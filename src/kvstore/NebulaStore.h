@@ -177,6 +177,8 @@ public:
 
     void removePart(GraphSpaceID spaceId, PartitionID partId) override;
 
+    ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
+
 private:
     std::unique_ptr<KVEngine> newEngine(GraphSpaceID spaceId, const std::string& path);
 
@@ -186,8 +188,6 @@ private:
                                   bool asLearner);
 
     ErrorOr<ResultCode, KVEngine*> engine(GraphSpaceID spaceId, PartitionID partId);
-
-    ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
 
 private:
     // The lock used to protect spaces_

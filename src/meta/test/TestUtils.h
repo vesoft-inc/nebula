@@ -44,9 +44,6 @@ public:
         // 0 => {0}
         auto& partsMap = partMan->partsMap();
         partsMap[0][0] = PartMeta();
-        // 1 => {1,2}
-        partsMap[1][1] = PartMeta();
-        partsMap[1][2] = PartMeta();
 
         std::vector<std::string> paths;
         paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath));

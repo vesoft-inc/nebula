@@ -12,6 +12,7 @@
 #include "kvstore/Part.h"
 #include "storage/StorageFlags.h"
 #include "storage/BaseProcessor.h"
+#include <folly/executors/Async.h>
 
 namespace nebula {
 namespace storage {
@@ -44,12 +45,7 @@ public:
             CHECK(ok(leaderRet));
             if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
                 auto leader = value(std::move(leaderRet));
-                // Check target is randomPeer (0, 0) or the election has completed.
-                if (host == HostAddr(0, 0) || leader == host) {
-                    code = kvstore::ResultCode::SUCCEEDED;
-                } else {
-                    resp_.set_leader(toThriftHost(leader));
-                }
+                resp_.set_leader(toThriftHost(leader));
             }
             onFinished(to(code));
         });
@@ -75,6 +71,11 @@ public:
         LOG(INFO) << "Receive add part for space "
                   << req.get_space_id() << ", part " << req.get_part_id();
         auto* store = static_cast<kvstore::NebulaStore*>(kvstore_);
+        auto ret = store->space(req.get_space_id());
+        if (!nebula::ok(ret) && nebula::error(ret) == kvstore::ResultCode::ERR_SPACE_NOT_FOUND) {
+            LOG(INFO) << "Space " << req.get_space_id() << " not exist, create it!";
+            store->addSpace(req.get_space_id());
+        }
         store->addPart(req.get_space_id(), req.get_part_id(), req.get_as_learner());
         onFinished(cpp2::ErrorCode::SUCCEEDED);
     }
@@ -191,9 +192,6 @@ public:
     }
 
     ~WaitingForCatchUpDataProcessor() {
-        if (bgThread_) {
-            bgThread_->join();
-        }
     }
 
     void process(const cpp2::CatchUpDataReq& req) {
@@ -209,7 +207,8 @@ public:
         auto part = nebula::value(ret);
         auto peer = kvstore::NebulaStore::getRaftAddr(HostAddr(req.get_target().get_ip(),
                                                                req.get_target().get_port()));
-        bgThread_ = std::make_unique<std::thread>([this, part, peer, spaceId, partId] {
+
+        folly::async([this, part, peer, spaceId, partId] {
             int retry = FLAGS_waiting_catch_up_retry_times;
             while (retry-- > 0) {
                 LOG(INFO) << "Waiting for catching up data, peer " << peer
@@ -242,9 +241,6 @@ public:
 private:
     explicit WaitingForCatchUpDataProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr) {}
-
-private:
-    std::unique_ptr<std::thread> bgThread_;
 };
 
 class GetLeaderProcessor : public BaseProcessor<cpp2::GetLeaderResp> {

@@ -53,6 +53,10 @@ public:
      * */
     void rollback() {}
 
+    Status status() {
+        return status_;
+    }
+
     bool saveInStore(bool onlyPlan = false);
 
     BalanceID id() const {

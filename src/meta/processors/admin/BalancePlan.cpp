@@ -54,6 +54,7 @@ void BalancePlan::invoke() {
                         finished = true;
                         if (status_ == Status::IN_PROGRESS) {
                             status_ = Status::SUCCEEDED;
+                            LOG(INFO) << "Balance " << id_ << " succeeded!";
                         }
                     }
                 }
@@ -76,6 +77,7 @@ void BalancePlan::invoke() {
                     status_ = Status::FAILED;
                     if (finishedTaskNum_ == tasks_.size()) {
                         finished = true;
+                        LOG(INFO) << "Balance " << id_ << " failed!";
                     }
                 }
                 if (finished) {
@@ -157,8 +159,9 @@ bool BalancePlan::recovery() {
                     // Resume the failed task.
                     task.ret_ = BalanceTask::Result::IN_PROGRESS;
                 }
-                task.startTimeMs_ = std::get<2>(tup);
-                task.endTimeMs_ = std::get<3>(tup);
+                task.srcLived_ = std::get<2>(tup);
+                task.startTimeMs_ = std::get<3>(tup);
+                task.endTimeMs_ = std::get<4>(tup);
             }
             tasks_.emplace_back(std::move(task));
             iter->next();

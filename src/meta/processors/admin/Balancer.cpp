@@ -157,6 +157,11 @@ std::vector<BalanceTask> Balancer::genTasks(GraphSpaceID spaceId) {
     for (auto& h : lost) {
         auto& lostParts = hostParts[h];
         for (auto& partId : lostParts) {
+            auto srcRet = hostWithPart(newHostParts, partId);
+            if (!srcRet.ok()) {
+                LOG(ERROR) << "Error:" << srcRet.status();
+                return std::vector<BalanceTask>();
+            }
             auto ret = hostWithMinimalParts(newHostParts, partId);
             if (!ret.ok()) {
                 LOG(ERROR) << "Error:" << ret.status();
@@ -169,6 +174,7 @@ std::vector<BalanceTask> Balancer::genTasks(GraphSpaceID spaceId) {
                                partId,
                                h,
                                luckyHost,
+                               false,
                                kv_,
                                client_.get());
         }
@@ -227,6 +233,7 @@ void Balancer::balanceParts(BalanceID balanceId,
                                partId,
                                maxPartsHost.first,
                                minPartsHost.first,
+                               true,
                                kv_,
                                client_.get());
             noAction = false;
@@ -285,14 +292,16 @@ void Balancer::calDiff(const std::unordered_map<HostAddr, std::vector<PartitionI
                        std::vector<HostAddr>& newlyAdded,
                        std::vector<HostAddr>& lost) {
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-        VLOG(3) << "Host " << it->first << ", parts " << it->second.size();
+        VLOG(1) << "Original Host " << it->first << ", parts " << it->second.size();
         if (std::find(activeHosts.begin(), activeHosts.end(), it->first) == activeHosts.end()) {
+            LOG(INFO) << "Lost host " << it->first;
             lost.emplace_back(it->first);
         }
     }
     for (auto& h : activeHosts) {
-        VLOG(3) << "Actvie Host " << h;
+        VLOG(1) << "Active host " << h;
         if (hostParts.find(h) == hostParts.end()) {
+            LOG(INFO) << "New Host " << h;
             newlyAdded.emplace_back(h);
         }
     }
@@ -309,6 +318,17 @@ Balancer::sortedHostsByParts(const std::unordered_map<HostAddr,
         return l.second < r.second;
     });
     return hosts;
+}
+
+StatusOr<HostAddr> Balancer::hostWithPart(
+            const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
+            PartitionID partId) {
+    for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
+        if (std::find(it->second.begin(), it->second.end(), partId) != it->second.end()) {
+            return it->first;
+        }
+    }
+    return Status::Error("No host hold the part %d", partId);
 }
 
 StatusOr<HostAddr> Balancer::hostWithMinimalParts(

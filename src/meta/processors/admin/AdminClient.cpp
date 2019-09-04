@@ -9,7 +9,7 @@
 #include "meta/processors/Common.h"
 #include "meta/ActiveHostsMan.h"
 
-DEFINE_int32(max_retry_times_admin_op, 3, "max retry times for admin request!");
+DEFINE_int32(max_retry_times_admin_op, 30, "max retry times for admin request!");
 
 namespace nebula {
 namespace meta {
@@ -24,7 +24,21 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
     storage::cpp2::TransLeaderReq req;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
-    req.set_new_leader(toThriftHost(dst));
+    auto target = dst;
+    if (dst == kRandomPeer) {
+        auto ret = getPeers(spaceId, partId);
+        if (!ret.ok()) {
+            return ret.status();
+        }
+        auto& peers = ret.value();
+        for (auto& p : peers) {
+            if (p != leader) {
+                target = p;
+                break;
+            }
+        }
+    }
+    req.set_new_leader(toThriftHost(target));
     return getResponse(leader, std::move(req), [] (auto client, auto request) {
                return client->future_transLeader(request);
            }, [] (auto&& resp) -> Status {
@@ -161,12 +175,15 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
     kv_->asyncMultiPut(kDefaultSpaceId,
                        kDefaultPartId,
                        std::move(data),
-                       [p = std::move(pro)] (kvstore::ResultCode code) mutable {
-        if (code == kvstore::ResultCode::SUCCEEDED) {
-            p.setValue(Status::OK());
-        } else {
-            p.setValue(Status::Error("Access kv failed, code:%d", static_cast<int32_t>(code)));
-        }
+                       [this, p = std::move(pro)] (kvstore::ResultCode code) mutable {
+        // To avoid dead lock, we call future callback in ioThreadPool_
+        folly::via(ioThreadPool_.get(), [code, p = std::move(p)] () mutable {
+            if (code == kvstore::ResultCode::SUCCEEDED) {
+                p.setValue(Status::OK());
+            } else {
+                p.setValue(Status::Error("Access kv failed, code:%d", static_cast<int32_t>(code)));
+            }
+        });
     });
     return f;
 }
@@ -250,7 +267,7 @@ void AdminClient::getResponse(
                               << ", retry " << retry
                               << ", limit " << retryLimit;
                     getResponse(std::move(hosts),
-                                index + 1,
+                                (index + 1) % hosts.size(),
                                 std::move(req),
                                 remoteFunc,
                                 retry + 1,
@@ -271,6 +288,20 @@ void AdminClient::getResponse(
                 case storage::cpp2::ErrorCode::E_LEADER_CHANGED: {
                     if (retry < retryLimit) {
                         HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
+                        if (leader == HostAddr(0, 0)) {
+                            usleep(1000 * 50);
+                            LOG(INFO) << "The leader is in election"
+                                      << ", retry " << retry
+                                      << ", limit " << retryLimit;
+                            getResponse(std::move(hosts),
+                                    (index + 1) % hosts.size(),
+                                    std::move(req),
+                                    std::move(remoteFunc),
+                                    retry + 1,
+                                    std::move(p),
+                                    retryLimit);
+                            return;
+                        }
                         int32_t leaderIndex = 0;
                         for (auto& h : hosts) {
                             if (h == leader) {
@@ -278,10 +309,11 @@ void AdminClient::getResponse(
                             }
                             leaderIndex++;
                         }
-                        LOG(INFO) << "Return leder change from " << hosts[index]
+                        LOG(INFO) << "Return leader change from " << hosts[index]
                                   << ", new leader is " << leader
                                   << ", retry " << retry
                                   << ", limit " << retryLimit;
+                        CHECK_LT(leaderIndex, hosts.size());
                         getResponse(std::move(hosts),
                                     leaderIndex,
                                     std::move(req),
@@ -301,7 +333,7 @@ void AdminClient::getResponse(
                                   << ", retry " << retry
                                   << ", limit " << retryLimit;
                         getResponse(std::move(hosts),
-                                    index + 1,
+                                    (index + 1) % hosts.size(),
                                     std::move(req),
                                     std::move(remoteFunc),
                                     retry + 1,

@@ -32,6 +32,7 @@ public:
                 PartitionID partId,
                 const HostAddr& src,
                 const HostAddr& dst,
+                bool srcLived,
                 kvstore::KVStore* kv,
                 AdminClient* client)
         : balanceId_(balanceId)
@@ -39,6 +40,7 @@ public:
         , partId_(partId)
         , src_(src)
         , dst_(dst)
+        , srcLived_(srcLived)
         , taskIdStr_(folly::stringPrintf(
                                       "[%ld, %d, %s:%d->%s:%d] ",
                                       balanceId,
@@ -89,7 +91,7 @@ private:
     static std::tuple<BalanceID, GraphSpaceID, PartitionID, HostAddr, HostAddr>
     parseKey(const folly::StringPiece& rawKey);
 
-    static std::tuple<BalanceTask::Status, BalanceTask::Result, int64_t, int64_t>
+    static std::tuple<BalanceTask::Status, BalanceTask::Result, bool, int64_t, int64_t>
     parseVal(const folly::StringPiece& rawVal);
 
 private:
@@ -98,6 +100,7 @@ private:
     PartitionID  partId_;
     HostAddr     src_;
     HostAddr     dst_;
+    bool         srcLived_ = true;  // false means the src host have been lost.
     std::string  taskIdStr_;
     kvstore::KVStore* kv_ = nullptr;
     AdminClient* client_ = nullptr;
