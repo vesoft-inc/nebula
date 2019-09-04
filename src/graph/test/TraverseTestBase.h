@@ -78,17 +78,18 @@ protected:
     static std::vector<std::string> buildPathString(std::vector<cpp2::RowValue> rows) {
         std::vector<std::string> paths;
         for (auto &row : rows) {
-            auto &cols = row.get_columns();
+            auto &pathValue = row.get_columns().back().get_path();
+            auto &cols = pathValue.get_entry_list();
             std::string pathStr;
             auto iter = cols.begin();
             while (iter < (cols.end() - 1)) {
-                pathStr += folly::stringPrintf("%ld<%d,%ld>",
-                                iter->get_integer(),
-                                (iter + 1)->get_edge().get_type(),
+                pathStr += folly::stringPrintf("%ld<%s,%ld>",
+                                iter->get_vertex().get_id(),
+                                (iter + 1)->get_edge().get_type().c_str(),
                                 (iter + 1)->get_edge().get_ranking());
                 iter = iter + 2;
             }
-            pathStr += folly::to<std::string>(iter->get_integer());
+            pathStr += folly::to<std::string>(iter->get_vertex().get_id());
             paths.emplace_back(std::move(pathStr));
         }
 

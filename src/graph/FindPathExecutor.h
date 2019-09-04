@@ -54,7 +54,7 @@ public:
 
     static std::string buildPathString(Path &path);
 
-    static cpp2::RowValue buildPathRow(Path &path);
+    cpp2::RowValue buildPathRow(Path &path);
 
 private:
     // Do some prepare work that can not do in prepare()
@@ -105,6 +105,7 @@ private:
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
     SchemaPropIndex                             srcTagProps_;
     SchemaPropIndex                             dstTagProps_;
+    std::unordered_map<EdgeType, std::string>   edgeTypes_;
     concurrent::Barrier                         barrier_;
     Status                                      fStatus_;
     Status                                      tStatus_;
