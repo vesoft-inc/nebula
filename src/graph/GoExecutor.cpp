@@ -425,19 +425,17 @@ std::vector<std::string> GoExecutor::getEdgeNamesFromResp(RpcResponse &rpcResp) 
     std::vector<std::string> names;
     auto spaceId = ectx()->rctx()->session()->space();
     for (auto &resp : rpcResp.responses()) {
-        auto *vertices = resp.get_vertices();
-        if (vertices == nullptr) {
+        auto *edgeSchema = resp.get_edge_schema();
+        if (edgeSchema == nullptr) {
             continue;
         }
 
-        for (auto &vdata : *vertices) {
-            for (auto &edata : vdata.edge_data) {
-                auto edgeType = edata.type;
-                auto status   = ectx()->schemaManager()->toEdgeName(spaceId, edgeType);
-                DCHECK(status.ok());
-                auto edgeName = status.value();
-                names.emplace_back(std::move(edgeName));
-            }
+        for (auto &schema : *edgeSchema) {
+            auto edgeType = schema.first;
+            auto status = ectx()->schemaManager()->toEdgeName(spaceId, edgeType);
+            DCHECK(status.ok());
+            auto edgeName = status.value();
+            names.emplace_back(std::move(edgeName));
         }
     }
 

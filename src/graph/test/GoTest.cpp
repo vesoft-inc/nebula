@@ -377,13 +377,10 @@ TEST_F(GoTest, MULTI_EDGES) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {teams_["Grizzlies"].vid(), 0},
-            {teams_["Lakers"].vid(), 0},
-            {teams_["Bulls"].vid(), 0},
-            {teams_["Spurs"].vid(), 0},
-            {teams_["Bucks"].vid(), 0},
-            {0, players_["Kobe Bryant"].vid()},
-            {0, players_["Marc Gasol"].vid()},
+            {0, teams_["Grizzlies"].vid()},    {0, teams_["Lakers"].vid()},
+            {0, teams_["Bulls"].vid()},        {0, teams_["Spurs"].vid()},
+            {0, teams_["Bucks"].vid()},        {players_["Kobe Bryant"].vid(), 0},
+            {players_["Marc Gasol"].vid(), 0},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
