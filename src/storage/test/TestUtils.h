@@ -136,8 +136,7 @@ public:
             column.type.type = nebula::cpp2::SupportedType::STRING;
             schema.columns.emplace_back(std::move(column));
         }
-        return std::shared_ptr<meta::SchemaProviderIf>(
-            new ResultSchemaProvider(std::move(schema)));
+        return std::make_shared<ResultSchemaProvider>(std::move(schema));
     }
 
 
@@ -161,8 +160,7 @@ public:
             column.type.type = nebula::cpp2::SupportedType::STRING;
             schema.columns.emplace_back(std::move(column));
         }
-        return std::shared_ptr<meta::SchemaProviderIf>(
-            new ResultSchemaProvider(std::move(schema)));
+        return std::make_shared<ResultSchemaProvider>(std::move(schema));
     }
 
     static cpp2::PropDef vetexPropDef(std::string name, TagID tagId) {
