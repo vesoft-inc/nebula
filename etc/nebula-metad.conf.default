@@ -15,6 +15,9 @@
 --logbufsecs=0
 
 ########## networking ##########
+# It is a list of IPs split by comma, the ips number equals replica number. If empty, it means replica is 1
+# The format looks like ip1, ip2, ip3
+--meta_server_addrs=
 # Local ip
 --local_ip=127.0.0.1
 # Meta daemon listening port

@@ -6,13 +6,14 @@
 
     <groupId>nebula-graph</groupId>
     <artifactId>graph-client</artifactId>
-    <version>1.0.0-beta</version>
+    <version>${NEBULA_BUILD_VERSION}</version>
 
     <properties>
         <project.root.dir>../../..</project.root.dir>
     </properties>
 
     <build>
+        <directory>${BUILD_TARGET}/target</directory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

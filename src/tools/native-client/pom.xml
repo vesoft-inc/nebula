@@ -12,7 +12,7 @@
 
     <groupId>com.vesoft</groupId>
     <artifactId>native-client</artifactId>
-    <version>1.0.0-beta</version>
+    <version>${NEBULA_BUILD_VERSION}</version>
 
     <properties>
         <project.root.dir>../../..</project.root.dir>
@@ -38,6 +38,7 @@
     </dependencies>
 
     <build>
+        <directory>${BUILD_TARGET}/target</directory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -71,7 +72,7 @@
                             <goal>javah</goal>
                         </goals>
                         <configuration>
-                            <javahOutputDirectory>${basedir}/src/main/cpp
+                            <javahOutputDirectory>${BUILD_TARGET}/src/main/cpp
                             </javahOutputDirectory>
                             <javahOutputFileName>
                                 com_vesoft_client_NativeClient.h
@@ -97,11 +98,11 @@
                         </goals>
                         <configuration>
                             <encoding>UTF-8</encoding>
-                            <outputDirectory>${basedir}/src/main/resources/
+                            <outputDirectory>${BUILD_TARGET}/src/main/resources/
                             </outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>_build</directory>
+                                    <directory>${BUILD_TARGET}/_build</directory>
                                     <includes>
                                         <include>libnebula_native_client.so
                                         </include>
@@ -152,7 +153,7 @@
                 <version>2.10</version>
                 <configuration>
                     <!-- put nebula_native_client.so in java.library.path env before run test-->
-                    <argLine>-Djava.library.path=_build/</argLine>
+                    <argLine>-Djava.library.path=${BUILD_TARGET}/_build/</argLine>
                 </configuration>
             </plugin>
         </plugins>
