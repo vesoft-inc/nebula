@@ -39,7 +39,6 @@ void DeleteVertexExecutor::execute() {
         auto rpcResp = std::move(resp).value();
         std::vector<storage::cpp2::EdgeKey> allEdges;
         for (auto& edge : *rpcResp.get_edge_keys()) {
-            allEdges.emplace_back(edge);
             auto reverseEdge = storage::cpp2::EdgeKey(apache::thrift::FragileConstructor::FRAGILE,
                                                       edge.get_dst(),
                                                       -(edge.get_edge_type()),

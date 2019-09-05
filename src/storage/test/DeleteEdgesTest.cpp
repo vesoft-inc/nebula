@@ -49,6 +49,35 @@ TEST(DeleteEdgesTest, SimpleTest) {
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_codes.size());
     }
+    // Add multi version edges
+    {
+        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr);
+        LOG(INFO) << "Build AddEdgesRequest...";
+        cpp2::AddEdgesRequest req;
+        req.space_id = 0;
+        req.overwritable = true;
+        // partId => List<Edge>
+        // Edge => {EdgeKey, props}
+        for (auto partId = 0; partId < 3; partId++) {
+            std::vector<cpp2::Edge> edges;
+            for (auto srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
+                edges.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                                   cpp2::EdgeKey(apache::thrift::FragileConstructor::FRAGILE,
+                                                 srcId,
+                                                 srcId*100 + 1,
+                                                 srcId*100 + 2,
+                                                 srcId*100 + 3),
+                                   folly::stringPrintf("%d_%d_new", partId, srcId));
+            }
+            req.parts.emplace(partId, std::move(edges));
+        }
+
+        LOG(INFO) << "Test AddEdgesProcessor...";
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+    }
 
     LOG(INFO) << "Check data in kv store...";
     for (auto partId = 0; partId < 3; partId++) {
@@ -58,11 +87,15 @@ TEST(DeleteEdgesTest, SimpleTest) {
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             int num = 0;
             while (iter->valid()) {
-                EXPECT_EQ(folly::stringPrintf("%d_%d", partId, srcId), iter->val());
+                if (num == 0) {
+                    EXPECT_EQ(folly::stringPrintf("%d_%d_new", partId, srcId), iter->val());
+                } else {
+                    EXPECT_EQ(folly::stringPrintf("%d_%d", partId, srcId), iter->val());
+                }
                 num++;
                 iter->next();
             }
-            EXPECT_EQ(1, num);
+            EXPECT_EQ(2, num);
         }
     }
 
