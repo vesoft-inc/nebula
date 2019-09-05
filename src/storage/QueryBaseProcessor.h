@@ -109,7 +109,6 @@ protected:
     std::vector<TagContext> tagContexts_;
     std::unordered_map<EdgeType, std::vector<PropContext>> edgeContexts_;
     folly::Executor* executor_ = nullptr;
-    bool             overAllEdge_{false};
 };
 
 }  // namespace storage

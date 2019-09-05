@@ -58,7 +58,6 @@ void QueryBaseProcessor<REQ, RESP>::initEdgeContext(const std::vector<EdgeType>&
 template<typename REQ, typename RESP>
 cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& req) {
     // Handle the case for query edges which should return some columns by default.
-    overAllEdge_ = req.over_all_edges;
     int32_t index = std::accumulate(edgeContexts_.cbegin(), edgeContexts_.cend(), 0,
                                     [](int ac, auto& ec) { return ac + ec.second.size(); });
     std::unordered_map<TagID, int32_t> tagIndex;

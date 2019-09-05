@@ -194,5 +194,14 @@ StatusOr<std::string> AdHocSchemaManager::toEdgeName(GraphSpaceID space, EdgeTyp
     return "";
 }
 
+
+// This interface is disabled
+StatusOr<std::vector<std::string>> AdHocSchemaManager::getAllEdge(GraphSpaceID space) {
+    UNUSED(space);
+    LOG(FATAL) << "Unimplement";
+    std::vector<std::string> r = { "" };
+    return r;
+}
+
 }  // namespace storage
 }  // namespace nebula

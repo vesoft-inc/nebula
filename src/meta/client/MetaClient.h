@@ -55,6 +55,8 @@ using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, 
 using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
 // get edgeName via spaceId and edgeType
 using SpaceEdgeTypeNameMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, std::string>;
+// get all edgeType edgeName via spaceId
+using SpaceAllEdgeMap = std::unordered_map<GraphSpaceID, std::vector<std::string>>;
 
 struct ConfigItem {
     ConfigItem() {}
@@ -240,6 +242,8 @@ public:
     StatusOr<SchemaVer> getNewestEdgeVerFromCache(const GraphSpaceID& space,
                                                   const EdgeType& edgeType);
 
+    StatusOr<std::vector<std::string>> getAllEdgeFromCache(const GraphSpaceID& space);
+
     PartsMap getPartsMapFromCache(const HostAddr& host);
 
     PartMeta getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId);
@@ -280,7 +284,8 @@ protected:
                      SpaceEdgeNameTypeMap &edgeNameTypeMap,
                      SpaceEdgeTypeNameMap &edgeTypeNamemap,
                      SpaceNewestTagVerMap &newestTagVerMap,
-                     SpaceNewestEdgeVerMap &newestEdgeVerMap);
+                     SpaceNewestEdgeVerMap &newestEdgeVerMap,
+                     SpaceAllEdgeMap &allEdgemap);
 
     folly::Future<StatusOr<bool>> heartbeat();
 
@@ -347,6 +352,7 @@ private:
     SpaceEdgeTypeNameMap  spaceEdgeIndexByType_;
     SpaceNewestTagVerMap  spaceNewestTagVerMap_;
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
+    SpaceAllEdgeMap      spaceAllEdgeMap_;
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
     folly::RWSpinLock     listenerLock_;

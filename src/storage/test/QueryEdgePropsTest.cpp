@@ -60,6 +60,7 @@ void buildRequest(cpp2::EdgePropRequest& req) {
         }
     }
     req.set_parts(std::move(tmpEdges));
+    req.set_edge_type(101);
     // Return edge props col_0, col_2, col_4 ... col_18
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 10; i++) {

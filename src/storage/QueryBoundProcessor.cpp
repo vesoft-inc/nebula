@@ -40,57 +40,6 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeImpl(const PartitionID partI
     return ret;
 }
 
-kvstore::ResultCode QueryBoundProcessor::processAllEdge(PartitionID partId, VertexID vId,
-                                                        FilterContext& fcontext,
-                                                        cpp2::VertexData& vdata) {
-    auto prefix = NebulaKeyUtils::prefix(partId, vId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
-        return ret;
-    }
-
-    std::unordered_set<EdgeType> edgeTypes;
-    for (; iter->valid(); iter->next()) {
-        auto key = iter->key();
-        if (NebulaKeyUtils::isEdge(key)) {
-            auto edgeType = NebulaKeyUtils::getEdgeType(key);
-            if (edgeType < 0) {
-                continue;
-            }
-            std::vector<PropContext> props;
-
-            auto ite = edgeTypes.find(edgeType);
-            if (ite != edgeTypes.end()) {
-                continue;
-            }
-
-            edgeTypes.emplace(edgeType);
-            auto it = edgeContexts_.find(edgeType);
-            if (it == edgeContexts_.end()) {
-                PropContext pc;
-                cpp2::PropDef pd;
-                pc.pikType_ = PropContext::PropInKeyType::DST;
-                pc.type_.type = nebula::cpp2::SupportedType::INT;
-                pd.name = "_dst";
-                pd.owner = storage::cpp2::PropOwner::EDGE;
-                pc.prop_ = std::move(pd);
-                pc.returned_ = true;
-                props.emplace_back(pc);
-                auto pair = edgeContexts_.emplace(edgeType, props);
-                it = pair.first;
-            }
-
-            ret = processEdgeImpl(partId, vId, edgeType, it->second, fcontext, vdata);
-            if (ret != kvstore::ResultCode::SUCCEEDED) {
-                return ret;
-            }
-        }
-    }
-
-    return ret;
-}
-
 kvstore::ResultCode QueryBoundProcessor::processEdge(PartitionID partId, VertexID vId,
                                                      FilterContext& fcontext,
                                                      cpp2::VertexData& vdata) {
@@ -146,11 +95,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
     }
 
     kvstore::ResultCode ret;
-    if (overAllEdge_) {
-        ret = processAllEdge(partId, vId, fcontext, vResp);
-    } else {
-        ret = processEdge(partId, vId, fcontext, vResp);
-    }
+    ret = processEdge(partId, vId, fcontext, vResp);
 
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         return ret;

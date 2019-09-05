@@ -182,6 +182,31 @@ Status GoExecutor::prepareFrom() {
     return status;
 }
 
+Status GoExecutor::prepareOverAll() {
+    auto spaceId = ectx()->rctx()->session()->space();
+    auto edgeAllStatus = ectx()->schemaManager()->getAllEdge(spaceId);
+
+    if (!edgeAllStatus.ok()) {
+        return edgeAllStatus.status();
+    }
+
+    auto allEdge = edgeAllStatus.value();
+    for (auto &e : allEdge) {
+        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, e);
+        if (!edgeStatus.ok()) {
+            return edgeStatus.status();
+        }
+
+        auto v = edgeStatus.value();
+        edgeTypes_.push_back(v);
+
+        if (!expCtx_->addEdge(e, v)) {
+            return Status::Error(folly::sformat("edge alias({}) was dup", e));
+        }
+    }
+
+    return Status::OK();
+}
 
 Status GoExecutor::prepareOver() {
     Status status = Status::OK();
@@ -194,7 +219,7 @@ Status GoExecutor::prepareOver() {
     for (auto e : edges) {
         if (e->isOverAll()) {
             expCtx_->setOverAllEdge();
-            return status;
+            return prepareOverAll();
         }
 
         auto spaceId = ectx()->rctx()->session()->space();
@@ -362,8 +387,7 @@ void GoExecutor::stepOut() {
                                                    starts_,
                                                    edgeTypes_,
                                                    "",
-                                                   std::move(returns),
-                                                   expCtx_->isOverAllEdge());
+                                                   std::move(returns));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
         auto completeness = result.completeness();
@@ -424,19 +448,18 @@ void GoExecutor::onVertexProps(RpcResponse &&rpcResp) {
 std::vector<std::string> GoExecutor::getEdgeNamesFromResp(RpcResponse &rpcResp) const {
     std::vector<std::string> names;
     auto spaceId = ectx()->rctx()->session()->space();
-    for (auto &resp : rpcResp.responses()) {
-        auto *edgeSchema = resp.get_edge_schema();
-        if (edgeSchema == nullptr) {
-            continue;
-        }
+    auto &resp = rpcResp.responses();
+    auto *edgeSchema = resp[0].get_edge_schema();
+    if (edgeSchema == nullptr) {
+        return names;
+    }
 
-        for (auto &schema : *edgeSchema) {
-            auto edgeType = schema.first;
-            auto status = ectx()->schemaManager()->toEdgeName(spaceId, edgeType);
-            DCHECK(status.ok());
-            auto edgeName = status.value();
-            names.emplace_back(std::move(edgeName));
-        }
+    for (auto &schema : *edgeSchema) {
+        auto edgeType = schema.first;
+        auto status = ectx()->schemaManager()->toEdgeName(spaceId, edgeType);
+        DCHECK(status.ok());
+        auto edgeName = status.value();
+        names.emplace_back(std::move(edgeName));
     }
 
     return names;
@@ -489,10 +512,15 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
     std::vector<std::unique_ptr<YieldColumn>> yc;
     if (expCtx_->isOverAllEdge() && yields_.empty()) {
         auto edgeNames = getEdgeNamesFromResp(rpcResp);
+        if (edgeNames.empty()) {
+            DCHECK(onError_);
+            onError_(Status::Error("get edge name failed"));
+            return;
+        }
         for (const auto &name : edgeNames) {
-            auto dummy       = new std::string(name);
-            auto dummy_exp   = new EdgeDstIdExpression(dummy);
-            auto ptr         = std::make_unique<YieldColumn>(dummy_exp);
+            auto dummy = new std::string(name);
+            auto dummy_exp = new EdgeDstIdExpression(dummy);
+            auto ptr = std::make_unique<YieldColumn>(dummy_exp);
             dummy_exp->setContext(expCtx_.get());
             yields_.emplace_back(ptr.get());
             yc.emplace_back(std::move(ptr));
@@ -552,23 +580,12 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
         pd.owner = storage::cpp2::PropOwner::EDGE;
         pd.name  = prop.second;
 
-        if (expCtx_->isOverAllEdge()) {
-            auto edgeName = prop.first;
+        EdgeType edgeType;
 
-            auto status = ectx()->schemaManager()->toEdgeType(spaceId, edgeName);
-            if (!status.ok()) {
-                return Status::Error("No schema found for '%s'", edgeName);
-            }
-            auto edgeType = status.value();
-            pd.id.set_edge_type(edgeType);
-        } else {
-            EdgeType edgeType;
-
-            if (!expCtx_->getEdgeType(prop.first, edgeType)) {
-                return Status::Error("the edge was not found '%s'", prop.first);
-            }
-            pd.id.set_edge_type(edgeType);
+        if (!expCtx_->getEdgeType(prop.first, edgeType)) {
+            return Status::Error("the edge was not found '%s'", prop.first);
         }
+        pd.id.set_edge_type(edgeType);
         props.emplace_back(std::move(pd));
     }
 
@@ -577,7 +594,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
 
 
 StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getDstProps() {
-std::vector<storage::cpp2::PropDef> props;
+    std::vector<storage::cpp2::PropDef> props;
     auto spaceId = ectx()->rctx()->session()->space();
     for (auto &tagProp : expCtx_->dstTagProps()) {
         storage::cpp2::PropDef pd;

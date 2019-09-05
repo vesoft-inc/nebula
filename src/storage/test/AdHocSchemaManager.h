@@ -77,6 +77,9 @@ public:
     // This interface is disabled
     StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) override;
 
+    // This interface is disabled
+    StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) override;
+
     void init(nebula::meta::MetaClient *client = nullptr) override {
         UNUSED(client);
     }

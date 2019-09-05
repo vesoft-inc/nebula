@@ -97,7 +97,6 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getNei
         const std::vector<EdgeType> &edgeTypes,
         std::string filter,
         std::vector<cpp2::PropDef> returnCols,
-        bool overAll,
         folly::EventBase* evb) {
     auto clusters = clusterIdsToHosts(
         space,
@@ -115,7 +114,6 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getNei
         req.set_edge_types(edgeTypes);
         req.set_filter(filter);
         req.set_return_columns(returnCols);
-        req.set_over_all_edges(overAll);
     }
 
     return collectResponse(

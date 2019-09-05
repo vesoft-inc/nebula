@@ -145,7 +145,6 @@ struct GetNeighborsRequest {
     3: list<common.EdgeType> edge_types,
     4: binary filter,
     5: list<PropDef> return_columns,
-    6: bool over_all_edges,
 }
 
 struct VertexPropRequest {
@@ -161,7 +160,6 @@ struct EdgePropRequest {
     3: common.EdgeType edge_type,
     4: binary filter,
     5: list<PropDef> return_columns,
-    6: bool over_all_edges,
 }
 
 struct AddVerticesRequest {

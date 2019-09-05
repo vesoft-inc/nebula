@@ -58,6 +58,8 @@ public:
 
     StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) override;
 
+    StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) override;
+
     void init(MetaClient *client) override;
 
 private:

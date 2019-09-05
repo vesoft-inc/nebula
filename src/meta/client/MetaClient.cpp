@@ -133,6 +133,7 @@ void MetaClient::loadData() {
     decltype(spaceNewestTagVerMap_) spaceNewestTagVerMap;
     decltype(spaceNewestEdgeVerMap_) spaceNewestEdgeVerMap;
     decltype(spaceEdgeIndexByType_)  spaceEdgeIndexByType;
+    decltype(spaceAllEdgeMap_)      spaceAllEdgeMap;
 
     for (auto space : ret.value()) {
         auto spaceId = space.first;
@@ -158,7 +159,8 @@ void MetaClient::loadData() {
                          spaceEdgeIndexByName,
                          spaceEdgeIndexByType,
                          spaceNewestTagVerMap,
-                         spaceNewestEdgeVerMap)) {
+                         spaceNewestEdgeVerMap,
+                         spaceAllEdgeMap)) {
             return;
         }
 
@@ -176,6 +178,7 @@ void MetaClient::loadData() {
         spaceNewestTagVerMap_ = std::move(spaceNewestTagVerMap);
         spaceNewestEdgeVerMap_ = std::move(spaceNewestEdgeVerMap);
         spaceEdgeIndexByType_  = std::move(spaceEdgeIndexByType);
+        spaceAllEdgeMap_ = std::move(spaceAllEdgeMap);
     }
     diff(oldCache, localCache_);
     ready_ = true;
@@ -194,7 +197,8 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                              SpaceEdgeNameTypeMap &edgeNameTypeMap,
                              SpaceEdgeTypeNameMap &edgeTypeNameMap,
                              SpaceNewestTagVerMap &newestTagVerMap,
-                             SpaceNewestEdgeVerMap &newestEdgeVerMap) {
+                             SpaceNewestEdgeVerMap &newestEdgeVerMap,
+                             SpaceAllEdgeMap &allEdgeMap) {
     auto tagRet = listTagSchemas(spaceId).get();
     if (!tagRet.ok()) {
         LOG(ERROR) << "Get tag schemas failed for spaceId " << spaceId << ", " << tagRet.status();
@@ -243,11 +247,18 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         edgeTypeSchemas.emplace(std::make_pair(edgeIt.edge_type, edgeIt.version), schema);
         edgeNameTypeMap.emplace(std::make_pair(spaceId, edgeIt.edge_name), edgeIt.edge_type);
         edgeTypeNameMap.emplace(std::make_pair(spaceId, edgeIt.edge_type), edgeIt.edge_name);
+        auto it = allEdgeMap.find(spaceId);
+        if (it == allEdgeMap.end()) {
+            std::vector<std::string> v = {edgeIt.edge_name};
+            allEdgeMap.emplace(spaceId, std::move(v));
+        } else {
+            it->second.emplace_back(edgeIt.edge_name);
+        }
         // get the latest edge version
-        auto it = newestEdgeVerMap.find(std::make_pair(spaceId, edgeIt.edge_type));
-        if (it != newestEdgeVerMap.end()) {
-            if (it->second < edgeIt.version) {
-                it->second = edgeIt.version;
+        auto it2 = newestEdgeVerMap.find(std::make_pair(spaceId, edgeIt.edge_type));
+        if (it2 != newestEdgeVerMap.end()) {
+            if (it2->second < edgeIt.version) {
+                it2->second = edgeIt.version;
             }
         } else {
             newestEdgeVerMap.emplace(std::make_pair(spaceId, edgeIt.edge_type), edgeIt.version);
@@ -659,6 +670,18 @@ StatusOr<std::string> MetaClient::getEdgeNameByTypeFromCache(const GraphSpaceID&
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceEdgeIndexByType_.find(std::make_pair(space, edgeType));
     if (it == spaceEdgeIndexByType_.end()) {
+        return Status::Error("Edge is no exist!");
+    }
+    return it->second;
+}
+
+StatusOr<std::vector<std::string>> MetaClient::getAllEdgeFromCache(const GraphSpaceID& space) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = spaceAllEdgeMap_.find(space);
+    if (it == spaceAllEdgeMap_.end()) {
         return Status::Error("Edge is no exist!");
     }
     return it->second;

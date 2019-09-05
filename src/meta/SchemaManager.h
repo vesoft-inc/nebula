@@ -57,6 +57,8 @@ public:
 
     virtual StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) = 0;
 
+    virtual StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) = 0;
+
     virtual void init(MetaClient *client = nullptr) = 0;
 
 protected:

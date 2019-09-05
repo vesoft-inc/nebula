@@ -57,6 +57,8 @@ private:
 
     Status prepareDistinct();
 
+    Status prepareOverAll();
+
     /**
      * To check if this is the final step.
      */
