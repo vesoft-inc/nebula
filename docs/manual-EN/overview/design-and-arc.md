@@ -14,7 +14,7 @@ Along the axis to right, there comes the graph streaming field, which is the com
 is often triggered by events and its latency is in second.
 
 Right beside the graph streaming is the online response system, whose requirement for latency is extremely high, which should be in millisecond. 
-The right most field is graph database and its use cases are completely different from the one on the left. The **Nebula Graph** we're working on can find its usage here in OLTP.
+The rightmost field is graph database and its use cases are completely different from the one on the left. The **Nebula Graph** we're working on can find its usage here in OLTP.
 
 ### Native VS Multi-model
 
