@@ -214,9 +214,7 @@ Status YieldClauseWrapper::prepare(
                 }
                 continue;
             }
-        }
-
-        if (col->expr()->isVariableExpression()) {
+        } else if (col->expr()->isVariableExpression()) {
             auto *variableExpr = static_cast<VariablePropertyExpression*>(col->expr());
             auto *colName = variableExpr->prop();
             if (*colName == "*") {

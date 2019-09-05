@@ -84,15 +84,16 @@ Status FetchEdgesExecutor::prepareEdgeKeys() {
 
             rank_ = edgeKeyRef->rank();
 
-            auto ret = edgeKeyRef->varname();
-            if (!ret.ok()) {
-                status = std::move(ret).status();
-                break;
-            }
             if ((srcid_ != nullptr && *srcid_ == "*")
                     || (dstid_ != nullptr && *dstid_ == "*")
                     || (rank_ != nullptr && *rank_ == "*")) {
                 status = Status::Error("Can not use `*' to reference a vertex id column.");
+                break;
+            }
+
+            auto ret = edgeKeyRef->varname();
+            if (!ret.ok()) {
+                status = std::move(ret).status();
                 break;
             }
             varname_ = ret.value();
