@@ -8,7 +8,7 @@ This document is to walk you through on how **Nebula Graph** is designed and why
 
 ![meetup1-04](https://user-images.githubusercontent.com/42762957/64223265-dc573680-cf05-11e9-98bc-93de4fd32463.jpg)
 
-The axis in the above picture shows the different requirement for query latency. Like traditional database, graph database can be divided into two parts: OLAP and OLTP. OLAP cares more about offline analysis while OLTP prefers online processing. Graph computing framework in OLAP is used to analysis data based on graph structure. And it's similar to OLAP in traditional database. But it has features which are not available in traditional database, one is iterative algorithm based on graph. A typical example is the PageRank algorithm from Google, which obtains the relevance of web pages through constant iterative computing. Another example is the commonly-used LPA algorithm.
+The axis in the above picture shows the different requirements for query latency. Like traditional database, graph database can be divided into two parts: OLAP and OLTP. OLAP cares more about offline analysis while OLTP prefers online processing. Graph computing framework in OLAP is used to analyse data based on graph structure. And it's similar to OLAP in traditional database. But it has features which are not available in traditional database, one is iterative algorithm based on graph. A typical example is the PageRank algorithm from Google, which obtains the relevance of web pages through constant iterative computing. Another example is the commonly-used LPA algorithm.
 
 Along the axis to right, there comes the graph streaming field, which is the combination of basic computing and streaming computing. A relational network is not a static structure, rather, it constantly changes in the business: be it graph structure or graph properties. Computing in this filed 
 is often triggered by events and its latency is in second.
@@ -36,7 +36,7 @@ Designed based on the above features, **Nebula Graph** is an open source, distri
 
 The dash line in the above picture divided computing and storage as two independent parts, the upper is the computing service, each machine or virtual machine is stateless and never talks to other so it's easy to scale in or out; the lower is the storage service, it's stateful since data is stored there. Storage service can turn graph semantics into key-values and pass them to the KV-store below it. Between the two is the Raft protocol.
 
-The right side is the meta service, similar with the NameNode in HDFS, it stores all meta data like schema and controls scaling. 
+The right side is the meta service, similar to the NameNode in HDFS, it stores all meta data like schema and controls scaling. 
 
 ### Design thinking: Storage Service
 
@@ -47,7 +47,7 @@ The right side is the meta service, similar with the NameNode in HDFS, it stores
 
 Another design is the **separation of computing and storage**, and the benefits are as follows:
 
-- Scalability. Separating storage from computing makes storage service flexible,thus it's easy to scale out or in.
+- Scalability. Separating storage from computing makes storage service flexible, thus it's easy to scale out or in.
 - Availability. Recovery from vertex failure can be performed quickly. 
 
 The binary of storage service is **nebula-storaged**, which provides a key-value store. Multiple storage engines like RocksDB and HBase are supported, with RocksDB set as default engine. To build a resilient distributed system, [Raft](https://raft.github.io/) is implemented as the consensus algorithm. 
@@ -72,7 +72,7 @@ The binary of the meta service is **nebula-metad**. Here is the list of its main
 
 -  User management
 
-   In **Nebula Graph** different roles are assigned diverse privileges. We provide the following native roles: Global Admin, Graph Space Admin, User,Guest.
+   In **Nebula Graph** different roles are assigned diverse privileges. We provide the following native roles: Global Admin, Graph Space Admin, User and Guest.
 - Cluster configuration management
 
    Meta service manages the servers and partitions in the cluster, e.g. records location of the partitions, receives heartbeat from servers, etc. It balances the partitions and manages the communication traffic in case of server failure.
@@ -105,11 +105,11 @@ The binary of the query engine is **nebula-graphd**. Each nebula-graphd instance
 
  - Asynchronous and parallel execution
 
-    I/O operations and network transmission are time-consuming. Thus asynchronous and parallel operations are widely adopted in the query engine to reduce the latency and to improve the overall throughput.Also, a separate resource pool is set for each query to avoid the long tail effect of those time-consuming queries.
+    I/O operations and network transmission are time-consuming. Thus asynchronous and parallel operations are widely adopted in the query engine to reduce the latency and to improve the overall throughput. Also, a separate resource pool is set for each query to avoid the long-tail effect of those time-consuming queries.
 
  - Pushing down computation
 
-    In a distributed system, transferring large amount of data on the network really hurts the overall latency. In **Nebula Graph**, the query engine will make decisions to push some filter and aggregation down to the storage service. The purpose is to reduce the amount of data passing back from the storage.
+    In a distributed system, transferring large amount of data on the network really extends the overall latency. In **Nebula Graph**, the query engine will make decisions to push some filter and aggregation down to the storage service. The purpose is to reduce the amount of data passing back from the storage.
 
 ### Design-thinking: API and SDK
 
