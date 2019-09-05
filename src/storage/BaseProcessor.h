@@ -70,6 +70,13 @@ protected:
         }
     }
 
+    nebula::cpp2::HostAddr toThriftHost(const HostAddr& host) {
+        nebula::cpp2::HostAddr tHost;
+        tHost.set_ip(host.first);
+        tHost.set_port(host.second);
+        return tHost;
+    }
+
 protected:
     kvstore::KVStore*       kvstore_ = nullptr;
     meta::SchemaManager*    schemaMan_ = nullptr;
