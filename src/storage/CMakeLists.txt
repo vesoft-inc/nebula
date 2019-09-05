@@ -14,7 +14,6 @@ nebula_add_library(
     UpdateVertexProcessor.cpp
     UpdateEdgeProcessor.cpp
     CreateIndexProcessor.cpp
-    CleanIndexLogProcessor.cpp
 )
 
 nebula_add_library(

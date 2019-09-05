@@ -58,15 +58,8 @@ enum SupportedType {
 } (cpp.enum_strict)
 
 enum IndexType {
-    UNKNOWN = 0,
     TAG = 1,
     EDGE = 2,
-}
-
-enum IndexOpType {
-    INSERT = 1,
-    DELETE = 2,
-    UPDATE = 3,
 }
 
 enum IndexStatus {

@@ -299,12 +299,6 @@ struct BuildIndexReq {
     4: map<common.PartitionID, list<common.HostAddr>>(cpp.template = "std::unordered_map") parts,
 }
 
-struct CleanIndexLogReq {
-    1: common.GraphSpaceID space_id,
-    2: common.IndexID      index_id,
-    3: map<common.PartitionID, list<common.HostAddr>>(cpp.template = "std::unordered_map") parts,
-}
-
 service StorageService {
     QueryResponse getBound(1: GetNeighborsRequest req)
 
@@ -321,7 +315,6 @@ service StorageService {
     ExecResponse deleteEdges(1: DeleteEdgesRequest req);
     ExecResponse deleteVertex(1: DeleteVertexRequest req);
     ExecResponse buildIndex(1: BuildIndexReq req);
-    ExecResponse cleanIndexLog(1: CleanIndexLogReq req);
 
     UpdateResponse updateVertex(1: UpdateVertexRequest req)
     UpdateResponse updateEdge(1: UpdateEdgeRequest req)

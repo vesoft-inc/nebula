@@ -9,7 +9,6 @@
 namespace nebula {
 
 const std::string kIndexPrefix = "_i";           // NOLINT
-const std::string kIndexLogPrefix = "_wal_i";    // NOLINT
 
 // static
 std::string NebulaKeyUtils::vertexKey(PartitionID partId, VertexID vId,
@@ -111,78 +110,6 @@ std::string NebulaKeyUtils::edgeIndexkey(PartitionID partId, IndexID indexId, Ed
        .append(reinterpret_cast<const char*>(&type), sizeof(EdgeType))
        .append(reinterpret_cast<const char*>(&ts), sizeof(EdgeVersion));
     return key;
-}
-
-// static
-std::string NebulaKeyUtils::preIndexKey(PartitionID partId, IndexID indexId, int64_t version) {
-    std::string key;
-    key.reserve(sizeof(PartitionID) + kIndexLogPrefix.size() + sizeof(IndexID) + sizeof(int64_t));
-    key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID))
-       .append(kIndexLogPrefix)
-       .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID))
-       .append(reinterpret_cast<const char*>(&version), sizeof(int64_t));
-    return key;
-}
-
-// static
-std::string NebulaKeyUtils::preIndexPrefix(PartitionID partId, IndexID indexId) {
-        std::string key;
-        key.reserve(sizeof(PartitionID) + kIndexLogPrefix.size() + sizeof(IndexID));
-        key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID))
-                .append(kIndexLogPrefix)
-                .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID));
-        return key;
-}
-
-// static
-std::string NebulaKeyUtils::preIndexValue(nebula::cpp2::IndexType type,
-                                          nebula::cpp2::IndexOpType op,
-                                          std::pair<std::string, std::string> original,
-                                          std::pair<std::string, std::string> newly) {
-    std::string val;
-    auto origKey = original.first;
-    auto origVal = original.second;
-    auto newlyKey = newly.first;
-    auto newlyVal = newly.second;
-    auto origKeyLen = origKey.size(), origValLen = origVal.size(),
-                      newlyKeyLen = newlyKey.size(), newlyValLen = newlyVal.size();
-
-    auto len = (op == nebula::cpp2::IndexOpType::UPDATE) ?
-               sizeof(nebula::cpp2::IndexType) + sizeof(nebula::cpp2::IndexOpType) +
-               sizeof(int32_t) * 4 + origKeyLen + origValLen +
-               newlyKeyLen + newlyValLen
-               :
-               sizeof(nebula::cpp2::IndexType) + sizeof(nebula::cpp2::IndexOpType) +
-               sizeof(int32_t) * 2 + origKeyLen + origValLen;
-    val.reserve(len);
-    switch (op) {
-        case nebula::cpp2::IndexOpType::UPDATE :
-        {
-            val.append(reinterpret_cast<const char*>(&type), sizeof(nebula::cpp2::IndexType))
-               .append(reinterpret_cast<const char*>(&op), sizeof(nebula::cpp2::IndexOpType))
-               .append(reinterpret_cast<const char*>(&origKeyLen), sizeof(int32_t))
-               .append(origKey)
-               .append(reinterpret_cast<const char*>(&origValLen), sizeof(int32_t))
-               .append(origVal)
-               .append(reinterpret_cast<const char*>(&newlyKeyLen), sizeof(int32_t))
-               .append(newlyKey)
-               .append(reinterpret_cast<const char*>(&newlyValLen), sizeof(int32_t))
-               .append(newlyVal);
-            break;
-        }
-        case nebula::cpp2::IndexOpType::INSERT :
-        case nebula::cpp2::IndexOpType::DELETE :
-        {
-            val.append(reinterpret_cast<const char*>(&type), sizeof(nebula::cpp2::IndexType))
-               .append(reinterpret_cast<const char*>(&op), sizeof(nebula::cpp2::IndexOpType))
-               .append(reinterpret_cast<const char*>(&origKeyLen), sizeof(int32_t))
-               .append(origKey)
-               .append(reinterpret_cast<const char*>(&origValLen), sizeof(int32_t))
-               .append(origVal);
-            break;
-        }
-    }
-    return val;
 }
 
 // static

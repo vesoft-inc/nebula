@@ -123,14 +123,6 @@ public:
     static std::string edgeIndexkey(PartitionID partId, IndexID indexId, EdgeType type,
                                     EdgeVersion ts, const folly::StringPiece &values);
 
-    static std::string preIndexKey(PartitionID partId, IndexID indexId, int64_t version);
-
-    static std::string preIndexPrefix(PartitionID partId, IndexID indexId);
-
-    static std::string preIndexValue(nebula::cpp2::IndexType type, nebula::cpp2::IndexOpType op,
-                                     std::pair<std::string, std::string> original,
-                                     std::pair<std::string, std::string> newly);
-
     static std::string partPrefix(PartitionID partId);
 
     static std::string indexValue(const folly::StringPiece &row);

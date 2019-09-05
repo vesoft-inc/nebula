@@ -237,7 +237,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::buildIn
         nebula::cpp2::IndexID id,
         std::map<int32_t, std::vector<std::string>> props,
         folly::EventBase* evb) {
-    auto hosts = client_->partsBySpace(space);
+    auto hosts = allParts(space);
 
     std::unordered_map<HostAddr, cpp2::BuildIndexReq> requests;
     std::unordered_map<PartitionID, std::vector<nebula::cpp2::HostAddr>> parts;
@@ -263,37 +263,6 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::buildIn
             [](cpp2::StorageServiceAsyncClient* client,
                const cpp2::BuildIndexReq& r) {
                 return client->future_buildIndex(r);
-            });
-}
-
-folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> StorageClient::cleanIndexLog(
-        GraphSpaceID space,
-        nebula::cpp2::IndexID id,
-        folly::EventBase* evb) {
-    auto hosts = client_->partsBySpace(space);
-
-    std::unordered_map<HostAddr, cpp2::CleanIndexLogReq> requests;
-    std::unordered_map<PartitionID, std::vector<nebula::cpp2::HostAddr>> parts;
-
-    for (auto& host : hosts) {
-        auto& addr = host.first;
-        auto& hostParts = host.second;
-        for (auto& part : hostParts) {
-            parts.emplace(part, std::vector<nebula::cpp2::HostAddr>(0));
-        }
-        auto& req = requests[addr];
-        req.set_space_id(space);
-        req.set_index_id(id);
-        req.set_parts(std::move(parts));
-    }
-
-    VLOG(3) << "requests size " << requests.size();
-
-    return collectResponse(
-            evb, std::move(requests),
-            [](cpp2::StorageServiceAsyncClient* client,
-               const cpp2::CleanIndexLogReq& r) {
-                return client->future_cleanIndexLog(r);
             });
 }
 

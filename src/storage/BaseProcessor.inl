@@ -156,6 +156,7 @@ StatusOr<std::pair<std::string, std::string>> BaseProcessor<RESP>::assembleIndex
     auto indexId = indexItem->get_index_id();
     switch (status) {
         case nebula::cpp2::IndexStatus::NORMAL :
+        case nebula::cpp2::IndexStatus::BUILDING :
         {
             switch (type) {
                 case nebula::cpp2::IndexType::EDGE :
@@ -191,37 +192,6 @@ StatusOr<std::pair<std::string, std::string>> BaseProcessor<RESP>::assembleIndex
                                                                 ret.value());
                     return std::pair<std::string, std::string>(std::move(indexKey), key);
                 }
-                case nebula::cpp2::IndexType::UNKNOWN :
-                default:
-                    return Status::Error("index type error");
-            }
-        }
-        case nebula::cpp2::IndexStatus::BUILDING :
-        {   auto version = time::WallClock::fastNowInMicroSec();
-            switch (type) {
-                case nebula::cpp2::IndexType::EDGE :
-                {
-                    std::pair<std::string, std::string> raw(key, val);
-                    auto preKey = NebulaKeyUtils::preIndexKey(partId, indexId, version);
-                    auto preVal = NebulaKeyUtils::preIndexValue(nebula::cpp2::IndexType::EDGE,
-                                                                nebula::cpp2::IndexOpType::INSERT,
-                                                                std::move(raw), {});
-                    return std::pair<std::string, std::string>(std::move(preKey),
-                                                               std::move(preVal));
-                }
-                case nebula::cpp2::IndexType::TAG :
-                {
-                    std::pair<std::string, std::string> raw(key, val);
-                    auto preKey = NebulaKeyUtils::preIndexKey(partId, indexId, version);
-                    auto preVal = NebulaKeyUtils::preIndexValue(nebula::cpp2::IndexType::TAG,
-                                                                nebula::cpp2::IndexOpType::INSERT,
-                                                                std::move(raw), {});
-                    return std::pair<std::string, std::string>(std::move(preKey),
-                                                               std::move(preVal));
-                }
-                case nebula::cpp2::IndexType::UNKNOWN :
-                default:
-                    return Status::Error("index type error");
             }
         }
         case nebula::cpp2::IndexStatus::INVALID :

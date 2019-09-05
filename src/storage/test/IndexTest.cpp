@@ -89,8 +89,6 @@ void verifyResult(nebula::cpp2::IndexType type,
             ASSERT_EQ(edges, actual);
             break;
         }
-        case nebula::cpp2::IndexType::UNKNOWN:
-            break;
     }
 }
 

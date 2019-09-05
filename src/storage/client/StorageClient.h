@@ -167,11 +167,6 @@ public:
         std::map<int32_t, std::vector<std::string>> props,
         folly::EventBase* evb = nullptr);
 
-    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> cleanIndexLog(
-        GraphSpaceID space,
-        nebula::cpp2::IndexID id,
-        folly::EventBase* evb = nullptr);
-
 protected:
     // Calculate the partition id for the given vertex id
     PartitionID partId(GraphSpaceID spaceId, int64_t id) const;

@@ -19,7 +19,6 @@
 #include "storage/UpdateVertexProcessor.h"
 #include "storage/UpdateEdgeProcessor.h"
 #include "storage/CreateIndexProcessor.h"
-#include "storage/CleanIndexLogProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -142,12 +141,6 @@ StorageServiceHandler::future_getLeaderPart(const cpp2::GetLeaderReq& req) {
 folly::Future<cpp2::ExecResponse>
 StorageServiceHandler::future_buildIndex(const cpp2::BuildIndexReq& req) {
     auto* processor = CreateIndexProcessor::instance(kvstore_, schemaMan_);
-    RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ExecResponse>
-StorageServiceHandler::future_cleanIndexLog(const cpp2::CleanIndexLogReq& req) {
-    auto* processor = CleanIndexLogProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
 

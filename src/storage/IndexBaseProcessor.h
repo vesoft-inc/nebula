@@ -23,34 +23,14 @@ public:
 protected:
     void doIndexCreate(PartitionID partId);
 
-    cpp2::ErrorCode pastIndexCreate(PartitionID partId, const folly::StringPiece &raw);
-
     cpp2::ErrorCode doBatchPut(GraphSpaceID spaceId, PartitionID partId,
                                std::vector<kvstore::KV> data);
-
-    cpp2::ErrorCode doDelete(GraphSpaceID spaceId, PartitionID partId,
-                             const std::string &key);
-
-    void  doBatchDelete(GraphSpaceID spaceId, PartitionID partId, std::string prefix);
 
     StatusOr<std::string> assembleEdgeIndexKey(GraphSpaceID spaceId, PartitionID partId,
                                                std::string key, std::string val);
 
     StatusOr<std::string> assembleVertexIndexKey(GraphSpaceID spaceId, PartitionID partId,
                                                  std::string key, std::string val);
-
-    StatusOr<std::vector<kvstore::KV>> parseIndexKey(PartitionID partId,
-            nebula::cpp2::IndexType type, const std::pair<std::string, std::string> data);
-
-    cpp2::ErrorCode pastDoInsert(PartitionID partId, nebula::cpp2::IndexType type,
-                                 const std::pair<std::string, std::string> data);
-
-    cpp2::ErrorCode pastDoDelete(PartitionID partId, nebula::cpp2::IndexType type,
-                                 const std::pair<std::string, std::string> data);
-
-    cpp2::ErrorCode pastDoUpdate(PartitionID partId, nebula::cpp2::IndexType type,
-                                 const std::pair<std::string, std::string> oldData,
-                                 const std::pair<std::string, std::string> newData);
 
     void pushPartsResultCode(std::vector<std::pair<cpp2::ErrorCode, PartitionID>> items) {
         for (auto item : items) {

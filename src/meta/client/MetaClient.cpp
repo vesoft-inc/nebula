@@ -878,10 +878,14 @@ int32_t MetaClient::partsNum(GraphSpaceID spaceId) {
 
 std::unordered_map<HostAddr, std::vector<PartitionID>>
 MetaClient::partsBySpace(GraphSpaceID spaceId) {
+    std::unordered_map<HostAddr, std::vector<PartitionID>> hosts;
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(spaceId);
     CHECK(it != localCache_.end());
-    return it->second->partsOnHost_;
+    for (auto a : it->second->partsOnHost_) {
+        hosts.emplace(a.first, a.second);
+    }
+    return hosts;
 }
 
 folly::Future<StatusOr<TagID>>
