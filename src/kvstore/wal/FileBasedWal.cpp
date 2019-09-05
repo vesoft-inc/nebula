@@ -5,6 +5,7 @@
  */
 
 #include "base/Base.h"
+#include <utime.h>
 #include "kvstore/wal/FileBasedWal.h"
 #include "kvstore/wal/FileBasedWalIterator.h"
 #include "fs/FileUtils.h"
@@ -281,9 +282,15 @@ void FileBasedWal::closeCurrFile() {
     CHECK_EQ(close(currFd_), 0);
     currFd_ = -1;
 
-    currInfo_->setMTime(::time(nullptr));
+    auto now = time::WallClock::fastNowInSec();
+    currInfo_->setMTime(now);
     DCHECK_EQ(currInfo_->size(), FileUtils::fileSize(currInfo_->path()))
         << currInfo_->path() << " size does not match";
+    struct utimbuf timebuf;
+    timebuf.modtime = currInfo_->mtime();
+    timebuf.actime = currInfo_->mtime();
+    VLOG(1) << "Close cur file " << currInfo_->path() << ", mtime: " << currInfo_->mtime();
+    CHECK_EQ(utime(currInfo_->path(), &timebuf), 0);
     currInfo_.reset();
 }
 
@@ -602,7 +609,8 @@ void FileBasedWal::cleanWAL(int32_t ttl) {
     int walTTL = ttl == 0 ? policy_.ttl : ttl;
     while (it != walFiles_.end()) {
         if (index++ < size - 1 &&  (now - it->second->mtime() > walTTL)) {
-            VLOG(1) << "Clean wals, Remove " << it->second->path();
+            VLOG(1) << "Clean wals, Remove " << it->second->path() << ", now: " << now
+                    << ", mtime: " << it->second->mtime();
             unlink(it->second->path());
             it = walFiles_.erase(it);
             count++;
