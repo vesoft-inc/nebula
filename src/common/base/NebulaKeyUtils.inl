@@ -26,7 +26,8 @@ template<typename T>
 typename std::enable_if<std::is_integral<T>::value>::type
 NebulaKeyUtils::decodeVersion(const char* data, int32_t len, T& v) {
     const uint8_t* encode = reinterpret_cast<const uint8_t*>(data);
-    uint8_t copy[10];
+    CHECK_LE(len, kVarintVersionMaxLen);
+    uint8_t copy[kVarintVersionMaxLen];
     for (auto i = 0; i < len; i++) {
         copy[i] = encode[len-i-1];
     }

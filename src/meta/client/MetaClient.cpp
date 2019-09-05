@@ -156,7 +156,7 @@ bool MetaClient::loadData() {
         if (!res.ok()) {
             LOG(ERROR) << "Get space failed for spaceId " << spaceId
                        << ", status " << res.status();
-            return;
+            return false;
         }
         spaceCache->timeSeries = res.value().properties.time_series;
 

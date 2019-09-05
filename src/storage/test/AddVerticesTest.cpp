@@ -19,7 +19,7 @@ TEST(AddVerticesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/AddVerticesTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = new AdHocSchemaManager();
-    auto* processor = AddVerticesProcessor::instance(kv.get(), schemaMan);
+    auto* processor = AddVerticesProcessor::instance(kv.get(), schemaMan, nullptr);
 
     LOG(INFO) << "Build AddVerticesRequest...";
     cpp2::AddVerticesRequest req;
@@ -75,7 +75,7 @@ TEST(AddVerticesTest, VersionTest) {
     auto addVertices = [&](nebula::meta::SchemaManager* schemaMan, PartitionID partId,
                            VertexID srcId) {
         for (auto version = 1; version <= 10000; version++) {
-            auto* processor = AddVerticesProcessor::instance(kv.get(), schemaMan);
+            auto* processor = AddVerticesProcessor::instance(kv.get(), schemaMan, nullptr);
             cpp2::AddVerticesRequest req;
             req.space_id = 0;
             req.overwritable = false;
@@ -99,7 +99,7 @@ TEST(AddVerticesTest, VersionTest) {
 
     auto checkVertexByPrefix = [&](PartitionID partId, VertexID vertexId,
                                    int32_t startValue, int32_t expectedNum) {
-        auto prefix = NebulaKeyUtils::prefix(partId, vertexId);
+        auto prefix = NebulaKeyUtils::vertexPrefix(partId, vertexId);
         std::unique_ptr<kvstore::KVIterator> iter;
         EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
         int num = 0;

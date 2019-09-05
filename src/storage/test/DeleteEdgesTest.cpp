@@ -20,9 +20,11 @@ namespace storage {
 TEST(DeleteEdgesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/DeleteEdgesTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto* schemaMan = new AdHocSchemaManager();
+    schemaMan->setSpaceTimeSeries(0, true);
     // Add edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
+        auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan, nullptr);
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
@@ -47,9 +49,9 @@ TEST(DeleteEdgesTest, SimpleTest) {
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_codes.size());
     }
-    // Add multi version edges
+    // Aagin add same edges with different prop value
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
+        auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan, nullptr);
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
@@ -60,8 +62,10 @@ TEST(DeleteEdgesTest, SimpleTest) {
             for (auto srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
                 edges.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                    cpp2::EdgeKey(apache::thrift::FragileConstructor::FRAGILE,
-                                                 srcId, srcId * 100 + 1,
-                                                 srcId * 100 + 2, srcId * 100 + 3),
+                                                 srcId,
+                                                 srcId * 100 + 1,
+                                                 srcId * 100 + 2,
+                                                 srcId * 100 + 3),
                                    folly::stringPrintf("%d_%d_new", partId, srcId));
             }
             req.parts.emplace(partId, std::move(edges));
@@ -94,7 +98,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
 
     // Delete edges
     {
-        auto* processor = DeleteEdgesProcessor::instance(kv.get(), nullptr);
+        auto* processor = DeleteEdgesProcessor::instance(kv.get(), schemaMan);
         cpp2::DeleteEdgesRequest req;
         req.set_space_id(0);
         // partId => List<EdgeKey>

@@ -22,7 +22,8 @@ TEST(DeleteVertexTest, SimpleTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     // Add vertices
     {
-        auto* processor = AddVerticesProcessor::instance(kv.get(), nullptr, nullptr);
+    auto* schemaMan = new AdHocSchemaManager();
+        auto* processor = AddVerticesProcessor::instance(kv.get(), schemaMan, nullptr);
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
         req.overwritable = false;

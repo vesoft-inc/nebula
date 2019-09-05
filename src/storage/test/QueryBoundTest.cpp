@@ -457,7 +457,7 @@ TEST(QueryBoundTest, MultiEdgeQueryTest) {
     mockData(kv.get());
 
     cpp2::GetNeighborsRequest req;
-    std::vector<EdgeType> et = {101, 102, 103};
+    std::vector<EdgeType> et = {101, 102};
     buildRequest(req, et);
 
     LOG(INFO) << "Test QueryOutBoundRequest...";

@@ -14,7 +14,6 @@ std::string NebulaKeyUtils::vertexKey(PartitionID partId, VertexID vId,
     constexpr uint32_t tagMask = 0xBFFFFFFF;
     tagId &= tagMask;
     int32_t item = (partId << 8) | static_cast<uint32_t>(NebulaKeyType::kData);
-    // TODO Use const variable to replace 10
     uint8_t encode[10];
     int len = encodeVersion(tv, encode);
     std::string key;
@@ -39,6 +38,7 @@ std::string NebulaKeyUtils::edgeKey(PartitionID partId,
 
     uint8_t encode[10];
     int len = encodeVersion(ev, encode);
+    std::string key;
     key.reserve(kEdgeWithNoVersionLen + len);
     key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID))
        .append(reinterpret_cast<const char*>(&srcId), sizeof(VertexID))
@@ -88,7 +88,7 @@ std::string NebulaKeyUtils::vertexPrefix(PartitionID partId, VertexID vId, TagID
     PartitionID item = (partId << 8) | static_cast<uint32_t>(NebulaKeyType::kData);
 
     std::string key;
-    key.reserve(kVertexLen);
+    key.reserve(kVertexWithNoVersionLen);
     key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID))
        .append(reinterpret_cast<const char*>(&vId), sizeof(VertexID))
        .append(reinterpret_cast<const char*>(&tagId), sizeof(TagID));

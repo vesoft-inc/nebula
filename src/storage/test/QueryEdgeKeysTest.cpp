@@ -21,7 +21,8 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     // Add edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
+        auto* schemaMan = new AdHocSchemaManager();
+        auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan, nullptr);
 
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
