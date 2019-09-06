@@ -89,9 +89,8 @@
         <dependency>
             <groupId>nebula-graph</groupId>
             <artifactId>graph-client</artifactId>
-            <version>0.1.0</version>
-            <scope>system</scope>
-            <systemPath>${pom.basedir}/${nebula-client.target.dir}/graph-client-1.0.0-beta.jar</systemPath>
+            <version>1.0.0-beta</version>
++           <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
