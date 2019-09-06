@@ -34,7 +34,7 @@ void DeleteVertexProcessor::process(const cpp2::DeleteVertexRequest& req) {
             auto addr = value(std::move(addrRet));
             leader.set_ip(addr.first);
             leader.set_port(addr.second);
-            thriftResult.set_leader(leader);
+            thriftResult.set_leader(std::move(leader));
         }
         {
             std::lock_guard<std::mutex> lg(this->lock_);

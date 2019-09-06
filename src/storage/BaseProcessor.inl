@@ -47,7 +47,7 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
             auto addr = value(std::move(addrRet));
             leader.set_ip(addr.first);
             leader.set_port(addr.second);
-            thriftResult.set_leader(leader);
+            thriftResult.set_leader(std::move(leader));
         }
         bool finished = false;
         {
@@ -87,7 +87,7 @@ void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
             auto addr = value(std::move(addrRet));
             leader.set_ip(addr.first);
             leader.set_port(addr.second);
-            thriftResult.set_leader(leader);
+            thriftResult.set_leader(std::move(leader));
         }
         bool finished = false;
         {
@@ -126,7 +126,7 @@ void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
             auto addr = value(std::move(addrRet));
             leader.set_ip(addr.first);
             leader.set_port(addr.second);
-            thriftResult.set_leader(leader);
+            thriftResult.set_leader(std::move(leader));
         }
         bool finished = false;
         {
