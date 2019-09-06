@@ -97,6 +97,7 @@ TEST(LeaderElection, LeaderCrash) {
         services[idx]->getIOThreadPool(),
         workers,
         services[idx]->getThreadManager(),
+        nullptr,
         std::bind(&onLeadershipLost,
                   std::ref(copies),
                   std::ref(leader),
