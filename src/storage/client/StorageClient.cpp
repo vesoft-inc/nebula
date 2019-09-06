@@ -235,6 +235,88 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
 }
 
 
+folly::Future<StatusOr<cpp2::EdgeKeyResponse>> StorageClient::getEdgeKeys(
+    GraphSpaceID space,
+    VertexID vid,
+    folly::EventBase* evb) {
+    std::pair<HostAddr, cpp2::EdgeKeyRequest> request;
+    PartitionID part = partId(space, vid);
+    auto partMeta = getPartMeta(space, part);
+    CHECK_GT(partMeta.peers_.size(), 0U);
+    const auto& leader = this->leader(partMeta);
+    request.first = leader;
+
+    cpp2::EdgeKeyRequest req;
+    req.set_space_id(space);
+    req.set_part_id(part);
+    req.set_vid(vid);
+    request.second = std::move(req);
+
+    return getResponse(
+        evb,
+        std::move(request),
+        [] (cpp2::StorageServiceAsyncClient* client,
+            const cpp2::EdgeKeyRequest& r) {
+            return client->future_getEdgeKeys(r);
+    });
+}
+
+
+folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::deleteEdges(
+    GraphSpaceID space,
+    std::vector<storage::cpp2::EdgeKey> edges,
+    folly::EventBase* evb) {
+    auto clusters = clusterIdsToHosts(
+        space,
+        edges,
+        [] (const cpp2::EdgeKey& v) {
+            return v.get_src();
+        });
+
+    std::unordered_map<HostAddr, cpp2::DeleteEdgesRequest> requests;
+    for (auto& c : clusters) {
+        auto& host = c.first;
+        auto& req = requests[host];
+        req.set_space_id(space);
+        req.set_parts(std::move(c.second));
+    }
+
+    return collectResponse(
+        evb, std::move(requests),
+        [](cpp2::StorageServiceAsyncClient* client,
+           const cpp2::DeleteEdgesRequest& r) {
+            return client->future_deleteEdges(r);
+        });
+}
+
+
+folly::Future<StatusOr<cpp2::ExecResponse>> StorageClient::deleteVertex(
+    GraphSpaceID space,
+    VertexID vid,
+    folly::EventBase* evb) {
+    std::pair<HostAddr, cpp2::DeleteVertexRequest> request;
+    PartitionID part = partId(space, vid);
+    auto partMeta = getPartMeta(space, part);
+    CHECK_GT(partMeta.peers_.size(), 0U);
+    const auto& leader = this->leader(partMeta);
+    request.first = leader;
+
+    cpp2::DeleteVertexRequest req;
+    req.set_space_id(space);
+    req.set_part_id(part);
+    req.set_vid(vid);
+    request.second = std::move(req);
+
+    return getResponse(
+        evb,
+        std::move(request),
+        [] (cpp2::StorageServiceAsyncClient* client,
+            const cpp2::DeleteVertexRequest& r) {
+            return client->future_deleteVertex(r);
+    });
+}
+
+
 PartitionID StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
     auto parts = partsNum(spaceId);
     auto s = ID_HASH(id, parts);

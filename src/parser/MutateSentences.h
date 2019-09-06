@@ -405,28 +405,19 @@ private:
 
 class DeleteVertexSentence final : public Sentence {
 public:
-    explicit DeleteVertexSentence(VertexIDList *vidList) {
-        vidList_.reset(vidList);
+    explicit DeleteVertexSentence(Expression *vid) {
+        vid_.reset(vid);
         kind_ = Kind::kDeleteVertex;
     }
 
-    auto vidList() const {
-        return vidList_->vidList();
-    }
-
-    void setWhereClause(WhereClause *clause) {
-        whereClause_.reset(clause);
-    }
-
-    const WhereClause* whereClause() const {
-        return whereClause_.get();
+    Expression* vid() const {
+        return vid_.get();
     }
 
     std::string toString() const override;
 
 private:
-    std::unique_ptr<VertexIDList>               vidList_;
-    std::unique_ptr<WhereClause>                whereClause_;
+    std::unique_ptr<Expression>                  vid_;
 };
 
 

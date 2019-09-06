@@ -1155,9 +1155,8 @@ update_edge_sentence
     ;
 
 delete_vertex_sentence
-    : KW_DELETE KW_VERTEX vid_list where_clause {
+    : KW_DELETE KW_VERTEX vid {
         auto sentence = new DeleteVertexSentence($3);
-        sentence->setWhereClause($4);
         $$ = sentence;
     }
     ;
