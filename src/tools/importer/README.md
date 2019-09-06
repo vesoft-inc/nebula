@@ -11,12 +11,12 @@ Download fbthrift and graph-client
 Install JARs
 
 ```
- > mvn install:install-file -Dfile=$your_graph_client_file_path -DgroupId=nebula-graph -DartifactId=graph-client -Dversion=1.0.0-beta -Dpackaging=jar
+ > mvn install:install-file -Dfile=$your_graph_client_file_path -DgroupId=nebula-graph -DartifactId=graph-client -Dversion=$graph-client-version -Dpackaging=jar
 
- > mvn install:install-file -Dfile=$your_fbthrift_file_path -DgroupId=nebula-graph -DartifactId=graph-client -Dversion=1.0.0-beta -Dpackaging=jar
+ > mvn install:install-file -Dfile=$your_fbthrift_file_path -DgroupId=com.facebook -DartifactId=thrift -Dversion=$fbthrift-version -Dpackaging=jar
 ```
 
-Replace '$your_graph_client_file_path' and '$your_fbthrift_file_path' with your own values.
+Replace `$your_graph_client_file_path` and `$your_fbthrift_file_path` with your own values. Also `$fbthrift-version` and `$graph-client-version`.
 
 ### Get Importer
 
