@@ -63,7 +63,7 @@ sourceID, destinationID, [ranking], value list.
 
 The examples are based on [Insert Data Section of get-started.md](../../../docs/get-started.md#insert-data).
 
-E1. Insert vertices 200,201,202.
+E1. Insert vertices 200, 201, 202.
 
 datafile.txt
 
