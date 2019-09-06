@@ -1,7 +1,7 @@
 
 ## Importer
 
-`Importer` is a tool use to load `CSV` file into `Nebula`.
+`Importer` is a tool used to load `CSV` files into `Nebula`.
 
 ### Download JARs
 
@@ -26,11 +26,11 @@ git clone https://github.com/vesoft-inc/nebula.git
 cd nebula/src/tools/importer
 ```
 
-To import the data:
+To import data, run the command:
 
-···
+```
 > ./run.sh ${CONFIG_PARAMETER}
-···
+```
 
 When loading a vertex CSV file, the first column is vid and then following the value list, separated by a comma.
 
@@ -78,9 +78,9 @@ under your importer dir run:
 > ./run.sh "--address 127.0.0.1:3699 --name myspace_test2 --schema student -u user -p password -t vertex --file data.txt --column name,age,gender --batch 2"
 ```
 
-E2. Insert 'select' edges.
+E2. Insert `select` edges.
 
-##Without Ranking##
+**Without Ranking**
 
 datafile.txt
 
@@ -98,7 +98,7 @@ under your importer dir run:
 > ./run.sh "--address 127.0.0.1:3699 --name myspace_test2 --schema select -u user -p password -t edge --file data.txt --column grade --batch 2"
 ```
 
-##With Ranking##
+**With Ranking**
 
 datafile.txt
 
