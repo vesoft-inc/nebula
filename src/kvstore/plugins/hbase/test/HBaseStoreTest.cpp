@@ -102,7 +102,7 @@ TEST(HBaseStoreTest, SimpleTest) {
     };
     std::string prefix1 = NebulaKeyUtils::prefix(partId, srcId);
     checkPrefix(prefix1, 0, 20);
-    std::string prefix2 = NebulaKeyUtils::prefix(partId, srcId, edgeType);
+    std::string prefix2 = NebulaKeyUtils::edgePrefix(partId, srcId, edgeType);
     checkPrefix(prefix2, 0, 10);
     std::string prefix3 = NebulaKeyUtils::prefix(partId, srcId, edgeType + 1, rank, dstId);
     checkPrefix(prefix3, 10, 10);

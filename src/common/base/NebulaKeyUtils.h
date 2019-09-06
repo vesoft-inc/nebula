@@ -13,12 +13,19 @@ namespace nebula {
 
 /**
  * VertexKeyUtils:
- * partId(4) + vertexId(8) + tagId(4) + version(8)
+ * type(1) + partId(3) + vertexId(8) + tagId(4) + version(8)
  *
  * EdgeKeyUtils:
- * partId(4) + srcId(8) + edgeType(4) + edgeRank(8) + dstId(8) + version(8)
+ * type(1) + partId(3) + srcId(8) + edgeType(4) + edgeRank(8) + dstId(8) + version(8)
  *
  * */
+
+enum NebulaKeyType : char {
+    kVertex      = '0',
+    kEdge        = '1',
+    kIndex       = '2',
+    kUUID        = '3',
+};
 
 /**
  * This class supply some utils for transition between Vertex/Edge and key in kvstore.
@@ -40,9 +47,14 @@ public:
                                VertexID dstId, EdgeVersion ev);
 
     /**
+     * Prefix for
+     * */
+    static std::string vertexPrefix(PartitionID partId, VertexID vId, TagID tagId);
+
+    /**
      * Prefix for srcId edges with some edgeType
      * */
-    static std::string prefix(PartitionID partId, VertexID srcId, EdgeType type);
+    static std::string edgePrefix(PartitionID partId, VertexID srcId, EdgeType type);
 
     /**
      * Prefix for some vertexId
