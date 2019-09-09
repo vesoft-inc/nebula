@@ -28,7 +28,7 @@ using Frontiers =
                    >;
 
 using StepOut = std::tuple<VertexID, EdgeType, EdgeRanking>; /* src, type, rank*/
-using Path = std::list<StepOut>;
+using Path = std::list<StepOut*>;
 enum class VisitedBy : char {
     FROM,
     TO,
@@ -110,6 +110,7 @@ private:
     Status                                      fStatus_;
     Status                                      tStatus_;
     std::unordered_set<VertexID>                targetNotFound_;
+    std::unordered_set<std::unique_ptr<StepOut>>        stepOutHolder_;
     // next step starting vertices
     std::unordered_set<VertexID>                visitedFrom_;
     std::unordered_set<VertexID>                visitedTo_;
