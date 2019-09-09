@@ -52,6 +52,8 @@ public:
     static std::string prefix(PartitionID partId, VertexID src, EdgeType type,
                               EdgeRanking ranking, VertexID dst);
 
+    static std::string prefix(PartitionID partId);
+
     static bool isVertex(const folly::StringPiece& rawKey) {
         return rawKey.size() == kVertexLen;
     }

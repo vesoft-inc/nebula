@@ -23,6 +23,10 @@ enum LogType : char {
     OP_TRANS_LEADER   = 0x08,
 };
 
+std::string encodeKV(const folly::StringPiece& key,
+                     const folly::StringPiece& val);
+
+std::pair<folly::StringPiece, folly::StringPiece> decodeKV(const std::string& data);
 
 std::string encodeSingleValue(LogType type, folly::StringPiece val);
 folly::StringPiece decodeSingleValue(folly::StringPiece encoded);

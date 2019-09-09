@@ -60,7 +60,6 @@ public:
         return responses_;
     }
 
-
 private:
     const size_t totalReqsSent_;
     size_t failedReqs_{0};
@@ -127,6 +126,21 @@ public:
         std::vector<storage::cpp2::PropDef> returnCols,
         folly::EventBase* evb = nullptr);
 
+    folly::Future<StatusOr<storage::cpp2::EdgeKeyResponse>> getEdgeKeys(
+        GraphSpaceID space,
+        VertexID vid,
+        folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> deleteEdges(
+        GraphSpaceID space,
+        std::vector<storage::cpp2::EdgeKey> edges,
+        folly::EventBase* evb = nullptr);
+
+    folly::Future<StatusOr<storage::cpp2::ExecResponse>> deleteVertex(
+        GraphSpaceID space,
+        VertexID vid,
+        folly::EventBase* evb = nullptr);
+
 protected:
     // Calculate the partition id for the given vertex id
     PartitionID partId(GraphSpaceID spaceId, int64_t id) const;
@@ -168,6 +182,18 @@ protected:
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc);
+
+    template<class Request,
+             class RemoteFunc,
+             class Response =
+                typename std::result_of<
+                    RemoteFunc(cpp2::StorageServiceAsyncClient* client, const Request&)
+                >::type::value_type
+            >
+    folly::Future<StatusOr<Response>> getResponse(
+            folly::EventBase* evb,
+            std::pair<HostAddr, Request> request,
+            RemoteFunc remoteFunc);
 
     // Cluster given ids into the host they belong to
     // The method returns a map

@@ -65,6 +65,7 @@ void RaftexService::initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor
     LOG(INFO) << "Init thrift server for raft service.";
     server_->setPort(port);
     server_->setIdleTimeout(std::chrono::seconds(0));
+    server_->setReusePort(true);
     if (pool != nullptr) {
         server_->setIOThreadPool(pool);
     }
@@ -213,6 +214,18 @@ void RaftexService::appendLog(
     part->processAppendLogRequest(req, resp);
 }
 
+void RaftexService::sendSnapshot(
+        cpp2::SendSnapshotResponse& resp,
+        const cpp2::SendSnapshotRequest& req) {
+    auto part = findPart(req.get_space(), req.get_part());
+    if (!part) {
+        // Not found
+        resp.set_error_code(cpp2::ErrorCode::E_UNKNOWN_PART);
+        return;
+    }
+
+    part->processSendSnapshotRequest(req, resp);
+}
 }  // namespace raftex
 }  // namespace nebula
 

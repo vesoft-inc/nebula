@@ -4,10 +4,13 @@ nebula_add_library(
     QueryBaseProcessor.cpp
     AddVerticesProcessor.cpp
     AddEdgesProcessor.cpp
+    DeleteEdgesProcessor.cpp
+    DeleteVertexProcessor.cpp
     QueryBoundProcessor.cpp
     QueryVertexPropsProcessor.cpp
     QueryEdgePropsProcessor.cpp
     QueryStatsProcessor.cpp
+    QueryEdgeKeysProcessor.cpp
 )
 
 nebula_add_library(
