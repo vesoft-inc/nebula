@@ -26,7 +26,7 @@ Consider the above picture as example, there are two tags: **player** and **team
 Like Mysql, **Nebula Graph** is a strong typed database. The property name and data type are determined before the data is written.
 
 ## Edges
-Edges are used to connect vertices. Each edge usually represents a relationship (i.e ...) or A behavior (i.e. ...) between two vertices. In **Nebula Graph**, an edge is always directional and of a specific edge type. However, from the source vertex to the target vertex, there could be multiple edges of
+Edges are used to connect vertices. Each edge usually represents a relationship or a behavior between two vertices. In **Nebula Graph**, an edge is always directional and of a specific edge type. However, from the source vertex to the target vertex, there could be multiple edges of
 the same edge type.
 These edges will be differentiated by their rankings. So, any
 edge is uniquely identified by the tuple [src_vertex, dst_vertex, edge_type, ranking]. In
