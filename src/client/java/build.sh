@@ -17,7 +17,7 @@ graph_gen_java_path=${output_src_file}/../../interface/gen-java/com/vesoft/nebul
 java_client_source_file_path=${src_root_path}/src/main/java/com/vesoft/nebula/graph/
 
 #-----------------------------------------------
-# check file or dir exist 
+# check file or dir exist
 #-----------------------------------------------
 check_file_exist()
 {
@@ -37,7 +37,7 @@ setup_graph_source()
 {
     check_file_exist $graph_gen_java_path
     find  $java_client_source_file_path  -type l |xargs rm -rf {}
-    ln -s $graph_gen_java_path/* $java_client_source_file_path
+    ln -s $graph_gen_java_path/ $java_client_source_file_path/generated
 }
 
 #-----------------------------------------------
