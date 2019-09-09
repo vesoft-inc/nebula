@@ -50,6 +50,11 @@ protected:
 
     void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV> data);
 
+    void doRemove(GraphSpaceID spaceId, PartitionID partId, std::vector<std::string> keys);
+
+    void doRemoveRange(GraphSpaceID spaceId, PartitionID partId, std::string start,
+                       std::string end);
+
     nebula::cpp2::ColumnDef columnDef(std::string name, nebula::cpp2::SupportedType type) {
         nebula::cpp2::ColumnDef column;
         column.set_name(std::move(name));

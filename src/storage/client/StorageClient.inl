@@ -158,6 +158,52 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
     return context->promise.getSemiFuture();
 }
 
+
+template<class Request, class RemoteFunc, class Response>
+folly::Future<StatusOr<Response>> StorageClient::getResponse(
+        folly::EventBase* evb,
+        std::pair<HostAddr, Request> request,
+        RemoteFunc remoteFunc) {
+    if (evb == nullptr) {
+        DCHECK(!!ioThreadPool_);
+        evb = ioThreadPool_->getEventBase();
+    }
+    folly::Promise<StatusOr<Response>> pro;
+    auto f = pro.getFuture();
+    folly::via(evb, [evb, request = std::move(request), remoteFunc = std::move(remoteFunc),
+                     pro = std::move(pro), this] () mutable {
+        auto host = request.first;
+        auto client = clientsMan_->client(host, evb);
+        auto spaceId = request.second.get_space_id();
+        LOG(INFO) << "Send request to storage " << host;
+        remoteFunc(client.get(), std::move(request.second))
+             .then(evb, [spaceId, p = std::move(pro), this] (folly::Try<Response>&& t) mutable {
+            // exception occurred during RPC
+            if (t.hasException()) {
+                p.setValue(Status::Error(folly::stringPrintf("RPC failure in StorageClient: %s",
+                                                             t.exception().what().c_str())));
+                return;
+            }
+            auto&& resp = std::move(t.value());
+            // leader changed
+            auto& result = resp.get_result();
+            for (auto& code : result.get_failed_codes()) {
+                VLOG(3) << "Failure! Failed part " << code.get_part_id()
+                        << ", failed code " << static_cast<int32_t>(code.get_code());
+                if (code.get_code() == storage::cpp2::ErrorCode::E_LEADER_CHANGED) {
+                    auto* leader = code.get_leader();
+                    if (leader != nullptr && leader->get_ip() != 0 && leader->get_port() != 0) {
+                        updateLeader(spaceId, code.get_part_id(),
+                                     HostAddr(leader->get_ip(), leader->get_port()));
+                    }
+                }
+            }
+            p.setValue(std::move(resp));
+        });
+    });  // via
+    return f;
+}
+
 }   // namespace storage
 }   // namespace nebula
 
