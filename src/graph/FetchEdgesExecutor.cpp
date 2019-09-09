@@ -54,18 +54,6 @@ Status FetchEdgesExecutor::prepareClauses() {
         if (!status.ok()) {
             break;
         }
-
-        // Save the type
-        auto iter = colTypes_.begin();
-        for (auto i = 0u; i < colNames_.size(); i++) {
-            auto type = labelSchema_->getFieldType(colNames_[i]);
-            if (type == CommonConstants::kInvalidValueType()) {
-                iter++;
-                continue;
-            }
-            *iter = type.type;
-            iter++;
-        }
     } while (false);
     return status;
 }
@@ -84,8 +72,8 @@ Status FetchEdgesExecutor::prepareEdgeKeys() {
 
             rank_ = edgeKeyRef->rank();
 
-            if ((srcid_ != nullptr && *srcid_ == "*")
-                    || (dstid_ != nullptr && *dstid_ == "*")
+            if ((*srcid_ == "*")
+                    || (*dstid_ == "*")
                     || (rank_ != nullptr && *rank_ == "*")) {
                 status = Status::Error("Can not use `*' to reference a vertex id column.");
                 break;
@@ -96,7 +84,7 @@ Status FetchEdgesExecutor::prepareEdgeKeys() {
                 status = std::move(ret).status();
                 break;
             }
-            varname_ = ret.value();
+            varname_ = std::move(ret).value();
         }
     } while (false);
 

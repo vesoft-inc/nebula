@@ -57,6 +57,7 @@ private:
     std::string                                 varname_;
     std::vector<std::string>                    resultColNames_;
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
+    std::vector<nebula::cpp2::SupportedType>    colTypes_;
 };
 }   // namespace graph
 }   // namespace nebula

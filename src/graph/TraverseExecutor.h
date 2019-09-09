@@ -62,7 +62,7 @@ public:
 
     static void getSchema(const std::vector<VariantType> &vals,
                           const std::vector<std::string> &colNames,
-						  const std::vector<nebula::cpp2::SupportedType> &colTypes,
+                          const std::vector<nebula::cpp2::SupportedType> &colTypes,
                           SchemaWriter *outputSchema);
 };
 
@@ -72,8 +72,8 @@ public:
         clause_ = clause;
     }
 
-    Status prepare(InterimResult *inputs,
-                   VariableHolder *varHolder,
+    Status prepare(const InterimResult *inputs,
+                   const VariableHolder *varHolder,
                    std::vector<YieldColumn*> &yields);
 
 private:

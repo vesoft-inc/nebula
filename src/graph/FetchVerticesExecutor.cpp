@@ -57,18 +57,6 @@ Status FetchVerticesExecutor::prepareClauses() {
         if (!status.ok()) {
             break;
         }
-
-        // Save the type
-        auto iter = colTypes_.begin();
-        for (auto i = 0u; i < colNames_.size(); i++) {
-            auto type = labelSchema_->getFieldType(colNames_[i]);
-            if (type == CommonConstants::kInvalidValueType()) {
-                iter++;
-                continue;
-            }
-            *iter = type.type;
-            iter++;
-        }
     } while (false);
     return status;
 }

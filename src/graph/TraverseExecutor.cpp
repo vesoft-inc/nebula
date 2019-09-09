@@ -152,14 +152,14 @@ VariantType Collector::getProp(const meta::SchemaProviderIf *schema,
 
 void Collector::getSchema(const std::vector<VariantType> &vals,
                           const std::vector<std::string> &colNames,
-						  const std::vector<nebula::cpp2::SupportedType> &colTypes,
+                          const std::vector<nebula::cpp2::SupportedType> &colTypes,
                           SchemaWriter *outputSchema) {
     DCHECK(outputSchema != nullptr);
     DCHECK_EQ(vals.size(), colNames.size());
     DCHECK_EQ(vals.size(), colTypes.size());
     using nebula::cpp2::SupportedType;
     auto index = 0u;
-    for (auto &it : colTypes_) {
+    for (auto &it : colTypes) {
         SupportedType type;
         if (it == SupportedType::UNKNOWN) {
             switch (vals[index].which()) {
@@ -183,14 +183,14 @@ void Collector::getSchema(const std::vector<VariantType> &vals,
             type = it;
         }
 
-        outputSchema->appendCol(colNames_[index], type);
+        outputSchema->appendCol(colNames[index], type);
         index++;
     }
 }
 
 Status YieldClauseWrapper::prepare(
-        InterimResult *inputs,
-        VariableHolder *varHolder,
+        const InterimResult *inputs,
+        const VariableHolder *varHolder,
         std::vector<YieldColumn*> &yields) {
     auto cols = clause_->columns();
     yieldColsHolder_ = std::make_unique<YieldColumns>();

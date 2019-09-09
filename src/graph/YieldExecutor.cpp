@@ -54,6 +54,14 @@ Status YieldExecutor::prepareYield() {
         } else {
             resultColNames_.emplace_back(*col->alias());
         }
+
+        // such as YIELD 1+1, it has not type in schema, the type from the eval()
+        colTypes_.emplace_back(nebula::cpp2::SupportedType::UNKNOWN);
+        if (col->expr()->isTypeCastingExpression()) {
+            // type cast
+            auto exprPtr = static_cast<TypeCastingExpression*>(col->expr());
+            colTypes_.back() = ColumnTypeToSupportedType(exprPtr->getType());
+        }
     }
 
     return Status::OK();
@@ -240,7 +248,7 @@ Status YieldExecutor::getOutputSchema(const InterimResult *inputs,
     };
     inputs->applyTo(visitor, 1);
 
-    Collector::getSchema(record, resultColNames_, outputSchema);
+    Collector::getSchema(record, resultColNames_, colTypes_, outputSchema);
     return Status::OK();
 }
 
@@ -259,7 +267,7 @@ Status YieldExecutor::executeConstant() {
     }
 
     auto outputSchema = std::make_shared<SchemaWriter>();
-    Collector::getSchema(values, resultColNames_, outputSchema.get());
+    Collector::getSchema(values, resultColNames_, colTypes_, outputSchema.get());
 
     RowWriter writer(outputSchema);
     auto rsWriter = std::make_unique<RowSetWriter>(outputSchema);

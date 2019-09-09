@@ -41,8 +41,6 @@ Status FetchExecutor::prepareYield() {
             auto exprPtr = dynamic_cast<TypeCastingExpression*>(col->expr());
             colTypes_.back() = ColumnTypeToSupportedType(exprPtr->getType());
         }
-
-        colNames_.emplace_back(col->expr()->toString());
     }
 
     if (expCtx_->hasSrcTagProp() || expCtx_->hasDstTagProp()) {
@@ -126,7 +124,7 @@ Status FetchExecutor::getOutputSchema(
     }
 
     Collector::getSchema(record, resultColNames_, colTypes_, outputSchema);
-	return Status::OK();
+    return Status::OK();
 }
 
 void FetchExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
