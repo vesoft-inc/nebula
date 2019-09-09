@@ -37,6 +37,12 @@ TEST_F(SetTest, UnionAllTest) {
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : tim.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
@@ -62,6 +68,12 @@ TEST_F(SetTest, UnionAllTest) {
         auto &manu = players_["Manu Ginobili"];
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid(), manu.vid());
         auto code = client_->execute(query, resp);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : tim.serves()) {
@@ -92,6 +104,12 @@ TEST_F(SetTest, UnionAllTest) {
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &like : tim.likes()) {
             auto &player = players_[std::get<0>(like)];
@@ -119,6 +137,12 @@ TEST_F(SetTest, UnionAllTest) {
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &like : tim.likes()) {
             auto &player = players_[std::get<0>(like)];
@@ -146,6 +170,12 @@ TEST_F(SetTest, UnionAllTest) {
         auto query = folly::stringPrintf(fmt, tony.vid(), tim.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &like : tim.likes()) {
             auto &player = players_[std::get<0>(like)];
@@ -173,6 +203,12 @@ TEST_F(SetTest, UnionAllTest) {
         auto query = folly::stringPrintf(fmt, tony.vid(), tim.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &like : tim.likes()) {
             auto &player = players_[std::get<0>(like)];
@@ -199,6 +235,12 @@ TEST_F(SetTest, UnionAllTest) {
         auto query = folly::stringPrintf(fmt, tony.vid(), tim.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &like : tim.likes()) {
             auto &player = players_[std::get<0>(like)];
@@ -230,6 +272,12 @@ TEST_F(SetTest, UnionAllTest) {
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}, {"player"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, std::string>> expected;
         for (auto &serve : tim.serves()) {
             std::tuple<std::string, std::string> record(
@@ -260,6 +308,12 @@ TEST_F(SetTest, UnionDistinct) {
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid(), manu.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &like : tim.likes()) {
             auto &player = players_[std::get<0>(like)];
@@ -282,6 +336,12 @@ TEST_F(SetTest, UnionDistinct) {
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &like : tim.likes()) {
             auto &player = players_[std::get<0>(like)];
@@ -307,6 +367,12 @@ TEST_F(SetTest, Minus) {
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &like : tim.likes()) {
             auto &player = players_[std::get<0>(like)];
@@ -335,6 +401,12 @@ TEST_F(SetTest, Intersect) {
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : tony.serves()) {
             std::tuple<std::string, int64_t, std::string> record(
@@ -362,6 +434,12 @@ TEST_F(SetTest, Mix) {
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid(), tim.vid(), manu.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : manu.serves()) {
             std::tuple<std::string, int64_t, std::string> record(

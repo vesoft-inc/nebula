@@ -34,6 +34,12 @@ TEST_F(GoTest, OneStepOutBound) {
         auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"id"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t>> expected = {
             {teams_["Spurs"].vid()},
         };
@@ -47,6 +53,12 @@ TEST_F(GoTest, OneStepOutBound) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"serve.end_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
             {player.name(), 2003, 2005, "Hawks"},
             {player.name(), 2005, 2008, "Suns"},
@@ -65,6 +77,12 @@ TEST_F(GoTest, OneStepOutBound) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"serve.end_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
             {player.name(), 2014, 2015, "Mavericks"},
             {player.name(), 2015, 2016, "Kings"},
@@ -81,6 +99,12 @@ TEST_F(GoTest, OneStepOutBound) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"id"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t>> expected = {
             {teams_["Spurs"].vid()},
             {teams_["Spurs"].vid()},
@@ -100,6 +124,12 @@ TEST_F(GoTest, OneStepOutBound) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"id"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t>> expected = {
             {teams_["Spurs"].vid()},
             {teams_["Spurs"].vid()},
@@ -123,6 +153,12 @@ TEST_F(GoTest, AssignmentSimple) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"id"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<uint64_t>> expected = {
             {players_["Tracy McGrady"].vid()},
             {players_["LaMarcus Aldridge"].vid()},
@@ -141,6 +177,12 @@ TEST_F(GoTest, AssignmentPipe) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"id"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<uint64_t>> expected = {
             {players_["Kobe Bryant"].vid()},
             {players_["Grant Hill"].vid()},
@@ -237,6 +279,12 @@ TEST_F(GoTest, Distinct) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t, std::string>> expected = {
             {teams_["Spurs"].vid(), "Spurs"},
             {teams_["Hornets"].vid(), "Hornets"},
@@ -323,6 +371,12 @@ TEST_F(GoTest, ReferencePipeInYieldAndWhere) {
                             "YIELD $-.name, $^.player.name, $$.player.name";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$-.name"}, {"$^.player.name"}, {"$$.player.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<uniform_tuple_t<std::string, 3>> expected = {
             {"Tim Duncan", "Manu Ginobili", "Tim Duncan"},
             {"Tim Duncan", "Tony Parker", "LaMarcus Aldridge"},
@@ -347,6 +401,12 @@ TEST_F(GoTest, ReferencePipeInYieldAndWhere) {
                             "YIELD $-.name, $^.player.name, $$.player.name";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$-.name"}, {"$^.player.name"}, {"$$.player.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<uniform_tuple_t<std::string, 3>> expected = {
             {"Tim Duncan", "Tony Parker", "LaMarcus Aldridge"},
             {"Tim Duncan", "Tony Parker", "Manu Ginobili"},
@@ -370,6 +430,12 @@ TEST_F(GoTest, ReferenceVariableInYieldAndWhere) {
                             "YIELD $var.name, $^.player.name, $$.player.name";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$var.name"}, {"$^.player.name"}, {"$$.player.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<uniform_tuple_t<std::string, 3>> expected = {
             {"Tim Duncan", "Manu Ginobili", "Tim Duncan"},
             {"Tim Duncan", "Tony Parker", "LaMarcus Aldridge"},
@@ -394,6 +460,12 @@ TEST_F(GoTest, ReferenceVariableInYieldAndWhere) {
                             "YIELD $var.name, $^.player.name, $$.player.name";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$var.name"}, {"$^.player.name"}, {"$$.player.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<uniform_tuple_t<std::string, 3>> expected = {
             {"Tim Duncan", "Tony Parker", "LaMarcus Aldridge"},
             {"Tim Duncan", "Tony Parker", "Manu Ginobili"},
