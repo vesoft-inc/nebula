@@ -564,7 +564,7 @@ public:
 
     SourcePropertyExpression(std::string *tag, std::string *prop) {
         kind_ = kSourceProp;
-        ref_.reset(new std::string("$^"));
+        ref_.reset(new std::string("$^."));
         alias_.reset(tag);
         prop_.reset(prop);
     }
