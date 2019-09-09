@@ -379,18 +379,19 @@ Host::prepareAppendLogRequest() {
     if (it->valid()) {
         VLOG(2) << idStr_ << "Prepare the list of log entries to send";
 
-        auto term = it->logTerm();
+        auto logEntry = it->logEntry();
+        auto term = std::get<1>(logEntry);
         req->set_log_term(term);
 
         std::vector<cpp2::LogEntry> logs;
-        for (size_t cnt = 0;
-             it->valid()
-                && it->logTerm() == term
-                && cnt < FLAGS_max_appendlog_batch_size;
-             ++(*it), ++cnt) {
+        for (size_t cnt = 0; it->valid() && cnt < FLAGS_max_appendlog_batch_size; ++(*it), ++cnt) {
+            logEntry = it->logEntry();
+            if (std::get<1>(logEntry) != term) {
+                break;
+            }
             cpp2::LogEntry le;
-            le.set_cluster(it->logSource());
-            le.set_log_str(it->logMsg().toString());
+            le.set_cluster(std::get<2>(logEntry));
+            le.set_log_str(std::get<3>(logEntry));
             logs.emplace_back(std::move(le));
         }
         req->set_log_str_list(std::move(logs));

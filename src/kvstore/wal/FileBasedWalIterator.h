@@ -46,9 +46,12 @@ public:
 
     folly::StringPiece logMsg() const override;
 
+    LogEntry logEntry() override;
+
 private:
-    LogID getFirstIdInNextBuffer() const;
     LogID getFirstIdInNextFile() const;
+
+    void loadWalFiles();
 
 private:
     // Holds the Wal object, so that it will not be destroyed before the iterator
@@ -56,21 +59,18 @@ private:
 
     LogID lastId_;
     LogID currId_;
-    TermID currTerm_;
-    LogID firstIdInBuffer_{std::numeric_limits<LogID>::max()};
 
     // First id in next buffer or in next WAL file
     LogID nextFirstId_;
 
-    BufferList buffers_;
-    size_t currIdx_{0};
+    std::shared_ptr<InMemoryLogBuffer> ringBuffer_;
 
     // [firstId, lastId]
     std::list<std::pair<LogID, LogID>> idRanges_;
     std::list<int> fds_;
     int64_t currPos_{0};
     int32_t currMsgLen_{0};
-    mutable std::string currLog_;
+    bool needToReadWalFile_{false};
 };
 
 }  // namespace wal

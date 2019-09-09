@@ -143,11 +143,12 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
     LogID lastId = -1;
     int32_t commitLogsNum = 0;
     while (iter->valid()) {
+        auto logEntry = iter->logEntry();
+        lastId = std::get<0>(logEntry);
         if (firstId < 0) {
-            firstId = iter->logId();
+            firstId = lastId;
         }
-        lastId = iter->logId();
-        auto log = iter->logMsg();
+        auto log = std::get<3>(logEntry);
         if (!log.empty()) {
             switch (static_cast<CommandType>(log[0])) {
                 case CommandType::TRANSFER_LEADER: {
@@ -166,8 +167,8 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
                 }
                 default: {
                     folly::RWSpinLock::WriteHolder wh(&lock_);
-                    currLogId_ = iter->logId();
-                    data_.emplace_back(currLogId_, log.toString());
+                    currLogId_ = lastId;
+                    data_.emplace_back(currLogId_, log);
                     VLOG(1) << idStr_ << "Write: " << log << ", LogId: " << currLogId_
                             << " state machine log size: " << data_.size();
                     break;

@@ -28,6 +28,7 @@ public:
     TermID logTerm() const override;
     ClusterID logSource() const override;
     folly::StringPiece logMsg() const override;
+    LogEntry logEntry() override;
 
 private:
     const LogID firstLogId_;

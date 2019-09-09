@@ -201,9 +201,10 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
     LogID lastId = -1;
     TermID lastTerm = -1;
     while (iter->valid()) {
-        lastId = iter->logId();
-        lastTerm = iter->logTerm();
-        auto log = iter->logMsg();
+        auto logEntry = iter->logEntry();
+        lastId = std::get<0>(logEntry);
+        lastTerm = std::get<1>(logEntry);
+        auto log = std::get<3>(logEntry);
         if (log.empty()) {
             VLOG(3) << idStr_ << "Skip the heartbeat!";
             ++(*iter);

@@ -17,6 +17,7 @@ using nebula::fs::TempDir;
 
 // Make a message which length > 1KB
 static const char* kLongMsg =
+    "%06d-abcdefghijklmnopqrstuvwxyz123456789abcdefghijklmnopqrstuvwxyz"
     "abcdefghijklmnopqrstuvwxyz123456789abcdefghijklmnopqrstuvwxyz123456789"
     "abcdefghijklmnopqrstuvwxyz123456789abcdefghijklmnopqrstuvwxyz123456789"
     "abcdefghijklmnopqrstuvwxyz123456789abcdefghijklmnopqrstuvwxyz123456789"
@@ -30,8 +31,7 @@ static const char* kLongMsg =
     "abcdefghijklmnopqrstuvwxyz123456789abcdefghijklmnopqrstuvwxyz123456789"
     "abcdefghijklmnopqrstuvwxyz123456789abcdefghijklmnopqrstuvwxyz123456789"
     "abcdefghijklmnopqrstuvwxyz123456789abcdefghijklmnopqrstuvwxyz123456789"
-    "abcdefghijklmnopqrstuvwxyz123456789abcdefghijklmnopqrstuvwxyz123456789"
-    "abcdefghijklmnopqrstuvwxyz123456789abcdefghijklmnopqrstuvwxyz-%06d";
+    "abcdefghijklmnopqrstuvwxyz123456789abcdefghijklmnopqrstuvwxyz123456789";
 
 
 TEST(FileBasedWal, AppendLogs) {
@@ -69,7 +69,7 @@ TEST(FileBasedWal, AppendLogs) {
     while (it->valid()) {
         EXPECT_EQ(id, it->logId());
         EXPECT_EQ(folly::stringPrintf("Test string %02ld", id),
-                  it->logMsg());
+                  std::get<3>(it->logEntry()));
         ++(*it);
         ++id;
     }
@@ -82,8 +82,6 @@ TEST(FileBasedWal, CacheOverflow) {
     // buffers at most
     FileBasedWalPolicy policy;
     policy.fileSize = 1024L * 1024L;
-    policy.bufferSize = 1024L * 1024L;
-    policy.numBuffers = 2;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
@@ -122,7 +120,7 @@ TEST(FileBasedWal, CacheOverflow) {
     LogID id = 1;
     while (it->valid()) {
         ASSERT_EQ(id, it->logId());
-        ASSERT_EQ(folly::stringPrintf(kLongMsg, id), it->logMsg());
+        EXPECT_EQ(folly::stringPrintf(kLongMsg, id), std::get<3>(it->logEntry()));
         ++(*it);
         ++id;
     }
@@ -135,8 +133,6 @@ TEST(FileBasedWal, Rollback) {
     // buffers at most
     FileBasedWalPolicy policy;
     policy.fileSize = 1024L * 1024L;
-    policy.bufferSize = 1024L * 1024L;
-    policy.numBuffers = 2;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
@@ -163,7 +159,7 @@ TEST(FileBasedWal, Rollback) {
     LogID id = 9891;
     while (it->valid()) {
         ASSERT_EQ(id, it->logId());
-        ASSERT_EQ(folly::stringPrintf(kLongMsg, id), it->logMsg());
+        EXPECT_EQ(folly::stringPrintf(kLongMsg, id), std::get<3>(it->logEntry()));
         ++(*it);
         ++id;
     }
@@ -178,7 +174,7 @@ TEST(FileBasedWal, Rollback) {
     id = 4991;
     while (it->valid()) {
         ASSERT_EQ(id, it->logId());
-        ASSERT_EQ(folly::stringPrintf(kLongMsg, id), it->logMsg());
+        EXPECT_EQ(folly::stringPrintf(kLongMsg, id), std::get<3>(it->logEntry()));
         ++(*it);
         ++id;
     }
@@ -197,7 +193,7 @@ TEST(FileBasedWal, Rollback) {
     id = 5991;
     while (it->valid()) {
         ASSERT_EQ(id, it->logId());
-        ASSERT_EQ(folly::stringPrintf(kLongMsg, id + 1000), it->logMsg());
+        EXPECT_EQ(folly::stringPrintf(kLongMsg, id + 1000), std::get<3>(it->logEntry()));
         ++(*it);
         ++id;
     }
@@ -210,8 +206,6 @@ TEST(FileBasedWal, RollbackThenReopen) {
     // buffers at most
     FileBasedWalPolicy policy;
     policy.fileSize = 1024L * 1024L;
-    policy.bufferSize = 1024L * 1024L;
-    policy.numBuffers = 2;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
@@ -253,7 +247,7 @@ TEST(FileBasedWal, RollbackThenReopen) {
     LogID id = 1;
     while (it->valid()) {
         ASSERT_EQ(id, it->logId());
-        ASSERT_EQ(folly::stringPrintf(kLongMsg, id), it->logMsg());
+        EXPECT_EQ(folly::stringPrintf(kLongMsg, id), std::get<3>(it->logEntry()));
         ++(*it);
         ++id;
     }
@@ -265,8 +259,6 @@ TEST(FileBasedWal, RollbackToZero) {
     // buffers at most
     FileBasedWalPolicy policy;
     policy.fileSize = 1024L * 1024L;
-    policy.bufferSize = 1024L * 1024L;
-    policy.numBuffers = 2;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
@@ -307,8 +299,6 @@ TEST(FileBasedWal, BackAndForth) {
     // buffers at most
     FileBasedWalPolicy policy;
     policy.fileSize = 1024L * 1024L;
-    policy.bufferSize = 1024L * 1024L;
-    policy.numBuffers = 2;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
@@ -321,7 +311,7 @@ TEST(FileBasedWal, BackAndForth) {
 
     // Go back and forth several times, each time append 200 and rollback 100 wal
     for (int count = 0; count < 10; count++) {
-        for (int i = count * 100 + 1; i <= (count + 1) * 200; i++) {
+        for (int i = count * 100 + 1; i <= (count + 2) * 100; i++) {
             ASSERT_TRUE(wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
                 folly::stringPrintf(kLongMsg, i)));
         }
@@ -345,9 +335,7 @@ TEST(FileBasedWal, TTLTest) {
     TempDir walDir("/tmp/testWal.XXXXXX");
     FileBasedWalPolicy policy;
     policy.ttl = 3;
-    policy.bufferSize = 128;
     policy.fileSize = 1024;
-    policy.numBuffers = 30;
     auto wal = FileBasedWal::getWal(walDir.path(),
                                     "",
                                     policy,
@@ -389,7 +377,7 @@ TEST(FileBasedWal, TTLTest) {
         while (it->valid()) {
             EXPECT_EQ(id, it->logId());
             EXPECT_EQ(folly::stringPrintf("Test string %02ld", id),
-                      it->logMsg());
+                      std::get<3>(it->logEntry()));
             ++(*it);
             ++id;
         }
@@ -420,7 +408,7 @@ TEST(FileBasedWal, TTLTest) {
         while (it->valid()) {
             EXPECT_EQ(id, it->logId());
             EXPECT_EQ(folly::stringPrintf("Test string %02ld", id),
-                      it->logMsg());
+                      std::get<3>(it->logEntry()));
             ++(*it);
             ++id;
         }

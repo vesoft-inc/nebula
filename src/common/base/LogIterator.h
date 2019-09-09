@@ -11,6 +11,8 @@
 
 namespace nebula {
 
+using LogEntry = std::tuple<LogID, TermID, ClusterID, std::string>;
+
 class LogIterator {
 public:
     virtual ~LogIterator() = default;
@@ -26,6 +28,7 @@ public:
     virtual TermID logTerm() const = 0;
     virtual ClusterID logSource() const = 0;
     virtual folly::StringPiece logMsg() const = 0;
+    virtual LogEntry logEntry() = 0;
 };
 
 }  // namespace nebula

@@ -11,6 +11,8 @@
 #include "fs/FileUtils.h"
 #include "time/WallClock.h"
 
+DEFINE_int32(wal_buffer_size_exp, 10, "max size of wal ring buffer is 2 ^ wal_buffer_size_exp");
+
 namespace nebula {
 namespace wal {
 
@@ -40,7 +42,6 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
         , idStr_(idStr)
         , policy_(std::move(policy))
         , maxFileSize_(policy_.fileSize)
-        , maxBufferSize_(policy_.bufferSize)
         , preProcessor_(std::move(preProcessor)) {
     // Make sure WAL directory exist
     if (FileUtils::fileType(dir_.c_str()) == fs::FileType::NOTEXIST) {
@@ -64,6 +65,8 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
         currInfo_ = info;
         CHECK_GE(currFd_, 0);
     }
+
+    ringBuffer_.reset(new InMemoryLogBuffer());
 }
 
 
@@ -377,24 +380,6 @@ TermID FileBasedWal::readTermId(const char* path, LogID logId) {
 }
 
 
-BufferPtr FileBasedWal::getLastBuffer(LogID id, size_t expectedToWrite) {
-    std::unique_lock<std::mutex> g(buffersMutex_);
-    if (!buffers_.empty()) {
-        if (buffers_.back()->size() + expectedToWrite <= maxBufferSize_) {
-            return buffers_.back();
-        }
-        // Need to rollover to a new buffer
-        if (buffers_.size() == policy_.numBuffers) {
-            // Need to pop the first one
-            buffers_.pop_front();
-        }
-        CHECK_LT(buffers_.size(), policy_.numBuffers);
-    }
-    buffers_.emplace_back(std::make_shared<InMemoryLogBuffer>(id));
-    return buffers_.back();
-}
-
-
 bool FileBasedWal::appendLogInternal(LogID id,
                                      TermID term,
                                      ClusterID cluster,
@@ -458,9 +443,7 @@ bool FileBasedWal::appendLogInternal(LogID id,
     }
 
     // Append to the in-memory buffer
-    auto buffer = getLastBuffer(id, strBuf.size());
-    DCHECK_EQ(id, static_cast<int64_t>(buffer->firstLogId() + buffer->numLogs()));
-    buffer->push(term, cluster, std::move(msg));
+    ringBuffer_->push(id, term, cluster, std::move(msg));
 
     return true;
 }
@@ -552,26 +535,7 @@ bool FileBasedWal::rollbackToLog(LogID id) {
     //------------------------------
     // 2. Roll back in-memory buffers
     //------------------------------
-    {
-        // First rollback from buffers
-        std::unique_lock<std::mutex> g(buffersMutex_);
-
-        // Remove all buffers that are rolled back
-        auto it = buffers_.begin();
-        while (it != buffers_.end() && (*it)->firstLogId() <= id) {
-            it++;
-        }
-        while (it != buffers_.end()) {
-            it = buffers_.erase(it);
-        }
-
-        // Need to rollover to a new buffer
-        if (buffers_.size() == policy_.numBuffers) {
-            // Need to pop the first one
-            buffers_.pop_front();
-        }
-        buffers_.emplace_back(std::make_shared<InMemoryLogBuffer>(id + 1));
-    }
+    ringBuffer_->clear();
 
     return true;
 }
@@ -579,10 +543,7 @@ bool FileBasedWal::rollbackToLog(LogID id) {
 
 bool FileBasedWal::reset() {
     closeCurrFile();
-    {
-        std::lock_guard<std::mutex> g(buffersMutex_);
-        buffers_.clear();
-    }
+    ringBuffer_->clear();
     {
         std::lock_guard<std::mutex> g(walFilesMutex_);
         walFiles_.clear();
@@ -635,21 +596,6 @@ size_t FileBasedWal::accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> f
     for (auto it = walFiles_.rbegin(); it != walFiles_.rend(); ++it) {
         ++count;
         if (!fn(it->second)) {
-            break;
-        }
-    }
-
-    return count;
-}
-
-
-size_t FileBasedWal::accessAllBuffers(std::function<bool(BufferPtr buffer)> fn) const {
-    std::lock_guard<std::mutex> g(buffersMutex_);
-
-    size_t count = 0;
-    for (auto it = buffers_.rbegin(); it != buffers_.rend(); ++it) {
-        ++count;
-        if (!fn(*it)) {
             break;
         }
     }

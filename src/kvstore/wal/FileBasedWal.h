@@ -26,13 +26,6 @@ struct FileBasedWalPolicy {
     // The maximum size of each log message file (in byte). When the existing
     // log file reaches this size, a new file will be created
     size_t fileSize = 128 * 1024L * 1024L;
-
-    // Size of each buffer (in byte)
-    size_t bufferSize = 8 * 1024L * 1024L;
-
-    // Number of buffers allowed. When the number of buffers reach this
-    // number, appendLogs() will be blocked until some buffers are flushed
-    size_t numBuffers = 4;
 };
 
 
@@ -41,6 +34,8 @@ using PreProcessor = folly::Function<bool(LogID, TermID, ClusterID, const std::s
 
 class FileBasedWal final : public Wal
                          , public std::enable_shared_from_this<FileBasedWal> {
+    FRIEND_TEST(FileBasedWal, CacheOverflow);
+    FRIEND_TEST(FileBasedWal, Rollback);
     FRIEND_TEST(FileBasedWal, TTLTest);
     friend class FileBasedWalIterator;
 public:
@@ -114,17 +109,6 @@ public:
     // The method returns the number of wal file info being accessed
     size_t accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> fn) const;
 
-    // Iterates through all log buffers in reversed order
-    // (from the latest to the earliest)
-    // The iteration finishes when the functor returns false or reaches
-    // the end
-    // The method returns the number of buffers being accessed
-    size_t accessAllBuffers(std::function<bool(BufferPtr buffer)> fn) const;
-
-    // Dump a buffer into a WAL file
-    void flushBuffer(BufferPtr buffer);
-
-
 private:
     /***************************************
      *
@@ -148,10 +132,6 @@ private:
     // Retrieve the term id for the given log id in the given WAL file
     TermID readTermId(const char* path, LogID logId);
 
-    // Return the last buffer.
-    // If the last buffer is big enough, create a new one
-    BufferPtr getLastBuffer(LogID id, size_t expectedToWrite);
-
     // Implementation of appendLog()
     bool appendLogInternal(LogID id,
                            TermID term,
@@ -174,7 +154,6 @@ private:
 
     const FileBasedWalPolicy policy_;
     const size_t maxFileSize_;
-    const size_t maxBufferSize_;
     LogID firstLogId_{0};
     LogID lastLogId_{0};
     TermID lastLogTerm_{0};
@@ -192,11 +171,9 @@ private:
     WalFileInfoPtr currInfo_;
 
     // The purpose of the memory buffer is to provide a read cache
-    BufferList buffers_;
-    mutable std::mutex buffersMutex_;
+    std::shared_ptr<InMemoryLogBuffer> ringBuffer_;
 
     PreProcessor preProcessor_;
-    std::atomic_int onGoingBuffersNum_{0};
 };
 
 }  // namespace wal
