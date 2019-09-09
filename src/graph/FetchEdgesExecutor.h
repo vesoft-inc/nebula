@@ -28,6 +28,8 @@ public:
     void execute() override;
 
 private:
+    Status prepareClauses();
+
     Status prepareEdgeKeys();
 
     Status setupEdgeKeys();

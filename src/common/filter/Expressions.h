@@ -136,6 +136,14 @@ public:
         return kind_ == kVariableProp;
     }
 
+    virtual bool isAliasExpression() const {
+        return kind_ == kAliasProp;
+    }
+
+    virtual bool isTypeCastingExpression() const {
+        return kind_ == kTypeCasting;
+    }
+
     /**
      * To encode an expression into a byte buffer.
      *
@@ -740,6 +748,10 @@ public:
 
     const Expression* operand() const {
         return operand_.get();
+    }
+
+    const ColumnType getType() const {
+        return type_;
     }
 
 private:
