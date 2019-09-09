@@ -86,63 +86,16 @@ If you have any questions or concerns about the deployment procedures, please do
 
 ### From Source(Linux)
 
-**Prerequisite Tools**
-
-Nebula Graph is written in C++14, so it requires a compiler supporting C++14 features.
-
-3rd-party Libraries
-
--	autoconf
--	automake
--	libtool
--	cmake
--	bison
--	unzip
--	boost
--	gperf
--	krb5
--	openssl
--	libunwind
--	ncurses
--	readline
--  flex
-
-It is recommended to install g++ 5 or higher Linux system, such as Fedora 29.
-Currently, we are using `git-lfs` to store the 3rd-party libraries so make sure
-`git-lfs` have been installed before fetching the source code.
-
-**Fetch from GitHub**
-
-```
-> git clone https://github.com/vesoft-inc/nebula.git
-```
-
 **Compiling**
 
-```
-> cmake ./
-```
+Click [how to build](https://github.com/vesoft-inc/nebula/blob/master/docs/how-to-build.md) to compile **Nebula Graph**.
 
-The default installation is in /usr/local path. To specify the installation path,
-use:
-
-```
-> cmake -DCMAKE_INSTALL_PREFIX=$your_nebula_install_dir
-```
-
-to replace the `$your_nebula_install_dir` here
-
-Then run the following command:
-
-```
-> make && make install
-```
 
 **Running**
 
 * Configure nebula-metad.conf
 
-   In your Nebula installation directory, run
+   In your Nebula installation directory(/usr/local/nebula/), run
 
    ```
    > cp etc/nebula-metad.conf.default etc/nebula-metad.conf
