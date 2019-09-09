@@ -17,7 +17,7 @@ CREATE {TAG | EDGE} <tag_name> | <edge_name>
     | DEFAULT <default_value>
 ```
 
-Nebula's graph schema is composed of tags and edges, either of which may have properties. `CREATE TAG` statement defines a tag with the given name. `CREATE EDGE` statement is to define an edge type.
+Nebula's graph schema is composed of tags and edges, either of which may have properties. `CREATE TAG` statement defines a tag with the given name. While `CREATE EDGE` statement is to define an edge type.
 
 There are several aspects to this syntax, described under the following topics in this section:
 
@@ -27,7 +27,7 @@ There are several aspects to this syntax, described under the following topics i
 * [Property Name and Data Type](#property-name-and-data-type)
 -->
 
-### Tag Name and EdgeType Name
+### Tag Name and Edge Type Name
 
 * **tag_name and edge_name**
 
@@ -47,7 +47,7 @@ There are several aspects to this syntax, described under the following topics i
 
 * **default values**
 
-    You can set the default value of a property when creating a tag/edge. When inserting a new vertex or edge, you don't have to provide the value for that property, or you can write a user-specify value if you don't want to use the default one.
+    You can set the default value of a property when creating a tag/edge. When inserting a new vertex or edge, you don't have to provide the value for that property. Also you can write a user-specify value if you don't want to use the default one.
 
     > Since it's so error-prone to modify the default value with new one, using `Alter` to change the default value is not supported.
 
