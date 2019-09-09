@@ -104,27 +104,6 @@ to connect to the graph server. -->
 
 ### 编译源码方式 (Linux)
 
-**第三方库**
-
-nebula 遵循 c++14 标准，依赖第三方库：
-
--	autoconf
--	automake
--	libtool
--	cmake
--	bison
--	unzip
--	boost
--	gperf
--	krb5
--	openssl
--	libunwind
--	ncurses
--	readline
--  flex
-
-建议安装 g++ 5 以上 Linux 系统, 比如 Fedora 29。目前，nebula 使用 `git-lfs` 存储第三方库，请确保获取源代码之前已安装 `git-lfs` 。
-
 **编译**
 
 请参见 [how-to-build.md](./how-to-build.md)
@@ -133,7 +112,7 @@ nebula 遵循 c++14 标准，依赖第三方库：
 
 * 配置 nebula-metad.conf
 
-   在 nebula 安装目录下，运行以下命令：
+   在 nebula 安装目录(/usr/local/nebula/)下，运行以下命令：
 
    ```
    > cp etc/nebula-metad.conf.default etc/nebula-metad.conf
@@ -145,6 +124,7 @@ nebula 遵循 c++14 标准，依赖第三方库：
    - port: 端口号
    - ws_http_port: metaservice HTTP服务端口号
    - ws_h2_port: metaservice HTTP2服务端口号
+   - meta_server_addrs: meta server 地址列表，格式为 ip1:port1, ip2:port2, ip3:port3
 
 * 配置 nebula-storaged.conf
 
@@ -158,6 +138,7 @@ nebula 遵循 c++14 标准，依赖第三方库：
    - port: 端口号
    - ws_http_port: storageservice HTTP 服务端口号
    - ws_h2_port: storageservice HTTP2 服务端口号
+   - meta_server_addrs: meta server 地址列表，格式为 ip1:port1, ip2:port2, ip3:port3
 
 * 配置 nebula-graphd.conf
 
@@ -165,10 +146,11 @@ nebula 遵循 c++14 标准，依赖第三方库：
    > cp etc/nebula-graphd.conf.default etc/nebula-graphd.conf
    ```
    根据实际修改 nebula-graphd.conf 中的配置：
-   - local_ip: ip 地址
+
    - port: 端口号
    - ws_http_port: graphservice HTTP 服务端口号
    - ws_h2_port: graphservice HTTP2 服务端口号
+   - meta_server_addrs: meta server 地址列表，格式为 ip1:port1, ip2:port2, ip3:port3
 
 **启动服务**
 
@@ -435,3 +417,12 @@ nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^.student.nam
    ```
    nebula> UPDATE VARIABLES graph:load_data_interval_secs=1
    ```
+
+### 使用docker启动后，执行命令时报错.
+
+可能的原因是docker的IP地址和我们默认配置中的监听地址不一致(默认是172.17.0.2)，因此这里需要修改默认配置中的监听地址.
+
+1. 首先在容器中执行ifconfig命令，查看您的容器地址，这里假设您的容器地址是172.17.0.3,那么就意味着您需要修改默认配置的IP地址.
+2. 然后进入配置目录(cd /usr/local/nebula/etc), 查找所有IP地址配置的位置(grep "172.17.0.2" . -r).
+3. 修改上一步查到的所有IP地址为您的容器地址(172.17.0.3).
+4. 最后重新启动所有服务.

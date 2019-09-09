@@ -54,7 +54,7 @@ TEST_F(LogCommandTest, CommandInMiddle) {
 
     ASSERT_EQ(3, leader_->commitTimes_);
     // need to sleep a bit more
-    sleep(1);
+    sleep(FLAGS_raft_heartbeat_interval_secs + 1);
     checkConsensus(copies_, 0, 9, msgs);
 }
 

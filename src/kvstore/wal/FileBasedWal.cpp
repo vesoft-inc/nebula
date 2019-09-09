@@ -5,6 +5,7 @@
  */
 
 #include "base/Base.h"
+#include <utime.h>
 #include "kvstore/wal/FileBasedWal.h"
 #include "kvstore/wal/FileBasedWalIterator.h"
 #include "fs/FileUtils.h"
@@ -23,17 +24,20 @@ using nebula::fs::FileUtils;
 // static
 std::shared_ptr<FileBasedWal> FileBasedWal::getWal(
         const folly::StringPiece dir,
+        const std::string& idStr,
         FileBasedWalPolicy policy,
         PreProcessor preProcessor) {
     return std::shared_ptr<FileBasedWal>(
-        new FileBasedWal(dir, std::move(policy), std::move(preProcessor)));
+        new FileBasedWal(dir, idStr, std::move(policy), std::move(preProcessor)));
 }
 
 
 FileBasedWal::FileBasedWal(const folly::StringPiece dir,
+                           const std::string& idStr,
                            FileBasedWalPolicy policy,
                            PreProcessor preProcessor)
         : dir_(dir.toString())
+        , idStr_(idStr)
         , policy_(std::move(policy))
         , maxFileSize_(policy_.fileSize)
         , maxBufferSize_(policy_.bufferSize)
@@ -66,10 +70,9 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
 FileBasedWal::~FileBasedWal() {
     // FileBasedWal inherits from std::enable_shared_from_this, so at this
     // moment, there should have no other thread holding this WAL object
-
     // Close the last file
     closeCurrFile();
-    LOG(INFO) << "~FileBasedWal, dir = " << dir_;
+    LOG(INFO) << idStr_ << "~FileBasedWal, dir = " << dir_;
 }
 
 
@@ -279,9 +282,15 @@ void FileBasedWal::closeCurrFile() {
     CHECK_EQ(close(currFd_), 0);
     currFd_ = -1;
 
-    currInfo_->setMTime(::time(nullptr));
+    auto now = time::WallClock::fastNowInSec();
+    currInfo_->setMTime(now);
     DCHECK_EQ(currInfo_->size(), FileUtils::fileSize(currInfo_->path()))
         << currInfo_->path() << " size does not match";
+    struct utimbuf timebuf;
+    timebuf.modtime = currInfo_->mtime();
+    timebuf.actime = currInfo_->mtime();
+    VLOG(1) << "Close cur file " << currInfo_->path() << ", mtime: " << currInfo_->mtime();
+    CHECK_EQ(utime(currInfo_->path(), &timebuf), 0);
     currInfo_.reset();
 }
 
@@ -295,7 +304,7 @@ void FileBasedWal::prepareNewFile(LogID startLogId) {
         FileUtils::joinPath(dir_,
                             folly::stringPrintf("%019ld.wal", startLogId)),
         startLogId);
-    VLOG(1) << "Write new file " << info->path();
+    VLOG(1) << idStr_ << "Write new file " << info->path();
     walFiles_.emplace(std::make_pair(startLogId, info));
 
     // Create the file for write
@@ -374,7 +383,6 @@ BufferPtr FileBasedWal::getLastBuffer(LogID id, size_t expectedToWrite) {
         if (buffers_.back()->size() + expectedToWrite <= maxBufferSize_) {
             return buffers_.back();
         }
-
         // Need to rollover to a new buffer
         if (buffers_.size() == policy_.numBuffers) {
             // Need to pop the first one
@@ -392,19 +400,19 @@ bool FileBasedWal::appendLogInternal(LogID id,
                                      ClusterID cluster,
                                      std::string msg) {
     if (stopped_) {
-        LOG(ERROR) << "WAL has stopped. Do not accept logs any more";
+        LOG(ERROR) << idStr_ << "WAL has stopped. Do not accept logs any more";
         return false;
     }
 
     if (lastLogId_ != 0 && firstLogId_ != 0 && id != lastLogId_ + 1) {
-        LOG(ERROR) << "There is a gap in the log id. The last log id is "
+        LOG(ERROR) << idStr_ << "There is a gap in the log id. The last log id is "
                    << lastLogId_
                    << ", and the id being appended is " << id;
         return false;
     }
 
     if (!preProcessor_(id, term, cluster, msg)) {
-        LOG(ERROR) << "Pre process failed for log " << id;
+        LOG(ERROR) << idStr_ << "Pre process failed for log " << id;
         return false;
     }
 
@@ -473,7 +481,7 @@ bool FileBasedWal::appendLogs(LogIterator& iter) {
                                iter.logTerm(),
                                iter.logSource(),
                                iter.logMsg().toString())) {
-            LOG(ERROR) << "Failed to append log for logId "
+            LOG(ERROR) << idStr_ << "Failed to append log for logId "
                        << iter.logId();
             return false;
         }
@@ -491,7 +499,7 @@ std::unique_ptr<LogIterator> FileBasedWal::iterator(LogID firstLogId,
 
 bool FileBasedWal::rollbackToLog(LogID id) {
     if (id < firstLogId_ - 1 || id > lastLogId_) {
-        LOG(ERROR) << "Rollback target id " << id
+        LOG(ERROR) << idStr_ << "Rollback target id " << id
                    << " is not in the range of ["
                    << firstLogId_ << ","
                    << lastLogId_ << "] of WAL";
@@ -587,8 +595,7 @@ bool FileBasedWal::reset() {
     return true;
 }
 
-
-void FileBasedWal::cleanWAL() {
+void FileBasedWal::cleanWAL(int32_t ttl) {
     std::lock_guard<std::mutex> g(walFilesMutex_);
     if (walFiles_.empty()) {
         return;
@@ -598,14 +605,21 @@ void FileBasedWal::cleanWAL() {
     size_t index = 0;
     auto it = walFiles_.begin();
     auto size = walFiles_.size();
+    int count = 0;
+    int walTTL = ttl == 0 ? policy_.ttl : ttl;
     while (it != walFiles_.end()) {
-        if (index++ < size - 1 &&  (now - it->second->mtime() > policy_.ttl)) {
-            VLOG(1) << "Clean wals, Remove " << it->second->path();
+        if (index++ < size - 1 &&  (now - it->second->mtime() > walTTL)) {
+            VLOG(1) << "Clean wals, Remove " << it->second->path() << ", now: " << now
+                    << ", mtime: " << it->second->mtime();
             unlink(it->second->path());
             it = walFiles_.erase(it);
+            count++;
         } else {
             ++it;
         }
+    }
+    if (count > 0) {
+        LOG(INFO) << idStr_ << "Clean wals number " << count;
     }
     firstLogId_ = walFiles_.begin()->second->firstId();
 }
