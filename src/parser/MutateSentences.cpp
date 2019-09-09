@@ -230,11 +230,7 @@ std::string DeleteVertexSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "DELETE VERTEX ";
-    buf += vidList_->toString();
-    if (whereClause_ != nullptr) {
-        buf += " ";
-        buf += whereClause_->toString();
-    }
+    buf += vid_->toString();
     return buf;
 }
 

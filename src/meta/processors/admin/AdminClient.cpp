@@ -198,17 +198,17 @@ folly::Future<Status> AdminClient::getResponse(
                      this] () mutable {
         auto client = clientsMan_->client(host, evb);
         remoteFunc(client, std::move(req))
-            .then(evb, [p = std::move(pro), respGen = std::move(respGen),
-                        this] (folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
-            // exception occurred during RPC
-            if (t.hasException()) {
-                p.setValue(Status::Error(folly::stringPrintf("RPC failure in AdminClient: %s",
-                                                             t.exception().what().c_str())));
-                return;
-            }
-            auto&& resp = std::move(t).value();
-            p.setValue(respGen(std::move(resp)));
-        });
+            .then(evb, [p = std::move(pro), respGen = std::move(respGen)](
+                           folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
+                // exception occurred during RPC
+                if (t.hasException()) {
+                    p.setValue(Status::Error(folly::stringPrintf("RPC failure in AdminClient: %s",
+                                                                 t.exception().what().c_str())));
+                    return;
+                }
+                auto&& resp = std::move(t).value();
+                p.setValue(respGen(std::move(resp)));
+            });
     });
     return f;
 }

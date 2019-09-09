@@ -338,10 +338,14 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
         } else {
             curSpaceName_ = "(none)";
         }
-        printResult(resp);
-        if (resp.get_rows() != nullptr) {
+        if (resp.get_rows() && !resp.get_rows()->empty()) {
+            printResult(resp);
             std::cout << "Got " << resp.get_rows()->size()
                       << " rows (Time spent: "
+                      << resp.get_latency_in_us() << "/"
+                      << dur.elapsedInUSec() << " us)\n";
+        } else if (resp.get_rows()) {
+            std::cout << "Empty set (Time spent: "
                       << resp.get_latency_in_us() << "/"
                       << dur.elapsedInUSec() << " us)\n";
         } else {
