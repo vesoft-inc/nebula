@@ -372,7 +372,7 @@ void RaftPart::addLearner(const HostAddr& addr) {
 
 void RaftPart::preProcessTransLeader(const HostAddr& target) {
     CHECK(!raftLock_.try_lock());
-    LOG(INFO) << idStr_ << "Commit transfer leader to " << target;
+    LOG(INFO) << idStr_ << "Pre process transfer leader to " << target;
     switch (role_) {
         case Role::FOLLOWER: {
             if (target != addr_ && target != HostAddr(0, 0)) {
@@ -410,10 +410,12 @@ void RaftPart::commitTransLeader(const HostAddr& target) {
             break;
         }
         case Role::FOLLOWER:
-        case Role::CANDIDATE:
-        case Role::LEARNER: {
-            CHECK(target != addr_);
+        case Role::CANDIDATE: {
             LOG(INFO) << idStr_ << "I am " << roleStr(role_) << ", just wait for the new leader!";
+            break;
+        }
+        case Role::LEARNER: {
+            CHECK(target != addr_) << idStr_ << "I am learner, not in the raft group";
             break;
         }
     }
@@ -433,7 +435,13 @@ void RaftPart::updateQuorum() {
 void RaftPart::addPeer(const HostAddr& peer) {
     CHECK(!raftLock_.try_lock());
     if (peer == addr_) {
-        LOG(INFO) << idStr_ << "I am already in the raft group!";
+        if (role_ == Role::LEARNER) {
+            LOG(INFO) << idStr_ << "I am learner, promote myself to be follower";
+            role_ = Role::FOLLOWER;
+            updateQuorum();
+        } else {
+            LOG(INFO) << idStr_ << "I am already in the raft group!";
+        }
         return;
     }
     auto it = std::find_if(hosts_.begin(), hosts_.end(), [&peer] (const auto& h) {
@@ -492,7 +500,8 @@ void RaftPart::preProcessRemovePeer(const HostAddr& peer) {
 void RaftPart::commitRemovePeer(const HostAddr& peer) {
     CHECK(!raftLock_.try_lock());
     if (role_ == Role::FOLLOWER || role_ == Role::LEARNER) {
-        LOG(INFO) << idStr_ << "I am follower, skip remove peer in commit";
+        LOG(INFO) << idStr_ << "I am" << roleStr(role_)
+                  << ", skip remove peer in commit";
         return;
     }
     CHECK(Role::LEADER == role_);

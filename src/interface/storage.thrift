@@ -23,6 +23,7 @@ enum ErrorCode {
     E_KEY_HAS_EXISTS = -12,
     E_SPACE_NOT_FOUND = -13,
     E_PART_NOT_FOUND = -14,
+    E_CONSENSUS_ERROR = -15,
 
     // meta failures
     E_EDGE_PROP_NOT_FOUND = -21,

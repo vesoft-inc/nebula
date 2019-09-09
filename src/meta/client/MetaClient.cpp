@@ -390,7 +390,13 @@ Status MetaClient::handleResponse(const RESP& resp) {
         case cpp2::ErrorCode::E_WRONGCLUSTER:
             return Status::Error("wrong cluster!");
         case cpp2::ErrorCode::E_LEADER_CHANGED: {
-            return Status::LeaderChanged();
+            return Status::LeaderChanged("Leader changed!");
+        case cpp2::ErrorCode::E_BALANCED:
+            return Status::Error("The cluster is balanced!");
+        case cpp2::ErrorCode::E_BALANCER_RUNNING:
+            return Status::Error("The balancer is running!");
+        case cpp2::ErrorCode::E_BAD_BALANCE_PLAN:
+            return Status::Error("Bad balance plan!");
         }
         default:
             return Status::Error("Unknown code %d", static_cast<int32_t>(resp.get_code()));
@@ -1164,6 +1170,20 @@ folly::Future<StatusOr<int64_t>> MetaClient::balance() {
                     return client->future_balance(request);
                 }, [] (cpp2::BalanceResp&& resp) -> int64_t {
                     return resp.id;
+                }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<cpp2::BalanceTask>>>
+MetaClient::showBalance(int64_t balanceId) {
+    cpp2::BalanceReq req;
+    req.set_id(balanceId);
+    folly::Promise<StatusOr<std::vector<cpp2::BalanceTask>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_balance(request);
+                }, [] (cpp2::BalanceResp&& resp) -> std::vector<cpp2::BalanceTask> {
+                    return resp.tasks;
                 }, std::move(promise), true);
     return future;
 }

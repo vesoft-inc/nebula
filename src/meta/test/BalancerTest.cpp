@@ -418,7 +418,7 @@ TEST(BalanceTest, NormalTest) {
     auto client = std::make_unique<AdminClient>(std::move(injector));
     Balancer balancer(kv.get(), std::move(client));
     auto ret = balancer.balance();
-    CHECK_EQ(Status::Error("No tasks"), ret.status());
+    CHECK_EQ(Status::Balanced(), ret.status());
 
     sleep(1);
     LOG(INFO) << "Now, we lost host " << HostAddr(3, 3);
@@ -614,9 +614,8 @@ TEST(BalanceTest, RecoveryTest) {
             {
                 auto tup = BalanceTask::parseVal(iter->val());
                 task.status_ = std::get<0>(tup);
-                ASSERT_EQ(BalanceTask::Status::END, task.status_);
                 task.ret_ = std::get<1>(tup);
-                ASSERT_EQ(BalanceTask::Result::SUCCEEDED, task.ret_);
+                ASSERT_EQ(BalanceTask::Result::INVALID, task.ret_);
                 task.srcLived_ = std::get<2>(tup);
                 ASSERT_FALSE(task.srcLived_);
                 task.startTimeMs_ = std::get<3>(tup);

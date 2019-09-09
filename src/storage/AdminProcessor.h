@@ -229,9 +229,12 @@ public:
                         onFinished(cpp2::ErrorCode::E_LEADER_CHANGED);
                         return;
                     }
+                    case raftex::AppendLogResult::E_SENDING_SNAPSHOT:
+                        LOG(INFO) << "Still sending snapshot, please wait...";
+                        break;
                     default:
-                        onFinished(cpp2::ErrorCode::E_UNKNOWN);
-                        return;
+                        LOG(INFO) << "Unknown error " << static_cast<int32_t>(res);
+                        break;
                 }
                 sleep(FLAGS_waiting_catch_up_interval_in_secs);
             }

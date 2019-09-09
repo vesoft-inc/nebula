@@ -29,7 +29,7 @@ StatusOr<BalanceID> Balancer::balance() {
             LOG(INFO) << "There is no corrupted plan need to recovery, so create a new one";
             auto status = buildBalancePlan();
             if (plan_ == nullptr) {
-                LOG(ERROR) << "Create balance plan failed!";
+                LOG(ERROR) << "Create balance plan failed, status " << status.toString();
                 return status;
             }
         }
@@ -37,6 +37,17 @@ StatusOr<BalanceID> Balancer::balance() {
         return plan_->id();
     }
     return Status::Error("balance running");
+}
+
+StatusOr<BalancePlan> Balancer::show(BalanceID id) const {
+    if (kv_) {
+        BalancePlan plan(id, kv_, client_.get());
+        if (!plan.recovery(false)) {
+            return Status::Error("Get balance plan failed, id %ld", id);
+        }
+        return plan;
+    }
+    return Status::Error("KV is nullptr");
 }
 
 bool Balancer::recovery() {
@@ -121,7 +132,7 @@ Status Balancer::buildBalancePlan() {
     };
     if (plan_->tasks_.empty()) {
         plan_->onFinished_();
-        return Status::Error("No Tasks");
+        return Status::Balanced();
     }
     if (!plan_->saveInStore()) {
         plan_->onFinished_();

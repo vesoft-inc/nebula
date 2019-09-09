@@ -22,6 +22,13 @@ const std::string kBalanceTaskTable = "__b_task__"; // NOLINT
 
 void BalanceTask::invoke() {
     CHECK_NOTNULL(client_);
+    if (ret_ == Result::INVALID) {
+        endTimeMs_ = time::WallClock::fastNowInMilliSec();
+        saveInStore();
+        LOG(ERROR) << taskIdStr_ << "Task invalid!";
+        onFinished_();
+        return;
+    }
     if (ret_ == Result::FAILED) {
         endTimeMs_ = time::WallClock::fastNowInMilliSec();
         saveInStore();

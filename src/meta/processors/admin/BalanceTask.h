@@ -26,41 +26,6 @@ class BalanceTask {
     FRIEND_TEST(BalanceTest, RecoveryTest);
 
 public:
-    BalanceTask() = default;
-    BalanceTask(BalanceID balanceId,
-                GraphSpaceID spaceId,
-                PartitionID partId,
-                const HostAddr& src,
-                const HostAddr& dst,
-                bool srcLived,
-                kvstore::KVStore* kv,
-                AdminClient* client)
-        : balanceId_(balanceId)
-        , spaceId_(spaceId)
-        , partId_(partId)
-        , src_(src)
-        , dst_(dst)
-        , srcLived_(srcLived)
-        , taskIdStr_(folly::stringPrintf(
-                                      "[%ld, %d, %s:%d->%s:%d] ",
-                                      balanceId,
-                                      partId,
-                                      network::NetworkUtils::intToIPv4(src.first).c_str(),
-                                      src.second,
-                                      network::NetworkUtils::intToIPv4(dst.first).c_str(),
-                                      dst.second))
-        , kv_(kv)
-        , client_(client) {}
-
-    const std::string& taskIdStr() const {
-        return taskIdStr_;
-    }
-
-    void invoke();
-
-    void rollback();
-
-private:
     enum class Status : uint8_t {
         START                   = 0x01,
         CHANGE_LEADER           = 0x02,
@@ -78,7 +43,51 @@ private:
         SUCCEEDED           = 0x01,
         FAILED              = 0x02,
         IN_PROGRESS         = 0x03,
+        INVALID             = 0x04,
     };
+
+    BalanceTask() = default;
+    BalanceTask(BalanceID balanceId,
+                GraphSpaceID spaceId,
+                PartitionID partId,
+                const HostAddr& src,
+                const HostAddr& dst,
+                bool srcLived,
+                kvstore::KVStore* kv,
+                AdminClient* client)
+        : balanceId_(balanceId)
+        , spaceId_(spaceId)
+        , partId_(partId)
+        , src_(src)
+        , dst_(dst)
+        , srcLived_(srcLived)
+        , taskIdStr_(buildTaskId())
+        , kv_(kv)
+        , client_(client) {}
+
+    const std::string& taskIdStr() const {
+        return taskIdStr_;
+    }
+
+    void invoke();
+
+    void rollback();
+
+    Result result() const {
+        return ret_;
+    }
+
+private:
+    std::string buildTaskId() {
+        return folly::stringPrintf("[%ld, %d:%d, %s:%d->%s:%d] ",
+                                   balanceId_,
+                                   spaceId_,
+                                   partId_,
+                                   network::NetworkUtils::intToIPv4(src_.first).c_str(),
+                                   src_.second,
+                                   network::NetworkUtils::intToIPv4(dst_.first).c_str(),
+                                   dst_.second);
+    }
 
     bool saveInStore();
 

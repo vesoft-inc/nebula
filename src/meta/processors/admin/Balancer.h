@@ -66,22 +66,16 @@ public:
      * */
     StatusOr<BalanceID> balance();
 
-    bool isRunning() {
-        return running_;
-    }
+    /**
+     * Show balance plan id status.
+     * */
+    StatusOr<BalancePlan> show(BalanceID id) const;
 
     /**
-     * TODO(heng): Rollback some specific balance id
+     * TODO(heng): rollback some balance plan.
      */
     Status rollback(BalanceID id) {
         return Status::Error("unplemented, %ld", id);
-    }
-
-    /**
-     * TODO(heng): Only generate balance plan for our users.
-     * */
-    const BalancePlan* preview() {
-        return plan_.get();
     }
 
     /**
@@ -101,6 +95,10 @@ public:
     }
 
     cpp2::ErrorCode leaderBalance();
+
+    bool isRunning() {
+        return running_;
+    }
 
 private:
     Balancer(kvstore::KVStore* kv, std::unique_ptr<AdminClient> client)

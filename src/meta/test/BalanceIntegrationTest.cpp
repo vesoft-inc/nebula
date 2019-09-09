@@ -146,10 +146,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         for (int32_t vId = 0; vId < 10000; vId++) {
             vIds.emplace_back(vId);
         }
-        retCols.emplace_back(
-            storage::TestUtils::propDef(storage::cpp2::PropOwner::SOURCE,
-                                        "c",
-                                        tagId));
+        retCols.emplace_back(storage::TestUtils::vetexPropDef("c", tagId));
         auto f = sClient->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
         auto resp = std::move(f).get();
         if (!resp.succeeded()) {
@@ -165,8 +162,8 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         auto& results = resp.responses();
         ASSERT_EQ(partition, results.size());
         EXPECT_EQ(0, results[0].result.failed_codes.size());
-        EXPECT_EQ(1, results[0].vertex_schema.columns.size());
-        auto tagProvider = std::make_shared<ResultSchemaProvider>(results[0].vertex_schema);
+        EXPECT_EQ(1, results[0].vertex_schema[tagId].columns.size());
+        auto tagProvider = std::make_shared<ResultSchemaProvider>(results[0].vertex_schema[tagId]);
         EXPECT_EQ(10000, results[0].vertices.size());
     }
     LOG(INFO) << "Let's open a new storage service";
