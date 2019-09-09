@@ -14,7 +14,9 @@ nebula_add_test(
     OBJECTS ${FILTER_TEST_LIBS}
     LIBRARIES gtest gtest_main
 )
-target_compile_options(expression_test PRIVATE -Wno-parentheses)
+if (ENABLE_TEST)
+    target_compile_options(expression_test PRIVATE -Wno-parentheses)
+endif()
 
 
 nebula_add_executable(

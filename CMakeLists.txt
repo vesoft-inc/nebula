@@ -25,6 +25,7 @@
 #   SKIP_JAVA_CLIENT               -- Skip building the java client
 #   ENABLE_JEMALLOC                -- Link jemalloc into all executables
 #   ENABLE_NATIVE                  -- Build native client
+#   ENABLE_TEST                    -- Build unit test
 #
 cmake_minimum_required(VERSION 3.0.0)
 
@@ -37,8 +38,10 @@ option(ENABLE_JEMALLOC "Whether to link jemalloc to all executables" ON)
 option(ENABLE_NATIVE "Whether to build native client" OFF)
 option(ENABLE_CCACHE "Whether to use ccache to speed up compiling" ON)
 option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
+option(ENABLE_TEST "Whether to turn unit test ON or OFF" ON)
 
 message(STATUS "ASAN: ${ENABLE_ASAN}")
+message(STATUS "ENABLE_TEST: ${ENABLE_TEST}")
 
 
 if (ENABLE_NATIVE)
@@ -46,7 +49,9 @@ if (ENABLE_NATIVE)
     add_compile_options(-fPIC)
 endif()
 
-enable_testing()
+if (ENABLE_TEST)
+    enable_testing()
+endif()
 
 if (!CMAKE_CXX_COMPILER)
     message(FATAL_ERROR "No C++ compiler found")
@@ -345,30 +350,32 @@ macro(nebula_add_executable)
 endmacro()
 
 macro(nebula_add_test)
-    cmake_parse_arguments(
-        nebula_test                 # prefix
-        "DISABLED"                  # <options>
-        "NAME"                      # <one_value_args>
-        "SOURCES;OBJECTS;LIBRARIES" # <multi_value_args>
-        ${ARGN}
-    )
+    if (ENABLE_TEST)
+        cmake_parse_arguments(
+            nebula_test                 # prefix
+            "DISABLED"                  # <options>
+            "NAME"                      # <one_value_args>
+            "SOURCES;OBJECTS;LIBRARIES" # <multi_value_args>
+            ${ARGN}
+        )
 
-    nebula_add_executable(
-        NAME ${nebula_test_NAME}
-        SOURCES ${nebula_test_SOURCES}
-        OBJECTS ${nebula_test_OBJECTS}
-        LIBRARIES ${nebula_test_LIBRARIES}
-    )
+        nebula_add_executable(
+            NAME ${nebula_test_NAME}
+            SOURCES ${nebula_test_SOURCES}
+            OBJECTS ${nebula_test_OBJECTS}
+            LIBRARIES ${nebula_test_LIBRARIES}
+        )
 
-    if (NOT ${nebula_test_DISABLED})
-        add_test(NAME ${nebula_test_NAME} COMMAND ${nebula_test_NAME})
-        # e.g. cmake -DNEBULA_ASAN_PRELOAD=/path/to/libasan.so
-        # or,  cmake -DNEBULA_ASAN_PRELOAD=`/path/to/gcc --print-file-name=libasan.so`
-        if (NEBULA_ASAN_PRELOAD)
-            set_property(
-                TEST ${nebula_test_NAME}
-                PROPERTY ENVIRONMENT LD_PRELOAD=${NEBULA_ASAN_PRELOAD}
-            )
+        if (NOT ${nebula_test_DISABLED})
+            add_test(NAME ${nebula_test_NAME} COMMAND ${nebula_test_NAME})
+            # e.g. cmake -DNEBULA_ASAN_PRELOAD=/path/to/libasan.so
+            # or,  cmake -DNEBULA_ASAN_PRELOAD=`/path/to/gcc --print-file-name=libasan.so`
+            if (NEBULA_ASAN_PRELOAD)
+                set_property(
+                    TEST ${nebula_test_NAME}
+                    PROPERTY ENVIRONMENT LD_PRELOAD=${NEBULA_ASAN_PRELOAD}
+                )
+            endif()
         endif()
     endif()
 endmacro()
@@ -560,4 +567,6 @@ IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git/")
     ELSE()
         MESSAGE(FATAL_ERROR "Creating pre-commit hook failed: ${retcode}")
     ENDIF()
+ELSE()
+    MESSAGE(FATAL_ERROR "Currently, we don't support downloaded source code.\nPlease using git clone it and rebuild.")
 ENDIF()
