@@ -81,7 +81,12 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                 auto it = kPropsInKey_.find(col.name);
                 if (it != kPropsInKey_.end()) {
                     prop.pikType_ = it->second;
-                    prop.type_.type = nebula::cpp2::SupportedType::INT;
+                    if ( prop.pikType_ == PropContext::PropInKeyType::SRC ||
+                            prop.pikType_ == PropContext::PropInKeyType::DST) {
+                        prop.type_.type = nebula::cpp2::SupportedType::VID;
+                    } else {
+                        prop.type_.type = nebula::cpp2::SupportedType::INT;
+                    }
                 } else if (type_ == BoundType::OUT_BOUND) {
                     // Only outBound have properties on edge.
                     auto schema = this->schemaMan_->getEdgeSchema(spaceId_,
@@ -256,11 +261,11 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
                 break;
             case PropContext::PropInKeyType::SRC:
                 VLOG(3) << "collect _src, value = " << NebulaKeyUtils::getSrcId(key);
-                collector->collectInt64(NebulaKeyUtils::getSrcId(key), prop);
+                collector->collectVid(NebulaKeyUtils::getSrcId(key), prop);
                 continue;
             case PropContext::PropInKeyType::DST:
                 VLOG(3) << "collect _dst, value = " << NebulaKeyUtils::getDstId(key);
-                collector->collectInt64(NebulaKeyUtils::getDstId(key), prop);
+                collector->collectVid(NebulaKeyUtils::getDstId(key), prop);
                 continue;
             case PropContext::PropInKeyType::TYPE:
                 VLOG(3) << "collect _type, value = " << NebulaKeyUtils::getEdgeType(key);
@@ -369,12 +374,12 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                 auto& getters = expCtx_->getters();
                 getters.getAliasProp =
                     [&] (const std::string&, const std::string &prop) -> OptVariantType {
-                    auto res = RowReader::getPropByName(reader.get(), prop);
-                    if (!ok(res)) {
-                        return Status::Error("Invalid Prop");
-                    }
-                    return value(std::move(res));
-                };
+                        auto res = RowReader::getPropByName(reader.get(), prop);
+                        if (!ok(res)) {
+                            return Status::Error("Invalid Prop");
+                        }
+                        return value(std::move(res));
+                    };
                 getters.getEdgeRank = [&] () -> VariantType {
                     return rank;
                 };

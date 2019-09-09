@@ -56,6 +56,7 @@ public:
         kConfig,
         kFetchVertices,
         kFetchEdges,
+        kBalance,
     };
 
     Kind kind() const {

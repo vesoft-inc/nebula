@@ -13,6 +13,9 @@
 #include "storage/QueryEdgePropsProcessor.h"
 #include "storage/QueryStatsProcessor.h"
 #include "storage/AdminProcessor.h"
+#include "storage/DeleteVertexProcessor.h"
+#include "storage/DeleteEdgesProcessor.h"
+#include "QueryEdgeKeysProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -78,6 +81,24 @@ StorageServiceHandler::future_addEdges(const cpp2::AddEdgesRequest& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::EdgeKeyResponse>
+StorageServiceHandler::future_getEdgeKeys(const cpp2::EdgeKeyRequest& req) {
+    auto* processor = QueryEdgeKeysProcessor::instance(kvstore_, schemaMan_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResponse>
+StorageServiceHandler::future_deleteVertex(const cpp2::DeleteVertexRequest& req) {
+    auto* processor = DeleteVertexProcessor::instance(kvstore_, schemaMan_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResponse>
+StorageServiceHandler::future_deleteEdges(const cpp2::DeleteEdgesRequest& req) {
+    auto* processor = DeleteEdgesProcessor::instance(kvstore_, schemaMan_);
+    RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::AdminExecResp>
 StorageServiceHandler::future_transLeader(const cpp2::TransLeaderReq& req) {
     auto* processor = TransLeaderProcessor::instance(kvstore_);
@@ -111,6 +132,12 @@ StorageServiceHandler::future_removePart(const cpp2::RemovePartReq& req) {
 folly::Future<cpp2::AdminExecResp>
 StorageServiceHandler::future_memberChange(const cpp2::MemberChangeReq& req) {
     auto* processor = MemberChangeProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GetLeaderResp>
+StorageServiceHandler::future_getLeaderPart(const cpp2::GetLeaderReq& req) {
+    auto* processor = GetLeaderProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

@@ -15,6 +15,7 @@
 #include "kvstore/PartManager.h"
 #include "kvstore/Part.h"
 #include "kvstore/KVEngine.h"
+#include "kvstore/raftex/SnapshotManager.h"
 
 namespace nebula {
 namespace kvstore {
@@ -30,11 +31,11 @@ struct SpacePartInfo {
     std::vector<std::unique_ptr<KVEngine>> engines_;
 };
 
-
 class NebulaStore : public KVStore, public Handler {
     FRIEND_TEST(NebulaStoreTest, SimpleTest);
     FRIEND_TEST(NebulaStoreTest, PartsTest);
     FRIEND_TEST(NebulaStoreTest, ThreeCopiesTest);
+    FRIEND_TEST(NebulaStoreTest, TransLeaderTest);
 
 public:
     NebulaStore(KVOptions options,
@@ -160,6 +161,9 @@ public:
 
     ResultCode flush(GraphSpaceID spaceId) override;
 
+    int32_t allLeader(std::unordered_map<GraphSpaceID,
+                                         std::vector<PartitionID>>& leaderIds) override;
+
     bool isLeader(GraphSpaceID spaceId, PartitionID partId);
 
 private:
@@ -197,6 +201,7 @@ private:
     KVOptions options_;
 
     std::shared_ptr<raftex::RaftexService> raftService_;
+    std::shared_ptr<raftex::SnapshotManager> snapshot_;
 };
 
 }  // namespace kvstore

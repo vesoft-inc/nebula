@@ -14,7 +14,7 @@
 #include "fs/FileUtils.h"
 #include "thread/GenericThreadPool.h"
 #include "network/NetworkUtils.h"
-
+#include "kvstore/raftex/SnapshotManager.h"
 
 namespace nebula {
 
@@ -71,8 +71,8 @@ void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,
                 std::shared_ptr<thread::GenericThreadPool>& workers,
                 std::shared_ptr<test::TestShard>& leader);
 
-void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
-                     std::shared_ptr<test::TestShard>& leader);
+int32_t checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
+                        std::shared_ptr<test::TestShard>& leader);
 
 void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
                      size_t index,
@@ -98,6 +98,9 @@ void rebootOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
                    std::vector<std::shared_ptr<test::TestShard>>& copies,
                    std::vector<HostAddr> allHosts,
                    size_t index);
+
+std::vector<std::shared_ptr<SnapshotManager>> snapshots(
+                   const std::vector<std::shared_ptr<RaftexService>>& services);
 
 class RaftexTestFixture : public ::testing::Test {
 public:
@@ -130,6 +133,7 @@ protected:
     std::vector<std::shared_ptr<RaftexService>> services_;
     std::vector<std::shared_ptr<test::TestShard>> copies_;
     std::shared_ptr<test::TestShard> leader_;
+    std::vector<std::shared_ptr<SnapshotManager>> snapshots_;
 };
 
 }  // namespace raftex

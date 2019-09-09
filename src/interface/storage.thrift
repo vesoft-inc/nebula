@@ -98,6 +98,11 @@ struct QueryStatsResponse {
     3: optional binary data,
 }
 
+struct EdgeKeyResponse {
+    1: required ResponseCommon result,
+    2: optional list<EdgeKey> edge_keys,      // out-edges and in-edges
+}
+
 struct Tag {
     1: common.TagID tag_id,
     2: binary props,
@@ -163,6 +168,24 @@ struct AddEdgesRequest {
     3: bool overwritable,
 }
 
+struct EdgeKeyRequest {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID part_id,
+    3: common.VertexID vid,
+}
+
+struct DeleteVertexRequest {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID  part_id,
+    3: common.VertexID     vid;
+}
+
+struct DeleteEdgesRequest {
+    1: common.GraphSpaceID space_id,
+    // partId => edgeKeys
+    2: map<common.PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") parts,
+}
+
 struct AdminExecResp {
     1: ErrorCode code,
     // Only valid when code is E_LEADER_CHANAGED.
@@ -199,8 +222,16 @@ struct AddLearnerReq {
 
 struct CatchUpDataReq {
     1: common.GraphSpaceID space_id,
-    2: common.GraphSpaceID part_id,
+    2: common.PartitionID  part_id,
     3: common.HostAddr     target,
+}
+
+struct GetLeaderReq {
+}
+
+struct GetLeaderResp {
+    1: ErrorCode                 code,
+    2: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts;
 }
 
 
@@ -218,6 +249,10 @@ service StorageService {
     ExecResponse addVertices(1: AddVerticesRequest req);
     ExecResponse addEdges(1: AddEdgesRequest req);
 
+    EdgeKeyResponse getEdgeKeys(1: EdgeKeyRequest req);
+    ExecResponse deleteEdges(1: DeleteEdgesRequest req);
+    ExecResponse deleteVertex(1: DeleteVertexRequest req);
+
     // Interfaces for admin operations
     AdminExecResp transLeader(1: TransLeaderReq req);
     AdminExecResp addPart(1: AddPartReq req);
@@ -225,5 +260,6 @@ service StorageService {
     AdminExecResp waitingForCatchUpData(1: CatchUpDataReq req);
     AdminExecResp removePart(1: RemovePartReq req);
     AdminExecResp memberChange(1: MemberChangeReq req);
+    GetLeaderResp getLeaderPart(1: GetLeaderReq req);
 }
 

@@ -182,13 +182,13 @@ void readMix(int32_t iters) {
         folly::doNotOptimizeAway(iVal);
         reader->getVid(23, iVal);
         folly::doNotOptimizeAway(iVal);
-        reader->getTimestamp(24, iVal);
+        reader->getInt(24, iVal);
         folly::doNotOptimizeAway(iVal);
-        reader->getTimestamp(25, iVal);
+        reader->getInt(25, iVal);
         folly::doNotOptimizeAway(iVal);
-        reader->getTimestamp(26, iVal);
+        reader->getInt(26, iVal);
         folly::doNotOptimizeAway(iVal);
-        reader->getTimestamp(27, iVal);
+        reader->getInt(27, iVal);
         folly::doNotOptimizeAway(iVal);
         reader->getInt(28, iVal);
         folly::doNotOptimizeAway(iVal);
@@ -274,10 +274,10 @@ BENCHMARK(read_vid_rand, iters) {
 BENCHMARK_DRAW_LINE();
 
 BENCHMARK(read_timestamp_seq, iters) {
-    READ_VALUE(int64_t, schemaAllTimestamps, dataAllTimestamps, Timestamp);
+    READ_VALUE(int64_t, schemaAllTimestamps, dataAllTimestamps, Int);
 }
 BENCHMARK(read_timestamp_rand, iters) {
-    READ_VALUE_RANDOMLY(int64_t, schemaAllTimestamps, dataAllTimestamps, Timestamp);
+    READ_VALUE_RANDOMLY(int64_t, schemaAllTimestamps, dataAllTimestamps, Int);
 }
 
 BENCHMARK_DRAW_LINE();

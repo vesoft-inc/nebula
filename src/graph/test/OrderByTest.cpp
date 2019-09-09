@@ -91,6 +91,12 @@ TEST_F(OrderByTest, SingleFactor) {
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}, {"start"}, {"team"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
             {player.name(), 2003, "Hawks"},
             {player.name(), 2008, "Hornets"},
@@ -107,6 +113,12 @@ TEST_F(OrderByTest, SingleFactor) {
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}, {"start"}, {"team"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
             {player.name(), 2008, "Hornets"},
             {player.name(), 2003, "Hawks"},
@@ -123,6 +135,12 @@ TEST_F(OrderByTest, SingleFactor) {
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}, {"start"}, {"team"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
             {player.name(), 2003, "Hawks"},
             {player.name(), 2008, "Hornets"},
@@ -139,6 +157,12 @@ TEST_F(OrderByTest, SingleFactor) {
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}, {"start"}, {"team"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
             {player.name(), 2005, "Suns"},
             {player.name(), 2012, "Spurs"},
@@ -162,6 +186,12 @@ TEST_F(OrderByTest, MultiFactors) {
         auto query = folly::stringPrintf(fmt.c_str(), boris.vid(), aldridge.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"team"}, {"player"}, {"age"}, {"start"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, std::string, int64_t, int64_t>> expected = {
             {"Jazz", boris.name(), 36, 2016},
             {"Spurs", aldridge.name(), 33, 2015},
@@ -192,6 +222,12 @@ TEST_F(OrderByTest, MultiFactors) {
         auto query = folly::stringPrintf(fmt.c_str(), boris.vid(), aldridge.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"team"}, {"player"}, {"age"}, {"start"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, std::string, int64_t, int64_t>> expected = {
             {"Jazz", boris.name(), 36, 2016},
             {"Spurs", boris.name(), 36, 2012},
@@ -207,6 +243,12 @@ TEST_F(OrderByTest, MultiFactors) {
         auto query = folly::stringPrintf(fmt.c_str(), boris.vid(), aldridge.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"team"}, {"player"}, {"age"}, {"start"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, std::string, int64_t, int64_t>> expected = {
             {"Spurs", aldridge.name(), 33, 2015},
             {"Spurs", boris.name(), 36, 2012},
@@ -222,6 +264,12 @@ TEST_F(OrderByTest, MultiFactors) {
         auto query = folly::stringPrintf(fmt.c_str(), boris.vid(), aldridge.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"team"}, {"player"}, {"age"}, {"start"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, std::string, int64_t, int64_t>> expected = {
             {"Spurs", boris.name(), 36, 2012},
             {"Spurs", aldridge.name(), 33, 2015},
@@ -238,6 +286,12 @@ TEST_F(OrderByTest, MultiFactors) {
         auto query = folly::stringPrintf(fmt.c_str(), boris.vid(), aldridge.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"team"}, {"player"}, {"age"}, {"start"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, std::string, int64_t, int64_t>> expected = {
             {"Spurs", boris.name(), 36, 2012},
             {"Spurs", aldridge.name(), 33, 2015},
@@ -255,6 +309,12 @@ TEST_F(OrderByTest, InterimResult) {
         auto query = folly::stringPrintf(fmt, boris.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"id"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t>> expected = {
             teams_["Spurs"].vid(),
             teams_["Spurs"].vid(),

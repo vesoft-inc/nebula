@@ -7,6 +7,7 @@
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/MetaServiceUtils.h"
 #include "meta/processors/Common.h"
+#include "meta/ActiveHostsMan.h"
 
 DEFINE_int32(max_retry_times_admin_op, 3, "max retry times for admin request!");
 
@@ -192,18 +193,22 @@ folly::Future<Status> AdminClient::getResponse(
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
     auto* evb = ioThreadPool_->getEventBase();
-    auto client = clientsMan_->client(host, evb);
-    remoteFunc(client, std::move(req))
-        .then(evb, [p = std::move(pro),
-                    respGen] (folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
-        // exception occurred during RPC
-        if (t.hasException()) {
-            p.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
-                                                         t.exception().what().c_str())));
-            return;
-        }
-        auto&& resp = std::move(t).value();
-        p.setValue(respGen(std::move(resp)));
+    folly::via(evb, [evb, pro = std::move(pro), host, req = std::move(req),
+                     remoteFunc = std::move(remoteFunc), respGen = std::move(respGen),
+                     this] () mutable {
+        auto client = clientsMan_->client(host, evb);
+        remoteFunc(client, std::move(req))
+            .then(evb, [p = std::move(pro), respGen = std::move(respGen)](
+                           folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
+                // exception occurred during RPC
+                if (t.hasException()) {
+                    p.setValue(Status::Error(folly::stringPrintf("RPC failure in AdminClient: %s",
+                                                                 t.exception().what().c_str())));
+                    return;
+                }
+                auto&& resp = std::move(t).value();
+                p.setValue(respGen(std::move(resp)));
+            });
     });
     return f;
 }
@@ -220,87 +225,87 @@ void AdminClient::getResponse(
     auto* evb = ioThreadPool_->getEventBase();
     CHECK_GE(index, 0);
     CHECK_LT(index, hosts.size());
-    auto client = clientsMan_->client(hosts[index], evb);
-    remoteFunc(client, req)
-        .then(evb, [p = std::move(pro),
-                    hosts = std::move(hosts),
-                    index,
-                    req = std::move(req),
-                    remoteFunc = std::move(remoteFunc),
-                    retry,
-                    retryLimit,
-                    this] (folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
-        // exception occurred during RPC
-        if (t.hasException()) {
-            if (retry < retryLimit) {
-                LOG(INFO) << "Rpc failure to " << hosts[index]
-                          << ", retry " << retry
-                          << ", limit " << retryLimit;
-                getResponse(std::move(hosts),
-                            index + 1,
-                            std::move(req),
-                            remoteFunc,
-                            retry + 1,
-                            std::move(p),
-                            retryLimit);
-                return;
-            }
-            p.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
-                                                         t.exception().what().c_str())));
-            return;
-        }
-        auto resp = std::move(t).value();
-        switch (resp.get_code()) {
-            case storage::cpp2::ErrorCode::SUCCEEDED: {
-                p.setValue(Status::OK());
-                return;
-            }
-            case storage::cpp2::ErrorCode::E_LEADER_CHANGED: {
+    folly::via(evb, [evb, hosts = std::move(hosts), index, req = std::move(req),
+                     remoteFunc = std::move(remoteFunc), retry, pro = std::move(pro),
+                     retryLimit, this] () mutable {
+        auto client = clientsMan_->client(hosts[index], evb);
+        remoteFunc(client, req)
+            .then(evb, [p = std::move(pro), hosts = std::move(hosts), index, req = std::move(req),
+                        remoteFunc = std::move(remoteFunc), retry, retryLimit,
+                        this] (folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
+            // exception occurred during RPC
+            if (t.hasException()) {
                 if (retry < retryLimit) {
-                    HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
-                    int32_t leaderIndex = 0;
-                    for (auto& h : hosts) {
-                        if (h == leader) {
-                            break;
-                        }
-                        leaderIndex++;
-                    }
-                    LOG(INFO) << "Return leder change from " << hosts[index]
-                              << ", new leader is " << leader
-                              << ", retry " << retry
-                              << ", limit " << retryLimit;
-                    getResponse(std::move(hosts),
-                                leaderIndex,
-                                std::move(req),
-                                std::move(remoteFunc),
-                                retry + 1,
-                                std::move(p),
-                                retryLimit);
-                    return;
-                }
-                p.setValue(Status::Error("Leader changed!"));
-                return;
-            }
-            default: {
-                if (retry < retryLimit) {
-                    LOG(INFO) << "Unknown code " << static_cast<int32_t>(resp.get_code())
-                              << " from " << hosts[index]
+                    LOG(INFO) << "Rpc failure to " << hosts[index]
                               << ", retry " << retry
                               << ", limit " << retryLimit;
                     getResponse(std::move(hosts),
                                 index + 1,
                                 std::move(req),
-                                std::move(remoteFunc),
+                                remoteFunc,
                                 retry + 1,
                                 std::move(p),
                                 retryLimit);
                     return;
                 }
-                p.setValue(Status::Error("Unknown code %d", static_cast<int32_t>(resp.get_code())));
+                p.setValue(Status::Error(folly::stringPrintf("RPC failure in AdminClient: %s",
+                                                             t.exception().what().c_str())));
                 return;
             }
-        }
-    });
+            auto resp = std::move(t).value();
+            switch (resp.get_code()) {
+                case storage::cpp2::ErrorCode::SUCCEEDED: {
+                    p.setValue(Status::OK());
+                    return;
+                }
+                case storage::cpp2::ErrorCode::E_LEADER_CHANGED: {
+                    if (retry < retryLimit) {
+                        HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
+                        int32_t leaderIndex = 0;
+                        for (auto& h : hosts) {
+                            if (h == leader) {
+                                break;
+                            }
+                            leaderIndex++;
+                        }
+                        LOG(INFO) << "Return leder change from " << hosts[index]
+                                  << ", new leader is " << leader
+                                  << ", retry " << retry
+                                  << ", limit " << retryLimit;
+                        getResponse(std::move(hosts),
+                                    leaderIndex,
+                                    std::move(req),
+                                    std::move(remoteFunc),
+                                    retry + 1,
+                                    std::move(p),
+                                    retryLimit);
+                        return;
+                    }
+                    p.setValue(Status::Error("Leader changed!"));
+                    return;
+                }
+                default: {
+                    if (retry < retryLimit) {
+                        LOG(INFO) << "Unknown code " << static_cast<int32_t>(resp.get_code())
+                                  << " from " << hosts[index]
+                                  << ", retry " << retry
+                                  << ", limit " << retryLimit;
+                        getResponse(std::move(hosts),
+                                    index + 1,
+                                    std::move(req),
+                                    std::move(remoteFunc),
+                                    retry + 1,
+                                    std::move(p),
+                                    retryLimit);
+                        return;
+                    }
+                    p.setValue(Status::Error("Unknown code %d",
+                                             static_cast<int32_t>(resp.get_code())));
+                    return;
+                }
+            }
+        });  // then
+    });  // via
 }
 
 nebula::cpp2::HostAddr AdminClient::to(const HostAddr& addr) {
@@ -332,6 +337,53 @@ StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, Part
             break;
     }
     return Status::Error("Get Failed");
+}
+
+folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
+    if (injector_) {
+        return injector_->getLeaderDist(result);
+    }
+    folly::Promise<Status> promise;
+    auto future = promise.getFuture();
+    auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
+
+    auto getLeader = [result, this] (const HostAddr& host) {
+        folly::Promise<Status> pro;
+        auto f = pro.getFuture();
+        auto* evb = ioThreadPool_->getEventBase();
+        folly::via(evb, [pro = std::move(pro), host, evb, result, this] () mutable {
+            storage::cpp2::GetLeaderReq req;
+            auto client = clientsMan_->client(host, evb);
+            client->future_getLeaderPart(std::move(req))
+                .then(evb, [p = std::move(pro), host,
+                            result] (folly::Try<storage::cpp2::GetLeaderResp>&& t) mutable {
+                if (t.hasException()) {
+                    LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
+                                                      t.exception().what().c_str());
+                    p.setValue(Status::Error("RPC failure in AdminClient"));
+                    return;
+                }
+                auto&& resp = std::move(t).value();
+                (*result)[host] = std::move(resp.get_leader_parts());
+                p.setValue(Status::OK());
+            });
+        });
+        return f;
+    };
+
+    std::vector<folly::SemiFuture<Status>> hostFutures;
+    for (const auto& h : allHosts) {
+        auto fut = getLeader(h);
+        hostFutures.emplace_back(std::move(fut));
+    }
+
+    folly::collectAll(hostFutures)
+        .then([p = std::move(promise)] (std::vector<folly::Try<Status>>&& tries) mutable {
+        UNUSED(tries);
+        p.setValue(Status::OK());
+    });
+
+    return future;
 }
 
 }  // namespace meta
