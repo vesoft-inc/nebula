@@ -163,6 +163,7 @@ TEST_F(ThreeRaftTest, Persistance) {
             waitUntilLeaderElected(copies_, leader_);
         }
     }
+    sleep(FLAGS_raft_heartbeat_interval_secs);
     checkConsensus(copies_, 0, 9, msgs);
     LOG(INFO) << "<===== Done persistance test";
 }

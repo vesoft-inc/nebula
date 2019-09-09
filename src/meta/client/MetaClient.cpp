@@ -557,7 +557,7 @@ folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts() {
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_listHosts(request);
-                }, [this] (cpp2::ListHostsResp&& resp) -> decltype(auto) {
+                }, [] (cpp2::ListHostsResp&& resp) -> decltype(auto) {
                     return resp.hosts;
                 }, std::move(promise));
     return future;
@@ -1168,7 +1168,7 @@ MetaClient::getConfig(const cpp2::ConfigModule& module, const std::string& name)
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_getConfig(request);
-                }, [this] (cpp2::GetConfigResp&& resp) -> decltype(auto) {
+                }, [] (cpp2::GetConfigResp&& resp) -> decltype(auto) {
                     return std::move(resp).get_items();
                 }, std::move(promise));
     return future;
@@ -1193,7 +1193,7 @@ MetaClient::setConfig(const cpp2::ConfigModule& module, const std::string& name,
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_setConfig(request);
-                }, [this] (cpp2::ExecResp&& resp) -> decltype(auto) {
+                }, [] (cpp2::ExecResp&& resp) -> decltype(auto) {
                     return resp.code == cpp2::ErrorCode::SUCCEEDED;
                 }, std::move(promise), true);
     return future;
@@ -1210,7 +1210,7 @@ MetaClient::listConfigs(const cpp2::ConfigModule& module) {
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_listConfigs(request);
-                }, [this] (cpp2::ListConfigsResp&& resp) -> decltype(auto) {
+                }, [] (cpp2::ListConfigsResp&& resp) -> decltype(auto) {
                     return std::move(resp).get_items();
                 }, std::move(promise));
     return future;

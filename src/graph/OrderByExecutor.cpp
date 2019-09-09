@@ -148,6 +148,9 @@ std::unique_ptr<InterimResult> OrderByExecutor::setupInterimResult() {
         auto columns = row.get_columns();
         for (auto &column : columns) {
             switch (column.getType()) {
+                case Type::id:
+                    writer << column.get_id();
+                    break;
                 case Type::integer:
                     writer << column.get_integer();
                     break;
@@ -159,6 +162,9 @@ std::unique_ptr<InterimResult> OrderByExecutor::setupInterimResult() {
                     break;
                 case Type::str:
                     writer << column.get_str();
+                    break;
+                case Type::timestamp:
+                    writer << column.get_timestamp();
                     break;
                 default:
                     LOG(FATAL) << "Not Support: " << column.getType();
