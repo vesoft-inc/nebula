@@ -85,7 +85,7 @@ void checkResponse(cpp2::EdgePropResponse& resp) {
             // _src
             // We can't ensure the order, so just check the srcId range.
             int64_t v;
-            EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(0, v));
+            EXPECT_EQ(ResultType::SUCCEEDED, it->getVid(0, v));
             CHECK_GE(30, v);
             CHECK_LE(0, v);
         }
@@ -98,7 +98,7 @@ void checkResponse(cpp2::EdgePropResponse& resp) {
         {
             // _dst
             int64_t v;
-            EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(2, v));
+            EXPECT_EQ(ResultType::SUCCEEDED, it->getVid(2, v));
             CHECK_EQ(10001 + rowNum % 7, v);
         }
         // col_0, col_2 ... col_8

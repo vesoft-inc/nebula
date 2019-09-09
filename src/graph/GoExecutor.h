@@ -147,7 +147,8 @@ private:
      * To iterate on the final data collection, and evaluate the filter and yield columns.
      * For each row that matches the filter, `cb' would be invoked.
      */
-    using Callback = std::function<void(std::vector<VariantType>)>;
+    using Callback = std::function<void(std::vector<VariantType>,
+                                   std::vector<nebula::cpp2::SupportedType>)>;
     bool processFinalResult(RpcResponse &rpcResp, Callback cb) const;
 
     /**
@@ -157,7 +158,11 @@ private:
     class VertexHolder final {
     public:
         OptVariantType get(VertexID id, int64_t index) const;
+
         void add(const storage::cpp2::QueryResponse &resp);
+
+        nebula::cpp2::SupportedType getType(int64_t index);
+
         const auto* schema() const {
             return schema_.get();
         }
@@ -192,7 +197,9 @@ private:
          std::unordered_map<VertexID, VertexID>     mapping_;
     };
 
-    VariantType getPropFromInterim(VertexID id, const std::string &prop) const;
+    OptVariantType getPropFromInterim(VertexID id, const std::string &prop) const;
+
+    nebula::cpp2::SupportedType getPropTypeFromInterim(const std::string &prop) const;
 
     enum FromType {
         kInstantExpr,
