@@ -56,6 +56,7 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus() {
 
     // Get all spaces
     std::vector<GraphSpaceID> spaces;
+    std::unordered_map<GraphSpaceID, std::string> spaceIdName;
     const auto& spacePrefix = MetaServiceUtils::spacePrefix();
     kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, spacePrefix, &iter);
     if (kvRet != kvstore::ResultCode::SUCCEEDED) {
@@ -63,13 +64,19 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus() {
     }
     while (iter->valid()) {
         auto spaceId = MetaServiceUtils::spaceId(iter->key());
-        spaces.push_back(spaceId);
+        spaces.emplace_back(spaceId);
+        spaceIdName.emplace(spaceId, MetaServiceUtils::spaceName(iter->val()));
         iter->next();
     }
 
     std::unordered_map<HostAddr,
-                       std::unordered_map<GraphSpaceID, std::vector<PartitionID>>> allParts;
+                       std::unordered_map<std::string, std::vector<PartitionID>>> allParts;
     for (const auto& spaceId : spaces) {
+        auto it = spaceIdName.find(spaceId);
+        if (it == spaceIdName.end()) {
+            continue;
+        }
+        auto spaceName = it->second;
         std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
         const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);
         kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
@@ -90,7 +97,7 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus() {
         }
 
         for (const auto& hostEntry : hostParts) {
-            allParts[hostEntry.first][spaceId] = std::move(hostEntry.second);
+            allParts[hostEntry.first][spaceName] = std::move(hostEntry.second);
         }
     }
 
@@ -119,7 +126,17 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus() {
             return item.get_hostAddr() == hostAddr;
         });
         if (it != hostItems.end()) {
-            it->set_leader_parts(std::move(hostEntry.second));
+            std::unordered_map<std::string, std::vector<PartitionID>> leaderParts;
+            for (auto& leaderEntry : hostEntry.second) {
+                auto spaceId = leaderEntry.first;
+                auto spaceIter = spaceIdName.find(spaceId);
+                if (spaceIter == spaceIdName.end()) {
+                    continue;
+                }
+                auto spaceName = spaceIter->second;
+                leaderParts[spaceName] = std::move(leaderEntry.second);
+            }
+            it->set_leader_parts(std::move(leaderParts));
         }
     }
 

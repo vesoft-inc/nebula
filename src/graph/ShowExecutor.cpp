@@ -109,7 +109,7 @@ void ShowExecutor::showHosts() {
             std::string leaders;
             for (auto& spaceEntry : item.get_leader_parts()) {
                 leaderCount += spaceEntry.second.size();
-                leaders += "space " + folly::to<std::string>(spaceEntry.first) + ": " +
+                leaders += spaceEntry.first + ": " +
                            folly::to<std::string>(spaceEntry.second.size()) + ", ";
             }
             if (!leaders.empty()) {
@@ -121,8 +121,8 @@ void ShowExecutor::showHosts() {
 
             std::string parts;
             for (auto& spaceEntry : item.get_all_parts()) {
-                parts += "space " + folly::to<std::string>(spaceEntry.first) + ": " +
-                           folly::to<std::string>(spaceEntry.second.size()) + ", ";
+                parts += spaceEntry.first + ": " +
+                         folly::to<std::string>(spaceEntry.second.size()) + ", ";
             }
             if (!parts.empty()) {
                 parts.resize(parts.size() - 2);
