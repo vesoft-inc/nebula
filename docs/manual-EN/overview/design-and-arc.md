@@ -34,7 +34,7 @@ Designed based on the above features, **Nebula Graph** is an open source, distri
 
 ![meetup1-13](https://user-images.githubusercontent.com/42762957/64231577-9c527c80-cf22-11e9-9044-9a739a22c42a.jpg)
 
-The dash line in the above picture divided computing and storage as two independent parts, the upper is the computing service, each machine or virtual machine is stateless and never talks to other so it's easy to scale in or out; the lower is the storage service, it's stateful since data is stored there. Storage service can turn graph semantics into key-values and pass them to the KV-store below it. Between the two is the Raft protocol.
+The dashed line in the above picture divided computing and storage as two independent parts, the upper is the computing service, each machine or virtual machine is stateless and never talks to other so it's easy to scale in or out; the lower is the storage service, it's stateful since data is stored there. Storage service can turn graph semantics into key-values and pass them to the KV-store below it. Between the two is the Raft protocol.
 
 The right side is the meta service, similar to the NameNode in HDFS, it stores all metadata like schema and controls scaling. 
 
