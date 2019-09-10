@@ -1,0 +1,43 @@
+# Example Graph
+
+We will use the example graph below to introduce the basic concepts of the property graph:
+
+![image](https://user-images.githubusercontent.com/42762957/64587509-38bcc900-d3d2-11e9-8646-306b468f3e7c.png)
+
+## Vertices
+
+Vertices are typically used to represent entities in the real world. In the preceding example, the graph contains two vertices.
+
+## Tags
+
+In **Nebula Graph**, vertex properties are clustered by **tags**. In the example above, the vertices have tags
+**player** and **team**.
+
+## Edge
+
+Edges are used to connect vertices. Each edge usually represents a relationship (i.e ...) or a behavior (i.e. ...) between two vertices. In
+the preceding example, edges are _**serve**_ and _**like**_.
+
+## Edge Type
+
+Each edge is an instance of an edge type. Our example uses _**serve**_ and _**like**_ as edge types. Take edge _**serve**_ for example, **player** vertex is the source vertex and **team** is the target vertex. We see that **player** vertex has an outgoing edge while the **team** vertex has an incoming edge.
+
+
+## Properties
+
+Properties are name-value pairs that are used to add qualities to vertices and edges. In our example graph, we have used the properties id, name and age on **player** vertex, id and name on **team** vertex, and likeness on _**like**_ edge.
+
+## Schema
+
+In **Nebula Graph**, schema refers to the definition of properties (name, type, etc.). Like Mysql, **Nebula Graph** is a strong typed database. The name and data type of the properties are determined before the data is written.
+
+## Name rules and recommendations
+
+Vertices tags, edge types and properties are case sensitive, meaning for example that the property `name` means something different than the property `Name`. It is recommended to follow the naming conventions described in the following table:
+
+| Graph entity  | Recommended style                                          | Example     |
+|:-:            | :-:                                                        | :-:         |
+|Key words      | Upper case                                                 | SHOW SPACES |
+|Vertex tags    | Upper camel case, beginning with an upper-case character   | ManageTeam  |
+|Edges          | Upper snake case, beginning with an upper-case character   | Play_for    |
+|Property names | Lower camel case, beginning with a lower-case character    | inService   |
