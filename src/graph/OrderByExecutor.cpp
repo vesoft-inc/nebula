@@ -83,7 +83,12 @@ void OrderByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
     }
     DCHECK(sentence_ != nullptr);
     inputs_ = std::move(result);
-    rows_ = inputs_->getRows();
+    colNames_ = inputs_->getColNames();
+    auto ret = inputs_->getRows();
+    if (!ret.ok()) {
+        return;
+    }
+    rows_ = std::move(ret).value();
 }
 
 void OrderByExecutor::execute() {
@@ -129,7 +134,7 @@ void OrderByExecutor::execute() {
 }
 
 Status OrderByExecutor::beforeExecute() {
-    if (inputs_ == nullptr) {
+    if (inputs_ == nullptr || !inputs_->hasData()) {
         return Status::OK();
     }
 
