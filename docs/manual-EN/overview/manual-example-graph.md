@@ -6,7 +6,7 @@ We will use the example graph below to introduce the basic concepts of the prope
 
 ## Vertices
 
-Vertices are typically used to represent entities in the real world. In the preceding example, the graph contains two vertices.
+Vertices are typically used to represent entities in the real world. In the preceding example, the graph contains eleven vertices.
 
 ## Tags
 
@@ -15,17 +15,17 @@ In **Nebula Graph**, vertex properties are clustered by **tags**. In the example
 
 ## Edge
 
-Edges are used to connect vertices. Each edge usually represents a relationship (i.e ...) or a behavior (i.e. ...) between two vertices. In
+Edges are used to connect vertices. Each edge usually represents a relationship or a behavior between two vertices. In
 the preceding example, edges are _**serve**_ and _**like**_.
 
 ## Edge Type
 
-Each edge is an instance of an edge type. Our example uses _**serve**_ and _**like**_ as edge types. Take edge _**serve**_ for example, **player** vertex is the source vertex and **team** is the target vertex. We see that **player** vertex has an outgoing edge while the **team** vertex has an incoming edge.
+Each edge is an instance of an edge type. Our example uses _**serve**_ and _**like**_ as edge types. Take edge _**serve**_ for example, **player** is the source vertex and **team** is the target vertex. We see that **player** has an outgoing edge while the **team** has an incoming edge.
 
 
 ## Properties
 
-Properties are name-value pairs that are used to add qualities to vertices and edges. In our example graph, we have used the properties id, name and age on **player** vertex, id and name on **team** vertex, and likeness on _**like**_ edge.
+Properties are name-value pairs that are used to add qualities to vertices and edges. In our example graph, we have used the properties id, name and age on **player**, id and name on **team**, and likeness on _**like**_ edge.
 
 ## Schema
 
