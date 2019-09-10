@@ -21,4 +21,4 @@ nebula_add_library(
     UserSentences.cpp
 )
 
-add_subdirectory(test)
+nebula_add_subdirectory(test)
