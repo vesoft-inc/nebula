@@ -36,7 +36,7 @@ TEST_F(GoTest, OneStepOutBound) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"id"}
+            {"serve._dst"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -101,7 +101,7 @@ TEST_F(GoTest, OneStepOutBound) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"id"}
+            {"serve._dst"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -127,7 +127,7 @@ TEST_F(GoTest, OneStepOutBound) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"id"}
+            {"serve._dst"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -156,7 +156,7 @@ TEST_F(GoTest, AssignmentSimple) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"id"}
+            {"like._dst"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -182,7 +182,7 @@ TEST_F(GoTest, AssignmentPipe) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"id"}
+            {"like._dst"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 

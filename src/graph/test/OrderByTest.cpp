@@ -313,7 +313,7 @@ TEST_F(OrderByTest, InterimResult) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"id"}
+            {"serve._dst"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
