@@ -432,6 +432,7 @@ TEST_F(YieldTest, yieldVar) {
 TEST_F(YieldTest, error) {
     {
         cpp2::ExecutionResponse resp;
+        // Reference input in a single yield sentence is meaningless.
         auto query = "yield $-";
         auto code = client_->execute(query, resp);
         UNUSED(code);
@@ -441,6 +442,7 @@ TEST_F(YieldTest, error) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
+        // Not support reference input and variable
         auto fmt = var + "YIELD $var.team WHERE $-.start > 2005";
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
@@ -449,6 +451,7 @@ TEST_F(YieldTest, error) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
+        // Not support reference two diffrent variable
         auto fmt = var + "YIELD $var.team WHERE $var1.start > 2005";
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
@@ -457,6 +460,7 @@ TEST_F(YieldTest, error) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
+        // Reference properties in single yield sentence is meaningless.
         auto fmt = var + "YIELD $$.a.team";
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);

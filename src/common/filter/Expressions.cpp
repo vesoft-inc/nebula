@@ -112,7 +112,7 @@ std::string AliasPropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
     buf += *ref_;
-    if (*ref_ != "" && *ref_ != "$") {
+    if (*ref_ != "" && *ref_ != VAR_REF) {
         buf += ".";
     }
     buf += *alias_;
