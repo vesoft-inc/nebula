@@ -1,0 +1,23 @@
+FROM vesoft/nebula-dev:centos as builder
+
+LABEL maintainer "yee.yi@vesoft.com"
+
+COPY . /home/nebula/BUILD
+
+RUN cd /home/nebula/BUILD/package \
+  && . /etc/profile.d/devtoolset-8.sh \
+  && ./make_srpm.sh -v $(git rev-parse --short HEAD) -p /home/nebula storaged
+
+FROM centos:7
+
+COPY --from=builder /home/nebula/RPMS/x86_64/nebula-storaged-*.el7.x86_64.rpm /usr/local/nebula/nebula-storaged.rpm
+
+WORKDIR /usr/local/nebula
+
+RUN rpm -ivh nebula-storaged.rpm \
+  && mkdir -p ./{logs,data,pids} \
+  && rm -rf nebula-storaged.rpm
+
+EXPOSE 44500 44501
+
+ENTRYPOINT ["./bin/nebula-storaged", "--flagfile=./etc/nebula-storaged.conf", "--daemonize=false"]
