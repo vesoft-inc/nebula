@@ -14,13 +14,13 @@ Nebula 在 C++14 上开发，因此它需要一个支持 C++14 的编译器。
 - 安装工具
 
     ```
-    bash> sudo yum -y install git git-lfs
+    bash> sudo yum -y install git
     ```
 
 - 安装依赖模块
 
     ```
-    bash> sudo yum -y install autoconf automake libtool cmake bison unzip boost gperf krb5 openssl libunwind ncurses readline maven java-1.8.0-openjdk
+    bash> sudo yum -y install gcc gcc-c++ libstdc++-static cmake make autoconf automake flex gperf libtool bison unzip boost boost-devel boost-static krb5-devel krb5-libs openssl openssl-devel libunwind libunwind-devel ncurses ncurses-devel readline readline-devel python java-1.8.0-openjdk java-1.8.0-openjdk-devel
     ```
 
 #### 步骤 2: 构建和安装第三方库
@@ -53,14 +53,14 @@ bash> sudo make install
 - 安装工具
 
     ```
-    bash> sudo yum -y install git git-lfs
+    bash> sudo yum -y install git
     ```
 - 安装依赖模块
 
     通过 yum install
 
     ```
-    bash> sudo yum install -y libtool autoconf autoconf-archive automake perl-WWW-Curl libstdc++-static maven java-1.8.0-openjdk
+    bash> sudo yum install -y libtool autoconf autoconf-archive automake perl-WWW-Curl libstdc++-static ncurses ncurses-devel readline readline-devel maven java-1.8.0-openjdk
     ```
 
     和通过 vesoft 提供的包
@@ -131,14 +131,14 @@ bash> sudo make install
 - 安装工具
 
     ```
-    bash> sudo yum -y install git git-lfs
+    bash> sudo yum -y install git
     ```
 - 安装依赖模块
 
     通过 yum install
 
     ```
-    bash> sudo yum -y install libtool autoconf autoconf-archive automake perl-WWW-Curl perl-YAML perl-CGI glibc-devel libstdc++-static maven java-1.8.0-openjdk
+    bash> sudo yum -y install libtool autoconf autoconf-archive automake perl-WWW-Curl perl-YAML perl-CGI glibc-devel libstdc++-static ncurses ncurses-devel readline readline-devel maven java-1.8.0-openjdk
     ```
 
     和通过 vesoft 提供的包
@@ -159,8 +159,8 @@ bash> sudo make install
     ```
     export PATH=/opt/nebula/autoconf/bin:/opt/nebula/automake/bin:/opt/nebula/libtool/bin:/opt/nebula/git/bin:/opt/nebula/gettext/bin:/opt/nebula/flex/bin:/opt/nebula/bison/bin:/opt/nebula/binutils/bin:$PATH
     export ACLOCAL_PATH=/opt/nebula/automake/share/aclocal-1.15:/opt/nebula/libtool/share/aclocal:/opt/nebula/autoconf-archive/share/aclocal
-
-    alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BISON_ROOT=/opt/nebula/bison -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind -DNEBULA_READLINE_ROOT=/opt/nebula/readline -DNEBULA_NCURSES_ROOT=/opt/nebula/ncurses'
+    
+    alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BISON_ROOT=/opt/nebula/bison -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind'
     alias ctest='/opt/nebula/cmake/bin/ctest'
     ```
     3) 应用 **~/.bashrc** 修改
@@ -199,14 +199,14 @@ bash> sudo make install
 - 安装工具
 
     ```
-    bash> sudo yum -y install git git-lfs
+    bash> sudo apt-get -y install git
     ```
 - 安装依赖模块
 
     通过 apt-get install
 
     ```
-    bash> sudo apt-get -y install gcc-multilib libtool autoconf autoconf-archive automake python maven java-1.8.0-openjdk
+    bash> sudo apt-get -y install gcc-multilib libtool autoconf autoconf-archive automake libncurses5-dev libreadline-dev python maven java-1.8.0-openjdk
     ```
 
     通过 vesoft 提供的包
@@ -237,8 +237,8 @@ bash> sudo make install
     4)  在 **~/.bashrc** 末添加如下几行
 
     ```
-    alias cmake='/home/engshare/cmake/bin/cmake -DCMAKE_C_COMPILER=/home/engshare/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/home/engshare/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/home/engshare/gperf/bin -DNEBULA_FLEX_ROOT=/home/engshare/flex -DNEBULA_BOOST_ROOT=/home/engshare/boost -DNEBULA_OPENSSL_ROOT=/home/engshare/openssl -DNEBULA_KRB5_ROOT=/home/engshare/krb5 -DNEBULA_LIBUNWIND_ROOT=/home/engshare/libunwind -DNEBULA_READLINE_ROOT=/home/engshare/readline -DNEBULA_NCURSES_ROOT=/home/engshare/ncurses'
-
+    alias cmake='/home/engshare/cmake/bin/cmake -DCMAKE_C_COMPILER=/home/engshare/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/home/engshare/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/home/engshare/gperf/bin -DNEBULA_FLEX_ROOT=/home/engshare/flex -DNEBULA_BOOST_ROOT=/home/engshare/boost -DNEBULA_OPENSSL_ROOT=/home/engshare/openssl -DNEBULA_KRB5_ROOT=/home/engshare/krb5 -DNEBULA_LIBUNWIND_ROOT=/home/engshare/libunwind'
+    
     alias ctest='/home/engshare/cmake/bin/ctest'
     ```
     5) 应用 **~/.bashrc** 修改
@@ -321,15 +321,6 @@ bash> sudo make install
     bash> ./configure
     bash> make && make install
 
-    ```
-
-- **错误信息**: 构建第三方库失败, 并且 _build.log 提示 `No such file or directory`
-
-    **解决方案**:
-
-    ```
-    bash> cd nebula-3rdparty/
-    bash> git-lfs pull
     ```
 
 - **错误信息**: `[ERROR] No compiler is provided in this environment. Perhaps you are running on a JRE rather than a JDK?`

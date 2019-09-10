@@ -662,19 +662,7 @@ TEST(Parser, DeleteVertex) {
     }
     {
         GQLParser parser;
-        std::string query = "DELETE VERTEX 123,456,789";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-    }
-    {
-        GQLParser parser;
-        std::string query = "DELETE VERTEX 12345 WHERE salary > 10000";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-    }
-    {
-        GQLParser parser;
-        std::string query = "DELETE VERTEX 123,456,789 WHERE salary > 10000";
+        std::string query = "DELETE VERTEX hash(\"zhangsan\")";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

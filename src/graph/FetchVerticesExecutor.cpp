@@ -17,10 +17,19 @@ FetchVerticesExecutor::FetchVerticesExecutor(Sentence *sentence, ExecutionContex
 }
 
 Status FetchVerticesExecutor::prepare() {
+    return Status::OK();
+}
+
+Status FetchVerticesExecutor::prepareClauses() {
     DCHECK_NOTNULL(sentence_);
     Status status = Status::OK();
 
     do {
+        status = checkIfGraphSpaceChosen();
+        if (!status.ok()) {
+            break;
+        }
+
         expCtx_ = std::make_unique<ExpressionContext>();
         spaceId_ = ectx()->rctx()->session()->space();
         yieldClause_ = sentence_->yieldClause();
@@ -43,6 +52,18 @@ Status FetchVerticesExecutor::prepare() {
         status = prepareYield();
         if (!status.ok()) {
             break;
+        }
+
+        // Save the type
+        auto iter = colTypes_.begin();
+        for (auto i = 0u; i < colNames_.size(); i++) {
+            auto type = labelSchema_->getFieldType(colNames_[i]);
+            if (type == CommonConstants::kInvalidValueType()) {
+                iter++;
+                continue;
+            }
+            *iter = type.type;
+            iter++;
         }
     } while (false);
     return status;
@@ -68,7 +89,14 @@ void FetchVerticesExecutor::prepareVids() {
 
 void FetchVerticesExecutor::execute() {
     FLOG_INFO("Executing FetchVertices: %s", sentence_->toString().c_str());
-    auto status = setupVids();
+    auto status = prepareClauses();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+
+    status = setupVids();
     if (!status.ok()) {
         onError_(std::move(status));
         return;
@@ -120,7 +148,7 @@ std::vector<storage::cpp2::PropDef> FetchVerticesExecutor::getPropNames() {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::SOURCE;
         pd.name = prop.second;
-        pd.tag_id = tagID_;
+        pd.id.set_tag_id(tagID_);
         props.emplace_back(std::move(pd));
     }
 
@@ -133,20 +161,39 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
     std::unique_ptr<RowSetWriter> rsWriter;
     auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
     for (auto &resp : all) {
-        if (!resp.__isset.vertices || !resp.__isset.vertex_schema
-                || resp.get_vertices() == nullptr || resp.get_vertex_schema() == nullptr) {
+        if (!resp.__isset.vertices) {
             continue;
         }
-        auto vschema = std::make_shared<ResultSchemaProvider>(resp.vertex_schema);
+
+        auto *schema = resp.get_vertex_schema();
+        if (schema == nullptr) {
+            continue;
+        }
+
+        std::unordered_map<TagID, std::shared_ptr<ResultSchemaProvider>> tagSchema;
+        std::transform(schema->cbegin(), schema->cend(),
+                       std::inserter(tagSchema, tagSchema.begin()), [](auto &s) {
+                           return std::make_pair(
+                               s.first, std::make_shared<ResultSchemaProvider>(s.second));
+                       });
+
         for (auto &vdata : resp.vertices) {
             std::unique_ptr<RowReader> vreader;
-            if (!vdata.__isset.vertex_data || vdata.vertex_data.empty()) {
+            if (!vdata.__isset.tag_data || vdata.tag_data.empty()) {
                 continue;
             }
-            vreader = RowReader::getRowReader(vdata.vertex_data, vschema);
+
+            auto vschema = tagSchema[vdata.tag_data[0].tag_id];
+            vreader = RowReader::getRowReader(vdata.tag_data[0].data, vschema);
             if (outputSchema == nullptr) {
                 outputSchema = std::make_shared<SchemaWriter>();
-                getOutputSchema(vschema.get(), vreader.get(), outputSchema.get());
+                auto status = getOutputSchema(vschema.get(), vreader.get(), outputSchema.get());
+                if (!status.ok()) {
+                    LOG(ERROR) << "Get getOutputSchema failed" << status;
+                    DCHECK(onError_);
+                    onError_(std::move(status));
+                    return;
+                }
                 rsWriter = std::make_unique<RowSetWriter>(outputSchema);
             }
 
@@ -178,7 +225,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                 rsWriter->addRow(std::move(encode));
             }
         }  // for `vdata'
-    }  // for `resp'
+    }      // for `resp'
 
     finishExecution(std::move(rsWriter));
 }

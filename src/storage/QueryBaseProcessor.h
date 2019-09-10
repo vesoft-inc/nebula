@@ -24,11 +24,6 @@ const std::unordered_map<std::string, PropContext::PropInKeyType> kPropsInKey_ =
     {"_rank", PropContext::PropInKeyType::RANK}
 };
 
-enum class BoundType {
-    IN_BOUND,
-    OUT_BOUND,
-};
-
 using EdgeProcessor
     = std::function<void(RowReader* reader,
                          folly::StringPiece key,
@@ -49,15 +44,19 @@ public:
 protected:
     explicit QueryBaseProcessor(kvstore::KVStore* kvstore,
                                 meta::SchemaManager* schemaMan,
-                                folly::Executor* executor = nullptr,
-                                BoundType type = BoundType::OUT_BOUND)
+                                folly::Executor* executor = nullptr)
         : BaseProcessor<RESP>(kvstore, schemaMan)
-        , type_(type)
         , executor_(executor) {}
     /**
      * Check whether current operation on the data is valid or not.
      * */
     bool validOperation(nebula::cpp2::SupportedType vType, cpp2::StatType statType);
+
+    void addDefaultProps(std::vector<PropContext>& p, EdgeType eType);
+    /**
+     * init edge context
+     **/
+    void initEdgeContext(const std::vector<EdgeType> &eTypes, bool need_default_props = false);
 
     /**
      * Check request meta is illegal or not and build contexts for tag and edge.
@@ -105,11 +104,10 @@ protected:
 
 protected:
     GraphSpaceID  spaceId_;
-    BoundType     type_;
     std::unique_ptr<ExpressionContext> expCtx_;
     std::unique_ptr<Expression> exp_;
     std::vector<TagContext> tagContexts_;
-    EdgeContext edgeContext_;
+    std::unordered_map<EdgeType, std::vector<PropContext>> edgeContexts_;
     folly::Executor* executor_ = nullptr;
 };
 
