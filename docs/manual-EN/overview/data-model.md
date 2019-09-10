@@ -10,7 +10,7 @@ Here **V** is a set of nodes aka vertices, **E** is a set of directional edges,
 **P<sub>V</sub>** represents properties on vertices, and **P<sub>E</sub>** is the properties on edges.
 
 ## Tags
-In **Nebula Graph**, vertex properties are clustered by **tags**. A tag is like an entity type, which contains multiple properties. Each vertex can have multiple tags associated. There could be dependency between tags, too.
+In **Nebula Graph**, vertex properties are clustered by **tags**. A tag is like an entity type, which contains multiple properties. Each vertex can have multiple tags associated. There could be dependencies between tags, too.
 
 For instance, we could have a tag **Person**, which contains first_name, last_name, date_of_birth, etc. We could have another tag **Developer**, which has properties favorite_lang, github_account, etc. Tag **Developer** would depend on tag **Person**, which means if a vertex has tag **Developer** associated, it must have tag **Person** associated as well.
 
