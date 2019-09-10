@@ -145,7 +145,8 @@ private:
      * To iterate on the final data collection, and evaluate the filter and yield columns.
      * For each row that matches the filter, `cb' would be invoked.
      */
-    using Callback = std::function<void(std::vector<VariantType>)>;
+    using Callback = std::function<void(std::vector<VariantType>,
+                                   std::vector<nebula::cpp2::SupportedType>)>;
     bool processFinalResult(RpcResponse &rpcResp, Callback cb) const;
 
     /**
@@ -157,6 +158,8 @@ private:
         VariantType getDefaultProp(TagID tid, const std::string &prop) const;
         OptVariantType get(VertexID id, TagID tid, const std::string &prop) const;
         void add(const storage::cpp2::QueryResponse &resp);
+        nebula::cpp2::SupportedType getDefaultPropType(TagID tid, const std::string &prop) const;
+        nebula::cpp2::SupportedType getType(VertexID id, TagID tid, const std::string &prop);
 
     private:
         using VData = std::tuple<std::shared_ptr<ResultSchemaProvider>, std::string>;
@@ -184,7 +187,9 @@ private:
          std::unordered_map<VertexID, VertexID>     mapping_;
     };
 
-    VariantType getPropFromInterim(VertexID id, const std::string &prop) const;
+    OptVariantType getPropFromInterim(VertexID id, const std::string &prop) const;
+
+    nebula::cpp2::SupportedType getPropTypeFromInterim(const std::string &prop) const;
 
     enum FromType {
         kInstantExpr,

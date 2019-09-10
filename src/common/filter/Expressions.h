@@ -165,9 +165,12 @@ public:
         return kind_ == kVariableProp;
     }
 
-    virtual bool isEdgeExpression() const {
-        return (kind_ == kEdgeRank) || (kind_ == kEdgeType) || (kind_ == kEdgeProp) ||
-               (kind_ == kEdgeDstId) || (kind_ == kEdgeSrcId);
+    virtual bool isAliasExpression() const {
+        return kind_ == kAliasProp;
+    }
+
+    virtual bool isTypeCastingExpression() const {
+        return kind_ == kTypeCasting;
     }
 
     /**
@@ -774,6 +777,10 @@ public:
 
     const Expression* operand() const {
         return operand_.get();
+    }
+
+    const ColumnType getType() const {
+        return type_;
     }
 
 private:

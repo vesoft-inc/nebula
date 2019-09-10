@@ -86,7 +86,7 @@ std::vector<cpp2::RowValue> InterimResult::getRows() const {
                     int64_t v;
                     auto rc = rowIter->getVid(field, v);
                     CHECK(rc == ResultType::SUCCEEDED);
-                    row.back().set_integer(v);
+                    row.back().set_id(v);
                     break;
                 }
                 case SupportedType::DOUBLE: {
@@ -107,6 +107,20 @@ std::vector<cpp2::RowValue> InterimResult::getRows() const {
                     auto rc = rowIter->getString(field, piece);
                     CHECK(rc == ResultType::SUCCEEDED);
                     row.back().set_str(piece.toString());
+                    break;
+                }
+                case SupportedType::INT: {
+                    int64_t v;
+                    auto rc = rowIter->getInt(field, v);
+                    CHECK(rc == ResultType::SUCCEEDED);
+                    row.back().set_integer(v);
+                    break;
+                }
+                case SupportedType::TIMESTAMP: {
+                    int64_t v;
+                    auto rc = rowIter->getInt(field, v);
+                    CHECK(rc == ResultType::SUCCEEDED);
+                    row.back().set_timestamp(v);
                     break;
                 }
                 default:
@@ -182,6 +196,14 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
                     row.emplace_back(piece.toString());
                     break;
                 }
+                case SupportedType::INT:
+                case SupportedType::TIMESTAMP: {
+                    int64_t v;
+                    auto rc = rowIter->getInt(i, v);
+                    CHECK(rc == ResultType::SUCCEEDED);
+                    row.emplace_back(v);
+                    break;
+                }
                 default:
                     LOG(FATAL) << "Unknown Type: " << static_cast<int32_t>(type);
             }
@@ -189,13 +211,13 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
         index->rows_.emplace_back(std::move(row));
         ++rowIter;
     }
-
+    index->schema_ = schema;
     return index;
 }
 
 
-VariantType InterimResult::InterimResultIndex::getColumnWithVID(VertexID id,
-                                                                const std::string &col) const {
+OptVariantType InterimResult::InterimResultIndex::getColumnWithVID(VertexID id,
+    const std::string &col) const {
     uint32_t rowIndex = 0;
     {
         auto iter = vidToRowIndex_.find(id);
@@ -205,19 +227,45 @@ VariantType InterimResult::InterimResultIndex::getColumnWithVID(VertexID id,
     uint32_t columnIndex = 0;
     {
         auto iter = columnToIndex_.find(col);
-        // TODO(dutor) should report error
-        DCHECK(iter != columnToIndex_.end());
+        if (iter == columnToIndex_.end()) {
+            LOG(ERROR) << "Prop `" << col << "' not found";
+            return Status::Error("Prop `%s' not found", col.c_str());
+        }
         columnIndex = iter->second;
     }
     return rows_[rowIndex][columnIndex];
 }
+
+
+nebula::cpp2::SupportedType InterimResult::InterimResultIndex::getColumnType(
+    const std::string &col) const {
+    uint32_t columnIndex = 0;
+    auto iter = columnToIndex_.find(col);
+    if (iter == columnToIndex_.end()) {
+        LOG(ERROR) << "Prop `" << col << "' not found";
+        return nebula::cpp2::SupportedType::UNKNOWN;
+    }
+    columnIndex = iter->second;
+
+
+    if (schema_ == nullptr) {
+        return nebula::cpp2::SupportedType::UNKNOWN;
+    }
+    auto type = schema_->getFieldType(columnIndex);
+    return type.type;
+}
+
 
 Status InterimResult::castTo(cpp2::ColumnValue *col,
                              const nebula::cpp2::SupportedType &type) {
     using nebula::cpp2::SupportedType;
     switch (type) {
         case SupportedType::VID:
+            return castToVid(col);
+        case SupportedType::INT:
             return castToInt(col);
+        case SupportedType::TIMESTAMP:
+            return castToTimestamp(col);
         case SupportedType::DOUBLE:
             return castToDouble(col);
         case SupportedType::BOOL:
@@ -235,6 +283,12 @@ Status InterimResult::castTo(cpp2::ColumnValue *col,
 Status InterimResult::castToInt(cpp2::ColumnValue *col) {
     switch (col->getType()) {
         case cpp2::ColumnValue::Type::integer:
+            break;
+        case cpp2::ColumnValue::Type::id:
+            col->set_integer(col->get_id());
+            break;
+        case cpp2::ColumnValue::Type::timestamp:
+            col->set_integer(col->get_timestamp());
             break;
         case cpp2::ColumnValue::Type::double_precision: {
             auto d2i = static_cast<int64_t>(col->get_double_precision());
@@ -263,8 +317,87 @@ Status InterimResult::castToInt(cpp2::ColumnValue *col) {
     return Status::OK();
 }
 
+Status InterimResult::castToVid(cpp2::ColumnValue *col) {
+    switch (col->getType()) {
+        case cpp2::ColumnValue::Type::id:
+            break;
+        case cpp2::ColumnValue::Type::integer:
+            col->set_id(col->get_integer());
+            break;
+        case cpp2::ColumnValue::Type::timestamp:
+            col->set_id(col->get_timestamp());
+            break;
+        case cpp2::ColumnValue::Type::double_precision: {
+            auto d2i = static_cast<int64_t>(col->get_double_precision());
+            col->set_id(d2i);
+            break;
+        }
+        case cpp2::ColumnValue::Type::bool_val: {
+            auto b2i = static_cast<int64_t>(col->get_bool_val());
+            col->set_id(b2i);
+            break;
+        }
+        case cpp2::ColumnValue::Type::str: {
+            auto r = folly::tryTo<int64_t>(col->get_str());
+            if (r.hasValue()) {
+                col->set_id(r.value());
+                break;
+            } else {
+                return Status::Error(
+                    "Casting from string %s to double failed.", col->get_str().c_str());
+            }
+        }
+        default:
+            LOG(ERROR) << NotSupported << static_cast<int32_t>(col->getType());
+            return Status::Error(NotSupported);
+    }
+    return Status::OK();
+}
+
+Status InterimResult::castToTimestamp(cpp2::ColumnValue *col) {
+    switch (col->getType()) {
+        case cpp2::ColumnValue::Type::timestamp:
+            break;
+        case cpp2::ColumnValue::Type::integer:
+            col->set_timestamp(col->get_integer());
+            break;
+        case cpp2::ColumnValue::Type::id:
+            col->set_timestamp(col->get_id());
+            break;
+        case cpp2::ColumnValue::Type::double_precision: {
+            auto d2i = static_cast<int64_t>(col->get_double_precision());
+            col->set_timestamp(d2i);
+            break;
+        }
+        case cpp2::ColumnValue::Type::bool_val: {
+            auto b2i = static_cast<int64_t>(col->get_bool_val());
+            col->set_timestamp(b2i);
+            break;
+        }
+        case cpp2::ColumnValue::Type::str: {
+            auto r = folly::tryTo<int64_t>(col->get_str());
+            if (r.hasValue()) {
+                col->set_timestamp(r.value());
+                break;
+            } else {
+                return Status::Error(
+                    "Casting from string %s to double failed.", col->get_str().c_str());
+            }
+        }
+        default:
+            LOG(ERROR) << NotSupported << static_cast<int32_t>(col->getType());
+            return Status::Error(NotSupported);
+    }
+    return Status::OK();
+}
+
 Status InterimResult::castToDouble(cpp2::ColumnValue *col) {
     switch (col->getType()) {
+        case cpp2::ColumnValue::Type::id: {
+            auto i2d = static_cast<double>(col->get_id());
+            col->set_double_precision(i2d);
+            break;
+        }
         case cpp2::ColumnValue::Type::integer: {
             auto i2d = static_cast<double>(col->get_integer());
             col->set_double_precision(i2d);
@@ -287,6 +420,11 @@ Status InterimResult::castToDouble(cpp2::ColumnValue *col) {
                     "Casting from string %s to double failed.", col->get_str().c_str());
             }
         }
+        case cpp2::ColumnValue::Type::timestamp: {
+            auto i2d = static_cast<double>(col->get_timestamp());
+            col->set_double_precision(i2d);
+            break;
+        }
         default:
             LOG(ERROR) << NotSupported << static_cast<int32_t>(col->getType());
             return Status::Error(NotSupported);
@@ -296,6 +434,11 @@ Status InterimResult::castToDouble(cpp2::ColumnValue *col) {
 
 Status InterimResult::castToBool(cpp2::ColumnValue *col) {
     switch (col->getType()) {
+        case cpp2::ColumnValue::Type::id: {
+            auto i2b = col->get_id() != 0;
+            col->set_bool_val(i2b);
+            break;
+        }
         case cpp2::ColumnValue::Type::integer: {
             auto i2b = col->get_integer() != 0;
             col->set_bool_val(i2b);
@@ -313,6 +456,11 @@ Status InterimResult::castToBool(cpp2::ColumnValue *col) {
             col->set_bool_val(s2b);
             break;
         }
+        case cpp2::ColumnValue::Type::timestamp: {
+            auto i2b = col->get_timestamp() != 0;
+            col->set_bool_val(i2b);
+            break;
+        }
         default:
             LOG(ERROR) << NotSupported << static_cast<int32_t>(col->getType());
             return Status::Error(NotSupported);
@@ -322,6 +470,11 @@ Status InterimResult::castToBool(cpp2::ColumnValue *col) {
 
 Status InterimResult::castToStr(cpp2::ColumnValue *col) {
     switch (col->getType()) {
+        case cpp2::ColumnValue::Type::id: {
+            auto i2s = folly::to<std::string>(col->get_id());
+            col->set_str(std::move(i2s));
+            break;
+        }
         case cpp2::ColumnValue::Type::integer: {
             auto i2s = folly::to<std::string>(col->get_integer());
             col->set_str(std::move(i2s));
@@ -339,6 +492,11 @@ Status InterimResult::castToStr(cpp2::ColumnValue *col) {
         }
         case cpp2::ColumnValue::Type::str:
             break;
+        case cpp2::ColumnValue::Type::timestamp: {
+            auto i2s = folly::to<std::string>(col->get_timestamp());
+            col->set_str(std::move(i2s));
+            break;
+        }
         default:
             LOG(ERROR) << NotSupported << static_cast<int32_t>(col->getType());
             return Status::Error(NotSupported);
@@ -355,6 +513,9 @@ std::unique_ptr<InterimResult> InterimResult::getInterim(
         auto &cols = r.get_columns();
         for (auto &col : cols) {
             switch (col.getType()) {
+                case cpp2::ColumnValue::Type::id:
+                    writer << col.get_id();
+                    break;
                 case cpp2::ColumnValue::Type::integer:
                     writer << col.get_integer();
                     break;
@@ -366,6 +527,9 @@ std::unique_ptr<InterimResult> InterimResult::getInterim(
                     break;
                 case cpp2::ColumnValue::Type::str:
                     writer << col.get_str();
+                    break;
+                case cpp2::ColumnValue::Type::timestamp:
+                    writer << col.get_timestamp();
                     break;
                 default:
                     LOG(ERROR) << NotSupported << static_cast<int32_t>(col.getType());

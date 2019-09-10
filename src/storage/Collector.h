@@ -21,6 +21,8 @@ public:
 
     virtual ~Collector() = default;
 
+    virtual void collectVid(int64_t v, const PropContext& prop) = 0;
+
     virtual void collectBool(bool v, const PropContext& prop) = 0;
 
     virtual void collectInt64(int64_t v, const PropContext& prop) = 0;
@@ -36,21 +38,29 @@ public:
     explicit PropsCollector(RowWriter* writer)
                 : writer_(writer) {}
 
+    void collectVid(int64_t v, const PropContext& prop) override {
+        UNUSED(prop);
+        (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::VID) << v;
+    }
 
     void collectBool(bool v, const PropContext& prop) override {
-        collect<bool>(v, prop);
+        UNUSED(prop);
+        (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::BOOL) << v;
     }
 
     void collectInt64(int64_t v, const PropContext& prop) override {
-        collect<int64_t>(v, prop);
+        UNUSED(prop);
+        (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::INT) << v;
     }
 
     void collectDouble(double v, const PropContext& prop) override {
-        collect<double>(v, prop);
+        UNUSED(prop);
+        (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::DOUBLE) << v;
     }
 
     void collectString(const std::string& v, const PropContext& prop) override {
-        collect<const std::string>(v, prop);
+        UNUSED(prop);
+        (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::STRING) << v;
     }
 
     template<typename V>
@@ -66,6 +76,11 @@ private:
 class StatsCollector : public Collector {
 public:
     StatsCollector() = default;
+
+    void collectVid(int64_t v, const PropContext& prop) override {
+        UNUSED(v);
+        UNUSED(prop);
+    }
 
     void collectBool(bool, const PropContext& prop) override {
         std::lock_guard<std::mutex> lg(lock_);

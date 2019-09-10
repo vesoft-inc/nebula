@@ -169,7 +169,7 @@ void checkResponse(cpp2::QueryResponse& resp,
                 int64_t dstId;
                 {
                     // _dst
-                    EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(0, dstId));
+                    EXPECT_EQ(ResultType::SUCCEEDED, it->getVid(0, dstId));
                     CHECK_EQ(dstIdFrom + rowNum, dstId);
                 }
                 {

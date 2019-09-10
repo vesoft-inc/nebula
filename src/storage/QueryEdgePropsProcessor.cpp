@@ -90,7 +90,7 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
     decltype(resp_.schema) s;
     decltype(resp_.schema.columns) cols;
     for (auto& prop : props) {
-        VLOG(3) << prop.prop_.name << "," << static_cast<int8_t>(prop.type_.type);
+        VLOG(3) << prop.prop_.name << "," << static_cast<int32_t>(prop.type_.type);
         cols.emplace_back(
                 columnDef(std::move(prop.prop_.name),
                           prop.type_.type));
