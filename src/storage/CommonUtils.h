@@ -34,10 +34,12 @@ public:
 
     // Some default props could be constructed by this ctor
     // For example, _src, _dst, _type, _rank
-    PropContext(const char* name, int32_t retIndex, PropContext::PropInKeyType pikType) {
+    PropContext(const char* name, EdgeType eType, int32_t retIndex,
+                PropContext::PropInKeyType pikType) {
         prop_.name = name;
         prop_.owner = cpp2::PropOwner::EDGE;
         retIndex_ = retIndex;
+        prop_.id.set_edge_type(eType);
         if (prop_.name == "_src" || prop_.name == "_dst") {
             type_.type = nebula::cpp2::SupportedType::VID;
         } else {
@@ -115,16 +117,6 @@ struct TagContext {
     }
 };
 
-struct EdgeContext {
-    EdgeContext() {
-        props_.reserve(8);
-    }
-
-    EdgeType edgeType_ = 0;
-    std::vector<PropContext> props_;
-};
-
 }  // namespace storage
 }  // namespace nebula
 #endif  // STORAGE_COMMON_H_
-

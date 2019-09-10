@@ -26,16 +26,10 @@ public:
         , schemaMan_(schemaMan) {}
 
     folly::Future<cpp2::QueryResponse>
-    future_getOutBound(const cpp2::GetNeighborsRequest& req) override;
-
-    folly::Future<cpp2::QueryResponse>
-    future_getInBound(const cpp2::GetNeighborsRequest& req) override;
+    future_getBound(const cpp2::GetNeighborsRequest& req) override;
 
     folly::Future<cpp2::QueryStatsResponse>
-    future_outBoundStats(const cpp2::GetNeighborsRequest& req) override;
-
-    folly::Future<cpp2::QueryStatsResponse>
-    future_inBoundStats(const cpp2::GetNeighborsRequest& req) override;
+    future_boundStats(const cpp2::GetNeighborsRequest& req) override;
 
     folly::Future<cpp2::QueryResponse>
     future_getProps(const cpp2::VertexPropRequest& req) override;

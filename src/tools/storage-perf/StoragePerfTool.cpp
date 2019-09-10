@@ -143,7 +143,7 @@ private:
             storage::cpp2::PropDef prop;
             prop.set_name(folly::stringPrintf("tag_%d_col_1", tagId_));
             prop.set_owner(storage::cpp2::PropOwner::SOURCE);
-            prop.set_tag_id(tagId_);
+            prop.id.set_tag_id(tagId_);
             props.emplace_back(std::move(prop));
         }
         {
@@ -214,19 +214,20 @@ private:
 
     void getNeighborsTask() {
         auto* evb = threadPool_->getEventBase();
-        auto f = client_->getNeighbors(spaceId_, randomVertices(),
-                                       edgeType_, true, "", randomCols())
-                            .via(evb).then([this](auto&& resps) {
-                                if (!resps.succeeded()) {
-                                    LOG(ERROR) << "Request failed!";
-                                } else {
-                                    VLOG(3) << "request successed!";
-                                }
-                                this->finishedRequests_++;
-                                VLOG(3) << "request successed!";
-                             }).onError([](folly::FutureException&) {
-                                LOG(ERROR) << "request failed!";
-                             });
+        std::vector<EdgeType> e(edgeType_);
+        auto f =
+          client_->getNeighbors(spaceId_, randomVertices(), std::move(e), "", randomCols())
+                .via(evb)
+                .then([this](auto&& resps) {
+                    if (!resps.succeeded()) {
+                        LOG(ERROR) << "Request failed!";
+                    } else {
+                        VLOG(3) << "request successed!";
+                    }
+                    this->finishedRequests_++;
+                    VLOG(3) << "request successed!";
+                })
+                .onError([](folly::FutureException&) { LOG(ERROR) << "request failed!"; });
     }
 
     void addVerticesTask() {
@@ -296,4 +297,3 @@ int main(int argc, char *argv[]) {
     nebula::storage::Perf perf;
     return perf.run();
 }
-
