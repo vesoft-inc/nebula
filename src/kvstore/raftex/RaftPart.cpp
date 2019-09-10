@@ -379,8 +379,11 @@ void RaftPart::preProcessTransLeader(const HostAddr& target) {
                 LOG(INFO) << idStr_ << "I am follower, just wait for the new leader.";
             } else {
                 LOG(INFO) << idStr_ << "I will be the new leader, trigger leader election now!";
-                role_ = Role::CANDIDATE;
                 bgWorkers_->addTask([self = shared_from_this()] {
+                    {
+                        std::unique_lock<std::mutex> lck(self->raftLock_);
+                        self->role_ = Role::CANDIDATE;
+                    }
                     self->leaderElection();
                 });
             }
@@ -1302,7 +1305,7 @@ void RaftPart::processAppendLogRequest(
         return;
     }
     // Check leadership
-    cpp2::ErrorCode err = verifyLeader(req, g);
+    cpp2::ErrorCode err = verifyLeader(req);
     if (err != cpp2::ErrorCode::SUCCEEDED) {
         // Wrong leadership
         VLOG(2) << idStr_ << "Will not follow the leader";
@@ -1440,10 +1443,9 @@ void RaftPart::processAppendLogRequest(
 
 
 cpp2::ErrorCode RaftPart::verifyLeader(
-        const cpp2::AppendLogRequest& req,
-        std::lock_guard<std::mutex>& lck) {
+        const cpp2::AppendLogRequest& req) {
+    CHECK(!raftLock_.try_lock());
     VLOG(2) << idStr_ << "The current role is " << roleStr(role_);
-    UNUSED(lck);
     switch (role_) {
         case Role::LEARNER:
         case Role::FOLLOWER: {

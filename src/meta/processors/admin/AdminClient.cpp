@@ -159,7 +159,12 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
     }
     auto peers = std::move(ret).value();
     auto it = std::find(peers.begin(), peers.end(), src);
-    CHECK(it != peers.end());
+    if (it == peers.end()) {
+        LOG(INFO) << "src " << src << " has been removed in [" << spaceId << ", " << partId << "]";
+        // In this case, the dst should be existed in peers.
+        CHECK(std::find(peers.begin(), peers.end(), dst) != peers.end());
+        return Status::OK();
+    }
     peers.erase(it);
     peers.emplace_back(dst);
     std::vector<nebula::cpp2::HostAddr> thriftPeers;

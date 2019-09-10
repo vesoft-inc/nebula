@@ -298,8 +298,7 @@ private:
      ***************************************************/
     const char* roleStr(Role role) const;
 
-    cpp2::ErrorCode verifyLeader(const cpp2::AppendLogRequest& req,
-                                 std::lock_guard<std::mutex>& lck);
+    cpp2::ErrorCode verifyLeader(const cpp2::AppendLogRequest& req);
 
     /*****************************************************************
      * Asynchronously send a heartbeat (An empty log entry)
