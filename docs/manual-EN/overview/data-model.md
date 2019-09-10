@@ -19,7 +19,7 @@ We will use the example graph below to introduce the basic concepts of the prope
 
 ![image](https://user-images.githubusercontent.com/42762957/61120012-96b25a80-a4ce-11e9-8460-067cac52a1e0.png)
 
-Vertices are typically used to represent entities in the real world. In the preceding example, vertices are **player** and **team**. A vertex must be labeled with at least one tag. Each tag may have a set of properties called schema.
+Vertices are typically used to represent entities in the real world. In the preceding example, there are two kind of vertices labeled with tag **player** and **team**. A vertex must be labeled with at least one tag. Each tag may have a set of properties called schema.
 
 Consider the above picture as example, there are two tags: **player** and **team**. Player has three properties: id (vid), Name(string), and Age(int); team has two properties: id (vid) and Name(string).
 
@@ -39,7 +39,7 @@ Each edge is an instance of an edge type. Each edge type contains a collection o
 
 ## Properties
 
-Both tags and edges can have properties, which are key/value pairs, and the definition of these properties (name, type, etc.) are called **Schema** in the **Nebula Graph**. 
+Both tags and edge types can have properties, which are key/value pairs, and the definition of these properties (name, type, etc.) are called **Schema** in the **Nebula Graph**. 
 
 Like Mysql, **Nebula Graph** is a strong typed database. The name and data type of the properties are determined before the data is written. Vertices can have properties indirectly via associated tags, and edges can have properties too.
 
@@ -47,9 +47,10 @@ In the preceding example, the schema of the tag **player** has three kind of pro
 - id (vid)
 - Name (string)
 - Age (int)
-  the schema of the edge **serve** has two kinds of properties:
-  - start_year (int)
-  - end_year (int)
+
+The schema of the edge **serve** has two kinds of properties:
+- start_year (int)
+- end_year (int)
 
 
 
