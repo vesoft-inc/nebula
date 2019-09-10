@@ -93,9 +93,8 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addEdge
 
 folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getNeighbors(
         GraphSpaceID space,
-        std::vector<VertexID> vertices,
-        EdgeType edgeType,
-        bool isOutBound,
+        const std::vector<VertexID> &vertices,
+        const std::vector<EdgeType> &edgeTypes,
         std::string filter,
         std::vector<cpp2::PropDef> returnCols,
         folly::EventBase* evb) {
@@ -112,21 +111,15 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getNei
         auto& req = requests[host];
         req.set_space_id(space);
         req.set_parts(std::move(c.second));
-        // Make edge type a negative number when query in-bound
-        req.set_edge_type(isOutBound ? edgeType : -edgeType);
+        req.set_edge_types(edgeTypes);
         req.set_filter(filter);
         req.set_return_columns(returnCols);
     }
 
     return collectResponse(
         evb, std::move(requests),
-        [isOutBound](cpp2::StorageServiceAsyncClient* client,
-                     const cpp2::GetNeighborsRequest& r) {
-            if (isOutBound) {
-                return client->future_getOutBound(r);
-            } else {
-                return client->future_getInBound(r);
-            }
+        [](cpp2::StorageServiceAsyncClient* client, const cpp2::GetNeighborsRequest& r) {
+            return client->future_getBound(r);
         });
 }
 
@@ -134,8 +127,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getNei
 folly::SemiFuture<StorageRpcResponse<cpp2::QueryStatsResponse>> StorageClient::neighborStats(
         GraphSpaceID space,
         std::vector<VertexID> vertices,
-        EdgeType edgeType,
-        bool isOutBound,
+        std::vector<EdgeType> edgeTypes,
         std::string filter,
         std::vector<cpp2::PropDef> returnCols,
         folly::EventBase* evb) {
@@ -153,20 +145,15 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryStatsResponse>> StorageClient::n
         req.set_space_id(space);
         req.set_parts(std::move(c.second));
         // Make edge type a negative number when query in-bound
-        req.set_edge_type(isOutBound ? edgeType : -edgeType);
+        req.set_edge_types(edgeTypes);
         req.set_filter(filter);
         req.set_return_columns(returnCols);
     }
 
     return collectResponse(
         evb, std::move(requests),
-        [isOutBound](cpp2::StorageServiceAsyncClient* client,
-                     const cpp2::GetNeighborsRequest& r) {
-            if (isOutBound) {
-                return client->future_outBoundStats(r);
-            } else {
-                return client->future_inBoundStats(r);
-            }
+        [](cpp2::StorageServiceAsyncClient* client, const cpp2::GetNeighborsRequest& r) {
+            return client->future_boundStats(r);
         });
 }
 

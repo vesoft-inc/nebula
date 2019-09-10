@@ -177,11 +177,31 @@ StatusOr<TagID> AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPie
 // This interface is disabled
 StatusOr<EdgeType> AdHocSchemaManager::toEdgeType(GraphSpaceID space, folly::StringPiece typeName) {
     UNUSED(space);
-    UNUSED(typeName);
-    LOG(FATAL) << "Unimplement";
+
+    try {
+        return folly::to<EdgeType>(typeName);
+    } catch (const std::exception& e) {
+        LOG(FATAL) << e.what();
+    }
     return -1;
+}
+
+// This interface is disabled
+StatusOr<std::string> AdHocSchemaManager::toEdgeName(GraphSpaceID space, EdgeType edgeType) {
+    UNUSED(space);
+    UNUSED(edgeType);
+    LOG(FATAL) << "Unimplement";
+    return "";
+}
+
+
+// This interface is disabled
+StatusOr<std::vector<std::string>> AdHocSchemaManager::getAllEdge(GraphSpaceID space) {
+    UNUSED(space);
+    LOG(FATAL) << "Unimplement";
+    std::vector<std::string> r = { "" };
+    return r;
 }
 
 }  // namespace storage
 }  // namespace nebula
-

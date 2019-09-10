@@ -26,32 +26,14 @@ namespace nebula {
 namespace storage {
 
 folly::Future<cpp2::QueryResponse>
-StorageServiceHandler::future_getOutBound(const cpp2::GetNeighborsRequest& req) {
+StorageServiceHandler::future_getBound(const cpp2::GetNeighborsRequest& req) {
     auto* processor = QueryBoundProcessor::instance(kvstore_, schemaMan_, getThreadManager());
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::QueryResponse>
-StorageServiceHandler::future_getInBound(const cpp2::GetNeighborsRequest& req) {
-    auto* processor = QueryBoundProcessor::instance(kvstore_,
-                                                    schemaMan_,
-                                                    getThreadManager(),
-                                                    BoundType::IN_BOUND);
-    RETURN_FUTURE(processor);
-}
-
 folly::Future<cpp2::QueryStatsResponse>
-StorageServiceHandler::future_outBoundStats(const cpp2::GetNeighborsRequest& req) {
+StorageServiceHandler::future_boundStats(const cpp2::GetNeighborsRequest& req) {
     auto* processor = QueryStatsProcessor::instance(kvstore_, schemaMan_, getThreadManager());
-    RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::QueryStatsResponse>
-StorageServiceHandler::future_inBoundStats(const cpp2::GetNeighborsRequest& req) {
-    auto* processor = QueryStatsProcessor::instance(kvstore_,
-                                                    schemaMan_,
-                                                    getThreadManager(),
-                                                    BoundType::IN_BOUND);
     RETURN_FUTURE(processor);
 }
 
@@ -143,4 +125,3 @@ StorageServiceHandler::future_getLeaderPart(const cpp2::GetLeaderReq& req) {
 
 }  // namespace storage
 }  // namespace nebula
-

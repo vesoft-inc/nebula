@@ -21,7 +21,6 @@
 
 namespace nebula {
 
-
 void Expression::print(const VariantType &value) {
     switch (value.which()) {
         case 0:
@@ -281,12 +280,10 @@ OptVariantType EdgeTypeExpression::eval() const {
     return *alias_;
 }
 
-
 Status EdgeTypeExpression::prepare() {
     context_->addAliasProp(*alias_, *prop_);
     return Status::OK();
 }
-
 
 void EdgeTypeExpression::encode(Cord &cord) const {
     cord << kindToInt(kind());
@@ -307,17 +304,14 @@ const char* EdgeTypeExpression::decode(const char *pos, const char *end) {
     return pos;
 }
 
-
 OptVariantType EdgeSrcIdExpression::eval() const {
     return context_->getters().getAliasProp(*alias_, *prop_);
 }
-
 
 Status EdgeSrcIdExpression::prepare() {
     context_->addAliasProp(*alias_, *prop_);
     return Status::OK();
 }
-
 
 void EdgeSrcIdExpression::encode(Cord &cord) const {
     cord << kindToInt(kind());
@@ -338,17 +332,14 @@ const char* EdgeSrcIdExpression::decode(const char *pos, const char *end) {
     return pos;
 }
 
-
 OptVariantType EdgeDstIdExpression::eval() const {
     return context_->getters().getAliasProp(*alias_, *prop_);
 }
-
 
 Status EdgeDstIdExpression::prepare() {
     context_->addAliasProp(*alias_, *prop_);
     return Status::OK();
 }
-
 
 void EdgeDstIdExpression::encode(Cord &cord) const {
     cord << kindToInt(kind());
@@ -369,17 +360,14 @@ const char* EdgeDstIdExpression::decode(const char *pos, const char *end) {
     return pos;
 }
 
-
 OptVariantType EdgeRankExpression::eval() const {
     return context_->getters().getAliasProp(*alias_, *prop_);
 }
-
 
 Status EdgeRankExpression::prepare() {
     context_->addAliasProp(*alias_, *prop_);
     return Status::OK();
 }
-
 
 void EdgeRankExpression::encode(Cord &cord) const {
     cord << kindToInt(kind());

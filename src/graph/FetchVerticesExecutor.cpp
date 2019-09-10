@@ -148,7 +148,7 @@ std::vector<storage::cpp2::PropDef> FetchVerticesExecutor::getPropNames() {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::SOURCE;
         pd.name = prop.second;
-        pd.tag_id = tagID_;
+        pd.id.set_tag_id(tagID_);
         props.emplace_back(std::move(pd));
     }
 
@@ -161,17 +161,30 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
     std::unique_ptr<RowSetWriter> rsWriter;
     auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
     for (auto &resp : all) {
-        if (!resp.__isset.vertices || !resp.__isset.vertex_schema
-                || resp.get_vertices() == nullptr || resp.get_vertex_schema() == nullptr) {
+        if (!resp.__isset.vertices) {
             continue;
         }
-        auto vschema = std::make_shared<ResultSchemaProvider>(resp.vertex_schema);
+
+        auto *schema = resp.get_vertex_schema();
+        if (schema == nullptr) {
+            continue;
+        }
+
+        std::unordered_map<TagID, std::shared_ptr<ResultSchemaProvider>> tagSchema;
+        std::transform(schema->cbegin(), schema->cend(),
+                       std::inserter(tagSchema, tagSchema.begin()), [](auto &s) {
+                           return std::make_pair(
+                               s.first, std::make_shared<ResultSchemaProvider>(s.second));
+                       });
+
         for (auto &vdata : resp.vertices) {
             std::unique_ptr<RowReader> vreader;
-            if (!vdata.__isset.vertex_data || vdata.vertex_data.empty()) {
+            if (!vdata.__isset.tag_data || vdata.tag_data.empty()) {
                 continue;
             }
-            vreader = RowReader::getRowReader(vdata.vertex_data, vschema);
+
+            auto vschema = tagSchema[vdata.tag_data[0].tag_id];
+            vreader = RowReader::getRowReader(vdata.tag_data[0].data, vschema);
             if (outputSchema == nullptr) {
                 outputSchema = std::make_shared<SchemaWriter>();
                 auto status = getOutputSchema(vschema.get(), vreader.get(), outputSchema.get());
@@ -212,7 +225,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                 rsWriter->addRow(std::move(encode));
             }
         }  // for `vdata'
-    }  // for `resp'
+    }      // for `resp'
 
     finishExecution(std::move(rsWriter));
 }
