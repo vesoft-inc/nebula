@@ -44,6 +44,8 @@ class GraphScanner;
     nebula::StepClause                     *step_clause;
     nebula::FromClause                     *from_clause;
     nebula::VertexIDList                   *vid_list;
+    nebula::OverEdge                       *over_edge;
+    nebula::OverEdges                      *over_edges;
     nebula::OverClause                     *over_clause;
     nebula::WhereClause                    *where_clause;
     nebula::YieldClause                    *yield_clause;
@@ -134,6 +136,8 @@ class GraphScanner;
 %type <step_clause> step_clause
 %type <from_clause> from_clause
 %type <vid_list> vid_list
+%type <over_edge> over_edge
+%type <over_edges> over_edges
 %type <over_clause> over_clause
 %type <where_clause> where_clause
 %type <yield_clause> yield_clause
@@ -438,12 +442,16 @@ go_sentence
         go->setOverClause($4);
         go->setWhereClause($5);
         if ($6 == nullptr) {
-            auto *edge = new std::string(*$4->edge());
-            auto *expr = new EdgeDstIdExpression(edge);
-            auto *alias = new std::string("id");
-            auto *col = new YieldColumn(expr, alias);
             auto *cols = new YieldColumns();
-            cols->addColumn(col);
+            for (auto e : $4->edges()) {
+                if (e->isOverAll()) {
+                    continue;
+                }
+                auto *edge  = new std::string(*e->edge());
+                auto *expr  = new EdgeDstIdExpression(edge);
+                auto *col   = new YieldColumn(expr);
+                cols->addColumn(col);
+            }
             $6 = new YieldClause(cols);
         }
         go->setYieldClause($6);
@@ -507,18 +515,50 @@ vid_ref_expression
     }
     ;
 
+over_edge
+    : name_label {
+        $$ = new OverEdge($1);
+    }
+    | name_label KW_REVERSELY {
+        $$ = new OverEdge($1, nullptr, true);
+    }
+    | name_label KW_AS name_label {
+        $$ = new OverEdge($1, $3);
+    }
+    | name_label KW_AS name_label KW_REVERSELY {
+        $$ = new OverEdge($1, $3, true);
+    }
+    ;
+
+over_edges
+    : over_edge {
+        auto edge = new OverEdges();
+        edge->addEdge($1);
+        $$ = edge;
+    }
+    | over_edges COMMA over_edge {
+        $1->addEdge($3);
+        $$ = $1;
+    }
+    ;
+
 over_clause
-    : KW_OVER name_label {
+    : KW_OVER MUL {
+        auto edges = new OverEdges();
+        auto s = new std::string("*");
+        auto edge = new OverEdge(s, nullptr, false);
+        edges->addEdge(edge);
+        $$ = new OverClause(edges);
+    }
+    | KW_OVER MUL KW_REVERSELY {
+        auto edges = new OverEdges();
+        auto s = new std::string("*");
+        auto edge = new OverEdge(s, nullptr, false);
+        edges->addEdge(edge);
+        $$ = new OverClause(edges);
+    }
+    | KW_OVER over_edges {
         $$ = new OverClause($2);
-    }
-    | KW_OVER name_label KW_REVERSELY {
-        $$ = new OverClause($2, nullptr, true);
-    }
-    | KW_OVER name_label KW_AS name_label {
-        $$ = new OverClause($2, $4);
-    }
-    | KW_OVER name_label KW_AS name_label KW_REVERSELY {
-        $$ = new OverClause($2, $4, true);
     }
     ;
 
@@ -654,11 +694,11 @@ edge_key_ref:
     var_ref_expression R_ARROW var_ref_expression AT var_ref_expression {
         $$ = new EdgeKeyRef($1, $3, $5, false);
     }
-	|
+    |
     input_ref_expression R_ARROW input_ref_expression {
         $$ = new EdgeKeyRef($1, $3, nullptr);
     }
-	|
+    |
     var_ref_expression R_ARROW var_ref_expression {
         $$ = new EdgeKeyRef($1, $3, nullptr, false);
     }

@@ -244,7 +244,14 @@ Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
 }
 
 void FetchEdgesExecutor::fetchEdges() {
-    auto props = getPropNames();
+    std::vector<storage::cpp2::PropDef> props;
+    auto status = getPropNames(props);
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(status);
+        return;
+    }
+
     if (props.empty()) {
         DCHECK(onError_);
         onError_(Status::Error("No props declared."));
@@ -276,16 +283,21 @@ void FetchEdgesExecutor::fetchEdges() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-std::vector<storage::cpp2::PropDef> FetchEdgesExecutor::getPropNames() {
-    std::vector<storage::cpp2::PropDef> props;
+Status FetchEdgesExecutor::getPropNames(std::vector<storage::cpp2::PropDef> &props) {
     for (auto &prop : expCtx_->aliasProps()) {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::EDGE;
         pd.name = prop.second;
+        auto status = ectx()->schemaManager()->toEdgeType(spaceId_, prop.first);
+        if (!status.ok()) {
+            return Status::Error("No schema found for '%s'", prop.first.c_str());
+        }
+        auto edgeType = status.value();
+        pd.id.set_edge_type(edgeType);
         props.emplace_back(std::move(pd));
     }
 
-    return props;
+    return Status::OK();
 }
 
 void FetchEdgesExecutor::processResult(RpcResponse &&result) {

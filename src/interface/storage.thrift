@@ -41,9 +41,14 @@ enum PropOwner {
     EDGE = 3,
 } (cpp.enum_strict)
 
+union EntryId {
+    1: common.TagID tag_id,
+    2: common.EdgeType edge_type,
+}
+
 struct PropDef {
     1: PropOwner owner,
-    2: common.TagID tag_id,       // Only valid when owner is SOURCE or DEST
+    2: EntryId   id,
     3: string name,      // Property name
     4: StatType stat,    // calc stats when setted.
 }
@@ -61,10 +66,20 @@ struct ResultCode {
     3: optional common.HostAddr  leader,
 }
 
+struct EdgeData {
+    1: common.EdgeType type,
+    2: binary          data,   // decode according to edge_schema.
+}
+
+struct TagData {
+    1: common.TagID          tag_id,
+    2: binary                data,
+}
+
 struct VertexData {
-    1: common.VertexID vertex_id,
-    2: binary vertex_data, // decode according to vertex_schema.
-    3: binary edge_data,   // decode according to edge_schema.
+    1: common.VertexID       vertex_id,
+    2: list<TagData>         tag_data,
+    3: list<EdgeData>        edge_data,
 }
 
 struct ResponseCommon {
@@ -76,8 +91,8 @@ struct ResponseCommon {
 
 struct QueryResponse {
     1: required ResponseCommon result,
-    2: optional common.Schema vertex_schema,   // vertex related props
-    3: optional common.Schema edge_schema,     // edge related props
+    2: optional map<common.TagID, common.Schema>(cpp.template = "std::unordered_map")       vertex_schema,
+    3: optional map<common.EdgeType, common.Schema>(cpp.template = "std::unordered_map")    edge_schema,
     4: optional list<VertexData> vertices,
 }
 
@@ -132,7 +147,7 @@ struct GetNeighborsRequest {
     // partId => ids
     2: map<common.PartitionID, list<common.VertexID>>(cpp.template = "std::unordered_map") parts,
     // When edge_type > 0, going along the out-edge, otherwise, along the in-edge
-    3: common.EdgeType edge_type,
+    3: list<common.EdgeType> edge_types,
     4: binary filter,
     5: list<PropDef> return_columns,
 }
@@ -236,11 +251,9 @@ struct GetLeaderResp {
 
 
 service StorageService {
-    QueryResponse getOutBound(1: GetNeighborsRequest req)
-    QueryResponse getInBound(1: GetNeighborsRequest req)
+    QueryResponse getBound(1: GetNeighborsRequest req)
 
-    QueryStatsResponse outBoundStats(1: GetNeighborsRequest req)
-    QueryStatsResponse inBoundStats(1: GetNeighborsRequest req)
+    QueryStatsResponse boundStats(1: GetNeighborsRequest req)
 
     // When return_columns is empty, return all properties
     QueryResponse getProps(1: VertexPropRequest req);
@@ -262,4 +275,3 @@ service StorageService {
     AdminExecResp memberChange(1: MemberChangeReq req);
     GetLeaderResp getLeaderPart(1: GetLeaderReq req);
 }
-
