@@ -6,6 +6,7 @@
 
 #include "kvstore/Part.h"
 #include "kvstore/LogEncoder.h"
+#include "base/NebulaKeyUtils.h"
 
 DEFINE_int32(cluster_id, 0, "A unique id for each cluster");
 
@@ -14,7 +15,7 @@ namespace kvstore {
 
 using raftex::AppendLogResult;
 
-const char* kCommitKeyPrefix = "__system_commit_msg_";
+const char* kCommitKey = "committed";
 
 namespace {
 
@@ -59,7 +60,8 @@ Part::Part(GraphSpaceID spaceId,
 
 std::pair<LogID, TermID> Part::lastCommittedLogId() {
     std::string val;
-    ResultCode res = engine_->get(folly::stringPrintf("%s%d", kCommitKeyPrefix, partId_), &val);
+    auto key = folly::stringPrintf("%d%d%s", NebulaKeyType::kSystem, partId_, kCommitKey);
+    ResultCode res = engine_->get(key, &val);
     if (res != ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Cannot fetch the last committed log id from the storage engine";
         return std::make_pair(0, 0);
@@ -306,8 +308,8 @@ ResultCode Part::putCommitMsg(WriteBatch* batch, LogID committedLogId, TermID co
     commitMsg.reserve(sizeof(LogID) + sizeof(TermID));
     commitMsg.append(reinterpret_cast<char*>(&committedLogId), sizeof(LogID));
     commitMsg.append(reinterpret_cast<char*>(&committedLogTerm), sizeof(TermID));
-    return batch->put(folly::stringPrintf("%s%d", kCommitKeyPrefix, partId_),
-                      commitMsg);
+    return batch->put(folly::stringPrintf("%d%d%s", NebulaKeyType::kSystem, partId_,
+                                          kCommitKey), commitMsg);
 }
 
 bool Part::preProcessLog(LogID logId,

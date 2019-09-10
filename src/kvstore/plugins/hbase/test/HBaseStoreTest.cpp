@@ -100,7 +100,7 @@ TEST(HBaseStoreTest, SimpleTest) {
         }
         EXPECT_EQ(expectedTotal, num);
     };
-    std::string prefix1 = NebulaKeyUtils::prefix(partId, srcId);
+    std::string prefix1 = NebulaKeyUtils::vertexPrefix(partId, srcId);
     checkPrefix(prefix1, 0, 20);
     std::string prefix2 = NebulaKeyUtils::edgePrefix(partId, srcId, edgeType);
     checkPrefix(prefix2, 0, 10);

@@ -207,7 +207,7 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        deleteVertex_test
+        delete_vertex_sentence_test
     SOURCES
         DeleteVertexTest.cpp
     OBJECTS
