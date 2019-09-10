@@ -53,6 +53,20 @@ HostAddr decodeTransferLeader(const folly::StringPiece& log) {
     return leader;
 }
 
+std::string encodeSnapshotRow(LogID logId, const std::string& row) {
+    std::string rawData;
+    rawData.reserve(sizeof(LogID) + row.size());
+    rawData.append(reinterpret_cast<const char*>(&logId), sizeof(logId));
+    rawData.append(row.data(), row.size());
+    return rawData;
+}
+
+std::pair<LogID, std::string> decodeSnapshotRow(const std::string& rawData) {
+    LogID id = *reinterpret_cast<const LogID*>(rawData.data());
+    auto str = rawData.substr(sizeof(LogID));
+    return std::make_pair(id, std::move(str));
+}
+
 TestShard::TestShard(size_t idx,
                      std::shared_ptr<RaftexService> svc,
                      PartitionID partId,
@@ -61,6 +75,7 @@ TestShard::TestShard(size_t idx,
                      std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                      std::shared_ptr<thread::GenericThreadPool> workers,
                      std::shared_ptr<folly::Executor> handlersPool,
+                     std::shared_ptr<SnapshotManager> snapshotMan,
                      std::function<void(size_t idx, const char*, TermID)>
                         leadershipLostCB,
                      std::function<void(size_t idx, const char*, TermID)>
@@ -72,7 +87,8 @@ TestShard::TestShard(size_t idx,
                    walRoot,
                    ioPool,
                    workers,
-                   handlersPool)
+                   handlersPool,
+                   snapshotMan)
         , idx_(idx)
         , service_(svc)
         , leadershipLostCB_(leadershipLostCB)
@@ -133,6 +149,34 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
         commitTimes_++;
     }
     return true;
+}
+
+std::pair<int64_t, int64_t> TestShard::commitSnapshot(const std::vector<std::string>& data,
+                                                      LogID committedLogId,
+                                                      TermID committedLogTerm,
+                                                      bool finished) {
+    folly::RWSpinLock::WriteHolder wh(&lock_);
+    int64_t count = 0;
+    int64_t size = 0;
+    for (auto& row : data) {
+        count++;
+        size += row.size();
+        auto idData = decodeSnapshotRow(row);
+        VLOG(1) << idStr_ << "Commit row logId " << idData.first << ", log " << idData.second;
+        data_.emplace_back(idData.first, std::move(idData.second));
+    }
+    if (finished) {
+        lastCommittedLogId_ = committedLogId;
+        LOG(INFO) << idStr_ << "Commit the snapshot committedLogId " << committedLogId
+                  << ", term " << committedLogTerm;
+    }
+    return std::make_pair(count, size);
+}
+
+void TestShard::cleanup() {
+    folly::RWSpinLock::WriteHolder wh(&lock_);
+    data_.clear();
+    lastCommittedLogId_ = 0;
 }
 
 size_t TestShard::getNumLogs() const {

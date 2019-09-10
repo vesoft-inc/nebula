@@ -16,7 +16,7 @@ enum ErrorCode {
     E_LOG_GAP = -1;
     E_LOG_STALE = -2;
     E_MISSING_COMMIT = -3;
-    E_PULLING_SNAPSHOT = -4;    // The follower is pulling a snapshot
+    E_WAITING_SNAPSHOT = -4;    // The follower is waiting a snapshot
 
     E_UNKNOWN_PART = -5;
     E_TERM_OUT_OF_DATE = -6;
@@ -31,6 +31,7 @@ enum ErrorCode {
     E_NOT_A_LEADER = -13;
     E_HOST_DISCONNECTED = -14;
     E_TOO_MANY_REQUESTS = -15;
+    E_PERSIST_SNAPSHOT_FAILED = -16;
 
     E_EXCEPTION = -20;          // An thrift internal exception was thrown
 }
@@ -94,8 +95,6 @@ struct AppendLogRequest {
     //
     // Fields 10 to 11 are used for LogAppend.
     //
-    // In the case of heartbeat, the log_str_list will be empty,
-    // and log_term == 0
     //
     // In the case of LogAppend, the id of the first log is the
     //      last_log_id_sent + 1
@@ -106,7 +105,7 @@ struct AppendLogRequest {
     10: TermID log_term;
     11: list<LogEntry> log_str_list;
 
-    12: optional binary snapshot_uri;   // Snapshot URL
+    12: bool sending_snapshot;
 }
 
 
@@ -118,13 +117,30 @@ struct AppendLogResponse {
     5: LogID        committed_log_id;
     6: LogID        last_log_id;
     7: TermID       last_log_term;
-    8: bool         pulling_snapshot;
 }
 
+struct SendSnapshotRequest {
+    1: GraphSpaceID space;
+    2: PartitionID  part;
+    3: TermID       term;
+    4: LogID        committed_log_id;
+    5: TermID       committed_log_term;
+    6: IPv4         leader_ip;
+    7: Port         leader_port;
+    8: list<binary> rows;
+    9: i64          total_size;
+    10: i64          total_count;
+    11: bool         done;
+}
+
+struct SendSnapshotResponse {
+    1: ErrorCode    error_code;
+}
 
 service RaftexService {
     AskForVoteResponse askForVote(1: AskForVoteRequest req);
     AppendLogResponse appendLog(1: AppendLogRequest req);
+    SendSnapshotResponse  sendSnapshot(1: SendSnapshotRequest req);
 }
 
 

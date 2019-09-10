@@ -39,6 +39,7 @@ TEST(FileBasedWal, AppendLogs) {
     TempDir walDir("/tmp/testWal.XXXXXX");
 
     auto wal = FileBasedWal::getWal(walDir.path(),
+                                    "",
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
@@ -56,6 +57,7 @@ TEST(FileBasedWal, AppendLogs) {
 
     // Now let's open it to read
     wal = FileBasedWal::getWal(walDir.path(),
+                               "",
                                policy,
                                [](LogID, TermID, ClusterID, const std::string&) {
                                    return true;
@@ -85,6 +87,7 @@ TEST(FileBasedWal, CacheOverflow) {
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
+                                    "",
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
@@ -107,6 +110,7 @@ TEST(FileBasedWal, CacheOverflow) {
 
     // Now let's open it to read
     wal = FileBasedWal::getWal(walDir.path(),
+                               "",
                                policy,
                                [](LogID, TermID, ClusterID, const std::string&) {
                                    return true;
@@ -136,6 +140,7 @@ TEST(FileBasedWal, Rollback) {
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
+                                    "",
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
@@ -210,6 +215,7 @@ TEST(FileBasedWal, RollbackThenReopen) {
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
+                                    "",
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
@@ -235,6 +241,7 @@ TEST(FileBasedWal, RollbackThenReopen) {
 
     // Now let's open it to read
     wal = FileBasedWal::getWal(walDir.path(),
+                               "",
                                policy,
                                [](LogID, TermID, ClusterID, const std::string&) {
                                    return true;
@@ -253,7 +260,6 @@ TEST(FileBasedWal, RollbackThenReopen) {
     EXPECT_EQ(801, id);
 }
 
-
 TEST(FileBasedWal, RollbackToZero) {
     // Force to make each file 1MB, each buffer is 1MB, and there are two
     // buffers at most
@@ -264,6 +270,7 @@ TEST(FileBasedWal, RollbackToZero) {
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
+                                    "",
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
@@ -305,6 +312,7 @@ TEST(FileBasedWal, BackAndForth) {
 
     TempDir walDir("/tmp/testWal.XXXXXX");
     auto wal = FileBasedWal::getWal(walDir.path(),
+                                    "",
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
@@ -341,6 +349,7 @@ TEST(FileBasedWal, TTLTest) {
     policy.fileSize = 1024;
     policy.numBuffers = 30;
     auto wal = FileBasedWal::getWal(walDir.path(),
+                                    "",
                                     policy,
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
@@ -352,26 +361,23 @@ TEST(FileBasedWal, TTLTest) {
             wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
                            folly::stringPrintf("Test string %02d", i)));
     }
-    // Wait for the buffer flushed.
-    sleep(1);
     auto startIdAfterGC
         = static_cast<FileBasedWal*>(wal.get())->walFiles_.rbegin()->second->firstId();
     auto expiredFilesNum = static_cast<FileBasedWal*>(wal.get())->walFiles_.size() - 1;
-    sleep(policy.ttl);
+    sleep(policy.ttl + 1);
     for (int i = 101; i <= 200; i++) {
         EXPECT_TRUE(
             wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
                            folly::stringPrintf("Test string %02d", i)));
     }
     EXPECT_EQ(200, wal->lastLogId());
-    // Wait for the flusher finished!
-    sleep(1);
     // Close the wal
     wal.reset();
 
     {
         // Now let's open it to read
         wal = FileBasedWal::getWal(walDir.path(),
+                                   "",
                                    policy,
                                    [](LogID, TermID, ClusterID, const std::string&) {
                                        return true;
@@ -402,6 +408,7 @@ TEST(FileBasedWal, TTLTest) {
     {
         // Now let's open it to read
         wal = FileBasedWal::getWal(walDir.path(),
+                                   "",
                                    policy,
                                    [](LogID, TermID, ClusterID, const std::string&) {
                                        return true;

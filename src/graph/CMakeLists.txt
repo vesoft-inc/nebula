@@ -45,6 +45,7 @@ add_library(
     SetExecutor.cpp
     FindExecutor.cpp
     MatchExecutor.cpp
+    DeleteVertexExecutor.cpp
 )
 add_dependencies(
     graph_obj

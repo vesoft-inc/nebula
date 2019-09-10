@@ -35,20 +35,17 @@ public:
         auto part = nebula::value(ret);
         auto host = kvstore::NebulaStore::getRaftAddr(HostAddr(req.get_new_leader().get_ip(),
                                                                req.get_new_leader().get_port()));
-        part->asyncTransferLeader(std::move(host),
-                                  [this, spaceId, partId] (kvstore::ResultCode code) {
+        part->asyncTransferLeader(host,
+                                  [this, spaceId, partId, host] (kvstore::ResultCode code) {
             auto leaderRet = kvstore_->partLeader(spaceId, partId);
             CHECK(ok(leaderRet));
             if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-                auto addr = value(std::move(leaderRet));
-                if (addr == HostAddr(0, 0)) {
-                    // No leader is elected, just return ok
+                auto leader = value(std::move(leaderRet));
+                // Check target is randomPeer (0, 0) or the election has completed.
+                if (host == HostAddr(0, 0) || leader == host) {
                     code = kvstore::ResultCode::SUCCEEDED;
                 } else {
-                    nebula::cpp2::HostAddr leader;
-                    leader.set_ip(addr.first);
-                    leader.set_port(addr.second);
-                    resp_.set_leader(std::move(leader));
+                    resp_.set_leader(toThriftHost(leader));
                 }
             }
             resp_.set_code(to(code));

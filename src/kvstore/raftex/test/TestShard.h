@@ -9,11 +9,12 @@
 
 #include "base/Base.h"
 #include "kvstore/raftex/RaftPart.h"
+#include "kvstore/raftex/RaftexService.h"
 
 namespace nebula {
 namespace raftex {
 
-class RaftexService;
+// class RaftexService;
 
 namespace test {
 
@@ -32,7 +33,12 @@ std::string encodeTransferLeader(const HostAddr& addr);
 
 HostAddr decodeTransferLeader(const folly::StringPiece& log);
 
+std::string encodeSnapshotRow(LogID logId, const std::string& row);
+
+std::pair<LogID, std::string> decodeSnapshotRow(const std::string& rawData);
+
 class TestShard : public RaftPart {
+    friend class SnapshotManagerImpl;
 public:
     TestShard(
         size_t idx,
@@ -43,6 +49,7 @@ public:
         std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
         std::shared_ptr<thread::GenericThreadPool> workers,
         std::shared_ptr<folly::Executor> handlersPool,
+        std::shared_ptr<SnapshotManager> snapshotMan,
         std::function<void(size_t idx, const char*, TermID)>
             leadershipLostCB,
         std::function<void(size_t idx, const char*, TermID)>
@@ -92,6 +99,13 @@ public:
         return true;
     }
 
+    std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
+                                               LogID committedLogId,
+                                               TermID committedLogTerm,
+                                               bool finished) override;
+
+    void cleanup() override;
+
     size_t getNumLogs() const;
     bool getLogMsg(size_t index, folly::StringPiece& msg);
 
@@ -112,6 +126,52 @@ private:
         leadershipLostCB_;
     std::function<void(size_t idx, const char*, TermID)>
         becomeLeaderCB_;
+};
+
+class SnapshotManagerImpl : public SnapshotManager {
+public:
+    explicit SnapshotManagerImpl(RaftexService* service)
+        : service_(service) {
+        CHECK_NOTNULL(service);
+    }
+
+    ~SnapshotManagerImpl() {
+        LOG(INFO) << "~SnapshotManagerImpl()";
+    }
+
+    void accessAllRowsInSnapshot(GraphSpaceID spaceId,
+                                 PartitionID partId,
+                                 SnapshotCallback cb) override {
+        auto part = std::dynamic_pointer_cast<TestShard>(service_->findPart(spaceId, partId));
+        CHECK(!!part);
+        int64_t totalCount = 0;
+        int64_t totalSize = 0;
+        std::vector<std::string> data;
+        folly::RWSpinLock::ReadHolder rh(&part->lock_);
+        for (auto& row : part->data_) {
+            if (data.size() > 100) {
+                LOG(INFO) << part->idStr_ << "Send snapshot total rows " << data.size()
+                          << ", total count sended " << totalCount
+                          << ", total size sended " << totalSize
+                          << ", finished false";
+                cb(std::move(data), totalCount, totalSize, false);
+                data.clear();
+            }
+            auto encoded = encodeSnapshotRow(row.first, row.second);
+            totalSize += encoded.size();
+            totalCount++;
+            data.emplace_back(std::move(encoded));
+        }
+        if (data.size() > 0) {
+            LOG(INFO) << part->idStr_ << "Send snapshot total rows " << data.size()
+                      << ", total count sended " << totalCount
+                      << ", total size sended " << totalSize
+                      << ", finished true";
+            cb(std::move(data), totalCount, totalSize, true);
+        }
+    }
+
+    RaftexService* service_;
 };
 
 }  // namespace test

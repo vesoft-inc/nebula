@@ -135,7 +135,20 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-
+    // Test same prop name
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG samePropTag(name string, name int)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    // Test same prop name
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE samePropEdge(name string, name int)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
     // Test create tag without prop
     {
         cpp2::ExecutionResponse resp;
