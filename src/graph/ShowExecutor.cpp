@@ -88,6 +88,13 @@ void ShowExecutor::showHosts() {
                                         "Leader distribution", "Partition distribution"};
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(std::move(header));
+        std::sort(hostItems.begin(), hostItems.end(), [](const auto& a, const auto& b) {
+            // sort with online/offline and ip
+            if (a.get_status() == b.get_status()) {
+                return a.hostAddr.ip < b.hostAddr.ip;
+            }
+            return a.status < b.status;
+        });
 
         for (auto& item : hostItems) {
             std::vector<cpp2::ColumnValue> row;
@@ -117,7 +124,6 @@ void ShowExecutor::showHosts() {
             }
 
             row[3].set_integer(leaderCount);
-            row[4].set_str(leaders);
 
             std::string parts;
             for (auto& spaceEntry : item.get_all_parts()) {
@@ -126,7 +132,12 @@ void ShowExecutor::showHosts() {
             }
             if (!parts.empty()) {
                 parts.resize(parts.size() - 2);
+            } else {
+                // if there is no valid parition on a host at all
+                leaders = "No valid partition";
+                parts = "No valid partition";
             }
+            row[4].set_str(leaders);
             row[5].set_str(parts);
 
             rows.emplace_back();
