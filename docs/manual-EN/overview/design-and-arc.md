@@ -8,7 +8,7 @@ This document is to walk you through on how **Nebula Graph** is designed and why
 
 ![meetup1-04](https://user-images.githubusercontent.com/42762957/64223265-dc573680-cf05-11e9-98bc-93de4fd32463.jpg)
 
-The axis in the above picture shows the different requirements for query latency. Like traditional database, graph database can be divided into two parts: OLAP and OLTP. OLAP cares more about offline analysis while OLTP prefers online processing. Graph computing framework in OLAP is used to analyse data based on graph structure. And it's similar to OLAP in traditional database. But it has features which are not available in traditional database, one is iterative algorithm based on graph. A typical example is the PageRank algorithm from Google, which obtains the relevance of web pages through constant iterative computing. Another example is the commonly-used LPA algorithm.
+The axis in the above picture shows the different requirements for query latency. Like a traditional database, graph database can be divided into two parts: OLAP and OLTP. OLAP cares more about offline analysis while OLTP prefers online processing. Graph computing framework in OLAP is used to analyse data based on graph structure. And it's similar to OLAP in traditional database. But it has features which are not available in traditional database, one is iterative algorithm based on graph. A typical example is the PageRank algorithm from Google, which obtains the relevance of web pages through constant iterative computing. Another example is the commonly-used LPA algorithm.
 
 Along the axis to right, there comes the graph streaming field, which is the combination of basic computing and streaming computing. A relational network is not a static structure, rather, it constantly changes in the business: be it graph structure or graph properties. Computing in this filed 
 is often triggered by events and its latency is in second.
@@ -36,11 +36,11 @@ Designed based on the above features, **Nebula Graph** is an open source, distri
 
 The dash line in the above picture divided computing and storage as two independent parts, the upper is the computing service, each machine or virtual machine is stateless and never talks to other so it's easy to scale in or out; the lower is the storage service, it's stateful since data is stored there. Storage service can turn graph semantics into key-values and pass them to the KV-store below it. Between the two is the Raft protocol.
 
-The right side is the meta service, similar to the NameNode in HDFS, it stores all meta data like schema and controls scaling. 
+The right side is the meta service, similar to the NameNode in HDFS, it stores all metadata like schema and controls scaling. 
 
 ### Design thinking: Storage Service
 
-**Nebula Graph** adopted the **share-nothing** distributed architecture in storage so nodes do not share memory or storage, which means there is no central nodes in the whole system. Benefits of such design are: 
+**Nebula Graph** adopted the **share-nothing** distributed architecture in storage so nodes do not share memory or storage, which means there are no central nodes in the whole system. Benefits of such design are: 
 
 - Easy to scale
 - The overall system continues operating despite individual crash
@@ -50,7 +50,7 @@ Another design is the **separation of computing and storage**, and the benefits 
 - Scalability. Separating storage from computing makes storage service flexible, thus it's easy to scale out or in.
 - Availability. Recovery from vertex failure can be performed quickly. 
 
-The binary of storage service is **nebula-storaged**, which provides a key-value store. Multiple storage engines like RocksDB and HBase are supported, with RocksDB set as default engine. To build a resilient distributed system, [Raft](https://raft.github.io/) is implemented as the consensus algorithm. 
+The binary of storage service is **nebula-storaged**, which provides a key-value store. Multiple storage engines like RocksDB and HBase are supported, with RocksDB set as the default engine. To build a resilient distributed system, [Raft](https://raft.github.io/) is implemented as the consensus algorithm. 
 
 Raft achieves data consensus via an elected leader. Based on that, nebula-storaged makes the following optimizations:
 
@@ -109,7 +109,7 @@ The binary of the query engine is **nebula-graphd**. Each nebula-graphd instance
 
  - Pushing down computation
 
-    In a distributed system, transferring large amount of data on the network really extends the overall latency. In **Nebula Graph**, the query engine will make decisions to push some filter and aggregation down to the storage service. The purpose is to reduce the amount of data passing back from the storage.
+    In a distributed system, transferring a large amount of data on the network really extends the overall latency. In **Nebula Graph**, the query engine will make decisions to push some filter and aggregation down to the storage service. The purpose is to reduce the amount of data passing back from the storage.
 
 ### Design-thinking: API and SDK
 
