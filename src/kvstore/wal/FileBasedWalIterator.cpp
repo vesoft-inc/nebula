@@ -135,33 +135,31 @@ void FileBasedWalIterator::loadWalFiles() {
     nextFirstId_ = getFirstIdInNextFile();
     CHECK_LE(currId_, idRanges_.front().second);
 
-    if (!idRanges_.empty()) {
-        // Find the correct position in the first WAL file
-        currPos_ = 0;
-        while (true) {
-            LogID logId;
-            // Read the logID
-            int fd = fds_.front();
-            CHECK_EQ(pread(fd,
-                           reinterpret_cast<char*>(&logId),
-                           sizeof(LogID),
-                           currPos_),
-                     static_cast<ssize_t>(sizeof(LogID)));
-            // Read the log length
-            CHECK_EQ(pread(fd,
-                           reinterpret_cast<char*>(&currMsgLen_),
-                           sizeof(int32_t),
-                           currPos_ + sizeof(LogID) + sizeof(TermID)),
-                     static_cast<ssize_t>(sizeof(int32_t)));
-            if (logId == currId_) {
-                break;
-            }
-            currPos_ += sizeof(LogID)
-                        + sizeof(TermID)
-                        + sizeof(int32_t) * 2
-                        + currMsgLen_
-                        + sizeof(ClusterID);
+    // Find the correct position in the first WAL file
+    currPos_ = 0;
+    while (true) {
+        LogID logId;
+        // Read the logID
+        int fd = fds_.front();
+        CHECK_EQ(pread(fd,
+                       reinterpret_cast<char*>(&logId),
+                       sizeof(LogID),
+                       currPos_),
+                 static_cast<ssize_t>(sizeof(LogID)));
+        // Read the log length
+        CHECK_EQ(pread(fd,
+                       reinterpret_cast<char*>(&currMsgLen_),
+                       sizeof(int32_t),
+                       currPos_ + sizeof(LogID) + sizeof(TermID)),
+                 static_cast<ssize_t>(sizeof(int32_t)));
+        if (logId == currId_) {
+            break;
         }
+        currPos_ += sizeof(LogID)
+                    + sizeof(TermID)
+                    + sizeof(int32_t) * 2
+                    + currMsgLen_
+                    + sizeof(ClusterID);
     }
 }
 
@@ -236,7 +234,7 @@ LogEntry FileBasedWalIterator::logEntry() {
                         + sizeof(int32_t)
                         + sizeof(ClusterID)),
                  static_cast<ssize_t>(currMsgLen_));
-        return {logId, term, cluster, logMsg};
+        return {logId, term, cluster, std::move(logMsg)};
     }
     return logEntry;
 }
