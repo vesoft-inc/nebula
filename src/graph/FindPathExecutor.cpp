@@ -93,10 +93,12 @@ Status FindPathExecutor::prepareOverAll() {
 
         auto v = edgeStatus.value();
         over_.edgeTypes_.emplace_back(v);
+        over_.oppositeTypes_.emplace_back(-v);
 
         if (!expCtx_->addEdge(e, v)) {
             return Status::Error(folly::sformat("edge alias({}) was dup", e));
         }
+        edgeTypeNameMap_.emplace(v, e);
     }
 
     return Status::OK();

@@ -56,20 +56,20 @@ struct DateTime {
 }
 
 struct Vertex {
-	1: common.VertexID id;
+    1: common.VertexID id;
 }
 struct Edge {
     1: binary type;
     2: common.EdgeRanking ranking;
-	3: optional common.VertexID src;
-	4: optional common.VertexID dst;
+    3: optional common.VertexID src;
+    4: optional common.VertexID dst;
 }
 union PathEntry {
-	1: Vertex vertex;
-	2: Edge edge;
+    1: Vertex vertex;
+    2: Edge edge;
 }
 struct Path {
-	1: list<PathEntry> entry_list;
+    1: list<PathEntry> entry_list;
 }
 
 union ColumnValue {
@@ -89,7 +89,7 @@ union ColumnValue {
     11: DateTime datetime;
 
     // Graph specific
-	41: Path path;
+    41: Path path;
 
     // Container types
     // LIST = 101;
