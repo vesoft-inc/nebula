@@ -15,17 +15,24 @@ namespace meta {
 
 void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
     UNUSED(req);
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-    auto ret = allHostsWithStatus();
-    if (!ret.ok()) {
-        onFinished();
-        return;
+    std::unordered_map<GraphSpaceID, std::string> spaceIdName;
+    std::vector<cpp2::HostItem> hostItems;
+    {
+        folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+        auto status = allHostsWithStatus(spaceIdName);
+        if (!status.ok()) {
+            onFinished();
+            return;
+        }
+        hostItems = std::move(status.value());
     }
-    resp_.set_hosts(std::move(ret.value()));
+    getLeaderDist(hostItems, spaceIdName);
+    resp_.set_hosts(std::move(hostItems));
     onFinished();
 }
 
-StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus() {
+StatusOr<std::vector<cpp2::HostItem>>
+ListHostsProcessor::allHostsWithStatus(std::unordered_map<GraphSpaceID, std::string>& spaceIdName) {
     std::vector<cpp2::HostItem> hostItems;
 
     const auto& hostPrefix = MetaServiceUtils::hostPrefix();
@@ -56,7 +63,6 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus() {
 
     // Get all spaces
     std::vector<GraphSpaceID> spaces;
-    std::unordered_map<GraphSpaceID, std::string> spaceIdName;
     const auto& spacePrefix = MetaServiceUtils::spacePrefix();
     kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, spacePrefix, &iter);
     if (kvRet != kvstore::ResultCode::SUCCEEDED) {
@@ -109,18 +115,28 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus() {
             return item.get_hostAddr() == hostAddr;
         });
         if (it != hostItems.end()) {
+            // set default leader parts of all space to empty
+            std::unordered_map<std::string, std::vector<PartitionID>> leaderParts;
+            for (auto& spaceEntry : hostEntry.second) {
+                leaderParts[spaceEntry.first] = {};
+            }
+            it->set_leader_parts(std::move(leaderParts));
             it->set_all_parts(std::move(hostEntry.second));
         }
     }
+    return hostItems;
+}
 
-    if (adminClient_  == nullptr) {
-        return hostItems;
+void ListHostsProcessor::getLeaderDist(std::vector<cpp2::HostItem>& hostItems,
+                                       std::unordered_map<GraphSpaceID, std::string>& spaceIdName) {
+    if (adminClient_ == nullptr) {
+        return;
     }
     HostLeaderMap hostLeaderMap;
     auto ret = adminClient_->getLeaderDist(&hostLeaderMap).get();
     if (!ret.ok()) {
         LOG(ERROR) << "Get leader distribution failed";
-        return hostItems;
+        return;
     }
     for (auto& hostEntry : hostLeaderMap) {
         auto hostAddr = toThriftHost(hostEntry.first);
@@ -129,11 +145,6 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus() {
         });
 
         if (it != hostItems.end()) {
-            std::unordered_map<std::string, std::vector<PartitionID>> leaderParts;
-            // set default leader parts of a space to empty
-            for (auto& spaceEntry : allParts[hostEntry.first]) {
-                leaderParts[spaceEntry.first] = {};
-            }
             for (auto& leaderEntry : hostEntry.second) {
                 // get space name by space id
                 auto spaceId = leaderEntry.first;
@@ -143,13 +154,10 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus() {
                 }
                 auto spaceName = spaceIter->second;
 
-                leaderParts[spaceName] = std::move(leaderEntry.second);
+                it->leader_parts[spaceName] = std::move(leaderEntry.second);
             }
-            it->set_leader_parts(std::move(leaderParts));
         }
     }
-
-    return hostItems;
 }
 
 
