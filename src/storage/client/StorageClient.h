@@ -139,6 +139,10 @@ public:
         VertexID vid,
         folly::EventBase* evb = nullptr);
 
+    folly::SemiFuture<bool> saveAsUUID(std::string value);
+
+    folly::SemiFuture<std::string> fetchUUID(std::string value);
+
 protected:
     // Calculate the partition id for the given vertex id
     PartitionID partId(GraphSpaceID spaceId, int64_t id) const;

@@ -310,5 +310,14 @@ PartitionID StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
     CHECK_GE(s, 0U);
     return s;
 }
+
+folly::SemiFuture<bool> StorageClient::saveAsUUID(std::string) {
+    LOG(FATAL) << "Not Implement";
+}
+
+folly::SemiFuture<std::string> StorageClient::fetchUUID(std::string) {
+    LOG(FATAL) << "Not Implement";
+}
+
 }   // namespace storage
 }   // namespace nebula

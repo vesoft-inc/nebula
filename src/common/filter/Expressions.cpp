@@ -561,7 +561,7 @@ OptVariantType FunctionCallExpression::eval() const {
     }
 
     // TODO(simon.liu)
-    auto r = function_(args);
+    auto r = function_(args).get();
     return OptVariantType(r);
 }
 

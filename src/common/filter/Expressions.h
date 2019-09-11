@@ -10,7 +10,8 @@
 #include "base/StatusOr.h"
 #include "base/Status.h"
 #include <boost/variant.hpp>
-#include  <boost/unordered_set.hpp>
+#include <boost/unordered_set.hpp>
+#include <folly/futures/Future.h>
 
 namespace nebula {
 
@@ -703,7 +704,7 @@ private:
 private:
     std::unique_ptr<std::string>                name_;
     std::vector<std::unique_ptr<Expression>>    args_;
-    std::function<VariantType(const std::vector<VariantType>&)> function_;
+    std::function<folly::Future<VariantType>(const std::vector<VariantType>&)> function_;
 };
 
 

@@ -527,6 +527,20 @@ TEST(Parser, InsertVertex) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.status().isSyntaxError());
     }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name, age) "
+                            "VALUES hash(\"dutor\"):(\'dutor, 30)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isSyntaxError());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name, age) "
+                            "VALUES uuid(\"dutor\"):(\'dutor, 30)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isSyntaxError());
+    }
 }
 
 TEST(Parser, UpdateVertex) {
@@ -572,6 +586,20 @@ TEST(Parser, InsertEdge) {
         GQLParser parser;
         std::string query = "INSERT EDGE transfer(amount, time) "
                             "VALUES 12345->-54321:(3.75, 1537408527)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT EDGE transfer(amount, time) "
+                            "VALUES hash(\"from\")->hash(\"to\"):(3.75, 1537408527)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT EDGE transfer(amount, time) "
+                            "VALUES uuid(\"from\")->uuid(\"to\"):(3.75, 1537408527)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

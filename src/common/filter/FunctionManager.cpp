@@ -403,6 +403,16 @@ FunctionManager::FunctionManager() {
         };
     }
     {
+        auto &attr = functions_["uuid"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.body_ = [] (const auto &args) {
+            LOG(INFO) << "UUID called";
+            auto v = Expression::asString(args[0]);
+            return static_cast<int64_t>(std::hash<std::string>()(v));
+        };
+    }
+    {
         // 64bit signed hash value
         auto &attr = functions_["hash"];
         attr.minArity_ = 1;

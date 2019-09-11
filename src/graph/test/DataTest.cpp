@@ -187,6 +187,13 @@ TEST_F(DataTest, InsertVertex) {
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX person(name, age),student(grade, number) "
+                          "VALUES uuid(\"Lucy\"):(\"Lucy\", 8, \"three\", 20190901001)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
     // Multi vertices multi tags
     {
         cpp2::ExecutionResponse resp;
@@ -240,6 +247,14 @@ TEST_F(DataTest, InsertVertex) {
         std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
                           "hash(\"Lucy\")->hash(\"Laura\"):(90),"
                           "hash(\"Lucy\")->hash(\"Amber\"):(95)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
+                          "uuid(\"Lucy\")->uuid(\"Laura\"):(90),"
+                          "uuid(\"Lucy\")->uuid(\"Amber\"):(95)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
