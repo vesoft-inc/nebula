@@ -79,8 +79,7 @@ struct TagData {
 
 struct VertexData {
     1: common.VertexID       vertex_id,
-    2: list<TagData>         tag_data,
-    3: list<EdgeData>        edge_data,
+    2: list<binary>          data
 }
 
 struct ResponseCommon {
@@ -92,8 +91,7 @@ struct ResponseCommon {
 
 struct QueryResponse {
     1: required ResponseCommon result,
-    2: optional map<common.TagID, common.Schema>(cpp.template = "std::unordered_map")       vertex_schema,
-    3: optional map<common.EdgeType, common.Schema>(cpp.template = "std::unordered_map")    edge_schema,
+    2: optional common.Schema schema,
     4: optional list<VertexData> vertices,
 }
 

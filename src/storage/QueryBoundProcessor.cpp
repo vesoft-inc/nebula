@@ -102,7 +102,81 @@ kvstore::ResultCode QueryBoundProcessor::processEdge(PartitionID partId, VertexI
     return kvstore::ResultCode::SUCCEEDED;
 }
 
+kvstore::ResultCode QueryBoundProcessor::collectVertexProps(
+                            PartitionID partId,
+                            VertexID vId,
+                            TagID tagId,
+                            const std::vector<PropContext>& props,
+                            FilterContext* fcontext,
+                            Collector* collector) {
+    auto prefix = NebulaKeyUtils::prefix(partId, vId, tagId);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId " << spaceId_;
+        return ret;
+    }
+    // Will decode the properties according to the schema version
+    // stored along with the properties
+    if (iter && iter->valid()) {
+        auto reader = RowReader::getTagPropReader(this->schemaMan_, iter->val(), spaceId_, tagId);
+        this->collectProps(reader.get(), iter->key(), props, fcontext, collector);
+    } else {
+        VLOG(3) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagId;
+        return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
+    }
+    return ret;
+}
+
 kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, VertexID vId) {
+    /*
+    cpp2::VertexData vResp;
+    vResp.set_vertex_id(vId);
+    FilterContext fcontext;
+    if (!tagContexts_.empty()) {
+        std::vector<cpp2::TagData> td;
+        for (auto& tc : tagContexts_) {
+            RowWriter writer;
+            PropsCollector collector(&writer);
+            VLOG(3) << "partId " << partId << ", vId " << vId << ", tagId " << tc.tagId_
+                    << ", prop size " << tc.props_.size();
+            auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_, &fcontext, &collector);
+            if (ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
+                continue;
+            }
+            if (ret != kvstore::ResultCode::SUCCEEDED) {
+                return ret;
+            }
+            if (writer.size() > 1) {
+                td.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                                tc.tagId_,
+                                writer.encode());
+            }
+        }
+        vResp.set_tag_data(std::move(td));
+    }
+
+    if (onlyVertexProps_) {
+        std::lock_guard<std::mutex> lg(this->lock_);
+        vertices_.emplace_back(std::move(vResp));
+        return kvstore::ResultCode::SUCCEEDED;
+    }
+
+    kvstore::ResultCode ret;
+    ret = processEdge(partId, vId, fcontext, vResp);
+
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        return ret;
+    }
+
+    if (!vResp.edge_data.empty()) {
+        // Only return the vertex if edges existed.
+        std::lock_guard<std::mutex> lg(this->lock_);
+        vertices_.emplace_back(std::move(vResp));
+    }
+
+    return kvstore::ResultCode::SUCCEEDED;
+    */
     cpp2::VertexData vResp;
     vResp.set_vertex_id(vId);
     FilterContext fcontext;
@@ -152,6 +226,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
 }
 
 void QueryBoundProcessor::onProcessFinished(int32_t retNum) {
+    /*
     (void)retNum;
     resp_.set_vertices(std::move(vertices_));
     std::unordered_map<TagID, nebula::cpp2::Schema> vertexSchema;
@@ -199,6 +274,103 @@ void QueryBoundProcessor::onProcessFinished(int32_t retNum) {
             resp_.set_edge_schema(std::move(edgeSchema));
         }
     }
+    */
+    if (retNum > 0) {
+        nebula::cpp2::Schema respSchema;
+        respSchema.columns.reserve(retNum);
+        RowWriter writer(nullptr);
+        for (auto& exp : returnColumnsExp_) {
+            auto value = exp->eval();
+            if (!value.ok()) {
+                LOG(ERROR) << value.status();
+                return;
+            }
+            nebula::cpp2::ColumnDef column;
+            auto v = std::move(value.value());
+            switch (v.which()) {
+               case VAR_INT64: {
+                   writer << boost::get<int64_t>(v);
+                   column = this->columnDef(std::string("anonymous"),
+                                            nebula::cpp2::SupportedType::INT);
+                   break;
+               }
+               case VAR_DOUBLE: {
+                   writer << boost::get<double>(v);
+                   column = this->columnDef(std::string("anonymous"),
+                                            nebula::cpp2::SupportedType::DOUBLE);
+                   break;
+               }
+               case VAR_BOOL: {
+                   writer << boost::get<bool>(v);
+                   column = this->columnDef(std::string("anonymous"),
+                                            nebula::cpp2::SupportedType::BOOL);
+                   break;
+               }
+               case VAR_STR: {
+                   writer << boost::get<std::string>(v);
+                   column = this->columnDef(std::string("anonymous"),
+                                            nebula::cpp2::SupportedType::STRING);
+                   break;
+               }
+               default: {
+                   LOG(FATAL) << "Unknown VariantType: " << v.which();
+                   return;
+               }
+           }
+           respSchema.columns.emplace_back(std::move(column));
+        }
+        resp_.set_schema(std::move(respSchema));
+        resp_.set_vertices(std::move(vertices_));
+    }
+}
+
+void QueryBoundProcessor::process(const cpp2::GetNeighborsRequest& req) {
+    CHECK_NOTNULL(executor_);
+    spaceId_ = req.get_space_id();
+    int32_t returnColumnsNum = req.get_return_columns().size();
+    VLOG(3) << "Receive request, spaceId " << spaceId_ << ", return cols " << returnColumnsNum;
+    // qwer
+    // tagContexts_.reserve(returnColumnsNum);
+
+    if (req.__isset.edge_types) {
+        initEdgeContext(req.edge_types);
+    }
+
+    auto retCode = checkAndBuildContexts(req);
+
+    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+        for (const auto& part : req.get_parts()) {
+            this->pushResultCode(retCode, part.first);
+        }
+        this->onFinished();
+        return;
+    }
+
+    auto buckets = genBuckets(req);
+    std::vector<folly::Future<std::vector<OneVertexResp>>> results;
+    for (auto& bucket : buckets) {
+        results.emplace_back(asyncProcessBucket(std::move(bucket)));
+    }
+    folly::collectAll(results).via(executor_).thenTry([
+                     this,
+                     returnColumnsNum] (auto&& t) mutable {
+        CHECK(!t.hasException());
+        std::unordered_set<PartitionID> failedParts;
+        for (auto& bucketTry : t.value()) {
+            CHECK(!bucketTry.hasException());
+            for (auto& r : bucketTry.value()) {
+                auto& partId = std::get<0>(r);
+                auto& ret = std::get<2>(r);
+                if (ret != kvstore::ResultCode::SUCCEEDED
+                      && failedParts.find(partId) == failedParts.end()) {
+                    failedParts.emplace(partId);
+                    this->pushResultCode(this->to(ret), partId);
+                }
+            }
+        }
+        this->onProcessFinished(returnColumnsNum);
+        this->onFinished();
+    });
 }
 
 void QueryBoundProcessor::process(const cpp2::GetNeighborsRequest& req) {
