@@ -288,6 +288,7 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
 
     // Start all peer hosts
     for (auto& addr : peers) {
+        LOG(INFO) << idStr_ << "Add peer " << addr;
         auto hostPtr = std::make_shared<Host>(addr, shared_from_this());
         hosts_.emplace_back(hostPtr);
     }
@@ -383,6 +384,7 @@ void RaftPart::preProcessTransLeader(const HostAddr& target) {
                     {
                         std::unique_lock<std::mutex> lck(self->raftLock_);
                         self->role_ = Role::CANDIDATE;
+                        self->leader_ = HostAddr(0, 0);
                     }
                     self->leaderElection();
                 });
@@ -468,7 +470,6 @@ void RaftPart::addPeer(const HostAddr& peer) {
 
 void RaftPart::removePeer(const HostAddr& peer) {
     CHECK(!raftLock_.try_lock());
-    LOG(INFO) << idStr_ << "Remove peer " << peer;
     if (peer == addr_) {
         status_ = Status::STOPPED;
         LOG(INFO) << idStr_ << "Remove myself from the raft group, just stop.";
@@ -932,6 +933,7 @@ bool RaftPart::needToStartElection() {
                   << lastMsgRecvDur_.elapsedInSec()
                   << ", term " << term_;
         role_ = Role::CANDIDATE;
+        leader_ = HostAddr(0, 0);
         LOG(INFO) << idStr_
                   << "needToStartElection: lastMsgRecvDur " << lastMsgRecvDur_.elapsedInSec()
                   << ", term_ " << term_;
@@ -1183,8 +1185,12 @@ void RaftPart::processAskForVoteRequest(
         return;
     }
 
-    VLOG(2) << idStr_ << "The partition currently is a "
-            << roleStr(role_);
+    LOG(INFO) << idStr_ << "The partition currently is a "
+              << roleStr(role_);
+    if (role_ == Role::LEARNER) {
+        resp.set_error_code(cpp2::ErrorCode::E_BAD_ROLE);
+        return;
+    }
 
     // Check term id
     auto term = role_ == Role::CANDIDATE ? proposedTerm_ : term_;

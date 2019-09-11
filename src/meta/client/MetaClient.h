@@ -268,9 +268,13 @@ public:
 
     const std::vector<HostAddr>& getAddresses();
 
+    Status refreshCache();
+
 protected:
     void loadDataThreadFunc();
-    void loadData();
+    // Return true if load succeeded.
+    bool loadData();
+
     void addLoadDataTask();
 
     void heartBeatThreadFunc();

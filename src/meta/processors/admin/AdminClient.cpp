@@ -8,6 +8,7 @@
 #include "meta/MetaServiceUtils.h"
 #include "meta/processors/Common.h"
 #include "meta/ActiveHostsMan.h"
+#include "kvstore/Part.h"
 
 DEFINE_int32(max_retry_times_admin_op, 30, "max retry times for admin request!");
 
@@ -32,7 +33,7 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
         }
         auto& peers = ret.value();
         for (auto& p : peers) {
-            if (p != leader) {
+            if (p != leader && ActiveHostsMan::isLived(kv_, p)) {
                 target = p;
                 break;
             }
@@ -158,6 +159,15 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
         return ret.status();
     }
     auto peers = std::move(ret).value();
+    auto strHosts = [] (const std::vector<HostAddr>& hosts) -> std::string {
+        std::stringstream peersStr;
+        for (auto& h : hosts) {
+            peersStr << h << ",";
+        }
+        return peersStr.str();
+    };
+    LOG(INFO) << "[space:" << spaceId << ", part:" << partId << "] Update original peers "
+              << strHosts(peers) << ", remove " << src << ", add " << dst;
     auto it = std::find(peers.begin(), peers.end(), src);
     if (it == peers.end()) {
         LOG(INFO) << "src " << src << " has been removed in [" << spaceId << ", " << partId << "]";
@@ -166,21 +176,26 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
         return Status::OK();
     }
     peers.erase(it);
+
+    CHECK(std::find(peers.begin(), peers.end(), dst) == peers.end());
     peers.emplace_back(dst);
     std::vector<nebula::cpp2::HostAddr> thriftPeers;
     thriftPeers.resize(peers.size());
     std::transform(peers.begin(), peers.end(), thriftPeers.begin(), [this](const auto& h) {
         return toThriftHost(h);
     });
+
+    auto partRet = kv_->part(kDefaultSpaceId, kDefaultPartId);
+    CHECK(ok(partRet));
+    auto part = nebula::value(partRet);
+
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::partKey(spaceId, partId),
                       MetaServiceUtils::partVal(thriftPeers));
-    kv_->asyncMultiPut(kDefaultSpaceId,
-                       kDefaultPartId,
-                       std::move(data),
-                       [this, p = std::move(pro)] (kvstore::ResultCode code) mutable {
+    part->asyncMultiPut(std::move(data), [] (kvstore::ResultCode) {});
+    part->sync([this, p = std::move(pro)] (kvstore::ResultCode code) mutable {
         // To avoid dead lock, we call future callback in ioThreadPool_
         folly::via(ioThreadPool_.get(), [code, p = std::move(p)] () mutable {
             if (code == kvstore::ResultCode::SUCCEEDED) {
@@ -314,6 +329,14 @@ void AdminClient::getResponse(
                             }
                             leaderIndex++;
                         }
+                        if (leaderIndex == (int32_t)hosts.size()) {
+                            LOG(ERROR) << "The new leader is " << leader;
+                            for (auto& h : hosts) {
+                                LOG(ERROR) << "The peer is " << h;
+                            }
+                            p.setValue(Status::Error("Can't find leader in current peers"));
+                            return;
+                        }
                         LOG(INFO) << "Return leader change from " << hosts[index]
                                   << ", new leader is " << leader
                                   << ", retry " << retry
@@ -411,7 +434,8 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
                     return;
                 }
                 auto&& resp = std::move(t).value();
-                (*result)[host] = std::move(resp.get_leader_parts());
+                LOG(INFO) << "Get leader for host " << host;
+                result->emplace(host, std::move(resp).get_leader_parts());
                 p.setValue(Status::OK());
             });
         });

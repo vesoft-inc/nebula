@@ -136,6 +136,13 @@ void Part::asyncRemoveRange(folly::StringPiece start,
         });
 }
 
+void Part::sync(KVCallback cb) {
+    sendCommandAsync("")
+        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
+        callback(toResultCode(res));
+    });
+}
+
 void Part::asyncAtomicOp(raftex::AtomicOp op, KVCallback cb) {
     atomicOpAsync(std::move(op)).then([callback = std::move(cb)] (AppendLogResult res) mutable {
         callback(toResultCode(res));

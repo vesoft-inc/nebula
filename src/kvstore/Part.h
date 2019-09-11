@@ -58,6 +58,9 @@ public:
 
     void asyncRemovePeer(const HostAddr& peer, KVCallback cb);
 
+    // Sync the information committed on follower.
+    void sync(KVCallback cb);
+
     void registerNewLeaderCb(NewLeaderCallback cb) {
         newLeaderCb_ = std::move(cb);
     }

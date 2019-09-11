@@ -122,7 +122,9 @@ bool StorageServer::start() {
         return false;
     }
 
-    auto handler = std::make_shared<StorageServiceHandler>(kvstore_.get(), schemaMan_.get());
+    auto handler = std::make_shared<StorageServiceHandler>(kvstore_.get(),
+                                                           schemaMan_.get(),
+                                                           metaClient_.get());
     try {
         LOG(INFO) << "The storage deamon start on " << localHost_;
         tfServer_ = std::make_unique<apache::thrift::ThriftServer>();

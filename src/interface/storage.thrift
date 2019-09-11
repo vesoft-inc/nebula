@@ -35,6 +35,8 @@ enum ErrorCode {
     E_INVALID_UPDATER = -32,
     E_INVALID_STORE = -33,
     E_INVALID_PEER  = -34,
+    // meta client failed
+    E_LOAD_META_FAILED = -41,
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 

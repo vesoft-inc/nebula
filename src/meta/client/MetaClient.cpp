@@ -116,15 +116,15 @@ void MetaClient::loadDataThreadFunc() {
     addLoadDataTask();
 }
 
-void MetaClient::loadData() {
+bool MetaClient::loadData() {
     if (ioThreadPool_->numThreads() <= 0) {
         LOG(ERROR) << "The threads number in ioThreadPool should be greater than 0";
-        return;
+        return false;
     }
     auto ret = listSpaces().get();
     if (!ret.ok()) {
         LOG(ERROR) << "List space failed, status:" << ret.status();
-        return;
+        return false;
     }
     decltype(localCache_) cache;
     decltype(spaceIndexByName_) spaceIndexByName;
@@ -141,7 +141,7 @@ void MetaClient::loadData() {
         if (!r.ok()) {
             LOG(ERROR) << "Get parts allocation failed for spaceId " << spaceId
                        << ", status " << r.status();
-            return;
+            return false;
         }
 
         auto spaceCache = std::make_shared<SpaceInfoCache>();
@@ -161,7 +161,7 @@ void MetaClient::loadData() {
                          spaceNewestTagVerMap,
                          spaceNewestEdgeVerMap,
                          spaceAllEdgeMap)) {
-            return;
+            return false;
         }
 
         cache.emplace(spaceId, spaceCache);
@@ -183,6 +183,7 @@ void MetaClient::loadData() {
     diff(oldCache, localCache_);
     ready_ = true;
     LOG(INFO) << "Load data completed!";
+    return true;
 }
 
 void MetaClient::addLoadDataTask() {
@@ -1381,6 +1382,11 @@ ConfigItem MetaClient::toConfigItem(const cpp2::ConfigItem& item) {
             break;
     }
     return ConfigItem(item.get_module(), item.get_name(), item.get_type(), item.get_mode(), value);
+}
+
+Status MetaClient::refreshCache() {
+    auto ret = bgThread_->addTask(&MetaClient::loadData, this).get();
+    return ret ? Status::OK() : Status::Error("Load data failed");
 }
 
 }  // namespace meta
