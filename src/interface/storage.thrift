@@ -31,6 +31,7 @@ enum ErrorCode {
 
     // Invalid request
     E_INVALID_FILTER = -31,
+    E_INVALID_RETURN_COL = -32
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 
@@ -149,13 +150,23 @@ struct GetNeighborsRequest {
     // When edge_type > 0, going along the out-edge, otherwise, along the in-edge
     3: list<common.EdgeType> edge_types,
     4: binary filter,
+    5: list<binary> return_columns,
+}
+
+struct QueryStatsRequest {
+    1: common.GraphSpaceID space_id,
+    // partId => ids
+    2: map<common.PartitionID, list<common.VertexID>>(cpp.template = "std::unordered_map") parts,
+    // When edge_type > 0, going along the out-edge, otherwise, along the in-edge
+    3: list<common.EdgeType> edge_types,
+    4: binary filter,
     5: list<PropDef> return_columns,
 }
 
 struct VertexPropRequest {
     1: common.GraphSpaceID space_id,
     2: map<common.PartitionID, list<common.VertexID>>(cpp.template = "std::unordered_map") parts,
-    3: list<PropDef> return_columns,
+    3: list<binary> return_columns,
 }
 
 struct EdgePropRequest {
@@ -253,7 +264,7 @@ struct GetLeaderResp {
 service StorageService {
     QueryResponse getBound(1: GetNeighborsRequest req)
 
-    QueryStatsResponse boundStats(1: GetNeighborsRequest req)
+    QueryStatsResponse boundStats(1: QueryStatsRequest req)
 
     // When return_columns is empty, return all properties
     QueryResponse getProps(1: VertexPropRequest req);

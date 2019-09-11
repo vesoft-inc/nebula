@@ -377,6 +377,8 @@ void GoExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
 
 void GoExecutor::stepOut() {
     auto spaceId = ectx()->rctx()->session()->space();
+    // qwer
+    /*
     auto status = getStepOutProps();
     if (!status.ok()) {
         DCHECK(onError_);
@@ -384,6 +386,8 @@ void GoExecutor::stepOut() {
         return;
     }
     auto returns = status.value();
+    */
+    auto returns = getReturnColumns();
     auto future  = ectx()->storage()->getNeighbors(spaceId,
                                                    starts_,
                                                    edgeTypes_,
@@ -593,6 +597,15 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
     return props;
 }
 
+std::vector<std::string> GoExecutor::getReturnColumns() {
+    std::vector<std::string> returnColumns;
+    for (auto *col : yields_) {
+        auto column = Expression::encode(col->expr());
+        returnColumns.emplace_back(std::move(column));
+    }
+    return returnColumns;
+}
+
 
 StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getDstProps() {
     std::vector<storage::cpp2::PropDef> props;
@@ -615,6 +628,8 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getDstProps() {
 
 void GoExecutor::fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcResp) {
     auto spaceId = ectx()->rctx()->session()->space();
+    // qwer
+    /*
     auto status = getDstProps();
     if (!status.ok()) {
         DCHECK(onError_);
@@ -622,6 +637,8 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcRe
         return;
     }
     auto returns = status.value();
+    */
+    auto returns = getReturnColumns();
     auto future = ectx()->storage()->getVertexProps(spaceId, ids, returns);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this, stepOutResp = std::move(rpcResp)] (auto &&result) mutable {

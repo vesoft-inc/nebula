@@ -482,7 +482,7 @@ int32_t QueryBaseProcessor<REQ, RESP>::getBucketsNum(int32_t verticesNum,
 
 template<typename REQ, typename RESP>
 std::vector<Bucket> QueryBaseProcessor<REQ, RESP>::genBuckets(
-                                                    const cpp2::GetNeighborsRequest& req) {
+                                                    const REQ& req) {
     std::vector<Bucket> buckets;
     int32_t verticesNum = 0;
     for (auto& pv : req.get_parts()) {
@@ -511,7 +511,7 @@ std::vector<Bucket> QueryBaseProcessor<REQ, RESP>::genBuckets(
 }
 
 template<typename REQ, typename RESP>
-void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req) {
+void QueryBaseProcessor<REQ, RESP>::process(const REQ& req) {
     CHECK_NOTNULL(executor_);
     spaceId_ = req.get_space_id();
     int32_t returnColumnsNum = req.get_return_columns().size();

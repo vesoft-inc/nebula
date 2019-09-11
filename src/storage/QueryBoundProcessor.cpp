@@ -13,6 +13,47 @@
 namespace nebula {
 namespace storage {
 
+cpp2::ErrorCode QueryBoundProcessor::checkAndBuildContexts(const cpp2::GetNeighborsRequest& req) {
+    if (this->expCtx_ == nullptr) {
+        this->expCtx_ = std::make_unique<ExpressionContext>();
+    }
+
+    // return columns
+    for (auto& col : req.get_return_columns()) {
+        StatusOr<std::unique_ptr<Expression>> colExpRet = Expression::decode(col);
+        if (!colExpRet.ok()) {
+            return cpp2::ErrorCode::E_INVALID_RETURN_COL;
+        }
+        auto colExp = std::move(colExpRet).value();
+        colExp->setContext(this->expCtx_.get());
+        auto status = colExp->prepare();
+        if (!status.ok() || !this->checkExp(colExp.get())) {
+            return cpp2::ErrorCode::E_INVALID_RETURN_COL;
+        }
+        returnColumnsExp_.emplace_back(std::move(colExp));
+    }
+
+    // filter(where/when)
+    const auto& filterStr = req.get_filter();
+    if (!filterStr.empty()) {
+        StatusOr<std::unique_ptr<Expression>> expRet = Expression::decode(filterStr);
+        if (!expRet.ok()) {
+            VLOG(1) << "Can't decode the filter " << filterStr;
+            return cpp2::ErrorCode::E_INVALID_FILTER;
+        }
+        this->exp_ = std::move(expRet).value();
+        this->exp_->setContext(this->expCtx_.get());
+        auto status = this->exp_->prepare();
+        if (!status.ok() || !this->checkExp(this->exp_.get())) {
+            return cpp2::ErrorCode::E_INVALID_FILTER;
+        }
+    }
+
+    // qwer: check expCtx_ has invalid property?
+
+    return cpp2::ErrorCode::SUCCEEDED;
+}
+
 kvstore::ResultCode QueryBoundProcessor::processEdgeImpl(const PartitionID partId,
                                                          const VertexID vId,
                                                          const EdgeType edgeType,
@@ -158,6 +199,57 @@ void QueryBoundProcessor::onProcessFinished(int32_t retNum) {
             resp_.set_edge_schema(std::move(edgeSchema));
         }
     }
+}
+
+void QueryBoundProcessor::process(const cpp2::GetNeighborsRequest& req) {
+    CHECK_NOTNULL(executor_);
+    spaceId_ = req.get_space_id();
+    /*
+    int32_t returnColumnsNum = req.get_return_columns().size();
+    VLOG(3) << "Receive request, spaceId " << spaceId_ << ", return cols " << returnColumnsNum;
+    // qwer
+    // tagContexts_.reserve(returnColumnsNum);
+
+    if (req.__isset.edge_types) {
+        initEdgeContext(req.edge_types);
+    }
+
+    auto retCode = checkAndBuildContexts(req);
+
+    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+        for (const auto& part : req.get_parts()) {
+            this->pushResultCode(retCode, part.first);
+        }
+        this->onFinished();
+        return;
+    }
+
+    auto buckets = genBuckets(req);
+    std::vector<folly::Future<std::vector<OneVertexResp>>> results;
+    for (auto& bucket : buckets) {
+        results.emplace_back(asyncProcessBucket(std::move(bucket)));
+    }
+    folly::collectAll(results).via(executor_).thenTry([
+                     this,
+                     returnColumnsNum] (auto&& t) mutable {
+        CHECK(!t.hasException());
+        std::unordered_set<PartitionID> failedParts;
+        for (auto& bucketTry : t.value()) {
+            CHECK(!bucketTry.hasException());
+            for (auto& r : bucketTry.value()) {
+                auto& partId = std::get<0>(r);
+                auto& ret = std::get<2>(r);
+                if (ret != kvstore::ResultCode::SUCCEEDED
+                      && failedParts.find(partId) == failedParts.end()) {
+                    failedParts.emplace(partId);
+                    this->pushResultCode(this->to(ret), partId);
+                }
+            }
+        }
+        this->onProcessFinished(returnColumnsNum);
+        this->onFinished();
+    });
+    */
 }
 
 }  // namespace storage

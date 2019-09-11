@@ -17,6 +17,7 @@
 namespace nebula {
 namespace storage {
 
+/*
 TEST(QueryVertexPropsTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/QueryVertexPropsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
@@ -105,6 +106,7 @@ TEST(QueryVertexPropsTest, SimpleTest) {
                                   folly::stringPrintf("tag_string_col_4"));
     }
 }
+*/
 
 }  // namespace storage
 }  // namespace nebula

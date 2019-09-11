@@ -30,6 +30,8 @@ std::unique_ptr<nebula::storage::AdHocSchemaManager> schema;
 namespace nebula {
 namespace storage {
 
+// qwer
+/*
 void mockData(kvstore::KVStore* kv) {
     for (auto partId = 0; partId < 6; partId++) {
         std::vector<kvstore::KV> data;
@@ -83,6 +85,7 @@ void mockData(kvstore::KVStore* kv) {
             });
     }
 }
+*/
 
 void setUp(const char* path) {
     gKV = TestUtils::initKV(path);
@@ -93,9 +96,11 @@ void setUp(const char* path) {
         schema->addTagSchema(
             0 /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
     }
-    mockData(gKV.get());
+    // qwer
+    // mockData(gKV.get());
 }
 
+/*
 cpp2::GetNeighborsRequest buildRequest(bool outBound = true) {
     cpp2::GetNeighborsRequest req;
     req.set_space_id(0);
@@ -127,10 +132,12 @@ cpp2::GetNeighborsRequest buildRequest(bool outBound = true) {
     req.set_return_columns(std::move(tmpColumns));
     return req;
 }
+*/
 
 }  // namespace storage
 }  // namespace nebula
 
+/*
 void run(int32_t iters, int32_t handlerNum) {
     FLAGS_max_handlers_per_req = handlerNum;
     nebula::storage::cpp2::GetNeighborsRequest req;
@@ -161,6 +168,7 @@ BENCHMARK(query_bound_3, iters) {
 BENCHMARK(query_bound_10, iters) {
     run(iters, 10);
 }
+*/
 /*************************
  * End of benchmarks
  ************************/
@@ -169,9 +177,12 @@ BENCHMARK(query_bound_10, iters) {
 int main(int argc, char** argv) {
     folly::init(&argc, &argv, true);
     nebula::fs::TempDir rootPath("/tmp/QueryBoundBenchmarkTest.XXXXXX");
+    // qwer
+    /*
     nebula::storage::setUp(rootPath.path());
     folly::runBenchmarks();
     gKV.reset();
+    */
     return 0;
 }
 /*

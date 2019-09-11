@@ -40,6 +40,8 @@ private:
 
     std::vector<storage::cpp2::PropDef> getPropNames();
 
+    std::vector<std::string> getReturnColumns();
+
     void fetchVertices();
 
     using RpcResponse = storage::StorageRpcResponse<storage::cpp2::QueryResponse>;

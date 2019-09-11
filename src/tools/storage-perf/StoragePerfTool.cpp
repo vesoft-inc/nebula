@@ -29,6 +29,8 @@ namespace storage {
 
 thread_local uint32_t position = 1;
 
+// qwer
+/*
 class Perf {
 public:
     int run() {
@@ -287,6 +289,7 @@ private:
     EdgeType edgeType_;
     int32_t slots_[10];
 };
+*/
 
 }  // namespace storage
 }  // namespace nebula
@@ -294,6 +297,9 @@ private:
 int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
+    /*
     nebula::storage::Perf perf;
     return perf.run();
+    */
+    return 0;
 }

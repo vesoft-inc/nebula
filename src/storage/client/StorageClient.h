@@ -101,7 +101,7 @@ public:
         const std::vector<VertexID> &vertices,
         const std::vector<EdgeType> &edgeTypes,
         std::string filter,
-        std::vector<storage::cpp2::PropDef> returnCols,
+        std::vector<std::string> returnCols,
         folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::QueryStatsResponse>> neighborStats(
@@ -115,7 +115,7 @@ public:
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::QueryResponse>> getVertexProps(
         GraphSpaceID space,
         std::vector<VertexID> vertices,
-        std::vector<storage::cpp2::PropDef> returnCols,
+        std::vector<std::string> returnCols,
         folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::EdgePropResponse>> getEdgeProps(

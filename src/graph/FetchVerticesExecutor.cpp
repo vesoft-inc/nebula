@@ -110,12 +110,16 @@ void FetchVerticesExecutor::execute() {
 }
 
 void FetchVerticesExecutor::fetchVertices() {
+    // qwer
+    /*
     auto props = getPropNames();
     if (props.empty()) {
         DCHECK(onError_);
         onError_(Status::Error("No props declared."));
         return;
     }
+    */
+    auto props = getReturnColumns();
 
     auto future = ectx()->storage()->getVertexProps(spaceId_, vids_, std::move(props));
     auto *runner = ectx()->rctx()->runner();
@@ -153,6 +157,15 @@ std::vector<storage::cpp2::PropDef> FetchVerticesExecutor::getPropNames() {
     }
 
     return props;
+}
+
+std::vector<std::string> FetchVerticesExecutor::getReturnColumns() {
+    std::vector<std::string> returnColumns;
+    for (auto *col : yields_) {
+        auto column = Expression::encode(col->expr());
+        returnColumns.emplace_back(std::move(column));
+    }
+    return returnColumns;
 }
 
 void FetchVerticesExecutor::processResult(RpcResponse &&result) {

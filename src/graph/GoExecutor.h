@@ -104,6 +104,8 @@ private:
     StatusOr<std::vector<storage::cpp2::PropDef>> getStepOutProps();
     StatusOr<std::vector<storage::cpp2::PropDef>> getDstProps();
 
+    std::vector<std::string> getReturnColumns();
+
     void fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcResp);
 
     /**

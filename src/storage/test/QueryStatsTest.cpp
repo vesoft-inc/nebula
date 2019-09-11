@@ -17,6 +17,7 @@
 namespace nebula {
 namespace storage {
 
+/*
 void mockData(kvstore::KVStore* kv) {
     for (auto partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
@@ -141,7 +142,7 @@ TEST(QueryStatsTest, StatsSimpleTest) {
     auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
 
-    cpp2::GetNeighborsRequest req;
+    cpp2::QueryStatsRequest req;
     buildRequest(req);
 
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
@@ -152,6 +153,7 @@ TEST(QueryStatsTest, StatsSimpleTest) {
 
     checkResponse(resp);
 }
+*/
 
 }  // namespace storage
 }  // namespace nebula

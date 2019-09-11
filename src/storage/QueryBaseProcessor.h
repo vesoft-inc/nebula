@@ -39,7 +39,7 @@ class QueryBaseProcessor : public BaseProcessor<RESP> {
 public:
     virtual ~QueryBaseProcessor() = default;
 
-    void process(const cpp2::GetNeighborsRequest& req);
+    void process(const REQ& req);
 
 protected:
     explicit QueryBaseProcessor(kvstore::KVStore* kvstore,
@@ -94,7 +94,7 @@ protected:
                                FilterContext* fcontext,
                                EdgeProcessor proc);
 
-    std::vector<Bucket> genBuckets(const cpp2::GetNeighborsRequest& req);
+    std::vector<Bucket> genBuckets(const REQ& req);
 
     folly::Future<std::vector<OneVertexResp>> asyncProcessBucket(Bucket bucket);
 

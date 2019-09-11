@@ -21,6 +21,8 @@ DECLARE_int32(min_vertices_per_bucket);
 namespace nebula {
 namespace storage {
 
+// qwer
+/*
 void mockData(kvstore::KVStore* kv) {
     for (auto partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
@@ -467,6 +469,7 @@ TEST(QueryBoundTest, MultiEdgeQueryTest) {
     LOG(INFO) << "Check the results...";
     checkResponse(resp, 30, 12, 10001, 7, true);
 }
+*/
 
 }  // namespace storage
 }  // namespace nebula

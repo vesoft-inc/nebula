@@ -32,7 +32,7 @@ StorageServiceHandler::future_getBound(const cpp2::GetNeighborsRequest& req) {
 }
 
 folly::Future<cpp2::QueryStatsResponse>
-StorageServiceHandler::future_boundStats(const cpp2::GetNeighborsRequest& req) {
+StorageServiceHandler::future_boundStats(const cpp2::QueryStatsRequest& req) {
     auto* processor = QueryStatsProcessor::instance(kvstore_, schemaMan_, getThreadManager());
     RETURN_FUTURE(processor);
 }

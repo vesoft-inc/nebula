@@ -96,7 +96,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getNei
         const std::vector<VertexID> &vertices,
         const std::vector<EdgeType> &edgeTypes,
         std::string filter,
-        std::vector<cpp2::PropDef> returnCols,
+        std::vector<std::string> returnCols,
         folly::EventBase* evb) {
     auto clusters = clusterIdsToHosts(
         space,
@@ -138,7 +138,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryStatsResponse>> StorageClient::n
             return v;
         });
 
-    std::unordered_map<HostAddr, cpp2::GetNeighborsRequest> requests;
+    std::unordered_map<HostAddr, cpp2::QueryStatsRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];
@@ -152,7 +152,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryStatsResponse>> StorageClient::n
 
     return collectResponse(
         evb, std::move(requests),
-        [](cpp2::StorageServiceAsyncClient* client, const cpp2::GetNeighborsRequest& r) {
+        [](cpp2::StorageServiceAsyncClient* client, const cpp2::QueryStatsRequest& r) {
             return client->future_boundStats(r);
         });
 }
@@ -161,7 +161,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryStatsResponse>> StorageClient::n
 folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getVertexProps(
         GraphSpaceID space,
         std::vector<VertexID> vertices,
-        std::vector<cpp2::PropDef> returnCols,
+        std::vector<std::string> returnCols,
         folly::EventBase* evb) {
     auto clusters = clusterIdsToHosts(
         space,

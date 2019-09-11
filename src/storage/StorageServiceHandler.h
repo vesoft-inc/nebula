@@ -29,7 +29,7 @@ public:
     future_getBound(const cpp2::GetNeighborsRequest& req) override;
 
     folly::Future<cpp2::QueryStatsResponse>
-    future_boundStats(const cpp2::GetNeighborsRequest& req) override;
+    future_boundStats(const cpp2::QueryStatsRequest& req) override;
 
     folly::Future<cpp2::QueryResponse>
     future_getProps(const cpp2::VertexPropRequest& req) override;

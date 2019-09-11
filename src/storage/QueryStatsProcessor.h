@@ -14,7 +14,7 @@ namespace nebula {
 namespace storage {
 
 class QueryStatsProcessor
-    : public QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryStatsResponse> {
+    : public QueryBaseProcessor<cpp2::QueryStatsRequest, cpp2::QueryStatsResponse> {
 public:
     static QueryStatsProcessor* instance(kvstore::KVStore* kvstore,
                                          meta::SchemaManager* schemaMan,
@@ -26,7 +26,7 @@ private:
     explicit QueryStatsProcessor(kvstore::KVStore* kvstore,
                                  meta::SchemaManager* schemaMan,
                                  folly::Executor* executor)
-        : QueryBaseProcessor<cpp2::GetNeighborsRequest,
+        : QueryBaseProcessor<cpp2::QueryStatsRequest,
                              cpp2::QueryStatsResponse>(kvstore, schemaMan, executor) {}
 
     kvstore::ResultCode processVertex(PartitionID partID,

@@ -26,6 +26,8 @@ public:
         return new QueryBoundProcessor(kvstore, schemaMan, executor);
     }
 
+    void process(const cpp2::GetNeighborsRequest& req);
+
 protected:
     explicit QueryBoundProcessor(kvstore::KVStore* kvstore,
                                  meta::SchemaManager* schemaMan,
@@ -41,6 +43,8 @@ protected:
 private:
     std::vector<cpp2::VertexData> vertices_;
 
+    cpp2::ErrorCode checkAndBuildContexts(const cpp2::GetNeighborsRequest& req);
+
     kvstore::ResultCode processEdge(PartitionID partId, VertexID vId, FilterContext &fcontext,
                                     cpp2::VertexData& vdata);
     kvstore::ResultCode processEdgeImpl(const PartitionID partId, const VertexID vId,
@@ -51,6 +55,8 @@ private:
 protected:
     // Indicate the request only get vertex props.
     bool onlyVertexProps_ = false;
+
+    std::vector<std::unique_ptr<Expression>> returnColumnsExp_;
 };
 
 }  // namespace storage

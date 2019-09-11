@@ -22,6 +22,7 @@ DECLARE_int32(heartbeat_interval_secs);
 namespace nebula {
 namespace storage {
 
+/*
 TEST(StorageClientTest, VerticesInterfacesTest) {
     FLAGS_load_data_interval_secs = 1;
     FLAGS_heartbeat_interval_secs = 1;
@@ -414,6 +415,7 @@ TEST(StorageClientTest, LeaderChangeTest) {
     ASSERT_EQ(1, tsc.leaders_.size());
     ASSERT_EQ(HostAddr(localIp, 10010), tsc.leaders_[std::make_pair(0, 1)]);
 }
+*/
 
 }  // namespace storage
 }  // namespace nebula
