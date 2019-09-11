@@ -32,6 +32,8 @@ public:
 private:
     std::unique_ptr<InterimResult> setupInterimResult();
 
+    Status beforeExecute();
+
 private:
     OrderBySentence                                            *sentence_{nullptr};
     std::unique_ptr<InterimResult>                              inputs_;

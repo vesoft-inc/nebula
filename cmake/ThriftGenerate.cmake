@@ -82,6 +82,7 @@ add_custom_command(
     --strict "--allow-neg-enum-vals"
     --templates ${THRIFT_TEMPLATES}
     --gen "mstch_cpp2:include_prefix=${include_prefix},process_in_event_base,stack_arguments"
+    --gen "py"
     --gen "java:hashcode"
     --gen "go"
     -o "." "${file_path}/${file_name}.thrift"

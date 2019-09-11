@@ -30,6 +30,19 @@ Status FetchExecutor::prepareYield() {
         } else {
             resultColNames_.emplace_back(*col->alias());
         }
+
+        // such as YIELD 1+1, it has not type in schema, the type from the eval()
+        colTypes_.emplace_back(nebula::cpp2::SupportedType::UNKNOWN);
+        if (col->expr()->isAliasExpression()) {
+            colNames_.emplace_back(*static_cast<InputPropertyExpression*>(col->expr())->prop());
+            continue;
+        } else if (col->expr()->isTypeCastingExpression()) {
+            // type cast
+            auto exprPtr = static_cast<TypeCastingExpression*>(col->expr());
+            colTypes_.back() = ColumnTypeToSupportedType(exprPtr->getType());
+        }
+
+        colNames_.emplace_back(col->expr()->toString());
     }
 
     if (expCtx_->hasSrcTagProp() || expCtx_->hasDstTagProp()) {
@@ -84,12 +97,12 @@ void FetchExecutor::onEmptyInputs() {
     onFinish_();
 }
 
-void FetchExecutor::getOutputSchema(
+Status FetchExecutor::getOutputSchema(
         meta::SchemaProviderIf *schema,
         const RowReader *reader,
         SchemaWriter *outputSchema) const {
     if (expCtx_ == nullptr || resultColNames_.empty()) {
-        return;
+        LOG(FATAL) << "Input is empty";
     }
     auto collector = std::make_unique<Collector>(schema);
     auto &getters = expCtx_->getters();
@@ -101,34 +114,44 @@ void FetchExecutor::getOutputSchema(
         auto *expr = column->expr();
         auto value = expr->eval();
         if (!value.ok()) {
-            onError_(value.status());
-            return;
+            return value.status();
         }
         record.emplace_back(std::move(value.value()));
     }
 
-    using nebula::cpp2::SupportedType;
-    for (auto index = 0u; index < record.size(); ++index) {
-        SupportedType type;
-        switch (record[index].which()) {
-            case VAR_INT64:
-                // all integers in InterimResult are regarded as type of VID
-                type = SupportedType::VID;
-                break;
-            case VAR_DOUBLE:
-                type = SupportedType::DOUBLE;
-                break;
-            case VAR_BOOL:
-                type = SupportedType::BOOL;
-                break;
-            case VAR_STR:
-                type = SupportedType::STRING;
-                break;
-            default:
-                LOG(FATAL) << "Unknown VariantType: " << record[index].which();
-        }
-        outputSchema->appendCol(resultColNames_[index], type);
+    if (colTypes_.size() != record.size()) {
+        return Status::Error("Input is not equal to output");
     }
+    using nebula::cpp2::SupportedType;
+    auto index = 0u;
+    for (auto &it : colTypes_) {
+        SupportedType type;
+        if (it == SupportedType::UNKNOWN) {
+            switch (record[index].which()) {
+                case VAR_INT64:
+                    // all integers in InterimResult are regarded as type of INT
+                    type = SupportedType::INT;
+                    break;
+                case VAR_DOUBLE:
+                    type = SupportedType::DOUBLE;
+                    break;
+                case VAR_BOOL:
+                    type = SupportedType::BOOL;
+                    break;
+                case VAR_STR:
+                    type = SupportedType::STRING;
+                    break;
+                default:
+                    LOG(FATAL) << "Unknown VariantType: " << record[index].which();
+            }
+        } else {
+            type = it;
+        }
+
+        outputSchema->appendCol(resultColNames_[index], type);
+        index++;
+    }
+    return Status::OK();
 }
 
 void FetchExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {

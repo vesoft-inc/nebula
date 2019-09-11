@@ -124,10 +124,8 @@ TEST(RowWriter, streamControl) {
 
     // Col 4
     int64_t tVal;
-    EXPECT_EQ(ResultType::E_INCOMPATIBLE_TYPE,
-              reader->getInt("Column5", tVal));
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader->getTimestamp("Column5", tVal));
+              reader->getInt("Column5", tVal));
     EXPECT_EQ(1551331827, tVal);
 }
 
@@ -214,7 +212,7 @@ TEST(RowWriter, withSchema) {
 
     // Col 8
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader->getTimestamp("col8", tVal));
+              reader->getInt("col8", tVal));
     EXPECT_EQ(1551331827, tVal);
 }
 
@@ -287,7 +285,7 @@ TEST(RowWriter, skip) {
 
     // Col 9: Implicitly skipped field
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader->getTimestamp("col9", tVal));
+              reader->getInt("col9", tVal));
     EXPECT_DOUBLE_EQ(0.0, dVal);
 }
 

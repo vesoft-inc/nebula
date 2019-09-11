@@ -40,7 +40,6 @@ public:
         ResultType getDouble(double& v) const noexcept;
         ResultType getString(folly::StringPiece& v) const noexcept;
         ResultType getVid(int64_t& v) const noexcept;
-        ResultType getTimestamp(int64_t& v) const noexcept;
     private:
         const RowReader* reader_;
         Iterator* iter_;
@@ -89,8 +88,34 @@ public:
         folly::StringPiece row,
         std::shared_ptr<const meta::SchemaProviderIf> schema);
 
+    static VariantType getDefaultProp(const meta::SchemaProviderIf* schema,
+                                      const std::string& prop) {
+        auto& vType = schema->getFieldType(prop);
+        switch (vType.type) {
+            case nebula::cpp2::SupportedType::BOOL: {
+                return false;
+            }
+            case nebula::cpp2::SupportedType::TIMESTAMP:
+            case nebula::cpp2::SupportedType::INT:
+                return static_cast<int64_t>(0);
+            case nebula::cpp2::SupportedType::VID: {
+                return static_cast<VertexID>(0);
+            }
+            case nebula::cpp2::SupportedType::FLOAT:
+            case nebula::cpp2::SupportedType::DOUBLE: {
+                return static_cast<double>(0.0);
+            }
+            case nebula::cpp2::SupportedType::STRING: {
+                return static_cast<std::string>("");
+            }
+            default:
+                LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(vType.type);
+                return "";
+        }
+    }
+
     static ErrorOr<ResultType, VariantType> getPropByName(const RowReader* reader,
-                                                    const std::string& prop) {
+                                                          const std::string& prop) {
         auto& vType = reader->getSchema()->getFieldType(prop);
         switch (vType.type) {
             case nebula::cpp2::SupportedType::BOOL: {
@@ -101,7 +126,8 @@ public:
                 }
                 return v;
             }
-            case nebula::cpp2::SupportedType::INT: {
+            case nebula::cpp2::SupportedType::INT:
+            case nebula::cpp2::SupportedType::TIMESTAMP: {
                 int64_t v;
                 auto ret = reader->getInt(prop, v);
                 if (ret != ResultType::SUCCEEDED) {
@@ -160,7 +186,8 @@ public:
                 }
                 return v;
             }
-            case nebula::cpp2::SupportedType::INT: {
+            case nebula::cpp2::SupportedType::INT:
+            case nebula::cpp2::SupportedType::TIMESTAMP: {
                 int64_t v;
                 auto ret = reader->getInt(index, v);
                 if (ret != ResultType::SUCCEEDED) {
@@ -239,8 +266,6 @@ public:
     ResultType getVid(const folly::StringPiece name, int64_t& v) const noexcept;
     ResultType getVid(int64_t index, int64_t& v) const noexcept;
 
-    ResultType getTimestamp(const folly::StringPiece name, int64_t& v) const noexcept;
-    ResultType getTimestamp(int64_t index, int64_t& v) const noexcept;
 
     const meta::SchemaProviderIf* getSchema() const {
         return schema_.get();
@@ -305,7 +330,6 @@ private:
     int32_t readString(int64_t offset, folly::StringPiece& v) const noexcept;
     int32_t readInt64(int64_t offset, int64_t& v) const noexcept;
     int32_t readVid(int64_t offset, int64_t& v) const noexcept;
-    int32_t readTimestamp(int64_t offset, int64_t& v) const noexcept;
 
     // Following methods assume the parameters index and offset are valid
     // When succeeded, offset will advance
@@ -320,8 +344,6 @@ private:
         const noexcept;
     ResultType getInt64(int64_t index, int64_t& offset, int64_t& v) const noexcept;
     ResultType getVid(int64_t index, int64_t& offset, int64_t& v) const noexcept;
-    ResultType getTimestamp(int64_t index, int64_t& offset, int64_t& v)
-        const noexcept;
 };
 
 }  // namespace nebula
@@ -366,5 +388,3 @@ private:
 #include "dataman/RowReader.inl"
 
 #endif  // DATAMAN_ROWREADER_H_
-
-
