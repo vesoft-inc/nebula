@@ -113,7 +113,7 @@ The binary of the query engine is **nebula-graphd**. Each nebula-graphd instance
 
 ### Design-thinking: API and SDK
 
-**Nebula Graph** provides SDKs in C++, Java, and Golang. **Nebula Graph** uses fbthrift as the RPC framework to communicate among servers. **Nebula Graph**'s web SDK is in progress and will be released soon.
+**Nebula Graph** provides SDKs in C++, Java, and Golang. **Nebula Graph** uses fbthrift as the RPC framework to communicate among servers. **Nebula Graph**'s web console is in progress and will be released soon.
 
 
 
