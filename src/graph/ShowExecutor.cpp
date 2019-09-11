@@ -74,6 +74,7 @@ void ShowExecutor::execute() {
 void ShowExecutor::showHosts() {
     auto future = ectx()->getMetaClient()->listHosts();
     auto *runner = ectx()->rctx()->runner();
+    constexpr static char kNoValidPart[] = "No valid partition";
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
@@ -134,8 +135,8 @@ void ShowExecutor::showHosts() {
                 parts.resize(parts.size() - 2);
             } else {
                 // if there is no valid parition on a host at all
-                leaders = "No valid partition";
-                parts = "No valid partition";
+                leaders = kNoValidPart;
+                parts = kNoValidPart;
             }
             row[4].set_str(leaders);
             row[5].set_str(parts);
