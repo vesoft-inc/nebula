@@ -80,28 +80,6 @@ const folly::StringPiece InMemoryLogBuffer::getLog(size_t idx) const {
 }
 
 
-bool InMemoryLogBuffer::freeze() {
-    bool expected = false;
-    return frozen_.compare_exchange_strong(expected, true);
-}
-
-
-void InMemoryLogBuffer::rollover() {
-    rollover_ = true;
-}
-
-bool InMemoryLogBuffer::needToRollover() const {
-    return rollover_;
-}
-
-bool InMemoryLogBuffer::invalid() const {
-    return invalid_;
-}
-
-void InMemoryLogBuffer::markInvalid() {
-    invalid_ = true;
-}
-
 std::pair<LogID, TermID> InMemoryLogBuffer::accessAllLogs(
         std::function<void(LogID,
                            TermID,

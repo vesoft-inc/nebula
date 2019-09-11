@@ -14,9 +14,11 @@ namespace nebula {
 namespace storage {
 
 void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
-    VLOG(3) << "Receive AddVerticesRequest...";
-    auto now =
+    auto version =
         std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec();
+    // Switch version to big-endian, make sure the key is in ordered.
+    version = folly::Endian::big(version);
+
     const auto& partVertices = req.get_parts();
     auto spaceId = req.get_space_id();
     callingNum_ = partVertices.size();
@@ -28,8 +30,10 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
         std::for_each(vertices.begin(), vertices.end(), [&](auto& v){
             const auto& tags = v.get_tags();
             std::for_each(tags.begin(), tags.end(), [&](auto& tag) {
+                VLOG(4) << "PartitionID: " << partId << ", VertexID: " << v.get_id()
+                        << ", TagID: " << tag.get_tag_id() << ", TagVersion: " << version;
                 auto key = NebulaKeyUtils::vertexKey(partId, v.get_id(),
-                                                     tag.get_tag_id(), now);
+                                                     tag.get_tag_id(), version);
                 data.emplace_back(std::move(key), std::move(tag.get_props()));
             });
         });

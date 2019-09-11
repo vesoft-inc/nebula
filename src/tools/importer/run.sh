@@ -6,5 +6,4 @@
 mvn compile exec:java \
     -Dexec.mainClass="com.vesoft.nebula.importer.Importer" \
     -Dexec.args="$1" \
-    -DJAVA_FBTHRIFT_JAR=$2 \
     -Dexec.classpathScope=compile

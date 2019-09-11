@@ -9,6 +9,8 @@
 #include "base/Base.h"
 #include "base/StatusOr.h"
 #include "base/Status.h"
+#include <boost/variant.hpp>
+#include  <boost/unordered_set.hpp>
 
 namespace nebula {
 
@@ -23,6 +25,7 @@ std::string columnTypeToString(ColumnType type);
 
 class ExpressionContext final {
 public:
+    using EdgeInfo = boost::variant<std::string, EdgeType>;
     void addSrcTagProp(const std::string &tag, const std::string &prop) {
         srcTagProps_.emplace(tag, prop);
     }
@@ -42,6 +45,25 @@ public:
 
     void addAliasProp(const std::string &alias, const std::string &prop) {
         aliasProps_.emplace(alias, prop);
+    }
+
+    bool addEdge(const std::string &alias, EdgeType edgeType) {
+        auto it = edgeMaps_.find(alias);
+        if (it != edgeMaps_.end()) {
+            return false;
+        }
+        edgeMaps_.emplace(alias, edgeType);
+        return true;
+    }
+
+    bool getEdgeType(const std::string &alias, EdgeType &edgeType) {
+        auto it = edgeMaps_.find(alias);
+        if (it == edgeMaps_.end()) {
+            return false;
+        }
+
+        edgeType = it->second;
+        return true;
     }
 
     using PropPair = std::pair<std::string, std::string>;
@@ -103,14 +125,21 @@ public:
 
     void print() const;
 
+    bool isOverAllEdge() const { return overAll_; }
+
+    void setOverAllEdge() { overAll_ = true; }
+
 private:
-    Getters                                     getters_;
-    std::unordered_set<PropPair>                srcTagProps_;
-    std::unordered_set<PropPair>                dstTagProps_;
-    std::unordered_set<PropPair>                aliasProps_;
-    std::unordered_set<VariableProp>            variableProps_;
-    std::unordered_set<std::string>             variables_;
-    std::unordered_set<std::string>             inputProps_;
+    Getters                                   getters_;
+    std::unordered_set<PropPair>              srcTagProps_;
+    std::unordered_set<PropPair>              dstTagProps_;
+    std::unordered_set<PropPair>              aliasProps_;
+    std::unordered_set<VariableProp>          variableProps_;
+    std::unordered_set<std::string>           variables_;
+    std::unordered_set<std::string>           inputProps_;
+    // alias => edgeType
+    std::unordered_map<std::string, EdgeType> edgeMaps_;
+    bool                                      overAll_{false};
 };
 
 
@@ -134,6 +163,14 @@ public:
 
     virtual bool isVariableExpression() const {
         return kind_ == kVariableProp;
+    }
+
+    virtual bool isAliasExpression() const {
+        return kind_ == kAliasProp;
+    }
+
+    virtual bool isTypeCastingExpression() const {
+        return kind_ == kTypeCasting;
     }
 
     /**
@@ -556,7 +593,7 @@ public:
 
     SourcePropertyExpression(std::string *tag, std::string *prop) {
         kind_ = kSourceProp;
-        ref_.reset(new std::string("$^"));
+        ref_.reset(new std::string("$^."));
         alias_.reset(tag);
         prop_.reset(prop);
     }
@@ -740,6 +777,10 @@ public:
 
     const Expression* operand() const {
         return operand_.get();
+    }
+
+    const ColumnType getType() const {
+        return type_;
     }
 
 private:
