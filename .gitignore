@@ -22,3 +22,5 @@ CTestTestfile.cmake
 CMakeFiles/
 Testing/
 target/
+cluster.id
+pids/
