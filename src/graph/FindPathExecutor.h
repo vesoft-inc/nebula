@@ -60,6 +60,10 @@ private:
     // Do some prepare work that can not do in prepare()
     Status beforeExecute();
 
+    Status prepareOver();
+
+    Status prepareOverAll();
+
     void getFromFrontiers(std::vector<storage::cpp2::PropDef> props);
 
     void getToFrontiers(std::vector<storage::cpp2::PropDef> props);
@@ -105,12 +109,13 @@ private:
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
     SchemaPropIndex                             srcTagProps_;
     SchemaPropIndex                             dstTagProps_;
-    std::unordered_map<EdgeType, std::string>   edgeTypes_;
+    std::unordered_map<EdgeType, std::string>   edgeTypeNameMap_;
     concurrent::Barrier                         barrier_;
     Status                                      fStatus_;
     Status                                      tStatus_;
     std::unordered_set<VertexID>                targetNotFound_;
-    std::unordered_set<std::unique_ptr<StepOut>>        stepOutHolder_;
+    using StepOutHolder = std::unordered_set<std::unique_ptr<StepOut>>;
+    StepOutHolder                               stepOutHolder_;
     // next step starting vertices
     std::unordered_set<VertexID>                visitedFrom_;
     std::unordered_set<VertexID>                visitedTo_;

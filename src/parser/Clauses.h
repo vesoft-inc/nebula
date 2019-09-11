@@ -11,6 +11,7 @@
 
 namespace nebula {
 
+class OverEdge;
 class Clause {
 public:
     struct Vertices {
@@ -20,9 +21,9 @@ public:
     };
 
     struct Over {
-        std::string *edge_{nullptr};
-        EdgeType     edgeType_{INT_MIN};
-        bool         reversely_{false};
+        std::vector<OverEdge*>  edges_{nullptr};
+        std::vector<EdgeType>   edgeTypes_;
+        std::vector<EdgeType>   oppositeTypes_;
     };
 
     struct Step {
@@ -99,7 +100,6 @@ private:
 };
 
 
-
 class VertexIDList final {
 public:
     void add(Expression *expr) {
@@ -151,9 +151,6 @@ protected:
     std::unique_ptr<Expression>                 ref_;
 };
 
-<<<<<<< HEAD
-class OverEdge final {
-=======
 class FromClause final : public VerticesClause {
 public:
     explicit FromClause(VertexIDList *vidList) : VerticesClause(vidList) {
@@ -180,8 +177,7 @@ public:
     std::string toString() const;
 };
 
-class OverClause final : public Clause {
->>>>>>> Refactoring the prepare part.
+class OverEdge final {
 public:
     explicit OverEdge(std::string *edge, std::string *alias = nullptr, bool isReversely = false) {
         edge_.reset(edge);
@@ -218,19 +214,22 @@ public:
         return result;
     }
 
-    Status prepare(Over &over) const;
-
     std::string toString() const;
 
 private:
     std::vector<std::unique_ptr<OverEdge>> edges_;
 };
 
-class OverClause final {
+class OverClause final : public Clause {
 public:
-    explicit OverClause(OverEdges *edges) { overEdges_.reset(edges); }
+    explicit OverClause(OverEdges *edges) {
+        kind_ = kOverClause;
+        overEdges_.reset(edges);
+    }
 
     std::vector<OverEdge *> edges() const { return overEdges_->edges(); }
+
+    Status prepare(Over &over) const;
 
     std::string toString() const;
 
@@ -320,36 +319,6 @@ public:
 private:
     std::unique_ptr<YieldColumns>               yieldColumns_;
     bool                                        distinct_;
-};
-
-
-class ToClause final {
-public:
-    explicit ToClause(VertexIDList *vidList) {
-        vidList_.reset(vidList);
-    }
-
-    explicit ToClause(Expression *ref) {
-        ref_.reset(ref);
-    }
-
-    auto vidList() const {
-        return vidList_->vidList();
-    }
-
-    auto isRef() const {
-        return ref_ != nullptr;
-    }
-
-    auto ref() const {
-        return ref_.get();
-    }
-
-    std::string toString() const;
-
-private:
-    std::unique_ptr<VertexIDList>               vidList_;
-    std::unique_ptr<Expression>                 ref_;
 };
 }   // namespace nebula
 #endif  // PARSER_CLAUSES_H_

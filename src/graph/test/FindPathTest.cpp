@@ -241,5 +241,21 @@ TEST_F(FindPathTest, all) {
         ASSERT_TRUE(verifyPath(resp, expected));
     }
 }
+
+TEST_F(FindPathTest, multiEdges) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like,like reversely UPTO 5 STEPS";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::string> expected = {
+            "5662213458193308137<like,0>-7579316172763586624",
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+}
 }  // namespace graph
 }  // namespace nebula

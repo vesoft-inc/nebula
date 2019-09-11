@@ -63,19 +63,82 @@ Status FindPathExecutor::beforeExecute() {
         }
         spaceId_ = ectx()->rctx()->session()->space();
 
-        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId_, *(over_.edge_));
-        if (!edgeStatus.ok()) {
-            status = std::move(edgeStatus).status();
+        status = prepareOver();
+        if (!status.ok()) {
             break;
         }
-        over_.edgeType_ = std::move(edgeStatus).value();
-        edgeTypes_.emplace(over_.edgeType_, *(over_.edge_));
 
         status = setupVids();
         if (!status.ok()) {
             break;
         }
     } while (false);
+    return status;
+}
+
+Status FindPathExecutor::prepareOverAll() {
+    auto spaceId = ectx()->rctx()->session()->space();
+    auto edgeAllStatus = ectx()->schemaManager()->getAllEdge(spaceId);
+
+    if (!edgeAllStatus.ok()) {
+        return edgeAllStatus.status();
+    }
+
+    auto allEdge = edgeAllStatus.value();
+    for (auto &e : allEdge) {
+        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, e);
+        if (!edgeStatus.ok()) {
+            return edgeStatus.status();
+        }
+
+        auto v = edgeStatus.value();
+        over_.edgeTypes_.emplace_back(v);
+
+        if (!expCtx_->addEdge(e, v)) {
+            return Status::Error(folly::sformat("edge alias({}) was dup", e));
+        }
+    }
+
+    return Status::OK();
+}
+
+Status FindPathExecutor::prepareOver() {
+    Status status = Status::OK();
+
+    for (auto e : over_.edges_) {
+        if (e->isOverAll()) {
+            expCtx_->setOverAllEdge();
+            return prepareOverAll();
+        }
+
+        auto spaceId = ectx()->rctx()->session()->space();
+        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *e->edge());
+        if (!edgeStatus.ok()) {
+            return edgeStatus.status();
+        }
+
+        auto v = edgeStatus.value();
+        if (e->isReversely()) {
+            over_.edgeTypes_.emplace_back(-v);
+            over_.oppositeTypes_.emplace_back(v);
+        } else {
+            over_.edgeTypes_.emplace_back(v);
+            over_.oppositeTypes_.emplace_back(-v);
+        }
+
+        if (e->alias() != nullptr) {
+            if (!expCtx_->addEdge(*e->alias(), v)) {
+                return Status::Error(folly::sformat("edge alias({}) was dup", *e->alias()));
+            }
+        } else {
+            if (!expCtx_->addEdge(*e->edge(), v)) {
+                return Status::Error(folly::sformat("edge alias({}) was dup", *e->edge()));
+            }
+        }
+
+        edgeTypeNameMap_.emplace(v, *e->edge());
+    }
+
     return status;
 }
 
@@ -128,7 +191,6 @@ void FindPathExecutor::execute() {
         VLOG(1) << "Current step:" << currentStep_;
         ++currentStep_;;
     }
-    LOG(INFO) << stepOutHolder_.size();
     onFinish_();
 }
 
@@ -353,8 +415,7 @@ void FindPathExecutor::getFromFrontiers(
         std::vector<storage::cpp2::PropDef> props) {
     auto future = ectx()->storage()->getNeighbors(spaceId_,
                                                   std::move(fromVids_),
-                                                  over_.edgeType_,
-                                                  true,
+                                                  over_.edgeTypes_,
                                                   "",
                                                   std::move(props));
     auto *runner = ectx()->rctx()->runner();
@@ -388,8 +449,7 @@ void FindPathExecutor::getToFrontiers(
         std::vector<storage::cpp2::PropDef> props) {
     auto future = ectx()->storage()->getNeighbors(spaceId_,
                                                   std::move(toVids_),
-                                                  over_.edgeType_,
-                                                  false,
+                                                  over_.oppositeTypes_,
                                                   "",
                                                   std::move(props));
     auto *runner = ectx()->rctx()->runner();
@@ -432,115 +492,73 @@ Status FindPathExecutor::doFilter(
         if (resp.get_vertices() == nullptr) {
             continue;
         }
-        std::shared_ptr<ResultSchemaProvider> eschema;
-        if (resp.get_edge_schema() != nullptr) {
-            eschema = std::make_shared<ResultSchemaProvider>(resp.edge_schema);
+
+        std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> edgeSchema;
+        auto *eschema = resp.get_edge_schema();
+        if (eschema != nullptr) {
+            std::transform(eschema->cbegin(), eschema->cend(),
+                           std::inserter(edgeSchema, edgeSchema.begin()), [](auto &schema) {
+                               return std::make_pair(
+                                   schema.first,
+                                   std::make_shared<ResultSchemaProvider>(schema.second));
+                           });
+        }
+
+        if (edgeSchema.empty()) {
+            continue;
         }
 
         for (auto &vdata : resp.vertices) {
-            std::unique_ptr<RowReader> vreader;
             DCHECK(vdata.__isset.edge_data);
-            DCHECK(eschema != nullptr);
-            RowSetReader rsReader(eschema, vdata.edge_data);
-            auto iter = rsReader.begin();
-            Neighbors neighbors;
-            while (iter) {
-                std::vector<VariantType> temps;
-                for (auto &prop : kReserveProps_) {
-                    auto res = RowReader::getPropByName(&*iter, prop);
-                    if (ok(res)) {
-                        temps.emplace_back(std::move(value(res)));
-                    } else {
-                        return Status::Error("get edge prop failed %s", prop.c_str());
+            for (auto &edata : vdata.edge_data) {
+                auto edgeType = edata.type;
+                auto it = edgeSchema.find(edgeType);
+                DCHECK(it != edgeSchema.end());
+                RowSetReader rsReader(it->second, edata.data);
+                auto iter = rsReader.begin();
+                Neighbors neighbors;
+                while (iter) {
+                    std::vector<VariantType> temps;
+                    for (auto &prop : kReserveProps_) {
+                        auto res = RowReader::getPropByName(&*iter, prop);
+                        if (ok(res)) {
+                            temps.emplace_back(std::move(value(res)));
+                        } else {
+                            return Status::Error("get edge prop failed %s", prop.c_str());
+                        }
                     }
-                }
-                Neighbor neighbor(
+                    Neighbor neighbor(
                         boost::get<int64_t>(temps[0]),
                         boost::get<int64_t>(temps[1]),
                         boost::get<int64_t>(temps[2]));
-                neighbors.emplace_back(std::move(neighbor));
-                ++iter;
-            }   // while `iter'
-            auto frontier = std::make_pair(vdata.get_vertex_id(), std::move(neighbors));
-            frontiers.emplace_back(std::move(frontier));
-        }   // for `vdata'
-    }   // for `resp'
+                    neighbors.emplace_back(std::move(neighbor));
+                    ++iter;
+                }  // while `iter'
+                auto frontier = std::make_pair(vdata.get_vertex_id(), std::move(neighbors));
+                frontiers.emplace_back(std::move(frontier));
+            }  // `edata'
+        }  // for `vdata'
+    }  // for `resp'
     return Status::OK();
 }
 
 StatusOr<std::vector<storage::cpp2::PropDef>>
 FindPathExecutor::getStepOutProps(bool reversely) {
-    std::vector<storage::cpp2::PropDef> props;
-    for (auto &prop : kReserveProps_) {
-        storage::cpp2::PropDef pd;
-        pd.owner = storage::cpp2::PropOwner::EDGE;
-        pd.name = prop;
-        props.emplace_back(std::move(pd));
-    }
-
+    auto *edges = &over_.edgeTypes_;
     if (reversely) {
-        return props;
+        edges = &over_.oppositeTypes_;
     }
-
-    auto spaceId = ectx()->rctx()->session()->space();
-    SchemaProps tagProps;
-    for (auto &tagProp : expCtx_->srcTagProps()) {
-        tagProps[tagProp.first].emplace_back(tagProp.second);
-    }
-
-    int64_t index = -1;
-    for (auto &tagIt : tagProps) {
-        auto status = ectx()->schemaManager()->toTagID(spaceId, tagIt.first);
-        if (!status.ok()) {
-            return Status::Error("No schema found for '%s'", tagIt.first);
-        }
-        auto tagId = status.value();
-        for (auto &prop : tagIt.second) {
-            index++;
-            storage::cpp2::PropDef pd;
-            pd.owner = storage::cpp2::PropOwner::DEST;
-            pd.name = prop;
-            pd.set_tag_id(tagId);
-            props.emplace_back(std::move(pd));
-            srcTagProps_.emplace(std::make_pair(tagIt.first, prop), index);
-        }
-    }
-
-    for (auto &prop : expCtx_->aliasProps()) {
-        storage::cpp2::PropDef pd;
-        pd.owner = storage::cpp2::PropOwner::EDGE;
-        pd.name = prop.second;
-        props.emplace_back(std::move(pd));
-    }
-
-    return props;
-}
-
-StatusOr<std::vector<storage::cpp2::PropDef>> FindPathExecutor::getDstProps() {
-    auto spaceId = ectx()->rctx()->session()->space();
-    SchemaProps tagProps;
-    for (auto &tagProp : expCtx_->dstTagProps()) {
-        tagProps[tagProp.first].emplace_back(tagProp.second);
-    }
-
     std::vector<storage::cpp2::PropDef> props;
-    int64_t index = -1;
-    for (auto &tagIt : tagProps) {
-        auto status = ectx()->schemaManager()->toTagID(spaceId, tagIt.first);
-        if (!status.ok()) {
-            return Status::Error("No schema found for '%s'", tagIt.first);
-        }
-        auto tagId = status.value();
-        for (auto &prop : tagIt.second) {
-            index++;
+    for (auto &e : *edges) {
+        for (auto &prop : kReserveProps_) {
             storage::cpp2::PropDef pd;
-            pd.owner = storage::cpp2::PropOwner::DEST;
+            pd.owner = storage::cpp2::PropOwner::EDGE;
             pd.name = prop;
-            pd.set_tag_id(tagId);
+            pd.id.set_edge_type(e);
             props.emplace_back(std::move(pd));
-            dstTagProps_.emplace(std::make_pair(tagIt.first, prop), index);
         }
     }
+
     return props;
 }
 
@@ -599,8 +617,8 @@ cpp2::RowValue FindPathExecutor::buildPathRow(Path &path) {
 
         entryList.emplace_back();
         cpp2::Edge edge;
-        auto typeName = edgeTypes_.find(type);
-        DCHECK(typeName != edgeTypes_.end());
+        auto typeName = edgeTypeNameMap_.find(type);
+        DCHECK(typeName != edgeTypeNameMap_.end()) << type;
         edge.set_type(typeName->second);
         edge.set_ranking(ranking);
         entryList.back().set_edge(std::move(edge));
@@ -614,8 +632,8 @@ cpp2::RowValue FindPathExecutor::buildPathRow(Path &path) {
 
         entryList.emplace_back();
         cpp2::Edge edge;
-        auto typeName = edgeTypes_.find(-type);
-        DCHECK(typeName != edgeTypes_.end());
+        auto typeName = edgeTypeNameMap_.find(-type);
+        DCHECK(typeName != edgeTypeNameMap_.end()) << type;
         edge.set_type(typeName->second);
         edge.set_ranking(ranking);
         entryList.back().set_edge(std::move(edge));

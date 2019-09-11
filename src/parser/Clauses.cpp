@@ -118,8 +118,7 @@ std::string ToClause::toString() const {
 }
 
 Status OverClause::prepare(Over &over) const {
-    over.edge_ = edge_.get();
-    over.reversely_ = isReversely_;
+    over.edges_ = edges();
     return Status::OK();
 }
 
