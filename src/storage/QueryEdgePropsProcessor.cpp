@@ -61,7 +61,7 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
     RowSetWriter rsWriter;
     std::for_each(req.get_parts().begin(), req.get_parts().end(), [&](auto& partE) {
         auto partId = partE.first;
-        kvstore::ResultCode ret;
+        kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
         for (auto& edgeKey : partE.second) {
             for (auto& ec : edgeContexts_) {
                 ret = this->collectEdgesProps(partId, edgeKey, ec.second, rsWriter);
