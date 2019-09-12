@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    gStorageServer = std::make_unique<nebula::storage::StorageServer>(hostRet.value(),
+    gStorageServer = std::make_unique<nebula::storage::StorageServer>(hostRet.value()[0],
                                                                       metaAddrsRet.value(),
                                                                       paths);
     if (!gStorageServer->start()) {

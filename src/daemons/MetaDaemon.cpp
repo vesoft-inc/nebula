@@ -203,14 +203,14 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << "Bad local host addr, status:" << hostAddrRet.status();
         return EXIT_FAILURE;
     }
-    auto& localhost = hostAddrRet.value();
+    auto& localhost = hostAddrRet.value()[0];
     auto peersRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
     if (!peersRet.ok()) {
         LOG(ERROR) << "Can't get peers address, status:" << peersRet.status();
         return EXIT_FAILURE;
     }
 
-    auto kvstore = initKV(peersRet.value(), hostAddrRet.value());
+    auto kvstore = initKV(peersRet.value(), localhost);
     if (kvstore == nullptr) {
         LOG(ERROR) << "Init kv failed!";
         return EXIT_FAILURE;

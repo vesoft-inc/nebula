@@ -46,7 +46,7 @@ void TestEnv::SetUp() {
     if (!hostRet.ok()) {
         LOG(ERROR) << "Bad local host addr, status:" << hostRet.status();
     }
-    auto& localhost = hostRet.value();
+    auto& localhost = hostRet.value()[0];
 
     mClient_ = std::make_unique<meta::MetaClient>(threadPool,
                                                   std::move(addrsRet.value()),

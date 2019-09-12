@@ -87,6 +87,44 @@ TEST(NetworkUtils, getAvailablePort) {
     ASSERT_GT(port, 0);
 }
 
+TEST(NetworkUtils, toHostAddr) {
+    auto s = NetworkUtils::toHostAddr("localhost:1200");
+    ASSERT_TRUE(s.ok());
+    auto addr = s.value();
+    IPv4 ip;
+    ASSERT_TRUE(NetworkUtils::ipv4ToInt("127.0.0.1", ip));
+    ASSERT_EQ(addr[0].first, ip);
+    ASSERT_EQ(addr[0].second, 1200);
+
+    s = NetworkUtils::toHostAddr("8.8.8.8:1300");
+    ASSERT_TRUE(s.ok());
+    addr = s.value();
+
+    ASSERT_TRUE(NetworkUtils::ipv4ToInt("8.8.8.8", ip));
+    ASSERT_EQ(addr[0].first, ip);
+    ASSERT_EQ(addr[0].second, 1300);
+
+    s = NetworkUtils::toHostAddr("a.b.c.d:a23");
+    ASSERT_FALSE(s.ok());
+}
+
+TEST(NetworkUtils, toHosts) {
+    auto s = NetworkUtils::toHosts("localhost:1200, 127.0.0.1:1200");
+    ASSERT_TRUE(s.ok());
+    auto addr = s.value();
+
+    IPv4 ip;
+    ASSERT_TRUE(NetworkUtils::ipv4ToInt("127.0.0.1", ip));
+    ASSERT_EQ(addr[0].first, ip);
+    ASSERT_EQ(addr[0].second, 1200);
+
+    ASSERT_EQ(addr[1].first, ip);
+    ASSERT_EQ(addr[1].second, 1200);
+
+    s = NetworkUtils::toHostAddr("1.1.2.3:123, a.b.c.d:a23");
+    ASSERT_FALSE(s.ok());
+}
+
 }   // namespace network
 }   // namespace nebula
 
@@ -98,4 +136,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-

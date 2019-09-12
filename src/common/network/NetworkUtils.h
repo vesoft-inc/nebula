@@ -33,10 +33,10 @@ public:
     // Get a dynamic port that is not in use
     static uint16_t getAvailablePort();
 
-    // Convert the given IP (must be in the form of "xx.xx.xx.xx") and Port to a HostAddr
-    static StatusOr<HostAddr> toHostAddr(folly::StringPiece ip, int32_t port);
-    // Convert the given IP/Port (must be in the form of "xx.xx.xx.xx:pp") to a HostAddr
-    static StatusOr<HostAddr> toHostAddr(folly::StringPiece ipPort);
+    // Convert the given IP/HOST and Port to a HostAddr
+    static StatusOr<std::vector<HostAddr>> toHostAddr(folly::StringPiece ip, int32_t port);
+    // Convert the given (IP/HOST):Port to a HostAddr
+    static StatusOr<std::vector<HostAddr>> toHostAddr(folly::StringPiece ipPort);
     // Retrieve the string-form IP from the given HostAddr
     static std::string ipFromHostAddr(const HostAddr& host);
     // Retrieve the port number from the given HostAddr
@@ -67,4 +67,3 @@ private:
 }  // namespace nebula
 
 #endif  // COMMON_NETWORK_NETWORKUTILS_H_
-
