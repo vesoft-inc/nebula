@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nebula
+  name: nebula-graphd
+spec:
+  selector:
+    matchLabels:
+      app: nebula
+  replicas: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate  
+  template:
+    metadata:
+      labels:
+        app: nebula
+    spec:
+      containers:
+      - name: nebula-graphd
+        image: vesoft/nebula-graphd:nightly
+        ports:
+        - name: thrift
+          containerPort: 3699
+        - name: http
+          containerPort: 13000
+        - name: http2
+          containerPort: 13002
+        command: ["/usr/local/nebula/bin/nebula-graphd", "--flagfile=/usr/local/nebula/etc/nebula-graphd.conf", "--daemonize=false", "--meta_server_addrs=10.1.0.204:45500" , "--ws_ip=0.0.0.0"]
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 13000
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "1"

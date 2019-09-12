@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nebula
+  name: neubla-metad
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+spec:
+  publishNotReadyAddresses: true
+  clusterIP: None
+  ports:
+  - name: thrift
+    port: 44500
+  - name: raft
+    port: 44501
+  - name: http
+    port: 11000
+  - name: http2
+    port: 11002
+  selector:
+    app: nebula
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: nebula-budget
+  labels:
+    app: nebula
+spec:
+  selector:
+    matchLabels:
+      app: nebula-metad
+  maxUnavailable: 1
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nebula-metad
+  labels:
+    app: nebula
+spec:
+  serviceName: nebula-metad
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nebula
+  template:
+    metadata:
+      labels:
+        app: nebula
+    spec:
+      terminationGracePeriodSeconds: 60
+      hostname: meta.nebula.services
+      containers:
+      - name: nebula-metad
+        image: vesoft/nebula-metad:nightly
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 45500
+          name: thrift
+        - containerPort: 45501
+          name: raft
+        - containerPort: 11000
+          name: http
+        - containerPort: 11002
+          name: http2
+        command: 
+          - "/bin/bash"
+          - "-ecx"
+          - "exec /usr/local/nebula/bin/nebula-metad --flagfile=/usr/local/nebula/etc/nebula-metad.conf --daemonize=false --local_ip=$(hostname -i) --ws_ip=0.0.0.0"
+        volumeMounts:
+        - name: data
+          mountPath: /root/nebula-graph/data/meta
+        env:
+        - name: meta_services
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: data
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi
