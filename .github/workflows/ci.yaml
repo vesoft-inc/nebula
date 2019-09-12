@@ -16,11 +16,13 @@ jobs:
       - name: make
         uses: actions/checkout@v1
         uses: docker://vesoft/nebula-dev:centos
-          with:
-            fetch-depth: 1
+        with:
+          fetch-depth: 1
         run: docker run --rm -it -v $(pwd):/home/nebula vesoft/nebula-dev:centos /bin/bash -c ". /etc/profile.d/devtoolset-8-enable.sh && mkdir _build && cd _build && cmake .. && make -j"
         id: build
       - name: ctest
         uses: actions/checkout@v1
         uses: docker://vesoft/nebula-dev:centos
+        with:
+          fetch-depth: 1
         run: docker run --rm -v $(pwd):/home/nebula vesoft/nebula-dev:centos /bin/bash -c 'cd _build && ctest'
