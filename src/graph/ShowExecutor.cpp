@@ -94,7 +94,7 @@ void ShowExecutor::showHosts() {
             if (a.get_status() == b.get_status()) {
                 return a.hostAddr.ip < b.hostAddr.ip;
             }
-            return a.status < b.status;
+            return a.get_status() < b.get_status();
         });
 
         for (auto& item : hostItems) {

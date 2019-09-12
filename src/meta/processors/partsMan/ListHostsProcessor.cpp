@@ -15,24 +15,24 @@ namespace meta {
 
 void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
     UNUSED(req);
-    std::unordered_map<GraphSpaceID, std::string> spaceIdName;
+    std::unordered_map<GraphSpaceID, std::string> spaceIdNameMap;
     std::vector<cpp2::HostItem> hostItems;
     {
         folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-        auto status = allHostsWithStatus(spaceIdName);
+        auto status = allHostsWithStatus(spaceIdNameMap);
         if (!status.ok()) {
             onFinished();
             return;
         }
         hostItems = std::move(status.value());
     }
-    getLeaderDist(hostItems, spaceIdName);
+    getLeaderDist(hostItems, spaceIdNameMap);
     resp_.set_hosts(std::move(hostItems));
     onFinished();
 }
 
-StatusOr<std::vector<cpp2::HostItem>>
-ListHostsProcessor::allHostsWithStatus(std::unordered_map<GraphSpaceID, std::string>& spaceIdName) {
+StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus(
+                                    std::unordered_map<GraphSpaceID, std::string>& spaceIdNameMap) {
     std::vector<cpp2::HostItem> hostItems;
 
     const auto& hostPrefix = MetaServiceUtils::hostPrefix();
@@ -71,7 +71,7 @@ ListHostsProcessor::allHostsWithStatus(std::unordered_map<GraphSpaceID, std::str
     while (iter->valid()) {
         auto spaceId = MetaServiceUtils::spaceId(iter->key());
         spaces.emplace_back(spaceId);
-        spaceIdName.emplace(spaceId, MetaServiceUtils::spaceName(iter->val()));
+        spaceIdNameMap.emplace(spaceId, MetaServiceUtils::spaceName(iter->val()));
         iter->next();
     }
 
@@ -79,8 +79,8 @@ ListHostsProcessor::allHostsWithStatus(std::unordered_map<GraphSpaceID, std::str
                        std::unordered_map<std::string, std::vector<PartitionID>>> allParts;
     for (const auto& spaceId : spaces) {
         // get space name by space id
-        auto it = spaceIdName.find(spaceId);
-        if (it == spaceIdName.end()) {
+        auto it = spaceIdNameMap.find(spaceId);
+        if (it == spaceIdNameMap.end()) {
             continue;
         }
         auto spaceName = it->second;
@@ -127,8 +127,9 @@ ListHostsProcessor::allHostsWithStatus(std::unordered_map<GraphSpaceID, std::str
     return hostItems;
 }
 
-void ListHostsProcessor::getLeaderDist(std::vector<cpp2::HostItem>& hostItems,
-                                       std::unordered_map<GraphSpaceID, std::string>& spaceIdName) {
+void ListHostsProcessor::getLeaderDist(
+                                std::vector<cpp2::HostItem>& hostItems,
+                                std::unordered_map<GraphSpaceID, std::string>& spaceIdNameMap) {
     if (adminClient_ == nullptr) {
         return;
     }
@@ -148,8 +149,8 @@ void ListHostsProcessor::getLeaderDist(std::vector<cpp2::HostItem>& hostItems,
             for (auto& leaderEntry : hostEntry.second) {
                 // get space name by space id
                 auto spaceId = leaderEntry.first;
-                auto spaceIter = spaceIdName.find(spaceId);
-                if (spaceIter == spaceIdName.end()) {
+                auto spaceIter = spaceIdNameMap.find(spaceId);
+                if (spaceIter == spaceIdNameMap.end()) {
                     continue;
                 }
                 auto spaceName = spaceIter->second;
