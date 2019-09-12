@@ -2,7 +2,8 @@
 
 We will use the example graph below to introduce the basic concepts of the property graph:
 
-![image](https://user-images.githubusercontent.com/42762957/64587509-38bcc900-d3d2-11e9-8646-306b468f3e7c.png)
+![pict1](https://user-images.githubusercontent.com/42762957/64759683-7bb1a480-d56a-11e9-90fb-f96d221bbbdf.png)
+
 
 ## Vertices
 
