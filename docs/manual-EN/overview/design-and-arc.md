@@ -40,7 +40,7 @@ The right side is the meta service, similar to the NameNode in HDFS, it stores a
 
 ### Design thinking: Storage Service
 
-**Nebula Graph** adopted the **share-nothing** distributed architecture in storage so nodes do not share memory or storage, which means there are no central nodes in the whole system. Benefits of such design are: 
+**Nebula Graph** adopted the **shared-nothing** distributed architecture in storage so nodes do not share memory or storage, which means there are no central nodes in the whole system. Benefits of such design are: 
 
 - Easy to scale
 - The overall system continues operating despite individual crash
