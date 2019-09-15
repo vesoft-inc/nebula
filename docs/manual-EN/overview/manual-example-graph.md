@@ -1,25 +1,31 @@
 # Example Graph
 
-We will use the example graph below to introduce the basic concepts of the property graph:
+We will use the example graph below to introduce the basic concepts of property graph:
 
 
-![pict1](https://user-images.githubusercontent.com/42762957/64762315-84a57480-d570-11e9-8361-07f2c03cd28c.png)
+![pict4](https://user-images.githubusercontent.com/42762957/64775622-21740c00-d589-11e9-98ad-04e149a5c371.png)
 
 
+In the preceding picture, we have a data set about the players and teams information of NBA. We can see the eleven vertices are classified to two kinds, i.e. player and name while the fifteen edges are classified to serve and like.
+
+To better understand the elements of a graph data model, let us walk through each concept of the example graph.
 
 ## Vertices
 
 Vertices are typically used to represent entities in the real world. In the preceding example, the graph contains eleven vertices.
+![image](https://user-images.githubusercontent.com/42762957/64915700-aa649080-d79f-11e9-983b-7564d03c7eee.png)
+
 
 ## Tags
 
-In **Nebula Graph**, vertex properties are clustered by **tags**. In the example above, the vertices have tags
-**player** and **team**.
+In **Nebula Graph**, vertex properties are clustered by **tags**. In the example above, the vertices have tags **player** and **team**.
+![image](https://user-images.githubusercontent.com/42762957/64915770-9b7edd80-d7a1-11e9-8874-9d5e2deadf4d.png)
+
 
 ## Edge
 
-Edges are used to connect vertices. Each edge usually represents a relationship or a behavior between two vertices. In
-the preceding example, edges are _**serve**_ and _**like**_.
+Edges are used to connect vertices. Each edge usually represents a relationship or a behavior between two vertices. In the preceding example, edges are _**serve**_ and _**like**_.
+![image](https://user-images.githubusercontent.com/42762957/64915798-455e6a00-d7a2-11e9-8944-8c04b8484d25.png)
 
 ## Edge Type
 
