@@ -63,10 +63,13 @@ bash> sudo make install
     bash> sudo yum install -y libtool autoconf autoconf-archive automake perl-WWW-Curl libstdc++-static ncurses ncurses-devel readline readline-devel maven java-1.8.0-openjdk
     ```
 
-    和通过 vesoft 提供的包
+    和通过 VESoft Inc. 提供的包
 
     ```
+    # From China
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-7.5-1804.tar.gz
+    # From US
+    bash> wget https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos-7.5-1804.tar.gz
     ```
 
     1) 建立一个系统用户, 并将其 home 目录设置为共享目录
@@ -141,10 +144,13 @@ bash> sudo make install
     bash> sudo yum -y install libtool autoconf autoconf-archive automake perl-WWW-Curl perl-YAML perl-CGI glibc-devel libstdc++-static ncurses ncurses-devel readline readline-devel maven java-1.8.0-openjdk
     ```
 
-    和通过 vesoft 提供的包
+    和通过 VESoft Inc. 提供的包
 
     ```
+    # From China
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-6.5.tar.gz
+    # From US
+    bash> wget https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos-6.5.tar.gz
     ```
 
     1) 在此目录下安装所有需要的 rpm 包
@@ -209,9 +215,12 @@ bash> sudo make install
     bash> sudo apt-get -y install gcc-multilib libtool autoconf autoconf-archive automake libncurses5-dev libreadline-dev python maven java-1.8.0-openjdk
     ```
 
-    通过 vesoft 提供的包
+    通过 VESoft Inc. 提供的包
 
     ```
+    # From China
+    bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu1804.tar.gz
+    # From US
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu1804.tar.gz
     ```
 
