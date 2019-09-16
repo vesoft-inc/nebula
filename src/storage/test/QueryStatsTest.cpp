@@ -86,7 +86,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req) {
 
 
 void checkResponse(const cpp2::QueryStatsResponse& resp) {
-    EXPECT_EQ(0, resp.result.partition_codes.size());
+    EXPECT_EQ(0, resp.result.failed_codes.size());
 
     EXPECT_EQ(7, resp.schema.columns.size());
     CHECK_GT(resp.data.size(), 0);

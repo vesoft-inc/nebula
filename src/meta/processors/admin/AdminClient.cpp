@@ -248,12 +248,13 @@ folly::Future<Status> AdminClient::getResponse(
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
     auto* evb = ioThreadPool_->getEventBase();
-    folly::via(evb, [evb, pro = std::move(pro), host, req = std::move(req),
+    auto partId = req.get_part_id();
+    folly::via(evb, [evb, pro = std::move(pro), host, req = std::move(req), partId,
                      remoteFunc = std::move(remoteFunc), respGen = std::move(respGen),
                      this] () mutable {
         auto client = clientsMan_->client(host, evb);
         remoteFunc(client, std::move(req))
-            .then(evb, [p = std::move(pro), respGen = std::move(respGen)](
+            .then(evb, [p = std::move(pro), partId, respGen = std::move(respGen)](
                            folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
                 // exception occurred during RPC
                 if (t.hasException()) {
@@ -262,11 +263,15 @@ folly::Future<Status> AdminClient::getResponse(
                     return;
                 }
                 auto&& result = std::move(t).value().get_result();
-                if (result.get_partition_codes().empty()) {
-                    p.setValue(Status::Error("Illegal response"));
+                if (result.get_failed_codes().empty()) {
+                    storage::cpp2::ResultCode resultCode;
+                    resultCode.set_code(storage::cpp2::ErrorCode::SUCCEEDED);
+                    resultCode.set_part_id(partId);
+                    p.setValue(respGen(resultCode));
+                } else {
+                    auto resp = result.get_failed_codes().front();
+                    p.setValue(respGen(std::move(resp)));
                 }
-                auto resp = result.get_partition_codes().front();
-                p.setValue(respGen(std::move(resp)));
             });
     });
     return f;
@@ -284,13 +289,14 @@ void AdminClient::getResponse(
     auto* evb = ioThreadPool_->getEventBase();
     CHECK_GE(index, 0);
     CHECK_LT(index, hosts.size());
-    folly::via(evb, [evb, hosts = std::move(hosts), index, req = std::move(req),
+    auto partId = req.get_part_id();
+    folly::via(evb, [evb, hosts = std::move(hosts), index, req = std::move(req), partId,
                      remoteFunc = std::move(remoteFunc), retry, pro = std::move(pro),
                      retryLimit, this] () mutable {
         auto client = clientsMan_->client(hosts[index], evb);
         remoteFunc(client, req)
             .then(evb, [p = std::move(pro), hosts = std::move(hosts), index, req = std::move(req),
-                        remoteFunc = std::move(remoteFunc), retry, retryLimit,
+                        partId, remoteFunc = std::move(remoteFunc), retry, retryLimit,
                         this] (folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
@@ -300,7 +306,7 @@ void AdminClient::getResponse(
                               << ", limit " << retryLimit;
                     index = ++index % hosts.size();
                     getResponse(std::move(hosts),
-                                index,
+                                (index + 1) % hosts.size(),
                                 std::move(req),
                                 remoteFunc,
                                 retry + 1,
@@ -313,15 +319,12 @@ void AdminClient::getResponse(
                 return;
             }
             auto&& result = std::move(t).value().get_result();
-            if (result.get_partition_codes().empty()) {
-                p.setValue(Status::Error("Illegal response"));
+            if (result.get_failed_codes().empty()) {
+                p.setValue(Status::OK());
+                return;
             }
-            auto resp = result.get_partition_codes().front();
+            auto resp = result.get_failed_codes().front();
             switch (resp.get_code()) {
-                case storage::cpp2::ErrorCode::SUCCEEDED: {
-                    p.setValue(Status::OK());
-                    return;
-                }
                 case storage::cpp2::ErrorCode::E_LEADER_CHANGED: {
                     if (retry < retryLimit) {
                         HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
@@ -380,7 +383,7 @@ void AdminClient::getResponse(
                                   << ", limit " << retryLimit;
                         index = ++index % hosts.size();
                         getResponse(std::move(hosts),
-                                    index,
+                                    (index + 1) % hosts.size(),
                                     std::move(req),
                                     std::move(remoteFunc),
                                     retry + 1,

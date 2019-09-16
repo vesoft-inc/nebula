@@ -48,14 +48,14 @@ protected:
         if (this->stats_ != nullptr) {
             stats::StatsManager::addValue(this->stats_->latencyStatId_,
                                           this->duration_.elapsedInUSec());
-            if (this->result_.get_partition_codes().empty()) {
+            if (this->result_.get_failed_codes().empty()) {
                 stats::StatsManager::addValue(this->stats_->qpsStatId_, 1);
             } else {
                 stats::StatsManager::addValue(this->stats_->errorQpsStatId_, 1);
             }
         }
         this->result_.set_latency_in_us(this->duration_.elapsedInUSec());
-        this->result_.set_partition_codes(this->codes_);
+        this->result_.set_failed_codes(this->codes_);
         this->resp_.set_result(std::move(this->result_));
         this->promise_.setValue(std::move(this->resp_));
         delete this;
@@ -88,18 +88,22 @@ protected:
     cpp2::ErrorCode to(kvstore::ResultCode code);
 
     void pushResultCode(cpp2::ErrorCode code, PartitionID partId) {
-        cpp2::ResultCode thriftRet;
-        thriftRet.set_code(code);
-        thriftRet.set_part_id(partId);
-        codes_.emplace_back(std::move(thriftRet));
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            cpp2::ResultCode thriftRet;
+            thriftRet.set_code(code);
+            thriftRet.set_part_id(partId);
+            codes_.emplace_back(std::move(thriftRet));
+        }
     }
 
     void pushResultCode(cpp2::ErrorCode code, PartitionID partId, HostAddr leader) {
-        cpp2::ResultCode thriftRet;
-        thriftRet.set_code(code);
-        thriftRet.set_part_id(partId);
-        thriftRet.set_leader(toThriftHost(leader));
-        codes_.emplace_back(std::move(thriftRet));
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            cpp2::ResultCode thriftRet;
+            thriftRet.set_code(code);
+            thriftRet.set_part_id(partId);
+            thriftRet.set_leader(toThriftHost(leader));
+            codes_.emplace_back(std::move(thriftRet));
+        }
     }
 
     void pushResultCode(cpp2::ErrorCode code, PartitionID partId, HostAddr leader) {

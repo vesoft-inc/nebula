@@ -120,7 +120,7 @@ void checkResponse(cpp2::QueryResponse& resp,
                    int32_t dstIdFrom,
                    int32_t edgeNum,
                    bool outBound) {
-    EXPECT_EQ(0, resp.result.partition_codes.size());
+    EXPECT_EQ(0, resp.result.failed_codes.size());
 
     EXPECT_EQ(vertexNum, resp.vertices.size());
 
@@ -443,9 +443,9 @@ TEST(QueryBoundTest, FilterTest_InvalidFilter) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(3, resp.result.partition_codes.size());
+    EXPECT_EQ(3, resp.result.failed_codes.size());
     EXPECT_TRUE(nebula::storage::cpp2::ErrorCode::E_INVALID_FILTER
-                    == resp.result.partition_codes[0].code);
+                    == resp.result.failed_codes[0].code);
 }
 
 TEST(QueryBoundTest, MultiEdgeQueryTest) {
@@ -462,7 +462,10 @@ TEST(QueryBoundTest, MultiEdgeQueryTest) {
 
     LOG(INFO) << "Test QueryOutBoundRequest...";
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(), nullptr, executor.get());
+    auto* processor = QueryBoundProcessor::instance(kv.get(),
+                                                    schemaMan.get(),
+                                                    nullptr,
+                                                    executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

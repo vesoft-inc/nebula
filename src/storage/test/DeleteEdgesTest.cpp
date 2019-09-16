@@ -45,7 +45,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.partition_codes.size());
+        EXPECT_EQ(0, resp.result.failed_codes.size());
     }
     // Add multi version edges
     {
@@ -70,7 +70,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.partition_codes.size());
+        EXPECT_EQ(0, resp.result.failed_codes.size());
     }
 
     for (auto partId = 0; partId < 3; partId++) {
@@ -110,7 +110,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.partition_codes.size());
+        EXPECT_EQ(0, resp.result.failed_codes.size());
     }
 
     for (auto partId = 0; partId < 3; partId++) {

@@ -112,7 +112,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                     auto resp = std::move(val.value());
                     auto& result = resp.get_result();
                     bool hasFailure{false};
-                    for (auto& code : result.get_partition_codes()) {
+                    for (auto& code : result.get_failed_codes()) {
                         VLOG(3) << "Failure! Failed part " << code.get_part_id()
                                 << ", failed code " << static_cast<int32_t>(code.get_code());
                         hasFailure = true;
@@ -191,7 +191,7 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
             auto&& resp = std::move(t.value());
             // leader changed
             auto& result = resp.get_result();
-            for (auto& code : result.get_partition_codes()) {
+            for (auto& code : result.get_failed_codes()) {
                 VLOG(3) << "Failure! Failed part " << code.get_part_id()
                         << ", failed code " << static_cast<int32_t>(code.get_code());
                 if (code.get_code() == storage::cpp2::ErrorCode::E_LEADER_CHANGED) {

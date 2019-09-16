@@ -83,7 +83,7 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(0, resp.result.partition_codes.size());
+    EXPECT_EQ(0, resp.result.failed_codes.size());
 
     EXPECT_EQ(30, resp.vertices.size());
 

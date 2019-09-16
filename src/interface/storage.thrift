@@ -92,10 +92,8 @@ struct VertexData {
 }
 
 struct ResponseCommon {
-    // For those operations that affect multiple partitions, partition_codes only contains result of the partitions
-    // which return error. As for operations that only affect single partition (e.g. AdminExecResp), partition_codes
-    // only contains one result of the target partition
-    1: required list<ResultCode> partition_codes,
+    // Only contains the partition that returns error
+    1: required list<ResultCode> failed_codes,
     // Query latency from storage service
     2: required i32 latency_in_us,
 }

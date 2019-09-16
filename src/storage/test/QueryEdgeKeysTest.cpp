@@ -42,7 +42,7 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.partition_codes.size());
+        EXPECT_EQ(0, resp.result.failed_codes.size());
     }
 
     LOG(INFO) << "Check data in kv store...";
@@ -74,7 +74,7 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
                 auto fut = processor->getFuture();
                 processor->process(req);
                 auto resp = std::move(fut).get();
-                EXPECT_EQ(0, resp.result.partition_codes.size());
+                EXPECT_EQ(0, resp.result.failed_codes.size());
                 CHECK_EQ(1, resp.edge_keys.size());
                 auto edge = resp.edge_keys[0];
                 CHECK_EQ(srcId, edge.get_src());
