@@ -109,9 +109,9 @@ bash> sudo make install
 
     ```
     alias cmake='/home/engshare/cmake/bin/cmake -DCMAKE_C_COMPILER=/home/engshare/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/home/engshare/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/home/engshare/gperf/bin -DNEBULA_FLEX_ROOT=/home/engshare/flex -DNEBULA_BOOST_ROOT=/home/engshare/boost -DNEBULA_OPENSSL_ROOT=/home/engshare/openssl -DNEBULA_KRB5_ROOT=/home/engshare/krb5 -DNEBULA_LIBUNWIND_ROOT=/home/engshare/libunwind'
-
     alias ctest='/home/engshare/cmake/bin/ctest'
     ```
+
     5) Update **~/.bashrc**
 
     ```
@@ -180,10 +180,12 @@ bash> sudo make install
     ```
     export PATH=/opt/nebula/autoconf/bin:/opt/nebula/automake/bin:/opt/nebula/libtool/bin:/opt/nebula/git/bin:/opt/nebula/gettext/bin:/opt/nebula/flex/bin:/opt/nebula/bison/bin:/opt/nebula/binutils/bin:$PATH
     export ACLOCAL_PATH=/opt/nebula/automake/share/aclocal-1.15:/opt/nebula/libtool/share/aclocal:/opt/nebula/autoconf-archive/share/aclocal
-
+    ```
+    ```
     alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BISON_ROOT=/opt/nebula/bison -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind'
     alias ctest='/opt/nebula/cmake/bin/ctest'
     ```
+
     3) Update **~/.bashrc**
 
     ```
@@ -262,9 +264,12 @@ bash> sudo make install
 
     ```
     alias cmake='/home/engshare/cmake/bin/cmake -DCMAKE_C_COMPILER=/home/engshare/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/home/engshare/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/home/engshare/gperf/bin -DNEBULA_FLEX_ROOT=/home/engshare/flex -DNEBULA_BOOST_ROOT=/home/engshare/boost -DNEBULA_OPENSSL_ROOT=/home/engshare/openssl -DNEBULA_KRB5_ROOT=/home/engshare/krb5 -DNEBULA_LIBUNWIND_ROOT=/home/engshare/libunwind'
+    ```
 
+    ```
     alias ctest='/home/engshare/cmake/bin/ctest'
     ```
+
     5) Update **~/.bashrc**
 
     ```
@@ -308,7 +313,8 @@ bash> sudo make install
     [root@centos7.5 nebula]# ls /usr/local/nebula/
     bin  etc  scripts  share
     ```
-    **Now, you can start nebula!** [get_start](https://github.com/vesoft-inc/nebula/blob/master/docs/get-started.md)
+    
+    **Now, you can start nebula!** [Getting Started](get-started.md)
 
 
 
