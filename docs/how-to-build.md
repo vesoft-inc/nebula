@@ -77,10 +77,13 @@ bash> sudo make install
     bash> sudo yum install -y libtool autoconf autoconf-archive automake ncurses ncurses-devel readline readline-devel perl-WWW-Curl libstdc++-static maven java-1.8.0-openjdk
     ```
 
-    and through vesoft offer
+    and through VESoft Inc. offer
 
     ```
+    # From China
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-7.5-1804.tar.gz
+    # From US
+    bash> wget https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos-7.5-1804.tar.gz
     ```
 
     1) Create a system user, which home directory will be used as a shared file location
@@ -155,10 +158,14 @@ bash> sudo make install
     bash> sudo yum -y install libtool autoconf autoconf-archive automake perl-WWW-Curl perl-YAML perl-CGI glibc-devel libstdc++-static ncurses ncurses-devel readline readline-devel maven java-1.8.0-openjdk
     ```
 
-    and through vesoft offer
+    and through VESoft Inc. offer
 
     ```
+    # From China
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-6.5.tar.gz
+    # From US
+    bash> wget https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos-6.5.tar.gz
+
     ```
 
     1) Install all necessary rpm packages in this folder
@@ -225,10 +232,13 @@ bash> sudo make install
     bash> sudo apt-get -y install gcc-multilib libtool autoconf autoconf-archive automake libncurses5-dev libreadline-dev python maven openjdk-8-jdk
     ```
 
-    and through vesoft offer
+    and through VESoft Inc. offer
 
     ```
+    # From China
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu1804.tar.gz
+    # From US
+    bash> wget https://nebula-graph-cn.oss-us-west-1.aliyuncs.com/build-deb/ubuntu1804.tar.gz
     ```
 
     1) Create a system user, which home directory will be used as a shared file location
