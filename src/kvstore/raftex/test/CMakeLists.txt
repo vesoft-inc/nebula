@@ -50,10 +50,23 @@ nebula_add_test(
     LIBRARIES ${THRIFT_LIBRARIES} wangle gtest
 )
 
-
 nebula_add_test(
     NAME raft_case_test
     SOURCES RaftCase.cpp RaftexTestBase.cpp TestShard.cpp
+    OBJECTS ${RAFTEX_TEST_LIBS}
+    LIBRARIES ${THRIFT_LIBRARIES} wangle gtest
+)
+
+nebula_add_test(
+    NAME leader_transfer_test
+    SOURCES LeaderTransferTest.cpp RaftexTestBase.cpp TestShard.cpp
+    OBJECTS ${RAFTEX_TEST_LIBS}
+    LIBRARIES ${THRIFT_LIBRARIES} wangle gtest
+)
+
+nebula_add_test(
+    NAME snapshot_test
+    SOURCES SnapshotTest.cpp RaftexTestBase.cpp TestShard.cpp
     OBJECTS ${RAFTEX_TEST_LIBS}
     LIBRARIES ${THRIFT_LIBRARIES} wangle gtest
 )

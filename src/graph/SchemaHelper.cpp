@@ -35,7 +35,12 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
                                   nebula::cpp2::Schema& schema) {
     auto status = Status::OK();
 
+    std::unordered_set<std::string> nameSet;
     for (auto& spec : specs) {
+        if (nameSet.find(*spec->name()) != nameSet.end()) {
+            return Status::Error("Duplicate column name `%s'", spec->name()->c_str());
+        }
+        nameSet.emplace(*spec->name());
         nebula::cpp2::ColumnDef column;
         column.name = *spec->name();
         column.type.type = columnTypeToSupportedType(spec->type());

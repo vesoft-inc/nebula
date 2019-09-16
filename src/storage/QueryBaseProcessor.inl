@@ -34,20 +34,39 @@ bool QueryBaseProcessor<REQ, RESP>::validOperation(nebula::cpp2::SupportedType v
     return true;
 }
 
+template <typename REQ, typename RESP>
+void QueryBaseProcessor<REQ, RESP>::addDefaultProps(std::vector<PropContext>& p, EdgeType eType) {
+    p.emplace_back("_src", eType, 0, PropContext::PropInKeyType::SRC);
+    p.emplace_back("_rank", eType, 1, PropContext::PropInKeyType::RANK);
+    p.emplace_back("_dst", eType, 2, PropContext::PropInKeyType::DST);
+}
+
+template <typename REQ, typename RESP>
+void QueryBaseProcessor<REQ, RESP>::initEdgeContext(const std::vector<EdgeType>& eTypes,
+                                                    bool need_default_props) {
+    std::transform(eTypes.cbegin(), eTypes.cend(),
+                   std::inserter(edgeContexts_, edgeContexts_.end()),
+                   [this, need_default_props](const auto& ec) {
+                       std::vector<PropContext> prop;
+                       if (need_default_props) {
+                           addDefaultProps(prop, ec);
+                       }
+                       return std::make_pair(ec, std::move(prop));
+                   });
+}
+
 template<typename REQ, typename RESP>
 cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& req) {
-    if (req.__isset.edge_type) {
-        edgeContext_.edgeType_ = req.edge_type;
-    }
     // Handle the case for query edges which should return some columns by default.
-    int32_t index = edgeContext_.props_.size();
+    int32_t index = std::accumulate(edgeContexts_.cbegin(), edgeContexts_.cend(), 0,
+                                    [](int ac, auto& ec) { return ac + ec.second.size(); });
     std::unordered_map<TagID, int32_t> tagIndex;
     for (auto& col : req.get_return_columns()) {
         PropContext prop;
         switch (col.owner) {
             case cpp2::PropOwner::SOURCE:
             case cpp2::PropOwner::DEST: {
-                auto tagId = col.tag_id;
+                auto tagId = col.id.get_tag_id();
                 auto schema = this->schemaMan_->getTagSchema(spaceId_, tagId);
                 if (!schema) {
                     VLOG(3) << "Can't find spaceId " << spaceId_ << ", tagId " << tagId;
@@ -79,13 +98,19 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
             }
             case cpp2::PropOwner::EDGE: {
                 auto it = kPropsInKey_.find(col.name);
+                EdgeType edgeType = col.id.get_edge_type();
                 if (it != kPropsInKey_.end()) {
                     prop.pikType_ = it->second;
-                    prop.type_.type = nebula::cpp2::SupportedType::INT;
-                } else if (type_ == BoundType::OUT_BOUND) {
+                    if (prop.pikType_ == PropContext::PropInKeyType::SRC ||
+                        prop.pikType_ == PropContext::PropInKeyType::DST) {
+                        prop.type_.type = nebula::cpp2::SupportedType::VID;
+                    } else {
+                        prop.type_.type = nebula::cpp2::SupportedType::INT;
+                    }
+                } else if (edgeType > 0) {
                     // Only outBound have properties on edge.
                     auto schema = this->schemaMan_->getEdgeSchema(spaceId_,
-                                                                  edgeContext_.edgeType_);
+                                                                  edgeType);
                     if (!schema) {
                         return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
                     }
@@ -104,7 +129,14 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                 prop.retIndex_ = index++;
                 prop.prop_ = std::move(col);
                 prop.returned_ = true;
-                edgeContext_.props_.emplace_back(std::move(prop));
+                auto it2 = edgeContexts_.find(edgeType);
+                if (it2 == edgeContexts_.end()) {
+                    std::vector<PropContext> v{std::move(prop)};
+                    edgeContexts_.emplace(edgeType, std::move(v));
+                    break;
+                }
+
+                it2->second.emplace_back(std::move(prop));
                 break;
             }
         }
@@ -209,25 +241,37 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
         }
         case Expression::kAliasProp:
         case Expression::kEdgeProp: {
-            if (type_ != BoundType::OUT_BOUND) {
-                VLOG(1) << "Only support filter on out bound props";
-                return false;
-            }
-            if (edgeContext_.edgeType_ == -1) {
+            if (edgeContexts_.empty()) {
                 VLOG(1) << "No edge requested!";
                 return false;
             }
+
             auto* edgeExp = static_cast<const AliasPropertyExpression*>(exp);
-            const auto* propName = edgeExp->prop();
-            auto schema = this->schemaMan_->getEdgeSchema(spaceId_, edgeContext_.edgeType_);
-            if (!schema) {
-                VLOG(1) << "Cant find edgeType " << edgeContext_.edgeType_;
+
+            // TODO(simon.liu) we need handle rename.
+            auto edgeStatus = this->schemaMan_->toEdgeType(spaceId_, *edgeExp->alias());
+            if (!edgeStatus.ok()) {
+                VLOG(1) << "Can't find edge " << *(edgeExp->alias());
                 return false;
             }
-            auto field = schema->field(*propName);
+
+            auto edgeType = edgeStatus.value();
+            if (edgeType < 0) {
+                VLOG(1) << "Only support filter on out bound props";
+                return false;
+            }
+
+            auto schema = this->schemaMan_->getEdgeSchema(spaceId_, edgeType);
+            if (!schema) {
+                VLOG(1) << "Cant find edgeType " << edgeType;
+                return false;
+            }
+
+            const auto* propName = edgeExp->prop();
+            auto field           = schema->field(*propName);
             if (field == nullptr) {
-                VLOG(1) << "Can't find related prop "
-                        << *propName << " on edge " << *(edgeExp->alias());
+                VLOG(1) << "Can't find related prop " << *propName << " on edge "
+                        << *(edgeExp->alias());
                 return false;
             }
             return true;
@@ -256,11 +300,11 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
                 break;
             case PropContext::PropInKeyType::SRC:
                 VLOG(3) << "collect _src, value = " << NebulaKeyUtils::getSrcId(key);
-                collector->collectInt64(NebulaKeyUtils::getSrcId(key), prop);
+                collector->collectVid(NebulaKeyUtils::getSrcId(key), prop);
                 continue;
             case PropContext::PropInKeyType::DST:
                 VLOG(3) << "collect _dst, value = " << NebulaKeyUtils::getDstId(key);
-                collector->collectInt64(NebulaKeyUtils::getDstId(key), prop);
+                collector->collectVid(NebulaKeyUtils::getDstId(key), prop);
                 continue;
             case PropContext::PropInKeyType::TYPE:
                 VLOG(3) << "collect _type, value = " << NebulaKeyUtils::getEdgeType(key);
@@ -328,6 +372,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
         this->collectProps(reader.get(), iter->key(), props, fcontext, collector);
     } else {
         VLOG(3) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagId;
+        return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
     }
     return ret;
 }
@@ -361,14 +406,20 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
         lastRank = rank;
         lastDstId = dstId;
         std::unique_ptr<RowReader> reader;
-        if (type_ == BoundType::OUT_BOUND && !val.empty()) {
+        if (edgeType > 0 && !val.empty()) {
             reader = RowReader::getEdgePropReader(this->schemaMan_, val, spaceId_, edgeType);
             if (exp_ != nullptr) {
                 // TODO(heng): We could remove the lock with one filter one bucket.
                 std::lock_guard<std::mutex> lg(this->lock_);
                 auto& getters = expCtx_->getters();
-                getters.getAliasProp =
-                    [&] (const std::string&, const std::string &prop) -> OptVariantType {
+                getters.getAliasProp = [this, edgeType, &reader](const std::string& edgeName,
+                                           const std::string& prop) -> OptVariantType {
+                    auto edgeStatus = this->schemaMan_->toEdgeType(spaceId_, edgeName);
+                    CHECK(edgeStatus.ok());
+
+                    if (edgeType != edgeStatus.value()) {
+                        return Status::Error("ignore this edge");
+                    }
                     auto res = RowReader::getPropByName(reader.get(), prop);
                     if (!ok(res)) {
                         return Status::Error("Invalid Prop");
@@ -467,7 +518,12 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
     VLOG(3) << "Receive request, spaceId " << spaceId_ << ", return cols " << returnColumnsNum;
     tagContexts_.reserve(returnColumnsNum);
 
+    if (req.__isset.edge_types) {
+        initEdgeContext(req.edge_types);
+    }
+
     auto retCode = checkAndBuildContexts(req);
+
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         for (auto& p : req.get_parts()) {
             this->pushResultCode(retCode, p.first);
@@ -475,7 +531,6 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
         this->onFinished();
         return;
     }
-
     // const auto& filter = req.get_filter();
     auto buckets = genBuckets(req);
     std::vector<folly::Future<std::vector<OneVertexResp>>> results;

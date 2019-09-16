@@ -9,6 +9,8 @@
 #include "base/Base.h"
 #include "base/StatusOr.h"
 #include "base/Status.h"
+#include <boost/variant.hpp>
+#include  <boost/unordered_set.hpp>
 
 namespace nebula {
 
@@ -23,6 +25,7 @@ std::string columnTypeToString(ColumnType type);
 
 class ExpressionContext final {
 public:
+    using EdgeInfo = boost::variant<std::string, EdgeType>;
     void addSrcTagProp(const std::string &tag, const std::string &prop) {
         srcTagProps_.emplace(tag, prop);
     }
@@ -42,6 +45,25 @@ public:
 
     void addAliasProp(const std::string &alias, const std::string &prop) {
         aliasProps_.emplace(alias, prop);
+    }
+
+    bool addEdge(const std::string &alias, EdgeType edgeType) {
+        auto it = edgeMaps_.find(alias);
+        if (it != edgeMaps_.end()) {
+            return false;
+        }
+        edgeMaps_.emplace(alias, edgeType);
+        return true;
+    }
+
+    bool getEdgeType(const std::string &alias, EdgeType &edgeType) {
+        auto it = edgeMaps_.find(alias);
+        if (it == edgeMaps_.end()) {
+            return false;
+        }
+
+        edgeType = it->second;
+        return true;
     }
 
     using PropPair = std::pair<std::string, std::string>;
@@ -103,14 +125,21 @@ public:
 
     void print() const;
 
+    bool isOverAllEdge() const { return overAll_; }
+
+    void setOverAllEdge() { overAll_ = true; }
+
 private:
-    Getters                                     getters_;
-    std::unordered_set<PropPair>                srcTagProps_;
-    std::unordered_set<PropPair>                dstTagProps_;
-    std::unordered_set<PropPair>                aliasProps_;
-    std::unordered_set<VariableProp>            variableProps_;
-    std::unordered_set<std::string>             variables_;
-    std::unordered_set<std::string>             inputProps_;
+    Getters                                   getters_;
+    std::unordered_set<PropPair>              srcTagProps_;
+    std::unordered_set<PropPair>              dstTagProps_;
+    std::unordered_set<PropPair>              aliasProps_;
+    std::unordered_set<VariableProp>          variableProps_;
+    std::unordered_set<std::string>           variables_;
+    std::unordered_set<std::string>           inputProps_;
+    // alias => edgeType
+    std::unordered_map<std::string, EdgeType> edgeMaps_;
+    bool                                      overAll_{false};
 };
 
 
@@ -136,6 +165,14 @@ public:
         return kind_ == kVariableProp;
     }
 
+    virtual bool isAliasExpression() const {
+        return kind_ == kAliasProp;
+    }
+
+    virtual bool isTypeCastingExpression() const {
+        return kind_ == kTypeCasting;
+    }
+
     /**
      * To encode an expression into a byte buffer.
      *
@@ -148,6 +185,7 @@ public:
      */
     static StatusOr<std::unique_ptr<Expression>> decode(folly::StringPiece buffer) noexcept;
 
+    // Procedures used to do type conversions only between compatible ones.
     static int64_t asInt(const VariantType &value) {
         return boost::get<int64_t>(value);
     }
@@ -202,6 +240,57 @@ public:
     static bool almostEqual(double left, double right) {
         constexpr auto EPSILON = 1e-8;
         return std::abs(left - right) < EPSILON;
+    }
+
+    // Procedures used to do type casting
+    static std::string toString(const VariantType &value) {
+        char buf[1024];
+        switch (value.which()) {
+            case 0:
+                return folly::to<std::string>(boost::get<int64_t>(value));
+            case 1:
+                return folly::to<std::string>(boost::get<double>(value));
+            case 2:
+                snprintf(buf, sizeof(buf), "%s", boost::get<bool>(value) ? "true" : "false");
+                return buf;
+            case 3:
+                return boost::get<std::string>(value);
+        }
+        LOG(FATAL) << "unknown type: " << value.which();
+    }
+
+    static bool toBool(const VariantType &value) {
+        return asBool(value);
+    }
+
+    static double toDouble(const VariantType &value) {
+        switch (value.which()) {
+            case 0:
+                return static_cast<double>(boost::get<int64_t>(value));
+            case 1:
+                return boost::get<double>(value);
+            case 2:
+                return boost::get<bool>(value) ? 1.0 : 0.0;
+            case 3:
+                // TODO(dutor) error handling
+                return folly::to<double>(boost::get<std::string>(value));
+        }
+        LOG(FATAL) << "unknown type: " << value.which();
+    }
+
+    static int64_t toInt(const VariantType &value) {
+        switch (value.which()) {
+            case 0:
+                return boost::get<int64_t>(value);
+            case 1:
+                return static_cast<int64_t>(boost::get<double>(value));
+            case 2:
+                return boost::get<bool>(value) ? 1.0 : 0.0;
+            case 3:
+                // TODO(dutor) error handling
+                return folly::to<int64_t>(boost::get<std::string>(value));
+        }
+        LOG(FATAL) << "unknown type: " << value.which();
     }
 
     static void print(const VariantType &value);
@@ -504,7 +593,7 @@ public:
 
     SourcePropertyExpression(std::string *tag, std::string *prop) {
         kind_ = kSourceProp;
-        ref_.reset(new std::string("$^"));
+        ref_.reset(new std::string("$^."));
         alias_.reset(tag);
         prop_.reset(prop);
     }
@@ -690,6 +779,10 @@ public:
         return operand_.get();
     }
 
+    const ColumnType getType() const {
+        return type_;
+    }
+
 private:
     void encode(Cord &cord) const override;
 
@@ -709,7 +802,7 @@ private:
 class ArithmeticExpression final : public Expression {
 public:
     enum Operator : uint8_t {
-        ADD, SUB, MUL, DIV, MOD
+        ADD, SUB, MUL, DIV, MOD, XOR
     };
     static_assert(sizeof(Operator) == sizeof(uint8_t), "");
 
@@ -812,7 +905,7 @@ private:
 class LogicalExpression final : public Expression {
 public:
     enum Operator : uint8_t {
-        AND, OR
+        AND, OR, XOR
     };
     static_assert(sizeof(Operator) == sizeof(uint8_t), "");
 

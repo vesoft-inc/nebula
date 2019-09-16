@@ -10,12 +10,14 @@
 #include "base/Base.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
 #include <folly/RWSpinLock.h>
+#include <gtest/gtest_prod.h>
 #include "gen-cpp2/MetaServiceAsyncClient.h"
 #include "base/Status.h"
 #include "base/StatusOr.h"
 #include "thread/GenericWorker.h"
 #include "thrift/ThriftClientManager.h"
 #include "meta/SchemaProviderIf.h"
+#include "meta/GflagsManager.h"
 
 DECLARE_int32(meta_client_retry_times);
 
@@ -51,6 +53,10 @@ using SpaceEdgeNameTypeMap = std::unordered_map<std::pair<GraphSpaceID, std::str
 using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, SchemaVer>;
 // get latest edge version via spaceId and edgeType
 using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
+// get edgeName via spaceId and edgeType
+using SpaceEdgeTypeNameMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, std::string>;
+// get all edgeType edgeName via spaceId
+using SpaceAllEdgeMap = std::unordered_map<GraphSpaceID, std::vector<std::string>>;
 
 struct ConfigItem {
     ConfigItem() {}
@@ -85,6 +91,9 @@ public:
 };
 
 class MetaClient {
+    FRIEND_TEST(ConfigManTest, MetaConfigManTest);
+    FRIEND_TEST(ConfigManTest, MockConfigTest);
+
 public:
     explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                         std::vector<HostAddr> addrs,
@@ -130,7 +139,7 @@ public:
     folly::Future<StatusOr<bool>>
     addHosts(const std::vector<HostAddr>& hosts);
 
-    folly::Future<StatusOr<std::vector<HostStatus>>>
+    folly::Future<StatusOr<std::vector<cpp2::HostItem>>>
     listHosts();
 
     folly::Future<StatusOr<bool>>
@@ -202,6 +211,8 @@ public:
     folly::Future<StatusOr<int64_t>>
     balance();
 
+    folly::Future<StatusOr<bool>> balanceLeader();
+
     // Operations for config
     folly::Future<StatusOr<bool>>
     regConfig(const std::vector<cpp2::ConfigItem>& items);
@@ -216,10 +227,6 @@ public:
     folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module);
 
-    cpp2::ConfigModule& getGflagsModule() {return gflagsModule_;}
-
-    void setGflagsModule(const cpp2::ConfigModule& module = cpp2::ConfigModule::UNKNOWN);
-
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
@@ -227,11 +234,15 @@ public:
 
     StatusOr<EdgeType> getEdgeTypeByNameFromCache(const GraphSpaceID& space,
                                                   const std::string& name);
+    StatusOr<std::string> getEdgeNameByTypeFromCache(const GraphSpaceID& space,
+                                                     const EdgeType edgeType);
 
     StatusOr<SchemaVer> getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
 
     StatusOr<SchemaVer> getNewestEdgeVerFromCache(const GraphSpaceID& space,
                                                   const EdgeType& edgeType);
+
+    StatusOr<std::vector<std::string>> getAllEdgeFromCache(const GraphSpaceID& space);
 
     PartsMap getPartsMapFromCache(const HostAddr& host);
 
@@ -263,6 +274,7 @@ protected:
 
     void loadCfgThreadFunc();
     void loadCfg();
+    bool registerCfg();
     void addLoadCfgTask();
     void updateGflagsValue(const ConfigItem& item);
 
@@ -270,8 +282,10 @@ protected:
                      std::shared_ptr<SpaceInfoCache> spaceInfoCache,
                      SpaceTagNameIdMap &tagNameIdMap,
                      SpaceEdgeNameTypeMap &edgeNameTypeMap,
+                     SpaceEdgeTypeNameMap &edgeTypeNamemap,
                      SpaceNewestTagVerMap &newestTagVerMap,
-                     SpaceNewestEdgeVerMap &newestEdgeVerMap);
+                     SpaceNewestEdgeVerMap &newestEdgeVerMap,
+                     SpaceAllEdgeMap &allEdgemap);
 
     folly::Future<StatusOr<bool>> heartbeat();
 
@@ -312,8 +326,6 @@ protected:
 
     std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
-    std::vector<HostStatus> toHostStatus(const std::vector<cpp2::HostItem>& thosts);
-
     std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
 
     ConfigItem toConfigItem(const cpp2::ConfigItem& item);
@@ -337,8 +349,10 @@ private:
     SpaceNameIdMap        spaceIndexByName_;
     SpaceTagNameIdMap     spaceTagIndexByName_;
     SpaceEdgeNameTypeMap  spaceEdgeIndexByName_;
+    SpaceEdgeTypeNameMap  spaceEdgeIndexByType_;
     SpaceNewestTagVerMap  spaceNewestTagVerMap_;
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
+    SpaceAllEdgeMap      spaceAllEdgeMap_;
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
     folly::RWSpinLock     listenerLock_;
@@ -349,6 +363,8 @@ private:
     MetaConfigMap         metaConfigMap_;
     folly::RWSpinLock     configCacheLock_;
     cpp2::ConfigModule    gflagsModule_{cpp2::ConfigModule::UNKNOWN};
+    std::atomic_bool      configReady_{false};
+    std::vector<cpp2::ConfigItem> gflagsDeclared_;
 };
 
 }  // namespace meta

@@ -115,6 +115,25 @@ AssertionResult DataTest::prepareSchema() {
                                << " failed, error code "<< static_cast<int32_t>(code);
         }
     }
+    // Insert timestamp
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG school(name string, create_time timestamp)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd
+                               << " failed, error code "<< static_cast<int32_t>(code);
+        }
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE EDGE study(start_time timestamp, end_time timestamp)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd
+                               << " failed, error code "<< static_cast<int32_t>(code);
+        }
+    }
     sleep(FLAGS_load_data_interval_secs + 3);
     return TestOK();
 }
@@ -356,7 +375,116 @@ TEST_F(DataTest, InsertVertex) {
         auto code = client_->execute(cmd, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // Insert invalid timestamp
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE study(start_time, end_time) "
+                          "VALUES hash(\"Laura\")->hash(\"sun_school\"):"
+                          "(\"2300-01-01 10:00:00\", now()+3600*24*365*3)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    // Insert timestamp succeeded
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX school(name, create_time) VALUES "
+                          "hash(\"sun_school\"):(\"sun_school\", \"2010-01-01 10:00:00\")";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE study(start_time, end_time) "
+                          "VALUES hash(\"Laura\")->hash(\"sun_school\"):"
+                          "(\"2019-01-01 10:00:00\", now()+3600*24*365*3)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "GO FROM hash(\"Laura\") OVER study "
+                          "YIELD $$.school.name, study._dst, "
+                          "$$.school.create_time, (string)study.start_time";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
+            {"sun_school", std::hash<std::string>()("sun_school"),  1262311200, "1535760000"},
+        };
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "FETCH PROP ON school hash(\"sun_school\") ";;
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+                {"sun_school", 1262311200},
+        };
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
     // TODO: Test insert multi tags, and delete one of them then check other existent
+}
+
+TEST_F(DataTest, InsertMultiVersionTest) {
+    // Insert multi version vertex
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX person(name, age) VALUES "
+                          "hash(\"Tony\"):(\"Tony\", 18), "
+                          "hash(\"Mack\"):(\"Mack\", 19)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX person(name, age) VALUES "
+                          "hash(\"Mack\"):(\"Mack\", 20)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX person(name, age) VALUES "
+                          "hash(\"Mack\"):(\"Mack\", 21)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Insert multi version edge
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
+                          "hash(\"Tony\")->hash(\"Mack\")@1:(1)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
+                          "hash(\"Tony\")->hash(\"Mack\")@1:(2)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
+                          "hash(\"Tony\")->hash(\"Mack\")@1:(3)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Get result
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "GO FROM hash(\"Tony\") OVER schoolmate "
+                          "YIELD $$.person.name, $$.person.age, schoolmate.likeness";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        using valueType = std::tuple<std::string, int64_t, int64_t>;
+        // Get the latest result
+        std::vector<valueType> expected{
+            {"Mack", 21, 3},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 
 TEST_F(DataTest, FindTest) {

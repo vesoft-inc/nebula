@@ -384,6 +384,139 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
     }
 }
 
+TEST(NebulaStoreTest, TransLeaderTest) {
+    fs::TempDir rootPath("/tmp/trans_leader_test.XXXXXX");
+    auto initNebulaStore = [](const std::vector<HostAddr>& peers,
+                              int32_t index,
+                              const std::string& path) -> std::unique_ptr<NebulaStore> {
+        LOG(INFO) << "Start nebula store on " << peers[index];
+        auto sIoThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+        auto partMan = std::make_unique<MemPartManager>();
+        for (auto partId = 0; partId < 3; partId++) {
+            PartMeta pm;
+            pm.spaceId_ = 0;
+            pm.partId_ = partId;
+            pm.peers_ = peers;
+            partMan->partsMap_[0][partId] = std::move(pm);
+        }
+        std::vector<std::string> paths;
+        paths.emplace_back(folly::stringPrintf("%s/disk%d", path.c_str(), index));
+        KVOptions options;
+        options.dataPaths_ = std::move(paths);
+        options.partMan_ = std::move(partMan);
+        HostAddr local = peers[index];
+        return std::make_unique<NebulaStore>(std::move(options),
+                                             sIoThreadPool,
+                                             local,
+                                             getHandlers());
+    };
+
+    // 3 replicas, 3 partition
+    int32_t replicas = 3;
+    IPv4 ip;
+    CHECK(network::NetworkUtils::ipv4ToInt("127.0.0.1", ip));
+    std::vector<HostAddr> peers;
+    for (int32_t i = 0; i < replicas; i++) {
+        peers.emplace_back(ip, network::NetworkUtils::getAvailablePort());
+    }
+
+    std::vector<std::unique_ptr<NebulaStore>> stores;
+    for (int i = 0; i < replicas; i++) {
+        stores.emplace_back(initNebulaStore(peers, i, rootPath.path()));
+        stores.back()->init();
+    }
+    sleep(FLAGS_raft_heartbeat_interval_secs);
+    LOG(INFO) << "Waiting for all leaders elected!";
+    int from = 0;
+    while (true) {
+        bool allLeaderElected = true;
+        for (int part = from; part < 3; part++) {
+            auto res = stores[0]->partLeader(0, part);
+            CHECK(ok(res));
+            auto leader = value(std::move(res));
+            if (leader == HostAddr(0, 0)) {
+                allLeaderElected = false;
+                from = part;
+                break;
+            }
+            LOG(INFO) << "Leader for part " << part << " is " << leader;
+        }
+        if (allLeaderElected) {
+            break;
+        }
+        usleep(100000);
+    }
+
+    auto findStoreIndex = [&] (const HostAddr& addr) {
+        for (size_t i = 0; i < peers.size(); i++) {
+            if (peers[i] == addr) {
+                return i;
+            }
+        }
+        LOG(FATAL) << "Should not reach here!";
+        return 0UL;
+    };
+
+    LOG(INFO) << "Transfer leader to first copy";
+    // all parttition tranfer leaders to first replica
+    GraphSpaceID spaceId = 0;
+    for (int i = 0; i < 3; i++) {
+        PartitionID partId = i;
+        auto targetAddr = NebulaStore::getRaftAddr(peers[0]);
+        folly::Baton<true, std::atomic> baton;
+        LOG(INFO) << "try to trans leader to " << targetAddr.second;
+
+        auto leaderRet = stores[0]->partLeader(spaceId, partId);
+        CHECK(ok(leaderRet));
+        auto leader = value(std::move(leaderRet));
+        auto index = findStoreIndex(leader);
+        auto partRet = stores[index]->part(spaceId, partId);
+        CHECK(ok(partRet));
+        auto part = value(partRet);
+        part->asyncTransferLeader(targetAddr, [&] (kvstore::ResultCode code) {
+            if (code == ResultCode::ERR_LEADER_CHANGED) {
+                ASSERT_EQ(targetAddr, part->leader());
+            } else {
+                ASSERT_EQ(ResultCode::SUCCEEDED, code);
+            }
+            baton.post();
+        });
+        baton.wait();
+    }
+    sleep(FLAGS_raft_heartbeat_interval_secs);
+    {
+        std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+        ASSERT_EQ(3, stores[0]->allLeader(leaderIds));
+    }
+
+    LOG(INFO) << "Manual leader balance";
+    // stores[0] transfer leader to other replica, each one have a leader
+    // leader of parts would be {0: peers[0], 1: peers[1], 2: peers[2]}
+    for (int i = 0; i < 3; i++) {
+        PartitionID partId = i;
+        auto targetAddr = NebulaStore::getRaftAddr(peers[i]);
+        folly::Baton<true, std::atomic> baton;
+        auto ret = stores[0]->part(spaceId, partId);
+        CHECK(ok(ret));
+        auto part = nebula::value(ret);
+        LOG(INFO) << "Transfer part " << partId << " leader to " << targetAddr;
+        part->asyncTransferLeader(targetAddr, [&] (kvstore::ResultCode code) {
+            if (code == ResultCode::ERR_LEADER_CHANGED) {
+                ASSERT_EQ(targetAddr, part->leader());
+            } else {
+                ASSERT_EQ(ResultCode::SUCCEEDED, code);
+            }
+            baton.post();
+        });
+        baton.wait();
+    }
+    sleep(FLAGS_raft_heartbeat_interval_secs);
+    for (int i = 0; i < replicas; i++) {
+        std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+        ASSERT_EQ(1UL, stores[i]->allLeader(leaderIds));
+    }
+}
+
 
 }  // namespace kvstore
 }  // namespace nebula

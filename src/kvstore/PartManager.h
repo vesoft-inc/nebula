@@ -72,6 +72,7 @@ class MemPartManager final : public PartManager {
     FRIEND_TEST(NebulaStoreTest, SimpleTest);
     FRIEND_TEST(NebulaStoreTest, PartsTest);
     FRIEND_TEST(NebulaStoreTest, ThreeCopiesTest);
+    FRIEND_TEST(NebulaStoreTest, TransLeaderTest);
 
 public:
     MemPartManager() = default;

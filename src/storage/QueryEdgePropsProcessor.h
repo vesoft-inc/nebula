@@ -33,8 +33,6 @@ private:
                                           std::vector<PropContext>& props,
                                           RowSetWriter& rsWriter);
 
-    void addDefaultProps();
-
     kvstore::ResultCode processVertex(PartitionID, VertexID) override {
         LOG(FATAL) << "Unimplement!";
         return kvstore::ResultCode::SUCCEEDED;
