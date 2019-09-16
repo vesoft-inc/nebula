@@ -188,9 +188,9 @@ Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
 
 
 template<typename RESP>
-Status BaseProcessor<RESP>::userExist(UserID spaceId) {
+Status BaseProcessor<RESP>::userExist(UserID userId) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
-    auto userKey = MetaServiceUtils::userKey(spaceId);
+    auto userKey = MetaServiceUtils::userKey(userId);
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {

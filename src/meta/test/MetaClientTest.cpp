@@ -683,32 +683,34 @@ TEST(MetaClientTest, UserTest) {
         std::vector<HostAddr> hosts = {{0, 0}};
         auto r = client->addHosts(hosts).get();
         ASSERT_TRUE(r.ok());
-        TestUtils::registerHB(hosts);
+        TestUtils::registerHB(sc->kvStore_.get(), hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
-            ASSERT_EQ(hosts[i], ret.value()[i].first);
+            auto tHost = ret.value()[i].hostAddr;
+            auto hostAddr = HostAddr(tHost.ip, tHost.port);
+            ASSERT_EQ(hosts[i], hostAddr);
         }
     }
     auto spaceRet = client->createSpace("default_space", 1, 1).get();
-    ASSERT_TRUE(spaceRet.ok()) << spaceRet.status();
+    ASSERT_TRUE(spaceRet.ok());
     auto defaultSpaceId = spaceRet.value();
     spaceRet = client->createSpace("test_space", 1, 1).get();
-    ASSERT_TRUE(spaceRet.ok()) << spaceRet.status();
+    ASSERT_TRUE(spaceRet.ok());
     auto testSpaceId = spaceRet.value();
     UserID uId1, uId2;
     // Test simple user create.
     {
         cpp2::UserItem user(FRAGILE, "user1", false, 10, 20, 30, 40);
         auto r = client->createUser(user, "password", false).get();
-        ASSERT_TRUE(r.ok()) << r.status();
+        ASSERT_TRUE(r.ok());
         uId1 = r.value();
         // Expected failing. user exists.
         r = client->createUser(user, "password", false).get();
         ASSERT_FALSE(r.ok()) << r.status();
         // Expected success. user exists but missingOk is turn on.
         r = client->createUser(user, "password", true).get();
-        ASSERT_TRUE(r.ok()) << r.status();
+        ASSERT_TRUE(r.ok());
     }
     // Test optional parameters.
     {
@@ -718,20 +720,20 @@ TEST(MetaClientTest, UserTest) {
         user.set_max_user_connections(10);
         user.set_max_connections_per_hour(20);
         auto r = client->createUser(user, "user2", false).get();
-        ASSERT_TRUE(r.ok()) << r.status();
+        ASSERT_TRUE(r.ok());
         auto ret = client->getUser("user2").get();
-        ASSERT_TRUE(ret.ok()) << ret.status();
+        ASSERT_TRUE(ret.ok());
         ASSERT_EQ(user, ret.value());
     }
     {
         auto r = client->dropUser("user2", false).get();
-        ASSERT_TRUE(r.ok()) << r.status();
+        ASSERT_TRUE(r.ok());
         // Expected failing, user not exists.
         r = client->dropUser("user2", false).get();
         ASSERT_FALSE(r.ok()) << r.status();
         // Expected success. user exists but missingOk is turn on.
         r = client->dropUser("user2", true).get();
-        ASSERT_TRUE(r.ok()) << r.status();
+        ASSERT_TRUE(r.ok());
         // Verify user dropped.
         auto ret = client->getUser("user2").get();
         ASSERT_FALSE(ret.ok()) << ret.status();
@@ -742,17 +744,18 @@ TEST(MetaClientTest, UserTest) {
         user.set_is_lock(true);
         user.set_max_user_connections(100);
         auto r = client->alterUser(user).get();
-        ASSERT_TRUE(r.ok()) << r.status();
+        ASSERT_TRUE(r.ok());
         auto ret = client->getUser("user1").get();
-        ASSERT_TRUE(ret.ok()) << ret.status();
+        ASSERT_TRUE(ret.ok());
         cpp2::UserItem expect(FRAGILE, "user1", true, 10, 20, 30, 100);
         ASSERT_EQ(expect, ret.value());
     }
     {
         cpp2::UserItem user(FRAGILE, "user2", true, 10, 20, 30, 40);
         auto r = client->createUser(user, "password", false).get();
-        ASSERT_TRUE(r.ok()) << r.status();
+        ASSERT_TRUE(r.ok());
         uId2 = r.value();
+        sleep(FLAGS_load_data_interval_secs + 1);
         auto grantRet = client->grantToUser(
                 cpp2::RoleItem(FRAGILE, uId1, defaultSpaceId, cpp2::RoleType::GOD)).get();
         ASSERT_TRUE(grantRet.ok());

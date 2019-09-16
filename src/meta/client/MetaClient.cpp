@@ -864,7 +864,7 @@ MetaClient::createUser(cpp2::UserItem userItem, std::string password, bool missi
     req.set_user(std::move(userItem));
     req.set_encoded_pwd(std::move(password));
     req.set_missing_ok(missingOk);
-    folly::Promise<StatusOr<bool>> promise;
+    folly::Promise<StatusOr<UserID>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_createUser(request);
