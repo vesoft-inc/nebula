@@ -63,7 +63,7 @@ bash> sudo make install
     bash> sudo yum install -y libtool autoconf autoconf-archive automake perl-WWW-Curl libstdc++-static ncurses ncurses-devel readline readline-devel maven java-1.8.0-openjdk
     ```
 
-    和通过 vesoft 提供的包
+    和通过 VESoft Inc. 提供的包
 
     ```
     # From China
@@ -144,7 +144,7 @@ bash> sudo make install
     bash> sudo yum -y install libtool autoconf autoconf-archive automake perl-WWW-Curl perl-YAML perl-CGI glibc-devel libstdc++-static ncurses ncurses-devel readline readline-devel maven java-1.8.0-openjdk
     ```
 
-    和通过 vesoft 提供的包
+    和通过 VESoft Inc. 提供的包
 
     ```
     # From China
@@ -215,7 +215,7 @@ bash> sudo make install
     bash> sudo apt-get -y install gcc-multilib libtool autoconf autoconf-archive automake libncurses5-dev libreadline-dev python maven java-1.8.0-openjdk
     ```
 
-    通过 vesoft 提供的包
+    通过 VESoft Inc. 提供的包
 
     ```
     # From China
