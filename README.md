@@ -27,7 +27,7 @@ As a graph database, **Nebula** has these features
 
 Apart from [installing from source code](docs/how-to-build.md), you can use the docker image to [try](https://hub.docker.com/r/vesoft/nebula-graph) or for [develop](https://hub.docker.com/u/vesoft).
 
-For more details, see [manual](docs/README.md).
+For more details, see [manual](docs/README.md) or download the [pdf](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/doc/nebulagraph.pdf).
 
 ## How can I contribute ##
 As the team behind **Nebula**, we fully commit to the community and all-in to the open source project. All the core features are and will be implemented in the open source repository.
