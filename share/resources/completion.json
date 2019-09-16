@@ -97,6 +97,18 @@
                 "CONFIGS"
             ]
         }
+        "ORDER BY": {
+        },
+        "LIMIT": {
+            "sub_keywords": [
+                "OFFSET"
+            ]
+        },
+        "GROUP BY": {
+            "sub_keywords": [
+                "COUNT", "COUNT_DISTINCT", "SUM", "AVG", "MAX", "MIN", "STD", "BIT_AND", "BIT_OR", "BIT_XOR"
+            ]
+        },
     },
     "typenames": [
         "int" ,

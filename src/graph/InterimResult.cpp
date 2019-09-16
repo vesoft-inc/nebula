@@ -96,7 +96,7 @@ StatusOr<std::vector<cpp2::RowValue>> InterimResult::getRows() const {
                     if (rc != ResultType::SUCCEEDED) {
                         return Status::Error("Get vid from interim failed.");
                     }
-                    row.back().set_integer(v);
+                    row.back().set_vid(v);
                     break;
                 }
                 case SupportedType::DOUBLE: {

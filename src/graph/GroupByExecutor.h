@@ -34,19 +34,18 @@ private:
     Status prepareYield();
     Status buildIndex();
 
-    void groupingData();
+    Status groupingData();
     void generateOutputSchema();
 
     std::vector<std::string> getResultColumnNames() const;
     std::unique_ptr<InterimResult> setupInterimResult();
 
-    VariantType toVariantType(const cpp2::ColumnValue& value);
     cpp2::ColumnValue toColumnValue(const VariantType& value);
 
 
 private:
     GroupBySentence                                          *sentence_{nullptr};
-    std::unique_ptr<InterimResult>                            inputs_;
+    //std::unique_ptr<InterimResult>                            inputs_;
     std::vector<cpp2::RowValue>                               rows_;
     std::shared_ptr<const meta::SchemaProviderIf>             schema_{nullptr};
 

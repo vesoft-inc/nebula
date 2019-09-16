@@ -687,13 +687,13 @@ yield_column
         $$ = yield;
     }
     | agg_function L_PAREN MUL R_PAREN {
-        auto expr = new PrimaryExpression("*");
+        auto expr = new PrimaryExpression(std::string("*"));
         auto yield = new YieldColumn(expr);
         yield->setFunction($1);
         $$ = yield;
     }
     | agg_function L_PAREN MUL R_PAREN KW_AS name_label {
-        auto expr = new PrimaryExpression("*");
+        auto expr = new PrimaryExpression(std::string("*"));
         auto yield = new YieldColumn(expr, $6);
         yield->setFunction($1);
         $$ = yield;

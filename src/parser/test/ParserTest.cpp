@@ -1378,7 +1378,6 @@ TEST(Parser, BalanceOperation) {
     }
 }
 
-<<<<<<< HEAD
 TEST(Parser, CrashByFuzzer) {
     {
         GQLParser parser;
@@ -1453,6 +1452,13 @@ TEST(Parser, GroupBy) {
 
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // Error syntax
+    {
+        GQLParser parser;
+        std::string query = "YIELD rand32() as id, sum(1) as sum, avg(2) as avg GROUP BY id";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
     }
     // All fun error, empty group name
     {

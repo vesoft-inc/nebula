@@ -379,6 +379,7 @@ Status GoExecutor::setupStarts() {
 
     auto result = inputs->getVIDs(*colname_);
     if (!result.ok()) {
+        LOG(ERROR) << "Get vid fail: " << *colname_;
         return std::move(result).status();
     }
     starts_ = std::move(result).value();

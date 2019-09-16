@@ -272,9 +272,26 @@ public:
         return alias_.get();
     }
 
+    void setFunction(std::string* fun = nullptr) {
+        if (fun == nullptr) {
+            return;
+        }
+        funName_.reset(fun);
+    }
+
+    std::string getFunName() {
+        if (funName_ == nullptr) {
+            return "";
+        }
+        return *funName_;
+    }
+
+    std::string toString() const;
+
 private:
     std::unique_ptr<Expression>                 expr_;
     std::unique_ptr<std::string>                alias_;
+    std::unique_ptr<std::string>                funName_{nullptr};
 };
 
 
@@ -322,6 +339,23 @@ private:
     // this member will hold the reference
     // which is expand by *
     std::unique_ptr<YieldColumns>               yieldColHolder_;
+};
+
+class GroupClause final {
+public:
+    explicit GroupClause(YieldColumns *fields) {
+        groupColumns_.reset(fields);
+    }
+
+    std::vector<YieldColumn*> columns() const {
+        return groupColumns_->columns();
+    }
+
+
+    std::string toString() const;
+
+private:
+    std::unique_ptr<YieldColumns>               groupColumns_;
 };
 }   // namespace nebula
 #endif  // PARSER_CLAUSES_H_

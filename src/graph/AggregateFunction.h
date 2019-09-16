@@ -24,6 +24,7 @@ namespace ColumnType {
     const auto month_type = cpp2::ColumnValue::Type::month;
     const auto date_type = cpp2::ColumnValue::Type::date;
     const auto datetime_type = cpp2::ColumnValue::Type::datetime;
+    const auto path_type = cpp2::ColumnValue::Type::path;
     const auto empty_type = cpp2::ColumnValue::Type::__EMPTY__;
 }  // namespace ColumnType
 
@@ -60,7 +61,8 @@ public:
             case ColumnType::year_type:
             case ColumnType::month_type:
             case ColumnType::date_type:
-            case ColumnType::datetime_type: {
+            case ColumnType::datetime_type:
+            case ColumnType::path_type: {
                 // TODO(laura): To calculate the hash val
                 return 0;
             }
@@ -303,7 +305,7 @@ public:
         double acc = 0.0;
         double avg = avg_.getResult().get_double_precision();
         std::for_each(std::begin(elems_), std::end(elems_), [&](const double elem) {
-            acc += (elem - avg) *(elem - avg);
+            acc += (elem - avg) * (elem - avg);
         });
 
         double stdev = std::sqrt(acc/elems_.size());
