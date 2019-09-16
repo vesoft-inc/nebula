@@ -46,7 +46,8 @@ void RowUpdater::encodeTo(std::string& encoded) const noexcept {
                 RU_OUTPUT_VALUE(bool, Bool, false);
                 break;
             }
-            case cpp2::SupportedType::INT: {
+            case cpp2::SupportedType::INT:
+            case cpp2::SupportedType::TIMESTAMP: {
                 RU_OUTPUT_VALUE(int64_t, Int, 0);
                 break;
             }
@@ -64,10 +65,6 @@ void RowUpdater::encodeTo(std::string& encoded) const noexcept {
             }
             case cpp2::SupportedType::VID: {
                 RU_OUTPUT_VALUE(int64_t, Vid, 0);
-                break;
-            }
-            case cpp2::SupportedType::TIMESTAMP: {
-                RU_OUTPUT_VALUE(int64_t, Timestamp, 0);
                 break;
             }
             default: {
@@ -184,24 +181,6 @@ ResultType RowUpdater::setVid(const folly::StringPiece name,
 }
 
 
-ResultType RowUpdater::setTimestamp(const folly::StringPiece name,
-                              int64_t v) noexcept {
-    RU_GET_TYPE_BY_NAME()
-
-    uint64_t hash;
-    switch (type.get_type()) {
-        case cpp2::SupportedType::TIMESTAMP:
-            hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
-            updatedFields_[hash] = v;
-            break;
-        default:
-            return ResultType::E_INCOMPATIBLE_TYPE;
-    }
-
-    return ResultType::SUCCEEDED;
-}
-
-
 /***************************************************
  *
  * Field Accessors
@@ -298,21 +277,6 @@ ResultType RowUpdater::getVid(const folly::StringPiece name,
     return ResultType::SUCCEEDED;
 }
 
-
-ResultType RowUpdater::getTimestamp(const folly::StringPiece name,
-                              int64_t& v) const noexcept {
-    RU_CHECK_UPDATED_FIELDS(Timestamp)
-
-    switch (it->second.which()) {
-    case VALUE_TYPE_INT:
-        v = boost::get<int64_t>(it->second);
-        break;
-    default:
-        return ResultType::E_INCOMPATIBLE_TYPE;
-    }
-
-    return ResultType::SUCCEEDED;
-}
 
 #undef CHECK_UPDATED_FIELDS
 

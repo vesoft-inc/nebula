@@ -23,7 +23,6 @@ struct FileBasedWalPolicy {
     // This is only a hint, the FileBasedWal will try to keep all messages
     // newer than ttl, but not guarantee to remove old messages right away
     int32_t ttl = 86400;
-
     // The maximum size of each log message file (in byte). When the existing
     // log file reaches this size, a new file will be created
     size_t fileSize = 128 * 1024L * 1024L;
@@ -43,10 +42,12 @@ using PreProcessor = folly::Function<bool(LogID, TermID, ClusterID, const std::s
 class FileBasedWal final : public Wal
                          , public std::enable_shared_from_this<FileBasedWal> {
     FRIEND_TEST(FileBasedWal, TTLTest);
+    friend class FileBasedWalIterator;
 public:
     // A factory method to create a new WAL
     static std::shared_ptr<FileBasedWal> getWal(
         const folly::StringPiece dir,
+        const std::string& idStr,
         FileBasedWalPolicy policy,
         PreProcessor preProcessor);
 
@@ -99,7 +100,7 @@ public:
     // This method is *NOT* thread safe
     bool reset() override;
 
-    void cleanWAL() override;
+    void cleanWAL(int32_t ttl = 0) override;
 
     // Scan [firstLogId, lastLogId]
     // This method IS thread-safe
@@ -133,6 +134,7 @@ private:
     // Callers **SHOULD NEVER** use this constructor directly
     // Callers should use static method getWal() instead
     FileBasedWal(const folly::StringPiece dir,
+                 const std::string& idStr,
                  FileBasedWalPolicy policy,
                  PreProcessor preProcessor);
 
@@ -165,9 +167,11 @@ private:
      * FileBasedWal Member Fields
      *
      **************************************/
+    const std::string dir_;
+    std::string idStr_;
+
     std::atomic<bool> stopped_{false};
 
-    const std::string dir_;
     const FileBasedWalPolicy policy_;
     const size_t maxFileSize_;
     const size_t maxBufferSize_;
