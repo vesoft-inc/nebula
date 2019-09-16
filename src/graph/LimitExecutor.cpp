@@ -77,6 +77,9 @@ std::unique_ptr<InterimResult> LimitExecutor::setupInterimResult() {
         auto columns = row.get_columns();
         for (auto &column : columns) {
             switch (column.getType()) {
+                case cpp2::ColumnValue::Type::id:
+                    writer << column.get_id();
+                    break;
                 case Type::integer:
                     writer << column.get_integer();
                     break;
@@ -88,6 +91,9 @@ std::unique_ptr<InterimResult> LimitExecutor::setupInterimResult() {
                     break;
                 case Type::str:
                     writer << column.get_str();
+                    break;
+                case cpp2::ColumnValue::Type::timestamp:
+                    writer << column.get_timestamp();
                     break;
                 default:
                     LOG(FATAL) << "Not Support: " << column.getType();
