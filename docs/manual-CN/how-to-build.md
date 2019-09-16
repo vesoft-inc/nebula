@@ -66,7 +66,10 @@ bash> sudo make install
     和通过 vesoft 提供的包
 
     ```
+    # From China
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-7.5-1804.tar.gz
+    # From US
+    bash> wget https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos-7.5-1804.tar.gz
     ```
 
     1) 建立一个系统用户, 并将其 home 目录设置为共享目录
@@ -144,7 +147,10 @@ bash> sudo make install
     和通过 vesoft 提供的包
 
     ```
+    # From China
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-6.5.tar.gz
+    # From US
+    bash> wget https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos-6.5.tar.gz
     ```
 
     1) 在此目录下安装所有需要的 rpm 包
@@ -212,6 +218,9 @@ bash> sudo make install
     通过 vesoft 提供的包
 
     ```
+    # From China
+    bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu1804.tar.gz
+    # From US
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu1804.tar.gz
     ```
 
