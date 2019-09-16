@@ -3,7 +3,8 @@
 We will use the example graph below to introduce the basic concepts of property graph:
 
 
-![pict4](https://user-images.githubusercontent.com/42762957/64775622-21740c00-d589-11e9-98ad-04e149a5c371.png)
+![map300](https://user-images.githubusercontent.com/42762957/64931522-9f773200-d86b-11e9-8965-d1620817195e.png)
+
 
 
 In the preceding picture, we have a data set about the players and teams information of NBA. We can see the eleven vertices are classified to two kinds, i.e. player and name while the fifteen edges are classified to serve and like.
