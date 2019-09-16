@@ -13,18 +13,21 @@ To better understand the elements of a graph data model, let us walk through eac
 ## Vertices
 
 Vertices are typically used to represent entities in the real world. In the preceding example, the graph contains eleven vertices.
+
 ![image](https://user-images.githubusercontent.com/42762957/64915700-aa649080-d79f-11e9-983b-7564d03c7eee.png)
 
 
 ## Tags
 
 In **Nebula Graph**, vertex properties are clustered by **tags**. In the example above, the vertices have tags **player** and **team**.
+
 ![image](https://user-images.githubusercontent.com/42762957/64915770-9b7edd80-d7a1-11e9-8874-9d5e2deadf4d.png)
 
 
 ## Edge
 
 Edges are used to connect vertices. Each edge usually represents a relationship or a behavior between two vertices. In the preceding example, edges are _**serve**_ and _**like**_.
+
 ![image](https://user-images.githubusercontent.com/42762957/64915798-455e6a00-d7a2-11e9-8944-8c04b8484d25.png)
 
 ## Edge Type
