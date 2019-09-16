@@ -155,7 +155,7 @@ private:
      */
     class VertexHolder final {
     public:
-        VariantType getDefaultProp(TagID tid, const std::string &prop) const;
+        OptVariantType getDefaultProp(TagID tid, const std::string &prop) const;
         OptVariantType get(VertexID id, TagID tid, const std::string &prop) const;
         void add(const storage::cpp2::QueryResponse &resp);
         nebula::cpp2::SupportedType getDefaultPropType(TagID tid, const std::string &prop) const;
