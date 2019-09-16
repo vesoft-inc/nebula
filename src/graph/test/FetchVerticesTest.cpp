@@ -33,6 +33,12 @@ TEST_F(FetchVerticesTest, base) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"player.name"}, {"player.age"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t>> expected = {
             {player.name(), player.age()},
         };
@@ -46,6 +52,12 @@ TEST_F(FetchVerticesTest, base) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"player.name"}, {"player.age"}, {"(player.age>30)"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, bool>> expected = {
             {player.name(), player.age(), player.age() > 30},
         };
@@ -54,11 +66,17 @@ TEST_F(FetchVerticesTest, base) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
-        auto *fmt = "GO FROM %ld over like "
-                    "| FETCH PROP ON player $- YIELD player.name, player.age";
+        auto *fmt = "GO FROM %ld over like YIELD like._dst as id"
+                    "| FETCH PROP ON player $-.id YIELD player.name, player.age";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"player.name"}, {"player.age"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t>> expected = {
             {"Tony Parker", players_["Tony Parker"].age()},
             {"Tim Duncan", players_["Tim Duncan"].age()},
@@ -68,11 +86,17 @@ TEST_F(FetchVerticesTest, base) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
-        auto *fmt = "$var = GO FROM %ld over like;"
+        auto *fmt = "$var = GO FROM %ld over like YIELD like._dst as id;"
                     "FETCH PROP ON player $var.id YIELD player.name, player.age";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"player.name"}, {"player.age"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t>> expected = {
             {"Tony Parker", players_["Tony Parker"].age()},
             {"Tim Duncan", players_["Tim Duncan"].age()},
@@ -82,12 +106,18 @@ TEST_F(FetchVerticesTest, base) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
-        auto *fmt = "$var = GO FROM %ld over like;"
+        auto *fmt = "$var = GO FROM %ld over like YIELD like._dst as id;"
                     "FETCH PROP ON player $var.id YIELD player.name as name, player.age"
                     " | ORDER BY name";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}, {"player.age"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t>> expected = {
             {"Tim Duncan", players_["Tim Duncan"].age()},
             {"Tony Parker", players_["Tony Parker"].age()},
@@ -102,6 +132,12 @@ TEST_F(FetchVerticesTest, base) {
         auto query = folly::stringPrintf(fmt, player.name().c_str());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"player.name"}, {"player.age"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t>> expected = {
             {player.name(), player.age()},
         };
@@ -117,6 +153,12 @@ TEST_F(FetchVerticesTest, noYield) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"player.name"}, {"player.age"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t>> expected = {
             {player.name(), player.age()},
         };
@@ -129,6 +171,12 @@ TEST_F(FetchVerticesTest, noYield) {
         auto query = folly::stringPrintf(fmt, player.name().c_str());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"player.name"}, {"player.age"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t>> expected = {
             {player.name(), player.age()},
         };
@@ -145,6 +193,12 @@ TEST_F(FetchVerticesTest, distinct) {
         auto query = folly::stringPrintf(fmt, player.vid(), player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"player.name"}, {"player.age"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t>> expected = {
             {player.name(), player.age()},
         };
@@ -159,6 +213,12 @@ TEST_F(FetchVerticesTest, distinct) {
         auto query = folly::stringPrintf(fmt, boris.vid(), tony.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"player.age"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t>> expected = {
             {boris.age()},
         };

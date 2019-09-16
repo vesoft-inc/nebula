@@ -28,6 +28,8 @@ public:
     void execute() override;
 
 private:
+    Status prepareClauses();
+
     Status prepareEdgeKeys();
 
     Status setupEdgeKeys();
@@ -36,7 +38,7 @@ private:
 
     Status setupEdgeKeysFromRef();
 
-    std::vector<storage::cpp2::PropDef> getPropNames();
+    Status getPropNames(std::vector<storage::cpp2::PropDef> &props);
 
     void fetchEdges();
 

@@ -105,13 +105,14 @@ public class Importer {
 
     private void parseOptions(Options options, String[] args) throws ParseException {
         CommandLineParser parser = new DefaultParser();
-        if (Objects.isNull(args) || args.length == 0) {
+        CommandLine commandLine = parser.parse(options, args);
+        if (Objects.isNull(args) || args.length == 0
+                || commandLine.hasOption("h") || commandLine.hasOption("help")) {
             HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp("Importer Options", options);
             System.exit(-1);
         }
 
-        CommandLine commandLine = parser.parse(options, args);
 
         address = fetchOptionValue(commandLine, 'a', "address", DEFAULT_ADDRESS);
         batchSize = fetchOptionValue(commandLine, 'b', "batch", DEFAULT_INSERT_BATCH_SIZE);

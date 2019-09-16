@@ -81,14 +81,10 @@ void CmdProcessor::calColumnWidths(
                     break;
                 }
                 case cpp2::ColumnValue::Type::id: {
-                    // Enough to hold "0x{16 letters}"
-                    if (widths[idx] < 18UL) {
-                        widths[idx] = 18UL;
-                        genFmt = true;
-                    }
+                    GET_VALUE_WIDTH(int64_t, id, "%ld");
+
                     if (genFmt) {
-                        formats[idx] =
-                            folly::stringPrintf(" %%-%ldLX |", widths[idx]);
+                        formats[idx] = folly::stringPrintf(" %%-%ldld |", widths[idx]);
                     }
                     break;
                 }
@@ -121,10 +117,15 @@ void CmdProcessor::calColumnWidths(
                     break;
                 }
                 case cpp2::ColumnValue::Type::timestamp: {
-                    GET_VALUE_WIDTH(int64_t, timestamp, "%ld")
+                    if (widths[idx] < 19) {
+                        widths[idx] = 19;
+                        genFmt = true;
+                    }
                     if (genFmt) {
                         formats[idx] =
-                            folly::stringPrintf(" %%-%ldld |", widths[idx]);
+                            folly::stringPrintf(" %%%ldd-%%02d-%%02d"
+                                                " %%02d:%%02d:%%02d |",
+                                                widths[idx] - 15);
                     }
                     break;
                 }
@@ -272,7 +273,22 @@ void CmdProcessor::printData(const cpp2::ExecutionResponse& resp,
                     break;
                 }
                 case cpp2::ColumnValue::Type::timestamp: {
-                    PRINT_FIELD_VALUE(col.get_timestamp());
+                    time_t timestamp = col.get_timestamp();
+                    struct tm time;
+                    if (nullptr == localtime_r(&timestamp, &time)) {
+                        time.tm_year = 1970;
+                        time.tm_mon = 1;
+                        time.tm_mday = 1;
+                        time.tm_hour = 0;
+                        time.tm_min = 0;
+                        time.tm_sec = 0;
+                    }
+                    PRINT_FIELD_VALUE(time.tm_year + 1900,
+                                      time.tm_mon + 1,
+                                      time.tm_mday,
+                                      time.tm_hour,
+                                      time.tm_min,
+                                      time.tm_sec);
                     break;
                 }
                 case cpp2::ColumnValue::Type::year: {
@@ -338,10 +354,14 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
         } else {
             curSpaceName_ = "(none)";
         }
-        printResult(resp);
-        if (resp.get_rows() != nullptr) {
+        if (resp.get_rows() && !resp.get_rows()->empty()) {
+            printResult(resp);
             std::cout << "Got " << resp.get_rows()->size()
                       << " rows (Time spent: "
+                      << resp.get_latency_in_us() << "/"
+                      << dur.elapsedInUSec() << " us)\n";
+        } else if (resp.get_rows()) {
+            std::cout << "Empty set (Time spent: "
                       << resp.get_latency_in_us() << "/"
                       << dur.elapsedInUSec() << " us)\n";
         } else {
@@ -412,4 +432,3 @@ const std::string& CmdProcessor::getSpaceName() const {
 
 }  // namespace graph
 }  // namespace nebula
-

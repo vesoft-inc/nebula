@@ -729,8 +729,6 @@ TEST_F(ExpressionTest, InvalidExpressionTest) {
     TEST_EXPR(1.0 * "a");
     TEST_EXPR(1 / "a");
     TEST_EXPR("a" / "b");
-    TEST_EXPR(1.0 % 2.0);
-    TEST_EXPR(1.0 % 3);
     TEST_EXPR(1.0 % "a");
     TEST_EXPR(-"A");
     TEST_EXPR(TRUE + FALSE);
