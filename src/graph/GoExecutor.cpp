@@ -930,7 +930,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
     return true;
 }
 
-VariantType GoExecutor::VertexHolder::getDefaultProp(TagID tid, const std::string &prop) const {
+OptVariantType GoExecutor::VertexHolder::getDefaultProp(TagID tid, const std::string &prop) const {
     for (auto it = data_.cbegin(); it != data_.cend(); ++it) {
         auto it2 = it->second.find(tid);
         if (it2 != it->second.cend()) {
@@ -939,7 +939,7 @@ VariantType GoExecutor::VertexHolder::getDefaultProp(TagID tid, const std::strin
     }
 
     DCHECK(false);
-    return "";
+    return Status::Error("Unknown tid");
 }
 
 SupportedType GoExecutor::VertexHolder::getDefaultPropType(TagID tid,

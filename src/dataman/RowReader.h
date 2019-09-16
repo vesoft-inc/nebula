@@ -88,7 +88,7 @@ public:
         folly::StringPiece row,
         std::shared_ptr<const meta::SchemaProviderIf> schema);
 
-    static VariantType getDefaultProp(const meta::SchemaProviderIf* schema,
+    static StatusOr<VariantType> getDefaultProp(const meta::SchemaProviderIf* schema,
                                       const std::string& prop) {
         auto& vType = schema->getFieldType(prop);
         switch (vType.type) {
@@ -109,8 +109,9 @@ public:
                 return static_cast<std::string>("");
             }
             default:
-                LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(vType.type);
-                return "";
+                auto msg = folly::sformat("Unknown type: {}", static_cast<int32_t>(vType.type));
+                LOG(ERROR) << "Unknown type: " << msg;
+                return Status::Error(msg);
         }
     }
 
