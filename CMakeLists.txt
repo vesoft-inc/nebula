@@ -361,7 +361,9 @@ macro(nebula_add_test)
     )
 
     if (NOT ${nebula_test_DISABLED})
+        string(REGEX REPLACE "${CMAKE_SOURCE_DIR}/src/(.*)/test" "\\1" test_group ${CMAKE_CURRENT_SOURCE_DIR})
         add_test(NAME ${nebula_test_NAME} COMMAND ${nebula_test_NAME})
+        set_tests_properties(${nebula_test_NAME} PROPERTIES LABELS ${test_group})
         # e.g. cmake -DNEBULA_ASAN_PRELOAD=/path/to/libasan.so
         # or,  cmake -DNEBULA_ASAN_PRELOAD=`/path/to/gcc --print-file-name=libasan.so`
         if (NEBULA_ASAN_PRELOAD)
