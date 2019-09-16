@@ -17,15 +17,19 @@ This manual was originally written and maintained by the Nebula Graph Documentat
 
 ### Typographical and syntax conventions
 This manual uses certain typographical conventions:
+
 - `Fixed width`
 
     A fixed-width font is used in syntax, code examples, system output, and file names.
+
 - **Bold**
 
     Bold typeface indicates commands or characters the user types, provides emphasis, or the names of user interface elements.
+
 - *Italic*
 
     Italic typeface indicates the title of a document, or signifies new terms.
+    
 - `UPPERCASE fixed width`
 
      Keywords in syntax and code examples are almost always shown in upper case. Although shown in uppercase, you can type keywords in either uppercase or lowercase.

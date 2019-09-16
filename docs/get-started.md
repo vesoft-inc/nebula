@@ -97,9 +97,9 @@ Click [how to build](https://github.com/vesoft-inc/nebula/blob/master/docs/how-t
 
    In your Nebula installation directory(/usr/local/nebula/), run
 
-   ```
+```
    > cp etc/nebula-metad.conf.default etc/nebula-metad.conf
-   ```
+```
 
    Modify configurations in nebula-metad.conf:
 
@@ -112,9 +112,9 @@ Click [how to build](https://github.com/vesoft-inc/nebula/blob/master/docs/how-t
 
 * Configure nebula-storaged.conf
 
-   ```
+```
    > cp etc/nebula-storaged.conf.default etc/nebula-storaged.conf
-   ```
+```
 
    Modify configurations in nebula-storaged.conf:
 
@@ -125,9 +125,9 @@ Click [how to build](https://github.com/vesoft-inc/nebula/blob/master/docs/how-t
 
 * Configure nebula-graphd.conf
 
-   ```
+```
    > cp etc/nebula-graphd.conf.default etc/nebula-graphd.conf
-   ```
+```
 
    Modify configurations in nebula-graphd.conf:
 
@@ -157,6 +157,7 @@ Make sure all the services are working
 
 * -u is to set the user name, `user` is the default Nebula user account
 * -p is to set password, `password` is the default password for account `user`
+
 <!--
 `Add HOSTS` is to register the storage hosts:
 
