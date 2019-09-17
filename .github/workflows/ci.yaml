@@ -14,11 +14,14 @@ jobs:
           fetch-depth: 1
       - name: make
         run: |
+          . /etc/profile.d/devtoolset-8-enable.sh
           mkdir _build
           cd _build
           cmake ..
           make -j2
         shell: bash
       - name: test
-        run: cd _build && ctest
+        run: |
+          . /etc/profile.d/devtoolset-8-enable.sh
+          cd _build && ctest
         shell: bash
