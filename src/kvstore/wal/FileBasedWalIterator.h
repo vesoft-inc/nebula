@@ -70,7 +70,7 @@ private:
     std::list<int> fds_;
     int64_t currPos_{0};
     int32_t currMsgLen_{0};
-    bool needToReadWalFile_{false};
+    bool hasReadWalFile_{false};
 };
 
 }  // namespace wal

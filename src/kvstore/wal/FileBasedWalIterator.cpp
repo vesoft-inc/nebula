@@ -49,7 +49,7 @@ FileBasedWalIterator::~FileBasedWalIterator() {
 
 LogIterator& FileBasedWalIterator::operator++() {
     ++currId_;
-    if (needToReadWalFile_) {
+    if (hasReadWalFile_) {
         if (currId_ >= nextFirstId_) {
             // Need to roll over to next file
             VLOG(2) << "Current ID is " << currId_
@@ -195,9 +195,9 @@ LogEntry FileBasedWalIterator::logEntry() {
     // try to read from wal files
     // TODO: need to figure out when can we stop reading from wal file anymore once hit ring buffer
     if (!ringBuffer_->getLogEntry(currId_, logEntry)) {
-        if (!needToReadWalFile_) {
+        if (!hasReadWalFile_) {
             loadWalFiles();
-            needToReadWalFile_ = true;
+            hasReadWalFile_ = true;
         }
 
         LogID logId;
