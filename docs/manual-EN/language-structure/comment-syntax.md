@@ -1,4 +1,5 @@
 Nebula supports four comment styles:
+
 * From a # character to the end of the line.
 * From a --  sequence to the end of the line.
 * From a // sequence to the end of the line, as in the C programming language. 
