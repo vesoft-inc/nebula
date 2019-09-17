@@ -18,5 +18,7 @@ jobs:
           cd _build
           cmake ..
           make -j2
+        shell: bash
       - name: test
         run: cd _build && ctest
+        shell: bash
