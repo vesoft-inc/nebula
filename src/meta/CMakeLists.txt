@@ -98,4 +98,4 @@ add_dependencies(
     kvstore_obj
 )
 
-add_subdirectory(test)
+nebula_add_subdirectory(test)
