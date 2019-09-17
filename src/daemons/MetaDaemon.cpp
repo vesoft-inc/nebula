@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << "Bad local host addr, status:" << hostAddrRet.status();
         return EXIT_FAILURE;
     }
-    auto& localhost = hostAddrRet.value()[0];
+    auto& localhost = hostAddrRet.value();
     auto peersRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
     if (!peersRet.ok()) {
         LOG(ERROR) << "Can't get peers address, status:" << peersRet.status();

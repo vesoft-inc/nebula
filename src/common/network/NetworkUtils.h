@@ -33,10 +33,9 @@ public:
     // Get a dynamic port that is not in use
     static uint16_t getAvailablePort();
 
+    static StatusOr<std::vector<HostAddr>> resolveHost(const std::string &ip, int32_t port);
     // Convert the given IP/HOST and Port to a HostAddr
-    static StatusOr<std::vector<HostAddr>> toHostAddr(folly::StringPiece ip, int32_t port);
-    // Convert the given (IP/HOST):Port to a HostAddr
-    static StatusOr<std::vector<HostAddr>> toHostAddr(folly::StringPiece ipPort);
+    static StatusOr<HostAddr> toHostAddr(const std::string &ip, int32_t port);
     // Retrieve the string-form IP from the given HostAddr
     static std::string ipFromHostAddr(const HostAddr& host);
     // Retrieve the port number from the given HostAddr

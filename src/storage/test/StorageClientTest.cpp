@@ -48,7 +48,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     auto& addrs = addrsRet.value();
     uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
     auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
-    auto& localHost = hostRet.value()[0];
+    auto& localHost = hostRet.value();
     auto mClient = std::make_unique<meta::MetaClient>(threadPool,
                                                       std::move(addrs),
                                                       localHost,
