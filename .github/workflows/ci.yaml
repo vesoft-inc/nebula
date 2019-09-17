@@ -7,23 +7,15 @@ on:
       - '!/docs/*'
 
 jobs:
-  # lint:
-  #   name: cpp-lint
   build:
     name: build
     runs-on: ubuntu-18.04
     steps:
-      - name: checkout
-        uses: actions/checkout@v1
+      - uses: actions/checkout@v1
         with:
           fetch-depth: 1
-      - name: docker
-        uses: docker://vesoft/nebula-dev:centos
-        id: docker
-      - name: build
+      - uses: docker://vesoft/nebula-dev:centos
+      - name: make
         run: docker run --rm -it -v $(pwd):/home/nebula vesoft/nebula-dev:centos /bin/bash -c ". /etc/profile.d/devtoolset-8-enable.sh && mkdir _build && cd _build && cmake .. && make -j"
-        needs: steps.docker
-        id: build
-      - name: ctest
-        run: docker run --rm -v $(pwd):/home/nebula vesoft/nebula-dev:centos /bin/bash -c 'cd _build && ctest'
-        needs: steps.build
+      - name: test
+        run: docker run --rm -it -v $(pwd):/home/nebula vesoft/nebula-dev:centos /bin/bash -c "cd _build && ctest"
