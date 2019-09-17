@@ -26,5 +26,5 @@ jobs:
       - name: test
         run: |
           . /etc/profile.d/devtoolset-8-enable.sh
-          cd _build && ctest
+          cd _build && ctest --output-on-failure
         shell: bash
