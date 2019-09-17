@@ -1,11 +1,6 @@
 name: Nebula Build and Test Workflow
 
-on:
-- push
-- pull_request:
-    paths:
-      - '*'
-      - '!/docs/*'
+on: [push, pull_request]
 
 jobs:
   build:
