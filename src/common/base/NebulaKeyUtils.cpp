@@ -69,6 +69,17 @@ std::string NebulaKeyUtils::systemPartKey(PartitionID partId) {
 }
 
 // static
+std::string NebulaKeyUtils::uuidKey(PartitionID partId, const folly::StringPiece& name) {
+    std::string key;
+    key.reserve(sizeof(PartitionID) + name.size());
+    // todo: replace 0x03 with NebulaKeyType::kUUID after #914 merged
+    int32_t item = (partId << 8) | (0x03);
+    key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
+       .append(name.str());
+    return key;
+}
+
+// static
 std::string NebulaKeyUtils::vertexPrefix(PartitionID partId, VertexID vId, TagID tagId) {
     constexpr uint32_t tagMask = 0xBFFFFFFF;
     tagId &= tagMask;
