@@ -79,11 +79,7 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus(
                        std::unordered_map<std::string, std::vector<PartitionID>>> allParts;
     for (const auto& spaceId : spaces) {
         // get space name by space id
-        auto it = spaceIdNameMap.find(spaceId);
-        if (it == spaceIdNameMap.end()) {
-            continue;
-        }
-        auto spaceName = it->second;
+        auto spaceName = spaceIdNameMap[spaceId];
 
         std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
         const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);
