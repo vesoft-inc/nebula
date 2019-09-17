@@ -172,12 +172,20 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
     if (it == peers.end()) {
         LOG(INFO) << "src " << src << " has been removed in [" << spaceId << ", " << partId << "]";
         // In this case, the dst should be existed in peers.
-        CHECK(std::find(peers.begin(), peers.end(), dst) != peers.end());
+        if (std::find(peers.begin(), peers.end(), dst) == peers.end()) {
+            LOG(ERROR) << "[space:" << spaceId << ", part:" << partId << "] dst "
+                       << dst << "should be existed in peers!";
+            return Status::Error("dst not exist in peers");
+        }
         return Status::OK();
     }
     peers.erase(it);
 
-    CHECK(std::find(peers.begin(), peers.end(), dst) == peers.end());
+    if (std::find(peers.begin(), peers.end(), dst) != peers.end()) {
+        LOG(ERROR) << "[space:" << spaceId << ", part:" << partId << "] dst "
+                   << dst << " has been existed!";
+        return Status::Error("dst has been existed in peers");
+    }
     peers.emplace_back(dst);
     std::vector<nebula::cpp2::HostAddr> thriftPeers;
     thriftPeers.resize(peers.size());

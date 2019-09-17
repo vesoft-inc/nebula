@@ -443,7 +443,10 @@ bool FileBasedWal::appendLogInternal(LogID id,
     }
 
     ssize_t bytesWritten = write(currFd_, strBuf.data(), strBuf.size());
-    CHECK_EQ(bytesWritten, strBuf.size());
+    if (bytesWritten != (ssize_t)strBuf.size()) {
+        LOG(FATAL) << idStr_ << "bytesWritten:" << bytesWritten << ", expected:" << strBuf.size()
+                   << ", error:" << strerror(errno);
+    }
     currInfo_->setSize(currInfo_->size() + strBuf.size());
     currInfo_->setLastId(id);
     currInfo_->setLastTerm(term);

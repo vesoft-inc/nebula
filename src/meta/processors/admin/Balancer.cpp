@@ -156,9 +156,11 @@ std::vector<BalanceTask> Balancer::genTasks(GraphSpaceID spaceId) {
     calDiff(hostParts, activeHosts, newlyAdded, lost);
     decltype(hostParts) newHostParts(hostParts);
     for (auto& h : newlyAdded) {
+        LOG(INFO) << "Found new host " << h;
         newHostParts.emplace(h, std::vector<PartitionID>());
     }
     for (auto& h : lost) {
+        LOG(INFO) << "Lost host " << h;
         newHostParts.erase(h);
     }
     LOG(INFO) << "Now, try to balance the newHostParts";
@@ -219,6 +221,8 @@ void Balancer::balanceParts(BalanceID balanceId,
         CHECK_GE(avgLoad, minPartsHost.second);
         auto& partsFrom = newHostParts[maxPartsHost.first];
         auto& partsTo = newHostParts[minPartsHost.first];
+        std::sort(partsFrom.begin(), partsFrom.end());
+        std::sort(partsTo.begin(), partsTo.end());
         VLOG(1) << maxPartsHost.first << ":" << partsFrom.size()
                 << "->" << minPartsHost.first << ":" << partsTo.size()
                 << ", lastDelta=" << lastDelta;
@@ -234,9 +238,11 @@ void Balancer::balanceParts(BalanceID balanceId,
                         << maxPartsHost.first << " to " << minPartsHost.first;
                 break;
             }
-            VLOG(1) << maxPartsHost.first << "->" << minPartsHost.first << ": " << partId;
+            LOG(INFO) << "[space:" << spaceId << ", part:" << partId << "] "
+                      << maxPartsHost.first << "->" << minPartsHost.first;
             auto it = std::find(partsFrom.begin(), partsFrom.end(), partId);
             CHECK(it != partsFrom.end());
+            CHECK(std::find(partsTo.begin(), partsTo.end(), partId) == partsTo.end());
             partsFrom.erase(it);
             partsTo.emplace_back(partId);
             tasks.emplace_back(balanceId,
