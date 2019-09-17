@@ -85,34 +85,21 @@ bash> sudo make install
     # From US
     bash> wget https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos-7.5-1804.tar.gz
     ```
-
-    1) Create a system user, which home directory will be used as a shared file location
-
-    ```
-    bash> sudo adduser --system --group --home /home/engshare engshare
-    ```
-
-    2) Please make sure the user's home directory **/home/engshare** is readable to all users
-
-    ```
-    bash> chmod -R 755 /home/engshare
-    ```
-
-    3) Install all necessary rpm packages in this folder
+    1) Install all necessary rpm packages in this folder
 
     ```
     bash> tar xf centos-7.5-1804.tar.gz && cd centos-7.5-1804/
     bash> rpm -ivh *.rpm
     ```
 
-    4) Modify **~/.bashrc** by appending following lines to the end
+    2) Modify **~/.bashrc** by appending following lines to the end
 
     ```
-    alias cmake='/home/engshare/cmake/bin/cmake -DCMAKE_C_COMPILER=/home/engshare/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/home/engshare/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/home/engshare/gperf/bin -DNEBULA_FLEX_ROOT=/home/engshare/flex -DNEBULA_BOOST_ROOT=/home/engshare/boost -DNEBULA_OPENSSL_ROOT=/home/engshare/openssl -DNEBULA_KRB5_ROOT=/home/engshare/krb5 -DNEBULA_LIBUNWIND_ROOT=/home/engshare/libunwind'
-    alias ctest='/home/engshare/cmake/bin/ctest'
+    alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind'
+    alias ctest='/opt/nebula/cmake/bin/ctest'
     ```
 
-    5) Update **~/.bashrc**
+    3) Update **~/.bashrc**
 
     ```
     bash> source ~/.bashrc
@@ -240,37 +227,24 @@ bash> sudo make install
     # From US
     bash> wget https://nebula-graph-cn.oss-us-west-1.aliyuncs.com/build-deb/ubuntu1804.tar.gz
     ```
-
-    1) Create a system user, which home directory will be used as a shared file location
-
-    ```
-    bash> sudo adduser --system --group --home /home/engshare engshare
-    ```
-
-    2) Please make sure the user's home directory **/home/engshare** is readable to all users
-
-    ```
-    bash> chmod -R 755 /home/engshare
-    ```
-
-    3) Install all necessary deb packages in this folder
+    1) Install all necessary deb packages in this folder
 
     ```
     bash> tar xf ubuntu1804.tar.gz && cd ubuntu1804/
     bash> sudo dpkg -i *.deb
     ```
 
-    4) Modify **~/.bashrc** by appending following lines to the end
+    2) Modify **~/.bashrc** by appending following lines to the end
 
     ```
-    alias cmake='/home/engshare/cmake/bin/cmake -DCMAKE_C_COMPILER=/home/engshare/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/home/engshare/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/home/engshare/gperf/bin -DNEBULA_FLEX_ROOT=/home/engshare/flex -DNEBULA_BOOST_ROOT=/home/engshare/boost -DNEBULA_OPENSSL_ROOT=/home/engshare/openssl -DNEBULA_KRB5_ROOT=/home/engshare/krb5 -DNEBULA_LIBUNWIND_ROOT=/home/engshare/libunwind'
+    alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind'
     ```
 
     ```
-    alias ctest='/home/engshare/cmake/bin/ctest'
+    alias ctest='/opt/nebula/cmake/bin/ctest'
     ```
 
-    5) Update **~/.bashrc**
+    3) Update **~/.bashrc**
 
     ```
     bash> source ~/.bashrc

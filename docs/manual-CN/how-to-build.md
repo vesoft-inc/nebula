@@ -72,33 +72,21 @@ bash> sudo make install
     bash> wget https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos-7.5-1804.tar.gz
     ```
 
-    1) 建立一个系统用户, 并将其 home 目录设置为共享目录
-
-    ```
-    bash> sudo adduser --system --group --home /home/engshare engshare
-    ```
-
-    2) 确保 home 目录 **/home/engshare** 对全用户可读
-
-    ```
-    bash> chmod -R 755 /home/engshare
-    ```
-
-    3) 在此目录下安装所有需要的 rpm 包
+    1) 在此目录下安装所有需要的 rpm 包
 
     ```
     bash> tar xf centos-7.5-1804.tar.gz && cd centos-7.5-1804/
     bash> rpm -ivh *.rpm
     ```
 
-    4) 在 **~/.bashrc** 末添加如下几行
+    2) 在 **~/.bashrc** 末添加如下几行
 
     ```
-    alias cmake='/home/engshare/cmake/bin/cmake -DCMAKE_C_COMPILER=/home/engshare/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/home/engshare/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/home/engshare/gperf/bin -DNEBULA_FLEX_ROOT=/home/engshare/flex -DNEBULA_BOOST_ROOT=/home/engshare/boost -DNEBULA_OPENSSL_ROOT=/home/engshare/openssl -DNEBULA_KRB5_ROOT=/home/engshare/krb5 -DNEBULA_LIBUNWIND_ROOT=/home/engshare/libunwind'
+    alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind -DNEBULA_BISON_ROOT=/opt/nebula/bison'
 
-    alias ctest='/home/engshare/cmake/bin/ctest'
+    alias ctest='/opt/nebula/cmake/bin/ctest'
     ```
-    5) 应用 **~/.bashrc** 修改
+    3) 应用 **~/.bashrc** 修改
 
     ```
     bash> source ~/.bashrc
@@ -166,7 +154,7 @@ bash> sudo make install
     export PATH=/opt/nebula/autoconf/bin:/opt/nebula/automake/bin:/opt/nebula/libtool/bin:/opt/nebula/git/bin:/opt/nebula/gettext/bin:/opt/nebula/flex/bin:/opt/nebula/bison/bin:/opt/nebula/binutils/bin:$PATH
     export ACLOCAL_PATH=/opt/nebula/automake/share/aclocal-1.15:/opt/nebula/libtool/share/aclocal:/opt/nebula/autoconf-archive/share/aclocal
     
-    alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BISON_ROOT=/opt/nebula/bison -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind'
+    alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BISON_ROOT=/opt/nebula/bison -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind -DNEBULA_BISON_ROOT=/opt/nebula/bison'
     alias ctest='/opt/nebula/cmake/bin/ctest'
     ```
     3) 应用 **~/.bashrc** 修改
@@ -224,33 +212,21 @@ bash> sudo make install
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu1804.tar.gz
     ```
 
-    1) 建立一个系统用户, 并将其 home 目录设置为共享目录
-
-    ```
-    bash> sudo adduser --system --group --home /home/engshare engshare
-    ```
-
-    2) 确保 home 目录 **/home/engshare** 对全用户可读
-
-    ```
-    bash> chmod -R 755 /home/engshare
-    ```
-
-    3) 在此目录下安装所有需要的 deb 包
+    1) 在此目录下安装所有需要的 deb 包
 
     ```
     bash> tar xf ubuntu1804.tar.gz && cd ubuntu1804/
     bash> sudo dpkg -i *.deb
     ```
 
-    4)  在 **~/.bashrc** 末添加如下几行
+    2)  在 **~/.bashrc** 末添加如下几行
 
     ```
-    alias cmake='/home/engshare/cmake/bin/cmake -DCMAKE_C_COMPILER=/home/engshare/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/home/engshare/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/home/engshare/gperf/bin -DNEBULA_FLEX_ROOT=/home/engshare/flex -DNEBULA_BOOST_ROOT=/home/engshare/boost -DNEBULA_OPENSSL_ROOT=/home/engshare/openssl -DNEBULA_KRB5_ROOT=/home/engshare/krb5 -DNEBULA_LIBUNWIND_ROOT=/home/engshare/libunwind'
+    alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind -DNEBULA_BISON_ROOT=/opt/nebula/bison'
     
-    alias ctest='/home/engshare/cmake/bin/ctest'
+    alias ctest='/opt/nebula/cmake/bin/ctest'
     ```
-    5) 应用 **~/.bashrc** 修改
+    3) 应用 **~/.bashrc** 修改
 
     ```
     bash> source ~/.bashrc
