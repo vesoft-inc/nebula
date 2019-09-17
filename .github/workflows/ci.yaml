@@ -11,12 +11,18 @@ jobs:
   build:
     name: build
     runs-on: ubuntu-18.04
+    container:
+      image: vesoft/nebula-dev:centos
     steps:
       - uses: actions/checkout@v1
         with:
           fetch-depth: 1
-      - uses: docker://vesoft/nebula-dev:centos
       - name: make
-        run: docker run --rm -v $(pwd):/home/nebula vesoft/nebula-dev:centos /bin/bash -c ". /etc/profile.d/devtoolset-8-enable.sh && mkdir _build && cd _build && cmake .. && make -j"
+        run: |
+          . /etc/profile.d/devtoolset-8-enable.sh
+          mkdir _build
+          cd _build
+          cmake ..
+          make -j
       - name: test
-        run: docker run --rm -v $(pwd):/home/nebula vesoft/nebula-dev:centos /bin/bash -c "cd _build && ctest"
+        run: cd _build && ctest
