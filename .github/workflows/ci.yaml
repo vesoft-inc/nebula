@@ -19,7 +19,6 @@ jobs:
           fetch-depth: 1
       - name: make
         run: |
-          . /etc/profile.d/devtoolset-8-enable.sh
           mkdir _build
           cd _build
           cmake ..
