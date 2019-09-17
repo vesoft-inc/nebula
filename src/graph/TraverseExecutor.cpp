@@ -284,21 +284,32 @@ StatusOr<bool> YieldClauseWrapper::needAllPropsFromVar(
     return false;
 }
 
-Status WhereWrapper::encode() {
+Status WhereWrapper::prepare(ExpressionContext *ectx) {
+    Status status = Status::OK();
     if (where_ == nullptr) {
-        return Status::OK();
+        return status;
     }
-    auto status = prepare();
+
+    filter_ = where_->filter();
+    if (filter_ != nullptr) {
+        filter_->setContext(ectx);
+        status = filter_->prepare();
+        if (!status.ok()) {
+            return status;
+        }
+    }
+
+    status = rewrite();
     if (!status.ok()) {
-        return std::move(status);
+        return status;
     }
     if (filterRewrite_ != nullptr) {
         filterPushdown_ = Expression::encode(filterRewrite_.get());
     }
-    return Status::OK();
+    return status;
 }
 
-Status WhereWrapper::prepare() {
+Status WhereWrapper::rewrite() {
     auto encode = Expression::encode(where_->filter());
     auto decode = Expression::decode(std::move(encode));
     if (!decode.ok()) {
@@ -315,57 +326,30 @@ Status WhereWrapper::prepare() {
                 expr->orChildren(orChildren);
                 for (auto *orChild : orChildren) {
                     if (orChild->isLogicalExpression()) {
-                        auto orFilter = static_cast<LogicalExpression*>(orChild);
-                        auto left = orFilter->left();
-                        auto right = orFilter->right();
-                        auto canLeftPushdown = canPushdown(const_cast<Expression*>(left));
-                        if (!canLeftPushdown.ok()) {
-                            return std::move(canLeftPushdown).status();
+                        auto filter = static_cast<LogicalExpression*>(orChild);
+                        if (filter->isAnd()) {
+                            if (rewriteAnd(filter)) {
+                                continue;
+                            } else {
+                                filterRewrite_ = nullptr;
+                                break;
+                            }
                         }
-                        auto canRightPushdown = canPushdown(const_cast<Expression*>(right));
-                        if (!canLeftPushdown.ok()) {
-                            return std::move(canRightPushdown).status();
-                        }
-                        if (!canLeftPushdown.value() && !canRightPushdown.value()) {
-                            filterRewrite_ = nullptr;
-                            break;
-                        } else if (!canLeftPushdown.value()) {
-                            auto *truePri = new PrimaryExpression(true);
-                            orFilter->resetLeft(truePri);
-                        } else if (!canRightPushdown.value()) {
-                            auto *truePri = new PrimaryExpression(true);
-                            orFilter->resetRight(truePri);
-                        } else {
-                            continue;
-                        }
-                    } else {
-                        auto canFilterPushdown = canPushdown(orChild);
-                        if (!canFilterPushdown.ok()) {
-                            return std::move(canFilterPushdown).status();
-                        }
-                        if (!canFilterPushdown.value()) {
-                            filterRewrite_ = nullptr;
-                            break;
-                        }
+                    }
+                    if (!canPushdown(orChild)) {
+                        filterRewrite_ = nullptr;
+                        break;
                     }
                 }  // `orChild'
             } else {
-                auto canFilterPushdown = canPushdown(xorChild);
-                if (!canFilterPushdown.ok()) {
-                    return std::move(canFilterPushdown).status();
-                }
-                if (!canFilterPushdown.value()) {
+                if (!canPushdown(xorChild)) {
                     filterRewrite_ = nullptr;
                     break;
                 }
             }
         }  // `xorChild'
     } else {
-        auto canFilterPushdown = canPushdown(filterRewrite_.get());
-        if (!canFilterPushdown.ok()) {
-            return std::move(canFilterPushdown).status();
-        }
-        if (!canFilterPushdown.value()) {
+        if (!canPushdown(filterRewrite_.get())) {
             filterRewrite_ = nullptr;
         }
     }
@@ -373,12 +357,49 @@ Status WhereWrapper::prepare() {
     return Status::OK();
 }
 
-StatusOr<bool> WhereWrapper::canPushdown(Expression *expr) const {
+bool WhereWrapper::rewriteAnd(LogicalExpression *filter) const {
+    auto left = filter->left();
+    auto right = filter->right();
+    if (left->isLogicalExpression()) {
+        auto leftFilter = static_cast<LogicalExpression*>(
+                            const_cast<Expression*>(left));
+        if (leftFilter->isAnd()) {
+            if (!rewriteAnd(leftFilter)) {
+                return false;
+            }
+        }
+    }
+    if (right->isLogicalExpression()) {
+        auto rightFilter = static_cast<LogicalExpression*>(
+                            const_cast<Expression*>(right));
+        if (rightFilter->isAnd()) {
+            if (!rewriteAnd(rightFilter)) {
+                return false;
+            }
+        }
+    }
+    auto canLeftPushdown = canPushdown(const_cast<Expression*>(left));
+    auto canRightPushdown = canPushdown(const_cast<Expression*>(right));
+    if (!canLeftPushdown && !canRightPushdown) {
+        return false;
+    } else if (!canLeftPushdown) {
+        auto *truePri = new PrimaryExpression(true);
+        filter->resetLeft(truePri);
+    } else if (!canRightPushdown) {
+        auto *truePri = new PrimaryExpression(true);
+        filter->resetRight(truePri);
+    }
+    return true;
+}
+
+bool WhereWrapper::canPushdown(Expression *expr) const {
     auto ectx = std::make_unique<ExpressionContext>();
     expr->setContext(ectx.get());
     auto status = expr->prepare();
     if (!status.ok()) {
-        return std::move(status);
+        // We had do the preparation before encode, it would not fail here.
+        LOG(ERROR) << "Prepare failed when rewrite filter: " << status.toString();
+        return false;
     }
     if (ectx->hasInputProp() || ectx->hasVariableProp() || ectx->hasDstTagProp()) {
         return false;

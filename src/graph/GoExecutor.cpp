@@ -285,9 +285,11 @@ Status GoExecutor::prepareOver() {
 Status GoExecutor::prepareWhere() {
     auto *clause = sentence_->whereClause();
     whereWrapper_ = std::make_unique<WhereWrapper>(clause);
-    whereWrapper_->encode();
-    VLOG(1) << "Filter str: " << whereWrapper_->filterRewrite_->toString();
-    return Status::OK();
+    auto status = whereWrapper_->prepare(expCtx_.get());
+    VLOG(1) << "Filter str: "
+        << (whereWrapper_->filterRewrite_ == nullptr ?
+            "" : whereWrapper_->filterRewrite_->toString());
+    return status;
 }
 
 
@@ -318,14 +320,6 @@ Status GoExecutor::prepareYield() {
 Status GoExecutor::prepareNeededProps() {
     auto status = Status::OK();
     do {
-        if (whereWrapper_->filter_ != nullptr) {
-            whereWrapper_->filter_->setContext(expCtx_.get());
-            status = whereWrapper_->filter_->prepare();
-            if (!status.ok()) {
-                break;
-            }
-        }
-
         for (auto *col : yields_) {
             col->expr()->setContext(expCtx_.get());
             status = col->expr()->prepare();

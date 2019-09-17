@@ -1006,7 +1006,20 @@ public:
     }
 
     const void orChildren(std::vector<Expression*> &orChildren);
+
     const void xorChildren(std::vector<Expression*> &xorChildren);
+
+    bool isAnd() {
+        return op_ == AND;
+    }
+
+    bool isOr() {
+        return op_ == OR;
+    }
+
+    bool isXor() {
+        return op_ == XOR;
+    }
 
     const Expression* left() const {
         return left_.get();

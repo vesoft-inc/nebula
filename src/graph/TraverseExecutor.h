@@ -98,7 +98,7 @@ public:
         }
     }
 
-    Status encode();
+    Status prepare(ExpressionContext *ectx);
 
     Expression* getFilter() {
         return filter_;
@@ -109,15 +109,19 @@ public:
     }
 
 private:
-    Status prepare();
+    Status encode();
 
-    StatusOr<bool> canPushdown(Expression *expr) const;
+    Status rewrite();
+
+    bool rewriteAnd(LogicalExpression *expr) const;
+
+    bool canPushdown(Expression *expr) const;
 
 private:
-    const WhereClause              *where_{nullptr};
-    std::unique_ptr<Expression>     filterRewrite_;
     friend class TraverseExecutor;
     friend class GoExecutor;
+    const WhereClause              *where_{nullptr};
+    std::unique_ptr<Expression>     filterRewrite_;
     Expression                     *filter_{nullptr};
     std::string                     filterPushdown_;
 };
