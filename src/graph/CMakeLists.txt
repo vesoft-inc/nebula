@@ -69,5 +69,5 @@ add_dependencies(
     base_obj
 )
 
-add_subdirectory(test)
+nebula_add_subdirectory(test)
 
