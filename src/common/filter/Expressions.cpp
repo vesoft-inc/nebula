@@ -1200,7 +1200,7 @@ void LogicalExpression::encode(Cord &cord) const {
 const char* LogicalExpression::decode(const char *pos, const char *end) {
     THROW_IF_NO_SPACE(pos, end, 2UL);
     op_ = *reinterpret_cast<const Operator*>(pos++);
-    DCHECK(op_ == AND || op_ == OR);
+    DCHECK(op_ == AND || op_ == OR || op_ == XOR);
 
     left_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
     pos = left_->decode(pos, end);

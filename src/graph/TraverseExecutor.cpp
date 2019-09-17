@@ -323,7 +323,8 @@ Status WhereWrapper::rewrite() {
         for (auto *xorChild : xorChildren) {
             if (xorChild->isLogicalExpression()) {
                 std::vector<Expression*> orChildren;
-                expr->orChildren(orChildren);
+                auto *xorChildFilter = static_cast<LogicalExpression*>(xorChild);
+                xorChildFilter->orChildren(orChildren);
                 for (auto *orChild : orChildren) {
                     if (orChild->isLogicalExpression()) {
                         auto filter = static_cast<LogicalExpression*>(orChild);
@@ -341,6 +342,9 @@ Status WhereWrapper::rewrite() {
                         break;
                     }
                 }  // `orChild'
+                if (filterRewrite_ == nullptr) {
+                    break;
+                }
             } else {
                 if (!canPushdown(xorChild)) {
                     filterRewrite_ = nullptr;

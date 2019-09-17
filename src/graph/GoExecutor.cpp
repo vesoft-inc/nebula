@@ -286,7 +286,7 @@ Status GoExecutor::prepareWhere() {
     auto *clause = sentence_->whereClause();
     whereWrapper_ = std::make_unique<WhereWrapper>(clause);
     auto status = whereWrapper_->prepare(expCtx_.get());
-    VLOG(1) << "Filter str: "
+    VLOG(1) << "Filter pushdown: "
         << (whereWrapper_->filterRewrite_ == nullptr ?
             "" : whereWrapper_->filterRewrite_->toString());
     return status;
