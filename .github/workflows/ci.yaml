@@ -12,13 +12,16 @@ jobs:
       - uses: actions/checkout@v1
         with:
           fetch-depth: 1
-      - name: make
+      - name: cmake
         run: |
           . /etc/profile.d/devtoolset-8-enable.sh
           mkdir _build
-          cd _build
-          cmake ..
-          make -j2
+          cd _build && cmake ..
+        shell: bash
+      - name: make
+        run: |
+          . /etc/profile.d/devtoolset-8-enable.sh
+          cd _build && make -j2
         shell: bash
       - name: test
         run: |
