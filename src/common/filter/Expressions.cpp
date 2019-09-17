@@ -1087,48 +1087,6 @@ const char* RelationalExpression::decode(const char *pos, const char *end) {
 }
 
 
-const void LogicalExpression::orChildren(std::vector<Expression*> &orChildren) {
-    if (op_ == OR) {
-        if (left_->isLogicalExpression()) {
-            auto *expr = static_cast<LogicalExpression*>(left_.get());
-            expr->orChildren(orChildren);
-        } else {
-            orChildren.emplace_back(left_.get());
-        }
-
-        if (right_->isLogicalExpression()) {
-            auto *expr = static_cast<LogicalExpression*>(right_.get());
-            expr->orChildren(orChildren);
-        } else {
-            orChildren.emplace_back(right_.get());
-        }
-    } else {
-        orChildren.emplace_back(this);
-    }
-}
-
-
-const void LogicalExpression::xorChildren(std::vector<Expression*> &xorChildren) {
-    if (op_ == XOR) {
-        if (left_->isLogicalExpression()) {
-            auto *expr = static_cast<LogicalExpression*>(left_.get());
-            expr->xorChildren(xorChildren);
-        } else {
-            xorChildren.emplace_back(left_.get());
-        }
-
-        if (right_->isLogicalExpression()) {
-            auto *expr = static_cast<LogicalExpression*>(right_.get());
-            expr->xorChildren(xorChildren);
-        } else {
-            xorChildren.emplace_back(right_.get());
-        }
-    } else {
-        xorChildren.emplace_back(this);
-    }
-}
-
-
 std::string LogicalExpression::toString() const {
     std::string buf;
     buf.reserve(256);

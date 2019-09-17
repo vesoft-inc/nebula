@@ -1005,10 +1005,6 @@ public:
         right_.reset(expr);
     }
 
-    const void orChildren(std::vector<Expression*> &orChildren);
-
-    const void xorChildren(std::vector<Expression*> &xorChildren);
-
     bool isAnd() {
         return op_ == AND;
     }

@@ -318,40 +318,11 @@ Status WhereWrapper::rewrite() {
     filterRewrite_ = std::move(decode).value();
     if (filterRewrite_->isLogicalExpression()) {
         auto *expr = static_cast<LogicalExpression*>(filterRewrite_.get());
-        std::vector<Expression*> xorChildren;
-        expr->xorChildren(xorChildren);
-        for (auto *xorChild : xorChildren) {
-            if (xorChild->isLogicalExpression()) {
-                std::vector<Expression*> orChildren;
-                auto *xorChildFilter = static_cast<LogicalExpression*>(xorChild);
-                xorChildFilter->orChildren(orChildren);
-                for (auto *orChild : orChildren) {
-                    if (orChild->isLogicalExpression()) {
-                        auto filter = static_cast<LogicalExpression*>(orChild);
-                        if (filter->isAnd()) {
-                            if (rewriteAnd(filter)) {
-                                continue;
-                            } else {
-                                filterRewrite_ = nullptr;
-                                break;
-                            }
-                        }
-                    }
-                    if (!canPushdown(orChild)) {
-                        filterRewrite_ = nullptr;
-                        break;
-                    }
-                }  // `orChild'
-                if (filterRewrite_ == nullptr) {
-                    break;
-                }
-            } else {
-                if (!canPushdown(xorChild)) {
-                    filterRewrite_ = nullptr;
-                    break;
-                }
-            }
-        }  // `xorChild'
+        if ((expr->isXor() && !rewriteXor(expr))
+            || (expr->isOr() && !rewriteOr(expr))
+            || (expr->isAnd() && !rewriteAnd(expr))) {
+            filterRewrite_ = nullptr;
+        }
     } else {
         if (!canPushdown(filterRewrite_.get())) {
             filterRewrite_ = nullptr;
@@ -361,27 +332,67 @@ Status WhereWrapper::rewrite() {
     return Status::OK();
 }
 
-bool WhereWrapper::rewriteAnd(LogicalExpression *filter) const {
+bool WhereWrapper::rewriteXor(LogicalExpression *filter) const {
+    return rewriteOr(filter);
+}
+
+bool WhereWrapper::rewriteOr(LogicalExpression *filter) const {
     auto left = filter->left();
-    auto right = filter->right();
     if (left->isLogicalExpression()) {
         auto leftFilter = static_cast<LogicalExpression*>(
                             const_cast<Expression*>(left));
-        if (leftFilter->isAnd()) {
-            if (!rewriteAnd(leftFilter)) {
-                return false;
-            }
+        if ((leftFilter->isXor() && !rewriteXor(leftFilter))
+            || (leftFilter->isOr() && !rewriteOr(leftFilter))
+            || (leftFilter->isAnd() && !rewriteAnd(leftFilter))) {
+            return false;
         }
     }
+
+    auto right = filter->right();
     if (right->isLogicalExpression()) {
         auto rightFilter = static_cast<LogicalExpression*>(
                             const_cast<Expression*>(right));
-        if (rightFilter->isAnd()) {
-            if (!rewriteAnd(rightFilter)) {
-                return false;
-            }
+        if ((rightFilter->isXor() && !rewriteXor(rightFilter))
+            || (rightFilter->isOr() && !rewriteOr(rightFilter))
+            || (rightFilter->isAnd() && !rewriteAnd(rightFilter))) {
+            return false;
         }
     }
+
+    auto canLeftPushdown = canPushdown(const_cast<Expression*>(left));
+    auto canRightPushdown = canPushdown(const_cast<Expression*>(right));
+    if (canLeftPushdown && canRightPushdown) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool WhereWrapper::rewriteAnd(LogicalExpression *filter) const {
+    auto left = filter->left();
+    if (left->isLogicalExpression()) {
+        auto leftFilter = static_cast<LogicalExpression*>(
+                            const_cast<Expression*>(left));
+        if ((leftFilter->isXor() && !rewriteXor(leftFilter))
+            || (leftFilter->isOr() && !rewriteOr(leftFilter))
+            || (leftFilter->isAnd() && !rewriteAnd(leftFilter))) {
+            auto *truePri = new PrimaryExpression(true);
+            filter->resetLeft(truePri);
+        }
+    }
+
+    auto right = filter->right();
+    if (right->isLogicalExpression()) {
+        auto rightFilter = static_cast<LogicalExpression*>(
+                            const_cast<Expression*>(right));
+        if ((rightFilter->isXor() && !rewriteXor(rightFilter))
+            || (rightFilter->isOr() && !rewriteOr(rightFilter))
+            || (rightFilter->isAnd() && !rewriteAnd(rightFilter))) {
+            auto *truePri = new PrimaryExpression(true);
+            filter->resetLeft(truePri);
+        }
+    }
+
     auto canLeftPushdown = canPushdown(const_cast<Expression*>(left));
     auto canRightPushdown = canPushdown(const_cast<Expression*>(right));
     if (!canLeftPushdown && !canRightPushdown) {
@@ -401,7 +412,7 @@ bool WhereWrapper::canPushdown(Expression *expr) const {
     expr->setContext(ectx.get());
     auto status = expr->prepare();
     if (!status.ok()) {
-        // We had do the preparation before encode, it would not fail here.
+        // We had do the preparation before rewrite, it would not fail here.
         LOG(ERROR) << "Prepare failed when rewrite filter: " << status.toString();
         return false;
     }
