@@ -16,6 +16,6 @@ jobs:
           fetch-depth: 1
       - uses: docker://vesoft/nebula-dev:centos
       - name: make
-        run: docker run --rm -it -v $(pwd):/home/nebula vesoft/nebula-dev:centos /bin/bash -c ". /etc/profile.d/devtoolset-8-enable.sh && mkdir _build && cd _build && cmake .. && make -j"
+        run: docker run --rm -v $(pwd):/home/nebula vesoft/nebula-dev:centos /bin/bash -c ". /etc/profile.d/devtoolset-8-enable.sh && mkdir _build && cd _build && cmake .. && make -j"
       - name: test
-        run: docker run --rm -it -v $(pwd):/home/nebula vesoft/nebula-dev:centos /bin/bash -c "cd _build && ctest"
+        run: docker run --rm -v $(pwd):/home/nebula vesoft/nebula-dev:centos /bin/bash -c "cd _build && ctest"
