@@ -38,7 +38,7 @@ option(ENABLE_JEMALLOC "Whether to link jemalloc to all executables" ON)
 option(ENABLE_NATIVE "Whether to build native client" OFF)
 option(ENABLE_CCACHE "Whether to use ccache to speed up compiling" ON)
 option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
-option(ENABLE_TEST "Whether to turn unit test ON or OFF" ON)
+option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
 
 message(STATUS "ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
