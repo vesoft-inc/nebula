@@ -11,7 +11,7 @@ nebula_add_library(
     HBaseClient.cpp
 )
 
-add_subdirectory(test)
+nebula_add_subdirectory(test)
 
 add_custom_target(
     clean-hbase

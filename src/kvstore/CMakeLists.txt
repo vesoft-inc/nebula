@@ -9,9 +9,9 @@ nebula_add_library(
     SnapshotManagerImpl.cpp
 )
 
-add_subdirectory(raftex)
-add_subdirectory(wal)
-add_subdirectory(test)
+nebula_add_subdirectory(raftex)
+nebula_add_subdirectory(wal)
+nebula_add_subdirectory(test)
 
-add_subdirectory(plugins)
+nebula_add_subdirectory(plugins)
 
