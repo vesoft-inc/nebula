@@ -22,6 +22,6 @@ jobs:
           mkdir _build
           cd _build
           cmake ..
-          make -j
+          make -j2
       - name: test
         run: cd _build && ctest
