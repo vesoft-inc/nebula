@@ -15,7 +15,7 @@ nebula_add_test(
     LIBRARIES gtest gtest_main
 )
 
-if (ENABLE_TEST)
+if (ENABLE_TESTING)
     target_compile_options(expression_test PRIVATE -Wno-parentheses)
 endif()
 
