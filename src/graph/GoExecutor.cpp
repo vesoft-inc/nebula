@@ -284,9 +284,9 @@ Status GoExecutor::prepareOver() {
 
 Status GoExecutor::prepareWhere() {
     auto *clause = sentence_->whereClause();
-    if (clause != nullptr) {
-        filter_ = clause->filter();
-    }
+    whereWrapper_ = std::make_unique<WhereWrapper>(clause);
+    whereWrapper_->encode();
+    VLOG(1) << "Filter str: " << whereWrapper_->filterRewrite_->toString();
     return Status::OK();
 }
 
@@ -318,9 +318,9 @@ Status GoExecutor::prepareYield() {
 Status GoExecutor::prepareNeededProps() {
     auto status = Status::OK();
     do {
-        if (filter_ != nullptr) {
-            filter_->setContext(expCtx_.get());
-            status = filter_->prepare();
+        if (whereWrapper_->filter_ != nullptr) {
+            whereWrapper_->filter_->setContext(expCtx_.get());
+            status = whereWrapper_->filter_->prepare();
             if (!status.ok()) {
                 break;
             }
@@ -446,11 +446,16 @@ void GoExecutor::stepOut() {
         return;
     }
     auto returns = status.value();
-    auto future  = ectx()->getStorageClient()->getNeighbors(spaceId,
-                                                            starts_,
-                                                            edgeTypes_,
-                                                            "",
-                                                            std::move(returns));
+    std::string filterPushdown = "";
+    if (isFinalStep() && !isReversely()) {
+        // TODO: not support filter pushdown in reversely traversal now.
+        filterPushdown = whereWrapper_->filterPushdown_;
+    }
+    auto future  = ectx()->storage()->getNeighbors(spaceId,
+                                                   starts_,
+                                                   edgeTypes_,
+                                                   filterPushdown,
+                                                   std::move(returns));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
         auto completeness = result.completeness();
@@ -1153,8 +1158,8 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     };
 
                     // Evaluate filter
-                    if (filter_ != nullptr) {
-                        auto value = filter_->eval();
+                    if (whereWrapper_->filter_ != nullptr) {
+                        auto value = whereWrapper_->filter_->eval();
                         if (!value.ok()) {
                             doError(std::move(value).status(),
                                     ectx()->getGraphStats()->getGoStats());

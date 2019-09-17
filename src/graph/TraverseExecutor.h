@@ -90,6 +90,38 @@ private:
     std::unique_ptr<YieldColumns>   yieldColsHolder_;
 };
 
+class WhereWrapper final {
+public:
+    explicit WhereWrapper(const WhereClause *where) : where_(where) {
+        if (where != nullptr) {
+            filter_ = where->filter();
+        }
+    }
+
+    Status encode();
+
+    Expression* getFilter() {
+        return filter_;
+    }
+
+    std::string getFilterPushdown() {
+        return filterPushdown_;
+    }
+
+private:
+    Status prepare();
+
+    StatusOr<bool> canPushdown(Expression *expr) const;
+
+private:
+    const WhereClause              *where_{nullptr};
+    std::unique_ptr<Expression>     filterRewrite_;
+    friend class TraverseExecutor;
+    friend class GoExecutor;
+    Expression                     *filter_{nullptr};
+    std::string                     filterPushdown_;
+};
+
 class TraverseExecutor : public Executor {
 public:
     explicit TraverseExecutor(ExecutionContext *ectx) : Executor(ectx) {}

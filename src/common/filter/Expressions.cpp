@@ -118,15 +118,16 @@ Expression::decode(folly::StringPiece buffer) noexcept {
 std::string AliasPropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
-    buf += *ref_;
-    if (*ref_ != "" && *ref_ != VAR_REF) {
+    if (ref_ != nullptr && *ref_ != "" && *ref_ != VAR_REF) {
+        buf += *ref_;
+    }
+    if (alias_ != nullptr && *alias_ != "") {
+        buf += *alias_;
         buf += ".";
     }
-    buf += *alias_;
-    if (*alias_ != "") {
-        buf += ".";
+    if (prop_ != nullptr) {
+        buf += *prop_;
     }
-    buf += *prop_;
     return buf;
 }
 
@@ -1086,6 +1087,48 @@ const char* RelationalExpression::decode(const char *pos, const char *end) {
 }
 
 
+const void LogicalExpression::orChildren(std::vector<Expression*> &orChildren) {
+    if (op_ == OR) {
+        if (left_->isLogicalExpression()) {
+            auto *expr = static_cast<LogicalExpression*>(left_.get());
+            expr->orChildren(orChildren);
+        } else {
+            orChildren.emplace_back(left_.get());
+        }
+
+        if (right_->isLogicalExpression()) {
+            auto *expr = static_cast<LogicalExpression*>(right_.get());
+            expr->orChildren(orChildren);
+        } else {
+            orChildren.emplace_back(right_.get());
+        }
+    } else {
+        orChildren.emplace_back(this);
+    }
+}
+
+
+const void LogicalExpression::xorChildren(std::vector<Expression*> &xorChildren) {
+    if (op_ == XOR) {
+        if (left_->isLogicalExpression()) {
+            auto *expr = static_cast<LogicalExpression*>(left_.get());
+            expr->xorChildren(xorChildren);
+        } else {
+            xorChildren.emplace_back(left_.get());
+        }
+
+        if (right_->isLogicalExpression()) {
+            auto *expr = static_cast<LogicalExpression*>(right_.get());
+            expr->xorChildren(xorChildren);
+        } else {
+            xorChildren.emplace_back(right_.get());
+        }
+    } else {
+        xorChildren.emplace_back(this);
+    }
+}
+
+
 std::string LogicalExpression::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -1145,7 +1188,6 @@ Status LogicalExpression::prepare() {
     status = right_->prepare();
     return Status::OK();
 }
-
 
 void LogicalExpression::encode(Cord &cord) const {
     cord << kindToInt(kind());

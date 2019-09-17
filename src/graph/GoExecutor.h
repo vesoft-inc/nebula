@@ -234,7 +234,7 @@ private:
     std::vector<EdgeType>                       edgeTypes_;
     std::string                                *varname_{nullptr};
     std::string                                *colname_{nullptr};
-    Expression                                 *filter_{nullptr};
+    std::unique_ptr<WhereWrapper>               whereWrapper_;
     std::vector<YieldColumn*>                   yields_;
     std::unique_ptr<YieldClauseWrapper>         yieldClauseWrapper_;
     bool                                        distinct_{false};

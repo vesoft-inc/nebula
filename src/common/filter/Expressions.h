@@ -218,6 +218,10 @@ public:
         return kind_ == kFunctionCall;
     }
 
+    virtual bool isLogicalExpression() const {
+        return kind_ == kLogical;
+    }
+
     /**
      * To encode an expression into a byte buffer.
      *
@@ -993,6 +997,17 @@ public:
         right_->setContext(context);
     }
 
+    void resetLeft(Expression *expr) {
+        left_.reset(expr);
+    }
+
+    void resetRight(Expression *expr) {
+        right_.reset(expr);
+    }
+
+    const void orChildren(std::vector<Expression*> &orChildren);
+    const void xorChildren(std::vector<Expression*> &xorChildren);
+
     const Expression* left() const {
         return left_.get();
     }
@@ -1011,7 +1026,6 @@ private:
     std::unique_ptr<Expression>                 left_;
     std::unique_ptr<Expression>                 right_;
 };
-
 }   // namespace nebula
 
 #endif  // COMMON_FILTER_EXPRESSIONS_H_

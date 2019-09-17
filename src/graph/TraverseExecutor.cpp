@@ -283,5 +283,108 @@ StatusOr<bool> YieldClauseWrapper::needAllPropsFromVar(
     }
     return false;
 }
+
+Status WhereWrapper::encode() {
+    if (where_ == nullptr) {
+        return Status::OK();
+    }
+    auto status = prepare();
+    if (!status.ok()) {
+        return std::move(status);
+    }
+    if (filterRewrite_ != nullptr) {
+        filterPushdown_ = Expression::encode(filterRewrite_.get());
+    }
+    return Status::OK();
+}
+
+Status WhereWrapper::prepare() {
+    auto encode = Expression::encode(where_->filter());
+    auto decode = Expression::decode(std::move(encode));
+    if (!decode.ok()) {
+        return std::move(decode).status();
+    }
+    filterRewrite_ = std::move(decode).value();
+    if (filterRewrite_->isLogicalExpression()) {
+        auto *expr = static_cast<LogicalExpression*>(filterRewrite_.get());
+        std::vector<Expression*> xorChildren;
+        expr->xorChildren(xorChildren);
+        for (auto *xorChild : xorChildren) {
+            if (xorChild->isLogicalExpression()) {
+                std::vector<Expression*> orChildren;
+                expr->orChildren(orChildren);
+                for (auto *orChild : orChildren) {
+                    if (orChild->isLogicalExpression()) {
+                        auto orFilter = static_cast<LogicalExpression*>(orChild);
+                        auto left = orFilter->left();
+                        auto right = orFilter->right();
+                        auto canLeftPushdown = canPushdown(const_cast<Expression*>(left));
+                        if (!canLeftPushdown.ok()) {
+                            return std::move(canLeftPushdown).status();
+                        }
+                        auto canRightPushdown = canPushdown(const_cast<Expression*>(right));
+                        if (!canLeftPushdown.ok()) {
+                            return std::move(canRightPushdown).status();
+                        }
+                        if (!canLeftPushdown.value() && !canRightPushdown.value()) {
+                            filterRewrite_ = nullptr;
+                            break;
+                        } else if (!canLeftPushdown.value()) {
+                            auto *truePri = new PrimaryExpression(true);
+                            orFilter->resetLeft(truePri);
+                        } else if (!canRightPushdown.value()) {
+                            auto *truePri = new PrimaryExpression(true);
+                            orFilter->resetRight(truePri);
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        auto canFilterPushdown = canPushdown(orChild);
+                        if (!canFilterPushdown.ok()) {
+                            return std::move(canFilterPushdown).status();
+                        }
+                        if (!canFilterPushdown.value()) {
+                            filterRewrite_ = nullptr;
+                            break;
+                        }
+                    }
+                }  // `orChild'
+            } else {
+                auto canFilterPushdown = canPushdown(xorChild);
+                if (!canFilterPushdown.ok()) {
+                    return std::move(canFilterPushdown).status();
+                }
+                if (!canFilterPushdown.value()) {
+                    filterRewrite_ = nullptr;
+                    break;
+                }
+            }
+        }  // `xorChild'
+    } else {
+        auto canFilterPushdown = canPushdown(filterRewrite_.get());
+        if (!canFilterPushdown.ok()) {
+            return std::move(canFilterPushdown).status();
+        }
+        if (!canFilterPushdown.value()) {
+            filterRewrite_ = nullptr;
+        }
+    }
+
+    return Status::OK();
+}
+
+StatusOr<bool> WhereWrapper::canPushdown(Expression *expr) const {
+    auto ectx = std::make_unique<ExpressionContext>();
+    expr->setContext(ectx.get());
+    auto status = expr->prepare();
+    if (!status.ok()) {
+        return std::move(status);
+    }
+    if (ectx->hasInputProp() || ectx->hasVariableProp() || ectx->hasDstTagProp()) {
+        return false;
+    }
+    return true;
+}
+
 }   // namespace graph
 }   // namespace nebula
