@@ -49,6 +49,7 @@ nebula_add_library(
     processors/admin/BalancePlan.cpp
     processors/admin/BalanceTask.cpp
     processors/admin/AdminClient.cpp
+    processors/admin/LeaderBalanceProcessor.cpp
     processors/configMan/RegConfigProcessor.cpp
     processors/configMan/GetConfigProcessor.cpp
     processors/configMan/ListConfigsProcessor.cpp
@@ -65,6 +66,10 @@ nebula_add_library(
 nebula_add_library(
     meta_client OBJECT
     client/MetaClient.cpp
+)
+add_dependencies(
+    meta_client
+    gflags_man_obj
 )
 
 add_library(
@@ -101,4 +106,4 @@ add_dependencies(
     kvstore_obj
 )
 
-add_subdirectory(test)
+nebula_add_subdirectory(test)

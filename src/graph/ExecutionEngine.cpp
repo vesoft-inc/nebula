@@ -40,7 +40,6 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
     schemaManager_->init(metaClient_.get());
 
     gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(metaClient_.get());
-    gflagsManager_->init();
 
     storage_ = std::make_unique<storage::StorageClient>(ioExecutor, metaClient_.get());
     return Status::OK();

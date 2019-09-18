@@ -57,6 +57,8 @@ private:
 
     Status prepareDistinct();
 
+    Status prepareOverAll();
+
     /**
      * To check if this is the final step.
      */
@@ -70,14 +72,6 @@ private:
      */
     bool isUpto() const {
         return upto_;
-    }
-
-    /**
-     * To check if `REVERSELY' is specified.
-     * If so, we step out in a reverse manner.
-     */
-    bool isReversely() const {
-        return reversely_;
     }
 
     /**
@@ -123,6 +117,10 @@ private:
     std::vector<VertexID> getDstIdsFromResp(RpcResponse &rpcResp) const;
 
     /**
+     * get the edgeName from response when over all edges
+     */
+    std::vector<std::string> getEdgeNamesFromResp(RpcResponse &rpcResp) const;
+    /**
      * All required data have arrived, finish the execution.
      */
     void finishExecution(RpcResponse &&rpcResp);
@@ -147,7 +145,8 @@ private:
      * To iterate on the final data collection, and evaluate the filter and yield columns.
      * For each row that matches the filter, `cb' would be invoked.
      */
-    using Callback = std::function<void(std::vector<VariantType>)>;
+    using Callback = std::function<void(std::vector<VariantType>,
+                                   std::vector<nebula::cpp2::SupportedType>)>;
     bool processFinalResult(RpcResponse &rpcResp, Callback cb) const;
 
     /**
@@ -156,19 +155,15 @@ private:
      */
     class VertexHolder final {
     public:
-        OptVariantType get(VertexID id, int64_t index) const;
+        OptVariantType getDefaultProp(TagID tid, const std::string &prop) const;
+        OptVariantType get(VertexID id, TagID tid, const std::string &prop) const;
         void add(const storage::cpp2::QueryResponse &resp);
-        const auto* schema() const {
-            return schema_.get();
-        }
+        nebula::cpp2::SupportedType getDefaultPropType(TagID tid, const std::string &prop) const;
+        nebula::cpp2::SupportedType getType(VertexID id, TagID tid, const std::string &prop);
 
     private:
-        // The schema include multi vertexes, and multi tags of one vertex
-        // eg: get 3 vertexex, vertex A has tag1.prop1, vertex B has tag2.prop2,
-        // vertex C has tag3.prop3,
-        // and the schema is {[tag1.prop1, type], [tag2.prop2, type], [tag3.prop3, type]}
-        std::shared_ptr<ResultSchemaProvider>       schema_;
-        std::unordered_map<VertexID, std::string>   data_;
+        using VData = std::tuple<std::shared_ptr<ResultSchemaProvider>, std::string>;
+        std::unordered_map<VertexID, std::unordered_map<TagID, VData>> data_;
     };
 
     class VertexBackTracker final {
@@ -192,7 +187,9 @@ private:
          std::unordered_map<VertexID, VertexID>     mapping_;
     };
 
-    VariantType getPropFromInterim(VertexID id, const std::string &prop) const;
+    OptVariantType getPropFromInterim(VertexID id, const std::string &prop) const;
+
+    nebula::cpp2::SupportedType getPropTypeFromInterim(const std::string &prop) const;
 
     enum FromType {
         kInstantExpr,
@@ -206,8 +203,7 @@ private:
     uint32_t                                    steps_{1};
     uint32_t                                    curStep_{1};
     bool                                        upto_{false};
-    bool                                        reversely_{false};
-    EdgeType                                    edgeType_;
+    std::vector<EdgeType>                       edgeTypes_;
     std::string                                *varname_{nullptr};
     std::string                                *colname_{nullptr};
     Expression                                 *filter_{nullptr};
@@ -224,8 +220,6 @@ private:
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
     // The name of Tag or Edge, index of prop in data
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
-    SchemaPropIndex                              srcTagProps_;
-    SchemaPropIndex                              dstTagProps_;
 };
 
 }   // namespace graph

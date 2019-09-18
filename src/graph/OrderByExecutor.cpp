@@ -84,25 +84,19 @@ void OrderByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
     DCHECK(sentence_ != nullptr);
     inputs_ = std::move(result);
     rows_ = inputs_->getRows();
-
-    auto schema = inputs_->schema();
-    auto factors = sentence_->factors();
-    sortFactors_.reserve(factors.size());
-    for (auto &factor : factors) {
-        auto expr = static_cast<InputPropertyExpression*>(factor->expr());
-        folly::StringPiece field = *(expr->prop());
-        auto fieldIndex = schema->getFieldIndex(field);
-        if (fieldIndex == -1) {
-            LOG(INFO) << "Field(" << field << ") not exist in input schema.";
-            continue;
-        }
-        auto pair = std::make_pair(schema->getFieldIndex(field), factor->orderType());
-        sortFactors_.emplace_back(std::move(pair));
-    }
 }
 
 void OrderByExecutor::execute() {
+    DCHECK(onFinish_);
+    DCHECK(onError_);
     FLOG_INFO("Executing Order By: %s", sentence_->toString().c_str());
+    auto status = beforeExecute();
+    if (!status.ok()) {
+        LOG(ERROR) << "Error happened before execute: " << status.toString();
+        onError_(std::move(status));
+        return;
+    }
+
     auto comparator = [this] (cpp2::RowValue& lhs, cpp2::RowValue& rhs) {
         const auto &lhsColumns = lhs.get_columns();
         const auto &rhsColumns = rhs.get_columns();
@@ -131,8 +125,28 @@ void OrderByExecutor::execute() {
     if (onResult_) {
         onResult_(setupInterimResult());
     }
-    DCHECK(onFinish_);
     onFinish_();
+}
+
+Status OrderByExecutor::beforeExecute() {
+    if (inputs_ == nullptr) {
+        return Status::OK();
+    }
+
+    auto schema = inputs_->schema();
+    auto factors = sentence_->factors();
+    sortFactors_.reserve(factors.size());
+    for (auto &factor : factors) {
+        auto expr = static_cast<InputPropertyExpression*>(factor->expr());
+        folly::StringPiece field = *(expr->prop());
+        auto fieldIndex = schema->getFieldIndex(field);
+        if (fieldIndex == -1) {
+            return Status::Error("Field (%s) not exist in input schema.", field.str().c_str());
+        }
+        auto pair = std::make_pair(schema->getFieldIndex(field), factor->orderType());
+        sortFactors_.emplace_back(std::move(pair));
+    }
+    return Status::OK();
 }
 
 std::unique_ptr<InterimResult> OrderByExecutor::setupInterimResult() {
@@ -148,6 +162,9 @@ std::unique_ptr<InterimResult> OrderByExecutor::setupInterimResult() {
         auto columns = row.get_columns();
         for (auto &column : columns) {
             switch (column.getType()) {
+                case Type::id:
+                    writer << column.get_id();
+                    break;
                 case Type::integer:
                     writer << column.get_integer();
                     break;
@@ -159,6 +176,9 @@ std::unique_ptr<InterimResult> OrderByExecutor::setupInterimResult() {
                     break;
                 case Type::str:
                     writer << column.get_str();
+                    break;
+                case Type::timestamp:
+                    writer << column.get_timestamp();
                     break;
                 default:
                     LOG(FATAL) << "Not Support: " << column.getType();

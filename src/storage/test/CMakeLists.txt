@@ -17,6 +17,7 @@ set(storage_test_deps
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:gflags_man_obj>
 )
 
 
@@ -28,6 +29,30 @@ nebula_add_library(
 nebula_add_test(
     NAME add_vertices_test
     SOURCES AddVerticesTest.cpp
+    OBJECTS ${storage_test_deps}
+    LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
+)
+
+
+nebula_add_test(
+    NAME delete_vertex_test
+    SOURCES DeleteVertexTest.cpp
+    OBJECTS ${storage_test_deps}
+    LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
+)
+
+
+nebula_add_test(
+    NAME delete_edges_test
+    SOURCES DeleteEdgesTest.cpp
+    OBJECTS ${storage_test_deps}
+    LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
+)
+
+
+nebula_add_test(
+    NAME query_edgekeys_test
+    SOURCES QueryEdgeKeysTest.cpp
     OBJECTS ${storage_test_deps}
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
@@ -221,6 +246,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}

@@ -33,12 +33,17 @@ A high performance distributed graph database
 %prep
 
 %build
-cmake -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=%{_version} -DCMAKE_INSTALL_PREFIX=%{_install_dir} ./
+cmake -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=%{_version} -DCMAKE_INSTALL_PREFIX=%{_install_dir} -DENABLE_TESTING=OFF./
 make -j2
 
 %install
 rm -rf %{buildroot}
 make install DESTDIR=%{buildroot}
+
+%package base
+Summary: nebula base package
+Group: Applications/Databases
+%description base
 
 %package metad
 Summary: nebula meta server daemon
@@ -58,10 +63,10 @@ Group: Applications/Databases
 %description storaged
 storaged is a daemon for storage all data
 
-%package nebula
+%package console
 Summary: nebula console client
 Group: Applications/Databases
-%description nebula
+%description console
 
 %package storage_perf
 Summary: tool for storage
@@ -71,7 +76,7 @@ Group: Applications/Databases
 
 # the files include exe, config file, scripts
 # base rpm include files
-%files
+%files base
 %attr(0755,root,root) %{_datadir}/nebula.service
 %attr(0755,root,root) %{_datadir}/utils.sh
 %attr(0755,root,root) %{_datadir}/services.sh
@@ -81,6 +86,7 @@ Group: Applications/Databases
 %attr(0755,root,root) %{_bindir}/nebula-metad
 %attr(0644,root,root) %{_sysconfdir}/nebula-metad.conf.default
 %attr(0755,root,root) %{_datadir}/nebula-metad.service
+%attr(0644,root,root) %{_resourcesdir}/gflags.json
 
 # After install, if config file is non-existent, copy default config file
 %post metad
@@ -94,6 +100,7 @@ fi
 %attr(0755,root,root) %{_bindir}/nebula-graphd
 %attr(0644,root,root) %config%{_sysconfdir}/nebula-graphd.conf.default
 %attr(0755,root,root) %{_datadir}/nebula-graphd.service
+%attr(0644,root,root) %{_resourcesdir}/gflags.json
 
 %post graphd
 if [[ ! -f %{_install_dir}/etc/nebula-graphd.conf ]]; then
@@ -106,6 +113,7 @@ fi
 %attr(0755,root,root) %{_bindir}/nebula-storaged
 %attr(0644,root,root) %config%{_sysconfdir}/nebula-storaged.conf.default
 %attr(0755,root,root) %{_datadir}/nebula-storaged.service
+%attr(0644,root,root) %{_resourcesdir}/gflags.json
 
 %post storaged
 if [[ ! -f %{_install_dir}/etc/nebula-storaged.conf ]]; then
@@ -113,7 +121,7 @@ if [[ ! -f %{_install_dir}/etc/nebula-storaged.conf ]]; then
 fi
 
 
-%files nebula
+%files console
 %attr(0755,root,root) %{_bindir}/nebula
 %attr(0644,root,root) %{_resourcesdir}/completion.json
 
@@ -128,4 +136,3 @@ fi
 %undefine _missing_build_ids_terminate_build
 
 %changelog
-

@@ -37,6 +37,7 @@ add_library(
     OrderByExecutor.cpp
     IngestExecutor.cpp
     ConfigExecutor.cpp
+    BalanceExecutor.cpp
     SchemaHelper.cpp
     FetchVerticesExecutor.cpp
     FetchEdgesExecutor.cpp
@@ -44,6 +45,7 @@ add_library(
     SetExecutor.cpp
     FindExecutor.cpp
     MatchExecutor.cpp
+    DeleteVertexExecutor.cpp
 )
 add_dependencies(
     graph_obj
@@ -51,6 +53,7 @@ add_dependencies(
     graph_thrift_obj
     meta_thrift_obj
     meta_client
+    gflags_man_obj
     schema_obj
     stats_obj
     process_obj
@@ -66,5 +69,5 @@ add_dependencies(
     base_obj
 )
 
-add_subdirectory(test)
+nebula_add_subdirectory(test)
 

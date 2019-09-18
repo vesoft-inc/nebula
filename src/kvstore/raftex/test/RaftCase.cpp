@@ -11,7 +11,6 @@
 #include "fs/FileUtils.h"
 #include "thread/GenericThreadPool.h"
 #include "network/NetworkUtils.h"
-#include "kvstore/wal/BufferFlusher.h"
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/raftex/test/RaftexTestBase.h"
 #include "kvstore/raftex/test/TestShard.h"
@@ -164,6 +163,7 @@ TEST_F(ThreeRaftTest, Persistance) {
             waitUntilLeaderElected(copies_, leader_);
         }
     }
+    sleep(FLAGS_raft_heartbeat_interval_secs);
     checkConsensus(copies_, 0, 9, msgs);
     LOG(INFO) << "<===== Done persistance test";
 }
@@ -249,10 +249,6 @@ int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
-
-    // `flusher' is extern-declared in RaftexTestBase.h, defined in RaftexTestBase.cpp
-    using nebula::raftex::flusher;
-    flusher = std::make_unique<nebula::wal::BufferFlusher>();
 
     return RUN_ALL_TESTS();
 }

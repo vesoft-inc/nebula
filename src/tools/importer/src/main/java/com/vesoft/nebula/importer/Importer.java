@@ -13,6 +13,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 
 import com.vesoft.nebula.graph.client.GraphClient;
+import com.vesoft.nebula.graph.client.GraphClientImpl;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -61,6 +62,7 @@ public class Importer {
     private static final int DEFAULT_INSERT_BATCH_SIZE = 16;
     private static final int DEFAULT_CONNECTION_TIMEOUT_MS = 3 * 1000;
     private static final int DEFAULT_CONNECTION_RETRY = 3;
+    private static final String DEFAULT_ADDRESS = "127.0.0.1:3699";
 
     private String address;
     private int batchSize;
@@ -103,15 +105,16 @@ public class Importer {
 
     private void parseOptions(Options options, String[] args) throws ParseException {
         CommandLineParser parser = new DefaultParser();
-        if (Objects.isNull(args) || args.length == 0) {
+        CommandLine commandLine = parser.parse(options, args);
+        if (Objects.isNull(args) || args.length == 0
+                || commandLine.hasOption("h") || commandLine.hasOption("help")) {
             HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp("Importer Options", options);
             System.exit(-1);
         }
 
-        CommandLine commandLine = parser.parse(options, args);
 
-        address = fetchOptionValue(commandLine, 'a', "address", EMPTY);
+        address = fetchOptionValue(commandLine, 'a', "address", DEFAULT_ADDRESS);
         batchSize = fetchOptionValue(commandLine, 'b', "batch", DEFAULT_INSERT_BATCH_SIZE);
         spaceName = fetchOptionValue(commandLine, 'n', "name", EMPTY);
         schemaName = fetchOptionValue(commandLine, 'm', "schema", EMPTY);
@@ -166,33 +169,35 @@ public class Importer {
 
     private void run() {
         long rowCounter = 0;
-        long startTime = System.currentTimeMillis();
+        final long startTime = System.currentTimeMillis();
+        String[] hostAndPort = address.split(":");
+        if (hostAndPort.length != 2) {
+            LOGGER.error(String.format("Address format error: %s", address));
+            return;
+        }
+
+        String host = hostAndPort[0];
+        int port = Integer.valueOf(hostAndPort[1]);
+
+        GraphClient client = new GraphClientImpl(host, port, timeout, retry);
+        int code = client.connect(user, pswd);
+
+        if (code == 0) {
+            LOGGER.debug(String.format("%s connect to thrift service", user));
+        } else {
+            LOGGER.error("Connection or Authenticate Failed");
+            return;
+        }
+
+        code = client.execute(String.format(USE_TEMPLATE, spaceName));
+        if (code == 0) {
+            LOGGER.info(String.format("Switch Space to %s", spaceName));
+        } else {
+            LOGGER.error(String.format("USE %s Failed", spaceName));
+            return;
+        }
+
         try (Stream<String> lines = readContent(file)) {
-
-            Map<String, Integer> hosts = StreamSupport.stream(
-                    Splitter.on(",").split(address).spliterator(), false)
-                    .map(token -> token.split(":"))
-                    .filter(pair -> pair.length == 2)
-                    .collect(Collectors.toMap(pair -> pair[0], pair -> Integer.valueOf(pair[1])));
-
-            GraphClient client = new GraphClient(hosts, timeout, retry);
-            int code = client.connect(user, pswd);
-
-            if (code == 0) {
-                LOGGER.debug(String.format("%s connect to thrift service", user));
-            } else {
-                LOGGER.error("Connection or Authenticate Failed");
-                return;
-            }
-
-            code = client.execute(String.format(USE_TEMPLATE, spaceName));
-            if (code == 0) {
-                LOGGER.info(String.format("Switch Space to %s", spaceName));
-            } else {
-                LOGGER.error(String.format("USE %s Failed", spaceName));
-                return;
-            }
-
             try {
                 Iterator<List<String>> portion = Iterables.partition(() -> lines.iterator(), batchSize).iterator();
                 while (portion.hasNext()) {

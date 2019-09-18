@@ -118,13 +118,29 @@ public:
         return hosts.size();
     }
 
-    static bool assembleSpace(kvstore::KVStore* kv, GraphSpaceID id, int32_t partitionNum) {
+    static bool assembleSpace(kvstore::KVStore* kv, GraphSpaceID id, int32_t partitionNum,
+                              int32_t replica = 1, int32_t totalHost = 1) {
+        // mock the part distribution like create space
         bool ret = false;
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("test_space");
+        properties.set_partition_num(partitionNum);
+        properties.set_replica_factor(replica);
+        auto spaceVal = MetaServiceUtils::spaceVal(properties);
         std::vector<nebula::kvstore::KV> data;
-        data.emplace_back(MetaServiceUtils::spaceKey(id), "test_space");
+        data.emplace_back(MetaServiceUtils::spaceKey(id), MetaServiceUtils::spaceVal(properties));
+
+        std::vector<nebula::cpp2::HostAddr> allHosts;
+        for (int i = 0; i < totalHost; i++) {
+            allHosts.emplace_back(apache::thrift::FragileConstructor::FRAGILE, i, i);
+        }
+
         for (auto partId = 1; partId <= partitionNum; partId++) {
             std::vector<nebula::cpp2::HostAddr> hosts;
-            hosts.emplace_back(apache::thrift::FragileConstructor::FRAGILE, 0, 0);
+            size_t idx = partId;
+            for (int32_t i = 0; i < replica; i++, idx++) {
+                hosts.emplace_back(allHosts[idx % totalHost]);
+            }
             data.emplace_back(MetaServiceUtils::partKey(id, partId),
                               MetaServiceUtils::partVal(hosts));
         }
