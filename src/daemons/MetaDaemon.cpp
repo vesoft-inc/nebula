@@ -133,12 +133,12 @@ bool initWebService(nebula::kvstore::KVStore* kvstore,
     nebula::WebService::registerHandler("/status", [] {
         return new nebula::meta::MetaHttpStatusHandler();
     });
-    nebula::WebService::registerHandler("/download-dispatch", [&] {
+    nebula::WebService::registerHandler("/download-dispatch", [kvstore, helper, pool] {
         auto handler = new nebula::meta::MetaHttpDownloadHandler();
         handler->init(kvstore, helper, pool);
         return handler;
     });
-    nebula::WebService::registerHandler("/ingest-dispatch", [&] {
+    nebula::WebService::registerHandler("/ingest-dispatch", [kvstore, pool] {
         auto handler = new nebula::meta::MetaHttpIngestHandler();
         handler->init(kvstore, pool);
         return handler;

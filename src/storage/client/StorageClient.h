@@ -8,6 +8,7 @@
 #define STORAGE_CLIENT_STORAGECLIENT_H_
 
 #include "base/Base.h"
+#include "base/StatusOr.h"
 #include <gtest/gtest_prod.h>
 #include <folly/futures/Future.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
@@ -137,6 +138,24 @@ public:
     folly::Future<StatusOr<storage::cpp2::ExecResponse>> deleteVertex(
         GraphSpaceID space,
         VertexID vid,
+        folly::EventBase* evb = nullptr);
+
+    folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateVertex(
+        GraphSpaceID space,
+        VertexID vertexId,
+        std::string filter,
+        std::vector<storage::cpp2::UpdateItem> updateItems,
+        std::vector<std::string> returnCols,
+        bool insertable,
+        folly::EventBase* evb = nullptr);
+
+    folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateEdge(
+        GraphSpaceID space,
+        storage::cpp2::EdgeKey edgeKey,
+        std::string filter,
+        std::vector<storage::cpp2::UpdateItem> updateItems,
+        std::vector<std::string> returnCols,
+        bool insertable,
         folly::EventBase* evb = nullptr);
 
 protected:

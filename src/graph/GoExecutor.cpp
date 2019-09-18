@@ -819,7 +819,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                             colTypes.back() = iter->getSchema()->getFieldType(prop).type;
                         }
                         if (edgeType != edgeStatus.value()) {
-                            return RowReader::getDefaultProp(iter->getSchema(), prop);
+                            return RowReader::getDefaultProp(iter->getSchema().get(), prop);
                         }
 
                         auto res = RowReader::getPropByName(&*iter, prop);
@@ -846,7 +846,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                             });
 
                         if (it2 == tagData.cend()) {
-                            return RowReader::getDefaultProp(iter->getSchema(), prop);
+                            return RowReader::getDefaultProp(iter->getSchema().get(), prop);
                         }
 
                         if (saveTypeFlag) {
@@ -930,7 +930,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
     return true;
 }
 
-VariantType GoExecutor::VertexHolder::getDefaultProp(TagID tid, const std::string &prop) const {
+OptVariantType GoExecutor::VertexHolder::getDefaultProp(TagID tid, const std::string &prop) const {
     for (auto it = data_.cbegin(); it != data_.cend(); ++it) {
         auto it2 = it->second.find(tid);
         if (it2 != it->second.cend()) {
@@ -939,7 +939,7 @@ VariantType GoExecutor::VertexHolder::getDefaultProp(TagID tid, const std::strin
     }
 
     DCHECK(false);
-    return "";
+    return Status::Error("Unknown tid");
 }
 
 SupportedType GoExecutor::VertexHolder::getDefaultPropType(TagID tid,

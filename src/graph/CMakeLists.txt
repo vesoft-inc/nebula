@@ -22,7 +22,9 @@ add_library(
     DescribeTagExecutor.cpp
     DescribeEdgeExecutor.cpp
     InsertVertexExecutor.cpp
+    UpdateVertexExecutor.cpp
     InsertEdgeExecutor.cpp
+    UpdateEdgeExecutor.cpp
     AssignmentExecutor.cpp
     InterimResult.cpp
     VariableHolder.cpp
@@ -69,5 +71,5 @@ add_dependencies(
     base_obj
 )
 
-add_subdirectory(test)
+nebula_add_subdirectory(test)
 

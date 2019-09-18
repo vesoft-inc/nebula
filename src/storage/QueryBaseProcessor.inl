@@ -239,8 +239,7 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
         case Expression::kEdgeType: {
             return true;
         }
-        case Expression::kAliasProp:
-        case Expression::kEdgeProp: {
+        case Expression::kAliasProp: {
             if (edgeContexts_.empty()) {
                 VLOG(1) << "No edge requested!";
                 return false;
@@ -268,7 +267,7 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
             }
 
             const auto* propName = edgeExp->prop();
-            auto field           = schema->field(*propName);
+            auto field = schema->field(*propName);
             if (field == nullptr) {
                 VLOG(1) << "Can't find related prop " << *propName << " on edge "
                         << *(edgeExp->alias());
@@ -278,8 +277,9 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
         }
         case Expression::kVariableProp:
         case Expression::kDestProp:
-        case Expression::kInputProp:
+        case Expression::kInputProp: {
             return false;
+        }
         default: {
             VLOG(1) << "Unsupport expression type! kind = "
                     << std::to_string(static_cast<uint8_t>(exp->kind()));
@@ -348,7 +348,6 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
         }  // if reader != nullptr
     }  // for
 }
-
 
 template<typename REQ, typename RESP>
 kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(

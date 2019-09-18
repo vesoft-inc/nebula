@@ -8,6 +8,8 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:filter_obj>
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:dataman_obj>
+    $<TARGET_OBJECTS:http_client_obj>
+    $<TARGET_OBJECTS:ws_common_obj>
     $<TARGET_OBJECTS:storage_client>
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
@@ -41,7 +43,6 @@ nebula_add_test(
     SOURCES
         SessionManagerTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:http_client_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -60,7 +61,6 @@ nebula_add_test(
         ConfigTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         ${GRAPH_TEST_LIBS}
@@ -78,7 +78,6 @@ nebula_add_test(
         GoTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         ${GRAPH_TEST_LIBS}
@@ -98,7 +97,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:graph_http_handler>
         $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:process_obj>
@@ -121,7 +119,6 @@ nebula_add_test(
         OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         ${GRAPH_TEST_LIBS}
@@ -140,7 +137,6 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         ${GRAPH_TEST_LIBS}
@@ -160,7 +156,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
-        $<TARGET_OBJECTS:http_client_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -178,7 +173,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
-        $<TARGET_OBJECTS:http_client_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -196,7 +190,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
-        $<TARGET_OBJECTS:http_client_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -214,7 +207,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
-        $<TARGET_OBJECTS:http_client_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -222,3 +214,21 @@ nebula_add_test(
         wangle
         gtest
 )
+
+nebula_add_test(
+    NAME
+        update_test
+    SOURCES
+        UpdateTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
