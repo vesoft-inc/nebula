@@ -24,10 +24,17 @@ bash> git clone https://github.com/vesoft-inc/nebula.git
 ```
 
 #### Step2: install dependencies
+- user in China
 
-```
-bash> cd nebula && ./build_dep.sh
-```
+    ```
+    bash> cd nebula && ./build_dep.sh C
+    ```
+
+- user in US
+
+    ```
+    bash> cd nebula && ./build_dep.sh U
+    ```
 
 #### Step3: update **~/.bashrc**
 
@@ -35,13 +42,23 @@ bash> cd nebula && ./build_dep.sh
 bash> source ~/.bashrc
 ```
 #### Step4: build
+- without java client
 
-```
-bash> mkdir build && cd build
-bash> cmake ..
-bash> make
-bash> sudo make install
-```
+    ```
+    bash> mkdir build && cd build
+    bash> cmake ..
+    bash> make
+    bash> sudo make install
+    ```
+- with java client
+
+    ```
+    bash> mvn install:install-file -Dfile=/opt/nebula/third-party/fbthrift/thrift-1.0-SNAPSHOT.jar -DgroupId="com.facebook" -DartifactId="thrift" -Dversion="1.0-SNAPSHOT" -Dpackaging=jar
+    bash> mkdir build && cd build
+    bash> cmake -DSKIP_JAVA_CLIENT=OFF ..
+    bash> make
+    bash> sudo make install
+    ```
 
 #### **Now build finish**
 - If you don't see any error messages，and the end has

@@ -20,9 +20,17 @@ bash> git clone https://github.com/vesoft-inc/nebula.git
 
 #### 步骤 2 : 安装依赖
 
-```
-bash> cd nebula && ./build_dep.sh
-```
+- 中国用户
+
+    ```
+    bash> cd nebula && ./build_dep.sh C
+    ```
+
+- 美国用户
+
+    ```
+    bash> cd nebula && ./build_dep.sh U
+    ```
 
 #### 步骤 3: 应用 **~/.bashrc** 修改
 
@@ -31,12 +39,23 @@ bash> source ~/.bashrc
 ```
 #### 步骤 4: 构建
 
-```
-bash> mkdir build && cd build
-bash> cmake ..
-bash> make
-bash> sudo make install
-```
+- 不编译java client
+
+    ```
+    bash> mkdir build && cd build
+    bash> cmake ..
+    bash> make
+    bash> sudo make install
+    ```
+- 编译java client
+
+    ```
+    bash> mvn install:install-file -Dfile=/opt/nebula/third-party/fbthrift/thrift-1.0-SNAPSHOT.jar -DgroupId="com.facebook" -DartifactId="thrift" -Dversion="1.0-SNAPSHOT" -Dpackaging=jar
+    bash> mkdir build && cd build
+    bash> cmake -DSKIP_JAVA_CLIENT=OFF ..
+    bash> make
+    bash> sudo make install
+    ```
 
 #### **构建完成**
 - 如果没有任何错误信息
