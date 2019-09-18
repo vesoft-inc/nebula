@@ -15,6 +15,7 @@ import com.facebook.thrift.transport.TSocket;
 import com.facebook.thrift.transport.TTransport;
 import com.facebook.thrift.transport.TTransportException;
 import com.google.common.collect.Lists;
+import com.google.common.net.HostAndPort;
 import com.google.common.net.InetAddresses;
 import com.vesoft.nebula.graph.AuthResponse;
 import com.vesoft.nebula.graph.ErrorCode;
@@ -25,7 +26,6 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 
@@ -39,9 +39,9 @@ public class GraphClientImpl implements GraphClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GraphClientImpl.class.getName());
 
-    private String host;
-    private int port;
-    private int retry;
+    private final List<HostAndPort> addresses;
+    private final int connectionRetry;
+    private final int executionRetry;
     private final int timeout;
     private long sessionId_;
     private TTransport transport = null;
@@ -50,31 +50,38 @@ public class GraphClientImpl implements GraphClient {
     /**
      * The Constructor of GraphClient.
      *
-     * @param host      The host of graph services.
-     * @param port      The port of graph services.
-     * @param timeout   The timeout of RPC request.
-     * @param retry     The number of retries when connection failure.
+     * @param addresses       The addresses of graph services.
+     * @param timeout         The timeout of RPC request.
+     * @param connectionRetry The number of retries when connection failure.
+     * @param executionRetry  The number of retries when execution failure.
      */
-    public GraphClientImpl(String host, int port, int timeout, int retry) {
+    public GraphClientImpl(List<HostAndPort> addresses, int timeout, int connectionRetry,
+                           int executionRetry) {
         checkArgument(timeout > 0);
-        checkArgument(retry > 0);
-        if (!InetAddresses.isInetAddress(host) || (port <= 0 || port >= 65535)) {
-            throw new IllegalArgumentException(String.format("%s:%d is not a valid address", host, port));
-        }
+        checkArgument(connectionRetry > 0);
+        addresses.forEach(address -> {
+            String host = address.getHost();
+            int port = address.getPort();
+            if (!InetAddresses.isInetAddress(host) || (port <= 0 || port >= 65535)) {
+                throw new IllegalArgumentException(String.format("%s:%d is not a valid address",
+                                                                 host, port));
+            }
+        });
 
-        this.host = host;
-        this.port = port;
+        this.addresses = addresses;
         this.timeout = timeout;
-        this.retry = retry;
+        this.connectionRetry = connectionRetry;
+        this.executionRetry = executionRetry;
     }
 
     /**
      * The Constructor of GraphClient.
      *
-     * @param host      The host of graph services.
+     * @param addresses The addresses of graph services.
      */
-    public GraphClientImpl(String host) {
-        this(host, DEFAULT_PORT, DEFAULT_TIMEOUT_MS, DEFAULT_CONNECTION_RETRY_SIZE);
+    public GraphClientImpl(List<HostAndPort> addresses) {
+        this(addresses, DEFAULT_TIMEOUT_MS, DEFAULT_CONNECTION_RETRY_SIZE,
+             DEFAULT_EXECUTION_RETRY_SIZE);
     }
 
     /**
@@ -86,10 +93,12 @@ public class GraphClientImpl implements GraphClient {
      */
     @Override
     public int connect(String username, String password) {
-        while (retry != 0) {
-            retry -= 1;
-
-            transport = new TSocket(host, port, timeout);
+        int retry = connectionRetry;
+        while (retry-- != 0) {
+            Random random = new Random(System.currentTimeMillis());
+            int position = random.nextInt(addresses.size());
+            HostAndPort address = addresses.get(position);
+            transport = new TSocket(address.getHost(), address.getPort(), timeout);
             TProtocol protocol = new TBinaryProtocol(transport);
 
             try {
@@ -102,8 +111,8 @@ public class GraphClientImpl implements GraphClient {
                 }
 
                 if (result.getError_code() != ErrorCode.SUCCEEDED) {
-                    LOGGER.error(String.format("Connect host %s failed : %s",
-                            host, result.getError_msg()));
+                    LOGGER.error(String.format("Connect address %s failed : %s",
+                                 address.toString(), result.getError_msg()));
                 } else {
                     sessionId_ = result.getSession_id();
                     return ErrorCode.SUCCEEDED;
@@ -147,16 +156,20 @@ public class GraphClientImpl implements GraphClient {
             return ErrorCode.E_DISCONNECTED;
         }
 
-        try {
-            ExecutionResponse executionResponse = client.execute(sessionId_, stmt);
-            if (executionResponse.getError_code() != ErrorCode.SUCCEEDED) {
-                LOGGER.error("execute error: " + executionResponse.getError_msg());
+        int retry = executionRetry;
+        while (retry-- > 0) {
+            try {
+                ExecutionResponse executionResponse = client.execute(sessionId_, stmt);
+                if (executionResponse.getError_code() != ErrorCode.SUCCEEDED) {
+                    LOGGER.error("execute error: " + executionResponse.getError_msg());
+                }
+                return executionResponse.getError_code();
+            } catch (TException e) {
+                LOGGER.error("Thrift rpc call failed: " + e.getMessage());
+                return ErrorCode.E_RPC_FAILURE;
             }
-            return executionResponse.getError_code();
-        } catch (TException e) {
-            LOGGER.error("Thrift rpc call failed: " + e.getMessage());
-            return ErrorCode.E_RPC_FAILURE;
         }
+        return ErrorCode.E_RPC_FAILURE;
     }
 
     /**
@@ -177,7 +190,8 @@ public class GraphClientImpl implements GraphClient {
      * @return     The ErrorCode of status, 0 is succeeded.
      */
     @Override
-    public ResultSet executeQuery(String stmt) throws ConnectionException, NGQLException, TException {
+    public ResultSet executeQuery(String stmt) throws ConnectionException,
+           NGQLException, TException {
         if (!checkTransportOpened(transport)) {
             LOGGER.error("Thrift rpc call failed");
             throw new ConnectionException();
