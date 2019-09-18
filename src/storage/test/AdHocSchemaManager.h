@@ -96,6 +96,11 @@ protected:
                        // version -> schema
                        std::map<SchemaVer, std::shared_ptr<const nebula::meta::SchemaProviderIf>>>
         edgeSchemas_;
+
+    folly::RWSpinLock spaceLock_;
+    std::set<GraphSpaceID> spaces_;
+    // Key: spaceId + tagName,  Val: tagId
+    std::unordered_map<std::string, TagID> tagNameToId_;
 };
 
 }  // namespace storage
