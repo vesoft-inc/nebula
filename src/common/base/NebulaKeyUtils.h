@@ -20,11 +20,12 @@ namespace nebula {
  *
  * */
 
-enum NebulaKeyType : int32_t {
-    kData        = 0x00000001,
-    kIndex       = 0x00000002,
-    kUUID        = 0x00000003,
-    kSystem      = 0x00000004,
+enum NebulaKeyType : uint32_t {
+    kData              = 0x00000001,
+    kIndex             = 0x00000002,
+    kUUID              = 0x00000003,
+    kSystemCommit      = 0x00000004,
+    kSystemPart        = 0x00000005,
 };
 
 /**
@@ -46,6 +47,10 @@ public:
                                EdgeType type, EdgeRanking rank,
                                VertexID dstId, EdgeVersion ev);
 
+    static std::string commitKey(PartitionID partId);
+
+    static std::string systemPartKey(PartitionID partId);
+
     /**
      * Prefix for
      * */
@@ -60,15 +65,17 @@ public:
 
     static std::string edgePrefix(PartitionID partId, VertexID vId);
 
+    static std::string systemPartsPrefix();
+
     static std::string prefix(PartitionID partId, VertexID src, EdgeType type,
                               EdgeRanking ranking, VertexID dst);
 
     static std::string prefix(PartitionID partId);
 
     static bool isVertex(const folly::StringPiece& rawKey) {
-        static int32_t tagMask  = 0x40000000;
-        static int32_t typeMask = 0x000000FF;
-        static int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
+        constexpr uint32_t tagMask  = 0x40000000;
+        constexpr uint32_t typeMask = 0x000000FF;
+        constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
         if (NebulaKeyType::kData != (readInt<int32_t>(rawKey.data(), len) & typeMask)) {
             return false;
         }
@@ -84,9 +91,9 @@ public:
     }
 
     static bool isEdge(const folly::StringPiece& rawKey) {
-        static int32_t edgeMask = 0x40000000;
-        static int32_t typeMask = 0x000000FF;
-        static int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
+        constexpr uint32_t edgeMask = 0x40000000;
+        constexpr uint32_t typeMask = 0x000000FF;
+        constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
         if (NebulaKeyType::kData != (readInt<int32_t>(rawKey.data(), len) & typeMask)) {
             return false;
         }
@@ -109,7 +116,7 @@ public:
 
     static EdgeType getEdgeType(const folly::StringPiece& rawKey) {
         CHECK_EQ(rawKey.size(), kEdgeLen);
-        static int32_t edgeMask = 0xBFFFFFFF;
+        constexpr int32_t edgeMask = 0xBFFFFFFF;
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
         EdgeType type = readInt<EdgeType>(rawKey.data() + offset, sizeof(EdgeType));
         return type > 0 ? type & edgeMask : type;
@@ -129,14 +136,14 @@ public:
     }
 
     static bool isDataKey(const folly::StringPiece& key) {
-        static int32_t typeMask = 0x000000FF;
-        static int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
+        constexpr uint32_t typeMask = 0x000000FF;
+        constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
         return NebulaKeyType::kData == (readInt<int32_t>(key.data(), len) & typeMask);
     }
 
     static bool isIndexKey(const folly::StringPiece& key) {
-        static int32_t typeMask = 0x000000FF;
-        static int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
+        constexpr uint32_t typeMask = 0x000000FF;
+        constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
         return NebulaKeyType::kIndex == (readInt<int32_t>(key.data(), len) & typeMask);
     }
 
@@ -151,11 +158,14 @@ private:
 private:
     static constexpr int32_t kVertexLen = sizeof(PartitionID) + sizeof(VertexID)
                                         + sizeof(TagID) + sizeof(TagVersion);
+
     static constexpr int32_t kEdgeLen = sizeof(PartitionID) + sizeof(VertexID)
                                       + sizeof(EdgeType) + sizeof(VertexID)
                                       + sizeof(EdgeRanking) + sizeof(EdgeVersion);
 
-    static const char kSysPrefix = '_';
+    static constexpr int32_t kCommitLen = sizeof(PartitionID) + ::strlen("committed");
+
+    static constexpr int32_t kSystemPartLen = sizeof(PartitionID);
 };
 
 }  // namespace nebula
