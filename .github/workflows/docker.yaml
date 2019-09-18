@@ -1,0 +1,86 @@
+name: Nebula Service Docker Image Building Workflow
+
+on:
+  schedule:
+    - cron:  '0 2 * * *'
+
+jobs:
+  metad:
+    name: metad
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: azure/container-actions/docker-login@master
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: clone
+        run: |
+          git clone --single-branch --branch master --depth 1 https://github.com/vesoft-inc/nebula-docker-compose.git
+      - name: build
+        run: |
+          cd nebula-docker-compose/
+          docker build -t vesoft/nebula-metad:${{ github.sha }} -f Dockerfile.metad .
+          docker tag vesoft/nebula-metad:${{ github.sha }} vesoft/nebula-metad:nightly
+          docker push vesoft/nebula-metad:${{ github.sha }}
+          docker push vesoft/nebula-metad:nightly
+        shell: bash
+
+  storaged:
+    name: storaged
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: azure/container-actions/docker-login@master
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: clone
+        run: |
+          git clone --single-branch --branch master --depth 1 https://github.com/vesoft-inc/nebula-docker-compose.git
+      - name: build
+        run: |
+          cd nebula-docker-compose/
+          docker build -t vesoft/nebula-storaged:${{ github.sha }} -f Dockerfile.storaged .
+          docker tag vesoft/nebula-storaged:${{ github.sha }} vesoft/nebula-storaged:nightly
+          docker push vesoft/nebula-storaged:${{ github.sha }}
+          docker push vesoft/nebula-storaged:nightly
+        shell: bash
+
+  graphd:
+    name: graphd
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: azure/container-actions/docker-login@master
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: clone
+        run: |
+          git clone --single-branch --branch master --depth 1 https://github.com/vesoft-inc/nebula-docker-compose.git
+      - name: build
+        run: |
+          cd nebula-docker-compose/
+          docker build -t vesoft/nebula-graphd:${{ github.sha }} -f Dockerfile.graphd .
+          docker tag vesoft/nebula-graphd:${{ github.sha }} vesoft/nebula-graphd:nightly
+          docker push vesoft/nebula-graphd:${{ github.sha }}
+          docker push vesoft/nebula-graphd:nightly
+        shell: bash
+
+  console:
+    name: console
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: azure/container-actions/docker-login@master
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: clone
+        run: |
+          git clone --single-branch --branch master --depth 1 https://github.com/vesoft-inc/nebula-docker-compose.git
+      - name: build
+        run: |
+          cd nebula-docker-compose/
+          docker build -t vesoft/nebula-console:${{ github.sha }} -f Dockerfile.console .
+          docker tag vesoft/nebula-console:${{ github.sha }} vesoft/nebula-console:nightly
+          docker push vesoft/nebula-console:${{ github.sha }}
+          docker push vesoft/nebula-console:nightly
+        shell: bash
