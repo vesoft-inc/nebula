@@ -81,14 +81,10 @@ void CmdProcessor::calColumnWidths(
                     break;
                 }
                 case cpp2::ColumnValue::Type::id: {
-                    // Enough to hold "0x{16 letters}"
-                    if (widths[idx] < 18UL) {
-                        widths[idx] = 18UL;
-                        genFmt = true;
-                    }
+                    GET_VALUE_WIDTH(int64_t, id, "%ld");
+
                     if (genFmt) {
-                        formats[idx] =
-                            folly::stringPrintf(" %%-%ldLX |", widths[idx]);
+                        formats[idx] = folly::stringPrintf(" %%-%ldld |", widths[idx]);
                     }
                     break;
                 }
@@ -436,4 +432,3 @@ const std::string& CmdProcessor::getSpaceName() const {
 
 }  // namespace graph
 }  // namespace nebula
-

@@ -5,7 +5,7 @@
  */
 
 #ifndef GRAPH_DELETEVERTEXEXECUTOR_H_
-#define GRAPH_DELETEVERTEXEEXECUTOR_H_
+#define GRAPH_DELETEVERTEXEXECUTOR_H_
 
 #include "base/Base.h"
 #include "graph/Executor.h"

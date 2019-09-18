@@ -5,7 +5,7 @@
  */
 
 #ifndef STORAGE_DELETEEDGESPROCESSOR_H_
-#define STORAGE_DELETEEDGESSPROCESSOR_H_
+#define STORAGE_DELETEEDGESPROCESSOR_H_
 
 #include "base/Base.h"
 #include "storage/BaseProcessor.h"
