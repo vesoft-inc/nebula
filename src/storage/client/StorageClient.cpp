@@ -304,11 +304,78 @@ folly::Future<StatusOr<cpp2::ExecResponse>> StorageClient::deleteVertex(
 }
 
 
+folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateVertex(
+        GraphSpaceID space,
+        VertexID vertexId,
+        std::string filter,
+        std::vector<storage::cpp2::UpdateItem> updateItems,
+        std::vector<std::string> returnCols,
+        bool insertable,
+        folly::EventBase* evb) {
+    std::pair<HostAddr, cpp2::UpdateVertexRequest> request;
+    PartitionID part = this->partId(space, vertexId);
+    auto partMeta = this->getPartMeta(space, part);
+    CHECK_GT(partMeta.peers_.size(), 0U);
+    const auto& host = this->leader(partMeta);
+    request.first = std::move(host);
+    cpp2::UpdateVertexRequest req;
+    req.set_space_id(space);
+    req.set_vertex_id(vertexId);
+    req.set_part_id(part);
+    req.set_filter(filter);
+    req.set_update_items(std::move(updateItems));
+    req.set_return_columns(returnCols);
+    req.set_insertable(insertable);
+    request.second = std::move(req);
+
+    return getResponse(
+        evb, std::move(request),
+        [] (cpp2::StorageServiceAsyncClient* client,
+           const cpp2::UpdateVertexRequest& r) {
+            return client->future_updateVertex(r);
+        });
+}
+
+
+folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateEdge(
+        GraphSpaceID space,
+        storage::cpp2::EdgeKey edgeKey,
+        std::string filter,
+        std::vector<storage::cpp2::UpdateItem> updateItems,
+        std::vector<std::string> returnCols,
+        bool insertable,
+        folly::EventBase* evb) {
+    std::pair<HostAddr, cpp2::UpdateEdgeRequest> request;
+    PartitionID part = this->partId(space, edgeKey.get_src());
+    auto partMeta = this->getPartMeta(space, part);
+    CHECK_GT(partMeta.peers_.size(), 0U);
+    const auto& host = this->leader(partMeta);
+    request.first = std::move(host);
+    cpp2::UpdateEdgeRequest req;
+    req.set_space_id(space);
+    req.set_edge_key(edgeKey);
+    req.set_part_id(part);
+    req.set_filter(filter);
+    req.set_update_items(std::move(updateItems));
+    req.set_return_columns(returnCols);
+    req.set_insertable(insertable);
+    request.second = std::move(req);
+
+    return getResponse(
+        evb, std::move(request),
+        [] (cpp2::StorageServiceAsyncClient* client,
+           const cpp2::UpdateEdgeRequest& r) {
+            return client->future_updateEdge(r);
+        });
+}
+
+
 PartitionID StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
     auto parts = partsNum(spaceId);
     auto s = ID_HASH(id, parts);
     CHECK_GE(s, 0U);
     return s;
 }
+
 }   // namespace storage
 }   // namespace nebula
