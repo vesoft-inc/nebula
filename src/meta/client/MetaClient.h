@@ -53,6 +53,10 @@ using SpaceEdgeNameTypeMap = std::unordered_map<std::pair<GraphSpaceID, std::str
 using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, SchemaVer>;
 // get latest edge version via spaceId and edgeType
 using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
+// get edgeName via spaceId and edgeType
+using SpaceEdgeTypeNameMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, std::string>;
+// get all edgeType edgeName via spaceId
+using SpaceAllEdgeMap = std::unordered_map<GraphSpaceID, std::vector<std::string>>;
 
 struct ConfigItem {
     ConfigItem() {}
@@ -230,11 +234,15 @@ public:
 
     StatusOr<EdgeType> getEdgeTypeByNameFromCache(const GraphSpaceID& space,
                                                   const std::string& name);
+    StatusOr<std::string> getEdgeNameByTypeFromCache(const GraphSpaceID& space,
+                                                     const EdgeType edgeType);
 
     StatusOr<SchemaVer> getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
 
     StatusOr<SchemaVer> getNewestEdgeVerFromCache(const GraphSpaceID& space,
                                                   const EdgeType& edgeType);
+
+    StatusOr<std::vector<std::string>> getAllEdgeFromCache(const GraphSpaceID& space);
 
     PartsMap getPartsMapFromCache(const HostAddr& host);
 
@@ -274,8 +282,10 @@ protected:
                      std::shared_ptr<SpaceInfoCache> spaceInfoCache,
                      SpaceTagNameIdMap &tagNameIdMap,
                      SpaceEdgeNameTypeMap &edgeNameTypeMap,
+                     SpaceEdgeTypeNameMap &edgeTypeNamemap,
                      SpaceNewestTagVerMap &newestTagVerMap,
-                     SpaceNewestEdgeVerMap &newestEdgeVerMap);
+                     SpaceNewestEdgeVerMap &newestEdgeVerMap,
+                     SpaceAllEdgeMap &allEdgemap);
 
     folly::Future<StatusOr<bool>> heartbeat();
 
@@ -339,8 +349,10 @@ private:
     SpaceNameIdMap        spaceIndexByName_;
     SpaceTagNameIdMap     spaceTagIndexByName_;
     SpaceEdgeNameTypeMap  spaceEdgeIndexByName_;
+    SpaceEdgeTypeNameMap  spaceEdgeIndexByType_;
     SpaceNewestTagVerMap  spaceNewestTagVerMap_;
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
+    SpaceAllEdgeMap      spaceAllEdgeMap_;
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
     folly::RWSpinLock     listenerLock_;

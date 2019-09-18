@@ -46,8 +46,15 @@ public:
     void appendLog(cpp2::AppendLogResponse& resp,
                    const cpp2::AppendLogRequest& req) override;
 
+    void sendSnapshot(
+        cpp2::SendSnapshotResponse& resp,
+        const cpp2::SendSnapshotRequest& req) override;
+
     void addPartition(std::shared_ptr<RaftPart> part);
     void removePartition(std::shared_ptr<RaftPart> part);
+
+    std::shared_ptr<RaftPart> findPart(GraphSpaceID spaceId,
+                                       PartitionID partId);
 
 private:
     void initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor> pool,
@@ -60,9 +67,6 @@ private:
     void waitUntilReady();
 
     RaftexService() = default;
-
-    std::shared_ptr<RaftPart> findPart(GraphSpaceID spaceId,
-                                       PartitionID partId);
 
 private:
     std::unique_ptr<apache::thrift::ThriftServer> server_;

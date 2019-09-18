@@ -4,6 +4,7 @@ nebula_add_library(
     RaftPart.cpp
     RaftexService.cpp
     Host.cpp
+    SnapshotManager.cpp
 )
 
-add_subdirectory(test)
+nebula_add_subdirectory(test)

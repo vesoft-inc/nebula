@@ -13,6 +13,26 @@ namespace kvstore {
 
 constexpr auto kHeadLen = sizeof(int64_t) + 1 + sizeof(uint32_t);
 
+std::string encodeKV(const folly::StringPiece& key,
+                     const folly::StringPiece& val) {
+    uint32_t ksize = key.size();
+    uint32_t vsize = val.size();
+    std::string str;
+    str.reserve(sizeof(uint32_t) * 2 + ksize + vsize);
+    str.append(reinterpret_cast<const char*>(&ksize), sizeof(ksize));
+    str.append(reinterpret_cast<const char*>(&vsize), sizeof(vsize));
+    str.append(key.data(), ksize);
+    str.append(val.data(), vsize);
+    return str;
+}
+
+std::pair<folly::StringPiece, folly::StringPiece> decodeKV(const std::string& data) {
+    auto ksize = *reinterpret_cast<const uint32_t*>(data.data());
+    auto vsize = *reinterpret_cast<const uint32_t*>(data.data() + sizeof(ksize));
+    auto key = folly::StringPiece(data.data() + sizeof(ksize) + sizeof(vsize), ksize);
+    auto val = folly::StringPiece(data.data() + sizeof(ksize) + sizeof(vsize) + ksize, vsize);
+    return std::make_pair(key, val);
+}
 
 std::string encodeSingleValue(LogType type, folly::StringPiece val) {
     std::string encoded;

@@ -12,12 +12,12 @@ RowWriter::operator<<(T v) noexcept {
     RW_GET_COLUMN_TYPE(INT)
 
     switch (type->get_type()) {
-        case cpp2::SupportedType::INT: {
+        case cpp2::SupportedType::INT:
+        case cpp2::SupportedType::TIMESTAMP: {
             writeInt(v);
             break;
         }
-        case cpp2::SupportedType::VID:
-        case cpp2::SupportedType::TIMESTAMP: {
+        case cpp2::SupportedType::VID: {
             cord_ << (uint64_t)v;
             break;
         }

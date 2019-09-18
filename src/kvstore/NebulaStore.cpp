@@ -12,6 +12,7 @@
 #include "network/NetworkUtils.h"
 #include "fs/FileUtils.h"
 #include "kvstore/RocksEngine.h"
+#include "kvstore/SnapshotManagerImpl.h"
 
 DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_int32(custom_filter_interval_secs, 24 * 3600, "interval to trigger custom compaction");
@@ -36,7 +37,8 @@ NebulaStore::~NebulaStore() {
 bool NebulaStore::init() {
     LOG(INFO) << "Start the raft service...";
     bgWorkers_ = std::make_shared<thread::GenericThreadPool>();
-    bgWorkers_->start(FLAGS_num_workers);
+    bgWorkers_->start(FLAGS_num_workers, "nebula-bgworkers");
+    snapshot_.reset(new SnapshotManagerImpl(this));
     raftService_ = raftex::RaftexService::createService(ioPool_,
                                                         workers_,
                                                         raftAddr_.second);
@@ -206,7 +208,8 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                        engine,
                                        ioPool_,
                                        bgWorkers_,
-                                       workers_);
+                                       workers_,
+                                       snapshot_);
     auto partMeta = options_.partMan_->partMeta(spaceId, partId);
     std::vector<HostAddr> peers;
     for (auto& h : partMeta.peers_) {
@@ -419,14 +422,13 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
                 return error(ret);
             }
 
-            auto path = value(ret)->getDataRoot();
-            LOG(INFO) << "Ingesting Part " << part;
+            auto path = folly::stringPrintf("%s/download/%d", value(ret)->getDataRoot(), part);
             if (!fs::FileUtils::exist(path)) {
                 LOG(ERROR) << path << " not existed";
                 return ResultCode::ERR_IO_ERROR;
             }
 
-            auto files = nebula::fs::FileUtils::listAllFilesInDir(path, true, "*.sst");
+            auto files = nebula::fs::FileUtils::listAllFilesInDir(path.c_str(), true, "*.sst");
             for (auto file : files) {
                 VLOG(3) << "Ingesting extra file: " << file;
                 extras.emplace_back(file);

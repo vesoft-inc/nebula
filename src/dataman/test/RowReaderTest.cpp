@@ -147,8 +147,8 @@ TEST(RowReader, encodedData) {
     encoded.append(reinterpret_cast<char*>(&e), sizeof(double));
 
     // Col 9
-    int64_t timestampVal = 1551331827;
-    encoded.append(reinterpret_cast<char*>(&timestampVal), sizeof(int64_t));
+    len = folly::encodeVarint(1551331827, buf);
+    encoded.append(reinterpret_cast<char*>(buf), len);
 
     /**************************
      * Now let's read it
@@ -257,11 +257,11 @@ TEST(RowReader, encodedData) {
     // Col 9
     i64Val = 0;
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader->getTimestamp(9, i64Val));
+              reader->getInt(9, i64Val));
     EXPECT_EQ(1551331827, i64Val);
     i64Val = 0;
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader->getTimestamp("timestamp_col", i64Val));
+              reader->getInt("timestamp_col", i64Val));
     EXPECT_EQ(1551331827, i64Val);
 
     // Col 10 -- non-existing column
