@@ -17,11 +17,11 @@ jobs:
         with:
           fetch-depth: 1
       - name: build
+        env:
+          image_name: ${{ secrets.DOCKER_USERNAME }}/nebula-metad:nightly
         run: |
-          docker build -t vesoft/nebula-metad:${{ github.sha }} -f docker/Dockerfile.metad .
-          docker tag vesoft/nebula-metad:${{ github.sha }} vesoft/nebula-metad:nightly
-          docker push vesoft/nebula-metad:${{ github.sha }}
-          docker push vesoft/nebula-metad:nightly
+          docker build -t ${IMAGE_NAME} -f docker/Dockerfile.metad .
+          docker push ${IMAGE_NAME}
         shell: bash
 
   storaged:
@@ -36,11 +36,11 @@ jobs:
         with:
           fetch-depth: 1
       - name: build
+        env:
+          image_name: ${{ secrets.DOCKER_USERNAME }}/nebula-storaged:nightly
         run: |
-          docker build -t vesoft/nebula-storaged:${{ github.sha }} -f docker/Dockerfile.storaged .
-          docker tag vesoft/nebula-storaged:${{ github.sha }} vesoft/nebula-storaged:nightly
-          docker push vesoft/nebula-storaged:${{ github.sha }}
-          docker push vesoft/nebula-storaged:nightly
+          docker build -t ${IMAGE_NAME} -f docker/Dockerfile.storaged .
+          docker push ${IMAGE_NAME}
         shell: bash
 
   graphd:
@@ -55,11 +55,11 @@ jobs:
         with:
           fetch-depth: 1
       - name: build
+        env:
+          image_name: ${{ secrets.DOCKER_USERNAME }}/nebula-graphd:nightly
         run: |
-          docker build -t vesoft/nebula-graphd:${{ github.sha }} -f docker/Dockerfile.graphd .
-          docker tag vesoft/nebula-graphd:${{ github.sha }} vesoft/nebula-graphd:nightly
-          docker push vesoft/nebula-graphd:${{ github.sha }}
-          docker push vesoft/nebula-graphd:nightly
+          docker build -t ${IMAGE_NAME} -f docker/Dockerfile.graphd .
+          docker push ${IMAGE_NAME}
         shell: bash
 
   console:
@@ -74,11 +74,11 @@ jobs:
         with:
           fetch-depth: 1
       - name: build
+        env:
+          image_name: ${{ secrets.DOCKER_USERNAME }}/nebula-console:nightly
         run: |
-          docker build -t vesoft/nebula-console:${{ github.sha }} -f docker/Dockerfile.console .
-          docker tag vesoft/nebula-console:${{ github.sha }} vesoft/nebula-console:nightly
-          docker push vesoft/nebula-console:${{ github.sha }}
-          docker push vesoft/nebula-console:nightly
+          docker build -t ${IMAGE_NAME} -f docker/Dockerfile.console .
+          docker push ${IMAGE_NAME}
         shell: bash
 
   nebula_graph:
@@ -93,9 +93,9 @@ jobs:
         with:
           fetch-depth: 1
       - name: build
+        env:
+          image_name: ${{ secrets.DOCKER_USERNAME }}/nebula-graph:nightly
         run: |
-          docker build -t vesoft/nebula-graph:${{ github.sha }} -f docker/Dockerfile .
-          docker tag vesoft/nebula-graph:${{ github.sha }} vesoft/nebula-graph:nightly
-          docker push vesoft/nebula-graph:${{ github.sha }}
-          docker push vesoft/nebula-graph:nightly
+          docker build -t ${IMAGE_NAME} -f docker/Dockerfile .
+          docker push ${IMAGE_NAME}
         shell: bash
