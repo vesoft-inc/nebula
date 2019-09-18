@@ -8,17 +8,11 @@
 #define GRAPH_TEST_TESTENV_H_
 
 #include "base/Base.h"
-#include <gtest/gtest.h>
-#include "thread/NamedThread.h"
-#include <thrift/lib/cpp2/server/ThriftServer.h>
-#include "graph/GraphService.h"
+#include "fs/TempDir.h"
 #include "client/cpp/GraphClient.h"
-
-namespace apache {
-namespace thrift {
-class ThriftServer;
-}
-}
+#include "test/ServerContext.h"
+#include <gtest/gtest.h>
+#include "TestUtils.h"
 
 namespace nebula {
 namespace graph {
@@ -33,13 +27,22 @@ public:
 
     void TearDown() override;
     // Obtain the system assigned listening port
-    uint16_t serverPort() const;
+    uint16_t graphServerPort() const;
+    uint16_t metaServerPort() const;
+    uint16_t storageServerPort() const;
 
     std::unique_ptr<GraphClient> getClient() const;
 
+    meta::ClientBasedGflagsManager* gflagsManager();
+
 private:
-    std::unique_ptr<apache::thrift::ThriftServer>   server_;
-    std::unique_ptr<thread::NamedThread>            thread_;
+    nebula::fs::TempDir                             metaRootPath_{"/tmp/MetaTest.XXXXXX"};
+    nebula::fs::TempDir                             storageRootPath_{"/tmp/StorageTest.XXXXXX"};
+    std::unique_ptr<test::ServerContext>            metaServer_{nullptr};
+    std::unique_ptr<test::ServerContext>            storageServer_{nullptr};
+    std::unique_ptr<test::ServerContext>            graphServer_{nullptr};
+    std::unique_ptr<meta::MetaClient>               mClient_{nullptr};
+    std::unique_ptr<meta::ClientBasedGflagsManager> gflagsManager_{nullptr};
 };
 
 

@@ -144,7 +144,7 @@ private:
     colNum_++; \
     if (colNum_ != 0 && (colNum_ >> 4 << 4) == colNum_) { \
         /* We need to record offset for every 16 fields */ \
-        blockOffsets_.push_back(cord_.size()); \
+        blockOffsets_.emplace_back(cord_.size()); \
     } \
     if (colNum_ > static_cast<int64_t>(schema_->getNumFields())) { \
         /* Need to append the new column type to the schema */ \

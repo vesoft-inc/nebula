@@ -67,14 +67,6 @@ TEST(TempDir, CreateFiles) {
     EXPECT_EQ(FileType::NOTEXIST, FileUtils::fileType(dirpath.c_str()));
 }
 
-
-TEST(TempDir, NegativeTest) {
-    std::string dirpath;
-
-    TempDir td("/", "TempDirNegativeTest1.XXXXXX", false);
-    EXPECT_TRUE(!td.path());
-}
-
 }   // namespace fs
 }   // namespace nebula
 

@@ -27,6 +27,7 @@ public:
 
     void loop();
 
+private:
     bool readLine(std::string &line, bool linebreak = false);
 
     void updateHistory(const char *line);
@@ -35,10 +36,14 @@ public:
 
     void loadHistory();
 
+    void initAutoCompletion();
+
 private:
     std::string addr_;
     uint16_t port_;
     std::string username_;
+    bool enableHistroy_{true};
+    bool isInteractive_{true};
 
     std::unique_ptr<CmdProcessor> cmdProcessor_;
 };

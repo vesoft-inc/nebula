@@ -2,7 +2,6 @@ add_library(
     graph_obj OBJECT
     GraphFlags.cpp
     GraphService.cpp
-    GraphHttpHandler.cpp
     ClientSession.cpp
     SessionManager.cpp
     ExecutionEngine.cpp
@@ -16,13 +15,14 @@ add_library(
     PipeExecutor.cpp
     CreateEdgeExecutor.cpp
     AlterEdgeExecutor.cpp
-    RemoveEdgeExecutor.cpp
     DescribeEdgeExecutor.cpp
     CreateTagExecutor.cpp
     AlterTagExecutor.cpp
-    RemoveTagExecutor.cpp
+    DropTagExecutor.cpp
+    DropEdgeExecutor.cpp
     DescribeTagExecutor.cpp
     InsertVertexExecutor.cpp
+    UpdateVertexExecutor.cpp
     InsertEdgeExecutor.cpp
     CreateEdgeIndexExecutor.cpp
     DropEdgeIndexExecutor.cpp
@@ -30,6 +30,7 @@ add_library(
     CreateTagIndexExecutor.cpp
     DropTagIndexExecutor.cpp
     DescribeTagIndexExecutor.cpp
+    UpdateEdgeExecutor.cpp
     AssignmentExecutor.cpp
     InterimResult.cpp
     VariableHolder.cpp
@@ -37,20 +38,44 @@ add_library(
     RemoveHostsExecutor.cpp
     CreateSpaceExecutor.cpp
     DropSpaceExecutor.cpp
+    DescribeSpaceExecutor.cpp
     ShowExecutor.cpp
     YieldExecutor.cpp
+    DownloadExecutor.cpp
+    OrderByExecutor.cpp
+    IngestExecutor.cpp
+    ConfigExecutor.cpp
+    BalanceExecutor.cpp
+    SchemaHelper.cpp
+    FetchVerticesExecutor.cpp
+    FetchEdgesExecutor.cpp
+    FetchExecutor.cpp
+    SetExecutor.cpp
+    FindExecutor.cpp
+    MatchExecutor.cpp
+    DeleteVertexExecutor.cpp
 )
 add_dependencies(
     graph_obj
-    base_obj
     parser_obj
     graph_thrift_obj
-    ws_obj
     meta_thrift_obj
     meta_client
+    gflags_man_obj
     schema_obj
     stats_obj
+    process_obj
+    base_obj
 )
 
+add_library(
+    graph_http_handler OBJECT
+    GraphHttpHandler.cpp
+)
+add_dependencies(
+    graph_http_handler
+    base_obj
+)
 
-add_subdirectory(test)
+nebula_add_subdirectory(test)
+

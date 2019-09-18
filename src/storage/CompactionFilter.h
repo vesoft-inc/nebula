@@ -8,43 +8,105 @@
 #define STORAGE_COMPACTIONFILTER_H_
 
 #include "base/Base.h"
-#include <rocksdb/compaction_filter.h>
+#include "base/NebulaKeyUtils.h"
+#include "kvstore/CompactionFilter.h"
 
 namespace nebula {
 namespace storage {
 
-
-class NebulaCompactionFilter final : public rocksdb::CompactionFilter {
+class NebulaCompactionFilter final : public kvstore::KVFilter {
 public:
-    bool Filter(int level, const rocksdb::Slice& key, const rocksdb::Slice& old_val,
-                std::string* new_val, bool* value_changed) const override {
-        UNUSED(level);
-        UNUSED(key);
-        UNUSED(old_val);
-        UNUSED(new_val);
-        UNUSED(value_changed);
-        LOG(ERROR) << "NebulaCompactionFilter not supported yet";
+    explicit NebulaCompactionFilter(meta::SchemaManager* schemaMan)
+        : schemaMan_(schemaMan) {
+        CHECK_NOTNULL(schemaMan_);
+    }
+
+    bool filter(GraphSpaceID spaceId,
+                const folly::StringPiece& key,
+                const folly::StringPiece& val) const override {
+        if (NebulaKeyUtils::isDataKey(key)) {
+            if (!schemaValid(spaceId, key)) {
+                return true;
+            }
+            if (!ttlValid(spaceId, val)) {
+                VLOG(3) << "TTL invalid for key " << key;
+                return true;
+            }
+            if (filterVersions(key)) {
+                VLOG(3) << "Extra versions has been filtered!";
+                return true;
+            }
+        } else if (NebulaKeyUtils::isIndexKey(key)) {
+            if (!indexValid(key)) {
+                VLOG(3) << "Index invalid for the key " << key;
+                return true;
+            }
+        } else {
+            VLOG(3) << "Skip the system key inside, key " << key;
+        }
         return false;
     }
 
-    const char* Name() const override {
-        return "NebulaCompactionFilter";
+    bool schemaValid(GraphSpaceID spaceId, const folly::StringPiece& key) const {
+        if (NebulaKeyUtils::isVertex(key)) {
+            auto tagId = NebulaKeyUtils::getTagId(key);
+            auto ret = schemaMan_->getNewestTagSchemaVer(spaceId, tagId);
+            if (ret.ok() && ret.value() == -1) {
+                VLOG(3) << "Space " << spaceId << ", Tag " << tagId << " invalid";
+                return false;
+            }
+        } else {
+            CHECK(NebulaKeyUtils::isEdge(key));
+            auto edgeType = NebulaKeyUtils::getEdgeType(key);
+            if (edgeType < 0) {
+                edgeType = -edgeType;
+            }
+            auto ret = schemaMan_->getNewestEdgeSchemaVer(spaceId, edgeType);
+            if (ret.ok() && ret.value() == -1) {
+                VLOG(3) << "Space " << spaceId << ", EdgeType " << edgeType << " invalid";
+                return false;
+            }
+        }
+        return true;
     }
+
+    bool ttlValid(GraphSpaceID, const folly::StringPiece&) const {
+        // TODO(heng): Implement ttl filter after ttl schema pr merged in
+        return true;
+    }
+
+    bool filterVersions(const folly::StringPiece& key) const {
+        folly::StringPiece keyWithNoVersion = NebulaKeyUtils::keyWithNoVersion(key);
+        if (keyWithNoVersion == lastKeyWithNoVerison_) {
+            // TODO(heng): we could support max-versions configuration in schema if needed.
+            return true;
+        }
+        lastKeyWithNoVerison_ = keyWithNoVersion.str();
+        return false;
+    }
+
+    bool indexValid(const folly::StringPiece&) const {
+        return true;
+    }
+
+private:
+    mutable std::string lastKeyWithNoVerison_;
+    meta::SchemaManager* schemaMan_ = nullptr;
 };
 
-class NebulaCompactionFilterFactory final : public rocksdb::CompactionFilterFactory {
+class NebulaCompactionFilterFactory final : public kvstore::KVCompactionFilterFactory {
 public:
-    std::unique_ptr<rocksdb::CompactionFilter>
-    CreateCompactionFilter(const rocksdb::CompactionFilter::Context& context) override {
-        UNUSED(context);
-        return std::make_unique<NebulaCompactionFilter>();
+    explicit NebulaCompactionFilterFactory(meta::SchemaManager* schemaMan)
+        : schemaMan_(schemaMan) {}
+
+    std::unique_ptr<kvstore::KVFilter> createKVFilter() override {
+        return std::make_unique<NebulaCompactionFilter>(schemaMan_);
     }
-    const char* Name() const override {
-        return "NebulaCompactionFilterFactory";
-    }
+
+private:
+    meta::SchemaManager* schemaMan_ = nullptr;
 };
 
-}  // namespace storage
-}  // namespace nebula
-#endif  // STORAGE_COMPACTIONFILTER_H_
-
+}   // namespace storage
+}   // namespace nebula
+#endif   // STORAGE_COMPACTIONFILTER_H_

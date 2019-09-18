@@ -10,9 +10,13 @@
 #include "base/Base.h"
 #include "graph/Executor.h"
 #include "graph/InterimResult.h"
+#include "meta/SchemaProviderIf.h"
+#include "dataman/RowReader.h"
+#include "dataman/RowWriter.h"
 
 namespace nebula {
 namespace graph {
+
 
 class ResultSchema final {
 public:
@@ -48,6 +52,19 @@ private:
 };
 
 
+class Collector final {
+public:
+    explicit Collector(meta::SchemaProviderIf* schema) : schema_(schema) {}
+
+    void collect(VariantType &var, RowWriter *writer) const;
+
+    VariantType getProp(const std::string &prop,
+                        const RowReader *reader) const;
+
+private:
+    meta::SchemaProviderIf   *schema_;
+};
+
 class TraverseExecutor : public Executor {
 public:
     explicit TraverseExecutor(ExecutionContext *ectx) : Executor(ectx) {}
@@ -70,14 +87,6 @@ public:
         onResult_ = std::move(onResult);
     }
 
-    virtual ResultSchema* resultSchema() const {
-        return resultSchema_.get();
-    }
-
-    virtual void setInputResultSchema(ResultSchema *schema) {
-        inputResultSchema_ = schema;
-    }
-
     static std::unique_ptr<TraverseExecutor>
     makeTraverseExecutor(Sentence *sentence, ExecutionContext *ectx);
 
@@ -86,8 +95,6 @@ protected:
 
 protected:
     OnResult                                    onResult_;
-    std::unique_ptr<ResultSchema>               resultSchema_;
-    ResultSchema                               *inputResultSchema_{nullptr};
 };
 
 }   // namespace graph

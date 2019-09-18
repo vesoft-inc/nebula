@@ -136,6 +136,40 @@ private:
     std::unique_ptr<std::string>                indexName_;
 };
 
+class RebuildTagIndexSentence final : public Sentence {
+public:
+    explicit RebuildTagIndexSentence(std::string *indexName) {
+        indexName_.reset(indexName);
+        kind_ = Kind::kRebuildTagIndex;
+    }
+
+    std::string toString() const override;
+
+    std::string* indexName() const {
+        return indexName_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+};
+
+class RebuildEdgeIndexSentence final : public Sentence {
+public:
+    explicit RebuildEdgeIndexSentence(std::string *indexName) {
+        indexName_.reset(indexName);
+        kind_ = Kind::kRebuildEdgeIndex;
+    }
+
+    std::string toString() const override;
+
+    std::string* indexName() const {
+        return indexName_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+};
+
 }   // namespace nebula
 
 #endif  // PARSER_INDEXSENTENCES_H

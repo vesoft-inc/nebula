@@ -32,5 +32,13 @@ std::string DescribeEdgeIndexSentence::toString() const {
     return folly::stringPrintf("DESCRIBE EDGE INDEX %s", indexName_.get()->c_str());
 }
 
+std::string RebuildTagIndexSentence::toString() const {
+    return folly::stringPrintf("REBUILD TAG INDEX %s", indexName_.get()->c_str());
+}
+
+std::string RebuildEdgeIndexSentence::toString() const {
+    return folly::stringPrintf("REBUILD EDGE INDEX %s", indexName_.get()->c_str());
+}
+
 }   // namespace nebula
 

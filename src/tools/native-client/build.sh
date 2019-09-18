@@ -1,4 +1,3 @@
 #!/bin/bash
 
-mvn clean compile package -DskipTests
-mvn test
+mvn clean package -X -f $1/pom.xml

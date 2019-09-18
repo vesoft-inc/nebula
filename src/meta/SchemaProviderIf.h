@@ -8,7 +8,6 @@
 #define META_SCHEMAPROVIDERIF_H_
 
 #include "base/Base.h"
-#include "gen-cpp2/storage_types.h"
 #include "gen-cpp2/common_constants.h"
 
 

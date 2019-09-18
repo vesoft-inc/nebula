@@ -7,7 +7,6 @@
 #include "base/Base.h"
 #include "graph/InsertVertexExecutor.h"
 #include "storage/client/StorageClient.h"
-#include "dataman/RowWriter.h"
 
 namespace nebula {
 namespace graph {
@@ -19,86 +18,173 @@ InsertVertexExecutor::InsertVertexExecutor(Sentence *sentence,
 
 
 Status InsertVertexExecutor::prepare() {
+    return Status::OK();
+}
+
+
+Status InsertVertexExecutor::check() {
     auto status = checkIfGraphSpaceChosen();
     if (!status.ok()) {
         return status;
     }
 
-    // TODO(dutor) To support multi-tag insertion
-    auto tagItems = sentence_->tagItems();
-    if (tagItems.size() > 1) {
-        return Status::Error("Multi-tag not supported yet");
-    }
-
-    auto *tagName = tagItems[0]->tagName();
-    properties_ = tagItems[0]->properties();
-
     rows_ = sentence_->rows();
-    // TODO(dutor) To check whether the number of props and values matches.
     if (rows_.empty()) {
         return Status::Error("VALUES cannot be empty");
     }
 
+    auto tagItems = sentence_->tagItems();
     overwritable_ = sentence_->overwritable();
+    spaceId_ = ectx()->rctx()->session()->space();
 
-    auto spaceId = ectx()->rctx()->session()->space();
-    tagId_ = ectx()->schemaManager()->toTagID(spaceId, *tagName);
-    schema_ = ectx()->schemaManager()->getTagSchema(spaceId, tagId_);
-    if (schema_ == nullptr) {
-        return Status::Error("No schema found for `%s'", tagName->c_str());
+    tagIds_.reserve(tagItems.size());
+    schemas_.reserve(tagItems.size());
+    tagProps_.reserve(tagItems.size());
+
+    for (auto& item : tagItems) {
+        auto *tagName = item->tagName();
+        auto tagStatus = ectx()->schemaManager()->toTagID(spaceId_, *tagName);
+        if (!tagStatus.ok()) {
+            return Status::Error("No schema found for `%s'", tagName->c_str());
+        }
+
+        auto tagId = tagStatus.value();
+        auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
+        if (schema == nullptr) {
+            return Status::Error("No schema found for `%s'", tagName->c_str());
+        }
+
+        auto props = item->properties();
+        // Now default value is unsupported, props should equal to schema's fields
+        if (schema->getNumFields() != props.size()) {
+            LOG(ERROR) << "props number " << props.size()
+                        << ", schema field number " << schema->getNumFields();
+            return Status::Error("Wrong number of props");
+        }
+
+        tagIds_.emplace_back(tagId);
+        schemas_.emplace_back(schema);
+        tagProps_.emplace_back(props);
+
+        // Check field name
+        auto checkStatus = checkFieldName(schema, props);
+        if (!checkStatus.ok()) {
+            return checkStatus;
+        }
     }
     return Status::OK();
 }
 
 
-void InsertVertexExecutor::execute() {
-    using storage::cpp2::Vertex;
-    using storage::cpp2::Tag;
-
-    std::vector<Vertex> vertices(rows_.size());
+StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertices() {
+    std::vector<storage::cpp2::Vertex> vertices(rows_.size());
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
-        auto id = row->id();
-        auto expressions = row->values();
-        std::vector<VariantType> values;
+        auto rid = row->id();
+        auto status = rid->prepare();
+        if (!status.ok()) {
+            return status;
+        }
+        auto ovalue = rid->eval();
+        if (!ovalue.ok()) {
+            return ovalue.status();
+        }
 
+        auto v = ovalue.value();
+        if (!Expression::isInt(v)) {
+            return Status::Error("Vertex ID should be of type integer");
+        }
+        auto id = Expression::asInt(v);
+        auto expressions = row->values();
+
+        std::vector<VariantType> values;
         values.reserve(expressions.size());
         for (auto *expr : expressions) {
-            values.emplace_back(expr->eval());
-        }
-
-        auto &vertex = vertices[i];
-        std::vector<Tag> tags(1);
-        auto &tag = tags[0];
-        RowWriter writer(schema_);
-
-        for (auto &value : values) {
-            switch (value.which()) {
-                case 0:
-                    writer << boost::get<int64_t>(value);
-                    break;
-                case 1:
-                    writer << boost::get<double>(value);
-                    break;
-                case 2:
-                    writer << boost::get<bool>(value);
-                    break;
-                case 3:
-                    writer << boost::get<std::string>(value);
-                    break;
-                default:
-                    LOG(FATAL) << "Unknown value type: " << static_cast<uint32_t>(value.which());
+            status = expr->prepare();
+            if (!status.ok()) {
+                return status;
             }
+            ovalue = expr->eval();
+            if (!ovalue.ok()) {
+                return ovalue.status();
+            }
+            values.emplace_back(ovalue.value());
         }
 
-        tag.set_tag_id(tagId_);
-        tag.set_props(writer.encode());
+        storage::cpp2::Vertex vertex;
+        std::vector<storage::cpp2::Tag> tags(tagIds_.size());
+
+        auto valuePos = 0u;
+        for (auto index = 0u; index < tagIds_.size(); index++) {
+            auto &tag = tags[index];
+            auto tagId = tagIds_[index];
+            auto propSize = tagProps_[index].size();
+            auto schema = schemas_[index];
+
+            // props's number should equal to value's number
+            if ((valuePos + propSize) > values.size()) {
+                LOG(ERROR) << "Input values number " << values.size()
+                           << ", props number " << propSize;
+                return Status::Error("Wrong number of value");
+            }
+
+            RowWriter writer(schema);
+            auto valueIndex = valuePos;
+            for (auto fieldIndex = 0u; fieldIndex < schema->getNumFields(); fieldIndex++) {
+                auto& value = values[valueIndex];
+
+                // Check value type
+                auto schemaType = schema->getFieldType(fieldIndex);
+                if (!checkValueType(schemaType, value)) {
+                    LOG(ERROR) << "ValueType is wrong, schema type "
+                               << static_cast<int32_t>(schemaType.type)
+                               << ", input type " <<  value.which();
+                    return Status::Error("ValueType is wrong");
+                }
+                if (schemaType.type == nebula::cpp2::SupportedType::TIMESTAMP) {
+                    auto timestamp = toTimestamp(value);
+                    if (!timestamp.ok()) {
+                        return timestamp.status();
+                    }
+                    writeVariantType(writer, timestamp.value());
+                } else {
+                    writeVariantType(writer, value);
+                }
+
+                valueIndex++;
+            }
+
+            tag.set_tag_id(tagId);
+            tag.set_props(writer.encode());
+            valuePos += propSize;
+        }
+
         vertex.set_id(id);
         vertex.set_tags(std::move(tags));
+        vertices.emplace_back(std::move(vertex));
     }
 
-    auto space = ectx()->rctx()->session()->space();
-    auto future = ectx()->storage()->addVertices(space, std::move(vertices), overwritable_);
+    return vertices;
+}
+
+
+void InsertVertexExecutor::execute() {
+    auto status = check();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+
+    auto result = prepareVertices();
+    if (!result.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(result).status());
+        return;
+    }
+    auto future = ectx()->storage()->addVertices(spaceId_,
+                                                 std::move(result).value(),
+                                                 overwritable_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {

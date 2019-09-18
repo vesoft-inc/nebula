@@ -23,7 +23,8 @@ TEST(ProcessUtils, getExeCWD) {
     auto result = ProcessUtils::getExeCWD();
     ASSERT_TRUE(result.ok()) << result.status();
     char buffer[PATH_MAX];
-    ::getcwd(buffer, sizeof(buffer));
+    auto len = ::getcwd(buffer, sizeof(buffer));
+    UNUSED(len);
     ASSERT_EQ(buffer, result.value());
 }
 
@@ -31,7 +32,7 @@ TEST(ProcessUtils, getExeCWD) {
 TEST(ProcessUtils, isPidAvailable) {
     {
         auto status = ProcessUtils::isPidAvailable(::getpid());
-        ASSERT_FALSE(status.ok());
+        ASSERT_TRUE(status.ok()) << status;
     }
     {
         auto status = ProcessUtils::isPidAvailable(0);  // idle/swap
@@ -51,7 +52,7 @@ TEST(ProcessUtils, isPidAvailable) {
         auto status = ProcessUtils::makePidFile(pidFile);
         ASSERT_TRUE(status.ok()) << status;
         status = ProcessUtils::isPidAvailable(pidFile);
-        ASSERT_FALSE(status.ok());
+        ASSERT_TRUE(status.ok()) << status;
     }
     {
         // pid file not exist

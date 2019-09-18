@@ -5,46 +5,35 @@
  */
 
 #include "base/Base.h"
+#include "storage/StorageServer.h"
+#include "common/base/SignalHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "network/NetworkUtils.h"
-#include "storage/StorageServiceHandler.h"
-#include "storage/StorageHttpHandler.h"
-#include "kvstore/KVStore.h"
-#include "kvstore/PartManager.h"
 #include "process/ProcessUtils.h"
-#include "storage/test/TestUtils.h"
-#include "webservice/WebService.h"
-#include "meta/SchemaManager.h"
-#include "meta/client/MetaClient.h"
 
-DEFINE_int32(port, 44500, "Storage daemon listening port");
-DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_string(data_path, "", "Root data path, multi paths should be split by comma."
                              "For rocksdb engine, one path one instance.");
-DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
-DEFINE_bool(mock_server, true, "start mock server");
+DEFINE_string(local_ip, "", "IP address which is used to identify this server, "
+                            "combined with the listen port");
 DEFINE_bool(daemonize, true, "Whether to run the process as a daemon");
 DEFINE_string(pid_file, "pids/nebula-storaged.pid", "File to hold the process id");
 DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
                                      "the format looks like ip1:port1, ip2:port2, ip3:port3");
-DEFINE_int32(io_handlers, 10, "io handlers");
+DECLARE_int32(port);
 
+using nebula::operator<<;
 using nebula::Status;
 using nebula::HostAddr;
-using nebula::storage::StorageServiceHandler;
-using nebula::kvstore::KVStore;
-using nebula::meta::SchemaManager;
-using nebula::meta::MetaClient;
 using nebula::network::NetworkUtils;
 using nebula::ProcessUtils;
-
-static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 
 static void signalHandler(int sig);
 static Status setupSignalHandler();
 
+std::unique_ptr<nebula::storage::StorageServer> gStorageServer;
 
 int main(int argc, char *argv[]) {
+    google::SetVersionString(nebula::versionString());
     folly::init(&argc, &argv, true);
     if (FLAGS_daemonize) {
         google::SetStderrLogging(google::FATAL);
@@ -91,7 +80,6 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << "Bad local host addr, status:" << hostRet.status();
         return EXIT_FAILURE;
     }
-    auto& localHost = hostRet.value();
     auto metaAddrsRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
     if (!metaAddrsRet.ok() || metaAddrsRet.value().empty()) {
         LOG(ERROR) << "Can't get metaServer address, status:" << metaAddrsRet.status()
@@ -109,32 +97,6 @@ int main(int argc, char *argv[]) {
          return EXIT_FAILURE;
     }
 
-    auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_io_handlers);
-    auto metaClient = std::make_unique<nebula::meta::MetaClient>(ioThreadPool,
-                                                                 std::move(metaAddrsRet.value()),
-                                                                 true);
-    metaClient->init();
-
-    nebula::kvstore::KVOptions options;
-    options.local_ = localHost;
-    options.dataPaths_ = std::move(paths);
-    options.partMan_ = std::make_unique<nebula::kvstore::MetaServerBasedPartManager>(
-            options.local_, metaClient.get());
-    std::unique_ptr<nebula::kvstore::KVStore> kvstore(
-            nebula::kvstore::KVStore::instance(std::move(options)));
-    auto schemaMan = nebula::meta::SchemaManager::create();
-    schemaMan->init(metaClient.get());
-
-    LOG(INFO) << "Starting Storage HTTP Service";
-    nebula::WebService::registerHandler("/status", [] {
-        return new nebula::storage::StorageHttpHandler();
-    });
-
-    status = nebula::WebService::start();
-    if (!status.ok()) {
-        LOG(ERROR) << "Failed to start web service: " << status;
-        return EXIT_FAILURE;
-    }
     // Setup the signal handlers
     status = setupSignalHandler();
     if (!status.ok()) {
@@ -142,40 +104,34 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), std::move(schemaMan));
-    try {
-        nebula::operator<<(operator<<(LOG(INFO), "The storage deamon start on "), localHost);
-        gServer = std::make_unique<apache::thrift::ThriftServer>();
-        gServer->setInterface(std::move(handler));
-        gServer->setPort(FLAGS_port);
-        gServer->setReusePort(FLAGS_reuse_port);
-        gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
-        gServer->setIOThreadPool(ioThreadPool);
-        gServer->serve();  // Will wait until the server shuts down
-    } catch (const std::exception& e) {
-        LOG(ERROR) << "Start thrift server failed, error:" << e.what();
+    gStorageServer = std::make_unique<nebula::storage::StorageServer>(hostRet.value(),
+                                                                      metaAddrsRet.value(),
+                                                                      paths);
+    if (!gStorageServer->start()) {
+        LOG(ERROR) << "Storage server start failed";
         return EXIT_FAILURE;
     }
 
     LOG(INFO) << "The storage Daemon stopped";
+    return EXIT_SUCCESS;
 }
-
 
 Status setupSignalHandler() {
-    ::signal(SIGPIPE, SIG_IGN);
-    ::signal(SIGINT, signalHandler);
-    ::signal(SIGTERM, signalHandler);
-    return Status::OK();
+    return nebula::SignalHandler::install(
+        {SIGINT, SIGTERM},
+        [](nebula::SignalHandler::GeneralSignalInfo *info) {
+            signalHandler(info->sig());
+        });
 }
-
 
 void signalHandler(int sig) {
     switch (sig) {
         case SIGINT:
         case SIGTERM:
             FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
-            nebula::WebService::stop();
-            gServer->stop();
+            if (gStorageServer) {
+                gStorageServer->stop();
+            }
             break;
         default:
             FLOG_ERROR("Signal %d(%s) received but ignored", sig, ::strsignal(sig));

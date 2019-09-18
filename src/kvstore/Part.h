@@ -8,67 +8,97 @@
 #define KVSTORE_PART_H_
 
 #include "base/Base.h"
+#include "raftex/RaftPart.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVEngine.h"
+#include "kvstore/raftex/SnapshotManager.h"
 
 namespace nebula {
 namespace kvstore {
 
-class Part {
+
+class Part : public raftex::RaftPart {
+    friend class SnapshotManager;
 public:
     Part(GraphSpaceID spaceId,
          PartitionID partId,
+         HostAddr localAddr,
          const std::string& walPath,
-         KVEngine* engine)
-        : spaceId_(spaceId)
-        , partId_(partId)
-        , walPath_(walPath)
-        , engine_(engine) {}
+         KVEngine* engine,
+         std::shared_ptr<folly::IOThreadPoolExecutor> pool,
+         std::shared_ptr<thread::GenericThreadPool> workers,
+         std::shared_ptr<folly::Executor> handlers,
+         std::shared_ptr<raftex::SnapshotManager> snapshotMan);
 
-    virtual ~Part() = default;
+    virtual ~Part() {
+        LOG(INFO) << idStr_ << "~Part()";
+    }
 
     KVEngine* engine() {
         return engine_;
     }
 
-    virtual void asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) = 0;
+    void asyncPut(folly::StringPiece key, folly::StringPiece value, KVCallback cb);
+    void asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb);
 
-    virtual void asyncRemove(const std::string& key, KVCallback cb) = 0;
+    void asyncRemove(folly::StringPiece key, KVCallback cb);
+    void asyncMultiRemove(const std::vector<std::string>& keys, KVCallback cb);
+    void asyncRemovePrefix(folly::StringPiece prefix, KVCallback cb);
+    void asyncRemoveRange(folly::StringPiece start,
+                          folly::StringPiece end,
+                          KVCallback cb);
 
-    virtual void asyncMultiRemove(std::vector<std::string> keys, KVCallback cb) = 0;
+    void asyncAtomicOp(raftex::AtomicOp op, KVCallback cb);
 
-    virtual void asyncRemoveRange(const std::string& start,
-                                  const std::string& end,
-                                  KVCallback cb) = 0;
+    void asyncAddLearner(const HostAddr& learner, KVCallback cb);
+
+    void asyncTransferLeader(const HostAddr& target, KVCallback cb);
+
+    void registerNewLeaderCb(NewLeaderCallback cb) {
+        newLeaderCb_ = std::move(cb);
+    }
+
+    void unRegisterNewLeaderCb() {
+        newLeaderCb_ = nullptr;
+    }
+
+private:
+    /**
+     * Methods inherited from RaftPart
+     */
+    std::pair<LogID, TermID> lastCommittedLogId() override;
+
+    void onLostLeadership(TermID term) override;
+
+    void onElected(TermID term) override;
+
+    void onDiscoverNewLeader(HostAddr nLeader) override;
+
+    bool commitLogs(std::unique_ptr<LogIterator> iter) override;
+
+    bool preProcessLog(LogID logId,
+                       TermID termId,
+                       ClusterID clusterId,
+                       const std::string& log) override;
+
+    std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
+                                               LogID committedLogId,
+                                               TermID committedLogTerm,
+                                               bool finished) override;
+
+    ResultCode putCommitMsg(WriteBatch* batch, LogID committedLogId, TermID committedLogTerm);
+
+    void cleanup() override {
+        LOG(INFO) << idStr_ << "Clean up all data, not implement!";
+    }
 
 protected:
     GraphSpaceID spaceId_;
     PartitionID partId_;
     std::string walPath_;
     KVEngine* engine_ = nullptr;
+    NewLeaderCallback newLeaderCb_ = nullptr;
 };
-
-/**
- * Bypass raft, just write into storage when asyncMultiPut invoked.
- * */
-class SimplePart final : public Part {
-public:
-    SimplePart(GraphSpaceID spaceId, PartitionID partId,
-               const std::string& walPath, KVEngine* engine)
-        : Part(spaceId, partId, walPath, engine) {}
-
-    void asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) override;
-
-    void asyncRemove(const std::string& key, KVCallback cb) override;
-
-    void asyncMultiRemove(std::vector<std::string> keys, KVCallback cb) override;
-
-    void asyncRemoveRange(const std::string& start,
-                          const std::string& end,
-                          KVCallback cb) override;
-};
-
-
 
 }  // namespace kvstore
 }  // namespace nebula

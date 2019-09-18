@@ -20,19 +20,9 @@ AssignmentExecutor::AssignmentExecutor(Sentence *sentence,
 
 
 Status AssignmentExecutor::prepare() {
-    auto status = checkIfGraphSpaceChosen();
-    if (!status.ok()) {
-        return status;
-    }
-
     var_ = sentence_->var();
     executor_ = TraverseExecutor::makeTraverseExecutor(sentence_->sentence(), ectx());
-    status = executor_->prepare();
-    if (!status.ok()) {
-        FLOG_ERROR("Prepare executor `%s' failed: %s",
-                    executor_->name(), status.toString().c_str());
-        return status;
-    }
+
     auto onError = [this] (Status s) {
         DCHECK(onError_);
         onError_(std::move(s));
@@ -48,11 +38,24 @@ Status AssignmentExecutor::prepare() {
     executor_->setOnFinish(onFinish);
     executor_->setOnResult(onResult);
 
+    auto status = executor_->prepare();
+    if (!status.ok()) {
+        FLOG_ERROR("Prepare executor `%s' failed: %s",
+                    executor_->name(), status.toString().c_str());
+        return status;
+    }
+
     return Status::OK();
 }
 
 
 void AssignmentExecutor::execute() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
     executor_->execute();
 }
 

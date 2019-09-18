@@ -16,7 +16,6 @@ namespace nebula {
 namespace meta {
 
 class ServerBasedSchemaManager : public SchemaManager {
-    friend class SchemaManager;
 public:
     ServerBasedSchemaManager() = default;
     ~ServerBasedSchemaManager();
@@ -31,7 +30,7 @@ public:
         SchemaVer ver = -1) override;
 
     // Returns a negative number when the schema does not exist
-    SchemaVer getNewestTagSchemaVer(GraphSpaceID space, TagID tag) override;
+    StatusOr<SchemaVer> getNewestTagSchemaVer(GraphSpaceID space, TagID tag) override;
 
     SchemaVer getNewestTagSchemaVer(folly::StringPiece spaceName,
                                     folly::StringPiece tagName) override;
@@ -46,18 +45,20 @@ public:
         SchemaVer ver = -1) override;
 
     // Returns a negative number when the schema does not exist
-    SchemaVer getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
+    StatusOr<SchemaVer> getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
 
     SchemaVer getNewestEdgeSchemaVer(folly::StringPiece spaceName,
                                      folly::StringPiece typeName) override;
 
-    GraphSpaceID toGraphSpaceID(folly::StringPiece spaceName) override;
+    StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece spaceName) override;
 
-    TagID toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
+    StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
-    EdgeType toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
+    StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
-    Status checkSpaceExist(folly::StringPiece spaceName) override;
+    StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) override;
+
+    StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) override;
 
     void init(MetaClient *client) override;
 
@@ -68,4 +69,3 @@ private:
 }  // namespace meta
 }  // namespace nebula
 #endif  // META_SERVERBASEDSCHEMAMANAGER_H_
-

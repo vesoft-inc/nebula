@@ -9,7 +9,9 @@
 #include "parser/GraphScanner.h"
 #include "GraphParser.hpp"
 
-#define YY_USER_ACTION  yylloc->columns(yyleng);
+#define YY_USER_ACTION                  \
+    yylloc->step();                     \
+    yylloc->columns(yyleng);
 
 using TokenType = nebula::GraphParser::token;
 
@@ -18,31 +20,38 @@ static constexpr size_t MAX_STRING = 4096;
 
 %}
 
-%x STR
+%x DQ_STR
+%x SQ_STR
+%x COMMENT
 
 GO                          ([Gg][Oo])
 AS                          ([Aa][Ss])
 TO                          ([Tt][Oo])
 OR                          ([Oo][Rr])
+AND                         ([Aa][Nn][Dd])
+XOR                         ([Xx][Oo][Rr])
 USE                         ([Uu][Ss][Ee])
 SET                         ([Ss][Ee][Tt])
 FROM                        ([Ff][Rr][Oo][Mm])
 WHERE                       ([Ww][Hh][Ee][Rr][Ee])
 MATCH                       ([Mm][Aa][Tt][Cc][Hh])
 INSERT                      ([Ii][Nn][Ss][Ee][Rr][Tt])
-VALUES                      ([Vv][Aa][Ll][Uu][Ee][Ss])
+VALUES                      ([Vv][Aa][Ll][Uu][Ee][Ss]?)
 YIELD                       ([Yy][Ii][Ee][Ll][Dd])
 RETURN                      ([Rr][Ee][Tt][Uu][Rr][Nn])
 CREATE                      ([Cc][Rr][Ee][Aa][Tt][Ee])
 DESCRIBE                    ([Dd][Ee][Ss][Cc][Rr][Ii][Bb][Ee])
+DESC                        ([Dd][Ee][Ss][Cc])
 VERTEX                      ([Vv][Ee][Rr][Tt][Ee][Xx])
 EDGE                        ([Ee][Dd][Gg][Ee])
 EDGES                       ([Ee][Dd][Gg][Ee][Ss])
 UPDATE                      ([Uu][Pp][Dd][Aa][Tt][Ee])
+UPSERT                      ([Uu][Pp][Ss][Ee][Rr][Tt])
+WHEN                        ([Ww][Hh][Ee][Nn])
 DELETE                      ([Dd][Ee][Ll][Ee][Tt][Ee])
 FIND                        ([Ff][Ii][Nn][Dd])
 ALTER                       ([Aa][Ll][Tt][Ee][Rr])
-STEPS                       ([Ss][Tt][Ee][Pp][Ss])
+STEPS                       ([Ss][Tt][Ee][Pp][Ss]?)
 OVER                        ([Oo][Vv][Ee][Rr])
 UPTO                        ([Uu][Pp][Tt][Oo])
 REVERSELY                   ([Rr][Ee][Vv][Ee][Rr][Ss][Ee][Ll][Yy])
@@ -95,6 +104,25 @@ ON                          ([Oo][Nn])
 ROLES                       ([Rr][Oo][Ll][Ee][Ss])
 BY                          ([Bb][Yy])
 IN                          ([Ii][Nn])
+TTL_DURATION                ([Tt][Tt][Ll][_][Dd][Uu][Rr][Aa][Tt][Ii][Oo][Nn])
+TTL_COL                     ([Tt][Tt][Ll][_][Cc][Oo][Ll])
+DOWNLOAD                    ([Dd][Oo][Ww][Nn][Ll][Oo][Aa][Dd])
+HDFS                        ([Hh][Dd][Ff][Ss])
+ORDER                       ([Oo][Rr][Dd][Ee][Rr])
+INGEST                      ([Ii][Nn][Gg][Ee][Ss][Tt])
+ASC                         ([Aa][Ss][Cc])
+DISTINCT                    ([Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
+VARIABLES                   ([Vv][Aa][Rr][Ii][Aa][Bb][Ll][Ee][Ss])
+GET                         ([Gg][Ee][Tt])
+GRAPH                       ([Gg][Rr][Aa][Pp][Hh])
+META                        ([Mm][Ee][Tt][Aa])
+STORAGE                     ([Ss][Tt][Oo][Rr][Aa][Gg][Ee])
+FETCH                       ([Ff][Ee][Tt][Cc][Hh])
+PROP                        ([Pp][Rr][Oo][Pp])
+ALL                         ([Aa][Ll][Ll])
+BALANCE                     ([Bb][Aa][Ll][Aa][Nn][Cc][Ee])
+LEADER                      ([Ll][Ee][Aa][Dd][Ee][Rr])
+OF                          ([Oo][Ff])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -112,6 +140,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {AS}                        { return TokenType::KW_AS; }
 {TO}                        { return TokenType::KW_TO; }
 {OR}                        { return TokenType::KW_OR; }
+{AND}                       { return TokenType::KW_AND; }
+{XOR}                       { return TokenType::KW_XOR; }
 {USE}                       { return TokenType::KW_USE; }
 {SET}                       { return TokenType::KW_SET; }
 {FROM}                      { return TokenType::KW_FROM; }
@@ -122,10 +152,13 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {YIELD}                     { return TokenType::KW_YIELD; }
 {RETURN}                    { return TokenType::KW_RETURN; }
 {DESCRIBE}                  { return TokenType::KW_DESCRIBE; }
+{DESC}                      { return TokenType::KW_DESC; }
 {VERTEX}                    { return TokenType::KW_VERTEX; }
 {EDGE}                      { return TokenType::KW_EDGE; }
 {EDGES}                     { return TokenType::KW_EDGES; }
 {UPDATE}                    { return TokenType::KW_UPDATE; }
+{UPSERT}                    { return TokenType::KW_UPSERT; }
+{WHEN}                      { return TokenType::KW_WHEN; }
 {DELETE}                    { return TokenType::KW_DELETE; }
 {FIND}                      { return TokenType::KW_FIND; }
 {ALTER}                     { return TokenType::KW_ALTER; }
@@ -150,8 +183,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {MINUS}                     { return TokenType::KW_MINUS; }
 {NO}                        { return TokenType::KW_NO; }
 {OVERWRITE}                 { return TokenType::KW_OVERWRITE; }
-{TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
-{FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 {SHOW}                      { return TokenType::KW_SHOW; }
 {ADD}                       { return TokenType::KW_ADD; }
 {HOSTS}                     { return TokenType::KW_HOSTS; }
@@ -183,6 +214,27 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {ROLES}                     { return TokenType::KW_ROLES; }
 {BY}                        { return TokenType::KW_BY; }
 {IN}                        { return TokenType::KW_IN; }
+{TTL_DURATION}              { return TokenType::KW_TTL_DURATION; }
+{TTL_COL}                   { return TokenType::KW_TTL_COL; }
+{DOWNLOAD}                  { return TokenType::KW_DOWNLOAD; }
+{HDFS}                      { return TokenType::KW_HDFS; }
+{VARIABLES}                 { return TokenType::KW_VARIABLES; }
+{GET}                       { return TokenType::KW_GET; }
+{GRAPH}                     { return TokenType::KW_GRAPH; }
+{META}                      { return TokenType::KW_META; }
+{STORAGE}                   { return TokenType::KW_STORAGE; }
+{OF}                        { return TokenType::KW_OF; }
+{TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
+{FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
+{ORDER}                     { return TokenType::KW_ORDER; }
+{INGEST}                    { return TokenType::KW_INGEST; }
+{ASC}                       { return TokenType::KW_ASC; }
+{DISTINCT}                  { return TokenType::KW_DISTINCT; }
+{FETCH}                     { return TokenType::KW_FETCH; }
+{PROP}                      { return TokenType::KW_PROP; }
+{ALL}                       { return TokenType::KW_ALL; }
+{BALANCE}                   { return TokenType::KW_BALANCE; }
+{LEADER}                    { return TokenType::KW_LEADER; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
@@ -190,12 +242,13 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 ";"                         { return TokenType::SEMICOLON; }
 "@"                         { return TokenType::AT; }
 
-"+"                         { return TokenType::ADD; }
-"-"                         { return TokenType::SUB; }
+"+"                         { return TokenType::PLUS; }
+"-"                         { return TokenType::MINUS; }
 "*"                         { return TokenType::MUL; }
 "/"                         { return TokenType::DIV; }
 "%"                         { return TokenType::MOD; }
 "!"                         { return TokenType::NOT; }
+"^"                         { return TokenType::XOR; }
 
 "<"                         { return TokenType::LT; }
 "<="                        { return TokenType::LE; }
@@ -244,26 +297,71 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 return TokenType::IPV4;
                             }
 0[Xx]{HEX}+                 {
+                                if (yyleng > 18) {
+                                    auto i = 2;
+                                    while (i < yyleng && yytext[i] == '0') {
+                                        i++;
+                                    }
+                                    if (yyleng - i > 16) {
+                                        yyterminate();
+                                    }
+                                }
                                 int64_t val = 0;
                                 sscanf(yytext, "%lx", &val);
                                 yylval->intval = val;
                                 return TokenType::INTEGER;
                             }
 0{OCT}+                     {
+                                if (yyleng > 22) {
+                                    auto i = 1;
+                                    while (i < yyleng && yytext[i] == '0') {
+                                        i++;
+                                    }
+                                    if (yyleng - i > 22) {
+                                        yyterminate();
+                                    } else if (yyleng - i == 22 && yytext[i] != '1') {
+                                        yyterminate();
+                                    }
+                                }
                                 int64_t val = 0;
                                 sscanf(yytext, "%lo", &val);
                                 yylval->intval = val;
                                 return TokenType::INTEGER;
                             }
-[+-]?{DEC}+                 { yylval->intval = ::atoll(yytext); return TokenType::INTEGER; }
-[+-]?{DEC}+\.{DEC}*         { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
-[+-]?{DEC}*\.{DEC}+         { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
+{DEC}+                      {
+                                try {
+                                    folly::StringPiece text(yytext, yyleng);
+                                    yylval->intval = folly::to<int64_t>(text);
+                                } catch (...) {
+                                    yyterminate();
+                                }
+                                return TokenType::INTEGER;
+                            }
+{DEC}+\.{DEC}*              {
+                                try {
+                                    folly::StringPiece text(yytext, yyleng);
+                                    yylval->doubleval = folly::to<double>(text);
+                                } catch (...) {
+                                    yyterminate();
+                                }
+                                return TokenType::DOUBLE;
+                            }
+{DEC}*\.{DEC}+              {
+                                try {
+                                    folly::StringPiece text(yytext, yyleng);
+                                    yylval->doubleval = folly::to<double>(text);
+                                } catch (...) {
+                                    yyterminate();
+                                }
+                                return TokenType::DOUBLE;
+                            }
 
 \${LABEL}                   { yylval->strval = new std::string(yytext + 1, yyleng - 1); return TokenType::VARIABLE; }
 
 
-\"                          { BEGIN(STR); pos = 0; }
-<STR>\"                     {
+\"                          { BEGIN(DQ_STR); pos = 0; }
+\'                          { BEGIN(SQ_STR); pos = 0; }
+<DQ_STR>\"                  {
                                 yylval->strval = new std::string(sbuf, pos);
                                 BEGIN(INITIAL);
                                 if (yylval->strval->size() > MAX_STRING) {
@@ -271,12 +369,28 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 }
                                 return TokenType::STRING;
                             }
-<STR>\n                     { yyterminate(); }
-<STR>[^\\\n\"]+             {
+<SQ_STR>\'                  {
+                                yylval->strval = new std::string(sbuf, pos);
+                                BEGIN(INITIAL);
+                                if (yylval->strval->size() > MAX_STRING) {
+                                    yyterminate();
+                                }
+                                return TokenType::STRING;
+                            }
+<DQ_STR,SQ_STR><<EOF>>      {
+                                // Must match '' or ""
+                                throw GraphParser::syntax_error(*yylloc, "unterminated string");
+                            }
+<DQ_STR,SQ_STR>\n           { yyterminate(); }
+<DQ_STR>[^\\\n\"]+          {
                                 ::strncpy(sbuf + pos, yytext, yyleng);
                                 pos += yyleng;
                             }
-<STR>\\{OCT}{1,3}           {
+<SQ_STR>[^\\\n\']+          {
+                                ::strncpy(sbuf + pos, yytext, yyleng);
+                                pos += yyleng;
+                            }
+<DQ_STR,SQ_STR>\\{OCT}{1,3} {
                                 int val = 0;
                                 sscanf(yytext + 1, "%o", &val);
                                 if (val > 0xFF) {
@@ -285,25 +399,57 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 sbuf[pos] = val;
                                 pos++;
                             }
-<STR>\\{DEC}+               { yyterminate(); }
-<STR>\\n                    { sbuf[pos] = '\n'; pos++; }
-<STR>\\t                    { sbuf[pos] = '\t'; pos++; }
-<STR>\\r                    { sbuf[pos] = '\r'; pos++; }
-<STR>\\b                    { sbuf[pos] = '\b'; pos++; }
-<STR>\\f                    { sbuf[pos] = '\f'; pos++; }
-<STR>\\(.|\n)               { sbuf[pos] = yytext[1]; pos++; }
-<STR>\\                     {
+<DQ_STR,SQ_STR>\\{DEC}+     { yyterminate(); }
+<DQ_STR,SQ_STR>\\n          { sbuf[pos] = '\n'; pos++; }
+<DQ_STR,SQ_STR>\\t          { sbuf[pos] = '\t'; pos++; }
+<DQ_STR,SQ_STR>\\r          { sbuf[pos] = '\r'; pos++; }
+<DQ_STR,SQ_STR>\\b          { sbuf[pos] = '\b'; pos++; }
+<DQ_STR,SQ_STR>\\f          { sbuf[pos] = '\f'; pos++; }
+<DQ_STR,SQ_STR>\\(.|\n)     { sbuf[pos] = yytext[1]; pos++; }
+<DQ_STR,SQ_STR>\\           {
                                 // This rule should have never been matched,
                                 // but without this, it somehow triggers the `nodefault' warning of flex.
                                 yyterminate();
                             }
 
-[ \r\t]                     { yylloc->step(); }
+[ \r\t]                     { }
 \n                          {
                                 yylineno++;
                                 yylloc->lines(yyleng);
-                                yylloc->step();
                             }
-.                           { printf("error %c\n", *yytext); yyterminate(); }
+"#".*                       // Skip the annotation
+"//".*                      // Skip the annotation
+"--".*                      // Skip the annotation
+"/*"                        { BEGIN(COMMENT); }
+<COMMENT>"*/"               { BEGIN(INITIAL); }
+<COMMENT>([^*]|\n)+|.
+<COMMENT><<EOF>>            {
+                                // Must match /* */
+                                throw GraphParser::syntax_error(*yylloc, "unterminated comment");
+                            }
+.                           {
+                                /**
+                                 * Any other unmatched byte sequences will get us here,
+                                 * including the non-ascii ones, which are negative
+                                 * in terms of type of `signed char'. At the same time, because
+                                 * Bison translates all negative tokens to EOF(i.e. YY_NULL),
+                                 * so we have to cast illegal characters to type of `unsinged char'
+                                 * This will make Bison receive an unknown token, which leads to
+                                 * a syntax error.
+                                 *
+                                 * Please note that it is not Flex but Bison to regard illegal
+                                 * characters as errors, in such case.
+                                 */
+                                return static_cast<unsigned char>(yytext[0]);
+
+                                /**
+                                 * Alternatively, we could report illegal characters by
+                                 * throwing a `syntax_error' exception.
+                                 * In such a way, we could distinguish illegal characters
+                                 * from normal syntax errors, but at cost of poor performance
+                                 * incurred by the expensive exception handling.
+                                 */
+                                // throw GraphParser::syntax_error(*yylloc, "char illegal");
+                            }
 
 %%

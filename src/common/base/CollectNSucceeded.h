@@ -49,8 +49,10 @@ template<typename FutureIter>
 using FutureReturnType =
     typename std::iterator_traits<FutureIter>::value_type::value_type;
 
+// The result pair list.
+// The first element in pair represents the index in Requests list.
 template<typename FutureIter>
-using SucceededResultList = std::vector<FutureReturnType<FutureIter>>;
+using SucceededResultList = std::vector<std::pair<size_t, FutureReturnType<FutureIter>>>;
 
 
 template <class FutureIter, typename ResultEval>

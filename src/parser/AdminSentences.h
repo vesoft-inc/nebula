@@ -6,7 +6,6 @@
 #ifndef PARSER_ADMINSENTENCES_H_
 #define PARSER_ADMINSENTENCES_H_
 
-#include "base/Base.h"
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
 #include "network/NetworkUtils.h"
@@ -14,6 +13,8 @@
 namespace nebula {
 
 using nebula::network::NetworkUtils;
+
+class ConfigRowItem;
 
 class ShowSentence final : public Sentence {
 public:
@@ -27,18 +28,23 @@ public:
         kShowEdgeIndexes,
         kShowUsers,
         kShowUser,
-        kShowRoles
+        kShowRoles,
+        kShowCreateSpace,
+        kShowCreateTag,
+        kShowCreateEdge
     };
 
     explicit ShowSentence(ShowType sType) {
         kind_ = Kind::kShow;
         showType_ = std::move(sType);
     }
+
     ShowSentence(ShowType sType, std::string *name) {
         kind_ = Kind::kShow;
         name_.reset(name);
         showType_ = std::move(sType);
     }
+
     std::string toString() const override;
 
     ShowType showType() const {
@@ -50,8 +56,8 @@ public:
     }
 
 private:
-    ShowType                      showType_{ShowType::kUnknown};
-    std::unique_ptr<std::string>  name_;
+    ShowType                        showType_{ShowType::kUnknown};
+    std::unique_ptr<std::string>    name_;
 };
 
 
@@ -225,6 +231,9 @@ public:
     }
 
     std::vector<SpaceOptItem*> getOpts() {
+        if (spaceOpts_ == nullptr) {
+            return {};
+        }
         return spaceOpts_->getOpts();
     }
 
@@ -251,6 +260,123 @@ public:
 
 private:
     std::unique_ptr<std::string>     spaceName_;
+};
+
+
+class DescribeSpaceSentence final : public Sentence {
+public:
+    explicit DescribeSpaceSentence(std::string *spaceName) {
+        spaceName_.reset(spaceName);
+        kind_ = Kind::kDescribeSpace;
+    }
+
+    const std::string* spaceName() const {
+        return spaceName_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>     spaceName_;
+};
+
+enum ConfigModule {
+    ALL, GRAPH, META, STORAGE
+};
+
+class ConfigRowItem {
+public:
+    explicit ConfigRowItem(ConfigModule module) {
+        module_ = std::make_unique<ConfigModule>(module);
+    }
+
+    ConfigRowItem(ConfigModule module, std::string* name, Expression* value) {
+        module_ = std::make_unique<ConfigModule>(module);
+        name_.reset(name);
+        value_.reset(value);
+    }
+
+    ConfigRowItem(ConfigModule module, std::string* name) {
+        module_ = std::make_unique<ConfigModule>(module);
+        name_.reset(name);
+    }
+
+    const ConfigModule* getModule() {
+        return module_.get();
+    }
+
+    const std::string* getName() {
+        return name_.get();
+    }
+
+    const Expression* getValue() {
+        return value_.get();
+    }
+
+    std::string toString() const;
+
+private:
+    std::unique_ptr<ConfigModule>   module_;
+    std::unique_ptr<std::string>    name_;
+    std::unique_ptr<Expression>     value_;
+};
+
+class ConfigSentence final : public Sentence {
+public:
+    enum class SubType : uint32_t {
+        kUnknown,
+        kShow,
+        kSet,
+        kGet,
+    };
+
+    explicit ConfigSentence(SubType subType) {
+        kind_ = Kind::kConfig;
+        subType_ = std::move(subType);
+    }
+
+    ConfigSentence(SubType subType, ConfigRowItem* item) {
+        kind_ = Kind::kConfig;
+        subType_ = std::move(subType);
+        configItem_.reset(item);
+    }
+
+    std::string toString() const override;
+
+    SubType subType() const {
+        return subType_;
+    }
+
+    ConfigRowItem* configItem() {
+        return configItem_.get();
+    }
+
+private:
+    SubType                         subType_{SubType::kUnknown};
+    std::unique_ptr<ConfigRowItem>  configItem_;
+};
+
+class BalanceSentence final : public Sentence {
+public:
+    enum class SubType : uint32_t {
+        kUnknown,
+        kLeader,
+    };
+
+    // TODO: add more subtype for balance
+    explicit BalanceSentence(SubType subType) {
+        kind_ = Kind::kBalance;
+        subType_ = std::move(subType);
+    }
+
+    std::string toString() const override;
+
+    SubType subType() const {
+        return subType_;
+    }
+
+private:
+    SubType                         subType_{SubType::kUnknown};
 };
 
 }   // namespace nebula

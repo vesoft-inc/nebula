@@ -8,6 +8,7 @@
 #define STORAGE_QUERYBOUNDPROCESSOR_H_
 
 #include "base/Base.h"
+#include <gtest/gtest_prod.h>
 #include "storage/QueryBaseProcessor.h"
 
 namespace nebula {
@@ -16,31 +17,39 @@ namespace storage {
 
 class QueryBoundProcessor
     : public QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryResponse> {
+    FRIEND_TEST(QueryBoundTest,  GenBucketsTest);
+
 public:
     static QueryBoundProcessor* instance(kvstore::KVStore* kvstore,
                                          meta::SchemaManager* schemaMan,
-                                         BoundType type = BoundType::OUT_BOUND) {
-        return new QueryBoundProcessor(kvstore, schemaMan, type);
+                                         folly::Executor* executor) {
+        return new QueryBoundProcessor(kvstore, schemaMan, executor);
     }
 
 protected:
     explicit QueryBoundProcessor(kvstore::KVStore* kvstore,
                                  meta::SchemaManager* schemaMan,
-                                 BoundType type)
+                                 folly::Executor* executor)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
-                             cpp2::QueryResponse>(kvstore, schemaMan, type) {}
+                             cpp2::QueryResponse>(kvstore, schemaMan, executor) {}
 
-    kvstore::ResultCode processVertex(PartitionID partID,
-                                      VertexID vId,
-                                      std::vector<TagContext>& tagContexts,
-                                      EdgeContext& edgeContext) override;
+    kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) override;
 
-    void onProcessed(std::vector<TagContext>& tagContexts,
-                     EdgeContext& edgeContext,
-                     int32_t retNum) override;
+    void onProcessFinished(int32_t retNum) override;
 
 private:
     std::vector<cpp2::VertexData> vertices_;
+
+    kvstore::ResultCode processEdge(PartitionID partId, VertexID vId, FilterContext &fcontext,
+                                    cpp2::VertexData& vdata);
+    kvstore::ResultCode processEdgeImpl(const PartitionID partId, const VertexID vId,
+                                        const EdgeType edgeType,
+                                        const std::vector<PropContext>& props,
+                                        FilterContext& fcontext, cpp2::VertexData& vdata);
+
+protected:
+    // Indicate the request only get vertex props.
+    bool onlyVertexProps_ = false;
 };
 
 }  // namespace storage

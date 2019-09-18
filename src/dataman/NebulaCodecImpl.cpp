@@ -29,8 +29,10 @@ std::string NebulaCodecImpl::encode(std::vector<Value> values,
                                     std::shared_ptr<const meta::SchemaProviderIf> schema) {
     RowWriter writer(schema);
     for (auto& value : values) {
-        if (value.type() == typeid(int)) {
-            writer << boost::any_cast<int>(value);
+        if (value.type() == typeid(int32_t)) {
+            writer << boost::any_cast<int32_t>(value);
+        } else if (value.type() == typeid(int64_t)) {
+            writer << boost::any_cast<int64_t>(value);
         } else if (value.type() == typeid(std::string)) {
             writer << boost::any_cast<std::string>(value);
         } else if (value.type() == typeid(double)) {
@@ -64,6 +66,9 @@ NebulaCodecImpl::decode(std::string encoded,
     std::unordered_map<std::string, Value> result;
     for (size_t index = 0; index < schema->getNumFields(); index++) {
         auto field = schema->getFieldName(index);
+        if (UNLIKELY(nullptr == field)) {
+            return Status::Error("invalid field index");
+        }
         switch (schema->getFieldType(index).get_type()) {
             case cpp2::SupportedType::BOOL:
                 bool b;
@@ -119,5 +124,6 @@ NebulaCodecImpl::decode(std::string encoded,
     }
     return result;
 }
+
 }  // namespace dataman
 }  // namespace nebula

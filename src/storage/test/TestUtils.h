@@ -4,50 +4,85 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#ifndef STORAGE_TEST_TESTUTILS_H_
+#define STORAGE_TEST_TESTUTILS_H_
+
+#include "AdHocSchemaManager.h"
+#include "test/ServerContext.h"
 #include "base/Base.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
+#include "meta/SchemaManager.h"
 #include "meta/SchemaProviderIf.h"
 #include "dataman/ResultSchemaProvider.h"
 #include "storage/StorageServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include "meta/SchemaManager.h"
+#include <folly/synchronization/Baton.h>
+#include <folly/executors/ThreadPoolExecutor.h>
+#include <folly/executors/CPUThreadPoolExecutor.h>
+#include "dataman/RowReader.h"
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
-
-DECLARE_string(part_man_type);
 
 namespace nebula {
 namespace storage {
 
 class TestUtils {
 public:
-    static kvstore::KVStore* initKV(const char* rootPath) {
-        auto partMan = std::make_unique<kvstore::MemPartManager>();
-        // GraphSpaceID =>  {PartitionIDs}
-        // 0 => {0, 1, 2, 3, 4, 5}
-        auto& partsMap = partMan->partsMap();
-        for (auto partId = 0; partId < 6; partId++) {
-            partsMap[0][partId] = PartMeta();
-        }
-        std::vector<std::string> paths;
-        paths.push_back(folly::stringPrintf("%s/disk1", rootPath));
-        paths.push_back(folly::stringPrintf("%s/disk2", rootPath));
+    static std::unique_ptr<kvstore::KVStore> initKV(
+            const char* rootPath,
+            int32_t partitionNumber = 6,
+            HostAddr localhost = {0, 0},
+            meta::MetaClient* mClient = nullptr,
+            bool useMetaServer = false,
+            std::shared_ptr<kvstore::KVCompactionFilterFactory> cfFactory = nullptr) {
+        auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+        auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+                                 1, true /*stats*/);
+        workers->setNamePrefix("executor");
+        workers->start();
+
 
         kvstore::KVOptions options;
-        options.local_ = HostAddr(0, 0);
-        options.dataPaths_ = std::move(paths);
-        options.partMan_ = std::move(partMan);
+        if (useMetaServer) {
+            options.partMan_ = std::make_unique<kvstore::MetaServerBasedPartManager>(
+                localhost,
+                mClient);
+        } else {
+            auto memPartMan = std::make_unique<kvstore::MemPartManager>();
+            // GraphSpaceID =>  {PartitionIDs}
+            // 0 => {0, 1, 2, 3, 4, 5}
+            auto& partsMap = memPartMan->partsMap();
+            for (auto partId = 0; partId < partitionNumber; partId++) {
+                partsMap[0][partId] = PartMeta();
+            }
 
-        kvstore::NebulaStore* kv = static_cast<kvstore::NebulaStore*>(
-                                        kvstore::KVStore::instance(std::move(options)));
-        return kv;
+            options.partMan_ = std::move(memPartMan);
+        }
+
+        std::vector<std::string> paths;
+        paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath));
+        paths.emplace_back(folly::stringPrintf("%s/disk2", rootPath));
+
+        // Prepare KVStore
+        options.dataPaths_ = std::move(paths);
+        options.cfFactory_ = std::move(cfFactory);
+        auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
+                                                            ioPool,
+                                                            localhost,
+                                                            workers);
+        store->init();
+        sleep(1);
+        return store;
     }
 
     static std::unique_ptr<meta::SchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0) {
-        auto* schemaMan = new meta::AdHocSchemaManager();
-        schemaMan->addEdgeSchema(
-            spaceId /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
+        auto* schemaMan = new AdHocSchemaManager();
+        for (auto edgeType = 101; edgeType < 110; edgeType++) {
+            schemaMan->addEdgeSchema(spaceId /*space id*/, edgeType /*edge type*/,
+                                     TestUtils::genEdgeSchemaProvider(10, 10));
+        }
         for (auto tagId = 3001; tagId < 3010; tagId++) {
             schemaMan->addTagSchema(
                 spaceId /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
@@ -101,8 +136,7 @@ public:
             column.type.type = nebula::cpp2::SupportedType::STRING;
             schema.columns.emplace_back(std::move(column));
         }
-        return std::shared_ptr<meta::SchemaProviderIf>(
-            new ResultSchemaProvider(std::move(schema)));
+        return std::make_shared<ResultSchemaProvider>(std::move(schema));
     }
 
 
@@ -126,83 +160,99 @@ public:
             column.type.type = nebula::cpp2::SupportedType::STRING;
             schema.columns.emplace_back(std::move(column));
         }
-        return std::shared_ptr<meta::SchemaProviderIf>(
-            new ResultSchemaProvider(std::move(schema)));
+        return std::make_shared<ResultSchemaProvider>(std::move(schema));
     }
 
-
-    static cpp2::PropDef propDef(cpp2::PropOwner owner,
-                                 std::string name,
-                                 TagID tagId = -1) {
+    static cpp2::PropDef vetexPropDef(std::string name, TagID tagId) {
         cpp2::PropDef prop;
         prop.set_name(std::move(name));
-        prop.set_owner(owner);
-        if (tagId != -1) {
-            prop.set_tag_id(tagId);
-        }
+        prop.set_owner(cpp2::PropOwner::SOURCE);
+        prop.id.set_tag_id(tagId);
         return prop;
     }
 
+    static cpp2::PropDef edgePropDef(std::string name, EdgeType eType) {
+        cpp2::PropDef prop;
+        prop.set_name(std::move(name));
+        prop.set_owner(cpp2::PropOwner::EDGE);
+        prop.id.set_edge_type(eType);
+        return prop;
+    }
 
-    static cpp2::PropDef propDef(cpp2::PropOwner owner,
-                                 std::string name,
-                                 cpp2::StatType type,
-                                 TagID tagId = -1) {
-        auto prop = TestUtils::propDef(owner, name, tagId);
+    static cpp2::PropDef vetexPropDef(std::string name, cpp2::StatType type, TagID tagId) {
+        auto prop = TestUtils::vetexPropDef(std::move(name), tagId);
         prop.set_stat(type);
         return prop;
     }
 
-    struct ServerContext {
-        ~ServerContext() {
-            server_->stop();
-            serverT_->join();
-            VLOG(3) << "~ServerContext";
+    static cpp2::PropDef edgePropDef(std::string name, cpp2::StatType type, EdgeType eType) {
+        auto prop = TestUtils::edgePropDef(std::move(name), eType);
+        prop.set_stat(type);
+        return prop;
+    }
+
+    // If kvstore should init files in dataPath, input port can't be 0
+    static std::unique_ptr<test::ServerContext> mockStorageServer(meta::MetaClient* mClient,
+                                                                  const char* dataPath,
+                                                                  uint32_t ip,
+                                                                  uint32_t port = 0,
+                                                                  bool useMetaServer = false) {
+        auto sc = std::make_unique<test::ServerContext>();
+        // Always use the Meta Service in this case
+        sc->kvStore_ = TestUtils::initKV(dataPath, 6, {ip, port}, mClient, true);
+
+        if (!useMetaServer) {
+            sc->schemaMan_ = TestUtils::mockSchemaMan(1);
+        } else {
+            LOG(INFO) << "Create real schemaManager";
+            sc->schemaMan_ = meta::SchemaManager::create();
+            sc->schemaMan_->init(mClient);
         }
 
-        std::unique_ptr<apache::thrift::ThriftServer> server_;
-        std::unique_ptr<std::thread> serverT_;
-        uint32_t port_;
-    };
-
-    static std::unique_ptr<ServerContext> mockServer(meta::MetaClient* mClient,
-                                                     const char* dataPath,
-                                                     uint32_t ip,
-                                                     uint32_t port = 0) {
-        auto sc = std::make_unique<ServerContext>();
-        sc->server_ = std::make_unique<apache::thrift::ThriftServer>();
-        sc->serverT_ = std::make_unique<std::thread>([&]() {
-            std::vector<std::string> paths;
-            paths.push_back(folly::stringPrintf("%s/disk1", dataPath));
-            paths.push_back(folly::stringPrintf("%s/disk2", dataPath));
-            kvstore::KVOptions options;
-            options.local_ = HostAddr(ip, port);
-            options.dataPaths_ = std::move(paths);
-            options.partMan_
-                = std::make_unique<kvstore::MetaServerBasedPartManager>(options.local_, mClient);
-            kvstore::NebulaStore* kvPtr = static_cast<kvstore::NebulaStore*>(
-                                        kvstore::KVStore::instance(std::move(options)));
-            std::unique_ptr<kvstore::KVStore> kv(kvPtr);
-            auto schemaMan = TestUtils::mockSchemaMan(1);
-            auto handler
-                 = std::make_shared<nebula::storage::StorageServiceHandler>(kv.get(),
-                                                                            std::move(schemaMan));
-            CHECK(!!sc->server_) << "Failed to create the thrift server";
-            sc->server_->setInterface(handler);
-            sc->server_->setPort(port);
-            sc->server_->serve();  // Will wait until the server shuts down
-            LOG(INFO) << "Stop the server...";
-        });
-        while (!sc->server_->getServeEventBase() ||
-               !sc->server_->getServeEventBase()->isRunning()) {
+        auto handler = std::make_shared<nebula::storage::StorageServiceHandler>(
+            sc->kvStore_.get(), sc->schemaMan_.get());
+        sc->mockCommon("storage", port, handler);
+        auto ptr = dynamic_cast<kvstore::MetaServerBasedPartManager*>(
+            sc->kvStore_->partManager());
+        if (ptr) {
+            ptr->setLocalHost(HostAddr(ip, sc->port_));
+        } else {
+            VLOG(1) << "Not using a MetaServerBasedPartManager";
         }
-        sc->port_ = sc->server_->getAddress().getPort();
-        LOG(INFO) << "Starting the storage Daemon on port " << sc->port_
-                  << ", path " << dataPath;
+
+        // Sleep one second to wait for the leader election
+        sleep(1);
+
+        LOG(INFO) << "The storage daemon started on port " << sc->port_
+                  << ", data path is at \"" << dataPath << "\"";
         return sc;
     }
 };
 
+template <typename T>
+void checkTagData(const std::vector<cpp2::TagData>& data,
+                  TagID tid,
+                  const std::string col_name,
+                  const std::unordered_map<TagID, nebula::cpp2::Schema> *schema,
+                  T expected) {
+    auto it = std::find_if(data.cbegin(), data.cend(), [tid](auto& td) {
+        if (td.tag_id == tid) {
+            return true;
+        }
+        return false;
+    });
+    DCHECK(it != data.cend());
+    auto it2 = schema->find(tid);
+    DCHECK(it2 != schema->end());
+    auto tagProvider = std::make_shared<ResultSchemaProvider>(it2->second);
+    auto tagReader   = RowReader::getRowReader(it->data, tagProvider);
+    auto r = RowReader::getPropByName(tagReader.get(), col_name);
+    CHECK(ok(r));
+    auto col = boost::get<T>(value(r));
+    EXPECT_EQ(col, expected);
+}
+
 }  // namespace storage
 }  // namespace nebula
 
+#endif  // STORAGE_TEST_TESTUTILS_H_

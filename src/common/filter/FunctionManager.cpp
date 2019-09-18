@@ -6,7 +6,7 @@
 
 #include "base/Base.h"
 #include "filter/FunctionManager.h"
-#include "time/TimeUtils.h"
+#include "time/WallClock.h"
 
 namespace nebula {
 
@@ -230,7 +230,7 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 0;
         attr.body_ = [] (const auto &args) {
             UNUSED(args);
-            return time::TimeUtils::nowInSeconds();
+            return time::WallClock::fastNowInSec();
         };
     }
     {
@@ -244,13 +244,190 @@ FunctionManager::FunctionManager() {
         };
     }
     {
+        auto &attr = functions_["lower"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.body_ = [] (const auto &args) {
+            auto value = Expression::asString(args[0]);
+            std::transform(value.begin(), value.end(), value.begin(),
+                           [](unsigned char c){ return std::tolower(c);});
+            return value;
+        };
+    }
+    {
+        auto &attr = functions_["upper"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.body_ = [] (const auto &args) {
+            auto value = Expression::asString(args[0]);
+            std::transform(value.begin(), value.end(), value.begin(),
+                           [](unsigned char c){ return std::toupper(c);});
+            return value;
+        };
+    }
+    {
+        auto &attr = functions_["length"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.body_ = [] (const auto &args) {
+            auto value = Expression::asString(args[0]);
+            return static_cast<int64_t>(value.length());
+        };
+    }
+    {
+        auto &attr = functions_["trim"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.body_ = [] (const auto &args) {
+            auto value = Expression::asString(args[0]);
+            value.erase(0, value.find_first_not_of(" "));
+            value.erase(value.find_last_not_of(" ") + 1);
+            return value;
+        };
+    }
+    {
+        auto &attr = functions_["ltrim"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.body_ = [] (const auto &args) {
+            auto value = Expression::asString(args[0]);
+            value.erase(0, value.find_first_not_of(" "));
+            return value;
+        };
+    }
+    {
+        auto &attr = functions_["rtrim"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.body_ = [] (const auto &args) {
+            auto value = Expression::asString(args[0]);
+            value.erase(value.find_last_not_of(" ") + 1);
+            return value;
+        };
+    }
+    {
+        auto &attr = functions_["left"];
+        attr.minArity_ = 2;
+        attr.maxArity_ = 2;
+        attr.body_ = [] (const auto &args) {
+            auto value = Expression::asString(args[0]);
+            auto length = Expression::asInt(args[1]);
+            if (length < 0) {
+                length = 0;
+            }
+            return value.substr(0, length);
+        };
+    }
+    {
+        auto &attr = functions_["right"];
+        attr.minArity_ = 2;
+        attr.maxArity_ = 2;
+        attr.body_ = [] (const auto &args) {
+            auto value  = Expression::asString(args[0]);
+            auto length = Expression::asInt(args[1]);
+            if (length <= 0) {
+                length = 0;
+            }
+            return value.substr(value.size() - length);
+        };
+    }
+    {
+        auto &attr = functions_["lpad"];
+        attr.minArity_ = 3;
+        attr.maxArity_ = 3;
+        attr.body_ = [] (const auto &args) {
+            auto value = Expression::asString(args[0]);
+            size_t size  = Expression::asInt(args[1]);
+
+            if (size < 0) {
+                return std::string("");
+            } else if (size < value.size()) {
+                return value.substr(0, static_cast<int32_t>(size));
+            } else {
+                auto extra = Expression::asString(args[2]);
+                size -= value.size();
+                std::stringstream stream;
+                while (size > extra.size()) {
+                    stream << extra;
+                    size -= extra.size();
+                }
+                stream << extra.substr(0, size);
+                stream << value;
+                return stream.str();
+            }
+        };
+    }
+    {
+        auto &attr = functions_["rpad"];
+        attr.minArity_ = 3;
+        attr.maxArity_ = 3;
+        attr.body_ = [] (const auto &args) {
+            auto value = Expression::asString(args[0]);
+            size_t size  = Expression::asInt(args[1]);
+            if (size < 0) {
+                return std::string("");
+            } else if (size < value.size()) {
+                return value.substr(0, static_cast<int32_t>(size));
+            } else {
+                auto extra = Expression::asString(args[2]);
+                std::stringstream stream;
+                stream << value;
+                size -= value.size();
+                while (size > extra.size()) {
+                    stream << extra;
+                    size -= extra.size();
+                }
+                stream << extra.substr(0, size);
+                return stream.str();
+            }
+        };
+    }
+    {
+        auto &attr = functions_["substr"];
+        attr.minArity_ = 3;
+        attr.maxArity_ = 3;
+        attr.body_ = [] (const auto &args) {
+            auto value   = Expression::asString(args[0]);
+            auto start   = Expression::asInt(args[1]);
+            auto length  = Expression::asInt(args[2]);
+            if (static_cast<size_t>(std::abs(start)) > value.size() ||
+                length <= 0 || start == 0) {
+                return std::string("");
+            }
+
+            if (start > 0) {
+                return value.substr(start - 1, length);
+            } else {
+                return value.substr(value.size() + start, length);
+            }
+        };
+    }
+    {
         // 64bit signed hash value
         auto &attr = functions_["hash"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
         attr.body_ = [] (const auto &args) {
-            auto &str = Expression::asString(args[0]);
-            return static_cast<int64_t>(std::hash<std::string>()(str));
+            switch (args[0].which()) {
+                case 0: {
+                    auto v = Expression::asInt(args[0]);
+                    return static_cast<int64_t>(std::hash<int64_t>()(v));
+                }
+                case 1: {
+                    auto v = Expression::asDouble(args[0]);
+                    return static_cast<int64_t>(std::hash<double>()(v));
+                }
+                case 2: {
+                    auto v = Expression::asBool(args[0]);
+                    return static_cast<int64_t>(std::hash<bool>()(v));
+                }
+                case 3: {
+                    auto &v = Expression::asString(args[0]);
+                    return static_cast<int64_t>(std::hash<std::string>()(v));
+                }
+                default:
+                    return INT64_MIN;
+            }
         };
     }
 }
@@ -276,8 +453,15 @@ FunctionManager::getInternal(const std::string &func, size_t arity) const {
     auto minArity = iter->second.minArity_;
     auto maxArity = iter->second.maxArity_;
     if (arity < minArity || arity > maxArity) {
-        return Status::Error("Arity not match for function `%s': %lu vs. [%lu-%lu]",
-                              func.c_str(), arity, minArity, maxArity);
+        if (minArity == maxArity) {
+            return Status::Error("Arity not match for function `%s': "
+                                 "provided %lu but %lu expected.",
+                                 func.c_str(), arity, minArity);
+        } else {
+            return Status::Error("Arity not match for function `%s': "
+                                 "provided %lu but %lu-%lu expected.",
+                                 func.c_str(), arity, minArity, maxArity);
+        }
     }
     return iter->second.body_;
 }

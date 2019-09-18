@@ -48,41 +48,42 @@ void mockData(kvstore::KVStore* kv) {
                 data.emplace_back(std::move(key), std::move(val));
             }
         }
-        kv->asyncMultiPut(0, partId, std::move(data),
-                            [&](kvstore::ResultCode code, HostAddr addr) {
+        folly::Baton<true, std::atomic> baton;
+        kv->asyncMultiPut(0, partId, std::move(data), [&](kvstore::ResultCode code) {
             EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
-            UNUSED(addr);
+            baton.post();
         });
+        baton.wait();
     }
 }
+
 
 void buildRequest(cpp2::GetNeighborsRequest& req) {
     req.set_space_id(0);
     decltype(req.parts) tmpIds;
     for (auto partId = 0; partId < 3; partId++) {
         for (auto vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            tmpIds[partId].push_back(vertexId);
+            tmpIds[partId].emplace_back(vertexId);
         }
     }
     req.set_parts(std::move(tmpIds));
-    req.set_edge_type(101);
+    std::vector<EdgeType> et = {101};
+    req.set_edge_types(et);
     // Return tag props col_0, col_2, col_4
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 2; i++) {
-        tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::SOURCE,
-                                                   folly::stringPrintf("tag_%d_col_%d",
-                                                                       3001 + i*2, i*2),
-                                                   cpp2::StatType::AVG,
-                                                   3001 + i*2));
+        tmpColumns.emplace_back(
+            TestUtils::vetexPropDef(folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2),
+                                    cpp2::StatType::AVG, 3001 + i * 2));
     }
     // Return edge props col_0, col_2, col_4 ... col_18
     for (int i = 0; i < 5; i++) {
-        tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE,
-                                                   folly::stringPrintf("col_%d", i*2),
-                                                   cpp2::StatType::SUM));
+        tmpColumns.emplace_back(
+            TestUtils::edgePropDef(folly::stringPrintf("col_%d", i * 2), cpp2::StatType::SUM, 101));
     }
     req.set_return_columns(std::move(tmpColumns));
 }
+
 
 void checkResponse(const cpp2::QueryStatsResponse& resp) {
     EXPECT_EQ(0, resp.result.failed_codes.size());
@@ -131,9 +132,11 @@ void checkResponse(const cpp2::QueryStatsResponse& resp) {
     }
 }
 
+
 TEST(QueryStatsTest, StatsSimpleTest) {
     fs::TempDir rootPath("/tmp/QueryStatsTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
@@ -141,7 +144,8 @@ TEST(QueryStatsTest, StatsSimpleTest) {
     cpp2::GetNeighborsRequest req;
     buildRequest(req);
 
-    auto* processor = QueryStatsProcessor::instance(kv.get(), schemaMan.get());
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto* processor = QueryStatsProcessor::instance(kv.get(), schemaMan.get(), executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -157,7 +161,6 @@ int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
+
     return RUN_ALL_TESTS();
 }
-
-

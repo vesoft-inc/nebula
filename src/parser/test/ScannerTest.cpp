@@ -104,13 +104,36 @@ TEST(Scanner, Basic) {
         }                                                                   \
     })
 
+#define CHECK_LEXICAL_ERROR(STR)                                            \
+    ([] () {                                                                \
+        auto input = [] (char *buf, int) -> int {                           \
+            static bool first = true;                                       \
+            if (!first) { return 0; }                                       \
+            first = false;                                                  \
+            auto size = ::strlen(STR);                                      \
+            ::memcpy(buf, STR, size);                                       \
+            return size;                                                    \
+        };                                                                  \
+        GraphScanner lexer;                                                 \
+        lexer.setReadBuffer(input);                                         \
+        nebula::GraphParser::semantic_type dumyyylval;                      \
+        nebula::GraphParser::location_type dumyyyloc;                       \
+        auto token = lexer.yylex(&dumyyylval, &dumyyyloc);                  \
+        if (token != 0) {                                                   \
+            return AssertionFailure() << "Lexical error should've happened "\
+                                      << "for `" << STR << "'";             \
+        } else {                                                            \
+            return AssertionSuccess();                                      \
+        }                                                                   \
+    })
+
     std::vector<Validator> validators = {
         CHECK_SEMANTIC_TYPE(".", TokenType::DOT),
         CHECK_SEMANTIC_TYPE(",", TokenType::COMMA),
         CHECK_SEMANTIC_TYPE(":", TokenType::COLON),
         CHECK_SEMANTIC_TYPE(";", TokenType::SEMICOLON),
-        CHECK_SEMANTIC_TYPE("+", TokenType::ADD),
-        CHECK_SEMANTIC_TYPE("-", TokenType::SUB),
+        CHECK_SEMANTIC_TYPE("+", TokenType::PLUS),
+        CHECK_SEMANTIC_TYPE("-", TokenType::MINUS),
         CHECK_SEMANTIC_TYPE("*", TokenType::MUL),
         CHECK_SEMANTIC_TYPE("/", TokenType::DIV),
         CHECK_SEMANTIC_TYPE("%", TokenType::MOD),
@@ -160,6 +183,8 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("match", TokenType::KW_MATCH),
         CHECK_SEMANTIC_TYPE("INSERT", TokenType::KW_INSERT),
         CHECK_SEMANTIC_TYPE("insert", TokenType::KW_INSERT),
+        CHECK_SEMANTIC_TYPE("VALUE", TokenType::KW_VALUES),
+        CHECK_SEMANTIC_TYPE("value", TokenType::KW_VALUES),
         CHECK_SEMANTIC_TYPE("VALUES", TokenType::KW_VALUES),
         CHECK_SEMANTIC_TYPE("values", TokenType::KW_VALUES),
         CHECK_SEMANTIC_TYPE("YIELD", TokenType::KW_YIELD),
@@ -169,13 +194,15 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("VERTEX", TokenType::KW_VERTEX),
         CHECK_SEMANTIC_TYPE("vertex", TokenType::KW_VERTEX),
         CHECK_SEMANTIC_TYPE("EDGE", TokenType::KW_EDGE),
-        CHECK_SEMANTIC_TYPE("edges", TokenType::KW_EDGES),
-        CHECK_SEMANTIC_TYPE("EDGES", TokenType::KW_EDGES),
         CHECK_SEMANTIC_TYPE("edge", TokenType::KW_EDGE),
+        CHECK_SEMANTIC_TYPE("EDGES", TokenType::KW_EDGES),
+        CHECK_SEMANTIC_TYPE("edges", TokenType::KW_EDGES),
         CHECK_SEMANTIC_TYPE("UPDATE", TokenType::KW_UPDATE),
         CHECK_SEMANTIC_TYPE("update", TokenType::KW_UPDATE),
         CHECK_SEMANTIC_TYPE("ALTER", TokenType::KW_ALTER),
         CHECK_SEMANTIC_TYPE("alter", TokenType::KW_ALTER),
+        CHECK_SEMANTIC_TYPE("STEP", TokenType::KW_STEPS),
+        CHECK_SEMANTIC_TYPE("step", TokenType::KW_STEPS),
         CHECK_SEMANTIC_TYPE("STEPS", TokenType::KW_STEPS),
         CHECK_SEMANTIC_TYPE("steps", TokenType::KW_STEPS),
         CHECK_SEMANTIC_TYPE("OVER", TokenType::KW_OVER),
@@ -242,6 +269,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("DROP", TokenType::KW_DROP),
         CHECK_SEMANTIC_TYPE("drop", TokenType::KW_DROP),
         CHECK_SEMANTIC_TYPE("Drop", TokenType::KW_DROP),
+        CHECK_SEMANTIC_TYPE("DESC", TokenType::KW_DESC),
+        CHECK_SEMANTIC_TYPE("desc", TokenType::KW_DESC),
+        CHECK_SEMANTIC_TYPE("Desc", TokenType::KW_DESC),
+        CHECK_SEMANTIC_TYPE("DESCRIBE", TokenType::KW_DESCRIBE),
+        CHECK_SEMANTIC_TYPE("describe", TokenType::KW_DESCRIBE),
+        CHECK_SEMANTIC_TYPE("Describe", TokenType::KW_DESCRIBE),
         CHECK_SEMANTIC_TYPE("REMOVE", TokenType::KW_REMOVE),
         CHECK_SEMANTIC_TYPE("remove", TokenType::KW_REMOVE),
         CHECK_SEMANTIC_TYPE("Remove", TokenType::KW_REMOVE),
@@ -251,6 +284,15 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("NOT", TokenType::KW_NOT),
         CHECK_SEMANTIC_TYPE("Not", TokenType::KW_NOT),
         CHECK_SEMANTIC_TYPE("not", TokenType::KW_NOT),
+        CHECK_SEMANTIC_TYPE("OR", TokenType::KW_OR),
+        CHECK_SEMANTIC_TYPE("Or", TokenType::KW_OR),
+        CHECK_SEMANTIC_TYPE("or", TokenType::KW_OR),
+        CHECK_SEMANTIC_TYPE("AND", TokenType::KW_AND),
+        CHECK_SEMANTIC_TYPE("And", TokenType::KW_AND),
+        CHECK_SEMANTIC_TYPE("and", TokenType::KW_AND),
+        CHECK_SEMANTIC_TYPE("XOR", TokenType::KW_XOR),
+        CHECK_SEMANTIC_TYPE("Xor", TokenType::KW_XOR),
+        CHECK_SEMANTIC_TYPE("xor", TokenType::KW_XOR),
         CHECK_SEMANTIC_TYPE("EXISTS", TokenType::KW_EXISTS),
         CHECK_SEMANTIC_TYPE("Exists", TokenType::KW_EXISTS),
         CHECK_SEMANTIC_TYPE("exists", TokenType::KW_EXISTS),
@@ -311,6 +353,41 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("by", TokenType::KW_BY),
         CHECK_SEMANTIC_TYPE("IN", TokenType::KW_IN),
         CHECK_SEMANTIC_TYPE("In", TokenType::KW_IN),
+        CHECK_SEMANTIC_TYPE("TTL_DURATION", TokenType::KW_TTL_DURATION),
+        CHECK_SEMANTIC_TYPE("ttl_duration", TokenType::KW_TTL_DURATION),
+        CHECK_SEMANTIC_TYPE("Ttl_duration", TokenType::KW_TTL_DURATION),
+        CHECK_SEMANTIC_TYPE("TTL_COL", TokenType::KW_TTL_COL),
+        CHECK_SEMANTIC_TYPE("ttl_col", TokenType::KW_TTL_COL),
+        CHECK_SEMANTIC_TYPE("Ttl_col", TokenType::KW_TTL_COL),
+        CHECK_SEMANTIC_TYPE("DOWNLOAD", TokenType::KW_DOWNLOAD),
+        CHECK_SEMANTIC_TYPE("download", TokenType::KW_DOWNLOAD),
+        CHECK_SEMANTIC_TYPE("Download", TokenType::KW_DOWNLOAD),
+        CHECK_SEMANTIC_TYPE("HDFS", TokenType::KW_HDFS),
+        CHECK_SEMANTIC_TYPE("Hdfs", TokenType::KW_HDFS),
+        CHECK_SEMANTIC_TYPE("hdfs", TokenType::KW_HDFS),
+        CHECK_SEMANTIC_TYPE("ORDER", TokenType::KW_ORDER),
+        CHECK_SEMANTIC_TYPE("Order", TokenType::KW_ORDER),
+        CHECK_SEMANTIC_TYPE("order", TokenType::KW_ORDER),
+        CHECK_SEMANTIC_TYPE("ASC", TokenType::KW_ASC),
+        CHECK_SEMANTIC_TYPE("Asc", TokenType::KW_ASC),
+        CHECK_SEMANTIC_TYPE("asc", TokenType::KW_ASC),
+        CHECK_SEMANTIC_TYPE("INGEST", TokenType::KW_INGEST),
+        CHECK_SEMANTIC_TYPE("Ingest", TokenType::KW_INGEST),
+        CHECK_SEMANTIC_TYPE("ingest", TokenType::KW_INGEST),
+        CHECK_SEMANTIC_TYPE("VARIABLES", TokenType::KW_VARIABLES),
+        CHECK_SEMANTIC_TYPE("variables", TokenType::KW_VARIABLES),
+        CHECK_SEMANTIC_TYPE("Variables", TokenType::KW_VARIABLES),
+        CHECK_SEMANTIC_TYPE("ALL", TokenType::KW_ALL),
+        CHECK_SEMANTIC_TYPE("all", TokenType::KW_ALL),
+        CHECK_SEMANTIC_TYPE("BALANCE", TokenType::KW_BALANCE),
+        CHECK_SEMANTIC_TYPE("Balance", TokenType::KW_BALANCE),
+        CHECK_SEMANTIC_TYPE("balance", TokenType::KW_BALANCE),
+        CHECK_SEMANTIC_TYPE("LEADER", TokenType::KW_LEADER),
+        CHECK_SEMANTIC_TYPE("Leader", TokenType::KW_LEADER),
+        CHECK_SEMANTIC_TYPE("leader", TokenType::KW_LEADER),
+        CHECK_SEMANTIC_TYPE("OF", TokenType::KW_OF),
+        CHECK_SEMANTIC_TYPE("Of", TokenType::KW_OF),
+        CHECK_SEMANTIC_TYPE("of", TokenType::KW_OF),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),
@@ -330,15 +407,23 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("label123", TokenType::LABEL, "label123"),
 
         CHECK_SEMANTIC_VALUE("123", TokenType::INTEGER, 123),
-        CHECK_SEMANTIC_VALUE("-123", TokenType::INTEGER, -123),
         CHECK_SEMANTIC_VALUE("0x123", TokenType::INTEGER, 0x123),
         CHECK_SEMANTIC_VALUE("0xdeadbeef", TokenType::INTEGER, 0xdeadbeef),
         CHECK_SEMANTIC_VALUE("0123", TokenType::INTEGER, 0123),
         CHECK_SEMANTIC_VALUE("123.", TokenType::DOUBLE, 123.),
         CHECK_SEMANTIC_VALUE(".123", TokenType::DOUBLE, 0.123),
         CHECK_SEMANTIC_VALUE("123.456", TokenType::DOUBLE, 123.456),
-        CHECK_SEMANTIC_VALUE("+123.456", TokenType::DOUBLE, 123.456),
-        CHECK_SEMANTIC_VALUE("-123.456", TokenType::DOUBLE, -123.456),
+
+        CHECK_SEMANTIC_VALUE("0xFFFFFFFFFFFFFFFF", TokenType::INTEGER, 0xFFFFFFFFFFFFFFFFL),
+        CHECK_SEMANTIC_VALUE("0x00FFFFFFFFFFFFFFFF", TokenType::INTEGER, 0x00FFFFFFFFFFFFFFFFL),
+        CHECK_SEMANTIC_VALUE("9223372036854775807", TokenType::INTEGER, 9223372036854775807L),
+        CHECK_SEMANTIC_VALUE("001777777777777777777777", TokenType::INTEGER,
+                              001777777777777777777777),
+        CHECK_LEXICAL_ERROR("9223372036854775808"),
+        CHECK_LEXICAL_ERROR("0xFFFFFFFFFFFFFFFFF"),
+        CHECK_LEXICAL_ERROR("002777777777777777777777"),
+        // TODO(dutor) It's too tedious to paste an overflowed double number here,
+        // thus we rely on `folly::to<double>' to cover those cases for us.
 
         CHECK_SEMANTIC_VALUE("127.0.0.1", TokenType::IPV4, 0x7F000001),
 
@@ -347,6 +432,10 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("\"He\\nllo\"", TokenType::STRING, "He\nllo"),
         CHECK_SEMANTIC_VALUE("\"He\\\nllo\"", TokenType::STRING, "He\nllo"),
         CHECK_SEMANTIC_VALUE("\"\\\"Hello\\\"\"", TokenType::STRING, "\"Hello\""),
+
+        CHECK_SEMANTIC_VALUE("'Hello'", TokenType::STRING, "Hello"),
+        CHECK_SEMANTIC_VALUE("'\"Hello\"'", TokenType::STRING, "\"Hello\""),
+        CHECK_SEMANTIC_VALUE("'\\'Hello\\''", TokenType::STRING, "'Hello'"),
 
         // escape Normal character
         CHECK_SEMANTIC_VALUE("\"Hell\\o\"", TokenType::STRING, "Hello"),
@@ -364,12 +453,25 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("\"\\\\\\\110 \"", TokenType::STRING, "\\H "),
         CHECK_SEMANTIC_VALUE("\"\\\\\\\\110 \"", TokenType::STRING, "\\\\110 "),
         CHECK_SEMANTIC_VALUE("\"\\\\\\\\\110 \"", TokenType::STRING, "\\\\H "),
+
+
+        CHECK_SEMANTIC_VALUE("\"己所不欲，勿施于人\"", TokenType::STRING, "己所不欲，勿施于人"),
     };
 #undef CHECK_SEMANTIC_TYPE
 #undef CHECK_SEMANTIC_VALUE
 
-    std::istringstream is(stream);
-    scanner.switch_streams(&is, nullptr);
+    auto input = [&] (char *buf, int maxSize) {
+        static int copied = 0;
+        int left = stream.size() - copied;
+        if (left == 0) {
+            return 0;
+        }
+        int n = left < maxSize ? left : maxSize;
+        ::memcpy(buf, &stream[copied], n);
+        copied += n;
+        return n;
+    };
+    scanner.setReadBuffer(input);
 
     for (auto &item : validators) {
         ASSERT_TRUE(item());

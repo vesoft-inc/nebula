@@ -29,13 +29,8 @@ public:
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
-    ResultSchema* resultSchema() const override {
-        return right_->resultSchema();
-    }
-
-    void setInputResultSchema(ResultSchema *schema) override {
-        left_->setInputResultSchema(schema);
-    }
+private:
+    Status syntaxPreCheck();
 
 private:
     PipedSentence                              *sentence_{nullptr};

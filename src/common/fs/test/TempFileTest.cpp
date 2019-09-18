@@ -57,18 +57,5 @@ TEST(TempFile, Basic) {
     }
 }
 
-TEST(TempFile, Failure) {
-    {
-        // no permission
-        const char *path = "/tmp.XXXXXX";
-        ASSERT_THROW({ TempFile tmp(path); }, std::runtime_error);
-    }
-    {
-        // incorrect template
-        const char *path = "/tmp.XXXXX";
-        ASSERT_THROW({ TempFile tmp(path); }, std::runtime_error);
-    }
-}
-
 }   // namespace fs
 }   // namespace nebula

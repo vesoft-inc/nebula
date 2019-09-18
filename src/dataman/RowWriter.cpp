@@ -42,7 +42,7 @@ std::string RowWriter::encode() noexcept {
     encoded.reserve(sizeof(int64_t) * blockOffsets_.size() + cord_.size() + 11);
     encodeTo(encoded);
 
-    return std::move(encoded);
+    return encoded;
 }
 
 
@@ -77,7 +77,7 @@ void RowWriter::encodeTo(std::string& encoded) noexcept {
 
 Schema RowWriter::moveSchema() {
     if (schemaWriter_) {
-        return std::move(schemaWriter_->moveSchema());
+        return schemaWriter_->moveSchema();
     } else {
         return Schema();
     }
@@ -225,7 +225,8 @@ RowWriter& RowWriter::operator<<(Skip&& skip) noexcept {
                 cord_ << false;
                 break;
             }
-            case SupportedType::INT: {
+            case SupportedType::INT:
+            case SupportedType::TIMESTAMP: {
                 writeInt(0);
                 break;
             }
@@ -241,8 +242,7 @@ RowWriter& RowWriter::operator<<(Skip&& skip) noexcept {
                 writeInt(0);
                 break;
             }
-            case SupportedType::VID:
-            case SupportedType::TIMESTAMP: {
+            case SupportedType::VID: {
                 cord_ << static_cast<uint64_t>(0);
                 break;
             }
@@ -254,7 +254,7 @@ RowWriter& RowWriter::operator<<(Skip&& skip) noexcept {
         // Update block offsets
         if (i != 0 && (i >> 4 << 4) == i) {
             // We need to record block offset for every 16 fields
-            blockOffsets_.push_back(cord_.size());
+            blockOffsets_.emplace_back(cord_.size());
         }
     }
     colNum_ = skipTo;
@@ -263,4 +263,3 @@ RowWriter& RowWriter::operator<<(Skip&& skip) noexcept {
 }
 
 }  // namespace nebula
-

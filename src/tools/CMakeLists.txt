@@ -1,4 +1,4 @@
-add_subdirectory(storage-perf)
+nebula_add_subdirectory(storage-perf)
 if (ENABLE_NATIVE)
     add_subdirectory(native-client)
 endif()
@@ -8,4 +8,3 @@ if (NOT SKIP_JAVA_CLIENT)
 else()
     message(STATUS "Skip building the importer")
 endif()
-

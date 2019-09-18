@@ -1,0 +1,14 @@
+nebula_add_test(
+    NAME
+        file_based_wal_test
+    SOURCES
+        FileBasedWalTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:wal_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:time_obj>
+    LIBRARIES
+        gtest
+)

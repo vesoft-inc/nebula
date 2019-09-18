@@ -12,8 +12,6 @@
 
 namespace nebula {
 
-namespace {  // NOLINT
-
 using LeftType = std::true_type;
 using RightType = std::false_type;
 
@@ -22,8 +20,6 @@ enum class State : int16_t {
     LEFT_TYPE = 1,
     RIGHT_TYPE = 2,
 };
-
-}  // Anonymous namespace
 
 static constexpr LeftType* kConstructLeft = nullptr;
 static constexpr RightType* kConstructRight = nullptr;

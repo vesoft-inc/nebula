@@ -17,61 +17,59 @@ static const int32_t kMaxPathLen = 1024;
 namespace detail {
 
 bool removeDir(const char* path, bool recursively) {
-    if (recursively) {
-        // Assuming the path is a directory
-        DIR* dh = opendir(path);
-        if (!dh) {
-            LOG(ERROR) << "Failed to read the directory \"" << path
-                       << "\" (" << errno << "): " << strerror(errno);
-            return false;
-        }
+    // Assuming the path is a directory
+    DIR *dh = opendir(path);
+    if (!dh) {
+        LOG(ERROR) << "Failed to read the directory \"" << path
+                   << "\" (" << errno << "): " << strerror(errno);
+        return false;
+    }
 
-        bool succeeded = true;
-        struct dirent* dEnt;
-        errno = 0;
-        while (succeeded && !!(dEnt = readdir(dh))) {
-            if (!strcmp(dEnt->d_name, ".") || !strcmp(dEnt->d_name, "..")) {
-                // Skip "." and ".."
-                continue;
-            }
-            if (dEnt->d_type == DT_DIR && !recursively) {
-                LOG(ERROR) << "Cannot remove the directory \"" << path
-                           << "\" because it contains sub-directory \""
-                           << dEnt->d_name << "\"";
-                succeeded = false;
-            } else {
-                // Remove the directory entry
-                succeeded = FileUtils::remove(
-                    FileUtils::joinPath(path, dEnt->d_name).c_str(), recursively);
-                if (!succeeded) {
-                    LOG(ERROR) << "Failed to remove \"" << dEnt->d_name
-                               << "\" in \"" << path
-                               << "\"";
-                } else {
-                    VLOG(2) << "Succeeded removing \"" << dEnt->d_name << "\"";
-                }
-            }
+    bool succeeded = true;
+    struct dirent *dEnt;
+    errno = 0;
+    while (succeeded && !!(dEnt = readdir(dh))) {
+        if (!strcmp(dEnt->d_name, ".") || !strcmp(dEnt->d_name, "..")) {
+            // Skip "." and ".."
+            continue;
         }
-
-        if (succeeded && errno) {
-            // There is an error
-            LOG(ERROR) << "Failed to read the directory \"" << path
-                       << "\" (" << errno << "): " << strerror(errno);
+        if (dEnt->d_type == DT_DIR && !recursively) {
+            LOG(ERROR) << "Cannot remove the directory \"" << path
+                       << "\" because it contains sub-directory \""
+                       << dEnt->d_name << "\"";
             succeeded = false;
+        } else {
+            // Remove the directory entry, recursive call
+            succeeded = FileUtils::remove(
+                FileUtils::joinPath(path, dEnt->d_name).c_str(), recursively);
+            if (!succeeded) {
+                LOG(ERROR) << "Failed to remove \"" << dEnt->d_name
+                           << "\" in \"" << path
+                           << "\"";
+            } else {
+                VLOG(2) << "Succeeded removing \"" << dEnt->d_name << "\"";
+            }
         }
+    }
 
-        if (closedir(dh)) {
-            // Failed to close the directory stream
-            LOG(ERROR) << "Failed to close the directory stream (" << errno
-                       << "): " << strerror(errno);
-            return false;
-        }
+    if (succeeded && errno) {
+        // There is an error
+        LOG(ERROR) << "Failed to read the directory \"" << path
+                   << "\" (" << errno << "): " << strerror(errno);
+        succeeded = false;
+    }
 
-        if (!succeeded) {
-            LOG(ERROR) << "Failed to remove the content of the directory \""
-                       << path << "\"";
-            return false;
-        }
+    if (closedir(dh)) {
+        // Failed to close the directory stream
+        LOG(ERROR) << "Failed to close the directory stream (" << errno
+                   << "): " << strerror(errno);
+        return false;
+    }
+
+    if (!succeeded) {
+        LOG(ERROR) << "Failed to remove the content of the directory \""
+                   << path << "\"";
+        return false;
     }
 
     // All content has been removed, now remove the directory itself
@@ -146,7 +144,7 @@ size_t FileUtils::fileSize(const char* path) {
     struct stat st;
     if (lstat(path, &st)) {
         // Failed o get file stat
-        VLOG(3) << "Failed to get infomation about \"" << path
+        VLOG(3) << "Failed to get information about \"" << path
                 << "\" (" << errno << "): " << strerror(errno);
         return 0;
     }
@@ -163,7 +161,7 @@ FileType FileUtils::fileType(const char* path) {
             return FileType::NOTEXIST;
         } else {
             // Failed o get file stat
-            VLOG(3) << "Failed to get infomation about \"" << path
+            VLOG(3) << "Failed to get information about \"" << path
                     << "\" (" << errno << "): " << strerror(errno);
             return FileType::UNKNOWN;
         }
@@ -193,7 +191,7 @@ int64_t FileUtils::fileLastUpdateTime(const char* path) {
     struct stat st;
     if (lstat(path, &st)) {
         // Failed to get file stat
-        LOG(ERROR) << "Failed to get file infomation for \"" << path
+        LOG(ERROR) << "Failed to get file information for \"" << path
                    << "\" (" << errno << "): " << strerror(errno);
         return -1;
     }
@@ -230,7 +228,7 @@ std::string FileUtils::joinPath(const folly::StringPiece dir,
         buf.resize(filename.size() + 2);
         strcpy(&(buf[0]), "./");    // NOLINT
         strncpy(&(buf[2]), filename.begin(), filename.size());
-        return std::move(buf);
+        return buf;
     }
 
     if (dir[len-1] == '/') {
@@ -244,7 +242,7 @@ std::string FileUtils::joinPath(const folly::StringPiece dir,
 
     strncpy(&(buf[len]), filename.data(), filename.size());
 
-    return std::move(buf);
+    return buf;
 }
 
 
@@ -278,8 +276,6 @@ void FileUtils::dividePath(const folly::StringPiece path,
     } else {
         parent = folly::StringPiece(pathToLook.begin(), pos);
     }
-
-    return;
 }
 
 
@@ -317,7 +313,7 @@ bool FileUtils::remove(const char* path, bool recursively) {
 }
 
 
-bool FileUtils::makeDir(const std::string& dir) {
+bool FileUtils::makeDir(const std::string& dir, uint32_t mode) {
     if (dir.empty()) {
         return false;
     }
@@ -336,22 +332,25 @@ bool FileUtils::makeDir(const std::string& dir) {
 
     // create parent if it is not empty
     if (!parent.empty()) {
-        bool ret = makeDir(parent.toString());
+        bool ret = makeDir(parent.toString(), mode);
         if (!ret) {
             return false;
         }
     }
 
-    int err = mkdir(dir.c_str(), S_IRWXU);
+    int err = mkdir(dir.c_str(), mode);
     if (err != 0) {
-        if (fileType(dir.c_str()) == FileType::DIRECTORY) {
-            return true;
-        }
-        return false;
+        return fileType(dir.c_str()) == FileType::DIRECTORY;
     }
     return true;
 }
 
+bool FileUtils::exist(const std::string& path) {
+    if (path.empty()) {
+        return false;
+    }
+    return access(path.c_str(), F_OK) == 0;
+}
 
 std::vector<std::string> FileUtils::listAllTypedEntitiesInDir(
         const char* dirpath,
@@ -361,13 +360,13 @@ std::vector<std::string> FileUtils::listAllTypedEntitiesInDir(
     std::vector<std::string> entities;
     struct dirent *dirInfo;
     DIR *dir = opendir(dirpath);
-    if (dir == NULL) {
+    if (dir == nullptr) {
         LOG(ERROR)<< "Failed to read the directory \"" << dirpath
                   << "\" (" << errno << "): " << strerror(errno);
         return entities;
     }
 
-    while ((dirInfo = readdir(dir)) != NULL) {
+    while ((dirInfo = readdir(dir)) != nullptr) {
         if ((type == FileType::REGULAR && dirInfo->d_type == DT_REG) ||
             (type == FileType::DIRECTORY && dirInfo->d_type == DT_DIR) ||
             (type == FileType::SYM_LINK && dirInfo->d_type == DT_LNK) ||
@@ -386,14 +385,14 @@ std::vector<std::string> FileUtils::listAllTypedEntitiesInDir(
             }
 
             // We found one entity
-            entities.push_back(
+            entities.emplace_back(
                 returnFullPath ? joinPath(dirpath, std::string(dirInfo->d_name))
                                : std::string(dirInfo->d_name));
         }
     }
     closedir(dir);
 
-    return std::move(entities);
+    return entities;
 }
 
 
@@ -466,7 +465,7 @@ void FileUtils::Iterator::dirNext() {
     CHECK(type_ == FileType::DIRECTORY);
     CHECK(dir_ != nullptr);
     struct dirent *dent;
-    while ((dent = ::readdir(dir_)) != NULL) {
+    while ((dent = ::readdir(dir_)) != nullptr) {
         if (dent->d_name[0] == '.') {
             continue;
         }

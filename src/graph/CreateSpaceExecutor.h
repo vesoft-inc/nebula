@@ -26,10 +26,12 @@ public:
     void execute() override;
 
 private:
-    CreateSpaceSentence             *sentence_{nullptr};
-    const std::string               *spaceName_{nullptr};
-    int32_t                          partNum_{0};
-    int32_t                          replicaFactor_{0};
+    CreateSpaceSentence            *sentence_{nullptr};
+    const std::string              *spaceName_{nullptr};
+    // TODO Due to the currently design of the createSpace interface,
+    // it's impossible to express *not specified*, so we use 0 to indicate this.
+    int32_t                         partNum_{0};
+    int32_t                         replicaFactor_{0};
 };
 
 }   // namespace graph

@@ -42,11 +42,14 @@ class VertexTagItem final {
 
      std::string toString() const;
 
-     std::string* tagName() const {
+     const std::string* tagName() const {
          return tagName_.get();
      }
 
      std::vector<std::string*> properties() const {
+         if (nullptr == properties_) {
+             return {};
+         }
          return properties_->properties();
      }
 
@@ -101,13 +104,13 @@ private:
 
 class VertexRowItem final {
 public:
-    VertexRowItem(int64_t id, ValueList *values) {
-        id_ = id;
+    VertexRowItem(Expression *id, ValueList *values) {
+        id_.reset(id);
         values_.reset(values);
     }
 
-    int64_t id() const {
-        return id_;
+    Expression* id() const {
+        return id_.get();
     }
 
     std::vector<Expression*> values() const {
@@ -117,7 +120,7 @@ public:
     std::string toString() const;
 
 private:
-    int64_t                                     id_;
+    std::unique_ptr<Expression>                 id_;
     std::unique_ptr<ValueList>                  values_;
 };
 
@@ -185,28 +188,28 @@ private:
 
 class EdgeRowItem final {
 public:
-    EdgeRowItem(int64_t srcid, int64_t dstid, ValueList *values) {
-        srcid_ = srcid;
-        dstid_ = dstid;
+    EdgeRowItem(Expression *srcid, Expression *dstid, ValueList *values) {
+        srcid_.reset(srcid);
+        dstid_.reset(dstid);
         values_.reset(values);
     }
 
-    EdgeRowItem(int64_t srcid, int64_t dstid, int64_t rank, ValueList *values) {
-        srcid_ = srcid;
-        dstid_ = dstid;
+    EdgeRowItem(Expression *srcid, Expression *dstid, int64_t rank, ValueList *values) {
+        srcid_.reset(srcid);
+        dstid_.reset(dstid);
         rank_ = rank;
         values_.reset(values);
     }
 
-    int64_t srcid() const {
-        return srcid_;
+    auto srcid() const {
+        return srcid_.get();
     }
 
-    int64_t dstid() const {
-        return dstid_;
+    auto dstid() const {
+        return dstid_.get();
     }
 
-    int64_t rank() const {
+    auto rank() const {
         return rank_;
     }
 
@@ -217,9 +220,9 @@ public:
     std::string toString() const;
 
 private:
-    int64_t                                     srcid_{0};
-    int64_t                                     dstid_{0};
-    int64_t                                     rank_{0};
+    std::unique_ptr<Expression>                 srcid_;
+    std::unique_ptr<Expression>                 dstid_;
+    EdgeRanking                                 rank_{0};
     std::unique_ptr<ValueList>                  values_;
 };
 
@@ -250,6 +253,7 @@ public:
     InsertEdgeSentence() {
         kind_ = Kind::kInsertEdge;
     }
+
     void setOverwrite(bool overwritable) {
         overwritable_ = overwritable;
     }
@@ -271,6 +275,9 @@ public:
     }
 
     std::vector<std::string*> properties() const {
+        if (nullptr == properties_) {
+            return {};
+        }
         return properties_->properties();
     }
 
@@ -299,6 +306,19 @@ public:
         value_.reset(value);
     }
 
+    UpdateItem(Expression *field, Expression *value) {
+        field_ = std::make_unique<std::string>(Expression::encode(field));
+        value_.reset(value);
+    }
+
+    std::string* field() const {
+        return field_.get();
+    }
+
+    Expression* value() const {
+        return value_.get();
+    }
+
     std::string toString() const;
 
 private:
@@ -313,6 +333,15 @@ public:
         items_.emplace_back(item);
     }
 
+    std::vector<UpdateItem*> items() const {
+        std::vector<UpdateItem*> result;
+        result.reserve(items_.size());
+        for (auto &item : items_) {
+             result.emplace_back(item.get());
+        }
+        return result;
+    }
+
     std::string toString() const;
 
 private:
@@ -322,120 +351,182 @@ private:
 
 class UpdateVertexSentence final : public Sentence {
 public:
+    UpdateVertexSentence() {
+        kind_ = Kind::kUpdateVertex;
+    }
+
     void setInsertable(bool insertable) {
         insertable_ = insertable;
     }
 
-    void setVid(int64_t vid) {
-        vid_ = vid;
+    bool getInsertable() const {
+        return insertable_;
     }
 
-    void setUpdateList(UpdateList *items) {
-        updateItems_.reset(items);
+    void setVid(Expression *vid) {
+        vid_.reset(vid);
     }
 
-    void setWhereClause(WhereClause *clause) {
-        whereClause_.reset(clause);
+    Expression* getVid() const {
+        return vid_.get();
+    }
+
+    void setUpdateList(UpdateList *updateList) {
+        updateList_.reset(updateList);
+    }
+
+    const UpdateList* updateList() const {
+        return updateList_.get();
+    }
+
+    void setWhenClause(WhenClause *clause) {
+        whenClause_.reset(clause);
+    }
+
+    const WhenClause* whenClause() const {
+        return whenClause_.get();
     }
 
     void setYieldClause(YieldClause *clause) {
         yieldClause_.reset(clause);
     }
 
+    const YieldClause* yieldClause() const {
+        return yieldClause_.get();
+    }
+
     std::string toString() const override;
 
 private:
     bool                                        insertable_{false};
-    int64_t                                     vid_{0};
-    std::unique_ptr<UpdateList>                 updateItems_;
-    std::unique_ptr<WhereClause>                whereClause_;
+    std::unique_ptr<Expression>                 vid_;
+    std::unique_ptr<UpdateList>                 updateList_;
+    std::unique_ptr<WhenClause>                 whenClause_;
     std::unique_ptr<YieldClause>                yieldClause_;
 };
 
 
 class UpdateEdgeSentence final : public Sentence {
 public:
+    UpdateEdgeSentence() {
+        kind_ = Kind::kUpdateEdge;
+    }
+
     void setInsertable(bool insertable) {
         insertable_ = insertable;
     }
 
-    void setSrcId(int64_t srcid) {
-        srcid_ = srcid;
+    bool getInsertable() const {
+        return insertable_;
     }
 
-    void setDstId(int64_t dstid) {
-        dstid_ = dstid;
+    void setSrcId(Expression* srcid) {
+        srcid_.reset(srcid);
+    }
+
+    Expression* getSrcId() const {
+        return srcid_.get();
+    }
+
+    void setDstId(Expression* dstid) {
+        dstid_.reset(dstid);
+    }
+
+    Expression* getDstId() const {
+        return dstid_.get();
     }
 
     void setRank(int64_t rank) {
         rank_ = rank;
+        hasRank_ = true;
     }
 
-    void setUpdateList(UpdateList *items) {
-        updateItems_.reset(items);
+    const int64_t getRank() const {
+        return rank_;
     }
 
-    void setWhereClause(WhereClause *clause) {
-        whereClause_.reset(clause);
+    void setEdgeType(std::string* edgeType) {
+        edgeType_.reset(edgeType);
+    }
+
+    const std::string* getEdgeType() const {
+        return edgeType_.get();
+    }
+
+    void setUpdateList(UpdateList *updateList) {
+        updateList_.reset(updateList);
+    }
+
+    const UpdateList* updateList() const {
+        return updateList_.get();
+    }
+
+    void setWhenClause(WhenClause *clause) {
+        whenClause_.reset(clause);
+    }
+
+    const WhenClause* whenClause() const {
+        return whenClause_.get();
     }
 
     void setYieldClause(YieldClause *clause) {
         yieldClause_.reset(clause);
     }
 
+    const YieldClause* yieldClause() const {
+        return yieldClause_.get();
+    }
+
     std::string toString() const override;
 
 private:
     bool                                        insertable_{false};
-    int64_t                                     srcid_{0};
-    int64_t                                     dstid_{0};
-    int64_t                                     rank_{0};
-    std::unique_ptr<UpdateList>                 updateItems_;
-    std::unique_ptr<WhereClause>                whereClause_;
+    bool                                        hasRank_{false};
+    std::unique_ptr<Expression>                 srcid_;
+    std::unique_ptr<Expression>                 dstid_;
+    int64_t                                     rank_{0L};
+    std::unique_ptr<std::string>                edgeType_;
+    std::unique_ptr<UpdateList>                 updateList_;
+    std::unique_ptr<WhenClause>                 whenClause_;
     std::unique_ptr<YieldClause>                yieldClause_;
 };
 
+
 class DeleteVertexSentence final : public Sentence {
 public:
-    explicit DeleteVertexSentence(SourceNodeList *srcNodeList) {
-        srcNodeList_.reset(srcNodeList);
+    explicit DeleteVertexSentence(Expression *vid) {
+        vid_.reset(vid);
         kind_ = Kind::kDeleteVertex;
     }
 
-    const SourceNodeList* srcNodeLists() const {
-        return srcNodeList_.get();
-    }
-
-    void setWhereClause(WhereClause *clause) {
-        whereClause_.reset(clause);
-    }
-
-    const WhereClause* whereClause() const {
-        return whereClause_.get();
+    Expression* vid() const {
+        return vid_.get();
     }
 
     std::string toString() const override;
 
 private:
-    std::unique_ptr<SourceNodeList>            srcNodeList_;
-    std::unique_ptr<WhereClause>               whereClause_;
+    std::unique_ptr<Expression>                  vid_;
 };
+
 
 class EdgeList final {
 public:
-    void addEdge(int64_t srcid, int64_t dstid) {
-        edges_.emplace_back(std::make_pair(srcid, dstid));
+    void addEdge(Expression *srcid, Expression *dstid) {
+        edges_.emplace_back(srcid, dstid);
     }
 
-    const std::vector<std::pair<int64_t, int64_t>>& edges() const {
+    const auto& edges() const {
         return edges_;
     }
 
     std::string toString() const;
 
 private:
-    std::vector<std::pair<int64_t, int64_t>>    edges_;
+    using EdgeItem = std::pair<std::unique_ptr<Expression>, std::unique_ptr<Expression>>;
+    std::vector<EdgeItem>                       edges_;
 };
+
 
 class DeleteEdgeSentence final : public Sentence {
 public:
@@ -463,6 +554,83 @@ private:
     std::unique_ptr<WhereClause>                whereClause_;
 };
 
-}  // namespace nebula
 
+class DownloadSentence final : public Sentence {
+public:
+    DownloadSentence() {
+        kind_ = Kind::kDownload;
+    }
+
+    const std::string* host() const {
+        return host_.get();
+    }
+
+    void setHost(std::string *host) {
+        host_.reset(host);
+    }
+
+    const int32_t port() const {
+        return port_;
+    }
+
+    void setPort(int32_t port) {
+        port_ = port;
+    }
+
+    const std::string* path() const {
+        return path_.get();
+    }
+
+    void setPath(std::string *path) {
+        path_.reset(path);
+    }
+
+    void setUrl(std::string *url) {
+        static std::string hdfsPrefix = "hdfs://";
+        if (url->find(hdfsPrefix) != 0) {
+            LOG(ERROR) << "URL should start with " << hdfsPrefix;
+            delete url;
+            return;
+        }
+
+        std::string u = url->substr(hdfsPrefix.size(), url->size());
+        std::vector<folly::StringPiece> tokens;
+        folly::split(":", u, tokens);
+        if (tokens.size() == 2) {
+            host_ = std::make_unique<std::string>(tokens[0]);
+            int32_t position = tokens[1].find_first_of("/");
+            if (position != -1) {
+                try {
+                    port_ = folly::to<int32_t>(tokens[1].toString().substr(0, position).c_str());
+                } catch (const std::exception& ex) {
+                    LOG(ERROR) << "URL's port parse failed: " << *url;
+                }
+                path_ = std::make_unique<std::string>(
+                            tokens[1].toString().substr(position, tokens[1].size()));
+            } else {
+                LOG(ERROR) << "URL Parse Failed: " << *url;
+            }
+        } else {
+            LOG(ERROR) << "URL Parse Failed: " << *url;
+        }
+        delete url;
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>                host_;
+    int32_t                                     port_;
+    std::unique_ptr<std::string>                path_;
+};
+
+class IngestSentence final : public Sentence {
+public:
+    IngestSentence() {
+        kind_ = Kind::kIngest;
+    }
+
+    std::string toString() const override;
+};
+}  // namespace nebula
 #endif  // PARSER_MUTATESENTENCES_H_

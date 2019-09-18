@@ -8,18 +8,17 @@
 #define GRAPH_INTERIMRESULT_H_
 
 #include "base/Base.h"
+#include "base/StatusOr.h"
+#include "filter/Expressions.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowSetWriter.h"
 #include "dataman/SchemaWriter.h"
 
+namespace nebula {
+namespace graph {
 /**
  * The intermediate form of execution result, used in pipeline and variable.
  */
-
-
-namespace nebula {
-namespace graph {
-
 class InterimResult final {
 public:
     InterimResult() = default;
@@ -32,11 +31,52 @@ public:
     explicit InterimResult(std::unique_ptr<RowSetWriter> rsWriter);
     explicit InterimResult(std::vector<VertexID> vids);
 
-    std::vector<VertexID> getVIDs(const std::string &col) const;
+    static std::unique_ptr<InterimResult> getInterim(
+            std::shared_ptr<const meta::SchemaProviderIf> resultSchema,
+            std::vector<cpp2::RowValue> &rows);
+    static Status castTo(cpp2::ColumnValue *col,
+                         const nebula::cpp2::SupportedType &type);
+    static Status castToInt(cpp2::ColumnValue *col);
+    static Status castToVid(cpp2::ColumnValue *col);
+    static Status castToTimestamp(cpp2::ColumnValue *col);
+    static Status castToDouble(cpp2::ColumnValue *col);
+    static Status castToBool(cpp2::ColumnValue *col);
+    static Status castToStr(cpp2::ColumnValue *col);
 
-    // TODO(dutor) iterating interfaces on rows and columns
+    std::shared_ptr<const meta::SchemaProviderIf> schema() const {
+        return rsReader_->schema();
+    }
+
+    std::string& data() const {
+        return rsWriter_->data();
+    }
+
+    StatusOr<std::vector<VertexID>> getVIDs(const std::string &col) const;
+
+    StatusOr<std::vector<VertexID>> getDistinctVIDs(const std::string &col) const;
+
+    std::vector<cpp2::RowValue> getRows() const;
+
+    class InterimResultIndex;
+    std::unique_ptr<InterimResultIndex> buildIndex(const std::string &vidColumn) const;
+
+    class InterimResultIndex final {
+    public:
+        OptVariantType getColumnWithVID(VertexID id, const std::string &col) const;
+        nebula::cpp2::SupportedType getColumnType(const std::string &col) const;
+
+    private:
+        friend class InterimResult;
+        using Row = std::vector<VariantType>;
+        std::vector<Row>                            rows_;
+        using SchemaPtr = std::shared_ptr<const meta::SchemaProviderIf>;
+        SchemaPtr                                   schema_{nullptr};
+        std::unordered_map<std::string, uint32_t>   columnToIndex_;
+        std::unordered_map<VertexID, uint32_t>      vidToRowIndex_;
+    };
 
 private:
+    using Row = std::vector<VariantType>;
     std::unique_ptr<RowSetReader>               rsReader_;
     std::unique_ptr<RowSetWriter>               rsWriter_;
     std::vector<VertexID>                       vids_;

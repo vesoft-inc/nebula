@@ -7,742 +7,39 @@
 #include "base/Base.h"
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
-#include "fs/TempFile.h"
+#include "graph/test/TraverseTestBase.h"
+#include "meta/test/TestUtils.h"
 
-DECLARE_string(schema_file);
 
 namespace nebula {
 namespace graph {
 
-class GoTest : public TestBase {
+class GoTest : public TraverseTestBase {
 protected:
     void SetUp() override {
-        TestBase::SetUp();
+        TraverseTestBase::SetUp();
         // ...
     }
 
     void TearDown() override {
         // ...
-        TestBase::TearDown();
-    }
-
-    static void SetUpTestCase() {
-        client_ = gEnv->getClient();
-        ASSERT_NE(nullptr, client_);
-
-        ASSERT_TRUE(prepareSchema());
-
-        ASSERT_TRUE(prepareData());
-    }
-
-    static void TearDownTestCase() {
-        client_.reset();
-    }
-
-    static AssertionResult prepareSchema();
-
-    static AssertionResult prepareData();
-
-    class Player final {
-    public:
-        Player(std::string name, int64_t age) {
-            name_ = std::move(name);
-            age_ = age;
-            vid_ = std::hash<std::string>()(name_);
-        }
-
-        Player(const Player&) = default;
-        Player(Player&&) = default;
-        Player& operator=(const Player&) = default;
-        Player& operator=(Player&&) = default;
-
-        const std::string& name() const {
-            return name_;
-        }
-
-        int64_t vid() const {
-            return vid_;
-        }
-
-        int64_t age() const {
-            return age_;
-        }
-
-        Player& serve(std::string team, int64_t startYear, int64_t endYear) {
-            serves_.emplace_back(std::move(team), startYear, endYear);
-            return *this;
-        }
-
-        Player& like(std::string player, int64_t likeness) {
-            likes_.emplace_back(std::move(player), likeness);
-            return *this;
-        }
-
-        const auto& serves() const {
-            return serves_;
-        }
-
-        const auto& likes() const {
-            return likes_;
-        }
-
-    private:
-        using Serve = std::tuple<std::string, int64_t, int64_t>;
-        using Like = std::tuple<std::string, int64_t>;
-        std::string                             name_;
-        int64_t                                 vid_{0};
-        int64_t                                 age_{0};
-        int64_t                                 draftYear{0};
-        std::vector<Serve>                      serves_;
-        std::vector<Like>                       likes_;
-    };
-
-    template <typename Vertex, typename Key = std::string>
-    class VertexHolder final {
-    public:
-        using KeyGetter = std::function<Key(const Vertex&)>;
-        using Container = std::unordered_map<Key, Vertex>;
-        using InternalIterator = typename Container::iterator;
-        VertexHolder(KeyGetter getter, std::initializer_list<Vertex> vertices) {
-            getter_ = std::move(getter);
-            for (auto &vertex : vertices) {
-                vertices_.emplace(getter_(vertex), std::move(vertex));
-            }
-        }
-
-        const Vertex& operator[](const Key &key) const {
-            auto iter = vertices_.find(key);
-            CHECK(iter != vertices_.end()) << "Vertex not exist, key: " << key;;
-            return iter->second;
-        }
-
-        Vertex& operator[](const Key &key) {
-            auto iter = vertices_.find(key);
-            CHECK(iter != vertices_.end()) << "Vertex not exist, key: " << key;
-            return iter->second;
-        }
-
-        class Iterator final {
-        public:
-            explicit Iterator(InternalIterator iter) {
-                iter_ = iter;
-            }
-
-            Iterator& operator++() {
-                ++iter_;
-                return *this;
-            }
-
-            Vertex& operator*() {
-                return iter_->second;
-            }
-
-            Vertex* operator->() {
-                return &iter_->second;
-            }
-
-            bool operator==(const Iterator &rhs) const {
-                return iter_ == rhs.iter_;
-            }
-
-            bool operator!=(const Iterator &rhs) const {
-                return !(*this == rhs);
-            }
-
-        private:
-            InternalIterator iter_;
-        };
-
-        Iterator begin() {
-            return Iterator(vertices_.begin());
-        }
-
-        Iterator end() {
-            return Iterator(vertices_.end());
-        }
-
-    private:
-        KeyGetter                               getter_;
-        Container                               vertices_;
-    };
-
-
-    class Team final {
-    public:
-        explicit Team(std::string name) {
-            name_ = std::move(name);
-            vid_ = std::hash<std::string>()(name_);
-        }
-
-        const std::string& name() const {
-            return name_;
-        }
-
-        int64_t vid() const {
-            return vid_;
-        }
-
-    private:
-        std::string                             name_;
-        int64_t                                 vid_{0};
-    };
-
-protected:
-    static std::unique_ptr<fs::TempFile>        schemaFile_;
-    static std::unique_ptr<GraphClient>         client_;
-    static VertexHolder<Player>                 players_;
-    static VertexHolder<Team>                   teams_;
-};
-
-std::unique_ptr<fs::TempFile> GoTest::schemaFile_;
-
-std::unique_ptr<GraphClient> GoTest::client_;
-
-GoTest::VertexHolder<GoTest::Player> GoTest::players_ = {
-    [] (const auto &player) { return player.name(); }, {
-        Player{"Tim Duncan", 42/*, 1997*/},
-        Player{"Tony Parker", 36},
-        Player{"LaMarcus Aldridge", 33},
-        Player{"Rudy Gay", 32},
-        Player{"Marco Belinelli", 32},
-        Player{"Danny Green", 31},
-        Player{"Kyle Anderson", 25},
-        Player{"Aron Baynes", 32},
-        Player{"Boris Diaw", 36},
-        Player{"Tiago Splitter", 34},
-        Player{"Cory Joseph", 27},
-        Player{"David West", 38},
-        Player{"Jonathon Simmons", 29},
-        Player{"Dejounte Murray", 29},
-        Player{"Tracy McGrady", 39},
-        Player{"Kobe Bryant", 40},
-        Player{"LeBron James", 34},
-        Player{"Stephen Curry", 31},
-        Player{"Russell Westbrook", 30},
-        Player{"Kevin Durant", 30},
-        Player{"James Harden", 29},
-        Player{"Chris Paul", 33},
-        Player{"DeAndre Jordan", 30},
-        Player{"Ricky Rubio", 28},
-
-        Player{"Rajon Rondo", 33},
-        Player{"Manu Ginobili", 41},
-        Player{"Kyrie Irving", 26},
-        Player{"Vince Carter", 42},
-        Player{"Carmelo Anthony", 34},
-        Player{"Dwyane Wade", 37},
-        Player{"Joel Embiid", 25},
-        Player{"Paul George", 28},
-        Player{"Giannis Antetokounmpo", 24},
-        Player{"Yao Ming", 38},
-        Player{"Blake Griffin", 30},
-        Player{"Damian Lillard", 28},
-        Player{"Steve Nash", 45},
-        Player{"Dirk Nowitzki", 40},
-        Player{"Paul Gasol", 38},
-        Player{"Marc Gasol", 34},
-        Player{"Grant Hill", 46},
-        Player{"Ray Allen", 43},
-        Player{"Klay Thompson", 29},
-        Player{"Kristaps Porzingis", 23},
-        Player{"Shaquile O'Neal", 47},
-        Player{"JaVale McGee", 31},
-        Player{"Dwight Howard", 33},
-        Player{"Amar'e Stoudemire", 36},
-        Player{"Jason Kidd", 45},
-        Player{"Ben Simmons", 22},
-        Player{"Luka Doncic", 20},
+        TraverseTestBase::TearDown();
     }
 };
 
-GoTest::VertexHolder<GoTest::Team> GoTest::teams_ = {
-    [] (const auto &team) { return team.name(); }, {
-        Team{"Warriors"},
-        Team{"Nuggets"},
-        Team{"Rockets"},
-        Team{"Trail Blazers"},
-        Team{"Spurs"},
-        Team{"Thunders"},
-        Team{"Jazz"},
-        Team{"Clippers"},
-        Team{"Kings"},
-        Team{"Timberwolves"},
-        Team{"Lakers"},
-        Team{"Pelicans"},
-        Team{"Grizzlies"},
-        Team{"Mavericks"},
-        Team{"Suns"},
-
-        Team{"Hornets"},
-        Team{"Cavaliers"},
-        Team{"Celtics"},
-        Team{"Raptors"},
-        Team{"76ers"},
-        Team{"Pacers"},
-        Team{"Bulls"},
-        Team{"Hawks"},
-        Team{"Knicks"},
-        Team{"Pistons"},
-        Team{"Bucks"},
-        Team{"Magic"},
-        Team{"Nets"},
-        Team{"Wizards"},
-        Team{"Heat"},
-    }
-};
-
-
-// static
-AssertionResult GoTest::prepareSchema() {
-    schemaFile_ = std::make_unique<fs::TempFile>("/tmp/go_test.XXXXXX");
-    std::ofstream file(schemaFile_->path());
-    if (!file.good()) {
-        return TestError() << "Failed to open: " << schemaFile_->path();
-    }
-    file << "{\n"
-            "     \"nba\": {\n"
-            "         \"tags\": {\n"
-            "             \"player\": [\n"
-            "                 [\n"
-            "                     \"name: string\",\n"
-            "                     \"age: integer\"\n"
-            "                 ]\n"
-            "             ],\n"
-            "             \"team\": [\n"
-            "                 [\n"
-            "                     \"name: string\"\n"
-            "                 ]\n"
-            "             ]\n"
-            "         },\n"
-            "         \"edges\": {\n"
-            "             \"serve\": [\n"
-            "                 [\n"
-            "                     \"start_year: integer\",\n"
-            "                     \"end_year: integer\"\n"
-            "                 ]\n"
-            "             ],\n"
-            "             \"like\": [\n"
-            "                 [\n"
-            "                     \"likeness: integer\"\n"
-            "                 ]\n"
-            "             ]\n"
-            "         }\n"
-            "     }\n"
-            "}\n";
-    file.close();
-    FLAGS_schema_file = schemaFile_->path();
-    return TestOK();
-}
-
-
-AssertionResult GoTest::prepareData() {
-    // TODO(dutor) Maybe we should move these data into some kind of testing resources, later.
-    players_["Tim Duncan"].serve("Spurs", 1997, 2016)
-                          .like("Tony Parker", 95)
-                          .like("Manu Ginobili", 95);
-
-    players_["Tony Parker"].serve("Spurs", 1999, 2018)
-                           .serve("Hornets", 2018, 2019)
-                           .like("Tim Duncan", 95)
-                           .like("Manu Ginobili", 95)
-                           .like("LaMarcus Aldridge", 90);
-
-    players_["Manu Ginobili"].serve("Spurs", 2002, 2018)
-                             .like("Tim Duncan", 90);
-
-    players_["LaMarcus Aldridge"].serve("Trail Blazers", 2006, 2015)
-                                 .serve("Spurs", 2015, 2019)
-                                 .like("Tony Parker", 75)
-                                 .like("Tim Duncan", 75);
-
-    players_["Rudy Gay"].serve("Grizzlies", 2006, 2013)
-                        .serve("Raptors", 2013, 2013)
-                        .serve("Kings", 2013, 2017)
-                        .serve("Spurs", 2017, 2019)
-                        .like("LaMarcus Aldridge", 70);
-
-    players_["Marco Belinelli"].serve("Warriors", 2007, 2009)
-                               .serve("Raptors", 2009, 2010)
-                               .serve("Hornets", 2010, 2012)
-                               .serve("Bulls", 2012, 2013)
-                               .serve("Spurs", 2013, 2015)
-                               .serve("Kings", 2015, 2016)
-                               .serve("Hornets", 2016, 2017)
-                               .serve("Hawks", 2017, 2018)
-                               .serve("76ers", 2018, 2018)
-                               .serve("Spurs", 2018, 2019)
-                               .like("Tony Parker", 50)
-                               .like("Tim Duncan", 55)
-                               .like("Danny Green", 60);
-
-    players_["Danny Green"].serve("Cavaliers", 2009, 2010)
-                           .serve("Spurs", 2010, 2018)
-                           .serve("Raptors", 2018, 2019)
-                           .like("Marco Belinelli", 83)
-                           .like("Tim Duncan", 70)
-                           .like("LeBron James", 80);
-
-    players_["Kyle Anderson"].serve("Spurs", 2014, 2018)
-                             .serve("Grizzlies", 2018, 2019);
-
-    players_["Aron Baynes"].serve("Spurs", 2013, 2015)
-                           .serve("Pistons", 2015, 2017)
-                           .serve("Celtics", 2017, 2019)
-                           .like("Tim Duncan", 80);
-
-    players_["Boris Diaw"].serve("Hawks", 2003, 2005)
-                          .serve("Suns", 2005, 2008)
-                          .serve("Hornets", 2008, 2012)
-                          .serve("Spurs", 2012, 2016)
-                          .serve("Jazz", 2016, 2017)
-                          .like("Tony Parker", 80)
-                          .like("Tim Duncan", 80);
-
-    players_["Tiago Splitter"].serve("Spurs", 2010, 2015)
-                              .serve("Hawks", 2015, 2017)
-                              .serve("76ers", 2017, 2017)
-                              .like("Tim Duncan", 80)
-                              .like("Manu Ginobili", 90);
-
-    players_["Cory Joseph"].serve("Spurs", 2011, 2015)
-                           .serve("Raptors", 2015, 2017)
-                           .serve("Pacers", 2017, 2019);
-
-    players_["David West"].serve("Hornets", 2003, 2011)
-                          .serve("Pacers", 2011, 2015)
-                          .serve("Spurs", 2015, 2016)
-                          .serve("Warriors", 2016, 2018);
-
-    players_["Jonathon Simmons"].serve("Spurs", 2015, 2017)
-                                .serve("Magic", 2017, 2019)
-                                .serve("76ers", 2019, 2019);
-
-    players_["Dejounte Murray"].serve("Spurs", 2016, 2019)
-                               .like("Tim Duncan", 99)
-                               .like("Tony Parker", 99)
-                               .like("Manu Ginobili", 99)
-                               .like("Marco Belinelli", 99)
-                               .like("Danny Green", 99)
-                               .like("LeBron James", 99)
-                               .like("Russell Westbrook", 99)
-                               .like("Chris Paul", 99)
-                               .like("Kyle Anderson", 99)
-                               .like("Kevin Durant", 99)
-                               .like("James Harden", 99)
-                               .like("Tony Parker", 99);
-
-    players_["Tracy McGrady"].serve("Raptors", 1997, 2000)
-                             .serve("Magic", 2000, 2004)
-                             .serve("Rockets", 2004, 2010)
-                             .serve("Spurs", 2013, 2013)
-                             .like("Kobe Bryant", 90)
-                             .like("Grant Hill", 90)
-                             .like("Rudy Gay", 90);
-
-    players_["Kobe Bryant"].serve("Lakers", 1996, 2016);
-
-    players_["LeBron James"].serve("Cavaliers", 2003, 2010)
-                            .serve("Heat", 2010, 2014)
-                            .serve("Cavaliers", 2014, 2018)
-                            .serve("Lakers", 2018, 2019)
-                            .like("Ray Allen", 100);
-
-    players_["Stephen Curry"].serve("Warriors", 2009, 2019);
-
-    players_["Russell Westbrook"].serve("Thunders", 2008, 2019)
-                                 .like("Paul George", 90)
-                                 .like("James Harden", 90);
-
-    players_["Kevin Durant"].serve("Thunders", 2007, 2016)
-                            .serve("Warriors", 2016, 2019);
-
-    players_["James Harden"].serve("Thunders", 2009, 2012)
-                            .serve("Rockets", 2012, 2019)
-                            .like("Russell Westbrook", 80);
-
-    players_["Chris Paul"].serve("Hornets", 2005, 2011)
-                          .serve("Clippers", 2011, 2017)
-                          .serve("Rockets", 2017, 2021)
-                          .like("LeBron James", 90)
-                          .like("Carmelo Anthony", 90)
-                          .like("Dwyane Wade", 90);
-
-    players_["DeAndre Jordan"].serve("Clippers", 2008, 2018)
-                              .serve("Mavericks", 2018, 2019)
-                              .serve("Knicks", 2019, 2019);
-
-    players_["Ricky Rubio"].serve("Timberwolves", 2011, 2017)
-                            .serve("Jazz", 2017, 2019);
-
-    players_["Rajon Rondo"].serve("Celtics", 2006, 2014)
-                           .serve("Mavericks", 2014, 2015)
-                           .serve("Kings", 2015, 2016)
-                           .serve("Bulls", 2016, 2017)
-                           .serve("Pelicans", 2017, 2018)
-                           .serve("Lakers", 2018, 2019)
-                           .like("Ray Allen", -1);
-
-    players_["Kyrie Irving"].serve("Cavaliers", 2011, 2017)
-                            .serve("Celtics", 2017, 2019)
-                            .like("LeBron James", 13);
-
-    players_["Vince Carter"].serve("Raptors", 1998, 2004)
-                            .serve("Nets", 2004, 2009)
-                            .serve("Magic", 2009, 2010)
-                            .serve("Suns", 2010, 2011)
-                            .serve("Mavericks", 2011, 2014)
-                            .serve("Grizzlies", 2014, 2017)
-                            .serve("Kings", 2017, 2018)
-                            .serve("Hawks", 2018, 2019)
-                            .like("Tracy McGrady", 90)
-                            .like("Jason Kidd", 70);
-
-    players_["Carmelo Anthony"].serve("Nuggets", 2003, 2011)
-                               .serve("Knicks", 2011, 2017)
-                               .serve("Thunders", 2017, 2018)
-                               .serve("Rockets", 2018, 2019)
-                               .like("LeBron James", 90)
-                               .like("Chris Paul", 90)
-                               .like("Dwyane Wade", 90);
-
-    players_["Dwyane Wade"].serve("Heat", 2003, 2016)
-                           .serve("Bulls", 2016, 2017)
-                           .serve("Cavaliers", 2017, 2018)
-                           .serve("Heat", 2018, 2019)
-                           .like("LeBron James", 90)
-                           .like("Chris Paul", 90)
-                           .like("Carmelo Anthony", 90);
-
-    players_["Joel Embiid"].serve("76ers", 2014, 2019)
-                           .like("Ben Simmons", 80);
-
-    players_["Paul George"].serve("Pacers", 2010, 2017)
-                           .serve("Thunders", 2017, 2019)
-                           .like("Russell Westbrook", 95);
-
-    players_["Giannis Antetokounmpo"].serve("Bucks", 2013, 2019);
-
-    players_["Yao Ming"].serve("Rockets", 2002, 2011)
-                        .like("Tracy McGrady", 90)
-                        .like("Shaquile O'Neal", 90);
-
-    players_["Blake Griffin"].serve("Clippers", 2009, 2018)
-                             .serve("Pistons", 2018, 2019)
-                             .like("Chris Paul", -1);
-
-    players_["Damian Lillard"].serve("Trail Blazers", 2012, 2019)
-                              .like("LaMarcus Aldridge", 80);
-
-    players_["Steve Nash"].serve("Suns", 1996, 1998)
-                          .serve("Mavericks", 1998, 2004)
-                          .serve("Suns", 2004, 2012)
-                          .serve("Lakers", 2012, 2015)
-                          .like("Amar'e Stoudemire", 90)
-                          .like("Dirk Nowitzki", 88)
-                          .like("Stephen Curry", 90)
-                          .like("Jason Kidd", 85);
-
-    players_["Dirk Nowitzki"].serve("Mavericks", 1998, 2019)
-                             .like("Steve Nash", 80)
-                             .like("Jason Kidd", 80)
-                             .like("Dwyane Wade", 10);
-
-    players_["Paul Gasol"].serve("Grizzlies", 2001, 2008)
-                          .serve("Lakers", 2008, 2014)
-                          .serve("Bulls", 2014, 2016)
-                          .serve("Spurs", 2016, 2019)
-                          .serve("Bucks", 2019, 2020)
-                          .like("Kobe Bryant", 90)
-                          .like("Marc Gasol", 99);
-
-    players_["Marc Gasol"].serve("Grizzlies", 2008, 2019)
-                          .serve("Raptors", 2019, 2019)
-                          .like("Paul Gasol", 99);
-
-    players_["Grant Hill"].serve("Pistons", 1994, 2000)
-                          .serve("Magic", 2000, 2007)
-                          .serve("Suns", 2007, 2012)
-                          .serve("Clippers", 2012, 2013)
-                          .like("Tracy McGrady", 90);
-
-    players_["Ray Allen"].serve("Bucks", 1996, 2003)
-                         .serve("Thunders", 2003, 2007)
-                         .serve("Celtics", 2007, 2012)
-                         .serve("Heat", 2012, 2014)
-                         .like("Rajon Rondo", 9);
-
-    players_["Klay Thompson"].serve("Warriors", 2011, 2019)
-                             .like("Stephen Curry", 90);
-
-    players_["Kristaps Porzingis"].serve("Knicks", 2015, 2019)
-                                  .serve("Mavericks", 2019, 2020)
-                                  .like("Luka Doncic", 90);
-
-    players_["Shaquile O'Neal"].serve("Magic", 1992, 1996)
-                               .serve("Lakers", 1996, 2004)
-                               .serve("Heat", 2004, 2008)
-                               .serve("Suns", 2008, 2009)
-                               .serve("Cavaliers", 2009, 2010)
-                               .serve("Celtics", 2010, 2011)
-                               .like("JaVale McGee", 100)
-                               .like("Tim Duncan", 80);
-
-    players_["JaVale McGee"].serve("Wizards", 2008, 2012)
-                            .serve("Nuggets", 2012, 2015)
-                            .serve("Mavericks", 2015, 2016)
-                            .serve("Warriors", 2016, 2018)
-                            .serve("Lakers", 2018, 2019);
-
-    players_["Dwight Howard"].serve("Magic", 2004, 2012)
-                            .serve("Lakers", 2012, 2013)
-                            .serve("Rockets", 2013, 2016)
-                            .serve("Hawks", 2016, 2017)
-                            .serve("Hornets", 2017, 2018)
-                            .serve("Wizards", 2018, 2019);
-
-    players_["Amar'e Stoudemire"].serve("Suns", 2002, 2010)
-                                 .serve("Knicks", 2010, 2015)
-                                 .serve("Heat", 2015, 2016)
-                                 .like("Steve Nash", 90);
-
-    players_["Jason Kidd"].serve("Mavericks", 1994, 1996)
-                          .serve("Suns", 1996, 2001)
-                          .serve("Nets", 2001, 2008)
-                          .serve("Mavericks", 2008, 2012)
-                          .serve("Knicks", 2012, 2013)
-                          .like("Vince Carter", 80)
-                          .like("Steve Nash", 90)
-                          .like("Dirk Nowitzki", 85);
-
-    players_["Ben Simmons"].serve("76ers", 2016, 2019)
-                           .like("Joel Embiid", 80);
-
-    players_["Luka Doncic"].serve("Mavericks", 2018, 2019)
-                           .like("Dirk Nowitzki", 90)
-                           .like("Kristaps Porzingis", 90)
-                           .like("James Harden", 80);
-
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "USE nba";
-        auto code = client_->execute(query, resp);
-        if (code != cpp2::ErrorCode::SUCCEEDED) {
-            return TestError() << "USE nba failed"
-                               << static_cast<int32_t>(code);
-        }
-    }
-    {
-        // Insert vertices `player'
-        cpp2::ExecutionResponse resp;
-        std::string query;
-        query.reserve(1024);
-        query += "INSERT VERTEX player(name, age) VALUES";
-        for (auto &player : players_) {
-            query += "(";
-            query += std::to_string(player.vid());
-            query += ": ";
-            query += "\"";
-            query += player.name();
-            query += "\"";
-            query += ",";
-            query += std::to_string(player.age());
-            query += "),\n\t";
-        }
-        query.resize(query.size() - 3);
-        auto code = client_->execute(query, resp);
-        if (code != cpp2::ErrorCode::SUCCEEDED) {
-            return TestError() << "Insert `players' failed: "
-                               << static_cast<int32_t>(code);
-        }
-    }
-    {
-        // Insert vertices `team'
-        cpp2::ExecutionResponse resp;
-        std::string query;
-        query.reserve(1024);
-        query += "INSERT VERTEX team(name) VALUES";
-        for (auto &team : teams_) {
-            query += "(";
-            query += std::to_string(team.vid());
-            query += ": ";
-            query += "\"";
-            query += team.name();
-            query += "\"";
-            query += "),\n\t";
-        }
-        query.resize(query.size() - 3);
-        auto code = client_->execute(query, resp);
-        if (code != cpp2::ErrorCode::SUCCEEDED) {
-            return TestError() << "Insert `teams' failed: "
-                               << static_cast<int32_t>(code);
-        }
-    }
-    {
-        // Insert edges `serve'
-        cpp2::ExecutionResponse resp;
-        std::string query;
-        query.reserve(1024);
-        query += "INSERT EDGE serve(start_year, end_year) VALUES";
-        for (auto &player : players_) {
-            for (auto &serve : player.serves()) {
-                auto &team = std::get<0>(serve);
-                auto startYear = std::get<1>(serve);
-                auto endYear = std::get<2>(serve);
-                query += "(";
-                query += std::to_string(player.vid());
-                query += " -> ";
-                query += std::to_string(teams_[team].vid());
-                query += ": ";
-                query += std::to_string(startYear);
-                query += ", ";
-                query += std::to_string(endYear);
-                query += "),\n\t";
-            }
-        }
-        query.resize(query.size() - 3);
-        auto code = client_->execute(query, resp);
-        if (code != cpp2::ErrorCode::SUCCEEDED) {
-            return TestError() << "Insert `serve' failed: "
-                               << static_cast<int32_t>(code);
-        }
-    }
-    {
-        // Insert edges `like'
-        cpp2::ExecutionResponse resp;
-        std::string query;
-        query.reserve(1024);
-        query += "INSERT EDGE like(likeness) VALUES";
-        for (auto &player : players_) {
-            for (auto &like : player.likes()) {
-                auto &other = std::get<0>(like);
-                auto likeness = std::get<1>(like);
-                query += "(";
-                query += std::to_string(player.vid());
-                query += " -> ";
-                query += std::to_string(players_[other].vid());
-                query += ": ";
-                query += std::to_string(likeness);
-                query += "),\n\t";
-            }
-        }
-        query.resize(query.size() - 3);
-        auto code = client_->execute(query, resp);
-        if (code != cpp2::ErrorCode::SUCCEEDED) {
-            return TestError() << "Insert `like' failed: "
-                               << static_cast<int32_t>(code);
-        }
-    }
-    return TestOK();
-}
-
-
-TEST_F(GoTest, DISABLED_OneStepOutBound) {
+TEST_F(GoTest, OneStepOutBound) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve";
         auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t>> expected = {
             {teams_["Spurs"].vid()},
         };
@@ -752,10 +49,16 @@ TEST_F(GoTest, DISABLED_OneStepOutBound) {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
         auto *fmt = "GO FROM %ld OVER serve YIELD "
-                    "$^[player].name, serve.start_year, serve.end_year, $$[team].name";
+                    "$^.player.name, serve.start_year, serve.end_year, $$.team.name";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"serve.end_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
             {player.name(), 2003, 2005, "Hawks"},
             {player.name(), 2005, 2008, "Suns"},
@@ -770,10 +73,16 @@ TEST_F(GoTest, DISABLED_OneStepOutBound) {
         auto &player = players_["Rajon Rondo"];
         auto *fmt = "GO FROM %ld OVER serve WHERE "
                     "serve.start_year >= 2013 && serve.end_year <= 2018 YIELD "
-                    "$^[player].name, serve.start_year, serve.end_year, $$[team].name";
+                    "$^.player.name, serve.start_year, serve.end_year, $$.team.name";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"serve.end_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
             {player.name(), 2014, 2015, "Mavericks"},
             {player.name(), 2015, 2016, "Kings"},
@@ -782,9 +91,138 @@ TEST_F(GoTest, DISABLED_OneStepOutBound) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER like YIELD like._dst as id"
+                    "| GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Hornets"].vid()},
+            {teams_["Trail Blazers"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt =
+            "GO FROM %ld OVER like YIELD like._dst as id"
+            "| ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve )";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Hornets"].vid()},
+            {teams_["Trail Blazers"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 
 
+TEST_F(GoTest, AssignmentSimple) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tracy McGrady"];
+        auto *fmt = "$var = GO FROM %ld OVER like YIELD like._dst as id; "
+                    "GO FROM $var.id OVER like";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<uint64_t>> expected = {
+            {players_["Tracy McGrady"].vid()},
+            {players_["LaMarcus Aldridge"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+
+TEST_F(GoTest, AssignmentPipe) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tracy McGrady"];
+        auto *fmt =
+            "$var = (GO FROM %ld OVER like YIELD like._dst as id | GO FROM $-.id OVER like YIELD "
+            "like._dst as id);"
+            "GO FROM $var.id OVER like";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<uint64_t>> expected = {
+            {players_["Kobe Bryant"].vid()},
+            {players_["Grant Hill"].vid()},
+            {players_["Rudy Gay"].vid()},
+            {players_["Tony Parker"].vid()},
+            {players_["Tim Duncan"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+
+TEST_F(GoTest, VariableUndefined) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO FROM $var OVER like";
+        auto code = client_->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+}
+
+
+TEST_F(GoTest, AssignmentEmptyResult) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "$var = GO FROM -1 OVER like YIELD like._dst as id; "
+                     "GO FROM $var.id OVER like";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<uint64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+
+// REVERSELY not supported yet
 TEST_F(GoTest, DISABLED_OneStepInBound) {
     {
         cpp2::ExecutionResponse resp;
@@ -802,12 +240,12 @@ TEST_F(GoTest, DISABLED_OneStepInBound) {
     }
 }
 
-
+// REVERSELY not supported yet
 TEST_F(GoTest, DISABLED_OneStepInOutBound) {
     // Ever served in the same team
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER serve | GO FROM $-.id OVER serve REVERSELY";
+        auto *fmt = "GO FROM %ld OVER serve | GO FROM $-.serve_id OVER serve REVERSELY";
         auto &player = players_["Kobe Bryant"];
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
@@ -824,5 +262,369 @@ TEST_F(GoTest, DISABLED_OneStepInOutBound) {
     }
 }
 
+TEST_F(GoTest, Distinct) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Nobody"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD DISTINCT $^.player.name as name, $$.team.name as name";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER like YIELD like._dst as id"
+                    "| GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve "
+                    "YIELD DISTINCT serve._dst, $$.team.name";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t, std::string>> expected = {
+            {teams_["Spurs"].vid(), "Spurs"},
+            {teams_["Hornets"].vid(), "Hornets"},
+            {teams_["Trail Blazers"].vid(), "Trail Blazers"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+
+TEST_F(GoTest, VertexNotExist) {
+    std::string name = "NON EXIST VERTEX ID";
+    int64_t nonExistPlayerID = std::hash<std::string>()(name);
+    auto iter = players_.begin();
+    while (iter != players_.end()) {
+        if (iter->vid() == nonExistPlayerID) {
+            ++nonExistPlayerID;
+            iter = players_.begin();
+            continue;
+        }
+        ++iter;
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve YIELD "
+                    "$^.player.name, serve.start_year, serve.end_year, $$.team.name";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve YIELD DISTINCT "
+                    "$^.player.name, serve.start_year, serve.end_year, $$.team.name";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve | GO FROM $-.serve_id OVER serve";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like YIELD like._dst as id"
+                    "| GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like YIELD like._dst as id"
+                    "| (GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve)";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+}
+
+TEST_F(GoTest, MULTI_EDGES) {
+    // Ever served in the same team
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve, like";
+        auto &player = players_["Russell Westbrook"];
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {teams_["Thunders"].vid(), 0},
+            {0, players_["Paul George"].vid()},
+            {0, players_["James Harden"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve, like";
+        auto &player = players_["Shaquile O'Neal"];
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {teams_["Magic"].vid(), 0},
+            {teams_["Lakers"].vid(), 0},
+            {teams_["Heat"].vid(), 0},
+            {teams_["Suns"].vid(), 0},
+            {teams_["Cavaliers"].vid(), 0},
+            {teams_["Celtics"].vid(), 0},
+            {0, players_["JaVale McGee"].vid()},
+            {0, players_["Tim Duncan"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER * YIELD serve._dst, like._dst";
+        auto &player = players_["Dirk Nowitzki"];
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {teams_["Mavericks"].vid(), 0},
+            {0, players_["Steve Nash"].vid()},
+            {0, players_["Jason Kidd"].vid()},
+            {0, players_["Dwyane Wade"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER *";
+        auto &player = players_["Paul Gasol"];
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {0, teams_["Grizzlies"].vid()},    {0, teams_["Lakers"].vid()},
+            {0, teams_["Bulls"].vid()},        {0, teams_["Spurs"].vid()},
+            {0, teams_["Bucks"].vid()},        {players_["Kobe Bryant"].vid(), 0},
+            {players_["Marc Gasol"].vid(), 0},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt    = "GO FROM %ld OVER * YIELD $$.team.name, $$.player.name";
+        auto &player = players_["LaMarcus Aldridge"];
+        auto query   = folly::stringPrintf(fmt, player.vid());
+        auto code    = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, std::string>> expected = {
+            {"Trail Blazers", ""},
+            {"", "Tim Duncan"},
+            {"", "Tony Parker"},
+            {"Spurs", ""},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt =
+            "GO FROM %ld OVER like, serve YIELD like._dst as id"
+            "| ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve )";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code  = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Hornets"].vid()},
+            {teams_["Trail Blazers"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt =
+            "GO FROM %ld OVER * YIELD like._dst as id"
+            "| ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve )";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code  = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Hornets"].vid()},
+            {teams_["Trail Blazers"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(GoTest, ReferencePipeInYieldAndWhere) {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "GO FROM hash('Tim Duncan'),hash('Chris Paul') OVER like "
+                            "YIELD $^.player.name AS name, like._dst AS id "
+                            "| GO FROM $-.id OVER like "
+                            "YIELD $-.name, $^.player.name, $$.player.name";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$-.name"}, {"$^.player.name"}, {"$$.player.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<uniform_tuple_t<std::string, 3>> expected = {
+            {"Tim Duncan", "Manu Ginobili", "Tim Duncan"},
+            {"Tim Duncan", "Tony Parker", "LaMarcus Aldridge"},
+            {"Tim Duncan", "Tony Parker", "Manu Ginobili"},
+            {"Tim Duncan", "Tony Parker", "Tim Duncan"},
+            {"Chris Paul", "LeBron James", "Ray Allen"},
+            {"Chris Paul", "Carmelo Anthony", "Chris Paul"},
+            {"Chris Paul", "Carmelo Anthony", "LeBron James"},
+            {"Chris Paul", "Carmelo Anthony", "Dwyane Wade"},
+            {"Chris Paul", "Dwyane Wade", "Chris Paul"},
+            {"Chris Paul", "Dwyane Wade", "LeBron James"},
+            {"Chris Paul", "Dwyane Wade", "Carmelo Anthony"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "GO FROM hash('Tim Duncan'),hash('Chris Paul') OVER like "
+                            "YIELD $^.player.name AS name, like._dst AS id "
+                            "| GO FROM $-.id OVER like "
+                            "WHERE $-.name != $$.player.name "
+                            "YIELD $-.name, $^.player.name, $$.player.name";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$-.name"}, {"$^.player.name"}, {"$$.player.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<uniform_tuple_t<std::string, 3>> expected = {
+            {"Tim Duncan", "Tony Parker", "LaMarcus Aldridge"},
+            {"Tim Duncan", "Tony Parker", "Manu Ginobili"},
+            {"Chris Paul", "LeBron James", "Ray Allen"},
+            {"Chris Paul", "Carmelo Anthony", "LeBron James"},
+            {"Chris Paul", "Carmelo Anthony", "Dwyane Wade"},
+            {"Chris Paul", "Dwyane Wade", "LeBron James"},
+            {"Chris Paul", "Dwyane Wade", "Carmelo Anthony"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+
+TEST_F(GoTest, ReferenceVariableInYieldAndWhere) {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "$var = GO FROM hash('Tim Duncan'),hash('Chris Paul') OVER like "
+                            "YIELD $^.player.name AS name, like._dst AS id; "
+                            "GO FROM $var.id OVER like "
+                            "YIELD $var.name, $^.player.name, $$.player.name";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$var.name"}, {"$^.player.name"}, {"$$.player.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<uniform_tuple_t<std::string, 3>> expected = {
+            {"Tim Duncan", "Manu Ginobili", "Tim Duncan"},
+            {"Tim Duncan", "Tony Parker", "LaMarcus Aldridge"},
+            {"Tim Duncan", "Tony Parker", "Manu Ginobili"},
+            {"Tim Duncan", "Tony Parker", "Tim Duncan"},
+            {"Chris Paul", "LeBron James", "Ray Allen"},
+            {"Chris Paul", "Carmelo Anthony", "Chris Paul"},
+            {"Chris Paul", "Carmelo Anthony", "LeBron James"},
+            {"Chris Paul", "Carmelo Anthony", "Dwyane Wade"},
+            {"Chris Paul", "Dwyane Wade", "Chris Paul"},
+            {"Chris Paul", "Dwyane Wade", "LeBron James"},
+            {"Chris Paul", "Dwyane Wade", "Carmelo Anthony"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "$var = GO FROM hash('Tim Duncan'),hash('Chris Paul') OVER like "
+                            "YIELD $^.player.name AS name, like._dst AS id; "
+                            "GO FROM $var.id OVER like "
+                            "WHERE $var.name != $$.player.name "
+                            "YIELD $var.name, $^.player.name, $$.player.name";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$var.name"}, {"$^.player.name"}, {"$$.player.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<uniform_tuple_t<std::string, 3>> expected = {
+            {"Tim Duncan", "Tony Parker", "LaMarcus Aldridge"},
+            {"Tim Duncan", "Tony Parker", "Manu Ginobili"},
+            {"Chris Paul", "LeBron James", "Ray Allen"},
+            {"Chris Paul", "Carmelo Anthony", "LeBron James"},
+            {"Chris Paul", "Carmelo Anthony", "Dwyane Wade"},
+            {"Chris Paul", "Dwyane Wade", "LeBron James"},
+            {"Chris Paul", "Dwyane Wade", "Carmelo Anthony"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(GoTest, NotExistTagProp) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve yield $^.test";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve yield serve.test";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+}
 }   // namespace graph
 }   // namespace nebula

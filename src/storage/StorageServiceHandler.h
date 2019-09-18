@@ -21,21 +21,15 @@ class StorageServiceHandler final : public cpp2::StorageServiceSvIf {
 
 public:
     StorageServiceHandler(kvstore::KVStore* kvstore,
-                          std::unique_ptr<meta::SchemaManager> schemaMan)
+                          meta::SchemaManager* schemaMan)
         : kvstore_(kvstore)
-        , schemaMan_(std::move(schemaMan)) {}
+        , schemaMan_(schemaMan) {}
 
     folly::Future<cpp2::QueryResponse>
-    future_getOutBound(const cpp2::GetNeighborsRequest& req) override;
-
-    folly::Future<cpp2::QueryResponse>
-    future_getInBound(const cpp2::GetNeighborsRequest& req) override;
+    future_getBound(const cpp2::GetNeighborsRequest& req) override;
 
     folly::Future<cpp2::QueryStatsResponse>
-    future_outBoundStats(const cpp2::GetNeighborsRequest& req) override;
-
-    folly::Future<cpp2::QueryStatsResponse>
-    future_inBoundStats(const cpp2::GetNeighborsRequest& req) override;
+    future_boundStats(const cpp2::GetNeighborsRequest& req) override;
 
     folly::Future<cpp2::QueryResponse>
     future_getProps(const cpp2::VertexPropRequest& req) override;
@@ -49,9 +43,46 @@ public:
     folly::Future<cpp2::ExecResponse>
     future_addEdges(const cpp2::AddEdgesRequest& req) override;
 
+    folly::Future<cpp2::EdgeKeyResponse>
+    future_getEdgeKeys(const cpp2::EdgeKeyRequest& req) override;
+
+    folly::Future<cpp2::ExecResponse>
+    future_deleteEdges(const cpp2::DeleteEdgesRequest& req) override;
+
+    folly::Future<cpp2::ExecResponse>
+    future_deleteVertex(const cpp2::DeleteVertexRequest& req) override;
+
+    folly::Future<cpp2::UpdateResponse>
+    future_updateVertex(const cpp2::UpdateVertexRequest& req) override;
+
+    folly::Future<cpp2::UpdateResponse>
+    future_updateEdge(const cpp2::UpdateEdgeRequest& req) override;
+
+    // Admin operations
+    folly::Future<cpp2::AdminExecResp>
+    future_transLeader(const cpp2::TransLeaderReq& req) override;
+
+    folly::Future<cpp2::AdminExecResp>
+    future_addPart(const cpp2::AddPartReq& req) override;
+
+    folly::Future<cpp2::AdminExecResp>
+    future_addLearner(const cpp2::AddLearnerReq& req) override;
+
+    folly::Future<cpp2::AdminExecResp>
+    future_waitingForCatchUpData(const cpp2::CatchUpDataReq& req) override;
+
+    folly::Future<cpp2::AdminExecResp>
+    future_removePart(const cpp2::RemovePartReq& req) override;
+
+    folly::Future<cpp2::AdminExecResp>
+    future_memberChange(const cpp2::MemberChangeReq& req) override;
+
+    folly::Future<cpp2::GetLeaderResp>
+    future_getLeaderPart(const cpp2::GetLeaderReq& req) override;
+
 private:
     kvstore::KVStore* kvstore_ = nullptr;
-    std::unique_ptr<meta::SchemaManager> schemaMan_;
+    meta::SchemaManager* schemaMan_;
 };
 
 }  // namespace storage

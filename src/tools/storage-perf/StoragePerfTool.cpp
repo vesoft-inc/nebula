@@ -8,40 +8,99 @@
 #include "thread/GenericWorker.h"
 #include "time/Duration.h"
 #include "storage/client/StorageClient.h"
-#include "dataman/RowWriter.h"
 
 DEFINE_int32(threads, 2, "Total threads for perf");
 DEFINE_int32(qps, 1000, "Total qps for the perf tool");
 DEFINE_int32(totalReqs, 10000, "Total requests during this perf test");
-DEFINE_int32(io_threads, 3, "Client io threads");
-DEFINE_bool(mock_server, true, "Test server was started in mock server mode");
-DEFINE_int32(mock_server_port, 44500, "The mock server port");
+DEFINE_int32(io_threads, 10, "Client io threads");
 DEFINE_string(method, "getNeighbors", "method type being tested,"
                                       "such as getNeighbors, addVertices, addEdges, getVertices");
-
+DEFINE_string(meta_server_addrs, "", "meta server address");
 DEFINE_int32(min_vertex_id, 1, "The smallest vertex Id");
 DEFINE_int32(max_vertex_id, 10000, "The biggest vertex Id");
+DEFINE_int32(size, 1000, "The data's size per request");
+DEFINE_string(space_name, "test", "Specify the space name");
+DEFINE_string(tag_name, "test_tag", "Specify the tag name");
+DEFINE_string(edge_name, "test_edge", "Specify the edge name");
+DEFINE_bool(random_message, false, "Whether to write random message to storage service");
 
 namespace nebula {
 namespace storage {
+
+thread_local uint32_t position = 1;
 
 class Perf {
 public:
     int run() {
         uint32_t qpsPerThread = FLAGS_qps / FLAGS_threads;
-        uint32_t interval = 1000 / qpsPerThread;
-        CHECK_GT(interval, 0) << "qpsPerThread should not large than 1000, interval " << interval;
+        int32_t radix = qpsPerThread / 1000;
+        int32_t slotSize = sizeof(slots_) / sizeof(int32_t);
+        std::fill(slots_, slots_ + slotSize, radix);
+
+        int32_t remained = qpsPerThread % 1000 / 100;
+        if (remained != 0) {
+            int32_t step = slotSize / remained - 1;
+            if (step == 0) {
+                step = 1;
+            }
+            for (int32_t i = 0; i < remained; i++) {
+                int32_t p = (i + i * step) % slotSize;
+                if (slots_[p] == radix) {
+                    slots_[p] += 1;
+                } else {
+                    while (slots_[++p] == (radix + 1)) {}
+                    slots_[p] += 1;
+                }
+            }
+        }
+
+        std::stringstream stream;
+        for (int32_t slot : slots_) {
+            stream << slot << " ";
+        }
         LOG(INFO) << "Total threads " << FLAGS_threads
                   << ", qpsPerThread " << qpsPerThread
-                  << ", task interval ms " << interval;
+                  << ", slots " << stream.str();
+        auto metaAddrsRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
+        if (!metaAddrsRet.ok() || metaAddrsRet.value().empty()) {
+            LOG(ERROR) << "Can't get metaServer address, status:" << metaAddrsRet.status()
+                       << ", FLAGS_meta_server_addrs:" << FLAGS_meta_server_addrs;
+            return EXIT_FAILURE;
+        }
+
         std::vector<std::unique_ptr<thread::GenericWorker>> threads;
         for (int32_t i = 0; i < FLAGS_threads; i++) {
             auto t = std::make_unique<thread::GenericWorker>();
             threads.emplace_back(std::move(t));
         }
         threadPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_io_threads);
-        client_ = std::make_unique<StorageClient>(threadPool_);
+        mClient_ = std::make_unique<meta::MetaClient>(threadPool_, metaAddrsRet.value());
+        CHECK(mClient_->waitForMetadReady());
+
+        auto spaceResult = mClient_->getSpaceIdByNameFromCache(FLAGS_space_name);
+        if (!spaceResult.ok()) {
+            LOG(ERROR) << "Get SpaceID Failed: " << spaceResult.status();
+            return EXIT_FAILURE;
+        }
+        spaceId_ = spaceResult.value();
+
+        auto tagResult = mClient_->getTagIDByNameFromCache(spaceId_, FLAGS_tag_name);
+        if (!tagResult.ok()) {
+            LOG(ERROR) << "TagID not exist: " << tagResult.status();
+            return EXIT_FAILURE;
+        }
+        tagId_ = tagResult.value();
+
+        auto edgeResult = mClient_->getEdgeTypeByNameFromCache(spaceId_, FLAGS_edge_name);
+        if (!edgeResult.ok()) {
+            LOG(ERROR) << "EdgeType not exist: " << edgeResult.status();
+            return EXIT_FAILURE;
+        }
+        edgeType_ = edgeResult.value();
+
+        client_ = std::make_unique<StorageClient>(threadPool_, mClient_.get());
         time::Duration duration;
+        static uint32_t interval = 1;
         for (auto& t : threads) {
             CHECK(t->start("TaskThread"));
             if (FLAGS_method == "getNeighbors") {
@@ -50,12 +109,11 @@ public:
                 t->addRepeatTask(interval, &Perf::addVerticesTask, this);
             } else if (FLAGS_method == "addEdges") {
                 t->addRepeatTask(interval, &Perf::addEdgesTask, this);
-            } else if (FLAGS_method == "getVertices") {
-                t->addRepeatTask(interval, &Perf::getVerticesTask, this);
             } else {
-                LOG(FATAL) << "Unknown method name " << FLAGS_method;
+                t->addRepeatTask(interval, &Perf::getVerticesTask, this);
             }
         }
+
         while (finishedRequests_ < FLAGS_totalReqs) {
             if (finishedRequests_ % 1000 == 0) {
                 LOG(INFO) << "Total " << FLAGS_totalReqs << ", finished " << finishedRequests_;
@@ -83,9 +141,9 @@ private:
         std::vector<storage::cpp2::PropDef> props;
         {
             storage::cpp2::PropDef prop;
-            prop.set_name(folly::stringPrintf("tag_%d_col_1", defaultTagId_));
+            prop.set_name(folly::stringPrintf("tag_%d_col_1", tagId_));
             prop.set_owner(storage::cpp2::PropOwner::SOURCE);
-            prop.set_tag_id(defaultTagId_);
+            prop.id.set_tag_id(tagId_);
             props.emplace_back(std::move(prop));
         }
         {
@@ -97,68 +155,91 @@ private:
         return props;
     }
 
+    std::string genData(int32_t size) {
+        if (FLAGS_random_message) {
+            std::stringstream stream;
+            for (int32_t index = 0; index < size;) {
+                const char *array = folly::to<std::string>(folly::Random::rand32(128)).c_str();
+                int32_t length = sizeof(array) / sizeof(char);
+                for (int32_t i = 0; i < length; i++) {
+                    stream << array[i];
+                    index++;
+                }
+            }
+            return stream.str();
+        } else {
+            return std::string(size, ' ');
+        }
+    }
+
     std::vector<storage::cpp2::Vertex> genVertices() {
+        static int32_t size = sizeof(slots_) / sizeof(int32_t);
         std::vector<storage::cpp2::Vertex> vertices;
         static VertexID vId = FLAGS_min_vertex_id;
-        storage::cpp2::Vertex v;
-        v.set_id(vId++);
-        decltype(v.tags) tags;
-        storage::cpp2::Tag tag;
-        tag.set_tag_id(defaultTagId_);
-        RowWriter writer;
-        for (uint64_t numInt = 0; numInt < 3; numInt++) {
-            writer << numInt;
+        position = (position + 1) % size;
+        for (int32_t i = 0; i < slots_[position]; i++) {
+            storage::cpp2::Vertex v;
+            v.set_id(vId++);
+            decltype(v.tags) tags;
+            storage::cpp2::Tag tag;
+            tag.set_tag_id(tagId_);
+            auto props = genData(FLAGS_size);
+            tag.set_props(std::move(props));
+            tags.emplace_back(std::move(tag));
+            v.set_tags(std::move(tags));
+            vertices.emplace_back(std::move(v));
         }
-        for (auto numString = 3; numString < 6; numString++) {
-            writer << folly::stringPrintf("tag_string_col_%d", numString);
-        }
-        tag.set_props(writer.encode());
-        tags.emplace_back(std::move(tag));
-        v.set_tags(std::move(tags));
-        vertices.emplace_back(std::move(v));
         return vertices;
     }
 
     std::vector<storage::cpp2::Edge> genEdges() {
+        static int32_t size = sizeof(slots_) / sizeof(int32_t);
         std::vector<storage::cpp2::Edge> edges;
         static VertexID vId = FLAGS_min_vertex_id;
-        storage::cpp2::Edge edge;
-        storage::cpp2::EdgeKey eKey;
-        eKey.set_src(vId);
-        eKey.set_edge_type(defaultEdgeType_);
-        eKey.set_dst(vId + 1);
-        eKey.set_ranking(0);
-        edge.set_key(std::move(eKey));
-        RowWriter writer(nullptr);
-        for (uint64_t numInt = 0; numInt < 10; numInt++) {
-            writer << numInt;
+        position = (position + 1) % size;
+        for (int32_t i = 0; i< slots_[position]; i++) {
+            storage::cpp2::Edge edge;
+            storage::cpp2::EdgeKey eKey;
+            eKey.set_src(vId);
+            eKey.set_edge_type(edgeType_);
+            eKey.set_dst(vId + 1);
+            eKey.set_ranking(0);
+            edge.set_key(std::move(eKey));
+            auto props = genData(FLAGS_size);
+            edge.set_props(std::move(props));
+            edges.emplace_back(std::move(edge));
         }
-        for (auto numString = 10; numString < 20; numString++) {
-            writer << folly::stringPrintf("string_col_%d", numString);
-        }
-        edge.set_props(writer.encode());
-        edges.emplace_back(std::move(edge));
         return edges;
     }
 
     void getNeighborsTask() {
         auto* evb = threadPool_->getEventBase();
-        auto f = client_->getNeighbors(defaultSpaceId_, randomVertices(),
-                                       defaultEdgeType_, true, "", randomCols())
-                            .via(evb).then([this]() {
-                                this->finishedRequests_++;
-                                VLOG(3) << "request successed!";
-                             }).onError([](folly::FutureException&) {
-                                LOG(ERROR) << "request failed!";
-                             });
+        std::vector<EdgeType> e(edgeType_);
+        auto f =
+          client_->getNeighbors(spaceId_, randomVertices(), std::move(e), "", randomCols())
+                .via(evb)
+                .then([this](auto&& resps) {
+                    if (!resps.succeeded()) {
+                        LOG(ERROR) << "Request failed!";
+                    } else {
+                        VLOG(3) << "request successed!";
+                    }
+                    this->finishedRequests_++;
+                    VLOG(3) << "request successed!";
+                })
+                .onError([](folly::FutureException&) { LOG(ERROR) << "request failed!"; });
     }
 
     void addVerticesTask() {
         auto* evb = threadPool_->getEventBase();
-        auto f = client_->addVertices(defaultSpaceId_, genVertices(), true)
-                    .via(evb).then([this]() {
+        auto f = client_->addVertices(spaceId_, genVertices(), true)
+                    .via(evb).then([this](auto&& resps) {
+                        if (!resps.succeeded()) {
+                            LOG(ERROR) << "Request failed!";
+                        } else {
+                            VLOG(3) << "request successed!";
+                        }
                         this->finishedRequests_++;
-                        VLOG(3) << "request successed!";
                      }).onError([](folly::FutureException&) {
                         LOG(ERROR) << "Request failed!";
                      });
@@ -166,8 +247,13 @@ private:
 
     void addEdgesTask() {
         auto* evb = threadPool_->getEventBase();
-        auto f = client_->addEdges(defaultSpaceId_, genEdges(), true)
-                    .via(evb).then([this]() {
+        auto f = client_->addEdges(spaceId_, genEdges(), true)
+                    .via(evb).then([this](auto&& resps) {
+                        if (!resps.succeeded()) {
+                            LOG(ERROR) << "Request failed!";
+                        } else {
+                            VLOG(3) << "request successed!";
+                        }
                         this->finishedRequests_++;
                         VLOG(3) << "request successed!";
                      }).onError([](folly::FutureException&) {
@@ -177,8 +263,13 @@ private:
 
     void getVerticesTask() {
         auto* evb = threadPool_->getEventBase();
-        auto f = client_->getVertexProps(defaultSpaceId_, randomVertices(), randomCols())
-                    .via(evb).then([this]() {
+        auto f = client_->getVertexProps(spaceId_, randomVertices(), randomCols())
+                    .via(evb).then([this](auto&& resps) {
+                        if (!resps.succeeded()) {
+                            LOG(ERROR) << "Request failed!";
+                        } else {
+                            VLOG(3) << "request successed!";
+                        }
                         this->finishedRequests_++;
                         VLOG(3) << "request successed!";
                      }).onError([](folly::FutureException&) {
@@ -189,10 +280,12 @@ private:
 private:
     std::atomic_long finishedRequests_{0};
     std::unique_ptr<StorageClient> client_;
+    std::unique_ptr<meta::MetaClient> mClient_;
     std::shared_ptr<folly::IOThreadPoolExecutor> threadPool_;
-    GraphSpaceID defaultSpaceId_ = 0;
-    EdgeType     defaultEdgeType_ = 101;
-    TagID        defaultTagId_    = 3001;
+    GraphSpaceID spaceId_;
+    TagID tagId_;
+    EdgeType edgeType_;
+    int32_t slots_[10];
 };
 
 }  // namespace storage
@@ -204,4 +297,3 @@ int main(int argc, char *argv[]) {
     nebula::storage::Perf perf;
     return perf.run();
 }
-

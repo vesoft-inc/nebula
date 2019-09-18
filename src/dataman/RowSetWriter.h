@@ -41,6 +41,8 @@ public:
     void addRow(RowWriter& writer);
     // Append the encoded row data
     void addRow(const std::string& data);
+    // Copy existed rows
+    void addAll(const std::string& data);
 
 private:
     std::shared_ptr<const meta::SchemaProviderIf> schema_;

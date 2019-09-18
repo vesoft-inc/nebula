@@ -24,7 +24,8 @@ public:
     void process(const cpp2::EdgePropRequest& req);
 
 private:
-    explicit QueryEdgePropsProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
+    explicit QueryEdgePropsProcessor(kvstore::KVStore* kvstore,
+                                     meta::SchemaManager* schemaMan)
         : QueryBaseProcessor<cpp2::EdgePropRequest,
                              cpp2::EdgePropResponse>(kvstore, schemaMan) {}
 
@@ -33,24 +34,12 @@ private:
                                           std::vector<PropContext>& props,
                                           RowSetWriter& rsWriter);
 
-    void addDefaultProps(EdgeContext& edgeContext);
-
-    kvstore::ResultCode processVertex(PartitionID partID, VertexID vId,
-                                      std::vector<TagContext>& tagContexts,
-                                      EdgeContext& edgeContext) {
-        UNUSED(partID);
-        UNUSED(vId);
-        UNUSED(tagContexts);
-        UNUSED(edgeContext);
+    kvstore::ResultCode processVertex(PartitionID, VertexID) override {
         LOG(FATAL) << "Unimplement!";
         return kvstore::ResultCode::SUCCEEDED;
     }
 
-    void onProcessed(std::vector<TagContext>& tagContexts,
-                     EdgeContext& edgeContext,
-                     int32_t retNum) {
-        UNUSED(tagContexts);
-        UNUSED(edgeContext);
+    void onProcessFinished(int32_t retNum) override {
         UNUSED(retNum);
         LOG(FATAL) << "Unimplement!";
     }

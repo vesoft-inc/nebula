@@ -25,12 +25,5 @@ int main(int argc, char **argv) {
     gEnv = new TestEnv();   // gtest will delete this env object for us
     ::testing::AddGlobalTestEnvironment(gEnv);
 
-    // Let the system choose an available port for us
-    int32_t localMetaPort = 0;
-    // need to start meta server
-    TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto metaServer = TestUtils::mockServer(localMetaPort, rootPath.path());
-
-    FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", metaServer->port_);
     return RUN_ALL_TESTS();
 }

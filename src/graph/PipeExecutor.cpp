@@ -17,7 +17,7 @@ PipeExecutor::PipeExecutor(Sentence *sentence,
 
 
 Status PipeExecutor::prepare() {
-    auto status = checkIfGraphSpaceChosen();
+    auto status = syntaxPreCheck();
     if (!status.ok()) {
         return status;
     }
@@ -26,22 +26,6 @@ Status PipeExecutor::prepare() {
     right_ = makeTraverseExecutor(sentence_->right());
     DCHECK(left_ != nullptr);
     DCHECK(right_ != nullptr);
-
-    status = left_->prepare();
-    if (!status.ok()) {
-        FLOG_ERROR("Prepare executor `%s' failed: %s",
-                    left_->name(), status.toString().c_str());
-        return status;
-    }
-
-    right_->setInputResultSchema(left_->resultSchema());
-
-    status = right_->prepare();
-    if (!status.ok()) {
-        FLOG_ERROR("Prepare executor `%s' failed: %s",
-                    right_->name(), status.toString().c_str());
-        return status;
-    }
 
     auto onError = [this] (Status s) {
         /**
@@ -90,9 +74,34 @@ Status PipeExecutor::prepare() {
         right_->setOnError(onError);
     }
 
+    status = left_->prepare();
+    if (!status.ok()) {
+        FLOG_ERROR("Prepare executor `%s' failed: %s",
+                    left_->name(), status.toString().c_str());
+        return status;
+    }
+
+    status = right_->prepare();
+    if (!status.ok()) {
+        FLOG_ERROR("Prepare executor `%s' failed: %s",
+                    right_->name(), status.toString().c_str());
+        return status;
+    }
+
+
     return Status::OK();
 }
 
+Status PipeExecutor::syntaxPreCheck() {
+    // Set op not support input,
+    // because '$-' would be ambiguous in such a situation:
+    // Go | (Go | Go $- UNION GO)
+    if (sentence_->right()->kind() == Sentence::Kind::kSet) {
+        return Status::SyntaxError("Set op not support input.");
+    }
+
+    return Status::OK();
+}
 
 void PipeExecutor::execute() {
     left_->execute();

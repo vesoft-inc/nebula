@@ -10,9 +10,11 @@
 #include "base/Base.h"
 #include <gtest/gtest_prod.h>
 #include "gen-cpp2/graph_types.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "dataman/DataCommon.h"
 #include "meta/SchemaProviderIf.h"
 #include "meta/SchemaManager.h"
+#include "base/ErrorOr.h"
 
 namespace nebula {
 
@@ -38,7 +40,6 @@ public:
         ResultType getDouble(double& v) const noexcept;
         ResultType getString(folly::StringPiece& v) const noexcept;
         ResultType getVid(int64_t& v) const noexcept;
-        ResultType getTimestamp(int64_t& v) const noexcept;
     private:
         const RowReader* reader_;
         Iterator* iter_;
@@ -87,6 +88,152 @@ public:
         folly::StringPiece row,
         std::shared_ptr<const meta::SchemaProviderIf> schema);
 
+    static StatusOr<VariantType> getDefaultProp(const meta::SchemaProviderIf* schema,
+                                                const std::string& prop) {
+        auto& vType = schema->getFieldType(prop);
+        switch (vType.type) {
+            case nebula::cpp2::SupportedType::BOOL: {
+                return false;
+            }
+            case nebula::cpp2::SupportedType::TIMESTAMP:
+            case nebula::cpp2::SupportedType::INT:
+                return static_cast<int64_t>(0);
+            case nebula::cpp2::SupportedType::VID: {
+                return static_cast<VertexID>(0);
+            }
+            case nebula::cpp2::SupportedType::FLOAT:
+            case nebula::cpp2::SupportedType::DOUBLE: {
+                return static_cast<double>(0.0);
+            }
+            case nebula::cpp2::SupportedType::STRING: {
+                return static_cast<std::string>("");
+            }
+            default:
+                auto msg = folly::sformat("Unknown type: {}", static_cast<int32_t>(vType.type));
+                LOG(ERROR) << "Unknown type: " << msg;
+                return Status::Error(msg);
+        }
+    }
+
+    static ErrorOr<ResultType, VariantType> getPropByName(const RowReader* reader,
+                                                          const std::string& prop) {
+        auto& vType = reader->getSchema()->getFieldType(prop);
+        switch (vType.type) {
+            case nebula::cpp2::SupportedType::BOOL: {
+                bool v;
+                auto ret = reader->getBool(prop, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return v;
+            }
+            case nebula::cpp2::SupportedType::INT:
+            case nebula::cpp2::SupportedType::TIMESTAMP: {
+                int64_t v;
+                auto ret = reader->getInt(prop, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return v;
+            }
+            case nebula::cpp2::SupportedType::VID: {
+                VertexID v;
+                auto ret = reader->getVid(prop, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return v;
+            }
+            case nebula::cpp2::SupportedType::FLOAT: {
+                float v;
+                auto ret = reader->getFloat(prop, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return static_cast<double>(v);
+            }
+            case nebula::cpp2::SupportedType::DOUBLE: {
+                double v;
+                auto ret = reader->getDouble(prop, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return v;
+            }
+            case nebula::cpp2::SupportedType::STRING: {
+                folly::StringPiece v;
+                auto ret = reader->getString(prop, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return v.toString();
+            }
+            default:
+                LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(vType.type);
+                return ResultType::E_DATA_INVALID;
+        }
+    }
+
+
+    static ErrorOr<ResultType, VariantType> getPropByIndex(const RowReader *reader,
+                                                           const int64_t index) {
+        auto& vType = reader->getSchema()->getFieldType(index);
+        switch (vType.get_type()) {
+            case nebula::cpp2::SupportedType::BOOL: {
+                bool v;
+                auto ret = reader->getBool(index, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return v;
+            }
+            case nebula::cpp2::SupportedType::INT:
+            case nebula::cpp2::SupportedType::TIMESTAMP: {
+                int64_t v;
+                auto ret = reader->getInt(index, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return v;
+            }
+            case nebula::cpp2::SupportedType::VID: {
+                VertexID v;
+                auto ret = reader->getVid(index, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return v;
+            }
+            case nebula::cpp2::SupportedType::FLOAT: {
+                float v;
+                auto ret = reader->getFloat(index, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return static_cast<double>(v);
+            }
+            case nebula::cpp2::SupportedType::DOUBLE: {
+                double v;
+                auto ret = reader->getDouble(index, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return v;
+            }
+            case nebula::cpp2::SupportedType::STRING: {
+                folly::StringPiece v;
+                auto ret = reader->getString(index, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return v.toString();
+            }
+            default:
+                LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(vType.get_type());
+                return ResultType::E_DATA_INVALID;
+        }
+    }
+
     virtual ~RowReader() = default;
 
     SchemaVer schemaVer() const noexcept;
@@ -120,8 +267,10 @@ public:
     ResultType getVid(const folly::StringPiece name, int64_t& v) const noexcept;
     ResultType getVid(int64_t index, int64_t& v) const noexcept;
 
-    ResultType getTimestamp(const folly::StringPiece name, int64_t& v) const noexcept;
-    ResultType getTimestamp(int64_t index, int64_t& v) const noexcept;
+
+    std::shared_ptr<const meta::SchemaProviderIf> getSchema() const {
+        return schema_;
+    }
 
     // TODO getPath(const std::string& name) const noexcept;
     // TODO getPath(int64_t index) const noexcept;
@@ -182,7 +331,6 @@ private:
     int32_t readString(int64_t offset, folly::StringPiece& v) const noexcept;
     int32_t readInt64(int64_t offset, int64_t& v) const noexcept;
     int32_t readVid(int64_t offset, int64_t& v) const noexcept;
-    int32_t readTimestamp(int64_t offset, int64_t& v) const noexcept;
 
     // Following methods assume the parameters index and offset are valid
     // When succeeded, offset will advance
@@ -197,8 +345,6 @@ private:
         const noexcept;
     ResultType getInt64(int64_t index, int64_t& offset, int64_t& v) const noexcept;
     ResultType getVid(int64_t index, int64_t& offset, int64_t& v) const noexcept;
-    ResultType getTimestamp(int64_t index, int64_t& offset, int64_t& v)
-        const noexcept;
 };
 
 }  // namespace nebula
@@ -243,5 +389,3 @@ private:
 #include "dataman/RowReader.inl"
 
 #endif  // DATAMAN_ROWREADER_H_
-
-

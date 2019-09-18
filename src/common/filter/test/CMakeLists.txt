@@ -1,33 +1,28 @@
-add_compile_options(-Wno-parentheses)
-add_executable(
-    expression_test
-    ExpressionTest.cpp
+set(FILTER_TEST_LIBS
     $<TARGET_OBJECTS:filter_obj>
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:time_obj>
 )
-nebula_link_libraries(
-    expression_test
-    gtest
-    gtest_main
-)
-target_include_directories(expression_test SYSTEM BEFORE PUBLIC ${FLEX_INCLUDE_DIRS})
-nebula_add_test(expression_test)
 
-add_executable(
-    expression_encode_decode_bm
-    ExpressionEncodeDecodeBenchmark.cpp
-    $<TARGET_OBJECTS:filter_obj>
-    $<TARGET_OBJECTS:parser_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:parser_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:fs_obj>
+
+nebula_add_test(
+    NAME expression_test
+    SOURCES ExpressionTest.cpp
+    OBJECTS ${FILTER_TEST_LIBS}
+    LIBRARIES gtest gtest_main
 )
-nebula_link_libraries(
-    expression_encode_decode_bm
-    follybenchmark
-    boost_regex
+
+if (ENABLE_TESTING)
+    target_compile_options(expression_test PRIVATE -Wno-parentheses)
+endif()
+
+
+nebula_add_executable(
+    NAME expression_encode_decode_bm
+    SOURCES ExpressionEncodeDecodeBenchmark.cpp
+    OBJECTS ${FILTER_TEST_LIBS}
+    LIBRARIES follybenchmark boost_regex
 )

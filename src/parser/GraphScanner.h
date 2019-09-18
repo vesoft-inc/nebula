@@ -30,13 +30,33 @@ public:
         return yylex();
     }
 
+public:
+    // Called by GQLParser to set the `readBuffer' callback, which would be invoked
+    // by LexerInput to fill the stream buffer.
+    void setReadBuffer(std::function<int(char*, int)> readBuffer) {
+        readBuffer_ = readBuffer;
+    }
+
+    // Manually invoked by GQLParser to recover from a failure state.
+    // This makes the scanner reentrant.
+    void flushBuffer() {
+        yy_flush_buffer(yy_buffer_stack ? yy_buffer_stack[yy_buffer_stack_top] : nullptr);
+    }
+
+protected:
+    // Called when YY_INPUT is invoked
+    int LexerInput(char *buf, int maxSize) override {
+        return readBuffer_(buf, maxSize);
+    }
+
 
 private:
     friend class Scanner_Basic_Test;
-    int yylex();
+    int yylex() override;
 
     nebula::GraphParser::semantic_type * yylval{nullptr};
     nebula::GraphParser::location_type * yylloc{nullptr};
+    std::function<int(char*, int)>       readBuffer_;
 };
 
 }   // namespace nebula

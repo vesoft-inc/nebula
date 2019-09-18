@@ -15,17 +15,17 @@ namespace nebula {
 namespace kvstore {
 
 TEST(RocksEngineTest, SimpleTest) {
-    fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
+    fs::TempDir rootPath("/tmp/rocksdb_engine_SimpleTest.XXXXXX");
     auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->put("key", "val"));
     std::string val;
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &val));
-    EXPECT_EQ(val, "val");
+    EXPECT_EQ("val", val);
 }
 
 
 TEST(RocksEngineTest, RangeTest) {
-    fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
+    fs::TempDir rootPath("/tmp/rocksdb_engine_RangeTest.XXXXXX");
     auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
     std::vector<KV> data;
     for (int32_t i = 10; i < 20;  i++) {
@@ -33,10 +33,15 @@ TEST(RocksEngineTest, RangeTest) {
                           folly::stringPrintf("val_%d", i));
     }
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->multiPut(std::move(data)));
-    auto checkRange = [&](int32_t start, int32_t end,
-                          int32_t expectedFrom, int32_t expectedTotal) {
-        LOG(INFO) << "start " << start << ", end " << end
-                  << ", expectedFrom " << expectedFrom << ", expectedTotal " << expectedTotal;
+
+    auto checkRange = [&](int32_t start,
+                          int32_t end,
+                          int32_t expectedFrom,
+                          int32_t expectedTotal) {
+        VLOG(1) << "start " << start
+                << ", end " << end
+                << ", expectedFrom " << expectedFrom
+                << ", expectedTotal " << expectedTotal;
         std::string s(reinterpret_cast<const char*>(&start), sizeof(int32_t));
         std::string e(reinterpret_cast<const char*>(&end), sizeof(int32_t));
         std::unique_ptr<KVIterator> iter;
@@ -63,7 +68,7 @@ TEST(RocksEngineTest, RangeTest) {
 
 
 TEST(RocksEngineTest, PrefixTest) {
-    fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
+    fs::TempDir rootPath("/tmp/rocksdb_engine_PrefixTest.XXXXXX");
     auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
     LOG(INFO) << "Write data in batch and scan them...";
     std::vector<KV> data;
@@ -80,10 +85,14 @@ TEST(RocksEngineTest, PrefixTest) {
                           folly::stringPrintf("val_%d", i));
     }
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->multiPut(std::move(data)));
+
     auto checkPrefix = [&](const std::string& prefix,
-                          int32_t expectedFrom, int32_t expectedTotal) {
-        LOG(INFO) << "prefix " << prefix
-                  << ", expectedFrom " << expectedFrom << ", expectedTotal " << expectedTotal;
+                           int32_t expectedFrom,
+                           int32_t expectedTotal) {
+        VLOG(1) << "prefix " << prefix
+                << ", expectedFrom " << expectedFrom
+                << ", expectedTotal " << expectedTotal;
+
         std::unique_ptr<KVIterator> iter;
         EXPECT_EQ(ResultCode::SUCCEEDED, engine->prefix(prefix, &iter));
         int num = 0;
@@ -105,35 +114,35 @@ TEST(RocksEngineTest, PrefixTest) {
 
 
 TEST(RocksEngineTest, RemoveTest) {
-    fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
+    fs::TempDir rootPath("/tmp/rocksdb_engine_RemoveTest.XXXXXX");
     auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->put("key", "val"));
     std::string val;
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &val));
-    EXPECT_EQ(val, "val");
+    EXPECT_EQ("val", val);
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->remove("key"));
     EXPECT_EQ(ResultCode::ERR_KEY_NOT_FOUND, engine->get("key", &val));
 }
 
 
 TEST(RocksEngineTest, RemoveRangeTest) {
-    fs::TempDir rootPath("/tmp/rocksdb_remove_range_test.XXXXXX");
+    fs::TempDir rootPath("/tmp/rocksdb_engine_RemoveRangeTest.XXXXXX");
     auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
     for (int32_t i = 0; i < 100; i++) {
-        EXPECT_EQ(ResultCode::SUCCEEDED, engine->put(
-                    std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
-                    folly::stringPrintf("%d_val", i)));
+        std::string key(reinterpret_cast<const char*>(&i), sizeof(int32_t));
+        std::string value(folly::stringPrintf("%d_val", i));
+        EXPECT_EQ(ResultCode::SUCCEEDED, engine->put(key, value));
         std::string val;
-        EXPECT_EQ(ResultCode::SUCCEEDED, engine->get(
-                    std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
-                    &val));
-        EXPECT_EQ(val, folly::stringPrintf("%d_val", i));
+        EXPECT_EQ(ResultCode::SUCCEEDED, engine->get(key, &val));
+        EXPECT_EQ(value, val);
     }
     {
         int32_t s = 0, e = 50;
-        EXPECT_EQ(ResultCode::SUCCEEDED, engine->removeRange(
-                     std::string(reinterpret_cast<const char*>(&s), sizeof(int32_t)),
-                     std::string(reinterpret_cast<const char*>(&e), sizeof(int32_t))));
+        EXPECT_EQ(
+            ResultCode::SUCCEEDED,
+            engine->removeRange(
+                std::string(reinterpret_cast<const char*>(&s), sizeof(int32_t)),
+                std::string(reinterpret_cast<const char*>(&e), sizeof(int32_t))));
     }
     {
         int32_t s = 0, e = 100;
@@ -158,7 +167,7 @@ TEST(RocksEngineTest, RemoveRangeTest) {
 
 
 TEST(RocksEngineTest, OptionTest) {
-    fs::TempDir rootPath("/tmp/rocksdb_option_test.XXXXXX");
+    fs::TempDir rootPath("/tmp/rocksdb_engine_OptionTest.XXXXXX");
     auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
     EXPECT_EQ(ResultCode::SUCCEEDED,
               engine->setOption("disable_auto_compactions", "true"));
@@ -173,11 +182,12 @@ TEST(RocksEngineTest, OptionTest) {
     EXPECT_EQ(ResultCode::SUCCEEDED,
               engine->setDBOption("max_background_compactions", "2_"));
     EXPECT_EQ(ResultCode::ERR_INVALID_ARGUMENT,
-            engine->setDBOption("max_background_compactions", "bad_value"));
+              engine->setDBOption("max_background_compactions", "bad_value"));
 }
 
+
 TEST(RocksEngineTest, CompactTest) {
-    fs::TempDir rootPath("/tmp/rocksdb_compact_test.XXXXXX");
+    fs::TempDir rootPath("/tmp/rocksdb_engine_CompactTest.XXXXXX");
     auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
     std::vector<KV> data;
     for (int32_t i = 2; i < 8;  i++) {
@@ -185,7 +195,7 @@ TEST(RocksEngineTest, CompactTest) {
                           folly::stringPrintf("value_%d", i));
     }
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->multiPut(std::move(data)));
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->compactAll());
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->compact());
 }
 
 }  // namespace kvstore

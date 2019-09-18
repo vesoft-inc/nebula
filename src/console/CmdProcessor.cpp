@@ -68,7 +68,7 @@ void CmdProcessor::calColumnWidths(
                     }
                     if (genFmt) {
                         formats[idx] =
-                            folly::stringPrintf(" %%%lds |", widths[idx]);
+                            folly::stringPrintf(" %%-%lds |", widths[idx]);
                     }
                     break;
                 }
@@ -76,19 +76,15 @@ void CmdProcessor::calColumnWidths(
                     GET_VALUE_WIDTH(int64_t, integer, "%ld")
                     if (genFmt) {
                         formats[idx] =
-                            folly::stringPrintf(" %%%ldld |", widths[idx]);
+                            folly::stringPrintf(" %%-%ldld |", widths[idx]);
                     }
                     break;
                 }
                 case cpp2::ColumnValue::Type::id: {
-                    // Enough to hold "0x{16 letters}"
-                    if (widths[idx] < 18UL) {
-                        widths[idx] = 18UL;
-                        genFmt = true;
-                    }
+                    GET_VALUE_WIDTH(int64_t, id, "%ld");
+
                     if (genFmt) {
-                        formats[idx] =
-                            folly::stringPrintf(" %%%ldLX |", widths[idx]);
+                        formats[idx] = folly::stringPrintf(" %%-%ldld |", widths[idx]);
                     }
                     break;
                 }
@@ -96,7 +92,7 @@ void CmdProcessor::calColumnWidths(
                     GET_VALUE_WIDTH(float, single_precision, "%f")
                     if (genFmt) {
                         formats[idx] =
-                            folly::stringPrintf(" %%%ldf |", widths[idx]);
+                            folly::stringPrintf(" %%-%ldf |", widths[idx]);
                     }
                     break;
                 }
@@ -104,7 +100,7 @@ void CmdProcessor::calColumnWidths(
                     GET_VALUE_WIDTH(double, double_precision, "%lf")
                     if (genFmt) {
                         formats[idx] =
-                            folly::stringPrintf(" %%%ldlf |", widths[idx]);
+                            folly::stringPrintf(" %%-%ldlf |", widths[idx]);
                     }
                     break;
                 }
@@ -116,15 +112,20 @@ void CmdProcessor::calColumnWidths(
                     }
                     if (genFmt) {
                         formats[idx] =
-                            folly::stringPrintf(" %%%lds |", widths[idx]);
+                            folly::stringPrintf(" %%-%lds |", widths[idx]);
                     }
                     break;
                 }
                 case cpp2::ColumnValue::Type::timestamp: {
-                    GET_VALUE_WIDTH(int64_t, timestamp, "%ld")
+                    if (widths[idx] < 19) {
+                        widths[idx] = 19;
+                        genFmt = true;
+                    }
                     if (genFmt) {
                         formats[idx] =
-                            folly::stringPrintf(" %%%ldld |", widths[idx]);
+                            folly::stringPrintf(" %%%ldd-%%02d-%%02d"
+                                                " %%02d:%%02d:%%02d |",
+                                                widths[idx] - 15);
                     }
                     break;
                 }
@@ -134,7 +135,7 @@ void CmdProcessor::calColumnWidths(
                         genFmt = true;
                     }
                     if (genFmt) {
-                        formats[idx] = folly::stringPrintf(" %%%ldd |", widths[idx]);
+                        formats[idx] = folly::stringPrintf(" %%-%ldd |", widths[idx]);
                     }
                     break;
                 }
@@ -219,7 +220,7 @@ void CmdProcessor::printHeader(
 
     size_t idx = 0;
     for (auto& cname : (*resp.get_column_names())) {
-        std::string fmt = folly::stringPrintf(" %%%lds |", widths[idx++]);
+        std::string fmt = folly::stringPrintf(" %%-%lds |", widths[idx++]);
         std::cout << folly::stringPrintf(fmt.c_str(), cname.c_str());
     }
     std::cout << "\n";
@@ -243,7 +244,7 @@ void CmdProcessor::printData(const cpp2::ExecutionResponse& resp,
         for (auto& col : row.get_columns()) {
             switch (col.getType()) {
                 case cpp2::ColumnValue::Type::__EMPTY__: {
-                    std::string fmt = folly::stringPrintf(" %%%ldc |", widths[cIdx]);
+                    std::string fmt = folly::stringPrintf(" %%-%ldc |", widths[cIdx]);
                     std::cout << folly::stringPrintf(fmt.c_str(), ' ');
                     break;
                 }
@@ -272,7 +273,22 @@ void CmdProcessor::printData(const cpp2::ExecutionResponse& resp,
                     break;
                 }
                 case cpp2::ColumnValue::Type::timestamp: {
-                    PRINT_FIELD_VALUE(col.get_timestamp());
+                    time_t timestamp = col.get_timestamp();
+                    struct tm time;
+                    if (nullptr == localtime_r(&timestamp, &time)) {
+                        time.tm_year = 1970;
+                        time.tm_mon = 1;
+                        time.tm_mday = 1;
+                        time.tm_hour = 0;
+                        time.tm_min = 0;
+                        time.tm_sec = 0;
+                    }
+                    PRINT_FIELD_VALUE(time.tm_year + 1900,
+                                      time.tm_mon + 1,
+                                      time.tm_mday,
+                                      time.tm_hour,
+                                      time.tm_min,
+                                      time.tm_sec);
                     break;
                 }
                 case cpp2::ColumnValue::Type::year: {
@@ -332,10 +348,20 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
     cpp2::ErrorCode res = client_->execute(cmd, resp);
     if (res == cpp2::ErrorCode::SUCCEEDED) {
         // Succeeded
-        printResult(resp);
-        if (resp.get_rows() != nullptr) {
+        auto *spaceName = resp.get_space_name();
+        if (spaceName && !spaceName->empty()) {
+            curSpaceName_ = std::move(*spaceName);
+        } else {
+            curSpaceName_ = "(none)";
+        }
+        if (resp.get_rows() && !resp.get_rows()->empty()) {
+            printResult(resp);
             std::cout << "Got " << resp.get_rows()->size()
                       << " rows (Time spent: "
+                      << resp.get_latency_in_us() << "/"
+                      << dur.elapsedInUSec() << " us)\n";
+        } else if (resp.get_rows()) {
+            std::cout << "Empty set (Time spent: "
                       << resp.get_latency_in_us() << "/"
                       << dur.elapsedInUSec() << " us)\n";
         } else {
@@ -343,24 +369,33 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
                       << resp.get_latency_in_us() << "/"
                       << dur.elapsedInUSec() << " us)\n";
         }
+        std::cout << std::endl;
     } else if (res == cpp2::ErrorCode::E_SYNTAX_ERROR) {
-        static const std::regex range("syntax error at 1.([0-9]+)-([0-9]+)");
-        static const std::regex single("syntax error at 1.([0-9]+)");
+        static const std::regex range("at 1.([0-9]+)-([0-9]+)");
+        static const std::regex single("at 1.([0-9]+)");
         std::smatch result;
         auto *msg = resp.get_error_msg();
         auto verbose = *msg;
+        std::string headMsg = "syntax error near `";
+        auto pos = msg->find("at 1.");
+        if (pos != msg->npos) {
+            headMsg = msg->substr(0, pos) + "near `";
+            headMsg.replace(headMsg.find("SyntaxError:"), sizeof("SyntaxError:"), "");
+        }
         if (std::regex_search(*msg, result, range)) {
             auto start = folly::to<size_t>(result[1].str());
             auto end = folly::to<size_t>(result[2].str());
-            verbose = "syntax error near `" + std::string(&cmd[start-1], end - start + 1) + "'";
+            verbose = headMsg + std::string(&cmd[start-1], end - start + 1) + "'";
         } else if (std::regex_search(*msg, result, single)) {
             auto start = folly::to<size_t>(result[1].str());
             auto end = start + 8;
             end = end > cmd.size() ? cmd.size() : end;
-            verbose = "syntax error near `" + std::string(&cmd[start-1], end - start + 1) + "'";
+            verbose = headMsg + std::string(&cmd[start-1], end - start + 1) + "'";
         }
         std::cout << "[ERROR (" << static_cast<int32_t>(res)
                   << ")]: " << verbose << "\n";
+    } else if (res == cpp2::ErrorCode::E_STATEMENT_EMTPY) {
+        return;
     } else {
         // TODO(sye) Need to print human-readable error strings
         auto msg = resp.get_error_msg();
@@ -390,6 +425,10 @@ void CmdProcessor::normalize(folly::StringPiece &command) {
     }
 }
 
+
+const std::string& CmdProcessor::getSpaceName() const {
+    return curSpaceName_;
+}
+
 }  // namespace graph
 }  // namespace nebula
-

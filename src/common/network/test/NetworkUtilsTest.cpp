@@ -16,7 +16,8 @@ TEST(NetworkUtils, getHostname) {
 
     FILE* fp = popen("LD_PRELOAD= hostname | tr -d ['\n']", "r");
     char buffer[256];
-    fgets(buffer, sizeof(buffer), fp);
+    auto numChars = fgets(buffer, sizeof(buffer), fp);
+    UNUSED(numChars);
     pclose(fp);
     EXPECT_EQ(std::string(buffer), hostname);
 }
@@ -63,12 +64,12 @@ TEST(NetworkUtils, listDeviceAndIPv4s) {
 
 
 TEST(NetworkUtils, intIPv4Conversion) {
-    uint32_t ip;
+    IPv4 ip;
     ASSERT_TRUE(NetworkUtils::ipv4ToInt("127.0.0.1", ip));
     EXPECT_EQ(NetworkUtils::intToIPv4(ip), "127.0.0.1");
 
     ip = 0x11223344;
-    uint32_t converted;
+    IPv4 converted;
     ASSERT_TRUE(NetworkUtils::ipv4ToInt(NetworkUtils::intToIPv4(ip), converted));
     EXPECT_EQ(converted, ip);
 }

@@ -7,7 +7,7 @@
 #include "base/Base.h"
 #include "graph/GraphFlags.h"
 
-DEFINE_int32(port, 34500, "Nebula Graph daemon's listen port");
+DEFINE_int32(port, 3699, "Nebula Graph daemon's listen port");
 DEFINE_int32(client_idle_timeout_secs, 0,
                 "Seconds before we close the idle connections, 0 for infinite");
 DEFINE_int32(session_idle_timeout_secs, 600,
@@ -16,6 +16,7 @@ DEFINE_int32(session_reclaim_interval_secs, 10, "Period we try to reclaim expire
 DEFINE_int32(num_netio_threads, 0,
                 "Number of networking threads, 0 for number of physical CPU cores");
 DEFINE_int32(num_accept_threads, 1, "Number of threads to accept incoming connections");
+DEFINE_int32(num_worker_threads, 1, "Number of threads to execute user queries");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_int32(listen_backlog, 1024, "Backlog of the listen socket");
 DEFINE_string(listen_netdev, "any", "The network device to listen on");

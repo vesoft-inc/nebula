@@ -33,7 +33,7 @@ TEST(Load, SSTLoad) {
 
     std::string result;
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &result));
-    EXPECT_EQ(result, "value");
+    EXPECT_EQ("value", result);
 }
 
 }   // namespace kvstore

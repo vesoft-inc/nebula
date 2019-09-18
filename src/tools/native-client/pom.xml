@@ -12,18 +12,13 @@
 
     <groupId>com.vesoft</groupId>
     <artifactId>native-client</artifactId>
-    <version>0.0.1</version>
+    <version>1.0.0-beta</version>
 
     <properties>
         <project.root.dir>../../..</project.root.dir>
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>org.rocksdb</groupId>
-            <artifactId>rocksdbjni</artifactId>
-            <version>5.15.10</version>
-        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -76,10 +71,14 @@
                             <goal>javah</goal>
                         </goals>
                         <configuration>
-                            <javahOutputDirectory>${basedir}/src/main/cpp</javahOutputDirectory>
-                            <javahOutputFileName>com_vesoft_client_NativeClient.h</javahOutputFileName>
+                            <javahOutputDirectory>${basedir}/src/main/cpp
+                            </javahOutputDirectory>
+                            <javahOutputFileName>
+                                com_vesoft_client_NativeClient.h
+                            </javahOutputFileName>
                             <javahClassNames>
-                                <javahClassName>com.vesoft.client.NativeClient</javahClassName>
+                                <javahClassName>com.vesoft.client.NativeClient
+                                </javahClassName>
                             </javahClassNames>
                         </configuration>
                     </execution>
@@ -98,12 +97,14 @@
                         </goals>
                         <configuration>
                             <encoding>UTF-8</encoding>
-                            <outputDirectory>${basedir}/src/main/resources/</outputDirectory>
+                            <outputDirectory>${basedir}/src/main/resources/
+                            </outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>_build</directory>
                                     <includes>
-                                        <include>libnebula_native_client.so</include>
+                                        <include>libnebula_native_client.so
+                                        </include>
                                     </includes>
                                     <filtering>false</filtering>
                                 </resource>
@@ -117,11 +118,14 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.0.0</version>
                 <configuration>
-                    <configLocation>${project.root.dir}/.linters/java/nebula_java_style_checks.xml</configLocation>
+                    <configLocation>
+                        ${project.root.dir}/.linters/java/nebula_java_style_checks.xml
+                    </configLocation>
                     <encoding>UTF-8</encoding>
                     <failOnViolation>true</failOnViolation>
                     <linkXRef>false</linkXRef>
-                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <includeTestSourceDirectory>true
+                    </includeTestSourceDirectory>
                     <maxAllowedViolations>0</maxAllowedViolations>
                     <violationSeverity>warning</violationSeverity>
                 </configuration>
@@ -141,6 +145,15 @@
                         <version>8.18</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.10</version>
+                <configuration>
+                    <!-- put nebula_native_client.so in java.library.path env before run test-->
+                    <argLine>-Djava.library.path=_build/</argLine>
+                </configuration>
             </plugin>
         </plugins>
     </build>

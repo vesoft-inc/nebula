@@ -16,6 +16,9 @@ folly::Future<SucceededResultList<FutureIter>> collectNSucceeded(
         size_t n,
         ResultEval&& eval) {
     using Result = SucceededResultList<FutureIter>;
+    if (n == 0) {
+        return folly::Future<Result>(Result());
+    }
 
     struct Context {
         Context(size_t total, ResultEval&& e)
@@ -30,7 +33,6 @@ folly::Future<SucceededResultList<FutureIter>> collectNSucceeded(
     };
 
     size_t total = size_t(std::distance(first, last));
-    DCHECK_GT(n, 0U);
     DCHECK_GE(total, 0U);
 
     if (total < n) {
@@ -45,12 +47,12 @@ folly::Future<SucceededResultList<FutureIter>> collectNSucceeded(
     // for each succeeded Future, add to the result list, until
     // we have required number of futures, at which point we fulfil
     // the promise with the result list
-    for (; first != last; ++first) {
-        first->setCallback_([n, ctx] (
+    for (size_t index = 0; first != last; ++first, ++index) {
+        first->setCallback_([n, ctx, index] (
                 folly::Try<FutureReturnType<FutureIter>>&& t) {
             if (!ctx->promise.isFulfilled()) {
-                if (!t.hasException() && ctx->eval(t.value())) {
-                    ctx->results.emplace_back(std::move(t.value()));
+                if (!t.hasException() && ctx->eval(index, t.value())) {
+                    ctx->results.emplace_back(index, std::move(t.value()));
                 }
                 if ((++ctx->numCompleted) == ctx->nTotal ||
                     ctx->results.size() == n) {

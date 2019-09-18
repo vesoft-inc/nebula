@@ -18,25 +18,20 @@ class QueryStatsProcessor
 public:
     static QueryStatsProcessor* instance(kvstore::KVStore* kvstore,
                                          meta::SchemaManager* schemaMan,
-                                         BoundType type = BoundType::OUT_BOUND) {
-        return new QueryStatsProcessor(kvstore, schemaMan, type);
+                                         folly::Executor* executor) {
+        return new QueryStatsProcessor(kvstore, schemaMan, executor);
     }
 
 private:
     explicit QueryStatsProcessor(kvstore::KVStore* kvstore,
                                  meta::SchemaManager* schemaMan,
-                                 BoundType type)
+                                 folly::Executor* executor)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
-                             cpp2::QueryStatsResponse>(kvstore, schemaMan, type) {}
+                             cpp2::QueryStatsResponse>(kvstore, schemaMan, executor) {}
 
-    kvstore::ResultCode processVertex(PartitionID partID,
-                                      VertexID vId,
-                                      std::vector<TagContext>& tagContexts,
-                                      EdgeContext& edgeContext) override;
+    kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) override;
 
-    void onProcessed(std::vector<TagContext>& tagContexts,
-                     EdgeContext& edgeContext,
-                     int32_t retNum) override;
+    void onProcessFinished(int32_t retNum) override;
 
     void calcResult(std::vector<PropContext>&& props);
 

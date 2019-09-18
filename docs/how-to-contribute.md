@@ -1,5 +1,5 @@
-## Workflow
 
+---
 ### Step 1: Fork in the cloud
 
 1. Visit https://github.com/vesoft-inc/nebula
@@ -14,10 +14,10 @@ Define a local working directory:
 working_dir=$HOME/Workspace
 ```
 
-Set `user` to match your github profile name:
+Set `user` to match your Github profile name:
 
 ```sh
-user={your github profile name}
+user={your Github profile name}
 ```
 
 Create your clone:
@@ -53,9 +53,9 @@ This hook checks your commits for formatting, building, doc generation, etc.
 
 ```sh
 cd $working_dir/nebula/.git/hooks
-ln -s ../../.linters/cpp/hooks/pre-commit.sh pre-commit
+ln -s ../../.linters/cpp/hooks/pre-commit.sh .
 ```
-Sometime, pre-commit hook can not be executable. In such case, you have to make it executable manually.
+Sometimes, pre-commit hook can not be executable. In such case, you have to make it executable manually.
 
 ```sh
 cd $working_dir/nebula/.git/hooks
@@ -73,7 +73,7 @@ git checkout master
 git rebase upstream/master
 ```
 
-Branch from master:
+Checkout a new branch from master:
 
 ```sh
 git checkout -b myfeature
@@ -95,7 +95,7 @@ git push --force origin master
 
 #### Edit the code
 
-You can now edit the code on the `myfeature` branch. Please follow the coding style guidance [here](docs/cpp-coding-style.md).
+You can now edit the code on the `myfeature` branch. We are following [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html).
 
 #### Run stand-alone mode
 
@@ -118,7 +118,7 @@ nebula
 #### Run Test
 
 ```sh
-# Run unit test to make sure all test passed.
+# Run unit test to make sure all tests passed.
 ```
 
 ### Step 5: Keep your branch in sync
@@ -156,13 +156,5 @@ git push -f origin myfeature
 
 ### Step 9: Get a code review
 
-Once your pull request has been opened, it will be assigned to at least one
-reviewers. Those reviewers will do a thorough code review, looking for
-correctness, bugs, opportunities for improvement, documentation and comments,
-and style.
-
-Commit changes made in response to review comments to the same branch on your
-fork.
-
-Very small PRs are easy to review. Very large PRs are very difficult to
-review.
+Once your pull request has been opened, it will be assigned to at least two
+reviewers. Those reviewers will do a thorough code review to ensure the changes meet the repository's contributing guidelines and other quality standards.

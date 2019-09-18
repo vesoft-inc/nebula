@@ -16,11 +16,11 @@ namespace nebula {
 
 TEST(NebulaCodec, encode) {
     std::vector<boost::any> v;
-    v.push_back(1);
-    v.push_back(false);
-    v.push_back(3.14F);
-    v.push_back(3.14);
-    v.push_back(std::string("hi"));
+    v.emplace_back(1);
+    v.emplace_back(false);
+    v.emplace_back(3.14F);
+    v.emplace_back(3.14);
+    v.emplace_back(std::string("hi"));
 
     EXPECT_EQ(boost::any_cast<int>(v[0]), 1);
     EXPECT_EQ(boost::any_cast<bool>(v[1]), false);
@@ -85,6 +85,7 @@ TEST(NebulaCodec, encode) {
     // check empty values
     std::vector<boost::any> emptyV;
     std::string emptyEncoded = codec.encode(emptyV);
+
     SchemaWriter emptyWriter;
     auto emptySchema = std::make_shared<ResultSchemaProvider>(emptyWriter.moveSchema());
     auto emptyReader = RowReader::getRowReader(emptyEncoded, emptySchema);

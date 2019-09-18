@@ -12,6 +12,9 @@
 #include "cpp/helpers.h"
 #include "graph/ExecutionContext.h"
 #include "gen-cpp2/common_types.h"
+#include "gen-cpp2/storage_types.h"
+#include "dataman/RowWriter.h"
+#include "meta/SchemaManager.h"
 
 
 /**
@@ -76,7 +79,16 @@ protected:
 
     std::string valueTypeToString(nebula::cpp2::ValueType type);
 
-    nebula::cpp2::SupportedType columnTypeToSupportedType(ColumnType type);
+    void writeVariantType(RowWriter &writer, const VariantType &value);
+
+    bool checkValueType(const nebula::cpp2::ValueType &type, const VariantType &value);
+
+    Status checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> schema,
+                          std::vector<std::string*> props);
+
+    StatusOr<int64_t> toTimestamp(const VariantType &value);
+
+    nebula::cpp2::SupportedType ColumnTypeToSupportedType(ColumnType type) const;
 
     Status checkIfGraphSpaceChosen() const {
         if (ectx()->rctx()->session()->space() == -1) {

@@ -17,7 +17,7 @@ public:
     ProcessUtils() = delete;
 
     // Tell if there is no existing process who has the same pid as `pid'.
-    static Status isPidAvailable(uint32_t pid);
+    static Status isPidAvailable(pid_t pid);
     /**
      * Like isPidAvailable(uint32_t), but use a file which contains a pid as input.
      * Returns Status::OK if:
@@ -29,7 +29,7 @@ public:
     /**
      * Write pid into file, create if not exist.
      */
-    static Status makePidFile(const std::string &path, uint32_t pid = 0);
+    static Status makePidFile(const std::string &path, pid_t pid = 0);
     /**
      * Make current process a daemon and write the daemon's pid into pidFile
      */
@@ -38,21 +38,21 @@ public:
      * Get the absolute path to the target process's executable.
      * Use the current process if pid == 0.
      */
-    static StatusOr<std::string> getExePath(uint32_t pid = 0);
+    static StatusOr<std::string> getExePath(pid_t pid = 0);
     /**
      * Get the absolute path to the current working directory of the target process.
      * Use the current process if pid == 0.
      */
-    static StatusOr<std::string> getExeCWD(uint32_t pid = 0);
+    static StatusOr<std::string> getExeCWD(pid_t pid = 0);
     /**
      * Get the name of the target process.
      * Use the current process if pid == 0.
      */
-    static StatusOr<std::string> getProcessName(uint32_t pid = 0);
+    static StatusOr<std::string> getProcessName(pid_t pid = 0);
     /**
      * Get the maximum pid of the system.
      */
-    static uint32_t maxPid();
+    static pid_t maxPid();
     /**
      * Execute a shell command and return the standard output of the command
      */

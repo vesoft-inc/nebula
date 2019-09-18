@@ -1,10 +1,2 @@
-src/main/java/com/vesoft/nebula/graph/AuthResponse.java
-src/main/java/com/vesoft/nebula/graph/ColumnValue.java
-src/main/java/com/vesoft/nebula/graph/Date.java
-src/main/java/com/vesoft/nebula/graph/DateTime.java
-src/main/java/com/vesoft/nebula/graph/ErrorCode.java
-src/main/java/com/vesoft/nebula/graph/ExecutionResponse.java
-src/main/java/com/vesoft/nebula/graph/GraphService.java
-src/main/java/com/vesoft/nebula/graph/RowValue.java
-src/main/java/com/vesoft/nebula/graph/YearMonth.java
+src/main/java/com/vesoft/nebula/graph/generated
 target

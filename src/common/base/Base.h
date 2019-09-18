@@ -47,7 +47,6 @@
 #include <cmath>
 
 #include <gflags/gflags.h>
-#include <glog/logging.h>
 
 #include <boost/variant.hpp>
 #include <boost/any.hpp>
@@ -64,6 +63,7 @@
 #include <folly/json.h>
 #include <folly/RWSpinLock.h>
 
+#include "base/Logging.h"
 #include "thread/NamedThread.h"
 // #include "base/StringUnorderedMap.h"
 
@@ -99,6 +99,7 @@
 #define FVLOG4(...) VLOG(4) << folly::stringPrintf(__VA_ARGS__)
 
 #include "base/ThriftTypes.h"
+
 
 namespace nebula {
 
@@ -136,6 +137,24 @@ struct PartMeta {
 
 using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, PartMeta>>;
 
+using VariantType = boost::variant<int64_t, double, bool, std::string>;
+
+#ifndef VAR_INT64
+#define VAR_INT64 0
+#endif
+
+#ifndef VAR_DOUBLE
+#define VAR_DOUBLE 1
+#endif
+
+#ifndef VAR_BOOL
+#define VAR_BOOL 2
+#endif
+
+#ifndef VAR_STR
+#define VAR_STR 3
+#endif
+
 // Useful type traits
 
 // Tell if `T' is copy-constructible
@@ -159,5 +178,8 @@ static constexpr auto is_constructible_v = std::is_constructible<T, Args...>::va
 template <typename U, typename T>
 static constexpr auto is_convertible_v = std::is_constructible<U, T>::value;
 
+std::string versionString();
+
 }  // namespace nebula
+
 #endif  // COMMON_BASE_BASE_H_

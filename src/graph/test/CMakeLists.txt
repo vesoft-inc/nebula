@@ -1,157 +1,234 @@
-add_executable(
-    session_manager_test
-    SessionManagerTest.cpp
-    $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:meta_thrift_obj>
+set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:graph_obj>
-    $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
+    $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:filter_obj>
+    $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:dataman_obj>
+    $<TARGET_OBJECTS:http_client_obj>
+    $<TARGET_OBJECTS:ws_common_obj>
+    $<TARGET_OBJECTS:storage_client>
+    $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:parser_obj>
-    $<TARGET_OBJECTS:filter_obj>
-    $<TARGET_OBJECTS:schema_obj>
-    $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:storage_client>
-    $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:meta_service_handler>
-    $<TARGET_OBJECTS:kvstore_obj>
-)
-
-nebula_link_libraries(
-    session_manager_test
-    ${THRIFT_LIBRARIES}
-    ${ROCKSDB_LIBRARIES}
-    wangle
-    gtest
-    gtest_main
-)
-
-nebula_add_test(session_manager_test)
-
-
-add_executable(
-    query_engine_test
-    TestMain.cpp
-    TestEnv.cpp
-    TestBase.cpp
-    YieldTest.cpp
-    SchemaTest.cpp
-    $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:graph_obj>
-    $<TARGET_OBJECTS:client_cpp_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:graph_thrift_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:parser_obj>
-    $<TARGET_OBJECTS:filter_obj>
-    $<TARGET_OBJECTS:schema_obj>
-    $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:storage_client>
-    $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:meta_service_handler>
-    $<TARGET_OBJECTS:kvstore_obj>
-)
-
-nebula_link_libraries(
-    query_engine_test
-    ${THRIFT_LIBRARIES}
-    ${ROCKSDB_LIBRARIES}
-    wangle
-    gtest
-)
-nebula_add_test(query_engine_test)
-
-
-add_executable(
-    go_test
-    TestMain.cpp
-    TestEnv.cpp
-    TestBase.cpp
-    GoTest.cpp
-    $<TARGET_OBJECTS:graph_obj>
-    $<TARGET_OBJECTS:client_cpp_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:graph_thrift_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:schema_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:parser_obj>
-    $<TARGET_OBJECTS:filter_obj>
-    $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:storage_client>
-    $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:meta_service_handler>
-    $<TARGET_OBJECTS:kvstore_obj>
-)
-nebula_link_libraries(
-    go_test
-    ${THRIFT_LIBRARIES}
-    ${ROCKSDB_LIBRARIES}
-    wangle
-    gtest
-)
-nebula_add_test(go_test)
-
-
-add_executable(
-    graph_http_test
-    TestMain.cpp
-    TestEnv.cpp
-    TestBase.cpp
-    GraphHttpHandlerTest.cpp
-    $<TARGET_OBJECTS:graph_obj>
-    $<TARGET_OBJECTS:client_cpp_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:graph_thrift_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:schema_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:parser_obj>
-    $<TARGET_OBJECTS:filter_obj>
-    $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:storage_client>
-    $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:meta_service_handler>
-    $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:process_obj>
-    $<TARGET_OBJECTS:ws_obj>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:process_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:meta_gflags_man_obj>
+    $<TARGET_OBJECTS:gflags_man_obj>
+    $<TARGET_OBJECTS:ws_common_obj>
 )
-nebula_link_libraries(
-    graph_http_test
-    proxygenhttpserver
-    proxygenlib
-    ${THRIFT_LIBRARIES}
-    ${ROCKSDB_LIBRARIES}
-    wangle
-    gtest
+
+nebula_add_library(
+    graph_test_common_obj OBJECT
+    TestMain.cpp
+    TestEnv.cpp
+    TestBase.cpp
 )
-nebula_add_test(graph_http_test)
+
+nebula_add_test(
+    NAME
+        session_manager_test
+    SOURCES
+        SessionManagerTest.cpp
+    OBJECTS
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+        gtest_main
+)
+
+nebula_add_test(
+    NAME
+        query_engine_test
+    SOURCES
+        YieldTest.cpp
+        SchemaTest.cpp
+        ConfigTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        go_test
+    SOURCES
+        GoTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        graph_http_test
+    SOURCES
+        GraphHttpHandlerTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:graph_http_handler>
+        $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        data_test
+    SOURCES
+        DataTest.cpp
+        OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        order_by_test
+    SOURCES
+        OrderByTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        fetch_vertices_test
+    SOURCES
+        FetchVerticesTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        fetch_edges_test
+    SOURCES
+        FetchEdgesTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        set_test
+    SOURCES
+        SetTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        deleteVertex_test
+    SOURCES
+        DeleteVertexTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        update_test
+    SOURCES
+        UpdateTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+

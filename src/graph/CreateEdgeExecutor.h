@@ -26,7 +26,11 @@ public:
     void execute() override;
 
 private:
+    Status getSchema();
+
+private:
     CreateEdgeSentence                         *sentence_{nullptr};
+    nebula::cpp2::Schema                        schema_;
 };
 
 }   // namespace graph

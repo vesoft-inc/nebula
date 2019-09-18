@@ -17,28 +17,12 @@
 #include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
 #include "network/NetworkUtils.h"
+#include "meta/processors/Common.h"
 
 namespace nebula {
 namespace meta {
 
 using nebula::network::NetworkUtils;
-
-class LockUtils {
-public:
-    LockUtils() = delete;
-#define GENERATE_LOCK(Entry) \
-    static folly::SharedMutex& Entry##Lock() { \
-        static folly::SharedMutex l; \
-        return l; \
-    }
-
-GENERATE_LOCK(space);
-GENERATE_LOCK(id);
-GENERATE_LOCK(tag);
-GENERATE_LOCK(edge);
-
-#undef GENERATE_LOCK
-};
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID) \
     if (spaceExist(spaceID) == Status::SpaceNotFound()) { \
@@ -47,8 +31,15 @@ GENERATE_LOCK(edge);
         return; \
     }
 
+#define CHECK_USER_ID_AND_RETURN(userID) \
+    if (userExist(userID) == Status::UserNotFound()) { \
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
+        onFinished(); \
+        return; \
+    }
+
 /**
- * Check segemnt is consist of numbers and letters and should not empty.
+ * Check segment is consist of numbers and letters and should not empty.
  * */
 #define CHECK_SEGMENT(segment) \
     if (!MetaCommon::checkSegment(segment)) { \
@@ -84,18 +75,22 @@ protected:
             return cpp2::ErrorCode::SUCCEEDED;
         case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
             return cpp2::ErrorCode::E_NOT_FOUND;
+        case kvstore::ResultCode::ERR_LEADER_CHANGED:
+            return cpp2::ErrorCode::E_LEADER_CHANGED;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
         }
     }
 
-    cpp2::ErrorCode to(Status status) {
+    cpp2::ErrorCode to(const Status& status) {
         switch (status.code()) {
         case Status::kOk:
             return cpp2::ErrorCode::SUCCEEDED;
         case Status::kSpaceNotFound:
         case Status::kHostNotFound:
         case Status::kTagNotFound:
+        case Status::kUserNotFound:
+        case Status::kCfgNotFound:
             return cpp2::ErrorCode::E_NOT_FOUND;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
@@ -116,8 +111,19 @@ protected:
         case EntryType::EDGE:
             thriftID.set_edge_type(static_cast<EdgeType>(id));
             break;
+        case EntryType::USER:
+            thriftID.set_user_id(static_cast<UserID>(id));
+        case EntryType::CONFIG:
+            break;
         }
         return thriftID;
+    }
+
+    nebula::cpp2::HostAddr toThriftHost(const HostAddr& host) {
+        nebula::cpp2::HostAddr tHost;
+        tHost.set_ip(host.first);
+        tHost.set_port(host.second);
+        return tHost;
     }
 
     /**
@@ -166,12 +172,17 @@ protected:
     /**
      * Get one auto-increment Id.
      * */
-    int32_t autoIncrementId();
+    ErrorOr<cpp2::ErrorCode, int32_t> autoIncrementId();
 
     /**
      * Check spaceId exist or not.
      * */
     Status spaceExist(GraphSpaceID spaceId);
+
+    /**
+     * Check userId exist or not.
+     **/
+    Status userExist(UserID userId);
 
     /**
      * Check host has been registered or not.
@@ -193,12 +204,16 @@ protected:
      */
     StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
 
+    StatusOr<UserID> getUserId(const std::string& account);
+
+    bool checkPassword(UserID userId, const std::string& password);
+
+    StatusOr<std::string> getUserAccount(UserID userId);
+
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;
     folly::Promise<RESP> promise_;
-    const PartitionID kDefaultPartId_ = 0;
-    const GraphSpaceID kDefaultSpaceId_ = 0;
 };
 
 }  // namespace meta

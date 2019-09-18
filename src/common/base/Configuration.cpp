@@ -42,7 +42,8 @@ Status Configuration::parseFromFile(const std::string &filename) {
         // read the whole content
         // TODO(dutor) ::read might be interrupted by signals
         auto buffer = std::make_unique<char[]>(len + 1);
-        ::read(fd, buffer.get(), len);
+        auto charsRead = ::read(fd, buffer.get(), len);
+        UNUSED(charsRead);
         buffer[len] = '\0';
         // strip off all comments
         static const std::regex comment("//.*|#.*");

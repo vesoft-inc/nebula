@@ -1,4 +1,3 @@
-
 # Some color code definitions
 RED=
 GREEN=
@@ -82,6 +81,19 @@ function is_port_listened_on {
     fi
 }
 
+
+# To wait for a process to exit
+# args: <path to pid file> <seconds to wait>
+function wait_for_exit {
+    local pid_file=${1}
+    local seconds=${2}
+    is_process_running ${pid_file} || return 0
+    while [[ ${seconds} > 0 ]]; do
+        sleep 0.1
+        is_process_running ${pid_file} || return 0
+        seconds=$(echo "${seconds} - 0.1" | bc -l)
+    done
+}
 
 # To read a config item's value from the config file
 # args: <config file> <config item name>

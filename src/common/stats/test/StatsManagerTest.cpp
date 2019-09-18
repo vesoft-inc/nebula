@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include <gtest/gtest.h>
 #include "stats/StatsManager.h"
+#include "thread/GenericWorker.h"
 
 namespace nebula {
 namespace stats {
@@ -39,6 +40,30 @@ TEST(StatsManager, StatsTest) {
     EXPECT_EQ(50, StatsManager::readValue("stat01.AVG.600"));
     EXPECT_EQ(50, StatsManager::readValue("stat01.Avg.3600"));
     EXPECT_EQ(0, StatsManager::readValue("stat01.Avg1.3600"));
+}
+
+
+TEST(StatsManager, RateTest) {
+    auto statId = StatsManager::registerStats("ratetest");
+    auto thread = std::make_unique<thread::GenericWorker>();
+    ASSERT_TRUE(thread->start());
+
+    auto task = [=] () {
+        StatsManager::addValue(statId);
+    };
+    constexpr auto qps = 100L;
+    thread->addRepeatTask(1 * 1000 / qps, task);
+
+    ::usleep(60 * 1000 * 1000);
+
+    auto actual = StatsManager::readValue("ratetest.rate.60");
+
+    ASSERT_LT(std::max(qps, actual) - std::min(qps, actual), 10L) << "expected: " << qps
+                                                                  << ", actual: " << actual;
+
+    thread->stop();
+    thread->wait();
+    thread.reset();
 }
 
 

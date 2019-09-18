@@ -6,7 +6,6 @@
 
 #include "base/Base.h"
 #include "graph/DescribeEdgeExecutor.h"
-#include "meta/SchemaManager.h"
 
 namespace nebula {
 namespace graph {
@@ -18,40 +17,56 @@ DescribeEdgeExecutor::DescribeEdgeExecutor(Sentence *sentence,
 
 
 Status DescribeEdgeExecutor::prepare() {
-    return checkIfGraphSpaceChosen();
+    return Status::OK();
 }
 
 
 void DescribeEdgeExecutor::execute() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();
-    auto edgeType = ectx()->schemaManager()->toEdgeType(spaceId, *name);
-    auto schema = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType);
-    resp_ = std::make_unique<cpp2::ExecutionResponse>();
 
-    do {
-        if (schema == nullptr) {
-            onError_(Status::Error("Schema not found for edge `%s'", name->c_str()));
+    // Get the lastest ver
+    auto future = ectx()->getMetaClient()->getEdgeSchema(spaceId, *name);
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(Status::Error("Schema not found for edge '%s'", sentence_->name()->c_str()));
             return;
         }
+
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
         std::vector<std::string> header{"Field", "Type"};
         resp_->set_column_names(std::move(header));
-        uint32_t numFields = schema->getNumFields();
         std::vector<cpp2::RowValue> rows;
-        for (uint32_t index = 0; index < numFields; index++) {
+        for (auto& item : resp.value().columns) {
             std::vector<cpp2::ColumnValue> row;
             row.resize(2);
-            row[0].set_str(schema->getFieldName(index));
-            row[1].set_str(valueTypeToString(schema->getFieldType(index)));
+            row[0].set_str(item.name);
+            row[1].set_str(valueTypeToString(item.type));
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }
 
         resp_->set_rows(std::move(rows));
-    } while (false);
+        DCHECK(onFinish_);
+        onFinish_();
+    };
 
-    DCHECK(onFinish_);
-    onFinish_();
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error("Internal error"));
+    };
+
+    std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
 

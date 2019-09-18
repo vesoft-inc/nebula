@@ -20,11 +20,6 @@ namespace nebula {
  *
  * */
 
-
-using Vertex = std::tuple<VertexID, TagID>;
-
-using Edge = std::tuple<VertexID, EdgeType, VertexID, EdgeRanking>;
-
 /**
  * This class supply some utils for transition between Vertex/Edge and key in kvstore.
  * */
@@ -35,14 +30,14 @@ public:
      * Generate vertex key for kv store
      * */
     static std::string vertexKey(PartitionID partId, VertexID vId,
-                                 TagID tagId, TagVersion ts);
+                                 TagID tagId, TagVersion tv);
 
     /**
      * Generate edge key for kv store
      * */
     static std::string edgeKey(PartitionID partId, VertexID srcId,
                                EdgeType type, EdgeRanking rank,
-                               VertexID dstId, EdgeVersion ts);
+                               VertexID dstId, EdgeVersion ev);
 
     /**
      * Prefix for srcId edges with some edgeType
@@ -57,45 +52,47 @@ public:
     static std::string prefix(PartitionID partId, VertexID src, EdgeType type,
                               EdgeRanking ranking, VertexID dst);
 
-    static bool isVertex(const std::string& rawKey) {
+    static std::string prefix(PartitionID partId);
+
+    static bool isVertex(const folly::StringPiece& rawKey) {
         return rawKey.size() == kVertexLen;
     }
 
-    static int32_t getTagId(folly::StringPiece rawKey) {
+    static TagID getTagId(const folly::StringPiece& rawKey) {
         CHECK_EQ(rawKey.size(), kVertexLen);
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
-        return readInt<int32_t>(rawKey.data() + offset, sizeof(TagID));
+        return readInt<TagID>(rawKey.data() + offset, sizeof(TagID));
     }
 
-    static bool isEdge(const std::string& rawKey) {
+    static bool isEdge(const folly::StringPiece& rawKey) {
         return rawKey.size() == kEdgeLen;
     }
 
-    static int64_t getSrcId(folly::StringPiece rawKey) {
+    static VertexID getSrcId(const folly::StringPiece& rawKey) {
         CHECK_EQ(rawKey.size(), kEdgeLen);
-        return readInt<int64_t>(rawKey.data() + sizeof(PartitionID),
-                                rawKey.size() - sizeof(PartitionID));
+        return readInt<VertexID>(rawKey.data() + sizeof(PartitionID),
+                                 rawKey.size() - sizeof(PartitionID));
     }
 
-    static int64_t getDstId(folly::StringPiece rawKey) {
+    static VertexID getDstId(const folly::StringPiece& rawKey) {
         CHECK_EQ(rawKey.size(), kEdgeLen);
         auto offset = kEdgeLen - sizeof(EdgeVersion) - sizeof(VertexID);
-        return readInt<int64_t>(rawKey.data() + offset,
-                                rawKey.size() - offset);
+        return readInt<VertexID>(rawKey.data() + offset,
+                                 rawKey.size() - offset);
     }
 
-    static int32_t getEdgeType(folly::StringPiece rawKey) {
+    static EdgeType getEdgeType(const folly::StringPiece& rawKey) {
         CHECK_EQ(rawKey.size(), kEdgeLen);
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
-        return readInt<int32_t>(rawKey.data() + offset,
-                                rawKey.size() - offset);
+        return readInt<EdgeType>(rawKey.data() + offset,
+                                 rawKey.size() - offset);
     }
 
-    static int64_t getRank(folly::StringPiece rawKey) {
+    static EdgeRanking getRank(const folly::StringPiece& rawKey) {
         CHECK_EQ(rawKey.size(), kEdgeLen);
         auto offset = sizeof(PartitionID) + sizeof(VertexID) + sizeof(EdgeType);
-        return readInt<int64_t>(rawKey.data() + offset,
-                                rawKey.size() - offset);
+        return readInt<EdgeRanking>(rawKey.data() + offset,
+                                    rawKey.size() - offset);
     }
 
     template<typename T>
@@ -103,6 +100,20 @@ public:
     readInt(const char* data, int32_t len) {
         CHECK_GE(len, sizeof(T));
         return *reinterpret_cast<const T*>(data);
+    }
+
+    static bool isDataKey(const folly::StringPiece& key) {
+        return !key.empty() && key[0] != kSysPrefix;
+    }
+
+    static bool isIndexKey(const folly::StringPiece&) {
+        // TODO(heng) Implement the method when index merged in.
+        return false;
+    }
+
+    static folly::StringPiece keyWithNoVersion(const folly::StringPiece& rawKey) {
+        // TODO(heng) We should change the method if varint data version supportted.
+        return rawKey.subpiece(0, rawKey.size() - sizeof(int64_t));
     }
 
 private:
@@ -114,6 +125,8 @@ private:
     static constexpr int32_t kEdgeLen = sizeof(PartitionID) + sizeof(VertexID)
                                       + sizeof(EdgeType) + sizeof(VertexID)
                                       + sizeof(EdgeRanking) + sizeof(EdgeVersion);
+
+    static const char kSysPrefix = '_';
 };
 
 }  // namespace nebula

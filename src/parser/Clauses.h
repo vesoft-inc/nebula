@@ -37,7 +37,7 @@ private:
 class SourceNodeList final {
 public:
     void addNodeId(int64_t id) {
-        nodes_.push_back(id);
+        nodes_.emplace_back(id);
     }
 
     const std::vector<int64_t>& nodeIds() const {
@@ -51,73 +51,112 @@ private:
 };
 
 
-class FromClause final {
+
+class VertexIDList final {
 public:
-    explicit FromClause(SourceNodeList *srcNodeList) {
-        srcNodeList_.reset(srcNodeList);
-        isRef_ = false;
+    void add(Expression *expr) {
+        vidList_.emplace_back(expr);
     }
 
-    explicit FromClause(Expression *expr) {
-        ref_.reset(expr);
-        isRef_ = true;
-    }
-
-    void setSourceNodeList(SourceNodeList *srcNodeList) {
-        srcNodeList_.reset(srcNodeList);
-    }
-
-    SourceNodeList* srcNodeList() const {
-        return srcNodeList_.get();
-    }
-
-    Expression* ref() const {
-        return ref_.get();
-    }
-
-    bool isRef() const {
-        return isRef_;
+    std::vector<Expression*> vidList() const {
+        std::vector<Expression*> result;
+        result.reserve(vidList_.size());
+        for (auto &expr : vidList_) {
+            result.push_back(expr.get());
+        }
+        return result;
     }
 
     std::string toString() const;
 
 private:
-    std::unique_ptr<SourceNodeList>             srcNodeList_;
-    std::unique_ptr<Expression>                 ref_;
-    bool                                        isRef_{false};
+    std::vector<std::unique_ptr<Expression>>    vidList_;
 };
 
 
-class OverClause final {
+class FromClause final {
 public:
-    explicit OverClause(std::string *edge,
-                        std::string *alias = nullptr,
-                        bool isReversely = false) {
+    explicit FromClause(VertexIDList *vidList) {
+        vidList_.reset(vidList);
+    }
+
+    explicit FromClause(Expression *ref) {
+        ref_.reset(ref);
+    }
+
+    auto vidList() const {
+        return vidList_->vidList();
+    }
+
+    auto isRef() const {
+        return ref_ != nullptr;
+    }
+
+    auto ref() const {
+        return ref_.get();
+    }
+
+    std::string toString() const;
+
+private:
+    std::unique_ptr<VertexIDList>               vidList_;
+    std::unique_ptr<Expression>                 ref_;
+};
+
+class OverEdge final {
+public:
+    explicit OverEdge(std::string *edge, std::string *alias = nullptr, bool isReversely = false) {
         edge_.reset(edge);
         alias_.reset(alias);
         isReversely_ = isReversely;
     }
 
-    bool isReversely() const {
-        return isReversely_;
-    }
+    bool isReversely() const { return isReversely_; }
 
-    std::string* edge() const {
-        return edge_.get();
-    }
+    bool isOverAll() const { return *edge_ == "*"; }
 
-    std::string* alias() const {
-        return alias_.get();
+    std::string *edge() const { return edge_.get(); }
+
+    std::string *alias() const { return alias_.get(); }
+
+    std::string toString() const;
+
+private:
+    bool isReversely_{false};
+    std::unique_ptr<std::string> edge_;
+    std::unique_ptr<std::string> alias_;
+};
+
+class OverEdges final {
+public:
+    void addEdge(OverEdge *edge) { edges_.emplace_back(edge); }
+
+    std::vector<OverEdge *> edges() {
+        std::vector<OverEdge *> result;
+
+        std::transform(edges_.cbegin(), edges_.cend(),
+                       std::insert_iterator<std::vector<OverEdge *>>(result, result.begin()),
+                       [](auto &edge) { return edge.get(); });
+        return result;
     }
 
     std::string toString() const;
 
 private:
-    bool                                        isReversely_{false};
-    std::unique_ptr<std::string>                edge_;
-    std::unique_ptr<std::string>                alias_;
+    std::vector<std::unique_ptr<OverEdge>> edges_;
 };
 
+class OverClause final {
+public:
+    explicit OverClause(OverEdges *edges) { overEdges_.reset(edges); }
+
+    std::vector<OverEdge *> edges() const { return overEdges_->edges(); }
+
+    std::string toString() const;
+
+private:
+    std::unique_ptr<OverEdges> overEdges_;
+};
 
 class WhereClause final {
 public:
@@ -135,6 +174,7 @@ private:
     std::unique_ptr<Expression>                 filter_;
 };
 
+using WhenClause = WhereClause;
 
 class YieldColumn final {
 public:
@@ -180,20 +220,26 @@ private:
 
 class YieldClause final {
 public:
-    explicit YieldClause(YieldColumns *fields) {
+    explicit YieldClause(YieldColumns *fields, bool distinct = false) {
         yieldColumns_.reset(fields);
+        distinct_ = distinct;
     }
 
     std::vector<YieldColumn*> columns() const {
         return yieldColumns_->columns();
     }
 
+    bool isDistinct() const {
+        return distinct_;
+    }
+
     std::string toString() const;
 
 private:
     std::unique_ptr<YieldColumns>               yieldColumns_;
+    bool                                        distinct_;
 };
 
-}   // namespace nebula
+}  // namespace nebula
 
 #endif  // PARSER_CLAUSES_H_

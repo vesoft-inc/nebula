@@ -69,7 +69,7 @@ std::string ValueList::toString() const {
 std::string VertexRowItem::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += std::to_string(id_);
+    buf += id_->toString();
     buf += ":";
     buf += "(";
     buf += values_->toString();
@@ -107,9 +107,9 @@ std::string EdgeRowItem::toString() const {
     std::string buf;
     buf.reserve(256);
 
-    buf += std::to_string(srcid_);
+    buf += srcid_->toString();
     buf += "->";
-    buf += std::to_string(dstid_);
+    buf += dstid_->toString();
     if (rank_ != 0) {
         buf += "@";
         buf += std::to_string(rank_);
@@ -180,17 +180,18 @@ std::string UpdateList::toString() const {
 std::string UpdateVertexSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "UPDATE ";
     if (insertable_) {
-        buf += "OR INSERT ";
+        buf += "UPSERT ";
+    } else {
+        buf += "UPDATE ";
     }
     buf += "VERTEX ";
-    buf += std::to_string(vid_);
+    buf += vid_->toString();
     buf += " SET ";
-    buf += updateItems_->toString();
-    if (whereClause_ != nullptr) {
+    buf += updateList_->toString();
+    if (whenClause_ != nullptr) {
         buf += " ";
-        buf += whereClause_->toString();
+        buf += whenClause_->toString();
     }
     if (yieldClause_ != nullptr) {
         buf += " ";
@@ -204,19 +205,24 @@ std::string UpdateVertexSentence::toString() const {
 std::string UpdateEdgeSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "UPDATE ";
     if (insertable_) {
-        buf += "OR INSERT ";
+        buf += "UPSERT ";
+    } else {
+        buf += "UPDATE ";
     }
     buf += "EDGE ";
-    buf += std::to_string(srcid_);
+    buf += srcid_->toString();
     buf += "->";
-    buf += std::to_string(dstid_);
+    buf += dstid_->toString();
+    if (hasRank_) {
+        buf += " AT" + std::to_string(rank_);
+    }
+    buf += " OF " + *edgeType_;
     buf += " SET ";
-    buf += updateItems_->toString();
-    if (whereClause_ != nullptr) {
+    buf += updateList_->toString();
+    if (whenClause_ != nullptr) {
         buf += " ";
-        buf += whereClause_->toString();
+        buf += whenClause_->toString();
     }
     if (yieldClause_ != nullptr) {
         buf += " ";
@@ -230,21 +236,17 @@ std::string DeleteVertexSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "DELETE VERTEX ";
-    buf += srcNodeList_->toString();
-    if (whereClause_ != nullptr) {
-        buf += " ";
-        buf += whereClause_->toString();
-    }
+    buf += vid_->toString();
     return buf;
 }
 
 std::string EdgeList::toString() const {
     std::string buf;
     buf.reserve(256);
-    for (auto edge : edges_) {
-        buf += std::to_string(edge.first);
+    for (auto &edge : edges_) {
+        buf += edge.first->toString();
         buf += "->";
-        buf += std::to_string(edge.second);
+        buf += edge.second->toString();
         buf += ",";
     }
     if (!buf.empty()) {
@@ -263,6 +265,15 @@ std::string DeleteEdgeSentence::toString() const {
         buf += whereClause_->toString();
     }
     return buf;
+}
+
+std::string DownloadSentence::toString() const {
+    return folly::stringPrintf("DOWNLOAD HDFS \"%s:%d/%s\"", host_.get()->c_str(),
+                               port_, path_.get()->c_str());
+}
+
+std::string IngestSentence::toString() const {
+    return "INGEST";
 }
 
 }   // namespace nebula

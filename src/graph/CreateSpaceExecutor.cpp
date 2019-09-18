@@ -21,17 +21,17 @@ Status CreateSpaceExecutor::prepare() {
         switch (item->getOptType()) {
             case SpaceOptItem::PARTITION_NUM:
                 partNum_ = item->get_partition_num();
+                if (partNum_ <= 0) {
+                    return Status::Error("Partition_num value should be greater than zero");
+                }
                 break;
             case SpaceOptItem::REPLICA_FACTOR:
                 replicaFactor_ = item->get_replica_factor();
+                if (replicaFactor_ <= 0) {
+                    return Status::Error("Replica_factor value should be greater than zero");
+                }
                 break;
         }
-    }
-    if (partNum_ <= 0) {
-        return Status::Error("Partition_num value should be greater than zero");
-    }
-    if (replicaFactor_ <= 0) {
-        return Status::Error("Replica_factor value should be greater than zero");
     }
     return Status::OK();
 }

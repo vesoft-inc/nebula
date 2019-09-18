@@ -56,6 +56,10 @@ public:
 
     void addField(folly::StringPiece name, nebula::cpp2::ValueType&& type);
 
+    void setProp(nebula::cpp2::SchemaProp schemaProp);
+
+    const nebula::cpp2::SchemaProp getProp() const;
+
 protected:
     NebulaSchemaProvider() = default;
 
@@ -63,8 +67,9 @@ protected:
     SchemaVer ver_{-1};
 
     // fieldname -> index
-    std::unordered_map<std::string, int64_t> fieldNameIndex_;
+    std::unordered_map<std::string, int64_t>   fieldNameIndex_;
     std::vector<std::shared_ptr<SchemaField>>  fields_;
+    nebula::cpp2::SchemaProp                   schemaProp_;
 };
 
 }  // namespace meta

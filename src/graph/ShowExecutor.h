@@ -30,6 +30,9 @@ public:
     void showEdges();
     void showTagIndexes();
     void showEdgeIndexes();
+    void showCreateSpace();
+    void showCreateTag();
+    void showCreateEdge();
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 

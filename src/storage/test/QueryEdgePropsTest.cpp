@@ -36,14 +36,17 @@ void mockData(kvstore::KVStore* kv) {
                 data.emplace_back(std::move(key), std::move(val));
             }
         }
+        folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(
             0, partId, std::move(data),
-            [&](kvstore::ResultCode code, HostAddr addr) {
+            [&](kvstore::ResultCode code) {
                 EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
-                UNUSED(addr);
+                baton.post();
             });
+        baton.wait();
     }
 }
+
 
 void buildRequest(cpp2::EdgePropRequest& req) {
     req.set_space_id(0);
@@ -52,7 +55,7 @@ void buildRequest(cpp2::EdgePropRequest& req) {
         for (auto vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             for (auto dstId = 10001; dstId <= 10007; dstId++) {
                 tmpEdges[partId].emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                              vertexId, 101, dstId, dstId - 10001);
+                                              vertexId, 101, dstId - 10001, dstId);
             }
         }
     }
@@ -61,11 +64,11 @@ void buildRequest(cpp2::EdgePropRequest& req) {
     // Return edge props col_0, col_2, col_4 ... col_18
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 10; i++) {
-        tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE,
-                                                   folly::stringPrintf("col_%d", i*2)));
+        tmpColumns.emplace_back(TestUtils::edgePropDef(folly::stringPrintf("col_%d", i * 2), 101));
     }
     req.set_return_columns(std::move(tmpColumns));
 }
+
 
 void checkResponse(cpp2::EdgePropResponse& resp) {
     EXPECT_EQ(0, resp.result.failed_codes.size());
@@ -77,11 +80,11 @@ void checkResponse(cpp2::EdgePropResponse& resp) {
     int32_t rowNum = 0;
     while (static_cast<bool>(it)) {
         EXPECT_EQ(13, it->numFields());
-        {
+       {
             // _src
             // We can't ensure the order, so just check the srcId range.
             int64_t v;
-            EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(0, v));
+            EXPECT_EQ(ResultType::SUCCEEDED, it->getVid(0, v));
             CHECK_GE(30, v);
             CHECK_LE(0, v);
         }
@@ -94,20 +97,20 @@ void checkResponse(cpp2::EdgePropResponse& resp) {
         {
             // _dst
             int64_t v;
-            EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(2, v));
+            EXPECT_EQ(ResultType::SUCCEEDED, it->getVid(2, v));
             CHECK_EQ(10001 + rowNum % 7, v);
         }
         // col_0, col_2 ... col_8
         for (auto i = 3; i < 8; i++) {
             int64_t v;
             EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(i, v));
-            CHECK_EQ((i - 3) * 2, v);
+            CHECK_EQ((i -3) * 2, v);
         }
         // col_10, col_12 ... col_18
         for (auto i = 8; i < 13; i++) {
             folly::StringPiece v;
             EXPECT_EQ(ResultType::SUCCEEDED, it->getString(i, v));
-            CHECK_EQ(folly::stringPrintf("string_col_%d", (i - 8 + 5) * 2), v);
+            CHECK_EQ(folly::stringPrintf("string_col_%d", (i -8 + 5) * 2), v);
         }
         ++it;
         rowNum++;
@@ -116,9 +119,11 @@ void checkResponse(cpp2::EdgePropResponse& resp) {
     EXPECT_EQ(210, rowNum);
 }
 
+
 TEST(QueryEdgePropsTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
     LOG(INFO) << "Prepare data...";
@@ -147,5 +152,3 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
-

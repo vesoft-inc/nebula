@@ -9,29 +9,59 @@
 
 namespace nebula {
 
+std::string SchemaPropItem::toString() const {
+    switch (propType_) {
+        case TTL_DURATION:
+            return folly::stringPrintf("ttl_duration = %ld",
+                                       boost::get<int64_t>(propValue_));
+        case TTL_COL:
+            return folly::stringPrintf("ttl_col = %s",
+                                       boost::get<std::string>(propValue_).c_str());
+        default:
+            FLOG_FATAL("Schema property type illegal");
+    }
+    return "Unknown";
+}
+
+
+ std::string SchemaPropList::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &item : items_) {
+        buf += " ";
+        buf += item->toString();
+        buf += ",";
+    }
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
+}
+
+
 std::string CreateTagSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "CREATE TAG ";
     buf += *name_;
     buf += " (";
-    auto colSpecs = std::move(columns_->columnSpecs());
+    auto colSpecs = columns_->columnSpecs();
     for (auto *col : colSpecs) {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
-        if (col->hasTTL()) {
-            buf += " TTL = ";
-            buf += std::to_string(col->ttl());
-        }
         buf += ",";
     }
     if (!colSpecs.empty()) {
         buf.resize(buf.size() - 1);
     }
     buf += ")";
+    if (schemaProps_ != nullptr) {
+        buf +=  schemaProps_->toString();
+    }
     return buf;
 }
+
 
 std::string CreateEdgeSentence::toString() const {
     std::string buf;
@@ -39,23 +69,23 @@ std::string CreateEdgeSentence::toString() const {
     buf += "CREATE EDGE ";
     buf += *name_;
     buf += " (";
-    auto colSpecs = std::move(columns_->columnSpecs());
+    auto colSpecs = columns_->columnSpecs();
     for (auto &col : colSpecs) {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
-        if (col->hasTTL()) {
-            buf += " TTL = ";
-            buf += std::to_string(col->ttl());
-        }
         buf += ",";
     }
     if (!colSpecs.empty()) {
         buf.resize(buf.size() - 1);
     }
     buf += ")";
+    if (schemaProps_ != nullptr) {
+        buf +=  schemaProps_->toString();
+    }
     return buf;
 }
+
 
 std::string AlterSchemaOptItem::toString() const {
     std::string buf;
@@ -72,15 +102,11 @@ std::string AlterSchemaOptItem::toString() const {
             break;
     }
     buf += " (";
-    auto colSpecs = std::move(columns_->columnSpecs());
+    auto colSpecs = columns_->columnSpecs();
     for (auto &col : colSpecs) {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
-        if (col->hasTTL()) {
-            buf += " TTL = ";
-            buf += std::to_string(col->ttl());
-        }
         buf += ",";
     }
     if (!colSpecs.empty()) {
@@ -89,6 +115,7 @@ std::string AlterSchemaOptItem::toString() const {
     buf += ")";
     return buf;
 }
+
 
 nebula::meta::cpp2::AlterSchemaOp
 AlterSchemaOptItem::toType() {
@@ -104,10 +131,12 @@ AlterSchemaOptItem::toType() {
     }
 }
 
+
 std::string AlterSchemaOptList::toString() const {
     std::string buf;
     buf.reserve(256);
     for (auto &item : alterSchemaItems_) {
+        buf += " ";
         buf += item->toString();
         buf += ",";
     }
@@ -117,26 +146,38 @@ std::string AlterSchemaOptList::toString() const {
     return buf;
 }
 
+
 std::string AlterTagSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "ALTER TAG ";
     buf += *name_;
-    for (auto &tagOpt : opts_->alterSchemaItems()) {
-        buf += " ";
-        buf += tagOpt->toString();
+    if (opts_ != nullptr) {
+        for (auto &schemaOpt : opts_->alterSchemaItems()) {
+            buf += " ";
+            buf += schemaOpt->toString();
+        }
+    }
+    if (schemaProps_ != nullptr) {
+        buf +=  schemaProps_->toString();
     }
     return buf;
 }
+
 
 std::string AlterEdgeSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "ALTER EDGE ";
     buf += *name_;
-    for (auto &edgeOpt : opts_->alterSchemaItems()) {
-        buf += " ";
-        buf += edgeOpt->toString();
+    if (opts_ != nullptr) {
+        for (auto &schemaOpt : opts_->alterSchemaItems()) {
+            buf += " ";
+            buf += schemaOpt->toString();
+        }
+    }
+    if (schemaProps_ != nullptr) {
+        buf +=  schemaProps_->toString();
     }
     return buf;
 }
@@ -146,18 +187,21 @@ std::string DescribeTagSentence::toString() const {
     return folly::stringPrintf("DESCRIBE TAG %s", name_.get()->c_str());
 }
 
+
 std::string DescribeEdgeSentence::toString() const {
     return folly::stringPrintf("DESCRIBE EDGE %s", name_.get()->c_str());
 }
 
-std::string RemoveTagSentence::toString() const {
-    return folly::stringPrintf("REMOVE TAG %s", name_.get()->c_str());
+
+std::string DropTagSentence::toString() const {
+    return folly::stringPrintf("DROP TAG %s", name_.get()->c_str());
 }
 
 
-std::string RemoveEdgeSentence::toString() const {
-    return folly::stringPrintf("REMOVE TAG %s", name_.get()->c_str());
+std::string DropEdgeSentence::toString() const {
+    return folly::stringPrintf("DROP EDGE %s", name_.get()->c_str());
 }
+
 
 std::string YieldSentence::toString() const {
     std::string buf;
@@ -166,5 +210,4 @@ std::string YieldSentence::toString() const {
     buf += yieldColumns_->toString();
     return buf;
 }
-
 }   // namespace nebula

@@ -86,9 +86,9 @@ TEST(RowUpdater, noOrigin) {
     EXPECT_DOUBLE_EQ(2.17, dVal);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
-              updater.setTimestamp("col9", 1551331827));
+              updater.setInt("col9", 1551331827));
     EXPECT_EQ(ResultType::SUCCEEDED,
-              updater.getTimestamp("col9", tVal));
+              updater.getInt("col9", tVal));
     EXPECT_EQ(1551331827, tVal);
 }
 
@@ -110,7 +110,7 @@ TEST(RowUpdater, withOrigin) {
     EXPECT_EQ(ResultType::SUCCEEDED,
               updater.setVid("col7", 0x1234123412341234));
     EXPECT_EQ(ResultType::SUCCEEDED,
-              updater.setTimestamp("col9", 1551331830));
+              updater.setInt("col9", 1551331830));
 
     bool bVal;
     int64_t iVal, tVal;
@@ -153,8 +153,8 @@ TEST(RowUpdater, withOrigin) {
     EXPECT_DOUBLE_EQ(2.17, dVal);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
-              updater.getTimestamp("col9", tVal));
-    EXPECT_DOUBLE_EQ(1551331830, tVal);
+              updater.getInt("col9", tVal));
+    EXPECT_EQ(1551331830, tVal);
 }
 
 
@@ -178,7 +178,7 @@ TEST(RowUpdater, encodeWithAllFields) {
     EXPECT_EQ(ResultType::SUCCEEDED,
               updater.setDouble("col8", 2.17));
     EXPECT_EQ(ResultType::SUCCEEDED,
-              updater.setTimestamp("col9", 1551331830));
+              updater.setInt("col9", 1551331830));
 
     std::string encoded(updater.encode());
 
@@ -225,8 +225,8 @@ TEST(RowUpdater, encodeWithAllFields) {
     EXPECT_DOUBLE_EQ(2.17, dVal);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader->getTimestamp("col9", tVal));
-    EXPECT_DOUBLE_EQ(1551331830, tVal);
+              reader->getInt("col9", tVal));
+    EXPECT_EQ(1551331830, tVal);
 }
 
 
@@ -290,7 +290,7 @@ TEST(RowUpdater, encodeWithMissingFields) {
 
     // Default value
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader->getTimestamp("col9", tVal));
+              reader->getInt("col9", tVal));
     EXPECT_DOUBLE_EQ(0, tVal);
 }
 

@@ -24,7 +24,7 @@ find_path(
 
 find_path(
     NCURSES_INCLUDE_DIR
-    NAMES ncurses/curses.h
+    NAMES ncurses.h curses.h ncurses/curses.h
     HINTS ${NCURSES_ROOT_DIR}/include
 )
 

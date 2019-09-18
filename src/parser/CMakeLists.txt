@@ -8,21 +8,18 @@ add_flex_bison_dependency(Scanner Parser)
 
 add_compile_options(-Wno-error=sign-compare)
 
-add_library(
-        parser_obj
-        OBJECT
-        ${FLEX_Scanner_OUTPUTS}
-        ${BISON_Parser_OUTPUTS}
-        Clauses.cpp
-        IndexSentences.cpp
-        SequentialSentences.cpp
-        MaintainSentences.cpp
-        MutateSentences.cpp
-        TraverseSentences.cpp
-        AdminSentences.cpp
-        UserSentences.cpp
+nebula_add_library(
+    parser_obj OBJECT
+    ${FLEX_Scanner_OUTPUTS}
+    ${BISON_Parser_OUTPUTS}
+    Clauses.cpp
+    SequentialSentences.cpp
+    MaintainSentences.cpp
+    MutateSentences.cpp
+    TraverseSentences.cpp
+    AdminSentences.cpp
+    UserSentences.cpp
+    IndexSentences.cpp
 )
 
-add_dependencies(parser_obj base_obj filter_obj)
-
-add_subdirectory(test)
+nebula_add_subdirectory(test)

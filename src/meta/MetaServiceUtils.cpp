@@ -17,6 +17,13 @@ const std::string kHostsTable  = "__hosts__";   // NOLINT
 const std::string kTagsTable   = "__tags__";    // NOLINT
 const std::string kEdgesTable  = "__edges__";   // NOLINT
 const std::string kIndexTable  = "__index__";   // NOLINT
+const std::string kUsersTable  = "__users__";    // NOLINT
+const std::string kRolesTable  = "__roles__";    // NOLINT
+const std::string kConfigsTable = "__configs__"; // NOLINT
+
+
+const std::string kHostOnline = "Online";       // NOLINT
+const std::string kHostOffline = "Offline";     // NOLINT
 
 std::string MetaServiceUtils::spaceKey(GraphSpaceID spaceId) {
     std::string key;
@@ -26,15 +33,16 @@ std::string MetaServiceUtils::spaceKey(GraphSpaceID spaceId) {
     return key;
 }
 
-std::string MetaServiceUtils::spaceVal(int32_t partsNum,
-                                       int32_t replicaFactor,
-                                       const std::string& name) {
+std::string MetaServiceUtils::spaceVal(const cpp2::SpaceProperties &properties) {
     std::string val;
-    val.reserve(256);
-    val.append(reinterpret_cast<const char*>(&partsNum), sizeof(partsNum));
-    val.append(reinterpret_cast<const char*>(&replicaFactor), sizeof(replicaFactor));
-    val.append(name);
+    apache::thrift::CompactSerializer::serialize(properties, &val);
     return val;
+}
+
+cpp2::SpaceProperties  MetaServiceUtils::parseSpace(folly::StringPiece rawData) {
+    cpp2::SpaceProperties properties;
+    apache::thrift::CompactSerializer::deserialize(rawData, properties);
+    return properties;
 }
 
 const std::string& MetaServiceUtils::spacePrefix() {
@@ -45,8 +53,8 @@ GraphSpaceID MetaServiceUtils::spaceId(folly::StringPiece rawKey) {
     return *reinterpret_cast<const GraphSpaceID*>(rawKey.data() + kSpacesTable.size());
 }
 
-folly::StringPiece MetaServiceUtils::spaceName(folly::StringPiece rawVal) {
-    return rawVal.subpiece(sizeof(int32_t)*2);
+std::string MetaServiceUtils::spaceName(folly::StringPiece rawVal) {
+    return parseSpace(rawVal).get_space_name();
 }
 
 std::string MetaServiceUtils::partKey(GraphSpaceID spaceId, PartitionID partId) {
@@ -102,8 +110,12 @@ std::string MetaServiceUtils::hostKey(IPv4 ip, Port port) {
     return key;
 }
 
-std::string MetaServiceUtils::hostVal() {
-    return "";
+std::string MetaServiceUtils::hostValOnline() {
+    return kHostOnline;
+}
+
+std::string MetaServiceUtils::hostValOffline() {
+    return kHostOffline;
 }
 
 const std::string& MetaServiceUtils::hostPrefix() {
@@ -260,10 +272,11 @@ std::string MetaServiceUtils::assembleSegmentKey(const std::string& segment,
 }
 
 cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
+                                                  nebula::cpp2::SchemaProp&  prop,
                                                   const nebula::cpp2::ColumnDef col,
                                                   const cpp2::AlterSchemaOp op) {
     switch (op) {
-        case cpp2::AlterSchemaOp::ADD :
+        case cpp2::AlterSchemaOp::ADD:
         {
             for (auto it = cols.begin(); it != cols.end(); ++it) {
                 if (it->get_name() == col.get_name()) {
@@ -274,7 +287,7 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
             cols.emplace_back(std::move(col));
             return cpp2::ErrorCode::SUCCEEDED;
         }
-        case cpp2::AlterSchemaOp::CHANGE :
+        case cpp2::AlterSchemaOp::CHANGE:
         {
             for (auto it = cols.begin(); it != cols.end(); ++it) {
                 if (col.get_name() == it->get_name()) {
@@ -284,12 +297,21 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
             }
             break;
         }
-        case cpp2::AlterSchemaOp::DROP :
+        case cpp2::AlterSchemaOp::DROP:
         {
+            auto colName = col.get_name();
             for (auto it = cols.begin(); it != cols.end(); ++it) {
-                if (col.get_name() == it->get_name()) {
-                    cols.erase(it);
-                    return cpp2::ErrorCode::SUCCEEDED;
+                if (colName == it->get_name()) {
+                    // Check if there is a TTL on the column to be deleted
+                    if (!prop.get_ttl_col() ||
+                        (prop.get_ttl_col() && (*prop.get_ttl_col() != colName))) {
+                        cols.erase(it);
+                        return cpp2::ErrorCode::SUCCEEDED;
+                    } else {
+                        LOG(WARNING) << "Column can't be dropped, a TTL attribute on it : "
+                                     << colName;
+                        return cpp2::ErrorCode::E_NOT_DROP;
+                    }
                 }
             }
             break;
@@ -299,6 +321,228 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
     }
     LOG(WARNING) << "Column not found : " << col.get_name();
     return cpp2::ErrorCode::E_NOT_FOUND;
+}
+
+cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
+                                                  nebula::cpp2::SchemaProp& schemaProp,
+                                                  nebula::cpp2::SchemaProp alterSchemaProp) {
+    if (alterSchemaProp.__isset.ttl_duration) {
+        // Graph check  <=0 to = 0
+        schemaProp.set_ttl_duration(*alterSchemaProp.get_ttl_duration());
+    }
+    if (alterSchemaProp.__isset.ttl_col) {
+        auto ttlCol = *alterSchemaProp.get_ttl_col();
+        auto existed = false;
+        for (auto& col : cols) {
+            if (col.get_name() == ttlCol) {
+                // Only integer and timestamp columns can be used as ttl_col
+                if (col.type.type != nebula::cpp2::SupportedType::INT &&
+                    col.type.type != nebula::cpp2::SupportedType::TIMESTAMP) {
+                    LOG(WARNING) << "TTL column type illegal";
+                    return cpp2::ErrorCode::E_UNSUPPORTED;
+                }
+                existed = true;
+                schemaProp.set_ttl_col(ttlCol);
+                break;
+            }
+        }
+
+        if (!existed) {
+            LOG(WARNING) << "TTL column not found : " << ttlCol;
+            return cpp2::ErrorCode::E_NOT_FOUND;
+        }
+    }
+
+    // Disable implicit TTL mode
+    if ((schemaProp.get_ttl_duration() && (*schemaProp.get_ttl_duration() != 0)) &&
+        (!schemaProp.get_ttl_col() || (schemaProp.get_ttl_col() &&
+         schemaProp.get_ttl_col()->empty()))) {
+        LOG(WARNING) << "Implicit ttl_col not support";
+        return cpp2::ErrorCode::E_UNSUPPORTED;
+    }
+
+    return cpp2::ErrorCode::SUCCEEDED;
+}
+
+std::string MetaServiceUtils::indexUserKey(const std::string& account) {
+    std::string key;
+    EntryType type = EntryType::USER;
+    key.reserve(128);
+    key.append(kIndexTable.data(), kIndexTable.size());
+    key.append(reinterpret_cast<const char*>(&type), sizeof(type));
+    key.append(account);
+    return key;
+}
+
+std::string MetaServiceUtils::userKey(UserID userId) {
+    std::string key;
+    key.reserve(64);
+    key.append(kUsersTable.data(), kUsersTable.size());
+    key.append(reinterpret_cast<const char*>(&userId), sizeof(userId));
+    return key;
+}
+
+std::string MetaServiceUtils::userVal(const std::string& password,
+                                      const cpp2::UserItem& userItem) {
+    auto len = password.size();
+    std::string val, userVal;
+    apache::thrift::CompactSerializer::serialize(userItem, &userVal);
+    val.reserve(sizeof(int32_t) + len + userVal.size());
+    val.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
+    val.append(password);
+    val.append(userVal);
+    return val;
+}
+
+folly::StringPiece MetaServiceUtils::userItemVal(folly::StringPiece rawVal) {
+    auto offset = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(rawVal.begin());
+    return rawVal.subpiece(offset, rawVal.size() - offset);
+}
+
+std::string MetaServiceUtils::replaceUserVal(const cpp2::UserItem& user, folly::StringPiece val) {
+    cpp2:: UserItem oldUser;
+    apache::thrift::CompactSerializer::deserialize(userItemVal(val), oldUser);
+    if (user.__isset.is_lock) {
+        oldUser.set_is_lock(user.get_is_lock());
+    }
+    if (user.__isset.max_queries_per_hour) {
+        oldUser.set_max_queries_per_hour(user.get_max_queries_per_hour());
+    }
+    if (user.__isset.max_updates_per_hour) {
+        oldUser.set_max_updates_per_hour(user.get_max_updates_per_hour());
+    }
+    if (user.__isset.max_connections_per_hour) {
+        oldUser.set_max_connections_per_hour(user.get_max_connections_per_hour());
+    }
+    if (user.__isset.max_user_connections) {
+        oldUser.set_max_user_connections(user.get_max_user_connections());
+    }
+
+    std::string newVal, userVal;
+    apache::thrift::CompactSerializer::serialize(oldUser, &userVal);
+    auto len = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(val.begin());
+    newVal.reserve(len + userVal.size());
+    newVal.append(val.subpiece(0, len).str());
+    newVal.append(userVal);
+    return newVal;
+}
+
+std::string MetaServiceUtils::roleKey(GraphSpaceID spaceId, UserID userId) {
+    std::string key;
+    key.reserve(64);
+    key.append(kRolesTable.data(), kRolesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&userId), sizeof(UserID));
+    return key;
+}
+
+std::string MetaServiceUtils::roleVal(cpp2::RoleType roleType) {
+    std::string val;
+    val.reserve(64);
+    val.append(reinterpret_cast<const char*>(&roleType), sizeof(roleType));
+    return val;
+}
+
+std::string MetaServiceUtils::changePassword(folly::StringPiece val, folly::StringPiece newPwd) {
+    auto pwdLen = newPwd.size();
+    auto len = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(val.begin());
+    auto userVal = val.subpiece(len, val.size() - len);
+    std::string newVal;
+    newVal.reserve(sizeof(int32_t) + pwdLen+ userVal.size());
+    newVal.append(reinterpret_cast<const char*>(&pwdLen), sizeof(int32_t));
+    newVal.append(newPwd.str());
+    newVal.append(userVal.str());
+    return newVal;
+}
+
+cpp2::UserItem MetaServiceUtils::parseUserItem(folly::StringPiece val) {
+    cpp2:: UserItem user;
+    apache::thrift::CompactSerializer::deserialize(userItemVal(val), user);
+    return user;
+}
+
+std::string MetaServiceUtils::rolesPrefix() {
+    return kRolesTable;
+}
+
+std::string MetaServiceUtils::roleSpacePrefix(GraphSpaceID spaceId) {
+    std::string key;
+    key.reserve(64);
+    key.append(kRolesTable.data(), kRolesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    return key;
+}
+
+UserID MetaServiceUtils::parseRoleUserId(folly::StringPiece val) {
+    return *reinterpret_cast<const UserID *>(val.begin() +
+                                             kRolesTable.size() +
+                                             sizeof(GraphSpaceID));
+}
+
+UserID MetaServiceUtils::parseUserId(folly::StringPiece val) {
+    return *reinterpret_cast<const UserID *>(val.begin() +
+                                             kUsersTable.size());
+}
+
+std::string MetaServiceUtils::configKey(const cpp2::ConfigModule& module,
+                                        const std::string& name) {
+    std::string key;
+    key.reserve(128);
+    key.append(kConfigsTable.data(), kConfigsTable.size());
+
+    key.append(reinterpret_cast<const char*>(&module), sizeof(cpp2::ConfigModule));
+
+    int32_t nSize = name.size();
+    key.append(reinterpret_cast<const char*>(&nSize), sizeof(int32_t));
+    key.append(name);
+    return key;
+}
+
+std::string MetaServiceUtils::configKeyPrefix(const cpp2::ConfigModule& module) {
+    std::string key;
+    key.reserve(128);
+    key.append(kConfigsTable.data(), kConfigsTable.size());
+    if (module != cpp2::ConfigModule::ALL) {
+        key.append(reinterpret_cast<const char*>(&module), sizeof(cpp2::ConfigModule));
+    }
+    return key;
+}
+
+std::string MetaServiceUtils::configValue(const cpp2::ConfigType& valueType,
+                                          const cpp2::ConfigMode& valueMode,
+                                          const std::string& config) {
+    std::string val;
+    val.reserve(sizeof(cpp2::ConfigType) + sizeof(cpp2::ConfigMode) + config.size());
+    val.append(reinterpret_cast<const char*>(&valueType), sizeof(cpp2::ConfigType));
+    val.append(reinterpret_cast<const char*>(&valueMode), sizeof(cpp2::ConfigMode));
+    val.append(config);
+    return val;
+}
+
+ConfigName MetaServiceUtils::parseConfigKey(folly::StringPiece rawKey) {
+    std::string key;
+    auto offset = kConfigsTable.size();
+    auto module = *reinterpret_cast<const cpp2::ConfigModule*>(rawKey.data() + offset);
+    offset += sizeof(cpp2::ConfigModule);
+    int32_t nSize = *reinterpret_cast<const int32_t*>(rawKey.data() + offset);
+    offset += sizeof(int32_t);
+    auto name = rawKey.subpiece(offset, nSize);
+    return {module, name.str()};
+}
+
+cpp2::ConfigItem MetaServiceUtils::parseConfigValue(folly::StringPiece rawData) {
+    int32_t offset = 0;
+    cpp2::ConfigType type = *reinterpret_cast<const cpp2::ConfigType*>(rawData.data() + offset);
+    offset += sizeof(cpp2::ConfigType);
+    cpp2::ConfigMode mode = *reinterpret_cast<const cpp2::ConfigMode*>(rawData.data() + offset);
+    offset += sizeof(cpp2::ConfigMode);
+    auto value = rawData.subpiece(offset, rawData.size() - offset);
+
+    cpp2::ConfigItem item;
+    item.set_type(type);
+    item.set_mode(mode);
+    item.set_value(value.str());
+    return item;
 }
 
 }  // namespace meta

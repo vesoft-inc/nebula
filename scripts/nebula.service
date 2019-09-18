@@ -119,7 +119,8 @@ function start_daemon {
     pid_file=$(get_pid_file_from_config ${config})
     if [[ -f ${pid_file} ]]; then
         if is_process_running ${pid_file}; then
-            ERROR_AND_EXIT "Process already running: $(cat ${pid_file})"
+            ERROR "${daemon_name} already running: $(cat ${pid_file})"
+            return 1
         fi
     fi
 
@@ -168,8 +169,25 @@ function stop_daemon {
 
 
 # args: <daemon name> [config file]
+function wait_daemon_to_exit {
+    local daemon_name=nebula-${1}
+    local config=${2}
+    local executable=${INSTALL_ROOT}/bin/${daemon_name}
+
+    [[ -e ${executable} ]] || ERROR_AND_EXIT "${executable} not found"
+
+    [[ -z ${config} ]] && config=${INSTALL_ROOT}/etc/${daemon_name}.conf
+
+    [[ -f ${config} ]] || ERROR_AND_EXIT "${config} not found"
+
+    wait_for_exit $(get_pid_file_from_config ${config}) 5
+}
+
+
+# args: <daemon name> [config file]
 function restart_daemon {
     stop_daemon $@
+    wait_daemon_to_exit $@
     start_daemon $@
 }
 
