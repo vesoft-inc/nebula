@@ -380,9 +380,6 @@ macro(nebula_add_test)
     endif()
 endmacro()
 
-macro(nebula_build_after_base obj_name)
-endmacro()
-
 # All ordinary libraries shall depend on the compile-time generated files,
 # including the precompiled header, a.k.a Base.h.gch, and thrift headers.
 macro(nebula_add_library name type)
