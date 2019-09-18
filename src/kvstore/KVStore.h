@@ -161,7 +161,7 @@ public:
 
     virtual ResultCode createSnapshot(GraphSpaceID spaceId) = 0;
 
-    virtual ResultCode deleteSnapshot(GraphSpaceID spaceId) = 0;
+    virtual void deleteSnapshot(GraphSpaceID spaceId) = 0;
 
 protected:
     KVStore() = default;

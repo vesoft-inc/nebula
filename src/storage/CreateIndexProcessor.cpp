@@ -13,19 +13,6 @@
 DEFINE_int32(bulk_number_per_index_creation, 100000,
              "The number of rows that data inserts in bulk during index creation");
 
-#define ERROR_CODE_CHECK(ret)                                          \
-do {                                                                   \
-    if (ret != cpp2::ErrorCode::SUCCEEDED) {                           \
-        std::vector<std::pair<cpp2::ErrorCode, PartitionID>> items;    \
-        for (auto& part : parts) {                                     \
-            items.emplace_back(ret, part.first);                       \
-        }                                                              \
-    pushPartsResultCode(std::move(items));                             \
-    onFinished();                                                      \
-    return;                                                            \
-    }                                                                  \
-} while (false)                                                        \
-
 namespace nebula {
 namespace storage {
 
@@ -41,8 +28,16 @@ void CreateIndexProcessor::process(const cpp2::BuildIndexReq& req) {
     callingNum_ = parts.size();
     CHECK_NOTNULL(kvstore_);
 
-    auto ret = kvstore_->createSnapshot(spaceId_);
-    ERROR_CODE_CHECK(to(ret));
+    auto ret = to(kvstore_->createSnapshot(spaceId_));
+    if (ret != cpp2::ErrorCode::SUCCEEDED) {
+        std::vector<std::pair<cpp2::ErrorCode, PartitionID>> items;
+        for (auto& part : parts) {
+            items.emplace_back(ret, part.first);
+        }
+        pushPartsResultCode(std::move(items));
+        onFinished();
+        return;
+    }
 
     std::for_each(parts.begin(), parts.end(), [&](auto& part){
         auto partId = part.first;

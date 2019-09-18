@@ -126,7 +126,7 @@ void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
             auto addr = value(std::move(addrRet));
             leader.set_ip(addr.first);
             leader.set_port(addr.second);
-            thriftResult.set_leader(std::move(leader));
+            thriftResult.set_leader(leader);
         }
         bool finished = false;
         {
@@ -173,7 +173,7 @@ StatusOr<std::pair<std::string, std::string>> BaseProcessor<RESP>::assembleIndex
                     }
                     auto indexKey = NebulaKeyUtils::edgeIndexkey(partId, indexId, id, version,
                                                                  ret.value());
-                    return std::pair<std::string, std::string>(std::move(indexKey), key);
+                    return std::pair<std::string, std::string>(std::move(indexKey), std::move(key));
                 }
                 case nebula::cpp2::IndexType::TAG :
                 {

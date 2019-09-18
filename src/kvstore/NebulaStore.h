@@ -168,10 +168,10 @@ public:
 
     int32_t allLeader(std::unordered_map<GraphSpaceID,
                                          std::vector<PartitionID>>& leaderIds) override;
-    
+
     ResultCode createSnapshot(GraphSpaceID spaceId) override;
 
-    ResultCode deleteSnapshot(GraphSpaceID spaceId) override;
+    void deleteSnapshot(GraphSpaceID spaceId) override;
 
     bool isLeader(GraphSpaceID spaceId, PartitionID partId);
 

@@ -21,6 +21,7 @@ public:
     virtual ~IndexBaseProcessor() = default;
 
 protected:
+    void finishProcess(cpp2::ResultCode thriftResult);
     void doIndexCreate(PartitionID partId);
 
     cpp2::ErrorCode doBatchPut(GraphSpaceID spaceId, PartitionID partId,

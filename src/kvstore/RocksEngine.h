@@ -170,7 +170,7 @@ public:
 
     ResultCode createSnapshot() override;
 
-    ResultCode deleteSnapshot() override;
+    void deleteSnapshot() override;
 
 private:
     std::string partKey(PartitionID partId);

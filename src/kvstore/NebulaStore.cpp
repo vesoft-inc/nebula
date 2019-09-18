@@ -538,19 +538,15 @@ ResultCode NebulaStore::createSnapshot(GraphSpaceID spaceId) {
     return ResultCode::SUCCEEDED;
 }
 
-ResultCode NebulaStore::deleteSnapshot(GraphSpaceID spaceId) {
+void NebulaStore::deleteSnapshot(GraphSpaceID spaceId) {
     auto spaceRet = space(spaceId);
     if (!ok(spaceRet)) {
-        return error(spaceRet);
+        return;
     }
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
-        auto code = engine->deleteSnapshot();
-        if (code != ResultCode::SUCCEEDED) {
-            return code;
-        }
+        engine->deleteSnapshot();
     }
-    return ResultCode::SUCCEEDED;
 }
 
 bool NebulaStore::isLeader(GraphSpaceID spaceId, PartitionID partId) {

@@ -10,30 +10,28 @@
 
 DECLARE_int32(bulk_number_per_index_creation);
 
-#define INDEX_CREATE_DONE                                              \
-do {                                                                   \
-    bool finished = false;                                             \
-    {                                                                  \
-        std::lock_guard<std::mutex> lg(this->lock_);                   \
-        if (thriftResult.code != cpp2::ErrorCode::SUCCEEDED) {         \
-        this->codes_.emplace_back(thriftResult);                       \
-        }                                                              \
-        this->callingNum_--;                                           \
-        if (this->callingNum_ == 0) {                                  \
-            this->result_.set_failed_codes(std::move(this->codes_));   \
-            finished = true;                                           \
-        }                                                              \
-    }                                                                  \
-    if (finished) {                                                    \
-        this->kvstore_->deleteSnapshot(spaceId_);                      \
-        this->onFinished();                                            \
-    }                                                                  \
-    return;                                                            \
-} while (false)                                                        \
-
-
 namespace nebula {
 namespace storage {
+
+template<typename RESP>
+void IndexBaseProcessor<RESP>::finishProcess(cpp2::ResultCode thriftResult) {
+    bool finished = false;
+    {
+        std::lock_guard<std::mutex> lg(this->lock_);
+        if (thriftResult.code != cpp2::ErrorCode::SUCCEEDED) {
+            this->codes_.emplace_back(thriftResult);
+        }
+        this->callingNum_--;
+        if (this->callingNum_ == 0) {
+            this->result_.set_failed_codes(std::move(this->codes_));
+            finished = true;
+        }
+    }
+    if (finished) {
+        this->kvstore_->deleteSnapshot(spaceId_);
+        this->onFinished();
+    }
+}
 
 template<typename RESP>
 void IndexBaseProcessor<RESP>::doIndexCreate(PartitionID partId) {
@@ -52,7 +50,8 @@ void IndexBaseProcessor<RESP>::doIndexCreate(PartitionID partId) {
 
     if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
         thriftResult.set_code(this->to(ret));
-        INDEX_CREATE_DONE;
+        finishProcess(thriftResult);
+        return;
     }
 
     while (iter->valid()) {
@@ -69,7 +68,7 @@ void IndexBaseProcessor<RESP>::doIndexCreate(PartitionID partId) {
         data.emplace_back(std::move(indexKey.value()), std::move(key));
         batchPutNum++;
         if (batchPutNum == FLAGS_bulk_number_per_index_creation) {
-            auto code = doBatchPut(spaceId_, partId, data);
+            auto code = doBatchPut(spaceId_, partId, std::move(data));
             if (code == cpp2::ErrorCode::E_LEADER_CHANGED) {
                 nebula::cpp2::HostAddr leader;
                 auto addrRet = this->kvstore_->partLeader(spaceId_, partId);
@@ -80,15 +79,15 @@ void IndexBaseProcessor<RESP>::doIndexCreate(PartitionID partId) {
                 thriftResult.set_leader(leader);
             } else if (code != cpp2::ErrorCode::SUCCEEDED) {
                 thriftResult.set_code(code);
-                INDEX_CREATE_DONE;
+                finishProcess(thriftResult);
+                return;
             }
-            data.clear();
             batchPutNum = 0;
         }
     }
 
     if (!data.empty()) {
-        auto code = doBatchPut(spaceId_, partId, data);
+        auto code = doBatchPut(spaceId_, partId, std::move(data));
         if (code == cpp2::ErrorCode::E_LEADER_CHANGED) {
             nebula::cpp2::HostAddr leader;
             auto addrRet = this->kvstore_->partLeader(spaceId_, partId);
@@ -99,9 +98,9 @@ void IndexBaseProcessor<RESP>::doIndexCreate(PartitionID partId) {
             thriftResult.set_leader(leader);
         } else if (code != cpp2::ErrorCode::SUCCEEDED) {
             thriftResult.set_code(code);
-            INDEX_CREATE_DONE;
+            finishProcess(thriftResult);
+            return;
         }
-        data.clear();
     }
 
     // TODO : send index status 'CONSTRUCTING' via meta client,
@@ -110,7 +109,7 @@ void IndexBaseProcessor<RESP>::doIndexCreate(PartitionID partId) {
 
     // TODO : Assemble new data changes during index creation.
 
-    INDEX_CREATE_DONE;
+    finishProcess(thriftResult);
 }
 
 template<typename RESP>

@@ -448,9 +448,8 @@ ResultCode RocksEngine::createSnapshot() {
     return ResultCode::SUCCEEDED;
 }
 
-ResultCode RocksEngine::deleteSnapshot() {
+void RocksEngine::deleteSnapshot() {
     db_->ReleaseSnapshot(snapshot_);
-    return ResultCode::SUCCEEDED;
 }
 
 }  // namespace kvstore

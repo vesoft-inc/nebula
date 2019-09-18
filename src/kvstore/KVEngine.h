@@ -113,7 +113,7 @@ public:
 
     virtual ResultCode createSnapshot() = 0;
 
-    virtual ResultCode deleteSnapshot() = 0;
+    virtual void deleteSnapshot() = 0;
 
 protected:
     GraphSpaceID spaceId_;

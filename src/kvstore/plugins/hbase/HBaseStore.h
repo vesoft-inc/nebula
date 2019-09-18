@@ -162,8 +162,7 @@ public:
         return ResultCode::ERR_UNSUPPORTED;
     }
 
-    ResultCode deleteSnapshot(GraphSpaceID) override {
-        return ResultCode::ERR_UNSUPPORTED;
+    void deleteSnapshot(GraphSpaceID) override {
     }
 
 
