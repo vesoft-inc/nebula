@@ -76,6 +76,10 @@ void Cord::clear() {
 
 
 bool Cord::applyTo(std::function<bool(const char*, int32_t)> visitor) const {
+    if (empty()) {
+        return true;
+    }
+
     char* next = head_;
     while (next != tail_) {
         if (!visitor(next, blockContentSize_)) {
@@ -94,6 +98,10 @@ bool Cord::applyTo(std::function<bool(const char*, int32_t)> visitor) const {
 
 
 size_t Cord::appendTo(std::string& str) const {
+    if (empty()) {
+        return 0;
+    }
+
     char* next = head_;
     while (next != tail_) {
         str.append(next, blockContentSize_);
@@ -112,11 +120,7 @@ size_t Cord::appendTo(std::string& str) const {
 
 std::string Cord::str() const {
     std::string buf;
-    if (len_ == 0) {
-        return buf;
-    }
     buf.reserve(len_);
-
     appendTo(buf);
 
     return buf;
