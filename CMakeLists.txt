@@ -394,7 +394,9 @@ macro(nebula_add_library name type)
         graph_thrift_headers
         storage_thrift_headers
         meta_thrift_headers
+        raftex_thrift_headers
         hbase_thrift_headers
+        parser_target
     )
 endmacro()
 
