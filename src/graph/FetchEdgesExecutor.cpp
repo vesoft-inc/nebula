@@ -15,10 +15,18 @@ FetchEdgesExecutor::FetchEdgesExecutor(Sentence *sentence, ExecutionContext *ect
 }
 
 Status FetchEdgesExecutor::prepare() {
+    return Status::OK();
+}
+
+Status FetchEdgesExecutor::prepareClauses() {
     DCHECK_NOTNULL(sentence_);
     Status status = Status::OK();
 
     do {
+        status = checkIfGraphSpaceChosen();
+        if (!status.ok()) {
+            break;
+        }
         expCtx_ = std::make_unique<ExpressionContext>();
         spaceId_ = ectx()->rctx()->session()->space();
         yieldClause_ = sentence_->yieldClause();
@@ -43,6 +51,18 @@ Status FetchEdgesExecutor::prepare() {
         status = prepareYield();
         if (!status.ok()) {
             break;
+        }
+
+        // Save the type
+        auto iter = colTypes_.begin();
+        for (auto i = 0u; i < colNames_.size(); i++) {
+            auto type = labelSchema_->getFieldType(colNames_[i]);
+            if (type == CommonConstants::kInvalidValueType()) {
+                iter++;
+                continue;
+            }
+            *iter = type.type;
+            iter++;
         }
     } while (false);
     return status;
@@ -72,7 +92,13 @@ Status FetchEdgesExecutor::prepareEdgeKeys() {
 
 void FetchEdgesExecutor::execute() {
     FLOG_INFO("Executing FetchEdges: %s", sentence_->toString().c_str());
-    auto status = setupEdgeKeys();
+    auto status = prepareClauses();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+    status = setupEdgeKeys();
     if (!status.ok()) {
         DCHECK(onError_);
         onError_(std::move(status));
@@ -125,7 +151,6 @@ Status FetchEdgesExecutor::setupEdgeKeysFromRef() {
         return ret.status();
     }
     auto srcVids = std::move(ret).value();
-
     ret = inputs->getVIDs(*dstid_);
     if (!ret.ok()) {
         return ret.status();
@@ -219,7 +244,14 @@ Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
 }
 
 void FetchEdgesExecutor::fetchEdges() {
-    auto props = getPropNames();
+    std::vector<storage::cpp2::PropDef> props;
+    auto status = getPropNames(props);
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(status);
+        return;
+    }
+
     if (props.empty()) {
         DCHECK(onError_);
         onError_(Status::Error("No props declared."));
@@ -251,16 +283,21 @@ void FetchEdgesExecutor::fetchEdges() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-std::vector<storage::cpp2::PropDef> FetchEdgesExecutor::getPropNames() {
-    std::vector<storage::cpp2::PropDef> props;
+Status FetchEdgesExecutor::getPropNames(std::vector<storage::cpp2::PropDef> &props) {
     for (auto &prop : expCtx_->aliasProps()) {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::EDGE;
         pd.name = prop.second;
+        auto status = ectx()->schemaManager()->toEdgeType(spaceId_, prop.first);
+        if (!status.ok()) {
+            return Status::Error("No schema found for '%s'", prop.first.c_str());
+        }
+        auto edgeType = status.value();
+        pd.id.set_edge_type(edgeType);
         props.emplace_back(std::move(pd));
     }
 
-    return props;
+    return Status::OK();
 }
 
 void FetchEdgesExecutor::processResult(RpcResponse &&result) {
@@ -280,7 +317,13 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
         auto iter = rsReader.begin();
         if (outputSchema == nullptr) {
             outputSchema = std::make_shared<SchemaWriter>();
-            getOutputSchema(eschema.get(), &*iter, outputSchema.get());
+            auto status = getOutputSchema(eschema.get(), &*iter, outputSchema.get());
+            if (!status.ok()) {
+                LOG(ERROR) << "Get getOutputSchema failed" << status;
+                DCHECK(onError_);
+                onError_(std::move(status));
+                return;
+            }
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
         }
         while (iter) {

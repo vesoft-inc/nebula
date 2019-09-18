@@ -28,6 +28,8 @@ public:
     void execute() override;
 
 private:
+    Status prepareClauses();
+
     void prepareVids();
 
     Status setupVids();

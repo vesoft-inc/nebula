@@ -45,6 +45,7 @@ add_library(
     SetExecutor.cpp
     FindExecutor.cpp
     MatchExecutor.cpp
+    DeleteVertexExecutor.cpp
 )
 add_dependencies(
     graph_obj
@@ -68,5 +69,5 @@ add_dependencies(
     base_obj
 )
 
-add_subdirectory(test)
+nebula_add_subdirectory(test)
 
