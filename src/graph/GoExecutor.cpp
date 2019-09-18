@@ -819,7 +819,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                             colTypes.back() = iter->getSchema()->getFieldType(prop).type;
                         }
                         if (edgeType != edgeStatus.value()) {
-                            return RowReader::getDefaultProp(iter->getSchema(), prop);
+                            return RowReader::getDefaultProp(iter->getSchema().get(), prop);
                         }
 
                         auto res = RowReader::getPropByName(&*iter, prop);
@@ -846,7 +846,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                             });
 
                         if (it2 == tagData.cend()) {
-                            return RowReader::getDefaultProp(iter->getSchema(), prop);
+                            return RowReader::getDefaultProp(iter->getSchema().get(), prop);
                         }
 
                         if (saveTypeFlag) {

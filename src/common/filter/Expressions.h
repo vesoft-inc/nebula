@@ -311,7 +311,6 @@ public:
         kEdgeSrcId,
         kEdgeType,
         kAliasProp,
-        kEdgeProp,
         kVariableProp,
         kDestProp,
         kInputProp,
@@ -351,7 +350,6 @@ private:
     friend class EdgeDstIdExpression;
     friend class EdgeSrcIdExpression;
     friend class EdgeTypeExpression;
-    friend class EdgePropertyExpression;
     friend class VariablePropertyExpression;
     friend class InputPropertyExpression;
 

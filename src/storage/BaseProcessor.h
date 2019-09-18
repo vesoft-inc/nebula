@@ -83,16 +83,16 @@ protected:
     }
 
 protected:
-    kvstore::KVStore*       kvstore_ = nullptr;
-    meta::SchemaManager*    schemaMan_ = nullptr;
-    RESP                    resp_;
-    folly::Promise<RESP>    promise_;
-    cpp2::ResponseCommon    result_;
+    kvstore::KVStore*                               kvstore_ = nullptr;
+    meta::SchemaManager*                            schemaMan_ = nullptr;
+    RESP                                            resp_;
+    folly::Promise<RESP>                            promise_;
+    cpp2::ResponseCommon                            result_;
 
-    time::Duration          duration_;
-    std::vector<cpp2::ResultCode> codes_;
-    std::mutex lock_;
-    int32_t                 callingNum_ = 0;
+    time::Duration                                  duration_;
+    std::vector<cpp2::ResultCode>                   codes_;
+    std::mutex                                      lock_;
+    int32_t                                         callingNum_ = 0;
 };
 
 }  // namespace storage
