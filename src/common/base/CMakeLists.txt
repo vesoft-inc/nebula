@@ -19,6 +19,6 @@ add_custom_target(
     COMMAND "rm" "-fr" "Base.h.gch"
 )
 
-add_subdirectory(test)
+nebula_add_subdirectory(test)
 
 
