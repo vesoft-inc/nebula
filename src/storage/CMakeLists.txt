@@ -11,6 +11,8 @@ nebula_add_library(
     QueryEdgePropsProcessor.cpp
     QueryStatsProcessor.cpp
     QueryEdgeKeysProcessor.cpp
+    UpdateVertexProcessor.cpp
+    UpdateEdgeProcessor.cpp
 )
 
 nebula_add_library(
