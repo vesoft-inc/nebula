@@ -14,11 +14,11 @@ fi
 # fedora
 function fedora_install {
     echo "###### start install dep in fedora ######"
-#   sudo yum -y install autoconf autoconf-archive automake bison boost boost-devel boost-static bzip2-devel cmake curl flex gcc gcc-c++ gperf  java-1.8.0-openjdk java-1.8.0-openjdk-devel krb5-devel libstdc++-static libstdc++-devel libunwind libunwind-devel libtool make maven ncurses ncurses-devel openssl openssl-devel perl perl-WWW-Curl python readline readline-devel unzip  xz-devel
+    sudo yum -y install autoconf autoconf-archive automake bison boost boost-devel boost-static bzip2-devel cmake curl flex gcc gcc-c++ gperf  java-1.8.0-openjdk java-1.8.0-openjdk-devel krb5-devel libstdc++-static libstdc++-devel libunwind libunwind-devel libtool make maven ncurses ncurses-devel openssl openssl-devel perl perl-WWW-Curl python readline readline-devel unzip xz-devel
     mkdir download
     pushd download
         wget $url_addr/vs-nebula-3rdparty.fc.x86_64.rpm
-#sudo rpm -ivh vs-nebula-3rdparty.fc.x86_64.rpm
+        sudo rpm -ivh vs-nebula-3rdparty.fc.x86_64.rpm
     popd
     rm -rf download/
 }
@@ -29,14 +29,14 @@ function centos6_install {
     mkdir download
     pushd download
         sudo yum -y install wget libtool autoconf autoconf-archive automake perl-WWW-Curl perl-YAML perl-CGI perl-DBI perl-Pod-Simple glibc-devel libstdc++-static ncurses-devel readline-devel maven java-1.8.0-openjdk unzip
-        wget $url_addr/centos-6.5.tar.gz
-        tar xf centos-6.5.tar.gz
-        pushd centos-6.5
+        wget $url_addr/centos6.tar.gz
+        tar xf centos6.tar.gz
+        pushd centos6
             sudo rpm -ivh *.rpm
         popd
 
         wget $url_addr/vs-nebula-3rdparty.el6.x86_64.rpm
-        sudo rpm -ivh vs-nebula-3rdparty.el6-5.x86_64.rpm
+        sudo rpm -ivh vs-nebula-3rdparty.el6.x86_64.rpm
     popd
     rm -rf download/
     echo "export PATH=/opt/nebula/autoconf/bin:/opt/nebula/automake/bin:/opt/nebula/libtool/bin:/opt/nebula/gettext/bin:/opt/nebula/flex/bin:/opt/nebula/binutils/bin:$PATH" >> ~/.bashrc
@@ -49,14 +49,14 @@ function centos7_install {
     mkdir download
     pushd download
         sudo yum -y install wget libtool autoconf autoconf-archive automake ncurses-devel readline-devel perl-WWW-Curl libstdc++-static maven java-1.8.0-openjdk unzip
-        wget $url_addr/centos-7.5-1804.tar.gz
-        tar xf centos-7.5-1804.tar.gz
-        pushd centos-7.5-1804
+        wget $url_addr/centos7.tar.gz
+        tar xf centos7.tar.gz
+        pushd centos7
             sudo rpm -ivh *.rpm
         popd
 
         wget $url_addr/vs-nebula-3rdparty.el7.x86_64.rpm
-        sudo rpm -ivh vs-nebula-3rdparty.el7-5.x86_64.rpm
+        sudo rpm -ivh vs-nebula-3rdparty.el7.x86_64.rpm
     popd
     rm -rf download/
 }
@@ -66,15 +66,15 @@ function ubuntu16_install {
     echo "###### start install dep in ubuntu16 ######"
     mkdir download
     pushd download
-        sudo yum -y install wget libtool autoconf autoconf-archive automake perl-WWW-Curl perl-YAML perl-CGI glibc-devel libstdc++-static ncurses ncurses-devel readline readline-devel maven java-1.8.0-openjdk unzip
-        wget $url_addr/ubuntu1804.tar.gz
-        tar xf ubuntu1804.tar.gz
-        pushd ubuntu1804/
-            sudo rpm -ivh *.rpm
+        sudo apt-get -y install gcc-multilib libtool autoconf autoconf-archive automake libncurses5-dev libreadline-dev python maven openjdk-8-jdk unzip
+        wget $url_addr/ubuntu.tar.gz
+        tar xf ubuntu.tar.gz
+        pushd ubuntu/
+            sudo dpkg -i *.deb
         popd
 
         wget $url_addr/vs-nebula-3rdparty.ubuntu1604.amd64.deb
-        sudo rpm -ivh vs-nebula-3rdparty.ubuntu1604.amd64.deb
+        sudo dpkg -i vs-nebula-3rdparty.ubuntu1604.amd64.deb
     popd
     rm -rf download/
 }
@@ -84,21 +84,15 @@ function ubuntu18_install {
     echo "###### start install dep in ubuntu18 ######"
     mkdir download
     pushd download
-        sudo yum -y install wget libtool autoconf autoconf-archive automake perl-WWW-Curl perl-YAML perl-CGI glibc-devel libstdc++-static ncurses ncurses-devel readline readline-devel maven java-1.8.0-openjdk unzip
-        wget $url_addr/ubuntu1804.tar.gz
-        tar xf ubuntu1804.tar.gz
-        pushd ubuntu1804/
-            sudo rpm -ivh *.rpm
+        sudo apt-get -y install gcc-multilib libtool autoconf autoconf-archive automake libncurses5-dev libreadline-dev python maven openjdk-8-jdk unzip
+        wget $url_addr/ubuntu.tar.gz
+        tar xf ubuntu.tar.gz
+        pushd ubuntu/
+            sudo dpkg -i *.deb
         popd
 
-        wget $url_addr/vs-nebula-3rdparty.ubuntu1604.amd64.deb
-        sudo rpm -ivh vs-nebula-3rdparty.ubuntu1804.amd64.deb
-        wget http://ftp.gnu.org/gnu/bison/bison-3.0.5.tar.gz
-        tar xf bison-3.0.5.tar.gz
-        pushd bison-3.0.5/
-            ./configure
-            make && sudo make install
-        popd
+        wget $url_addr/vs-nebula-3rdparty.ubuntu1804.amd64.deb
+        sudo dpkg -i vs-nebula-3rdparty.ubuntu1804.amd64.deb
     popd
     rm -rf download/
 }
@@ -106,7 +100,7 @@ function ubuntu18_install {
 function addAlias {
     echo "alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind -DNEBULA_BISON_ROOT=/opt/nebula/bison'" >> ~/.bashrc
     echo "alias ctest='/opt/nebula/cmake/bin/ctest'" >> ~/.bashrc
-    echo "export LD_LIBRARY_PATH=/opt/nebula/gcc/lib64:$LD_LIBRARY_PATH" >> ~/.bashrc
+    echo "export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LIBRARY_PATH" >> ~/.bashrc
 }
 
 # fedora:1, centos7:2, centos6:3, ubuntu18:4, ubuntu16:5

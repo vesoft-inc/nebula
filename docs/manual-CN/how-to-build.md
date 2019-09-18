@@ -1,5 +1,4 @@
-
-### 编译器
+###  编译器
 
 Nebula 在 C++14 上开发，因此它需要一个支持 C++14 的编译器。
 
@@ -8,250 +7,33 @@ Nebula 在 C++14 上开发，因此它需要一个支持 C++14 的编译器。
 - Centos6.5, 7.5
 - Ubuntu16.04, 18.04
 
+### 需要的存储空间
 
-### 在 Fedora29 和 Fedora30 上构建
-#### 步骤 1: 准备工作
-- 安装工具
+当编译类型为**DEBUG**的时候，最好预留**30G**磁盘空间
 
-    ```
-    bash> sudo yum -y install git
-    ```
-
-- 安装依赖模块
-
-    ```
-    bash> sudo yum -y install gcc gcc-c++ libstdc++-static cmake make autoconf automake flex gperf libtool bison unzip boost boost-devel boost-static krb5-devel krb5-libs openssl openssl-devel libunwind libunwind-devel ncurses ncurses-devel readline readline-devel python java-1.8.0-openjdk java-1.8.0-openjdk-devel
-    ```
-
-#### 步骤 2: 构建和安装第三方库
-第三方库被安装在 **/opt/nebula/third-party**
-
-```
-bash> git clone https://github.com/vesoft-inc/nebula-3rdparty.git
-bash> cd nebula-3rdparty
-bash> cmake ./
-bash> cmake -DSKIP_JAVA_JAR=OFF  ./  # if you need to build java client
-bash> make
-bash> sudo make install
-```
-
-#### 步骤 3: 构建 Nebula
-默认的安装路径是 **/usr/local/nebula**
+### 构建
+#### 步骤 1: 克隆代码
 
 ```
 bash> git clone https://github.com/vesoft-inc/nebula.git
-bash> cd nebula && mkdir build && cd build
+```
+
+#### 步骤 2 : 安装依赖
+
+```
+bash> cd nebula && ./build_dep.sh
+```
+
+#### 步骤 3: 应用 **~/.bashrc** 修改
+
+```
+bash> source ~/.bashrc
+```
+#### 步骤 4: 构建
+
+```
+bash> mkdir build && cd build
 bash> cmake ..
-bash> cmake -DSKIP_JAVA_CLIENT=OFF ..  # if you need to build java client
-bash> make
-bash> sudo make install
-```
-
-### 在 Centos7.5 上构建
-
-#### 步骤 1: 准备工作
-- 安装工具
-
-    ```
-    bash> sudo yum -y install git
-    ```
-- 安装依赖模块
-
-    通过 yum install
-
-    ```
-    bash> sudo yum install -y libtool autoconf autoconf-archive automake perl-WWW-Curl libstdc++-static ncurses ncurses-devel readline readline-devel maven java-1.8.0-openjdk
-    ```
-
-    和通过 VESoft Inc. 提供的包
-
-    ```
-    # From China
-    bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-7.5-1804.tar.gz
-    # From US
-    bash> wget https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos-7.5-1804.tar.gz
-    ```
-
-    1) 在此目录下安装所有需要的 rpm 包
-
-    ```
-    bash> tar xf centos-7.5-1804.tar.gz && cd centos-7.5-1804/
-    bash> rpm -ivh *.rpm
-    ```
-
-    2) 在 **~/.bashrc** 末添加如下几行
-
-    ```
-    alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind -DNEBULA_BISON_ROOT=/opt/nebula/bison'
-
-    alias ctest='/opt/nebula/cmake/bin/ctest'
-    ```
-    3) 应用 **~/.bashrc** 修改
-
-    ```
-    bash> source ~/.bashrc
-    ```
-
-#### 步骤 2: 构建和安装第三方库
-第三方库被安装在 **/opt/nebula/third-party**
-
-```
-bash> git clone https://github.com/vesoft-inc/nebula-3rdparty.git
-bash> cd nebula-3rdparty
-bash> cmake ./
-bash> cmake -DSKIP_JAVA_JAR=OFF  ./  # if you need to build java client
-bash> make
-bash> sudo make install
-```
-
-#### 步骤 3: 构建 Nebula
-默认的安装路径是 **/usr/local/nebula**
-
-```
-bash> git clone https://github.com/vesoft-inc/nebula.git
-bash> cd nebula && mkdir build && cd build
-bash> cmake ..
-bash> cmake -DSKIP_JAVA_CLENT=OFF ..  # if you need to build java client
-bash> make
-bash> sudo make install
-```
-
-### 在 Centos6.5 上构建
-
-#### 步骤 1: 准备工作
-- 安装工具
-
-    ```
-    bash> sudo yum -y install git
-    ```
-- 安装依赖模块
-
-    通过 yum install
-
-    ```
-    bash> sudo yum -y install libtool autoconf autoconf-archive automake perl-WWW-Curl perl-YAML perl-CGI glibc-devel libstdc++-static ncurses ncurses-devel readline readline-devel maven java-1.8.0-openjdk
-    ```
-
-    和通过 VESoft Inc. 提供的包
-
-    ```
-    # From China
-    bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-6.5.tar.gz
-    # From US
-    bash> wget https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos-6.5.tar.gz
-    ```
-
-    1) 在此目录下安装所有需要的 rpm 包
-
-    ```
-    bash> tar xf centos-6.5.tar.gz && cd centos-6.5/
-    bash> sudo rpm -ivh *.rpm
-    ```
-
-    2) 在 **~/.bashrc** 末添加如下几行
-
-    ```
-    export PATH=/opt/nebula/autoconf/bin:/opt/nebula/automake/bin:/opt/nebula/libtool/bin:/opt/nebula/git/bin:/opt/nebula/gettext/bin:/opt/nebula/flex/bin:/opt/nebula/bison/bin:/opt/nebula/binutils/bin:$PATH
-    export ACLOCAL_PATH=/opt/nebula/automake/share/aclocal-1.15:/opt/nebula/libtool/share/aclocal:/opt/nebula/autoconf-archive/share/aclocal
-    
-    alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BISON_ROOT=/opt/nebula/bison -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind -DNEBULA_BISON_ROOT=/opt/nebula/bison'
-    alias ctest='/opt/nebula/cmake/bin/ctest'
-    ```
-    3) 应用 **~/.bashrc** 修改
-
-    ```
-    bash> source ~/.bashrc
-    ```
-
-#### 步骤 2: 构建和安装第三方库
-第三方库被安装在 **/opt/nebula/third-party**
-
-```
-bash> git clone https://github.com/vesoft-inc/nebula-3rdparty.git
-bash> cd nebula-3rdparty
-bash> cmake ./
-bash> cmake -DSKIP_JAVA_JAR=OFF  ./  # if you need to build java client
-bash> make
-bash> sudo make install
-```
-
-#### 步骤 3: 构建 Nebula
-默认的安装路径是 **/usr/local/nebula**
-
-```
-bash> git clone https://github.com/vesoft-inc/nebula.git
-bash> cd nebula && mkdir build && cd build
-bash> cmake ..
-bash> cmake -DSKIP_JAVA_CLENT=OFF ..  # if you need to build java client
-bash> make
-bash> sudo make install
-```
-
-### 在 Ubuntu18.04 和 Ubuntu16.04 上构建
-
-#### 步骤 1: 准备工作
-- 安装工具
-
-    ```
-    bash> sudo apt-get -y install git
-    ```
-- 安装依赖模块
-
-    通过 apt-get install
-
-    ```
-    bash> sudo apt-get -y install gcc-multilib libtool autoconf autoconf-archive automake libncurses5-dev libreadline-dev python maven java-1.8.0-openjdk
-    ```
-
-    通过 VESoft Inc. 提供的包
-
-    ```
-    # From China
-    bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu1804.tar.gz
-    # From US
-    bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu1804.tar.gz
-    ```
-
-    1) 在此目录下安装所有需要的 deb 包
-
-    ```
-    bash> tar xf ubuntu1804.tar.gz && cd ubuntu1804/
-    bash> sudo dpkg -i *.deb
-    ```
-
-    2)  在 **~/.bashrc** 末添加如下几行
-
-    ```
-    alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind -DNEBULA_BISON_ROOT=/opt/nebula/bison'
-    
-    alias ctest='/opt/nebula/cmake/bin/ctest'
-    ```
-    3) 应用 **~/.bashrc** 修改
-
-    ```
-    bash> source ~/.bashrc
-    ```
-
-#### 步骤 2: 构建和安装第三方库
-第三方库被安装在 **/opt/nebula/third-party**
-
-```
-bash> git clone https://github.com/vesoft-inc/nebula-3rdparty.git
-bash> cd nebula-3rdparty
-bash> cmake
-bash> cmake -DSKIP_JAVA_JAR=OFF  ./  # if you need to build java client
-bash> make
-bash> sudo make install
-```
-
-#### 步骤 3: 构建 Nebula
-默认的安装路径是 **/usr/local/nebula**
-
-```
-bash> git clone https://github.com/vesoft-inc/nebula.git
-bash> cd nebula && mkdir build && cd build
-bash> cmake ..
-bash> cmake -DSKIP_JAVA_CLENT=OFF ..  # if you need to build java client
 bash> make
 bash> sudo make install
 ```
@@ -288,24 +70,6 @@ bash> sudo make install
 
     ```
     bash> source ~/.bashrc
-    ```
-
-- **错误信息**: `bison verson less than 3.0.5`
-
-    **解决方案**:
-
-    1) 下载 bison-3.0.5.tar.gz
-
-    ```
-    bash> wget http://ftp.gnu.org/gnu/bison/bison-3.0.5.tar.gz
-    ```
-
-    2) 构建和安装
-
-    ```
-    bash> ./configure
-    bash> make && make install
-
     ```
 
 - **错误信息**: `[ERROR] No compiler is provided in this environment. Perhaps you are running on a JRE rather than a JDK?`
