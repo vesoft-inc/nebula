@@ -57,6 +57,11 @@ spec:
           initialDelaySeconds: 30
           timeoutSeconds: 5
         resources:
-          limits:
-            memory: "1Gi"
+          #TODO: Change these to appropriate values for the hardware that you're running.        
+          requests:
             cpu: "1"
+            memory: "1Gi"        
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+

@@ -3,5 +3,7 @@ kind: ConfigMap
 metadata:
   name: nebula-config
 data:
-#  kubectl get  pod nebula-metad-{0|1|2...} --template={{.status.podIP}}
-  meta_server_addrs: 10.1.0.244:45500, 10.1.0.245:45000, 10.1.0.246:45000
+  # TODO 
+  # After the metad is started, you need to use the command to get the meta ip address and modify it.
+  # kubectl get  pod nebula-metad-{0|1|2...} --template={{.status.podIP}}
+  meta_server_addrs: ip1:port1, ip2:port2
