@@ -76,8 +76,8 @@ TEST(InMemoryLogBuffer, Simple) {
     EXPECT_EQ(inc * (std::strlen(log) + sizeof(LogID) + sizeof(TermID) + sizeof(ClusterID)), b.size());
 }
 
-}  //< namespace wal
-}  //< namespace nebula
+}  // namespace wal
+}  // namespace nebula
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
