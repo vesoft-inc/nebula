@@ -503,6 +503,20 @@ TEST(Parser, InsertVertex) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name,age,married,salary,create_time) "
+                            "VALUES hash(\"dutor\"):(\"dutor\", 30, true, 3.14, 1551331900)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name,age,married,salary,create_time) "
+                            "VALUES uuid(\"dutor\"):(\"dutor\", 30, true, 3.14, 1551331900)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
     // Test insert empty value
     {
         GQLParser parser;
@@ -923,6 +937,12 @@ TEST(Parser, UnreservedKeywords) {
     }
     {
         GQLParser parser;
+        std::string query = "GO FROM UUID(\"tom\") OVER guest WHERE $-.EMAIL";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "GO FROM 123 OVER like YIELD $$.tag1.EMAIL, like.users,"
                             "like._src, like._dst, like.type, $^.tag2.SPACE "
                             "| ORDER BY $-.SPACE";
@@ -931,7 +951,21 @@ TEST(Parser, UnreservedKeywords) {
     }
     {
         GQLParser parser;
+        std::string query = "GO FROM UUID(\"tom\") OVER like YIELD $$.tag1.EMAIL, like.users,"
+                            "like._src, like._dst, like.type, $^.tag2.SPACE "
+                            "| ORDER BY $-.SPACE";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "$var = GO FROM 123 OVER like;GO FROM $var.SPACE OVER like";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "$var = GO FROM UUID(\"tom\") OVER like;GO FROM $var.SPACE OVER like";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

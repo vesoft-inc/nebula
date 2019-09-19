@@ -18,6 +18,7 @@ InsertEdgeExecutor::InsertEdgeExecutor(Sentence *sentence,
 
 
 Status InsertEdgeExecutor::prepare() {
+    expCtx_ = std::make_unique<ExpressionContext>();
     return Status::OK();
 }
 
@@ -40,6 +41,8 @@ Status InsertEdgeExecutor::check() {
         edgeType_ = edgeStatus.value();
         auto props = sentence_->properties();
         rows_ = sentence_->rows();
+
+        expCtx_->setStorageClient(ectx()->getStorageClient());
 
         schema_ = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType_);
         if (schema_ == nullptr) {
@@ -68,11 +71,18 @@ Status InsertEdgeExecutor::check() {
 
 
 StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
+    expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->getters().getUUID = [&] (const std::string &prop) -> OptVariantType {
+        return getUUID(prop);
+    };
+
     std::vector<storage::cpp2::Edge> edges(rows_.size() * 2);   // inbound and outbound
     auto index = 0;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto sid = row->srcid();
+        sid->setContext(expCtx_.get());
         auto status = sid->prepare();
         if (!status.ok()) {
             return status;
@@ -89,6 +99,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         auto src = Expression::asInt(v);
 
         auto did = row->dstid();
+        did->setContext(expCtx_.get());
         status = did->prepare();
         if (!status.ok()) {
             return status;
@@ -195,7 +206,9 @@ void InsertEdgeExecutor::execute() {
         return;
     }
     auto space = ectx()->rctx()->session()->space();
-    auto future = ectx()->storage()->addEdges(space, std::move(result).value(), overwritable_);
+    auto future = ectx()->getStorageClient()->addEdges(space,
+                                                       std::move(result).value(),
+                                                       overwritable_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
@@ -218,6 +231,10 @@ void InsertEdgeExecutor::execute() {
     };
 
     std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+OptVariantType InsertEdgeExecutor::getUUID(const std::string &prop) const {
+    return static_cast<int64_t>(std::hash<std::string>()(prop));
 }
 
 }   // namespace graph

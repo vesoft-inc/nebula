@@ -403,16 +403,6 @@ FunctionManager::FunctionManager() {
         };
     }
     {
-        auto &attr = functions_["uuid"];
-        attr.minArity_ = 1;
-        attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
-            LOG(INFO) << "UUID called";
-            auto v = Expression::asString(args[0]);
-            return static_cast<int64_t>(std::hash<std::string>()(v));
-        };
-    }
-    {
         // 64bit signed hash value
         auto &attr = functions_["hash"];
         attr.minArity_ = 1;
@@ -476,7 +466,6 @@ FunctionManager::getInternal(const std::string &func, size_t arity) const {
     return iter->second.body_;
 }
 
-
 // static
 Status FunctionManager::load(const std::string &name,
                              const std::vector<std::string> &funcs) {
@@ -484,10 +473,8 @@ Status FunctionManager::load(const std::string &name,
 }
 
 
-Status FunctionManager::loadInternal(const std::string &name,
-                                     const std::vector<std::string> &funcs) {
-    UNUSED(name);
-    UNUSED(funcs);
+Status FunctionManager::loadInternal(const std::string &,
+                                     const std::vector<std::string> &) {
     return Status::Error("Dynamic function loading not supported yet");
 }
 
@@ -499,10 +486,8 @@ Status FunctionManager::unload(const std::string &name,
 }
 
 
-Status FunctionManager::unloadInternal(const std::string &name,
-                                       const std::vector<std::string> &funcs) {
-    UNUSED(name);
-    UNUSED(funcs);
+Status FunctionManager::unloadInternal(const std::string &,
+                                       const std::vector<std::string> &) {
     return Status::Error("Dynamic function unloading not supported yet");
 }
 

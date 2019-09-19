@@ -272,6 +272,21 @@ TEST_F(DataTest, InsertVertex) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Go UUID test
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "GO FROM uuid(\"Lucy\") OVER schoolmate YIELD "
+                          "schoolmate.likeness, $$.person.name,"
+                          "$$.student.grade, $$.student.number";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        using valueType = std::tuple<int64_t, std::string, std::string, int64_t>;
+        std::vector<valueType> expected = {
+            {90, "Laura", "three", 20190901008},
+            {95, "Amber", "four", 20180901003},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     // Multi sentences to insert multi tags
     {
         cpp2::ExecutionResponse resp;

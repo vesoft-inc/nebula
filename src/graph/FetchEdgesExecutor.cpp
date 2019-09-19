@@ -196,12 +196,21 @@ Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
     if (distinct_) {
         uniq = std::make_unique<EdgeKeyHashSet>(256, hash_);
     }
+
     auto edgeKeyExprs = sentence_->keys()->keys();
+    auto &getters = expCtx_->getters();
+    getters.getUUID = [&] (const std::string &prop) {
+        return getUUID(prop);
+    };
+
     for (auto *keyExpr : edgeKeyExprs) {
         auto *srcExpr = keyExpr->srcid();
-        auto *dstExpr = keyExpr->dstid();
-        auto rank = keyExpr->rank();
+        srcExpr->setContext(expCtx_.get());
 
+        auto *dstExpr = keyExpr->dstid();
+        dstExpr->setContext(expCtx_.get());
+
+        auto rank = keyExpr->rank();
         status = srcExpr->prepare();
         if (!status.ok()) {
             break;
@@ -258,7 +267,7 @@ void FetchEdgesExecutor::fetchEdges() {
         return;
     }
 
-    auto future = ectx()->storage()->getEdgeProps(spaceId_, edgeKeys_, std::move(props));
+    auto future = ectx()->getStorageClient()->getEdgeProps(spaceId_, edgeKeys_, std::move(props));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
@@ -362,5 +371,10 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
 
     finishExecution(std::move(rsWriter));
 }
+
+OptVariantType FetchEdgesExecutor::getUUID(const std::string &prop) const {
+    return static_cast<int64_t>(std::hash<std::string>()(prop));
+}
+
 }  // namespace graph
 }  // namespace nebula

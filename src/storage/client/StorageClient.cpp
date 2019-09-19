@@ -311,12 +311,16 @@ PartitionID StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
     return s;
 }
 
-folly::SemiFuture<bool> StorageClient::saveAsUUID(std::string) {
+/*
+folly::Future<StatusOr<cpp2::GetUUIDResp>> getUUID(GraphSpaceID, const std::string&,
+                                                   folly::EventBase*) {
     LOG(FATAL) << "Not Implement";
 }
+*/
 
-folly::SemiFuture<std::string> StorageClient::fetchUUID(std::string) {
-    LOG(FATAL) << "Not Implement";
+int64_t StorageClient::getUUID(const std::string&) {
+    LOG(INFO) << "Called GetUUID";
+    return 1024;
 }
 
 }   // namespace storage

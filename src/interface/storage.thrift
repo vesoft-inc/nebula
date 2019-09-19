@@ -249,6 +249,16 @@ struct GetLeaderResp {
     2: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts;
 }
 
+struct GetUUIDReq {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID  part_id,
+    3: i64 hash_value,
+}
+
+struct GetUUIDResp {
+    1: required ResponseCommon result,
+    2: common.VertexID id,
+}
 
 service StorageService {
     QueryResponse getBound(1: GetNeighborsRequest req)
@@ -274,4 +284,6 @@ service StorageService {
     AdminExecResp removePart(1: RemovePartReq req);
     AdminExecResp memberChange(1: MemberChangeReq req);
     GetLeaderResp getLeaderPart(1: GetLeaderReq req);
+
+    GetUUIDResp getUUID(1: GetUUIDReq req);
 }

@@ -33,6 +33,8 @@ Status GoExecutor::prepareClauses() {
     DCHECK(sentence_ != nullptr);
     Status status;
     expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setStorageClient(ectx()->getStorageClient());
+
     do {
         status = checkIfGraphSpaceChosen();
         if (!status.ok()) {
@@ -158,6 +160,12 @@ Status GoExecutor::prepareFrom() {
 
         auto vidList = clause->vidList();
         for (auto *expr : vidList) {
+            auto &getters = expCtx_->getters();
+            getters.getUUID = [&] (const std::string &prop) {
+                return getUUID(prop);
+            };
+            expr->setContext(expCtx_.get());
+
             status = expr->prepare();
             if (!status.ok()) {
                 break;
@@ -384,11 +392,11 @@ void GoExecutor::stepOut() {
         return;
     }
     auto returns = status.value();
-    auto future  = ectx()->storage()->getNeighbors(spaceId,
-                                                   starts_,
-                                                   edgeTypes_,
-                                                   "",
-                                                   std::move(returns));
+    auto future  = ectx()->getStorageClient()->getNeighbors(spaceId,
+                                                            starts_,
+                                                            edgeTypes_,
+                                                            "",
+                                                            std::move(returns));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
         auto completeness = result.completeness();
@@ -622,7 +630,7 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcRe
         return;
     }
     auto returns = status.value();
-    auto future = ectx()->storage()->getVertexProps(spaceId, ids, returns);
+    auto future = ectx()->getStorageClient()->getVertexProps(spaceId, ids, returns);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this, stepOutResp = std::move(rpcResp)] (auto &&result) mutable {
         auto completeness = result.completeness();
@@ -892,6 +900,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         }
                         return getPropFromInterim(vdata.get_vertex_id(), prop);
                     };
+
                     // Evaluate filter
                     if (filter_ != nullptr) {
                         auto value = filter_->eval();
@@ -1029,6 +1038,9 @@ SupportedType GoExecutor::getPropTypeFromInterim(const std::string &prop) const 
     return index_->getColumnType(prop);
 }
 
+OptVariantType GoExecutor::getUUID(const std::string &prop) const {
+    return static_cast<int64_t>(std::hash<std::string>()(prop));
+}
 
 }   // namespace graph
 }   // namespace nebula

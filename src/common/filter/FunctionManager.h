@@ -49,6 +49,8 @@ private:
 
     static FunctionManager& instance();
 
+    // void setStorageClientInternal(nebula::storage::StorageClient *storageClient);
+
     StatusOr<Function> getInternal(const std::string &func, size_t arity) const;
 
     Status loadInternal(const std::string &soname, const std::vector<std::string> &funcs);

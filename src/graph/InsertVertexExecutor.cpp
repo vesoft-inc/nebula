@@ -18,6 +18,7 @@ InsertVertexExecutor::InsertVertexExecutor(Sentence *sentence,
 
 
 Status InsertVertexExecutor::prepare() {
+    expCtx_ = std::make_unique<ExpressionContext>();
     return Status::OK();
 }
 
@@ -75,12 +76,18 @@ Status InsertVertexExecutor::check() {
     return Status::OK();
 }
 
-
 StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertices() {
+    expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->getters().getUUID = [&] (const std::string &prop) -> OptVariantType {
+        return getUUID(prop);
+    };
+
     std::vector<storage::cpp2::Vertex> vertices(rows_.size());
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto rid = row->id();
+        rid->setContext(expCtx_.get());
+
         auto status = rid->prepare();
         if (!status.ok()) {
             return status;
@@ -182,9 +189,9 @@ void InsertVertexExecutor::execute() {
         onError_(std::move(result).status());
         return;
     }
-    auto future = ectx()->storage()->addVertices(spaceId_,
-                                                 std::move(result).value(),
-                                                 overwritable_);
+    auto future = ectx()->getStorageClient()->addVertices(spaceId_,
+                                                          std::move(result).value(),
+                                                          overwritable_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
@@ -207,6 +214,10 @@ void InsertVertexExecutor::execute() {
     };
 
     std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+OptVariantType InsertVertexExecutor::getUUID(const std::string &prop) const {
+    return static_cast<int64_t>(std::hash<std::string>()(prop));
 }
 
 }   // namespace graph

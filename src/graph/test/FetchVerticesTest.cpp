@@ -143,6 +143,19 @@ TEST_F(FetchVerticesTest, base) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "FETCH PROP ON player uuid(\"%s\")"
+                    " YIELD player.name, player.age";
+        auto query = folly::stringPrintf(fmt, player.name().c_str());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {player.name(), player.age()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 
 TEST_F(FetchVerticesTest, noYield) {
@@ -177,6 +190,18 @@ TEST_F(FetchVerticesTest, noYield) {
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {player.name(), player.age()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "FETCH PROP ON player uuid(\"%s\")";
+        auto query = folly::stringPrintf(fmt, player.name().c_str());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, int64_t>> expected = {
             {player.name(), player.age()},
         };

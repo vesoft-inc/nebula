@@ -379,6 +379,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("LEADER", TokenType::KW_LEADER),
         CHECK_SEMANTIC_TYPE("Leader", TokenType::KW_LEADER),
         CHECK_SEMANTIC_TYPE("leader", TokenType::KW_LEADER),
+        CHECK_SEMANTIC_TYPE("FETCH", TokenType::KW_FETCH),
+        CHECK_SEMANTIC_TYPE("Fetch", TokenType::KW_FETCH),
+        CHECK_SEMANTIC_TYPE("fetch", TokenType::KW_FETCH),
+        CHECK_SEMANTIC_TYPE("UUID", TokenType::KW_UUID),
+        CHECK_SEMANTIC_TYPE("Uuid", TokenType::KW_UUID),
+        CHECK_SEMANTIC_TYPE("uuid", TokenType::KW_UUID),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),

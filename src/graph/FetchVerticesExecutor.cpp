@@ -117,7 +117,7 @@ void FetchVerticesExecutor::fetchVertices() {
         return;
     }
 
-    auto future = ectx()->storage()->getVertexProps(spaceId_, vids_, std::move(props));
+    auto future = ectx()->getStorageClient()->getVertexProps(spaceId_, vids_, std::move(props));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
@@ -247,8 +247,15 @@ Status FetchVerticesExecutor::setupVidsFromExpr() {
     if (distinct_) {
         uniqID = std::make_unique<std::unordered_set<VertexID>>();
     }
+
+    auto &getters = expCtx_->getters();
+    getters.getUUID = [&] (const std::string &prop) {
+        return getUUID(prop);
+    };
+
     auto vidList = sentence_->vidList();
     for (auto *expr : vidList) {
+        expr->setContext(expCtx_.get());
         status = expr->prepare();
         if (!status.ok()) {
             break;
@@ -304,6 +311,9 @@ Status FetchVerticesExecutor::setupVidsFromRef() {
     return Status::OK();
 }
 
+OptVariantType FetchVerticesExecutor::getUUID(const std::string &prop) const {
+    return static_cast<int64_t>(std::hash<std::string>()(prop));
+}
 
 }  // namespace graph
 }  // namespace nebula

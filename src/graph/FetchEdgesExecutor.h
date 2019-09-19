@@ -45,6 +45,7 @@ private:
     using RpcResponse = storage::StorageRpcResponse<storage::cpp2::EdgePropResponse>;
     void processResult(RpcResponse &&result);
 
+    OptVariantType getUUID(const std::string &prop) const;
 
     using EdgeKeyHashSet = std::unordered_set<
             storage::cpp2::EdgeKey,
