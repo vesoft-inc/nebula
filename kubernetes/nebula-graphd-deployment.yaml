@@ -30,7 +30,7 @@ spec:
                 - key: app
                   operator: In
                   values:
-                  - nebula-storaged
+                  - nebula-graphd
               topologyKey: kubernetes.io/hostname    
       containers:
       - name: nebula-graphd
