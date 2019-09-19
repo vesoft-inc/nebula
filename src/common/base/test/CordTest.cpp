@@ -10,6 +10,7 @@
 
 namespace nebula {
 
+<<<<<<< HEAD
 TEST(Cord, empty) {
     Cord cord;
     std::string a;
@@ -25,6 +26,23 @@ TEST(Cord, empty) {
     cord.clear();
 }
 
+=======
+TEST(Cord, Empty) {
+    {
+        Cord cord;
+        auto empty = cord.str();
+        ASSERT_TRUE(empty.empty()) << "size: " << empty.size();
+    }
+    {
+        Cord cord;
+        std::string empty;
+        cord.appendTo(empty);
+        ASSERT_TRUE(empty.empty()) << "size: " << empty.size();
+    }
+}
+
+
+>>>>>>> master
 TEST(Cord, write) {
     Cord cord;
 

@@ -26,13 +26,32 @@ public:
         rootPath_ = std::make_unique<fs::TempDir>("/tmp/StorageHttpIngestHandler.XXXXXX");
         kv_ = TestUtils::initKV(rootPath_->path(), 1);
 
+        auto partPath = folly::stringPrintf("%s/disk1/nebula/0/download/0", rootPath_->path());
+        ASSERT_TRUE(nebula::fs::FileUtils::makeDir(partPath));
+
+        auto options = rocksdb::Options();
+        auto env = rocksdb::EnvOptions();
+        rocksdb::SstFileWriter writer{env, options};
+
+        auto sstPath = folly::stringPrintf("%s/data.sst", partPath.c_str());
+        auto status = writer.Open(sstPath);
+        ASSERT_EQ(rocksdb::Status::OK(), status);
+
+        for (auto i = 0; i < 10; i++) {
+            status = writer.Put(folly::stringPrintf("key_%d", i),
+                                folly::stringPrintf("val_%d", i));
+            ASSERT_EQ(rocksdb::Status::OK(), status);
+        }
+        status = writer.Finish();
+        ASSERT_EQ(rocksdb::Status::OK(), status);
+
         WebService::registerHandler("/ingest", [this] {
             auto handler = new storage::StorageHttpIngestHandler();
             handler->init(kv_.get());
             return handler;
         });
-        auto status = WebService::start();
-        ASSERT_TRUE(status.ok()) << status;
+        auto webStatus = WebService::start();
+        ASSERT_TRUE(webStatus.ok()) << webStatus;
     }
 
     void TearDown() override {
@@ -48,26 +67,6 @@ private:
 };
 
 TEST(StorageHttpIngestHandlerTest, StorageIngestTest) {
-    auto path = "/tmp/StorageHttpIngestData.XXXXXX";
-    std::unique_ptr<fs::TempDir> externalPath_ = std::make_unique<fs::TempDir>(path);
-    auto partPath = folly::stringPrintf("%s/1", externalPath_->path());
-    ASSERT_TRUE(nebula::fs::FileUtils::makeDir(partPath));
-
-    auto options = rocksdb::Options();
-    auto env = rocksdb::EnvOptions();
-    rocksdb::SstFileWriter writer{env, options};
-    auto sstPath = folly::stringPrintf("%s/data.sst", partPath.c_str());
-    auto status = writer.Open(sstPath);
-    ASSERT_EQ(rocksdb::Status::OK(), status);
-
-    for (auto i = 0; i < 10; i++) {
-        status = writer.Put(folly::stringPrintf("key_%d", i),
-                            folly::stringPrintf("val_%d", i));
-        ASSERT_EQ(rocksdb::Status::OK(), status);
-    }
-    status = writer.Finish();
-    ASSERT_EQ(rocksdb::Status::OK(), status);
-
     {
         auto url = "/ingest?space=0";
         auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),

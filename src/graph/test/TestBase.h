@@ -222,6 +222,39 @@ protected:
         return TestOK();
     }
 
+    AssertionResult verifyColNames(const cpp2::ExecutionResponse &resp,
+                                   std::vector<std::string> &expectedColNames) {
+        if (resp.get_error_code() != cpp2::ErrorCode::SUCCEEDED) {
+            auto *errmsg = resp.get_error_msg();
+            return TestError() << "Query failed with `"
+                               << static_cast<int32_t>(resp.get_error_code())
+                               << (errmsg == nullptr ? "'" : "': " + *errmsg);
+        }
+
+        if (resp.get_column_names() == nullptr && expectedColNames.empty()) {
+            return TestOK();
+        }
+
+        if (resp.get_column_names() != nullptr) {
+            auto colNames = *(resp.get_column_names());
+            if (colNames.size() != expectedColNames.size()) {
+                return TestError() << "Column size not match: "
+                                   << colNames.size() << " vs. " << expectedColNames.size();
+            }
+            for (decltype(colNames.size()) i = 0; i < colNames.size(); ++i) {
+                if (colNames[i] != expectedColNames[i]) {
+                    return TestError() << colNames[i] << " vs. " << expectedColNames[i]
+                                       << ", index: " << i;
+                }
+            }
+        } else {
+            return TestError() << "Response has no column names.";
+        }
+
+        return TestOK();
+    }
+
+
 protected:
 };
 
