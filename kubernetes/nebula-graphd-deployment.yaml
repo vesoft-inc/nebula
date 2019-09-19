@@ -22,6 +22,7 @@ spec:
       containers:
       - name: nebula-graphd
         image: vesoft/nebula-graphd:nightly
+        imagePullPolicy: Always
         ports:
         - name: thrift
           containerPort: 3699
@@ -29,10 +30,16 @@ spec:
           containerPort: 13000
         - name: http2
           containerPort: 13002
-        command: ["/usr/local/nebula/bin/nebula-graphd", "--flagfile=/usr/local/nebula/etc/nebula-graphd.conf", "--daemonize=false", "--meta_server_addrs=10.1.0.204:45500" , "--ws_ip=0.0.0.0"]
+        command: ["/usr/local/nebula/bin/nebula-graphd", "--flagfile=/usr/local/nebula/etc/nebula-graphd.conf", "--daemonize=false", "--meta_server_addrs=$(META_SERVER_ADDRS)" , "--ws_ip=0.0.0.0"]
+        env:
+        - name: META_SERVER_ADDRS
+          valueFrom:
+            configMapKeyRef:
+              name: nebula-configmaps
+              key: meta_server_addrs        
         livenessProbe:
           httpGet:
-            path: /
+            path: /status
             port: 13000
           initialDelaySeconds: 30
           timeoutSeconds: 5

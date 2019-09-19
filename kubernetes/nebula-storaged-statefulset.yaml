@@ -52,7 +52,7 @@ spec:
       containers:
       - name: nebula-storaged
         image: vesoft/nebula-storaged:nightly
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 44500
           name: thrift
@@ -65,10 +65,22 @@ spec:
         command: 
           - "/bin/bash"
           - "-ecx"
-          - "exec /usr/local/nebula/bin/nebula-storaged --flagfile=/usr/local/nebula/etc/nebula-storaged.conf --daemonize=false --local_ip=$(hostname -i) --meta_server_addrs=10.1.0.204:45500 --ws_ip=0.0.0.0" 
+          - "exec /usr/local/nebula/bin/nebula-storaged --flagfile=/usr/local/nebula/etc/nebula-storaged.conf --daemonize=false --local_ip=$(hostname -i) --meta_server_addrs=$(META_SERVER_ADDRS) --ws_ip=0.0.0.0" 
+        env:
+        - name: META_SERVER_ADDRS
+          valueFrom:
+            configMapKeyRef:
+              name: nebula-configmaps
+              key: meta_server_addrs          
+        livenessProbe:
+          httpGet:
+            path: /status
+            port: 12000
+          initialDelaySeconds: 30
+          timeoutSeconds: 5          
         volumeMounts:
         - name: data
-          mountPath: /root/nebula-graph/data/storage
+          mountPath: /usr/local/nebula/data/
       volumes:
       - name: data
         persistentVolumeClaim:

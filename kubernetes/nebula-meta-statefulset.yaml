@@ -55,7 +55,7 @@ spec:
       containers:
       - name: nebula-metad
         image: vesoft/nebula-metad:nightly
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 45500
           name: thrift
@@ -69,9 +69,15 @@ spec:
           - "/bin/bash"
           - "-ecx"
           - "exec /usr/local/nebula/bin/nebula-metad --flagfile=/usr/local/nebula/etc/nebula-metad.conf --daemonize=false --local_ip=$(hostname -i) --ws_ip=0.0.0.0"
+        livenessProbe:
+          httpGet:
+            path: /status
+            port: 11000
+          initialDelaySeconds: 30
+          timeoutSeconds: 5          
         volumeMounts:
         - name: data
-          mountPath: /root/nebula-graph/data/meta
+          mountPath: /usr/local/nebula/data/
         env:
         - name: meta_services
           valueFrom:
