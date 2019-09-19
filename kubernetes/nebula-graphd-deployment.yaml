@@ -2,12 +2,12 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: nebula
+    app: nebula-graphd
   name: nebula-graphd
 spec:
   selector:
     matchLabels:
-      app: nebula
+      app: nebula-graphd
   replicas: 3
   strategy:
     rollingUpdate:
@@ -17,8 +17,21 @@ spec:
   template:
     metadata:
       labels:
-        app: nebula
+        app: nebula-graphd
     spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - nebula-storaged
+              topologyKey: kubernetes.io/hostname    
       containers:
       - name: nebula-graphd
         image: vesoft/nebula-graphd:nightly
