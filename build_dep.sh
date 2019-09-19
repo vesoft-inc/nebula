@@ -52,12 +52,10 @@ function fedora_install {
         wget
     wget $url_addr/fedora.tar.gz
     tar xf fedora.tar.gz
-    pushd fedora
-        sudo rpm -ivh *.rpm
-    popd
+    sudo rpm -ivh fedora/*.rpm
     wget $url_addr/vs-nebula-3rdparty.fc.x86_64.rpm
     sudo rpm -ivh vs-nebula-3rdparty.fc.x86_64.rpm
-    echo "alias cmake='cmake -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind ..'" >> ~/.bashrc
+    echo "alias cmake='cmake -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind'" >> ~/.bashrc
     return 0
 }
 
@@ -75,7 +73,6 @@ function centos6_install {
         perl-DBI \
         perl-Pod-Simple \
         glibc-devel \
-        libstdc++-static \
         ncurses-devel \
         readline-devel \
         maven \
@@ -83,9 +80,7 @@ function centos6_install {
         unzip
     wget $url_addr/centos6.tar.gz
     tar xf centos6.tar.gz
-    pushd centos6
-        sudo rpm -ivh *.rpm
-    popd
+    sudo rpm -ivh centos6/*.rpm
 
     wget $url_addr/vs-nebula-3rdparty.el6.x86_64.rpm
     sudo rpm -ivh vs-nebula-3rdparty.el6.x86_64.rpm
@@ -105,15 +100,12 @@ function centos7_install {
         ncurses-devel \
         readline-devel \
         perl-WWW-Curl \
-        libstdc++-static \
         maven \
         java-1.8.0-openjdk \
         unzip
     wget $url_addr/centos7.tar.gz
     tar xf centos7.tar.gz
-    pushd centos7
-        sudo rpm -ivh *.rpm
-    popd
+    sudo rpm -ivh centos7/*.rpm
 
     wget $url_addr/vs-nebula-3rdparty.el7.x86_64.rpm
     sudo rpm -ivh vs-nebula-3rdparty.el7.x86_64.rpm
@@ -136,9 +128,7 @@ function ubuntu16_install {
         openjdk-8-jdk unzip
     wget $url_addr/ubuntu.tar.gz
     tar xf ubuntu.tar.gz
-    pushd ubuntu/
-        sudo dpkg -i *.deb
-    popd
+    sudo dpkg -i ubuntu/*.deb
 
     wget $url_addr/vs-nebula-3rdparty.ubuntu1604.amd64.deb
     sudo dpkg -i vs-nebula-3rdparty.ubuntu1604.amd64.deb
@@ -161,9 +151,7 @@ function ubuntu18_install {
         openjdk-8-jdk unzip
     wget $url_addr/ubuntu.tar.gz
     tar xf ubuntu.tar.gz
-    pushd ubuntu/
-        sudo dpkg -i *.deb
-    popd
+    sudo dpkg -i ubuntu/*.deb
 
     wget $url_addr/vs-nebula-3rdparty.ubuntu1804.amd64.deb
     sudo dpkg -i vs-nebula-3rdparty.ubuntu1804.amd64.deb
