@@ -1,6 +1,9 @@
 name: Nebula Build and Test Workflow
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   build:
