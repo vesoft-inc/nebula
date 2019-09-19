@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: nebula
+    app: nebula-metad
   name: neubla-metad
   annotations:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
@@ -19,19 +19,7 @@ spec:
   - name: http2
     port: 11002
   selector:
-    app: nebula
----
-apiVersion: policy/v1beta1
-kind: PodDisruptionBudget
-metadata:
-  name: nebula-budget
-  labels:
-    app: nebula
-spec:
-  selector:
-    matchLabels:
-      app: nebula-metad
-  maxUnavailable: 1
+    app: nebula-metad
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -44,12 +32,26 @@ spec:
   replicas: 3
   selector:
     matchLabels:
-      app: nebula
+      app: nebula-metad
   template:
     metadata:
       labels:
-        app: nebula
+        app: nebula-metad
     spec:
+#      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - nebula-metad
+              topologyKey: kubernetes.io/hostname
       terminationGracePeriodSeconds: 60
       hostname: meta.nebula.services
       containers:
@@ -78,15 +80,11 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /usr/local/nebula/data/
-        env:
-        - name: meta_services
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
       volumes:
       - name: data
         persistentVolumeClaim:
           claimName: data
+  podManagementPolicy: Parallel
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:

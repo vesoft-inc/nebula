@@ -35,7 +35,7 @@ spec:
         - name: META_SERVER_ADDRS
           valueFrom:
             configMapKeyRef:
-              name: nebula-configmaps
+              name: nebula-config
               key: meta_server_addrs        
         livenessProbe:
           httpGet:
