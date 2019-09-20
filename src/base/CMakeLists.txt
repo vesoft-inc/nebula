@@ -8,6 +8,8 @@ add_library(
     SignalHandler.cpp
     NebulaKeyUtils.cpp
     SlowOpTracker.cpp
+    NullValue.cpp
+    StringValue.cpp
 )
 
 IF(${PCHSupport_FOUND})
