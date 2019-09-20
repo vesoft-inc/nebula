@@ -89,8 +89,8 @@ void FetchExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
 }
 
 void FetchExecutor::onEmptyInputs() {
-    auto outputs = std::make_unique<InterimResult>(std::move(resultColNames_));
     if (onResult_) {
+        auto outputs = std::make_unique<InterimResult>(std::move(resultColNames_));
         onResult_(std::move(outputs));
     } else if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
