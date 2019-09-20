@@ -42,6 +42,7 @@ enum class AppendLogResult {
     E_TERM_OUT_OF_DATE = -7,
     E_SENDING_SNAPSHOT = -8,
     E_INVALID_PEER = -9,
+    E_NOT_ENOUGH_ACKS = -10,
 };
 
 enum class LogType {

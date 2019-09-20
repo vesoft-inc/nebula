@@ -12,6 +12,7 @@
 #include "kvstore/Common.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/raftex/SnapshotManager.h"
+#include "kvstore/wal/FileBasedWal.h"
 
 namespace nebula {
 namespace kvstore {
@@ -67,6 +68,12 @@ public:
 
     void unRegisterNewLeaderCb() {
         newLeaderCb_ = nullptr;
+    }
+
+    // clean up all data about this part.
+    void reset() {
+        LOG(INFO) << idStr_ << "Clean up all wals";
+        wal()->reset();
     }
 
 private:

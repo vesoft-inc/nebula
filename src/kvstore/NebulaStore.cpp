@@ -252,6 +252,7 @@ void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId) {
             auto* e = partIt->second->engine();
             CHECK_NOTNULL(e);
             raftService_->removePartition(partIt->second);
+            partIt->second->reset();
             spaceIt->second->parts_.erase(partId);
             e->removePart(partId);
         }

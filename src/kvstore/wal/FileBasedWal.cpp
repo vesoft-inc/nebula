@@ -284,8 +284,8 @@ void FileBasedWal::closeCurrFile() {
 
     auto now = time::WallClock::fastNowInSec();
     currInfo_->setMTime(now);
-    DCHECK_EQ(currInfo_->size(), FileUtils::fileSize(currInfo_->path()))
-        << currInfo_->path() << " size does not match";
+//    DCHECK_EQ(currInfo_->size(), FileUtils::fileSize(currInfo_->path()))
+//        << currInfo_->path() << " size does not match";
     struct utimbuf timebuf;
     timebuf.modtime = currInfo_->mtime();
     timebuf.actime = currInfo_->mtime();

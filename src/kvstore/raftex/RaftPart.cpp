@@ -471,8 +471,8 @@ void RaftPart::addPeer(const HostAddr& peer) {
 void RaftPart::removePeer(const HostAddr& peer) {
     CHECK(!raftLock_.try_lock());
     if (peer == addr_) {
-        status_ = Status::STOPPED;
-        LOG(INFO) << idStr_ << "Remove myself from the raft group, just stop.";
+        //    status_ = Status::STOPPED;
+        LOG(INFO) << idStr_ << "Remove myself from the raft group.";
         return;
     }
     auto it = std::find_if(hosts_.begin(), hosts_.end(), [&peer] (const auto& h) {
@@ -504,7 +504,7 @@ void RaftPart::preProcessRemovePeer(const HostAddr& peer) {
 void RaftPart::commitRemovePeer(const HostAddr& peer) {
     CHECK(!raftLock_.try_lock());
     if (role_ == Role::FOLLOWER || role_ == Role::LEARNER) {
-        LOG(INFO) << idStr_ << "I am" << roleStr(role_)
+        LOG(INFO) << idStr_ << "I am " << roleStr(role_)
                   << ", skip remove peer in commit";
         return;
     }
@@ -796,13 +796,13 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
 
 void RaftPart::processAppendLogResponses(
         const AppendLogResponses& resps,
-        folly::EventBase* eb,
+        folly::EventBase*,
         AppendLogsIterator iter,
         TermID currTerm,
         LogID lastLogId,
         LogID committedId,
-        TermID prevLogTerm,
-        LogID prevLogId,
+        TermID,
+        LogID,
         std::vector<std::shared_ptr<Host>> hosts) {
     // Make sure majority have succeeded
     size_t numSucceeded = 0;
@@ -903,14 +903,12 @@ void RaftPart::processAppendLogResponses(
     } else {
         // Not enough hosts accepted the log, re-try
         LOG(WARNING) << idStr_ << "Only " << numSucceeded
-                     << " hosts succeeded, Need to try again";
-        replicateLogs(eb,
-                      std::move(iter),
-                      currTerm,
-                      lastLogId,
-                      committedId,
-                      prevLogTerm,
-                      prevLogId);
+                     << " hosts succeeded, roll back log to " << lastLogId_;
+        {
+            std::lock_guard<std::mutex> lck(logsLock_);
+            wal_->rollbackToLog(lastLogId_);
+        }
+        checkAppendLogResult(AppendLogResult::E_NOT_ENOUGH_ACKS);
     }
 }
 
@@ -1229,6 +1227,16 @@ void RaftPart::processAskForVoteRequest(
         }
     }
 
+    auto candidate = HostAddr(req.get_candidate_ip(), req.get_candidate_port());
+    auto hosts = followers();
+    auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate] (const auto& h){
+                return h->address() == candidate;
+            });
+    if (it == hosts.end()) {
+        LOG(INFO) << idStr_ << "The candidate " << candidate << " is not my peers";
+        resp.set_error_code(cpp2::ErrorCode::E_WRONG_LEADER);
+        return;
+    }
     // Ok, no reason to refuse, we will vote for the candidate
     LOG(INFO) << idStr_ << "The partition will vote for the candidate";
     resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
@@ -1451,6 +1459,15 @@ void RaftPart::processAppendLogRequest(
 cpp2::ErrorCode RaftPart::verifyLeader(
         const cpp2::AppendLogRequest& req) {
     CHECK(!raftLock_.try_lock());
+    auto candidate = HostAddr(req.get_leader_ip(), req.get_leader_port());
+    auto hosts = followers();
+    auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate] (const auto& h){
+                return h->address() == candidate;
+            });
+    if (it == hosts.end()) {
+        VLOG(2) << idStr_ << "The candidate leader " << candidate << " is not my peers";
+        return cpp2::ErrorCode::E_WRONG_LEADER;
+    }
     VLOG(2) << idStr_ << "The current role is " << roleStr(role_);
     switch (role_) {
         case Role::LEARNER:
