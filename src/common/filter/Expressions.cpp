@@ -961,13 +961,13 @@ OptVariantType RelationalExpression::eval() const {
 
     switch (op_) {
         case LT:
-            return OptVariantType(l < r);
+            return OptVariantType(variantLT(l, r));
         case LE:
-            return OptVariantType(l <= r);
+            return OptVariantType(variantLE(l, r));
         case GT:
-            return OptVariantType(l > r);
+            return OptVariantType(variantGT(l, r));
         case GE:
-            return OptVariantType(l >= r);
+            return OptVariantType(variantGE(l, r));
         case EQ:
             if (isArithmetic(l) && isArithmetic(r)) {
                 if (isDouble(l) || isDouble(r)) {
@@ -975,7 +975,7 @@ OptVariantType RelationalExpression::eval() const {
                         almostEqual(asDouble(l), asDouble(r)));
                 }
             }
-            return OptVariantType(l == r);
+            return OptVariantType(variantEQ(l, r));
         case NE:
             if (isArithmetic(l) && isArithmetic(r)) {
                 if (isDouble(l) || isDouble(r)) {
@@ -983,7 +983,7 @@ OptVariantType RelationalExpression::eval() const {
                         !almostEqual(asDouble(l), asDouble(r)));
                 }
             }
-            return OptVariantType(l != r);
+            return OptVariantType(variantNE(l, r));
     }
 
     return OptVariantType(Status::Error("Wrong operator"));

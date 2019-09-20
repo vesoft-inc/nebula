@@ -29,6 +29,26 @@ public:
         const nebula::cpp2::ValueType& getType() const override {
             return type_;
         }
+
+        const FieldValue& getDefault() const override {
+            // TODO(sye) Need schema support
+            // For now, we just hard code it with a default FieldValue object
+            static FieldValue fake;
+            return fake;
+        }
+
+        bool nullable() const override {
+            // TODO(sye) Need schema support
+            // For now, we just hard code it nullalble
+            return true;
+        }
+
+        bool hasDefault() const override {
+            // TODO(sye) Need schema support
+            // For now, we just hard code it without default value
+            return false;
+        }
+
         bool isValid() const override {
             return true;
         }

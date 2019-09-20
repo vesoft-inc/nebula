@@ -1332,7 +1332,8 @@ void MetaClient::loadCfg() {
             for (const auto& entry : metaConfigMap) {
                 auto& key = entry.first;
                 auto it = metaConfigMap_.find(key);
-                if (it == metaConfigMap_.end() || metaConfigMap[key].value_ != it->second.value_) {
+                if (it == metaConfigMap_.end() ||
+                    variantBoolNE(metaConfigMap[key].value_, it->second.value_)) {
                     updateGflagsValue(entry.second);
                     LOG(INFO) << "update config in cache " << key.second
                               << " to " << metaConfigMap[key].value_;

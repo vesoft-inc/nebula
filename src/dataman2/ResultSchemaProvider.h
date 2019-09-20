@@ -1,11 +1,11 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef DATAMAN_RESULTSCHEMAPROVIDER_H_
-#define DATAMAN_RESULTSCHEMAPROVIDER_H_
+#ifndef DATAMAN2_RESULTSCHEMAPROVIDER_H_
+#define DATAMAN2_RESULTSCHEMAPROVIDER_H_
 
 #include "base/Base.h"
 #include "meta/SchemaProviderIf.h"
@@ -67,4 +67,4 @@ protected:
 };
 
 }  // namespace nebula
-#endif  // DATAMAN_RESULTSCHEMAPROVIDER_H_
+#endif  // DATAMAN2_RESULTSCHEMAPROVIDER_H_

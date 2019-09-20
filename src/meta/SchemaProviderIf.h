@@ -15,6 +15,14 @@ namespace nebula {
 
 using CommonConstants = nebula::cpp2::common_constants;
 
+using FieldValue = boost::variant<bool, int64_t, float, double, std::string>;
+#define VALUE_TYPE_BOOL 0
+#define VALUE_TYPE_INT 1
+#define VALUE_TYPE_FLOAT 2
+#define VALUE_TYPE_DOUBLE 3
+#define VALUE_TYPE_STRING 4
+
+
 namespace meta {
 
 class SchemaProviderIf {
@@ -26,6 +34,11 @@ public:
 
         virtual const char* getName() const = 0;
         virtual const nebula::cpp2::ValueType& getType() const = 0;
+
+        virtual const FieldValue& getDefault() const = 0;
+
+        virtual bool nullable() const = 0;
+        virtual bool hasDefault() const = 0;
         virtual bool isValid() const = 0;
     };
 

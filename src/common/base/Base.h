@@ -67,6 +67,9 @@
 #include "thread/NamedThread.h"
 // #include "base/StringUnorderedMap.h"
 
+#include "base/NullValue.h"
+#include "base/StringValue.h"
+
 #define MUST_USE_RESULT                 __attribute__((warn_unused_result))
 #define DONT_OPTIMIZE                   __attribute__((optimize("O0")))
 
@@ -137,7 +140,19 @@ struct PartMeta {
 
 using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, PartMeta>>;
 
-using VariantType = boost::variant<int64_t, double, bool, std::string>;
+using VariantType = boost::variant<int64_t, double, bool, std::string, NullValue>;
+VariantType variantLT(VariantType&, VariantType&);
+VariantType variantLE(VariantType&, VariantType&);
+VariantType variantGT(VariantType&, VariantType&);
+VariantType variantGE(VariantType&, VariantType&);
+VariantType variantEQ(VariantType&, VariantType&);
+VariantType variantNE(VariantType&, VariantType&);
+bool variantBoolLT(VariantType&, VariantType&);
+bool variantBoolLE(VariantType&, VariantType&);
+bool variantBoolGT(VariantType&, VariantType&);
+bool variantBoolGE(VariantType&, VariantType&);
+bool variantBoolEQ(VariantType&, VariantType&);
+bool variantBoolNE(VariantType&, VariantType&);
 
 #ifndef VAR_INT64
 #define VAR_INT64 0

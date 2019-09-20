@@ -13,6 +13,8 @@ namespace nebula {
 
 enum class ResultType {
     SUCCEEDED = 0,
+
+    // Errors
     E_NAME_NOT_FOUND = -1,
     E_INDEX_OUT_OF_RANGE = -2,
     E_INCOMPATIBLE_TYPE = -3,
@@ -33,6 +35,7 @@ typename std::enable_if<
 intToBool(IntType iVal) {
     return iVal != 0;
 }
+
 
 inline bool strToBool(folly::StringPiece str) {
     return str == "Y" || str == "y" || str == "T" || str == "t" ||

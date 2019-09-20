@@ -7,6 +7,8 @@ add_library(
     SanitizerOptions.cpp
     SignalHandler.cpp
     NebulaKeyUtils.cpp
+    NullValue.cpp
+    StringValue.cpp
 )
 
 IF(${PCHSupport_FOUND})
