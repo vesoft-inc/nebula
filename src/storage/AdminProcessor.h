@@ -247,6 +247,7 @@ public:
                 }
                 sleep(FLAGS_waiting_catch_up_interval_in_secs);
             }
+            onFinished(cpp2::ErrorCode::E_RETRY_EXHAUSTED);
         });
     }
 
