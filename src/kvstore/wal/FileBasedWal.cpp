@@ -277,9 +277,9 @@ void FileBasedWal::closeCurrFile() {
         return;
     }
 
-    CHECK_EQ(fsync(currFd_), 0);
+    CHECK_EQ(fsync(currFd_), 0) << strerror(errno);
     // Close the file
-    CHECK_EQ(close(currFd_), 0);
+    CHECK_EQ(close(currFd_), 0) << strerror(errno);
     currFd_ = -1;
 
     auto now = time::WallClock::fastNowInSec();

@@ -796,13 +796,13 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
 
 void RaftPart::processAppendLogResponses(
         const AppendLogResponses& resps,
-        folly::EventBase*,
+        folly::EventBase* eb,
         AppendLogsIterator iter,
         TermID currTerm,
         LogID lastLogId,
         LogID committedId,
-        TermID,
-        LogID,
+        TermID prevLogTerm,
+        LogID prevLogId,
         std::vector<std::shared_ptr<Host>> hosts) {
     // Make sure majority have succeeded
     size_t numSucceeded = 0;
@@ -903,12 +903,14 @@ void RaftPart::processAppendLogResponses(
     } else {
         // Not enough hosts accepted the log, re-try
         LOG(WARNING) << idStr_ << "Only " << numSucceeded
-                     << " hosts succeeded, roll back log to " << lastLogId_;
-        {
-            std::lock_guard<std::mutex> lck(logsLock_);
-            wal_->rollbackToLog(lastLogId_);
-        }
-        checkAppendLogResult(AppendLogResult::E_NOT_ENOUGH_ACKS);
+                     << " hosts succeeded, Need to try again";
+        replicateLogs(eb,
+                      std::move(iter),
+                      currTerm,
+                      lastLogId,
+                      committedId,
+                      prevLogTerm,
+                      prevLogId);
     }
 }
 
