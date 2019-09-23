@@ -58,6 +58,7 @@ if (!CMAKE_CXX_COMPILER)
 endif()
 
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++ -no-pie")
 

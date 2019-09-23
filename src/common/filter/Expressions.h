@@ -17,7 +17,7 @@ namespace nebula {
 class Cord;
 using OptVariantType = StatusOr<VariantType>;
 
-enum ColumnType {
+enum class ColumnType {
     INT, STRING, DOUBLE, BIGINT, BOOL, TIMESTAMP,
 };
 

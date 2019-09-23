@@ -684,17 +684,17 @@ const char* UnaryExpression::decode(const char *pos, const char *end) {
 
 std::string columnTypeToString(ColumnType type) {
     switch (type) {
-        case INT:
+        case ColumnType::INT:
             return "int";
-        case STRING:
+        case ColumnType::STRING:
             return "string";
-        case DOUBLE:
+        case ColumnType::DOUBLE:
             return "double";
-        case BIGINT:
+        case ColumnType::BIGINT:
             return "bigint";
-        case BOOL:
+        case ColumnType::BOOL:
             return "bool";
-        case TIMESTAMP:
+        case ColumnType::TIMESTAMP:
             return  "timestamp";
         default:
             return "unknown";
@@ -722,16 +722,16 @@ OptVariantType TypeCastingExpression::eval() const {
     }
 
     switch (type_) {
-        case INT:
-        case TIMESTAMP:
+        case ColumnType::INT:
+        case ColumnType::TIMESTAMP:
             return Expression::toInt(result.value());
-        case STRING:
+        case ColumnType::STRING:
             return Expression::toString(result.value());
-        case DOUBLE:
+        case ColumnType::DOUBLE:
             return Expression::toDouble(result.value());
-        case BOOL:
+        case ColumnType::BOOL:
             return Expression::toBool(result.value());
-        case BIGINT:
+        case ColumnType::BIGINT:
             return Status::Error("Type bigint not supported yet");
     }
     LOG(FATAL) << "casting to unknown type: " << static_cast<int>(type_);
