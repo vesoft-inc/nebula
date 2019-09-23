@@ -4,6 +4,6 @@ nebula_add_library(
     StatsManager.cpp
 )
 
-add_subdirectory(test)
+nebula_add_subdirectory(test)
 
 

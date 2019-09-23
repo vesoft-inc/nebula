@@ -17,7 +17,7 @@ namespace nebula {
 class Cord;
 using OptVariantType = StatusOr<VariantType>;
 
-enum ColumnType {
+enum class ColumnType {
     INT, STRING, DOUBLE, BIGINT, BOOL, TIMESTAMP,
 };
 
@@ -311,7 +311,6 @@ public:
         kEdgeSrcId,
         kEdgeType,
         kAliasProp,
-        kEdgeProp,
         kVariableProp,
         kDestProp,
         kInputProp,
@@ -351,7 +350,6 @@ private:
     friend class EdgeDstIdExpression;
     friend class EdgeSrcIdExpression;
     friend class EdgeTypeExpression;
-    friend class EdgePropertyExpression;
     friend class VariablePropertyExpression;
     friend class InputPropertyExpression;
 
@@ -802,7 +800,7 @@ private:
 class ArithmeticExpression final : public Expression {
 public:
     enum Operator : uint8_t {
-        ADD, SUB, MUL, DIV, MOD
+        ADD, SUB, MUL, DIV, MOD, XOR
     };
     static_assert(sizeof(Operator) == sizeof(uint8_t), "");
 
@@ -893,6 +891,7 @@ private:
 
     const char* decode(const char *pos, const char *end) override;
 
+    Status implicitCasting(VariantType &lhs, VariantType &rhs) const;
 
 private:
     Operator                                    op_;
@@ -905,7 +904,7 @@ private:
 class LogicalExpression final : public Expression {
 public:
     enum Operator : uint8_t {
-        AND, OR
+        AND, OR, XOR
     };
     static_assert(sizeof(Operator) == sizeof(uint8_t), "");
 

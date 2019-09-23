@@ -684,17 +684,17 @@ const char* UnaryExpression::decode(const char *pos, const char *end) {
 
 std::string columnTypeToString(ColumnType type) {
     switch (type) {
-        case INT:
+        case ColumnType::INT:
             return "int";
-        case STRING:
+        case ColumnType::STRING:
             return "string";
-        case DOUBLE:
+        case ColumnType::DOUBLE:
             return "double";
-        case BIGINT:
+        case ColumnType::BIGINT:
             return "bigint";
-        case BOOL:
+        case ColumnType::BOOL:
             return "bool";
-        case TIMESTAMP:
+        case ColumnType::TIMESTAMP:
             return  "timestamp";
         default:
             return "unknown";
@@ -722,16 +722,16 @@ OptVariantType TypeCastingExpression::eval() const {
     }
 
     switch (type_) {
-        case INT:
-        case TIMESTAMP:
+        case ColumnType::INT:
+        case ColumnType::TIMESTAMP:
             return Expression::toInt(result.value());
-        case STRING:
+        case ColumnType::STRING:
             return Expression::toString(result.value());
-        case DOUBLE:
+        case ColumnType::DOUBLE:
             return Expression::toDouble(result.value());
-        case BOOL:
+        case ColumnType::BOOL:
             return Expression::toBool(result.value());
-        case BIGINT:
+        case ColumnType::BIGINT:
             return Status::Error("Type bigint not supported yet");
     }
     LOG(FATAL) << "casting to unknown type: " << static_cast<int>(type_);
@@ -768,6 +768,9 @@ std::string ArithmeticExpression::toString() const {
             break;
         case MOD:
             buf += '%';
+            break;
+        case XOR:
+            buf += '^';
             break;
     }
     buf.append(right_->toString());
@@ -827,8 +830,20 @@ OptVariantType ArithmeticExpression::eval() const {
             }
             break;
         case MOD:
-            if (isInt(l) && isInt(r)) {
+            if (isArithmetic(l) && isArithmetic(r)) {
+                if (isDouble(l) || isDouble(r)) {
+                    return fmod(asDouble(l), asDouble(r));
+                }
                 return OptVariantType(asInt(l) % asInt(r));
+            }
+            break;
+        case XOR:
+            if (isArithmetic(l) && isArithmetic(r)) {
+                if (isDouble(l) || isDouble(r)) {
+                    return (static_cast<int64_t>(std::round(asDouble(l)))
+                                ^ static_cast<int64_t>(std::round(asDouble(r))));
+                }
+                return OptVariantType(asInt(l) ^ asInt(r));
             }
             break;
         default:
@@ -918,6 +933,13 @@ OptVariantType RelationalExpression::eval() const {
 
     auto l = left.value();
     auto r = right.value();
+    if (l.which() != r.which()) {
+        auto s = implicitCasting(l, r);
+        if (!s.ok()) {
+            return s;
+        }
+    }
+
     switch (op_) {
         case LT:
             return OptVariantType(l < r);
@@ -946,6 +968,26 @@ OptVariantType RelationalExpression::eval() const {
     }
 
     return OptVariantType(Status::Error("Wrong operator"));
+}
+
+Status RelationalExpression::implicitCasting(VariantType &lhs, VariantType &rhs) const {
+    // Rule: bool -> int64_t -> double
+    if (lhs.which() == VAR_STR || rhs.which() == VAR_STR) {
+        return Status::Error("A string type can not be compared with a non-string type.");
+    } else if (lhs.which() == VAR_DOUBLE || rhs.which() == VAR_DOUBLE) {
+        lhs = toDouble(lhs);
+        rhs = toDouble(rhs);
+    } else if (lhs.which() == VAR_INT64 || rhs.which() == VAR_INT64) {
+        lhs = toInt(lhs);
+        rhs = toInt(rhs);
+    } else if (lhs.which() == VAR_BOOL || rhs.which() == VAR_BOOL) {
+        // No need do cast here.
+    } else {
+        // If the variant type is expanded, we should update the rule.
+        LOG(FATAL) << "Unknown type: " << lhs.which() << ", " << rhs.which();
+    }
+
+    return Status::OK();
 }
 
 Status RelationalExpression::prepare() {
@@ -995,6 +1037,9 @@ std::string LogicalExpression::toString() const {
         case OR:
             buf += "||";
             break;
+        case XOR:
+            buf += "XOR";
+            break;
     }
     buf.append(right_->toString());
     buf += ')';
@@ -1018,11 +1063,16 @@ OptVariantType LogicalExpression::eval() const {
             return OptVariantType(false);
         }
         return OptVariantType(asBool(right.value()));
-    } else {
+    } else if (op_ == OR) {
         if (asBool(left.value())) {
             return OptVariantType(true);
         }
         return OptVariantType(asBool(right.value()));
+    } else {
+        if (asBool(left.value()) == asBool(right.value())) {
+            return OptVariantType(false);
+        }
+        return OptVariantType(true);
     }
 }
 
