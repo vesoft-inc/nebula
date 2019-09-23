@@ -113,8 +113,8 @@ private:
 
     Status rewrite();
 
-    bool rewriteXor(LogicalExpression *expr) const;
     bool rewriteOr(LogicalExpression *expr) const;
+
     bool rewriteAnd(LogicalExpression *expr) const;
 
     bool canPushdown(Expression *expr) const;

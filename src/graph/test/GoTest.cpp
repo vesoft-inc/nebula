@@ -1642,6 +1642,26 @@ TEST_F(GoTest, filterPushdown) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        // Filter pushdown: ((player.name=="Tony Parker")&&(serve.start_year>2013))
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like YIELD like._dst AS id | "
+                    "GO FROM $-.id OVER serve "
+                    "WHERE $^.player.name == \"Tony Parker\" && serve.start_year > 2013";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Hornets"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 }   // namespace graph
 }   // namespace nebula
