@@ -627,7 +627,10 @@ std::string UUIDExpression::toString() const {
 }
 
 OptVariantType UUIDExpression::eval() const {
-     return context_->getters().getUUID(*field_);
+     // return context_->getters().getUUID(*field_);
+     auto client = context_->storageClient();
+     auto space = context_->space();
+     return client->getUUID(space, *field_);
 }
 
 Status UUIDExpression::prepare() {

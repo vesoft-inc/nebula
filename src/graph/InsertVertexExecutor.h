@@ -29,8 +29,6 @@ private:
     Status check();
     StatusOr<std::vector<storage::cpp2::Vertex>> prepareVertices();
 
-    OptVariantType getUUID(const std::string &prop) const;
-
 private:
     using TagSchema = std::shared_ptr<const meta::SchemaProviderIf>;
     InsertVertexSentence                       *sentence_{nullptr};

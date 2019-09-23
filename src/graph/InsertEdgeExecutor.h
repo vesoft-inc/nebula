@@ -29,8 +29,6 @@ private:
     Status check();
     StatusOr<std::vector<storage::cpp2::Edge>> prepareEdges();
 
-    OptVariantType getUUID(const std::string &prop) const;
-
 private:
     using EdgeSchema = std::shared_ptr<const meta::SchemaProviderIf>;
     InsertEdgeSentence                         *sentence_{nullptr};

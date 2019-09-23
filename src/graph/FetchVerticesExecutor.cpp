@@ -248,11 +248,7 @@ Status FetchVerticesExecutor::setupVidsFromExpr() {
         uniqID = std::make_unique<std::unordered_set<VertexID>>();
     }
 
-    auto &getters = expCtx_->getters();
-    getters.getUUID = [&] (const std::string &prop) {
-        return getUUID(prop);
-    };
-
+    expCtx_->setSpace(spaceId_);
     auto vidList = sentence_->vidList();
     for (auto *expr : vidList) {
         expr->setContext(expCtx_.get());
@@ -309,10 +305,6 @@ Status FetchVerticesExecutor::setupVidsFromRef() {
     }
     vids_ = std::move(result).value();
     return Status::OK();
-}
-
-OptVariantType FetchVerticesExecutor::getUUID(const std::string &prop) const {
-    return static_cast<int64_t>(std::hash<std::string>()(prop));
 }
 
 }  // namespace graph

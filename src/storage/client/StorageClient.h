@@ -147,7 +147,7 @@ public:
           const std::string& name,
           folly::EventBase* evb = nullptr);
           */
-    int64_t getUUID(const std::string& name);
+    int64_t getUUID(GraphSpaceID space, const std::string& name);
 
 protected:
     // Calculate the partition id for the given vertex id

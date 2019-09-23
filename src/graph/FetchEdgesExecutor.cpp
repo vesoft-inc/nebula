@@ -198,10 +198,7 @@ Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
     }
 
     auto edgeKeyExprs = sentence_->keys()->keys();
-    auto &getters = expCtx_->getters();
-    getters.getUUID = [&] (const std::string &prop) {
-        return getUUID(prop);
-    };
+    expCtx_->setSpace(spaceId_);
 
     for (auto *keyExpr : edgeKeyExprs) {
         auto *srcExpr = keyExpr->srcid();
@@ -370,10 +367,6 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
     }  // for `resp'
 
     finishExecution(std::move(rsWriter));
-}
-
-OptVariantType FetchEdgesExecutor::getUUID(const std::string &prop) const {
-    return static_cast<int64_t>(std::hash<std::string>()(prop));
 }
 
 }  // namespace graph

@@ -78,9 +78,7 @@ Status InsertVertexExecutor::check() {
 
 StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertices() {
     expCtx_->setStorageClient(ectx()->getStorageClient());
-    expCtx_->getters().getUUID = [&] (const std::string &prop) -> OptVariantType {
-        return getUUID(prop);
-    };
+    expCtx_->setSpace(spaceId_);
 
     std::vector<storage::cpp2::Vertex> vertices(rows_.size());
     for (auto i = 0u; i < rows_.size(); i++) {
@@ -214,10 +212,6 @@ void InsertVertexExecutor::execute() {
     };
 
     std::move(future).via(runner).thenValue(cb).thenError(error);
-}
-
-OptVariantType InsertVertexExecutor::getUUID(const std::string &prop) const {
-    return static_cast<int64_t>(std::hash<std::string>()(prop));
 }
 
 }   // namespace graph

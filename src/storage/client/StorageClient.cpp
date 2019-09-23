@@ -318,9 +318,10 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> getUUID(GraphSpaceID, const std::stri
 }
 */
 
-int64_t StorageClient::getUUID(const std::string&) {
+int64_t StorageClient::getUUID(GraphSpaceID space, const std::string& field) {
     LOG(INFO) << "Called GetUUID";
-    return 1024;
+    UNUSED(space);
+    return static_cast<int64_t>(std::hash<std::string>()(field));;
 }
 
 }   // namespace storage

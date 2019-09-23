@@ -191,8 +191,6 @@ private:
 
     nebula::cpp2::SupportedType getPropTypeFromInterim(const std::string &prop) const;
 
-    OptVariantType getUUID(const std::string &prop) const;
-
     enum FromType {
         kInstantExpr,
         kVariable,

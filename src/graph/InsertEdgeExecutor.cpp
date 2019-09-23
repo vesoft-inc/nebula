@@ -73,9 +73,9 @@ Status InsertEdgeExecutor::check() {
 StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
     expCtx_ = std::make_unique<ExpressionContext>();
     expCtx_->setStorageClient(ectx()->getStorageClient());
-    expCtx_->getters().getUUID = [&] (const std::string &prop) -> OptVariantType {
-        return getUUID(prop);
-    };
+
+    auto space = ectx()->rctx()->session()->space();
+    expCtx_->setSpace(space);
 
     std::vector<storage::cpp2::Edge> edges(rows_.size() * 2);   // inbound and outbound
     auto index = 0;
@@ -231,10 +231,6 @@ void InsertEdgeExecutor::execute() {
     };
 
     std::move(future).via(runner).thenValue(cb).thenError(error);
-}
-
-OptVariantType InsertEdgeExecutor::getUUID(const std::string &prop) const {
-    return static_cast<int64_t>(std::hash<std::string>()(prop));
 }
 
 }   // namespace graph

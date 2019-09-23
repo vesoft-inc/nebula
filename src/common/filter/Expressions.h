@@ -119,6 +119,14 @@ public:
         return !inputProps_.empty();
     }
 
+    void setSpace(GraphSpaceID space) {
+        space_ = space;
+    }
+
+    GraphSpaceID space() {
+        return space_;
+    }
+
     struct Getters {
         std::function<OptVariantType()>                                       getEdgeRank;
         std::function<OptVariantType(const std::string&)>                     getInputProp;
@@ -126,7 +134,6 @@ public:
         std::function<OptVariantType(const std::string&, const std::string&)> getSrcTagProp;
         std::function<OptVariantType(const std::string&, const std::string&)> getDstTagProp;
         std::function<OptVariantType(const std::string&, const std::string&)> getAliasProp;
-        std::function<OptVariantType(const std::string&)>                     getUUID;
     };
 
     Getters& getters() {
@@ -150,7 +157,7 @@ private:
     // alias => edgeType
     std::unordered_map<std::string, EdgeType> edgeMaps_;
     bool                                      overAll_{false};
-    GraphSpaceID                              space;
+    GraphSpaceID                              space_;
     nebula::storage::StorageClient            *storageClient_{nullptr};
 };
 
@@ -744,6 +751,10 @@ public:
         context_ = ctx;
     }
 
+    void setSpace(GraphSpaceID space) {
+        space_ = space;
+    }
+
 private:
     void encode(Cord &) const override {
         throw Status::Error("Not supported yet");
@@ -755,6 +766,7 @@ private:
 
 private:
     std::unique_ptr<std::string>                field_;
+    GraphSpaceID                                space_;
 };
 
 // +expr, -expr, !expr

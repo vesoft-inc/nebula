@@ -158,12 +158,10 @@ Status GoExecutor::prepareFrom() {
             break;
         }
 
+        auto space = ectx()->rctx()->session()->space();
+        expCtx_->setSpace(space);
         auto vidList = clause->vidList();
         for (auto *expr : vidList) {
-            auto &getters = expCtx_->getters();
-            getters.getUUID = [&] (const std::string &prop) {
-                return getUUID(prop);
-            };
             expr->setContext(expCtx_.get());
 
             status = expr->prepare();
@@ -1036,10 +1034,6 @@ OptVariantType GoExecutor::getPropFromInterim(VertexID id, const std::string &pr
 SupportedType GoExecutor::getPropTypeFromInterim(const std::string &prop) const {
     DCHECK(index_ != nullptr);
     return index_->getColumnType(prop);
-}
-
-OptVariantType GoExecutor::getUUID(const std::string &prop) const {
-    return static_cast<int64_t>(std::hash<std::string>()(prop));
 }
 
 }   // namespace graph
