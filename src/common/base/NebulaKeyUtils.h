@@ -24,8 +24,12 @@ enum NebulaKeyType : uint32_t {
     kData              = 0x00000001,
     kIndex             = 0x00000002,
     kUUID              = 0x00000003,
-    kSystemCommit      = 0x00000004,
-    kSystemPart        = 0x00000005,
+    kSystem            = 0x00000004,
+};
+
+enum NebulaSystemKeyType : uint32_t {
+    kSystemCommit      = 0x00000001,
+    kSystemPart        = 0x00000002,
 };
 
 /**
@@ -47,7 +51,7 @@ public:
                                EdgeType type, EdgeRanking rank,
                                VertexID dstId, EdgeVersion ev);
 
-    static std::string commitKey(PartitionID partId);
+    static std::string systemCommitKey(PartitionID partId);
 
     static std::string systemPartKey(PartitionID partId);
 
@@ -65,7 +69,7 @@ public:
 
     static std::string edgePrefix(PartitionID partId, VertexID vId);
 
-    static std::string systemPartsPrefix();
+    static std::string systemPrefix();
 
     static std::string prefix(PartitionID partId, VertexID src, EdgeType type,
                               EdgeRanking ranking, VertexID dst);
@@ -100,6 +104,24 @@ public:
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
         EdgeType type = readInt<EdgeType>(rawKey.data() + offset, sizeof(EdgeType));
         return type & edgeMask;
+    }
+
+    static bool isSystemCommit(const folly::StringPiece& rawKey) {
+        if (rawKey.size() != kSystemLen) {
+            return false;
+        }
+        auto position = rawKey.data() + sizeof(PartitionID);
+        auto len = sizeof(NebulaSystemKeyType);
+        return NebulaSystemKeyType::kSystemCommit == readInt<uint32_t>(position, len);
+    }
+
+    static bool isSystemPart(const folly::StringPiece& rawKey) {
+        if (rawKey.size() != kSystemLen) {
+            return false;
+        }
+        auto position = rawKey.data() + sizeof(PartitionID);
+        auto len = sizeof(NebulaSystemKeyType);
+        return NebulaSystemKeyType::kSystemPart == readInt<uint32_t>(position, len);
     }
 
     static VertexID getSrcId(const folly::StringPiece& rawKey) {
@@ -163,9 +185,7 @@ private:
                                       + sizeof(EdgeType) + sizeof(VertexID)
                                       + sizeof(EdgeRanking) + sizeof(EdgeVersion);
 
-    static constexpr int32_t kCommitLen = sizeof(PartitionID) + ::strlen("committed");
-
-    static constexpr int32_t kSystemPartLen = sizeof(PartitionID);
+    static constexpr int32_t kSystemLen = sizeof(PartitionID) + sizeof(NebulaSystemKeyType);
 };
 
 }  // namespace nebula

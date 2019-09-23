@@ -330,14 +330,20 @@ void RocksEngine::removePart(PartitionID partId) {
 
 std::vector<PartitionID> RocksEngine::allParts() {
     std::unique_ptr<KVIterator> iter;
-    static const std::string prefixStr = NebulaKeyUtils::systemPartsPrefix();
+    static const std::string prefixStr = NebulaKeyUtils::systemPrefix();
     CHECK_EQ(ResultCode::SUCCEEDED, this->prefix(prefixStr, &iter));
 
     std::vector<PartitionID> parts;
     while (iter->valid()) {
         auto key = iter->key();
-        CHECK_EQ(key.size(), sizeof(PartitionID));
-        auto partId = *reinterpret_cast<const PartitionID*>(key.data());
+        CHECK_EQ(key.size(), sizeof(PartitionID) + sizeof(NebulaSystemKeyType));
+        PartitionID partId = *reinterpret_cast<const PartitionID*>(key.data());
+        if (!NebulaKeyUtils::isSystemPart(key)) {
+            VLOG(3) << "Skip: " << std::bitset<32>(partId);
+            iter->next();
+            continue;
+        }
+
         partId = partId >> 8;
         parts.emplace_back(partId);
         iter->next();
