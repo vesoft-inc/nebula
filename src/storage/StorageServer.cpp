@@ -37,8 +37,7 @@ std::unique_ptr<kvstore::KVStore> StorageServer::getStoreInstance() {
     options.partMan_ = std::make_unique<kvstore::MetaServerBasedPartManager>(
                                                 localHost_,
                                                 metaClient_.get());
-    options.cfFactory_ = std::shared_ptr<kvstore::KVCompactionFilterFactory>(
-                                new storage::NebulaCompactionFilterFactory(schemaMan_.get()));
+    options.cfFactory_ = std::make_shared<NebulaCompactionFilterFactory>(schemaMan_.get());
     if (FLAGS_store_type == "nebula") {
         auto nbStore = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                               ioThreadPool_,
@@ -165,6 +164,5 @@ void StorageServer::stop() {
     }
 }
 
-}  // namespace storage
-}  // namespace nebula
-
+}   // namespace storage
+}   // namespace nebula

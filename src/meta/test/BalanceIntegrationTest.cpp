@@ -54,11 +54,7 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
     auto mClient = std::make_unique<meta::MetaClient>(threadPool, metaAddr, tempDataAddr,
                                                       kClusterId, false);
 
-    auto ret = mClient->addHosts({tempDataAddr}).get();
-    ASSERT_TRUE(ret.ok());
     mClient->waitForMetadReady();
-    ret = mClient->removeHosts({tempDataAddr}).get();
-    ASSERT_TRUE(ret.ok());
 
     int partition = 9;
     int replica = 3;
@@ -73,8 +69,6 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
         storagePorts.emplace_back(storagePort);
         peers.emplace_back(storageAddr);
 
-        ret = mClient->addHosts({storageAddr}).get();
-        ASSERT_TRUE(ret.ok());
         VLOG(1) << "The storage server has been added to the meta service";
 
         auto metaClient = std::make_shared<meta::MetaClient>(threadPool, metaAddr, storageAddr,
@@ -93,15 +87,15 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
         serverContexts.emplace_back(std::move(sc));
     }
 
-    ret = mClient->createSpace("storage", partition, replica).get();
+    auto ret = mClient->createSpace("storage", partition, replica).get();
     ASSERT_TRUE(ret.ok());
-    sleep(FLAGS_load_data_interval_secs + 1);
-    sleep(FLAGS_raft_heartbeat_interval_secs);
+    sleep(FLAGS_load_data_interval_secs + FLAGS_raft_heartbeat_interval_secs + 3);
 
     auto code = balancer.leaderBalance();
     ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
 
-    sleep(FLAGS_raft_heartbeat_interval_secs);
+    LOG(INFO) << "Waiting for the leader balance";
+    sleep(FLAGS_raft_heartbeat_interval_secs + 1);
     for (int i = 0; i < replica; i++) {
         std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
         EXPECT_EQ(3, serverContexts[i]->kvStore_->allLeader(leaderIds));

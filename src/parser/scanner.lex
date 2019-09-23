@@ -28,13 +28,15 @@ GO                          ([Gg][Oo])
 AS                          ([Aa][Ss])
 TO                          ([Tt][Oo])
 OR                          ([Oo][Rr])
+AND                         ([Aa][Nn][Dd])
+XOR                         ([Xx][Oo][Rr])
 USE                         ([Uu][Ss][Ee])
 SET                         ([Ss][Ee][Tt])
 FROM                        ([Ff][Rr][Oo][Mm])
 WHERE                       ([Ww][Hh][Ee][Rr][Ee])
 MATCH                       ([Mm][Aa][Tt][Cc][Hh])
 INSERT                      ([Ii][Nn][Ss][Ee][Rr][Tt])
-VALUES                      ([Vv][Aa][Ll][Uu][Ee][Ss])
+VALUES                      ([Vv][Aa][Ll][Uu][Ee][Ss]?)
 YIELD                       ([Yy][Ii][Ee][Ll][Dd])
 RETURN                      ([Rr][Ee][Tt][Uu][Rr][Nn])
 CREATE                      ([Cc][Rr][Ee][Aa][Tt][Ee])
@@ -44,10 +46,12 @@ VERTEX                      ([Vv][Ee][Rr][Tt][Ee][Xx])
 EDGE                        ([Ee][Dd][Gg][Ee])
 EDGES                       ([Ee][Dd][Gg][Ee][Ss])
 UPDATE                      ([Uu][Pp][Dd][Aa][Tt][Ee])
+UPSERT                      ([Uu][Pp][Ss][Ee][Rr][Tt])
+WHEN                        ([Ww][Hh][Ee][Nn])
 DELETE                      ([Dd][Ee][Ll][Ee][Tt][Ee])
 FIND                        ([Ff][Ii][Nn][Dd])
 ALTER                       ([Aa][Ll][Tt][Ee][Rr])
-STEPS                       ([Ss][Tt][Ee][Pp][Ss])
+STEPS                       ([Ss][Tt][Ee][Pp][Ss]?)
 OVER                        ([Oo][Vv][Ee][Rr])
 UPTO                        ([Uu][Pp][Tt][Oo])
 REVERSELY                   ([Rr][Ee][Vv][Ee][Rr][Ss][Ee][Ll][Yy])
@@ -115,6 +119,7 @@ PROP                        ([Pp][Rr][Oo][Pp])
 ALL                         ([Aa][Ll][Ll])
 BALANCE                     ([Bb][Aa][Ll][Aa][Nn][Cc][Ee])
 LEADER                      ([Ll][Ee][Aa][Dd][Ee][Rr])
+OF                          ([Oo][Ff])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -132,6 +137,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {AS}                        { return TokenType::KW_AS; }
 {TO}                        { return TokenType::KW_TO; }
 {OR}                        { return TokenType::KW_OR; }
+{AND}                       { return TokenType::KW_AND; }
+{XOR}                       { return TokenType::KW_XOR; }
 {USE}                       { return TokenType::KW_USE; }
 {SET}                       { return TokenType::KW_SET; }
 {FROM}                      { return TokenType::KW_FROM; }
@@ -147,6 +154,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {EDGE}                      { return TokenType::KW_EDGE; }
 {EDGES}                     { return TokenType::KW_EDGES; }
 {UPDATE}                    { return TokenType::KW_UPDATE; }
+{UPSERT}                    { return TokenType::KW_UPSERT; }
+{WHEN}                      { return TokenType::KW_WHEN; }
 {DELETE}                    { return TokenType::KW_DELETE; }
 {FIND}                      { return TokenType::KW_FIND; }
 {ALTER}                     { return TokenType::KW_ALTER; }
@@ -208,6 +217,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {GRAPH}                     { return TokenType::KW_GRAPH; }
 {META}                      { return TokenType::KW_META; }
 {STORAGE}                   { return TokenType::KW_STORAGE; }
+{OF}                        { return TokenType::KW_OF; }
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 {ORDER}                     { return TokenType::KW_ORDER; }
@@ -232,6 +242,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "/"                         { return TokenType::DIV; }
 "%"                         { return TokenType::MOD; }
 "!"                         { return TokenType::NOT; }
+"^"                         { return TokenType::XOR; }
 
 "<"                         { return TokenType::LT; }
 "<="                        { return TokenType::LE; }

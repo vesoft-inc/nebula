@@ -39,7 +39,8 @@ Part::Part(GraphSpaceID spaceId,
            KVEngine* engine,
            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
            std::shared_ptr<thread::GenericThreadPool> workers,
-           std::shared_ptr<folly::Executor> handlers)
+           std::shared_ptr<folly::Executor> handlers,
+           std::shared_ptr<raftex::SnapshotManager> snapshotMan)
         : RaftPart(FLAGS_cluster_id,
                    spaceId,
                    partId,
@@ -47,7 +48,8 @@ Part::Part(GraphSpaceID spaceId,
                    walPath,
                    ioPool,
                    workers,
-                   handlers)
+                   handlers,
+                   snapshotMan)
         , spaceId_(spaceId)
         , partId_(partId)
         , walPath_(walPath)
@@ -192,7 +194,7 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             auto pieces = decodeMultiValues(log);
             DCHECK_EQ(2, pieces.size());
             if (batch->put(pieces[0], pieces[1]) != ResultCode::SUCCEEDED) {
-                LOG(ERROR) << "Failed to call WriteBatch::put()";
+                LOG(ERROR) << idStr_ << "Failed to call WriteBatch::put()";
                 return false;
             }
             break;
@@ -203,7 +205,7 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             DCHECK_EQ((kvs.size() + 1) / 2, kvs.size() / 2);
             for (size_t i = 0; i < kvs.size(); i += 2) {
                 if (batch->put(kvs[i], kvs[i + 1]) != ResultCode::SUCCEEDED) {
-                    LOG(ERROR) << "Failed to call WriteBatch::put()";
+                    LOG(ERROR) << idStr_ << "Failed to call WriteBatch::put()";
                     return false;
                 }
             }
@@ -212,7 +214,7 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
         case OP_REMOVE: {
             auto key = decodeSingleValue(log);
             if (batch->remove(key) != ResultCode::SUCCEEDED) {
-                LOG(ERROR) << "Failed to call WriteBatch::remove()";
+                LOG(ERROR) << idStr_ << "Failed to call WriteBatch::remove()";
                 return false;
             }
             break;
@@ -221,7 +223,7 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             auto keys = decodeMultiValues(log);
             for (auto k : keys) {
                 if (batch->remove(k) != ResultCode::SUCCEEDED) {
-                    LOG(ERROR) << "Failed to call WriteBatch::remove()";
+                    LOG(ERROR) << idStr_ << "Failed to call WriteBatch::remove()";
                     return false;
                 }
             }
@@ -230,7 +232,7 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
         case OP_REMOVE_PREFIX: {
             auto prefix = decodeSingleValue(log);
             if (batch->removePrefix(prefix) != ResultCode::SUCCEEDED) {
-                LOG(ERROR) << "Failed to call WriteBatch::removePrefix()";
+                LOG(ERROR) << idStr_ << "Failed to call WriteBatch::removePrefix()";
                 return false;
             }
             break;
@@ -239,7 +241,7 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             auto range = decodeMultiValues(log);
             DCHECK_EQ(2, range.size());
             if (batch->removeRange(range[0], range[1]) != ResultCode::SUCCEEDED) {
-                LOG(ERROR) << "Failed to call WriteBatch::removeRange()";
+                LOG(ERROR) << idStr_ << "Failed to call WriteBatch::removeRange()";
                 return false;
             }
             break;
@@ -254,7 +256,7 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             break;
         }
         default: {
-            LOG(FATAL) << "Unknown operation: " << static_cast<uint8_t>(log[0]);
+            LOG(FATAL) << idStr_ << "Unknown operation: " << static_cast<uint8_t>(log[0]);
         }
         }
 
@@ -262,14 +264,50 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
     }
 
     if (lastId >= 0) {
-        std::string commitMsg;
-        commitMsg.reserve(sizeof(LogID) + sizeof(TermID));
-        commitMsg.append(reinterpret_cast<char*>(&lastId), sizeof(LogID));
-        commitMsg.append(reinterpret_cast<char*>(&lastTerm), sizeof(TermID));
-        batch->put(folly::stringPrintf("%s%d", kCommitKeyPrefix, partId_), commitMsg);
+        if (putCommitMsg(batch.get(), lastId, lastTerm) != ResultCode::SUCCEEDED) {
+            LOG(ERROR) << idStr_ << "Commit msg failed";
+            return false;
+        }
     }
-
     return engine_->commitBatchWrite(std::move(batch)) == ResultCode::SUCCEEDED;
+}
+
+std::pair<int64_t, int64_t> Part::commitSnapshot(const std::vector<std::string>& rows,
+                                                 LogID committedLogId,
+                                                 TermID committedLogTerm,
+                                                 bool finished) {
+    auto batch = engine_->startBatchWrite();
+    int64_t count = 0;
+    int64_t size = 0;
+    for (auto& row : rows) {
+        count++;
+        size += row.size();
+        auto kv = decodeKV(row);
+        if (ResultCode::SUCCEEDED != batch->put(kv.first, kv.second)) {
+            LOG(ERROR) << idStr_ << "Put failed in commit";
+            return std::make_pair(0, 0);
+        }
+    }
+    if (finished) {
+        if (ResultCode::SUCCEEDED != putCommitMsg(batch.get(), committedLogId, committedLogTerm)) {
+            LOG(ERROR) << idStr_ << "Put failed in commit";
+            return std::make_pair(0, 0);
+        }
+    }
+    if (ResultCode::SUCCEEDED != engine_->commitBatchWrite(std::move(batch))) {
+        LOG(ERROR) << idStr_ << "Put failed in commit";
+        return std::make_pair(0, 0);
+    }
+    return std::make_pair(count, size);
+}
+
+ResultCode Part::putCommitMsg(WriteBatch* batch, LogID committedLogId, TermID committedLogTerm) {
+    std::string commitMsg;
+    commitMsg.reserve(sizeof(LogID) + sizeof(TermID));
+    commitMsg.append(reinterpret_cast<char*>(&committedLogId), sizeof(LogID));
+    commitMsg.append(reinterpret_cast<char*>(&committedLogTerm), sizeof(TermID));
+    return batch->put(folly::stringPrintf("%s%d", kCommitKeyPrefix, partId_),
+                      commitMsg);
 }
 
 bool Part::preProcessLog(LogID logId,

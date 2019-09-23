@@ -85,4 +85,3 @@ struct HostAddr {
 }
 
 const ValueType kInvalidValueType = {"type" : UNKNOWN}
-

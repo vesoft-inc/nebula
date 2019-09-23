@@ -44,8 +44,11 @@ class GraphScanner;
     nebula::StepClause                     *step_clause;
     nebula::FromClause                     *from_clause;
     nebula::VertexIDList                   *vid_list;
+    nebula::OverEdge                       *over_edge;
+    nebula::OverEdges                      *over_edges;
     nebula::OverClause                     *over_clause;
     nebula::WhereClause                    *where_clause;
+    nebula::WhenClause                     *when_clause;
     nebula::YieldClause                    *yield_clause;
     nebula::YieldColumns                   *yield_columns;
     nebula::YieldColumn                    *yield_column;
@@ -90,9 +93,9 @@ class GraphScanner;
 %destructor { delete $$; } <*>
 
 /* keywords */
-%token KW_GO KW_AS KW_TO KW_OR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
+%token KW_GO KW_AS KW_TO KW_OR KW_AND KW_XOR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
-%token KW_EDGE KW_EDGES KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
+%token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST
@@ -102,12 +105,12 @@ class GraphScanner;
 %token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL_DURATION KW_TTL_COL
 %token KW_ORDER KW_ASC
-%token KW_FETCH KW_PROP
-%token KW_DISTINCT KW_ALL
+%token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
+%token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
-%token PIPE OR AND LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
+%token PIPE OR AND XOR LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
 %token DOT COLON SEMICOLON L_ARROW R_ARROW AT
 %token ID_PROP TYPE_PROP SRC_ID_PROP DST_ID_PROP RANK_PROP INPUT_REF DST_REF SRC_REF
 
@@ -118,8 +121,8 @@ class GraphScanner;
 %token <strval> STRING VARIABLE LABEL
 
 %type <strval> name_label unreserved_keyword
-%type <expr> expression logic_or_expression logic_and_expression
-%type <expr> relational_expression multiplicative_expression additive_expression
+%type <expr> expression logic_xor_expression logic_or_expression logic_and_expression
+%type <expr> relational_expression multiplicative_expression additive_expression arithmetic_xor_expression
 %type <expr> unary_expression primary_expression equality_expression
 %type <expr> src_ref_expression
 %type <expr> dst_ref_expression
@@ -134,8 +137,11 @@ class GraphScanner;
 %type <step_clause> step_clause
 %type <from_clause> from_clause
 %type <vid_list> vid_list
+%type <over_edge> over_edge
+%type <over_edges> over_edges
 %type <over_clause> over_clause
 %type <where_clause> where_clause
+%type <when_clause> when_clause
 %type <yield_clause> yield_clause
 %type <yield_columns> yield_columns
 %type <yield_column> yield_column
@@ -211,6 +217,7 @@ name_label
 
 unreserved_keyword
      : KW_SPACE              { $$ = new std::string("space"); }
+     | KW_VALUES             { $$ = new std::string("values"); }
      | KW_HOSTS              { $$ = new std::string("hosts"); }
      | KW_SPACES             { $$ = new std::string("spaces"); }
      | KW_FIRSTNAME          { $$ = new std::string("firstname"); }
@@ -348,6 +355,9 @@ unary_expression
     | NOT unary_expression {
         $$ = new UnaryExpression(UnaryExpression::NOT, $2);
     }
+    | KW_NOT unary_expression {
+        $$ = new UnaryExpression(UnaryExpression::NOT, $2);
+    }
     | L_PAREN type_spec R_PAREN unary_expression {
         $$ = new TypeCastingExpression($2, $4);
     }
@@ -362,15 +372,22 @@ type_spec
     | KW_TIMESTAMP { $$ = ColumnType::TIMESTAMP; }
     ;
 
-multiplicative_expression
+arithmetic_xor_expression
     : unary_expression { $$ = $1; }
-    | multiplicative_expression MUL unary_expression {
+    | arithmetic_xor_expression XOR unary_expression {
+        $$ = new ArithmeticExpression($1, ArithmeticExpression::XOR, $3);
+    }
+    ;
+
+multiplicative_expression
+    : arithmetic_xor_expression { $$ = $1; }
+    | multiplicative_expression MUL arithmetic_xor_expression {
         $$ = new ArithmeticExpression($1, ArithmeticExpression::MUL, $3);
     }
-    | multiplicative_expression DIV unary_expression {
+    | multiplicative_expression DIV arithmetic_xor_expression {
         $$ = new ArithmeticExpression($1, ArithmeticExpression::DIV, $3);
     }
-    | multiplicative_expression MOD unary_expression {
+    | multiplicative_expression MOD arithmetic_xor_expression {
         $$ = new ArithmeticExpression($1, ArithmeticExpression::MOD, $3);
     }
     ;
@@ -416,6 +433,9 @@ logic_and_expression
     | logic_and_expression AND equality_expression {
         $$ = new LogicalExpression($1, LogicalExpression::AND, $3);
     }
+    | logic_and_expression KW_AND equality_expression {
+        $$ = new LogicalExpression($1, LogicalExpression::AND, $3);
+    }
     ;
 
 logic_or_expression
@@ -423,10 +443,20 @@ logic_or_expression
     | logic_or_expression OR logic_and_expression {
         $$ = new LogicalExpression($1, LogicalExpression::OR, $3);
     }
+    | logic_or_expression KW_OR logic_and_expression {
+        $$ = new LogicalExpression($1, LogicalExpression::OR, $3);
+    }
+    ;
+
+logic_xor_expression
+    : logic_or_expression { $$ = $1; }
+    | logic_xor_expression KW_XOR logic_or_expression {
+        $$ = new LogicalExpression($1, LogicalExpression::XOR, $3);
+    }
     ;
 
 expression
-    : logic_or_expression { $$ = $1; }
+    : logic_xor_expression { $$ = $1; }
     ;
 
 go_sentence
@@ -437,12 +467,16 @@ go_sentence
         go->setOverClause($4);
         go->setWhereClause($5);
         if ($6 == nullptr) {
-            auto *edge = new std::string(*$4->edge());
-            auto *expr = new EdgeDstIdExpression(edge);
-            auto *alias = new std::string("id");
-            auto *col = new YieldColumn(expr, alias);
             auto *cols = new YieldColumns();
-            cols->addColumn(col);
+            for (auto e : $4->edges()) {
+                if (e->isOverAll()) {
+                    continue;
+                }
+                auto *edge  = new std::string(*e->edge());
+                auto *expr  = new EdgeDstIdExpression(edge);
+                auto *col   = new YieldColumn(expr);
+                cols->addColumn(col);
+            }
             $6 = new YieldClause(cols);
         }
         go->setYieldClause($6);
@@ -506,24 +540,61 @@ vid_ref_expression
     }
     ;
 
+over_edge
+    : name_label {
+        $$ = new OverEdge($1);
+    }
+    | name_label KW_REVERSELY {
+        $$ = new OverEdge($1, nullptr, true);
+    }
+    | name_label KW_AS name_label {
+        $$ = new OverEdge($1, $3);
+    }
+    | name_label KW_AS name_label KW_REVERSELY {
+        $$ = new OverEdge($1, $3, true);
+    }
+    ;
+
+over_edges
+    : over_edge {
+        auto edge = new OverEdges();
+        edge->addEdge($1);
+        $$ = edge;
+    }
+    | over_edges COMMA over_edge {
+        $1->addEdge($3);
+        $$ = $1;
+    }
+    ;
+
 over_clause
-    : KW_OVER name_label {
+    : KW_OVER MUL {
+        auto edges = new OverEdges();
+        auto s = new std::string("*");
+        auto edge = new OverEdge(s, nullptr, false);
+        edges->addEdge(edge);
+        $$ = new OverClause(edges);
+    }
+    | KW_OVER MUL KW_REVERSELY {
+        auto edges = new OverEdges();
+        auto s = new std::string("*");
+        auto edge = new OverEdge(s, nullptr, false);
+        edges->addEdge(edge);
+        $$ = new OverClause(edges);
+    }
+    | KW_OVER over_edges {
         $$ = new OverClause($2);
-    }
-    | KW_OVER name_label KW_REVERSELY {
-        $$ = new OverClause($2, nullptr, true);
-    }
-    | KW_OVER name_label KW_AS name_label {
-        $$ = new OverClause($2, $4);
-    }
-    | KW_OVER name_label KW_AS name_label KW_REVERSELY {
-        $$ = new OverClause($2, $4, true);
     }
     ;
 
 where_clause
     : %empty { $$ = nullptr; }
     | KW_WHERE expression { $$ = new WhereClause($2); }
+    ;
+
+when_clause
+    : %empty { $$ = nullptr; }
+    | KW_WHEN expression { $$ = new WhenClause($2); }
     ;
 
 yield_clause
@@ -653,11 +724,11 @@ edge_key_ref:
     var_ref_expression R_ARROW var_ref_expression AT var_ref_expression {
         $$ = new EdgeKeyRef($1, $3, $5, false);
     }
-	|
+    |
     input_ref_expression R_ARROW input_ref_expression {
         $$ = new EdgeKeyRef($1, $3, nullptr);
     }
-	|
+    |
     var_ref_expression R_ARROW var_ref_expression {
         $$ = new EdgeKeyRef($1, $3, nullptr, false);
     }
@@ -1070,21 +1141,21 @@ edge_row_item
 rank: unary_integer { $$ = $1; };
 
 update_vertex_sentence
-    : KW_UPDATE KW_VERTEX vid KW_SET update_list where_clause yield_clause {
+    : KW_UPDATE KW_VERTEX vid KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateVertexSentence();
         sentence->setVid($3);
         sentence->setUpdateList($5);
-        sentence->setWhereClause($6);
+        sentence->setWhenClause($6);
         sentence->setYieldClause($7);
         $$ = sentence;
     }
-    | KW_UPDATE KW_OR KW_INSERT KW_VERTEX vid KW_SET update_list where_clause yield_clause {
+    | KW_UPSERT KW_VERTEX vid KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateVertexSentence();
         sentence->setInsertable(true);
-        sentence->setVid($5);
-        sentence->setUpdateList($7);
-        sentence->setWhereClause($8);
-        sentence->setYieldClause($9);
+        sentence->setVid($3);
+        sentence->setUpdateList($5);
+        sentence->setWhenClause($6);
+        sentence->setYieldClause($7);
         $$ = sentence;
     }
     ;
@@ -1104,59 +1175,65 @@ update_item
     : name_label ASSIGN expression {
         $$ = new UpdateItem($1, $3);
     }
+    | alias_ref_expression ASSIGN expression {
+        $$ = new UpdateItem($1, $3);
+    }
     ;
 
 update_edge_sentence
-    : KW_UPDATE KW_EDGE vid R_ARROW vid
-      KW_SET update_list where_clause yield_clause {
+    : KW_UPDATE KW_EDGE vid R_ARROW vid KW_OF name_label
+      KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateEdgeSentence();
         sentence->setSrcId($3);
         sentence->setDstId($5);
-        sentence->setUpdateList($7);
-        sentence->setWhereClause($8);
-        sentence->setYieldClause($9);
-        $$ = sentence;
-    }
-    | KW_UPDATE KW_OR KW_INSERT KW_EDGE vid R_ARROW vid
-      KW_SET update_list where_clause yield_clause {
-        auto sentence = new UpdateEdgeSentence();
-        sentence->setInsertable(true);
-        sentence->setSrcId($5);
-        sentence->setDstId($7);
+        sentence->setEdgeType($7);
         sentence->setUpdateList($9);
-        sentence->setWhereClause($10);
+        sentence->setWhenClause($10);
         sentence->setYieldClause($11);
         $$ = sentence;
     }
-    | KW_UPDATE KW_EDGE vid R_ARROW vid AT rank
-      KW_SET update_list where_clause yield_clause {
+    | KW_UPSERT KW_EDGE vid R_ARROW vid KW_OF name_label
+      KW_SET update_list when_clause yield_clause {
+        auto sentence = new UpdateEdgeSentence();
+        sentence->setInsertable(true);
+        sentence->setSrcId($3);
+        sentence->setDstId($5);
+        sentence->setEdgeType($7);
+        sentence->setUpdateList($9);
+        sentence->setWhenClause($10);
+        sentence->setYieldClause($11);
+        $$ = sentence;
+    }
+    | KW_UPDATE KW_EDGE vid R_ARROW vid AT rank KW_OF name_label
+      KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateEdgeSentence();
         sentence->setSrcId($3);
         sentence->setDstId($5);
         sentence->setRank($7);
-        sentence->setUpdateList($9);
-        sentence->setWhereClause($10);
-        sentence->setYieldClause($11);
+        sentence->setEdgeType($9);
+        sentence->setUpdateList($11);
+        sentence->setWhenClause($12);
+        sentence->setYieldClause($13);
         $$ = sentence;
     }
-    | KW_UPDATE KW_OR KW_INSERT KW_EDGE vid R_ARROW vid AT rank KW_SET
-      update_list where_clause yield_clause {
+    | KW_UPSERT KW_EDGE vid R_ARROW vid AT rank KW_OF name_label
+      KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateEdgeSentence();
         sentence->setInsertable(true);
-        sentence->setSrcId($5);
-        sentence->setDstId($7);
-        sentence->setRank($9);
+        sentence->setSrcId($3);
+        sentence->setDstId($5);
+        sentence->setRank($7);
+        sentence->setEdgeType($9);
         sentence->setUpdateList($11);
-        sentence->setWhereClause($12);
+        sentence->setWhenClause($12);
         sentence->setYieldClause($13);
         $$ = sentence;
     }
     ;
 
 delete_vertex_sentence
-    : KW_DELETE KW_VERTEX vid_list where_clause {
+    : KW_DELETE KW_VERTEX vid {
         auto sentence = new DeleteVertexSentence($3);
-        sentence->setWhereClause($4);
         $$ = sentence;
     }
     ;

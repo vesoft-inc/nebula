@@ -10,6 +10,21 @@
 
 namespace nebula {
 
+TEST(Cord, Empty) {
+    {
+        Cord cord;
+        auto empty = cord.str();
+        ASSERT_TRUE(empty.empty()) << "size: " << empty.size();
+    }
+    {
+        Cord cord;
+        std::string empty;
+        cord.appendTo(empty);
+        ASSERT_TRUE(empty.empty()) << "size: " << empty.size();
+    }
+}
+
+
 TEST(Cord, write) {
     Cord cord;
 

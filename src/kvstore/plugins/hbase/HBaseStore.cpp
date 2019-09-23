@@ -105,7 +105,7 @@ std::string HBaseStore::encode(GraphSpaceID spaceId,
                     break;
             }
         } catch (const std::exception& ex) {
-            LOG(ERROR) << "encoding failed: " << fieldName << ":" << value;
+            LOG(ERROR) << "encoding failed: " << ex.what();
             return "";
         }
     }

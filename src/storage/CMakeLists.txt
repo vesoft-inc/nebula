@@ -4,10 +4,15 @@ nebula_add_library(
     QueryBaseProcessor.cpp
     AddVerticesProcessor.cpp
     AddEdgesProcessor.cpp
+    DeleteEdgesProcessor.cpp
+    DeleteVertexProcessor.cpp
     QueryBoundProcessor.cpp
     QueryVertexPropsProcessor.cpp
     QueryEdgePropsProcessor.cpp
     QueryStatsProcessor.cpp
+    QueryEdgeKeysProcessor.cpp
+    UpdateVertexProcessor.cpp
+    UpdateEdgeProcessor.cpp
 )
 
 nebula_add_library(
@@ -28,4 +33,4 @@ nebula_add_library(
     StorageServer.cpp
 )
 
-add_subdirectory(test)
+nebula_add_subdirectory(test)
