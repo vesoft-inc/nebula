@@ -95,13 +95,13 @@ StorageServiceHandler::future_deleteEdges(const cpp2::DeleteEdgesRequest& req) {
 
 folly::Future<cpp2::UpdateResponse>
 StorageServiceHandler::future_updateVertex(const cpp2::UpdateVertexRequest& req) {
-    auto* processor = UpdateVertexProcessor::instance(kvstore_, schemaMan_);
+    auto* processor = UpdateVertexProcessor::instance(kvstore_, schemaMan_, &updateVertexQpsStat_);
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::UpdateResponse>
 StorageServiceHandler::future_updateEdge(const cpp2::UpdateEdgeRequest& req) {
-    auto* processor = UpdateEdgeProcessor::instance(kvstore_, schemaMan_);
+    auto* processor = UpdateEdgeProcessor::instance(kvstore_, schemaMan_, &updateEdgeQpsStat_);
     RETURN_FUTURE(processor);
 }
 

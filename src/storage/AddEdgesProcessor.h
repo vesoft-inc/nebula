@@ -16,7 +16,8 @@ namespace storage {
 class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static AddEdgesProcessor* instance(kvstore::KVStore* kvstore,
-                                       meta::SchemaManager* schemaMan, StorageStats* stats) {
+                                       meta::SchemaManager* schemaMan,
+                                       StorageStats* stats) {
         return new AddEdgesProcessor(kvstore, schemaMan, stats);
     }
 

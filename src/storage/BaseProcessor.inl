@@ -138,7 +138,6 @@ void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
             }
             this->callingNum_--;
             if (this->callingNum_ == 0) {
-                // qwer: set_failed_codes?
                 finished = true;
             }
         }

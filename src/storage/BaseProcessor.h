@@ -126,6 +126,7 @@ protected:
 protected:
     kvstore::KVStore*                               kvstore_ = nullptr;
     meta::SchemaManager*                            schemaMan_ = nullptr;
+    StorageStats*                                   stats_ = nullptr;
     RESP                                            resp_;
     folly::Promise<RESP>                            promise_;
     cpp2::ResponseCommon                            result_;

@@ -233,6 +233,9 @@ private:
                     [this] (const auto& tagData) {
                         return tagData.tag_id == tagId_;
                     });
+                if (iter == vdata.tag_data.end()) {
+                    return false;
+                }
                 auto tagReader = RowReader::getRowReader(iter->data, tagProvider);
                 auto ret = RowReader::getPropByName(tagReader.get(), propName_);
                 CHECK(ok(ret));

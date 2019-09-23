@@ -35,6 +35,8 @@ public:
         addVertexQpsStat_ = StorageStats("add_vertex");
         addEdgeQpsStat_ = StorageStats("add_edge");
         delVertexQpsStat_ = StorageStats("del_vertex");
+        updateVertexQpsStat_ = StorageStats("update_vertex");
+        updateEdgeQpsStat_ = StorageStats("update_edge");
     }
 
     folly::Future<cpp2::QueryResponse>
@@ -103,11 +105,9 @@ public:
 
 private:
     kvstore::KVStore* kvstore_ = nullptr;
-<<<<<<< HEAD
     meta::SchemaManager* schemaMan_ = nullptr;
     meta::MetaClient* metaClient_ = nullptr;
-=======
-    meta::SchemaManager* schemaMan_;
+
     StorageStats getBoundQpsStat_;
     StorageStats boundStatsQpsStat_;
     StorageStats vertexPropsQpsStat_;
@@ -115,7 +115,8 @@ private:
     StorageStats addVertexQpsStat_;
     StorageStats addEdgeQpsStat_;
     StorageStats delVertexQpsStat_;
->>>>>>> e90ebb6... integrity tool
+    StorageStats updateVertexQpsStat_;
+    StorageStats updateEdgeQpsStat_;
 };
 
 }  // namespace storage
