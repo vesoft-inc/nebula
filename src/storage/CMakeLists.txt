@@ -4,16 +4,23 @@ nebula_add_library(
     QueryBaseProcessor.cpp
     AddVerticesProcessor.cpp
     AddEdgesProcessor.cpp
+    DeleteEdgesProcessor.cpp
+    DeleteVertexProcessor.cpp
     QueryBoundProcessor.cpp
     QueryVertexPropsProcessor.cpp
     QueryEdgePropsProcessor.cpp
     QueryStatsProcessor.cpp
+    QueryEdgeKeysProcessor.cpp
+    UpdateVertexProcessor.cpp
+    UpdateEdgeProcessor.cpp
 )
 
 nebula_add_library(
     storage_http_handler OBJECT
+    StorageHttpIngestHandler.cpp
     StorageHttpStatusHandler.cpp
     StorageHttpDownloadHandler.cpp
+    StorageHttpAdminHandler.cpp
 )
 
 nebula_add_library(
@@ -21,4 +28,9 @@ nebula_add_library(
     client/StorageClient.cpp
 )
 
-add_subdirectory(test)
+nebula_add_library(
+    storage_server OBJECT
+    StorageServer.cpp
+)
+
+nebula_add_subdirectory(test)

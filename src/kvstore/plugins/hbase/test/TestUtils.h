@@ -49,8 +49,7 @@ private:
             column.type.type = nebula::cpp2::SupportedType::STRING;
             schema.columns.emplace_back(std::move(column));
         }
-        return std::shared_ptr<meta::SchemaProviderIf>(
-            new ResultSchemaProvider(std::move(schema)));
+        return std::make_shared<ResultSchemaProvider>(std::move(schema));
     }
 
 
@@ -72,11 +71,9 @@ private:
             column.type.type = nebula::cpp2::SupportedType::STRING;
             schema.columns.emplace_back(std::move(column));
         }
-        return std::shared_ptr<meta::SchemaProviderIf>(
-            new ResultSchemaProvider(std::move(schema)));
+        return std::make_shared<ResultSchemaProvider>(std::move(schema));
     }
 };
 
 }  // namespace kvstore
 }  // namespace nebula
-

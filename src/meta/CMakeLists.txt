@@ -41,10 +41,16 @@ nebula_add_library(
     processors/admin/BalancePlan.cpp
     processors/admin/BalanceTask.cpp
     processors/admin/AdminClient.cpp
+    processors/admin/LeaderBalanceProcessor.cpp
+    processors/configMan/RegConfigProcessor.cpp
+    processors/configMan/GetConfigProcessor.cpp
+    processors/configMan/ListConfigsProcessor.cpp
+    processors/configMan/SetConfigProcessor.cpp
 )
 
 nebula_add_library(
     meta_http_handler OBJECT
+    MetaHttpIngestHandler.cpp
     MetaHttpDownloadHandler.cpp
     MetaHttpStatusHandler.cpp
 )
@@ -54,4 +60,19 @@ nebula_add_library(
     client/MetaClient.cpp
 )
 
-add_subdirectory(test)
+nebula_add_library(
+    gflags_man_obj OBJECT
+    GflagsManager.cpp
+)
+
+nebula_add_library(
+    meta_gflags_man_obj OBJECT
+    ClientBasedGflagsManager.cpp
+)
+
+nebula_add_library(
+    kv_gflags_man_obj OBJECT
+    KVBasedGflagsManager.cpp
+)
+
+nebula_add_subdirectory(test)

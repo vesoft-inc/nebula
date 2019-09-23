@@ -100,11 +100,6 @@ int main(int argc, char *argv[]) {
         localIP = std::move(result).value();
     }
 
-    if (FLAGS_num_netio_threads <= 0) {
-        LOG(WARNING) << "Number netio threads should be greater than zero";
-        return EXIT_FAILURE;
-    }
-
     LOG(INFO) << "Starting Graph HTTP Service";
     // http://127.0.0.1:XXXX/status is equivalent to http://127.0.0.1:XXXX
     nebula::WebService::registerHandler("/status", [] {
@@ -115,18 +110,28 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    if (FLAGS_num_netio_threads <= 0) {
+        LOG(WARNING) << "Number of networking IO threads should be greater than zero";
+        return EXIT_FAILURE;
+    }
+    auto threadFactory = std::make_shared<folly::NamedThreadFactory>("graph-netio");
+    auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(
+                            FLAGS_num_netio_threads, std::move(threadFactory));
     gServer = std::make_unique<apache::thrift::ThriftServer>();
-    gServer->getIOThreadPool()->setNumThreads(FLAGS_num_netio_threads);
-    auto interface = std::make_shared<GraphService>(gServer->getIOThreadPool());
+    gServer->setIOThreadPool(ioThreadPool);
+
+    auto interface = std::make_shared<GraphService>();
+    status = interface->init(ioThreadPool);
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
+    }
 
     gServer->setInterface(std::move(interface));
     gServer->setAddress(localIP, FLAGS_port);
     gServer->setReusePort(FLAGS_reuse_port);
     gServer->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
-
-    // TODO(dutor) This only take effects on NORMAL priority threads
     gServer->setNumCPUWorkerThreads(FLAGS_num_worker_threads);
-
     gServer->setCPUWorkerThreadName("executor");
     gServer->setNumAcceptThreads(FLAGS_num_accept_threads);
     gServer->setListenBacklog(FLAGS_listen_backlog);
@@ -158,7 +163,7 @@ int main(int argc, char *argv[]) {
 
 Status setupSignalHandler() {
     return nebula::SignalHandler::install(
-        {SIGINT, SIGTERM}, 
+        {SIGINT, SIGTERM},
         [](nebula::SignalHandler::GeneralSignalInfo *info) {
             signalHandler(info->sig());
         });

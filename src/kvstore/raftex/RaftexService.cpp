@@ -19,6 +19,7 @@ namespace raftex {
  ******************************************************/
 std::shared_ptr<RaftexService> RaftexService::createService(
         std::shared_ptr<folly::IOThreadPoolExecutor> pool,
+        std::shared_ptr<folly::Executor> workers,
         uint16_t port) {
     auto svc = std::shared_ptr<RaftexService>(new RaftexService());
     CHECK(svc != nullptr) << "Failed to create a raft service";
@@ -27,7 +28,7 @@ std::shared_ptr<RaftexService> RaftexService::createService(
     CHECK(svc->server_ != nullptr) << "Failed to create a thrift server";
     svc->server_->setInterface(svc);
 
-    svc->initThriftServer(pool, port);
+    svc->initThriftServer(pool, workers, port);
     return svc;
 }
 
@@ -59,13 +60,23 @@ void RaftexService::waitUntilReady() {
 
 
 void RaftexService::initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor> pool,
+                                     std::shared_ptr<folly::Executor> workers,
                                      uint16_t port) {
     LOG(INFO) << "Init thrift server for raft service.";
     server_->setPort(port);
+    server_->setIdleTimeout(std::chrono::seconds(0));
+    server_->setReusePort(true);
     if (pool != nullptr) {
         server_->setIOThreadPool(pool);
     }
+    if (workers != nullptr) {
+        server_->setThreadManager(
+                std::dynamic_pointer_cast<
+                        apache::thrift::concurrency::ThreadManager>(workers));
+    }
+    server_->setStopWorkersOnStopListening(false);
 }
+
 
 
 bool RaftexService::setup() {
@@ -110,6 +121,9 @@ RaftexService::getIOThreadPool() const {
     return server_->getIOThreadPool();
 }
 
+std::shared_ptr<folly::Executor> RaftexService::getThreadManager() {
+    return server_->getThreadManager();
+}
 
 void RaftexService::stop() {
     if (status_.load() != STATUS_RUNNING) {
@@ -133,11 +147,10 @@ void RaftexService::stop() {
 void RaftexService::waitUntilStop() {
     if (serverThread_) {
         serverThread_->join();
-
         serverThread_.reset();
         server_.reset();
         LOG(INFO) << "Server thread has stopped. Service on port "
-                << serverPort_ << " is ready to be destroyed";
+                  << serverPort_ << " is ready to be destroyed";
     }
 }
 
@@ -201,6 +214,18 @@ void RaftexService::appendLog(
     part->processAppendLogRequest(req, resp);
 }
 
+void RaftexService::sendSnapshot(
+        cpp2::SendSnapshotResponse& resp,
+        const cpp2::SendSnapshotRequest& req) {
+    auto part = findPart(req.get_space(), req.get_part());
+    if (!part) {
+        // Not found
+        resp.set_error_code(cpp2::ErrorCode::E_UNKNOWN_PART);
+        return;
+    }
+
+    part->processSendSnapshotRequest(req, resp);
+}
 }  // namespace raftex
 }  // namespace nebula
 

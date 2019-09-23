@@ -67,13 +67,18 @@ public:
     SchemaVer getNewestEdgeSchemaVer(folly::StringPiece spaceName,
                                      folly::StringPiece typeName) override;
 
-    // This interface is disabled
     StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece spaceName) override;
 
     StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
     // This interface is disabled
     StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
+
+    // This interface is disabled
+    StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) override;
+
+    // This interface is disabled
+    StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) override;
 
     void init(nebula::meta::MetaClient *client = nullptr) override {
         UNUSED(client);
@@ -91,10 +96,13 @@ protected:
                        // version -> schema
                        std::map<SchemaVer, std::shared_ptr<const nebula::meta::SchemaProviderIf>>>
         edgeSchemas_;
+
+    folly::RWSpinLock spaceLock_;
+    std::set<GraphSpaceID> spaces_;
+    // Key: spaceId + tagName,  Val: tagId
+    std::unordered_map<std::string, TagID> tagNameToId_;
 };
 
 }  // namespace storage
 }  // namespace nebula
 #endif  // META_ADHOCSCHEMAMANAGER_H_
-
-

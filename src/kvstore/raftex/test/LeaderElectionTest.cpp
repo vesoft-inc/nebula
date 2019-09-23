@@ -11,7 +11,6 @@
 #include "fs/FileUtils.h"
 #include "thread/GenericThreadPool.h"
 #include "network/NetworkUtils.h"
-#include "kvstore/wal/BufferFlusher.h"
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/raftex/test/RaftexTestBase.h"
 #include "kvstore/raftex/test/TestShard.h"
@@ -95,9 +94,10 @@ TEST(LeaderElection, LeaderCrash) {
         1,  // Shard ID
         allHosts[idx],
         wals[3],
-        flusher.get(),
         services[idx]->getIOThreadPool(),
         workers,
+        services[idx]->getThreadManager(),
+        nullptr,
         std::bind(&onLeadershipLost,
                   std::ref(copies),
                   std::ref(leader),
@@ -132,10 +132,6 @@ int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
-
-    // `flusher' is extern-declared in RaftexTestBase.h, defined in RaftexTestBase.cpp
-    using nebula::raftex::flusher;
-    flusher = std::make_unique<nebula::wal::BufferFlusher>();
 
     return RUN_ALL_TESTS();
 }

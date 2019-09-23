@@ -6,21 +6,17 @@
 
 #include "base/Base.h"
 #include "kvstore/raftex/test/RaftexTestBase.h"
-#include "kvstore/wal/BufferFlusher.h"
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/raftex/test/TestShard.h"
 #include "thrift/ThriftClientManager.h"
 
-DECLARE_uint32(heartbeat_interval);
+DECLARE_uint32(raft_heartbeat_interval_secs);
 
 namespace nebula {
 namespace raftex {
 
 using network::NetworkUtils;
 using fs::FileUtils;
-using wal::BufferFlusher;
-
-std::unique_ptr<BufferFlusher> flusher;
 
 std::mutex leaderMutex;
 std::condition_variable leaderCV;
@@ -173,7 +169,7 @@ void setupRaft(
 
     // Set up services
     for (int i = 0; i < numCopies; ++i) {
-        services.emplace_back(RaftexService::createService(nullptr));
+        services.emplace_back(RaftexService::createService(nullptr, nullptr));
         if (!services.back()->start())
             return;
         uint16_t port = services.back()->getServerPort();
@@ -183,6 +179,7 @@ void setupRaft(
     if (isLearner.empty()) {
         isLearner.resize(allHosts.size(), false);
     }
+    auto sps = snapshots(services);
     // Create one copy of the shard for each service
     for (size_t i = 0; i < services.size(); i++) {
         copies.emplace_back(std::make_shared<test::TestShard>(
@@ -191,9 +188,10 @@ void setupRaft(
             1,  // Shard ID
             allHosts[i],
             wals[i],
-            flusher.get(),
             services[i]->getIOThreadPool(),
             workers,
+            services[i]->getThreadManager(),
+            sps[i],
             std::bind(&onLeadershipLost,
                       std::ref(copies),
                       std::ref(leader),
@@ -237,16 +235,22 @@ void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,
     }
 }
 
-void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
-                     std::shared_ptr<test::TestShard>& leader) {
+int32_t checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
+                        std::shared_ptr<test::TestShard>& leader) {
     std::lock_guard<std::mutex> lock(leaderMutex);
-
-    ASSERT_FALSE(!leader);
+    CHECK(!!leader);
+    int32_t leaderIndex = -1;
+    int i = 0;
     for (auto& c : copies) {
-        if (c != nullptr && leader != c && !c->isLearner() && c->isRunning_ == true) {
-            ASSERT_EQ(leader->address(), c->leader());
+        if (c != nullptr && leader != c && !c->isLearner() && c->isRunning_) {
+            EXPECT_EQ(leader->address(), c->leader());
+        } else if (leader == c) {
+            leaderIndex = i;
         }
+        i++;
     }
+    CHECK_GE(leaderIndex, 0);
+    return leaderIndex;
 }
 
 /**
@@ -290,7 +294,7 @@ void checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
                     size_t start, size_t end,
                     std::vector<std::string>& msgs) {
     // Sleep a while to make sure the last log has been committed on followers
-    sleep(FLAGS_heartbeat_interval);
+    sleep(FLAGS_raft_heartbeat_interval_secs);
 
     // Check every copy
     for (auto& c : copies) {
@@ -330,6 +334,16 @@ void rebootOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
     copies[index]->start(getPeers(allHosts, allHosts[index]));
     copies[index]->isRunning_ = true;
     LOG(INFO) << "copies " << index << " reboot";
+}
+
+std::vector<std::shared_ptr<SnapshotManager>> snapshots(
+                    const std::vector<std::shared_ptr<RaftexService>>& services) {
+    std::vector<std::shared_ptr<SnapshotManager>> snapshots;
+    for (auto& service : services) {
+        std::shared_ptr<SnapshotManager> snapshot(new test::SnapshotManagerImpl(service.get()));
+        snapshots.emplace_back(std::move(snapshot));
+    }
+    return snapshots;
 }
 
 }  // namespace raftex

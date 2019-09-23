@@ -25,6 +25,7 @@ namespace storage {
 TEST(StorageClientTest, VerticesInterfacesTest) {
     FLAGS_load_data_interval_secs = 1;
     FLAGS_heartbeat_interval_secs = 1;
+    const nebula::ClusterID kClusterId = 10;
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
     GraphSpaceID spaceId = 0;
     IPv4 localIp;
@@ -34,7 +35,9 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
     LOG(INFO) << "Start meta server....";
     std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
-    auto metaServerContext = meta::TestUtils::mockMetaServer(localMetaPort, metaPath.c_str());
+    auto metaServerContext = meta::TestUtils::mockMetaServer(localMetaPort,
+                                                             metaPath.c_str(),
+                                                             kClusterId);
     localMetaPort =  metaServerContext->port_;
 
     LOG(INFO) << "Create meta client...";
@@ -46,8 +49,11 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
     auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
     auto& localHost = hostRet.value();
-    auto mClient
-        = std::make_unique<meta::MetaClient>(threadPool, std::move(addrs), localHost, true);
+    auto mClient = std::make_unique<meta::MetaClient>(threadPool,
+                                                      std::move(addrs),
+                                                      localHost,
+                                                      kClusterId,
+                                                      true);
     LOG(INFO) << "Add hosts and create space....";
     auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
     ASSERT_TRUE(r.ok());
@@ -96,7 +102,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     {
         LOG(INFO) << "Prepare vertices data...";
         std::vector<storage::cpp2::Vertex> vertices;
-        for (int32_t vId = 0; vId < 10; vId++) {
+        for (int64_t vId = 0; vId < 10; vId++) {
             cpp2::Vertex v;
             v.set_id(vId);
             decltype(v.tags) tags;
@@ -136,10 +142,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             vIds.emplace_back(vId);
         }
         for (int i = 0; i < 3; i++) {
-            retCols.emplace_back(
-                TestUtils::propDef(cpp2::PropOwner::SOURCE,
-                                   folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2),
-                                   3001 + i*2));
+            retCols.emplace_back(TestUtils::vetexPropDef(
+                folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2), 3001 + i * 2));
         }
         auto f = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
         auto resp = std::move(f).get();
@@ -147,9 +151,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             if (!resp.succeeded()) {
                 std::stringstream ss;
                 for (auto& p : resp.failedParts()) {
-                    ss << "Part " << p.first
-                       << ": " << static_cast<int32_t>(p.second)
-                       << "; ";
+                    ss << "Part " << p.first << ": " << static_cast<int32_t>(p.second) << "; ";
                 }
                 VLOG(2) << "Failed partitions:: " << ss.str();
             }
@@ -160,23 +162,24 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         ASSERT_EQ(1, results.size());
         EXPECT_EQ(0, results[0].result.failed_codes.size());
 
-        EXPECT_EQ(3, results[0].vertex_schema.columns.size());
-        auto tagProvider = std::make_shared<ResultSchemaProvider>(results[0].vertex_schema);
         EXPECT_EQ(10, results[0].vertices.size());
+
+        auto* vschema = results[0].get_vertex_schema();
+        DCHECK(vschema != nullptr);
         for (auto& vp : results[0].vertices) {
-            auto tagReader = RowReader::getRowReader(vp.vertex_data, tagProvider);
-            EXPECT_EQ(3, tagReader->numFields());
-            int64_t col1;
-            EXPECT_EQ(ResultType::SUCCEEDED, tagReader->getInt("tag_3001_col_0", col1));
-            EXPECT_EQ(col1, 0);
+            auto size = std::accumulate(vp.tag_data.cbegin(), vp.tag_data.cend(), 0,
+                                        [vschema](int acc, auto& td) {
+                                            auto it = vschema->find(td.tag_id);
+                                            DCHECK(it != vschema->end());
+                                            return acc + it->second.columns.size();
+                                        });
 
-            int64_t col2;
-            EXPECT_EQ(ResultType::SUCCEEDED, tagReader->getInt("tag_3003_col_2", col2));
-            EXPECT_EQ(col2, 2);
+            EXPECT_EQ(3, size);
 
-            folly::StringPiece col3;
-            EXPECT_EQ(ResultType::SUCCEEDED, tagReader->getString("tag_3005_col_4", col3));
-            EXPECT_EQ(folly::stringPrintf("tag_string_col_4"), col3);
+            checkTagData<int64_t>(vp.tag_data, 3001, "tag_3001_col_0", vschema, 0);
+            checkTagData<int64_t>(vp.tag_data, 3003, "tag_3003_col_2", vschema, 2);
+            checkTagData<std::string>(vp.tag_data, 3005, "tag_3005_col_4", vschema,
+                                      folly::stringPrintf("tag_string_col_4"));
         }
     }
 
@@ -184,7 +187,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     {
         LOG(INFO) << "Prepare edges data...";
         std::vector<storage::cpp2::Edge> edges;
-        for (uint64_t srcId = 0; srcId < 10; srcId++) {
+        for (int64_t srcId = 0; srcId < 10; srcId++) {
             cpp2::Edge edge;
             // Set the edge key.
             decltype(edge.key) edgeKey;
@@ -213,7 +216,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     {
         std::vector<storage::cpp2::EdgeKey> edgeKeys;
         std::vector<cpp2::PropDef> retCols;
-        for (uint64_t srcId = 0; srcId < 10; srcId++) {
+        for (int64_t srcId = 0; srcId < 10; srcId++) {
             // Set the edge key.
             cpp2::EdgeKey edgeKey;
             edgeKey.set_src(srcId);
@@ -223,9 +226,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             edgeKeys.emplace_back(std::move(edgeKey));
         }
         for (int i = 0; i < 20; i++) {
-            retCols.emplace_back(
-                TestUtils::propDef(cpp2::PropOwner::EDGE,
-                                   folly::stringPrintf("col_%d", i)));
+            retCols.emplace_back(TestUtils::edgePropDef(folly::stringPrintf("col_%d", i), 101));
         }
         auto f = client->getEdgeProps(spaceId, std::move(edgeKeys), std::move(retCols));
         auto resp = std::move(f).get();
@@ -264,6 +265,70 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         }
         EXPECT_EQ(it, rsReader.end());
     }
+    {
+        for (int64_t srcId = 0; srcId < 10; srcId++) {
+            std::vector<cpp2::EdgeKey> edgeKeys;
+            // Get all edgeKeys of a vertex
+            {
+                auto f = client->getEdgeKeys(spaceId, srcId);
+                auto resp = std::move(f).get();
+                ASSERT_TRUE(resp.ok());
+                auto edgeKeyResp =  std::move(resp).value();
+                auto& result = edgeKeyResp.get_result();
+                ASSERT_EQ(0, result.get_failed_codes().size());
+                edgeKeys = *(edgeKeyResp.get_edge_keys());
+
+                // Check edgeKeys
+                CHECK_EQ(1, edgeKeys.size());
+                auto& edge = edgeKeys[0];
+                CHECK_EQ(srcId, edge.get_src());
+                CHECK_EQ(101, edge.get_edge_type());
+                CHECK_EQ(srcId*100 + 3, edge.get_ranking());
+                CHECK_EQ(srcId*100 + 2, edge.get_dst());
+            }
+            // Delete all edges of a vertex
+            {
+                auto f = client->deleteEdges(spaceId, edgeKeys);
+                auto resp = std::move(f).get();
+                ASSERT_TRUE(resp.succeeded());
+
+                // Check that edges have been successfully deleted
+                auto cf = client->getEdgeKeys(spaceId, srcId);
+                auto cresp = std::move(cf).get();
+                ASSERT_TRUE(cresp.ok());
+                auto edgeKeyResp =  std::move(cresp).value();
+                auto& result = edgeKeyResp.get_result();
+                ASSERT_EQ(0, result.get_failed_codes().size());
+                ASSERT_EQ(0, edgeKeyResp.get_edge_keys()->size());
+            }
+            // Delete a vertex
+            {
+                auto f = client->deleteVertex(spaceId, srcId);
+                auto resp = std::move(f).get();
+                ASSERT_TRUE(resp.ok());
+                auto  execResp = std::move(resp).value();
+                auto& result = execResp.get_result();
+                ASSERT_EQ(0, result.get_failed_codes().size());
+
+                // Check that this vertex has been successfully deleted
+                std::vector<VertexID> vIds{srcId};
+                std::vector<cpp2::PropDef> retCols;
+                retCols.emplace_back(
+                    TestUtils::vetexPropDef(folly::stringPrintf("tag_%d_col_%d", 3001, 0), 3001));
+                auto cf = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
+                auto cresp = std::move(cf).get();
+                ASSERT_TRUE(cresp.succeeded());
+                auto& results = cresp.responses();
+                ASSERT_EQ(1, results.size());
+                EXPECT_EQ(0, results[0].result.failed_codes.size());
+                // TODO bug: the results[0].vertices.size should be equal 0
+                EXPECT_EQ(1, results[0].vertices.size());
+                EXPECT_EQ(0, results[0].vertices[0].tag_data.size());
+            }
+        }
+    }
+    LOG(INFO) << "Stop meta client";
+    mClient->stop();
     LOG(INFO) << "Stop data server...";
     sc.reset();
     LOG(INFO) << "Stop data client...";
@@ -298,7 +363,7 @@ public:
     }
 
     folly::Future<cpp2::QueryResponse>
-    future_getOutBound(const cpp2::GetNeighborsRequest& req) override {
+    future_getBound(const cpp2::GetNeighborsRequest& req) override {
         RETURN_LEADER_CHANGED(req, leader_);
     }
 
@@ -342,7 +407,7 @@ TEST(StorageClientTest, LeaderChangeTest) {
     tsc.parts_.emplace(1, std::move(pm));
 
     folly::Baton<true, std::atomic> baton;
-    tsc.getNeighbors(0, {1, 2, 3}, 0, true, "", {}).via(threadPool.get()).then([&] {
+    tsc.getNeighbors(0, {1, 2, 3}, {0}, "", {}).via(threadPool.get()).then([&] {
         baton.post();
     });
     baton.wait();
@@ -359,5 +424,3 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
-

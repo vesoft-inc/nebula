@@ -10,18 +10,22 @@ namespace nebula {
 namespace cpp {
 
 class NonCopyable {
-public:
+protected:
     NonCopyable() {}
     NonCopyable(const NonCopyable&) = delete;
     NonCopyable& operator=(const NonCopyable&) = delete;
 };
 
+static_assert(sizeof(NonCopyable) == 1UL, "Unexpected sizeof(NonCopyable)!");
+
 class NonMovable {
-public:
+protected:
     NonMovable() {}
     NonMovable(NonMovable&&) = delete;
     NonMovable& operator=(NonMovable&&) = delete;
 };
+
+static_assert(sizeof(NonMovable) == 1UL, "Unexpected sizeof(NonMovable)!");
 
 }   // namespace cpp
 }   // namespace nebula

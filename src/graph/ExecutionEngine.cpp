@@ -32,11 +32,15 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
     // load data try 3 time
     bool loadDataOk = metaClient_->waitForMetadReady(3);
     if (!loadDataOk) {
-        return Status::Error("ExecutionEngine::init loadData by thread error!");
+        // Resort to retrying in the background
+        LOG(WARNING) << "Failed to synchronously wait for meta service ready";
     }
 
     schemaManager_ = meta::SchemaManager::create();
     schemaManager_->init(metaClient_.get());
+
+    gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(metaClient_.get());
+
     storage_ = std::make_unique<storage::StorageClient>(ioExecutor, metaClient_.get());
     return Status::OK();
 }
@@ -44,6 +48,7 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
 void ExecutionEngine::execute(RequestContextPtr rctx) {
     auto ectx = std::make_unique<ExecutionContext>(std::move(rctx),
                                                    schemaManager_.get(),
+                                                   gflagsManager_.get(),
                                                    storage_.get(),
                                                    metaClient_.get());
     // TODO(dutor) add support to plan cache

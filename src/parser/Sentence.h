@@ -33,7 +33,9 @@ public:
         kDropTag,
         kDropEdge,
         kInsertVertex,
+        kUpdateVertex,
         kInsertEdge,
+        kUpdateEdge,
         kShow,
         kDeleteVertex,
         kDeleteEdge,
@@ -53,6 +55,10 @@ public:
         kDownload,
         kIngest,
         kOrderBy,
+        kConfig,
+        kFetchVertices,
+        kFetchEdges,
+        kBalance,
     };
 
     Kind kind() const {

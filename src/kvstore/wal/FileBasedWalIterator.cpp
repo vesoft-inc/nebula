@@ -25,17 +25,23 @@ FileBasedWalIterator::FileBasedWalIterator(
     }
 
     if (currId_ > lastId_) {
+        LOG(ERROR) << wal_->idStr_ << "The log " << currId_
+                   << " is out of range, the lastLogId is " << lastId_;
         return;
     }
 
     if (startId < wal_->firstLogId()) {
-        LOG(ERROR) << "The given log id " << startId
-                   << " is out of the range";
+        LOG(ERROR) << wal_->idStr_ << "The given log id " << startId
+                   << " is out of the range, the wal firstLogId is " << wal_->firstLogId();
         currId_ = lastId_ + 1;
         return;
     } else {
         // Pick all buffers that match the range [currId_, lastId_]
         wal_->accessAllBuffers([this] (BufferPtr buffer) {
+            if (buffer->empty()) {
+                // Skip th empty one.
+                return true;
+            }
             if (lastId_ >= buffer->firstLogId()) {
                 buffers_.push_front(buffer);
                 firstIdInBuffer_ = buffer->firstLogId();
@@ -55,20 +61,22 @@ FileBasedWalIterator::FileBasedWalIterator(
     if (firstIdInBuffer_ > currId_) {
         // We need to read from the WAL files
         wal_->accessAllWalInfo([this] (WalFileInfoPtr info) {
-            if (lastId_ >= info->firstId()) {
-                int fd = open(info->path(), O_RDONLY);
-                if (fd < 0) {
-                    LOG(ERROR) << "Failed to open wal file \""
-                               << info->path()
-                               << "\" (" << errno << "): "
-                               << strerror(errno);
-                    currId_ = lastId_ + 1;
-                    return false;
-                }
-                fds_.push_front(fd);
-                idRanges_.push_front(
-                    std::make_pair(info->firstId(), info->lastId()));
+            if (info->firstId() >= firstIdInBuffer_) {
+                // Skip this file
+                return true;
             }
+            int fd = open(info->path(), O_RDONLY);
+            if (fd < 0) {
+                LOG(ERROR) << "Failed to open wal file \""
+                           << info->path()
+                           << "\" (" << errno << "): "
+                           << strerror(errno);
+                currId_ = lastId_ + 1;
+                return false;
+            }
+            fds_.push_front(fd);
+            idRanges_.push_front(std::make_pair(info->firstId(), info->lastId()));
+
             if (info->firstId() <= currId_) {
                 // Go no further
                 return false;
@@ -168,27 +176,33 @@ LogIterator& FileBasedWalIterator::operator++() {
                         + sizeof(ClusterID);
         }
 
-        LogID logId;
-        int fd = fds_.front();
-        // Read the logID
-        CHECK_EQ(pread(fd,
-                       reinterpret_cast<char*>(&logId),
-                       sizeof(LogID),
-                       currPos_),
-                 static_cast<ssize_t>(sizeof(LogID)));
-        CHECK_EQ(currId_, logId);
-        // Read the termID
-        CHECK_EQ(pread(fd,
-                       reinterpret_cast<char*>(&currTerm_),
-                       sizeof(TermID),
-                       currPos_ + sizeof(LogID)),
-                 static_cast<ssize_t>(sizeof(TermID)));
-        // Read the log length
-        CHECK_EQ(pread(fd,
-                       reinterpret_cast<char*>(&currMsgLen_),
-                       sizeof(int32_t),
-                       currPos_ + sizeof(TermID) + sizeof(LogID)),
-                 static_cast<ssize_t>(sizeof(int32_t)));
+        if (idRanges_.front().second <= 0) {
+            // empty file
+            currId_ = lastId_ + 1;
+            return *this;
+        } else {
+            LogID logId;
+            int fd = fds_.front();
+            // Read the logID
+            CHECK_EQ(pread(fd,
+                           reinterpret_cast<char*>(&logId),
+                           sizeof(LogID),
+                           currPos_),
+                     static_cast<ssize_t>(sizeof(LogID))) << "currPos = " << currPos_;
+            CHECK_EQ(currId_, logId);
+            // Read the termID
+            CHECK_EQ(pread(fd,
+                           reinterpret_cast<char*>(&currTerm_),
+                           sizeof(TermID),
+                           currPos_ + sizeof(LogID)),
+                     static_cast<ssize_t>(sizeof(TermID)));
+            // Read the log length
+            CHECK_EQ(pread(fd,
+                           reinterpret_cast<char*>(&currMsgLen_),
+                           sizeof(int32_t),
+                           currPos_ + sizeof(TermID) + sizeof(LogID)),
+                     static_cast<ssize_t>(sizeof(int32_t)));
+        }
     } else if (currId_ <= lastId_) {
         // Need to adjust nextFirstId_, in case we just start
         // reading buffers

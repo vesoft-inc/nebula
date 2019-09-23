@@ -79,6 +79,7 @@ TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
     std::shared_ptr<kvstore::KVCompactionFilterFactory> cfFactory(
                                     new NebulaCompactionFilterFactory(schemaMan.get()));
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
+                                                           6,
                                                            {0, 0},
                                                            nullptr,
                                                            false,
@@ -90,7 +91,7 @@ TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
     adhoc->removeTagSchema(0, 3001);
 
     auto* ns = static_cast<kvstore::NebulaStore*>(kv.get());
-    ns->compactAll(0);
+    ns->compact(0);
     LOG(INFO) << "Finish compaction, check data...";
 
     auto checkTag = [&](PartitionID partId, VertexID vertexId, TagID tagId, int32_t expectedNum) {

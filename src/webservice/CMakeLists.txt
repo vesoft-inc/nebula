@@ -7,4 +7,9 @@ nebula_add_library(
     GetStatsHandler.cpp
 )
 
-add_subdirectory(test)
+nebula_add_library(
+    ws_common_obj OBJECT
+    Common.cpp
+)
+
+nebula_add_subdirectory(test)

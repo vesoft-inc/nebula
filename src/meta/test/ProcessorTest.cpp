@@ -34,6 +34,8 @@
 #include "meta/processors/customKV/RemoveRangeProcessor.h"
 #include "meta/processors/customKV/ScanProcessor.h"
 
+DECLARE_int32(expired_threshold_sec);
+
 namespace nebula {
 namespace meta {
 
@@ -43,7 +45,6 @@ using apache::thrift::FragileConstructor::FRAGILE;
 
 TEST(ProcessorTest, AddHostsTest) {
     fs::TempDir rootPath("/tmp/AddHostsTest.XXXXXX");
-    FLAGS_expired_hosts_check_interval_sec = 2;
     FLAGS_expired_threshold_sec = 2;
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     {
@@ -121,41 +122,15 @@ TEST(ProcessorTest, AddHostsTest) {
 
 TEST(ProcessorTest, ListHostsTest) {
     fs::TempDir rootPath("/tmp/ListHostsTest.XXXXXX");
+    FLAGS_expired_threshold_sec = 1;
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    ActiveHostsMan::instance(kv.get());
     std::vector<HostAddr> hosts;
-    {
-        std::vector<nebula::cpp2::HostAddr> thriftHosts;
-        for (auto i = 0; i < 10; i++) {
-            thriftHosts.emplace_back(FRAGILE, i, i);
-            hosts.emplace_back(i, i);
-        }
-
-        cpp2::AddHostsReq req;
-        req.set_hosts(std::move(thriftHosts));
-        auto* processor = AddHostsProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-    }
-    {
-        // add hosts will set host status to offline
-        cpp2::ListHostsReq req;
-        auto* processor = ListHostsProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(10, resp.hosts.size());
-        for (auto i = 0; i < 10; i++) {
-            ASSERT_EQ(i, resp.hosts[i].hostAddr.ip);
-            ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
-            ASSERT_EQ(cpp2::HostStatus::OFFLINE, resp.hosts[i].status);
-        }
+    for (auto i = 0; i < 10; i++) {
+        hosts.emplace_back(i, i);
     }
     {
         // after received heartbeat, host status will become online
-        meta::TestUtils::registerHB(hosts);
+        meta::TestUtils::registerHB(kv.get(), hosts);
         cpp2::ListHostsReq req;
         auto* processor = ListHostsProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -170,7 +145,7 @@ TEST(ProcessorTest, ListHostsTest) {
     }
     {
         // host info expired
-        sleep(FLAGS_expired_hosts_check_interval_sec + FLAGS_expired_threshold_sec + 1);
+        sleep(FLAGS_expired_threshold_sec + 1);
         cpp2::ListHostsReq req;
         auto* processor = ListHostsProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -183,7 +158,6 @@ TEST(ProcessorTest, ListHostsTest) {
             ASSERT_EQ(cpp2::HostStatus::OFFLINE, resp.hosts[i].status);
         }
     }
-    ActiveHostsMan::instance()->stopClean();
 }
 
 TEST(ProcessorTest, CreateSpaceTest) {
@@ -361,6 +335,18 @@ TEST(ProcessorTest, CreateTagTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(4, resp.get_id().get_tag_id());
     }
+    {
+        // Create same name edge in same spaces
+        cpp2::CreateEdgeReq req;
+        req.set_space_id(1);
+        req.set_edge_name("default_tag");
+        req.set_schema(schema);
+        auto* processor = CreateEdgeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.code);
+    }
 
     // Set schema ttl property
     nebula::cpp2::SchemaProp schemaProp;
@@ -474,6 +460,18 @@ TEST(ProcessorTest, CreateEdgeTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(4, resp.get_id().get_edge_type());
+    }
+    {
+        // Create same name tag in same spaces
+        cpp2::CreateTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("default_edge");
+        req.set_schema(schema);
+        auto* processor = CreateTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.code);
     }
 
     // Set schema ttl property
@@ -1288,7 +1286,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
 
     // Alter edge with ttl
     {
-        // only set ttl_duration, failed
+        // Only set ttl_duration, failed
         cpp2::AlterEdgeReq req;
         nebula::cpp2::SchemaProp schemaProp;
         schemaProp.set_ttl_duration(100);
@@ -1407,6 +1405,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
                                              cpp2::AlterSchemaOp::ADD,
                                              std::move(addSch));
         items.emplace_back(std::move(addItem));
+
         req.set_space_id(1);
         req.set_edge_name("edge_0");
         req.set_edge_items(items);

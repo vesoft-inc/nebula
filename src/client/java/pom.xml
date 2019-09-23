@@ -6,7 +6,7 @@
 
     <groupId>nebula-graph</groupId>
     <artifactId>graph-client</artifactId>
-    <version>0.0.1</version>
+    <version>1.0.0-beta</version>
 
     <properties>
         <project.root.dir>../../..</project.root.dir>
@@ -29,15 +29,7 @@
                 <configuration>
                     <configLocation>${project.root.dir}/.linters/java/nebula_java_style_checks.xml</configLocation>
                     <excludes>
-                        com/vesoft/nebula/graph/RowValue.java,
-                        com/vesoft/nebula/graph/GraphService.java,
-                        com/vesoft/nebula/graph/AuthResponse.java,
-                        com/vesoft/nebula/graph/ErrorCode.java,
-                        com/vesoft/nebula/graph/ExecutionResponse.java,
-                        com/vesoft/nebula/graph/Date.java,
-                        com/vesoft/nebula/graph/ColumnValue.java,
-                        com/vesoft/nebula/graph/DateTime.java,
-                        com/vesoft/nebula/graph/YearMonth.java
+                        com/vesoft/nebula/graph/generated/,
                     </excludes>
                     <encoding>UTF-8</encoding>
                     <failOnViolation>true</failOnViolation>
@@ -70,9 +62,7 @@
         <dependency>
             <groupId>com.facebook</groupId>
             <artifactId>thrift</artifactId>
-            <version>1.0.0-SNAPSHORT</version>
-            <scope>system</scope>
-            <systemPath>${JAVA_FBTHRIFT_JAR}</systemPath>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>

@@ -41,11 +41,6 @@ ResultType RowReader::Cell::getVid(int64_t& v) const noexcept {
 }
 
 
-ResultType RowReader::Cell::getTimestamp(int64_t& v) const noexcept {
-    RR_CELL_GET_VALUE(Timestamp);
-}
-
-
 /*********************************************
  *
  * class RowReader::Iterator
@@ -179,7 +174,7 @@ int32_t RowReader::getSchemaVer(folly::StringPiece row) {
     }
 
     // The first three bits indicate the number of bytes for the
-    // schena version. If the number is zero, no schema version
+    // schema version. If the number is zero, no schema version
     // presents
     size_t verBytes = *(it++) >> 5;
     int32_t ver = 0;
@@ -287,7 +282,8 @@ int64_t RowReader::skipToNext(int64_t index, int64_t offset) const noexcept {
             offset++;
             break;
         }
-        case cpp2::SupportedType::INT: {
+        case cpp2::SupportedType::INT:
+        case cpp2::SupportedType::TIMESTAMP: {
             int64_t v;
             int32_t len = readInteger(offset, v);
             if (len <= 0) {
@@ -315,8 +311,7 @@ int64_t RowReader::skipToNext(int64_t index, int64_t offset) const noexcept {
             offset += intLen + strLen;
             break;
         }
-        case cpp2::SupportedType::VID:
-        case cpp2::SupportedType::TIMESTAMP: {
+        case cpp2::SupportedType::VID: {
             // Eight bytes
             offset += sizeof(int64_t);
             break;
@@ -395,7 +390,6 @@ int32_t RowReader::readString(int64_t offset, folly::StringPiece& v)
     int64_t strLen;
     int32_t intLen = readInteger(offset, strLen);
     CHECK_GT(intLen, 0) << "Invalid string length";
-
     if (offset + intLen + strLen > static_cast<int64_t>(data_.size())) {
         return static_cast<int32_t>(ResultType::E_DATA_INVALID);
     }
@@ -422,11 +416,6 @@ int32_t RowReader::readVid(int64_t offset, int64_t& v) const noexcept {
 }
 
 
-int32_t RowReader::readTimestamp(int64_t offset, int64_t& v) const noexcept {
-    return readInt64(offset, v);
-}
-
-
 ResultType RowReader::getBool(int64_t index, int64_t& offset, bool& v)
         const noexcept {
     switch (schema_->getFieldType(index).get_type()) {
@@ -435,7 +424,8 @@ ResultType RowReader::getBool(int64_t index, int64_t& offset, bool& v)
             offset++;
             break;
         }
-        case cpp2::SupportedType::INT: {
+        case cpp2::SupportedType::INT:
+        case cpp2::SupportedType::TIMESTAMP: {
             int64_t intV;
             int32_t numBytes = readInteger(offset, intV);
             if (numBytes > 0) {
@@ -550,7 +540,8 @@ ResultType RowReader::getString(int64_t index,
 ResultType RowReader::getInt64(int64_t index, int64_t& offset, int64_t& v)
         const noexcept {
     switch (schema_->getFieldType(index).get_type()) {
-        case cpp2::SupportedType::INT: {
+        case cpp2::SupportedType::INT:
+        case cpp2::SupportedType::TIMESTAMP: {
             int32_t numBytes = readInteger(offset, v);
             if (numBytes < 0) {
                 return static_cast<ResultType>(numBytes);
@@ -560,14 +551,6 @@ ResultType RowReader::getInt64(int64_t index, int64_t& offset, int64_t& v)
         }
         case cpp2::SupportedType::VID: {
             int32_t numBytes = readVid(offset, v);
-            if (numBytes < 0) {
-                return static_cast<ResultType>(numBytes);
-            }
-            offset += numBytes;
-            break;
-        }
-        case cpp2::SupportedType::TIMESTAMP: {
-            int32_t numBytes = readTimestamp(offset, v);
             if (numBytes < 0) {
                 return static_cast<ResultType>(numBytes);
             }
@@ -587,16 +570,6 @@ ResultType RowReader::getVid(int64_t index, int64_t& offset, int64_t& v)
         const noexcept {
     auto fieldType = schema_->getFieldType(index).get_type();
     if (fieldType == cpp2::SupportedType::INT || fieldType == cpp2::SupportedType::VID)
-        return getInt64(index, offset, v);
-    else
-        return ResultType::E_INCOMPATIBLE_TYPE;
-}
-
-
-ResultType RowReader::getTimestamp(int64_t index, int64_t& offset, int64_t& v)
-        const noexcept {
-    auto fieldType = schema_->getFieldType(index).get_type();
-    if (fieldType == cpp2::SupportedType::INT || fieldType == cpp2::SupportedType::TIMESTAMP)
         return getInt64(index, offset, v);
     else
         return ResultType::E_INCOMPATIBLE_TYPE;
@@ -657,13 +630,6 @@ ResultType RR_GET_VALUE_BY_NAME(Vid, int64_t)
 ResultType RowReader::getVid(int64_t index, int64_t& v) const noexcept {
     RR_GET_OFFSET()
     return getVid(index, offset, v);
-}
-
-ResultType RR_GET_VALUE_BY_NAME(Timestamp, int64_t)
-
-ResultType RowReader::getTimestamp(int64_t index, int64_t& v) const noexcept {
-    RR_GET_OFFSET()
-    return getTimestamp(index, offset, v);
 }
 
 }  // namespace nebula

@@ -14,15 +14,15 @@ namespace graph {
 // static
 nebula::cpp2::SupportedType SchemaHelper::columnTypeToSupportedType(ColumnType type) {
     switch (type) {
-        case BOOL:
+        case ColumnType::BOOL:
             return nebula::cpp2::SupportedType::BOOL;
-        case INT:
+        case ColumnType::INT:
             return nebula::cpp2::SupportedType::INT;
-        case DOUBLE:
+        case ColumnType::DOUBLE:
             return nebula::cpp2::SupportedType::DOUBLE;
-        case STRING:
+        case ColumnType::STRING:
             return nebula::cpp2::SupportedType::STRING;
-        case TIMESTAMP:
+        case ColumnType::TIMESTAMP:
             return nebula::cpp2::SupportedType::TIMESTAMP;
         default:
             return nebula::cpp2::SupportedType::UNKNOWN;
@@ -35,7 +35,12 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
                                   nebula::cpp2::Schema& schema) {
     auto status = Status::OK();
 
+    std::unordered_set<std::string> nameSet;
     for (auto& spec : specs) {
+        if (nameSet.find(*spec->name()) != nameSet.end()) {
+            return Status::Error("Duplicate column name `%s'", spec->name()->c_str());
+        }
+        nameSet.emplace(*spec->name());
         nebula::cpp2::ColumnDef column;
         column.name = *spec->name();
         column.type.type = columnTypeToSupportedType(spec->type());

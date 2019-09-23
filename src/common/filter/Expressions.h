@@ -10,33 +10,22 @@
 #include "base/StatusOr.h"
 #include "base/Status.h"
 #include <boost/variant.hpp>
+#include  <boost/unordered_set.hpp>
 
 namespace nebula {
 
 class Cord;
+using OptVariantType = StatusOr<VariantType>;
 
-enum ColumnType {
+enum class ColumnType {
     INT, STRING, DOUBLE, BIGINT, BOOL, TIMESTAMP,
 };
 
 std::string columnTypeToString(ColumnType type);
 
-
-enum AliasKind {
-    Unknown,
-    SourceNode,
-    Edge,
-};
-
-std::string aliasKindToString(AliasKind kind);
-
-struct AliasInfo {
-    AliasKind                               kind_;
-    std::string                             data_;
-};
-
 class ExpressionContext final {
 public:
+    using EdgeInfo = boost::variant<std::string, EdgeType>;
     void addSrcTagProp(const std::string &tag, const std::string &prop) {
         srcTagProps_.emplace(tag, prop);
     }
@@ -45,43 +34,60 @@ public:
         dstTagProps_.emplace(tag, prop);
     }
 
-    void addEdgeProp(const std::string &prop) {
-        edgeProps_.emplace(prop);
+    void addVariableProp(const std::string &var, const std::string &prop) {
+        variableProps_.emplace(var, prop);
+        variables_.emplace(var);
     }
 
-    Status addAliasProp(const std::string &alias, const std::string &prop);
-
-    // TODO(dutor) check duplications on aliases
-    void addAlias(const std::string &alias, AliasKind kind) {
-        aliasInfo_[alias].kind_ = kind;
+    void addInputProp(const std::string &prop) {
+        inputProps_.emplace(prop);
     }
 
-    void addAlias(const std::string &alias, AliasKind kind, const std::string &data) {
-        auto &entry = aliasInfo_[alias];
-        entry.kind_ = kind;
-        entry.data_ = data;
+    void addAliasProp(const std::string &alias, const std::string &prop) {
+        aliasProps_.emplace(alias, prop);
     }
 
-    AliasKind aliasKind(const std::string &alias) {
-        auto iter = aliasInfo_.find(alias);
-        if (iter == aliasInfo_.end()) {
-            return AliasKind::Unknown;
+    bool addEdge(const std::string &alias, EdgeType edgeType) {
+        auto it = edgeMaps_.find(alias);
+        if (it != edgeMaps_.end()) {
+            return false;
         }
-        return iter->second.kind_;
+        edgeMaps_.emplace(alias, edgeType);
+        return true;
     }
 
-    using TagProp = std::pair<std::string, std::string>;
+    bool getEdgeType(const std::string &alias, EdgeType &edgeType) {
+        auto it = edgeMaps_.find(alias);
+        if (it == edgeMaps_.end()) {
+            return false;
+        }
 
-    std::vector<TagProp> srcTagProps() const {
-        return std::vector<TagProp>(srcTagProps_.begin(), srcTagProps_.end());
+        edgeType = it->second;
+        return true;
     }
 
-    std::vector<TagProp> dstTagProps() const {
-        return std::vector<TagProp>(dstTagProps_.begin(), dstTagProps_.end());
+    using PropPair = std::pair<std::string, std::string>;
+
+    std::vector<PropPair> srcTagProps() const {
+        return std::vector<PropPair>(srcTagProps_.begin(), srcTagProps_.end());
     }
 
-    std::vector<std::string> edgeProps() const {
-        return std::vector<std::string>(edgeProps_.begin(), edgeProps_.end());
+    std::vector<PropPair> dstTagProps() const {
+        return std::vector<PropPair>(dstTagProps_.begin(), dstTagProps_.end());
+    }
+
+    std::vector<PropPair> aliasProps() const {
+        return std::vector<PropPair>(aliasProps_.begin(), aliasProps_.end());
+    }
+
+    using VariableProp = std::pair<std::string, std::string>;
+
+    std::vector<VariableProp> variableProps() const {
+        return std::vector<VariableProp>(variableProps_.begin(), variableProps_.end());
+    }
+
+    const std::unordered_set<std::string>& variables() const {
+        return variables_;
     }
 
     bool hasSrcTagProp() const {
@@ -93,15 +99,24 @@ public:
     }
 
     bool hasEdgeProp() const {
-        return !edgeProps_.empty();
+        return !aliasProps_.empty();
+    }
+
+    bool hasVariableProp() const {
+        return !variableProps_.empty();
+    }
+
+    bool hasInputProp() const {
+        return !inputProps_.empty();
     }
 
     struct Getters {
-        std::function<VariantType()> getEdgeRank;
-        std::function<VariantType(const std::string&)> getEdgeProp;
-        std::function<VariantType(const std::string&)> getInputProp;
-        std::function<VariantType(const std::string&, const std::string&)> getSrcTagProp;
-        std::function<VariantType(const std::string&, const std::string&)> getDstTagProp;
+        std::function<OptVariantType()> getEdgeRank;
+        std::function<OptVariantType(const std::string&)> getInputProp;
+        std::function<OptVariantType(const std::string&)> getVariableProp;
+        std::function<OptVariantType(const std::string&, const std::string&)> getSrcTagProp;
+        std::function<OptVariantType(const std::string&, const std::string&)> getDstTagProp;
+        std::function<OptVariantType(const std::string&, const std::string&)> getAliasProp;
     };
 
     Getters& getters() {
@@ -110,12 +125,21 @@ public:
 
     void print() const;
 
+    bool isOverAllEdge() const { return overAll_; }
+
+    void setOverAllEdge() { overAll_ = true; }
+
 private:
-    Getters                                     getters_;
-    std::unordered_map<std::string, AliasInfo>  aliasInfo_;
-    std::unordered_set<TagProp>                 srcTagProps_;
-    std::unordered_set<TagProp>                 dstTagProps_;
-    std::unordered_set<std::string>             edgeProps_;
+    Getters                                   getters_;
+    std::unordered_set<PropPair>              srcTagProps_;
+    std::unordered_set<PropPair>              dstTagProps_;
+    std::unordered_set<PropPair>              aliasProps_;
+    std::unordered_set<VariableProp>          variableProps_;
+    std::unordered_set<std::string>           variables_;
+    std::unordered_set<std::string>           inputProps_;
+    // alias => edgeType
+    std::unordered_map<std::string, EdgeType> edgeMaps_;
+    bool                                      overAll_{false};
 };
 
 
@@ -131,7 +155,7 @@ public:
 
     virtual Status MUST_USE_RESULT prepare() = 0;
 
-    virtual VariantType eval() const = 0;
+    virtual OptVariantType eval() const = 0;
 
     virtual bool isInputExpression() const {
         return kind_ == kInputProp;
@@ -139,6 +163,14 @@ public:
 
     virtual bool isVariableExpression() const {
         return kind_ == kVariableProp;
+    }
+
+    virtual bool isAliasExpression() const {
+        return kind_ == kAliasProp;
+    }
+
+    virtual bool isTypeCastingExpression() const {
+        return kind_ == kTypeCasting;
     }
 
     /**
@@ -153,6 +185,7 @@ public:
      */
     static StatusOr<std::unique_ptr<Expression>> decode(folly::StringPiece buffer) noexcept;
 
+    // Procedures used to do type conversions only between compatible ones.
     static int64_t asInt(const VariantType &value) {
         return boost::get<int64_t>(value);
     }
@@ -209,6 +242,57 @@ public:
         return std::abs(left - right) < EPSILON;
     }
 
+    // Procedures used to do type casting
+    static std::string toString(const VariantType &value) {
+        char buf[1024];
+        switch (value.which()) {
+            case 0:
+                return folly::to<std::string>(boost::get<int64_t>(value));
+            case 1:
+                return folly::to<std::string>(boost::get<double>(value));
+            case 2:
+                snprintf(buf, sizeof(buf), "%s", boost::get<bool>(value) ? "true" : "false");
+                return buf;
+            case 3:
+                return boost::get<std::string>(value);
+        }
+        LOG(FATAL) << "unknown type: " << value.which();
+    }
+
+    static bool toBool(const VariantType &value) {
+        return asBool(value);
+    }
+
+    static double toDouble(const VariantType &value) {
+        switch (value.which()) {
+            case 0:
+                return static_cast<double>(boost::get<int64_t>(value));
+            case 1:
+                return boost::get<double>(value);
+            case 2:
+                return boost::get<bool>(value) ? 1.0 : 0.0;
+            case 3:
+                // TODO(dutor) error handling
+                return folly::to<double>(boost::get<std::string>(value));
+        }
+        LOG(FATAL) << "unknown type: " << value.which();
+    }
+
+    static int64_t toInt(const VariantType &value) {
+        switch (value.which()) {
+            case 0:
+                return boost::get<int64_t>(value);
+            case 1:
+                return static_cast<int64_t>(boost::get<double>(value));
+            case 2:
+                return boost::get<bool>(value) ? 1.0 : 0.0;
+            case 3:
+                // TODO(dutor) error handling
+                return folly::to<int64_t>(boost::get<std::string>(value));
+        }
+        LOG(FATAL) << "unknown type: " << value.which();
+    }
+
     static void print(const VariantType &value);
 
     enum Kind : uint8_t {
@@ -226,7 +310,7 @@ public:
         kEdgeDstId,
         kEdgeSrcId,
         kEdgeType,
-        kEdgeProp,
+        kAliasProp,
         kVariableProp,
         kDestProp,
         kInputProp,
@@ -266,7 +350,6 @@ private:
     friend class EdgeDstIdExpression;
     friend class EdgeSrcIdExpression;
     friend class EdgeTypeExpression;
-    friend class EdgePropertyExpression;
     friend class VariablePropertyExpression;
     friend class InputPropertyExpression;
 
@@ -284,9 +367,48 @@ protected:
     Kind                                        kind_{kUnknown};
 };
 
+// Alias.any_prop_name, i.e. EdgeName.any_prop_name
+class AliasPropertyExpression: public Expression {
+public:
+    AliasPropertyExpression() {
+        kind_ = kAliasProp;
+    }
+
+    AliasPropertyExpression(std::string *ref,
+                            std::string *alias,
+                            std::string *prop) {
+        kind_ = kAliasProp;
+        ref_.reset(ref);
+        alias_.reset(alias);
+        prop_.reset(prop);
+    }
+
+    std::string toString() const override;
+
+    OptVariantType eval() const override;
+
+    Status MUST_USE_RESULT prepare() override;
+
+    std::string* alias() const {
+        return alias_.get();
+    }
+
+    std::string* prop() const {
+        return prop_.get();
+    }
+
+private:
+    void encode(Cord &cord) const override;
+    const char* decode(const char *pos, const char *end) override;
+
+protected:
+    std::unique_ptr<std::string>    ref_;
+    std::unique_ptr<std::string>    alias_;
+    std::unique_ptr<std::string>    prop_;
+};
 
 // $-.any_prop_name or $-
-class InputPropertyExpression final : public Expression {
+class InputPropertyExpression final : public AliasPropertyExpression {
 public:
     InputPropertyExpression() {
         kind_ = kInputProp;
@@ -294,33 +416,24 @@ public:
 
     explicit InputPropertyExpression(std::string *prop) {
         kind_ = kInputProp;
+        ref_.reset(new std::string("$-."));
+        alias_.reset(new std::string(""));
         prop_.reset(prop);
     }
 
-    std::string toString() const override;
+    OptVariantType eval() const override;
 
-    VariantType eval() const override;
-
-    Status MUST_USE_RESULT prepare() override {
-        return Status::OK();
-    }
-
-    std::string* prop() const {
-        return prop_.get();
-    }
+    Status MUST_USE_RESULT prepare() override;
 
 private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                prop_;
 };
 
 
 // $$[TagName].any_prop_name
-class DestPropertyExpression final : public Expression {
+class DestPropertyExpression final : public AliasPropertyExpression {
 public:
     DestPropertyExpression() {
         kind_ = kDestProp;
@@ -328,13 +441,12 @@ public:
 
     DestPropertyExpression(std::string *tag, std::string *prop) {
         kind_ = kDestProp;
-        tag_.reset(tag);
+        ref_.reset(new std::string("$$."));
+        alias_.reset(tag);
         prop_.reset(prop);
     }
 
-    std::string toString() const override;
-
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -342,15 +454,11 @@ private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                tag_;
-    std::unique_ptr<std::string>                prop_;
 };
 
 
 // $VarName.any_prop_name
-class VariablePropertyExpression final : public Expression {
+class VariablePropertyExpression final : public AliasPropertyExpression {
 public:
     VariablePropertyExpression() {
         kind_ = kVariableProp;
@@ -358,75 +466,24 @@ public:
 
     VariablePropertyExpression(std::string *var, std::string *prop) {
         kind_ = kVariableProp;
-        var_.reset(var);
+        ref_.reset(new std::string("$"));
+        alias_.reset(var);
         prop_.reset(prop);
     }
 
-    std::string toString() const override;
-
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-    std::string* var() const {
-        return var_.get();
-    }
-
-    std::string* prop() const {
-        return prop_.get();
-    }
 
 private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                var_;
-    std::unique_ptr<std::string>                prop_;
-};
-
-
-// Alias.any_prop_name, i.e. EdgeName.any_prop_name
-class EdgePropertyExpression final : public Expression {
-public:
-    EdgePropertyExpression() {
-        kind_ = kEdgeProp;
-    }
-
-    EdgePropertyExpression(std::string *alias, std::string *prop) {
-        kind_ = kEdgeProp;
-        alias_.reset(alias);
-        prop_.reset(prop);
-    }
-
-    std::string toString() const override;
-
-    VariantType eval() const override;
-
-    Status MUST_USE_RESULT prepare() override;
-
-    const std::string& alias() const {
-        return *alias_;
-    }
-
-    const std::string& prop() const {
-        return *prop_;
-    }
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                alias_;
-    std::unique_ptr<std::string>                prop_;
 };
 
 
 // Alias._type, i.e. EdgeName._type
-class EdgeTypeExpression final : public Expression {
+class EdgeTypeExpression final : public AliasPropertyExpression {
 public:
     EdgeTypeExpression() {
         kind_ = kEdgeType;
@@ -434,12 +491,12 @@ public:
 
     explicit EdgeTypeExpression(std::string *alias) {
         kind_ = kEdgeType;
+        ref_.reset(new std::string(""));
         alias_.reset(alias);
+        prop_.reset(new std::string("_type"));
     }
 
-    std::string toString() const override;
-
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -447,14 +504,11 @@ private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                alias_;
 };
 
 
 // Alias._src, i.e. EdgeName._src
-class EdgeSrcIdExpression final : public Expression {
+class EdgeSrcIdExpression final : public AliasPropertyExpression {
 public:
     EdgeSrcIdExpression() {
         kind_ = kEdgeSrcId;
@@ -462,12 +516,12 @@ public:
 
     explicit EdgeSrcIdExpression(std::string *alias) {
         kind_ = kEdgeSrcId;
+        ref_.reset(new std::string(""));
         alias_.reset(alias);
+        prop_.reset(new std::string("_src"));
     }
 
-    std::string toString() const override;
-
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -475,14 +529,11 @@ private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                alias_;
 };
 
 
 // Alias._dst, i.e. EdgeName._dst
-class EdgeDstIdExpression final : public Expression {
+class EdgeDstIdExpression final : public AliasPropertyExpression {
 public:
     EdgeDstIdExpression() {
         kind_ = kEdgeDstId;
@@ -490,12 +541,12 @@ public:
 
     explicit EdgeDstIdExpression(std::string *alias) {
         kind_ = kEdgeDstId;
+        ref_.reset(new std::string(""));
         alias_.reset(alias);
+        prop_.reset(new std::string("_dst"));
     }
 
-    std::string toString() const override;
-
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -503,14 +554,11 @@ private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                alias_;
 };
 
 
 // Alias._rank, i.e. EdgeName._rank
-class EdgeRankExpression final : public Expression {
+class EdgeRankExpression final : public AliasPropertyExpression {
 public:
     EdgeRankExpression() {
         kind_ = kEdgeRank;
@@ -518,12 +566,12 @@ public:
 
     explicit EdgeRankExpression(std::string *alias) {
         kind_ = kEdgeRank;
+        ref_.reset(new std::string(""));
         alias_.reset(alias);
+        prop_.reset(new std::string("_rank"));
     }
 
-    std::string toString() const override;
-
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -531,14 +579,11 @@ private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                alias_;
 };
 
 
 // $^[TagName].any_prop_name
-class SourcePropertyExpression final : public Expression {
+class SourcePropertyExpression final : public AliasPropertyExpression {
 public:
     SourcePropertyExpression() {
         kind_ = kSourceProp;
@@ -546,45 +591,25 @@ public:
 
     SourcePropertyExpression(std::string *tag, std::string *prop) {
         kind_ = kSourceProp;
-        tag_.reset(tag);
+        ref_.reset(new std::string("$^."));
+        alias_.reset(tag);
         prop_.reset(prop);
     }
 
-    std::string toString() const override;
-
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-    const std::string& tag() const {
-        return *tag_;
-    }
-
-    const std::string& prop() const {
-        return *prop_;
-    }
 
 private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                tag_;
-    std::unique_ptr<std::string>                prop_;
 };
 
 
 // literal constants: bool, integer, double, string
 class PrimaryExpression final : public Expression {
 public:
-    using Operand = boost::variant<bool, int64_t, double, std::string>;
-    enum Which {
-        kBool = 0,
-        kInt = 1,
-        kDouble = 2,
-        kString = 3,
-    };
     PrimaryExpression() {
         kind_ = kPrimary;
     }
@@ -611,7 +636,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -621,7 +646,7 @@ private:
     const char* decode(const char *pos, const char *end) override;
 
 private:
-    Operand                                     operand_;
+    VariantType                                 operand_;
 };
 
 
@@ -657,7 +682,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -700,7 +725,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -739,7 +764,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -750,6 +775,10 @@ public:
 
     const Expression* operand() const {
         return operand_.get();
+    }
+
+    const ColumnType getType() const {
+        return type_;
     }
 
 private:
@@ -771,7 +800,7 @@ private:
 class ArithmeticExpression final : public Expression {
 public:
     enum Operator : uint8_t {
-        ADD, SUB, MUL, DIV, MOD
+        ADD, SUB, MUL, DIV, MOD, XOR
     };
     static_assert(sizeof(Operator) == sizeof(uint8_t), "");
 
@@ -788,7 +817,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -839,7 +868,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -862,6 +891,7 @@ private:
 
     const char* decode(const char *pos, const char *end) override;
 
+    Status implicitCasting(VariantType &lhs, VariantType &rhs) const;
 
 private:
     Operator                                    op_;
@@ -874,7 +904,7 @@ private:
 class LogicalExpression final : public Expression {
 public:
     enum Operator : uint8_t {
-        AND, OR
+        AND, OR, XOR
     };
     static_assert(sizeof(Operator) == sizeof(uint8_t), "");
 
@@ -891,7 +921,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 

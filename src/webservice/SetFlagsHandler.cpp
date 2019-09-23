@@ -57,12 +57,14 @@ void SetFlagsHandler::onEOM() noexcept {
     switch (err_) {
         case HttpCode::E_UNSUPPORTED_METHOD:
             ResponseBuilder(downstream_)
-                .status(405, "Method Not Allowed")
+                .status(WebServiceUtils::to(HttpStatusCode::METHOD_NOT_ALLOWED),
+                        WebServiceUtils::toString(HttpStatusCode::METHOD_NOT_ALLOWED))
                 .sendWithEOM();
             return;
         case HttpCode::E_UNPROCESSABLE:
             ResponseBuilder(downstream_)
-                .status(400, "Bad Request")
+                .status(WebServiceUtils::to(HttpStatusCode::BAD_REQUEST),
+                        WebServiceUtils::toString(HttpStatusCode::BAD_REQUEST))
                 .sendWithEOM();
             return;
         default:
@@ -72,12 +74,14 @@ void SetFlagsHandler::onEOM() noexcept {
     if (gflags::SetCommandLineOption(name_.c_str(), value_.c_str()).empty()) {
         // Failed
         ResponseBuilder(downstream_)
-            .status(200, "OK")
+            .status(WebServiceUtils::to(HttpStatusCode::OK),
+                    WebServiceUtils::toString(HttpStatusCode::OK))
             .body("false")
             .sendWithEOM();
     } else {
         ResponseBuilder(downstream_)
-            .status(200, "OK")
+            .status(WebServiceUtils::to(HttpStatusCode::OK),
+                    WebServiceUtils::toString(HttpStatusCode::OK))
             .body("true")
             .sendWithEOM();
     }

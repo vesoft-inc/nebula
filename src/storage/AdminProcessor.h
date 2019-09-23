@@ -9,6 +9,8 @@
 
 #include "base/Base.h"
 #include "storage/BaseProcessor.h"
+#include "kvstore/NebulaStore.h"
+#include "kvstore/Part.h"
 
 namespace nebula {
 namespace storage {
@@ -20,7 +22,36 @@ public:
     }
 
     void process(const cpp2::TransLeaderReq& req) {
-        UNUSED(req);
+        CHECK_NOTNULL(kvstore_);
+        auto spaceId = req.get_space_id();
+        auto partId = req.get_part_id();
+        auto ret = kvstore_->part(spaceId, partId);
+        if (!ok(ret)) {
+            resp_.set_code(to(error(ret)));
+            promise_.setValue(std::move(resp_));
+            delete this;
+            return;
+        }
+        auto part = nebula::value(ret);
+        auto host = kvstore::NebulaStore::getRaftAddr(HostAddr(req.get_new_leader().get_ip(),
+                                                               req.get_new_leader().get_port()));
+        part->asyncTransferLeader(host,
+                                  [this, spaceId, partId, host] (kvstore::ResultCode code) {
+            auto leaderRet = kvstore_->partLeader(spaceId, partId);
+            CHECK(ok(leaderRet));
+            if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+                auto leader = value(std::move(leaderRet));
+                // Check target is randomPeer (0, 0) or the election has completed.
+                if (host == HostAddr(0, 0) || leader == host) {
+                    code = kvstore::ResultCode::SUCCEEDED;
+                } else {
+                    resp_.set_leader(toThriftHost(leader));
+                }
+            }
+            resp_.set_code(to(code));
+            promise_.setValue(std::move(resp_));
+            delete this;
+        });
     }
 
 private:
@@ -102,6 +133,29 @@ private:
     explicit WaitingForCatchUpDataProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr) {}
 };
+
+class GetLeaderProcessor : public BaseProcessor<cpp2::GetLeaderResp> {
+public:
+    static GetLeaderProcessor* instance(kvstore::KVStore* kvstore) {
+        return new GetLeaderProcessor(kvstore);
+    }
+
+    void process(const cpp2::GetLeaderReq& req) {
+        UNUSED(req);
+        CHECK_NOTNULL(kvstore_);
+        std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+        kvstore_->allLeader(leaderIds);
+        resp_.set_code(to(kvstore::ResultCode::SUCCEEDED));
+        resp_.set_leader_parts(std::move(leaderIds));
+        promise_.setValue(std::move(resp_));
+        delete this;
+    }
+
+private:
+    explicit GetLeaderProcessor(kvstore::KVStore* kvstore)
+            : BaseProcessor<cpp2::GetLeaderResp>(kvstore, nullptr) {}
+};
+
 }  // namespace storage
 }  // namespace nebula
 

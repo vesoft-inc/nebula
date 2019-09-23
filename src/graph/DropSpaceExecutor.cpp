@@ -37,6 +37,10 @@ void DropSpaceExecutor::execute() {
             onError_(Status::Error("Drop space failed"));
             return;
         }
+
+        if (*spaceName_ == ectx()->rctx()->session()->spaceName()) {
+            ectx()->rctx()->session()->setSpace("", -1);
+        }
         DCHECK(onFinish_);
         onFinish_();
     };

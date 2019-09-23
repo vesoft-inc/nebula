@@ -18,6 +18,11 @@ InsertEdgeExecutor::InsertEdgeExecutor(Sentence *sentence,
 
 
 Status InsertEdgeExecutor::prepare() {
+    return Status::OK();
+}
+
+
+Status InsertEdgeExecutor::check() {
     Status status;
     do {
         status = checkIfGraphSpaceChosen();
@@ -67,20 +72,33 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
     auto index = 0;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
-        auto status = row->srcid()->prepare();
+        auto sid = row->srcid();
+        auto status = sid->prepare();
         if (!status.ok()) {
             return status;
         }
-        auto v = row->srcid()->eval();
+        auto ovalue = sid->eval();
+        if (!ovalue.ok()) {
+            return ovalue.status();
+        }
+
+        auto v = ovalue.value();
         if (!Expression::isInt(v)) {
             return Status::Error("Vertex ID should be of type integer");
         }
         auto src = Expression::asInt(v);
-        status = row->dstid()->prepare();
+
+        auto did = row->dstid();
+        status = did->prepare();
         if (!status.ok()) {
             return status;
         }
-        v = row->dstid()->eval();
+        ovalue = did->eval();
+        if (!ovalue.ok()) {
+            return ovalue.status();
+        }
+
+        v = ovalue.value();
         if (!Expression::isInt(v)) {
             return Status::Error("Vertex ID should be of type integer");
         }
@@ -100,7 +118,16 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         std::vector<VariantType> values;
         values.reserve(expressions.size());
         for (auto *expr : expressions) {
-            values.emplace_back(expr->eval());
+            status = expr->prepare();
+            if (!status.ok()) {
+                return status;
+            }
+
+            ovalue = expr->eval();
+            if (!ovalue.ok()) {
+                return ovalue.status();
+            }
+            values.emplace_back(ovalue.value());
         }
 
         RowWriter writer(schema_);
@@ -115,7 +142,16 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
                            << ", input type " <<  value.which();
                 return Status::Error("ValueType is wrong");
             }
-            writeVariantType(writer, value);
+
+            if (schemaType.type == nebula::cpp2::SupportedType::TIMESTAMP) {
+                auto timestamp = toTimestamp(value);
+                if (!timestamp.ok()) {
+                    return timestamp.status();
+                }
+                writeVariantType(writer, timestamp.value());
+            } else {
+                writeVariantType(writer, value);
+            }
             fieldIndex++;
         }
         {
@@ -145,6 +181,13 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
 
 
 void InsertEdgeExecutor::execute() {
+    auto status = check();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+
     auto result = prepareEdges();
     if (!result.ok()) {
         DCHECK(onError_);
