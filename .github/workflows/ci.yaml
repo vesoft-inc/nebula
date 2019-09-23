@@ -24,7 +24,7 @@ jobs:
       - name: make
         run: |
           . /etc/profile.d/devtoolset-8-enable.sh
-          cd _build && make -j2
+          cd _build && make -j $(nproc)
         shell: bash
       - name: test
         run: |

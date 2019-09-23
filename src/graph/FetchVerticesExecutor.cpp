@@ -281,12 +281,12 @@ Status FetchVerticesExecutor::setupVidsFromRef() {
     const InterimResult *inputs;
     if (varname_ == nullptr) {
         inputs = inputs_.get();
-        if (inputs == nullptr) {
+        if (inputs == nullptr || !inputs->hasData()) {
             return Status::OK();
         }
     } else {
         inputs = ectx()->variableHolder()->get(*varname_);
-        if (inputs == nullptr) {
+        if (inputs == nullptr || !inputs->hasData()) {
             return Status::Error("Variable `%s' not defined", varname_->c_str());
         }
     }
