@@ -933,6 +933,13 @@ OptVariantType RelationalExpression::eval() const {
 
     auto l = left.value();
     auto r = right.value();
+    if (l.which() != r.which()) {
+        auto s = implicitCasting(l, r);
+        if (!s.ok()) {
+            return s;
+        }
+    }
+
     switch (op_) {
         case LT:
             return OptVariantType(l < r);
@@ -961,6 +968,26 @@ OptVariantType RelationalExpression::eval() const {
     }
 
     return OptVariantType(Status::Error("Wrong operator"));
+}
+
+Status RelationalExpression::implicitCasting(VariantType &lhs, VariantType &rhs) const {
+    // Rule: bool -> int64_t -> double
+    if (lhs.which() == VAR_STR || rhs.which() == VAR_STR) {
+        return Status::Error("A string type can not be compared with a non-string type.");
+    } else if (lhs.which() == VAR_DOUBLE || rhs.which() == VAR_DOUBLE) {
+        lhs = toDouble(lhs);
+        rhs = toDouble(rhs);
+    } else if (lhs.which() == VAR_INT64 || rhs.which() == VAR_INT64) {
+        lhs = toInt(lhs);
+        rhs = toInt(rhs);
+    } else if (lhs.which() == VAR_BOOL || rhs.which() == VAR_BOOL) {
+        // No need do cast here.
+    } else {
+        // If the variant type is expanded, we should update the rule.
+        LOG(FATAL) << "Unknown type: " << lhs.which() << ", " << rhs.which();
+    }
+
+    return Status::OK();
 }
 
 Status RelationalExpression::prepare() {
