@@ -891,6 +891,7 @@ private:
 
     const char* decode(const char *pos, const char *end) override;
 
+    Status implicitCasting(VariantType &lhs, VariantType &rhs) const;
 
 private:
     Operator                                    op_;
