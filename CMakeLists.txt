@@ -40,7 +40,7 @@ option(ENABLE_CCACHE "Whether to use ccache to speed up compiling" ON)
 option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
 option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
 
-message(STATUS "ASAN: ${ENABLE_ASAN}")
+message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
 
 
@@ -64,7 +64,7 @@ set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++ -no-pie")
 # To detect if ccache available
 find_program(ccache_program_found "ccache")
 if (ENABLE_CCACHE AND ccache_program_found)
-    message(STATUS "CCACHE: ON")
+    message(STATUS "ENABLE_CCACHE: ON")
     if (NOT $ENV{CCACHE_DIR} STREQUAL "")
         message(STATUS "CCACHE_DIR: $ENV{CCACHE_DIR}")
     else()
@@ -479,7 +479,7 @@ if (LIBLZMA_FOUND)
     list(APPEND COMPRESSION_LIBRARIES ${LIBLZMA_LIBRARIES})
 endif()
 
-if (NOT ENABLE_JEMALLOC)
+if (NOT ENABLE_JEMALLOC OR ENABLE_ASAN)
     set(JEMALLOC_LIB )
 else()
     set(JEMALLOC_LIB jemalloc)
