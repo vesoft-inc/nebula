@@ -380,13 +380,18 @@ macro(nebula_add_test)
     endif()
 endmacro()
 
-# All ordinary libraries shall depend on the compile-time generated files,
+# For simplicity, we make all ordinary libraries depend on the compile-time generated files,
 # including the precompiled header, a.k.a Base.h.gch, and thrift headers.
 macro(nebula_add_library name type)
     add_library(${name} ${type} ${ARGN})
+    if (PCHSupport_FOUND)
+        add_dependencies(
+            ${name}
+            base_obj_gch
+        )
+    endif()
     add_dependencies(
         ${name}
-        base_obj_gch
         common_thrift_headers
         graph_thrift_headers
         storage_thrift_headers
