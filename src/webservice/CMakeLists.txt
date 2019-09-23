@@ -12,4 +12,4 @@ nebula_add_library(
     Common.cpp
 )
 
-add_subdirectory(test)
+nebula_add_subdirectory(test)
