@@ -23,8 +23,8 @@ class InterimResult final {
 public:
     InterimResult() = default;
     ~InterimResult() = default;
-    InterimResult(const InterimResult &) = default;
-    InterimResult& operator=(const InterimResult &) = default;
+    InterimResult(const InterimResult &) = delete;
+    InterimResult& operator=(const InterimResult &) = delete;
     InterimResult(InterimResult &&) = default;
     InterimResult& operator=(InterimResult &&) = default;
 

@@ -276,15 +276,15 @@ StatusOr<int64_t> Executor::toTimestamp(const VariantType &value) {
 
 nebula::cpp2::SupportedType Executor::ColumnTypeToSupportedType(ColumnType type) const {
     switch (type) {
-        case INT:
+        case ColumnType::INT:
             return nebula::cpp2::SupportedType::INT;
-        case STRING:
+        case ColumnType::STRING:
             return nebula::cpp2::SupportedType::STRING;
-        case DOUBLE:
+        case ColumnType::DOUBLE:
             return nebula::cpp2::SupportedType::DOUBLE;
-        case BOOL:
+        case ColumnType::BOOL:
             return nebula::cpp2::SupportedType::BOOL;
-        case TIMESTAMP:
+        case ColumnType::TIMESTAMP:
             return nebula::cpp2::SupportedType::TIMESTAMP;
         default:
             LOG(ERROR) << "Unknown type: " << static_cast<int32_t>(type);
