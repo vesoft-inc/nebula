@@ -380,13 +380,26 @@ macro(nebula_add_test)
     endif()
 endmacro()
 
-macro(nebula_build_after_base obj_name)
-    add_dependencies(${obj_name} base_obj)
-endmacro()
-
+# For simplicity, we make all ordinary libraries depend on the compile-time generated files,
+# including the precompiled header, a.k.a Base.h.gch, and thrift headers.
 macro(nebula_add_library name type)
     add_library(${name} ${type} ${ARGN})
-    nebula_build_after_base(${name})
+    if (PCHSupport_FOUND)
+        add_dependencies(
+            ${name}
+            base_obj_gch
+        )
+    endif()
+    add_dependencies(
+        ${name}
+        common_thrift_headers
+        graph_thrift_headers
+        storage_thrift_headers
+        meta_thrift_headers
+        raftex_thrift_headers
+        hbase_thrift_headers
+        parser_target
+    )
 endmacro()
 
 include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/bzip2/include)
