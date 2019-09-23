@@ -38,5 +38,8 @@ void RowSetWriter::addRow(const std::string& data) {
     data_.append(data);
 }
 
+void RowSetWriter::addAll(const std::string& data) {
+    data_.append(data);
+}
 }  // namespace nebula
 

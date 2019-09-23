@@ -13,13 +13,16 @@
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
+#include "meta/SchemaManager.h"
 #include "meta/SchemaProviderIf.h"
 #include "dataman/ResultSchemaProvider.h"
 #include "storage/StorageServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include "meta/SchemaManager.h"
+#include <folly/synchronization/Baton.h>
 #include <folly/executors/ThreadPoolExecutor.h>
 #include <folly/executors/CPUThreadPoolExecutor.h>
+#include "dataman/RowReader.h"
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
 
 namespace nebula {
@@ -29,13 +32,17 @@ class TestUtils {
 public:
     static std::unique_ptr<kvstore::KVStore> initKV(
             const char* rootPath,
+            int32_t partitionNumber = 6,
             HostAddr localhost = {0, 0},
             meta::MetaClient* mClient = nullptr,
             bool useMetaServer = false,
             std::shared_ptr<kvstore::KVCompactionFilterFactory> cfFactory = nullptr) {
-        auto workers = std::make_shared<thread::GenericThreadPool>();
-        workers->start(4);
         auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+        auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+                                 1, true /*stats*/);
+        workers->setNamePrefix("executor");
+        workers->start();
+
 
         kvstore::KVOptions options;
         if (useMetaServer) {
@@ -47,7 +54,7 @@ public:
             // GraphSpaceID =>  {PartitionIDs}
             // 0 => {0, 1, 2, 3, 4, 5}
             auto& partsMap = memPartMan->partsMap();
-            for (auto partId = 0; partId < 6; partId++) {
+            for (auto partId = 0; partId < partitionNumber; partId++) {
                 partsMap[0][partId] = PartMeta();
             }
 
@@ -63,16 +70,19 @@ public:
         options.cfFactory_ = std::move(cfFactory);
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
-                                                            workers,
-                                                            localhost);
+                                                            localhost,
+                                                            workers);
+        store->init();
         sleep(1);
         return store;
     }
 
     static std::unique_ptr<meta::SchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0) {
         auto* schemaMan = new AdHocSchemaManager();
-        schemaMan->addEdgeSchema(
-            spaceId /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
+        for (auto edgeType = 101; edgeType < 110; edgeType++) {
+            schemaMan->addEdgeSchema(spaceId /*space id*/, edgeType /*edge type*/,
+                                     TestUtils::genEdgeSchemaProvider(10, 10));
+        }
         for (auto tagId = 3001; tagId < 3010; tagId++) {
             schemaMan->addTagSchema(
                 spaceId /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
@@ -126,8 +136,7 @@ public:
             column.type.type = nebula::cpp2::SupportedType::STRING;
             schema.columns.emplace_back(std::move(column));
         }
-        return std::shared_ptr<meta::SchemaProviderIf>(
-            new ResultSchemaProvider(std::move(schema)));
+        return std::make_shared<ResultSchemaProvider>(std::move(schema));
     }
 
 
@@ -151,29 +160,33 @@ public:
             column.type.type = nebula::cpp2::SupportedType::STRING;
             schema.columns.emplace_back(std::move(column));
         }
-        return std::shared_ptr<meta::SchemaProviderIf>(
-            new ResultSchemaProvider(std::move(schema)));
+        return std::make_shared<ResultSchemaProvider>(std::move(schema));
     }
 
-
-    static cpp2::PropDef propDef(cpp2::PropOwner owner,
-                                 std::string name,
-                                 TagID tagId = -1) {
+    static cpp2::PropDef vetexPropDef(std::string name, TagID tagId) {
         cpp2::PropDef prop;
         prop.set_name(std::move(name));
-        prop.set_owner(owner);
-        if (tagId != -1) {
-            prop.set_tag_id(tagId);
-        }
+        prop.set_owner(cpp2::PropOwner::SOURCE);
+        prop.id.set_tag_id(tagId);
         return prop;
     }
 
+    static cpp2::PropDef edgePropDef(std::string name, EdgeType eType) {
+        cpp2::PropDef prop;
+        prop.set_name(std::move(name));
+        prop.set_owner(cpp2::PropOwner::EDGE);
+        prop.id.set_edge_type(eType);
+        return prop;
+    }
 
-    static cpp2::PropDef propDef(cpp2::PropOwner owner,
-                                 std::string name,
-                                 cpp2::StatType type,
-                                 TagID tagId = -1) {
-        auto prop = TestUtils::propDef(owner, std::move(name), tagId);
+    static cpp2::PropDef vetexPropDef(std::string name, cpp2::StatType type, TagID tagId) {
+        auto prop = TestUtils::vetexPropDef(std::move(name), tagId);
+        prop.set_stat(type);
+        return prop;
+    }
+
+    static cpp2::PropDef edgePropDef(std::string name, cpp2::StatType type, EdgeType eType) {
+        auto prop = TestUtils::edgePropDef(std::move(name), eType);
         prop.set_stat(type);
         return prop;
     }
@@ -186,7 +199,7 @@ public:
                                                                   bool useMetaServer = false) {
         auto sc = std::make_unique<test::ServerContext>();
         // Always use the Meta Service in this case
-        sc->kvStore_ = TestUtils::initKV(dataPath, {ip, port}, mClient, true);
+        sc->kvStore_ = TestUtils::initKV(dataPath, 6, {ip, port}, mClient, true);
 
         if (!useMetaServer) {
             sc->schemaMan_ = TestUtils::mockSchemaMan(1);
@@ -215,6 +228,29 @@ public:
         return sc;
     }
 };
+
+template <typename T>
+void checkTagData(const std::vector<cpp2::TagData>& data,
+                  TagID tid,
+                  const std::string col_name,
+                  const std::unordered_map<TagID, nebula::cpp2::Schema> *schema,
+                  T expected) {
+    auto it = std::find_if(data.cbegin(), data.cend(), [tid](auto& td) {
+        if (td.tag_id == tid) {
+            return true;
+        }
+        return false;
+    });
+    DCHECK(it != data.cend());
+    auto it2 = schema->find(tid);
+    DCHECK(it2 != schema->end());
+    auto tagProvider = std::make_shared<ResultSchemaProvider>(it2->second);
+    auto tagReader   = RowReader::getRowReader(it->data, tagProvider);
+    auto r = RowReader::getPropByName(tagReader.get(), col_name);
+    CHECK(ok(r));
+    auto col = boost::get<T>(value(r));
+    EXPECT_EQ(col, expected);
+}
 
 }  // namespace storage
 }  // namespace nebula

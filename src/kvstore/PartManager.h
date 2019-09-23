@@ -71,6 +71,8 @@ protected:
 class MemPartManager final : public PartManager {
     FRIEND_TEST(NebulaStoreTest, SimpleTest);
     FRIEND_TEST(NebulaStoreTest, PartsTest);
+    FRIEND_TEST(NebulaStoreTest, ThreeCopiesTest);
+    FRIEND_TEST(NebulaStoreTest, TransLeaderTest);
 
 public:
     MemPartManager() = default;
@@ -82,23 +84,21 @@ public:
     PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) override;
 
     void addPart(GraphSpaceID spaceId, PartitionID partId, std::vector<HostAddr> peers = {}) {
-        if (partsMap_.find(spaceId) == partsMap_.end()) {
-            if (handler_) {
-                handler_->addSpace(spaceId);
-            }
-        }
+        bool noSpace = partsMap_.find(spaceId) == partsMap_.end();
         auto& p = partsMap_[spaceId];
-        if (p.find(partId) == p.end()) {
-            if (handler_) {
-                handler_->addPart(spaceId, partId);
-            }
-        }
+        bool noPart = p.find(partId) == p.end();
         p[partId] = PartMeta();
         auto& pm = p[partId];
         pm.spaceId_ = spaceId;
         pm.partId_  = partId;
         pm.peers_ = std::move(peers);
-    }
+        if (noSpace && handler_) {
+            handler_->addSpace(spaceId);
+        }
+        if (noPart && handler_) {
+            handler_->addPart(spaceId, partId);
+        }
+     }
 
     void removePart(GraphSpaceID spaceId, PartitionID partId) {
         auto it = partsMap_.find(spaceId);
@@ -157,7 +157,7 @@ public:
 
      void onPartUpdated(const PartMeta& partMeta) override;
 
-     HostAddr getLocalHost() override {
+     HostAddr getLocalHost() {
         return localHost_;
      }
 

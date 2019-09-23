@@ -33,6 +33,8 @@ public:
 
     std::unique_ptr<GraphClient> getClient() const;
 
+    meta::ClientBasedGflagsManager* gflagsManager();
+
 private:
     nebula::fs::TempDir                             metaRootPath_{"/tmp/MetaTest.XXXXXX"};
     nebula::fs::TempDir                             storageRootPath_{"/tmp/StorageTest.XXXXXX"};
@@ -40,6 +42,7 @@ private:
     std::unique_ptr<test::ServerContext>            storageServer_{nullptr};
     std::unique_ptr<test::ServerContext>            graphServer_{nullptr};
     std::unique_ptr<meta::MetaClient>               mClient_{nullptr};
+    std::unique_ptr<meta::ClientBasedGflagsManager> gflagsManager_{nullptr};
 };
 
 

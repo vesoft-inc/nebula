@@ -1,45 +1,33 @@
 #!/bin/bash
- 
+
+# Copyright (c) 2018 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License,
+# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+
 #-----------------------------------------------
 # variable value
 #-----------------------------------------------
-src_root_path=`cd ../../../; pwd`;
-thrift_root_path=$src_root_path/"third-party/fbthrift"
-thrift_jar_source_path=$thrift_root_path/"_build/fbthrift-2018.08.20.00/thrift/lib/java/thrift"
-graph_gen_java_path=$src_root_path"/src/interface/gen-java/com/vesoft/nebula/graph/"
-java_client_source_file_path=$src_root_path/src/client/java/src/main/java/com/vesoft/nebula/graph/
+# $1: the path of java src
+# $2: the path of current build dir
+src_root_path=$1
+output_src_file=$2
+pom_file_path=${src_root_path}/pom.xml
+graph_gen_java_path=${output_src_file}/../../interface/gen-java/com/vesoft/nebula/graph/
+java_client_source_file_path=${src_root_path}/src/main/java/com/vesoft/nebula/graph/
 
 #-----------------------------------------------
-# check file or dir exist 
+# check file or dir exist
 #-----------------------------------------------
 check_file_exist()
 {
-	if [ -f $1 ] || [ -d $1 ]
-	then
-		echo "File or path exist : $1"
-	else
-		echo "File or path not exist : $1" 
-		exit 1;
-	fi
-}
-
-#-----------------------------------------------
-# check maven tool exist
-#-----------------------------------------------
-
-maven_check()
-{
-	command -v mvn >/dev/null 2>&1 || { echo >&2 "Require maven but it's not installed.  Aborting."; exit 1; }
-}
-
-#-----------------------------------------------
-# compile dependent thrift jar
-#-----------------------------------------------
-compile_thrift_jar()
-{
-	check_file_exist $thrift_jar_source_path
-	maven_check
-	cd $thrift_jar_source_path && mvn clean package && cd -
+    if [ -f $1 ] || [ -d $1 ]
+    then
+        echo "File or path exist : $1"
+    else
+        echo "File or path not exist : $1"
+        exit 1;
+    fi
 }
 
 #-----------------------------------------------
@@ -47,9 +35,9 @@ compile_thrift_jar()
 #-----------------------------------------------
 setup_graph_source()
 {
-	check_file_exist $graph_gen_java_path
-	find  $java_client_source_file_path  -type l |xargs rm -rf {}
-	ln -s $graph_gen_java_path/* $java_client_source_file_path
+    check_file_exist $graph_gen_java_path
+    find  $java_client_source_file_path  -type l |xargs rm -rf {}
+    ln -s $graph_gen_java_path/ $java_client_source_file_path/generated
 }
 
 #-----------------------------------------------
@@ -57,11 +45,9 @@ setup_graph_source()
 #-----------------------------------------------
 compile_java_client()
 {
-	mvn clean package
+    mvn clean package -f ${pom_file_path}
 }
 
-
-compile_thrift_jar
 setup_graph_source
 compile_java_client
 

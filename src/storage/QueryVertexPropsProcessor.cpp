@@ -23,6 +23,7 @@ void QueryVertexPropsProcessor::process(const cpp2::VertexPropRequest& vertexReq
         tmpColumns.emplace_back(std::move(col));
     }
     req.set_return_columns(std::move(tmpColumns));
+    this->onlyVertexProps_ = true;
     QueryBoundProcessor::process(req);
 }
 

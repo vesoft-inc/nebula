@@ -64,7 +64,7 @@ std::shared_ptr<const meta::SchemaProviderIf> HBaseStore::getSchema(GraphSpaceID
     } else {
         LOG(ERROR) << "Key Type Error : " << key;
     }
-    return std::move(schema);
+    return schema;
 }
 
 
@@ -76,6 +76,9 @@ std::string HBaseStore::encode(GraphSpaceID spaceId,
     std::vector<dataman::Value> values;
     for (size_t index = 0; index < schema->getNumFields(); index++) {
         auto fieldName = schema->getFieldName(index);
+        if (UNLIKELY(nullptr == fieldName)) {
+            return "";
+        }
         auto value = data[fieldName];
         switch (schema->getFieldType(index).get_type()) {
             case cpp2::SupportedType::INT:
@@ -117,6 +120,9 @@ std::vector<KV> HBaseStore::decode(GraphSpaceID spaceId,
     data.emplace_back(kSchemaVersionColumnName, folly::to<std::string>(version));
     for (size_t index = 0; index < schema->getNumFields(); index++) {
         auto fieldName = schema->getFieldName(index);
+        if (UNLIKELY(nullptr == fieldName)) {
+            return std::vector<KV>();
+        }
         dataman::Value anyValue = result[fieldName];
         std::string value;
         if (anyValue.type() == typeid(int32_t)) {
@@ -373,6 +379,16 @@ void HBaseStore::asyncRemovePrefix(GraphSpaceID spaceId,
     return cb(removePrefix());
 }
 
+ResultCode HBaseStore::ingest(GraphSpaceID spaceId) {
+    UNUSED(spaceId);
+    return ResultCode::ERR_UNSUPPORTED;
+}
+
+int32_t HBaseStore::allLeader(std::unordered_map<GraphSpaceID,
+                                                 std::vector<PartitionID>>& leaderIds) {
+    UNUSED(leaderIds);
+    LOG(FATAL) << "Unimplement";
+}
 
 }  // namespace kvstore
 }  // namespace nebula

@@ -33,6 +33,11 @@
 #include "meta/processors/admin/HBProcessor.h"
 #include "meta/processors/usersMan/AuthenticationProcessor.h"
 #include "meta/processors/admin/BalanceProcessor.h"
+#include "meta/processors/admin/LeaderBalanceProcessor.h"
+#include "meta/processors/configMan/RegConfigProcessor.h"
+#include "meta/processors/configMan/GetConfigProcessor.h"
+#include "meta/processors/configMan/SetConfigProcessor.h"
+#include "meta/processors/configMan/ListConfigsProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -74,7 +79,7 @@ MetaServiceHandler::future_addHosts(const cpp2::AddHostsReq& req) {
 
 folly::Future<cpp2::ListHostsResp>
 MetaServiceHandler::future_listHosts(const cpp2::ListHostsReq& req) {
-    auto* processor = ListHostsProcessor::instance(kvstore_);
+    auto* processor = ListHostsProcessor::instance(kvstore_, adminClient_.get());
     RETURN_FUTURE(processor);
 }
 
@@ -188,7 +193,7 @@ MetaServiceHandler::future_listEdges(const cpp2::ListEdgesReq& req) {
 
 folly::Future<cpp2::HBResp>
 MetaServiceHandler::future_heartBeat(const cpp2::HBReq& req) {
-    auto* processor = HBProcessor::instance(kvstore_);
+    auto* processor = HBProcessor::instance(kvstore_, clusterId_);
     RETURN_FUTURE(processor);
 }
 
@@ -257,5 +262,36 @@ MetaServiceHandler::future_balance(const cpp2::BalanceReq& req) {
     auto* processor = BalanceProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_leaderBalance(const cpp2::LeaderBalanceReq& req) {
+    auto* processor = LeaderBalanceProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_regConfig(const cpp2::RegConfigReq &req) {
+    auto* processor = RegConfigProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GetConfigResp>
+MetaServiceHandler::future_getConfig(const cpp2::GetConfigReq &req) {
+    auto* processor = GetConfigProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_setConfig(const cpp2::SetConfigReq &req) {
+    auto* processor = SetConfigProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListConfigsResp>
+MetaServiceHandler::future_listConfigs(const cpp2::ListConfigsReq &req) {
+    auto* processor = ListConfigsProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
 }  // namespace meta
 }  // namespace nebula

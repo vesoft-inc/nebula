@@ -8,6 +8,8 @@
 #define STORAGE_CLIENT_STORAGECLIENT_H_
 
 #include "base/Base.h"
+#include "base/StatusOr.h"
+#include <gtest/gtest_prod.h>
 #include <folly/futures/Future.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
 #include "gen-cpp2/StorageServiceAsyncClient.h"
@@ -59,7 +61,6 @@ public:
         return responses_;
     }
 
-
 private:
     const size_t totalReqsSent_;
     size_t failedReqs_{0};
@@ -76,11 +77,13 @@ private:
  *
  * The class is NOT re-entriable
  */
-class StorageClient final {
+class StorageClient {
+    FRIEND_TEST(StorageClientTest, LeaderChangeTest);
+
 public:
-    explicit StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
-                           meta::MetaClient *client = nullptr);
-    ~StorageClient();
+    StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
+                  meta::MetaClient *client);
+    virtual ~StorageClient();
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addVertices(
         GraphSpaceID space,
@@ -96,9 +99,8 @@ public:
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::QueryResponse>> getNeighbors(
         GraphSpaceID space,
-        std::vector<VertexID> vertices,
-        EdgeType edgeType,
-        bool isOutBound,
+        const std::vector<VertexID> &vertices,
+        const std::vector<EdgeType> &edgeTypes,
         std::string filter,
         std::vector<storage::cpp2::PropDef> returnCols,
         folly::EventBase* evb = nullptr);
@@ -106,8 +108,7 @@ public:
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::QueryStatsResponse>> neighborStats(
         GraphSpaceID space,
         std::vector<VertexID> vertices,
-        EdgeType edgeType,
-        bool isOutBound,
+        std::vector<EdgeType> edgeType,
         std::string filter,
         std::vector<storage::cpp2::PropDef> returnCols,
         folly::EventBase* evb = nullptr);
@@ -124,15 +125,68 @@ public:
         std::vector<storage::cpp2::PropDef> returnCols,
         folly::EventBase* evb = nullptr);
 
-private:
-    std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
-    meta::MetaClient *client_{nullptr};
-    std::unique_ptr<thrift::ThriftClientManager<
-                        storage::cpp2::StorageServiceAsyncClient>> clientsMan_;
+    folly::Future<StatusOr<storage::cpp2::EdgeKeyResponse>> getEdgeKeys(
+        GraphSpaceID space,
+        VertexID vid,
+        folly::EventBase* evb = nullptr);
 
-private:
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> deleteEdges(
+        GraphSpaceID space,
+        std::vector<storage::cpp2::EdgeKey> edges,
+        folly::EventBase* evb = nullptr);
+
+    folly::Future<StatusOr<storage::cpp2::ExecResponse>> deleteVertex(
+        GraphSpaceID space,
+        VertexID vid,
+        folly::EventBase* evb = nullptr);
+
+    folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateVertex(
+        GraphSpaceID space,
+        VertexID vertexId,
+        std::string filter,
+        std::vector<storage::cpp2::UpdateItem> updateItems,
+        std::vector<std::string> returnCols,
+        bool insertable,
+        folly::EventBase* evb = nullptr);
+
+    folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateEdge(
+        GraphSpaceID space,
+        storage::cpp2::EdgeKey edgeKey,
+        std::string filter,
+        std::vector<storage::cpp2::UpdateItem> updateItems,
+        std::vector<std::string> returnCols,
+        bool insertable,
+        folly::EventBase* evb = nullptr);
+
+protected:
     // Calculate the partition id for the given vertex id
     PartitionID partId(GraphSpaceID spaceId, int64_t id) const;
+
+    const HostAddr& leader(const PartMeta& partMeta) const {
+        {
+            folly::RWSpinLock::ReadHolder rh(leadersLock_);
+            auto it = leaders_.find(std::make_pair(partMeta.spaceId_, partMeta.partId_));
+            if (it != leaders_.end()) {
+                return it->second;
+            }
+        }
+        VLOG(1) << "No leader exists. Choose one random.";
+        return partMeta.peers_[folly::Random::rand32(partMeta.peers_.size())];
+    }
+
+    void updateLeader(GraphSpaceID spaceId, PartitionID partId, const HostAddr& leader) {
+        LOG(INFO) << "Update leader for " << spaceId << ", " << partId << " to " << leader;
+        folly::RWSpinLock::WriteHolder wh(leadersLock_);
+        leaders_[std::make_pair(spaceId, partId)] = leader;
+    }
+
+    void invalidLeader(GraphSpaceID spaceId, PartitionID partId) {
+        folly::RWSpinLock::WriteHolder wh(leadersLock_);
+        auto it = leaders_.find(std::make_pair(spaceId, partId));
+        if (it != leaders_.end()) {
+            leaders_.erase(it);
+        }
+    }
 
     template<class Request,
              class RemoteFunc,
@@ -145,6 +199,18 @@ private:
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc);
+
+    template<class Request,
+             class RemoteFunc,
+             class Response =
+                typename std::result_of<
+                    RemoteFunc(cpp2::StorageServiceAsyncClient* client, const Request&)
+                >::type::value_type
+            >
+    folly::Future<StatusOr<Response>> getResponse(
+            folly::EventBase* evb,
+            std::pair<HostAddr, Request> request,
+            RemoteFunc remoteFunc);
 
     // Cluster given ids into the host they belong to
     // The method returns a map
@@ -164,13 +230,31 @@ private:
                           > clusters;
         for (auto& id : ids) {
             PartitionID part = partId(spaceId, f(id));
-            auto partMeta = client_->getPartMetaFromCache(spaceId, part);
+            auto partMeta = getPartMeta(spaceId, part);
             CHECK_GT(partMeta.peers_.size(), 0U);
-            // TODO We need to use the leader here
-            clusters[partMeta.peers_.front()][part].emplace_back(std::move(id));
+            const auto& leader = this->leader(partMeta);
+            clusters[leader][part].emplace_back(std::move(id));
         }
         return clusters;
     }
+
+    virtual int32_t partsNum(GraphSpaceID spaceId) const {
+        CHECK(client_ != nullptr);
+        return client_->partsNum(spaceId);
+    }
+
+    virtual PartMeta getPartMeta(GraphSpaceID spaceId, PartitionID partId) const {
+        CHECK(client_ != nullptr);
+        return client_->getPartMetaFromCache(spaceId, partId);
+    }
+
+private:
+    std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
+    meta::MetaClient *client_{nullptr};
+    std::unique_ptr<thrift::ThriftClientManager<
+                        storage::cpp2::StorageServiceAsyncClient>> clientsMan_;
+    mutable folly::RWSpinLock leadersLock_;
+    std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> leaders_;
 };
 
 }   // namespace storage
@@ -179,4 +263,3 @@ private:
 #include "storage/client/StorageClient.inl"
 
 #endif  // STORAGE_CLIENT_STORAGECLIENT_H_
-

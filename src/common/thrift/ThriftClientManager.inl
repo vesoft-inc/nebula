@@ -17,7 +17,7 @@ namespace thrift {
 
 template<class ClientType>
 std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
-        const HostAddr& host, folly::EventBase* evb, bool compatibility) {
+        const HostAddr& host, folly::EventBase* evb, bool compatibility, uint32_t timeout) {
     VLOG(2) << "Getting a client to "
             << network::NetworkUtils::intToIPv4(host.first)
             << ":" << host.second;
@@ -38,7 +38,7 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
             << ipAddr << ":" << port
             << ", trying to create one";
     auto channel = apache::thrift::ReconnectingRequestChannel::newChannel(
-        *evb, [compatibility, ipAddr, port] (folly::EventBase& eb) mutable {
+        *evb, [compatibility, ipAddr, port, timeout] (folly::EventBase& eb) mutable {
             static thread_local int connectionCount = 0;
             VLOG(2) << "Connecting to " << ipAddr << ":" << port
                     << " for " << ++connectionCount << " times";
@@ -49,6 +49,9 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
                         &eb, ipAddr, port, FLAGS_conn_timeout_ms);
                 });
             auto headerClientChannel =  apache::thrift::HeaderClientChannel::newChannel(socket);
+            if (timeout > 0) {
+                headerClientChannel->setTimeout(timeout);
+            }
             if (compatibility) {
                 headerClientChannel->setProtocolId(apache::thrift::protocol::T_BINARY_PROTOCOL);
                 headerClientChannel->setClientType(THRIFT_UNFRAMED_DEPRECATED);

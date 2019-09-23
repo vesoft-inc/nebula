@@ -62,15 +62,13 @@ public:
         if (context.is_full_compaction) {
             LOG(INFO) << "Do full compaction!";
             lastRunCustomFilterTimeSec_ = now;
-            return std::unique_ptr<rocksdb::CompactionFilter>(
-                            new KVCompactionFilter(spaceId_, createKVFilter()));
+            return std::make_unique<KVCompactionFilter>(spaceId_, createKVFilter());
         } else {
             if (customFilterIntervalSecs_ >= 0
                     && now - lastRunCustomFilterTimeSec_ > customFilterIntervalSecs_) {
                 LOG(INFO) << "Do custom minor compaction!";
                 lastRunCustomFilterTimeSec_ = now;
-                return std::unique_ptr<rocksdb::CompactionFilter>(
-                            new KVCompactionFilter(spaceId_, createKVFilter()));
+                return std::make_unique<KVCompactionFilter>(spaceId_, createKVFilter());
             }
             LOG(INFO) << "Do default minor compaction!";
             return std::unique_ptr<rocksdb::CompactionFilter>(nullptr);
@@ -91,8 +89,6 @@ private:
     int32_t lastRunCustomFilterTimeSec_ = 0;
 };
 
-
-}  // namespace kvstore
-}  // namespace nebula
-#endif  // KVSTORE_COMPACTIONFILTER_H_
-
+}   // namespace kvstore
+}   // namespace nebula
+#endif   // KVSTORE_COMPACTIONFILTER_H_

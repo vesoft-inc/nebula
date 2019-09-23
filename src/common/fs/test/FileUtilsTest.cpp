@@ -115,17 +115,22 @@ TEST(FileUtils, removeDirNonrecursively) {
     char dirTemp[] = "/tmp/FileUtilTest-TempDir.XXXXXX";
     ASSERT_NE(mkdtemp(dirTemp), nullptr);
 
-    // Create two temp files
+    // Create 1 temp file & 1 temp dir
     char fileTemp[64];
     snprintf(fileTemp, sizeof(fileTemp), "%s/tempFile.XXXXXX", dirTemp);
     int fd = mkstemp(fileTemp);
     ASSERT_EQ(close(fd), 0);
 
+    char subDirTemp[64];
+    snprintf(subDirTemp, sizeof(subDirTemp),
+        "%s/FileUtilTest-SubTempDir.XXXXXX", dirTemp);
+    ASSERT_NE(mkdtemp(subDirTemp), nullptr);
+
     // Non-recursively removal should fail
     EXPECT_FALSE(FileUtils::remove(dirTemp));
 
-    // Now let's remove the temp file
-    EXPECT_TRUE(FileUtils::remove(fileTemp));
+    // Now let's remove the temp dir
+    EXPECT_TRUE(FileUtils::remove(subDirTemp));
 
     // This time non-recursively removal should succeed
     EXPECT_TRUE(FileUtils::remove(dirTemp));

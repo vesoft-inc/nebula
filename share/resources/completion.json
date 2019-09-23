@@ -12,7 +12,7 @@
         },
         "SHOW" : {
             "sub_keywords": [
-                "HOSTS", "TAGS", "EDGES", "SPACES", "USERS", "ROLES", "USER"
+                "HOSTS", "TAGS", "EDGES", "SPACES", "USERS", "ROLES", "USER", "VARIABLES"
             ]
         },
         "DESCRIBE" : {
@@ -39,6 +39,16 @@
         "ALTER": {
             "sub_keywords": [
                 "TAG", "EDGE", "ADD", "CHANGE", "DROP"
+            ]
+        },
+        "UPDATE": {
+            "sub_keywords": [
+                "VERTEX", "EDGE", "OF", "SET", "WHEN", "YIELD"
+            ]
+        },
+        "UPSERT": {
+            "sub_keywords": [
+                "VERTEX", "EDGE", "OF", "SET", "WHEN", "YIELD"
             ]
         },
         "DELETE": {
@@ -76,6 +86,16 @@
         "INTERSECT": {
         },
         "UNION": {
+        },
+        "UPDATE": {
+            "sub_keywords": [
+                "VARIABLES"
+            ]
+        },
+        "GET": {
+            "sub_keywords": [
+                "VARIABLES"
+            ]
         }
     },
     "typenames": [

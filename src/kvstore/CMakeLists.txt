@@ -1,4 +1,4 @@
-add_library(
+nebula_add_library(
     kvstore_obj OBJECT
     Part.cpp
     RocksEngine.cpp
@@ -6,12 +6,12 @@ add_library(
     NebulaStore.cpp
     RocksEngineConfig.cpp
     LogEncoder.cpp
+    SnapshotManagerImpl.cpp
 )
-add_dependencies(kvstore_obj base_obj meta_client)
 
-add_subdirectory(raftex)
-add_subdirectory(wal)
-add_subdirectory(test)
+nebula_add_subdirectory(raftex)
+nebula_add_subdirectory(wal)
+nebula_add_subdirectory(test)
 
-add_subdirectory(plugins)
+nebula_add_subdirectory(plugins)
 

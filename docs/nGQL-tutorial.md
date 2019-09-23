@@ -1,5 +1,4 @@
-# nGQL Query Language
-
+<!-- # nGQL Query Language -->
 
 nGQL is the query language of Nebula Graph that allows users to store and retrieve
 data from the graph database. Nebula Graph wants to make its queries easy to learn,
@@ -50,13 +49,13 @@ ADD HOSTS 192.168.8.5:65500
 
 ```
 SHOW HOSTS
-=============================
-|          Ip |  Port | Status |
-=============================
-| 192.168.8.5 | 65500 | online |
------------------------
+=================================
+| Ip          | Port  | Status  |
+=================================
+| 192.168.8.5 | 65500 | online  |
+---------------------------------
 | 192.168.8.1 | 65500 | offline |
------------------------
+---------------------------------
 ```
 
 * Remove hosts
@@ -79,9 +78,9 @@ REMOVE HOSTS $storage_ip1:$storage_port1, $storage_ip2:$storage_port2,...
 
 Graph spaces are physically isolated like the database in MySQL.
 
-| | CREATE | DROP | USE | DESCRIBE | SHOW |
-|---| --- | --- | ----- | -------- | ---- |
-| SPACE | √ | √  | √    | v0.2     | √    |
+|       | CREATE | DROP | USE   | DESCRIBE | SHOW | SHOW CREATE |
+|---    | ---    | ---  | ----- | -------- | ---- | ----------- |
+| SPACE | √      | √    | √     | √        | √    | √           |
 
 Create space with CREATE, drop space with DROP, choose which space to use with USE, list available spaces with SHOW. DESCRIBE will be released in v0.2.
 
@@ -92,10 +91,19 @@ Following are some examples:
 ```
 SHOW SPACES
 ================
-|         Name |
+| Name         |
 ================
 | myspace_test |
 ----------------
+```
+
+```
+SHOW CREATE SPACES myspace_test
+====================================================================================
+| Space        | Create Space                                                      |
+====================================================================================
+| myspace_test | CREATE SPACE myspace_test (partition_num = 1, replica_factor = 1) |
+------------------------------------------------------------------------------------
 ```
 
 * Drop a space
@@ -123,12 +131,12 @@ USE myspace_test
 
 Schema is used to manage the properties of vertices and edges (name and type of each field). In Nebula, a vertex can be labeled by multiple tags.
 
-|    | CREATE | DROP | ALTER | DESCRIBE | SHOW | TTL | LOAD | DUMP |
-|:-: | :-: | :-: |:-: | :-: | :-: | :-: |:-: | :-: |
-|TAG | √      | v0.2 |    v0.2  |      √   |   √  |  v0.3  | v0.2    |  v0.3   |
-|EDGE| √      |v0.2  |  v0.2 |  √       |  √   |v0.3 | v0.2 | v0.3 |
+|    | CREATE | DROP | ALTER | DESCRIBE | SHOW | TTL  | LOAD | DUMP | SHOW CREATE |
+|:-: | :-:    | :-:  |:-:    | :-:      | :-:  | :-:  | :-:  | :-:  | :-:         |
+|TAG | √      | √    | √     |  √       | √    | ×    | √    | ×    | √           |
+|EDGE| √      | √    | √     |  √       | √    | ×    | √    | ×    | √           |
 
-You can use CREATE, DROP, ALTER, DESCRIBE to create, drop, alter, view a schema.
+You can use CREATE, DROP, ALTER, DESCRIBE, SHOW CREATE to create, drop, alter, view a schema.
 Following are some examples:
 
 ```
@@ -137,6 +145,25 @@ CREATE TAG player(name string, age int);
 
 ```
 DESCRIBE TAG player;
+==================
+| Field | Type   |
+==================
+| name  | string |
+------------------
+| age   | int    |
+------------------
+```
+
+```
+SHOW CREATE TAG player;
+==========================================================================================
+| Tag    | Create Tag                                                                    |
+==========================================================================================
+| player | CREATE TAG player (
+  name string,
+  age int
+) ttl_duration = 0, ttl_col = "" |
+------------------------------------------------------------------------------------------
 ```
 
 ```
@@ -153,10 +180,29 @@ CREATE EDGE serve (start_year int, end_year int);
 
 ```
 DESCRIBE EDGE serve;
+=====================
+| Field      | Type |
+=====================
+| start_year | int  |
+---------------------
+| end_year   | int  |
+---------------------
 ```
 
 ```
-CREATE EDGE like (likeness double)；
+SHOW CREATE EDGE serve;
+=================================================================================================
+| Edge  | Create Edge                                                                           |
+=================================================================================================
+| serve | CREATE EDGE serve (
+  start_year int,
+  end_year int
+) ttl_duration = 0, ttl_col = "" |
+-------------------------------------------------------------------------------------------------
+```
+
+```
+CREATE EDGE like (likeness double);
 ```
 
 ```
@@ -171,25 +217,25 @@ SHOW EDGES
 
 INSERT is used to insert new vertices and edges, UPDATE AND REMOVE will be available in v0.2.
 
-|   | INSERT | UPDATE | REMOVE |
-|:-: | :-: | :-: |:-: |
-|TAG | √   | v0.2     | v0.2   |
-|EDGE | √   | v0.2    | v0.2|
+|     | INSERT | UPDATE | REMOVE |
+|:-:  | :-:    | :-:    |:-:     |
+|TAG  | √      | ×      | ×      |
+|EDGE | √      | ×      | ×      |
 
-When inserting a vertex, its tag type and ID should be specified, but the attribute field can be ignored(the ignored fields are set to default values).
+When inserting a vertex, its tag type and attribute fields should be specified, while its ID can either be auto-generated by hash or specified manually.
 
 Following are some examples:
 
 ```
-INSERT VERTEX player(name, age) VALUES 100:("Stoudemire", 36);
+INSERT VERTEX player(name, age) VALUES 100:("Stoudemire", 36); -- specify ID manually
 ```
 
 ```
-INSERT VERTEX player(name) VALUES 101:("Vicenta"); -- age is set to default value 0
+INSERT VERTEX player(name, age) VALUES hash("Jummy"):("Jummy", 0);  -- ID generated by hash
 ```
 
 ```
-INSERT VERTEX player(name) VALUES 102:("jummy");
+INSERT VERTEX player(name, age) VALUES 101:("Vicenta", 0);
 ```
 
 ```
@@ -201,7 +247,7 @@ INSERT EDGE like (likeness) VALUES 100 -> 101:(90.02);
 ```
 
 ```
-INSERT EDGE like (likeness) VALUES 101 -> 102:(10);
+INSERT EDGE like (likeness) VALUES 101 -> 102:(10.00);
 ```
 
 ```
@@ -227,20 +273,17 @@ GO FROM 100 OVER like WHERE likeness >= 0; -- Start from vertex 100, query along
 ```
 
 ```
-GO FROM 100 OVER like WHERE $$[player].name=="Vicenta"; -- Filter requirement: the destination vertex name is "Vicenta"
+GO FROM 100 OVER like WHERE $$.player.name=="Vicenta"; -- Filter requirement: the destination vertex name is "Vicenta"
 ```
 
 ```
-GO FROM 101 OVER serve YIELD serve._src AS src_id, $^[player].age AS src_propAge, serve._dst AS dst_id, $$[team].name AS dst_propName; -- Return the starting vertex id(renamed as srcid), source vertex property age, destination vertex id and its name
+GO FROM 101 OVER serve YIELD serve._src AS src_id, $^.player.age AS src_propAge, serve._dst AS dst_id, $$.team.name AS dst_propName; -- Return the starting vertex id(renamed as srcid), source vertex property age, destination vertex id and its name
 ```
 
 ```
 GO FROM 100 OVER like | GO FROM $-.id OVER serve; -- Start from vertex 100, query 1-hop, set its output as the next query's input by using pipe
 ```
-
-
-
-## Syntax norms
+<!-- ## Syntax norms -->
 
 In order to be consistent with ourselves and other nGQL users, we recommend
 you to follow these syntax norms:
@@ -264,9 +307,10 @@ you to follow these syntax norms:
   - eg: inService
 
 
-  | Graph entity  | Recommended style | Example |
-  |:-: | :-: | :-: |:-: |
-  |Key words | Upper case   | SHOW SPACES     |
-  |Vertex tags | Upper camel case, beginning with an upper-case character   | ManageTeam   |
-  |Edges | Upper snake case, beginning with an upper-case character   | Play_for   |
-  |Property names | Lower camel case, beginning with a lower-case character   | inService   |
+| Graph entity  | Recommended style                                          | Example     |
+|:-:            | :-:                                                        | :-:         |
+|Key words      | Upper case                                                 | SHOW SPACES |
+|Vertex tags    | Upper camel case, beginning with an upper-case character   | ManageTeam  |
+|Edges          | Upper snake case, beginning with an upper-case character   | Play_for    |
+|Property names | Lower camel case, beginning with a lower-case character    | inService   |
+

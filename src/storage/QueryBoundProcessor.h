@@ -22,25 +22,34 @@ class QueryBoundProcessor
 public:
     static QueryBoundProcessor* instance(kvstore::KVStore* kvstore,
                                          meta::SchemaManager* schemaMan,
-                                         folly::Executor* executor,
-                                         BoundType type = BoundType::OUT_BOUND) {
-        return new QueryBoundProcessor(kvstore, schemaMan, executor, type);
+                                         folly::Executor* executor) {
+        return new QueryBoundProcessor(kvstore, schemaMan, executor);
     }
 
 protected:
     explicit QueryBoundProcessor(kvstore::KVStore* kvstore,
                                  meta::SchemaManager* schemaMan,
-                                 folly::Executor* executor,
-                                 BoundType type)
+                                 folly::Executor* executor)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
-                             cpp2::QueryResponse>(kvstore, schemaMan, executor, type) {}
+                             cpp2::QueryResponse>(kvstore, schemaMan, executor) {}
 
-    kvstore::ResultCode processVertex(PartitionID partID, VertexID vId) override;
+    kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) override;
 
     void onProcessFinished(int32_t retNum) override;
 
 private:
     std::vector<cpp2::VertexData> vertices_;
+
+    kvstore::ResultCode processEdge(PartitionID partId, VertexID vId, FilterContext &fcontext,
+                                    cpp2::VertexData& vdata);
+    kvstore::ResultCode processEdgeImpl(const PartitionID partId, const VertexID vId,
+                                        const EdgeType edgeType,
+                                        const std::vector<PropContext>& props,
+                                        FilterContext& fcontext, cpp2::VertexData& vdata);
+
+protected:
+    // Indicate the request only get vertex props.
+    bool onlyVertexProps_ = false;
 };
 
 }  // namespace storage

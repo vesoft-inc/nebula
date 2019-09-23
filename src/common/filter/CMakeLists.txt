@@ -1,10 +1,8 @@
-add_library(
+nebula_add_library(
         filter_obj
         OBJECT
         Expressions.cpp
         FunctionManager.cpp
 )
 
-add_dependencies(filter_obj base_obj)
-
-add_subdirectory(test)
+nebula_add_subdirectory(test)

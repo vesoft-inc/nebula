@@ -16,6 +16,7 @@
 
 DECLARE_string(u);
 DECLARE_string(p);
+DEFINE_bool(enable_history, false, "Whether to force saving the command history");
 
 namespace nebula {
 namespace graph {
@@ -23,11 +24,24 @@ namespace graph {
 const int32_t kMaxAuthInfoRetries = 3;
 const int32_t kMaxUsernameLen = 16;
 const int32_t kMaxPasswordLen = 24;
-const int32_t kMaxCommandLineLen = 1024;
 
 CliManager::CliManager() {
-    ::using_history();
-    initAutoCompletion();
+    if (!fs::FileUtils::isStdinTTY()) {
+        enableHistroy_ = false;
+        isInteractive_ = false;
+    }
+
+    if (FLAGS_enable_history) {
+        enableHistroy_ = true;
+    }
+
+    if (enableHistroy_) {
+        ::using_history();
+    }
+
+    if (isInteractive_) {
+        initAutoCompletion();
+    }
 }
 
 
@@ -90,7 +104,12 @@ bool CliManager::connect(const std::string& addr,
     auto client = std::make_unique<GraphClient>(addr_, port_);
     cpp2::ErrorCode res = client->connect(user, pass);
     if (res == cpp2::ErrorCode::SUCCEEDED) {
-        std::cerr << "\nWelcome to Nebula Graph (Version 0.1)\n\n";
+#if defined(NEBULA_BUILD_VERSION)
+        std::cerr << "\nWelcome to Nebula Graph (Version "
+                  << NEBULA_STRINGIFY(NEBULA_BUILD_VERSION) << ")\n\n";
+#else
+        std::cerr << "\nWelcome to Nebula Graph\n\n";
+#endif
         cmdProcessor_ = std::make_unique<CmdProcessor>(std::move(client));
         return true;
     } else {
@@ -137,6 +156,7 @@ void CliManager::loop() {
         if (!cmdProcessor_->process(cmd)) {
             break;
         }
+
         cmd.clear();
     }
     saveHistory();
@@ -146,16 +166,22 @@ void CliManager::loop() {
 bool CliManager::readLine(std::string &line, bool linebreak) {
     auto ok = true;
     char prompt[256];
-    static auto color = 0u;
-    ::snprintf(prompt, sizeof(prompt),
-                "\001"          // RL_PROMPT_START_IGNORE
-                "\033[1;%um"    // color codes start
-                "\002"          // RL_PROMPT_END_IGNORE
-                "nebula> "      // prompt
-                "\001"          // RL_PROMPT_START_IGNORE
-                "\033[0m"       // restore color code
-                "\002",         // RL_PROMPT_END_IGNORE
-                color++ % 6 + 31);
+    if (isInteractive_) {
+        static auto color = 0u;
+        ::snprintf(prompt, sizeof(prompt),
+                   "\001"              // RL_PROMPT_START_IGNORE
+                   "\033[1;%um"        // color codes start
+                   "\002"              // RL_PROMPT_END_IGNORE
+                   "(%s@%s) [%s]> "    // prompt "(user@host) [spaceName]"
+                   "\001"              // RL_PROMPT_START_IGNORE
+                   "\033[0m"           // restore color code
+                   "\002",             // RL_PROMPT_END_IGNORE
+                   color++ % 6 + 31, username_.c_str(),
+                   addr_.c_str(), cmdProcessor_->getSpaceName().c_str());
+    } else {
+        prompt[0] = '\0';   // prompt
+    }
+
     auto *input = ::readline(linebreak ? "": prompt);
 
     do {
@@ -184,6 +210,9 @@ bool CliManager::readLine(std::string &line, bool linebreak) {
 
 
 void CliManager::updateHistory(const char *line) {
+    if (!enableHistroy_) {
+        return;
+    }
     auto **hists = ::history_list();
     auto i = 0;
     // Search in history
@@ -208,6 +237,9 @@ void CliManager::updateHistory(const char *line) {
 
 
 void CliManager::saveHistory() {
+    if (!enableHistroy_) {
+        return;
+    }
     std::string histfile;
     histfile += ::getenv("HOME");
     histfile += "/.nebula_history";
@@ -225,6 +257,9 @@ void CliManager::saveHistory() {
 
 
 void CliManager::loadHistory() {
+    if (!enableHistroy_) {
+        return;
+    }
     std::string histfile;
     histfile += ::getenv("HOME");
     histfile += "/.nebula_history";

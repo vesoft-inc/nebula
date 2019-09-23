@@ -24,7 +24,7 @@ public:
 
     void add(const std::string &var, std::unique_ptr<InterimResult> result);
 
-    const InterimResult* get(const std::string &var) const;
+    const InterimResult* get(const std::string &var, bool *existing = nullptr) const;
 
 private:
     std::unordered_map<std::string, std::unique_ptr<InterimResult>> holder_;

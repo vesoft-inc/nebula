@@ -131,6 +131,22 @@ protected:
         return T();     // suppress the no-return warning
     }
 
+    template <typename T>
+    std::enable_if_t<std::is_floating_point<T>::value, T>
+    convert(const cpp2::ColumnValue &v) {
+        switch (v.getType()) {
+            case ColumnType::single_precision:
+                return v.get_single_precision();
+            case ColumnType::double_precision:
+                return v.get_double_precision();
+            default:
+                throw TestError() << "Cannot convert unknown dynamic column type to "
+                                  << "floating point type: "
+                                  << static_cast<int32_t>(v.getType());
+        }
+        return T();     // suppress the no-return warning
+    }
+
     /**
      * Transform rows of dynamic type to tuples of static type
      */
@@ -172,6 +188,10 @@ protected:
                                << (errmsg == nullptr ? "'" : "': " + *errmsg);
         }
 
+        if (resp.get_rows() == nullptr && expected.empty()) {
+            return TestOK();
+        }
+
         std::vector<Tuple> rows;
         try {
             rows = rowsToTuples<Tuple>(respToRecords(resp));
@@ -201,6 +221,39 @@ protected:
         }
         return TestOK();
     }
+
+    AssertionResult verifyColNames(const cpp2::ExecutionResponse &resp,
+                                   std::vector<std::string> &expectedColNames) {
+        if (resp.get_error_code() != cpp2::ErrorCode::SUCCEEDED) {
+            auto *errmsg = resp.get_error_msg();
+            return TestError() << "Query failed with `"
+                               << static_cast<int32_t>(resp.get_error_code())
+                               << (errmsg == nullptr ? "'" : "': " + *errmsg);
+        }
+
+        if (resp.get_column_names() == nullptr && expectedColNames.empty()) {
+            return TestOK();
+        }
+
+        if (resp.get_column_names() != nullptr) {
+            auto colNames = *(resp.get_column_names());
+            if (colNames.size() != expectedColNames.size()) {
+                return TestError() << "Column size not match: "
+                                   << colNames.size() << " vs. " << expectedColNames.size();
+            }
+            for (decltype(colNames.size()) i = 0; i < colNames.size(); ++i) {
+                if (colNames[i] != expectedColNames[i]) {
+                    return TestError() << colNames[i] << " vs. " << expectedColNames[i]
+                                       << ", index: " << i;
+                }
+            }
+        } else {
+            return TestError() << "Response has no column names.";
+        }
+
+        return TestOK();
+    }
+
 
 protected:
 };

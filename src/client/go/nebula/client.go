@@ -73,7 +73,7 @@ func (client *GraphClient) Signout(sessionID int64) {
     }
 }
 
-func (client *GraphClient) execute(sessionID int64, stmt string) (response *graph.ExecutionResponse, err error) {
+func (client *GraphClient) Execute(sessionID int64, stmt string) (response *graph.ExecutionResponse, err error) {
     if response, err := client.graph.Execute(sessionID, stmt); err != nil {
         logger.Printf("Execute Failed : %v", err)
         return nil, err
@@ -81,4 +81,3 @@ func (client *GraphClient) execute(sessionID int64, stmt string) (response *grap
         return response, nil
     }
 }
-

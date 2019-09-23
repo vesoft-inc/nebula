@@ -92,12 +92,12 @@ void BalancePlan::invoke() {
         }  // for (auto j = 0; j < buckets_[i].size(); j++)
     }  // for (auto i = 0; i < buckets_.size(); i++)
 
+    saveInStore(true);
     for (auto& bucket : buckets_) {
         if (!bucket.empty()) {
             tasks_[bucket[0]].invoke();
         }
     }
-    saveInStore(true);
 }
 
 bool BalancePlan::saveInStore(bool onlyPlan) {
@@ -114,7 +114,7 @@ bool BalancePlan::saveInStore(bool onlyPlan) {
         kv_->asyncMultiPut(kDefaultSpaceId,
                            kDefaultPartId,
                            std::move(data),
-                           [this, &baton, &ret] (kvstore::ResultCode code) {
+                           [&baton, &ret] (kvstore::ResultCode code) {
             if (kvstore::ResultCode::SUCCEEDED == code) {
                 ret = true;
             } else {
@@ -195,4 +195,3 @@ BalancePlan::Status BalancePlan::status(const folly::StringPiece& rawVal) {
 
 }  // namespace meta
 }  // namespace nebula
-

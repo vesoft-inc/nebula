@@ -19,7 +19,7 @@ Schema SchemaWriter::moveSchema() noexcept {
     schema.set_columns(std::move(columns_));
 
     nameIndex_.clear();
-    return std::move(schema);
+    return schema;
 }
 
 

@@ -41,6 +41,10 @@ public:
 
     virtual StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) = 0;
 
+    virtual StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) = 0;
+
+    virtual StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) = 0;
+
     virtual void init(MetaClient *client = nullptr) = 0;
 
 protected:
@@ -50,4 +54,3 @@ protected:
 }  // namespace meta
 }  // namespace nebula
 #endif  // META_SCHEMAMANAGER_H_
-

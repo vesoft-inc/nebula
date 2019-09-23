@@ -48,17 +48,25 @@ public:
     // Returns a negative number when the schema does not exist
     StatusOr<SchemaVer> getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
 
-    // This interface is disabled
-    StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece spaceName) override;
+    StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece) override {
+        LOG(FATAL) << "Unimplemented";
+    }
 
-    // This interface is disabled
     StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
-    // This interface is disabled
-    StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
+    StatusOr<EdgeType> toEdgeType(GraphSpaceID, folly::StringPiece) override {
+        LOG(FATAL) << "Unimplemented";
+    }
 
-    void init(nebula::meta::MetaClient *client = nullptr) override {
-        UNUSED(client);
+    StatusOr<std::string> toEdgeName(GraphSpaceID, EdgeType) override {
+        LOG(FATAL) << "Unimplemented";
+    }
+
+    StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID) override {
+        LOG(FATAL) << "Unimplemented";
+    }
+
+    void init(nebula::meta::MetaClient *) override {
     }
 
 protected:
@@ -73,10 +81,13 @@ protected:
                        // version -> schema
                        std::map<SchemaVer, std::shared_ptr<const nebula::meta::SchemaProviderIf>>>
         edgeSchemas_;
+
+    folly::RWSpinLock spaceLock_;
+    std::set<GraphSpaceID> spaces_;
+    // Key: spaceId + tagName,  Val: tagId
+    std::unordered_map<std::string, TagID> tagNameToId_;
 };
 
 }  // namespace storage
 }  // namespace nebula
 #endif  // META_ADHOCSCHEMAMANAGER_H_
-
-

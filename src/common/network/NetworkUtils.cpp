@@ -143,7 +143,7 @@ uint16_t NetworkUtils::getAvailablePort() {
 }
 
 
-bool NetworkUtils::ipv4ToInt(const std::string& ipStr, uint32_t& ip) {
+bool NetworkUtils::ipv4ToInt(const std::string& ipStr, IPv4& ip) {
     std::vector<folly::StringPiece> parts;
     folly::split(".", ipStr, parts, true);
     if (parts.size() != 4) {
@@ -165,7 +165,7 @@ bool NetworkUtils::ipv4ToInt(const std::string& ipStr, uint32_t& ip) {
 }
 
 
-std::string NetworkUtils::intToIPv4(uint32_t ip) {
+std::string NetworkUtils::intToIPv4(IPv4 ip) {
     static const std::vector<std::string> kDict{
         "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12",
         "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24",
@@ -216,7 +216,7 @@ std::string NetworkUtils::intToIPv4(uint32_t ip) {
 }
 
 StatusOr<HostAddr> NetworkUtils::toHostAddr(folly::StringPiece ip, int32_t port) {
-    uint32_t ipV4;
+    IPv4 ipV4;
     if (!ipv4ToInt(ip.toString(), ipV4)) {
         return Status::Error("Bad ip format:%s", ip.start());
     }

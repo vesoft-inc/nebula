@@ -86,6 +86,7 @@ public:
     // Remove partId from current storage engine.
     virtual void removePart(PartitionID partId) = 0;
 
+
     // Return all partIds current storage engine holds.
     virtual std::vector<PartitionID> allParts() = 0;
 
@@ -103,7 +104,9 @@ public:
     virtual ResultCode setDBOption(const std::string& configKey,
                                    const std::string& configValue) = 0;
 
-    virtual ResultCode compactAll() = 0;
+    virtual ResultCode compact() = 0;
+
+    virtual ResultCode flush() = 0;
 
 protected:
     GraphSpaceID spaceId_;

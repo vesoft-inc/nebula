@@ -12,10 +12,8 @@ namespace nebula {
 namespace meta {
 
 std::unique_ptr<SchemaManager> SchemaManager::create() {
-    auto sm = std::unique_ptr<SchemaManager>(new ServerBasedSchemaManager());
-    return sm;
+    return std::make_unique<ServerBasedSchemaManager>();
 }
 
-}  // namespace meta
-}  // namespace nebula
-
+}   // namespace meta
+}   // namespace nebula

@@ -27,7 +27,7 @@ private:
     explicit QueryVertexPropsProcessor(kvstore::KVStore* kvstore,
                                        meta::SchemaManager* schemaMan,
                                        folly::Executor* executor)
-        : QueryBoundProcessor(kvstore, schemaMan, executor, BoundType::OUT_BOUND) {}
+        : QueryBoundProcessor(kvstore, schemaMan, executor) {}
 };
 
 }  // namespace storage

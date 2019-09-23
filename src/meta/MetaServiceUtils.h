@@ -19,7 +19,10 @@ enum class EntryType : int8_t {
     TAG   = 0x02,
     EDGE  = 0x03,
     USER  = 0x04,
+    CONFIG = 0x05,
 };
+
+using ConfigName = std::pair<cpp2::ConfigModule, std::string>;
 
 class MetaServiceUtils final {
 public:
@@ -122,6 +125,19 @@ public:
     static UserID parseRoleUserId(folly::StringPiece val);
 
     static UserID parseUserId(folly::StringPiece val);
+
+    static std::string configKey(const cpp2::ConfigModule& module,
+                                 const std::string& name);
+
+    static std::string configKeyPrefix(const cpp2::ConfigModule& module);
+
+    static std::string configValue(const cpp2::ConfigType& valueType,
+                                   const cpp2::ConfigMode& valueMode,
+                                   const std::string& config);
+
+    static ConfigName parseConfigKey(folly::StringPiece rawData);
+
+    static cpp2::ConfigItem parseConfigValue(folly::StringPiece rawData);
 };
 
 }  // namespace meta

@@ -180,17 +180,18 @@ std::string UpdateList::toString() const {
 std::string UpdateVertexSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "UPDATE ";
     if (insertable_) {
-        buf += "OR INSERT ";
+        buf += "UPSERT ";
+    } else {
+        buf += "UPDATE ";
     }
     buf += "VERTEX ";
     buf += vid_->toString();
     buf += " SET ";
-    buf += updateItems_->toString();
-    if (whereClause_ != nullptr) {
+    buf += updateList_->toString();
+    if (whenClause_ != nullptr) {
         buf += " ";
-        buf += whereClause_->toString();
+        buf += whenClause_->toString();
     }
     if (yieldClause_ != nullptr) {
         buf += " ";
@@ -204,19 +205,24 @@ std::string UpdateVertexSentence::toString() const {
 std::string UpdateEdgeSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "UPDATE ";
     if (insertable_) {
-        buf += "OR INSERT ";
+        buf += "UPSERT ";
+    } else {
+        buf += "UPDATE ";
     }
     buf += "EDGE ";
     buf += srcid_->toString();
     buf += "->";
     buf += dstid_->toString();
+    if (hasRank_) {
+        buf += " AT" + std::to_string(rank_);
+    }
+    buf += " OF " + *edgeType_;
     buf += " SET ";
-    buf += updateItems_->toString();
-    if (whereClause_ != nullptr) {
+    buf += updateList_->toString();
+    if (whenClause_ != nullptr) {
         buf += " ";
-        buf += whereClause_->toString();
+        buf += whenClause_->toString();
     }
     if (yieldClause_ != nullptr) {
         buf += " ";
@@ -230,11 +236,7 @@ std::string DeleteVertexSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "DELETE VERTEX ";
-    buf += vidList_->toString();
-    if (whereClause_ != nullptr) {
-        buf += " ";
-        buf += whereClause_->toString();
-    }
+    buf += vid_->toString();
     return buf;
 }
 
@@ -263,6 +265,15 @@ std::string DeleteEdgeSentence::toString() const {
         buf += whereClause_->toString();
     }
     return buf;
+}
+
+std::string DownloadSentence::toString() const {
+    return folly::stringPrintf("DOWNLOAD HDFS \"%s:%d/%s\"", host_.get()->c_str(),
+                               port_, path_.get()->c_str());
+}
+
+std::string IngestSentence::toString() const {
+    return "INGEST";
 }
 
 }   // namespace nebula

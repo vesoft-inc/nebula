@@ -10,21 +10,17 @@
 #include "base/Base.h"
 #include "storage/BaseProcessor.h"
 #include "storage/Collector.h"
+#include "filter/Expressions.h"
+#include "storage/CommonUtils.h"
 
 namespace nebula {
 namespace storage {
-
 
 const std::unordered_map<std::string, PropContext::PropInKeyType> kPropsInKey_ = {
     {"_src", PropContext::PropInKeyType::SRC},
     {"_dst", PropContext::PropInKeyType::DST},
     {"_type", PropContext::PropInKeyType::TYPE},
     {"_rank", PropContext::PropInKeyType::RANK}
-};
-
-enum class BoundType {
-    IN_BOUND,
-    OUT_BOUND,
 };
 
 using EdgeProcessor
@@ -45,22 +41,21 @@ public:
     void process(const cpp2::GetNeighborsRequest& req);
 
 protected:
-    virtual kvstore::ResultCode processVertex(PartitionID partID, VertexID vId) = 0;
-
-    virtual void onProcessFinished(int32_t retNum) = 0;
-
-protected:
     explicit QueryBaseProcessor(kvstore::KVStore* kvstore,
                                 meta::SchemaManager* schemaMan,
-                                folly::Executor* executor = nullptr,
-                                BoundType type = BoundType::OUT_BOUND)
+                                folly::Executor* executor = nullptr)
         : BaseProcessor<RESP>(kvstore, schemaMan)
-        , type_(type)
         , executor_(executor) {}
     /**
      * Check whether current operation on the data is valid or not.
      * */
     bool validOperation(nebula::cpp2::SupportedType vType, cpp2::StatType statType);
+
+    void addDefaultProps(std::vector<PropContext>& p, EdgeType eType);
+    /**
+     * init edge context
+     **/
+    void initEdgeContext(const std::vector<EdgeType> &eTypes, bool need_default_props = false);
 
     /**
      * Check request meta is illegal or not and build contexts for tag and edge.
@@ -73,7 +68,13 @@ protected:
     void collectProps(RowReader* reader,
                       folly::StringPiece key,
                       const std::vector<PropContext>& props,
+                      FilterContext* fcontext,
                       Collector* collector);
+
+    virtual kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) = 0;
+
+    virtual void onProcessFinished(int32_t retNum) = 0;
+
     /**
      * Collect props for one vertex tag.
      * */
@@ -82,6 +83,7 @@ protected:
                             VertexID vId,
                             TagID tagId,
                             const std::vector<PropContext>& props,
+                            FilterContext* fcontext,
                             Collector* collector);
     /**
      * Collect props for one vertex edge.
@@ -91,6 +93,7 @@ protected:
                                VertexID vId,
                                EdgeType edgeType,
                                const std::vector<PropContext>& props,
+                               FilterContext* fcontext,
                                EdgeProcessor proc);
 
     std::vector<Bucket> genBuckets(const cpp2::GetNeighborsRequest& req);
@@ -99,11 +102,14 @@ protected:
 
     int32_t getBucketsNum(int32_t verticesNum, int32_t minVerticesPerBucket, int32_t handlerNum);
 
+    bool checkExp(const Expression* exp);
+
 protected:
     GraphSpaceID  spaceId_;
-    BoundType     type_;
+    std::unique_ptr<ExpressionContext> expCtx_;
+    std::unique_ptr<Expression> exp_;
     std::vector<TagContext> tagContexts_;
-    EdgeContext edgeContext_;
+    std::unordered_map<EdgeType, std::vector<PropContext>> edgeContexts_;
     folly::Executor* executor_ = nullptr;
 };
 

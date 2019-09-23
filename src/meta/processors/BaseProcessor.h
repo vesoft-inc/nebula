@@ -75,6 +75,8 @@ protected:
             return cpp2::ErrorCode::SUCCEEDED;
         case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
             return cpp2::ErrorCode::E_NOT_FOUND;
+        case kvstore::ResultCode::ERR_LEADER_CHANGED:
+            return cpp2::ErrorCode::E_LEADER_CHANGED;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
         }
@@ -88,6 +90,7 @@ protected:
         case Status::kHostNotFound:
         case Status::kTagNotFound:
         case Status::kUserNotFound:
+        case Status::kCfgNotFound:
             return cpp2::ErrorCode::E_NOT_FOUND;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
@@ -110,6 +113,7 @@ protected:
             break;
         case EntryType::USER:
             thriftID.set_user_id(static_cast<UserID>(id));
+        case EntryType::CONFIG:
             break;
         }
         return thriftID;
@@ -168,7 +172,7 @@ protected:
     /**
      * Get one auto-increment Id.
      * */
-    int32_t autoIncrementId();
+    ErrorOr<cpp2::ErrorCode, int32_t> autoIncrementId();
 
     /**
      * Check spaceId exist or not.

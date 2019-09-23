@@ -195,7 +195,7 @@ TEST(RocksEngineTest, CompactTest) {
                           folly::stringPrintf("value_%d", i));
     }
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->multiPut(std::move(data)));
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->compactAll());
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->compact());
 }
 
 }  // namespace kvstore

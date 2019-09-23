@@ -12,7 +12,7 @@
 
     <groupId>com.vesoft</groupId>
     <artifactId>native-client</artifactId>
-    <version>0.1.0</version>
+    <version>1.0.0-beta</version>
 
     <properties>
         <project.root.dir>../../..</project.root.dir>

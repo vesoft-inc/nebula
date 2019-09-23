@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
 #include <gtest/gtest.h>
+#include "base/Base.h"
 #include "parser/GQLParser.h"
 
 // TODO(dutor) Inspect the internal structures to check on the syntax and semantics
@@ -58,9 +58,24 @@ TEST(Parser, Go) {
     {
         GQLParser parser;
         std::string query = "GO FROM 1 OVER friend "
-                            "YIELD $^[manager].name,$^[manager].age";
+                            "YIELD $^.manager.name,$^.manager.age";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 OVER friend "
+                            "YIELD $$.manager.name,$$.manager.age";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // Test wrong syntax
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 OVER friend "
+                            "YIELD $^[manager].name,$^[manager].age";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
@@ -121,6 +136,12 @@ TEST(Parser, SpaceOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "SHOW CREATE SPACE default_space";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "DROP SPACE default_space";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -132,6 +153,13 @@ TEST(Parser, TagOperation) {
         GQLParser parser;
         std::string query = "CREATE TAG person(name string, age int, "
                             "married bool, salary double, create_time timestamp)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // Test empty prop
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG person()";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -191,7 +219,7 @@ TEST(Parser, TagOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "DESCRIBE TAG person";
+        std::string query = "SHOW CREATE TAG person";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -208,6 +236,13 @@ TEST(Parser, EdgeOperation) {
         GQLParser parser;
         std::string query = "CREATE EDGE e1(name string, age int, "
                             "married bool, salary double, create_time timestamp)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // Test empty prop
+    {
+        GQLParser parser;
+        std::string query = "CREATE EDGE e1()";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -267,7 +302,7 @@ TEST(Parser, EdgeOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "DESCRIBE EDGE e1";
+        std::string query = "SHOW CREATE EDGE e1";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -276,6 +311,77 @@ TEST(Parser, EdgeOperation) {
         std::string query = "DROP EDGE e1";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+// Column space format test, expected SyntaxError
+TEST(Parser, ColumnSpacesTest) {
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG person(name, age, married bool)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG person(name, age, married)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG man(name string, age)"
+                            "ttl_duration = 100";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER TAG person ADD (col1 int, col2 string), "
+                            "CHANGE (married int, salary int), "
+                            "DROP (age int, create_time timestamp)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER TAG person ADD (col1, col2), "
+                            "CHANGE (married int, salary int), "
+                            "DROP (age, create_time)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER TAG person ADD (col1 int, col2 string), "
+                            "CHANGE (married, salary), "
+                            "DROP (age, create_time)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE EDGE man(name, age, married bool) "
+                            "ttl_duration = 100";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER EDGE woman ADD (col6)  ttl_duration = 200";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER EDGE woman CHANGE (col6)  ttl_duration = 200";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER EDGE woman DROP (col6 int)  ttl_duration = 200";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
     }
 }
 
@@ -305,7 +411,33 @@ TEST(Parser, Set) {
         GQLParser parser;
         std::string query = "GO FROM 1 OVER friend MINUS "
                             "GO FROM 2 OVER friend UNION "
+                            "GO FROM 2 OVER friend INTERSECT "
                             "GO FROM 3 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "(GO FROM 1 OVER friend | "
+                            "GO FROM 2 OVER friend) UNION "
+                            "GO FROM 3 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        // pipe have priority over set
+        std::string query = "GO FROM 1 OVER friend | "
+                            "GO FROM 2 OVER friend UNION "
+                            "GO FROM 3 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "(GO FROM 1 OVER friend UNION "
+                            "GO FROM 2 OVER friend) | "
+                            "GO FROM $- OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -371,41 +503,78 @@ TEST(Parser, InsertVertex) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    // Test insert empty value
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person() "
+                            "VALUES 12345:()";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // Test insert prop unterminated ""
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name, age) "
+                            "VALUES 12345:(\"dutor, 30)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isSyntaxError());
+    }
+    // Test insert prop unterminated ''
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name, age) "
+                            "VALUES 12345:(\'dutor, 30)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isSyntaxError());
+    }
 }
 
 TEST(Parser, UpdateVertex) {
     {
         GQLParser parser;
-        std::string query = "UPDATE VERTEX 12345 SET name=\"dutor\", age=30, "
-                            "married=true, create_time=1551331999";
+        std::string query = "UPDATE VERTEX 12345 "
+                            "SET person.name=\"dutor\", person.age=30, "
+                                "job.salary=10000, person.create_time=1551331999";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "UPDATE VERTEX 12345 SET name=\"dutor\", age=31, "
-                            "married=true, create_time=1551332019 WHERE salary > 10000";
+        std::string query = "UPDATE VERTEX 12345 "
+                            "SET person.name=\"dutor\", person.age=$^.person.age + 1, "
+                                "person.married=true "
+                            "WHEN $^.job.salary > 10000 && $^.person.age > 30";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "UPDATE VERTEX 12345 SET name=\"dutor\", age=31, married=true, "
-                            "create_time=1551332019 WHERE create_time > 1551332018";
+        std::string query = "UPDATE VERTEX 12345 "
+                            "SET person.name=\"dutor\", person.age=31, person.married=true, "
+                                "job.salary=1.1 * $^.person.create_time / 31536000 "
+                            "YIELD $^.person.name AS Name, job.name AS Title, "
+                                  "$^.job.salary AS Salary";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "UPDATE VERTEX 12345 SET name=\"dutor\", age=30, married=true "
-                            "YIELD name, salary, create_time";
+        std::string query = "UPDATE VERTEX 12345 "
+                            "SET person.name=\"dutor\", person.age=30, person.married=true "
+                            "WHEN $^.job.salary > 10000 && $^.job.name == \"CTO\" || "
+                                  "$^.person.age < 30"
+                            "YIELD $^.person.name AS Name, $^.job.salary AS Salary, "
+                                  "$^.person.create_time AS Time";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "UPDATE OR INSERT VERTEX 12345 SET name=\"dutor\", age=30, "
-                            "married=true YIELD name, salary, create_time";
+        std::string query = "UPSERT VERTEX 12345 "
+                            "SET person.name=\"dutor\", person.age = 30, job.name =\"CTO\" "
+                            "WHEN $^.job.salary > 10000 "
+                            "YIELD $^.person.name AS Name, $^.job.salary AS Salary, "
+                                  "$^.person.create_time AS Time";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -425,6 +594,14 @@ TEST(Parser, InsertEdge) {
         std::string query = "INSERT EDGE transfer(amount, time) "
                             "VALUES 12345->54321@1537408527:(3.75, 1537408527),"
                             "56789->98765@1537408527:(3.5, 1537408527)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // Test insert empty value
+    {
+        GQLParser parser;
+        std::string query = "INSERT EDGE transfer() "
+                            "VALUES 12345->54321@1537408527:()";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -449,33 +626,48 @@ TEST(Parser, InsertEdge) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    // Test insert empty value
+    {
+        GQLParser parser;
+        std::string query = "INSERT EDGE NO OVERWRITE transfer() "
+                            "VALUES 12345->54321@1537408527:()";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, UpdateEdge) {
     {
         GQLParser parser;
-        std::string query = "UPDATE EDGE 12345 -> 54321 SET amount=3.14,time=1537408527";
+        std::string query = "UPDATE EDGE 12345 -> 54321 OF transfer "
+                            "SET amount=3.14, time=1537408527";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "UPDATE EDGE 12345 -> 54321 SET amount=3.14,time=1537408527 "
-                            "WHERE amount > 3.14";
+        std::string query = "UPDATE EDGE 12345 -> 54321@789 OF transfer "
+                            "SET amount=3.14,time=1537408527 "
+                            "WHEN transfer.amount > 3.14 && $^.person.name == \"dutor\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "UPDATE EDGE 12345 -> 54321 SET amount=3.14,time=1537408527 "
-                            "WHERE amount > 3.14 YIELD amount,time";
+        std::string query = "UPDATE EDGE 12345 -> 54321 OF transfer "
+                            "SET amount = 3.14 + $^.job.salary, time = 1537408527 "
+                            "WHEN transfer.amount > 3.14 || $^.job.salary >= 10000 "
+                            "YIELD transfer.amount, transfer.time AS Time, "
+                                "$^.person.name AS PayFrom";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "UPDATE OR INSERT EDGE 12345 -> 54321 SET amount=3.14,time=1537408527 "
-                            "WHERE amount > 3.14 YIELD amount,time";
+        std::string query = "UPSERT EDGE 12345 -> 54321 @789 OF transfer "
+                            "SET amount=$^.job.salary + 3.14, time=1537408527 "
+                            "WHEN transfer.amount > 3.14 && $^.job.salary >= 10000 "
+                            "YIELD transfer.amount,transfer.time, $^.person.name AS Name";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -490,19 +682,7 @@ TEST(Parser, DeleteVertex) {
     }
     {
         GQLParser parser;
-        std::string query = "DELETE VERTEX 123,456,789";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-    }
-    {
-        GQLParser parser;
-        std::string query = "DELETE VERTEX 12345 WHERE salary > 10000";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-    }
-    {
-        GQLParser parser;
-        std::string query = "DELETE VERTEX 123,456,789 WHERE salary > 10000";
+        std::string query = "DELETE VERTEX hash(\"zhangsan\")";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -596,6 +776,24 @@ TEST(Parser, AdminOperation) {
     {
         GQLParser parser;
         std::string query = "SHOW EDGES";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE SPACE default_space";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE TAG person";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE EDGE e1";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -694,7 +892,6 @@ TEST(Parser, UserOperation) {
     }
 }
 
-
 TEST(Parser, UnreservedKeywords) {
     {
         GQLParser parser;
@@ -710,10 +907,59 @@ TEST(Parser, UnreservedKeywords) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 123 OVER guest WHERE $-.EMAIL";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 123 OVER like YIELD $$.tag1.EMAIL, like.users,"
+                            "like._src, like._dst, like.type, $^.tag2.SPACE "
+                            "| ORDER BY $-.SPACE";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "$var = GO FROM 123 OVER like;GO FROM $var.SPACE OVER like";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
-
 TEST(Parser, Annotation) {
+    {
+        GQLParser parser;
+        std::string query = "show spaces /* test comment....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isSyntaxError());
+    }
+    {
+        GQLParser parser;
+        std::string query = "// test comment....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isStatementEmpty());
+    }
+    {
+        GQLParser parser;
+        std::string query = "# test comment....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isStatementEmpty());
+    }
+    {
+        GQLParser parser;
+        std::string query = "-- test comment....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isStatementEmpty());
+    }
+    {
+        GQLParser parser;
+        std::string query = "/* test comment....*/";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isStatementEmpty());
+    }
     {
         GQLParser parser;
         std::string query = "CREATE TAG TAG1(space string) // test....";
@@ -741,6 +987,21 @@ TEST(Parser, Annotation) {
     {
         GQLParser parser;
         std::string query = "CREATE TAG TAG1/* tag name */(space string) // test....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, DownloadAndIngest) {
+    {
+        GQLParser parser;
+        std::string query = "DOWNLOAD HDFS \"hdfs://127.0.0.1:9090/data\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INGEST";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -811,6 +1072,92 @@ TEST(Parser, ReentrantRecoveryFromFailure) {
     }
     {
         std::string query = "USE space_name";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, IllegalCharacter) {
+    GQLParser parser;
+    {
+        std::string query = "USE space；";
+        ASSERT_FALSE(parser.parse(query).ok());
+    }
+    {
+        std::string query = "USE space_name；USE space";
+        ASSERT_FALSE(parser.parse(query).ok());
+    }
+}
+
+TEST(Parser, Distinct) {
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 over friend "
+                            "YIELD DISTINCT friend.name as name, friend.age as age";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        // syntax error
+        std::string query = "GO FROM 1 over friend "
+                            "YIELD friend.name as name, DISTINCT friend.age as age";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(!result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 OVER like "
+                            "| GO FROM $-.id OVER like | GO FROM $-.id OVER serve "
+                            "YIELD DISTINCT serve._dst, $$.team.name";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, ConfigOperation) {
+    {
+        GQLParser parser;
+        std::string query = "SHOW VARIABLES";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW VARIABLES GRAPH";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE VARIABLES storage:name=value";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GET VARIABLES Meta:name";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE VARIABLES load_data_interval_secs=120";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GET VARIABLES load_data_interval_secs";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, BalanceOperation) {
+    {
+        GQLParser parser;
+        std::string query = "BALANCE LEADER";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

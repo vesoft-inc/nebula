@@ -30,12 +30,13 @@
 # Root data path, multiple paths should be splitted by comma.
 # One path per instance, if --engine_type is `rocksdb'
 --data_path=data/storage
-# To start mock server
---mock_server=true
 # The type of part manager, [memory | meta]
 --part_man_type=memory
 # The default reserved bytes for one batch operation
---batch_reserved_bytes=4096
+--rocksdb_batch_size=4096
+# The default block cache size used in BlockBasedTable.
+# The unit is MB.
+--rocksdb_block_cache=4
 # The type of storage engine, `rocksdb', `memory', etc.
 --engine_type=rocksdb
 # The type of part, `simple', `consensus'...

@@ -46,10 +46,10 @@ public:
     // integer
     // Return true if succeeded.
     // Return false if the given address is invalid
-    static bool ipv4ToInt(const std::string& ipStr, uint32_t& ip);
+    static bool ipv4ToInt(const std::string& ipStr, IPv4& ip);
     // Convert the given 32-bit integer to an IPv4 address string
     // (in the form of xx.xx.xx.xx)
-    static std::string intToIPv4(uint32_t ip);
+    static std::string intToIPv4(IPv4 ip);
 
     // Get local IPv4 address. You could specify it by pass in default local ip, otherwise
     // it will use the first ip exclude "127.0.0.1"

@@ -35,7 +35,7 @@ DEFINE_string(rocksdb_block_based_table_options,
               "BlockBasedTableOptions, each option will be given "
               "as <option_name>:<option_value> separated by ;");
 
-DEFINE_int32(batch_reserved_bytes,
+DEFINE_int32(rocksdb_batch_size,
              4 * 1024,
              "default reserved bytes for one batch operation");
 
@@ -47,8 +47,8 @@ DEFINE_string(part_man_type,
  */
 
 // BlockBasedTable block_cache
-DEFINE_int64(block_cache, 4,
-             "BlockBasedTable:block_cache : MB");
+DEFINE_int64(rocksdb_block_cache, 4,
+             "The default block cache size used in BlockBasedTable. The unit is MB");
 
 
 namespace nebula {
@@ -81,7 +81,7 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts) {
         return s;
     }
 
-    bbtOpts.block_cache = rocksdb::NewLRUCache(FLAGS_block_cache * 1024 * 1024);
+    bbtOpts.block_cache = rocksdb::NewLRUCache(FLAGS_rocksdb_block_cache * 1024 * 1024);
     baseOpts.table_factory.reset(NewBlockBasedTableFactory(bbtOpts));
     baseOpts.create_if_missing = true;
     return s;

@@ -14,15 +14,15 @@ namespace graph {
 // static
 nebula::cpp2::SupportedType SchemaHelper::columnTypeToSupportedType(ColumnType type) {
     switch (type) {
-        case BOOL:
+        case ColumnType::BOOL:
             return nebula::cpp2::SupportedType::BOOL;
-        case INT:
+        case ColumnType::INT:
             return nebula::cpp2::SupportedType::INT;
-        case DOUBLE:
+        case ColumnType::DOUBLE:
             return nebula::cpp2::SupportedType::DOUBLE;
-        case STRING:
+        case ColumnType::STRING:
             return nebula::cpp2::SupportedType::STRING;
-        case TIMESTAMP:
+        case ColumnType::TIMESTAMP:
             return nebula::cpp2::SupportedType::TIMESTAMP;
         default:
             return nebula::cpp2::SupportedType::UNKNOWN;
@@ -35,7 +35,12 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
                                   nebula::cpp2::Schema& schema) {
     auto status = Status::OK();
 
+    std::unordered_set<std::string> nameSet;
     for (auto& spec : specs) {
+        if (nameSet.find(*spec->name()) != nameSet.end()) {
+            return Status::Error("Duplicate column name `%s'", spec->name()->c_str());
+        }
+        nameSet.emplace(*spec->name());
         nebula::cpp2::ColumnDef column;
         column.name = *spec->name();
         column.type.type = columnTypeToSupportedType(spec->type());
@@ -120,15 +125,25 @@ Status SchemaHelper::alterSchema(const std::vector<AlterSchemaOptItem*>& schemaO
     for (auto& schemaOpt : schemaOpts) {
         nebula::meta::cpp2::AlterSchemaItem schemaItem;
         auto opType = schemaOpt->toType();
-        schemaItem.set_op(std::move(opType));
-        const auto& specs = schemaOpt->columnSpecs();
+        schemaItem.set_op(opType);
         nebula::cpp2::Schema schema;
-        for (auto& spec : specs) {
-            nebula::cpp2::ColumnDef column;
-            column.name = *spec->name();
-            column.type.type = columnTypeToSupportedType(spec->type());
-            schema.columns.emplace_back(std::move(column));
+        if (opType == nebula::meta::cpp2::AlterSchemaOp::DROP) {
+            const auto& colNames = schemaOpt->columnNames();
+            for (auto& colName : colNames) {
+                nebula::cpp2::ColumnDef column;
+                column.name = *colName;
+                schema.columns.emplace_back(std::move(column));
+            }
+        } else {
+            const auto& specs = schemaOpt->columnSpecs();
+            for (auto& spec : specs) {
+                nebula::cpp2::ColumnDef column;
+                column.name = *spec->name();
+                column.type.type = columnTypeToSupportedType(spec->type());
+                schema.columns.emplace_back(std::move(column));
+            }
         }
+
         schemaItem.set_schema(std::move(schema));
         options.emplace_back(std::move(schemaItem));
     }

@@ -9,10 +9,12 @@
 
 #include "base/Base.h"
 #include <folly/futures/SharedPromise.h>
+#include <folly/Function.h>
 #include "gen-cpp2/raftex_types.h"
 #include "time/Duration.h"
 #include "thread/GenericThreadPool.h"
 #include "base/LogIterator.h"
+#include "kvstore/raftex/SnapshotManager.h"
 
 namespace folly {
 class IOThreadPoolExecutor;
@@ -23,7 +25,6 @@ namespace nebula {
 
 namespace wal {
 class FileBasedWal;
-class BufferFlusher;
 }  // namespace wal
 
 
@@ -31,20 +32,43 @@ namespace raftex {
 
 enum class AppendLogResult {
     SUCCEEDED = 0,
-    E_CAS_FAILURE = -1,
+    E_ATOMIC_OP_FAILURE = -1,
     E_NOT_A_LEADER = -2,
     E_STOPPED = -3,
     E_NOT_READY = -4,
     E_BUFFER_OVERFLOW = -5,
     E_WAL_FAILURE = -6,
+    E_TERM_OUT_OF_DATE = -7,
+};
+
+enum class LogType {
+    NORMAL      = 0x00,
+    ATOMIC_OP   = 0x01,
+    /**
+      COMMAND is similar to AtomicOp, but not the same. There are two differences:
+      1. Normal logs after AtomicOp could be committed together. In opposite, Normal logs
+         after COMMAND should be hold until the COMMAND committed, but the logs before
+         COMMAND could be committed together.
+      2. AtomicOp maybe failed. So we use SinglePromise for it. But COMMAND not, so it could
+         share one promise with the normal logs before it.
+     * */
+    COMMAND     = 0x02,
 };
 
 class Host;
 class AppendLogsIterator;
 
+/**
+ * The operation will be atomic, if the operation failed, empty string will be returned,
+ * otherwise it will return the new operation's encoded string whick should be applied atomically.
+ * You could implement CAS, READ-MODIFY-WRITE operations though it.
+ * */
+using AtomicOp = folly::Function<std::string(void)>;
 
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
     friend class AppendLogsIterator;
+    friend class Host;
+    friend class SnapshotManager;
 public:
     virtual ~RaftPart();
 
@@ -66,6 +90,11 @@ public:
     bool isFollower() const {
         std::lock_guard<std::mutex> g(raftLock_);
         return role_ == Role::FOLLOWER;
+    }
+
+    bool isLearner() const {
+        std::lock_guard<std::mutex> g(raftLock_);
+        return role_ == Role::LEARNER;
     }
 
     ClusterID clusterId() const {
@@ -93,9 +122,15 @@ public:
         return wal_;
     }
 
+    void addLearner(const HostAddr& learner);
+
+    void commitTransLeader(const HostAddr& target);
+
+    void preProcessTransLeader(const HostAddr& target);
+
     // Change the partition status to RUNNING. This is called
     // by the inherited class, when it's ready to serve
-    virtual void start(std::vector<HostAddr>&& peers);
+    virtual void start(std::vector<HostAddr>&& peers, bool asLearner = false);
 
     // Change the partition status to STOPPED. This is called
     // by the inherited class, when it's about to stop
@@ -119,9 +154,16 @@ public:
     folly::Future<AppendLogResult> appendAsync(ClusterID source, std::string log);
 
     /****************************************************************
-     * Asynchronously compare and set
+     * Run the op atomically.
      ***************************************************************/
-    folly::Future<AppendLogResult> casAsync(std::string log);
+    folly::Future<AppendLogResult> atomicOpAsync(AtomicOp op);
+
+    /**
+     * Asynchronously send one command.
+     * */
+    folly::Future<AppendLogResult> sendCommandAsync(std::string log);
+
+
 
     /*****************************************************
      *
@@ -138,6 +180,10 @@ public:
         const cpp2::AppendLogRequest& req,
         cpp2::AppendLogResponse& resp);
 
+    // Process sendSnapshot request
+    void processSendSnapshotRequest(
+        const cpp2::SendSnapshotRequest& req,
+        cpp2::SendSnapshotResponse& resp);
 
 protected:
     // Protected constructor to prevent from instantiating directly
@@ -146,9 +192,10 @@ protected:
              PartitionID partId,
              HostAddr localAddr,
              const folly::StringPiece walRoot,
-             wal::BufferFlusher* flusher,
              std::shared_ptr<folly::IOThreadPoolExecutor> pool,
-             std::shared_ptr<thread::GenericThreadPool> workers);
+             std::shared_ptr<thread::GenericThreadPool> workers,
+             std::shared_ptr<folly::Executor> executor,
+             std::shared_ptr<SnapshotManager> snapshotMan);
 
     const char* idStr() const {
         return idStr_.c_str();
@@ -158,7 +205,7 @@ protected:
     //
     // Inherited classes should implement this method to provide the last
     // committed log id
-    virtual LogID lastCommittedLogId() = 0;
+    virtual std::pair<LogID, TermID> lastCommittedLogId() = 0;
 
     // This method is called when this partition's leader term
     // is finished, either by receiving a new leader election
@@ -169,51 +216,60 @@ protected:
     // a new leader
     virtual void onElected(TermID term) = 0;
 
-    // This method is invoked when handling a CAS log. The inherited
-    // class uses this method to do the comparison and decide whether
-    // a log should be inserted
-    //
-    // The method will be guaranteed to execute in a single-threaded
-    // manner, so no need for locks
-    //
-    // If CAS succeeded, the method should return the correct log content
-    // that will be applied to the storage. Otherwise it returns an empty
-    // string
-    virtual std::string compareAndSet(const std::string& log) = 0;
+    virtual void onDiscoverNewLeader(HostAddr nLeader) = 0;
 
     // The inherited classes need to implement this method to commit
     // a batch of log messages
     virtual bool commitLogs(std::unique_ptr<LogIterator> iter) = 0;
 
+    virtual bool preProcessLog(LogID logId,
+                               TermID termId,
+                               ClusterID clusterId,
+                               const std::string& log) = 0;
+
+    // Return <size, count> committed;
+    virtual std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
+                                                       LogID committedLogId,
+                                                       TermID committedLogTerm,
+                                                       bool finished) = 0;
+
+    // Clean up all data about current part in storage.
+    virtual void cleanup() = 0;
+
+    // Reset the part, clean up all data and WALs.
+    void reset();
 
 private:
     enum class Status {
         STARTING = 0,   // The part is starting, not ready for service
         RUNNING,        // The part is running
-        STOPPED         // The part has been stopped
+        STOPPED,        // The part has been stopped
+        WAITING_SNAPSHOT  // Waiting for the snapshot.
     };
 
     enum class Role {
         LEADER = 1,     // the leader
         FOLLOWER,       // following a leader
-        CANDIDATE       // Has sent AskForVote request
+        CANDIDATE,      // Has sent AskForVote request
+        LEARNER         // It is the same with FOLLOWER,
+                        // except it does not participate in leader election
     };
 
     // A list of <idx, resp>
     // idx  -- the index of the peer
     // resp -- AskForVoteResponse
-    using ElectionResponses = std::vector<cpp2::AskForVoteResponse>;
+    using ElectionResponses = std::vector<std::pair<size_t, cpp2::AskForVoteResponse>>;
     // A list of <idx, resp>
     // idx  -- the index of the peer
     // resp -- AppendLogResponse
-    using AppendLogResponses = std::vector<cpp2::AppendLogResponse>;
+    using AppendLogResponses = std::vector<std::pair<size_t, cpp2::AppendLogResponse>>;
 
-    // <source, term, isCAS, log>
+    // <source, logType, log>
     using LogCache = std::vector<
         std::tuple<ClusterID,
-                   TermID,
-                   bool,
-                   std::string>>;
+                   LogType,
+                   std::string,
+                   AtomicOp>>;
 
 
     /****************************************************
@@ -229,11 +285,8 @@ private:
     /*****************************************************************
      * Asynchronously send a heartbeat (An empty log entry)
      *
-     * The code path is similar to appendLog() and the heartbeat will
-     * be put into the log batch, but will not be added to WAL
      ****************************************************************/
     folly::Future<AppendLogResult> sendHeartbeat();
-    void doneHeartbeat();
 
     /****************************************************
      *
@@ -246,6 +299,10 @@ private:
 
     void statusPolling();
 
+    bool needToCleanupSnapshot();
+
+    void cleanupSnapshot();
+
     // The method sends out AskForVote request
     // It return true if a leader is elected, otherwise returns false
     bool leaderElection();
@@ -255,20 +312,21 @@ private:
     // return FALSE
     bool prepareElectionRequest(
         cpp2::AskForVoteRequest& req,
-        std::shared_ptr<std::unordered_map<HostAddr, std::shared_ptr<Host>>>& hosts);
+        std::vector<std::shared_ptr<Host>>& hosts);
 
     // The method returns the partition's role after the election
     Role processElectionResponses(const ElectionResponses& results);
 
     // Check whether new logs can be appended
     // Pre-condition: The caller needs to hold the raftLock_
-    AppendLogResult canAppendLogs(std::lock_guard<std::mutex>& lck);
+    AppendLogResult canAppendLogs();
 
     folly::Future<AppendLogResult> appendLogAsync(ClusterID source,
-                                                  bool isCAS,
-                                                  std::string log);
+                                                  LogType logType,
+                                                  std::string log,
+                                                  AtomicOp cb = nullptr);
 
-    void appendLogsInternal(AppendLogsIterator iter);
+    void appendLogsInternal(AppendLogsIterator iter, TermID termId);
 
     void replicateLogs(
         folly::EventBase* eb,
@@ -287,10 +345,14 @@ private:
         LogID lastLogId,
         LogID committedId,
         TermID prevLogTerm,
-        LogID prevLogId);
+        LogID prevLogId,
+        std::vector<std::shared_ptr<Host>> hosts);
 
+    std::vector<std::shared_ptr<Host>> followers() const;
 
-private:
+    bool checkAppendLogResult(AppendLogResult res);
+
+protected:
     template<class ValueType>
     class PromiseSet final {
     public:
@@ -325,6 +387,14 @@ private:
             return singlePromises_.back().getFuture();
         }
 
+        folly::Future<ValueType> getAndRollSharedFuture() {
+            if (rollSharedPromise_) {
+                sharedPromises_.emplace_back();
+            }
+            rollSharedPromise_ = true;
+            return sharedPromises_.back().getFuture();
+        }
+
         template<class VT>
         void setOneSharedValue(VT&& val) {
             CHECK(!sharedPromises_.empty());
@@ -353,9 +423,9 @@ private:
         // Whether the last future was returned from a shared promise
         bool rollSharedPromise_{true};
 
-        // Promises shared by continuous non-CAS logs
+        // Promises shared by continuous non atomic op logs
         std::list<folly::SharedPromise<ValueType>> sharedPromises_;
-        // A list of promises for CAS logs
+        // A list of promises for atomic op logs
         std::list<folly::Promise<ValueType>> singlePromises_;
     };
 
@@ -366,17 +436,20 @@ private:
     const GraphSpaceID spaceId_;
     const PartitionID partId_;
     const HostAddr addr_;
-    std::shared_ptr<std::unordered_map<HostAddr, std::shared_ptr<Host>>>
-        peerHosts_;
+    std::vector<std::shared_ptr<Host>> hosts_;
     size_t quorum_{0};
+
+    // The lock is used to protect logs_ and cachingPromise_
+    mutable std::mutex logsLock_;
+    std::atomic_bool replicatingLogs_{false};
+    std::atomic_bool bufferOverFlow_{false};
+    PromiseSet<AppendLogResult> cachingPromise_;
+    LogCache logs_;
 
     // Partition level lock to synchronize the access of the partition
     mutable std::mutex raftLock_;
 
-    bool replicatingLogs_{false};
-    PromiseSet<AppendLogResult> cachingPromise_;
     PromiseSet<AppendLogResult> sendingPromise_;
-    LogCache logs_;
 
     Status status_;
     Role role_;
@@ -413,7 +486,16 @@ private:
     // IO Thread pool
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     // Shared worker thread pool
-    std::shared_ptr<thread::GenericThreadPool> workers_;
+    std::shared_ptr<thread::GenericThreadPool> bgWorkers_;
+    // Workers pool
+    std::shared_ptr<folly::Executor> executor_;
+
+    std::shared_ptr<SnapshotManager> snapshot_;
+
+    // Used in snapshot, record the last total count and total size received from request
+    int64_t lastTotalCount_ = 0;
+    int64_t lastTotalSize_ = 0;
+    time::Duration lastSnapshotRecvDur_;
 };
 
 }  // namespace raftex

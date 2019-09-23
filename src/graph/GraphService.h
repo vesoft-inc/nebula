@@ -22,8 +22,11 @@ namespace graph {
 
 class GraphService final : public cpp2::GraphServiceSvIf {
 public:
-    explicit GraphService(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor);
+    GraphService();
     ~GraphService();
+
+    Status MUST_USE_RESULT init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor);
+
     folly::Future<cpp2::AuthResponse> future_authenticate(
         const std::string& username,
         const std::string& password) override;

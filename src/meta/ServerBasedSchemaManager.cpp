@@ -93,6 +93,15 @@ StatusOr<EdgeType> ServerBasedSchemaManager::toEdgeType(GraphSpaceID space,
     return metaClient_->getEdgeTypeByNameFromCache(space, typeName.str());
 }
 
+StatusOr<std::string> ServerBasedSchemaManager::toEdgeName(GraphSpaceID space, EdgeType edgeType) {
+    CHECK(metaClient_);
+    return metaClient_->getEdgeNameByTypeFromCache(space, edgeType);
+}
+
+StatusOr<std::vector<std::string>> ServerBasedSchemaManager::getAllEdge(GraphSpaceID space) {
+    CHECK(metaClient_);
+    return metaClient_->getAllEdgeFromCache(space);
+}
+
 }  // namespace meta
 }  // namespace nebula
-

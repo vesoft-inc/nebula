@@ -13,6 +13,8 @@
 #include "meta/processors/partsMan/CreateSpaceProcessor.h"
 
 DECLARE_uint32(task_concurrency);
+DECLARE_int32(expired_threshold_sec);
+DECLARE_double(leader_balance_deviation);
 
 namespace nebula {
 namespace meta {
@@ -62,6 +64,13 @@ public:
 
     folly::Future<Status> removePart() override {
         return response(6);
+    }
+
+    folly::Future<Status> getLeaderDist(HostLeaderMap* hostLeaderMap) override {
+        (*hostLeaderMap)[HostAddr(0, 0)][1] = {1, 2, 3, 4, 5};
+        (*hostLeaderMap)[HostAddr(1, 1)][1] = {6, 7, 8};
+        (*hostLeaderMap)[HostAddr(2, 2)][1] = {9};
+        return response(7);
     }
 
     void reset(std::vector<Status> sts) {
@@ -122,7 +131,7 @@ TEST(BalanceTaskTest, SimpleTest) {
 }
 
 TEST(BalanceTest, BalancePartsTest) {
-    auto* balancer = Balancer::instance(nullptr);
+    std::unique_ptr<Balancer> balancer(new Balancer(nullptr, nullptr));
     auto dump = [](const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
                    const std::vector<BalanceTask>& tasks) {
         for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
@@ -386,7 +395,6 @@ TEST(BalanceTest, BalancePlanTest) {
 TEST(BalanceTest, NormalTest) {
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    FLAGS_expired_hosts_check_interval_sec = 1;
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get());
     {
@@ -412,7 +420,7 @@ TEST(BalanceTest, NormalTest) {
 
     sleep(1);
     LOG(INFO) << "Now, we lost host " << HostAddr(3, 3);
-    TestUtils::registerHB({{0, 0}, {1, 1}, {2, 2}});
+    TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
     ret = balancer.balance();
     CHECK(ret.ok());
     auto balanceId = ret.value();
@@ -472,7 +480,6 @@ TEST(BalanceTest, NormalTest) {
 TEST(BalanceTest, RecoveryTest) {
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    FLAGS_expired_hosts_check_interval_sec = 1;
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get());
     {
@@ -492,7 +499,7 @@ TEST(BalanceTest, RecoveryTest) {
 
     sleep(1);
     LOG(INFO) << "Now, we lost host " << HostAddr(3, 3);
-    TestUtils::registerHB({{0, 0}, {1, 1}, {2, 2}});
+    TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
     std::vector<Status> sts {
                                 Status::OK(),
                                 Status::OK(),
@@ -614,6 +621,225 @@ TEST(BalanceTest, RecoveryTest) {
         }
         ASSERT_EQ(6, num);
     }
+}
+
+void verifyLeaderBalancePlan(std::unordered_map<HostAddr, std::vector<PartitionID>> leaderCount,
+        size_t minLoad, size_t maxLoad) {
+    for (const auto& hostEntry : leaderCount) {
+        EXPECT_GE(hostEntry.second.size(), minLoad);
+        EXPECT_LE(hostEntry.second.size(), maxLoad);
+    }
+}
+
+TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
+    fs::TempDir rootPath("/tmp/SimpleLeaderBalancePlanTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}};
+    TestUtils::createSomeHosts(kv.get(), hosts);
+    // 9 partition in space 1, 3 replica, 3 hosts
+    TestUtils::assembleSpace(kv.get(), 1, 9, 3, 3);
+
+    std::unique_ptr<AdminClient> client(new AdminClient(kv.get()));
+    std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), std::move(client)));
+    {
+        HostLeaderMap hostLeaderMap;
+        hostLeaderMap[HostAddr(0, 0)][1] = {1, 2, 3, 4, 5};
+        hostLeaderMap[HostAddr(1, 1)][1] = {6, 7, 8};
+        hostLeaderMap[HostAddr(2, 2)][1] = {9};
+        auto tempMap = hostLeaderMap;
+
+        LeaderBalancePlan plan;
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
+        verifyLeaderBalancePlan(leaderParts, 3, 3);
+
+        // check two plan build are same
+        LeaderBalancePlan tempPlan;
+        auto tempLeaderParts = balancer->buildLeaderBalancePlan(&tempMap, 1, tempPlan, false);
+        verifyLeaderBalancePlan(tempLeaderParts, 3, 3);
+        EXPECT_EQ(plan.size(), tempPlan.size());
+        for (size_t i = 0; i < plan.size(); i++) {
+            EXPECT_EQ(plan[i], tempPlan[i]);
+        }
+    }
+    {
+        HostLeaderMap hostLeaderMap;
+        hostLeaderMap[HostAddr(0, 0)][1] = {1, 2, 3, 4};
+        hostLeaderMap[HostAddr(1, 1)][1] = {5, 6, 7, 8};
+        hostLeaderMap[HostAddr(2, 2)][1] = {9};
+
+        LeaderBalancePlan plan;
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
+        verifyLeaderBalancePlan(leaderParts, 3, 3);
+    }
+    {
+        HostLeaderMap hostLeaderMap;
+        hostLeaderMap[HostAddr(0, 0)][1] = {};
+        hostLeaderMap[HostAddr(1, 1)][1] = {};
+        hostLeaderMap[HostAddr(2, 2)][1] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+        LeaderBalancePlan plan;
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
+        verifyLeaderBalancePlan(leaderParts, 3, 3);
+    }
+    {
+        HostLeaderMap hostLeaderMap;
+        hostLeaderMap[HostAddr(0, 0)][1] = {1, 2, 3};
+        hostLeaderMap[HostAddr(1, 1)][1] = {4, 5, 6};
+        hostLeaderMap[HostAddr(2, 2)][1] = {7, 8, 9};
+
+        LeaderBalancePlan plan;
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
+        verifyLeaderBalancePlan(leaderParts, 3, 3);
+    }
+}
+
+TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
+    fs::TempDir rootPath("/tmp/IntersectHostsLeaderBalancePlanTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}};
+    TestUtils::createSomeHosts(kv.get(), hosts);
+    // 7 partition in space 1, 3 replica, 6 hosts, so not all hosts have intersection parts
+    TestUtils::assembleSpace(kv.get(), 1, 7, 3, 6);
+
+    std::unique_ptr<AdminClient> client(new AdminClient(kv.get()));
+    std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), std::move(client)));
+    {
+        HostLeaderMap hostLeaderMap;
+        hostLeaderMap[HostAddr(0, 0)][1] = {4, 5, 6};
+        hostLeaderMap[HostAddr(1, 1)][1] = {};
+        hostLeaderMap[HostAddr(2, 2)][1] = {};
+        hostLeaderMap[HostAddr(3, 3)][1] = {1, 2, 3, 7};
+        hostLeaderMap[HostAddr(4, 4)][1] = {};
+        hostLeaderMap[HostAddr(5, 5)][1] = {};
+
+        LeaderBalancePlan plan;
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
+        verifyLeaderBalancePlan(leaderParts, 1, 2);
+    }
+    {
+        HostLeaderMap hostLeaderMap;
+        hostLeaderMap[HostAddr(0, 0)][1] = {};
+        hostLeaderMap[HostAddr(1, 1)][1] = {5, 6, 7};
+        hostLeaderMap[HostAddr(2, 2)][1] = {};
+        hostLeaderMap[HostAddr(3, 3)][1] = {1, 2};
+        hostLeaderMap[HostAddr(4, 4)][1] = {};
+        hostLeaderMap[HostAddr(5, 5)][1] = {3, 4};
+
+        LeaderBalancePlan plan;
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
+        verifyLeaderBalancePlan(leaderParts, 1, 2);
+    }
+    {
+        HostLeaderMap hostLeaderMap;
+        hostLeaderMap[HostAddr(0, 0)][1] = {};
+        hostLeaderMap[HostAddr(1, 1)][1] = {1, 5};
+        hostLeaderMap[HostAddr(2, 2)][1] = {2, 6};
+        hostLeaderMap[HostAddr(3, 3)][1] = {3, 7};
+        hostLeaderMap[HostAddr(4, 4)][1] = {4};
+        hostLeaderMap[HostAddr(5, 5)][1] = {};
+
+        LeaderBalancePlan plan;
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
+        verifyLeaderBalancePlan(leaderParts, 1, 2);
+    }
+    {
+        HostLeaderMap hostLeaderMap;
+        hostLeaderMap[HostAddr(0, 0)][1] = {5, 6};
+        hostLeaderMap[HostAddr(1, 1)][1] = {1, 7};
+        hostLeaderMap[HostAddr(2, 2)][1] = {};
+        hostLeaderMap[HostAddr(3, 3)][1] = {};
+        hostLeaderMap[HostAddr(4, 4)][1] = {2, 3, 4};
+        hostLeaderMap[HostAddr(5, 5)][1] = {};
+
+        LeaderBalancePlan plan;
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
+        verifyLeaderBalancePlan(leaderParts, 1, 2);
+    }
+    {
+        HostLeaderMap hostLeaderMap;
+        hostLeaderMap[HostAddr(0, 0)][1] = {6};
+        hostLeaderMap[HostAddr(1, 1)][1] = {1, 7};
+        hostLeaderMap[HostAddr(2, 2)][1] = {2};
+        hostLeaderMap[HostAddr(3, 3)][1] = {3};
+        hostLeaderMap[HostAddr(4, 4)][1] = {4};
+        hostLeaderMap[HostAddr(5, 5)][1] = {5};
+
+        LeaderBalancePlan plan;
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
+        verifyLeaderBalancePlan(leaderParts, 1, 2);
+    }
+}
+
+TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
+    fs::TempDir rootPath("/tmp/SimpleLeaderBalancePlanTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    FLAGS_expired_threshold_sec = 600;
+
+    int partCount = 99999;
+    int replica = 3;
+    int hostCount = 100;
+    std::vector<HostAddr> hosts;
+    for (int i = 0; i < hostCount; i++) {
+        hosts.emplace_back(i, i);
+    }
+    TestUtils::createSomeHosts(kv.get(), hosts);
+    TestUtils::assembleSpace(kv.get(), 1, partCount, replica, hostCount);
+
+    float avgLoad = static_cast<float>(partCount) / hostCount;
+    int32_t minLoad = std::floor(avgLoad * (1 - FLAGS_leader_balance_deviation));
+    int32_t maxLoad = std::ceil(avgLoad * (1 + FLAGS_leader_balance_deviation));
+
+    std::unique_ptr<AdminClient> client(new AdminClient(kv.get()));
+    std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), std::move(client)));
+    // chcek several times if they are balanced
+    for (int count = 0; count < 1; count++) {
+        HostLeaderMap hostLeaderMap;
+        // all part will random choose a leader
+        for (int partId = 1; partId <= partCount; partId++) {
+            std::vector<HostAddr> peers;
+            size_t idx = partId;
+            for (int32_t i = 0; i < replica; i++, idx++) {
+                peers.emplace_back(hosts[idx % hostCount]);
+            }
+            ASSERT_EQ(peers.size(), replica);
+            auto leader = peers[folly::Random::rand32(peers.size())];
+            hostLeaderMap[leader][1].emplace_back(partId);
+        }
+
+        LeaderBalancePlan plan;
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        verifyLeaderBalancePlan(leaderParts, minLoad, maxLoad);
+    }
+}
+
+TEST(BalanceTest, LeaderBalanceTest) {
+    fs::TempDir rootPath("/tmp/LeaderBalanceTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}};
+    TestUtils::createSomeHosts(kv.get(), hosts);
+    TestUtils::assembleSpace(kv.get(), 1, 9, 3, 3);
+    {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
+        cpp2::CreateSpaceReq req;
+        req.set_properties(std::move(properties));
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.get_id().get_space_id());
+    }
+
+    std::vector<Status> sts(8, Status::OK());
+    std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
+    auto client = std::make_unique<AdminClient>(std::move(injector));
+
+    Balancer balancer(kv.get(), std::move(client));
+    auto ret = balancer.leaderBalance();
+    ASSERT_EQ(ret, cpp2::ErrorCode::SUCCEEDED);
 }
 
 }  // namespace meta

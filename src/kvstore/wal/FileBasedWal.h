@@ -8,6 +8,8 @@
 #define WAL_FILEBASEDWAL_H_
 
 #include "base/Base.h"
+#include <folly/Function.h>
+#include <gtest/gtest_prod.h>
 #include "base/Cord.h"
 #include "kvstore/wal/Wal.h"
 #include "kvstore/wal/InMemoryLogBuffer.h"
@@ -21,13 +23,12 @@ struct FileBasedWalPolicy {
     // This is only a hint, the FileBasedWal will try to keep all messages
     // newer than ttl, but not guarantee to remove old messages right away
     int32_t ttl = 86400;
-
-    // The maximum size of each log message file (in MB). When the existing
+    // The maximum size of each log message file (in byte). When the existing
     // log file reaches this size, a new file will be created
-    size_t fileSize = 128;
+    size_t fileSize = 128 * 1024L * 1024L;
 
-    // Size of each buffer (in MB)
-    size_t bufferSize = 8;
+    // Size of each buffer (in byte)
+    size_t bufferSize = 8 * 1024L * 1024L;
 
     // Number of buffers allowed. When the number of buffers reach this
     // number, appendLogs() will be blocked until some buffers are flushed
@@ -35,18 +36,20 @@ struct FileBasedWalPolicy {
 };
 
 
-class BufferFlusher;
+using PreProcessor = folly::Function<bool(LogID, TermID, ClusterID, const std::string& log)>;
 
 
-class FileBasedWal final
-        : public Wal
-        , public std::enable_shared_from_this<FileBasedWal> {
+class FileBasedWal final : public Wal
+                         , public std::enable_shared_from_this<FileBasedWal> {
+    FRIEND_TEST(FileBasedWal, TTLTest);
+    friend class FileBasedWalIterator;
 public:
     // A factory method to create a new WAL
     static std::shared_ptr<FileBasedWal> getWal(
         const folly::StringPiece dir,
+        const std::string& idStr,
         FileBasedWalPolicy policy,
-        BufferFlusher* flusher);
+        PreProcessor preProcessor);
 
     virtual ~FileBasedWal();
 
@@ -93,6 +96,12 @@ public:
     // appending logs
     bool rollbackToLog(LogID id) override;
 
+    // Reset the WAL
+    // This method is *NOT* thread safe
+    bool reset() override;
+
+    void cleanWAL(int32_t ttl = 0) override;
+
     // Scan [firstLogId, lastLogId]
     // This method IS thread-safe
     std::unique_ptr<LogIterator> iterator(LogID firstLogId,
@@ -125,30 +134,26 @@ private:
     // Callers **SHOULD NEVER** use this constructor directly
     // Callers should use static method getWal() instead
     FileBasedWal(const folly::StringPiece dir,
+                 const std::string& idStr,
                  FileBasedWalPolicy policy,
-                 BufferFlusher* flusher);
+                 PreProcessor preProcessor);
 
     // Scan all WAL files
     void scanAllWalFiles();
-
-    // Dump a Cord to the current file
-    void dumpCord(Cord& cord,
-                  LogID firstId,
-                  LogID lastId,
-                  TermID lastTerm);
 
     // Close down the current wal file
     void closeCurrFile();
     // Prepare a new wal file starting from the given log id
     void prepareNewFile(LogID startLogId);
+    // Retrieve the term id for the given log id in the given WAL file
+    TermID readTermId(const char* path, LogID logId);
 
-    // Create a new buffer at the end of the buffer list
-    BufferPtr createNewBuffer(LogID firstId,
-                              std::unique_lock<std::mutex>& guard);
+    // Return the last buffer.
+    // If the last buffer is big enough, create a new one
+    BufferPtr getLastBuffer(LogID id, size_t expectedToWrite);
 
     // Implementation of appendLog()
-    bool appendLogInternal(BufferPtr& buffer,
-                           LogID id,
+    bool appendLogInternal(LogID id,
                            TermID term,
                            ClusterID cluster,
                            std::string msg);
@@ -162,15 +167,15 @@ private:
      * FileBasedWal Member Fields
      *
      **************************************/
-    BufferFlusher* flusher_;
+    const std::string dir_;
+    std::string idStr_;
 
     std::atomic<bool> stopped_{false};
 
-    const std::string dir_;
     const FileBasedWalPolicy policy_;
     const size_t maxFileSize_;
     const size_t maxBufferSize_;
-    const LogID firstLogId_{0};
+    LogID firstLogId_{0};
     LogID lastLogId_{0};
     TermID lastLogTerm_{0};
 
@@ -180,21 +185,18 @@ private:
     mutable std::mutex walFilesMutex_;
 
     // The current fd (which is the last file in walFiles_)
-    // for appending new log messages
-    // Accessing currFd_ **IS NOT** thread-safe, because only
-    // the buffer-flush thread is expected to access it
+    // for appending new log messages.
+    // Please be aware: accessing currFd_ is not thread-safe
     int32_t currFd_{-1};
     // The WalFileInfo corresponding to the currFd_
     WalFileInfoPtr currInfo_;
 
-    // All buffers except the last one are ready to be persisted
-    // The last entry is the one being appended
+    // The purpose of the memory buffer is to provide a read cache
     BufferList buffers_;
     mutable std::mutex buffersMutex_;
-    // There is a vacancy for a new buffer
-    std::condition_variable slotReadyCV_;
 
-    mutable std::mutex flushMutex_;
+    PreProcessor preProcessor_;
+    std::atomic_int onGoingBuffersNum_{0};
 };
 
 }  // namespace wal

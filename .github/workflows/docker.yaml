@@ -1,0 +1,101 @@
+name: Nebula Service Docker Image Building Workflow
+
+on:
+  schedule:
+    - cron:  '0 2 * * *'
+
+jobs:
+  metad:
+    name: metad
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: azure/container-actions/docker-login@master
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: build
+        env:
+          image_name: ${{ secrets.DOCKER_USERNAME }}/nebula-metad:nightly
+        run: |
+          docker build -t ${IMAGE_NAME} -f docker/Dockerfile.metad .
+          docker push ${IMAGE_NAME}
+        shell: bash
+
+  storaged:
+    name: storaged
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: azure/container-actions/docker-login@master
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: build
+        env:
+          image_name: ${{ secrets.DOCKER_USERNAME }}/nebula-storaged:nightly
+        run: |
+          docker build -t ${IMAGE_NAME} -f docker/Dockerfile.storaged .
+          docker push ${IMAGE_NAME}
+        shell: bash
+
+  graphd:
+    name: graphd
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: azure/container-actions/docker-login@master
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: build
+        env:
+          image_name: ${{ secrets.DOCKER_USERNAME }}/nebula-graphd:nightly
+        run: |
+          docker build -t ${IMAGE_NAME} -f docker/Dockerfile.graphd .
+          docker push ${IMAGE_NAME}
+        shell: bash
+
+  console:
+    name: console
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: azure/container-actions/docker-login@master
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: build
+        env:
+          image_name: ${{ secrets.DOCKER_USERNAME }}/nebula-console:nightly
+        run: |
+          docker build -t ${IMAGE_NAME} -f docker/Dockerfile.console .
+          docker push ${IMAGE_NAME}
+        shell: bash
+
+  nebula_graph:
+    name: nebula graph
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: azure/container-actions/docker-login@master
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: build
+        env:
+          image_name: ${{ secrets.DOCKER_USERNAME }}/nebula-graph:nightly
+        run: |
+          docker build -t ${IMAGE_NAME} -f docker/Dockerfile .
+          docker push ${IMAGE_NAME}
+        shell: bash

@@ -17,7 +17,7 @@ PipeExecutor::PipeExecutor(Sentence *sentence,
 
 
 Status PipeExecutor::prepare() {
-    auto status = checkIfGraphSpaceChosen();
+    auto status = syntaxPreCheck();
     if (!status.ok()) {
         return status;
     }
@@ -47,6 +47,8 @@ Status PipeExecutor::prepare() {
 
         auto onResult = [this] (std::unique_ptr<InterimResult> result) {
             // Feed results from `left_' to `right_'
+            // result should never be null, it should give the column names at least.
+            DCHECK(result != nullptr);
             right_->feedResult(std::move(result));
         };
         left_->setOnResult(onResult);
@@ -64,6 +66,8 @@ Status PipeExecutor::prepare() {
         if (onResult_) {
             auto onResult = [this] (std::unique_ptr<InterimResult> result) {
                 // This executor takes results of `right_' as results.
+                // result should never be null, it should give the column names at least.
+                DCHECK(result != nullptr);
                 onResult_(std::move(result));
             };
             right_->setOnResult(onResult);
@@ -92,6 +96,16 @@ Status PipeExecutor::prepare() {
     return Status::OK();
 }
 
+Status PipeExecutor::syntaxPreCheck() {
+    // Set op not support input,
+    // because '$-' would be ambiguous in such a situation:
+    // Go | (Go | Go $- UNION GO)
+    if (sentence_->right()->kind() == Sentence::Kind::kSet) {
+        return Status::SyntaxError("Set op not support input.");
+    }
+
+    return Status::OK();
+}
 
 void PipeExecutor::execute() {
     left_->execute();

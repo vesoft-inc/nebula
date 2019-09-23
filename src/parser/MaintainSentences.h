@@ -16,10 +16,6 @@ namespace nebula {
 
 class ColumnSpecification final {
 public:
-    explicit ColumnSpecification(std::string *name) {
-        name_.reset(name);
-    }
-
     ColumnSpecification(ColumnType type, std::string *name) {
         type_ = type;
         name_.reset(name);
@@ -56,6 +52,26 @@ public:
 
 private:
     std::vector<std::unique_ptr<ColumnSpecification>> columns_;
+};
+
+class ColumnNameList final {
+public:
+    ColumnNameList() = default;
+
+    void addColumn(std::string *column) {
+        columns_.emplace_back(column);
+    }
+
+    std::vector<std::string*> columnNames() const {
+        std::vector<std::string*> result;
+        result.resize(columns_.size());
+        auto get = [] (auto &ptr) { return ptr.get(); };
+        std::transform(columns_.begin(), columns_.end(), result.begin(), get);
+        return result;
+    }
+
+private:
+    std::vector<std::unique_ptr<std::string>> columns_;
 };
 
 
@@ -246,8 +262,17 @@ public:
         columns_.reset(columns);
     }
 
+    AlterSchemaOptItem(OptionType op, ColumnNameList *colNames) {
+        optType_ = op;
+        colNames_.reset(colNames);
+    }
+
     std::vector<ColumnSpecification*> columnSpecs() const {
         return columns_->columnSpecs();
+    }
+
+    std::vector<std::string*> columnNames() const {
+        return colNames_->columnNames();
     }
 
     OptionType getOptType() {
@@ -261,6 +286,7 @@ public:
 private:
     OptionType                                  optType_;
     std::unique_ptr<ColumnSpecificationList>    columns_;
+    std::unique_ptr<ColumnNameList>             colNames_;
 };
 
 
@@ -385,6 +411,7 @@ private:
     std::unique_ptr<std::string>                name_;
 };
 
+
 class DropTagSentence final : public Sentence {
 public:
     explicit DropTagSentence(std::string *name) {
@@ -422,20 +449,20 @@ private:
 
 
 class YieldSentence final : public Sentence {
- public:
-     explicit YieldSentence(YieldColumns *fields) {
-         yieldColumns_.reset(fields);
-         kind_ = Kind::kYield;
-     }
+public:
+    explicit YieldSentence(YieldColumns *fields) {
+        yieldColumns_.reset(fields);
+        kind_ = Kind::kYield;
+    }
 
-     std::vector<YieldColumn*> columns() const {
-         return yieldColumns_->columns();
-     }
+    std::vector<YieldColumn*> columns() const {
+        return yieldColumns_->columns();
+    }
 
-     std::string toString() const override;
+    std::string toString() const override;
 
- private:
-     std::unique_ptr<YieldColumns>              yieldColumns_;
+private:
+    std::unique_ptr<YieldColumns>              yieldColumns_;
 };
 }   // namespace nebula
 

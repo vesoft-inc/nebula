@@ -19,8 +19,14 @@ enum LogType : char {
     OP_MULTI_REMOVE   = 0x4,
     OP_REMOVE_PREFIX  = 0x5,
     OP_REMOVE_RANGE   = 0x6,
+    OP_ADD_LEARNER    = 0x07,
+    OP_TRANS_LEADER   = 0x08,
 };
 
+std::string encodeKV(const folly::StringPiece& key,
+                     const folly::StringPiece& val);
+
+std::pair<folly::StringPiece, folly::StringPiece> decodeKV(const std::string& data);
 
 std::string encodeSingleValue(LogType type, folly::StringPiece val);
 folly::StringPiece decodeSingleValue(folly::StringPiece encoded);
@@ -32,6 +38,11 @@ std::string encodeMultiValues(LogType type,
                               folly::StringPiece v2);
 std::vector<folly::StringPiece> decodeMultiValues(folly::StringPiece encoded);
 
+std::string encodeLearner(const HostAddr& learner);
+HostAddr decodeLearner(const std::string& encoded);
+
+std::string encodeTransLeader(const HostAddr& targetAddr);
+HostAddr decodeTransLeader(folly::StringPiece encoded);
 }  // namespace kvstore
 }  // namespace nebula
 #endif  // KVSTORE_LOGENCODER_H_

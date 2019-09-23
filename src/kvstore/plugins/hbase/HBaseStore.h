@@ -70,7 +70,7 @@ public:
     }
 
     // Return the current leader
-    HostAddr partLeader(GraphSpaceID spaceId, PartitionID partId) override {
+    ErrorOr<ResultCode, HostAddr> partLeader(GraphSpaceID spaceId, PartitionID partId) override {
         UNUSED(spaceId);
         UNUSED(partId);
         return {-1, -1};
@@ -125,6 +125,31 @@ public:
                            PartitionID partId,
                            const std::string& prefix,
                            KVCallback cb) override;
+
+    void asyncAtomicOp(GraphSpaceID,
+                       PartitionID,
+                       raftex::AtomicOp,
+                       KVCallback) override {
+        LOG(FATAL) << "Not supportted yet!";
+    }
+
+    ResultCode ingest(GraphSpaceID spaceId) override;
+
+    int32_t allLeader(std::unordered_map<GraphSpaceID,
+                                         std::vector<PartitionID>>& leaderIds) override;
+
+    ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID,
+                                                    PartitionID) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
+    ResultCode compact(GraphSpaceID) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
+    ResultCode flush(GraphSpaceID) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
 
 private:
     std::string getRowKey(const std::string& key) {

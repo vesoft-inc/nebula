@@ -25,7 +25,14 @@ void CreateUserProcessor::process(const cpp2::CreateUserReq& req) {
         return;
     }
 
-    UserID userId = autoIncrementId();
+    auto userRet = autoIncrementId();
+    if (!nebula::ok(userRet)) {
+        LOG(ERROR) << "Create User Failed : Get user id failed";
+        resp_.set_code(nebula::error(userRet));
+        onFinished();
+        return;
+    }
+    auto userId = nebula::value(userRet);
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::indexUserKey(user.get_account()),
                       std::string(reinterpret_cast<const char*>(&userId), sizeof(userId)));

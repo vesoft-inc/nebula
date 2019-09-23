@@ -6,149 +6,52 @@
 
 #include "meta/ActiveHostsMan.h"
 #include "meta/MetaServiceUtils.h"
-#include "meta/processors/BaseProcessor.h"
+#include "meta/processors/Common.h"
+
+DEFINE_int32(expired_threshold_sec, 10 * 60,
+                     "Hosts will be expired in this time if no heartbeat received");
 
 namespace nebula {
 namespace meta {
 
-ActiveHostsMan::ActiveHostsMan(int32_t intervalSeconds, int32_t expiredSeconds,
-                               kvstore::KVStore* kv)
-    : intervalSeconds_(intervalSeconds)
-    , expirationInSeconds_(expiredSeconds) {
-    if (kv != nullptr) {
-        kvstore_ = dynamic_cast<kvstore::NebulaStore*>(kv);
-    }
-
-    CHECK_GT(intervalSeconds, 0)
-        << "intervalSeconds " << intervalSeconds << " should > 0!";
-    CHECK_GE(expiredSeconds, intervalSeconds)
-        << "expiredSeconds " << expiredSeconds
-        << " should >= intervalSeconds " << intervalSeconds;
-    CHECK(checkThread_.start());
-    checkThread_.addTimerTask(intervalSeconds * 1000,
-                              intervalSeconds * 1000,
-                              &ActiveHostsMan::cleanExpiredHosts,
-                              this);
-}
-
-bool ActiveHostsMan::updateHostInfo(const HostAddr& hostAddr, const HostInfo& info) {
+kvstore::ResultCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
+                                                   const HostAddr& hostAddr,
+                                                   const HostInfo& info) {
+    CHECK_NOTNULL(kv);
     std::vector<kvstore::KV> data;
-    {
-        folly::RWSpinLock::ReadHolder rh(&lock_);
-        auto it = hostsMap_.find(hostAddr);
-        if (it == hostsMap_.end()) {
-            folly::RWSpinLock::UpgradedHolder uh(&lock_);
-            hostsMap_.emplace(hostAddr, std::move(info));
-            data.emplace_back(MetaServiceUtils::hostKey(hostAddr.first, hostAddr.second),
-                              MetaServiceUtils::hostValOnline());
-        } else {
-            it->second.lastHBTimeInSec_ = info.lastHBTimeInSec_;
-        }
-    }
-    if (kvstore_ != nullptr && !data.empty()) {
-        if (kvstore_->isLeader(kDefaultSpaceId, kDefaultPartId)) {
-            folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
-            folly::Baton<true, std::atomic> baton;
-            bool succeeded = true;
-            kvstore_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
-                                    [&] (kvstore::ResultCode code) {
-                if (code != kvstore::ResultCode::SUCCEEDED) {
-                    succeeded = false;
-                }
-                baton.post();
-            });
-            baton.wait();
-            return succeeded;
-        } else {
-            return false;
-        }
-    }
-    return true;
-}
-
-std::vector<HostAddr> ActiveHostsMan::getActiveHosts() {
-    std::vector<HostAddr> hosts;
-    folly::RWSpinLock::ReadHolder rh(&lock_);
-    hosts.resize(hostsMap_.size());
-    std::transform(hostsMap_.begin(), hostsMap_.end(), hosts.begin(),
-                   [](const auto& entry) -> decltype(auto) {
-        return entry.first;
+    data.emplace_back(MetaServiceUtils::hostKey(hostAddr.first, hostAddr.second),
+                      HostInfo::encode(info));
+    folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+    folly::Baton<true, std::atomic> baton;
+    kvstore::ResultCode ret;
+    kv->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
+                            [&] (kvstore::ResultCode code) {
+        ret = code;
+        baton.post();
     });
-    return hosts;
+    baton.wait();
+    return ret;
 }
 
-void ActiveHostsMan::loadHostMap() {
-    if (kvstore_ == nullptr) {
-        return;
-    }
-
+std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv, int32_t expiredTTL) {
+    std::vector<HostAddr> hosts;
     const auto& prefix = MetaServiceUtils::hostPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        return;
+        return hosts;
     }
-
+    expiredTTL = (expiredTTL == 0 ? FLAGS_expired_threshold_sec : expiredTTL);
+    auto now = time::WallClock::fastNowInSec();
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseHostKey(iter->key());
-        HostInfo info;
-        info.lastHBTimeInSec_ = time::WallClock::fastNowInSec();
-        if (iter->val() == MetaServiceUtils::hostValOnline()) {
-            LOG(INFO) << "load host " << host.ip << ":" << host.port;
-            updateHostInfo({host.ip, host.port}, info);
+        HostInfo info = HostInfo::decode(iter->val());
+        if (now - info.lastHBTimeInSec_ < expiredTTL) {
+            hosts.emplace_back(host.ip, host.port);
         }
         iter->next();
     }
-}
-
-void ActiveHostsMan::cleanExpiredHosts() {
-    int64_t now = time::WallClock::fastNowInSec();
-    std::vector<kvstore::KV> data;
-    {
-        folly::RWSpinLock::WriteHolder rh(&lock_);
-        auto it = hostsMap_.begin();
-        while (it != hostsMap_.end()) {
-            if ((now - it->second.lastHBTimeInSec_) > expirationInSeconds_) {
-                LOG(INFO) << it->first << " expired! last hb time "
-                    << it->second.lastHBTimeInSec_;
-                data.emplace_back(MetaServiceUtils::hostKey(it->first.first, it->first.second),
-                                  MetaServiceUtils::hostValOffline());
-                it = hostsMap_.erase(it);
-            } else {
-                it++;
-            }
-        }
-    }
-
-    // merge host info from kvstore
-    if (kvstore_ != nullptr) {
-        const auto& prefix = MetaServiceUtils::hostPrefix();
-        std::unique_ptr<kvstore::KVIterator> iter;
-        auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-        if (ret == kvstore::ResultCode::SUCCEEDED) {
-            while (iter->valid()) {
-                auto host = MetaServiceUtils::parseHostKey(iter->key());
-                if (iter->val() == MetaServiceUtils::hostValOnline()) {
-                    folly::RWSpinLock::ReadHolder rh(&lock_);
-                    bool notFound = hostsMap_.find({host.ip, host.port}) == hostsMap_.end();
-                    if (notFound) {
-                        data.emplace_back(MetaServiceUtils::hostKey(host.ip, host.port),
-                                          MetaServiceUtils::hostValOffline());
-                    }
-                }
-                iter->next();
-            }
-        }
-    }
-
-    if (!data.empty() && kvstore_ != nullptr) {
-        folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
-        LOG(INFO) << "set " << data.size() << " expired hosts to offline in meta rocksdb";
-        kvstore_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
-                                [] (kvstore::ResultCode code) {
-            CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
-        });
-    }
+    return hosts;
 }
 
 }  // namespace meta

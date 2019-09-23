@@ -304,23 +304,12 @@ TraverseTestBase::VertexHolder<TraverseTestBase::Team> TraverseTestBase::teams_ 
 AssertionResult TraverseTestBase::prepareSchema() {
     {
         cpp2::ExecutionResponse resp;
-        std::string host = folly::stringPrintf("127.0.0.1:%u", storagePort_);
-        std::string cmd = "ADD HOSTS " + host;
-        auto code = client_->execute(cmd, resp);
-        if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
-        }
-        meta::TestUtils::registerHB(network::NetworkUtils::toHosts(host).value());
-    }
-    {
-        cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE SPACE nba(partition_num=1, replica_factor=1)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "USE nba";
@@ -361,7 +350,7 @@ AssertionResult TraverseTestBase::prepareSchema() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_load_data_interval_secs + 3);
     return TestOK();
 }
 
@@ -775,15 +764,6 @@ AssertionResult TraverseTestBase::removeData() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = folly::stringPrintf("REMOVE HOSTS 127.0.0.1:%u", storagePort_);
-        auto code = client_->execute(cmd, resp);
-        if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
-        }
-    }
-
     return TestOK();
 }
 }  // namespace graph

@@ -31,7 +31,7 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
                                                    iter->val(),
                                                    spaceId_,
                                                    edgeKey.edge_type);
-        this->collectProps(reader.get(), iter->key(), props, &collector);
+        this->collectProps(reader.get(), iter->key(), props, nullptr, &collector);
         rsWriter.addRow(writer);
 
         iter->next();
@@ -39,17 +39,12 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
     return ret;
 }
 
-void QueryEdgePropsProcessor::addDefaultProps() {
-    this->edgeContext_.props_.emplace_back("_src", 0, PropContext::PropInKeyType::SRC);
-    this->edgeContext_.props_.emplace_back("_rank", 1, PropContext::PropInKeyType::RANK);
-    this->edgeContext_.props_.emplace_back("_dst", 2, PropContext::PropInKeyType::DST);
-}
-
 void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
     spaceId_ = req.get_space_id();
-    // By default, _src, _rank, _dst will be returned as the first 3 fields
-    addDefaultProps();
-    int32_t returnColumnsNum = req.get_return_columns().size() + this->edgeContext_.props_.size();
+
+    std::vector<EdgeType> e = {req.edge_type};
+    initEdgeContext(e, true);
+
     auto retCode = this->checkAndBuildContexts(req);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         for (auto& p : req.get_parts()) {
@@ -59,14 +54,20 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
         return;
     }
 
+    int32_t edgeSize = std::accumulate(edgeContexts_.cbegin(), edgeContexts_.cend(), 0,
+                                       [](int ac, auto& ec) { return ac + ec.second.size(); });
+
+    int32_t returnColumnsNum = req.get_return_columns().size() + edgeSize;
     RowSetWriter rsWriter;
     std::for_each(req.get_parts().begin(), req.get_parts().end(), [&](auto& partE) {
         auto partId = partE.first;
-        kvstore::ResultCode ret;
+        kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
         for (auto& edgeKey : partE.second) {
-            ret = this->collectEdgesProps(partId, edgeKey, this->edgeContext_.props_, rsWriter);
-            if (ret != kvstore::ResultCode::SUCCEEDED) {
-                break;
+            for (auto& ec : edgeContexts_) {
+                ret = this->collectEdgesProps(partId, edgeKey, ec.second, rsWriter);
+                if (ret != kvstore::ResultCode::SUCCEEDED) {
+                    break;
+                }
             }
         }
         // TODO handle failures
@@ -76,16 +77,20 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
 
     std::vector<PropContext> props;
     props.reserve(returnColumnsNum);
-    for (auto& prop : this->edgeContext_.props_) {
-        props.emplace_back(std::move(prop));
+     for (auto& ec : this->edgeContexts_) {
+        auto p = ec.second;
+        for (auto& prop : p) {
+            props.emplace_back(std::move(prop));
+        }
     }
+
     std::sort(props.begin(), props.end(), [](auto& l, auto& r){
         return l.retIndex_ < r.retIndex_;
     });
     decltype(resp_.schema) s;
     decltype(resp_.schema.columns) cols;
     for (auto& prop : props) {
-        VLOG(3) << prop.prop_.name << "," << static_cast<int8_t>(prop.type_.type);
+        VLOG(3) << prop.prop_.name << "," << static_cast<int32_t>(prop.type_.type);
         cols.emplace_back(
                 columnDef(std::move(prop.prop_.name),
                           prop.type_.type));

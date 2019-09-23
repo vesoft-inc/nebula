@@ -26,7 +26,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         return;
     }
     CHECK_EQ(Status::SpaceNotFound(), spaceRet.status());
-    auto hosts = ActiveHostsMan::instance()->getActiveHosts();
+    auto hosts = ActiveHostsMan::getActiveHosts(kvstore_);
     if (hosts.empty()) {
         LOG(ERROR) << "Create Space Failed : No Hosts!";
         resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
@@ -34,7 +34,14 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         return;
     }
 
-    auto spaceId = autoIncrementId();
+    auto idRet = autoIncrementId();
+    if (!nebula::ok(idRet)) {
+        LOG(ERROR) << "Create Space Failed : Get space id failed";
+        resp_.set_code(nebula::error(idRet));
+        onFinished();
+        return;
+    }
+    auto spaceId = nebula::value(idRet);
     auto spaceName = properties.get_space_name();
     auto partitionNum = properties.get_partition_num();
     auto replicaFactor = properties.get_replica_factor();

@@ -68,24 +68,35 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
 
 kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
                                                        VertexID vId) {
-    for (auto& tc : this->tagContexts_) {
-        auto ret = this->collectVertexProps(partId, vId, tc.tagId_, tc.props_, &collector_);
+    FilterContext fcontext;
+    for (auto& tc : tagContexts_) {
+        auto ret = this->collectVertexProps(partId,
+                                            vId,
+                                            tc.tagId_,
+                                            tc.props_,
+                                            &fcontext,
+                                            &collector_);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             return ret;
         }
     }
 
-    if (!this->edgeContext_.props_.empty()) {
-         return this->collectEdgeProps(partId,
-                                       vId,
-                                       this->edgeContext_.edgeType_,
-                                       this->edgeContext_.props_,
-                                       [&, this] (RowReader* reader,
-                                                  folly::StringPiece key,
-                                                  const std::vector<PropContext>& props) {
-                                           this->collectProps(reader, key, props, &collector_);
-                                       });
+    for (auto& ec : this->edgeContexts_) {
+        auto edgeType = ec.first;
+        auto& props = ec.second;
+        if (!props.empty()) {
+            auto r = this->collectEdgeProps(partId, vId, edgeType, props, &fcontext,
+                                            [&, this](RowReader* reader, folly::StringPiece key,
+                                                      const std::vector<PropContext>& p) {
+                                                this->collectProps(reader, key,  p, &fcontext,
+                                                                   &collector_);
+                                            });
+            if (r != kvstore::ResultCode::SUCCEEDED) {
+                return r;
+            }
+        }
     }
+
     return kvstore::ResultCode::SUCCEEDED;
 }
 
@@ -95,11 +106,18 @@ void QueryStatsProcessor::onProcessFinished(int32_t retNum) {
     props.reserve(retNum);
     for (auto& tc : this->tagContexts_) {
         for (auto& prop : tc.props_) {
-            props.emplace_back(std::move(prop));
+            if (prop.returned_) {
+                props.emplace_back(std::move(prop));
+            }
         }
     }
-    for (auto& prop : this->edgeContext_.props_) {
-        props.emplace_back(std::move(prop));
+
+    for (auto& ec : this->edgeContexts_) {
+        auto p = ec.second;
+        for (auto& prop : p) {
+            CHECK(prop.returned_);
+            props.emplace_back(std::move(prop));
+        }
     }
     std::sort(props.begin(), props.end(), [](auto& l, auto& r){
         return l.retIndex_ < r.retIndex_;

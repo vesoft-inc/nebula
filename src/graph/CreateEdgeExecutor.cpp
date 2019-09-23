@@ -19,8 +19,12 @@ CreateEdgeExecutor::CreateEdgeExecutor(Sentence *sentence,
 
 
 Status CreateEdgeExecutor::prepare() {
-    auto status = checkIfGraphSpaceChosen();
+    return Status::OK();
+}
 
+
+Status CreateEdgeExecutor::getSchema() {
+    auto status = checkIfGraphSpaceChosen();
     if (!status.ok()) {
         return status;
     }
@@ -33,6 +37,13 @@ Status CreateEdgeExecutor::prepare() {
 
 
 void CreateEdgeExecutor::execute() {
+    auto status = getSchema();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();

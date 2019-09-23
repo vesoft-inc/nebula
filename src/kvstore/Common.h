@@ -23,6 +23,7 @@ enum ResultCode {
     ERR_LEADER_CHANGED      = -5,
     ERR_INVALID_ARGUMENT    = -6,
     ERR_IO_ERROR            = -7,
+    ERR_UNSUPPORTED         = -8,
     ERR_UNKNOWN             = -100,
 };
 
@@ -41,6 +42,7 @@ public:
 
 using KV = std::pair<std::string, std::string>;
 using KVCallback = folly::Function<void(ResultCode code)>;
+using NewLeaderCallback = folly::Function<void(HostAddr nLeader)>;
 
 inline rocksdb::Slice toSlice(const folly::StringPiece& str) {
     return rocksdb::Slice(str.begin(), str.size());

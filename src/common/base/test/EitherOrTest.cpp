@@ -390,4 +390,3 @@ TEST(EitherOr, Destruct) {
 }
 
 }   // namespace nebula
-
