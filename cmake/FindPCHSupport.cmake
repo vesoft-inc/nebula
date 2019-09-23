@@ -30,7 +30,7 @@ ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
 
 
-MACRO(ADD_PRECOMPILED_HEADER _targetName _input _dep)
+MACRO(ADD_PRECOMPILED_HEADER _targetName _input)
 
     GET_FILENAME_COMPONENT(_name ${_input} NAME)
     SET(_source "${CMAKE_CURRENT_SOURCE_DIR}/${_input}")
@@ -77,7 +77,6 @@ MACRO(ADD_PRECOMPILED_HEADER _targetName _input _dep)
 				-o ${_output} ${_source}
         MAIN_DEPENDENCY ${_source})
     ADD_CUSTOM_TARGET(${_targetName}_gch DEPENDS ${_output})
-    ADD_DEPENDENCIES(${_targetName}_gch ${_dep})
     ADD_DEPENDENCIES(${_targetName} ${_targetName}_gch)
 
 ENDMACRO(ADD_PRECOMPILED_HEADER)
