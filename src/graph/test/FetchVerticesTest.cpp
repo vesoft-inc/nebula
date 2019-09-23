@@ -284,6 +284,15 @@ TEST_F(FetchVerticesTest, nonExistVetex) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve"
+                    " | FETCH PROP ON team $-";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
 }
 }  // namespace graph
 }  // namespace nebula
