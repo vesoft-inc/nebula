@@ -31,6 +31,7 @@ enum ErrorCode {
 
     // Invalid request
     E_INVALID_FILTER = -31,
+    E_INVALID_UPDATER = -32,
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 
@@ -105,7 +106,6 @@ struct EdgePropResponse {
     2: optional common.Schema schema,          // edge related props
     3: optional binary data,
 }
-
 
 struct QueryStatsResponse {
     1: required ResponseCommon result,
@@ -260,6 +260,39 @@ struct GetUUIDResp {
     2: common.VertexID id,
 }
 
+struct UpdateResponse {
+    1: required ResponseCommon result,
+    2: optional common.Schema schema,   // return column related props schema
+    3: optional binary data,            // return column related props value
+    4: optional bool upsert = false,    // it's true when need to be inserted by UPSERT
+}
+
+struct UpdateItem {
+    1: required binary name,    // the Tag name or Edge name
+    2: required binary prop,    // property
+    3: required binary value,   // new value expression which is encoded
+}
+
+struct UpdateVertexRequest {
+    1: common.GraphSpaceID space_id,
+    2: common.VertexID vertex_id,
+    3: common.PartitionID part_id,
+    4: binary filter,
+    5: list<UpdateItem> update_items,
+    6: list<binary> return_columns,
+    7: bool insertable,
+}
+
+struct UpdateEdgeRequest {
+    1: common.GraphSpaceID space_id,
+    2: EdgeKey edge_key,
+    3: common.PartitionID part_id,
+    4: binary filter,
+    5: list<UpdateItem> update_items,
+    6: list<binary> return_columns,
+    7: bool insertable,
+}
+
 service StorageService {
     QueryResponse getBound(1: GetNeighborsRequest req)
 
@@ -275,6 +308,9 @@ service StorageService {
     EdgeKeyResponse getEdgeKeys(1: EdgeKeyRequest req);
     ExecResponse deleteEdges(1: DeleteEdgesRequest req);
     ExecResponse deleteVertex(1: DeleteVertexRequest req);
+
+    UpdateResponse updateVertex(1: UpdateVertexRequest req)
+    UpdateResponse updateEdge(1: UpdateEdgeRequest req)
 
     // Interfaces for admin operations
     AdminExecResp transLeader(1: TransLeaderReq req);

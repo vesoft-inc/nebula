@@ -24,7 +24,7 @@ namespace nebula {
 
 class FunctionManager final {
 public:
-    using Function = std::function<folly::Future<VariantType>(const std::vector<VariantType>&)>;
+    using Function = std::function<VariantType(const std::vector<VariantType>&)>;
 
     /**
      * To obtain a function named `func', with the actual arity.
@@ -48,8 +48,6 @@ private:
     FunctionManager();
 
     static FunctionManager& instance();
-
-    // void setStorageClientInternal(nebula::storage::StorageClient *storageClient);
 
     StatusOr<Function> getInternal(const std::string &func, size_t arity) const;
 

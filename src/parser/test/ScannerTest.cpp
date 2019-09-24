@@ -385,6 +385,9 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("UUID", TokenType::KW_UUID),
         CHECK_SEMANTIC_TYPE("Uuid", TokenType::KW_UUID),
         CHECK_SEMANTIC_TYPE("uuid", TokenType::KW_UUID),
+        CHECK_SEMANTIC_TYPE("OF", TokenType::KW_OF),
+        CHECK_SEMANTIC_TYPE("Of", TokenType::KW_OF),
+        CHECK_SEMANTIC_TYPE("of", TokenType::KW_OF),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),

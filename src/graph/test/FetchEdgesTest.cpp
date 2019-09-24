@@ -359,6 +359,20 @@ TEST_F(FetchEdgesTest, distinct) {
     }
 }
 
+TEST_F(FetchEdgesTest, noInput) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &nobody = players_["Nobody"];
+        auto *fmt = "GO FROM %ld OVER serve YIELD serve._src AS src, serve._dst AS dst"
+                    "| FETCH PROP ON serve $-.src->$-.dst"
+                    " YIELD serve.start_year, serve.end_year";
+        auto query = folly::stringPrintf(fmt, nobody.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+}
+
 TEST_F(FetchEdgesTest, syntaxError) {
     {
         cpp2::ExecutionResponse resp;

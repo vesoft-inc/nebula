@@ -272,3 +272,19 @@ nebula_add_executable(
         boost_regex
 )
 
+
+nebula_add_test(
+    NAME update_vertex_test
+    SOURCES UpdateVertexTest.cpp
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
+    LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
+)
+
+
+nebula_add_test(
+    NAME update_edge_test
+    SOURCES UpdateEdgeTest.cpp
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
+    LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
+)
+

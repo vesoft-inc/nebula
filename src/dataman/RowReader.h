@@ -89,7 +89,7 @@ public:
         std::shared_ptr<const meta::SchemaProviderIf> schema);
 
     static StatusOr<VariantType> getDefaultProp(const meta::SchemaProviderIf* schema,
-                                      const std::string& prop) {
+                                                const std::string& prop) {
         auto& vType = schema->getFieldType(prop);
         switch (vType.type) {
             case nebula::cpp2::SupportedType::BOOL: {
@@ -176,7 +176,7 @@ public:
 
 
     static ErrorOr<ResultType, VariantType> getPropByIndex(const RowReader *reader,
-                                                           int64_t index) {
+                                                           const int64_t index) {
         auto& vType = reader->getSchema()->getFieldType(index);
         switch (vType.get_type()) {
             case nebula::cpp2::SupportedType::BOOL: {
@@ -268,8 +268,8 @@ public:
     ResultType getVid(int64_t index, int64_t& v) const noexcept;
 
 
-    const meta::SchemaProviderIf* getSchema() const {
-        return schema_.get();
+    std::shared_ptr<const meta::SchemaProviderIf> getSchema() const {
+        return schema_;
     }
 
     // TODO getPath(const std::string& name) const noexcept;

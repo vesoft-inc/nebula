@@ -18,7 +18,7 @@ namespace nebula {
 class Cord;
 using OptVariantType = StatusOr<VariantType>;
 
-enum ColumnType {
+enum class ColumnType {
     INT, STRING, DOUBLE, BIGINT, BOOL, TIMESTAMP,
 };
 
@@ -67,10 +67,6 @@ public:
         return true;
     }
 
-    void setStorageClient(nebula::storage::StorageClient *storageClient) {
-        storageClient_ = storageClient;
-    }
-
     using PropPair = std::pair<std::string, std::string>;
 
     std::vector<PropPair> srcTagProps() const {
@@ -95,10 +91,6 @@ public:
         return variables_;
     }
 
-    nebula::storage::StorageClient* storageClient() {
-        return storageClient_;
-    }
-
     bool hasSrcTagProp() const {
         return !srcTagProps_.empty();
     }
@@ -118,6 +110,15 @@ public:
     bool hasInputProp() const {
         return !inputProps_.empty();
     }
+
+    void setStorageClient(nebula::storage::StorageClient *storageClient) {
+        storageClient_ = storageClient;
+    }
+
+    nebula::storage::StorageClient* storageClient() {
+        return storageClient_;
+    }
+
 
     void setSpace(GraphSpaceID space) {
         space_ = space;
@@ -330,12 +331,10 @@ public:
         kEdgeSrcId,
         kEdgeType,
         kAliasProp,
-        kEdgeProp,
         kVariableProp,
         kDestProp,
         kInputProp,
         kUUID,
-
         kMax,
     };
 
@@ -372,7 +371,6 @@ private:
     friend class EdgeDstIdExpression;
     friend class EdgeSrcIdExpression;
     friend class EdgeTypeExpression;
-    friend class EdgePropertyExpression;
     friend class VariablePropertyExpression;
     friend class InputPropertyExpression;
 
@@ -724,19 +722,17 @@ private:
 private:
     std::unique_ptr<std::string>                name_;
     std::vector<std::unique_ptr<Expression>>    args_;
-    std::function<folly::Future<VariantType>(const std::vector<VariantType>&)> function_;
+    std::function<VariantType(const std::vector<VariantType>&)> function_;
 };
 
 // (uuid)expr
 class UUIDExpression final : public Expression {
 public:
     UUIDExpression() {
-        LOG(INFO) << "UUIDExpression";
         kind_ = kUUID;
     }
 
     explicit UUIDExpression(std::string *field) {
-        LOG(INFO) << "UUIDExpression";
         kind_ = kUUID;
         field_.reset(field);
     }
@@ -751,10 +747,6 @@ public:
         context_ = ctx;
     }
 
-    void setSpace(GraphSpaceID space) {
-        space_ = space;
-    }
-
 private:
     void encode(Cord &) const override {
         throw Status::Error("Not supported yet");
@@ -766,7 +758,6 @@ private:
 
 private:
     std::unique_ptr<std::string>                field_;
-    GraphSpaceID                                space_;
 };
 
 // +expr, -expr, !expr
@@ -953,6 +944,7 @@ private:
 
     const char* decode(const char *pos, const char *end) override;
 
+    Status implicitCasting(VariantType &lhs, VariantType &rhs) const;
 
 private:
     Operator                                    op_;
