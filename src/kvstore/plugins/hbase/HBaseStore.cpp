@@ -80,28 +80,33 @@ std::string HBaseStore::encode(GraphSpaceID spaceId,
             return "";
         }
         auto value = data[fieldName];
-        switch (schema->getFieldType(index).get_type()) {
-            case cpp2::SupportedType::INT:
-                values.emplace_back(folly::to<int32_t>(value));
-                break;
-            case cpp2::SupportedType::STRING:
-                values.emplace_back(folly::to<std::string>(value));
-                break;
-            case cpp2::SupportedType::VID:
-                values.emplace_back(folly::to<int64_t>(value));
-                break;
-            case cpp2::SupportedType::FLOAT:
-                values.emplace_back(folly::to<float>(value));
-                break;
-            case cpp2::SupportedType::DOUBLE:
-                values.emplace_back(folly::to<double>(value));
-                break;
-            case cpp2::SupportedType::BOOL:
-                values.emplace_back(folly::to<bool>(value));
-                break;
-            default:
-                LOG(ERROR) << "Type Error : " << value;
-                break;
+        try {
+            switch (schema->getFieldType(index).get_type()) {
+                case cpp2::SupportedType::INT:
+                    values.emplace_back(folly::to<int32_t>(value));
+                    break;
+                case cpp2::SupportedType::STRING:
+                    values.emplace_back(folly::to<std::string>(value));
+                    break;
+                case cpp2::SupportedType::VID:
+                    values.emplace_back(folly::to<int64_t>(value));
+                    break;
+                case cpp2::SupportedType::FLOAT:
+                    values.emplace_back(folly::to<float>(value));
+                    break;
+                case cpp2::SupportedType::DOUBLE:
+                    values.emplace_back(folly::to<double>(value));
+                    break;
+                case cpp2::SupportedType::BOOL:
+                    values.emplace_back(folly::to<bool>(value));
+                    break;
+                default:
+                    LOG(ERROR) << "Type Error : " << value;
+                    break;
+            }
+        } catch (const std::exception& ex) {
+            LOG(ERROR) << "encoding failed: " << ex.what();
+            return "";
         }
     }
     dataman::NebulaCodecImpl codec;
@@ -379,14 +384,11 @@ void HBaseStore::asyncRemovePrefix(GraphSpaceID spaceId,
     return cb(removePrefix());
 }
 
-ResultCode HBaseStore::ingest(GraphSpaceID spaceId) {
-    UNUSED(spaceId);
-    return ResultCode::ERR_UNSUPPORTED;
+ResultCode HBaseStore::ingest(GraphSpaceID) {
+    LOG(FATAL) << "Unimplement";
 }
 
-int32_t HBaseStore::allLeader(std::unordered_map<GraphSpaceID,
-                                                 std::vector<PartitionID>>& leaderIds) {
-    UNUSED(leaderIds);
+int32_t HBaseStore::allLeader(std::unordered_map<GraphSpaceID, std::vector<PartitionID>>&) {
     LOG(FATAL) << "Unimplement";
 }
 

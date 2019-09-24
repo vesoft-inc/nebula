@@ -57,7 +57,14 @@ bool NebulaStore::init() {
             for (auto& dir : dirs) {
                 LOG(INFO) << "Scan path \"" << path << "/" << dir << "\"";
                 try {
-                    auto spaceId = folly::to<GraphSpaceID>(dir);
+                    GraphSpaceID spaceId;
+                    try {
+                        spaceId = folly::to<GraphSpaceID>(dir);
+                    } catch (const std::exception& ex) {
+                        LOG(ERROR) << "Data path invalid: " << ex.what();
+                        return false;
+                    }
+
                     if (!options_.partMan_->spaceExist(storeSvcAddr_, spaceId)) {
                         // TODO We might want to have a second thought here.
                         // Removing the data directly feels a little strong
@@ -422,14 +429,13 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
                 return error(ret);
             }
 
-            auto path = value(ret)->getDataRoot();
-            LOG(INFO) << "Ingesting Part " << part;
+            auto path = folly::stringPrintf("%s/download/%d", value(ret)->getDataRoot(), part);
             if (!fs::FileUtils::exist(path)) {
                 LOG(ERROR) << path << " not existed";
                 return ResultCode::ERR_IO_ERROR;
             }
 
-            auto files = nebula::fs::FileUtils::listAllFilesInDir(path, true, "*.sst");
+            auto files = nebula::fs::FileUtils::listAllFilesInDir(path.c_str(), true, "*.sst");
             for (auto file : files) {
                 VLOG(3) << "Ingesting extra file: " << file;
                 extras.emplace_back(file);

@@ -293,6 +293,49 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR(-1 <= -2, false);
     TEST_EXPR(-2 <= -1, true);
 
+    TEST_EXPR(0.5 == 1, false);
+    TEST_EXPR(1.0 == 1, true);
+    TEST_EXPR(0.5 != 1, true);
+    TEST_EXPR(1.0 != 1, false);
+    TEST_EXPR(0.5 > 1, false);
+    TEST_EXPR(0.5 >= 1, false);
+    TEST_EXPR(0.5 < 1, true);
+    TEST_EXPR(0.5 <= 1, true);
+
+    TEST_EXPR(true == 1, true);
+    TEST_EXPR(true == 2, false);
+    TEST_EXPR(true != 1, false);
+    TEST_EXPR(true != 2, true);
+    TEST_EXPR(true > 1, false);
+    TEST_EXPR(true >= 1, true);
+    TEST_EXPR(true < 1, false);
+    TEST_EXPR(true <= 1, true);
+    TEST_EXPR(false == 0, true);
+    TEST_EXPR(false == 1, false);
+    TEST_EXPR(false != 0, false);
+    TEST_EXPR(false != 1, true);
+    TEST_EXPR(false > 0, false);
+    TEST_EXPR(false >= 0, true);
+    TEST_EXPR(false < 0, false);
+    TEST_EXPR(false <= 0, true);
+
+    TEST_EXPR(true == 1.0, true);
+    TEST_EXPR(true == 2.0, false);
+    TEST_EXPR(true != 1.0, false);
+    TEST_EXPR(true != 2.0, true);
+    TEST_EXPR(true > 1.0, false);
+    TEST_EXPR(true >= 1.0, true);
+    TEST_EXPR(true < 1.0, false);
+    TEST_EXPR(true <= 1.0, true);
+    TEST_EXPR(false == 0.0, true);
+    TEST_EXPR(false == 1.0, false);
+    TEST_EXPR(false != 0.0, false);
+    TEST_EXPR(false != 1.0, true);
+    TEST_EXPR(false > 0.0, false);
+    TEST_EXPR(false >= 0.0, true);
+    TEST_EXPR(false < 0.0, false);
+    TEST_EXPR(false <= 0.0, true);
+
     TEST_EXPR(8 % 2 + 1 == 1, true);
     TEST_EXPR(8 % 2 + 1 != 1, false);
     TEST_EXPR(8 % 3 + 1 == 3, true);
@@ -729,11 +772,15 @@ TEST_F(ExpressionTest, InvalidExpressionTest) {
     TEST_EXPR(1.0 * "a");
     TEST_EXPR(1 / "a");
     TEST_EXPR("a" / "b");
-    TEST_EXPR(1.0 % 2.0);
-    TEST_EXPR(1.0 % 3);
     TEST_EXPR(1.0 % "a");
     TEST_EXPR(-"A");
     TEST_EXPR(TRUE + FALSE);
+    TEST_EXPR("123" > 123);
+    TEST_EXPR("123" < 123);
+    TEST_EXPR("123" >= 123);
+    TEST_EXPR("123" <= 123);
+    TEST_EXPR("123" == 123);
+    TEST_EXPR("123" != 123);
 #undef TEST_EXPR
 }
 

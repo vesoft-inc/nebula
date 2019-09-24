@@ -55,7 +55,6 @@ public:
         }
     }
 
-
 public:
     folly::Promise<StorageRpcResponse<Response>> promise;
     StorageRpcResponse<Response> resp;
