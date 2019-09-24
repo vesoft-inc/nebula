@@ -784,4 +784,42 @@ TEST_F(ExpressionTest, InvalidExpressionTest) {
 #undef TEST_EXPR
 }
 
+
+TEST_F(ExpressionTest, StringLengthLimitTest) {
+    constexpr auto MAX = 4096UL;
+    std::string valid(MAX, 'X');
+    std::string invalid(MAX + 1, 'X');
+
+    // double quote
+    {
+        GQLParser parser;
+        auto *fmt = "GO FROM 1 OVER follow WHERE \"%s\"";
+        {
+            auto query = folly::stringPrintf(fmt, valid.c_str());
+            auto parsed = parser.parse(query);
+            ASSERT_TRUE(parsed.ok()) << parsed.status();
+        }
+        {
+            auto query = folly::stringPrintf(fmt, invalid.c_str());
+            auto parsed = parser.parse(query);
+            ASSERT_FALSE(parsed.ok());
+        }
+    }
+    // single quote
+    {
+        GQLParser parser;
+        auto *fmt = "GO FROM 1 OVER follow WHERE '%s'";
+        {
+            auto query = folly::stringPrintf(fmt, valid.c_str());
+            auto parsed = parser.parse(query);
+            ASSERT_TRUE(parsed.ok()) << parsed.status();
+        }
+        {
+            auto query = folly::stringPrintf(fmt, invalid.c_str());
+            auto parsed = parser.parse(query);
+            ASSERT_FALSE(parsed.ok());
+        }
+    }
+}
+
 }   // namespace nebula
