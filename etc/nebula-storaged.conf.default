@@ -21,6 +21,8 @@
 --local_ip=127.0.0.1
 # Storage daemon listening port
 --port=44500
+# HTTP service ip
+--ws_ip=127.0.0.1
 # HTTP service port
 --ws_http_port=12000
 # HTTP2 service port
