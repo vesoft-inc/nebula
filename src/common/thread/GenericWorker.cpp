@@ -12,26 +12,7 @@
 namespace nebula {
 namespace thread {
 
-GenericWorker::GenericWorker() {
-    // Create an event base
-    evbase_ = event_base_new();
-    DCHECK(evbase_ != nullptr);
-
-    // Create an eventfd for async notification
-    evfd_ = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-    if (evfd_ == -1) {
-        LOG(ERROR) << "Create eventfd failed: " << ::strerror(errno);
-    }
-    auto cb = [] (int fd, int16_t, void *arg) {
-        auto val = 0UL;
-        auto len = ::read(fd, &val, sizeof(val));
-        DCHECK(len == sizeof(val));
-        reinterpret_cast<GenericWorker*>(arg)->onNotify();
-    };
-    auto events = EV_READ | EV_PERSIST;
-    notifier_  = event_new(evbase_, evfd_, events, cb, this);
-    DCHECK(notifier_ != nullptr);
-}
+GenericWorker::GenericWorker() = default;
 
 GenericWorker::~GenericWorker() {
     stop();
@@ -44,7 +25,9 @@ GenericWorker::~GenericWorker() {
         event_base_free(evbase_);
         evbase_ = nullptr;
     }
-    ::close(evfd_);
+    if (evfd_ >= 0) {
+        ::close(evfd_);
+    }
 }
 
 bool GenericWorker::start(std::string name) {
@@ -54,6 +37,25 @@ bool GenericWorker::start(std::string name) {
     }
     name_ = std::move(name);
 
+    // Create an event base
+    evbase_ = event_base_new();
+    DCHECK(evbase_ != nullptr);
+
+    // Create an eventfd for async notification
+    evfd_ = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+    if (evfd_ == -1) {
+        LOG(ERROR) << "Create eventfd failed: " << ::strerror(errno);
+        return false;
+    }
+    auto cb = [] (int fd, int16_t, void *arg) {
+        auto val = 0UL;
+        auto len = ::read(fd, &val, sizeof(val));
+        DCHECK(len == sizeof(val));
+        reinterpret_cast<GenericWorker*>(arg)->onNotify();
+    };
+    auto events = EV_READ | EV_PERSIST;
+    notifier_  = event_new(evbase_, evfd_, events, cb, this);
+    DCHECK(notifier_ != nullptr);
     event_add(notifier_, nullptr);
 
     // Launch a new thread to run the event loop
