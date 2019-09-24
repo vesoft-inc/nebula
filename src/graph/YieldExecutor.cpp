@@ -280,19 +280,25 @@ Status YieldExecutor::executeConstant() {
 }
 
 void YieldExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
-    std::unique_ptr<InterimResult> outputs;
+    auto outputs = std::make_unique<InterimResult>(std::move(resultColNames_));
     if (rsWriter != nullptr) {
-        outputs = std::make_unique<InterimResult>(std::move(rsWriter));
+        outputs->setInterim(std::move(rsWriter));
     }
 
     if (onResult_) {
         onResult_(std::move(outputs));
     } else {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        resp_->set_column_names(std::move(resultColNames_));
-        if (outputs != nullptr) {
-            auto rows = outputs->getRows();
-            resp_->set_rows(std::move(rows));
+        auto colNames = outputs->getColNames();
+        resp_->set_column_names(std::move(colNames));
+        if (outputs->hasData()) {
+            auto ret = outputs->getRows();
+            if (!ret.ok()) {
+                LOG(ERROR) << "Get rows failed: " << ret.status();
+                onError_(std::move(ret).status());
+                return;
+            }
+            resp_->set_rows(std::move(ret).value());
         }
     }
     DCHECK(onFinish_);
