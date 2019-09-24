@@ -52,6 +52,12 @@ public:
     folly::Future<cpp2::ExecResponse>
     future_deleteVertex(const cpp2::DeleteVertexRequest& req) override;
 
+    folly::Future<cpp2::UpdateResponse>
+    future_updateVertex(const cpp2::UpdateVertexRequest& req) override;
+
+    folly::Future<cpp2::UpdateResponse>
+    future_updateEdge(const cpp2::UpdateEdgeRequest& req) override;
+
     // Admin operations
     folly::Future<cpp2::AdminExecResp>
     future_transLeader(const cpp2::TransLeaderReq& req) override;

@@ -43,6 +43,8 @@
 #include "graph/MatchExecutor.h"
 #include "graph/BalanceExecutor.h"
 #include "graph/DeleteVertexExecutor.h"
+#include "graph/UpdateVertexExecutor.h"
+#include "graph/UpdateEdgeExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -146,6 +148,12 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kDeleteVertex:
             executor = std::make_unique<DeleteVertexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kUpdateVertex:
+            executor = std::make_unique<UpdateVertexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kUpdateEdge:
+            executor = std::make_unique<UpdateEdgeExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";
@@ -268,15 +276,15 @@ StatusOr<int64_t> Executor::toTimestamp(const VariantType &value) {
 
 nebula::cpp2::SupportedType Executor::ColumnTypeToSupportedType(ColumnType type) const {
     switch (type) {
-        case INT:
+        case ColumnType::INT:
             return nebula::cpp2::SupportedType::INT;
-        case STRING:
+        case ColumnType::STRING:
             return nebula::cpp2::SupportedType::STRING;
-        case DOUBLE:
+        case ColumnType::DOUBLE:
             return nebula::cpp2::SupportedType::DOUBLE;
-        case BOOL:
+        case ColumnType::BOOL:
             return nebula::cpp2::SupportedType::BOOL;
-        case TIMESTAMP:
+        case ColumnType::TIMESTAMP:
             return nebula::cpp2::SupportedType::TIMESTAMP;
         default:
             LOG(ERROR) << "Unknown type: " << static_cast<int32_t>(type);

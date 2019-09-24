@@ -44,11 +44,13 @@ Both tags and edge types can have properties, which are key/value pairs, and the
 Like Mysql, **Nebula Graph** is a strong typed database. The name and data type of the properties are determined before the data is written. Vertices can have properties indirectly via associated tags, and edges can have properties too.
 
 In the preceding example, the schema of the tag **player** has three kind of properties:
+
 - id (vid)
 - Name (string)
 - Age (int)
 
 The schema of the edge **serve** has two kinds of properties:
+
 - start_year (int)
 - end_year (int)
 

@@ -16,6 +16,8 @@
 #include "storage/DeleteVertexProcessor.h"
 #include "storage/DeleteEdgesProcessor.h"
 #include "QueryEdgeKeysProcessor.h"
+#include "storage/UpdateVertexProcessor.h"
+#include "storage/UpdateEdgeProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -78,6 +80,18 @@ StorageServiceHandler::future_deleteVertex(const cpp2::DeleteVertexRequest& req)
 folly::Future<cpp2::ExecResponse>
 StorageServiceHandler::future_deleteEdges(const cpp2::DeleteEdgesRequest& req) {
     auto* processor = DeleteEdgesProcessor::instance(kvstore_, schemaMan_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::UpdateResponse>
+StorageServiceHandler::future_updateVertex(const cpp2::UpdateVertexRequest& req) {
+    auto* processor = UpdateVertexProcessor::instance(kvstore_, schemaMan_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::UpdateResponse>
+StorageServiceHandler::future_updateEdge(const cpp2::UpdateEdgeRequest& req) {
+    auto* processor = UpdateEdgeProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
 

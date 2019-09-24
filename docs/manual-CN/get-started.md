@@ -309,13 +309,13 @@ Q1. 查询点 201 喜欢的点：
 ```
 nebula> GO FROM 201 OVER like;
 
-=======
-|  id |
-=======
-| 200 |
--------
-| 202 |
--------
+=============
+| like._dst |
+=============
+| 200       |
+-------------
+| 202       |
+-------------
 ```
 
 Q2. 查询点 201 喜欢的点，并筛选出年龄大于 17 岁的点，并返回其姓名，年龄，性别，将其重全名为 Friend，Age，Gender。
@@ -340,7 +340,7 @@ Q3. 查询点201喜欢的点选择了哪些课程和其对应年级。
 
 ```
 -- 使用管道
-nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
+nebula> GO FROM 201 OVER like yield like._dst as id | GO FROM $-.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
 
 =============================
 | Student |  Course | Grade |
@@ -353,7 +353,7 @@ nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^.student.name 
 -----------------------------
 
 -- 使用临时变量
-nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
+nebula> $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
 
 =============================
 | Student |  Course | Grade |
