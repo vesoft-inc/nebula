@@ -135,13 +135,13 @@ Status FetchEdgesExecutor::setupEdgeKeysFromRef() {
     const InterimResult *inputs;
     if (sentence_->ref()->isInputExpr()) {
         inputs = inputs_.get();
-        if (inputs == nullptr) {
+        if (inputs == nullptr || !inputs->hasData()) {
             // we have empty imputs from pipe.
             return Status::OK();
         }
     } else {
         inputs = ectx()->variableHolder()->get(varname_);
-        if (inputs == nullptr) {
+        if (inputs == nullptr || !inputs->hasData()) {
             return Status::Error("Variable `%s' not defined", varname_.c_str());
         }
     }
@@ -327,7 +327,6 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
         }
         while (iter) {
-            VLOG(3) << "collect.";
             auto collector = std::make_unique<Collector>(eschema.get());
             auto writer = std::make_unique<RowWriter>(outputSchema);
 

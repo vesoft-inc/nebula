@@ -10,7 +10,7 @@
 # Macro:
 #   ADD_PRECOMPILED_HEADER
 
-IF(CMAKE_COMPILER_IS_GNUCXX)
+IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     EXEC_PROGRAM(
         ${CMAKE_CXX_COMPILER}
         ARGS 			--version
@@ -20,13 +20,15 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
     IF(gcc_compiler_version MATCHES "[4-9]\\.[0-9]\\.[0-9]")
         SET(PCHSupport_FOUND TRUE)
         MESSAGE("-- Found PCH Support: gcc compiler version is " ${gcc_compiler_version})
-    ELSE(gcc_compiler_version MATCHES "[4-9]\\.[0-9]\\.[0-9]")
+    ELSE()
         IF(gcc_compiler_version MATCHES "3\\.4\\.[0-9]")
             SET(PCHSupport_FOUND TRUE)
             MESSAGE("-- Found PCH Support: gcc compiler version is " ${gcc_compiler_version})
-        ENDIF(gcc_compiler_version MATCHES "3\\.4\\.[0-9]")
-    ENDIF(gcc_compiler_version MATCHES "[4-9]\\.[0-9]\\.[0-9]")
-ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+        ENDIF()
+    ENDIF()
+ELSEIF(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    SET(PCHSupport_FOUND TRUE)
+ENDIF()
 
 
 
