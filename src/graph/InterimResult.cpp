@@ -96,7 +96,7 @@ StatusOr<std::vector<cpp2::RowValue>> InterimResult::getRows() const {
                     if (rc != ResultType::SUCCEEDED) {
                         return Status::Error("Get vid from interim failed.");
                     }
-                    row.back().set_vid(v);
+                    row.back().set_id(v);
                     break;
                 }
                 case SupportedType::DOUBLE: {
@@ -171,7 +171,8 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
         auto name = schema->getFieldName(i);
         if (vidColumn == name) {
             if (schema->getFieldType(i).type != SupportedType::VID) {
-                return Status::Error("The specific vid column is not type of VID.");
+                return Status::Error("The specific vid column `%s' is not type of VID.",
+                                      vidColumn.c_str());
             }
             vidIndex = i;
         }

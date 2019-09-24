@@ -162,19 +162,35 @@ private:
 class Sum: public AggFun {
 public:
     void apply(cpp2::ColumnValue &val) override {
+        if (val.getType() != ColumnType::int_type &&
+            val.getType() != ColumnType::double_type &&
+            val.getType() != ColumnType::id_type &&
+            val.getType() != ColumnType::timestamp_type) {
+            return;
+        }
         if (!has_) {
-            if (val.getType() == ColumnType::int_type) {
-                sum_.set_integer(val.get_integer());
-            } else if (val.getType() == ColumnType::double_type) {
-                sum_.set_double_precision(val.get_double_precision());
-            }
+            sum_ = val;
             has_ = true;
         } else {
-            if (val.getType() == ColumnType::int_type) {
-                sum_.set_integer(sum_.get_integer() + val.get_integer());
-            } else if (val.getType() == ColumnType::double_type) {
-                sum_.set_double_precision(sum_.get_double_precision() +
+            if (sum_.getType() != val.getType()) {
+                return;
+            }
+            switch (sum_.getType()) {
+                case ColumnType::int_type:
+                    sum_.set_integer(sum_.get_integer() + val.get_integer());
+                    break;
+                case ColumnType::id_type:
+                    sum_.set_id(sum_.get_id() + val.get_id());
+                    break;
+                case ColumnType::double_type:
+                    sum_.set_double_precision(sum_.get_double_precision() +
                                               val.get_double_precision());
+                    break;
+                case ColumnType::timestamp_type:
+                    sum_.set_timestamp(sum_.get_timestamp() + val.get_timestamp());
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -202,7 +218,7 @@ public:
     cpp2::ColumnValue getResult() override {
         auto sum = sum_.getResult();
         if (sum.getType() == ColumnType::empty_type) {
-            sum.set_integer(0);
+            sum.set_double_precision(0.0);
             return sum;
         }
         double dSum = 0.0;

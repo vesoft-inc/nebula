@@ -292,7 +292,6 @@ Status GroupByExecutor::groupingData() {
             if (!eval.ok()) {
                 return eval.status();
             }
-
             if (val.getType() == cpp2::ColumnValue::Type::__EMPTY__) {
                 val = toColumnValue(eval.value());
             }
@@ -423,6 +422,7 @@ void GroupByExecutor::generateOutputSchema() {
 
 
 std::unique_ptr<InterimResult> GroupByExecutor::setupInterimResult() {
+    auto result = std::make_unique<InterimResult>(getResultColumnNames());
     if (rows_.empty() || resultSchema_ == nullptr) {
         return nullptr;
     }
@@ -475,15 +475,7 @@ void GroupByExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
         return;
     }
 
-    std::vector<std::string> columnNames;
-    columnNames.reserve(resultSchema_->getNumFields());
-
-    auto field = resultSchema_->begin();
-    while (field) {
-        columnNames.emplace_back(field->getName());
-        ++field;
-    }
-    resp.set_column_names(std::move(columnNames));
+    resp.set_column_names(getResultColumnNames());
     resp.set_rows(std::move(rows_));
 }
 }  // namespace graph

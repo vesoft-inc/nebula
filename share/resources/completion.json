@@ -96,7 +96,7 @@
             "sub_keywords": [
                 "CONFIGS"
             ]
-        }
+        },
         "ORDER BY": {
         },
         "LIMIT": {
@@ -106,9 +106,9 @@
         },
         "GROUP BY": {
             "sub_keywords": [
-                "COUNT", "COUNT_DISTINCT", "SUM", "AVG", "MAX", "MIN", "STD", "BIT_AND", "BIT_OR", "BIT_XOR"
+                "YIELD", "COUNT", "COUNT_DISTINCT", "SUM", "AVG", "MAX", "MIN", "STD", "BIT_AND", "BIT_OR", "BIT_XOR"
             ]
-        },
+        }
     },
     "typenames": [
         "int" ,
