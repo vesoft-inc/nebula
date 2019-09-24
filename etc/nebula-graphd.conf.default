@@ -40,6 +40,8 @@
 --num_netio_threads=1
 # The number of threads to execute user queries
 --num_worker_threads=1
+# HTTP service ip
+--ws_ip=127.0.0.1
 # HTTP service port
 --ws_http_port=13000
 # HTTP2 service port
