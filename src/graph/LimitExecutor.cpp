@@ -37,7 +37,13 @@ void LimitExecutor::execute() {
         return;
     }
 
-    auto inRows = inputs_->getRows();
+    auto ret = inputs_->getRows();
+    if (!ret.ok()) {
+        DCHECK(onFinish_);
+        onFinish_();
+        return;
+    }
+    auto inRows = std::move(ret).value();
     if (inRows.size() > static_cast<uint64_t>(skip_ + count_)) {
         rows_.resize(count_);
         rows_.assign(inRows.begin() + skip_, inRows.begin() + skip_ + count_);
@@ -102,15 +108,15 @@ std::unique_ptr<InterimResult> LimitExecutor::setupInterimResult() {
         rsWriter->addRow(writer);
     }
 
-    return std::make_unique<InterimResult>(std::move(rsWriter));
+    auto result = std::make_unique<InterimResult>(getResultColumnNames());
+    if (rsWriter != nullptr) {
+        result->setInterim(std::move(rsWriter));
+    }
+    return result;
 }
 
 
-void LimitExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
-    if (rows_.empty()) {
-        return;
-    }
-
+std::vector<std::string> LimitExecutor::getResultColumnNames() const {
     std::vector<std::string> columnNames;
     columnNames.reserve(inputs_->schema()->getNumFields());
     auto field = inputs_->schema()->begin();
@@ -118,7 +124,16 @@ void LimitExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
         columnNames.emplace_back(field->getName());
         ++field;
     }
-    resp.set_column_names(std::move(columnNames));
+    return columnNames;
+}
+
+
+void LimitExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
+    resp.set_column_names(getResultColumnNames());
+    if (rows_.empty()) {
+        return;
+    }
+
     resp.set_rows(rows_);
 }
 }   // namespace graph

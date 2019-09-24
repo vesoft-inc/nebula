@@ -31,6 +31,7 @@ public:
 
 private:
     std::unique_ptr<InterimResult> setupInterimResult();
+    std::vector<std::string> getResultColumnNames() const;
 
 private:
     LimitSentence                                            *sentence_{nullptr};

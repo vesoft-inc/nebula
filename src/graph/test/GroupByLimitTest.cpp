@@ -110,6 +110,10 @@ TEST_F(GroupByLimitTest, LimitTest) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
+        std::vector<std::string> expectedColNames{
+            {"name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
     }
     // Test less limit
     {
