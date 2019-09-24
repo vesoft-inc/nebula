@@ -96,10 +96,11 @@ add_library(
   OBJECT
   ${${file_name}-cpp2-SOURCES}
 )
+add_custom_target(${file_name}_thrift_headers DEPENDS ${${file_name}-cpp2-HEADERS})
 if(NOT "${file_name}" STREQUAL "common")
 add_dependencies(
   "${file_name}_thrift_obj"
-  "common_thrift_obj"
+  common_thrift_headers
 )
 endif()
 endmacro()

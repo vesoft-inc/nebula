@@ -40,7 +40,7 @@ option(ENABLE_CCACHE "Whether to use ccache to speed up compiling" ON)
 option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
 option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
 
-message(STATUS "ASAN: ${ENABLE_ASAN}")
+message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
 
 
@@ -58,13 +58,14 @@ if (!CMAKE_CXX_COMPILER)
 endif()
 
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++ -no-pie")
 
 # To detect if ccache available
 find_program(ccache_program_found "ccache")
 if (ENABLE_CCACHE AND ccache_program_found)
-    message(STATUS "CCACHE: ON")
+    message(STATUS "ENABLE_CCACHE: ON")
     if (NOT $ENV{CCACHE_DIR} STREQUAL "")
         message(STATUS "CCACHE_DIR: $ENV{CCACHE_DIR}")
     else()
@@ -380,13 +381,26 @@ macro(nebula_add_test)
     endif()
 endmacro()
 
-macro(nebula_build_after_base obj_name)
-    add_dependencies(${obj_name} base_obj)
-endmacro()
-
+# For simplicity, we make all ordinary libraries depend on the compile-time generated files,
+# including the precompiled header, a.k.a Base.h.gch, and thrift headers.
 macro(nebula_add_library name type)
     add_library(${name} ${type} ${ARGN})
-    nebula_build_after_base(${name})
+    if (PCHSupport_FOUND)
+        add_dependencies(
+            ${name}
+            base_obj_gch
+        )
+    endif()
+    add_dependencies(
+        ${name}
+        common_thrift_headers
+        graph_thrift_headers
+        storage_thrift_headers
+        meta_thrift_headers
+        raftex_thrift_headers
+        hbase_thrift_headers
+        parser_target
+    )
 endmacro()
 
 include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/bzip2/include)
@@ -466,7 +480,7 @@ if (LIBLZMA_FOUND)
     list(APPEND COMPRESSION_LIBRARIES ${LIBLZMA_LIBRARIES})
 endif()
 
-if (NOT ENABLE_JEMALLOC)
+if (NOT ENABLE_JEMALLOC OR ENABLE_ASAN)
     set(JEMALLOC_LIB )
 else()
     set(JEMALLOC_LIB jemalloc)
