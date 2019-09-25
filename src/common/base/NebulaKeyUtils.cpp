@@ -69,11 +69,10 @@ std::string NebulaKeyUtils::systemPartKey(PartitionID partId) {
 }
 
 // static
-std::string NebulaKeyUtils::uuidKey(PartitionID partId, const folly::StringPiece& name) {
+std::string NebulaKeyUtils::uuidKey(PartitionID partId, folly::StringPiece name) {
     std::string key;
     key.reserve(sizeof(PartitionID) + name.size());
-    // todo: replace 0x03 with NebulaKeyType::kUUID after #914 merged
-    int32_t item = (partId << 8) | (0x03);
+    int32_t item = (partId << 8) | (NebulaKeyType::kUUID);
     key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
        .append(name.str());
     return key;

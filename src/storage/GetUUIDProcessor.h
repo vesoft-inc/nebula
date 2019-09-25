@@ -8,6 +8,7 @@
 #define STORAGE_GETUUIDPROCESSOR_H_
 
 #include "base/Base.h"
+#include "base/MurmurHash2.h"
 #include "storage/BaseProcessor.h"
 #include "kvstore/NebulaStore.h"
 #include "time/WallClock.h"
@@ -35,13 +36,13 @@ public:
         // try to get the corresponding vertex id
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             // need to generate new vertex id of this uuid
-            std::hash<std::string> hashFunc;
+            MurmurHash2 hashFunc;
             auto hashValue = hashFunc(name);
             auto now = time::WallClock::fastNowInMicroSec();
             vId = (hashValue & hashMask) | (now & timeMask);
             val.append(reinterpret_cast<char*>(&vId), sizeof(VertexID));
             std::vector<kvstore::KV> data;
-            data.emplace_back(key, val);
+            data.emplace_back(std::move(key), std::move(val));
 
             folly::Baton<true, std::atomic> baton;
             kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
