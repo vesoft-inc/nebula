@@ -56,8 +56,8 @@ TEST_F(DeleteVertexTest, base) {
         auto &player = players_["Tony Parker"];
         auto &serve = player.serves()[0];
         auto &team = teams_[std::get<0>(serve)];
-        auto *fmt = "FETCH PROP ON serve %ld->%ld"
-                    " YIELD serve.start_year, serve.end_year";
+        auto *fmt = "FETCH PROP ON serve %ld->%ld "
+                    "YIELD serve.start_year, serve.end_year";
         auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
