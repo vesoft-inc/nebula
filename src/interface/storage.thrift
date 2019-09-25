@@ -23,6 +23,7 @@ enum ErrorCode {
     E_KEY_HAS_EXISTS = -12,
     E_SPACE_NOT_FOUND = -13,
     E_PART_NOT_FOUND = -14,
+    E_KEY_NOT_FOUND = -15,
 
     // meta failures
     E_EDGE_PROP_NOT_FOUND = -21,
@@ -282,6 +283,31 @@ struct UpdateEdgeRequest {
     7: bool insertable,
 }
 
+struct PutRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<common.Pair>>(cpp.template = "std::unordered_map") parts,
+}
+
+struct RemoveRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") keys,
+}
+
+struct RemoveRangeRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<common.Pair>>(cpp.template = "std::unordered_map") keys,
+}
+
+struct GetRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") parts,
+}
+
+struct GetResponse {
+    1: required ResponseCommon result,
+    2: map<string, string>(cpp.template = "std::unordered_map") values,
+}
+
 service StorageService {
     QueryResponse getBound(1: GetNeighborsRequest req)
 
@@ -309,4 +335,10 @@ service StorageService {
     AdminExecResp removePart(1: RemovePartReq req);
     AdminExecResp memberChange(1: MemberChangeReq req);
     GetLeaderResp getLeaderPart(1: GetLeaderReq req);
+
+    // Interfaces for key-value storage
+    ExecResponse  put(1: PutRequest req);
+    GetResponse   get(1: GetRequest req);
+    ExecResponse  remove(1: RemoveRequest req);
+    ExecResponse  removeRange(1: RemoveRangeRequest req);
 }
