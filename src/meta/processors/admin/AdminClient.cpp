@@ -118,7 +118,7 @@ folly::Future<Status> AdminClient::waitingForCatchUpData(GraphSpaceID spaceId,
     auto f = pro.getFuture();
     getResponse(ret.value(), 0, std::move(req), [] (auto client, auto request) {
         return client->future_waitingForCatchUpData(request);
-    }, 0, std::move(pro), FLAGS_max_retry_times_admin_op);
+    }, 0, std::move(pro), 3);
     return f;
 }
 

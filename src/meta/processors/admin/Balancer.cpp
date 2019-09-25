@@ -311,14 +311,12 @@ void Balancer::calDiff(const std::unordered_map<HostAddr, std::vector<PartitionI
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
         VLOG(1) << "Original Host " << it->first << ", parts " << it->second.size();
         if (std::find(activeHosts.begin(), activeHosts.end(), it->first) == activeHosts.end()) {
-            LOG(INFO) << "Lost host " << it->first;
             lost.emplace_back(it->first);
         }
     }
     for (auto& h : activeHosts) {
         VLOG(1) << "Active host " << h;
         if (hostParts.find(h) == hostParts.end()) {
-            LOG(INFO) << "New Host " << h;
             newlyAdded.emplace_back(h);
         }
     }
