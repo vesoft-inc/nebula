@@ -23,7 +23,6 @@ TEST(DeleteVertexTest, SimpleTest) {
     // Add vertices
     {
         auto* processor = AddVerticesProcessor::instance(kv.get(), nullptr);
-        LOG(INFO) << "Build AddVerticesRequest...";
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
         req.overwritable = false;
@@ -44,16 +43,14 @@ TEST(DeleteVertexTest, SimpleTest) {
             req.parts.emplace(partId, std::move(vertices));
         }
 
-        LOG(INFO) << "Test AddVerticesProcessor...";
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_codes.size());
 
-        LOG(INFO) << "Check data in kv store...";
         for (auto partId = 0; partId < 3; partId++) {
             for (auto vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
-                auto prefix = NebulaKeyUtils::prefix(partId, vertexId);
+                auto prefix = NebulaKeyUtils::vertexPrefix(partId, vertexId);
                 std::unique_ptr<kvstore::KVIterator> iter;
                 EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
                 TagID tagId = 0;
@@ -73,13 +70,11 @@ TEST(DeleteVertexTest, SimpleTest) {
         for (auto partId = 0; partId < 3; partId++) {
             for (auto vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
                 auto* processor = DeleteVertexProcessor::instance(kv.get(), nullptr);
-                LOG(INFO) << "Build DeleteVertexRequest...";
                 cpp2::DeleteVertexRequest req;
                 req.set_space_id(0);
                 req.set_part_id(partId);
                 req.set_vid(vertexId);
 
-                LOG(INFO) << "Test DeleteVertexProcessor...";
                 auto fut = processor->getFuture();
                 processor->process(req);
                 auto resp = std::move(fut).get();
@@ -88,10 +83,9 @@ TEST(DeleteVertexTest, SimpleTest) {
         }
     }
 
-    LOG(INFO) << "Check data again in kv store...";
     for (auto partId = 0; partId < 3; partId++) {
         for (auto vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
-            auto prefix = NebulaKeyUtils::prefix(partId, vertexId);
+            auto prefix = NebulaKeyUtils::vertexPrefix(partId, vertexId);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             CHECK(!iter->valid());
