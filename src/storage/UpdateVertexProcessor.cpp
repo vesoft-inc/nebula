@@ -69,7 +69,7 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
                             const VertexID vId,
                             const TagID tagId,
                             const std::vector<PropContext>& props) {
-    auto prefix = NebulaKeyUtils::prefix(partId, vId, tagId);
+    auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId, tagId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(this->spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
