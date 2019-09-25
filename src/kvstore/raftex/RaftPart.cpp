@@ -420,7 +420,7 @@ void RaftPart::commitTransLeader(const HostAddr& target) {
             break;
         }
         case Role::LEARNER: {
-            CHECK(target != addr_) << idStr_ << "I am learner, not in the raft group";
+            LOG(INFO) << idStr_ << "I am learner, not in the raft group, skip the log";
             break;
         }
     }
