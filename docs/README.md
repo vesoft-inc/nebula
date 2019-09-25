@@ -13,7 +13,7 @@
  * SQL-like query language
 
 ## How can I get Nebula ##
-Apart from installing **Nebula Graph** from source code, you can use the [official Nebula Graph image](https://hub.docker.com/r/vesoft/nebula-graph/tags). For more details on how to install Nebula Graph, see [Get Started](get-started/).
+Apart from installing **Nebula Graph** from source code, you can use the [official Nebula Graph image](https://hub.docker.com/r/vesoft/nebula-graph/tags). For more details on how to install Nebula Graph, see [Get Started](https://github.com/vesoft-inc/nebula/blob/master/docs/get-started.md).
 
 ## How can I contribute ##
 As the team behind **Nebula Graph**, we fully commit to the community and all-in to the open source project. All the core features are and will be implemented in the open source repository.
@@ -23,8 +23,8 @@ We also encourage the community to involve the project. There are a few ways you
 * You can download and try **Nebula Graph**, and provide us feedbacks
 * You can submit your feature requirements and bug reports
 * You can help contribute the documentations. More details on how to contribute
-click [Contribute to Nebula Graph Docs](contribute-to-documentation/)
-* You can fix bugs or implement features. More details on how to build the project and submit the Pull Requests click [Contribute to Nebula Graph](how-to-contribute/)
+click [Contribute to Nebula Graph Docs](https://github.com/vesoft-inc/nebula/blob/master/docs/contribute-to-documentation.md)
+* You can fix bugs or implement features. More details on how to build the project and submit the Pull Requests click [Contribute to Nebula Graph](https://github.com/vesoft-inc/nebula/blob/master/docs/how-to-contribute.md)
 
 ## Licensing ###
 **Nebula Graph** is under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) license, so you can freely download, modify, deploy the source code to meet your needs. You can also freely deploy **Nebula Graph** as a back-end service to support your SAAS deployment.
