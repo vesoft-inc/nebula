@@ -26,8 +26,7 @@ std::unique_ptr<hdfs::HdfsHelper> helper = std::make_unique<meta::MockHdfsOKHelp
 class MetaHttpDownloadHandlerTestEnv : public ::testing::Environment {
 public:
     void SetUp() override {
-        FLAGS_ws_http_port = 12100;
-        FLAGS_ws_storage_http_port = 12100;
+        FLAGS_ws_http_port = 0;
         FLAGS_ws_h2_port = 0;
         VLOG(1) << "Starting web service...";
 
@@ -59,6 +58,7 @@ public:
             return handler;
         });
         auto status = WebService::start();
+        FLAGS_ws_storage_http_port = FLAGS_ws_http_port;
         ASSERT_TRUE(status.ok()) << status;
     }
 
