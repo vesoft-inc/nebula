@@ -227,7 +227,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack() {
     std::vector<kvstore::KV> data;
     for (const auto& u : tagUpdaters_) {
         data.emplace_back(std::move(u.second->key),
-                          std::move(u.second->updater->encode()));
+                          u.second->updater->encode());
     }
     auto log = kvstore::encodeMultiValues(kvstore::OP_MULTI_PUT, data);
     return log;

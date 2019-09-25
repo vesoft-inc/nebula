@@ -210,7 +210,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack() {
     }
 
     std::vector<kvstore::KV> data;
-    data.emplace_back(key_, std::move(updater_->encode()));
+    data.emplace_back(key_, updater_->encode());
     auto log = kvstore::encodeMultiValues(kvstore::OP_MULTI_PUT, data);
     return log;
 }
