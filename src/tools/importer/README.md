@@ -6,7 +6,7 @@
 ### Download JARs
 
 <!-- to be replaced after Nexus MVN repo being set -->
-Our maven repository is under construction. At this moment, get fbthrift and graph-client packages from oss https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/thrift-1.0-SNAPSHOT.jar nnd https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/graph-client-1.0.0-beta.jar.
+Our maven repository is under construction. At this moment, get fbthrift and graph-client packages from oss https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/thrift-1.0-SNAPSHOT.jar and https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/graph-client-1.0.0-beta.jar.
 
 Or build it by yourself.
 
@@ -16,7 +16,7 @@ Or build it by yourself.
 > mvn clean package
 ```
 
-`graph-client` jar package is under the target dirctory.
+`graph-client` jar package is under the target directory.
 
 #### Install JARs
 
@@ -40,13 +40,13 @@ Or build it by yourself.
 > mvn clean package
 ```
 
-The `importer` jar package is under the target dirctory.
+The `importer` jar package is under the target directory.
 
 ### Data File
 
 #### For Tags
 
-The Impoter can only import one tag or edgetype per time. For tags, the first column is `vid` and then the property value list, separated by a comma. 
+The `Importer` can only import one tag or edgetype per time. For tags, the first column is `vid` and then the property value list, separated by a comma. 
 
 ```
 vid,prop_name_1,prop_name_2,...
