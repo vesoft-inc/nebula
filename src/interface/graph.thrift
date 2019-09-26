@@ -7,6 +7,7 @@
 namespace cpp nebula.graph
 namespace java com.vesoft.nebula.graph
 namespace go nebula.graph
+namespace py nebula.graph
 
 enum ErrorCode {
     SUCCEEDED = 0,

@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-
 namespace cpp nebula
 namespace java com.vesoft.nebula
 namespace go nebula
+namespace py nebula
 
 cpp_include "base/ThriftTypes.h"
 
