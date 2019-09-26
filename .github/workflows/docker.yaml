@@ -2,7 +2,7 @@ name: Nebula Service Docker Image Building Workflow
 
 on:
   schedule:
-    - cron:  '0 2 * * *'
+    - cron:  '0 18 * * *'
 
 jobs:
   metad:
