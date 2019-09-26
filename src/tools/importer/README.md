@@ -1,7 +1,7 @@
 
 ## Importer
 
-`Importer` is a tool used to load a small amount of data from a CSV file into Nebula Graph. It is single-threaded.
+`Importer` is a tool used to load a small amount of data from a CSV file into Nebula Graph. It is single-threaded. If you have a large set of data, generating SST files and ingesting these files may be a better way. For details, please refer to [Spark SST File Generator](../spark-sstfile-generator/README.md) and HDFS Importer <!--to be done-->
 
 ### Download JARs
 
