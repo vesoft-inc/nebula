@@ -6,7 +6,7 @@
 ### Download JARs
 
 <!-- to be replaced after Nexus MVN repo being set -->
-Our maven repository is under construction. At this moment, please contact us to get fbthrift and graph-client package.
+Our maven repository is under construction. At this moment, get fbthrift and graph-client packages from oss https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/thrift-1.0-SNAPSHOT.jar nnd https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/graph-client-1.0.0-beta.jar.
 
 Or build it by yourself.
 
@@ -30,7 +30,7 @@ Replace "$YOUR_GRAPH_CLIENT_FILEPATH" and "$YOUR_FBTHRIFT_FILEPATH" with your ow
 
 ### Get Importer
 
-At this moment, please contact us to get the `importer` jar package.
+Get the `importer` jar package from oss https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/importer-1.0.0-beta.jar.
 
 Or build it by yourself.
 
