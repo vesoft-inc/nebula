@@ -1,7 +1,7 @@
 
 ## Importer
 
-`Importer` is a tool used to load a small amount of data from a `CSV` file into `Nebula`. It is single-threaded.
+`Importer` is a tool used to load a small amount of data from a CSV file into Nebula Graph. It is single-threaded.
 
 ### Download JARs
 
@@ -26,11 +26,11 @@ Or build it by yourself.
  > mvn install:install-file -Dfile=$YOUR_FBTHRIFT_FILEPATH -DgroupId=com.facebook -DartifactId=thrift -Dversion=$FBTHRIFT_VERSION -Dpackaging=jar
 ```
 
-Replace `$YOUR_GRAPH_CLIENT_FILEPATH` and `$YOUR_FBTHRIFT_FILEPATH` with your own values. Also `$GRAPH_CLIENT_VERSION` and `$FBTHRIFT_VERSION`.
+Replace "$YOUR_GRAPH_CLIENT_FILEPATH" and "$YOUR_FBTHRIFT_FILEPATH" with your own values. Also "$GRAPH_CLIENT_VERSION" and "$FBTHRIFT_VERSION".
 
 ### Get Importer
 
-At this moment, please contact us to get the importer jar package.
+At this moment, please contact us to get the `importer` jar package.
 
 Or build it by yourself.
 
@@ -60,7 +60,7 @@ For edge type, the file structure is as following:
 sourceID, destinationID, [ranking], prop_name_1, prop_name_2, ...
 ```
 
-> The `ranking` column is optional. It works with --ranking optional, which will be described below.
+> The "ranking" column is optional. It works with "--ranking" optional, which will be described below.
 
 ### Import Data
 
@@ -89,11 +89,11 @@ To import data, run:
 |--type           | -t            | indicate to insert vertex properties or edge properties| vertext/edge|
 |--user           | -u            | graphd service username||
 
-> For edge type, if 'ranking' column is specified, --ranking options should be set to `true`.
+> For edge type, if 'ranking' column is specified, '--ranking' options should be set to `true`.
 
 ### Example
 
-The examples are based on the Insert Data Section of [get-started.md](../../../docs/get-started.md#insert-data).
+The examples are based on the [Insert Data Section of get-started.md](../../../docs/get-started.md#insert-data).
 
 
 E1. Insert vertices 200, 201, 202.
