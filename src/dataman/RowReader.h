@@ -281,10 +281,6 @@ public:
     // TODO getMap(const std::string& name) const noexcept;
     // TODO getMap(int64_t index) const noexcept;
 
-    const meta::SchemaProviderIf*  getSchema() const noexcept {
-        return schema_.get();
-    }
-
     folly::StringPiece getData() const noexcept {
         return data_;
     }

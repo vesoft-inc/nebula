@@ -81,11 +81,11 @@ public:
         auto* schemaMan = new AdHocSchemaManager();
         for (auto edgeType = 101; edgeType < 110; edgeType++) {
             schemaMan->addEdgeSchema(spaceId /*space id*/,
-			             edgeType /*edge type*/,
+                                     edgeType /*edge type*/,
                                      TestUtils::genEdgeSchemaProvider(10, 10));
         }
 
-	for (auto tagId = 3001; tagId < 3010; tagId++) {
+    for (auto tagId = 3001; tagId < 3010; tagId++) {
             schemaMan->addTagSchema(spaceId /*space id*/,
                                     tagId,
                                     TestUtils::genTagSchemaProvider(tagId, 3, 3));
@@ -204,7 +204,7 @@ public:
         return std::make_shared<ResultSchemaProvider>(std::move(schema));
     }
 
-    static cpp2::PropDef vetexPropDef(std::string name, TagID tagId) {
+    static cpp2::PropDef vertexPropDef(std::string name, TagID tagId) {
         cpp2::PropDef prop;
         prop.set_name(std::move(name));
         prop.set_owner(cpp2::PropOwner::SOURCE);
@@ -248,8 +248,8 @@ public:
         return prop;
     }
 
-    static cpp2::PropDef vetexPropDef(std::string name, cpp2::StatType type, TagID tagId) {
-        auto prop = TestUtils::vetexPropDef(std::move(name), tagId);
+    static cpp2::PropDef vertexPropDef(std::string name, cpp2::StatType type, TagID tagId) {
+        auto prop = TestUtils::vertexPropDef(std::move(name), tagId);
         prop.set_stat(type);
         return prop;
     }

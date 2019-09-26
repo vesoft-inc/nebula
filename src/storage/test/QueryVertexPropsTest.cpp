@@ -67,7 +67,7 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     // Return tag props col_0, col_2, col_4
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 3; i++) {
-        tmpColumns.emplace_back(TestUtils::vetexPropDef(
+        tmpColumns.emplace_back(TestUtils::vertexPropDef(
             folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2), 3001 + i * 2));
     }
     req.set_return_columns(std::move(tmpColumns));
@@ -130,13 +130,17 @@ TEST(QueryVertexPropsTest, TTLTest) {
             auto val = writer.encode();
             data.emplace_back(std::move(key), std::move(val));
         }
+
+        folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(
             0,
             partId,
             std::move(data),
             [&](kvstore::ResultCode code) {
                 EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                baton.post();
             });
+        baton.wait();
     }
 
     LOG(INFO) << "Build VertexPropsRequest...";
@@ -153,9 +157,8 @@ TEST(QueryVertexPropsTest, TTLTest) {
     req.set_parts(std::move(tmpIds));
     // Return tag props col_0
     decltype(req.return_columns) tmpColumns;
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::SOURCE,
-                                               folly::stringPrintf("tag_%d_col_%d", 3001, 0),
-                                               3001));
+    tmpColumns.emplace_back(TestUtils::vertexPropDef(
+        folly::stringPrintf("tag_%d_col_%d", 3001, 0), 3001));
     req.set_return_columns(std::move(tmpColumns));
 
     LOG(INFO) << "Test QueryVertexPropsRequest...";
@@ -170,14 +173,22 @@ TEST(QueryVertexPropsTest, TTLTest) {
     LOG(INFO) << "Check the results...";
     EXPECT_EQ(0, resp.result.failed_codes.size());
 
-    EXPECT_EQ(1, resp.vertex_schema.columns.size());
-    auto tagProvider = std::make_shared<ResultSchemaProvider>(resp.vertex_schema);
     EXPECT_EQ(30, resp.vertices.size());
 
+    auto* vschema = resp.get_vertex_schema();
+    DCHECK(vschema != nullptr);
+
     for (auto& vp : resp.vertices) {
-        auto tagReader = RowReader::getRowReader(vp.vertex_data, tagProvider);
-        EXPECT_EQ(1, tagReader->numFields());
-        EXPECT_EQ(0, tagReader->getData().size());
+        auto it =  std::find_if(vp.tag_data.cbegin(), vp.tag_data.cend(), [](auto& td) {
+            if (td.tag_id == 3001) {
+                return true;
+            }
+            return false;
+        });
+
+        DCHECK(it == vp.tag_data.cend());
+        auto it2  = vschema->find(3001);
+        DCHECK(it2 != vschema->end());
     }
 }
 

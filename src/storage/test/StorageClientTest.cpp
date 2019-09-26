@@ -142,7 +142,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             vIds.emplace_back(vId);
         }
         for (int i = 0; i < 3; i++) {
-            retCols.emplace_back(TestUtils::vetexPropDef(
+            retCols.emplace_back(TestUtils::vertexPropDef(
                 folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2), 3001 + i * 2));
         }
         auto f = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
@@ -314,7 +314,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 std::vector<VertexID> vIds{srcId};
                 std::vector<cpp2::PropDef> retCols;
                 retCols.emplace_back(
-                    TestUtils::vetexPropDef(folly::stringPrintf("tag_%d_col_%d", 3001, 0), 3001));
+                    TestUtils::vertexPropDef(folly::stringPrintf("tag_%d_col_%d", 3001, 0), 3001));
                 auto cf = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
                 auto cresp = std::move(cf).get();
                 ASSERT_TRUE(cresp.succeeded());

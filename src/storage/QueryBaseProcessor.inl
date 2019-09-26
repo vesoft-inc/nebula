@@ -171,7 +171,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
 
 template<typename REQ, typename RESP>
 bool QueryBaseProcessor<REQ, RESP>::checkDataExpiredForTTL(RowReader* reader) {
-    const meta::SchemaProviderIf* schema = reader->getSchema();
+    auto schema = reader->getSchema();
     const nebula::cpp2::SchemaProp schemaProp = schema->getProp();
     int ttlDuration = 0;
     if (schemaProp.get_ttl_duration()) {
@@ -193,18 +193,14 @@ bool QueryBaseProcessor<REQ, RESP>::checkDataExpiredForTTL(RowReader* reader) {
 
     int64_t v;
     switch (ftype.type) {
+        case nebula::cpp2::SupportedType::TIMESTAMP:
         case nebula::cpp2::SupportedType::INT: {
-			    auto ret = reader->getInt<int64_t>(ttlCol, v);
+            auto ret = reader->getInt<int64_t>(ttlCol, v);
             CHECK(ret == ResultType::SUCCEEDED);
             break;
         }
         case nebula::cpp2::SupportedType::VID: {
             auto ret = reader->getVid(ttlCol, v);
-            CHECK(ret == ResultType::SUCCEEDED);
-            break;
-        }
-        case nebula::cpp2::SupportedType::TIMESTAMP: {
-            auto ret = reader->getTimestamp(ttlCol, v);
             CHECK(ret == ResultType::SUCCEEDED);
             break;
         }

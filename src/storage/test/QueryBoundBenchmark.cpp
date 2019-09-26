@@ -112,7 +112,7 @@ cpp2::GetNeighborsRequest buildRequest(bool outBound = true) {
     // Return tag props col_0, col_2, col_4
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 3; i++) {
-        tmpColumns.emplace_back(TestUtils::vetexPropDef(
+        tmpColumns.emplace_back(TestUtils::vertexPropDef(
             folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2), 3001 + i * 2));
     }
     tmpColumns.emplace_back(
