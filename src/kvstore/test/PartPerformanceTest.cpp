@@ -7,12 +7,17 @@
 #include "base/Base.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
+#include "rocksdb/cache.h"
+#include "rocksdb/table.h"
+#include "rocksdb/convenience.h"
+#include "rocksdb/utilities/options_util.h"
+#include "rocksdb/slice_transform.h"
 #include "fs/TempDir.h"
 #include "kvstore/Part.h"
 #include <folly/Benchmark.h>
 
-DEFINE_int32(part_performance_test_partnum, 20, "Total versions");
-DEFINE_int64(part_performance_test_rownum, 1000000, "Total versions");
+DEFINE_int32(part_performance_test_partnum, 20, "Total partitions");
+DEFINE_int64(part_performance_test_rownum, 1000000, "Total rows");
 
 namespace nebula {
 namespace kvstore {
@@ -39,6 +44,9 @@ void genData(rocksdb::DB* db) {
         }
     }
     rocksdb::Status status = db->Write(woptions, &updates);
+    CHECK(status.ok());
+    // flush memTable to sst file
+    status = db->Flush(rocksdb::FlushOptions());
     CHECK(status.ok());
     LOG(INFO) << "Data generation completed...";
 }
@@ -69,9 +77,17 @@ void range(int32_t partId, rocksdb::DB* db) {
     delete iter;
 }
 
-void multiThreadTest() {
+void multiThreadTest(bool inDisk) {
     fs::TempDir dataPath("/tmp/part_multi_thread_test.XXXXXX");
+    rocksdb::BlockBasedTableOptions table_options;
     rocksdb::Options options;
+    if (inDisk) {
+        table_options.no_block_cache = true;
+        options.table_factory.reset(rocksdb::NewBlockBasedTableFactory(table_options));
+    } else {
+        table_options.block_cache = rocksdb::NewLRUCache(100 * 1024 * 1024);
+        options.table_factory.reset(NewBlockBasedTableFactory(table_options));
+    }
     options.create_if_missing = true;
     rocksdb::DB* db = nullptr;
     rocksdb::Status status = rocksdb::DB::Open(options, dataPath.path(), &db);
@@ -81,7 +97,7 @@ void multiThreadTest() {
     }
 
     std::vector<std::thread> threads;
-    for (auto i = 1; i <= FLAGS_part_performance_test_partnum; i++) {
+    for (auto i = 0; i < FLAGS_part_performance_test_partnum; i++) {
         threads.emplace_back([db, i]() {
             range(i, db);
         });
@@ -97,31 +113,62 @@ void multiThreadTest() {
     }
 }
 
-void singleThreadTest() {
+void singleThreadTest(bool inDisk) {
     fs::TempDir dataPath("/tmp/part_single_thread_test.XXXXXX");
+    rocksdb::BlockBasedTableOptions table_options;
     rocksdb::Options options;
+    if (inDisk) {
+        table_options.no_block_cache = true;
+        options.table_factory.reset(rocksdb::NewBlockBasedTableFactory(table_options));
+    } else {
+        table_options.block_cache = rocksdb::NewLRUCache(100 * 1024 * 1024);
+        options.table_factory.reset(NewBlockBasedTableFactory(table_options));
+    }
+
     options.create_if_missing = true;
     rocksdb::DB* db = nullptr;
     rocksdb::Status status = rocksdb::DB::Open(options, dataPath.path(), &db);
     CHECK(status.ok());
-    FLAGS_part_performance_test_partnum = 1;
     BENCHMARK_SUSPEND {
         genData(db);
-        sleep(2);
     }
-    range(1, db);
+    for (auto i = 0 ; i < FLAGS_part_performance_test_partnum; i++) {
+        range(i, db);
+    }
     BENCHMARK_SUSPEND {
         db->Close();
         delete db;
     };
 }
 
-BENCHMARK(MultiThreadTest) {
-    multiThreadTest();
+BENCHMARK(ParallelMultiplePartInCache) {
+    FLAGS_part_performance_test_partnum = 20;
+    multiThreadTest(false);
 }
 
-BENCHMARK(SingleThreadTest) {
-    singleThreadTest();
+BENCHMARK(SerialMultiplePartInCache) {
+    FLAGS_part_performance_test_partnum = 20;
+    singleThreadTest(false);
+}
+
+BENCHMARK(SerialSinglePartInCache) {
+    FLAGS_part_performance_test_partnum = 1;
+    singleThreadTest(false);
+}
+
+BENCHMARK(ParallelMultiplePartInDisk) {
+    FLAGS_part_performance_test_partnum = 20;
+    multiThreadTest(true);
+}
+
+BENCHMARK(SerialMultiplePartInDisk) {
+    FLAGS_part_performance_test_partnum = 20;
+    singleThreadTest(true);
+}
+
+BENCHMARK(SerialSinglePartInDisk) {
+    FLAGS_part_performance_test_partnum = 1;
+    singleThreadTest(true);
 }
 
 }  // namespace kvstore
@@ -140,7 +187,11 @@ Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
 ============================================================================
 PartPerformanceTest.cpprelative                           time/iter  iters/s
 ============================================================================
-MultiThreadTest                                              9.95ms   100.46
-SingleThreadTest                                             7.41ms   134.97
+ParallelMultiplePartInCache                                  8.60ms   116.32
+SerialMultiplePartInCache                                    7.33ms   136.41
+SerialSinglePartInCache                                      6.65ms   150.27
+ParallelMultiplePartInDisk                                  15.41ms    64.91
+SerialMultiplePartInDisk                                     5.77ms   173.44
+SerialSinglePartInDisk                                       5.50ms   181.89
 ============================================================================
 **/
