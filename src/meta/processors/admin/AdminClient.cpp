@@ -251,7 +251,7 @@ folly::Future<Status> AdminClient::getResponse(
     folly::via(evb, [evb, pro = std::move(pro), host, req = std::move(req),
                      remoteFunc = std::move(remoteFunc), respGen = std::move(respGen),
                      this] () mutable {
-        auto client = clientsMan_->client(host, evb, false, FLAGS_admin_rpc_timeout_ms);
+        auto client = clientsMan_->client(host, evb);
         remoteFunc(client, std::move(req))
             .then(evb, [p = std::move(pro), respGen = std::move(respGen)](
                            folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
@@ -283,7 +283,7 @@ void AdminClient::getResponse(
     folly::via(evb, [evb, hosts = std::move(hosts), index, req = std::move(req),
                      remoteFunc = std::move(remoteFunc), retry, pro = std::move(pro),
                      retryLimit, this] () mutable {
-        auto client = clientsMan_->client(hosts[index], evb, false, FLAGS_admin_rpc_timeout_ms);
+        auto client = clientsMan_->client(hosts[index], evb);
         remoteFunc(client, req)
             .then(evb, [p = std::move(pro), hosts = std::move(hosts), index, req = std::move(req),
                         remoteFunc = std::move(remoteFunc), retry, retryLimit,
@@ -431,7 +431,7 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
         auto* evb = ioThreadPool_->getEventBase();
         folly::via(evb, [pro = std::move(pro), host, evb, result, this] () mutable {
             storage::cpp2::GetLeaderReq req;
-            auto client = clientsMan_->client(host, evb, false, FLAGS_admin_rpc_timeout_ms);
+            auto client = clientsMan_->client(host, evb);
             client->future_getLeaderPart(std::move(req))
                 .then(evb, [p = std::move(pro), host,
                             result] (folly::Try<storage::cpp2::GetLeaderResp>&& t) mutable {
