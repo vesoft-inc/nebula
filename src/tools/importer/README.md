@@ -8,7 +8,7 @@
 <!-- to be replaced after Nexus MVN repo being set -->
 Our maven repository is under construction. At this moment, please contact us to get fbthrift and graph-client package.
 
-Install JARs
+#### Install JARs
 
 ```
  > mvn install:install-file -Dfile=$YOUR_GRAPH_CLIENT_FILEPATH -DgroupId=nebula-graph -DartifactId=graph-client -Dversion=$GRAPH_CLIENT_VERSION -Dpackaging=jar
