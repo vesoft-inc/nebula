@@ -28,7 +28,7 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        stats_manager_cross_leveLtest
+        stats_manager_cross_level_test
     SOURCES
         StatsManagerCrossLevelTest.cpp
     OBJECTS
