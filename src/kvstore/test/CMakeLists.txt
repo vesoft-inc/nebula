@@ -26,6 +26,13 @@ nebula_add_test(
 )
 
 nebula_add_test(
+    NAME part_performance_test
+    SOURCES PartPerformanceTest.cpp
+    OBJECTS ${KVSTORE_TEST_LIBS}
+    LIBRARIES follybenchmark ${THRIFT_LIBRARIES} ${ROCKSDB_LIBRARIES} wangle gtest boost_regex
+)
+
+nebula_add_test(
     NAME rocks_engine_test
     SOURCES RocksEngineTest.cpp
     OBJECTS ${KVSTORE_TEST_LIBS}
