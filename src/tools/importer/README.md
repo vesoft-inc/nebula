@@ -1,5 +1,5 @@
 
-#### Importer
+## Importer
 
 `Importer` is a tool used to load a small amount of data from a `CSV` file into `Nebula`. It is single-threaded.
 
@@ -7,6 +7,16 @@
 
 <!-- to be replaced after Nexus MVN repo being set -->
 Our maven repository is under construction. At this moment, please contact us to get fbthrift and graph-client package.
+
+Or build it by yourself.
+
+```
+> cd $YOUR_NEBULA_DIR
+> cd src/client
+> mvn clean package
+```
+
+`graph-client` jar package is under the target dirctory.
 
 #### Install JARs
 
@@ -21,6 +31,16 @@ Replace `$YOUR_GRAPH_CLIENT_FILEPATH` and `$YOUR_FBTHRIFT_FILEPATH` with your ow
 ### Get Importer
 
 At this moment, please contact us to get the importer jar package.
+
+Or build it by yourself.
+
+```
+> cd $YOUR_NEBULA_DIR
+> cd src/tools/importer
+> mvn clean package
+```
+
+The `importer` jar package is under the target dirctory.
 
 ### Data File
 
@@ -57,12 +77,14 @@ To import data, run:
 |--name           | -n            | specify the space name.| myspace_test2 |
 |--schema         | -m            | specify the tag or edgetype name.| student |
 |--column         | -c            | properties of tag or edge to be inserted, separated by a comma | name,age |
-|--ranking        |               | the edge have ranking data. Default is false| true/false|
+|--ranking        | -k            | the edge have ranking data. Default is false| true/false|
 |--file           | -f            | data file| ./tmp/data.txt |
+|--errorPath    | -d            | error log file | ./tmp/error.log |
 |--help           | -h            | list help||
 |--timeout        | -o            | specify connection timeout, in millisecond| 3000 |
 |--pswd           | -p            | graphd service password||
-|--retry          | -r            | connection retry times||
+|--connectionRetry       | -r            | connection retry times||
+|--executionRetry       | -e           | thrift execution retry times||
 |--stat           | -s            | print statistics info| true/false |
 |--type           | -t            | indicate to insert vertex properties or edge properties| vertext/edge|
 |--user           | -u            | graphd service username||
@@ -71,7 +93,8 @@ To import data, run:
 
 ### Example
 
-The examples are based on the [Insert Data Section of get-started.md](../../../docs/get-started.md#insert-data).
+The examples are based on the Insert Data Section of [get-started.md](../../../docs/get-started.md#insert-data).
+
 
 E1. Insert vertices 200, 201, 202.
 
@@ -83,9 +106,10 @@ datafile.txt
 202,"Jane",17,"female"
 ```
 
-under your importer dir run:
+The importer command:
+
 ```
-> java -jar importer-1.0.0-beta.jar "--address 127.0.0.1:3699 --name myspace_test2 --schema student -u user -p password -t vertex --file data.txt --column name,age,gender --batch 2"
+> java -jar importer-1.0.0-beta.jar --address 127.0.0.1:3699 --name myspace_test2 --schema student -u user -p password -t vertex --file data.txt --column name,age,gender --batch 2
 ```
 
 E2. Insert `select` edges.
@@ -101,10 +125,10 @@ datafile.txt
 202,102,3
 ```
 
-under your importer dir run:
+The importer command:
 
 ```
-> java -jar importer-1.0.0-beta.jar "--address 127.0.0.1:3699 --name myspace_test2 --schema select -u user -p password -t edge --file data.txt --column grade --batch 2"
+> java -jar importer-1.0.0-beta.jar --address 127.0.0.1:3699 --name myspace_test2 --schema select -u user -p password -t edge --file data.txt --column grade --batch 2
 ```
 
 **With Ranking**
@@ -118,9 +142,8 @@ datafile.txt
 202,102,0,3
 ```
 
-
-under your importer dir run:
+The importer command:
 
 ```
-> java -jar importer-1.0.0-beta.jar "--address 127.0.0.1:3699 --name myspace_test2 --schema select -u user -p password -t edge --file data.txt --column grade --batch 2 -k true"
+> java -jar importer-1.0.0-beta.jar --address 127.0.0.1:3699 --name myspace_test2 --schema select -u user -p password -t edge --file data.txt --column grade --batch 2 -k true
 ```
