@@ -13,7 +13,7 @@ Our maven repository is under construction. At this moment, get fbthrift and gra
 Or build it by yourself.
 
 ```
-> cd $YOUR_NEBULA_DIR
+> cd ${YOUR_NEBULA_DIR}
 > cd src/client
 > mvn clean package
 ```
@@ -37,7 +37,7 @@ Get the `importer` jar package from oss https://nebula-graph.oss-cn-hangzhou.ali
 Or build it by yourself.
 
 ```
-> cd $YOUR_NEBULA_DIR
+> cd ${YOUR_NEBULA_DIR}
 > cd src/tools/importer
 > mvn clean package
 ```
