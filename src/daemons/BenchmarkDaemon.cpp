@@ -52,7 +52,18 @@ void runInsertRound(std::unordered_map<std::string, std::string>& round_kvs) {
         pairs.emplace_back(std::move(kv));
     }
     auto future = storageClient->put(space, std::move(pairs));
-    future.wait();
+    auto resp = std::move(future).get();
+    if (!resp.succeeded()) {
+        LOG(INFO) << "Client Put Failed";
+        return;
+    }
+    auto& result = resp.responses()[0];
+    if (!result.result.failed_codes.empty()) {
+        auto partId = result.result.failed_codes[0].part_id;
+        auto code = result.result.failed_codes[0].code;
+        LOG(INFO) << "Client Put Failed in " << partId << ", Code: " << static_cast<int32_t>(code);
+        return;
+    }
 
     LOG(INFO) << "Insert Done: " << round_kvs.size();
 }
@@ -65,9 +76,21 @@ void runCheckRound(std::unordered_map<std::string, std::string>& round_kvs) {
         keys.emplace_back(key);
 
         auto future = storageClient->get(space, std::move(keys));
-        future.wait();
+        auto resp = std::move(future).get();
+        if (!resp.succeeded()) {
+            LOG(INFO) << "Client Get Failed";
+            return;
+        }
+        auto& result = resp.responses()[0];
+        if (!result.result.failed_codes.empty()) {
+            auto partId = result.result.failed_codes[0].part_id;
+            auto code = result.result.failed_codes[0].code;
+            LOG(INFO) << "Client Get Failed in " << partId << ", Code: "
+                      << static_cast<int32_t>(code);
+            return;
+        }
 
-        std::string& actual_value = future.value().responses()[0].values[key];
+        std::string& actual_value = result.values[key];
         std::string& expect_value = round_kvs[key];
         if (actual_value != expect_value) {
             LOG(INFO) << "Check Fail: " << actual_value << " | " << expect_value;
