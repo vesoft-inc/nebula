@@ -55,7 +55,7 @@ public:
 
     static std::string systemPartKey(PartitionID partId);
 
-    static std::string uuidKey(PartitionID partId, folly::StringPiece name);
+    static std::string uuidKey(PartitionID partId, const folly::StringPiece& name);
 
     /**
      * Prefix for

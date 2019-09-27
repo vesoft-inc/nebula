@@ -38,7 +38,7 @@ public:
             // need to generate new vertex id of this uuid
             MurmurHash2 hashFunc;
             auto hashValue = hashFunc(name);
-            auto now = time::WallClock::fastNowInMicroSec();
+            auto now = time::WallClock::fastNowInSec();
             vId = (hashValue & hashMask) | (now & timeMask);
             val.append(reinterpret_cast<char*>(&vId), sizeof(VertexID));
             std::vector<kvstore::KV> data;
