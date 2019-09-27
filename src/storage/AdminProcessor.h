@@ -40,7 +40,7 @@ public:
         auto host = kvstore::NebulaStore::getRaftAddr(HostAddr(req.get_new_leader().get_ip(),
                                                                req.get_new_leader().get_port()));
         part->asyncTransferLeader(host,
-                                  [this, spaceId, partId, host] (kvstore::ResultCode code) {
+                                  [this, spaceId, partId] (kvstore::ResultCode code) {
             auto leaderRet = kvstore_->partLeader(spaceId, partId);
             CHECK(ok(leaderRet));
             if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
