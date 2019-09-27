@@ -21,8 +21,9 @@ namespace test {
 enum class CommandType : int8_t {
     ADD_LEARNER = 0x01,
     TRANSFER_LEADER = 0x02,
+    ADD_PEER = 0x03,
+    REMOVE_PEER = 0x04,
 };
-
 std::string encodeLearner(const HostAddr& addr);
 
 HostAddr decodeLearner(const folly::StringPiece& log);
@@ -36,6 +37,14 @@ HostAddr decodeTransferLeader(const folly::StringPiece& log);
 std::string encodeSnapshotRow(LogID logId, const std::string& row);
 
 std::pair<LogID, std::string> decodeSnapshotRow(const std::string& rawData);
+
+std::string encodeAddPeer(const HostAddr& addr);
+
+HostAddr decodeAddPeer(const folly::StringPiece& log);
+
+std::string encodeRemovePeer(const HostAddr& addr);
+
+HostAddr decodeRemovePeer(const folly::StringPiece& log);
 
 class TestShard : public RaftPart {
     friend class SnapshotManagerImpl;
@@ -91,6 +100,18 @@ public:
                     LOG(INFO) << idStr_ << "Preprocess transleader " << nLeader;
                     break;
                 }
+                case CommandType::ADD_PEER: {
+                    auto peer = decodeAddPeer(log);
+                    addPeer(peer);
+                    LOG(INFO) << idStr_ << "Add peer " << peer;
+                    break;
+                }
+                case CommandType::REMOVE_PEER: {
+                    auto peer = decodeRemovePeer(log);
+                    preProcessRemovePeer(peer);
+                    LOG(INFO) << idStr_ << "Remove peer " << peer;
+                    break;
+                }
                 default: {
                     break;
                 }
@@ -112,7 +133,6 @@ public:
 public:
     int32_t commitTimes_ = 0;
     int32_t currLogId_ = -1;
-    bool isRunning_ = false;
 
 private:
     const size_t idx_;
