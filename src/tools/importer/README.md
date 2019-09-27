@@ -32,7 +32,7 @@ Replace "${YOUR_GRAPH_CLIENT_FILEPATH}" and "${YOUR_FBTHRIFT_FILEPATH}" with you
 
 ### Get Importer
 
-Get the `importer` jar package from oss https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/importer-1.0.0-beta.jar.
+Get the `Importer` jar package from oss https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/importer-1.0.0-beta.jar.
 
 Or build it by yourself.
 
@@ -42,7 +42,7 @@ Or build it by yourself.
 > mvn clean package
 ```
 
-The `importer` jar package is under the target directory.
+The `Importer` jar package is under the target directory.
 
 ### Data File
 
@@ -108,7 +108,7 @@ data.csv
 202,"Jane",17,"female"
 ```
 
-Example importer command:
+Example command:
 
 ```
 > java -jar importer-${VERSION}.jar --address 127.0.0.1:3699 --name myspace_test2 --schema student -u user -p password -t vertex --file data.txt --column name,age,gender --batch 2
@@ -127,7 +127,7 @@ data.csv
 202,102,3
 ```
 
-Example importer command:
+Example command:
 
 ```
 > java -jar importer-${VERSION}.jar --address 127.0.0.1:3699 --name myspace_test2 --schema select -u user -p password -t edge --file data.txt --column grade --batch 2
@@ -144,7 +144,7 @@ data.csv
 202,102,0,3
 ```
 
-Example importer command:
+Example command:
 
 ```
 > java -jar importer-${VERSION}.jar --address 127.0.0.1:3699 --name myspace_test2 --schema select -u user -p password -t edge --file data.txt --column grade --batch 2 -k true
