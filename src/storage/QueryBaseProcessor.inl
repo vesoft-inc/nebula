@@ -357,7 +357,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
                             const std::vector<PropContext>& props,
                             FilterContext* fcontext,
                             Collector* collector) {
-    auto prefix = NebulaKeyUtils::prefix(partId, vId, tagId);
+    auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId, tagId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -384,7 +384,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                                                const std::vector<PropContext>& props,
                                                FilterContext* fcontext,
                                                EdgeProcessor proc) {
-    auto prefix = NebulaKeyUtils::prefix(partId, vId, edgeType);
+    auto prefix = NebulaKeyUtils::edgePrefix(partId, vId, edgeType);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {

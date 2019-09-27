@@ -17,7 +17,7 @@ void DeleteVertexProcessor::process(const cpp2::DeleteVertexRequest& req) {
     auto partId = req.get_part_id();
     auto vId = req.get_vid();
 
-    auto prefix = NebulaKeyUtils::prefix(partId, vId);
+    auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId);
     this->kvstore_->asyncRemovePrefix(spaceId,
                                       partId,
                                       prefix,

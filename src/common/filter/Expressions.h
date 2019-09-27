@@ -10,14 +10,13 @@
 #include "base/StatusOr.h"
 #include "base/Status.h"
 #include <boost/variant.hpp>
-#include  <boost/unordered_set.hpp>
 
 namespace nebula {
 
 class Cord;
 using OptVariantType = StatusOr<VariantType>;
 
-enum ColumnType {
+enum class ColumnType {
     INT, STRING, DOUBLE, BIGINT, BOOL, TIMESTAMP,
 };
 
@@ -891,6 +890,7 @@ private:
 
     const char* decode(const char *pos, const char *end) override;
 
+    Status implicitCasting(VariantType &lhs, VariantType &rhs) const;
 
 private:
     Operator                                    op_;

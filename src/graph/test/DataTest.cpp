@@ -260,7 +260,7 @@ TEST_F(DataTest, InsertVertex) {
     // Multi sentences to insert multi tags
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT VERTEX person(name, age)"
+        std::string cmd = "INSERT VERTEX person(name, age) "
                           "VALUES hash(\"Aero\"):(\"Aero\", 8);"
                           "INSERT VERTEX student(grade, number) "
                           "VALUES hash(\"Aero\"):(\"four\", 20190901003)";

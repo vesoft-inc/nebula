@@ -69,7 +69,7 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
                             const VertexID vId,
                             const TagID tagId,
                             const std::vector<PropContext>& props) {
-    auto prefix = NebulaKeyUtils::prefix(partId, vId, tagId);
+    auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId, tagId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(this->spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -227,7 +227,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack() {
     std::vector<kvstore::KV> data;
     for (const auto& u : tagUpdaters_) {
         data.emplace_back(std::move(u.second->key),
-                          std::move(u.second->updater->encode()));
+                          u.second->updater->encode());
     }
     auto log = kvstore::encodeMultiValues(kvstore::OP_MULTI_PUT, data);
     return log;

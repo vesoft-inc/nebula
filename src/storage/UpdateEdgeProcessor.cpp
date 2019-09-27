@@ -68,7 +68,7 @@ kvstore::ResultCode UpdateEdgeProcessor::collectVertexProps(
                             const VertexID vId,
                             const TagID tagId,
                             const std::vector<PropContext>& props) {
-    auto prefix = NebulaKeyUtils::prefix(partId, vId, tagId);
+    auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId, tagId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(this->spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -210,7 +210,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack() {
     }
 
     std::vector<kvstore::KV> data;
-    data.emplace_back(key_, std::move(updater_->encode()));
+    data.emplace_back(key_, updater_->encode());
     auto log = kvstore::encodeMultiValues(kvstore::OP_MULTI_PUT, data);
     return log;
 }
