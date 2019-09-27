@@ -10,7 +10,6 @@
 #include "base/StatusOr.h"
 #include "base/Status.h"
 #include <boost/variant.hpp>
-#include  <boost/unordered_set.hpp>
 
 namespace nebula {
 

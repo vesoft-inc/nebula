@@ -285,7 +285,7 @@ TEST(UpdateVertexTest, Insertable_Test) {
         EXPECT_STREQ("tag_string_col_4_2_new", boost::get<std::string>(v).c_str());
     }
     // get tag3009 from kvstore directly
-    auto prefix = NebulaKeyUtils::prefix(partId, vertexId, 3009);
+    auto prefix = NebulaKeyUtils::vertexPrefix(partId, vertexId, 3009);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv->prefix(spaceId, partId, prefix, &iter);
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
