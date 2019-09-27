@@ -179,6 +179,9 @@ uint16_t NetworkUtils::getAvailablePort() {
     std::unordered_set<uint16_t> portsInUse = getPortsInUse();
     uint16_t port = 0;
     while (true) {
+        // NOTE
+        // The availablity of port number *outside* the ephemeral port range is
+        // relatively stable for the binding purpose.
         port = folly::Random::rand32(1025, low);
         if (portsInUse.find(port) != portsInUse.end()) {
             continue;
