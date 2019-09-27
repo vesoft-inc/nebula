@@ -757,6 +757,133 @@ TEST(Parser, DeleteEdge) {
     }
 }
 
+TEST(Parser, FetchVertex) {
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON person 1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON person 1, 2, 3";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON person hash(\"dutor\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON person hash(\"dutor\"), hash(\"darion\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON person hash(\"dutor\") "
+                            "YIELD person.name, person.age";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON person hash(\"dutor\"), hash(\"darion\") "
+                            "YIELD person.name, person.age";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 over edu | "
+                            "FETCH PROP ON person $- YIELD person.name, person.age";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "$var = GO FROM 1 over e1; "
+                            "FETCH PROP ON person $var.id YIELD person.name, person.age";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON person 1,2,3 "
+                            "YIELD DISTINCT person.name, person.age";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON person uuid(\"dutor\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON person uuid(\"dutor\"), uuid(\"darion\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON person uuid(\"dutor\") "
+                            "YIELD person.name, person.age";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON person uuid(\"dutor\"), uuid(\"darion\") "
+                            "YIELD person.name, person.age";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, FetchEdge) {
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON transfer 12345 -> -54321";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON transfer 12345 -> -54321 "
+                            "YIELD transfer.time";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 12345 OVER transfer "
+                            "YIELD transfer.time";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 12345 OVER transfer "
+                            "YIELD transfer._src AS s, serve._dst AS d | "
+                            "FETCH PROP ON transfer $-.s -> $-.d YIELD transfer.amount";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "$var = GO FROM 12345 OVER transfer "
+                            "YIELD transfer._src AS s, edu._dst AS d; "
+                            "FETCH PROP ON service $var.s -> $var.d YIELD service.amount";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
 TEST(Parser, Find) {
     {
         GQLParser parser;

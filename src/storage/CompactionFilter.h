@@ -55,8 +55,7 @@ public:
                 VLOG(3) << "Space " << spaceId << ", Tag " << tagId << " invalid";
                 return false;
             }
-        } else {
-            CHECK(NebulaKeyUtils::isEdge(key));
+        } else if (NebulaKeyUtils::isEdge(key)) {
             auto edgeType = NebulaKeyUtils::getEdgeType(key);
             if (edgeType < 0) {
                 edgeType = -edgeType;

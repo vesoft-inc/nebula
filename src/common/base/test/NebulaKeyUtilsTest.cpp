@@ -11,7 +11,7 @@
 namespace nebula {
 
 TEST(NebulaKeyUtilsTest, SimpleTest) {
-    PartitionID partId = 0L;
+    PartitionID partId = 15;
     VertexID srcId = 1001L, dstId = 2001L;
     TagID tagId = 1001;
     TagVersion tagVersion = 20L;
@@ -20,15 +20,15 @@ TEST(NebulaKeyUtilsTest, SimpleTest) {
     EdgeVersion edgeVersion = 20;
 
     auto vertexKey = NebulaKeyUtils::vertexKey(partId, srcId, tagId, tagVersion);
-    CHECK(NebulaKeyUtils::isVertex(vertexKey));
-    CHECK_EQ(tagId, NebulaKeyUtils::getTagId(vertexKey));
+    ASSERT_TRUE(NebulaKeyUtils::isVertex(vertexKey));
+    ASSERT_EQ(tagId, NebulaKeyUtils::getTagId(vertexKey));
 
     auto edgeKey = NebulaKeyUtils::edgeKey(partId, srcId, type, rank, dstId, edgeVersion);
-    CHECK(NebulaKeyUtils::isEdge(edgeKey));
-    CHECK_EQ(srcId, NebulaKeyUtils::getSrcId(edgeKey));
-    CHECK_EQ(dstId, NebulaKeyUtils::getDstId(edgeKey));
-    CHECK_EQ(type, NebulaKeyUtils::getEdgeType(edgeKey));
-    CHECK_EQ(rank, NebulaKeyUtils::getRank(edgeKey));
+    ASSERT_TRUE(NebulaKeyUtils::isEdge(edgeKey));
+    ASSERT_EQ(srcId, NebulaKeyUtils::getSrcId(edgeKey));
+    ASSERT_EQ(dstId, NebulaKeyUtils::getDstId(edgeKey));
+    ASSERT_EQ(type, NebulaKeyUtils::getEdgeType(edgeKey));
+    ASSERT_EQ(rank, NebulaKeyUtils::getRank(edgeKey));
 }
 
 }  // namespace nebula

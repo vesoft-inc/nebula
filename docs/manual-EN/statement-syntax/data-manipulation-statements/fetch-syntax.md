@@ -57,5 +57,5 @@ nebula> GO FROM 1 OVER e1 YIELD e1.prop1       -- for all the out going edges of
 nebula> GO FROM 1 OVER e1 YIELD e1._src AS s, serve._dst AS d \
  | FETCH PROP ON e1 $-.s -> $-.d YIELD e1.prop1              -- the same as above sentence
 nebula> $var = GO FROM 1 OVER e1 YIELD e1._src AS s, e2._dst AS d;\
- FETCH PROP ON serve $var.s -> $var.d YIELD e1.prop1.        -- the same as above.
+ FETCH PROP ON e3 $var.s -> $var.d YIELD e3.prop1.        -- the same as above.
 ```
