@@ -12,6 +12,7 @@
 #include "kvstore/Common.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/raftex/SnapshotManager.h"
+#include "kvstore/wal/FileBasedWal.h"
 
 namespace nebula {
 namespace kvstore {
@@ -54,12 +55,25 @@ public:
 
     void asyncTransferLeader(const HostAddr& target, KVCallback cb);
 
+    void asyncAddPeer(const HostAddr& peer, KVCallback cb);
+
+    void asyncRemovePeer(const HostAddr& peer, KVCallback cb);
+
+    // Sync the information committed on follower.
+    void sync(KVCallback cb);
+
     void registerNewLeaderCb(NewLeaderCallback cb) {
         newLeaderCb_ = std::move(cb);
     }
 
     void unRegisterNewLeaderCb() {
         newLeaderCb_ = nullptr;
+    }
+
+    // clean up all data about this part.
+    void reset() {
+        LOG(INFO) << idStr_ << "Clean up all wals";
+        wal()->reset();
     }
 
 private:
