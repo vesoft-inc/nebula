@@ -334,6 +334,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:schema_obj>
         $<TARGET_OBJECTS:meta_client>
         $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:storage_client>
         $<TARGET_OBJECTS:storage_service_handler>
         $<TARGET_OBJECTS:kvstore_obj>
         $<TARGET_OBJECTS:storage_thrift_obj>
