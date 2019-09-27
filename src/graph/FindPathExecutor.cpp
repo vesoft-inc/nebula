@@ -444,7 +444,7 @@ void FindPathExecutor::getFromFrontiers(
         fromFrontiers_ = std::make_pair(VisitedBy::FROM, std::move(frontiers));
         barrier_.wait();
     };
-    std::move(future).via(runner).thenValue(cb);
+    std::move(future).via(runner, folly::Executor::HI_PRI).thenValue(cb);
 }
 
 void FindPathExecutor::getToFrontiers(
@@ -478,7 +478,7 @@ void FindPathExecutor::getToFrontiers(
         toFrontiers_ = std::make_pair(VisitedBy::TO, std::move(frontiers));
         barrier_.wait();
     };
-    std::move(future).via(runner).thenValue(cb);
+    std::move(future).via(runner, folly::Executor::HI_PRI).thenValue(cb);
 }
 
 Status FindPathExecutor::doFilter(
@@ -660,6 +660,9 @@ void FindPathExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
         rows.emplace_back(std::move(row));
         VLOG(1) << "Path: " << buildPathString(path.second);
     }
+
+    std::vector<std::string> colNames = {"_path_"};
+    resp.set_column_names(std::move(colNames));
     resp.set_rows(std::move(rows));
 }
 }  // namespace graph

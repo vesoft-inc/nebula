@@ -180,6 +180,8 @@ void CmdProcessor::calColumnWidths(
                     auto pathValue = col.get_path();
                     auto entryList = pathValue.get_entry_list();
                     decltype(entryList.size()) entryIdx = 0;
+                    formats.resize(entryList.size(), "");
+                    widths.resize(entryList.size(), 0);
                     for (auto &entry : entryList) {
                         if (entry.getType() ==  cpp2::PathEntry::vertex) {
                             auto v = entry.get_vertex();
@@ -200,14 +202,14 @@ void CmdProcessor::calColumnWidths(
                             auto ranking = e.get_ranking();
                             size_t typeLen = folly::stringPrintf("%s", type.c_str()).size();
                             size_t rankingLen = folly::stringPrintf("%ld", ranking).size();
-                            size_t len = typeLen + rankingLen + 6;
+                            size_t len = typeLen + rankingLen + 4;
                             if (widths[entryIdx] < len) {
                                 widths[entryIdx] = len;
                                 genFmt = true;
                             }
                             if (genFmt) {
-                                formats[idx] =
-                                    folly::stringPrintf(" <%%%lds,%%%ldld> |", typeLen, rankingLen);
+                                formats[entryIdx] =
+                                    folly::stringPrintf(" <%%%lds,%%%ldld>", typeLen, rankingLen);
                             }
                         }
                         ++entryIdx;
