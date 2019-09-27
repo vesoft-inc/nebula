@@ -116,15 +116,15 @@ void MetaClient::loadDataThreadFunc() {
     addLoadDataTask();
 }
 
-void MetaClient::loadData() {
+bool MetaClient::loadData() {
     if (ioThreadPool_->numThreads() <= 0) {
         LOG(ERROR) << "The threads number in ioThreadPool should be greater than 0";
-        return;
+        return false;
     }
     auto ret = listSpaces().get();
     if (!ret.ok()) {
         LOG(ERROR) << "List space failed, status:" << ret.status();
-        return;
+        return false;
     }
     decltype(localCache_) cache;
     decltype(spaceIndexByName_) spaceIndexByName;
@@ -141,7 +141,7 @@ void MetaClient::loadData() {
         if (!r.ok()) {
             LOG(ERROR) << "Get parts allocation failed for spaceId " << spaceId
                        << ", status " << r.status();
-            return;
+            return false;
         }
 
         auto spaceCache = std::make_shared<SpaceInfoCache>();
@@ -161,7 +161,7 @@ void MetaClient::loadData() {
                          spaceNewestTagVerMap,
                          spaceNewestEdgeVerMap,
                          spaceAllEdgeMap)) {
-            return;
+            return false;
         }
 
         cache.emplace(spaceId, spaceCache);
@@ -183,6 +183,7 @@ void MetaClient::loadData() {
     diff(oldCache, localCache_);
     ready_ = true;
     LOG(INFO) << "Load data completed!";
+    return true;
 }
 
 void MetaClient::addLoadDataTask() {
@@ -390,7 +391,13 @@ Status MetaClient::handleResponse(const RESP& resp) {
         case cpp2::ErrorCode::E_WRONGCLUSTER:
             return Status::Error("wrong cluster!");
         case cpp2::ErrorCode::E_LEADER_CHANGED: {
-            return Status::LeaderChanged();
+            return Status::LeaderChanged("Leader changed!");
+        case cpp2::ErrorCode::E_BALANCED:
+            return Status::Error("The cluster is balanced!");
+        case cpp2::ErrorCode::E_BALANCER_RUNNING:
+            return Status::Error("The balancer is running!");
+        case cpp2::ErrorCode::E_BAD_BALANCE_PLAN:
+            return Status::Error("Bad balance plan!");
         }
         default:
             return Status::Error("Unknown code %d", static_cast<int32_t>(resp.get_code()));
@@ -1168,6 +1175,20 @@ folly::Future<StatusOr<int64_t>> MetaClient::balance() {
     return future;
 }
 
+folly::Future<StatusOr<std::vector<cpp2::BalanceTask>>>
+MetaClient::showBalance(int64_t balanceId) {
+    cpp2::BalanceReq req;
+    req.set_id(balanceId);
+    folly::Promise<StatusOr<std::vector<cpp2::BalanceTask>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_balance(request);
+                }, [] (cpp2::BalanceResp&& resp) -> std::vector<cpp2::BalanceTask> {
+                    return resp.tasks;
+                }, std::move(promise), true);
+    return future;
+}
+
 folly::Future<StatusOr<bool>> MetaClient::balanceLeader() {
     cpp2::LeaderBalanceReq req;
     folly::Promise<StatusOr<bool>> promise;
@@ -1361,6 +1382,11 @@ ConfigItem MetaClient::toConfigItem(const cpp2::ConfigItem& item) {
             break;
     }
     return ConfigItem(item.get_module(), item.get_name(), item.get_type(), item.get_mode(), value);
+}
+
+Status MetaClient::refreshCache() {
+    auto ret = bgThread_->addTask(&MetaClient::loadData, this).get();
+    return ret ? Status::OK() : Status::Error("Load data failed");
 }
 
 }  // namespace meta

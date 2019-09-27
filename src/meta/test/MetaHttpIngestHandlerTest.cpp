@@ -15,13 +15,16 @@
 #include <rocksdb/sst_file_writer.h>
 #include "thread/GenericThreadPool.h"
 
+DECLARE_int32(ws_storage_http_port);
+
 namespace nebula {
 namespace meta {
 
 class MetaHttpIngestHandlerTestEnv : public ::testing::Environment {
 public:
     void SetUp() override {
-        FLAGS_ws_http_port = 12000;
+        FLAGS_ws_http_port = 12100;
+        FLAGS_ws_storage_http_port = 12100;
         FLAGS_ws_h2_port = 0;
         VLOG(1) << "Starting web service...";
 
