@@ -1,7 +1,9 @@
 
 ## Importer
 
-`Importer` is a tool used to load a small amount of data from a CSV file into Nebula Graph. It is single-threaded. If you have a large set of data, generating SST files and ingesting these files may be a better way. For details, please refer to [Spark SST File Generator](../spark-sstfile-generator/README.md) and HDFS Importer <!--to be done-->
+
+`Importer` is a single-threaded tool used to load small data set from a CSV file into Nebula Graph.
+As for large data set, generating SST files and then ingesting them may be a better way. For details, please refer to [Spark SST File Generator](../spark-sstfile-generator/README.md) and HDFS Importer <!--to be done-->
 
 ### Download JARs
 
@@ -98,7 +100,7 @@ The examples are based on [Insert Data Section of get-started.md](../../../docs/
 
 E1. Insert vertices 200, 201, 202.
 
-data.txt
+data.csv
 
 ```
 200,"Monica",16,"female"
@@ -116,7 +118,7 @@ E2. Insert `select` edges.
 
 **Without Ranking**
 
-data.txt
+data.csv
 
 ```
 200,101,5
@@ -133,7 +135,7 @@ Example importer command:
 
 **With Ranking**
 
-data.txt
+data.csv
 
 ```
 200,101,0,5
