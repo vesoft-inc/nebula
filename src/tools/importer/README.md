@@ -21,12 +21,12 @@ Or build it by yourself.
 #### Install JARs
 
 ```
- > mvn install:install-file -Dfile=$YOUR_GRAPH_CLIENT_FILEPATH -DgroupId=nebula-graph -DartifactId=graph-client -Dversion=$GRAPH_CLIENT_VERSION -Dpackaging=jar
+ > mvn install:install-file -Dfile=${YOUR_GRAPH_CLIENT_FILEPATH} -DgroupId=nebula-graph -DartifactId=graph-client -Dversion=${GRAPH_CLIENT_VERSION} -Dpackaging=jar
 
- > mvn install:install-file -Dfile=$YOUR_FBTHRIFT_FILEPATH -DgroupId=com.facebook -DartifactId=thrift -Dversion=$FBTHRIFT_VERSION -Dpackaging=jar
+ > mvn install:install-file -Dfile=${YOUR_FBTHRIFT_FILEPATH} -DgroupId=com.facebook -DartifactId=thrift -Dversion=${FBTHRIFT_VERSION} -Dpackaging=jar
 ```
 
-Replace "$YOUR_GRAPH_CLIENT_FILEPATH" and "$YOUR_FBTHRIFT_FILEPATH" with your own values. Also "$GRAPH_CLIENT_VERSION" and "$FBTHRIFT_VERSION".
+Replace "${YOUR_GRAPH_CLIENT_FILEPATH}" and "${YOUR_FBTHRIFT_FILEPATH}" with your own values. Also "${GRAPH_CLIENT_VERSION}" and "${FBTHRIFT_VERSION}".
 
 ### Get Importer
 
@@ -77,28 +77,28 @@ To import data, run:
 |--name           | -n            | specify the space name.| myspace_test2 |
 |--schema         | -m            | specify the tag or edgetype name.| student |
 |--column         | -c            | properties of tag or edge to be inserted, separated by a comma | name,age |
-|--ranking        | -k            | the edge have ranking data. Default is false| true/false|
+|--ranking        | -k            | whether the edge has ranking value. Default is false| true/false|
 |--file           | -f            | data file| ./tmp/data.txt |
 |--errorPath    | -d            | error log file | ./tmp/error.log |
-|--help           | -h            | list help||
+|--help           | -h            | list help|
 |--timeout        | -o            | specify connection timeout, in millisecond| 3000 |
 |--pswd           | -p            | graphd service password||
-|--connectionRetry       | -r            | connection retry times||
-|--executionRetry       | -e           | thrift execution retry times||
+|--connectionRetry       | -r            | connection retry times|
+|--executionRetry       | -e           | thrift execution retry times|
 |--stat           | -s            | print statistics info| true/false |
 |--type           | -t            | indicate to insert vertex properties or edge properties| vertext/edge|
-|--user           | -u            | graphd service username||
+|--user           | -u            | graphd service username|
 
-> For edge type, if 'ranking' column is specified, '--ranking' options should be set to `true`.
+> For edge type, if 'ranking' column is specified, '--ranking' option should be set to `true`.
 
 ### Example
 
-The examples are based on the [Insert Data Section of get-started.md](../../../docs/get-started.md#insert-data).
+The examples are based on [Insert Data Section of get-started.md](../../../docs/get-started.md#insert-data).
 
 
 E1. Insert vertices 200, 201, 202.
 
-datafile.txt
+data.txt
 
 ```
 200,"Monica",16,"female"
@@ -106,17 +106,17 @@ datafile.txt
 202,"Jane",17,"female"
 ```
 
-The importer command:
+Example importer command:
 
 ```
-> java -jar importer-1.0.0-beta.jar --address 127.0.0.1:3699 --name myspace_test2 --schema student -u user -p password -t vertex --file data.txt --column name,age,gender --batch 2
+> java -jar importer-${VERSION}.jar --address 127.0.0.1:3699 --name myspace_test2 --schema student -u user -p password -t vertex --file data.txt --column name,age,gender --batch 2
 ```
 
 E2. Insert `select` edges.
 
 **Without Ranking**
 
-datafile.txt
+data.txt
 
 ```
 200,101,5
@@ -125,15 +125,15 @@ datafile.txt
 202,102,3
 ```
 
-The importer command:
+Example importer command:
 
 ```
-> java -jar importer-1.0.0-beta.jar --address 127.0.0.1:3699 --name myspace_test2 --schema select -u user -p password -t edge --file data.txt --column grade --batch 2
+> java -jar importer-${VERSION}.jar --address 127.0.0.1:3699 --name myspace_test2 --schema select -u user -p password -t edge --file data.txt --column grade --batch 2
 ```
 
 **With Ranking**
 
-datafile.txt
+data.txt
 
 ```
 200,101,0,5
@@ -142,8 +142,8 @@ datafile.txt
 202,102,0,3
 ```
 
-The importer command:
+Example importer command:
 
 ```
-> java -jar importer-1.0.0-beta.jar --address 127.0.0.1:3699 --name myspace_test2 --schema select -u user -p password -t edge --file data.txt --column grade --batch 2 -k true
+> java -jar importer-${VERSION}.jar --address 127.0.0.1:3699 --name myspace_test2 --schema select -u user -p password -t edge --file data.txt --column grade --batch 2 -k true
 ```
