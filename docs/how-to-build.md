@@ -60,7 +60,7 @@ bash> source ~/.bashrc
     ```
 
 #### **Building completed**
-- If no errors are shown,
+- If no errors are shown
 
     ```
     [100%] Built target ....
@@ -85,7 +85,7 @@ Nebula has provided a docker image with the whole compiling environment [vesoft/
 bash> docker pull vesoft/nebula-dev
 ```
 
-#### Run docker container and mount your local source code directory to the container directory `/home/nebula`
+#### Run docker container and mount your local source code directory into the container working_dir `/home/nebula`
 
 ```shell
 bash> docker run --rm -ti \
@@ -114,7 +114,7 @@ Once the preceding installation is completed, you can run nebula service within 
 docker> cd /usr/local/nebula
 ```
 
-Rename  config files of nebula service 
+Rename config files of nebula service 
 
 ```shell
 docker> cp etc/nebula-graphd.conf.default etc/nebula-graphd.conf

@@ -93,7 +93,7 @@ bash> docker run --rm -ti \
   bash
 ```
 
-其中 `/path/to/nebula/` 要替换成**克隆 nebula 源码的本地目录**。
+其中 `/path/to/nebula/` 要替换成**本地 nebula 源码目录**。
 
 #### 容器内编译
 
