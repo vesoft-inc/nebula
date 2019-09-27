@@ -197,6 +197,7 @@ void FindPathExecutor::execute() {
 }
 
 void FindPathExecutor::findPath() {
+    VLOG(2) << "Find Path.";
     visitedFrom_.clear();
     std::multimap<VertexID, Path> pathF;
     for (auto &frontier : fromFrontiers_.second) {
@@ -215,9 +216,10 @@ void FindPathExecutor::findPath() {
             // update the path to frontiers
             updatePath(frontier.first, pathFrom_, neighbor, pathF, VisitedBy::FROM);
             visitedFrom_.emplace(dstId);
-        }  // for `frontier'
-    }  // for `neighbor'
+        }  // for `neighbor'
+    }  // for `frontier'
     pathFrom_ = std::move(pathF);
+    fromVids_.clear();
     fromVids_.reserve(visitedFrom_.size());
     std::copy(visitedFrom_.begin(),
               visitedFrom_.end(), std::back_inserter(fromVids_));
@@ -230,9 +232,10 @@ void FindPathExecutor::findPath() {
             // update the path to frontiers
             updatePath(frontier.first, pathTo_, neighbor, pathT, VisitedBy::TO);
             visitedTo_.emplace(dstId);
-        }  // for `frontier'
-    }  // for `neighbor'
+        }  // for `neighbor'
+    }  // for `frontier'
     pathTo_ = std::move(pathT);
+    toVids_.clear();
     toVids_.reserve(visitedTo_.size());
     std::copy(visitedTo_.begin(),
               visitedTo_.end(), std::back_inserter(toVids_));
@@ -255,6 +258,7 @@ void FindPathExecutor::findPath() {
 }
 
 inline void FindPathExecutor::meetOddPath(VertexID src, VertexID dst, Neighbor &neighbor) {
+    VLOG(2) << "Meet Odd Path.";
     auto rangeF = pathFrom_.equal_range(src);
     for (auto i = rangeF.first; i != rangeF.second; ++i) {
         auto rangeT = pathTo_.equal_range(dst);
@@ -269,7 +273,7 @@ inline void FindPathExecutor::meetOddPath(VertexID src, VertexID dst, Neighbor &
             std::get<0>(*s0) = src;
             path.emplace_back(s0.get());
             stepOutHolder_.emplace(std::move(s0));
-            VLOG(1) << "PathF: " << buildPathString(path);
+            VLOG(2) << "PathF: " << buildPathString(path);
 
             auto s1 = std::make_unique<StepOut>(neighbor);
             std::get<1>(*s1) = - std::get<1>(neighbor);
@@ -285,6 +289,7 @@ inline void FindPathExecutor::meetOddPath(VertexID src, VertexID dst, Neighbor &
                     // already found a shorter path
                     continue;
                 } else {
+                    VLOG(2) << "Found path: " << buildPathString(path);
                     finalPath_.emplace(target, std::move(path));
                 }
             } else {
@@ -296,6 +301,7 @@ inline void FindPathExecutor::meetOddPath(VertexID src, VertexID dst, Neighbor &
 }
 
 inline void FindPathExecutor::meetEvenPath(VertexID intersectId) {
+    VLOG(2) << "Meet Even Path.";
     auto rangeF = pathFrom_.equal_range(intersectId);
     auto rangeT = pathTo_.equal_range(intersectId);
     for (auto i = rangeF.first; i != rangeF.second; ++i) {
@@ -332,6 +338,7 @@ inline void FindPathExecutor::meetEvenPath(VertexID intersectId) {
                     continue;
                 } else {
                     targetNotFound_.erase(target);
+                    VLOG(2) << "Found path: " << buildPathString(path);
                     finalPath_.emplace(target, std::move(path));
                 }
             } else {
@@ -348,6 +355,7 @@ inline void FindPathExecutor::updatePath(
             Neighbor &neighbor,
             std::multimap<VertexID, Path> &pathToNeighbor,
             VisitedBy visitedBy) {
+    VLOG(2) << "Update Path.";
     auto range = pathToSrc.equal_range(src);
     for (auto i = range.first; i != range.second; ++i) {
         // Build path:
