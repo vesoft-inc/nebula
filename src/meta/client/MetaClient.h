@@ -211,6 +211,9 @@ public:
     folly::Future<StatusOr<int64_t>>
     balance();
 
+    folly::Future<StatusOr<std::vector<cpp2::BalanceTask>>>
+    showBalance(int64_t balanceId);
+
     folly::Future<StatusOr<bool>> balanceLeader();
 
     // Operations for config
@@ -265,9 +268,13 @@ public:
 
     const std::vector<HostAddr>& getAddresses();
 
+    Status refreshCache();
+
 protected:
     void loadDataThreadFunc();
-    void loadData();
+    // Return true if load succeeded.
+    bool loadData();
+
     void addLoadDataTask();
 
     void heartBeatThreadFunc();
