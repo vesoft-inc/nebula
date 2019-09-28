@@ -69,6 +69,7 @@ void BalanceTask::invoke() {
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::ADD_LEARNER;
+                    usleep(3000 * 1000);
                 }
                 invoke();
             });

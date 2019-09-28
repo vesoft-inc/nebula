@@ -167,7 +167,7 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
         return peersStr.str();
     };
     LOG(INFO) << "[space:" << spaceId << ", part:" << partId << "] Update original peers "
-              << strHosts(peers) << ", remove " << src << ", add " << dst;
+              << strHosts(peers) << " remove " << src << ", add " << dst;
     auto it = std::find(peers.begin(), peers.end(), src);
     if (it == peers.end()) {
         LOG(INFO) << "src " << src << " has been removed in [" << spaceId << ", " << partId << "]";
