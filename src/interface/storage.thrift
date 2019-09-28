@@ -23,6 +23,7 @@ enum ErrorCode {
     E_KEY_HAS_EXISTS = -12,
     E_SPACE_NOT_FOUND = -13,
     E_PART_NOT_FOUND = -14,
+    E_CONSENSUS_ERROR = -15,
 
     // meta failures
     E_EDGE_PROP_NOT_FOUND = -21,
@@ -32,6 +33,12 @@ enum ErrorCode {
     // Invalid request
     E_INVALID_FILTER = -31,
     E_INVALID_UPDATER = -32,
+    E_INVALID_STORE = -33,
+    E_INVALID_PEER  = -34,
+    E_RETRY_EXHAUSTED = -35,
+
+    // meta client failed
+    E_LOAD_META_FAILED = -41,
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 
@@ -221,6 +228,9 @@ struct RemovePartReq {
 struct MemberChangeReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
+    3: common.HostAddr     peer,
+    // true means add a peer, false means remove a peer.
+    4: bool                add,
 }
 
 struct TransLeaderReq {
