@@ -158,6 +158,11 @@ public:
         bool insertable,
         folly::EventBase* evb = nullptr);
 
+    folly::Future<StatusOr<cpp2::GetUUIDResp>> getUUID(
+        GraphSpaceID space,
+        const std::string& name,
+        folly::EventBase* evb = nullptr);
+
 protected:
     // Calculate the partition id for the given vertex id
     PartitionID partId(GraphSpaceID spaceId, int64_t id) const;

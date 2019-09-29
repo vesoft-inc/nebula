@@ -50,6 +50,7 @@ class Balancer {
     FRIEND_TEST(BalanceTest, LeaderBalanceTest);
     FRIEND_TEST(BalanceTest, ManyHostsLeaderBalancePlanTest);
     FRIEND_TEST(BalanceIntegrationTest, LeaderBalanceTest);
+    FRIEND_TEST(BalanceIntegrationTest, BalanceTest);
 
 public:
     static Balancer* instance(kvstore::KVStore* kv) {
@@ -66,17 +67,15 @@ public:
     StatusOr<BalanceID> balance();
 
     /**
-     * TODO(heng): Rollback some specific balance id
+     * Show balance plan id status.
+     * */
+    StatusOr<BalancePlan> show(BalanceID id) const;
+
+    /**
+     * TODO(heng): rollback some balance plan.
      */
     Status rollback(BalanceID id) {
         return Status::Error("unplemented, %ld", id);
-    }
-
-    /**
-     * TODO(heng): Only generate balance plan for our users.
-     * */
-    const BalancePlan* preview() {
-        return plan_.get();
     }
 
     /**
@@ -96,6 +95,10 @@ public:
     }
 
     cpp2::ErrorCode leaderBalance();
+
+    bool isRunning() {
+        return running_;
+    }
 
 private:
     Balancer(kvstore::KVStore* kv, std::unique_ptr<AdminClient> client)
@@ -123,6 +126,10 @@ private:
                  const std::vector<HostAddr>& activeHosts,
                  std::vector<HostAddr>& newlyAdded,
                  std::vector<HostAddr>& lost);
+
+    StatusOr<HostAddr> hostWithPart(
+                        const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
+                        PartitionID partId);
 
     StatusOr<HostAddr> hostWithMinimalParts(
                         const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
