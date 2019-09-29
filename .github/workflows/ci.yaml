@@ -29,5 +29,5 @@ jobs:
       - name: test
         run: |
           . /etc/profile.d/devtoolset-8-enable.sh
-          cd _build && ctest --output-on-failure
+          cd _build && ctest -j $(nproc) --output-on-failure
         shell: bash

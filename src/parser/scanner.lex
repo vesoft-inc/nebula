@@ -121,6 +121,7 @@ BALANCE                     ([Bb][Aa][Ll][Aa][Nn][Cc][Ee])
 LEADER                      ([Ll][Ee][Aa][Dd][Ee][Rr])
 UUID                        ([Uu][Uu][Ii][Dd])
 OF                          ([Oo][Ff])
+DATA                        ([Dd][Aa][Tt][Aa])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -231,6 +232,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {BALANCE}                   { return TokenType::KW_BALANCE; }
 {LEADER}                    { return TokenType::KW_LEADER; }
 {UUID}                      { return TokenType::KW_UUID; }
+{DATA}                      { return TokenType::KW_DATA; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

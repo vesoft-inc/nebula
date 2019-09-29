@@ -333,6 +333,7 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:schema_obj>
         $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:storage_client>
         $<TARGET_OBJECTS:storage_service_handler>
         $<TARGET_OBJECTS:kvstore_obj>
         $<TARGET_OBJECTS:raftex_obj>

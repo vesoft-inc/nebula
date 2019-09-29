@@ -127,8 +127,8 @@ TEST_F(FetchVerticesTest, base) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
-        auto *fmt = "FETCH PROP ON player hash(\"%s\")"
-                    " YIELD player.name, player.age";
+        auto *fmt = "FETCH PROP ON player hash(\"%s\") "
+                    "YIELD player.name, player.age";
         auto query = folly::stringPrintf(fmt, player.name().c_str());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -146,8 +146,8 @@ TEST_F(FetchVerticesTest, base) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
-        auto *fmt = "FETCH PROP ON player uuid(\"%s\")"
-                    " YIELD player.name, player.age";
+        auto *fmt = "FETCH PROP ON player uuid(\"%s\") "
+                    "YIELD player.name, player.age";
         auto query = folly::stringPrintf(fmt, player.name().c_str());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);

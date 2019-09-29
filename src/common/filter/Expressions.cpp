@@ -628,7 +628,12 @@ std::string UUIDExpression::toString() const {
 OptVariantType UUIDExpression::eval() const {
      auto client = context_->storageClient();
      auto space = context_->space();
-     return client->getUUID(space, *field_);
+     auto uuidResult = client->getUUID(space, *field_).get();
+     if (!uuidResult.ok() ||
+         !uuidResult.value().get_result().get_failed_codes().empty()) {
+         return OptVariantType(Status::Error("Get UUID Failed"));
+     }
+     return uuidResult.value().get_id();
 }
 
 Status UUIDExpression::prepare() {

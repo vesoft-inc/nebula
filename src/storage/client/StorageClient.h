@@ -140,8 +140,6 @@ public:
         VertexID vid,
         folly::EventBase* evb = nullptr);
 
-    int64_t getUUID(GraphSpaceID space, const std::string& name);
-
     folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateVertex(
         GraphSpaceID space,
         VertexID vertexId,
@@ -158,6 +156,11 @@ public:
         std::vector<storage::cpp2::UpdateItem> updateItems,
         std::vector<std::string> returnCols,
         bool insertable,
+        folly::EventBase* evb = nullptr);
+
+    folly::Future<StatusOr<cpp2::GetUUIDResp>> getUUID(
+        GraphSpaceID space,
+        const std::string& name,
         folly::EventBase* evb = nullptr);
 
 protected:

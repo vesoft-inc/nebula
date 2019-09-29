@@ -321,9 +321,22 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                         << " to the followers lastLodId " << resp.get_last_log_id();
                 {
                     std::lock_guard<std::mutex> g(self->lock_);
-                    self->lastLogIdSent_ = resp.get_last_log_id();
-                    self->lastLogTermSent_ = resp.get_last_log_term();
-                    self->setResponse(resp);
+                    auto res = self->checkStatus();
+                    if (res != cpp2::ErrorCode::SUCCEEDED) {
+                        VLOG(2) << self->idStr_
+                                << "The host is not in a proper status,"
+                                   " skip waiting the snapshot";
+                        cpp2::AppendLogResponse r;
+                        r.set_error_code(res);
+                        self->setResponse(r);
+                    } else {
+                        self->lastLogIdSent_ = resp.get_last_log_id();
+                        self->lastLogTermSent_ = resp.get_last_log_term();
+                        // For log stale, we think the request has been succeeded
+                        cpp2::AppendLogResponse r;
+                        r.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+                        self->setResponse(r);
+                    }
                 }
                 self->noMoreRequestCV_.notify_all();
                 return;

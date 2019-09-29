@@ -21,9 +21,11 @@ class StorageServiceHandler final : public cpp2::StorageServiceSvIf {
 
 public:
     StorageServiceHandler(kvstore::KVStore* kvstore,
-                          meta::SchemaManager* schemaMan)
+                          meta::SchemaManager* schemaMan,
+                          meta::MetaClient* client)
         : kvstore_(kvstore)
-        , schemaMan_(schemaMan) {}
+        , schemaMan_(schemaMan)
+        , metaClient_(client) {}
 
     folly::Future<cpp2::QueryResponse>
     future_getBound(const cpp2::GetNeighborsRequest& req) override;
@@ -80,9 +82,13 @@ public:
     folly::Future<cpp2::GetLeaderResp>
     future_getLeaderPart(const cpp2::GetLeaderReq& req) override;
 
+    folly::Future<cpp2::GetUUIDResp>
+    future_getUUID(const cpp2::GetUUIDReq& req) override;
+
 private:
     kvstore::KVStore* kvstore_ = nullptr;
-    meta::SchemaManager* schemaMan_;
+    meta::SchemaManager* schemaMan_ = nullptr;
+    meta::MetaClient* metaClient_ = nullptr;
 };
 
 }  // namespace storage

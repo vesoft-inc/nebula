@@ -107,7 +107,8 @@ class GraphScanner;
 %token KW_ORDER KW_ASC
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
 %token KW_DISTINCT KW_ALL KW_OF
-%token KW_BALANCE KW_LEADER
+%token KW_BALANCE KW_LEADER KW_DATA
+
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND XOR LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
@@ -1574,6 +1575,12 @@ set_config_sentence
 balance_sentence
     : KW_BALANCE KW_LEADER {
         $$ = new BalanceSentence(BalanceSentence::SubType::kLeader);
+    }
+    | KW_BALANCE KW_DATA {
+        $$ = new BalanceSentence(BalanceSentence::SubType::kData);
+    }
+    | KW_BALANCE KW_DATA INTEGER {
+        $$ = new BalanceSentence($3);
     }
     ;
 
