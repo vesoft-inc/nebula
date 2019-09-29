@@ -20,6 +20,7 @@ InsertEdgeExecutor::InsertEdgeExecutor(Sentence *sentence,
 Status InsertEdgeExecutor::prepare() {
     expCtx_ = std::make_unique<ExpressionContext>();
     expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->setExecutor(ectx()->rctx()->runner());
     return Status::OK();
 }
 

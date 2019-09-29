@@ -34,6 +34,7 @@ Status GoExecutor::prepareClauses() {
     Status status;
     expCtx_ = std::make_unique<ExpressionContext>();
     expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->setExecutor(ectx()->rctx()->runner());
 
     do {
         status = checkIfGraphSpaceChosen();

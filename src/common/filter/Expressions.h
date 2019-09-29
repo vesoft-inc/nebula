@@ -128,6 +128,14 @@ public:
         return space_;
     }
 
+    void setExecutor(folly::Executor *executor) {
+        executor_ = executor;
+    }
+
+    folly::Executor* executor() {
+        return executor_;
+    }
+
     struct Getters {
         std::function<OptVariantType()>                                       getEdgeRank;
         std::function<OptVariantType(const std::string&)>                     getInputProp;
@@ -160,6 +168,7 @@ private:
     bool                                      overAll_{false};
     GraphSpaceID                              space_;
     nebula::storage::StorageClient            *storageClient_{nullptr};
+    folly::Executor                           *executor_;
 };
 
 

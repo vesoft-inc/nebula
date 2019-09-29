@@ -20,6 +20,7 @@ InsertVertexExecutor::InsertVertexExecutor(Sentence *sentence,
 Status InsertVertexExecutor::prepare() {
     expCtx_ = std::make_unique<ExpressionContext>();
     expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->setExecutor(ectx()->rctx()->runner());
     return Status::OK();
 }
 

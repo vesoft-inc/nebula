@@ -32,6 +32,7 @@ Status FetchVerticesExecutor::prepareClauses() {
 
         expCtx_ = std::make_unique<ExpressionContext>();
         expCtx_->setStorageClient(ectx()->getStorageClient());
+        expCtx_->setExecutor(ectx()->rctx()->runner());
 
         spaceId_ = ectx()->rctx()->session()->space();
         yieldClause_ = sentence_->yieldClause();
