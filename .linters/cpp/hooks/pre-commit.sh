@@ -31,6 +31,11 @@ then
     exit 0
 fi
 
+if [ -x "$(command -v clang-format)" ]; then
+    echo "Formating with clang-format"
+    clang-format -i $CHECK_FILES
+fi
+
 echo "Performing C++ linters..."
 
 CPPLINT_EXTENS=cpp,h,inl
