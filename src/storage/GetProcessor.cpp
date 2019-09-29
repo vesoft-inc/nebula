@@ -6,8 +6,6 @@
 
 #include "storage/GetProcessor.h"
 #include "base/NebulaKeyUtils.h"
-#include <algorithm>
-#include <limits>
 
 namespace nebula {
 namespace storage {
@@ -16,12 +14,11 @@ void GetProcessor::process(const cpp2::GetRequest& req) {
     space_ = req.get_space_id();
     std::vector<folly::Future<std::pair<PartitionID, kvstore::ResultCode>>> results;
     for (auto& part : req.get_parts()) {
-        results.emplace_back(asyncProcessPart(part.first, part.second));
+        results.emplace_back(asyncProcess(part.first, part.second));
     }
 
     folly::collectAll(results).via(executor_)
-                              .then([&] (const std::vector<folly::Try<std::pair<PartitionID,
-                                                           kvstore::ResultCode>>>& tries) mutable {
+                              .then([&] (const std::vector<folly::Try<PartCode>>& tries) mutable {
         for (const auto& t : tries) {
             auto ret = t.value();
             auto part = std::get<0>(ret);
@@ -35,8 +32,8 @@ void GetProcessor::process(const cpp2::GetRequest& req) {
 }
 
 folly::Future<std::pair<PartitionID, kvstore::ResultCode>>
-GetProcessor::asyncProcessPart(PartitionID part,
-                               const std::vector<std::string>& keys) {
+GetProcessor::asyncProcess(PartitionID part,
+                           const std::vector<std::string>& keys) {
     folly::Promise<std::pair<PartitionID, kvstore::ResultCode>> promise;
     auto future = promise.getFuture();
 

@@ -145,7 +145,7 @@ StorageServiceHandler::future_put(const cpp2::PutRequest& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::GetResponse>
+folly::Future<cpp2::GeneralResponse>
 StorageServiceHandler::future_get(const cpp2::GetRequest& req) {
     auto* processor = GetProcessor::instance(kvstore_, schemaMan_, getThreadManager());
     RETURN_FUTURE(processor);

@@ -290,12 +290,12 @@ struct PutRequest {
 
 struct RemoveRequest {
     1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") keys,
+    2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") parts,
 }
 
 struct RemoveRangeRequest {
     1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, list<common.Pair>>(cpp.template = "std::unordered_map") keys,
+    2: map<common.PartitionID, list<common.Pair>>(cpp.template = "std::unordered_map") parts,
 }
 
 struct GetRequest {
@@ -303,7 +303,17 @@ struct GetRequest {
     2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") parts,
 }
 
-struct GetResponse {
+struct PrefixRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, string>(cpp.template = "std::unordered_map") parts,
+}
+
+struct ScanRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, common.Pair>(cpp.template = "std::unordered_map") parts,
+}
+
+struct GeneralResponse {
     1: required ResponseCommon result,
     2: map<string, string>(cpp.template = "std::unordered_map") values,
 }
@@ -337,8 +347,8 @@ service StorageService {
     GetLeaderResp getLeaderPart(1: GetLeaderReq req);
 
     // Interfaces for key-value storage
-    ExecResponse  put(1: PutRequest req);
-    GetResponse   get(1: GetRequest req);
-    ExecResponse  remove(1: RemoveRequest req);
-    ExecResponse  removeRange(1: RemoveRangeRequest req);
+    ExecResponse      put(1: PutRequest req);
+    GeneralResponse   get(1: GetRequest req);
+    ExecResponse      remove(1: RemoveRequest req);
+    ExecResponse      removeRange(1: RemoveRangeRequest req);
 }

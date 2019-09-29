@@ -13,7 +13,7 @@
 namespace nebula {
 namespace storage {
 
-class GetProcessor : public BaseProcessor<cpp2::GetResponse> {
+class GetProcessor : public BaseProcessor<cpp2::GeneralResponse> {
 public:
     static GetProcessor* instance(kvstore::KVStore* kvstore,
                                   meta::SchemaManager* schemaMan,
@@ -26,11 +26,11 @@ public:
 protected:
     explicit GetProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan,
                           folly::Executor* executor = nullptr)
-            : BaseProcessor<cpp2::GetResponse>(kvstore, schemaMan), executor_(executor) {}
+            : BaseProcessor<cpp2::GeneralResponse>(kvstore, schemaMan), executor_(executor) {}
 
 private:
     folly::Future<std::pair<PartitionID, kvstore::ResultCode>>
-    asyncProcessPart(PartitionID partId, const std::vector<std::string>& keys);
+    asyncProcess(PartitionID part, const std::vector<std::string>& keys);
 
     folly::Executor *executor_ = nullptr;
     std::unordered_map<std::string, std::string> pairs_;

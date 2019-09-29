@@ -83,7 +83,7 @@ public:
     folly::Future<cpp2::ExecResponse>
     future_put(const cpp2::PutRequest& req) override;
 
-    folly::Future<cpp2::GetResponse>
+    folly::Future<cpp2::GeneralResponse>
     future_get(const cpp2::GetRequest& req) override;
 
 
