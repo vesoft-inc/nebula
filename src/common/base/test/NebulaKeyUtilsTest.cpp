@@ -29,6 +29,8 @@ TEST(NebulaKeyUtilsTest, SimpleTest) {
     ASSERT_EQ(dstId, NebulaKeyUtils::getDstId(edgeKey));
     ASSERT_EQ(type, NebulaKeyUtils::getEdgeType(edgeKey));
     ASSERT_EQ(rank, NebulaKeyUtils::getRank(edgeKey));
+    auto uuidKey = NebulaKeyUtils::uuidKey(partId, "nebula");
+    ASSERT_TRUE(NebulaKeyUtils::isUUIDKey(uuidKey));
 }
 
 }  // namespace nebula
