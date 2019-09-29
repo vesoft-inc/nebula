@@ -5,6 +5,6 @@ add_custom_target(
 )
 
 add_custom_target(
-    clean-import
+    clean-importer
     COMMAND "rm" "-fr" "target" "_build.log"
 )

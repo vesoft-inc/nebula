@@ -41,7 +41,7 @@ add_custom_target(
 )
 
 add_custom_target(
-    clean-native-java
+    clean-native-client
     COMMAND "rm" "-fr" "target" "_build" "_build.log"
 )
 

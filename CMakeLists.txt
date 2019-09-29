@@ -538,7 +538,7 @@ function(nebula_add_subdirectory dir_name)
 endfunction()
 
 if (NOT SKIP_JAVA_CLIENT)
-    set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-hbase clean-java-client clean-import)
+    set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-hbase clean-java-client clean-importer)
 else()
     set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-hbase)
 endif()

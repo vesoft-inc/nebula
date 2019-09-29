@@ -53,7 +53,8 @@ public class NativeClient {
     private static final int EDGE_RANKING = 8;
     private static final int EDGE_VERSION = 8;
     private static final int VERTEX_SIZE = PARTITION_ID + VERTEX_ID + TAG_ID + TAG_VERSION;
-    private static final int EDGE_SIZE = PARTITION_ID + VERTEX_ID + EDGE_TYPE + EDGE_RANKING + VERTEX_ID + EDGE_VERSION;
+    private static final int EDGE_SIZE = PARTITION_ID + VERTEX_ID + EDGE_TYPE + EDGE_RANKING
+                                            + VERTEX_ID + EDGE_VERSION;
 
     public static byte[] createEdgeKey(int partitionId, long srcId, int edgeType,
                                        long edgeRank, long dstId, long edgeVersion) {
