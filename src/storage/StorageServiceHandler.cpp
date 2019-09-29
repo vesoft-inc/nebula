@@ -15,9 +15,10 @@
 #include "storage/AdminProcessor.h"
 #include "storage/DeleteVertexProcessor.h"
 #include "storage/DeleteEdgesProcessor.h"
-#include "QueryEdgeKeysProcessor.h"
+#include "storage/QueryEdgeKeysProcessor.h"
 #include "storage/UpdateVertexProcessor.h"
 #include "storage/UpdateEdgeProcessor.h"
+#include "storage/GetUUIDProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -134,6 +135,12 @@ StorageServiceHandler::future_memberChange(const cpp2::MemberChangeReq& req) {
 folly::Future<cpp2::GetLeaderResp>
 StorageServiceHandler::future_getLeaderPart(const cpp2::GetLeaderReq& req) {
     auto* processor = GetLeaderProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GetUUIDResp>
+StorageServiceHandler::future_getUUID(const cpp2::GetUUIDReq& req) {
+    auto* processor = GetUUIDProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
