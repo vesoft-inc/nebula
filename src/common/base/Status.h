@@ -114,6 +114,7 @@ public:
     STATUS_GENERATOR(CfgErrorType);
     STATUS_GENERATOR(CfgImmutable);
     STATUS_GENERATOR(LeaderChanged);
+    STATUS_GENERATOR(Balanced);
 
 #undef STATUS_GENERATOR
 
@@ -147,6 +148,7 @@ public:
         kCfgErrorType           = 411,
         kCfgImmutable           = 412,
         kLeaderChanged          = 413,
+        kBalanced               = 414,
     };
 
     Code code() const {

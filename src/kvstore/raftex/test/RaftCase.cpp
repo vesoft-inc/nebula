@@ -204,7 +204,7 @@ TEST_F(FiveRaftTest, DISABLED_Figure8) {
 
         if (alive < quorum) {
             size_t idx = folly::Random::rand32(size_);
-            if (!copies_[idx]->isRunning_) {
+            if (!copies_[idx]->isRunning()) {
                 rebootOneCopy(services_, copies_, allHosts_, idx);
                 ++alive;
             }
@@ -213,7 +213,7 @@ TEST_F(FiveRaftTest, DISABLED_Figure8) {
 
     LOG(INFO) << "=====> Now let's reboot all copy and check consensus";
     for (int32_t i = 0; i < size_; i++) {
-        if (!copies_[i]->isRunning_) {
+        if (!copies_[i]->isRunning()) {
             rebootOneCopy(services_, copies_, allHosts_, i);
         }
     }
