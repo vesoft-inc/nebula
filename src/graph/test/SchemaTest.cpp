@@ -54,7 +54,8 @@ TEST_F(SchemaTest, metaCommunication) {
         client->execute(query, resp);
         std::vector<std::tuple<std::string, std::string, std::string,
                                int, std::string, std::string>> expected {
-            {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online", 0, "", ""},
+            {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online", 0,
+             "No valid partition", "No valid partition"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -667,7 +668,8 @@ TEST_F(SchemaTest, TTLtest) {
         client->execute(query, resp);
         std::vector<std::tuple<std::string, std::string, std::string,
                                int, std::string, std::string>> expected {
-            {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online", 0, "", ""},
+            {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online", 0,
+             "No valid partition", "No valid partition"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
