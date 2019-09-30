@@ -27,3 +27,10 @@ nebula_add_executable(
     OBJECTS ${PARSER_TEST_LIBS}
     LIBRARIES follybenchmark boost_regex
 )
+
+nebula_add_test(
+    NAME parser_fuzzer
+    SOURCES ParserFuzzer.cpp
+    OBJECTS ${PARSER_TEST_LIBS}
+    FUZZER ON
+)

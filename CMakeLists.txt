@@ -354,28 +354,41 @@ macro(nebula_add_test)
         nebula_test                 # prefix
         "DISABLED"                  # <options>
         "NAME"                      # <one_value_args>
-        "SOURCES;OBJECTS;LIBRARIES" # <multi_value_args>
+        "SOURCES;OBJECTS;LIBRARIES;FUZZER" # <multi_value_args>
         ${ARGN}
     )
 
-    nebula_add_executable(
-        NAME ${nebula_test_NAME}
-        SOURCES ${nebula_test_SOURCES}
-        OBJECTS ${nebula_test_OBJECTS}
-        LIBRARIES ${nebula_test_LIBRARIES}
-    )
-
-    if (NOT ${nebula_test_DISABLED})
-        string(REGEX REPLACE "${CMAKE_SOURCE_DIR}/src/(.*)/test" "\\1" test_group ${CMAKE_CURRENT_SOURCE_DIR})
-        add_test(NAME ${nebula_test_NAME} COMMAND ${nebula_test_NAME})
-        set_tests_properties(${nebula_test_NAME} PROPERTIES LABELS ${test_group})
-        # e.g. cmake -DNEBULA_ASAN_PRELOAD=/path/to/libasan.so
-        # or,  cmake -DNEBULA_ASAN_PRELOAD=`/path/to/gcc --print-file-name=libasan.so`
-        if (NEBULA_ASAN_PRELOAD)
-            set_property(
-                TEST ${nebula_test_NAME}
-                PROPERTY ENVIRONMENT LD_PRELOAD=${NEBULA_ASAN_PRELOAD}
+    if (${nebula_test_FUZZER})
+        #Currently only Clang supports fuzzy test
+        if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+            nebula_add_executable(
+                NAME ${nebula_test_NAME}
+                SOURCES ${nebula_test_SOURCES}
+                OBJECTS ${nebula_test_OBJECTS}
+                LIBRARIES ${nebula_test_LIBRARIES}
             )
+            set_target_properties(${nebula_test_NAME} PROPERTIES COMPILE_FLAGS "-g -fsanitize=fuzzer")
+            set_target_properties(${nebula_test_NAME} PROPERTIES LINK_FLAGS "-fsanitize=fuzzer")
+        endif()
+    else()
+        nebula_add_executable(
+            NAME ${nebula_test_NAME}
+            SOURCES ${nebula_test_SOURCES}
+            OBJECTS ${nebula_test_OBJECTS}
+            LIBRARIES ${nebula_test_LIBRARIES}
+        )
+        if (NOT ${nebula_test_DISABLED})
+            string(REGEX REPLACE "${CMAKE_SOURCE_DIR}/src/(.*)/test" "\\1" test_group ${CMAKE_CURRENT_SOURCE_DIR})
+            add_test(NAME ${nebula_test_NAME} COMMAND ${nebula_test_NAME})
+            set_tests_properties(${nebula_test_NAME} PROPERTIES LABELS ${test_group})
+            # e.g. cmake -DNEBULA_ASAN_PRELOAD=/path/to/libasan.so
+            # or,  cmake -DNEBULA_ASAN_PRELOAD=`/path/to/gcc --print-file-name=libasan.so`
+            if (NEBULA_ASAN_PRELOAD)
+                set_property(
+                    TEST ${nebula_test_NAME}
+                    PROPERTY ENVIRONMENT LD_PRELOAD=${NEBULA_ASAN_PRELOAD}
+                )
+            endif()
         endif()
     endif()
 endmacro()
