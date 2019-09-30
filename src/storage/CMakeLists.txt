@@ -14,6 +14,8 @@ nebula_add_library(
     QueryEdgeKeysProcessor.cpp
     UpdateVertexProcessor.cpp
     UpdateEdgeProcessor.cpp
+    PutProcessor.cpp
+    GetProcessor.cpp
 )
 
 nebula_add_library(

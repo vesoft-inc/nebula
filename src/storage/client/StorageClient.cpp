@@ -406,5 +406,53 @@ PartitionID StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
     return s;
 }
 
+folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>>
+StorageClient::put(GraphSpaceID space,
+                   std::vector<nebula::cpp2::Pair> values,
+                   folly::EventBase* evb) {
+    auto clusters = clusterIdsToHosts(space, values,
+                                      [] (const nebula::cpp2::Pair& v) {
+                                          return std::hash<std::string>{}(v.get_key());
+                                      });
+
+    std::unordered_map<HostAddr, cpp2::PutRequest> requests;
+    for (auto& c : clusters) {
+        auto& host = c.first;
+        auto& req = requests[host];
+        req.set_space_id(space);
+        req.set_parts(std::move(c.second));
+    }
+
+    return collectResponse(evb, std::move(requests),
+                           [](cpp2::StorageServiceAsyncClient* client,
+                              const cpp2::PutRequest& r) {
+                                  return client->future_put(r);
+                              });
+}
+
+folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>>
+StorageClient::get(GraphSpaceID space,
+                   const std::vector<std::string>& keys,
+                   folly::EventBase* evb) {
+    auto clusters = clusterIdsToHosts(space, keys,
+                                      [] (const std::string& v) {
+                                          return std::hash<std::string>{}(v);
+                                      });
+
+    std::unordered_map<HostAddr, cpp2::GetRequest> requests;
+    for (auto& c : clusters) {
+        auto& host = c.first;
+        auto& req = requests[host];
+        req.set_space_id(space);
+        req.set_parts(std::move(c.second));
+    }
+
+    return collectResponse(evb, std::move(requests),
+                           [](cpp2::StorageServiceAsyncClient* client,
+                              const cpp2::GetRequest& r) {
+                                  return client->future_get(r);
+                              });
+}
+
 }   // namespace storage
 }   // namespace nebula

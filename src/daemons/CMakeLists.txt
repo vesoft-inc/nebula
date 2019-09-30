@@ -121,7 +121,6 @@ nebula_add_executable(
         wangle
 )
 
-
 install(
     TARGETS
         nebula-graphd

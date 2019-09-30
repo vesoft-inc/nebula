@@ -702,7 +702,7 @@ MetaClient::multiPut(std::string segment,
         return Status::Error("arguments invalid!");
     }
     cpp2::MultiPutReq req;
-    std::vector<cpp2::Pair> data;
+    std::vector<nebula::cpp2::Pair> data;
     for (auto& element : pairs) {
         data.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                           std::move(element.first), std::move(element.second));
