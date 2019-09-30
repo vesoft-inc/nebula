@@ -370,6 +370,35 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateEdge
 }
 
 
+folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(
+        GraphSpaceID space,
+        const std::string& name,
+        folly::EventBase* evb) {
+    std::pair<HostAddr, cpp2::GetUUIDReq> request;
+    std::hash<std::string> hashFunc;
+    auto hashValue = hashFunc(name);
+    PartitionID part = partId(space, hashValue);
+    auto partMeta = getPartMeta(space, part);
+    CHECK_GT(partMeta.peers_.size(), 0U);
+    const auto& leader = this->leader(partMeta);
+    request.first = leader;
+
+    cpp2::GetUUIDReq req;
+    req.set_space_id(space);
+    req.set_part_id(part);
+    req.set_name(name);
+    request.second = std::move(req);
+
+    return getResponse(
+        evb,
+        std::move(request),
+        [] (cpp2::StorageServiceAsyncClient* client,
+            const cpp2::GetUUIDReq& r) {
+            return client->future_getUUID(r);
+    });
+}
+
+
 PartitionID StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
     auto parts = partsNum(spaceId);
     auto s = ID_HASH(id, parts);
