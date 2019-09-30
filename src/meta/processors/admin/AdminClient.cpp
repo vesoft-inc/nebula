@@ -322,8 +322,9 @@ void AdminClient::getResponse(
                             LOG(INFO) << "The leader is in election"
                                       << ", retry " << retry
                                       << ", limit " << retryLimit;
+                            index = ++index % hosts.size();
                             getResponse(std::move(hosts),
-                                    (index + 1) % hosts.size(),
+                                    index,
                                     std::move(req),
                                     std::move(remoteFunc),
                                     retry + 1,
@@ -369,8 +370,9 @@ void AdminClient::getResponse(
                                   << " from " << hosts[index]
                                   << ", retry " << retry
                                   << ", limit " << retryLimit;
+                        index = ++index % hosts.size();
                         getResponse(std::move(hosts),
-                                    (index + 1) % hosts.size(),
+                                    index,
                                     std::move(req),
                                     std::move(remoteFunc),
                                     retry + 1,
