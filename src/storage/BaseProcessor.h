@@ -24,6 +24,8 @@
 namespace nebula {
 namespace storage {
 
+using PartCode = std::pair<PartitionID, kvstore::ResultCode>;
+
 template<typename RESP>
 class BaseProcessor {
 public:
