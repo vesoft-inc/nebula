@@ -100,8 +100,7 @@ TEST_F(ThreeRaftTest, ConsensusWhenFollowDisconnect) {
     LOG(INFO) << "<===== Done ConsensusWhenFollowDisconnect test";
 }
 
-// this ut will cause none was elected when quorum arises, see issue #685
-TEST_F(ThreeRaftTest, DISABLED_LeaderCrashRebootWithLogs) {
+TEST_F(ThreeRaftTest, LeaderCrashRebootWithLogs) {
     LOG(INFO) << "=====> Start LeaderNetworkFailure test";
 
     std::vector<std::string> msgs;
@@ -160,7 +159,7 @@ TEST_F(ThreeRaftTest, Persistance) {
         killOneCopy(services_, copies_, leader_, idx);
         rebootOneCopy(services_, copies_, allHosts_, idx);
         if (waitForNewLeader) {
-            waitUntilLeaderElected(copies_, leader_);
+            waitUntilAllHasLeader(copies_);
         }
     }
     sleep(FLAGS_raft_heartbeat_interval_secs);
