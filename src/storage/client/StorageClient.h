@@ -85,6 +85,16 @@ public:
                   meta::MetaClient *client);
     virtual ~StorageClient();
 
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> put(
+      GraphSpaceID space,
+      std::vector<nebula::cpp2::Pair> values,
+      folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> get(
+      GraphSpaceID space,
+      const std::vector<std::string>& keys,
+      folly::EventBase* evb = nullptr);
+
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addVertices(
         GraphSpaceID space,
         std::vector<storage::cpp2::Vertex> vertices,
