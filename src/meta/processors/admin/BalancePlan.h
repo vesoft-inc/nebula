@@ -39,6 +39,14 @@ public:
         , kv_(kv)
         , client_(client) {}
 
+    BalancePlan(const BalancePlan& plan)
+        : id_(plan.id_)
+        , kv_(plan.kv_)
+        , client_(plan.client_)
+        , tasks_(plan.tasks_)
+        , finishedTaskNum_(plan.finishedTaskNum_)
+        , status_(plan.status_) {}
+
     void addTask(BalanceTask task) {
         tasks_.emplace_back(std::move(task));
     }
@@ -53,14 +61,22 @@ public:
      * */
     void rollback() {}
 
+    Status status() {
+        return status_;
+    }
+
     bool saveInStore(bool onlyPlan = false);
 
     BalanceID id() const {
         return id_;
     }
 
+    const std::vector<BalanceTask>& tasks() const {
+        return tasks_;
+    }
+
 private:
-    bool recovery();
+    bool recovery(bool resume = true);
 
     std::string planKey() const;
 

@@ -64,11 +64,22 @@ public:
                                   const HostAddr& host,
                                   bool asLearner);
 
-    folly::Future<Status> addLearner(GraphSpaceID spaceId, PartitionID partId);
+    folly::Future<Status> addLearner(GraphSpaceID spaceId,
+                                     PartitionID partId,
+                                     const HostAddr& learner);
 
-    folly::Future<Status> waitingForCatchUpData(GraphSpaceID spaceId, PartitionID partId);
+    folly::Future<Status> waitingForCatchUpData(GraphSpaceID spaceId,
+                                                PartitionID partId,
+                                                const HostAddr& target);
 
-    folly::Future<Status> memberChange(GraphSpaceID spaceId, PartitionID partId);
+    /**
+     * Add/Remove one peer for raft group (spaceId, partId).
+     * "added" should be true if we want to add one peer, otherwise it is false.
+     * */
+    folly::Future<Status> memberChange(GraphSpaceID spaceId,
+                                       PartitionID partId,
+                                       const HostAddr& peer,
+                                       bool added);
 
     folly::Future<Status> updateMeta(GraphSpaceID spaceId,
                                      PartitionID partId,
@@ -105,7 +116,7 @@ private:
 
     Status handleResponse(const storage::cpp2::AdminExecResp& resp);
 
-    nebula::cpp2::HostAddr to(const HostAddr& addr);
+    nebula::cpp2::HostAddr toThriftHost(const HostAddr& addr);
 
     StatusOr<std::vector<HostAddr>> getPeers(GraphSpaceID spaceId, PartitionID partId);
 

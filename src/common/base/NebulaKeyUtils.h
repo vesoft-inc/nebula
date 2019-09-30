@@ -55,6 +55,8 @@ public:
 
     static std::string systemPartKey(PartitionID partId);
 
+    static std::string uuidKey(PartitionID partId, const folly::StringPiece& name);
+
     /**
      * Prefix for
      * */
@@ -167,6 +169,11 @@ public:
         constexpr uint32_t typeMask = 0x000000FF;
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
         return NebulaKeyType::kIndex == (readInt<int32_t>(key.data(), len) & typeMask);
+    }
+
+    static bool isUUIDKey(const folly::StringPiece& key) {
+        constexpr uint32_t typeMask = 0x000000FF;
+        return NebulaKeyType::kUUID == (readInt<int32_t>(key.data(), sizeof(int32_t)) & typeMask);
     }
 
     static folly::StringPiece keyWithNoVersion(const folly::StringPiece& rawKey) {

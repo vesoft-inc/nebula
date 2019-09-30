@@ -16,6 +16,7 @@
 
 DECLARE_int32(load_data_interval_secs);
 DECLARE_string(pid_file);
+DECLARE_int32(ws_storage_http_port);
 
 namespace nebula {
 namespace meta {
@@ -25,7 +26,7 @@ std::unique_ptr<hdfs::HdfsHelper> helper = std::make_unique<meta::MockHdfsOKHelp
 class MetaHttpDownloadHandlerTestEnv : public ::testing::Environment {
 public:
     void SetUp() override {
-        FLAGS_ws_http_port = 12000;
+        FLAGS_ws_http_port = 0;
         FLAGS_ws_h2_port = 0;
         VLOG(1) << "Starting web service...";
 
@@ -33,6 +34,14 @@ public:
         kv_ = TestUtils::initKV(rootPath_->path());
         TestUtils::createSomeHosts(kv_.get());
         TestUtils::assembleSpace(kv_.get(), 1, 2);
+
+        // Because we reuse the kvstore for storage handler, let's add part manually.
+        auto* partMan = static_cast<kvstore::MemPartManager*>(kv_->partManager());
+        partMan->addPart(1, 1);
+        partMan->addPart(1, 2);
+
+        // wait for the leader election
+        sleep(3);
 
         pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
         pool_->start(3);
@@ -49,6 +58,7 @@ public:
             return handler;
         });
         auto status = WebService::start();
+        FLAGS_ws_storage_http_port = FLAGS_ws_http_port;
         ASSERT_TRUE(status.ok()) << status;
     }
 

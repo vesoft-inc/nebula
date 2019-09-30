@@ -32,9 +32,10 @@ enum ErrorCode {
     E_CONFLICT         = -29,
     E_WRONGCLUSTER     = -30,
 
-    // KV Failure
     E_STORE_FAILURE          = -31,
     E_STORE_SEGMENT_ILLEGAL  = -32,
+    E_BAD_BALANCE_PLAN     = -33,
+    E_BALANCED             = -34,
 
     E_INVALID_PASSWORD       = -41,
     E_INPROPER_ROLE          = -42,
@@ -75,11 +76,6 @@ union ID {
 struct IdName {
     1: ID     id,
     2: string name,
-}
-
-struct Pair {
-    1: string key,
-    2: string value,
 }
 
 struct SpaceProperties {
@@ -301,7 +297,7 @@ struct MultiPutReq {
     // segment is used to avoid conflict with system data.
     // it should be comprised of numbers and letters.
     1: string     segment,
-    2: list<Pair> pairs,
+    2: list<common.Pair> pairs,
 }
 
 struct GetReq {
@@ -432,11 +428,25 @@ struct BalanceReq {
     2: optional i64 id,
 }
 
+enum TaskResult {
+    SUCCEEDED  = 0x00,
+    FAILED = 0x01,
+    IN_PROGRESS = 0x02,
+    INVALID = 0x03,
+} (cpp.enum_strict)
+
+
+struct BalanceTask {
+    1: string id,
+    2: TaskResult result,
+}
+
 struct BalanceResp {
     1: ErrorCode        code,
     2: i64              id,
     // Valid if code equals E_LEADER_CHANGED.
     3: common.HostAddr  leader,
+    4: list<BalanceTask> tasks,
 }
 
 struct LeaderBalanceReq {

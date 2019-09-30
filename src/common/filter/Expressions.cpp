@@ -49,6 +49,8 @@ std::unique_ptr<Expression> Expression::makeExpr(uint8_t kind) {
             return std::make_unique<UnaryExpression>();
         case kTypeCasting:
             return std::make_unique<TypeCastingExpression>();
+        case kUUID:
+            return std::make_unique<UUIDExpression>();
         case kArithmetic:
             return std::make_unique<ArithmeticExpression>();
         case kRelational:
@@ -619,6 +621,24 @@ const char* FunctionCallExpression::decode(const char *pos, const char *end) {
     return pos;
 }
 
+std::string UUIDExpression::toString() const {
+    return folly::stringPrintf("uuid(%s)", field_->c_str());
+}
+
+OptVariantType UUIDExpression::eval() const {
+     auto client = context_->storageClient();
+     auto space = context_->space();
+     auto uuidResult = client->getUUID(space, *field_).get();
+     if (!uuidResult.ok() ||
+         !uuidResult.value().get_result().get_failed_codes().empty()) {
+         return OptVariantType(Status::Error("Get UUID Failed"));
+     }
+     return uuidResult.value().get_id();
+}
+
+Status UUIDExpression::prepare() {
+    return Status::OK();
+}
 
 std::string UnaryExpression::toString() const {
     std::string buf;
@@ -743,8 +763,7 @@ Status TypeCastingExpression::prepare() {
 }
 
 
-void TypeCastingExpression::encode(Cord &cord) const {
-    UNUSED(cord);
+void TypeCastingExpression::encode(Cord &) const {
 }
 
 

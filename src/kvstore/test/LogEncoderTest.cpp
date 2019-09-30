@@ -121,6 +121,12 @@ TEST(LogEncoderTest, KVTest) {
     ASSERT_EQ("KV_val", decoded.second);
 }
 
+TEST(LogEncoderTest, HostTest) {
+    auto encoded = encodeHost(OP_ADD_LEARNER, HostAddr(1, 1));
+    auto decoded = decodeHost(OP_ADD_LEARNER, encoded);
+    ASSERT_EQ(HostAddr(1, 1), decoded);
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 

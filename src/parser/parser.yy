@@ -98,7 +98,7 @@ class GraphScanner;
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
-%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST
+%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_UUID
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
@@ -107,7 +107,8 @@ class GraphScanner;
 %token KW_ORDER KW_ASC
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
 %token KW_DISTINCT KW_ALL KW_OF
-%token KW_BALANCE KW_LEADER
+%token KW_BALANCE KW_LEADER KW_DATA
+
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND XOR LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
@@ -132,6 +133,7 @@ class GraphScanner;
 %type <expr> vid_ref_expression
 %type <expr> vid
 %type <expr> function_call_expression
+%type <expr> uuid_expression
 %type <argument_list> argument_list
 %type <type> type_spec
 %type <step_clause> step_clause
@@ -330,6 +332,12 @@ function_call_expression
     }
     ;
 
+uuid_expression
+    : KW_UUID L_PAREN STRING R_PAREN {
+        $$ = new UUIDExpression($3);
+    }
+    ;
+
 argument_list
     : %empty {
         $$ = nullptr;
@@ -515,6 +523,9 @@ vid
         $$ = new PrimaryExpression($1);
     }
     | function_call_expression {
+        $$ = $1;
+    }
+    | uuid_expression {
         $$ = $1;
     }
     ;
@@ -1564,6 +1575,12 @@ set_config_sentence
 balance_sentence
     : KW_BALANCE KW_LEADER {
         $$ = new BalanceSentence(BalanceSentence::SubType::kLeader);
+    }
+    | KW_BALANCE KW_DATA {
+        $$ = new BalanceSentence(BalanceSentence::SubType::kData);
+    }
+    | KW_BALANCE KW_DATA INTEGER {
+        $$ = new BalanceSentence($3);
     }
     ;
 
