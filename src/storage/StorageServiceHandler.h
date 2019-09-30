@@ -82,6 +82,15 @@ public:
     folly::Future<cpp2::GetLeaderResp>
     future_getLeaderPart(const cpp2::GetLeaderReq& req) override;
 
+    folly::Future<cpp2::ExecResponse>
+    future_put(const cpp2::PutRequest& req) override;
+
+    folly::Future<cpp2::GeneralResponse>
+    future_get(const cpp2::GetRequest& req) override;
+
+    folly::Future<cpp2::GetUUIDResp>
+    future_getUUID(const cpp2::GetUUIDReq& req) override;
+
 private:
     kvstore::KVStore* kvstore_ = nullptr;
     meta::SchemaManager* schemaMan_ = nullptr;

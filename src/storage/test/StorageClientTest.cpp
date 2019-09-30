@@ -327,6 +327,24 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             }
         }
     }
+
+    {
+        // get not existed uuid
+        std::vector<VertexID> vIds;
+        for (int i = 0; i < 10; i++) {
+            auto status = client->getUUID(spaceId, std::to_string(i)).get();
+            ASSERT_TRUE(status.ok());
+            auto resp = status.value();
+            vIds.emplace_back(resp.get_id());
+        }
+
+        for (int i = 0; i < 10; i++) {
+            auto status = client->getUUID(spaceId, std::to_string(i)).get();
+            ASSERT_TRUE(status.ok());
+            auto resp = status.value();
+            ASSERT_EQ(resp.get_id(), vIds[i]);
+        }
+    }
     LOG(INFO) << "Stop meta client";
     mClient->stop();
     LOG(INFO) << "Stop data server...";
