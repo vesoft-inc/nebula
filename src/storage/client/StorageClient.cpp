@@ -432,7 +432,7 @@ StorageClient::put(GraphSpaceID space,
 
 folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>>
 StorageClient::get(GraphSpaceID space,
-                   const std::vector<std::string>& keys,
+                   std::vector<std::string> keys,
                    folly::EventBase* evb) {
     auto clusters = clusterIdsToHosts(space, keys,
                                       [] (const std::string& v) {

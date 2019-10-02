@@ -88,6 +88,18 @@ public:
     folly::Future<cpp2::GeneralResponse>
     future_get(const cpp2::GetRequest& req) override;
 
+    folly::Future<cpp2::ExecResponse>
+    future_remove(const cpp2::RemoveRequest& req) override;
+
+    folly::Future<cpp2::ExecResponse>
+    future_removeRange(const cpp2::RemoveRangeRequest& req) override;
+
+    folly::Future<cpp2::GeneralResponse>
+    future_prefix(const cpp2::PrefixRequest& req) override;
+
+    folly::Future<cpp2::GeneralResponse>
+    future_scan(const cpp2::ScanRequest& req) override;
+
     folly::Future<cpp2::GetUUIDResp>
     future_getUUID(const cpp2::GetUUIDReq& req) override;
 

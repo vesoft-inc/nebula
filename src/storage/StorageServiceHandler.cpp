@@ -20,6 +20,10 @@
 #include "storage/UpdateEdgeProcessor.h"
 #include "storage/PutProcessor.h"
 #include "storage/GetProcessor.h"
+#include "storage/RemoveProcessor.h"
+#include "storage/RemoveRangeProcessor.h"
+#include "storage/PrefixProcessor.h"
+#include "storage/ScanProcessor.h"
 #include "storage/GetUUIDProcessor.h"
 
 #define RETURN_FUTURE(processor) \
@@ -149,6 +153,30 @@ StorageServiceHandler::future_put(const cpp2::PutRequest& req) {
 folly::Future<cpp2::GeneralResponse>
 StorageServiceHandler::future_get(const cpp2::GetRequest& req) {
     auto* processor = GetProcessor::instance(kvstore_, schemaMan_, getThreadManager());
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResponse>
+StorageServiceHandler::future_remove(const cpp2::RemoveRequest& req) {
+    auto* processor = RemoveProcessor::instance(kvstore_, schemaMan_, getThreadManager());
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResponse>
+StorageServiceHandler::future_removeRange(const cpp2::RemoveRangeRequest& req) {
+    auto* processor = RemoveRangeProcessor::instance(kvstore_, schemaMan_, getThreadManager());
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GeneralResponse>
+StorageServiceHandler::future_prefix(const cpp2::PrefixRequest& req) {
+    auto* processor = PrefixProcessor::instance(kvstore_, schemaMan_, getThreadManager());
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GeneralResponse>
+StorageServiceHandler::future_scan(const cpp2::ScanRequest& req) {
+    auto* processor = ScanProcessor::instance(kvstore_, schemaMan_, getThreadManager());
     RETURN_FUTURE(processor);
 }
 

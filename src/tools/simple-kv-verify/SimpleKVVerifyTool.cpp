@@ -54,7 +54,7 @@ public:
         return EXIT_SUCCESS;
     }
 
-    void runInsert(std::unordered_map<std::string, std::string>& data) {
+    void runPut(std::unordered_map<std::string, std::string>& data) {
         std::vector<nebula::cpp2::Pair> pairs;
         for (int32_t i = 0; i < 1000; i ++) {
             auto key = std::to_string(folly::Random::rand32(1000000000));
@@ -83,7 +83,7 @@ public:
     }
 
 
-    void runCheck(std::unordered_map<std::string, std::string>& pairs) {
+    void runGet(std::unordered_map<std::string, std::string>& pairs) {
         std::vector<std::string> keys;
         for (auto& pair : pairs) {
             keys.emplace_back(pair.first);
@@ -134,8 +134,8 @@ int main(int argc, char *argv[]) {
 
     for (int32_t i = 0; i < FLAGS_testing_times; i++) {
         std::unordered_map<std::string, std::string> data;
-        checker.runInsert(data);
-        checker.runCheck(data);
+        checker.runPut(data);
+        checker.runGet(data);
     }
     return EXIT_SUCCESS;
 }

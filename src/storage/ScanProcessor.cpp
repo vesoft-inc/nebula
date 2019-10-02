@@ -4,17 +4,17 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "storage/GetProcessor.h"
-#include "base/NebulaKeyUtils.h"
+#include "storage/ScanProcessor.h"
 
 namespace nebula {
 namespace storage {
 
-void GetProcessor::process(const cpp2::GetRequest& req) {
+void ScanProcessor::process(const cpp2::ScanRequest& req) {
+    CHECK_NOTNULL(kvstore_);
     space_ = req.get_space_id();
-    std::vector<folly::Future<std::pair<PartitionID, kvstore::ResultCode>>> results;
+    std::vector<folly::Future<PartCode>> results;
     for (auto& part : req.get_parts()) {
-        results.emplace_back(asyncProcess(part.first, part.second));
+        results.emplace_back(asyncProcess(part.first, part.second.start, part.second.end));
     }
 
     folly::collectAll(results).via(executor_)
@@ -25,25 +25,22 @@ void GetProcessor::process(const cpp2::GetRequest& req) {
             auto resultCode = std::get<1>(ret);
             this->pushResultCode(this->to(resultCode), part);
         }
-
-        resp_.set_values(std::move(pairs_));
         this->onFinished();
     });
 }
 
 folly::Future<PartCode>
-GetProcessor::asyncProcess(PartitionID part,
-                           const std::vector<std::string>& keys) {
-    folly::Promise<std::pair<PartitionID, kvstore::ResultCode>> promise;
+ScanProcessor::asyncProcess(PartitionID part, const std::string& start, const std::string& end) {
+    folly::Promise<PartCode> promise;
     auto future = promise.getFuture();
-
-    executor_->add([this, p = std::move(promise), part, keys] () mutable {
-        std::vector<std::string> values;
-        auto ret = this->kvstore_->multiGet(space_, part, keys, &values);
+    executor_->add([this, p = std::move(promise), part, start, end] () mutable {
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = this->kvstore_->range(space_, part, start, end, &iter);
         if (ret == kvstore::ResultCode::SUCCEEDED) {
             std::lock_guard<std::mutex> lg(this->lock_);
-            for (int32_t i = 0; i < static_cast<int32_t>(keys.size()); i++) {
-                pairs_.emplace(keys[i], values[i]);
+            while (iter->valid()) {
+                pairs_.emplace(iter->key(), iter->val());
+                iter->next();
             }
         }
         p.setValue(std::make_pair(part, ret));

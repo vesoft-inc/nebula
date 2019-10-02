@@ -89,4 +89,9 @@ struct Pair {
     2: string value,
 }
 
+struct Range {
+    1: string start,
+    2: string end,
+}
+
 const ValueType kInvalidValueType = {"type" : UNKNOWN}

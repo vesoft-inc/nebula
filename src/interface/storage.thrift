@@ -305,7 +305,7 @@ struct RemoveRequest {
 
 struct RemoveRangeRequest {
     1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, list<common.Pair>>(cpp.template = "std::unordered_map") parts,
+    2: map<common.PartitionID, common.Range>(cpp.template = "std::unordered_map") parts,
 }
 
 struct GetRequest {
@@ -320,7 +320,7 @@ struct PrefixRequest {
 
 struct ScanRequest {
     1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, common.Pair>(cpp.template = "std::unordered_map") parts,
+    2: map<common.PartitionID, common.Range>(cpp.template = "std::unordered_map") parts,
 }
 
 struct GeneralResponse {
@@ -372,6 +372,8 @@ service StorageService {
     GeneralResponse   get(1: GetRequest req);
     ExecResponse      remove(1: RemoveRequest req);
     ExecResponse      removeRange(1: RemoveRangeRequest req);
+    GeneralResponse   prefix(1: PrefixRequest req);
+    GeneralResponse   scan(1: ScanRequest req);
 
     GetUUIDResp getUUID(1: GetUUIDReq req);
 }

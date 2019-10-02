@@ -16,6 +16,10 @@ nebula_add_library(
     UpdateEdgeProcessor.cpp
     PutProcessor.cpp
     GetProcessor.cpp
+    RemoveProcessor.cpp
+    RemoveRangeProcessor.cpp
+    PrefixProcessor.cpp
+    ScanProcessor.cpp
 )
 
 nebula_add_library(

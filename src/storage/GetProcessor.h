@@ -23,18 +23,18 @@ public:
 
     void process(const cpp2::GetRequest& req);
 
-protected:
+private:
     explicit GetProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan,
                           folly::Executor* executor = nullptr)
             : BaseProcessor<cpp2::GeneralResponse>(kvstore, schemaMan), executor_(executor) {}
 
 private:
-    folly::Future<std::pair<PartitionID, kvstore::ResultCode>>
+    folly::Future<PartCode>
     asyncProcess(PartitionID part, const std::vector<std::string>& keys);
 
-    folly::Executor *executor_ = nullptr;
-    std::unordered_map<std::string, std::string> pairs_;
     GraphSpaceID  space_;
+    folly::Executor *executor_{nullptr};
+    std::unordered_map<std::string, std::string> pairs_;
 };
 
 }  // namespace storage

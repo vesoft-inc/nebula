@@ -92,7 +92,29 @@ public:
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> get(
       GraphSpaceID space,
-      const std::vector<std::string>& keys,
+      std::vector<std::string> keys,
+      folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> remove(
+      GraphSpaceID space,
+      std::vector<std::string> keys,
+      folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> removeRange(
+      GraphSpaceID space,
+      std::string start,
+      std::string end,
+      folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> prefix(
+      GraphSpaceID space,
+      std::vector<std::string> keys,
+      folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> scan(
+      GraphSpaceID space,
+      std::string start,
+      std::string end,
       folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addVertices(
