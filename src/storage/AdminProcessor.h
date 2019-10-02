@@ -33,7 +33,8 @@ public:
         auto partId = req.get_part_id();
         auto ret = kvstore_->part(spaceId, partId);
         if (!ok(ret)) {
-            onFinished(to(error(ret)));
+            this->pushResultCode(to(error(ret)), partId);
+            onFinished();
             return;
         }
         auto part = nebula::value(ret);
@@ -45,9 +46,9 @@ public:
             CHECK(ok(leaderRet));
             if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
                 auto leader = value(std::move(leaderRet));
-                resp_.set_leader(toThriftHost(leader));
+                this->pushResultCode(to(code), partId, leader);
             }
-            onFinished(to(code));
+            onFinished();
         });
     }
 
@@ -63,26 +64,30 @@ public:
     }
 
     void process(const cpp2::AddPartReq& req) {
+        auto spaceId = req.get_space_id();
+        auto partId = req.get_part_id();
         if (FLAGS_store_type != "nebula") {
-            onFinished(cpp2::ErrorCode::E_INVALID_STORE);
+            this->pushResultCode(cpp2::ErrorCode::E_INVALID_STORE, partId);
+            onFinished();
             return;
         }
 
         LOG(INFO) << "Receive add part for space "
-                  << req.get_space_id() << ", part " << req.get_part_id();
+                  << req.get_space_id() << ", part " << partId;
         auto* store = static_cast<kvstore::NebulaStore*>(kvstore_);
-        auto ret = store->space(req.get_space_id());
+        auto ret = store->space(spaceId);
         if (!nebula::ok(ret) && nebula::error(ret) == kvstore::ResultCode::ERR_SPACE_NOT_FOUND) {
-            LOG(INFO) << "Space " << req.get_space_id() << " not exist, create it!";
-            store->addSpace(req.get_space_id());
+            LOG(INFO) << "Space " << spaceId << " not exist, create it!";
+            store->addSpace(spaceId);
         }
         auto st = mClient_->refreshCache();
         if (!st.ok()) {
-            onFinished(cpp2::ErrorCode::E_LOAD_META_FAILED);
+            this->pushResultCode(cpp2::ErrorCode::E_LOAD_META_FAILED, partId);
+            onFinished();
             return;
         }
-        store->addPart(req.get_space_id(), req.get_part_id(), req.get_as_learner());
-        onFinished(cpp2::ErrorCode::SUCCEEDED);
+        store->addPart(spaceId, partId, req.get_as_learner());
+        onFinished();
     }
 
 private:
@@ -101,13 +106,16 @@ public:
     }
 
     void process(const cpp2::RemovePartReq& req) {
+        auto spaceId = req.get_space_id();
+        auto partId = req.get_part_id();
         if (FLAGS_store_type != "nebula") {
-            onFinished(cpp2::ErrorCode::E_INVALID_STORE);
+            this->pushResultCode(cpp2::ErrorCode::E_INVALID_STORE, partId);
+            onFinished();
             return;
         }
         auto* store = static_cast<kvstore::NebulaStore*>(kvstore_);
-        store->removePart(req.get_space_id(), req.get_part_id());
-        onFinished(cpp2::ErrorCode::SUCCEEDED);
+        store->removePart(spaceId, partId);
+        onFinished();
     }
 
 private:
@@ -130,7 +138,8 @@ public:
                   << ", add/remove " << (req.get_add() ? "add" : "remove");
         auto ret = kvstore_->part(spaceId, partId);
         if (!ok(ret)) {
-            onFinished(to(error(ret)));
+            this->pushResultCode(to(error(ret)), partId);
+            onFinished();
             return;
         }
         auto part = nebula::value(ret);
@@ -141,9 +150,9 @@ public:
             CHECK(ok(leaderRet));
             if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
                 auto leader = value(std::move(leaderRet));
-                resp_.set_leader(toThriftHost(leader));
+                this->pushResultCode(to(code), partId, leader);
             }
-            onFinished(to(code));
+            onFinished();
         };
         if (req.get_add()) {
             LOG(INFO) << "Add peer " << peer;
@@ -172,7 +181,8 @@ public:
                   << spaceId << ", part " << partId;
         auto ret = kvstore_->part(spaceId, partId);
         if (!ok(ret)) {
-            onFinished(to(error(ret)));
+            this->pushResultCode(to(error(ret)), partId);
+            onFinished();
             return;
         }
         auto part = nebula::value(ret);
@@ -183,9 +193,9 @@ public:
             CHECK(ok(leaderRet));
             if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
                 auto leader = value(std::move(leaderRet));
-                resp_.set_leader(toThriftHost(leader));
+                this->pushResultCode(to(code), partId, leader);
             }
-            onFinished(to(code));
+            onFinished();
         });
     }
 
@@ -210,7 +220,8 @@ public:
                   << spaceId << ", part " << partId;
         auto ret = kvstore_->part(spaceId, partId);
         if (!ok(ret)) {
-            onFinished(to(error(ret)));
+            this->pushResultCode(to(error(ret)), partId);
+            onFinished();
             return;
         }
         auto part = nebula::value(ret);
@@ -225,17 +236,18 @@ public:
                 auto res = part->isCatchedUp(peer);
                 switch (res) {
                     case raftex::AppendLogResult::SUCCEEDED:
-                        onFinished(cpp2::ErrorCode::SUCCEEDED);
+                        onFinished();
                         return;
                     case raftex::AppendLogResult::E_INVALID_PEER:
-                        onFinished(cpp2::ErrorCode::E_INVALID_PEER);
+                        this->pushResultCode(cpp2::ErrorCode::E_INVALID_PEER, partId);
+                        onFinished();
                         return;
                     case raftex::AppendLogResult::E_NOT_A_LEADER: {
                         auto leaderRet = kvstore_->partLeader(spaceId, partId);
                         CHECK(ok(leaderRet));
                         auto leader = value(std::move(leaderRet));
-                        resp_.set_leader(toThriftHost(leader));
-                        onFinished(cpp2::ErrorCode::E_LEADER_CHANGED);
+                        this->pushResultCode(cpp2::ErrorCode::E_LEADER_CHANGED, partId, leader);
+                        onFinished();
                         return;
                     }
                     case raftex::AppendLogResult::E_SENDING_SNAPSHOT:
@@ -247,7 +259,8 @@ public:
                 }
                 sleep(FLAGS_waiting_catch_up_interval_in_secs);
             }
-            onFinished(cpp2::ErrorCode::E_RETRY_EXHAUSTED);
+            this->pushResultCode(cpp2::ErrorCode::E_RETRY_EXHAUSTED, partId);
+            onFinished();
         });
     }
 

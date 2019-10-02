@@ -306,7 +306,7 @@ void AdminClient::getResponse(
                               << ", limit " << retryLimit;
                     index = ++index % hosts.size();
                     getResponse(std::move(hosts),
-                                (index + 1) % hosts.size(),
+                                index,
                                 std::move(req),
                                 remoteFunc,
                                 retry + 1,
@@ -327,7 +327,11 @@ void AdminClient::getResponse(
             switch (resp.get_code()) {
                 case storage::cpp2::ErrorCode::E_LEADER_CHANGED: {
                     if (retry < retryLimit) {
-                        HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
+                        HostAddr leader(0, 0);
+                        if (resp.get_leader() != nullptr) {
+                            leader = HostAddr(resp.get_leader()->get_ip(),
+                                              resp.get_leader()->get_port());
+                        }
                         if (leader == HostAddr(0, 0)) {
                             usleep(1000 * 50);
                             LOG(INFO) << "The leader is in election"
@@ -383,7 +387,7 @@ void AdminClient::getResponse(
                                   << ", limit " << retryLimit;
                         index = ++index % hosts.size();
                         getResponse(std::move(hosts),
-                                    (index + 1) % hosts.size(),
+                                    index,
                                     std::move(req),
                                     std::move(remoteFunc),
                                     retry + 1,

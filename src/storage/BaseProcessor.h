@@ -61,14 +61,6 @@ protected:
         delete this;
     }
 
-    // This method will be used for single part request processor.
-    // Currently, it is used in AdminProcessor
-    void onFinished(cpp2::ErrorCode code) {
-        resp_.set_code(code);
-        promise_.setValue(std::move(resp_));
-        delete this;
-    }
-
     void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV> data);
 
     void doRemove(GraphSpaceID spaceId, PartitionID partId, std::vector<std::string> keys);
