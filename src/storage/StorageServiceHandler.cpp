@@ -15,7 +15,12 @@
 #include "storage/AdminProcessor.h"
 #include "storage/DeleteVertexProcessor.h"
 #include "storage/DeleteEdgesProcessor.h"
-#include "QueryEdgeKeysProcessor.h"
+#include "storage/QueryEdgeKeysProcessor.h"
+#include "storage/UpdateVertexProcessor.h"
+#include "storage/UpdateEdgeProcessor.h"
+#include "storage/PutProcessor.h"
+#include "storage/GetProcessor.h"
+#include "storage/GetUUIDProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -81,6 +86,18 @@ StorageServiceHandler::future_deleteEdges(const cpp2::DeleteEdgesRequest& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::UpdateResponse>
+StorageServiceHandler::future_updateVertex(const cpp2::UpdateVertexRequest& req) {
+    auto* processor = UpdateVertexProcessor::instance(kvstore_, schemaMan_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::UpdateResponse>
+StorageServiceHandler::future_updateEdge(const cpp2::UpdateEdgeRequest& req) {
+    auto* processor = UpdateEdgeProcessor::instance(kvstore_, schemaMan_);
+    RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::AdminExecResp>
 StorageServiceHandler::future_transLeader(const cpp2::TransLeaderReq& req) {
     auto* processor = TransLeaderProcessor::instance(kvstore_);
@@ -89,7 +106,7 @@ StorageServiceHandler::future_transLeader(const cpp2::TransLeaderReq& req) {
 
 folly::Future<cpp2::AdminExecResp>
 StorageServiceHandler::future_addPart(const cpp2::AddPartReq& req) {
-    auto* processor = AddPartProcessor::instance(kvstore_);
+    auto* processor = AddPartProcessor::instance(kvstore_, metaClient_);
     RETURN_FUTURE(processor);
 }
 
@@ -120,6 +137,24 @@ StorageServiceHandler::future_memberChange(const cpp2::MemberChangeReq& req) {
 folly::Future<cpp2::GetLeaderResp>
 StorageServiceHandler::future_getLeaderPart(const cpp2::GetLeaderReq& req) {
     auto* processor = GetLeaderProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResponse>
+StorageServiceHandler::future_put(const cpp2::PutRequest& req) {
+    auto* processor = PutProcessor::instance(kvstore_, schemaMan_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GeneralResponse>
+StorageServiceHandler::future_get(const cpp2::GetRequest& req) {
+    auto* processor = GetProcessor::instance(kvstore_, schemaMan_, getThreadManager());
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GetUUIDResp>
+StorageServiceHandler::future_getUUID(const cpp2::GetUUIDReq& req) {
+    auto* processor = GetUUIDProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

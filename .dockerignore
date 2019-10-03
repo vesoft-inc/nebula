@@ -1,4 +1,5 @@
 *.md
 
+LICENSES/
 docs/
 _build/

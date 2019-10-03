@@ -29,8 +29,7 @@ private:
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
                              cpp2::QueryStatsResponse>(kvstore, schemaMan, executor) {}
 
-    kvstore::ResultCode processVertex(PartitionID partID,
-                                      VertexID vId) override;
+    kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) override;
 
     void onProcessFinished(int32_t retNum) override;
 

@@ -6,11 +6,17 @@
 
 package com.vesoft.nebula.importer;
 
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.SYNC;
+
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.net.HostAndPort;
 
 import com.vesoft.nebula.graph.client.GraphClient;
 import com.vesoft.nebula.graph.client.GraphClientImpl;
@@ -21,6 +27,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -62,16 +69,20 @@ public class Importer {
     private static final int DEFAULT_INSERT_BATCH_SIZE = 16;
     private static final int DEFAULT_CONNECTION_TIMEOUT_MS = 3 * 1000;
     private static final int DEFAULT_CONNECTION_RETRY = 3;
-    private static final String DEFAULT_ADDRESS = "127.0.0.1:3699";
+    private static final int DEFAULT_EXECUTION_RETRY = 3;
+    private static final String DEFAULT_ERROR_PATH = "/tmp/error";
+    private static final String DEFAULT_ADDRESSES = "127.0.0.1:3699";
 
-    private String address;
+    private String addresses;
     private int batchSize;
     private String spaceName;
     private String schemaName;
     private String columns;
     private String file;
     private int timeout;
-    private int retry;
+    private int connectionRetry;
+    private int executionRetry;
+    private Path errorPath;
     private boolean statistics;
     private String type;
     private String user;
@@ -94,8 +105,13 @@ public class Importer {
         options.addOption(new Option("m", "schema", true, "specify the schema name."));
         options.addOption(new Option("c", "column", true, "vertex and edge's column."));
         options.addOption(new Option("s", "stat", false, "print statistics info."));
-        options.addOption(new Option("a", "address", true, "thrift service address."));
-        options.addOption(new Option("r", "retry", true, "thrift connection retry number."));
+        options.addOption(new Option("a", "addresses", true, "thrift service addresses."));
+        options.addOption(new Option("r", "connectionRetry", true,
+                                     "thrift connection retry number."));
+        options.addOption(new Option("e", "executionRetry", true,
+                                     "thrift execution retry number."));
+        options.addOption(new Option("d", "errorPath", true,
+                                     "save the failed record in error path."));
         options.addOption(new Option("o", "timeout", true, "thrift connection timeout."));
         options.addOption(new Option("u", "user", true, "thrift service username."));
         options.addOption(new Option("p", "pswd", true, "thrift service password."));
@@ -114,14 +130,18 @@ public class Importer {
         }
 
 
-        address = fetchOptionValue(commandLine, 'a', "address", DEFAULT_ADDRESS);
+        addresses = fetchOptionValue(commandLine, 'a', "addresses", DEFAULT_ADDRESSES);
         batchSize = fetchOptionValue(commandLine, 'b', "batch", DEFAULT_INSERT_BATCH_SIZE);
         spaceName = fetchOptionValue(commandLine, 'n', "name", EMPTY);
         schemaName = fetchOptionValue(commandLine, 'm', "schema", EMPTY);
         columns = fetchOptionValue(commandLine, 'c', "column", EMPTY);
         file = fetchOptionValue(commandLine, 'f', "file", EMPTY);
         timeout = fetchOptionValue(commandLine, 'o', "timeout", DEFAULT_CONNECTION_TIMEOUT_MS);
-        retry = fetchOptionValue(commandLine, 'r', "retry", DEFAULT_CONNECTION_RETRY);
+        connectionRetry = fetchOptionValue(commandLine, 'r', "connectionRetry",
+                                           DEFAULT_CONNECTION_RETRY);
+        executionRetry = fetchOptionValue(commandLine, 'e', "executionRetry",
+                                          DEFAULT_EXECUTION_RETRY);
+        errorPath = Paths.get(fetchOptionValue(commandLine, 'd', "errorPath", DEFAULT_ERROR_PATH));
         user = fetchOptionValue(commandLine, 'u', "user", EMPTY);
         pswd = fetchOptionValue(commandLine, 'p', "pswd", EMPTY);
         type = fetchOptionValue(commandLine, 't', "type", EMPTY);
@@ -129,7 +149,8 @@ public class Importer {
         hasRanking = fetchOptionValue(commandLine, 'k', "ranking", false);
     }
 
-    private String fetchOptionValue(CommandLine cmd, Character opt, String longOpt, String defaultValue) {
+    private String fetchOptionValue(CommandLine cmd, Character opt, String longOpt,
+                                    String defaultValue) {
         if (cmd.hasOption(opt)) {
             return cmd.getOptionValue(opt);
         } else if (cmd.hasOption(longOpt)) {
@@ -151,7 +172,8 @@ public class Importer {
         }
     }
 
-    private boolean fetchOptionValue(CommandLine cmd, Character opt, String longOpt, boolean defaultValue) {
+    private boolean fetchOptionValue(CommandLine cmd, Character opt, String longOpt,
+                                     boolean defaultValue) {
         if (cmd.hasOption(opt) || cmd.hasOption(longOpt)) {
             return true;
         } else {
@@ -170,27 +192,39 @@ public class Importer {
     private void run() {
         long rowCounter = 0;
         final long startTime = System.currentTimeMillis();
-        String[] hostAndPort = address.split(":");
-        if (hostAndPort.length != 2) {
-            LOGGER.error(String.format("Address format error: %s", address));
+
+        List<HostAndPort> hostAndPorts = Lists.newLinkedList();
+        for (String address : addresses.split(",")) {
+            String[] hostAndPort = address.split(":");
+            if (hostAndPort.length != 2) {
+                LOGGER.error(String.format("Address format error: %s", address));
+                return;
+            }
+            hostAndPorts.add(HostAndPort.fromParts(hostAndPort[0],
+                                                   Integer.valueOf(hostAndPort[1])));
+        }
+
+        if (Files.exists(errorPath)) {
+            LOGGER.error(String.format("%s have existed", errorPath));
             return;
         }
 
-        String host = hostAndPort[0];
-        int port = Integer.valueOf(hostAndPort[1]);
+        if (Files.isDirectory(errorPath)) {
+            LOGGER.error(String.format("%s is a directory", errorPath));
+            return;
+        }
 
-        GraphClient client = new GraphClientImpl(host, port, timeout, retry);
-        int code = client.connect(user, pswd);
+        GraphClient client = new GraphClientImpl(hostAndPorts, timeout, connectionRetry,
+                                                 executionRetry);
 
-        if (code == 0) {
+        if (client.connect(user, pswd) == 0) {
             LOGGER.debug(String.format("%s connect to thrift service", user));
         } else {
             LOGGER.error("Connection or Authenticate Failed");
             return;
         }
 
-        code = client.execute(String.format(USE_TEMPLATE, spaceName));
-        if (code == 0) {
+        if (client.execute(String.format(USE_TEMPLATE, spaceName)) == 0) {
             LOGGER.info(String.format("Switch Space to %s", spaceName));
         } else {
             LOGGER.error(String.format("USE %s Failed", spaceName));
@@ -199,7 +233,8 @@ public class Importer {
 
         try (Stream<String> lines = readContent(file)) {
             try {
-                Iterator<List<String>> portion = Iterables.partition(() -> lines.iterator(), batchSize).iterator();
+                Iterable<List<String>> iterable = Iterables.partition(lines::iterator, batchSize);
+                Iterator<List<String>> portion = iterable.iterator();
                 while (portion.hasNext()) {
                     List<String> segment = portion.next();
                     if (statistics) {
@@ -208,8 +243,12 @@ public class Importer {
 
                     List<String> values = new ArrayList<>(segment.size());
                     for (String line : segment) {
-                        Iterable<String> tokens = Splitter.on(",").split(line);
+                        if (line.trim().length() == 0) {
+                            LOGGER.warn("Skip empty line");
+                            continue;
+                        }
 
+                        Iterable<String> tokens = Splitter.on(",").split(line);
                         if (Iterables.isEmpty(tokens)
                                 || (type.equals("vertex") && Iterables.size(tokens) < 2)
                                 || (type.equals("edge") && Iterables.size(tokens) < 3)) {
@@ -225,24 +264,33 @@ public class Importer {
                         switch (type.toLowerCase()) {
                           case "vertex":
                               long id = Long.parseLong(tokenList.get(0));
-                              String vertexValue = Joiner.on(", ").join(tokenList.subList(1, tokenList.size()));
-                              LOGGER.trace(String.format("vertex id: %d, value: %s", id, vertexValue));
-                              values.add(String.format(INSERT_VERTEX_VALUE_TEMPLATE, id, vertexValue));
+                              List<String> vertexValueList = tokenList.subList(1, tokenList.size());
+                              String vertexValue = Joiner.on(", ").join(vertexValueList);
+                              LOGGER.trace(String.format("vertex id: %d, value: %s", id,
+                                                         vertexValue));
+                              values.add(String.format(INSERT_VERTEX_VALUE_TEMPLATE, id,
+                                                       vertexValue));
                               break;
                           case "edge":
                               long source = Long.parseLong(tokenList.get(0));
                               long target = Long.parseLong(tokenList.get(1));
                               if (hasRanking) {
                                   long ranking = Long.parseLong(tokenList.get(2));
-                                  String edgeValue = Joiner.on(", ").join(tokenList.subList(3, tokenList.size()));
-                                  LOGGER.trace(String.format("edge source: %d, target: %d, ranking: %d, value: %s", source, target,
+                                  List<String> edgeList = tokenList.subList(3, tokenList.size());
+                                  String edgeValue = Joiner.on(", ").join(edgeList);
+                                  LOGGER.trace(String.format("edge source: %d, target: %d, ranking:"
+                                                             + " %d, value: %s", source, target,
                                                              ranking, edgeValue));
-                                  values.add(String.format(INSERT_EDGE_VALUE_TEMPLATE, source, target,ranking, edgeValue));
+                                  values.add(String.format(INSERT_EDGE_VALUE_TEMPLATE, source,
+                                                           target, ranking, edgeValue));
                               } else {
-                                  String edgeValue = Joiner.on(", ").join(tokenList.subList(2, tokenList.size()));
-                                  LOGGER.trace(String.format("edge source: %d, target: %d, value: %s", source, target, edgeValue));
-                                  values.add(String.format(INSERT_EDGE_VALUE_WITHOUT_RANKING_TEMPLATE, source,
-                                                           target, edgeValue));
+                                  List<String> edgeList = tokenList.subList(2, tokenList.size());
+                                  String edgeValue = Joiner.on(", ").join(edgeList);
+                                  LOGGER.trace(String.format("edge source: %d, target: %d, value:"
+                                                             + " %s", source, target, edgeValue));
+                                  values.add(String.format(
+                                              INSERT_EDGE_VALUE_WITHOUT_RANKING_TEMPLATE, source,
+                                              target, edgeValue));
                               }
                               break;
                           default:
@@ -251,10 +299,12 @@ public class Importer {
                         }
                     }
 
-                    String exec = String.format(BATCH_INSERT_TEMPLATE, type, schemaName,  columns, Joiner.on(", ").join(values));
+                    String exec = String.format(BATCH_INSERT_TEMPLATE, type, schemaName, columns,
+                                                Joiner.on(", ").join(values));
                     LOGGER.debug(String.format("Execute: %s", exec));
-                    int result = client.execute(exec);
-                    if (result != 0) {
+                    if (client.execute(exec) != 0) {
+                        Files.write(errorPath, segment, Charset.forName("UTF-8"), CREATE, APPEND,
+                                    SYNC);
                         LOGGER.error("Graph Client Execution Failed !");
                     }
                 }
@@ -281,7 +331,7 @@ public class Importer {
         return Files.lines(filePath, Charsets.UTF_8);
     }
 
-    private Stream<String> dfsProcessor(String filePath /*Map<String, String> config*/) throws IOException {
+    private Stream<String> dfsProcessor(String filePath) throws IOException {
         Configuration configuration = new Configuration();
         FileSystem fileSystem = FileSystem.get(URI.create(filePath), configuration);
         LOGGER.info(String.format("Reading HDFS: %s", file));

@@ -48,6 +48,7 @@ class GraphScanner;
     nebula::OverEdges                      *over_edges;
     nebula::OverClause                     *over_clause;
     nebula::WhereClause                    *where_clause;
+    nebula::WhenClause                     *when_clause;
     nebula::YieldClause                    *yield_clause;
     nebula::YieldColumns                   *yield_columns;
     nebula::YieldColumn                    *yield_column;
@@ -94,19 +95,20 @@ class GraphScanner;
 /* keywords */
 %token KW_GO KW_AS KW_TO KW_OR KW_AND KW_XOR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
-%token KW_EDGE KW_EDGES KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
+%token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
-%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST
+%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_UUID
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
 %token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL_DURATION KW_TTL_COL
 %token KW_ORDER KW_ASC
-%token KW_FETCH KW_PROP
-%token KW_DISTINCT KW_ALL
-%token KW_BALANCE KW_LEADER
+%token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
+%token KW_DISTINCT KW_ALL KW_OF
+%token KW_BALANCE KW_LEADER KW_DATA
+
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND XOR LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
@@ -131,6 +133,7 @@ class GraphScanner;
 %type <expr> vid_ref_expression
 %type <expr> vid
 %type <expr> function_call_expression
+%type <expr> uuid_expression
 %type <argument_list> argument_list
 %type <type> type_spec
 %type <step_clause> step_clause
@@ -140,6 +143,7 @@ class GraphScanner;
 %type <over_edges> over_edges
 %type <over_clause> over_clause
 %type <where_clause> where_clause
+%type <when_clause> when_clause
 %type <yield_clause> yield_clause
 %type <yield_columns> yield_columns
 %type <yield_column> yield_column
@@ -325,6 +329,12 @@ alias_ref_expression
 function_call_expression
     : LABEL L_PAREN argument_list R_PAREN {
         $$ = new FunctionCallExpression($1, $3);
+    }
+    ;
+
+uuid_expression
+    : KW_UUID L_PAREN STRING R_PAREN {
+        $$ = new UUIDExpression($3);
     }
     ;
 
@@ -515,6 +525,9 @@ vid
     | function_call_expression {
         $$ = $1;
     }
+    | uuid_expression {
+        $$ = $1;
+    }
     ;
 
 unary_integer
@@ -588,6 +601,11 @@ over_clause
 where_clause
     : %empty { $$ = nullptr; }
     | KW_WHERE expression { $$ = new WhereClause($2); }
+    ;
+
+when_clause
+    : %empty { $$ = nullptr; }
+    | KW_WHEN expression { $$ = new WhenClause($2); }
     ;
 
 yield_clause
@@ -1134,21 +1152,21 @@ edge_row_item
 rank: unary_integer { $$ = $1; };
 
 update_vertex_sentence
-    : KW_UPDATE KW_VERTEX vid KW_SET update_list where_clause yield_clause {
+    : KW_UPDATE KW_VERTEX vid KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateVertexSentence();
         sentence->setVid($3);
         sentence->setUpdateList($5);
-        sentence->setWhereClause($6);
+        sentence->setWhenClause($6);
         sentence->setYieldClause($7);
         $$ = sentence;
     }
-    | KW_UPDATE KW_OR KW_INSERT KW_VERTEX vid KW_SET update_list where_clause yield_clause {
+    | KW_UPSERT KW_VERTEX vid KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateVertexSentence();
         sentence->setInsertable(true);
-        sentence->setVid($5);
-        sentence->setUpdateList($7);
-        sentence->setWhereClause($8);
-        sentence->setYieldClause($9);
+        sentence->setVid($3);
+        sentence->setUpdateList($5);
+        sentence->setWhenClause($6);
+        sentence->setYieldClause($7);
         $$ = sentence;
     }
     ;
@@ -1168,50 +1186,57 @@ update_item
     : name_label ASSIGN expression {
         $$ = new UpdateItem($1, $3);
     }
+    | alias_ref_expression ASSIGN expression {
+        $$ = new UpdateItem($1, $3);
+    }
     ;
 
 update_edge_sentence
-    : KW_UPDATE KW_EDGE vid R_ARROW vid
-      KW_SET update_list where_clause yield_clause {
+    : KW_UPDATE KW_EDGE vid R_ARROW vid KW_OF name_label
+      KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateEdgeSentence();
         sentence->setSrcId($3);
         sentence->setDstId($5);
-        sentence->setUpdateList($7);
-        sentence->setWhereClause($8);
-        sentence->setYieldClause($9);
-        $$ = sentence;
-    }
-    | KW_UPDATE KW_OR KW_INSERT KW_EDGE vid R_ARROW vid
-      KW_SET update_list where_clause yield_clause {
-        auto sentence = new UpdateEdgeSentence();
-        sentence->setInsertable(true);
-        sentence->setSrcId($5);
-        sentence->setDstId($7);
+        sentence->setEdgeType($7);
         sentence->setUpdateList($9);
-        sentence->setWhereClause($10);
+        sentence->setWhenClause($10);
         sentence->setYieldClause($11);
         $$ = sentence;
     }
-    | KW_UPDATE KW_EDGE vid R_ARROW vid AT rank
-      KW_SET update_list where_clause yield_clause {
+    | KW_UPSERT KW_EDGE vid R_ARROW vid KW_OF name_label
+      KW_SET update_list when_clause yield_clause {
+        auto sentence = new UpdateEdgeSentence();
+        sentence->setInsertable(true);
+        sentence->setSrcId($3);
+        sentence->setDstId($5);
+        sentence->setEdgeType($7);
+        sentence->setUpdateList($9);
+        sentence->setWhenClause($10);
+        sentence->setYieldClause($11);
+        $$ = sentence;
+    }
+    | KW_UPDATE KW_EDGE vid R_ARROW vid AT rank KW_OF name_label
+      KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateEdgeSentence();
         sentence->setSrcId($3);
         sentence->setDstId($5);
         sentence->setRank($7);
-        sentence->setUpdateList($9);
-        sentence->setWhereClause($10);
-        sentence->setYieldClause($11);
+        sentence->setEdgeType($9);
+        sentence->setUpdateList($11);
+        sentence->setWhenClause($12);
+        sentence->setYieldClause($13);
         $$ = sentence;
     }
-    | KW_UPDATE KW_OR KW_INSERT KW_EDGE vid R_ARROW vid AT rank KW_SET
-      update_list where_clause yield_clause {
+    | KW_UPSERT KW_EDGE vid R_ARROW vid AT rank KW_OF name_label
+      KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateEdgeSentence();
         sentence->setInsertable(true);
-        sentence->setSrcId($5);
-        sentence->setDstId($7);
-        sentence->setRank($9);
+        sentence->setSrcId($3);
+        sentence->setDstId($5);
+        sentence->setRank($7);
+        sentence->setEdgeType($9);
         sentence->setUpdateList($11);
-        sentence->setWhereClause($12);
+        sentence->setWhenClause($12);
         sentence->setYieldClause($13);
         $$ = sentence;
     }
@@ -1550,6 +1575,12 @@ set_config_sentence
 balance_sentence
     : KW_BALANCE KW_LEADER {
         $$ = new BalanceSentence(BalanceSentence::SubType::kLeader);
+    }
+    | KW_BALANCE KW_DATA {
+        $$ = new BalanceSentence(BalanceSentence::SubType::kData);
+    }
+    | KW_BALANCE KW_DATA INTEGER {
+        $$ = new BalanceSentence($3);
     }
     ;
 

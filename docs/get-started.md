@@ -288,13 +288,13 @@ Q1. Find the vertexes that 201 likes:
 ```
 nebula> GO FROM 201 OVER like;
 
-=======
-|  id |
-=======
-| 200 |
--------
-| 202 |
--------
+=============
+| like._dst |
+=============
+| 200       |
+-------------
+| 202       |
+-------------
 ```
 
 Q2. Find the vertexes that 201 likes, whose ages are greater than 17. Return their name, age and gender, and alias the columns as Friend, Age and Gender, respectively.
@@ -319,7 +319,7 @@ Q3. Find the selected courses and corresponding grades of students liked by 201.
 
 ```
 -- By pipe
-nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
+nebula> GO FROM 201 OVER like yield like._dst as id | GO FROM $-.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
 
 =============================
 | Student |  Course | Grade |
@@ -332,7 +332,7 @@ nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^.student.name 
 -----------------------------
 
 -- By temporary variable
-nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
+nebula> $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
 
 =============================
 | Student |  Course | Grade |

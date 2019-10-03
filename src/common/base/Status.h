@@ -116,6 +116,7 @@ public:
     STATUS_GENERATOR(CfgErrorType);
     STATUS_GENERATOR(CfgImmutable);
     STATUS_GENERATOR(LeaderChanged);
+    STATUS_GENERATOR(Balanced);
 
 #undef STATUS_GENERATOR
 
@@ -151,6 +152,7 @@ public:
         kTagIndexNotFound       = 413,
         kEdgeIndexNotFound      = 414,
         kLeaderChanged          = 415,
+        kBalanced               = 416,
     };
 
     Code code() const {

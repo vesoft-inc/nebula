@@ -67,6 +67,36 @@ std::pair<LogID, std::string> decodeSnapshotRow(const std::string& rawData) {
     return std::make_pair(id, std::move(str));
 }
 
+std::string encodeAddPeer(const HostAddr& addr) {
+    std::string str;
+    CommandType type = CommandType::ADD_PEER;
+    str.append(reinterpret_cast<const char*>(&type), 1);
+    str.append(reinterpret_cast<const char*>(&addr), sizeof(HostAddr));
+    return str;
+}
+
+HostAddr decodeAddPeer(const folly::StringPiece& log) {
+    HostAddr addr;
+    memcpy(&addr.first, log.begin() + 1, sizeof(addr.first));
+    memcpy(&addr.second, log.begin() + 1 + sizeof(addr.first), sizeof(addr.second));
+    return addr;
+}
+
+std::string encodeRemovePeer(const HostAddr& addr) {
+    std::string str;
+    CommandType type = CommandType::REMOVE_PEER;
+    str.append(reinterpret_cast<const char*>(&type), 1);
+    str.append(reinterpret_cast<const char*>(&addr), sizeof(HostAddr));
+    return str;
+}
+
+HostAddr decodeRemovePeer(const folly::StringPiece& log) {
+    HostAddr addr;
+    memcpy(&addr.first, log.begin() + 1, sizeof(addr.first));
+    memcpy(&addr.second, log.begin() + 1 + sizeof(addr.first), sizeof(addr.second));
+    return addr;
+}
+
 TestShard::TestShard(size_t idx,
                      std::shared_ptr<RaftexService> svc,
                      PartitionID partId,
@@ -125,6 +155,12 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
                     commitTransLeader(nLeader);
                     break;
                 }
+                case CommandType::REMOVE_PEER: {
+                    auto peer = decodeRemovePeer(log);
+                    commitRemovePeer(peer);
+                    break;
+                }
+                case CommandType::ADD_PEER:
                 case CommandType::ADD_LEARNER: {
                     break;
                 }

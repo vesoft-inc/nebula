@@ -131,6 +131,8 @@ std::string FetchVerticesSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "FETCH PROP ON ";
+    buf += *tag_;
+    buf += " ";
     if (isRef()) {
         buf += vidRef_->toString();
     } else {
@@ -227,7 +229,6 @@ StatusOr<std::string> EdgeKeyRef::varname() const {
 std::string EdgeKeyRef::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "FETCH PTOP ON ";
     if (srcid_ != nullptr) {
         buf += srcid_->toString();
     }
@@ -246,6 +247,8 @@ std::string FetchEdgesSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "FETCH PROP ON ";
+    buf += *edge_;
+    buf += " ";
     if (isRef()) {
         buf += keyRef_->toString();
     } else {

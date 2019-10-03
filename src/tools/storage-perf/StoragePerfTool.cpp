@@ -235,13 +235,16 @@ private:
         auto f = client_->addVertices(spaceId_, genVertices(), true)
                     .via(evb).then([this](auto&& resps) {
                         if (!resps.succeeded()) {
-                            LOG(ERROR) << "Request failed!";
+                            for (auto& entry : resps.failedParts()) {
+                                LOG(ERROR) << "Request failed, part " << entry.first
+                                           << ", error " << static_cast<int32_t>(entry.second);
+                            }
                         } else {
                             VLOG(3) << "request successed!";
                         }
                         this->finishedRequests_++;
-                     }).onError([](folly::FutureException&) {
-                        LOG(ERROR) << "Request failed!";
+                     }).onError([](folly::FutureException& e) {
+                        LOG(ERROR) << "Request failed, e = " << e.what();
                      });
     }
 

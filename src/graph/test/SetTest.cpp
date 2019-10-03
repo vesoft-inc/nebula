@@ -297,6 +297,32 @@ TEST_F(SetTest, UnionAllTest) {
             expected.emplace_back(std::move(record));
         }
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD $^.player.name as player, serve.start_year as start"
+                    " UNION ALL "
+                    "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year";
+        auto &nobody = players_["Nobody"];
+        auto &tony = players_["Tony Parker"];
+        auto query = folly::stringPrintf(fmt, nobody.vid(), tony.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t>> expected;
+        for (auto &serve : tony.serves()) {
+            std::tuple<std::string, int64_t> record(
+                    tony.name(), std::get<1>(serve));
+            expected.emplace_back(std::move(record));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+
+        std::vector<std::string> colsExpect = {"player", "start"};
+        auto *cols = resp.get_column_names();
+        ASSERT_EQ(cols->size(), colsExpect.size());
+        for (decltype(colsExpect.size()) i = 0; i < colsExpect.size(); ++i) {
+            ASSERT_EQ((*cols)[i], colsExpect[i]);
+        }
+    }
 }
 
 TEST_F(SetTest, UnionDistinct) {
@@ -500,6 +526,17 @@ TEST_F(SetTest, ExecutionError) {
         auto *fmt = "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
                     " UNION "
                     "GO FROM %ld OVER serve YIELD $^.player.name1, serve.start_year, $$.team.name";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year"
+                    " UNION "
+                    "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
         auto &tim = players_["Tim Duncan"];
         auto &tony = players_["Tony Parker"];
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());

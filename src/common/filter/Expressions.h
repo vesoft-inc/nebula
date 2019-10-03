@@ -9,15 +9,16 @@
 #include "base/Base.h"
 #include "base/StatusOr.h"
 #include "base/Status.h"
+#include "storage/client/StorageClient.h"
 #include <boost/variant.hpp>
-#include  <boost/unordered_set.hpp>
+#include <folly/futures/Future.h>
 
 namespace nebula {
 
 class Cord;
 using OptVariantType = StatusOr<VariantType>;
 
-enum ColumnType {
+enum class ColumnType {
     INT, STRING, DOUBLE, BIGINT, BOOL, TIMESTAMP,
 };
 
@@ -110,10 +111,27 @@ public:
         return !inputProps_.empty();
     }
 
+    void setStorageClient(nebula::storage::StorageClient *storageClient) {
+        storageClient_ = storageClient;
+    }
+
+    nebula::storage::StorageClient* storageClient() {
+        return storageClient_;
+    }
+
+
+    void setSpace(GraphSpaceID space) {
+        space_ = space;
+    }
+
+    GraphSpaceID space() {
+        return space_;
+    }
+
     struct Getters {
-        std::function<OptVariantType()> getEdgeRank;
-        std::function<OptVariantType(const std::string&)> getInputProp;
-        std::function<OptVariantType(const std::string&)> getVariableProp;
+        std::function<OptVariantType()>                                       getEdgeRank;
+        std::function<OptVariantType(const std::string&)>                     getInputProp;
+        std::function<OptVariantType(const std::string&)>                     getVariableProp;
         std::function<OptVariantType(const std::string&, const std::string&)> getSrcTagProp;
         std::function<OptVariantType(const std::string&, const std::string&)> getDstTagProp;
         std::function<OptVariantType(const std::string&, const std::string&)> getAliasProp;
@@ -140,6 +158,8 @@ private:
     // alias => edgeType
     std::unordered_map<std::string, EdgeType> edgeMaps_;
     bool                                      overAll_{false};
+    GraphSpaceID                              space_;
+    nebula::storage::StorageClient            *storageClient_{nullptr};
 };
 
 
@@ -311,11 +331,10 @@ public:
         kEdgeSrcId,
         kEdgeType,
         kAliasProp,
-        kEdgeProp,
         kVariableProp,
         kDestProp,
         kInputProp,
-
+        kUUID,
         kMax,
     };
 
@@ -342,6 +361,7 @@ private:
     friend class PrimaryExpression;
     friend class UnaryExpression;
     friend class FunctionCallExpression;
+    friend class UUIDExpression;
     friend class TypeCastingExpression;
     friend class ArithmeticExpression;
     friend class RelationalExpression;
@@ -351,7 +371,6 @@ private:
     friend class EdgeDstIdExpression;
     friend class EdgeSrcIdExpression;
     friend class EdgeTypeExpression;
-    friend class EdgePropertyExpression;
     friend class VariablePropertyExpression;
     friend class InputPropertyExpression;
 
@@ -706,6 +725,40 @@ private:
     std::function<VariantType(const std::vector<VariantType>&)> function_;
 };
 
+// (uuid)expr
+class UUIDExpression final : public Expression {
+public:
+    UUIDExpression() {
+        kind_ = kUUID;
+    }
+
+    explicit UUIDExpression(std::string *field) {
+        kind_ = kUUID;
+        field_.reset(field);
+    }
+
+    std::string toString() const override;
+
+    OptVariantType eval() const override;
+
+    Status MUST_USE_RESULT prepare() override;
+
+    void setContext(ExpressionContext *ctx) override {
+        context_ = ctx;
+    }
+
+private:
+    void encode(Cord &) const override {
+        throw Status::Error("Not supported yet");
+    }
+
+    const char* decode(const char *, const char *) override {
+        throw Status::Error("Not supported yet");
+    }
+
+private:
+    std::unique_ptr<std::string>                field_;
+};
 
 // +expr, -expr, !expr
 class UnaryExpression final : public Expression {
@@ -786,9 +839,7 @@ public:
 private:
     void encode(Cord &cord) const override;
 
-    const char* decode(const char *buf, const char *end) override {
-        UNUSED(buf);
-        UNUSED(end);
+    const char* decode(const char *, const char *) override {
         throw Status::Error("Not supported yet");
     }
 
@@ -893,6 +944,7 @@ private:
 
     const char* decode(const char *pos, const char *end) override;
 
+    Status implicitCasting(VariantType &lhs, VariantType &rhs) const;
 
 private:
     Operator                                    op_;

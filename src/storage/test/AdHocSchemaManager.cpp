@@ -12,17 +12,31 @@ namespace storage {
 void AdHocSchemaManager::addTagSchema(GraphSpaceID space,
                                       TagID tag,
                                       std::shared_ptr<nebula::meta::SchemaProviderIf> schema) {
-    folly::RWSpinLock::WriteHolder wh(tagLock_);
-    // Only version 0
-    tagSchemas_[std::make_pair(space, tag)][0] = schema;
+    {
+        folly::RWSpinLock::WriteHolder wh(tagLock_);
+        // Only version 0
+        tagSchemas_[std::make_pair(space, tag)][0] = schema;
+        auto key = folly::stringPrintf("%d_%d", space, tag);
+        tagNameToId_[key] = tag;
+    }
+    {
+        folly::RWSpinLock::WriteHolder wh(spaceLock_);
+        spaces_.emplace(space);
+    }
 }
 
 void AdHocSchemaManager::addEdgeSchema(GraphSpaceID space,
                                        EdgeType edge,
                                        std::shared_ptr<nebula::meta::SchemaProviderIf> schema) {
-    folly::RWSpinLock::WriteHolder wh(edgeLock_);
-    // Only version 0
-    edgeSchemas_[std::make_pair(space, edge)][0] = schema;
+    {
+        folly::RWSpinLock::WriteHolder wh(edgeLock_);
+        // Only version 0
+        edgeSchemas_[std::make_pair(space, edge)][0] = schema;
+    }
+    {
+        folly::RWSpinLock::WriteHolder wh(spaceLock_);
+        spaces_.emplace(space);
+    }
 }
 
 void AdHocSchemaManager::removeTagSchema(GraphSpaceID space, TagID tag) {
@@ -34,11 +48,8 @@ std::shared_ptr<const nebula::meta::SchemaProviderIf>
 AdHocSchemaManager::getTagSchema(folly::StringPiece spaceName,
                                  folly::StringPiece tagName,
                                  SchemaVer ver) {
-    UNUSED(spaceName);
-    UNUSED(tagName);
-    UNUSED(ver);
-    LOG(FATAL) << "Unimplement";
-    return std::shared_ptr<const nebula::meta::SchemaProviderIf>();
+    auto space = toGraphSpaceID(spaceName).value();
+    return getTagSchema(space, toTagID(space, tagName).value(), ver);
 }
 
 std::shared_ptr<const nebula::meta::SchemaProviderIf>
@@ -75,10 +86,8 @@ AdHocSchemaManager::getTagSchema(GraphSpaceID space,
 
 SchemaVer AdHocSchemaManager::getNewestTagSchemaVer(folly::StringPiece spaceName,
                                                     folly::StringPiece tagName) {
-    UNUSED(spaceName);
-    UNUSED(tagName);
-    LOG(FATAL) << "Unimplement";
-    return -1;
+    auto space = toGraphSpaceID(spaceName).value();
+    return getNewestTagSchemaVer(space, toTagID(space, tagName).value()).value();
 }
 
 StatusOr<SchemaVer> AdHocSchemaManager::getNewestTagSchemaVer(GraphSpaceID space, TagID tag) {
@@ -97,10 +106,8 @@ std::shared_ptr<const nebula::meta::SchemaProviderIf>
 AdHocSchemaManager::getEdgeSchema(folly::StringPiece spaceName,
                                   folly::StringPiece typeName,
                                   SchemaVer ver) {
-    UNUSED(spaceName);
-    UNUSED(typeName);
-    UNUSED(ver);
-    return std::shared_ptr<const nebula::meta::SchemaProviderIf>();
+    auto space = toGraphSpaceID(spaceName).value();
+    return getEdgeSchema(space, toEdgeType(space, typeName).value(), ver);
 }
 
 std::shared_ptr<const nebula::meta::SchemaProviderIf>
@@ -137,15 +144,12 @@ AdHocSchemaManager::getEdgeSchema(GraphSpaceID space,
 
 SchemaVer AdHocSchemaManager::getNewestEdgeSchemaVer(folly::StringPiece spaceName,
                                                      folly::StringPiece typeName) {
-    UNUSED(spaceName);
-    UNUSED(typeName);
-    LOG(FATAL) << "Unimplement";
-    return -1;
+    auto space = toGraphSpaceID(spaceName).value();
+    return getNewestEdgeSchemaVer(space, toEdgeType(space, typeName).value()).value();
 }
 
 StatusOr<SchemaVer> AdHocSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) {
     folly::RWSpinLock::ReadHolder rh(edgeLock_);
-
     auto it = edgeSchemas_.find(std::make_pair(space, edge));
     if (it == edgeSchemas_.end() || it->second.empty()) {
         // Not found
@@ -174,10 +178,8 @@ StatusOr<TagID> AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPie
     return -1;
 }
 
-// This interface is disabled
 StatusOr<EdgeType> AdHocSchemaManager::toEdgeType(GraphSpaceID space, folly::StringPiece typeName) {
     UNUSED(space);
-
     try {
         return folly::to<EdgeType>(typeName);
     } catch (const std::exception& e) {

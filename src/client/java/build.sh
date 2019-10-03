@@ -12,7 +12,6 @@
 # $2: the path of current build dir
 src_root_path=$1
 output_src_file=$2
-pom_file_path=${src_root_path}/pom.xml
 graph_gen_java_path=${output_src_file}/../../interface/gen-java/com/vesoft/nebula/graph/
 java_client_source_file_path=${src_root_path}/src/main/java/com/vesoft/nebula/graph/
 
@@ -45,9 +44,14 @@ setup_graph_source()
 #-----------------------------------------------
 compile_java_client()
 {
-    mvn clean package -f ${pom_file_path}
+    mvn clean package
+}
+
+install_java_to_local_repo()
+{
+    mvn install:install-file -Dfile=target/graph-client-1.0.0-beta.jar -DgroupId=nebula-graph -DartifactId=graph-client -Dversion=1.0.0-beta -Dpackaging=jar
 }
 
 setup_graph_source
 compile_java_client
-
+install_java_to_local_repo

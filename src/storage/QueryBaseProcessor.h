@@ -16,7 +16,6 @@
 namespace nebula {
 namespace storage {
 
-
 const std::unordered_map<std::string, PropContext::PropInKeyType> kPropsInKey_ = {
     {"_src", PropContext::PropInKeyType::SRC},
     {"_dst", PropContext::PropInKeyType::DST},
@@ -62,6 +61,7 @@ protected:
      * Check request meta is illegal or not and build contexts for tag and edge.
      * */
     cpp2::ErrorCode checkAndBuildContexts(const REQ& req);
+
     /**
      * collect props in one row, you could define custom behavior by implement your own collector.
      * */
@@ -71,11 +71,13 @@ protected:
                       FilterContext* fcontext,
                       Collector* collector);
 
-    virtual kvstore::ResultCode processVertex(PartitionID partID,
-                                              VertexID vId) = 0;
+    virtual kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) = 0;
 
     virtual void onProcessFinished(int32_t retNum) = 0;
 
+    /**
+     * Collect props for one vertex tag.
+     * */
     kvstore::ResultCode collectVertexProps(
                             PartitionID partId,
                             VertexID vId,

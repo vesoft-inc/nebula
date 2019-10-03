@@ -58,16 +58,16 @@ void YieldExecutor::execute() {
          *  We shall reuse the conversion code and try to reduce conversion itself.
          */
         switch (value.which()) {
-            case 0:
+            case VAR_INT64:
                 row.back().set_integer(boost::get<int64_t>(value));
                 break;
-            case 1:
+            case VAR_DOUBLE:
                 row.back().set_double_precision(boost::get<double>(value));
                 break;
-            case 2:
+            case VAR_BOOL:
                 row.back().set_bool_val(boost::get<bool>(value));
                 break;
-            case 3:
+            case VAR_STR:
                 row.back().set_str(boost::get<std::string>(value));
                 break;
             default:

@@ -359,6 +359,8 @@ public:
     enum class SubType : uint32_t {
         kUnknown,
         kLeader,
+        kData,
+        kShowBalancePlan,
     };
 
     // TODO: add more subtype for balance
@@ -367,14 +369,25 @@ public:
         subType_ = std::move(subType);
     }
 
+    explicit BalanceSentence(int64_t id) {
+        kind_ = Kind::kBalance;
+        subType_ = SubType::kShowBalancePlan;
+        balanceId_ = id;
+    }
+
     std::string toString() const override;
 
     SubType subType() const {
         return subType_;
     }
 
+    int64_t balanceId() const {
+        return balanceId_;
+    }
+
 private:
     SubType                         subType_{SubType::kUnknown};
+    int64_t                         balanceId_{0};
 };
 
 }   // namespace nebula

@@ -24,7 +24,8 @@ public:
     void process(const cpp2::EdgePropRequest& req);
 
 private:
-    explicit QueryEdgePropsProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
+    explicit QueryEdgePropsProcessor(kvstore::KVStore* kvstore,
+                                     meta::SchemaManager* schemaMan)
         : QueryBaseProcessor<cpp2::EdgePropRequest,
                              cpp2::EdgePropResponse>(kvstore, schemaMan) {}
 

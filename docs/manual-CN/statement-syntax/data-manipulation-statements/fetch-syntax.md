@@ -55,5 +55,5 @@ nebula> GO FROM 1 OVER e1 YIELD e1.prop1       -- 获取节点1出边e1的prop1�
 nebula> GO FROM 1 OVER e1 YIELD e1._src AS s, serve._dst AS d \
  | FETCH PROP ON e1 $-.s -> $-.d YIELD e1.prop1              -- 同上述语句
 nebula> $var = GO FROM 1 OVER e1 YIELD e1._src AS s, e2._dst AS d;\
- FETCH PROP ON serve $var.s -> $var.d YIELD e1.prop1.        -- 同上述语句
+ FETCH PROP ON e3 $var.s -> $var.d YIELD e3.prop1.        -- 同上述语句
 ```

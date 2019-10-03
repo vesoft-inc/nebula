@@ -21,6 +21,8 @@ cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
         return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
     case kvstore::ResultCode::ERR_PART_NOT_FOUND:
         return cpp2::ErrorCode::E_PART_NOT_FOUND;
+    case kvstore::ResultCode::ERR_CONSENSUS_ERROR:
+        return cpp2::ErrorCode::E_CONSENSUS_ERROR;
     default:
         return cpp2::ErrorCode::E_UNKNOWN;
     }

@@ -32,7 +32,9 @@ public:
     folly::Future<Status> response(int index) {
         folly::Promise<Status> pro;
         auto f = pro.getFuture();
+        LOG(INFO) << "Response " << index;
         executor_->add([this, p = std::move(pro), index]() mutable {
+            LOG(INFO) << "Call callback";
             p.setValue(this->statusArray_[index]);
         });
         return f;
@@ -87,7 +89,7 @@ TEST(BalanceTaskTest, SimpleTest) {
         std::vector<Status> sts(7, Status::OK());
         std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
         auto client = std::make_unique<AdminClient>(std::move(injector));
-        BalanceTask task(0, 0, 0, HostAddr(0, 0), HostAddr(1, 1), nullptr, nullptr);
+        BalanceTask task(0, 0, 0, HostAddr(0, 0), HostAddr(1, 1), true, nullptr, nullptr);
         folly::Baton<true, std::atomic> b;
         task.onFinished_ = [&]() {
             LOG(INFO) << "Task finished!";
@@ -112,7 +114,7 @@ TEST(BalanceTaskTest, SimpleTest) {
                                 Status::OK()};
         std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
         auto client = std::make_unique<AdminClient>(std::move(injector));
-        BalanceTask task(0, 0, 0, HostAddr(0, 0), HostAddr(1, 1), nullptr, nullptr);
+        BalanceTask task(0, 0, 0, HostAddr(0, 0), HostAddr(1, 1), true, nullptr, nullptr);
         folly::Baton<true, std::atomic> b;
         task.onFinished_ = []() {
             LOG(FATAL) << "We should not reach here!";
@@ -254,7 +256,7 @@ TEST(BalanceTest, DispatchTasksTest) {
         FLAGS_task_concurrency = 10;
         BalancePlan plan(0L, nullptr, nullptr);
         for (int i = 0; i < 20; i++) {
-            BalanceTask task(0, 0, 0, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+            BalanceTask task(0, 0, 0, HostAddr(i, 0), HostAddr(i, 1), true, nullptr, nullptr);
             plan.addTask(std::move(task));
         }
         plan.dispatchTasks();
@@ -267,7 +269,7 @@ TEST(BalanceTest, DispatchTasksTest) {
         FLAGS_task_concurrency = 10;
         BalancePlan plan(0L, nullptr, nullptr);
         for (int i = 0; i < 5; i++) {
-            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), true, nullptr, nullptr);
             plan.addTask(std::move(task));
         }
         plan.dispatchTasks();
@@ -280,11 +282,11 @@ TEST(BalanceTest, DispatchTasksTest) {
         FLAGS_task_concurrency = 20;
         BalancePlan plan(0L, nullptr, nullptr);
         for (int i = 0; i < 5; i++) {
-            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), true, nullptr, nullptr);
             plan.addTask(std::move(task));
         }
         for (int i = 0; i < 10; i++) {
-            BalanceTask task(0, 0, i, HostAddr(i, 2), HostAddr(i, 3), nullptr, nullptr);
+            BalanceTask task(0, 0, i, HostAddr(i, 2), HostAddr(i, 3), true, nullptr, nullptr);
             plan.addTask(std::move(task));
         }
         plan.dispatchTasks();
@@ -308,7 +310,7 @@ TEST(BalanceTest, BalancePlanTest) {
         auto client = std::make_unique<AdminClient>(std::move(injector));
 
         for (int i = 0; i < 10; i++) {
-            BalanceTask task(0, 0, 0, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+            BalanceTask task(0, 0, 0, HostAddr(i, 0), HostAddr(i, 1), true, nullptr, nullptr);
             task.client_ = client.get();
             plan.addTask(std::move(task));
         }
@@ -333,7 +335,7 @@ TEST(BalanceTest, BalancePlanTest) {
         auto client = std::make_unique<AdminClient>(std::move(injector));
 
         for (int i = 0; i < 10; i++) {
-            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), true, nullptr, nullptr);
             task.client_ = client.get();
             plan.addTask(std::move(task));
         }
@@ -361,7 +363,7 @@ TEST(BalanceTest, BalancePlanTest) {
             std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
             client1 = std::make_unique<AdminClient>(std::move(injector));
             for (int i = 0; i < 9; i++) {
-                BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+                BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), true, nullptr, nullptr);
                 task.client_ = client1.get();
                 plan.addTask(std::move(task));
             }
@@ -377,7 +379,7 @@ TEST(BalanceTest, BalancePlanTest) {
                                 Status::OK()};
             std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
             client2 = std::make_unique<AdminClient>(std::move(injector));
-            BalanceTask task(0, 0, 0, HostAddr(10, 0), HostAddr(10, 1), nullptr, nullptr);
+            BalanceTask task(0, 0, 0, HostAddr(10, 0), HostAddr(10, 1), true, nullptr, nullptr);
             task.client_ = client2.get();
             plan.addTask(std::move(task));
         }
@@ -416,7 +418,7 @@ TEST(BalanceTest, NormalTest) {
     auto client = std::make_unique<AdminClient>(std::move(injector));
     Balancer balancer(kv.get(), std::move(client));
     auto ret = balancer.balance();
-    CHECK_EQ(Status::Error("No tasks"), ret.status());
+    CHECK_EQ(Status::Balanced(), ret.status());
 
     sleep(1);
     LOG(INFO) << "Now, we lost host " << HostAddr(3, 3);
@@ -465,9 +467,11 @@ TEST(BalanceTest, NormalTest) {
                 ASSERT_EQ(BalanceTask::Status::END, task.status_);
                 task.ret_ = std::get<1>(tup);
                 ASSERT_EQ(BalanceTask::Result::SUCCEEDED, task.ret_);
-                task.startTimeMs_ = std::get<2>(tup);
+                task.srcLived_ = std::get<2>(tup);
+                ASSERT_FALSE(task.srcLived_);
+                task.startTimeMs_ = std::get<3>(tup);
                 ASSERT_GT(task.startTimeMs_, 0);
-                task.endTimeMs_ = std::get<3>(tup);
+                task.endTimeMs_ = std::get<4>(tup);
                 ASSERT_GT(task.endTimeMs_, 0);
             }
             num++;
@@ -555,9 +559,11 @@ TEST(BalanceTest, RecoveryTest) {
                 ASSERT_EQ(BalanceTask::Status::CATCH_UP_DATA, task.status_);
                 task.ret_ = std::get<1>(tup);
                 ASSERT_EQ(BalanceTask::Result::FAILED, task.ret_);
-                task.startTimeMs_ = std::get<2>(tup);
+                task.srcLived_ = std::get<2>(tup);
+                ASSERT_FALSE(task.srcLived_);
+                task.startTimeMs_ = std::get<3>(tup);
                 ASSERT_GT(task.startTimeMs_, 0);
-                task.endTimeMs_ = std::get<3>(tup);
+                task.endTimeMs_ = std::get<4>(tup);
                 ASSERT_GT(task.endTimeMs_, 0);
             }
             num++;
@@ -608,12 +614,13 @@ TEST(BalanceTest, RecoveryTest) {
             {
                 auto tup = BalanceTask::parseVal(iter->val());
                 task.status_ = std::get<0>(tup);
-                ASSERT_EQ(BalanceTask::Status::END, task.status_);
                 task.ret_ = std::get<1>(tup);
-                ASSERT_EQ(BalanceTask::Result::SUCCEEDED, task.ret_);
-                task.startTimeMs_ = std::get<2>(tup);
+                ASSERT_EQ(BalanceTask::Result::INVALID, task.ret_);
+                task.srcLived_ = std::get<2>(tup);
+                ASSERT_FALSE(task.srcLived_);
+                task.startTimeMs_ = std::get<3>(tup);
                 ASSERT_GT(task.startTimeMs_, 0);
-                task.endTimeMs_ = std::get<3>(tup);
+                task.endTimeMs_ = std::get<4>(tup);
                 ASSERT_GT(task.endTimeMs_, 0);
             }
             num++;

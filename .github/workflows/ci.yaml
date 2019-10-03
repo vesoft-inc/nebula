@@ -1,6 +1,9 @@
 name: Nebula Build and Test Workflow
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   build:
@@ -21,10 +24,10 @@ jobs:
       - name: make
         run: |
           . /etc/profile.d/devtoolset-8-enable.sh
-          cd _build && make -j2
+          cd _build && make -j $(nproc)
         shell: bash
       - name: test
         run: |
           . /etc/profile.d/devtoolset-8-enable.sh
-          cd _build && ctest --output-on-failure
+          cd _build && ctest -j $(nproc) --output-on-failure
         shell: bash

@@ -11,17 +11,17 @@ namespace meta {
 
 void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     auto spaceID = req.get_space_id();
-    auto indexName = req.get_index_name();
     CHECK_SPACE_ID_AND_RETURN(spaceID);
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::tagIndexLock());
-    auto properties = req.get_properties();
-    if (properties.get_fields().size() == 0) {
+    const auto &indexName = req.get_index_name();
+    const auto &properties = req.get_properties();
+    if (properties.get_fields().empty()) {
         LOG(ERROR) << "Tag's Field should not empty";
         resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
     }
 
+    folly::SharedMutex::WriteHolder wHolder(LockUtils::tagIndexLock());
     auto ret = getTagIndexID(spaceID, indexName);
     if (ret.ok()) {
         LOG(ERROR) << "Create Tag Index Failed: " << indexName << " have existed";

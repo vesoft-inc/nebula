@@ -28,7 +28,7 @@ Status DeleteVertexExecutor::prepare() {
 void DeleteVertexExecutor::execute() {
     GraphSpaceID space = ectx()->rctx()->session()->space();
     // TODO(zlcook) Get edgeKes of a vertex by Go
-    auto future = ectx()->storage()->getEdgeKeys(space, vid_);
+    auto future = ectx()->getStorageClient()->getEdgeKeys(space, vid_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
@@ -62,7 +62,7 @@ void DeleteVertexExecutor::execute() {
 
 void DeleteVertexExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>* edges) {
     GraphSpaceID space = ectx()->rctx()->session()->space();
-    auto future = ectx()->storage()->deleteEdges(space, *edges);
+    auto future = ectx()->getStorageClient()->deleteEdges(space, *edges);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         auto completeness = resp.completeness();
@@ -86,7 +86,7 @@ void DeleteVertexExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>* edge
 
 void DeleteVertexExecutor::deleteVertex() {
     GraphSpaceID space = ectx()->rctx()->session()->space();
-    auto future = ectx()->storage()->deleteVertex(space, vid_);
+    auto future = ectx()->getStorageClient()->deleteVertex(space, vid_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {

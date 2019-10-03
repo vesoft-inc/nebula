@@ -10,9 +10,9 @@ import com.facebook.thrift.TException;
 
 public interface GraphClient {
 
-    public static final int DEFAULT_PORT = 3699;
     public static final int DEFAULT_TIMEOUT_MS = 1000;
     public static final int DEFAULT_CONNECTION_RETRY_SIZE = 3;
+    public static final int DEFAULT_EXECUTION_RETRY_SIZE = 3;
 
     public int connect(String username, String password);
 
@@ -22,5 +22,6 @@ public interface GraphClient {
 
     public int executeUpdate(String stmt);
 
-    public ResultSet executeQuery(String stmt) throws ConnectionException, NGQLException, TException;
+    public ResultSet executeQuery(String stmt)
+            throws ConnectionException, NGQLException, TException;
 }

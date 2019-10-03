@@ -1,5 +1,7 @@
 set(storage_test_deps
     $<TARGET_OBJECTS:storage_service_handler>
+    $<TARGET_OBJECTS:filter_obj>
+    $<TARGET_OBJECTS:storage_client>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:meta_client>
@@ -12,7 +14,6 @@ set(storage_test_deps
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:filter_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
@@ -116,7 +117,6 @@ nebula_add_test(
     SOURCES
         StorageClientTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:storage_client>
         $<TARGET_OBJECTS:meta_service_handler>
         $<TARGET_OBJECTS:adHocSchema_obj>
         ${storage_test_deps}
@@ -231,6 +231,8 @@ nebula_add_test(
         $<TARGET_OBJECTS:raftex_obj>
         $<TARGET_OBJECTS:raftex_thrift_obj>
         $<TARGET_OBJECTS:wal_obj>
+        $<TARGET_OBJECTS:filter_obj>
+        $<TARGET_OBJECTS:storage_client>
         $<TARGET_OBJECTS:meta_client>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:storage_thrift_obj>
@@ -238,7 +240,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:thrift_obj>
         $<TARGET_OBJECTS:dataman_obj>
         $<TARGET_OBJECTS:schema_obj>
-        $<TARGET_OBJECTS:filter_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:time_obj>
@@ -269,5 +270,21 @@ nebula_add_executable(
         follybenchmark
         wangle
         boost_regex
+)
+
+
+nebula_add_test(
+    NAME update_vertex_test
+    SOURCES UpdateVertexTest.cpp
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
+    LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
+)
+
+
+nebula_add_test(
+    NAME update_edge_test
+    SOURCES UpdateEdgeTest.cpp
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
+    LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 

@@ -23,6 +23,8 @@ enum ErrorCode {
     E_KEY_HAS_EXISTS = -12,
     E_SPACE_NOT_FOUND = -13,
     E_PART_NOT_FOUND = -14,
+    E_KEY_NOT_FOUND = -15,
+    E_CONSENSUS_ERROR = -16,
 
     // meta failures
     E_EDGE_PROP_NOT_FOUND = -21,
@@ -31,6 +33,13 @@ enum ErrorCode {
 
     // Invalid request
     E_INVALID_FILTER = -31,
+    E_INVALID_UPDATER = -32,
+    E_INVALID_STORE = -33,
+    E_INVALID_PEER  = -34,
+    E_RETRY_EXHAUSTED = -35,
+
+    // meta client failed
+    E_LOAD_META_FAILED = -41,
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 
@@ -105,7 +114,6 @@ struct EdgePropResponse {
     2: optional common.Schema schema,          // edge related props
     3: optional binary data,
 }
-
 
 struct QueryStatsResponse {
     1: required ResponseCommon result,
@@ -221,6 +229,9 @@ struct RemovePartReq {
 struct MemberChangeReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
+    3: common.HostAddr     peer,
+    // true means add a peer, false means remove a peer.
+    4: bool                add,
 }
 
 struct TransLeaderReq {
@@ -249,6 +260,84 @@ struct GetLeaderResp {
     2: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts;
 }
 
+struct UpdateResponse {
+    1: required ResponseCommon result,
+    2: optional common.Schema schema,   // return column related props schema
+    3: optional binary data,            // return column related props value
+    4: optional bool upsert = false,    // it's true when need to be inserted by UPSERT
+}
+
+struct UpdateItem {
+    1: required binary name,    // the Tag name or Edge name
+    2: required binary prop,    // property
+    3: required binary value,   // new value expression which is encoded
+}
+
+struct UpdateVertexRequest {
+    1: common.GraphSpaceID space_id,
+    2: common.VertexID vertex_id,
+    3: common.PartitionID part_id,
+    4: binary filter,
+    5: list<UpdateItem> update_items,
+    6: list<binary> return_columns,
+    7: bool insertable,
+}
+
+struct UpdateEdgeRequest {
+    1: common.GraphSpaceID space_id,
+    2: EdgeKey edge_key,
+    3: common.PartitionID part_id,
+    4: binary filter,
+    5: list<UpdateItem> update_items,
+    6: list<binary> return_columns,
+    7: bool insertable,
+}
+
+struct PutRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<common.Pair>>(cpp.template = "std::unordered_map") parts,
+}
+
+struct RemoveRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") parts,
+}
+
+struct RemoveRangeRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<common.Pair>>(cpp.template = "std::unordered_map") parts,
+}
+
+struct GetRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") parts,
+}
+
+struct PrefixRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, string>(cpp.template = "std::unordered_map") parts,
+}
+
+struct ScanRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, common.Pair>(cpp.template = "std::unordered_map") parts,
+}
+
+struct GeneralResponse {
+    1: required ResponseCommon result,
+    2: map<string, string>(cpp.template = "std::unordered_map") values,
+}
+
+struct GetUUIDReq {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID  part_id,
+    3: string name,
+}
+
+struct GetUUIDResp {
+    1: required ResponseCommon result,
+    2: common.VertexID id,
+}
 
 service StorageService {
     QueryResponse getBound(1: GetNeighborsRequest req)
@@ -266,6 +355,9 @@ service StorageService {
     ExecResponse deleteEdges(1: DeleteEdgesRequest req);
     ExecResponse deleteVertex(1: DeleteVertexRequest req);
 
+    UpdateResponse updateVertex(1: UpdateVertexRequest req)
+    UpdateResponse updateEdge(1: UpdateEdgeRequest req)
+
     // Interfaces for admin operations
     AdminExecResp transLeader(1: TransLeaderReq req);
     AdminExecResp addPart(1: AddPartReq req);
@@ -274,4 +366,12 @@ service StorageService {
     AdminExecResp removePart(1: RemovePartReq req);
     AdminExecResp memberChange(1: MemberChangeReq req);
     GetLeaderResp getLeaderPart(1: GetLeaderReq req);
+
+    // Interfaces for key-value storage
+    ExecResponse      put(1: PutRequest req);
+    GeneralResponse   get(1: GetRequest req);
+    ExecResponse      remove(1: RemoveRequest req);
+    ExecResponse      removeRange(1: RemoveRangeRequest req);
+
+    GetUUIDResp getUUID(1: GetUUIDReq req);
 }

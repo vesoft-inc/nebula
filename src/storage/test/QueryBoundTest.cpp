@@ -201,7 +201,6 @@ void checkResponse(cpp2::QueryResponse& resp,
     }
 }
 
-
 TEST(QueryBoundTest, OutBoundSimpleTest) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
@@ -224,7 +223,6 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
     LOG(INFO) << "Check the results...";
     checkResponse(resp, 30, 12, 10001, 7, true);
 }
-
 
 TEST(QueryBoundTest, inBoundSimpleTest) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
@@ -316,7 +314,7 @@ TEST(QueryBoundTest, FilterTest_OnlyTagFilter) {
     checkResponse(resp, 10, 12, 10001, 7, true);
 }
 
-TEST(QueryBoundTest,  GenBucketsTest) {
+TEST(QueryBoundTest, GenBucketsTest) {
     {
         cpp2::GetNeighborsRequest req;
         std::vector<EdgeType> et = {-101};

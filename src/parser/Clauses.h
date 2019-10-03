@@ -174,6 +174,7 @@ private:
     std::unique_ptr<Expression>                 filter_;
 };
 
+using WhenClause = WhereClause;
 
 class YieldColumn final {
 public:

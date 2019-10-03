@@ -536,7 +536,7 @@ TEST(ProcessorTest, KVOperationTest) {
     }
     {
         // Multi Put Test
-        std::vector<cpp2::Pair> pairs;
+        std::vector<nebula::cpp2::Pair> pairs;
         for (auto i = 0; i < 10; i++) {
             pairs.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                folly::stringPrintf("key_%d", i),

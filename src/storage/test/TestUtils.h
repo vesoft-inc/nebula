@@ -13,12 +13,12 @@
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
+#include "meta/SchemaManager.h"
 #include "meta/SchemaProviderIf.h"
 #include "dataman/ResultSchemaProvider.h"
 #include "storage/StorageServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include <folly/synchronization/Baton.h>
-#include "meta/SchemaManager.h"
 #include <folly/executors/ThreadPoolExecutor.h>
 #include <folly/executors/CPUThreadPoolExecutor.h>
 #include "dataman/RowReader.h"
@@ -210,7 +210,7 @@ public:
         }
 
         auto handler = std::make_shared<nebula::storage::StorageServiceHandler>(
-            sc->kvStore_.get(), sc->schemaMan_.get());
+            sc->kvStore_.get(), sc->schemaMan_.get(), mClient);
         sc->mockCommon("storage", port, handler);
         auto ptr = dynamic_cast<kvstore::MetaServerBasedPartManager*>(
             sc->kvStore_->partManager());

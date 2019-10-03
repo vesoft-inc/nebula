@@ -54,6 +54,7 @@ void SetExecutor::setLeft() {
 
     futures_.emplace_back(leftP_.getFuture());
     auto onResult = [this] (std::unique_ptr<InterimResult> result) {
+        DCHECK(result != nullptr);
         this->leftResult_ = std::move(result);
         VLOG(3) << "Left result set.";
         leftP_.setValue();
@@ -77,6 +78,7 @@ void SetExecutor::setRight() {
 
     futures_.emplace_back(rightP_.getFuture());
     auto onResult = [this] (std::unique_ptr<InterimResult> result) {
+        DCHECK(result != nullptr);
         this->rightResult_ = std::move(result);
         VLOG(3) << "Right result set.";
         rightP_.setValue();
@@ -108,15 +110,31 @@ void SetExecutor::execute() {
         UNUSED(result);
         if (!leftS_.ok() || !rightS_.ok()) {
             std::string msg;
-            msg += "left: ";
+            msg += "lhs has error: ";
             msg += leftS_.toString();
-            msg += " right: ";
+            msg += " rhs has error: ";
             msg += rightS_.toString();
             onError_(Status::Error(msg));
             return;
         }
 
-        if (leftResult_ == nullptr && rightResult_ == nullptr) {
+        if (leftResult_ == nullptr || rightResult_ == nullptr) {
+            // Should not reach here.
+            LOG(ERROR) << "Get null input: " << leftResult_.get()
+                        << " " << rightResult_.get();
+            onError_(Status::Error("Internal error."));
+            return;
+        }
+
+        colNames_ = leftResult_->getColNames();
+        // If the column count not match, we will not do set op.
+        if (colNames_.size() != rightResult_->getColNames().size()) {
+            std::string err = "Field count not match.";
+            LOG(ERROR) << err;
+            onError_(Status::Error(std::move(err)));
+            return;
+        }
+        if (!leftResult_->hasData() && !rightResult_->hasData()) {
             VLOG(3) << "Set op no input.";
             onEmptyInputs();
             return;
@@ -142,16 +160,15 @@ void SetExecutor::execute() {
 
 void SetExecutor::doUnion() {
     VLOG(3) << "Do Union.";
-    if (leftResult_ == nullptr) {
+    if (!leftResult_->hasData()) {
         VLOG(3) << "Union has right result.";
-        getResultCols(rightResult_);
+        rightResult_->setColNames(std::move(colNames_));
         finishExecution(std::move(rightResult_));
         return;
     }
 
-    if (rightResult_ == nullptr) {
+    if (!rightResult_->hasData()) {
         VLOG(3) << "Union has left result.";
-        getResultCols(leftResult_);
         finishExecution(std::move(leftResult_));
         return;
     }
@@ -163,8 +180,22 @@ void SetExecutor::doUnion() {
         return;
     }
 
-    auto leftRows = leftResult_->getRows();
-    auto rightRows = rightResult_->getRows();
+    auto ret = leftResult_->getRows();
+    if (!ret.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(ret).status());
+        return;
+    }
+    auto leftRows = std::move(ret).value();
+
+    ret = rightResult_->getRows();
+    if (!ret.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(ret).status());
+        return;
+    }
+    auto rightRows = std::move(ret).value();
+
     if (!castingMap_.empty()) {
         auto stat = doCasting(rightRows);
         if (!stat.ok()) {
@@ -193,14 +224,11 @@ Status SetExecutor::checkSchema() {
 
     auto index = 0u;
     while (leftIter && rightIter) {
-        auto *colName = leftIter->getName();
         if (leftIter->getType() != rightIter->getType()) {
             // Implicit type casting would happen if the type do no match.
             // If type casting failed. the whole statement would fail.
             castingMap_.emplace_back(index, leftIter->getType());
         }
-
-        colNames_.emplace_back(colName);
 
         ++index;
         ++leftIter;
@@ -242,7 +270,7 @@ void SetExecutor::doDistinct(std::vector<cpp2::RowValue> &rows) const {
 
 void SetExecutor::doIntersect() {
     VLOG(3) << "Do InterSect.";
-    if (leftResult_ == nullptr || rightResult_ == nullptr) {
+    if (!leftResult_->hasData() || !rightResult_->hasData()) {
         VLOG(3) << "No intersect.";
         onEmptyInputs();
         return;
@@ -255,8 +283,22 @@ void SetExecutor::doIntersect() {
         return;
     }
 
-    auto leftRows = leftResult_->getRows();
-    auto rightRows = rightResult_->getRows();
+    auto ret = leftResult_->getRows();
+    if (!ret.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(ret).status());
+        return;
+    }
+    auto leftRows = std::move(ret).value();
+
+    ret = rightResult_->getRows();
+    if (!ret.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(ret).status());
+        return;
+    }
+    auto rightRows = std::move(ret).value();
+
     if (!castingMap_.empty()) {
         Status stat = doCasting(rightRows);
         if (!stat.ok()) {
@@ -282,15 +324,14 @@ void SetExecutor::doIntersect() {
 
 void SetExecutor::doMinus() {
     VLOG(3) << "Do Minus.";
-    if (leftResult_ == nullptr) {
+    if (!leftResult_->hasData()) {
         VLOG(3) << "Minus has only right result.";
         onEmptyInputs();
         return;
     }
 
-    if (rightResult_ == nullptr) {
+    if (!rightResult_->hasData()) {
         VLOG(3) << "Minus has left result.";
-        getResultCols(leftResult_);
         finishExecution(std::move(leftResult_));
         return;
     }
@@ -302,8 +343,22 @@ void SetExecutor::doMinus() {
         return;
     }
 
-    auto leftRows = leftResult_->getRows();
-    auto rightRows = rightResult_->getRows();
+    auto ret = leftResult_->getRows();
+    if (!ret.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(ret).status());
+        return;
+    }
+    auto leftRows = std::move(ret).value();
+
+    ret = rightResult_->getRows();
+    if (!ret.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(ret).status());
+        return;
+    }
+    auto rightRows = std::move(ret).value();
+
     if (!castingMap_.empty()) {
         Status stat = doCasting(rightRows);
         if (!stat.ok()) {
@@ -327,19 +382,10 @@ void SetExecutor::doMinus() {
     return;
 }
 
-void SetExecutor::getResultCols(std::unique_ptr<InterimResult> &result) {
-    auto schema = result->schema();
-    auto iter = schema->begin();
-    while (iter) {
-        auto *colName = iter->getName();
-        colNames_.emplace_back(colName);
-        ++iter;
-    }
-}
-
 void SetExecutor::onEmptyInputs() {
+    auto result = std::make_unique<InterimResult>(std::move(colNames_));
     if (onResult_) {
-        onResult_(nullptr);
+        onResult_(std::move(result));
     } else if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
     }
@@ -348,14 +394,23 @@ void SetExecutor::onEmptyInputs() {
 }
 
 void SetExecutor::finishExecution(std::unique_ptr<InterimResult> result) {
+    if (result == nullptr) {
+        result = std::make_unique<InterimResult>(std::move(colNames_));
+    }
     if (onResult_) {
         onResult_(std::move(result));
     } else {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        resp_->set_column_names(std::move(colNames_));
-        if (result != nullptr) {
-            auto rows = result->getRows();
-            resp_->set_rows(std::move(rows));
+        auto colNames = result->getColNames();
+        resp_->set_column_names(std::move(colNames));
+        if (result->hasData()) {
+            auto ret = result->getRows();
+            if (!ret.ok()) {
+                DCHECK(onError_);
+                onError_(std::move(ret).status());
+                return;
+            }
+            resp_->set_rows(std::move(ret).value());
         }
     }
 
@@ -365,8 +420,12 @@ void SetExecutor::finishExecution(std::unique_ptr<InterimResult> result) {
 
 void SetExecutor::finishExecution(std::vector<cpp2::RowValue> rows) {
     if (onResult_) {
-        auto outputs = InterimResult::getInterim(resultSchema_, rows);
-        onResult_(std::move(outputs));
+        auto ret = InterimResult::getInterim(resultSchema_, rows);
+        if (!ret.ok()) {
+            LOG(ERROR) << "Get Interim result failed.";
+            onError_(std::move(ret).status());
+        }
+        onResult_(std::move(ret).value());
     } else {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(std::move(colNames_));

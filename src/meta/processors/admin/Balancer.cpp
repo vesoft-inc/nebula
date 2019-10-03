@@ -29,7 +29,7 @@ StatusOr<BalanceID> Balancer::balance() {
             LOG(INFO) << "There is no corrupted plan need to recovery, so create a new one";
             auto status = buildBalancePlan();
             if (plan_ == nullptr) {
-                LOG(ERROR) << "Create balance plan failed!";
+                LOG(ERROR) << "Create balance plan failed, status " << status.toString();
                 return status;
             }
         }
@@ -37,6 +37,17 @@ StatusOr<BalanceID> Balancer::balance() {
         return plan_->id();
     }
     return Status::Error("balance running");
+}
+
+StatusOr<BalancePlan> Balancer::show(BalanceID id) const {
+    if (kv_) {
+        BalancePlan plan(id, kv_, client_.get());
+        if (!plan.recovery(false)) {
+            return Status::Error("Get balance plan failed, id %ld", id);
+        }
+        return plan;
+    }
+    return Status::Error("KV is nullptr");
 }
 
 bool Balancer::recovery() {
@@ -121,7 +132,7 @@ Status Balancer::buildBalancePlan() {
     };
     if (plan_->tasks_.empty()) {
         plan_->onFinished_();
-        return Status::Error("No Tasks");
+        return Status::Balanced();
     }
     if (!plan_->saveInStore()) {
         plan_->onFinished_();
@@ -145,9 +156,11 @@ std::vector<BalanceTask> Balancer::genTasks(GraphSpaceID spaceId) {
     calDiff(hostParts, activeHosts, newlyAdded, lost);
     decltype(hostParts) newHostParts(hostParts);
     for (auto& h : newlyAdded) {
+        LOG(INFO) << "Found new host " << h;
         newHostParts.emplace(h, std::vector<PartitionID>());
     }
     for (auto& h : lost) {
+        LOG(INFO) << "Lost host " << h;
         newHostParts.erase(h);
     }
     LOG(INFO) << "Now, try to balance the newHostParts";
@@ -157,6 +170,11 @@ std::vector<BalanceTask> Balancer::genTasks(GraphSpaceID spaceId) {
     for (auto& h : lost) {
         auto& lostParts = hostParts[h];
         for (auto& partId : lostParts) {
+            auto srcRet = hostWithPart(newHostParts, partId);
+            if (!srcRet.ok()) {
+                LOG(ERROR) << "Error:" << srcRet.status();
+                return std::vector<BalanceTask>();
+            }
             auto ret = hostWithMinimalParts(newHostParts, partId);
             if (!ret.ok()) {
                 LOG(ERROR) << "Error:" << ret.status();
@@ -169,6 +187,7 @@ std::vector<BalanceTask> Balancer::genTasks(GraphSpaceID spaceId) {
                                partId,
                                h,
                                luckyHost,
+                               false,
                                kv_,
                                client_.get());
         }
@@ -202,6 +221,8 @@ void Balancer::balanceParts(BalanceID balanceId,
         CHECK_GE(avgLoad, minPartsHost.second);
         auto& partsFrom = newHostParts[maxPartsHost.first];
         auto& partsTo = newHostParts[minPartsHost.first];
+        std::sort(partsFrom.begin(), partsFrom.end());
+        std::sort(partsTo.begin(), partsTo.end());
         VLOG(1) << maxPartsHost.first << ":" << partsFrom.size()
                 << "->" << minPartsHost.first << ":" << partsTo.size()
                 << ", lastDelta=" << lastDelta;
@@ -217,9 +238,11 @@ void Balancer::balanceParts(BalanceID balanceId,
                         << maxPartsHost.first << " to " << minPartsHost.first;
                 break;
             }
-            VLOG(1) << maxPartsHost.first << "->" << minPartsHost.first << ": " << partId;
+            LOG(INFO) << "[space:" << spaceId << ", part:" << partId << "] "
+                      << maxPartsHost.first << "->" << minPartsHost.first;
             auto it = std::find(partsFrom.begin(), partsFrom.end(), partId);
             CHECK(it != partsFrom.end());
+            CHECK(std::find(partsTo.begin(), partsTo.end(), partId) == partsTo.end());
             partsFrom.erase(it);
             partsTo.emplace_back(partId);
             tasks.emplace_back(balanceId,
@@ -227,6 +250,7 @@ void Balancer::balanceParts(BalanceID balanceId,
                                partId,
                                maxPartsHost.first,
                                minPartsHost.first,
+                               true,
                                kv_,
                                client_.get());
             noAction = false;
@@ -285,13 +309,13 @@ void Balancer::calDiff(const std::unordered_map<HostAddr, std::vector<PartitionI
                        std::vector<HostAddr>& newlyAdded,
                        std::vector<HostAddr>& lost) {
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-        VLOG(3) << "Host " << it->first << ", parts " << it->second.size();
+        VLOG(1) << "Original Host " << it->first << ", parts " << it->second.size();
         if (std::find(activeHosts.begin(), activeHosts.end(), it->first) == activeHosts.end()) {
             lost.emplace_back(it->first);
         }
     }
     for (auto& h : activeHosts) {
-        VLOG(3) << "Actvie Host " << h;
+        VLOG(1) << "Active host " << h;
         if (hostParts.find(h) == hostParts.end()) {
             newlyAdded.emplace_back(h);
         }
@@ -309,6 +333,17 @@ Balancer::sortedHostsByParts(const std::unordered_map<HostAddr,
         return l.second < r.second;
     });
     return hosts;
+}
+
+StatusOr<HostAddr> Balancer::hostWithPart(
+            const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
+            PartitionID partId) {
+    for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
+        if (std::find(it->second.begin(), it->second.end(), partId) != it->second.end()) {
+            return it->first;
+        }
+    }
+    return Status::Error("No host hold the part %d", partId);
 }
 
 StatusOr<HostAddr> Balancer::hostWithMinimalParts(
@@ -342,7 +377,7 @@ cpp2::ErrorCode Balancer::leaderBalance() {
         hostLeaderMap_.reset(new HostLeaderMap);
         auto status = client_->getLeaderDist(hostLeaderMap_.get()).get();
 
-        if (!status.ok()) {
+        if (!status.ok() || hostLeaderMap_->empty()) {
             inLeaderBalance_ = false;
             return cpp2::ErrorCode::E_RPC_FAILURE;
         }

@@ -1,7 +1,5 @@
 FROM vesoft/nebula-dev:centos as builder
 
-LABEL maintainer "yee.yi@vesoft.com"
-
 COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \
