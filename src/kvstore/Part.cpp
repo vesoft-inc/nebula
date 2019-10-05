@@ -204,7 +204,7 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
         auto logEntry = iter->logEntry();
         lastId = std::get<0>(logEntry);
         lastTerm = std::get<1>(logEntry);
-        auto log = std::get<3>(logEntry);
+        auto log = std::move(std::get<3>(logEntry));
         if (log.empty()) {
             VLOG(3) << idStr_ << "Skip the heartbeat!";
             ++(*iter);

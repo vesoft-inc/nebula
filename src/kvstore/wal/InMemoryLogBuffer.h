@@ -19,7 +19,8 @@ namespace wal {
 class InMemoryLogBuffer final {
 public:
     InMemoryLogBuffer() {
-        logs_.reserve(1 << FLAGS_wal_buffer_size_exp);
+        CHECK_LT(FLAGS_wal_buffer_size_exp, 15);
+        logs_.reserve(1UL << FLAGS_wal_buffer_size_exp);
         mask_ = logs_.capacity() - 1;
     }
 
@@ -48,7 +49,7 @@ public:
         return firstLogId_;
     }
 
-    bool getLogEntry(LogID logId, LogEntry& logEntry) {
+    bool getLogEntry(LogID logId) {
         folly::RWSpinLock::ReadHolder rh(&accessLock_);
         if (logs_.empty() || logId < firstLogId_ ||
             logId >= firstLogId_ + static_cast<int64_t>(logs_.size())) {
@@ -68,7 +69,7 @@ public:
 
 private:
     mutable folly::RWSpinLock accessLock_;
-    std::vector<std::tuple<LogID, TermID, ClusterID, std::string>> logs_;
+    std::vector<LogEntry> logs_;
     LogID firstLogId_{std::numeric_limits<LogID>::max()};
     size_t firstLogIdIndex_{0};
     size_t mask_;

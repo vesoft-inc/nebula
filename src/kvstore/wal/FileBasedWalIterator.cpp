@@ -190,53 +190,54 @@ folly::StringPiece FileBasedWalIterator::logMsg() const {
 }
 
 LogEntry FileBasedWalIterator::logEntry() {
-    LogEntry logEntry;
     // Try to get log from ring buffer first, if failed to read from buffer,
     // try to read from wal files
     // TODO: need to figure out when can we stop reading from wal file anymore once hit ring buffer
-    if (!ringBuffer_->getLogEntry(currId_, logEntry)) {
-        if (!hasReadWalFile_) {
-            loadWalFiles();
-            hasReadWalFile_ = true;
-        }
-
-        LogID logId;
-        int fd = fds_.front();
-        // Read the logID
-        CHECK_EQ(pread(fd,
-                       reinterpret_cast<char*>(&logId),
-                       sizeof(LogID),
-                       currPos_),
-                 static_cast<ssize_t>(sizeof(LogID))) << "currPos = " << currPos_;
-
-        TermID term;
-        CHECK_EQ(pread(fd,
-                       reinterpret_cast<char*>(&term),
-                       sizeof(TermID),
-                       currPos_ + sizeof(LogID)),
-                 static_cast<ssize_t>(sizeof(TermID)));
-
-        ClusterID cluster = 0;
-        CHECK_EQ(pread(fd,
-                       &(cluster),
-                       sizeof(ClusterID),
-                       currPos_ + sizeof(LogID) + sizeof(TermID) + sizeof(int32_t)),
-                 static_cast<ssize_t>(sizeof(ClusterID)));
-
-        std::string logMsg;
-        logMsg.resize(currMsgLen_);
-        CHECK_EQ(pread(fd,
-                       &(logMsg[0]),
-                       currMsgLen_,
-                       currPos_
-                        + sizeof(LogID)
-                        + sizeof(TermID)
-                        + sizeof(int32_t)
-                        + sizeof(ClusterID)),
-                 static_cast<ssize_t>(currMsgLen_));
-        return {logId, term, cluster, std::move(logMsg)};
+    LogEntry logEntry;
+    if (ringBuffer_->getLogEntry(currId_, logEntry)) {
+        return logEntry;
     }
-    return logEntry;
+
+    if (!hasReadWalFile_) {
+        loadWalFiles();
+        hasReadWalFile_ = true;
+    }
+
+    LogID logId;
+    int fd = fds_.front();
+    // Read the logID
+    CHECK_EQ(pread(fd,
+                   reinterpret_cast<char*>(&logId),
+                   sizeof(LogID),
+                   currPos_),
+             static_cast<ssize_t>(sizeof(LogID))) << "currPos = " << currPos_;
+
+    TermID term;
+    CHECK_EQ(pread(fd,
+                   reinterpret_cast<char*>(&term),
+                   sizeof(TermID),
+                   currPos_ + sizeof(LogID)),
+             static_cast<ssize_t>(sizeof(TermID)));
+
+    ClusterID cluster = 0;
+    CHECK_EQ(pread(fd,
+                   &(cluster),
+                   sizeof(ClusterID),
+                   currPos_ + sizeof(LogID) + sizeof(TermID) + sizeof(int32_t)),
+             static_cast<ssize_t>(sizeof(ClusterID)));
+
+    std::string logMsg;
+    logMsg.resize(currMsgLen_);
+    CHECK_EQ(pread(fd,
+                   &(logMsg[0]),
+                   currMsgLen_,
+                   currPos_
+                    + sizeof(LogID)
+                    + sizeof(TermID)
+                    + sizeof(int32_t)
+                    + sizeof(ClusterID)),
+             static_cast<ssize_t>(currMsgLen_));
+    return LogEntry(logId, term, cluster, std::move(logMsg));
 }
 
 

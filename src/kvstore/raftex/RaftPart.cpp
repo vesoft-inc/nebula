@@ -149,8 +149,9 @@ public:
 
     LogEntry logEntry() override {
         DCHECK(valid());
-        return {logId_, termId_, std::get<0>(logs_.at(idx_)),
-                currLogType_ == LogType::ATOMIC_OP ? opResult_ : std::get<2>(logs_.at(idx_))};
+        return LogEntry(logId_, termId_, std::get<0>(logs_.at(idx_)),
+                        currLogType_ == LogType::ATOMIC_OP ?
+                                        opResult_ : std::get<2>(logs_.at(idx_)));
     }
 
     // Return true when there is no more log left for processing

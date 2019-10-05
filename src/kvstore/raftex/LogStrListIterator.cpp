@@ -57,8 +57,10 @@ folly::StringPiece LogStrListIterator::logMsg() const {
 
 LogEntry LogStrListIterator::logEntry() {
     DCHECK(valid());
-    return {firstLogId_ + idx_, term_, logEntries_.at(idx_).get_cluster(),
-            logEntries_.at(idx_).get_log_str()};
+    return LogEntry(firstLogId_ + idx_,
+                    term_,
+                    logEntries_.at(idx_).get_cluster(),
+                    logEntries_.at(idx_).get_log_str());
 }
 
 }  // namespace raftex
