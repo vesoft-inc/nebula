@@ -17,26 +17,6 @@ ColValue::~ColValue() {
     clear();
 }
 
-ColValue::ColValue(bool val) {
-    type_ = kBoolType;
-    value_.bool_val = val;
-}
-
-ColValue::ColValue(int64_t val) {
-    type_ = kIntType;
-    value_.integer = val;
-}
-
-ColValue::ColValue(double val) {
-    type_ = kDoubleType;
-    value_.double_precision = val;
-}
-
-ColValue::ColValue(const std::string &val) {
-    type_ = kStringType;
-    value_.str = val;
-}
-
 ColValue::ColValue(const ColValue &rhs) {
     assign(rhs);
 }
@@ -45,26 +25,6 @@ ColValue& ColValue::operator=(const ColValue &rhs) {
     if (&rhs != this) {
         assign(rhs);
     }
-    return *this;
-}
-
-ColValue& ColValue::operator=(bool val) {
-    setBoolValue(val);
-    return *this;
-}
-
-ColValue& ColValue::operator=(int64_t val) {
-    setIntValue(val);
-    return *this;
-}
-
-ColValue& ColValue::operator=(double val) {
-    setDoubleValue(val);
-    return *this;
-}
-
-ColValue& ColValue::operator=(const std::string &val) {
-    setStrValue(val);
     return *this;
 }
 

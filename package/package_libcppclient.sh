@@ -36,7 +36,7 @@ function build {
 
 function createRpmSpec {
     cat > $RPM_SEPC <<EOF
-Name: nebula_client
+Name: nebula-client
 Version: %{_version}
 Release: 0%{?dist}
 Summary: nebula_client
@@ -70,14 +70,14 @@ function createDebSpec {
     mkdir -p _debian/DEBIAN
     control_file=_debian/DEBIAN/control
     cat > $control_file <<EOF
-Package: nebula_client
+Package: nebula-client
 Version: $VERSION
-Section: nebula_client
+Section: nebula-client
 Priority: optional
 Architecture: amd64
 Depends:
 Maintainer: Vesoft Inc <info@vesoft.com>
-Description: Vesoft nebula_client-$VERSION package
+Description: Vesoft nebula-client-$VERSION package
 EOF
 
     mkdir -p _debian/usr/local/include

@@ -15,7 +15,6 @@ namespace graph {
 
 class NebulaClientImpl;
 
-
 class NebulaClient {
 public:
     NebulaClient(const std::string& addr, uint16_t port);
@@ -26,15 +25,14 @@ public:
 
     // Authenticate the user
     ErrorCode connect(const std::string& username,
-                   const std::string& password);
+                      const std::string& password);
+
     void disconnect();
 
     ErrorCode execute(std::string stmt, ExecuteResponse& resp);
 
 private:
-    std::unique_ptr<NebulaClientImpl> client_;
-    const std::string addr_;
-    const uint16_t port_;
+    std::unique_ptr<NebulaClientImpl>           client_;
 };
 
 }  // namespace graph

@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "client/cpp/include/nebula/NebulaClient.h"
 #include "NebulaClientImpl.h"
+#include "client/cpp/include/nebula/NebulaClient.h"
 
 namespace nebula {
 namespace graph {
@@ -14,9 +14,8 @@ void NebulaClient::init(int argc, char *argv[]) {
     NebulaClientImpl::initEnv(argc, argv);
 }
 
-NebulaClient::NebulaClient(const std::string& addr, uint16_t port)
-        : addr_(addr), port_(port) {
-    client_ = std::make_unique<NebulaClientImpl>(addr_, port_);
+NebulaClient::NebulaClient(const std::string& addr, uint16_t port) {
+    client_ = std::make_unique<NebulaClientImpl>(addr, port);
 }
 
 NebulaClient::~NebulaClient() {
@@ -25,7 +24,7 @@ NebulaClient::~NebulaClient() {
 }
 
 ErrorCode NebulaClient::connect(const std::string& username,
-                           const std::string& password) {
+                                const std::string& password) {
     return client_->doConnect(username, password);
 }
 

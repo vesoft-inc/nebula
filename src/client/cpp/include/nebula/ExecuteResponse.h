@@ -50,19 +50,11 @@ enum ValueType {
 class ColValue {
 public:
     ColValue();
-    explicit ColValue(bool val);
-    explicit ColValue(int64_t val);
-    explicit ColValue(double val);
-    explicit ColValue(const std::string &val);
     ColValue(const ColValue &rhs);
 
     virtual ~ColValue();
 
     ColValue& operator=(const ColValue &rhs);
-    ColValue& operator=(bool val);
-    ColValue& operator=(int64_t val);
-    ColValue& operator=(double val);
-    ColValue& operator=(const std::string &val);
     bool operator==(const ColValue &rhs) const;
 
     // set value
@@ -140,6 +132,7 @@ private:
         int16_t millisec;
         int16_t microsec;
     };
+
     union Value {
         Value() {}
         ~Value() {}
@@ -173,6 +166,7 @@ public:
     std::vector<ColValue> getColumns() {
         return std::move(columns_);
     }
+
 private:
     std::vector<ColValue>      columns_;
 };
@@ -197,7 +191,6 @@ public:
     std::string* getSpaceName();
     std::vector<std::string>* getColumnNames();
     std::vector<RowValue>* getRows();
-
 
 private:
     ErrorCode                       errorCode_;

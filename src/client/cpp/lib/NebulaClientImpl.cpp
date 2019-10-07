@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -12,7 +12,6 @@
 
 DEFINE_int32(server_conn_timeout_ms, 1000,
              "Connection timeout in milliseconds");
-
 
 namespace nebula {
 namespace graph {
@@ -68,7 +67,6 @@ ErrorCode NebulaClientImpl::doConnect(const std::string& username,
     cpp2::ErrorCode code = connect(username, password);
     return static_cast<ErrorCode>(code);
 }
-
 
 void NebulaClientImpl::disconnect() {
     if (!client_) {
@@ -177,7 +175,6 @@ ErrorCode NebulaClientImpl::doExecute(std::string stmt,
     if (response.get_rows() != nullptr) {
         feedRows(response, resp);
     }
-
 
     return static_cast<ErrorCode>(response.get_error_code());
 }

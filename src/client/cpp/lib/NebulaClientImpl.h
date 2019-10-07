@@ -37,7 +37,8 @@ public:
                         ExecuteResponse& resp);
 
 private:
-    void feedRows(const cpp2::ExecutionResponse& inResp, ExecuteResponse& outResp);
+    void feedRows(const cpp2::ExecutionResponse& inResp,
+                  ExecuteResponse& outResp);
 
 private:
     using GraphClient = std::unique_ptr<nebula::graph::cpp2::GraphServiceAsyncClient>;
