@@ -9,7 +9,7 @@
 
 #include "base/Base.h"
 #include "fs/TempDir.h"
-#include "client/cpp/GraphClient.h"
+#include "client/cpp/lib/NebulaClientImpl.h"
 #include "test/ServerContext.h"
 #include <gtest/gtest.h>
 #include "TestUtils.h"
@@ -19,7 +19,7 @@
 namespace nebula {
 namespace graph {
 
-class GraphClient;
+class NebulaClientImpl;
 class TestEnv : public ::testing::Environment {
 public:
     TestEnv();
@@ -33,8 +33,8 @@ public:
     uint16_t metaServerPort() const;
     uint16_t storageServerPort() const;
 
-    std::unique_ptr<GraphClient> getClient(const std::string& user = "root",
-                                           const std::string& password = "nebula") const;
+    std::unique_ptr<NebulaClientImpl> getClient(const std::string& user = "root",
+                                                const std::string& password = "nebula") const;
 
     meta::ClientBasedGflagsManager* gflagsManager();
 

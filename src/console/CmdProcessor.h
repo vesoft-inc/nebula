@@ -8,14 +8,14 @@
 #define CONSOLE_CMDPROCESSOR_H_
 
 #include "base/Base.h"
-#include "client/cpp/GraphClient.h"
+#include "client/cpp/lib/NebulaClientImpl.h"
 
 namespace nebula {
 namespace graph {
 
 class CmdProcessor final {
 public:
-    explicit CmdProcessor(std::unique_ptr<GraphClient> client)
+    explicit CmdProcessor(std::unique_ptr<NebulaClientImpl> client)
         : client_(std::move(client)) {}
     ~CmdProcessor() = default;
 
@@ -28,7 +28,7 @@ public:
     const std::string& getSpaceName() const;
 
 private:
-    std::unique_ptr<GraphClient> client_;
+    std::unique_ptr<NebulaClientImpl> client_;
 
     std::string curSpaceName_{"(none)"};
 

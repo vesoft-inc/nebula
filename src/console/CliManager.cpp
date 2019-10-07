@@ -11,7 +11,7 @@
 #include "readline/readline.h"
 #include "readline/history.h"
 #include "console/CliManager.h"
-#include "client/cpp/GraphClient.h"
+#include "client/cpp/lib/NebulaClientImpl.h"
 #include "fs/FileUtils.h"
 #include "network/NetworkUtils.h"
 
@@ -56,8 +56,13 @@ bool CliManager::connect() {
         return false;
     }
 
-    auto client = std::make_unique<GraphClient>(addr_, port_);
+    addr_ = addr;
+    port_ = port;
+    username_ = user;
+
+    auto client = std::make_unique<NebulaClientImpl>(addr_, port_);
     cpp2::ErrorCode res = client->connect(username_, passwd);
+
     if (res == cpp2::ErrorCode::SUCCEEDED) {
 #if defined(NEBULA_BUILD_VERSION)
         std::cerr << "\nWelcome to Nebula Graph (Version "

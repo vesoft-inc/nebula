@@ -298,7 +298,7 @@ public:
 
 protected:
     static uint16_t                             storagePort_;
-    static std::unique_ptr<GraphClient>         client_;
+    static std::unique_ptr<NebulaClientImpl>    client_;
     static VertexHolder<Player>                 players_;
     static VertexHolder<Team>                   teams_;
     static VertexHolder<Bachelor>               bachelors_;
@@ -306,7 +306,7 @@ protected:
 
 uint16_t TraverseTestBase::storagePort_ = 0;
 
-std::unique_ptr<GraphClient> TraverseTestBase::client_;
+std::unique_ptr<NebulaClientImpl> TraverseTestBase::client_;
 
 TraverseTestBase::VertexHolder<TraverseTestBase::Player> TraverseTestBase::players_ = {
     [] (const auto &player) { return player.name(); }, {

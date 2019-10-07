@@ -44,10 +44,10 @@ protected:
 
     static AssertionResult removeData();
 
-    static std::unique_ptr<GraphClient>         client_;
+    static std::unique_ptr<NebulaClientImpl>         client_;
 };
 
-std::unique_ptr<GraphClient>         DataTest::client_{nullptr};
+std::unique_ptr<NebulaClientImpl>         DataTest::client_{nullptr};
 
 AssertionResult DataTest::prepareSchema() {
     {

@@ -21,6 +21,7 @@
 #   ENABLE_NATIVE                   -- Build native client
 #   ENABLE_TESTING                  -- Build unit test
 #   ENABLE_PACK_ONE                 -- Package to one or multi packages
+#   ENABLE_CPPCLIENT_LIB           -- Build cpp client lib so
 #
 # CMake version check
 cmake_minimum_required(VERSION 3.5.0)
@@ -61,6 +62,7 @@ option(ENABLE_STATIC_UBSAN "Whether directs the GCC driver to link libubsan stat
 option(ENABLE_PACK_ONE "Whether to package into one" ON)
 option(ENABLE_PCH "Whether to enable use of precompiled header" OFF)
 option(ENABLE_FRAME_POINTER "Whether to build with -fno-omit-frame-pointer" ON)
+option(ENABLE_CPPCLIENT_LIB "Whether to build cpp client lib ON or OFF" OFF)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
@@ -73,8 +75,9 @@ message(STATUS "ENABLE_WERROR: ${ENABLE_WERROR}")
 message(STATUS "ENABLE_STRICT_ALIASING: ${ENABLE_STRICT_ALIASING}")
 message(STATUS "ENABLE_PCH: ${ENABLE_PCH}")
 message(STATUS "ENABLE_FRAME_POINTER: ${ENABLE_FRAME_POINTER}")
+message(STATUS "ENABLE_CPPCLIENT_LIB: ${ENABLE_CPPCLIENT_LIB}")
 
-if (ENABLE_NATIVE)
+if (ENABLE_NATIVE OR ENABLE_CPPCLIENT_LIB)
     message(STATUS "ENABLE_NATIVE is ${ENABLE_NATIVE}")
     add_compile_options(-fPIC)
 endif()

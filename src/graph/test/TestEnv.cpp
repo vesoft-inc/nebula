@@ -99,9 +99,9 @@ uint16_t TestEnv::storageServerPort() const {
     return storageServer_->port_;
 }
 
-std::unique_ptr<GraphClient> TestEnv::getClient(const std::string& user,
+std::unique_ptr<NebulaClientImpl> TestEnv::getClient(const std::string& user,
                                                 const std::string& password) const {
-    auto client = std::make_unique<GraphClient>("127.0.0.1", graphServerPort());
+    auto client = std::make_unique<NebulaClientImpl>("127.0.0.1", graphServerPort());
     if (cpp2::ErrorCode::SUCCEEDED != client->connect(user, password)) {
         return nullptr;
     }
