@@ -20,14 +20,14 @@ namespace nebula {
  *
  * */
 
-enum NebulaKeyType : uint32_t {
+enum class NebulaKeyType : uint32_t {
     kData              = 0x00000001,
     kIndex             = 0x00000002,
     kUUID              = 0x00000003,
     kSystem            = 0x00000004,
 };
 
-enum NebulaSystemKeyType : uint32_t {
+enum class NebulaSystemKeyType : uint32_t {
     kSystemCommit      = 0x00000001,
     kSystemPart        = 0x00000002,
 };
@@ -82,7 +82,8 @@ public:
         constexpr uint32_t tagMask  = 0x40000000;
         constexpr uint32_t typeMask = 0x000000FF;
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
-        if (NebulaKeyType::kData != (readInt<int32_t>(rawKey.data(), len) & typeMask)) {
+        auto type = readInt<uint32_t>(rawKey.data(), len) & typeMask;
+        if (static_cast<uint32_t>(NebulaKeyType::kData) != type) {
             return false;
         }
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
@@ -100,12 +101,13 @@ public:
         constexpr uint32_t edgeMask = 0x40000000;
         constexpr uint32_t typeMask = 0x000000FF;
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
-        if (NebulaKeyType::kData != (readInt<int32_t>(rawKey.data(), len) & typeMask)) {
+        auto type = readInt<uint32_t>(rawKey.data(), len) & typeMask;
+        if (static_cast<uint32_t>(NebulaKeyType::kData) != type) {
             return false;
         }
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
-        EdgeType type = readInt<EdgeType>(rawKey.data() + offset, sizeof(EdgeType));
-        return type & edgeMask;
+        EdgeType etype = readInt<EdgeType>(rawKey.data() + offset, sizeof(EdgeType));
+        return etype & edgeMask;
     }
 
     static bool isSystemCommit(const folly::StringPiece& rawKey) {
@@ -114,7 +116,8 @@ public:
         }
         auto position = rawKey.data() + sizeof(PartitionID);
         auto len = sizeof(NebulaSystemKeyType);
-        return NebulaSystemKeyType::kSystemCommit == readInt<uint32_t>(position, len);
+        auto type = readInt<uint32_t>(position, len);
+        return static_cast<uint32_t>(NebulaSystemKeyType::kSystemCommit) == type;
     }
 
     static bool isSystemPart(const folly::StringPiece& rawKey) {
@@ -123,7 +126,8 @@ public:
         }
         auto position = rawKey.data() + sizeof(PartitionID);
         auto len = sizeof(NebulaSystemKeyType);
-        return NebulaSystemKeyType::kSystemPart == readInt<uint32_t>(position, len);
+        auto type = readInt<uint32_t>(position, len);
+        return static_cast<uint32_t>(NebulaSystemKeyType::kSystemPart) == type;
     }
 
     static VertexID getSrcId(const folly::StringPiece& rawKey) {
@@ -162,18 +166,21 @@ public:
     static bool isDataKey(const folly::StringPiece& key) {
         constexpr uint32_t typeMask = 0x000000FF;
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
-        return NebulaKeyType::kData == (readInt<int32_t>(key.data(), len) & typeMask);
+        auto type = readInt<int32_t>(key.data(), len) & typeMask;
+        return static_cast<uint32_t>(NebulaKeyType::kData) == type;
     }
 
     static bool isIndexKey(const folly::StringPiece& key) {
         constexpr uint32_t typeMask = 0x000000FF;
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
-        return NebulaKeyType::kIndex == (readInt<int32_t>(key.data(), len) & typeMask);
+        auto type = readInt<int32_t>(key.data(), len) & typeMask;
+        return static_cast<uint32_t>(NebulaKeyType::kIndex) == type;
     }
 
     static bool isUUIDKey(const folly::StringPiece& key) {
         constexpr uint32_t typeMask = 0x000000FF;
-        return NebulaKeyType::kUUID == (readInt<int32_t>(key.data(), sizeof(int32_t)) & typeMask);
+        auto type = readInt<int32_t>(key.data(), sizeof(int32_t)) & typeMask;
+        return static_cast<uint32_t>(NebulaKeyType::kUUID) == type;
     }
 
     static folly::StringPiece keyWithNoVersion(const folly::StringPiece& rawKey) {

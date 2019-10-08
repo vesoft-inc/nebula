@@ -78,11 +78,6 @@ struct IdName {
     2: string name,
 }
 
-struct Pair {
-    1: string key,
-    2: string value,
-}
-
 struct SpaceProperties {
     1: string               space_name,
     2: i32                  partition_num,
@@ -122,8 +117,8 @@ enum HostStatus {
 struct HostItem {
     1: common.HostAddr      hostAddr,
     2: HostStatus           status,
-    3: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts,
-    4: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") all_parts,
+    3: map<string, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts,
+    4: map<string, list<common.PartitionID>> (cpp.template = "std::unordered_map") all_parts,
 }
 
 struct UserItem {
@@ -302,7 +297,7 @@ struct MultiPutReq {
     // segment is used to avoid conflict with system data.
     // it should be comprised of numbers and letters.
     1: string     segment,
-    2: list<Pair> pairs,
+    2: list<common.Pair> pairs,
 }
 
 struct GetReq {
