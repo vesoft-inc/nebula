@@ -8,7 +8,13 @@ As for large data set, generating SST files and then ingesting them may be a bet
 ### Download JARs
 
 <!-- to be replaced after Nexus MVN repo being set -->
-Our maven repository is under construction. At this moment, get fbthrift and graph-client packages from oss https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/thrift-1.0-SNAPSHOT.jar and https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/graph-client-1.0.0-beta.jar.
+Our maven repository is under construction. At this moment, get fbthrift and graph-client packages from oss 
+
+```
+wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/thrift-1.0-SNAPSHOT.jar
+
+wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/graph-client-1.0.0-beta.jar
+```
 
 Or build it by yourself.
 
@@ -32,7 +38,11 @@ Replace "${YOUR_GRAPH_CLIENT_FILEPATH}" and "${YOUR_FBTHRIFT_FILEPATH}" with you
 
 ### Get Importer
 
-Get the `Importer` jar package from oss https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/importer-1.0.0-beta.jar.
+Get the `Importer` jar package from oss 
+
+```
+wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/importer-1.0.0-beta.jar
+```
 
 Or build it by yourself.
 
