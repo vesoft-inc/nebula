@@ -27,6 +27,12 @@ public:
 
     void balanceLeader();
 
+    void balanceData();
+
+    void showBalancePlan();
+
+    void setupResponse(cpp2::ExecutionResponse &resp) override;
+
 private:
     BalanceSentence                          *sentence_{nullptr};
     std::unique_ptr<cpp2::ExecutionResponse>  resp_;

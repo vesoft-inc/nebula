@@ -15,6 +15,8 @@
  */
 #include <thrift/lib/cpp2/async/ReconnectingRequestChannel.h>
 
+#include <thrift/lib/cpp2/async/ClientChannel.h>
+
 #include <folly/io/async/AsyncSocketException.h>
 
 namespace apache {
@@ -80,7 +82,7 @@ uint32_t ReconnectingRequestChannel::sendRequest(
 }
 
 ReconnectingRequestChannel::Impl& ReconnectingRequestChannel::impl() {
-  if (!impl_) {
+  if (!impl_ || !std::dynamic_pointer_cast<apache::thrift::ClientChannel>(impl_)->good()) {
     impl_ = implCreator_(evb_);
   }
 

@@ -24,6 +24,8 @@
 namespace nebula {
 namespace storage {
 
+using PartCode = std::pair<PartitionID, kvstore::ResultCode>;
+
 template<typename RESP>
 class BaseProcessor {
 public:
@@ -44,6 +46,14 @@ protected:
     void onFinished() {
         result_.set_latency_in_us(duration_.elapsedInUSec());
         resp_.set_result(std::move(result_));
+        promise_.setValue(std::move(resp_));
+        delete this;
+    }
+
+    // This method will be used for single part request processor.
+    // Currently, it is used in AdminProcessor
+    void onFinished(cpp2::ErrorCode code) {
+        resp_.set_code(code);
         promise_.setValue(std::move(resp_));
         delete this;
     }
