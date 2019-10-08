@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "filter/FunctionManager.h"
 #include "time/WallClock.h"
+#include "filter/geo/GeoFilter.h"
 
 namespace nebula {
 
@@ -483,6 +484,15 @@ FunctionManager::FunctionManager() {
                     LOG(ERROR) << "Unkown type: " << cmp.which();
                     return false;
             }
+        }
+    }
+    {
+        auto &attr = functions_["near"];
+        attr.minArity_ = 3;
+        attr.maxArity_ = 3;
+        attr.body_ = [] (const auto &args) {
+            geo::GeoFilter::near(args);
+            return INT64_MIN;
         };
     }
 }

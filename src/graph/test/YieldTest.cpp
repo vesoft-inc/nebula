@@ -554,5 +554,16 @@ TEST_F(YieldTest, AggCall) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
+
+TEST_F(YieldTest, near) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD near(\"loc\", \"(123 111)\", 100)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+}
 }   // namespace graph
 }   // namespace nebula
