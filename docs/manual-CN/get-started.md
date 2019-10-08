@@ -172,7 +172,7 @@ to connect to the graph server. -->
 **连接 Nebula Graph**
 
 ```
-> bin/nebula -u=user -p=password --addr {graphd IP address} --port {graphd listening port}
+> bin/nebula -u=user -p=password --addr={graphd IP address} --port={graphd listening port}
 ```
 
 * -u 为用户名，默认值为 `user`
