@@ -82,6 +82,12 @@ nebula_add_test(
     LIBRARIES gtest gtest_main
 )
 
+nebula_add_test(
+    NAME nebula_scoped_invoker_test
+    SOURCES ScopedInvokerTest.cpp
+    LIBRARIES gtest gtest_main
+)
+
 nebula_add_executable(
     NAME range_vs_transform_bm
     SOURCES RangeVsTransformBenchmark.cpp
