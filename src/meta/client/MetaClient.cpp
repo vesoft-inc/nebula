@@ -344,7 +344,6 @@ void MetaClient::getResponse(Request req,
             }
             // errored
             if (retry < retryLimit) {
-                sleep(FLAGS_meta_client_retry_interval_secs);
                 getResponse(std::move(req), std::move(remoteFunc), std::move(respGen),
                             std::move(p), toLeader, retry + 1, retryLimit);
             } else {
