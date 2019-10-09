@@ -33,12 +33,17 @@ A high performance distributed graph database
 %prep
 
 %build
-cmake -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=%{_version} -DCMAKE_INSTALL_PREFIX=%{_install_dir} ./
-make -j2
+cmake -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=%{_version} -DCMAKE_INSTALL_PREFIX=%{_install_dir} -DENABLE_TESTING=OFF./
+make -j$(nproc)
 
 %install
 rm -rf %{buildroot}
 make install DESTDIR=%{buildroot}
+
+%package base
+Summary: nebula base package
+Group: Applications/Databases
+%description base
 
 %package metad
 Summary: nebula meta server daemon
@@ -58,10 +63,10 @@ Group: Applications/Databases
 %description storaged
 storaged is a daemon for storage all data
 
-%package nebula
+%package console
 Summary: nebula console client
 Group: Applications/Databases
-%description nebula
+%description console
 
 %package storage_perf
 Summary: tool for storage
@@ -71,7 +76,7 @@ Group: Applications/Databases
 
 # the files include exe, config file, scripts
 # base rpm include files
-%files
+%files base
 %attr(0755,root,root) %{_datadir}/nebula.service
 %attr(0755,root,root) %{_datadir}/utils.sh
 %attr(0755,root,root) %{_datadir}/services.sh
@@ -116,7 +121,7 @@ if [[ ! -f %{_install_dir}/etc/nebula-storaged.conf ]]; then
 fi
 
 
-%files nebula
+%files console
 %attr(0755,root,root) %{_bindir}/nebula
 %attr(0644,root,root) %{_resourcesdir}/completion.json
 
@@ -131,4 +136,3 @@ fi
 %undefine _missing_build_ids_terminate_build
 
 %changelog
-

@@ -35,6 +35,12 @@ TEST_F(FetchEdgesTest, base) {
         auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve.start_year"}, {"serve.end_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t, int64_t>> expected = {
             {std::get<1>(serve), std::get<2>(serve)},
         };
@@ -50,6 +56,12 @@ TEST_F(FetchEdgesTest, base) {
         auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"(serve.start_year>2001)"}, {"serve.end_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<bool, int64_t>> expected = {
             {std::get<1>(serve) > 2001, std::get<2>(serve)},
         };
@@ -65,6 +77,12 @@ TEST_F(FetchEdgesTest, base) {
         auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve.start_year"}, {"serve.end_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t, int64_t>> expected = {
             {std::get<1>(serve), std::get<2>(serve)},
         };
@@ -83,6 +101,12 @@ TEST_F(FetchEdgesTest, base) {
                 fmt, player.vid(), team0.vid(), player.vid(), team1.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve.start_year"}, {"serve.end_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t, int64_t>> expected = {
             {std::get<1>(serve0), std::get<2>(serve0)},
             {std::get<1>(serve1), std::get<2>(serve1)},
@@ -98,6 +122,12 @@ TEST_F(FetchEdgesTest, base) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve.start_year"}, {"serve.end_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t, int64_t>> expected;
         for (auto &serve : player.serves()) {
             std::tuple<int64_t, int64_t> result(std::get<1>(serve), std::get<2>(serve));
@@ -115,6 +145,12 @@ TEST_F(FetchEdgesTest, base) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve.start_year"}, {"serve.end_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t, int64_t>> expected;
         for (auto &serve : player.serves()) {
             std::tuple<int64_t, int64_t> result(std::get<1>(serve), std::get<2>(serve));
@@ -127,8 +163,23 @@ TEST_F(FetchEdgesTest, base) {
         auto &player = players_["Boris Diaw"];
         auto &serve = player.serves()[0];
         auto &team = teams_[std::get<0>(serve)];
-        auto *fmt = "FETCH PROP ON serve hash(\"%s\")->hash(\"%s\")"
-                    " YIELD serve.start_year, serve.end_year";
+        auto *fmt = "FETCH PROP ON serve hash(\"%s\")->hash(\"%s\") "
+                    "YIELD serve.start_year, serve.end_year";
+        auto query = folly::stringPrintf(fmt, player.name().c_str(), team.name().c_str());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {std::get<1>(serve), std::get<2>(serve)},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto &serve = player.serves()[0];
+        auto &team = teams_[std::get<0>(serve)];
+        auto *fmt = "FETCH PROP ON serve uuid(\"%s\")->hash(\"%s\") "
+                    "YIELD serve.start_year, serve.end_year";
         auto query = folly::stringPrintf(fmt, player.name().c_str(), team.name().c_str());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -149,6 +200,12 @@ TEST_F(FetchEdgesTest, noYield) {
         auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve.start_year"}, {"serve.end_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t, int64_t>> expected = {
             {std::get<1>(serve), std::get<2>(serve)},
         };
@@ -163,6 +220,12 @@ TEST_F(FetchEdgesTest, noYield) {
         auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve.start_year"}, {"serve.end_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t, int64_t>> expected = {
             {std::get<1>(serve), std::get<2>(serve)},
         };
@@ -174,6 +237,26 @@ TEST_F(FetchEdgesTest, noYield) {
         auto &serve = player.serves()[0];
         auto &team = teams_[std::get<0>(serve)];
         auto *fmt = "FETCH PROP ON serve hash(\"%s\")->hash(\"%s\")";
+        auto query = folly::stringPrintf(fmt, player.name().c_str(), team.name().c_str());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve.start_year"}, {"serve.end_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {std::get<1>(serve), std::get<2>(serve)},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto &serve = player.serves()[0];
+        auto &team = teams_[std::get<0>(serve)];
+        auto *fmt = "FETCH PROP ON serve uuid(\"%s\")->hash(\"%s\")";
         auto query = folly::stringPrintf(fmt, player.name().c_str(), team.name().c_str());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -196,6 +279,12 @@ TEST_F(FetchEdgesTest, distinct) {
                 fmt, player.vid(), team.vid(), player.vid(), team.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve.start_year"}, {"serve.end_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t, int64_t>> expected = {
             {std::get<1>(serve), std::get<2>(serve)},
         };
@@ -210,6 +299,12 @@ TEST_F(FetchEdgesTest, distinct) {
         auto query = folly::stringPrintf(fmt, player.vid(), player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve.start_year"}, {"serve.end_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t, int64_t>> expected;
         for (auto &serve : player.serves()) {
             std::tuple<int64_t, int64_t> result(std::get<1>(serve), std::get<2>(serve));
@@ -227,6 +322,12 @@ TEST_F(FetchEdgesTest, distinct) {
         auto query = folly::stringPrintf(fmt, player.vid(), player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve.start_year"}, {"serve.end_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t, int64_t>> expected;
         for (auto &serve : player.serves()) {
             std::tuple<int64_t, int64_t> result(std::get<1>(serve), std::get<2>(serve));
@@ -244,6 +345,12 @@ TEST_F(FetchEdgesTest, distinct) {
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<int64_t>> expected = {
             {teams_["Spurs"].vid()},
             {teams_["Hornets"].vid()},
@@ -252,25 +359,39 @@ TEST_F(FetchEdgesTest, distinct) {
     }
 }
 
+TEST_F(FetchEdgesTest, noInput) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &nobody = players_["Nobody"];
+        auto *fmt = "GO FROM %ld OVER serve YIELD serve._src AS src, serve._dst AS dst"
+                    "| FETCH PROP ON serve $-.src->$-.dst"
+                    " YIELD serve.start_year, serve.end_year";
+        auto query = folly::stringPrintf(fmt, nobody.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+}
+
 TEST_F(FetchEdgesTest, syntaxError) {
     {
         cpp2::ExecutionResponse resp;
-        auto query = "FETCH PROP ON serve hash(\"Boris Diaw\")->hash(\"Spurs\")"
-                     " YIELD $^.serve.start_year";
+        auto query = "FETCH PROP ON serve hash(\"Boris Diaw\")->hash(\"Spurs\") "
+                     "YIELD $^.serve.start_year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;
-        auto query = "FETCH PROP ON serve hash(\"Boris Diaw\")->hash(\"Spurs\")"
-                     " YIELD $$.serve.start_year";
+        auto query = "FETCH PROP ON serve hash(\"Boris Diaw\")->hash(\"Spurs\") "
+                     "YIELD $$.serve.start_year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;
-        auto query = "FETCH PROP ON serve hash(\"Boris Diaw\")->hash(\"Spurs\")"
-                     " YIELD abc.start_year";
+        auto query = "FETCH PROP ON serve hash(\"Boris Diaw\")->hash(\"Spurs\") "
+                     "YIELD abc.start_year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
@@ -279,8 +400,16 @@ TEST_F(FetchEdgesTest, syntaxError) {
 TEST_F(FetchEdgesTest, nonExistEdge) {
     {
         cpp2::ExecutionResponse resp;
-        auto query = "FETCH PROP ON serve hash(\"Zion Williamson\")->hash(\"Spurs\")"
-                     " YIELD serve.start_year";
+        auto query = "FETCH PROP ON serve hash(\"Zion Williamson\")->hash(\"Spurs\") "
+                     "YIELD serve.start_year";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP ON serve uuid(\"Zion Williamson\")->hash(\"Spurs\") "
+                     "YIELD serve.start_year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());

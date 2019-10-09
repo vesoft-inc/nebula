@@ -4,4 +4,4 @@ nebula_add_library(
     Latch.cpp
 )
 
-add_subdirectory(test)
+nebula_add_subdirectory(test)

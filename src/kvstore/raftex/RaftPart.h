@@ -10,10 +10,12 @@
 #include "base/Base.h"
 #include <folly/futures/SharedPromise.h>
 #include <folly/Function.h>
+#include <gtest/gtest_prod.h>
 #include "gen-cpp2/raftex_types.h"
 #include "time/Duration.h"
 #include "thread/GenericThreadPool.h"
 #include "base/LogIterator.h"
+#include "kvstore/raftex/SnapshotManager.h"
 
 namespace folly {
 class IOThreadPoolExecutor;
@@ -38,6 +40,9 @@ enum class AppendLogResult {
     E_BUFFER_OVERFLOW = -5,
     E_WAL_FAILURE = -6,
     E_TERM_OUT_OF_DATE = -7,
+    E_SENDING_SNAPSHOT = -8,
+    E_INVALID_PEER = -9,
+    E_NOT_ENOUGH_ACKS = -10,
 };
 
 enum class LogType {
@@ -67,6 +72,10 @@ using AtomicOp = folly::Function<std::string(void)>;
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
     friend class AppendLogsIterator;
     friend class Host;
+    friend class SnapshotManager;
+    FRIEND_TEST(MemberChangeTest, AddRemovePeerTest);
+    FRIEND_TEST(MemberChangeTest, RemoveLeaderTest);
+
 public:
     virtual ~RaftPart();
 
@@ -126,6 +135,11 @@ public:
 
     void preProcessTransLeader(const HostAddr& target);
 
+
+    void preProcessRemovePeer(const HostAddr& peer);
+
+    void commitRemovePeer(const HostAddr& peer);
+
     // Change the partition status to RUNNING. This is called
     // by the inherited class, when it's ready to serve
     virtual void start(std::vector<HostAddr>&& peers, bool asLearner = false);
@@ -161,7 +175,11 @@ public:
      * */
     folly::Future<AppendLogResult> sendCommandAsync(std::string log);
 
-
+    /**
+     * Check if the peer has catched up data from leader. If leader is sending the snapshot,
+     * the method will return false.
+     * */
+    AppendLogResult isCatchedUp(const HostAddr& peer);
 
     /*****************************************************
      *
@@ -178,6 +196,10 @@ public:
         const cpp2::AppendLogRequest& req,
         cpp2::AppendLogResponse& resp);
 
+    // Process sendSnapshot request
+    void processSendSnapshotRequest(
+        const cpp2::SendSnapshotRequest& req,
+        cpp2::SendSnapshotResponse& resp);
 
 protected:
     // Protected constructor to prevent from instantiating directly
@@ -188,7 +210,8 @@ protected:
              const folly::StringPiece walRoot,
              std::shared_ptr<folly::IOThreadPoolExecutor> pool,
              std::shared_ptr<thread::GenericThreadPool> workers,
-             std::shared_ptr<folly::Executor> executor);
+             std::shared_ptr<folly::Executor> executor,
+             std::shared_ptr<SnapshotManager> snapshotMan);
 
     const char* idStr() const {
         return idStr_.c_str();
@@ -220,11 +243,28 @@ protected:
                                ClusterID clusterId,
                                const std::string& log) = 0;
 
+    // Return <size, count> committed;
+    virtual std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
+                                                       LogID committedLogId,
+                                                       TermID committedLogTerm,
+                                                       bool finished) = 0;
+
+    // Clean up all data about current part in storage.
+    virtual void cleanup() = 0;
+
+    // Reset the part, clean up all data and WALs.
+    void reset();
+
+    void addPeer(const HostAddr& peer);
+
+    void removePeer(const HostAddr& peer);
+
 private:
     enum class Status {
         STARTING = 0,   // The part is starting, not ready for service
         RUNNING,        // The part is running
-        STOPPED         // The part has been stopped
+        STOPPED,        // The part has been stopped
+        WAITING_SNAPSHOT  // Waiting for the snapshot.
     };
 
     enum class Role {
@@ -259,8 +299,7 @@ private:
      ***************************************************/
     const char* roleStr(Role role) const;
 
-    cpp2::ErrorCode verifyLeader(const cpp2::AppendLogRequest& req,
-                                 std::lock_guard<std::mutex>& lck);
+    cpp2::ErrorCode verifyLeader(const cpp2::AppendLogRequest& req);
 
     /*****************************************************************
      * Asynchronously send a heartbeat (An empty log entry)
@@ -278,6 +317,10 @@ private:
     bool needToStartElection();
 
     void statusPolling();
+
+    bool needToCleanupSnapshot();
+
+    void cleanupSnapshot();
 
     // The method sends out AskForVote request
     // It return true if a leader is elected, otherwise returns false
@@ -327,6 +370,8 @@ private:
     std::vector<std::shared_ptr<Host>> followers() const;
 
     bool checkAppendLogResult(AppendLogResult res);
+
+    void updateQuorum();
 
 protected:
     template<class ValueType>
@@ -465,6 +510,13 @@ protected:
     std::shared_ptr<thread::GenericThreadPool> bgWorkers_;
     // Workers pool
     std::shared_ptr<folly::Executor> executor_;
+
+    std::shared_ptr<SnapshotManager> snapshot_;
+
+    // Used in snapshot, record the last total count and total size received from request
+    int64_t lastTotalCount_ = 0;
+    int64_t lastTotalSize_ = 0;
+    time::Duration lastSnapshotRecvDur_;
 };
 
 }  // namespace raftex

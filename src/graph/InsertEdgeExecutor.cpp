@@ -18,6 +18,8 @@ InsertEdgeExecutor::InsertEdgeExecutor(Sentence *sentence,
 
 
 Status InsertEdgeExecutor::prepare() {
+    expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setStorageClient(ectx()->getStorageClient());
     return Status::OK();
 }
 
@@ -40,6 +42,7 @@ Status InsertEdgeExecutor::check() {
     props_ = sentence_->properties();
     rows_ = sentence_->rows();
 
+    expCtx_->setStorageClient(ectx()->getStorageClient());
     schema_ = ectx()->schemaManager()->getEdgeSchema(spaceId_, edgeType_);
     if (schema_ == nullptr) {
         LOG(ERROR) << "No schema found for " << sentence_->edge();
@@ -87,11 +90,18 @@ Status InsertEdgeExecutor::check() {
 
 
 StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
+    expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setStorageClient(ectx()->getStorageClient());
+
+    auto space = ectx()->rctx()->session()->space();
+    expCtx_->setSpace(space);
+
     std::vector<storage::cpp2::Edge> edges(rows_.size() * 2);   // inbound and outbound
     auto index = 0;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto sid = row->srcid();
+        sid->setContext(expCtx_.get());
         auto status = sid->prepare();
         if (!status.ok()) {
             return status;
@@ -108,6 +118,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         auto src = Expression::asInt(v);
 
         auto did = row->dstid();
+        did->setContext(expCtx_.get());
         status = did->prepare();
         if (!status.ok()) {
             return status;
@@ -130,6 +141,11 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         std::vector<VariantType> values;
         values.reserve(expressions.size());
         for (auto *expr : expressions) {
+            status = expr->prepare();
+            if (!status.ok()) {
+                return status;
+            }
+
             ovalue = expr->eval();
             if (!ovalue.ok()) {
                 return ovalue.status();
@@ -221,7 +237,16 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
                            << ", input type " <<  value.which();
                 return Status::Error("ValueType is wrong");
             }
-            writeVariantType(writer, value);
+
+            if (schemaType.type == nebula::cpp2::SupportedType::TIMESTAMP) {
+                auto timestamp = toTimestamp(value);
+                if (!timestamp.ok()) {
+                    return timestamp.status();
+                }
+                writeVariantType(writer, timestamp.value());
+            } else {
+                writeVariantType(writer, value);
+            }
             fieldIndex++;
         }
 
@@ -265,7 +290,10 @@ void InsertEdgeExecutor::execute() {
         onError_(std::move(result).status());
         return;
     }
-    auto future = ectx()->storage()->addEdges(spaceId_, std::move(result).value(), overwritable_);
+
+    auto future = ectx()->getStorageClient()->addEdges(spaceId_,
+                                                       std::move(result).value(),
+                                                       overwritable_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {

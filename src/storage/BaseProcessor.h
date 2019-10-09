@@ -24,6 +24,8 @@
 namespace nebula {
 namespace storage {
 
+using PartCode = std::pair<PartitionID, kvstore::ResultCode>;
+
 template<typename RESP>
 class BaseProcessor {
 public:
@@ -48,7 +50,20 @@ protected:
         delete this;
     }
 
+    // This method will be used for single part request processor.
+    // Currently, it is used in AdminProcessor
+    void onFinished(cpp2::ErrorCode code) {
+        resp_.set_code(code);
+        promise_.setValue(std::move(resp_));
+        delete this;
+    }
+
     void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV> data);
+
+    void doRemove(GraphSpaceID spaceId, PartitionID partId, std::vector<std::string> keys);
+
+    void doRemoveRange(GraphSpaceID spaceId, PartitionID partId, std::string start,
+                       std::string end);
 
     nebula::cpp2::ColumnDef columnDef(std::string name, nebula::cpp2::SupportedType type) {
         nebula::cpp2::ColumnDef column;
@@ -70,17 +85,24 @@ protected:
         }
     }
 
-protected:
-    kvstore::KVStore*       kvstore_ = nullptr;
-    meta::SchemaManager*    schemaMan_ = nullptr;
-    RESP                    resp_;
-    folly::Promise<RESP>    promise_;
-    cpp2::ResponseCommon    result_;
+    nebula::cpp2::HostAddr toThriftHost(const HostAddr& host) {
+        nebula::cpp2::HostAddr tHost;
+        tHost.set_ip(host.first);
+        tHost.set_port(host.second);
+        return tHost;
+    }
 
-    time::Duration          duration_;
-    std::vector<cpp2::ResultCode> codes_;
-    std::mutex lock_;
-    int32_t                 callingNum_ = 0;
+protected:
+    kvstore::KVStore*                               kvstore_ = nullptr;
+    meta::SchemaManager*                            schemaMan_ = nullptr;
+    RESP                                            resp_;
+    folly::Promise<RESP>                            promise_;
+    cpp2::ResponseCommon                            result_;
+
+    time::Duration                                  duration_;
+    std::vector<cpp2::ResultCode>                   codes_;
+    std::mutex                                      lock_;
+    int32_t                                         callingNum_ = 0;
 };
 
 }  // namespace storage

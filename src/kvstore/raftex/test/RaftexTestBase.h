@@ -14,7 +14,7 @@
 #include "fs/FileUtils.h"
 #include "thread/GenericThreadPool.h"
 #include "network/NetworkUtils.h"
-
+#include "kvstore/raftex/SnapshotManager.h"
 
 namespace nebula {
 
@@ -99,6 +99,9 @@ void rebootOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
                    std::vector<HostAddr> allHosts,
                    size_t index);
 
+std::vector<std::shared_ptr<SnapshotManager>> snapshots(
+                   const std::vector<std::shared_ptr<RaftexService>>& services);
+
 class RaftexTestFixture : public ::testing::Test {
 public:
     explicit RaftexTestFixture(const std::string& testName, int32_t size = 3)
@@ -130,6 +133,7 @@ protected:
     std::vector<std::shared_ptr<RaftexService>> services_;
     std::vector<std::shared_ptr<test::TestShard>> copies_;
     std::shared_ptr<test::TestShard> leader_;
+    std::vector<std::shared_ptr<SnapshotManager>> snapshots_;
 };
 
 }  // namespace raftex

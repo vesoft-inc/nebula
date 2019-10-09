@@ -104,7 +104,10 @@ void waitUntilLeaderElected(
             int32_t index = 0;
             for (auto& c : copies) {
                 // if a copy in abnormal state, its leader is (0, 0)
-                if (!isLearner[index] && c != nullptr && leader != c && c->isRunning_ == true) {
+                VLOG(3) << c->address() << " , leader address "
+                        << c->leader() << ", elected one "
+                        << leader->address();
+                if (!isLearner[index] && c != nullptr && leader != c && c->isRunning()) {
                     if (leader->address() != c->leader()) {
                         sameLeader = false;
                         break;
@@ -126,7 +129,7 @@ void waitUntilAllHasLeader(const std::vector<std::shared_ptr<test::TestShard>>& 
     while (true) {
         bool allHaveLeader = true;
         for (auto& c : copies) {
-            if (c != nullptr && c->isRunning_ == true) {
+            if (c != nullptr && c->isRunning()) {
                 if (c->leader().first == 0 && c->leader().second == 0) {
                     allHaveLeader = false;
                     break;
@@ -179,6 +182,7 @@ void setupRaft(
     if (isLearner.empty()) {
         isLearner.resize(allHosts.size(), false);
     }
+    auto sps = snapshots(services);
     // Create one copy of the shard for each service
     for (size_t i = 0; i < services.size(); i++) {
         copies.emplace_back(std::make_shared<test::TestShard>(
@@ -190,6 +194,7 @@ void setupRaft(
             services[i]->getIOThreadPool(),
             workers,
             services[i]->getThreadManager(),
+            sps[i],
             std::bind(&onLeadershipLost,
                       std::ref(copies),
                       std::ref(leader),
@@ -205,7 +210,6 @@ void setupRaft(
         services[i]->addPartition(copies.back());
         copies.back()->start(getPeers(allHosts, allHosts[i], isLearner),
                              isLearner[i]);
-        copies.back()->isRunning_ = true;
     }
 
     // Wait untill all copies agree on the same leader
@@ -240,7 +244,7 @@ int32_t checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
     int32_t leaderIndex = -1;
     int i = 0;
     for (auto& c : copies) {
-        if (c != nullptr && leader != c && !c->isLearner() && c->isRunning_) {
+        if (c != nullptr && leader != c && !c->isLearner() && c->isRunning()) {
             EXPECT_EQ(leader->address(), c->leader());
         } else if (leader == c) {
             leaderIndex = i;
@@ -264,7 +268,7 @@ void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
 
 void checkNoLeader(std::vector<std::shared_ptr<test::TestShard>>& copies) {
     for (auto& c : copies) {
-        if (c != nullptr && c->isRunning_ == true) {
+        if (c != nullptr && c->isRunning()) {
             ASSERT_FALSE(c->isLeader());
         }
     }
@@ -296,13 +300,13 @@ void checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
 
     // Check every copy
     for (auto& c : copies) {
-        if (c != nullptr && c->isRunning_ == true) {
+        if (c != nullptr && c->isRunning()) {
             ASSERT_EQ(msgs.size(), c->getNumLogs());
         }
     }
     for (size_t i = start; i <= end; i++) {
         for (auto& c : copies) {
-            if (c != nullptr && c->isRunning_ == true) {
+            if (c != nullptr && c->isRunning()) {
                 folly::StringPiece msg;
                 ASSERT_TRUE(c->getLogMsg(i, msg));
                 ASSERT_EQ(msgs[i], msg.toString());
@@ -315,7 +319,7 @@ void killOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
                  std::vector<std::shared_ptr<test::TestShard>>& copies,
                  std::shared_ptr<test::TestShard>& leader,
                  size_t index) {
-    copies[index]->isRunning_ = false;
+    copies[index]->stop();
     services[index]->removePartition(copies[index]);
     if (leader != nullptr && index == leader->index()) {
         std::lock_guard<std::mutex> lock(leaderMutex);
@@ -330,8 +334,17 @@ void rebootOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
                    size_t index) {
     services[index]->addPartition(copies[index]);
     copies[index]->start(getPeers(allHosts, allHosts[index]));
-    copies[index]->isRunning_ = true;
     LOG(INFO) << "copies " << index << " reboot";
+}
+
+std::vector<std::shared_ptr<SnapshotManager>> snapshots(
+                    const std::vector<std::shared_ptr<RaftexService>>& services) {
+    std::vector<std::shared_ptr<SnapshotManager>> snapshots;
+    for (auto& service : services) {
+        std::shared_ptr<SnapshotManager> snapshot(new test::SnapshotManagerImpl(service.get()));
+        snapshots.emplace_back(std::move(snapshot));
+    }
+    return snapshots;
 }
 
 }  // namespace raftex

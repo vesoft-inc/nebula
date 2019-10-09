@@ -15,11 +15,20 @@ FetchEdgesExecutor::FetchEdgesExecutor(Sentence *sentence, ExecutionContext *ect
 }
 
 Status FetchEdgesExecutor::prepare() {
+    return Status::OK();
+}
+
+Status FetchEdgesExecutor::prepareClauses() {
     DCHECK_NOTNULL(sentence_);
     Status status = Status::OK();
 
     do {
+        status = checkIfGraphSpaceChosen();
+        if (!status.ok()) {
+            break;
+        }
         expCtx_ = std::make_unique<ExpressionContext>();
+        expCtx_->setStorageClient(ectx()->getStorageClient());
         spaceId_ = ectx()->rctx()->session()->space();
         yieldClause_ = sentence_->yieldClause();
         labelName_ = sentence_->edge();
@@ -43,6 +52,18 @@ Status FetchEdgesExecutor::prepare() {
         status = prepareYield();
         if (!status.ok()) {
             break;
+        }
+
+        // Save the type
+        auto iter = colTypes_.begin();
+        for (auto i = 0u; i < colNames_.size(); i++) {
+            auto type = labelSchema_->getFieldType(colNames_[i]);
+            if (type == CommonConstants::kInvalidValueType()) {
+                iter++;
+                continue;
+            }
+            *iter = type.type;
+            iter++;
         }
     } while (false);
     return status;
@@ -72,7 +93,13 @@ Status FetchEdgesExecutor::prepareEdgeKeys() {
 
 void FetchEdgesExecutor::execute() {
     FLOG_INFO("Executing FetchEdges: %s", sentence_->toString().c_str());
-    auto status = setupEdgeKeys();
+    auto status = prepareClauses();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+    status = setupEdgeKeys();
     if (!status.ok()) {
         DCHECK(onError_);
         onError_(std::move(status));
@@ -109,13 +136,13 @@ Status FetchEdgesExecutor::setupEdgeKeysFromRef() {
     const InterimResult *inputs;
     if (sentence_->ref()->isInputExpr()) {
         inputs = inputs_.get();
-        if (inputs == nullptr) {
+        if (inputs == nullptr || !inputs->hasData()) {
             // we have empty imputs from pipe.
             return Status::OK();
         }
     } else {
         inputs = ectx()->variableHolder()->get(varname_);
-        if (inputs == nullptr) {
+        if (inputs == nullptr || !inputs->hasData()) {
             return Status::Error("Variable `%s' not defined", varname_.c_str());
         }
     }
@@ -125,7 +152,6 @@ Status FetchEdgesExecutor::setupEdgeKeysFromRef() {
         return ret.status();
     }
     auto srcVids = std::move(ret).value();
-
     ret = inputs->getVIDs(*dstid_);
     if (!ret.ok()) {
         return ret.status();
@@ -171,12 +197,18 @@ Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
     if (distinct_) {
         uniq = std::make_unique<EdgeKeyHashSet>(256, hash_);
     }
+
     auto edgeKeyExprs = sentence_->keys()->keys();
+    expCtx_->setSpace(spaceId_);
+
     for (auto *keyExpr : edgeKeyExprs) {
         auto *srcExpr = keyExpr->srcid();
-        auto *dstExpr = keyExpr->dstid();
-        auto rank = keyExpr->rank();
+        srcExpr->setContext(expCtx_.get());
 
+        auto *dstExpr = keyExpr->dstid();
+        dstExpr->setContext(expCtx_.get());
+
+        auto rank = keyExpr->rank();
         status = srcExpr->prepare();
         if (!status.ok()) {
             break;
@@ -219,14 +251,21 @@ Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
 }
 
 void FetchEdgesExecutor::fetchEdges() {
-    auto props = getPropNames();
+    std::vector<storage::cpp2::PropDef> props;
+    auto status = getPropNames(props);
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(status);
+        return;
+    }
+
     if (props.empty()) {
         DCHECK(onError_);
         onError_(Status::Error("No props declared."));
         return;
     }
 
-    auto future = ectx()->storage()->getEdgeProps(spaceId_, edgeKeys_, std::move(props));
+    auto future = ectx()->getStorageClient()->getEdgeProps(spaceId_, edgeKeys_, std::move(props));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
@@ -251,16 +290,21 @@ void FetchEdgesExecutor::fetchEdges() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-std::vector<storage::cpp2::PropDef> FetchEdgesExecutor::getPropNames() {
-    std::vector<storage::cpp2::PropDef> props;
+Status FetchEdgesExecutor::getPropNames(std::vector<storage::cpp2::PropDef> &props) {
     for (auto &prop : expCtx_->aliasProps()) {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::EDGE;
         pd.name = prop.second;
+        auto status = ectx()->schemaManager()->toEdgeType(spaceId_, prop.first);
+        if (!status.ok()) {
+            return Status::Error("No schema found for '%s'", prop.first.c_str());
+        }
+        auto edgeType = status.value();
+        pd.id.set_edge_type(edgeType);
         props.emplace_back(std::move(pd));
     }
 
-    return props;
+    return Status::OK();
 }
 
 void FetchEdgesExecutor::processResult(RpcResponse &&result) {
@@ -280,11 +324,16 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
         auto iter = rsReader.begin();
         if (outputSchema == nullptr) {
             outputSchema = std::make_shared<SchemaWriter>();
-            getOutputSchema(eschema.get(), &*iter, outputSchema.get());
+            auto status = getOutputSchema(eschema.get(), &*iter, outputSchema.get());
+            if (!status.ok()) {
+                LOG(ERROR) << "Get getOutputSchema failed" << status;
+                DCHECK(onError_);
+                onError_(std::move(status));
+                return;
+            }
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
         }
         while (iter) {
-            VLOG(3) << "collect.";
             auto collector = std::make_unique<Collector>(eschema.get());
             auto writer = std::make_unique<RowWriter>(outputSchema);
 
@@ -319,5 +368,6 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
 
     finishExecution(std::move(rsWriter));
 }
+
 }  // namespace graph
 }  // namespace nebula

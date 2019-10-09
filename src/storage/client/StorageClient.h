@@ -8,6 +8,7 @@
 #define STORAGE_CLIENT_STORAGECLIENT_H_
 
 #include "base/Base.h"
+#include "base/StatusOr.h"
 #include <gtest/gtest_prod.h>
 #include <folly/futures/Future.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
@@ -60,7 +61,6 @@ public:
         return responses_;
     }
 
-
 private:
     const size_t totalReqsSent_;
     size_t failedReqs_{0};
@@ -85,6 +85,16 @@ public:
                   meta::MetaClient *client);
     virtual ~StorageClient();
 
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> put(
+      GraphSpaceID space,
+      std::vector<nebula::cpp2::Pair> values,
+      folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> get(
+      GraphSpaceID space,
+      const std::vector<std::string>& keys,
+      folly::EventBase* evb = nullptr);
+
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addVertices(
         GraphSpaceID space,
         std::vector<storage::cpp2::Vertex> vertices,
@@ -99,9 +109,8 @@ public:
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::QueryResponse>> getNeighbors(
         GraphSpaceID space,
-        std::vector<VertexID> vertices,
-        EdgeType edgeType,
-        bool isOutBound,
+        const std::vector<VertexID> &vertices,
+        const std::vector<EdgeType> &edgeTypes,
         std::string filter,
         std::vector<storage::cpp2::PropDef> returnCols,
         folly::EventBase* evb = nullptr);
@@ -109,8 +118,7 @@ public:
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::QueryStatsResponse>> neighborStats(
         GraphSpaceID space,
         std::vector<VertexID> vertices,
-        EdgeType edgeType,
-        bool isOutBound,
+        std::vector<EdgeType> edgeType,
         std::string filter,
         std::vector<storage::cpp2::PropDef> returnCols,
         folly::EventBase* evb = nullptr);
@@ -125,6 +133,44 @@ public:
         GraphSpaceID space,
         std::vector<storage::cpp2::EdgeKey> edges,
         std::vector<storage::cpp2::PropDef> returnCols,
+        folly::EventBase* evb = nullptr);
+
+    folly::Future<StatusOr<storage::cpp2::EdgeKeyResponse>> getEdgeKeys(
+        GraphSpaceID space,
+        VertexID vid,
+        folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> deleteEdges(
+        GraphSpaceID space,
+        std::vector<storage::cpp2::EdgeKey> edges,
+        folly::EventBase* evb = nullptr);
+
+    folly::Future<StatusOr<storage::cpp2::ExecResponse>> deleteVertex(
+        GraphSpaceID space,
+        VertexID vid,
+        folly::EventBase* evb = nullptr);
+
+    folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateVertex(
+        GraphSpaceID space,
+        VertexID vertexId,
+        std::string filter,
+        std::vector<storage::cpp2::UpdateItem> updateItems,
+        std::vector<std::string> returnCols,
+        bool insertable,
+        folly::EventBase* evb = nullptr);
+
+    folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateEdge(
+        GraphSpaceID space,
+        storage::cpp2::EdgeKey edgeKey,
+        std::string filter,
+        std::vector<storage::cpp2::UpdateItem> updateItems,
+        std::vector<std::string> returnCols,
+        bool insertable,
+        folly::EventBase* evb = nullptr);
+
+    folly::Future<StatusOr<cpp2::GetUUIDResp>> getUUID(
+        GraphSpaceID space,
+        const std::string& name,
         folly::EventBase* evb = nullptr);
 
 protected:
@@ -168,6 +214,18 @@ protected:
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc);
+
+    template<class Request,
+             class RemoteFunc,
+             class Response =
+                typename std::result_of<
+                    RemoteFunc(cpp2::StorageServiceAsyncClient* client, const Request&)
+                >::type::value_type
+            >
+    folly::Future<StatusOr<Response>> getResponse(
+            folly::EventBase* evb,
+            std::pair<HostAddr, Request> request,
+            RemoteFunc remoteFunc);
 
     // Cluster given ids into the host they belong to
     // The method returns a map

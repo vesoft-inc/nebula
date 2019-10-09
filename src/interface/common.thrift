@@ -92,5 +92,9 @@ struct HostAddr {
     2: Port  port,
 }
 
-const ValueType kInvalidValueType = {"type" : UNKNOWN}
+struct Pair {
+    1: string key,
+    2: string value,
+}
 
+const ValueType kInvalidValueType = {"type" : UNKNOWN}

@@ -114,6 +114,19 @@ TEST(LogEncoderTest, MultiValuesTest) {
     }
 }
 
+TEST(LogEncoderTest, KVTest) {
+    auto encoded = encodeKV("KV_key", "KV_val");
+    auto decoded = decodeKV(encoded);
+    ASSERT_EQ("KV_key", decoded.first);
+    ASSERT_EQ("KV_val", decoded.second);
+}
+
+TEST(LogEncoderTest, HostTest) {
+    auto encoded = encodeHost(OP_ADD_LEARNER, HostAddr(1, 1));
+    auto decoded = decodeHost(OP_ADD_LEARNER, encoded);
+    ASSERT_EQ(HostAddr(1, 1), decoded);
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 

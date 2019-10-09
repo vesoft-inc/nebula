@@ -54,7 +54,8 @@ TEST_F(SchemaTest, metaCommunication) {
         client->execute(query, resp);
         std::vector<std::tuple<std::string, std::string, std::string,
                                int, std::string, std::string>> expected {
-            {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online", 0, "", ""},
+            {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online", 0,
+             "No valid partition", "No valid partition"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -135,7 +136,20 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-
+    // Test same prop name
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG samePropTag(name string, name int)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    // Test same prop name
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE samePropEdge(name string, name int)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
     // Test create tag without prop
     {
         cpp2::ExecutionResponse resp;
@@ -682,7 +696,8 @@ TEST_F(SchemaTest, TTLtest) {
         client->execute(query, resp);
         std::vector<std::tuple<std::string, std::string, std::string,
                                int, std::string, std::string>> expected {
-            {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online", 0, "", ""},
+            {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online", 0,
+             "No valid partition", "No valid partition"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

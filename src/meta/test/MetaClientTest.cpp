@@ -366,8 +366,8 @@ TEST(MetaClientTest, TagTest) {
                              std::move(stringValue));
 
         nebula::cpp2::Schema schema;
-        schema.set_columns(columns);
-        auto result = client->createTagSchema(spaceId, "test_tag", schema).get();
+        schema.set_columns(std::move(columns));
+        auto result = client->createTagSchema(spaceId, "test_tag", std::move(schema)).get();
         ASSERT_TRUE(result.ok());
         id = result.value();
     }
@@ -405,6 +405,7 @@ TEST(MetaClientTest, TagTest) {
         ASSERT_TRUE(result1.ok());
         auto result2 = client->getTagSchema(spaceId, "test_tag").get();
         ASSERT_TRUE(result2.ok());
+        ASSERT_EQ(3, result2.value().columns.size());
         ASSERT_EQ(result1.value().columns.size(), result2.value().columns.size());
         for (auto i = 0u; i < result1.value().columns.size(); i++) {
             ASSERT_EQ(result1.value().columns[i].name, result2.value().columns[i].name);

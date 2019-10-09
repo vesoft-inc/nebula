@@ -64,3 +64,17 @@ nebula_add_test(
     LIBRARIES ${THRIFT_LIBRARIES} wangle gtest
 )
 
+nebula_add_test(
+    NAME snapshot_test
+    SOURCES SnapshotTest.cpp RaftexTestBase.cpp TestShard.cpp
+    OBJECTS ${RAFTEX_TEST_LIBS}
+    LIBRARIES ${THRIFT_LIBRARIES} wangle gtest
+)
+
+nebula_add_test(
+    NAME member_change_test
+    SOURCES MemberChangeTest.cpp RaftexTestBase.cpp TestShard.cpp
+    OBJECTS ${RAFTEX_TEST_LIBS}
+    LIBRARIES ${THRIFT_LIBRARIES} wangle gtest
+)
+

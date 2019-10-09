@@ -11,12 +11,15 @@
 #include "raftex/RaftPart.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVEngine.h"
+#include "kvstore/raftex/SnapshotManager.h"
+#include "kvstore/wal/FileBasedWal.h"
 
 namespace nebula {
 namespace kvstore {
 
 
 class Part : public raftex::RaftPart {
+    friend class SnapshotManager;
 public:
     Part(GraphSpaceID spaceId,
          PartitionID partId,
@@ -25,7 +28,8 @@ public:
          KVEngine* engine,
          std::shared_ptr<folly::IOThreadPoolExecutor> pool,
          std::shared_ptr<thread::GenericThreadPool> workers,
-         std::shared_ptr<folly::Executor> handlers);
+         std::shared_ptr<folly::Executor> handlers,
+         std::shared_ptr<raftex::SnapshotManager> snapshotMan);
 
     virtual ~Part() {
         LOG(INFO) << idStr_ << "~Part()";
@@ -51,12 +55,25 @@ public:
 
     void asyncTransferLeader(const HostAddr& target, KVCallback cb);
 
+    void asyncAddPeer(const HostAddr& peer, KVCallback cb);
+
+    void asyncRemovePeer(const HostAddr& peer, KVCallback cb);
+
+    // Sync the information committed on follower.
+    void sync(KVCallback cb);
+
     void registerNewLeaderCb(NewLeaderCallback cb) {
         newLeaderCb_ = std::move(cb);
     }
 
     void unRegisterNewLeaderCb() {
         newLeaderCb_ = nullptr;
+    }
+
+    // clean up all data about this part.
+    void reset() {
+        LOG(INFO) << idStr_ << "Clean up all wals";
+        wal()->reset();
     }
 
 private:
@@ -77,6 +94,17 @@ private:
                        TermID termId,
                        ClusterID clusterId,
                        const std::string& log) override;
+
+    std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
+                                               LogID committedLogId,
+                                               TermID committedLogTerm,
+                                               bool finished) override;
+
+    ResultCode putCommitMsg(WriteBatch* batch, LogID committedLogId, TermID committedLogTerm);
+
+    void cleanup() override {
+        LOG(INFO) << idStr_ << "Clean up all data, not implement!";
+    }
 
 protected:
     GraphSpaceID spaceId_;

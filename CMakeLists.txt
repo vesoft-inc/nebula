@@ -25,6 +25,7 @@
 #   SKIP_JAVA_CLIENT               -- Skip building the java client
 #   ENABLE_JEMALLOC                -- Link jemalloc into all executables
 #   ENABLE_NATIVE                  -- Build native client
+#   ENABLE_TESTING                 -- Build unit test
 #
 cmake_minimum_required(VERSION 3.0.0)
 
@@ -37,8 +38,10 @@ option(ENABLE_JEMALLOC "Whether to link jemalloc to all executables" ON)
 option(ENABLE_NATIVE "Whether to build native client" OFF)
 option(ENABLE_CCACHE "Whether to use ccache to speed up compiling" ON)
 option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
+option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
 
-message(STATUS "ASAN: ${ENABLE_ASAN}")
+message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
+message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
 
 
 if (ENABLE_NATIVE)
@@ -46,20 +49,23 @@ if (ENABLE_NATIVE)
     add_compile_options(-fPIC)
 endif()
 
-enable_testing()
+if (ENABLE_TESTING)
+    enable_testing()
+endif()
 
 if (!CMAKE_CXX_COMPILER)
     message(FATAL_ERROR "No C++ compiler found")
 endif()
 
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++ -no-pie")
 
 # To detect if ccache available
 find_program(ccache_program_found "ccache")
 if (ENABLE_CCACHE AND ccache_program_found)
-    message(STATUS "CCACHE: ON")
+    message(STATUS "ENABLE_CCACHE: ON")
     if (NOT $ENV{CCACHE_DIR} STREQUAL "")
         message(STATUS "CCACHE_DIR: $ENV{CCACHE_DIR}")
     else()
@@ -361,7 +367,9 @@ macro(nebula_add_test)
     )
 
     if (NOT ${nebula_test_DISABLED})
+        string(REGEX REPLACE "${CMAKE_SOURCE_DIR}/src/(.*)/test" "\\1" test_group ${CMAKE_CURRENT_SOURCE_DIR})
         add_test(NAME ${nebula_test_NAME} COMMAND ${nebula_test_NAME})
+        set_tests_properties(${nebula_test_NAME} PROPERTIES LABELS ${test_group})
         # e.g. cmake -DNEBULA_ASAN_PRELOAD=/path/to/libasan.so
         # or,  cmake -DNEBULA_ASAN_PRELOAD=`/path/to/gcc --print-file-name=libasan.so`
         if (NEBULA_ASAN_PRELOAD)
@@ -373,13 +381,26 @@ macro(nebula_add_test)
     endif()
 endmacro()
 
-macro(nebula_build_after_base obj_name)
-    add_dependencies(${obj_name} base_obj)
-endmacro()
-
+# For simplicity, we make all ordinary libraries depend on the compile-time generated files,
+# including the precompiled header, a.k.a Base.h.gch, and thrift headers.
 macro(nebula_add_library name type)
     add_library(${name} ${type} ${ARGN})
-    nebula_build_after_base(${name})
+    if (PCHSupport_FOUND)
+        add_dependencies(
+            ${name}
+            base_obj_gch
+        )
+    endif()
+    add_dependencies(
+        ${name}
+        common_thrift_headers
+        graph_thrift_headers
+        storage_thrift_headers
+        meta_thrift_headers
+        raftex_thrift_headers
+        hbase_thrift_headers
+        parser_target
+    )
 endmacro()
 
 include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/bzip2/include)
@@ -459,7 +480,7 @@ if (LIBLZMA_FOUND)
     list(APPEND COMPRESSION_LIBRARIES ${LIBLZMA_LIBRARIES})
 endif()
 
-if (NOT ENABLE_JEMALLOC)
+if (NOT ENABLE_JEMALLOC OR ENABLE_ASAN)
     set(JEMALLOC_LIB )
 else()
     set(JEMALLOC_LIB jemalloc)
@@ -505,6 +526,13 @@ macro(nebula_link_libraries target)
         -pthread
     )
 endmacro(nebula_link_libraries)
+
+function(nebula_add_subdirectory dir_name)
+    if ((NOT ENABLE_TESTING) AND (${dir_name} STREQUAL test))
+        return()
+    endif()
+    add_subdirectory(${dir_name})
+endfunction()
 
 if (NOT SKIP_JAVA_CLIENT)
     set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-hbase clean-java-client)
@@ -560,6 +588,29 @@ IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git/")
     ELSE()
         MESSAGE(FATAL_ERROR "Creating pre-commit hook failed: ${retcode}")
     ENDIF()
-ELSE()
-    MESSAGE(FATAL_ERROR "Currently, we don't support downloaded source code.\nPlease using git clone it and rebuild.")
 ENDIF()
+
+# package nebula to a deb/rpm file
+set(CPACK_PACKAGE_DESCRIPTION "nebula-graph")
+set(CPACK_PACKAGE_CONTACT "nebula-graph")
+set(CPACK_PACKAGE_VERSION ${NEBULA_BUILD_VERSION})
+set(CPACK_RPM_PACKAGE_LICENSE "Apache 2.0 + Common Clause 1.0")
+set(CPACK_PACKAGE_NAME nebula-graph)
+set(CPACK_SET_DESTDIR TRUE)
+set(CPACK_PACKAGE_RELOCATABLE FALSE)
+set(CPACK_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+
+set(CPACK_DEB_COMPONENT_INSTALL ON)
+set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/vesoft-inc/nebula/releases")
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA ${CMAKE_CURRENT_SOURCE_DIR}/package/postinst)
+
+set(CPACK_RPM_SPEC_MORE_DEFINE "%define debug_package %{nil}
+        %define __os_install_post %{nil}")
+set(CPACK_RPM_COMPONENT_INSTALL ON)
+set(CPACK_RPM_PACKAGE_ARCHITECTURE "x86_64")
+set(CPACK_RPM_PACKAGE_URL "https://github.com/vesoft-inc/nebula/releases")
+set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE ${CMAKE_CURRENT_SOURCE_DIR}/package/postinst)
+set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/local)
+
+include(CPack)

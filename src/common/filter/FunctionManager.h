@@ -11,6 +11,7 @@
 #include "base/StatusOr.h"
 #include "base/Status.h"
 #include "filter/Expressions.h"
+#include <folly/futures/Future.h>
 
 /**
  * FunctionManager is for managing builtin and dynamic-loaded functions,

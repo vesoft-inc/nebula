@@ -85,7 +85,7 @@ void MetaServerBasedPartManager::onSpaceRemoved(GraphSpaceID spaceId) {
 
 void MetaServerBasedPartManager::onPartAdded(const PartMeta& partMeta) {
     if (handler_ != nullptr) {
-        handler_->addPart(partMeta.spaceId_, partMeta.partId_);
+        handler_->addPart(partMeta.spaceId_, partMeta.partId_, false);
     } else {
         VLOG(1) << "handler_ is nullptr!";
     }

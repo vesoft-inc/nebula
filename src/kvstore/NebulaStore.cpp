@@ -12,6 +12,7 @@
 #include "network/NetworkUtils.h"
 #include "fs/FileUtils.h"
 #include "kvstore/RocksEngine.h"
+#include "kvstore/SnapshotManagerImpl.h"
 
 DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_int32(custom_filter_interval_secs, 24 * 3600, "interval to trigger custom compaction");
@@ -36,7 +37,8 @@ NebulaStore::~NebulaStore() {
 bool NebulaStore::init() {
     LOG(INFO) << "Start the raft service...";
     bgWorkers_ = std::make_shared<thread::GenericThreadPool>();
-    bgWorkers_->start(FLAGS_num_workers);
+    bgWorkers_->start(FLAGS_num_workers, "nebula-bgworkers");
+    snapshot_.reset(new SnapshotManagerImpl(this));
     raftService_ = raftex::RaftexService::createService(ioPool_,
                                                         workers_,
                                                         raftAddr_.second);
@@ -55,7 +57,14 @@ bool NebulaStore::init() {
             for (auto& dir : dirs) {
                 LOG(INFO) << "Scan path \"" << path << "/" << dir << "\"";
                 try {
-                    auto spaceId = folly::to<GraphSpaceID>(dir);
+                    GraphSpaceID spaceId;
+                    try {
+                        spaceId = folly::to<GraphSpaceID>(dir);
+                    } catch (const std::exception& ex) {
+                        LOG(ERROR) << "Data path invalid: " << ex.what();
+                        return false;
+                    }
+
                     if (!options_.partMan_->spaceExist(storeSvcAddr_, spaceId)) {
                         // TODO We might want to have a second thought here.
                         // Removing the data directly feels a little strong
@@ -88,7 +97,8 @@ bool NebulaStore::init() {
                             spaceIt->second->parts_.emplace(partId,
                                                             newPart(spaceId,
                                                                     partId,
-                                                                    enginePtr.get()));
+                                                                    enginePtr.get(),
+                                                                    false));
                         }
                     }
                 } catch (std::exception& e) {
@@ -109,7 +119,7 @@ bool NebulaStore::init() {
         }
         std::sort(partIds.begin(), partIds.end());
         for (auto& partId : partIds) {
-            addPart(spaceId, partId);
+            addPart(spaceId, partId, false);
         }
     }
 
@@ -163,7 +173,7 @@ void NebulaStore::addSpace(GraphSpaceID spaceId) {
 }
 
 
-void NebulaStore::addPart(GraphSpaceID spaceId, PartitionID partId) {
+void NebulaStore::addPart(GraphSpaceID spaceId, PartitionID partId, bool asLearner) {
     folly::RWSpinLock::WriteHolder wh(&lock_);
     auto spaceIt = this->spaces_.find(spaceId);
     CHECK(spaceIt != this->spaces_.end()) << "Space should exist!";
@@ -190,13 +200,15 @@ void NebulaStore::addPart(GraphSpaceID spaceId, PartitionID partId) {
     targetEngine->addPart(partId);
     spaceIt->second->parts_.emplace(
         partId,
-        newPart(spaceId, partId, targetEngine.get()));
-    LOG(INFO) << "Space " << spaceId << ", part " << partId << " has been added!";
+        newPart(spaceId, partId, targetEngine.get(), asLearner));
+    LOG(INFO) << "Space " << spaceId << ", part " << partId
+              << " has been added, asLearner " << asLearner;
 }
 
 std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                            PartitionID partId,
-                                           KVEngine* engine) {
+                                           KVEngine* engine,
+                                           bool asLearner) {
     auto part = std::make_shared<Part>(spaceId,
                                        partId,
                                        raftAddr_,
@@ -206,7 +218,8 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                        engine,
                                        ioPool_,
                                        bgWorkers_,
-                                       workers_);
+                                       workers_,
+                                       snapshot_);
     auto partMeta = options_.partMan_->partMeta(spaceId, partId);
     std::vector<HostAddr> peers;
     for (auto& h : partMeta.peers_) {
@@ -216,7 +229,7 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
         }
     }
     raftService_->addPartition(part);
-    part->start(std::move(peers));
+    part->start(std::move(peers), asLearner);
     return part;
 }
 
@@ -246,6 +259,7 @@ void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId) {
             auto* e = partIt->second->engine();
             CHECK_NOTNULL(e);
             raftService_->removePartition(partIt->second);
+            partIt->second->reset();
             spaceIt->second->parts_.erase(partId);
             e->removePart(partId);
         }
@@ -419,14 +433,13 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
                 return error(ret);
             }
 
-            auto path = value(ret)->getDataRoot();
-            LOG(INFO) << "Ingesting Part " << part;
+            auto path = folly::stringPrintf("%s/download/%d", value(ret)->getDataRoot(), part);
             if (!fs::FileUtils::exist(path)) {
                 LOG(ERROR) << path << " not existed";
                 return ResultCode::ERR_IO_ERROR;
             }
 
-            auto files = nebula::fs::FileUtils::listAllFilesInDir(path, true, "*.sst");
+            auto files = nebula::fs::FileUtils::listAllFilesInDir(path.c_str(), true, "*.sst");
             for (auto file : files) {
                 VLOG(3) << "Ingesting extra file: " << file;
                 extras.emplace_back(file);

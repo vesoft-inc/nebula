@@ -293,6 +293,49 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR(-1 <= -2, false);
     TEST_EXPR(-2 <= -1, true);
 
+    TEST_EXPR(0.5 == 1, false);
+    TEST_EXPR(1.0 == 1, true);
+    TEST_EXPR(0.5 != 1, true);
+    TEST_EXPR(1.0 != 1, false);
+    TEST_EXPR(0.5 > 1, false);
+    TEST_EXPR(0.5 >= 1, false);
+    TEST_EXPR(0.5 < 1, true);
+    TEST_EXPR(0.5 <= 1, true);
+
+    TEST_EXPR(true == 1, true);
+    TEST_EXPR(true == 2, false);
+    TEST_EXPR(true != 1, false);
+    TEST_EXPR(true != 2, true);
+    TEST_EXPR(true > 1, false);
+    TEST_EXPR(true >= 1, true);
+    TEST_EXPR(true < 1, false);
+    TEST_EXPR(true <= 1, true);
+    TEST_EXPR(false == 0, true);
+    TEST_EXPR(false == 1, false);
+    TEST_EXPR(false != 0, false);
+    TEST_EXPR(false != 1, true);
+    TEST_EXPR(false > 0, false);
+    TEST_EXPR(false >= 0, true);
+    TEST_EXPR(false < 0, false);
+    TEST_EXPR(false <= 0, true);
+
+    TEST_EXPR(true == 1.0, true);
+    TEST_EXPR(true == 2.0, false);
+    TEST_EXPR(true != 1.0, false);
+    TEST_EXPR(true != 2.0, true);
+    TEST_EXPR(true > 1.0, false);
+    TEST_EXPR(true >= 1.0, true);
+    TEST_EXPR(true < 1.0, false);
+    TEST_EXPR(true <= 1.0, true);
+    TEST_EXPR(false == 0.0, true);
+    TEST_EXPR(false == 1.0, false);
+    TEST_EXPR(false != 0.0, false);
+    TEST_EXPR(false != 1.0, true);
+    TEST_EXPR(false > 0.0, false);
+    TEST_EXPR(false >= 0.0, true);
+    TEST_EXPR(false < 0.0, false);
+    TEST_EXPR(false <= 0.0, true);
+
     TEST_EXPR(8 % 2 + 1 == 1, true);
     TEST_EXPR(8 % 2 + 1 != 1, false);
     TEST_EXPR(8 % 3 + 1 == 3, true);
@@ -615,6 +658,89 @@ TEST_F(ExpressionTest, FunctionCall) {
     TEST_EXPR(0, LT, strcasecmp("HelLo", "hell"), Int);
     TEST_EXPR(0, GT, strcasecmp("HelLo", "World"), Int);
 
+    TEST_EXPR(5, EQ, length("hello"), Int);
+    TEST_EXPR(0, EQ, length(""), Int);
+
+#undef TEST_EXPR
+}
+
+TEST_F(ExpressionTest, StringFunctionCall) {
+    GQLParser parser;
+#define TEST_EXPR(expected, op, expr_arg, type)                         \
+    do {                                                                \
+        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;   \
+        auto parsed = parser.parse(query);                              \
+        ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
+        auto *expr = getFilterExpr(parsed.value().get());               \
+        ASSERT_NE(nullptr, expr);                                       \
+        auto decoded = Expression::decode(Expression::encode(expr));    \
+        ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
+        auto ctx = std::make_unique<ExpressionContext>();               \
+        decoded.value()->setContext(ctx.get());                         \
+        auto status = decoded.value()->prepare();                       \
+        ASSERT_TRUE(status.ok()) << status;                             \
+        auto value = decoded.value()->eval();                           \
+        ASSERT_TRUE(value.ok());                                        \
+        auto v = value.value();                                         \
+        ASSERT_TRUE(Expression::is##type(v));                           \
+        if (#type == std::string("String")) {                           \
+            if (#op != std::string("EQ")) {                             \
+                ASSERT_##op(expected, Expression::as##type(v));         \
+            } else {                                                    \
+                ASSERT_EQ(expected, Expression::as##type(v));    \
+            }                                                           \
+        } else {                                                        \
+            ASSERT_##op(expected, Expression::as##type(v));             \
+        }                                                               \
+    } while (false)
+
+    TEST_EXPR("hello", EQ, lower("HelLo"), String);
+    TEST_EXPR("hello", EQ, lower("HELLO"), String);
+    TEST_EXPR("hello", EQ, lower("hello"), String);
+
+    TEST_EXPR("HELLO", EQ, upper("HelLo"), String);
+    TEST_EXPR("HELLO", EQ, upper("HELLO"), String);
+    TEST_EXPR("HELLO", EQ, upper("hello"), String);
+
+    TEST_EXPR("hello", EQ, trim(" hello "), String);
+    TEST_EXPR("hello", EQ, trim(" hello"),  String);
+    TEST_EXPR("hello", EQ, trim("hello "),  String);
+
+    TEST_EXPR("hello ", EQ, ltrim(" hello "), String);
+    TEST_EXPR("hello",  EQ, ltrim(" hello"),  String);
+    TEST_EXPR("hello ", EQ, ltrim("hello "),  String);
+
+    TEST_EXPR(" hello", EQ, rtrim(" hello "), String);
+    TEST_EXPR(" hello", EQ, rtrim(" hello"),  String);
+    TEST_EXPR("hello",  EQ, rtrim("hello "),  String);
+
+    TEST_EXPR("hello", EQ, left("hello world", 5),  String);
+    TEST_EXPR("",      EQ, left("hello world", 0),  String);
+    TEST_EXPR("",      EQ, left("hello world", -1), String);
+
+    TEST_EXPR("world", EQ, right("hello world", 5),  String);
+    TEST_EXPR("",      EQ, right("hello world", 0),  String);
+    TEST_EXPR("",      EQ, right("hello world", -1), String);
+
+    TEST_EXPR("111Hello", EQ, lpad("Hello", 8, "1"),  String);
+    TEST_EXPR("wewHello", EQ, lpad("Hello", 8, "we"), String);
+    TEST_EXPR("Hell",     EQ, lpad("Hello", 4, "1"),  String);
+    TEST_EXPR("",         EQ, lpad("Hello", 0, "1"),  String);
+
+    TEST_EXPR("Hello111", EQ, rpad("Hello", 8, "1"),  String);
+    TEST_EXPR("Hellowew", EQ, rpad("Hello", 8, "we"), String);
+    TEST_EXPR("Hell",     EQ, rpad("Hello", 4, "1"),  String);
+    TEST_EXPR("",         EQ, rpad("Hello", 0, "1"),  String);
+
+    TEST_EXPR("1", EQ, substr("123", 1, 1),   String);
+    TEST_EXPR("",  EQ, substr("123", 1, 0),   String);
+    TEST_EXPR("",  EQ, substr("123", 1, -1),  String);
+    TEST_EXPR("3", EQ, substr("123", -1, 1),  String);
+    TEST_EXPR("",  EQ, substr("123", -1, 0),  String);
+    TEST_EXPR("",  EQ, substr("123", -1, -1), String);
+    TEST_EXPR("",  EQ, substr("123", 5, 1),   String);
+    TEST_EXPR("",  EQ, substr("123", -5, 1),  String);
+
 #undef TEST_EXPR
 }
 
@@ -646,12 +772,54 @@ TEST_F(ExpressionTest, InvalidExpressionTest) {
     TEST_EXPR(1.0 * "a");
     TEST_EXPR(1 / "a");
     TEST_EXPR("a" / "b");
-    TEST_EXPR(1.0 % 2.0);
-    TEST_EXPR(1.0 % 3);
     TEST_EXPR(1.0 % "a");
     TEST_EXPR(-"A");
     TEST_EXPR(TRUE + FALSE);
+    TEST_EXPR("123" > 123);
+    TEST_EXPR("123" < 123);
+    TEST_EXPR("123" >= 123);
+    TEST_EXPR("123" <= 123);
+    TEST_EXPR("123" == 123);
+    TEST_EXPR("123" != 123);
 #undef TEST_EXPR
+}
+
+
+TEST_F(ExpressionTest, StringLengthLimitTest) {
+    constexpr auto MAX = 4096UL;
+    std::string valid(MAX, 'X');
+    std::string invalid(MAX + 1, 'X');
+
+    // double quote
+    {
+        GQLParser parser;
+        auto *fmt = "GO FROM 1 OVER follow WHERE \"%s\"";
+        {
+            auto query = folly::stringPrintf(fmt, valid.c_str());
+            auto parsed = parser.parse(query);
+            ASSERT_TRUE(parsed.ok()) << parsed.status();
+        }
+        {
+            auto query = folly::stringPrintf(fmt, invalid.c_str());
+            auto parsed = parser.parse(query);
+            ASSERT_FALSE(parsed.ok());
+        }
+    }
+    // single quote
+    {
+        GQLParser parser;
+        auto *fmt = "GO FROM 1 OVER follow WHERE '%s'";
+        {
+            auto query = folly::stringPrintf(fmt, valid.c_str());
+            auto parsed = parser.parse(query);
+            ASSERT_TRUE(parsed.ok()) << parsed.status();
+        }
+        {
+            auto query = folly::stringPrintf(fmt, invalid.c_str());
+            auto parsed = parser.parse(query);
+            ASSERT_FALSE(parsed.ok());
+        }
+    }
 }
 
 }   // namespace nebula

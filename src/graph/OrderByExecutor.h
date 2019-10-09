@@ -32,9 +32,12 @@ public:
 private:
     std::unique_ptr<InterimResult> setupInterimResult();
 
+    Status beforeExecute();
+
 private:
     OrderBySentence                                            *sentence_{nullptr};
     std::unique_ptr<InterimResult>                              inputs_;
+    std::vector<std::string>                                    colNames_;
     std::vector<cpp2::RowValue>                                 rows_;
     std::vector<std::pair<int64_t, OrderFactor::OrderType>>     sortFactors_;
 };

@@ -28,6 +28,8 @@ public:
     void execute() override;
 
 private:
+    Status prepareClauses();
+
     Status prepareEdgeKeys();
 
     Status setupEdgeKeys();
@@ -36,13 +38,12 @@ private:
 
     Status setupEdgeKeysFromRef();
 
-    std::vector<storage::cpp2::PropDef> getPropNames();
+    Status getPropNames(std::vector<storage::cpp2::PropDef> &props);
 
     void fetchEdges();
 
     using RpcResponse = storage::StorageRpcResponse<storage::cpp2::EdgePropResponse>;
     void processResult(RpcResponse &&result);
-
 
     using EdgeKeyHashSet = std::unordered_set<
             storage::cpp2::EdgeKey,
