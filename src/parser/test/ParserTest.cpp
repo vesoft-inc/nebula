@@ -503,6 +503,20 @@ TEST(Parser, InsertVertex) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name,age,married,salary,create_time) "
+                            "VALUES hash(\"dutor\"):(\"dutor\", 30, true, 3.14, 1551331900)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name,age,married,salary,create_time) "
+                            "VALUES uuid(\"dutor\"):(\"dutor\", 30, true, 3.14, 1551331900)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
     // Test insert empty value
     {
         GQLParser parser;
@@ -524,6 +538,20 @@ TEST(Parser, InsertVertex) {
         GQLParser parser;
         std::string query = "INSERT VERTEX person(name, age) "
                             "VALUES 12345:(\'dutor, 30)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isSyntaxError());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name, age) "
+                            "VALUES hash(\"dutor\"):(\'dutor, 30)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isSyntaxError());
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name, age) "
+                            "VALUES uuid(\"dutor\"):(\'dutor, 30)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.status().isSyntaxError());
     }
@@ -585,6 +613,20 @@ TEST(Parser, InsertEdge) {
         GQLParser parser;
         std::string query = "INSERT EDGE transfer(amount, time) "
                             "VALUES 12345->-54321:(3.75, 1537408527)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT EDGE transfer(amount, time) "
+                            "VALUES hash(\"from\")->hash(\"to\"):(3.75, 1537408527)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT EDGE transfer(amount, time) "
+                            "VALUES uuid(\"from\")->uuid(\"to\"):(3.75, 1537408527)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -1042,6 +1084,12 @@ TEST(Parser, UnreservedKeywords) {
     }
     {
         GQLParser parser;
+        std::string query = "GO FROM UUID(\"tom\") OVER guest WHERE $-.EMAIL";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "GO FROM 123 OVER like YIELD $$.tag1.EMAIL, like.users,"
                             "like._src, like._dst, like.type, $^.tag2.SPACE "
                             "| ORDER BY $-.SPACE";
@@ -1050,7 +1098,21 @@ TEST(Parser, UnreservedKeywords) {
     }
     {
         GQLParser parser;
+        std::string query = "GO FROM UUID(\"tom\") OVER like YIELD $$.tag1.EMAIL, like.users,"
+                            "like._src, like._dst, like.type, $^.tag2.SPACE "
+                            "| ORDER BY $-.SPACE";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "$var = GO FROM 123 OVER like;GO FROM $var.SPACE OVER like";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "$var = GO FROM UUID(\"tom\") OVER like;GO FROM $var.SPACE OVER like";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

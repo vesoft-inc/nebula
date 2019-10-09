@@ -32,6 +32,7 @@ private:
 private:
     using EdgeSchema = std::shared_ptr<const meta::SchemaProviderIf>;
     InsertEdgeSentence                         *sentence_{nullptr};
+    std::unique_ptr<ExpressionContext>          expCtx_;
     bool                                        overwritable_{true};
     EdgeType                                    edgeType_{0};
     EdgeSchema                                  schema_;

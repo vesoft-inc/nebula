@@ -18,7 +18,7 @@ namespace kvstore {
 class Handler {
 public:
     virtual void addSpace(GraphSpaceID spaceId) = 0;
-    virtual void addPart(GraphSpaceID spaceId, PartitionID partId) = 0;
+    virtual void addPart(GraphSpaceID spaceId, PartitionID partId, bool asLearner) = 0;
     virtual void removeSpace(GraphSpaceID spaceId) = 0;
     virtual void removePart(GraphSpaceID spaceId, PartitionID partId) = 0;
 };
@@ -96,7 +96,7 @@ public:
             handler_->addSpace(spaceId);
         }
         if (noPart && handler_) {
-            handler_->addPart(spaceId, partId);
+            handler_->addPart(spaceId, partId, false);
         }
      }
 

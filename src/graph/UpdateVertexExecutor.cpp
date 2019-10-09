@@ -179,12 +179,12 @@ void UpdateVertexExecutor::execute() {
     auto spaceId = ectx()->rctx()->session()->space();
     std::string filterStr = filter_ ? Expression::encode(filter_) : "";
     auto returns = getReturnColumns();
-    auto future = ectx()->storage()->updateVertex(spaceId,
-                                                  vertex_,
-                                                  filterStr,
-                                                  std::move(updateItems_),
-                                                  std::move(returns),
-                                                  insertable_);
+    auto future = ectx()->getStorageClient()->updateVertex(spaceId,
+                                                           vertex_,
+                                                           filterStr,
+                                                           std::move(updateItems_),
+                                                           std::move(returns),
+                                                           insertable_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {

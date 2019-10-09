@@ -201,7 +201,7 @@ void UpdateEdgeExecutor::insertReverselyEdge(storage::cpp2::UpdateResponse &&rpc
     reverselyEdge.props = "";
     edges.emplace_back(reverselyEdge);
     auto space = ectx()->rctx()->session()->space();
-    auto future = ectx()->storage()->addEdges(space, std::move(edges), false);
+    auto future = ectx()->getStorageClient()->addEdges(space, std::move(edges), false);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this, updateResp = std::move(rpcResp)] (auto &&resp) mutable {
         auto completeness = resp.completeness();
@@ -228,12 +228,12 @@ void UpdateEdgeExecutor::execute() {
     auto space = ectx()->rctx()->session()->space();
     std::string filterStr = filter_ ? Expression::encode(filter_) : "";
     auto returns = getReturnColumns();
-    auto future = ectx()->storage()->updateEdge(space,
-                                                edge_,
-                                                filterStr,
-                                                std::move(updateItems_),
-                                                std::move(returns),
-                                                insertable_);
+    auto future = ectx()->getStorageClient()->updateEdge(space,
+                                                         edge_,
+                                                         filterStr,
+                                                         std::move(updateItems_),
+                                                         std::move(returns),
+                                                         insertable_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
