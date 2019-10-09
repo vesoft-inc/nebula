@@ -36,7 +36,9 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.0.0</version>
                 <configuration>
-                    <configLocation>${project.root.dir}/.linters/java/nebula_java_style_checks.xml</configLocation>
+                    <configLocation>
+                        https://raw.githubusercontent.com/vesoft-inc/nebula/master/.linters/java/nebula_java_style_checks.xml
+                    </configLocation>
                     <encoding>UTF-8</encoding>
                     <failOnViolation>true</failOnViolation>
                     <linkXRef>false</linkXRef>
