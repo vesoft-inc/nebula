@@ -27,7 +27,9 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.0.0</version>
                 <configuration>
-                    <configLocation>${project.root.dir}/.linters/java/nebula_java_style_checks.xml</configLocation>
+                    <configLocation>
+                        https://raw.githubusercontent.com/vesoft-inc/nebula/master/.linters/java/nebula_java_style_checks.xml
+                    </configLocation>
                     <excludes>
                         com/vesoft/nebula/graph/generated/,
                     </excludes>
