@@ -19,28 +19,33 @@ namespace wal {
 class InMemoryLogBuffer final {
 public:
     InMemoryLogBuffer() {
+        CHECK_GT(FLAGS_wal_buffer_size_exp, 0);
         CHECK_LT(FLAGS_wal_buffer_size_exp, 15);
-        logs_.reserve(1UL << FLAGS_wal_buffer_size_exp);
-        mask_ = logs_.capacity() - 1;
+        logs_.resize(1UL << FLAGS_wal_buffer_size_exp);
+        mask_ = logs_.size() - 1;
+        empty_ = true;
+        full_ = false;
     }
 
 
     // Push a new message to the end of the buffer
     void push(LogID id, TermID term, ClusterID cluster, std::string&& msg) {
         folly::RWSpinLock::WriteHolder wh(&accessLock_);
-        if (logs_.empty()) {
+        if (empty_) {
             firstLogId_ = id;
+            lastLogId_ = id - 1;
+            empty_ = false;
         }
-
-        if (logs_.size() < logs_.capacity()) {
-            logs_.emplace_back(id, term, cluster, std::move(msg));
-        } else {
+        if (full_) {
             ++firstLogId_;
-            ++firstLogIdIndex_;
-            logs_[firstLogIdIndex_ - 1] = {id, term, cluster, std::move(msg)};
-            if (firstLogIdIndex_ == logs_.capacity()) {
-                firstLogIdIndex_ = 0;
-            }
+            ++firstLogIndex_;
+        }
+        ++lastLogId_;
+        logs_[nextLogIndex_++] = {id, term, cluster, std::move(msg)};
+        if (nextLogIndex_ == logs_.size()) {
+            firstLogIndex_ = 0;
+            nextLogIndex_ = 0;
+            full_ = true;
         }
     }
 
@@ -49,13 +54,12 @@ public:
         return firstLogId_;
     }
 
-    bool getLogEntry(LogID logId) {
+    bool getLogEntry(LogID logId, LogEntry& logEntry) {
         folly::RWSpinLock::ReadHolder rh(&accessLock_);
-        if (logs_.empty() || logId < firstLogId_ ||
-            logId >= firstLogId_ + static_cast<int64_t>(logs_.size())) {
+        if (empty_ || logId < firstLogId_ || logId > lastLogId_) {
             return false;
         }
-        size_t idx = (firstLogIdIndex_ + (logId - firstLogId_)) & mask_;
+        size_t idx = (firstLogIndex_ + (logId - firstLogId_)) & mask_;
         logEntry = logs_[idx];
         return true;
     }
@@ -63,16 +67,25 @@ public:
     void clear() {
         folly::RWSpinLock::WriteHolder wh(&accessLock_);
         logs_.clear();
+        logs_.resize(1UL << FLAGS_wal_buffer_size_exp);
         firstLogId_ = std::numeric_limits<LogID>::max();
-        firstLogIdIndex_ = 0;
+        lastLogId_ = std::numeric_limits<LogID>::max();
+        firstLogIndex_ = 0;
+        nextLogIndex_ = 0;
+        empty_ = true;
+        full_ = false;
     }
 
 private:
     mutable folly::RWSpinLock accessLock_;
     std::vector<LogEntry> logs_;
     LogID firstLogId_{std::numeric_limits<LogID>::max()};
-    size_t firstLogIdIndex_{0};
+    LogID lastLogId_{std::numeric_limits<LogID>::max()};
+    size_t firstLogIndex_{0};
+    size_t nextLogIndex_{0};
     size_t mask_;
+    bool empty_;
+    bool full_;
 };
 
 }  // namespace wal

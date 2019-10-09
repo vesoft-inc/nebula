@@ -9,6 +9,8 @@
 #include "kvstore/wal/FileBasedWal.h"
 #include "fs/TempDir.h"
 
+DECLARE_int32(wal_buffer_size_exp);
+
 namespace nebula {
 namespace wal {
 
@@ -35,6 +37,7 @@ static const char* kLongMsg =
 
 
 TEST(FileBasedWal, AppendLogs) {
+    FLAGS_wal_buffer_size_exp = 10;
     FileBasedWalPolicy policy;
     TempDir walDir("/tmp/testWal.XXXXXX");
 

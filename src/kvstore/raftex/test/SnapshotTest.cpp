@@ -18,8 +18,7 @@
 DECLARE_uint32(raft_heartbeat_interval_secs);
 DECLARE_int32(wal_ttl);
 DECLARE_int64(wal_file_size);
-DECLARE_int32(wal_buffer_size);
-DECLARE_int32(wal_buffer_num);
+DECLARE_int32(wal_buffer_size_exp);
 DECLARE_int32(raft_rpc_timeout_ms);
 
 namespace nebula {
@@ -28,8 +27,7 @@ namespace raftex {
 TEST(SnapshotTest, LearnerCatchUpDataTest) {
     fs::TempDir walRoot("/tmp/catch_up_data.XXXXXX");
     FLAGS_wal_file_size = 1024;
-    FLAGS_wal_buffer_size = 512;
-    FLAGS_wal_buffer_num = 30;
+    FLAGS_wal_buffer_size_exp = 8;
     FLAGS_raft_rpc_timeout_ms = 2000;
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
