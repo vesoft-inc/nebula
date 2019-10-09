@@ -3,12 +3,12 @@
 
 
 `Importer` is a single-threaded tool used to load small data set from a CSV file into Nebula Graph.
-As for large data set, generating SST files and then ingesting them may be a better way. For details, please refer to [Spark SST File Generator](../spark-sstfile-generator/README.md) and HDFS Importer <!--to be done-->
+As for large data set, generating SST files and then ingesting them may be a better way. For details, please refer to [Spark SST File Generator](../spark-sstfile-generator/README.md) and HDFS Importer. <!--to be done-->
 
 ### Download JARs
 
 <!-- to be replaced after Nexus MVN repo being set -->
-Our maven repository is under construction. At this moment, get fbthrift and graph-client packages from oss 
+Our maven repository is under construction. At this moment, get fbthrift and graph-client packages from oss. 
 
 ```
 wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/thrift-1.0-SNAPSHOT.jar
@@ -38,7 +38,7 @@ Replace "${YOUR_GRAPH_CLIENT_FILEPATH}" and "${YOUR_FBTHRIFT_FILEPATH}" with you
 
 ### Get Importer
 
-Get the `Importer` jar package from oss 
+Get the `Importer` jar package from oss: 
 
 ```
 wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/importer-1.0.0-beta.jar
@@ -58,7 +58,7 @@ The `Importer` jar package is under the target directory.
 
 #### For Tags
 
-The `Importer` can only import one tag or edgetype per time. For tags, the first column is `vid` and then the property value list, separated by a comma. 
+The `Importer` can only import one tag or edgetype each time. For tags, the first column is `vid` and then the property value list, separated by a comma. 
 
 ```
 vid,prop_name_1,prop_name_2,...
@@ -72,7 +72,7 @@ For edge type, the file structure is as following:
 sourceID, destinationID, [ranking], prop_name_1, prop_name_2, ...
 ```
 
-> The "ranking" column is optional. It works with "--ranking" optional, which will be described below.
+> The "ranking" column is optional. It works with "--ranking" option, which will be described below.
 
 ### Import Data
 
@@ -94,12 +94,12 @@ To import data, run:
 |--errorPath    | -d            | error log file | ./tmp/error.log |
 |--help           | -h            | list help|
 |--timeout        | -o            | specify connection timeout, in millisecond| 3000 |
-|--pswd           | -p            | graphd service password||
-|--connectionRetry       | -r            | connection retry times|
-|--executionRetry       | -e           | thrift execution retry times|
+|--pswd           | -p            | graphd service password| password |
+|--connectionRetry       | -r            | connection retry times| 3 |
+|--executionRetry       | -e           | thrift execution retry times| 3|
 |--stat           | -s            | print statistics info| true/false |
 |--type           | -t            | indicate to insert vertex properties or edge properties| vertext/edge|
-|--user           | -u            | graphd service username|
+|--user           | -u            | graphd service username| user |
 
 > For edge type, if 'ranking' column is specified, '--ranking' option should be set to `true`.
 
