@@ -17,6 +17,7 @@
 #include "kvstore/wal/FileBasedWal.h"
 #include "kvstore/raftex/LogStrListIterator.h"
 #include "kvstore/raftex/Host.h"
+#include "time/WallClock.h"
 
 
 DEFINE_uint32(raft_heartbeat_interval_secs, 5,
@@ -298,6 +299,7 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
     if (asLearner) {
         role_ = Role::LEARNER;
     }
+    startTimeMs_ = time::WallClock::fastNowInMilliSec();
     // Set up a leader election task
     size_t delayMS = 100 + folly::Random::rand32(900);
     bgWorkers_->addDelayTask(delayMS, [self = shared_from_this()] {
@@ -1305,7 +1307,7 @@ void RaftPart::processAppendLogRequest(
     resp.set_leader_ip(leader_.first);
     resp.set_leader_port(leader_.second);
     resp.set_committed_log_id(committedLogId_);
-    resp.set_last_log_id(lastLogId_);
+    resp.set_last_log_id(lastLogId_ < committedLogId_ ? committedLogId_ : lastLogId_);
     resp.set_last_log_term(lastLogTerm_);
 
     // Check status
@@ -1600,9 +1602,13 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
     }
     if (req.get_done()) {
         committedLogId_ = req.get_committed_log_id();
+        if (lastLogId_ < committedLogId_) {
+            lastLogId_ = committedLogId_;
+            lastLogTerm_ = req.get_committed_log_term();
+        }
         status_ = Status::RUNNING;
-        LOG(INFO) << idStr_ << "Receive all snapshot, committedLogId_ = " << committedLogId_
-                  << ", lastLodId " << lastLogId_;
+        LOG(INFO) << idStr_ << "Receive all snapshot, committedLogId_ " << committedLogId_
+                  << ", lastLodId " << lastLogId_ << ", lastLogTermId " << lastLogTerm_;
     }
     resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
     return;

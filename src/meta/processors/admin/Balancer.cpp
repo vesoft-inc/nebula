@@ -36,7 +36,8 @@ StatusOr<BalanceID> Balancer::balance() {
         executor_->add(std::bind(&BalancePlan::invoke, plan_.get()));
         return plan_->id();
     }
-    return Status::Error("balance running");
+    CHECK(!!plan_);
+    return plan_->id();
 }
 
 StatusOr<BalancePlan> Balancer::show(BalanceID id) const {
