@@ -36,7 +36,7 @@ Status: Downloaded newer image for vesoft/nebula-graph:nightly
 镜像拉取完成后，使用以下命令打开三个 docker 容器
 
 ```bash
-$ docker run -it vesoft/nebula-graph:latest /bin/bash
+$ docker run -it vesoft/nebula-graph:nightly /bin/bash
 ```
 
 查看 docker 进程
