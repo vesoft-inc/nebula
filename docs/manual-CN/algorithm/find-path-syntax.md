@@ -1,19 +1,17 @@
-# FIND PATH语句
+# FIND PATH 语句
 `FIND PATH` 语句用于获取最短路径及全路径
 
-## 最短路径
 ```
-FIND SHORTEST PATH FROM <vertex_id_list> TO <vertex_id_list> OVER <edge_type_list> [UPTO <N> STEPS]
-```
-
-## 全路径
-```
-FIND ALL PATH FROM <vertex_id_list> TO <vertex_id_list> OVER <edge_type_list> [UPTO <N> STEPS]
+FIND SHORTEST | ALL PATH FROM <vertex_id_list> TO <vertex_id_list> OVER <edge_type_list> [UPTO <N> STEPS]
 ```
 
-`<vertex_id_list>::=[vertex_id [, vertex_id]]` 节点列表，用逗号隔开。支持输入及变量。
+`SHORTEST` 寻找最短路径关键词。
 
-`<edge_type_list>` 指定边的类型，支持多种边类型，*。
+`ALL` 寻找全路径关键词。
+
+`<vertex_id_list>::=[vertex_id [, vertex_id]]` 节点列表，用逗号隔开。支持输入```$-```及变量```$var```。
+
+`<edge_type_list>` 指定边的类型，多种边类型用```,```隔开，用```*```表示所有边类型。
 
 `<N>` 跳数，默认值5。
 
@@ -26,7 +24,7 @@ FIND ALL PATH FROM <vertex_id_list> TO <vertex_id_list> OVER <edge_type_list> [U
 
 在console中，路径显示方式为 `id <edge_name, ranking> id`。
 ```
-(user@127.0.0.1) [myspace_test2]> find shortest path from 200 to 201 over *
+(user@127.0.0.1) [myspace_test2]> FIND SHORTEST PATH FROM 200 to 201 OVER *
 ============================
 | _path_ |
 ============================
@@ -35,7 +33,7 @@ FIND ALL PATH FROM <vertex_id_list> TO <vertex_id_list> OVER <edge_type_list> [U
 ```
 
 ```
-(user@127.0.0.1) [myspace_test2]> find all path from 200 to 201 over *
+(user@127.0.0.1) [myspace_test2]> FIND ALL PATH FROM 200 to 201 OVER *
 ====================================================================================================
 | _path_ |
 ====================================================================================================
