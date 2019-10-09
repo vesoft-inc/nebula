@@ -34,7 +34,7 @@ A high performance distributed graph database
 
 %build
 cmake -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=%{_version} -DCMAKE_INSTALL_PREFIX=%{_install_dir} -DENABLE_TESTING=OFF./
-make -j2
+make -j$(nproc)
 
 %install
 rm -rf %{buildroot}
