@@ -73,6 +73,11 @@ Summary: tool for storage
 Group: Applications/Databases
 %description storage_perf
 
+%package simple_kv_verify
+Summary: tool for storage
+Group: Applications/Databases
+%description simple_kv_verify
+
 
 # the files include exe, config file, scripts
 # base rpm include files
@@ -129,6 +134,10 @@ fi
 # storage_perf rpm
 %files storage_perf
 %attr(0755,root,root) %{_bindir}/storage_perf
+
+# simple_kv_verify rpm
+%files simple_kv_verify
+%attr(0755,root,root) %{_bindir}/simple_kv_verify
 
 %debug_package
 
