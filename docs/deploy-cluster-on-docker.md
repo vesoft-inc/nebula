@@ -9,14 +9,14 @@ Before you start, make sure that you have installed the latest version of [Docke
 Pull the latest image of nebula from [Docker Hub](https://hub.docker.com/r/vesoft/nebula-graph/tags) using the following command
 
 ```bash
-$ docker pull vesoft/nebula-graph:nightly
+$ docker pull vesoft/nebula-graph:latest
 
 Pulling from vesoft/nebula-graph
 d8d02d457314: Pull complete
 f7022daf2b4f: Pull complete
 106b632a856a: Pull complete
 Digest: sha256:313214ca1a4482183a0352450639d6dd79d77c56143654c57674c06131d00a47
-Status: Downloaded newer image for vesoft/nebula-graph:nightly
+Status: Downloaded newer image for vesoft/nebula-graph:latest
 ```
 
 ## Multi Nodes Deployment
@@ -24,7 +24,7 @@ Status: Downloaded newer image for vesoft/nebula-graph:nightly
 After the image is pulled completely, start three containers using the following command
 
 ```bash
-$ docker run -it vesoft/nebula-graph:nightly /bin/bash
+$ docker run -it vesoft/nebula-graph:latest /bin/bash
 ```
 
 View their processes using the following command
@@ -33,9 +33,9 @@ View their processes using the following command
 $ docker ps
 
 CONTAINER ID        IMAGE                         COMMAND             CREATED             STATUS              PORTS               NAMES
-c2134fd5ccc3        vesoft/nebula-graph:nightly   "/bin/bash"         5 minutes ago       Up 5 minutes                            thirsty_grothendieck
-1d7a441d4f40        vesoft/nebula-graph:nightly   "/bin/bash"         5 minutes ago       Up 5 minutes                            elastic_feistel
-591e2f6f48e2        vesoft/nebula-graph:nightly   "/bin/bash"         7 minutes ago       Up 7 minutes                            sad_chaum
+c2134fd5ccc3        vesoft/nebula-graph:latest   "/bin/bash"         5 minutes ago       Up 5 minutes                            thirsty_grothendieck
+1d7a441d4f40        vesoft/nebula-graph:latest   "/bin/bash"         5 minutes ago       Up 5 minutes                            elastic_feistel
+591e2f6f48e2        vesoft/nebula-graph:latest   "/bin/bash"         7 minutes ago       Up 7 minutes                            sad_chaum
 ```
 
 Use the following command to check the IP address of each docker process:
