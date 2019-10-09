@@ -274,12 +274,22 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
         }
         case OP_TRANS_LEADER: {
             auto newLeader = decodeHost(OP_TRANS_LEADER, log);
-            commitTransLeader(newLeader);
+            auto ts = getTimestamp(log);
+            if (ts > startTimeMs_) {
+                commitTransLeader(newLeader);
+            } else {
+                LOG(INFO) << idStr_ << "Skip commit stale transfer leader " << newLeader;
+            }
             break;
         }
         case OP_REMOVE_PEER: {
             auto peer = decodeHost(OP_REMOVE_PEER, log);
-            commitRemovePeer(peer);
+            auto ts = getTimestamp(log);
+            if (ts > startTimeMs_) {
+                commitRemovePeer(peer);
+            } else {
+                LOG(INFO) << idStr_ << "Skip commit stale remove peer " << peer;
+            }
             break;
         }
         default: {
@@ -347,22 +357,42 @@ bool Part::preProcessLog(LogID logId,
         switch (log[sizeof(int64_t)]) {
             case OP_ADD_LEARNER: {
                 auto learner = decodeHost(OP_ADD_LEARNER, log);
-                addLearner(learner);
+                auto ts = getTimestamp(log);
+                if (ts > startTimeMs_) {
+                    addLearner(learner);
+                } else {
+                    LOG(INFO) << idStr_ << "Skip stale add learner " << learner;
+                }
                 break;
             }
             case OP_TRANS_LEADER: {
                 auto newLeader = decodeHost(OP_TRANS_LEADER, log);
-                preProcessTransLeader(newLeader);
+                auto ts = getTimestamp(log);
+                if (ts > startTimeMs_) {
+                    preProcessTransLeader(newLeader);
+                } else {
+                    LOG(INFO) << idStr_ << "Skip stale transfer leader " << newLeader;
+                }
                 break;
             }
             case OP_ADD_PEER: {
                 auto peer = decodeHost(OP_ADD_PEER, log);
-                addPeer(peer);
+                auto ts = getTimestamp(log);
+                if (ts > startTimeMs_) {
+                    addPeer(peer);
+                } else {
+                    LOG(INFO) << idStr_ << "Skip stale add peer " << peer;
+                }
                 break;
             }
             case OP_REMOVE_PEER: {
                 auto peer = decodeHost(OP_REMOVE_PEER, log);
-                preProcessRemovePeer(peer);
+                auto ts = getTimestamp(log);
+                if (ts > startTimeMs_) {
+                    preProcessRemovePeer(peer);
+                } else {
+                    LOG(INFO) << idStr_ << "Skip stale remove peer " << peer;
+                }
                 break;
             }
             default: {
