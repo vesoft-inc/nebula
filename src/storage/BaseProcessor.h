@@ -85,6 +85,16 @@ protected:
         }
     }
 
+    void pushResultCode(cpp2::ErrorCode code, PartitionID partId, HostAddr leader) {
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            cpp2::ResultCode thriftRet;
+            thriftRet.set_code(code);
+            thriftRet.set_part_id(partId);
+            thriftRet.set_leader(toThriftHost(leader));
+            result_.failed_codes.emplace_back(std::move(thriftRet));
+        }
+    }
+
     nebula::cpp2::HostAddr toThriftHost(const HostAddr& host) {
         nebula::cpp2::HostAddr tHost;
         tHost.set_ip(host.first);
