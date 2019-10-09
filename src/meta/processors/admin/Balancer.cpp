@@ -378,7 +378,7 @@ cpp2::ErrorCode Balancer::leaderBalance() {
         hostLeaderMap_.reset(new HostLeaderMap);
         auto status = client_->getLeaderDist(hostLeaderMap_.get()).get();
 
-        if (!status.ok()) {
+        if (!status.ok() || hostLeaderMap_->empty()) {
             inLeaderBalance_ = false;
             return cpp2::ErrorCode::E_RPC_FAILURE;
         }
