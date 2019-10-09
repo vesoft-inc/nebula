@@ -8,7 +8,7 @@
 #define COMMON_FILTER_GEO_GEOFILTER_H_
 
 #include "base/Base.h"
-#include "base/Status.h"
+#include "base/StatusOr.h"
 
 namespace nebula {
 namespace geo {
@@ -20,7 +20,7 @@ public:
         CONTAIN,
     };
 
-    static Status near(const std::vector<VariantType> &args);
+    static StatusOr<std::string> near(const std::vector<VariantType> &args);
 };
 }  // namespace geo
 }  // namespace nebula

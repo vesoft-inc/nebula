@@ -491,8 +491,12 @@ FunctionManager::FunctionManager() {
         attr.minArity_ = 3;
         attr.maxArity_ = 3;
         attr.body_ = [] (const auto &args) {
-            geo::GeoFilter::near(args);
-            return INT64_MIN;
+            auto result = geo::GeoFilter::near(args);
+            if (!result.ok()) {
+                return std::string("");
+            } else {
+                return std::move(result).value();
+            }
         };
     }
 }

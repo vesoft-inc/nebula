@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "base/Status.h"
+#include "base/StatusOr.h"
 #include "filter/geo/GeoFilter.h"
 #include "filter/geo/GeoParams.h"
 #include "filter/Expressions.h"
@@ -16,7 +16,7 @@
 
 namespace nebula {
 namespace geo {
-Status GeoFilter::near(const std::vector<VariantType> &args) {
+StatusOr<std::string> GeoFilter::near(const std::vector<VariantType> &args) {
     auto predicate = args[0];
 
     std::string pointWkt = "POINT";
@@ -37,10 +37,13 @@ Status GeoFilter::near(const std::vector<VariantType> &args) {
     S2RegionCoverer rc(rcParams.regionCovererOpts());
     auto cover = rc.GetCovering(cap);
 
-    for (auto cell : cover) {
-        LOG(INFO) << cell.id() << " " << cell.level();
+    std::string s;
+    for (auto &cellId : cover) {
+        folly::toAppend(cellId.id(), &s);
+        folly::toAppend(",", &s);
     }
-    return Status::Error("To be implemented.");
+    s.pop_back();
+    return s;
 }
 }  // namespace geo
 }  // namespace nebula

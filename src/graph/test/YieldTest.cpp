@@ -560,7 +560,7 @@ TEST_F(YieldTest, near) {
     ASSERT_NE(nullptr, client);
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "YIELD near(\"loc\", \"(123 111)\", 100)";
+        std::string query = "YIELD near(\"loc\", \"(30.2838 120.0128)\", 100)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }

@@ -179,6 +179,18 @@ Status GoExecutor::prepareFrom() {
                 status = Status::Error();
                 break;
             }
+            if (expr->isFunCallExpression()) {
+                auto *funcExpr = static_cast<FunctionCallExpression*>(expr);
+                if (*(funcExpr->name()) == "near") {
+                    auto v = Expression::asString(value.value());
+                    std::vector<VertexID> result;
+                    folly::split(",", v, result, true);
+                    starts_.insert(starts_.end(),
+                                   std::make_move_iterator(result.begin()),
+                                   std::make_move_iterator(result.end()));
+                    continue;
+                }
+            }
             auto v = value.value();
             if (!Expression::isInt(v)) {
                 status = Status::Error("Vertex ID should be of type integer");

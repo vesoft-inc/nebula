@@ -761,5 +761,14 @@ TEST_F(GoTest, is_inCall) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
+
+TEST_F(GoTest, near) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO FROM near(\"\", \"(30.2838 120.0128)\", 1000) OVER serve";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+}
 }   // namespace graph
 }   // namespace nebula
