@@ -406,11 +406,16 @@ void RaftPart::commitTransLeader(const HostAddr& target) {
     LOG(INFO) << idStr_ << "Commit transfer leader to " << target;
     switch (role_) {
         case Role::LEADER: {
-            if (target != addr_) {
-                lastMsgRecvDur_.reset();
-                role_ = Role::FOLLOWER;
-                leader_ = HostAddr(0, 0);
-                LOG(INFO) << idStr_ << "Give up my leadership!";
+            if (target != addr_ && !hosts_.empty()) {
+                auto iter = std::find_if(hosts_.begin(), hosts_.end(), [] (const auto& h) {
+                    return !h->isLearner();
+                });
+                if (iter != hosts_.end()) {
+                    lastMsgRecvDur_.reset();
+                    role_ = Role::FOLLOWER;
+                    leader_ = HostAddr(0, 0);
+                    LOG(INFO) << idStr_ << "Give up my leadership!";
+                }
             } else {
                 LOG(INFO) << idStr_ << "I am already the leader!";
             }
