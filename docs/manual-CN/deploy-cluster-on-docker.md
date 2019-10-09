@@ -2,7 +2,7 @@
 
 本文介绍如何使用 Docker 部署一个多节点的 Nebula 集群。
 
-**_注意_:** 对于生产环境，不要使用该方式进行部署。
+**_注意_：** 对于生产环境，不要使用该方式进行部署。
 
 
 ## 环境准备
@@ -14,10 +14,11 @@ Docker 安装方法请参考 [Docker 官方文档](https://docs.docker.com/)。
 
 ### 拉取镜像
 
-从 Docker 镜像仓库获取最新 [Nebula Graph 镜像](https://hub.docker.com/r/vesoft/nebula-graph)：
+从 Docker 镜像仓库获取最新 [Nebula Graph 镜像](https://hub.docker.com/r/vesoft/nebula-graph)
 
 ```bash
 $ docker pull vesoft/nebula-graph:nightly
+
 Pulling from vesoft/nebula-graph
 d8d02d457314: Pull complete
 f7022daf2b4f: Pull complete
@@ -38,10 +39,11 @@ Status: Downloaded newer image for vesoft/nebula-graph:nightly
 $ docker run -it vesoft/nebula-graph:latest /bin/bash
 ```
 
-查看 docker 进程：
+查看 docker 进程
 
 ```bash
 $ docker ps
+
 CONTAINER ID        IMAGE                         COMMAND             CREATED             STATUS              PORTS               NAMES
 c2134fd5ccc3        vesoft/nebula-graph:nightly   "/bin/bash"         5 minutes ago       Up 5 minutes                            thirsty_grothendieck
 1d7a441d4f40        vesoft/nebula-graph:nightly   "/bin/bash"         5 minutes ago       Up 5 minutes                            elastic_feistel
@@ -56,21 +58,24 @@ $ docker inspect 容器ID | grep IPAddress
 
 ```bash
 $ docker inspect c2134fd5ccc3 | grep IPAddress
+
             "SecondaryIPAddresses": null,
             "IPAddress": "172.17.0.4",
                     "IPAddress": "172.17.0.4",
 $ docker inspect 1d7a441d4f40 | grep IPAddress
+
             "SecondaryIPAddresses": null,
             "IPAddress": "172.17.0.3",
                     "IPAddress": "172.17.0.3",
 $ docker inspect 591e2f6f48e2 | grep IPAddress
+
             "SecondaryIPAddresses": null,
             "IPAddress": "172.17.0.2",
                     "IPAddress": "172.17.0.2",
 ```
 
 
-因此本文将在3台主机上按如下的方式部署 Nebula 的集群：
+因此本文将在3台主机上按如下的方式部署 Nebula 的集群
 
 ```
 172.17.0.2 # cluster-2: metad/storaged/graphd
@@ -78,14 +83,15 @@ $ docker inspect 591e2f6f48e2 | grep IPAddress
 172.17.0.4 # cluster-4: metad/storaged/graphd
 ```
 
+**_注意_：** 也可根据实际情况灵活选取部署方式，此处仅做测试用。
 
 ## 配置
 
 Nebula 的所有配置文件都位于 `/usr/local/nebula/etc` 目录下，并且提供了三份默认配置。分别编辑这些配置文件:
 
-第一份配置文件：**nebula-metad.conf**
+第一份配置文件 **nebula-metad.conf**
 
-metad 通过 raft 协议保证高可用，需要为每个 metad 的 service 都配置该服务部署的机器 ip 和端口。主要涉及 meta_server_addrs 和 local_ip 两个字段，其他使用默认配置。cluster-2 上的两项配置示例如下所示：
+metad 通过 raft 协议保证高可用，需要为每个 metad 的 service 都配置该服务部署的机器 ip 和端口。主要涉及 meta_server_addrs 和 local_ip 两个字段，其他使用默认配置。cluster-2 上的两项配置示例如下所示
 
 ```
 # Peers
@@ -96,18 +102,23 @@ metad 通过 raft 协议保证高可用，需要为每个 metad 的 service 都�
 --port=45500
 ```
 
-第二份配置文件：**nebula-graphd.conf**
+![image](https://user-images.githubusercontent.com/42762957/66463034-dcbb9200-eaae-11e9-896b-c823318cb58e.png)
 
-graphd 运行时需要从 metad 中获取 Schema 数据，所以在配置中必须显示指定集群中 metad 的 ip 地址和端口选项 meta_server_addrs ，其他使用默认配置。cluster-2 上的 graphd 配置如下：
+第二份配置文件 **nebula-graphd.conf**
+
+graphd 运行时需要从 metad 中获取 Schema 数据，所以在配置中必须显示指定集群中 metad 的 ip 地址和端口选项 meta_server_addrs ，其他使用默认配置。cluster-2 上的 graphd 配置如下
 
 ```
 # Meta Server Address
 --meta_server_addrs=172.17.0.2:45500,172.17.0.3:45500,172.17.0.4:45500
 ```
 
-第三份配置文件：**nebula-storaged.conf**
+![image](https://user-images.githubusercontent.com/42762957/66463601-fb6e5880-eaaf-11e9-8067-1c7a8b2a52b0.png)
 
-storaged 也使用 raft 协议保证高可用，在数据迁移时会与 metad 通信，所以需要配置 metad 的地址和端口 `meta_server_addrs` 和本机地址 `local_ip` ，其 peers 可以通过 metad 获得。cluster-2 上的部分配置选项如下：
+
+第三份配置文件 **nebula-storaged.conf**
+
+storaged 也使用 raft 协议保证高可用，在数据迁移时会与 metad 通信，所以需要配置 metad 的地址和端口 `meta_server_addrs` 和本机地址 `local_ip` ，其 peers 可以通过 metad 获得。cluster-2 上的部分配置选项如下
 
 ```
 # Meta server address
@@ -118,21 +129,19 @@ storaged 也使用 raft 协议保证高可用，在数据迁移时会与 metad �
 --port=44500
 ```
 
+![image](https://user-images.githubusercontent.com/42762957/66463419-99adee80-eaaf-11e9-921f-c5648093d6c9.png)
+
+
 请重复上述步骤，为 cluster-3、cluster-4 进行配置，一共需配置9个文件。
 
 
 ## 启动集群
 
-进入容器后，默认在根目录下 / ，切换到 Nebula 主目录:
-
-```bash
-$ cd /usr/local/nebula/
-```
-
-集群配置完成后需重启服务：
+集群配置完成后需重启服务
 
 ```bash
 $ /usr/local/nebula/scripts/nebula.service stop all
+
 [INFO] Stopping nebula-metad...
 [INFO] Done
 [INFO] Stopping nebula-graphd...
@@ -141,6 +150,7 @@ $ /usr/local/nebula/scripts/nebula.service stop all
 [INFO] Done
 
 $ /usr/local/nebula/scripts/nebula.service start all
+
 [INFO] Starting nebula-metad...
 [INFO] Done
 [INFO] Starting nebula-graphd...
@@ -154,7 +164,7 @@ $ /usr/local/nebula/scripts/nebula.service start all
 
 ## 测试集群
 
-登录集群中的一台，执行如下命令：
+使用客户端登录集群中的一台，执行如下命令
 
 ```bash
 $ /usr/local/nebula/bin/nebula -u user -p password --addr 172.17.0.2 --port 3699
@@ -162,14 +172,15 @@ $ /usr/local/nebula/bin/nebula -u user -p password --addr 172.17.0.2 --port 3699
 Welcome to Nebula Graph (Version 5f656b5)
 
 (user@172.17.0.2) [(none)]> show hosts
+
 =============================================================================================
 | Ip         | Port  | Status | Leader count | Leader distribution | Partition distribution |
 =============================================================================================
-| 127.17.0.2 | 44500 | online | 0            |                     |                        |
+| 127.17.0.2 | 44500 | online | 1            | space 1: 1          | space 1: 1             |
 ---------------------------------------------------------------------------------------------
-| 172.17.0.3 | 44500 | online | 0            |                     |                        |
+| 172.17.0.3 | 44500 | online | 1            | space 1: 1          | space 1: 1             |
 ---------------------------------------------------------------------------------------------
-| 172.17.0.4 | 44500 | online | 0            |                     |                        |
+| 172.17.0.4 | 44500 | online | 0            |                     | space 1: 1             |
 ---------------------------------------------------------------------------------------------
 ```
 
@@ -177,6 +188,7 @@ Welcome to Nebula Graph (Version 5f656b5)
 
 ```
 $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade
+
 =============================
 | Student | Course  | Grade |
 =============================
@@ -188,42 +200,44 @@ $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD 
 -----------------------------
 ```
 
-停止 cluster-4 的 storage 进程：
+停止 cluster-4 的 storage 进程
 
 ```bash
 $ /usr/local/nebula/scripts/nebula.service stop storaged
 ```
 
-查看进程状态，确认进程是否停止：
+查看进程状态，确认进程是否停止
 
 ```bash
 $ /usr/local/nebula/scripts/nebula.service status storaged
 [INFO] nebula-storaged: Exited
 ```
 
-登录 cluster-2，使用 `SHOW HOSTS` 查看：
+登录 cluster-2，使用 `SHOW HOSTS` 查看
 
 ```
 > SHOW HOSTS
-==============================================================================================
-| Ip         | Port  | Status  | Leader count | Leader distribution | Partition distribution |
-==============================================================================================
-| 127.17.0.2 | 44500 | online  | 0            |                     | space 1: 1             |
-----------------------------------------------------------------------------------------------
-| 172.17.0.3 | 44500 | online  | 0            |                     | space 1: 1             |
-----------------------------------------------------------------------------------------------
+
+=============================================================================================
+| Ip         | Port  | Status | Leader count | Leader distribution | Partition distribution |
+=============================================================================================
+| 127.17.0.2 | 44500 | online | 1            | space 1: 1          | space 1: 1             |
+---------------------------------------------------------------------------------------------
+| 172.17.0.3 | 44500 | online | 1            | space 1: 1          | space 1: 1             |
+---------------------------------------------------------------------------------------------
 | 172.17.0.4 | 44500 | offline | 0            |                     | space 1: 1             |
-----------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------
 ```
 
 此时 cluster-4 状态显示为 offline，表明已成功停止。
 
 **_注意：_** 如果 172.17.0.4 状态显示为 online，是因为 `expired_threshold_sec` 的默认值为10分钟。请自行修改配置文件 `nebula-metad.conf` 中的 `expired_threshold_sec` 参数值。也可更改配置文件 `nebula-storaged.conf` 中的 `heartbeat_interval_secs`。多副本情况下，只有在大多数副本可用时才能读取数据。
 
-测试数据是否可读：
+测试数据是否可读
 
 ```
 $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade
+
 =============================
 | Student | Course  | Grade |
 =============================

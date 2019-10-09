@@ -6,10 +6,11 @@ This article describes how to deploy a multi-node Nebula cluster on Docker.
 ### Install Docker
 Before you start, make sure that you have installed the latest version of [Docker](https://docs.docker.com/).
 ### Pull Docker Image
-Pull the latest image of nebula from [Docker Hub](https://hub.docker.com/r/vesoft/nebula-graph/tags) using the following command:
+Pull the latest image of nebula from [Docker Hub](https://hub.docker.com/r/vesoft/nebula-graph/tags) using the following command
 
 ```bash
 $ docker pull vesoft/nebula-graph:nightly
+
 Pulling from vesoft/nebula-graph
 d8d02d457314: Pull complete
 f7022daf2b4f: Pull complete
@@ -20,16 +21,17 @@ Status: Downloaded newer image for vesoft/nebula-graph:nightly
 
 ## Multi Nodes Deployment
 ### Check The IP of Each Container
-After the image is pulled completely, start three containers using the following command:
+After the image is pulled completely, start three containers using the following command
 
 ```bash
 $ docker run -it vesoft/nebula-graph:latest /bin/bash
 ```
 
-View their processes using the following command:
+View their processes using the following command
 
 ```bash
 $ docker ps
+
 CONTAINER ID        IMAGE                         COMMAND             CREATED             STATUS              PORTS               NAMES
 c2134fd5ccc3        vesoft/nebula-graph:nightly   "/bin/bash"         5 minutes ago       Up 5 minutes                            thirsty_grothendieck
 1d7a441d4f40        vesoft/nebula-graph:nightly   "/bin/bash"         5 minutes ago       Up 5 minutes                            elastic_feistel
@@ -44,14 +46,17 @@ $ docker inspect {container ID} | grep IPAddress
 
 ```bash
 $ docker inspect c2134fd5ccc3 | grep IPAddress
+
             "SecondaryIPAddresses": null,
             "IPAddress": "172.17.0.4",
                     "IPAddress": "172.17.0.4",
 $ docker inspect 1d7a441d4f40 | grep IPAddress
+
             "SecondaryIPAddresses": null,
             "IPAddress": "172.17.0.3",
                     "IPAddress": "172.17.0.3",
 $ docker inspect 591e2f6f48e2 | grep IPAddress
+
             "SecondaryIPAddresses": null,
             "IPAddress": "172.17.0.2",
                     "IPAddress": "172.17.0.2",
@@ -64,6 +69,8 @@ Therefore, this article will deploy Nebula cluster on three hosts as follows:
 172.17.0.3 # cluster-3: metad/storaged/graphd
 172.17.0.4 # cluster-4: metad/storaged/graphd
 ```
+
+**_Note_:** In production, please choose deployment method based on your actual conditions. This is for testing only. 
 
 ## Configuration
 All the configuration files of Nebula are located in `/usr/local/nebula/etc`, and three default configuration files are provided there. Edit them separately:
@@ -107,16 +114,11 @@ Repeat the above steps to configure cluster-3 and cluster-4. A total of 9 files 
 
 ## Run Clusters
 
-After login, you're in the `root` directory and you should switch to the nebula directory
-
-```bash
-$ cd /usr/local/nebula/
-```
-
 Restart the service after the cluster configuration is complete:
 
 ```bash
 $ /usr/local/nebula/scripts/nebula.service stop all
+
 [INFO] Stopping nebula-metad...
 [INFO] Done
 [INFO] Stopping nebula-graphd...
@@ -125,6 +127,7 @@ $ /usr/local/nebula/scripts/nebula.service stop all
 [INFO] Done
 
 $ /usr/local/nebula/scripts/nebula.service start all
+
 [INFO] Starting nebula-metad...
 [INFO] Done
 [INFO] Starting nebula-graphd...
@@ -136,7 +139,7 @@ $ /usr/local/nebula/scripts/nebula.service start all
 Repeat the above command to restart cluster-3 and cluster-4.
 
 ## Test Clusters
-Log on to one of the clusters and run the following command:
+Now use the console to log on to one of the clusters and run the following command
 
 ```bash
 $ /usr/local/nebula/bin/nebula -u user -p password --addr 172.17.0.2 --port 3699
@@ -144,14 +147,15 @@ $ /usr/local/nebula/bin/nebula -u user -p password --addr 172.17.0.2 --port 3699
 Welcome to Nebula Graph (Version 5f656b5)
 
 (user@172.17.0.2) [(none)]> show hosts
+
 =============================================================================================
 | Ip         | Port  | Status | Leader count | Leader distribution | Partition distribution |
 =============================================================================================
-| 127.17.0.2 | 44500 | online | 0            |                     |                        |
+| 127.17.0.2 | 44500 | online | 1            | space 1: 1          | space 1: 1             |
 ---------------------------------------------------------------------------------------------
-| 172.17.0.3 | 44500 | online | 0            |                     |                        |
+| 172.17.0.3 | 44500 | online | 1            | space 1: 1          | space 1: 1             |
 ---------------------------------------------------------------------------------------------
-| 172.17.0.4 | 44500 | online | 0            |                     |                        |
+| 172.17.0.4 | 44500 | online | 0            |                     | space 1: 1             |
 ---------------------------------------------------------------------------------------------
 ```
 
@@ -160,6 +164,7 @@ The three shown hosts indicate that the clusters are successfully deployed, now 
 
 ```
 $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade
+
 =============================
 | Student | Course  | Grade |
 =============================
@@ -188,15 +193,16 @@ Log on to cluster-2 and check hosts using command `SHOW HOSTS`:
 
 ```
 > SHOW HOSTS
-==============================================================================================
-| Ip         | Port  | Status  | Leader count | Leader distribution | Partition distribution |
-==============================================================================================
-| 127.17.0.2 | 44500 | online  | 0            |                     | space 1: 1             |
-----------------------------------------------------------------------------------------------
-| 172.17.0.3 | 44500 | online  | 0            |                     | space 1: 1             |
-----------------------------------------------------------------------------------------------
+
+=============================================================================================
+| Ip         | Port  | Status | Leader count | Leader distribution | Partition distribution |
+=============================================================================================
+| 127.17.0.2 | 44500 | online | 1            | space 1: 1          | space 1: 1             |
+---------------------------------------------------------------------------------------------
+| 172.17.0.3 | 44500 | online | 1            | space 1: 1          | space 1: 1             |
+---------------------------------------------------------------------------------------------
 | 172.17.0.4 | 44500 | offline | 0            |                     | space 1: 1             |
-----------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------
 ```
 
 At this time the status of cluster-4 is offline, indicating it has been stopped successfully.
@@ -207,6 +213,7 @@ Test whether the data is readable with one storage killed:
 
 ```
 $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade
+
 =============================
 | Student | Course  | Grade |
 =============================
