@@ -15,6 +15,7 @@
 DECLARE_uint32(task_concurrency);
 DECLARE_int32(expired_threshold_sec);
 DECLARE_double(leader_balance_deviation);
+DECLARE_int32(wait_time_after_open_part_ms);
 
 namespace nebula {
 namespace meta {
@@ -857,6 +858,7 @@ int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
+    FLAGS_wait_time_after_open_part_ms = 0;
     return RUN_ALL_TESTS();
 }
 

@@ -174,13 +174,16 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
         auto host = request.first;
         auto client = clientsMan_->client(host, evb);
         auto spaceId = request.second.get_space_id();
+        auto partId = request.second.get_part_id();
         LOG(INFO) << "Send request to storage " << host;
         remoteFunc(client.get(), std::move(request.second))
-             .then(evb, [spaceId, p = std::move(pro), this] (folly::Try<Response>&& t) mutable {
+             .then(evb,
+                   [spaceId, partId, p = std::move(pro), this] (folly::Try<Response>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
                 p.setValue(Status::Error(folly::stringPrintf("RPC failure in StorageClient: %s",
                                                              t.exception().what().c_str())));
+                invalidLeader(spaceId, partId);
                 return;
             }
             auto&& resp = std::move(t.value());
