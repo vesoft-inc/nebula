@@ -30,6 +30,10 @@ enum class GeoVariantType : uint8_t {
     POLYGON     = 2,
 };
 
+constexpr char kWktPointPrefix[] = "POINT";
+constexpr char kWktLinestringPrefix[] = "LINESTRING";
+constexpr char kWktPolygonPrefix[] = "POLYGON";
+
 constexpr double kEarthRadiusMeters = (6371.000 * 1000);
 
 struct RegionCoverParams {

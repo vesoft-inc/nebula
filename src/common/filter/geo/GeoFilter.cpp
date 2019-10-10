@@ -9,6 +9,7 @@
 #include "filter/geo/GeoFilter.h"
 #include "filter/geo/GeoParams.h"
 #include "filter/Expressions.h"
+#include "filter/geo/GeoIndex.h"
 #include <s2/s2cell_id.h>
 #include <s2/s2latlng.h>
 #include <s2/s2cap.h>
@@ -19,7 +20,7 @@ namespace geo {
 StatusOr<std::string> GeoFilter::near(const std::vector<VariantType> &args) {
     auto predicate = args[0];
 
-    std::string pointWkt = "POINT";
+    std::string pointWkt = kWktPointPrefix;
     pointWkt.append(boost::get<std::string>(args[1]));
     PointType loc;
     boost::geometry::read_wkt(pointWkt, loc);
