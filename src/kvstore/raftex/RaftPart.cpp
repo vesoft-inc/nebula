@@ -17,10 +17,9 @@
 #include "kvstore/wal/FileBasedWal.h"
 #include "kvstore/raftex/LogStrListIterator.h"
 #include "kvstore/raftex/Host.h"
+#include "time/WallClock.h"
 
 
-DEFINE_bool(accept_log_append_during_pulling, false,
-            "Whether to accept new logs during pulling the snapshot");
 DEFINE_uint32(raft_heartbeat_interval_secs, 5,
              "Seconds between each heartbeat");
 
@@ -290,6 +289,7 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
 
     // Start all peer hosts
     for (auto& addr : peers) {
+        LOG(INFO) << idStr_ << "Add peer " << addr;
         auto hostPtr = std::make_shared<Host>(addr, shared_from_this());
         hosts_.emplace_back(hostPtr);
     }
@@ -299,6 +299,7 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
     if (asLearner) {
         role_ = Role::LEARNER;
     }
+    startTimeMs_ = time::WallClock::fastNowInMilliSec();
     // Set up a leader election task
     size_t delayMS = 100 + folly::Random::rand32(900);
     bgWorkers_->addDelayTask(delayMS, [self = shared_from_this()] {
@@ -374,15 +375,19 @@ void RaftPart::addLearner(const HostAddr& addr) {
 
 void RaftPart::preProcessTransLeader(const HostAddr& target) {
     CHECK(!raftLock_.try_lock());
-    LOG(INFO) << idStr_ << "Commit transfer leader to " << target;
+    LOG(INFO) << idStr_ << "Pre process transfer leader to " << target;
     switch (role_) {
         case Role::FOLLOWER: {
             if (target != addr_ && target != HostAddr(0, 0)) {
                 LOG(INFO) << idStr_ << "I am follower, just wait for the new leader.";
             } else {
                 LOG(INFO) << idStr_ << "I will be the new leader, trigger leader election now!";
-                role_ = Role::CANDIDATE;
                 bgWorkers_->addTask([self = shared_from_this()] {
+                    {
+                        std::unique_lock<std::mutex> lck(self->raftLock_);
+                        self->role_ = Role::CANDIDATE;
+                        self->leader_ = HostAddr(0, 0);
+                    }
                     self->leaderElection();
                 });
             }
@@ -401,24 +406,117 @@ void RaftPart::commitTransLeader(const HostAddr& target) {
     LOG(INFO) << idStr_ << "Commit transfer leader to " << target;
     switch (role_) {
         case Role::LEADER: {
-            if (target != addr_) {
-                lastMsgRecvDur_.reset();
-                role_ = Role::FOLLOWER;
-                leader_ = HostAddr(0, 0);
-                LOG(INFO) << idStr_ << "Give up my leadership!";
+            if (target != addr_ && !hosts_.empty()) {
+                auto iter = std::find_if(hosts_.begin(), hosts_.end(), [] (const auto& h) {
+                    return !h->isLearner();
+                });
+                if (iter != hosts_.end()) {
+                    lastMsgRecvDur_.reset();
+                    role_ = Role::FOLLOWER;
+                    leader_ = HostAddr(0, 0);
+                    LOG(INFO) << idStr_ << "Give up my leadership!";
+                }
             } else {
                 LOG(INFO) << idStr_ << "I am already the leader!";
             }
             break;
         }
         case Role::FOLLOWER:
-        case Role::CANDIDATE:
-        case Role::LEARNER: {
-            CHECK(target != addr_);
+        case Role::CANDIDATE: {
             LOG(INFO) << idStr_ << "I am " << roleStr(role_) << ", just wait for the new leader!";
             break;
         }
+        case Role::LEARNER: {
+            LOG(INFO) << idStr_ << "I am learner, not in the raft group, skip the log";
+            break;
+        }
     }
+}
+
+void RaftPart::updateQuorum() {
+    CHECK(!raftLock_.try_lock());
+    int32_t total = 0;
+    for (auto& h : hosts_) {
+        if (!h->isLearner()) {
+            total++;
+        }
+    }
+    quorum_ = (total + 1) / 2;
+}
+
+void RaftPart::addPeer(const HostAddr& peer) {
+    CHECK(!raftLock_.try_lock());
+    if (peer == addr_) {
+        if (role_ == Role::LEARNER) {
+            LOG(INFO) << idStr_ << "I am learner, promote myself to be follower";
+            role_ = Role::FOLLOWER;
+            updateQuorum();
+        } else {
+            LOG(INFO) << idStr_ << "I am already in the raft group!";
+        }
+        return;
+    }
+    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&peer] (const auto& h) {
+                return h->address() == peer;
+            });
+    if (it == hosts_.end()) {
+        hosts_.emplace_back(std::make_shared<Host>(peer, shared_from_this()));
+        updateQuorum();
+        LOG(INFO) << idStr_ << "Add peer " << peer;
+    } else {
+        if ((*it)->isLearner()) {
+            LOG(INFO) << idStr_ << "The host " << peer
+                      << " has been existed as learner, promote it!";
+            (*it)->setLearner(false);
+            updateQuorum();
+        } else {
+            LOG(INFO) << idStr_ << "The host " << peer << " has been existed as follower!";
+        }
+    }
+}
+
+void RaftPart::removePeer(const HostAddr& peer) {
+    CHECK(!raftLock_.try_lock());
+    if (peer == addr_) {
+        //    status_ = Status::STOPPED;
+        LOG(INFO) << idStr_ << "Remove myself from the raft group.";
+        return;
+    }
+    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&peer] (const auto& h) {
+                  return h->address() == peer;
+              });
+    if (it == hosts_.end()) {
+        LOG(INFO) << idStr_ << "The peer " << peer << " not exist!";
+    } else {
+        if ((*it)->isLearner()) {
+            LOG(INFO) << idStr_ << "The peer is learner, remove it directly!";
+            hosts_.erase(it);
+            return;
+        }
+        hosts_.erase(it);
+        updateQuorum();
+        LOG(INFO) << idStr_ << "Remove peer " << peer;
+    }
+}
+
+void RaftPart::preProcessRemovePeer(const HostAddr& peer) {
+    CHECK(!raftLock_.try_lock());
+    if (role_ == Role::LEADER) {
+        LOG(INFO) << idStr_ << "I am leader, skip remove peer in preProcessLog";
+        return;
+    }
+    removePeer(peer);
+}
+
+void RaftPart::commitRemovePeer(const HostAddr& peer) {
+    CHECK(!raftLock_.try_lock());
+    if (role_ == Role::FOLLOWER || role_ == Role::LEARNER) {
+        LOG(INFO) << idStr_ << "I am " << roleStr(role_)
+                  << ", skip remove peer in commit";
+        return;
+    }
+    CHECK(Role::LEADER == role_);
+    removePeer(peer);
 }
 
 folly::Future<AppendLogResult> RaftPart::appendAsync(ClusterID source,
@@ -842,6 +940,7 @@ bool RaftPart::needToStartElection() {
                   << lastMsgRecvDur_.elapsedInSec()
                   << ", term " << term_;
         role_ = Role::CANDIDATE;
+        leader_ = HostAddr(0, 0);
         LOG(INFO) << idStr_
                   << "needToStartElection: lastMsgRecvDur " << lastMsgRecvDur_.elapsedInSec()
                   << ", term_ " << term_;
@@ -1093,8 +1192,12 @@ void RaftPart::processAskForVoteRequest(
         return;
     }
 
-    VLOG(2) << idStr_ << "The partition currently is a "
-            << roleStr(role_);
+    LOG(INFO) << idStr_ << "The partition currently is a "
+              << roleStr(role_);
+    if (role_ == Role::LEARNER) {
+        resp.set_error_code(cpp2::ErrorCode::E_BAD_ROLE);
+        return;
+    }
 
     // Check term id
     auto term = role_ == Role::CANDIDATE ? proposedTerm_ : term_;
@@ -1133,6 +1236,16 @@ void RaftPart::processAskForVoteRequest(
         }
     }
 
+    auto candidate = HostAddr(req.get_candidate_ip(), req.get_candidate_port());
+    auto hosts = followers();
+    auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate] (const auto& h){
+                return h->address() == candidate;
+            });
+    if (it == hosts.end()) {
+        LOG(INFO) << idStr_ << "The candidate " << candidate << " is not my peers";
+        resp.set_error_code(cpp2::ErrorCode::E_WRONG_LEADER);
+        return;
+    }
     // Ok, no reason to refuse, we will vote for the candidate
     LOG(INFO) << idStr_ << "The partition will vote for the candidate";
     resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
@@ -1199,7 +1312,7 @@ void RaftPart::processAppendLogRequest(
     resp.set_leader_ip(leader_.first);
     resp.set_leader_port(leader_.second);
     resp.set_committed_log_id(committedLogId_);
-    resp.set_last_log_id(lastLogId_);
+    resp.set_last_log_id(lastLogId_ < committedLogId_ ? committedLogId_ : lastLogId_);
     resp.set_last_log_term(lastLogTerm_);
 
     // Check status
@@ -1215,7 +1328,7 @@ void RaftPart::processAppendLogRequest(
         return;
     }
     // Check leadership
-    cpp2::ErrorCode err = verifyLeader(req, g);
+    cpp2::ErrorCode err = verifyLeader(req);
     if (err != cpp2::ErrorCode::SUCCEEDED) {
         // Wrong leadership
         VLOG(2) << idStr_ << "Will not follow the leader";
@@ -1353,10 +1466,18 @@ void RaftPart::processAppendLogRequest(
 
 
 cpp2::ErrorCode RaftPart::verifyLeader(
-        const cpp2::AppendLogRequest& req,
-        std::lock_guard<std::mutex>& lck) {
+        const cpp2::AppendLogRequest& req) {
+    CHECK(!raftLock_.try_lock());
+    auto candidate = HostAddr(req.get_leader_ip(), req.get_leader_port());
+    auto hosts = followers();
+    auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate] (const auto& h){
+                return h->address() == candidate;
+            });
+    if (it == hosts.end()) {
+        VLOG(2) << idStr_ << "The candidate leader " << candidate << " is not my peers";
+        return cpp2::ErrorCode::E_WRONG_LEADER;
+    }
     VLOG(2) << idStr_ << "The current role is " << roleStr(role_);
-    UNUSED(lck);
     switch (role_) {
         case Role::LEARNER:
         case Role::FOLLOWER: {
@@ -1486,9 +1607,13 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
     }
     if (req.get_done()) {
         committedLogId_ = req.get_committed_log_id();
+        if (lastLogId_ < committedLogId_) {
+            lastLogId_ = committedLogId_;
+            lastLogTerm_ = req.get_committed_log_term();
+        }
         status_ = Status::RUNNING;
-        LOG(INFO) << idStr_ << "Receive all snapshot, committedLogId_ = " << committedLogId_
-                  << ", lastLodId " << lastLogId_;
+        LOG(INFO) << idStr_ << "Receive all snapshot, committedLogId_ " << committedLogId_
+                  << ", lastLodId " << lastLogId_ << ", lastLogTermId " << lastLogTerm_;
     }
     resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
     return;
@@ -1534,6 +1659,25 @@ void RaftPart::reset() {
     lastLogId_ = committedLogId_ = 0;
     lastTotalCount_ = 0;
     lastTotalSize_ = 0;
+}
+
+AppendLogResult RaftPart::isCatchedUp(const HostAddr& peer) {
+    std::lock_guard<std::mutex> lck(logsLock_);
+    if (role_ != Role::LEADER) {
+        LOG(INFO) << idStr_ << "I am not the leader";
+        return AppendLogResult::E_NOT_A_LEADER;
+    }
+    if (peer == addr_) {
+        LOG(INFO) << idStr_ << "I am the leader";
+        return AppendLogResult::SUCCEEDED;
+    }
+    for (auto& host : hosts_) {
+        if (host->addr_ == peer) {
+            return host->sendingSnapshot_ ? AppendLogResult::E_SENDING_SNAPSHOT
+                                          : AppendLogResult::SUCCEEDED;
+        }
+    }
+    return AppendLogResult::E_INVALID_PEER;
 }
 
 }  // namespace raftex

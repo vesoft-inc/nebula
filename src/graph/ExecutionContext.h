@@ -37,7 +37,7 @@ public:
         rctx_ = std::move(rctx);
         sm_ = sm;
         gflagsManager_ = gflagsManager;
-        storage_ = storage;
+        storageClient_ = storage;
         metaClient_ = metaClient;
         variableHolder_ = std::make_unique<VariableHolder>();
     }
@@ -56,8 +56,8 @@ public:
         return gflagsManager_;
     }
 
-    storage::StorageClient* storage() const {
-        return storage_;
+    storage::StorageClient* getStorageClient() const {
+        return storageClient_;
     }
 
     VariableHolder* variableHolder() const {
@@ -72,7 +72,7 @@ private:
     RequestContextPtr                           rctx_;
     meta::SchemaManager                        *sm_{nullptr};
     meta::ClientBasedGflagsManager             *gflagsManager_{nullptr};
-    storage::StorageClient                     *storage_{nullptr};
+    storage::StorageClient                     *storageClient_{nullptr};
     meta::MetaClient                           *metaClient_{nullptr};
     std::unique_ptr<VariableHolder>             variableHolder_;
 };

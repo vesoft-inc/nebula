@@ -24,6 +24,8 @@
 namespace nebula {
 namespace storage {
 
+using PartCode = std::pair<PartitionID, kvstore::ResultCode>;
+
 template<typename RESP>
 class BaseProcessor {
 public:
@@ -44,6 +46,14 @@ protected:
     void onFinished() {
         result_.set_latency_in_us(duration_.elapsedInUSec());
         resp_.set_result(std::move(result_));
+        promise_.setValue(std::move(resp_));
+        delete this;
+    }
+
+    // This method will be used for single part request processor.
+    // Currently, it is used in AdminProcessor
+    void onFinished(cpp2::ErrorCode code) {
+        resp_.set_code(code);
         promise_.setValue(std::move(resp_));
         delete this;
     }
@@ -71,6 +81,16 @@ protected:
             cpp2::ResultCode thriftRet;
             thriftRet.set_code(code);
             thriftRet.set_part_id(partId);
+            result_.failed_codes.emplace_back(std::move(thriftRet));
+        }
+    }
+
+    void pushResultCode(cpp2::ErrorCode code, PartitionID partId, HostAddr leader) {
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            cpp2::ResultCode thriftRet;
+            thriftRet.set_code(code);
+            thriftRet.set_part_id(partId);
+            thriftRet.set_leader(toThriftHost(leader));
             result_.failed_codes.emplace_back(std::move(thriftRet));
         }
     }

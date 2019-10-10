@@ -676,6 +676,31 @@ AssertionResult TraverseTestBase::prepareData() {
         }
     }
     {
+        // Insert vertices `player' with uuid
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query += "INSERT VERTEX player(name, age) VALUES ";
+        for (auto &player : players_) {
+            query += "uuid(\"";
+            query += player.name();
+            query += "\"): ";
+            query += "(";
+            query += "\"";
+            query += player.name();
+            query += "\"";
+            query += ",";
+            query += std::to_string(player.age());
+            query += "),\n\t";
+        }
+        query.resize(query.size() - 3);
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert `players' failed: "
+                               << static_cast<int32_t>(code);
+        }
+    }
+    {
         // Insert vertices `team'
         cpp2::ExecutionResponse resp;
         std::string query;
@@ -698,11 +723,34 @@ AssertionResult TraverseTestBase::prepareData() {
         }
     }
     {
+        // Insert vertices `team' with uuid
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query += "INSERT VERTEX team(name) VALUES ";
+        for (auto &team : teams_) {
+            query += "uuid(\"";
+            query += team.name();
+            query += "\"): ";
+            query += "(";
+            query += "\"";
+            query += team.name();
+            query += "\"";
+            query += "),\n\t";
+        }
+        query.resize(query.size() - 3);
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert `teams' failed: "
+                               << static_cast<int32_t>(code);
+        }
+    }
+    {
         // Insert edges `serve'
         cpp2::ExecutionResponse resp;
         std::string query;
         query.reserve(1024);
-        query += "INSERT EDGE serve(start_year, end_year) VALUES";
+        query += "INSERT EDGE serve(start_year, end_year) VALUES ";
         for (auto &player : players_) {
             for (auto &serve : player.serves()) {
                 auto &team = std::get<0>(serve);
@@ -712,6 +760,36 @@ AssertionResult TraverseTestBase::prepareData() {
                 query += " -> ";
                 query += std::to_string(teams_[team].vid());
                 query += ": ";
+                query += "(";
+                query += std::to_string(startYear);
+                query += ", ";
+                query += std::to_string(endYear);
+                query += "),\n\t";
+            }
+        }
+        query.resize(query.size() - 3);
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert `serve' failed: "
+                               << static_cast<int32_t>(code);
+        }
+    }
+    {
+        // Insert edges `serve' with uuid
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query += "INSERT EDGE serve(start_year, end_year) VALUES ";
+        for (auto &player : players_) {
+            for (auto &serve : player.serves()) {
+                auto &team = std::get<0>(serve);
+                auto startYear = std::get<1>(serve);
+                auto endYear = std::get<2>(serve);
+                query += "uuid(\"";
+                query += player.name();
+                query += "\") -> uuid(\"";
+                query += teams_[team].name();
+                query += "\"): ";
                 query += "(";
                 query += std::to_string(startYear);
                 query += ", ";
@@ -740,6 +818,33 @@ AssertionResult TraverseTestBase::prepareData() {
                 query += " -> ";
                 query += std::to_string(players_[other].vid());
                 query += ": ";
+                query += "(";
+                query += std::to_string(likeness);
+                query += "),\n\t";
+            }
+        }
+        query.resize(query.size() - 3);
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert `like' failed: "
+                               << static_cast<int32_t>(code);
+        }
+    }
+    {
+        // Insert edges `like' with uuid
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query += "INSERT EDGE like(likeness) VALUES ";
+        for (auto &player : players_) {
+            for (auto &like : player.likes()) {
+                auto &other = std::get<0>(like);
+                auto likeness = std::get<1>(like);
+                query += "uuid(\"";
+                query += player.name();
+                query += "\") -> uuid(\"";
+                query += players_[other].name();
+                query += "\"): ";
                 query += "(";
                 query += std::to_string(likeness);
                 query += "),\n\t";
