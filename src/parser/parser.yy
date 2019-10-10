@@ -134,7 +134,7 @@ class GraphScanner;
 %type <expr> vid
 %type <expr> function_call_expression
 %type <expr> uuid_expression
-%type <argument_list> argument_list
+%type <argument_list> argument_list opt_argument_list
 %type <type> type_spec
 %type <step_clause> step_clause
 %type <from_clause> from_clause
@@ -164,7 +164,7 @@ class GraphScanner;
 %type <space_opt_item> space_opt_item
 %type <alter_schema_opt_list> alter_schema_opt_list
 %type <alter_schema_opt_item> alter_schema_opt_item
-%type <create_schema_prop_list> create_schema_prop_list
+%type <create_schema_prop_list> create_schema_prop_list opt_create_schema_prop_list
 %type <create_schema_prop_item> create_schema_prop_item
 %type <alter_schema_prop_list> alter_schema_prop_list
 %type <alter_schema_prop_item> alter_schema_prop_item
@@ -327,7 +327,7 @@ alias_ref_expression
     ;
 
 function_call_expression
-    : LABEL L_PAREN argument_list R_PAREN {
+    : LABEL L_PAREN opt_argument_list R_PAREN {
         $$ = new FunctionCallExpression($1, $3);
     }
     ;
@@ -338,11 +338,17 @@ uuid_expression
     }
     ;
 
-argument_list
+opt_argument_list
     : %empty {
         $$ = nullptr;
     }
-    | expression {
+    | argument_list {
+        $$ = $1;
+    }
+    ;
+
+argument_list
+    : expression {
         $$ = new ArgumentList();
         $$->addArgument($1);
     }
@@ -765,11 +771,17 @@ use_sentence
     : KW_USE name_label { $$ = new UseSentence($2); }
     ;
 
-create_schema_prop_list
+opt_create_schema_prop_list
     : %empty {
         $$ = nullptr;
     }
-    | create_schema_prop_item {
+    | create_schema_prop_list {
+        $$ = $1;
+    }
+    ;
+
+create_schema_prop_list
+    : create_schema_prop_item {
         $$ = new SchemaPropList();
         $$->addOpt($1);
     }
@@ -794,19 +806,19 @@ create_schema_prop_list
     ;
 
 create_tag_sentence
-    : KW_CREATE KW_TAG name_label L_PAREN R_PAREN create_schema_prop_list {
+    : KW_CREATE KW_TAG name_label L_PAREN R_PAREN opt_create_schema_prop_list {
         if ($6 == nullptr) {
             $6 = new SchemaPropList();
         }
         $$ = new CreateTagSentence($3, new ColumnSpecificationList(), $6);
     }
-    | KW_CREATE KW_TAG name_label L_PAREN column_spec_list R_PAREN create_schema_prop_list {
+    | KW_CREATE KW_TAG name_label L_PAREN column_spec_list R_PAREN opt_create_schema_prop_list {
         if ($7 == nullptr) {
             $7 = new SchemaPropList();
         }
         $$ = new CreateTagSentence($3, $5, $7);
     }
-    | KW_CREATE KW_TAG name_label L_PAREN column_spec_list COMMA R_PAREN create_schema_prop_list {
+    | KW_CREATE KW_TAG name_label L_PAREN column_spec_list COMMA R_PAREN opt_create_schema_prop_list {
         if ($8 == nullptr) {
             $8 = new SchemaPropList();
         }
@@ -875,19 +887,19 @@ alter_schema_prop_item
     ;
 
 create_edge_sentence
-    : KW_CREATE KW_EDGE name_label L_PAREN R_PAREN create_schema_prop_list {
+    : KW_CREATE KW_EDGE name_label L_PAREN R_PAREN opt_create_schema_prop_list {
         if ($6 == nullptr) {
             $6 = new SchemaPropList();
         }
         $$ = new CreateEdgeSentence($3,  new ColumnSpecificationList(), $6);
     }
-    | KW_CREATE KW_EDGE name_label L_PAREN column_spec_list R_PAREN create_schema_prop_list {
+    | KW_CREATE KW_EDGE name_label L_PAREN column_spec_list R_PAREN opt_create_schema_prop_list {
         if ($7 == nullptr) {
             $7 = new SchemaPropList();
         }
         $$ = new CreateEdgeSentence($3, $5, $7);
     }
-    | KW_CREATE KW_EDGE name_label L_PAREN column_spec_list COMMA R_PAREN create_schema_prop_list {
+    | KW_CREATE KW_EDGE name_label L_PAREN column_spec_list COMMA R_PAREN opt_create_schema_prop_list {
         if ($8 == nullptr) {
             $8 = new SchemaPropList();
         }
@@ -1643,8 +1655,13 @@ sentences
         *sentences = $$;
     }
     | sentences SEMICOLON sentence {
-        $$ = $1;
-        $1->addSentence($3);
+        if ($1 == nullptr) {
+            $$ = new SequentialSentences($3);
+            *sentences = $$;
+        } else {
+            $$ = $1;
+            $1->addSentence($3);
+        }
     }
     | sentences SEMICOLON {
         $$ = $1;
