@@ -176,3 +176,15 @@ nebula> SHOW HOSTS;
     sudo update-alternatives --config java
     ```
     and select the java-1.8.0-openjdk/java-8-openjdk
+
+- **Error info**: ```[ERROR]libcrypto.so.10(OPENSSL_1.0.2)(64bit) is needed by vs-cmake-3.11.4-2.el7.centos.x86_64```
+
+  **resolve**:
+
+  This problem is happened in CentOS 7.0 with openssl version 1.0.1.
+
+  ```bash
+  sudo yum remove openssl
+  sudo yum install openssl
+  ```
+
