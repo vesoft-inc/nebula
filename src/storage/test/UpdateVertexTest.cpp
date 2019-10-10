@@ -97,6 +97,7 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
     item1.set_prop("tag_3001_col_0");
     auto* val1 = new PrimaryExpression(1L);
     item1.set_value(Expression::encode(val1));
+    delete val1;
     items.emplace_back(item1);
     // string: 3005.tag_3005_col_4 = tag_string_col_4_2_new
     cpp2::UpdateItem item2;
@@ -105,16 +106,18 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
     std::string col4new("tag_string_col_4_2_new");
     auto* val2 = new PrimaryExpression(col4new);
     item2.set_value(Expression::encode(val2));
+    delete val2;
     items.emplace_back(item2);
     req.set_update_items(std::move(items));
     LOG(INFO) << "Build yield...";
     // Return tag props: 3001.tag_3001_col_0, 3003.tag_3003_col_2, 3005.tag_3005_col_4
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 3; i++) {
-        std::string name = folly::to<std::string>(3001 + i*2);
-        std::string prop = folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2);
-        auto* sourcePropExp = new SourcePropertyExpression(&name, &prop);
+        auto* sourcePropExp = new SourcePropertyExpression(
+            new std::string(folly::to<std::string>(3001 + i * 2)),
+            new std::string(folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2)));
         tmpColumns.emplace_back(Expression::encode(sourcePropExp));
+        delete sourcePropExp;
     }
     req.set_return_columns(std::move(tmpColumns));
     req.set_insertable(false);
@@ -222,6 +225,7 @@ TEST(UpdateVertexTest, Insertable_Test) {
     item1.set_prop("tag_3001_col_0");
     auto* val1 = new PrimaryExpression(1L);
     item1.set_value(Expression::encode(val1));
+    delete val1;
     items.emplace_back(item1);
     // string: 3009.tag_3009_col_4 = tag_string_col_4_2_new
     cpp2::UpdateItem item2;
@@ -230,23 +234,26 @@ TEST(UpdateVertexTest, Insertable_Test) {
     std::string col4new("tag_string_col_4_2_new");
     auto* val2 = new PrimaryExpression(col4new);
     item2.set_value(Expression::encode(val2));
+    delete val2;
     items.emplace_back(item2);
     req.set_update_items(std::move(items));
     LOG(INFO) << "Build yield...";
     // Return tag props: tag_3001_col_0, tag_3003_col_2, tag_3005_col_4
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 3; i++) {
-        std::string name = folly::to<std::string>(3001 + i*2);
-        std::string prop = folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2);
-        auto* sourcePropExp = new SourcePropertyExpression(&name, &prop);
+        auto* sourcePropExp = new SourcePropertyExpression(
+            new std::string(folly::to<std::string>(3001 + i * 2)),
+            new std::string(folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2)));
         tmpColumns.emplace_back(Expression::encode(sourcePropExp));
+        delete sourcePropExp;
     }
     // tag_3009_col_0 ~ tag_3009_col_5
     for (int i = 0; i < 6; i++) {
-        std::string name = folly::to<std::string>(3009);
-        std::string prop = folly::stringPrintf("tag_3009_col_%d", i);
-        auto* sourcePropExp = new SourcePropertyExpression(&name, &prop);
+        auto* sourcePropExp = new SourcePropertyExpression(
+            new std::string(folly::to<std::string>(3009)),
+            new std::string(folly::stringPrintf("tag_3009_col_%d", i)));
         tmpColumns.emplace_back(Expression::encode(sourcePropExp));
+        delete sourcePropExp;
     }
     req.set_return_columns(std::move(tmpColumns));
     LOG(INFO) << "Make it insertable...";
@@ -325,6 +332,7 @@ TEST(UpdateVertexTest, Invalid_Set_Test) {
     auto* edgeProp = new std::string("col_0");
     auto* edgeExp = new AliasPropertyExpression(new std::string(""), alias, edgeProp);
     item.set_value(Expression::encode(edgeExp));
+    delete edgeExp;
     items.emplace_back(item);
     req.set_update_items(std::move(items));
     req.set_insertable(false);
@@ -373,6 +381,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
     item.set_prop("tag_3001_col_0");
     auto* val = new PrimaryExpression(1L);
     item.set_value(Expression::encode(val));
+    delete val;
     items.emplace_back(item);
     req.set_update_items(std::move(items));
     req.set_insertable(false);
