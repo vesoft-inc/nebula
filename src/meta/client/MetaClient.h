@@ -214,9 +214,8 @@ public:
     // Operations for admin
     folly::Future<StatusOr<int64_t>>
     balance();
-    
-    // Opeartions for users.
 
+    // Opeartions for users.
     folly::Future<StatusOr<UserID>>
     createUser(cpp2::UserItem userItem, std::string password, bool missingOk);
 
@@ -233,7 +232,7 @@ public:
     revokeFromUser(cpp2::RoleItem roleItem);
 
     folly::Future<StatusOr<cpp2::UserItem>>
-    getUser(std::string account);
+    getUser(const std::string& account);
 
     folly::Future<StatusOr<std::unordered_map<UserID, cpp2::UserItem>>>
     listUsers();

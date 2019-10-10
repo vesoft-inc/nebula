@@ -246,7 +246,7 @@ TEST_F(SchemaTest, metaCommunication) {
     // Test unreserved keyword
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG upper(name string, email string, "
+        std::string query = "CREATE TAG upper(name string, USER string, "
                             "age int, gender string, row_timestamp timestamp)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -259,7 +259,7 @@ TEST_F(SchemaTest, metaCommunication) {
 
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"name", "string"},
-            {"email", "string"},
+            {"user", "string"},
             {"age", "int"},
             {"gender", "string"},
             {"row_timestamp", "timestamp"},

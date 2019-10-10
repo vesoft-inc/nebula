@@ -188,23 +188,30 @@ GrantExecutor::GrantExecutor(Sentence *sentence,
 Status GrantExecutor::prepare() {
     aclItem_ = sentence_->getAclItemClause();
     type_ = toRole(aclItem_->getRoleType());
-    const auto& space = aclItem_->getSpaceName();
-    const auto& user = sentence_->getAccount();
-    auto spaceRet = ectx()->getMetaClient()->getSpaceIdByNameFromCache(space->data());
-    if (!spaceRet.ok()) {
-        return Status::Error("Space not found : '%s'", space);
-    }
-    auto userRet = ectx()->getMetaClient()->getUserIdByNameFromCache(user->data());
-    if (!userRet.ok()) {
-        return Status::Error("User not found : '%s'", user);
-    }
-    roleItem_.set_space_id(spaceRet.value());
-    roleItem_.set_user_id(userRet.value());
-    roleItem_.set_role_type(type_);
     return Status::OK();
 }
 
 void GrantExecutor::execute() {
+    const auto& space = aclItem_->getSpaceName();
+    auto spaceRet = ectx()->getMetaClient()->getSpaceIdByNameFromCache(*space);
+    if (!spaceRet.ok()) {
+        DCHECK(onError_);
+        onError_(spaceRet.status());
+        return;
+    }
+
+    const auto& user = sentence_->getAccount();
+    auto userRet = ectx()->getMetaClient()->getUserIdByNameFromCache(*user);
+    if (!userRet.ok()) {
+        DCHECK(onError_);
+        onError_(userRet.status());
+        return;
+    }
+
+    roleItem_.set_space_id(spaceRet.value());
+    roleItem_.set_user_id(userRet.value());
+    roleItem_.set_role_type(type_);
+
     auto *mc = ectx()->getMetaClient();
     auto future = mc->grantToUser(roleItem_);
     auto *runner = ectx()->rctx()->runner();
@@ -236,23 +243,30 @@ RevokeExecutor::RevokeExecutor(Sentence *sentence,
 Status RevokeExecutor::prepare() {
     aclItem_ = sentence_->getAclItemClause();
     type_ = toRole(aclItem_->getRoleType());
-    const auto& space = aclItem_->getSpaceName();
-    const auto& user = sentence_->getAccount();
-    auto spaceRet = ectx()->getMetaClient()->getSpaceIdByNameFromCache(space->data());
-    if (!spaceRet.ok()) {
-        return Status::Error("Space not found : '%s'", space);
-    }
-    auto userRet = ectx()->getMetaClient()->getUserIdByNameFromCache(user->data());
-    if (!userRet.ok()) {
-        return Status::Error("User not found : '%s'", user);
-    }
-    roleItem_.set_space_id(spaceRet.value());
-    roleItem_.set_user_id(userRet.value());
-    roleItem_.set_role_type(type_);
     return Status::OK();
 }
 
 void RevokeExecutor::execute() {
+    const auto& space = aclItem_->getSpaceName();
+    auto spaceRet = ectx()->getMetaClient()->getSpaceIdByNameFromCache(*space);
+    if (!spaceRet.ok()) {
+        DCHECK(onError_);
+        onError_(spaceRet.status());
+        return;
+    }
+
+    const auto& user = sentence_->getAccount();
+    auto userRet = ectx()->getMetaClient()->getUserIdByNameFromCache(*user);
+    if (!userRet.ok()) {
+        DCHECK(onError_);
+        onError_(userRet.status());
+        return;
+    }
+
+    roleItem_.set_space_id(spaceRet.value());
+    roleItem_.set_user_id(userRet.value());
+    roleItem_.set_role_type(type_);
+
     auto *mc = ectx()->getMetaClient();
     auto future = mc->revokeFromUser(roleItem_);
     auto *runner = ectx()->rctx()->runner();

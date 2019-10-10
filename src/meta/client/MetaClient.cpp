@@ -121,6 +121,7 @@ bool MetaClient::loadData() {
         LOG(ERROR) << "The threads number in ioThreadPool should be greater than 0";
         return false;
     }
+
     auto spaceRet = listSpaces().get();
     if (!spaceRet.ok()) {
         LOG(ERROR) << "List space failed, status:" << spaceRet.status();
@@ -932,7 +933,7 @@ MetaClient::revokeFromUser(cpp2::RoleItem roleItem) {
 }
 
 folly::Future<StatusOr<cpp2::UserItem>>
-MetaClient::getUser(std::string account) {
+MetaClient::getUser(const std::string& account) {
     cpp2::GetUserReq req;
     req.set_account(account);
     folly::Promise<StatusOr<cpp2::UserItem>> promise;
