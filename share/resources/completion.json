@@ -108,6 +108,16 @@
             "sub_keywords": [
                 "YIELD", "COUNT", "COUNT_DISTINCT", "SUM", "AVG", "MAX", "MIN", "STD", "BIT_AND", "BIT_OR", "BIT_XOR"
             ]
+        },
+        ":exit": {
+        },
+        ":quit": {
+        },
+        ":sh": {
+        },
+        ":bash": {
+        },
+        ":history": {
         }
     },
     "typenames": [

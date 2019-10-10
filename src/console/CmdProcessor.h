@@ -16,7 +16,9 @@ namespace graph {
 class CmdProcessor final {
 public:
     explicit CmdProcessor(std::unique_ptr<GraphClient> client)
-        : client_(std::move(client)) {}
+        : client_(std::move(client)) {
+        localCommandProcessor_ = std::make_unique<LocalCommandProcessor>();
+    }
     ~CmdProcessor() = default;
 
     // Process the given command
@@ -28,14 +30,26 @@ public:
     const std::string& getSpaceName() const;
 
 private:
-    std::unique_ptr<GraphClient> client_;
+    // All user inputs prefixed with ":" are considered as local commands,
+    // which won't be sent on wire to the remote server.
+    class LocalCommandProcessor final {
+    public:
+        LocalCommandProcessor();
+        ~LocalCommandProcessor() = default;
+        bool isLocalCommand(folly::StringPiece command) const;
+        bool process(folly::StringPiece command) const;
 
-    std::string curSpaceName_{"(none)"};
+    private:
+        bool doExit(folly::StringPiece args) const;
+        bool doShell(folly::StringPiece args) const;
+        bool doHistory(folly::StringPiece args) const;
 
-    // The method returns true if the given command is a client command
-    // and has been processed. Otherwise, the method returns false
-    bool processClientCmd(folly::StringPiece cmd, bool& readyToExit);
+    private:
+        std::string localCommandPrefix_ = ":";
+        std::vector<std::pair<std::string, std::function<bool(folly::StringPiece)>>> commands_;
+    };
 
+private:
     void processServerCmd(folly::StringPiece cmd);
 
     void calColumnWidths(const cpp2::ExecutionResponse& resp,
@@ -53,6 +67,11 @@ private:
     void printTime() const;
 
     void normalize(folly::StringPiece &command);
+
+private:
+    std::string curSpaceName_{"(none)"};
+    std::unique_ptr<GraphClient> client_;
+    std::unique_ptr<LocalCommandProcessor> localCommandProcessor_;
 };
 
 }  // namespace graph

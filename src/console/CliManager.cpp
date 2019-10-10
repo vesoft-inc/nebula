@@ -383,10 +383,15 @@ bool isStartOfStatement(std::string &primaryKeyword) {
         return true;
     }
 
+    // If this is an upcoming local command
+    if (piece == ":") {
+        return true;
+    }
+
     // If the inputs are terminated with ';' or '|', i.e. complete statements
     // Additionally, there is an incomplete primary keyword for the next statement
     {
-        static const std::regex pattern(R"((\s*\w+[^;|]*[;|]\s*)*(\w+)?)");
+        static const std::regex pattern(R"((\s*:?\w+[^;|]*[;|]\s*)*(:?\w+)?)");
         std::smatch result;
 
         if (std::regex_match(line, result, pattern)) {
@@ -397,7 +402,7 @@ bool isStartOfStatement(std::string &primaryKeyword) {
     // The same to the occasion above, except that the primary keyword is complete
     // This is where sub keywords shall be completed
     {
-        static const std::regex pattern(R"((\s*\w+[^;|]*[;|]\s*)*(\w+)[^;|]+)");
+        static const std::regex pattern(R"((\s*:?\w+[^;|]*[;|]\s*)*(:?\w+)[^;|]+)");
         std::smatch result;
 
         if (std::regex_match(line, result, pattern)) {

@@ -5,8 +5,10 @@
  */
 
 #include "base/Base.h"
+#include <readline/history.h>
 #include "console/CmdProcessor.h"
 #include "time/Duration.h"
+#include "process/ProcessUtils.h"
 
 namespace nebula {
 namespace graph {
@@ -392,22 +394,6 @@ void CmdProcessor::printTime() const {
 }
 
 
-bool CmdProcessor::processClientCmd(folly::StringPiece cmd,
-                                    bool& readyToExit) {
-    normalize(cmd);
-    if (cmd == "exit" || cmd== "quit") {
-        readyToExit = true;
-        return true;
-    } else {
-        readyToExit = false;
-    }
-
-    // TODO(sye) Check for all client commands
-
-    return false;
-}
-
-
 void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
     time::Duration dur;
     cpp2::ExecutionResponse resp;
@@ -464,15 +450,22 @@ bool CmdProcessor::process(folly::StringPiece cmd) {
     SCOPE_EXIT {
         printTime();
     };
-    bool exit;
-    if (processClientCmd(cmd, exit)) {
-        return !exit;
+
+    normalize(cmd);
+
+    if (localCommandProcessor_->isLocalCommand(cmd)) {
+        return localCommandProcessor_->process(cmd);
+    } else if (cmd == "exit" || cmd == "quit" || cmd == "q") {
+        return localCommandProcessor_->process(":exit");
+    } else if (cmd == "history") {
+        return localCommandProcessor_->process(":history");
     }
 
     processServerCmd(cmd);
 
     return true;
 }
+
 
 void CmdProcessor::normalize(folly::StringPiece &command) {
     command  = folly::trimWhitespace(command);
@@ -485,6 +478,79 @@ void CmdProcessor::normalize(folly::StringPiece &command) {
 
 const std::string& CmdProcessor::getSpaceName() const {
     return curSpaceName_;
+}
+
+
+CmdProcessor::LocalCommandProcessor::LocalCommandProcessor() {
+    using std::placeholders::_1;
+    commands_ = {
+        {"exit",        std::bind(&LocalCommandProcessor::doExit, this, _1)},
+        {"quit",        std::bind(&LocalCommandProcessor::doExit, this, _1)},
+        {"sh",          std::bind(&LocalCommandProcessor::doShell, this, _1)},
+        {"bash",        std::bind(&LocalCommandProcessor::doShell, this, _1)},
+        {"history",     std::bind(&LocalCommandProcessor::doHistory, this, _1)},
+    };
+}
+
+
+bool CmdProcessor::LocalCommandProcessor::doExit(folly::StringPiece) const {
+    return false;
+}
+
+
+bool CmdProcessor::LocalCommandProcessor::doShell(folly::StringPiece args) const {
+    auto ignored = ::system(args.toString().c_str());
+    UNUSED(ignored);
+    return true;
+}
+
+
+bool CmdProcessor::LocalCommandProcessor::doHistory(folly::StringPiece) const {
+    auto **hists = ::history_list();
+    for (auto i = 0; i < ::history_length; i++) {
+        fprintf(stdout, "%s\n", hists[i]->line);
+    }
+    return true;
+}
+
+
+bool CmdProcessor::LocalCommandProcessor::isLocalCommand(folly::StringPiece command) const {
+    if (command.empty()) {
+        return false;
+    }
+
+    if (!command.startsWith(localCommandPrefix_)) {
+        return false;
+    }
+
+    return true;
+}
+
+
+bool CmdProcessor::LocalCommandProcessor::process(folly::StringPiece command) const {
+    folly::StringPiece name;
+    folly::StringPiece args;
+
+    command.removePrefix(localCommandPrefix_);
+
+    auto pos = command.find_first_of(" \t");
+    if (pos == std::string::npos) {
+        name = command;
+    } else {
+        name = command.subpiece(0, pos);
+        args = command.subpiece(pos);
+    }
+
+    for (auto &pair : commands_) {
+        folly::StringPiece wholeName = pair.first;
+        if (wholeName.startsWith(name)) {
+            return pair.second(args);
+        }
+    }
+
+    fprintf(stderr, "No such command: %s\n", name.toString().c_str());
+
+    return true;
 }
 
 }  // namespace graph
