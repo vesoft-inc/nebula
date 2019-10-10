@@ -36,7 +36,9 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.0.0</version>
                 <configuration>
-                    <configLocation>${project.root.dir}/.linters/java/nebula_java_style_checks.xml</configLocation>
+                    <configLocation>
+                        https://raw.githubusercontent.com/vesoft-inc/nebula/master/.linters/java/nebula_java_style_checks.xml
+                    </configLocation>
                     <encoding>UTF-8</encoding>
                     <failOnViolation>true</failOnViolation>
                     <linkXRef>false</linkXRef>
@@ -77,6 +79,30 @@
                     <mainClass>com.vesoft.nebula.importer.Importer</mainClass>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.1</version>
+                <configuration>
+                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer
+                                    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.vesoft.nebula.importer.Importer</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -89,9 +115,7 @@
         <dependency>
             <groupId>nebula-graph</groupId>
             <artifactId>graph-client</artifactId>
-            <version>0.1.0</version>
-            <scope>system</scope>
-            <systemPath>${pom.basedir}/${nebula-client.target.dir}/graph-client-1.0.0-beta.jar</systemPath>
+            <version>1.0.0-beta</version>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>

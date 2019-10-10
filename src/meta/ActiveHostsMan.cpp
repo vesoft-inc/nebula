@@ -54,5 +54,10 @@ std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv, int32
     return hosts;
 }
 
+bool ActiveHostsMan::isLived(kvstore::KVStore* kv, const HostAddr& host) {
+    auto activeHosts = getActiveHosts(kv);
+    return std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end();
+}
+
 }  // namespace meta
 }  // namespace nebula

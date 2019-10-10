@@ -30,7 +30,11 @@ public:
     static bool getDynamicPortRange(uint16_t& low, uint16_t& high);
     // Get all ports that are currently in use
     static std::unordered_set<uint16_t> getPortsInUse();
-    // Get a dynamic port that is not in use
+    // To get a port number which is available to bind on.
+    // The availability is not guaranteed, e.g. in the parallel case.
+    //
+    // Note that this function is to be used for testing purpose.
+    // So don't use it in production code.
     static uint16_t getAvailablePort();
 
     // Convert the given IP (must be in the form of "xx.xx.xx.xx") and Port to a HostAddr
