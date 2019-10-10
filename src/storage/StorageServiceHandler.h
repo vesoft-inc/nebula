@@ -37,6 +37,8 @@ public:
         delVertexQpsStat_ = StorageStats("del_vertex");
         updateVertexQpsStat_ = StorageStats("update_vertex");
         updateEdgeQpsStat_ = StorageStats("update_edge");
+        getKvQpsStat_ = StorageStats("get_kv");
+        putKvQpsStat_ = StorageStats("put_kv");
     }
 
     folly::Future<cpp2::QueryResponse>
@@ -117,6 +119,8 @@ private:
     StorageStats delVertexQpsStat_;
     StorageStats updateVertexQpsStat_;
     StorageStats updateEdgeQpsStat_;
+    StorageStats getKvQpsStat_;
+    StorageStats putKvQpsStat_;
 };
 
 }  // namespace storage

@@ -193,7 +193,7 @@ private:
             tag.set_props(writer.encode());
             tags.emplace_back(std::move(tag));
 
-            v.set_tags(tags);
+            v.set_tags(std::move(tags));
             vertices.emplace_back(std::move(v));
             VLOG(2) << "Build " << cur[i] << " -> " << prev[i];
             PLOG_EVERY_N(INFO, 10000) << "We have inserted " << vId - firstVertexId_ - width_
@@ -218,7 +218,7 @@ private:
             auto resp = std::move(future).get();
             if (!resp.succeeded()) {
                 LOG(ERROR) << "Failed to fetch props of vertex " << nextId;
-                break;
+                return false;
             }
             auto& results = resp.responses();
             // get tag schema
