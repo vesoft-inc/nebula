@@ -20,7 +20,7 @@ FIND SHORTEST | ALL PATH FROM <vertex_id_list> TO <vertex_id_list> OVER <edge_ty
 ## Note
 
 - When start and end points are id lists, it means to find the shortest path from any start point to the end point.
-- Full path is cyclic.
+- There may be cycles when searching all paths.
 
 ## Examples
 
