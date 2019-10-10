@@ -125,6 +125,8 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                                              code.get_part_id(),
                                              HostAddr(leader->get_ip(), leader->get_port()));
                             }
+                        } else if (code.get_code() == storage::cpp2::ErrorCode::E_PART_NOT_FOUND) {
+                            invalidLeader(spaceId, code.get_part_id());
                         } else {
                             // Simply keep the result
                             context->resp.failedParts().emplace(code.get_part_id(),
@@ -198,6 +200,8 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
                         updateLeader(spaceId, code.get_part_id(),
                                      HostAddr(leader->get_ip(), leader->get_port()));
                     }
+                } else if (code.get_code() == storage::cpp2::ErrorCode::E_PART_NOT_FOUND) {
+                    invalidLeader(spaceId, code.get_part_id());
                 }
             }
             p.setValue(std::move(resp));

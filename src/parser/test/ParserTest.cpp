@@ -1352,4 +1352,20 @@ TEST(Parser, BalanceOperation) {
     }
 }
 
+TEST(Parser, CrashByFuzzer) {
+    {
+        GQLParser parser;
+        std::string query = ";MATCH";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+
+    {
+        GQLParser parser;
+        std::string query = ";YIELD\nI41( ,1)GEGE.INGEST";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok()) << result.status();
+    }
+}
+
 }   // namespace nebula

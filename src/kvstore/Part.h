@@ -103,7 +103,17 @@ private:
     ResultCode putCommitMsg(WriteBatch* batch, LogID committedLogId, TermID committedLogTerm);
 
     void cleanup() override {
-        LOG(INFO) << idStr_ << "Clean up all data, not implement!";
+        LOG(INFO) << idStr_ << "Clean up all data, just reset the committedLogId!";
+        auto batch = engine_->startBatchWrite();
+        if (ResultCode::SUCCEEDED != putCommitMsg(batch.get(), 0, 0)) {
+            LOG(ERROR) << idStr_ << "Put failed in commit";
+            return;
+        }
+        if (ResultCode::SUCCEEDED != engine_->commitBatchWrite(std::move(batch))) {
+            LOG(ERROR) << idStr_ << "Put failed in commit";
+            return;
+        }
+        return;
     }
 
 protected:

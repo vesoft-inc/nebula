@@ -63,7 +63,7 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
         if (ret.status() == Status::Balanced()) {
             resp_.set_code(cpp2::ErrorCode::E_BALANCED);
         } else {
-            resp_.set_code(cpp2::ErrorCode::E_BALANCER_RUNNING);
+            resp_.set_code(cpp2::ErrorCode::E_UNKNOWN);
         }
         onFinished();
         return;
