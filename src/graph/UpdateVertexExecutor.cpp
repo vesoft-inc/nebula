@@ -24,6 +24,12 @@ UpdateVertexExecutor::UpdateVertexExecutor(Sentence *sentence,
 
 Status UpdateVertexExecutor::prepare() {
     DCHECK(sentence_ != nullptr);
+
+    spaceId_ = ectx()->rctx()->session()->space();
+    expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setSpace(spaceId_);
+    expCtx_->setStorageClient(ectx()->getStorageClient());
+
     Status status = Status::OK();
     do {
         status = checkIfGraphSpaceChosen();
@@ -31,11 +37,13 @@ Status UpdateVertexExecutor::prepare() {
             break;
         }
         insertable_ = sentence_->getInsertable();
-        status = sentence_->getVid()->prepare();
+        auto id = sentence_->getVid();
+        id->setContext(expCtx_.get());
+        status = id->prepare();
         if (!status.ok()) {
             break;
         }
-        auto vid = sentence_->getVid()->eval();
+        auto vid = id->eval();
         if (!vid.ok() || !Expression::isInt(vid.value())) {
             status = Status::Error("Get Vertex ID failure!");
             break;
@@ -176,10 +184,9 @@ void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcRe
 
 void UpdateVertexExecutor::execute() {
     FLOG_INFO("Executing UpdateVertex: %s", sentence_->toString().c_str());
-    auto spaceId = ectx()->rctx()->session()->space();
     std::string filterStr = filter_ ? Expression::encode(filter_) : "";
     auto returns = getReturnColumns();
-    auto future = ectx()->getStorageClient()->updateVertex(spaceId,
+    auto future = ectx()->getStorageClient()->updateVertex(spaceId_,
                                                            vertex_,
                                                            filterStr,
                                                            std::move(updateItems_),
