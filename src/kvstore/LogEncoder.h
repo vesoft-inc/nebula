@@ -44,6 +44,8 @@ std::vector<folly::StringPiece> decodeMultiValues(folly::StringPiece encoded);
 std::string encodeHost(LogType type, const HostAddr& learner);
 HostAddr decodeHost(LogType type, const folly::StringPiece& encoded);
 
+int64_t getTimestamp(const folly::StringPiece& command);
+
 }  // namespace kvstore
 }  // namespace nebula
 #endif  // KVSTORE_LOGENCODER_H_

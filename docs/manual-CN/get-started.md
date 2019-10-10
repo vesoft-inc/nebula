@@ -97,8 +97,13 @@ to connect to the graph server. -->
 连接 Nebula Graph：
 
 ```
-> bin/nebula -u=user -p=password
+> bin/nebula -u=user -p=password --addr {graphd IP address} --port {graphd listening port}
 ```
+
+* -u 为用户名，默认值为 `user`
+* -p 为密码，用户 `user` 的默认密码为 `password` 
+* --addr 为 graphd IP 地址
+* --port 为 graphd 服务器端口，默认值为 `3699`
 
 在部署过程遇到的任何问题，欢迎你前往 [GitHub](https://github.com/vesoft-inc/nebula/issues) 向我们提 issue。
 
@@ -167,11 +172,13 @@ to connect to the graph server. -->
 **连接 Nebula Graph**
 
 ```
-> bin/nebula -u=user -p=password
+> bin/nebula -u=user -p=password --addr={graphd IP address} --port={graphd listening port}
 ```
 
 * -u 为用户名，默认值为 `user`
 * -p 为密码，用户 `user` 的默认密码为 `password`
+* --addr 为 graphd IP 地址
+* --port 为 graphd 服务器端口，默认值为 `3699`
 
 <!-- `ADD HOSTS` 将存储节点注册到元数据服务中
 
