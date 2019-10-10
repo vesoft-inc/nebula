@@ -423,11 +423,11 @@ Status FindPathExecutor::setupVidsFromRef(Clause::Vertices &vertices) {
 
 void FindPathExecutor::getFromFrontiers(
         std::vector<storage::cpp2::PropDef> props) {
-    auto future = ectx()->storage()->getNeighbors(spaceId_,
-                                                  std::move(fromVids_),
-                                                  over_.edgeTypes_,
-                                                  "",
-                                                  std::move(props));
+    auto future = ectx()->getStorageClient()->getNeighbors(spaceId_,
+                                                           std::move(fromVids_),
+                                                           over_.edgeTypes_,
+                                                           "",
+                                                           std::move(props));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
         Frontiers frontiers;
@@ -457,11 +457,11 @@ void FindPathExecutor::getFromFrontiers(
 
 void FindPathExecutor::getToFrontiers(
         std::vector<storage::cpp2::PropDef> props) {
-    auto future = ectx()->storage()->getNeighbors(spaceId_,
-                                                  std::move(toVids_),
-                                                  over_.oppositeTypes_,
-                                                  "",
-                                                  std::move(props));
+    auto future = ectx()->getStorageClient()->getNeighbors(spaceId_,
+                                                           std::move(toVids_),
+                                                           over_.oppositeTypes_,
+                                                           "",
+                                                           std::move(props));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
         Frontiers frontiers;
