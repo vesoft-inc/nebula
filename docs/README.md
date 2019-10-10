@@ -107,7 +107,7 @@
 ## Videos
 
    * [YouTube](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw/)
-   * [bilibili](https://www.bilibili.com/video/av67454133)
+   * [bilibili](https://www.bilibili.com/video/av67454132)
 
 <!--
 ## How can I get Nebula ##
