@@ -44,17 +44,10 @@ private:
 
 class KVCompactionFilterFactory : public rocksdb::CompactionFilterFactory {
 public:
-    KVCompactionFilterFactory() = default;
+    KVCompactionFilterFactory(GraphSpaceID spaceId, int32_t customFilterIntervalSecs):
+        spaceId_(spaceId), customFilterIntervalSecs_(customFilterIntervalSecs) {}
 
     virtual ~KVCompactionFilterFactory() = default;
-
-    /**
-     * We should call construct explicitly becasue the instacne is passed by modules outside.
-     * */
-    void construct(GraphSpaceID spaceId, int32_t customFilterIntervalSecs) {
-        spaceId_ = spaceId;
-        customFilterIntervalSecs_ = customFilterIntervalSecs;
-    }
 
     std::unique_ptr<rocksdb::CompactionFilter>
     CreateCompactionFilter(const rocksdb::CompactionFilter::Context& context) override {
@@ -87,6 +80,16 @@ private:
     // 0 means always do custom minor compaction
     int32_t customFilterIntervalSecs_ = 0;
     int32_t lastRunCustomFilterTimeSec_ = 0;
+};
+
+class CompactionFilterFactoryBuilder {
+public:
+    CompactionFilterFactoryBuilder() = default;
+
+    virtual ~CompactionFilterFactoryBuilder() = default;
+
+    virtual std::shared_ptr<KVCompactionFilterFactory>
+    buildCfFactory(GraphSpaceID spaceId, int32_t customFilterIntervalSecs) = 0;
 };
 
 }   // namespace kvstore
