@@ -305,13 +305,12 @@ cpp2::ErrorCode UpdateEdgeProcessor::checkAndBuildContexts(
     }
     // build context of the update items
     for (auto& item : req.get_update_items()) {
-        auto edgePropExp =
-            std::make_unique<AliasPropertyExpression>(new std::string(""),
-                                                      new std::string(item.get_name()),
-                                                      new std::string(item.get_prop()));
-        edgePropExp->setContext(this->expCtx_.get());
-        auto status = edgePropExp->prepare();
-        if (!status.ok() || !this->checkExp(edgePropExp.get())) {
+        AliasPropertyExpression edgePropExp(new std::string(""),
+                                            new std::string(item.get_name()),
+                                            new std::string(item.get_prop()));
+        edgePropExp.setContext(this->expCtx_.get());
+        auto status = edgePropExp.prepare();
+        if (!status.ok() || !this->checkExp(&edgePropExp)) {
             return cpp2::ErrorCode::E_INVALID_UPDATER;
         }
         auto exp = Expression::decode(item.get_value());

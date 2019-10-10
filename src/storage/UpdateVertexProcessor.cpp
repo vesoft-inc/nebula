@@ -274,11 +274,11 @@ cpp2::ErrorCode UpdateVertexProcessor::checkAndBuildContexts(
     // build context of the update items
     for (auto& item : req.get_update_items()) {
         auto name = item.get_name();
-        auto sourcePropExp = std::make_unique<SourcePropertyExpression>(
-            new std::string(name), new std::string(item.get_prop()));
-        sourcePropExp->setContext(this->expCtx_.get());
-        auto status = sourcePropExp->prepare();
-        if (!status.ok() || !this->checkExp(sourcePropExp.get())) {
+        SourcePropertyExpression sourcePropExp(new std::string(name),
+                                               new std::string(item.get_prop()));
+        sourcePropExp.setContext(this->expCtx_.get());
+        auto status = sourcePropExp.prepare();
+        if (!status.ok() || !this->checkExp(&sourcePropExp)) {
             return cpp2::ErrorCode::E_INVALID_UPDATER;
         }
         auto tagRet = this->schemaMan_->toTagID(this->spaceId_, name);
