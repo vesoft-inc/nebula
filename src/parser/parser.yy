@@ -1188,6 +1188,7 @@ update_item
     }
     | alias_ref_expression ASSIGN expression {
         $$ = new UpdateItem($1, $3);
+        delete $1;
     }
     ;
 
