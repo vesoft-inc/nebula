@@ -427,16 +427,17 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
     folly::Promise<Status> promise;
     auto future = promise.getFuture();
     auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
+    std::mutex lock;
 
-    auto getLeader = [result, this] (const HostAddr& host) {
+    auto getLeader = [result, &lock, this] (const HostAddr& host) {
         folly::Promise<Status> pro;
         auto f = pro.getFuture();
         auto* evb = ioThreadPool_->getEventBase();
-        folly::via(evb, [pro = std::move(pro), host, evb, result, this] () mutable {
+        folly::via(evb, [pro = std::move(pro), host, evb, result, &lock, this] () mutable {
             storage::cpp2::GetLeaderReq req;
             auto client = clientsMan_->client(host, evb);
             client->future_getLeaderPart(std::move(req))
-                .then(evb, [p = std::move(pro), host, result, this]
+                .then(evb, [p = std::move(pro), host, result, &lock, this]
                            (folly::Try<storage::cpp2::GetLeaderResp>&& t) mutable {
                 if (t.hasException()) {
                     LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
@@ -447,7 +448,7 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
                 auto&& resp = std::move(t).value();
                 LOG(INFO) << "Get leader for host " << host;
                 {
-                    std::lock_guard<std::mutex> lg(this->lock_);
+                    std::lock_guard<std::mutex> lg(lock);
                     result->emplace(host, std::move(resp).get_leader_parts());
                 }
                 p.setValue(Status::OK());
