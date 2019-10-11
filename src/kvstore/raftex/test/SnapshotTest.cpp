@@ -27,9 +27,9 @@ namespace raftex {
 
 TEST(SnapshotTest, LearnerCatchUpDataTest) {
     fs::TempDir walRoot("/tmp/catch_up_data.XXXXXX");
-    FLAGS_wal_file_size = 128;
-    FLAGS_wal_buffer_size = 64;
-    FLAGS_wal_buffer_num = 1000;
+    FLAGS_wal_file_size = 1024;
+    FLAGS_wal_buffer_size = 512;
+    FLAGS_wal_buffer_num = 30;
     FLAGS_raft_rpc_timeout_ms = 2000;
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;

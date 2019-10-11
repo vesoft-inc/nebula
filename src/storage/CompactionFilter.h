@@ -14,9 +14,9 @@
 namespace nebula {
 namespace storage {
 
-class NebulaCompactionFilter final : public kvstore::KVFilter {
+class StorageCompactionFilter final : public kvstore::KVFilter {
 public:
-    explicit NebulaCompactionFilter(meta::SchemaManager* schemaMan)
+    explicit StorageCompactionFilter(meta::SchemaManager* schemaMan)
         : schemaMan_(schemaMan) {
         CHECK_NOTNULL(schemaMan_);
     }
@@ -55,8 +55,7 @@ public:
                 VLOG(3) << "Space " << spaceId << ", Tag " << tagId << " invalid";
                 return false;
             }
-        } else {
-            CHECK(NebulaKeyUtils::isEdge(key));
+        } else if (NebulaKeyUtils::isEdge(key)) {
             auto edgeType = NebulaKeyUtils::getEdgeType(key);
             if (edgeType < 0) {
                 edgeType = -edgeType;
@@ -94,18 +93,40 @@ private:
     meta::SchemaManager* schemaMan_ = nullptr;
 };
 
-class NebulaCompactionFilterFactory final : public kvstore::KVCompactionFilterFactory {
+class StorageCompactionFilterFactory final : public kvstore::KVCompactionFilterFactory {
 public:
-    explicit NebulaCompactionFilterFactory(meta::SchemaManager* schemaMan)
-        : schemaMan_(schemaMan) {}
+    StorageCompactionFilterFactory(meta::SchemaManager* schemaMan,
+                                   GraphSpaceID spaceId,
+                                   int32_t customFilterIntervalSecs):
+        KVCompactionFilterFactory(spaceId, customFilterIntervalSecs),
+        schemaMan_(schemaMan) {}
 
     std::unique_ptr<kvstore::KVFilter> createKVFilter() override {
-        return std::make_unique<NebulaCompactionFilter>(schemaMan_);
+        return std::make_unique<StorageCompactionFilter>(schemaMan_);
     }
 
 private:
     meta::SchemaManager* schemaMan_ = nullptr;
 };
+
+class StorageCompactionFilterFactoryBuilder : public kvstore::CompactionFilterFactoryBuilder {
+public:
+    explicit StorageCompactionFilterFactoryBuilder(meta::SchemaManager* schemaMan)
+        : schemaMan_(schemaMan) {}
+
+    virtual ~StorageCompactionFilterFactoryBuilder() = default;
+
+    std::shared_ptr<kvstore::KVCompactionFilterFactory>
+    buildCfFactory(GraphSpaceID spaceId, int32_t customFilterIntervalSecs) override {
+        return std::make_shared<StorageCompactionFilterFactory>(schemaMan_,
+                                                                spaceId,
+                                                                customFilterIntervalSecs);
+    }
+
+private:
+    meta::SchemaManager* schemaMan_ = nullptr;
+};
+
 
 }   // namespace storage
 }   // namespace nebula

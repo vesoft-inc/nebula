@@ -52,7 +52,7 @@ TEST(AddVerticesTest, SimpleTest) {
     LOG(INFO) << "Check data in kv store...";
     for (auto partId = 0; partId < 3; partId++) {
         for (auto vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
-            auto prefix = NebulaKeyUtils::prefix(partId, vertexId);
+            auto prefix = NebulaKeyUtils::vertexPrefix(partId, vertexId);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             TagID tagId = 0;

@@ -97,8 +97,13 @@ to connect to the graph server. -->
 连接 Nebula Graph：
 
 ```
-> bin/nebula -u=user -p=password
+> bin/nebula -u=user -p=password --addr {graphd IP address} --port {graphd listening port}
 ```
+
+* -u 为用户名，默认值为 `user`
+* -p 为密码，用户 `user` 的默认密码为 `password` 
+* --addr 为 graphd IP 地址
+* --port 为 graphd 服务器端口，默认值为 `3699`
 
 在部署过程遇到的任何问题，欢迎你前往 [GitHub](https://github.com/vesoft-inc/nebula/issues) 向我们提 issue。
 
@@ -167,11 +172,13 @@ to connect to the graph server. -->
 **连接 Nebula Graph**
 
 ```
-> bin/nebula -u=user -p=password
+> bin/nebula -u=user -p=password --addr={graphd IP address} --port={graphd listening port}
 ```
 
 * -u 为用户名，默认值为 `user`
 * -p 为密码，用户 `user` 的默认密码为 `password`
+* --addr 为 graphd IP 地址
+* --port 为 graphd 服务器端口，默认值为 `3699`
 
 <!-- `ADD HOSTS` 将存储节点注册到元数据服务中
 
@@ -309,13 +316,13 @@ Q1. 查询点 201 喜欢的点：
 ```
 nebula> GO FROM 201 OVER like;
 
-=======
-|  id |
-=======
-| 200 |
--------
-| 202 |
--------
+=============
+| like._dst |
+=============
+| 200       |
+-------------
+| 202       |
+-------------
 ```
 
 Q2. 查询点 201 喜欢的点，并筛选出年龄大于 17 岁的点，并返回其姓名，年龄，性别，将其重全名为 Friend，Age，Gender。
@@ -340,7 +347,7 @@ Q3. 查询点201喜欢的点选择了哪些课程和其对应年级。
 
 ```
 -- 使用管道
-nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
+nebula> GO FROM 201 OVER like yield like._dst as id | GO FROM $-.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
 
 =============================
 | Student |  Course | Grade |
@@ -353,7 +360,7 @@ nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^.student.name 
 -----------------------------
 
 -- 使用临时变量
-nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
+nebula> $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
 
 =============================
 | Student |  Course | Grade |

@@ -36,7 +36,7 @@ public:
             HostAddr localhost = {0, 0},
             meta::MetaClient* mClient = nullptr,
             bool useMetaServer = false,
-            std::shared_ptr<kvstore::KVCompactionFilterFactory> cfFactory = nullptr) {
+            std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder = nullptr) {
         auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
         auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
                                  1, true /*stats*/);
@@ -67,7 +67,7 @@ public:
 
         // Prepare KVStore
         options.dataPaths_ = std::move(paths);
-        options.cfFactory_ = std::move(cfFactory);
+        options.cffBuilder_ = std::move(cffBuilder);
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
                                                             localhost,
@@ -210,7 +210,7 @@ public:
         }
 
         auto handler = std::make_shared<nebula::storage::StorageServiceHandler>(
-            sc->kvStore_.get(), sc->schemaMan_.get());
+            sc->kvStore_.get(), sc->schemaMan_.get(), mClient);
         sc->mockCommon("storage", port, handler);
         auto ptr = dynamic_cast<kvstore::MetaServerBasedPartManager*>(
             sc->kvStore_->partManager());

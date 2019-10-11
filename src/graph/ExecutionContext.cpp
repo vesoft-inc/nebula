@@ -19,8 +19,8 @@ ExecutionContext::~ExecutionContext() {
         gflagsManager_ = nullptr;
     }
 
-    if (nullptr != storage_) {
-        storage_ = nullptr;
+    if (nullptr != storageClient_) {
+        storageClient_ = nullptr;
     }
 
     if (nullptr != metaClient_) {

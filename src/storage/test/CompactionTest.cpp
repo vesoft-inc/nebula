@@ -76,14 +76,14 @@ void mockData(kvstore::KVStore* kv) {
 TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
     fs::TempDir rootPath("/tmp/NebulaCompactionFilterTest.XXXXXX");
     auto schemaMan = TestUtils::mockSchemaMan();
-    std::shared_ptr<kvstore::KVCompactionFilterFactory> cfFactory(
-                                    new NebulaCompactionFilterFactory(schemaMan.get()));
+    std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
+                                    new StorageCompactionFilterFactoryBuilder(schemaMan.get()));
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
                                                            6,
                                                            {0, 0},
                                                            nullptr,
                                                            false,
-                                                           cfFactory));
+                                                           std::move(cffBuilder)));
     LOG(INFO) << "Write some data";
     mockData(kv.get());
     LOG(INFO) << "Let's delete one tag";

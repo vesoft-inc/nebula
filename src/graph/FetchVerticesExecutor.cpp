@@ -31,6 +31,8 @@ Status FetchVerticesExecutor::prepareClauses() {
         }
 
         expCtx_ = std::make_unique<ExpressionContext>();
+        expCtx_->setStorageClient(ectx()->getStorageClient());
+
         spaceId_ = ectx()->rctx()->session()->space();
         yieldClause_ = sentence_->yieldClause();
         labelName_ = sentence_->tag();
@@ -117,7 +119,7 @@ void FetchVerticesExecutor::fetchVertices() {
         return;
     }
 
-    auto future = ectx()->storage()->getVertexProps(spaceId_, vids_, std::move(props));
+    auto future = ectx()->getStorageClient()->getVertexProps(spaceId_, vids_, std::move(props));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
@@ -247,8 +249,11 @@ Status FetchVerticesExecutor::setupVidsFromExpr() {
     if (distinct_) {
         uniqID = std::make_unique<std::unordered_set<VertexID>>();
     }
+
+    expCtx_->setSpace(spaceId_);
     auto vidList = sentence_->vidList();
     for (auto *expr : vidList) {
+        expr->setContext(expCtx_.get());
         status = expr->prepare();
         if (!status.ok()) {
             break;
@@ -281,12 +286,12 @@ Status FetchVerticesExecutor::setupVidsFromRef() {
     const InterimResult *inputs;
     if (varname_ == nullptr) {
         inputs = inputs_.get();
-        if (inputs == nullptr) {
+        if (inputs == nullptr || !inputs->hasData()) {
             return Status::OK();
         }
     } else {
         inputs = ectx()->variableHolder()->get(*varname_);
-        if (inputs == nullptr) {
+        if (inputs == nullptr || !inputs->hasData()) {
             return Status::Error("Variable `%s' not defined", varname_->c_str());
         }
     }
@@ -303,7 +308,6 @@ Status FetchVerticesExecutor::setupVidsFromRef() {
     vids_ = std::move(result).value();
     return Status::OK();
 }
-
 
 }  // namespace graph
 }  // namespace nebula

@@ -114,13 +114,56 @@ bool NetworkUtils::getDynamicPortRange(uint16_t& low, uint16_t& high) {
 
 std::unordered_set<uint16_t> NetworkUtils::getPortsInUse() {
     static const std::regex regex("[^:]+:[^:]+:([0-9A-F]+).+");
-    fs::FileUtils::FileLineIterator iter("/proc/net/tcp", &regex);
     std::unordered_set<uint16_t> inUse;
-    while (iter.valid()) {
-        auto &sm = iter.matched();
-        inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
-        ++iter;
+    {
+        fs::FileUtils::FileLineIterator iter("/proc/net/tcp", &regex);
+        while (iter.valid()) {
+            auto &sm = iter.matched();
+            inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
+            ++iter;
+        }
     }
+    {
+        fs::FileUtils::FileLineIterator iter("/proc/net/tcp6", &regex);
+        while (iter.valid()) {
+            auto &sm = iter.matched();
+            inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
+            ++iter;
+        }
+    }
+    {
+        fs::FileUtils::FileLineIterator iter("/proc/net/udp", &regex);
+        while (iter.valid()) {
+            auto &sm = iter.matched();
+            inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
+            ++iter;
+        }
+    }
+    {
+        fs::FileUtils::FileLineIterator iter("/proc/net/udp6", &regex);
+        while (iter.valid()) {
+            auto &sm = iter.matched();
+            inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
+            ++iter;
+        }
+    }
+    {
+        fs::FileUtils::FileLineIterator iter("/proc/net/raw", &regex);
+        while (iter.valid()) {
+            auto &sm = iter.matched();
+            inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
+            ++iter;
+        }
+    }
+    {
+        fs::FileUtils::FileLineIterator iter("/proc/net/raw6", &regex);
+        while (iter.valid()) {
+            auto &sm = iter.matched();
+            inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
+            ++iter;
+        }
+    }
+
     return inUse;
 }
 
@@ -135,9 +178,18 @@ uint16_t NetworkUtils::getAvailablePort() {
 
     std::unordered_set<uint16_t> portsInUse = getPortsInUse();
     uint16_t port = 0;
-    do {
-        port = folly::Random::rand32(low, static_cast<int32_t>(high) + 1);
-    } while (portsInUse.find(port) != portsInUse.end());
+    while (true) {
+        // NOTE
+        // The availablity of port number *outside* the ephemeral port range is
+        // relatively stable for the binding purpose.
+        port = folly::Random::rand32(1025, low);
+        if (portsInUse.find(port) != portsInUse.end()) {
+            continue;
+        }
+        if (portsInUse.find(port + 1) == portsInUse.end()) {
+            break;
+        }
+    }
 
     return port;
 }
