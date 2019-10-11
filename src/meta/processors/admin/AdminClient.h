@@ -126,6 +126,7 @@ private:
     std::unique_ptr<folly::IOThreadPoolExecutor> ioThreadPool_{nullptr};
     std::unique_ptr<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>
     clientsMan_;
+    std::mutex lock_;
 };
 }  // namespace meta
 }  // namespace nebula

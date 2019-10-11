@@ -436,8 +436,8 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
             storage::cpp2::GetLeaderReq req;
             auto client = clientsMan_->client(host, evb);
             client->future_getLeaderPart(std::move(req))
-                .then(evb, [p = std::move(pro), host,
-                            result] (folly::Try<storage::cpp2::GetLeaderResp>&& t) mutable {
+                .then(evb, [p = std::move(pro), host, result, this]
+                           (folly::Try<storage::cpp2::GetLeaderResp>&& t) mutable {
                 if (t.hasException()) {
                     LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
                                                       t.exception().what().c_str());
@@ -446,7 +446,10 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
                 }
                 auto&& resp = std::move(t).value();
                 LOG(INFO) << "Get leader for host " << host;
-                result->emplace(host, std::move(resp).get_leader_parts());
+                {
+                    std::lock_guard<std::mutex> lg(this->lock_);
+                    result->emplace(host, std::move(resp).get_leader_parts());
+                }
                 p.setValue(Status::OK());
             });
         });
