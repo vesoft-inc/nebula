@@ -1,169 +1,89 @@
-# Cluster Scale Out
+# Storage Balance Usage
+Nebula's services are composed of  three parts: graphd, storaged and metad. The **balance** in this document targets the operation of storage. Currently, storage is scaled by command `balance`. There are two kinds of balance command, one is to move data, the command is `balance data`; the other one only changes the distribution of leader partition to balance load without moving data, the command is `balance leader`.
 
-Cluster expansion allows the user to add new machine nodes to an existing cluster and to redistribute data. This document introduces how to horizontally scale out a nebula cluster. Horizontally scaling out nebula means scaling nebula out by adding nodes. When scaling out a cluster, the data is scaled out sequentially according to the values of replica value.
-
-## Prerequisites
-
-- The current nebula system must be installed in a cluster mode, not a single-node mode.
-- The new nodes are available.
-
-## Cluster Expansion Workflow
-
-### Connect to Nebula
-
-First check your IP address and configure **nebula-metad.conf** using the following command.
-
+## Balance data
+Let's use an example to expand the cluster from 3 processes to 8 to show how to balance data.
+### Step 1 Prerequisites
+Deploy a cluster with three replicas, one graphd, one metad and three storaged. Details on deployment please refer [Cluster Deploy](). Check the status of the deployed cluster using command `SHOW HOSTS`.
+#### Step 1.1
 ```
-$ ip addr
-$ cd /usr/local/nebula/etc
-$ vi nebula-metad.conf
+(user@127.0.0.1) [(none)]> SHOW HOSTS
 
-########## networking ##########
-# Local ip
---local_ip={your local ip}
+================================================================================================
+| Ip            | Port  | Status | Leader count | Leader distribution | Partition distribution |
+================================================================================================
+| 192.168.8.210 | 34600 | online | 0            | No valid partition  | No valid partition     |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34700 | online | 0            | No valid partition  | No valid partition     |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34500 | online | 0            | No valid partition  | No valid partition     |
+------------------------------------------------------------------------------------------------
+Got 3 rows (Time spent: 5886/6835 us)
 ```
 
-When configuration is done, try to connect to nebula using the following command.
+**_Explanations on the returned results:_**
+
+- **IP** and **Port** is the present storage process, the cluster started three storaged services without any data. (192.168.8.210:34600, 192.168.8.210:34700, 192.168.8.210:34500)
+- **Status** shows the state of the present process, currently there are two kind of states, i.e. online/offline. When a machine is out of service, metad will turn it to offline if no heart beat received for certain time threshold. The default threshold is 10 minutes and can be changed in parameter `expired_threshold_sec` when starting metad service.
+- **Leader count** shows RAFT leader number of the present process.
+- **Leader distribution** shows how the present leader is distributed in each graph space, no space is created for now.
+- **Partition distribution** is the partition number in different spaces.
+#### Step 1.2
+Create a graph space named **test** with 100 partition and 3 replicas.
 
 ```
-$ scripts/nebula.service start all
+(user@127.0.0.1) [(none)]> CREATE SPACE test(PARTITION_NUM=100, REPLICA_FACTOR=3)
 
-[WARN] The maximum files allowed to open might be too few: 1024
-[INFO] Starting nebula-metad...
-[INFO] Done
-[INFO] Starting nebula-graphd...
-[INFO] Done
-[INFO] Starting nebula-storaged...
-[INFO] Done
-
-$ scripts/nebula.service status all
-
-[INFO] nebula-metad: Running as 21935, Listening on 45500
-[INFO] nebula-graphd: Running as 22024, Listening on 3699
-[INFO] nebula-storaged: Running as 22042, Listening on 44500
+Execution succeeded (Time spent: 2770/3777 us)
 ```
 
-The above information indicates that nebula has been connected successfully. Some users may receive a warning `The maximum files allowed to open might be too few: 1024`, change the `/etc/security/limits.conf` file using the following command.
+Show partition distribution of the cluster using command `SHOW HOSTS` seconds later.
 
 ```
-ulimit -v
+(user@127.0.0.1) [(none)]> SHOW HOSTS
+
+================================================================================================
+| Ip            | Port  | Status | Leader count | Leader distribution | Partition distribution |
+================================================================================================
+| 192.168.8.210 | 34600 | online | 0            | test: 0             | test: 100              |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34700 | online | 52           | test: 52            | test: 100              |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34500 | online | 48           | test: 48            | test: 100              |
+------------------------------------------------------------------------------------------------
+Got 3 rows (Time spent: 6029/7175 us)
 ```
 
-## Add New Nodes to Cluster
-
-Assuming the original cluster has 7 hosts with 3 partitions, 3 replicas. Let's scale the cluster to 9 hosts (one partition one host). In this document, we only scale out storage service, therefore only start multiple storages using the following command.
-
-```
-$ cd /usr/local/nebula/etc
-$ cp nebula-storaged.conf nebula-storaged2.conf
-$ cp nebula-storaged.conf nebula-storaged3.conf
-$ cp nebula-storaged.conf nebula-storaged4.conf
-$ cp nebula-storaged.conf nebula-storaged5.conf
-$ cp nebula-storaged.conf nebula-storaged6.conf
-$ cp nebula-storaged.conf nebula-storaged7.conf
-$ cp nebula-storaged.conf nebula-storaged8.conf
-$ cp nebula-storaged.conf nebula-storaged9.conf
+### Step 2 Start new storage services
+Start 5 new storaged processes to scale out, show the new status using command `SHOW HOSTS`.
 
 ```
+(user@127.0.0.1) [(none)]> SHOW HOSTS
 
-Configure the storage files as follows, take **nebula-storaged2.conf** as example.
-
-```
-# The file to host the process id
---pid_file=pids/nebula-storaged2.pid
-# Storage daemon listening port
---port=34510
-# HTTP service port
---ws_http_port=12100
-# HTTP2 service port
---ws_h2_port=12012
-# One path per instance, if --engine_type is `rocksdb'
---data_path=data/storage2
-```
-
-**_Note_:** Make sure the ports are available when configuring with the command `netstat -anp|grep {port number}`.
-
-When all the configurations are done, start all the storage services using the following command.
-
-```
-$ ./bin/nebula-storaged --flagfile etc/nebula-storaged.conf
-$ ./bin/nebula-storaged --flagfile etc/nebula-storaged2.conf
-$ ./bin/nebula-storaged --flagfile etc/nebula-storaged3.conf
-$ ./bin/nebula-storaged --flagfile etc/nebula-storaged4.conf
-$ ./bin/nebula-storaged --flagfile etc/nebula-storaged5.conf
-$ ./bin/nebula-storaged --flagfile etc/nebula-storaged6.conf
-$ ./bin/nebula-storaged --flagfile etc/nebula-storaged7.conf
-$ ./bin/nebula-storaged --flagfile etc/nebula-storaged8.conf
-$ ./bin/nebula-storaged --flagfile etc/nebula-storaged9.conf
+================================================================================================
+| Ip            | Port  | Status | Leader count | Leader distribution | Partition distribution |
+================================================================================================
+| 192.168.8.210 | 34600 | online | 0            | test: 0             | test: 100              |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34900 | online | 0            | No valid partition  | No valid partition     |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 35940 | online | 0            | No valid partition  | No valid partition     |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34920 | online | 0            | No valid partition  | No valid partition     |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 44920 | online | 0            | No valid partition  | No valid partition     |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34700 | online | 52           | test: 52            | test: 100              |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34500 | online | 48           | test: 48            | test: 100              |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34800 | online | 0            | No valid partition  | No valid partition     |
+------------------------------------------------------------------------------------------------
 ```
 
-**_Note_:** Services should be started under `nebula` directory.
-
-Make sure the storage processes are available using command `ps -ef|grep storage
-`.
-
-## Write Data
-
-Reconnect nebula and create a space named `test` using the following command.
-
-```
-$ scripts/nebula.service stop all
-$ scripts/nebula.service status all
-$ scripts/nebula.service start all
-$ bin/nebula -u=user -p=password --addr={graphd IP address} --port={graphd listening port}
-(user@127.0.0.1) [(none)]> create space test(partition_num=3,replica_factor=3)
-Execution succeeded (Time spent: 2975/3618 us)
-(user@127.0.0.1) [(none)]> show spaces
-========
-| Name |
-========
-| test |
---------
-Got 1 rows (Time spent: 1039/1697 us)
-```
-
-**_Note_:** Refer [Get Started](https://github.com/vesoft-inc/nebula/blob/master/docs/get-started.md) for details on connecting nebula.
-
-Run the follow command under `/usr/local/nebula/bin`.
-
-```
-./simple_kv_verify --meta_server_addrs={meta ip}:{meta port} --space_name=test
-```
-
-**_Note_:** Check your meta ip and port in `/usr/local/nebula/etc/nebula-metad.conf`.
-
-## Redistribute Data
-
-Show the partitions allocation with `SHOW HOSTS`.
-
-```
-(user@127.0.0.1) [(none)]> show hosts
-
-============================================================================================
-| Ip        | Port  | Status | Leader count | Leader distribution | Partition distribution |
-============================================================================================
-| 127.0.0.1 | 34560 | online | 0            | No valid partition  | No valid partition     |
---------------------------------------------------------------------------------------------
-| 127.0.0.1 | 34570 | online | 0            | test: 0             | test: 1                |
---------------------------------------------------------------------------------------------
-| 127.0.0.1 | 34580 | online | 0            | test: 0             | test: 2                |
---------------------------------------------------------------------------------------------
-| 127.0.0.1 | 34510 | online | 3            | test: 3             | test: 3                |
---------------------------------------------------------------------------------------------
-| 127.0.0.1 | 44500 | online | 0            | test: 0             | test: 2                |
---------------------------------------------------------------------------------------------
-| 127.0.0.1 | 34520 | online | 0            | test: 0             | test: 1                |
---------------------------------------------------------------------------------------------
-| 127.0.0.1 | 34530 | online | 0            | No valid partition  | No valid partition     |
---------------------------------------------------------------------------------------------
-| 127.0.0.1 | 34540 | online | 0            | No valid partition  | No valid partition     |
---------------------------------------------------------------------------------------------
-| 127.0.0.1 | 34550 | online | 0            | No valid partition  | No valid partition     |
---------------------------------------------------------------------------------------------
-Got 9 rows (Time spent: 12287/13286 us)
-```
-
-Balance the data.
+No partition is distributed on the newly started storage processes.
+### Step 3 Data migration
+List the present balance plan's id using command `balance data`, a new plan id will be generated if new clusters are added, no operations will be conducted for balanced clusters.
 
 ```
 (user@127.0.0.1) [(none)]> balance data
@@ -171,55 +91,129 @@ Balance the data.
 ==============
 | ID         |
 ==============
-| 1570689993 |
+| 1570761786 |
 --------------
-Got 1 rows (Time spent: 5766/6528 us)
+Got 1 rows (Time spent: 14378/15410 us)
 ```
 
-The balance process has been run in the backend, check the detailed balance plan using `balance data $id`.
+Check the progress of balance using command `balance data $id`.
 
 ```
-(user@127.0.0.1) [(none)]> balance data 1570689993
+(user@127.0.0.1) [(none)]> balance data 1570761786
 
-====================================================================
-| balanceId, spaceId:partId, src->dst                  | status    |
-====================================================================
-| [1570689993, 1:1, 127.0.0.1:34580->127.0.0.1:34560]  | succeeded |
---------------------------------------------------------------------
-| [1570689993, 1:1, 127.0.0.1:34510->127.0.0.1:34550]  | succeeded |
---------------------------------------------------------------------
-| [1570689993, 1:2, 127.0.0.1:34510->127.0.0.1:34530]  | succeeded |
---------------------------------------------------------------------
-| [1570689993, 1:2, 127.0.0.1:44500->127.0.0.1:34540]  | succeeded |
---------------------------------------------------------------------
-Got 4 rows (Time spent: 1452/2312 us)
+===============================================================================
+| balanceId, spaceId:partId, src->dst                           | status      |
+===============================================================================
+| [1570761786, 1:1, 192.168.8.210:34600->192.168.8.210:44920]   | succeeded   |
+-------------------------------------------------------------------------------
+| [1570761786, 1:1, 192.168.8.210:34700->192.168.8.210:34920]   | succeeded   |
+-------------------------------------------------------------------------------
+| [1570761786, 1:1, 192.168.8.210:34500->192.168.8.210:34800]   | succeeded   |
+-------------------------------------------------------------------------------
+| [1570761786, 1:2, 192.168.8.210:34600->192.168.8.210:44920]   | in progress |
+-------------------------------------------------------------------------------
+| [1570761786, 1:2, 192.168.8.210:34700->192.168.8.210:34920]   | in progress |
+-------------------------------------------------------------------------------
+| [1570761786, 1:2, 192.168.8.210:34500->192.168.8.210:34800]   | in progress |
+-------------------------------------------------------------------------------
+| [1570761786, 1:3, 192.168.8.210:34600->192.168.8.210:44920]   | succeeded   |
+-------------------------------------------------------------------------------
+...
+| Total:189, Succeeded:170, Failed:0, In Progress:19, Invalid:0 | 89.947090%  |
+-------------------------------------------------------------------------------
+
+Got 190 rows (Time spent: 5454/11095 us)
 ```
 
-When balance is done, check the status with `SHOW HOSTS`.
+**_Explanations on the returned results:_**
+
+
+- The first column is a specific balance task. Take 1570761786, 1:88, 192.168.8.210:34700->192.168.8.210:35940 for example
+
+  - **1570761786** is the balance id
+  - **1:88**, 1 is the spaceId, 88 is the moved partId
+  - **192.168.8.210:34700->192.168.8.210:3594**, data migrated from 192.168.8.210:34700 to 192.168.8.210:35940
+-  The second column shows the state of the task, there are four states at present
+  - Succeeded: Operation succeed
+  - Failed: Operation failed
+  - In progress: Operating
+  - Invalid: Invalid task
+
+The last row is the summary of the tasks, some partitions are yet to be migrated.
+### Step 4 Migration confirmation
+In most cases, data migration is a long process. Fortunately, the existing services won't be affected. Once migration is done, the progress will show 100%. Rerun `balance data` to fix failed tasks. If they can't be fixed after several attempts, please contact us at [GitHub](https://github.com/vesoft-inc/nebula/issues).
+
+Check partition distribution using command `SHOW HOSTS` when balance completed.
 
 ```
-(user@127.0.0.1) [test]> show hosts
+(user@127.0.0.1) [(none)]> SHOW HOSTS
 
-============================================================================================
-| Ip        | Port  | Status | Leader count | Leader distribution | Partition distribution |
-============================================================================================
-| 127.0.0.1 | 34560 | online | 0            | test: 0             | test: 1                |
---------------------------------------------------------------------------------------------
-| 127.0.0.1 | 34570 | online | 1            | test: 1             | test: 1                |
---------------------------------------------------------------------------------------------
-| 127.0.0.1 | 34580 | online | 1            | test: 1             | test: 1                |
---------------------------------------------------------------------------------------------
-| 127.0.0.1 | 34510 | online | 1            | test: 1             | test: 1                |
---------------------------------------------------------------------------------------------
-| 127.0.0.1 | 44500 | online | 0            | test: 0             | test: 1                |
---------------------------------------------------------------------------------------------
-| 127.0.0.1 | 34520 | online | 0            | test: 0             | test: 1                |
---------------------------------------------------------------------------------------------
-| 127.0.0.1 | 34530 | online | 0            | test: 0             | test: 1                |
---------------------------------------------------------------------------------------------
-| 127.0.0.1 | 34540 | online | 0            | test: 0             | test: 1                |
---------------------------------------------------------------------------------------------
-| 127.0.0.1 | 34550 | online | 0            | test: 0             | test: 1                |
---------------------------------------------------------------------------------------------
-Got 9 rows (Time spent: 10270/11029 us)
+================================================================================================
+| Ip            | Port  | Status | Leader count | Leader distribution | Partition distribution |
+================================================================================================
+| 192.168.8.210 | 34600 | online | 3            | test: 3             | test: 37               |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34900 | online | 0            | test: 0             | test: 38               |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 35940 | online | 0            | test: 0             | test: 37               |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34920 | online | 0            | test: 0             | test: 38               |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 44920 | online | 0            | test: 0             | test: 38               |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34700 | online | 35           | test: 35            | test: 37               |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34500 | online | 24           | test: 24            | test: 37               |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34800 | online | 38           | test: 38            | test: 38               |
+------------------------------------------------------------------------------------------------
+Got 8 rows (Time spent: 5074/6488 us)
 ```
+
+Now partitions and data are evenly distributed on the machines.
+
+## Balance leader
+Balance data only balances partition but the leader distribution remains unbalanced, which means old services are overloaded while the new ones are not fully used. Redistribute RAFT leader using the command `balance leader`.
+
+```
+(user@127.0.0.1) [(none)]> balance leader
+
+Execution succeeded (Time spent: 89672/90581 us)
+```
+
+Seconds later, check the results using the command `SHOW HOSTS`, the RAFT leaders have distributed evenly on the services.
+
+```
+(user@127.0.0.1) [(none)]> SHOW HOSTS
+
+================================================================================================
+| Ip            | Port  | Status | Leader count | Leader distribution | Partition distribution |
+================================================================================================
+| 192.168.8.210 | 34600 | online | 13           | test: 13            | test: 37               |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34900 | online | 12           | test: 12            | test: 38               |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 35940 | online | 12           | test: 12            | test: 37               |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34920 | online | 12           | test: 12            | test: 38               |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 44920 | online | 13           | test: 13            | test: 38               |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34700 | online | 12           | test: 12            | test: 37               |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34500 | online | 13           | test: 13            | test: 37               |
+------------------------------------------------------------------------------------------------
+| 192.168.8.210 | 34800 | online | 13           | test: 13            | test: 38               |
+------------------------------------------------------------------------------------------------
+Got 8 rows (Time spent: 5039/6346 us)
+
+```
+
+
+
+
+
+
+
+
+
