@@ -273,12 +273,12 @@ cpp2::ErrorCode UpdateVertexProcessor::checkAndBuildContexts(
 
     // build context of the update items
     for (auto& item : req.get_update_items()) {
-        std::string name = item.get_name();
-        std::string prop = item.get_prop();
-        auto* sourcePropExp = new SourcePropertyExpression(&name, &prop);
-        sourcePropExp->setContext(this->expCtx_.get());
-        auto status = sourcePropExp->prepare();
-        if (!status.ok() || !this->checkExp(sourcePropExp)) {
+        auto name = item.get_name();
+        SourcePropertyExpression sourcePropExp(new std::string(name),
+                                               new std::string(item.get_prop()));
+        sourcePropExp.setContext(this->expCtx_.get());
+        auto status = sourcePropExp.prepare();
+        if (!status.ok() || !this->checkExp(&sourcePropExp)) {
             return cpp2::ErrorCode::E_INVALID_UPDATER;
         }
         auto tagRet = this->schemaMan_->toTagID(this->spaceId_, name);
@@ -335,7 +335,7 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
             }
             return std::string("");
         },
-        [&, this] (kvstore::ResultCode code) {
+        [this, partId, vId, req] (kvstore::ResultCode code) {
             this->pushResultCode(this->to(code), partId);
             if (code == kvstore::ResultCode::SUCCEEDED) {
                 onProcessFinished(req.get_return_columns().size());
