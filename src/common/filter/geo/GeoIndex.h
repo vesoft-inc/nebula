@@ -18,7 +18,9 @@ class GeoIndex final {
 public:
     Status indexCells(const GeoVariant &gv, std::vector<S2CellId> &cells);
 
-    Status indexCellsForPoint(const PointType p, std::vector<S2CellId> &cells);
+    Status indexCellsForPoint(const Point p, std::vector<S2CellId> &cells);
+
+    Status indexCellsForLineString(const LineString line, std::vector<S2CellId> &cells);
 
 private:
     RegionCoverParams    rcParams_;

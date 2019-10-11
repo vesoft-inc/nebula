@@ -147,7 +147,7 @@ AssertionResult GeoTest::prepareData() {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "INSERT EDGE locate(name) VALUES ";
-        geo::PointType loc;
+        geo::Point loc;
         geo::GeoIndex geoIndex;
         std::vector<S2CellId> cells;
         for (decltype(merchants_.size()) index = 0; index < merchants_.size(); ++index) {

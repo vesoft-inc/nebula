@@ -16,13 +16,13 @@
 
 namespace nebula {
 namespace geo {
-using PointType = boost::geometry::model::d2::point_xy<double>;
-
-using GeoVariant = boost::variant<
-    PointType,
-    boost::geometry::model::linestring<PointType>,
-    boost::geometry::model::polygon<PointType>
-    >;
+// We use boost to parse wkt and stores the location info
+// TODO: In the future, we should implement our own parser for wkt,
+// so that we can use s2 directly.
+using Point = boost::geometry::model::d2::point_xy<double>;
+using LineString = boost::geometry::model::linestring<Point>;
+using Polygon = boost::geometry::model::polygon<Point>;
+using GeoVariant = boost::variant<Point, LineString, Polygon>;
 
 enum class GeoVariantType : uint8_t {
     POINT       = 0,

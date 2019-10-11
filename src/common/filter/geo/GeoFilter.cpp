@@ -22,7 +22,7 @@ StatusOr<std::string> GeoFilter::near(const std::vector<VariantType> &args) {
 
     std::string pointWkt = kWktPointPrefix;
     pointWkt.append(boost::get<std::string>(args[1]));
-    PointType loc;
+    Point loc;
     boost::geometry::read_wkt(pointWkt, loc);
 
     auto dist = Expression::toDouble(args[2]);

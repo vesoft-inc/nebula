@@ -10,6 +10,7 @@
 #include "filter/geo/GeoParams.h"
 #include <s2/s2cell_id.h>
 #include <s2/s2latlng.h>
+#include <s2/s2polyline.h>
 
 namespace nebula {
 namespace geo {
@@ -18,7 +19,7 @@ Status GeoIndex::indexCells(const GeoVariant &gv, std::vector<S2CellId> &cells) 
     switch (GeoVariantType(gv.which())) {
         case GeoVariantType::POINT:
             {
-                status = indexCellsForPoint(boost::get<PointType>(gv), cells);
+                status = indexCellsForPoint(boost::get<Point>(gv), cells);
                 break;
             }
         case GeoVariantType::LINESTRING:
@@ -29,7 +30,7 @@ Status GeoIndex::indexCells(const GeoVariant &gv, std::vector<S2CellId> &cells) 
     return status;
 }
 
-Status GeoIndex::indexCellsForPoint(const PointType p, std::vector<S2CellId> &cells) {
+Status GeoIndex::indexCellsForPoint(const Point p, std::vector<S2CellId> &cells) {
     const auto sll = S2LatLng::FromDegrees(p.x(), p.y());
     const S2CellId s2Id(sll);
 
@@ -37,6 +38,34 @@ Status GeoIndex::indexCellsForPoint(const PointType p, std::vector<S2CellId> &ce
         cells.emplace_back(s2Id.parent(level));
     }
 
+    return Status::OK();
+}
+
+Status GeoIndex::indexCellsForLineString(const LineString line, std::vector<S2CellId> &cells) {
+    S2Polyline s2Line;
+    std::vector<S2LatLng> slls;
+    for (auto &p : line) {
+        auto sll = S2LatLng::FromDegrees(p.x(), p.y());
+        slls.emplace_back(std::move(sll));
+    }
+    s2Line.Init(slls);
+
+    S2RegionCoverer rc(rcParams_.regionCovererOpts());
+    auto cover = rc.GetCovering(s2Line);
+
+    for (auto &cell : cover) {
+        for (auto level = rcParams_.minCellLevel_; level <= rcParams_.maxCellLevel_; ++level) {
+            cells.emplace_back(cell.parent(level));
+        }
+    }
+
+    return Status::OK();
+}
+
+Status GeoIndex::indexCellsForPolygon(const Polygon polygon, std::vector<S2CellId> &cells) {
+    // TODO:
+    // 1. No ajacent in a loop
+    // 2. No intersect in loops
     return Status::OK();
 }
 }  // namespace geo
