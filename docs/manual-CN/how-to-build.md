@@ -31,6 +31,40 @@ bash> git clone https://github.com/vesoft-inc/nebula.git
     ```
     bash> cd nebula && ./build_dep.sh U
     ```
+- 环境不能直接下载oss包的用户
+
+    步骤 1:
+    从下面链接中下载对应版本的压缩包
+
+    **中国用户**
+    - [Fedora29/30](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/fedora29.tar.gz)
+    - [Centos7.5](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos7.5.tar.gz)
+    - [Centos6.5](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos7.5.tar.gz)
+    - [Ubuntu1604](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu16.tar.gz)
+    - [Ubuntu1804](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu18.tar.gz)
+
+    **美国用户**
+
+    - [Fedora29/30](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/fedora29.tar.gz)
+    - [Centos7.5](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos7.5.tar.gz)
+    - [Centos6.5](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos7.5.tar.gz)
+    - [Ubuntu1604](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/ubuntu16.tar.gz)
+    - [Ubuntu1804](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/ubuntu18.tar.gz)
+
+    步骤 2:
+    安装下载好的压缩包
+
+    ```
+    tar xf ${package_name}.tar.gz
+    cd ${package_name} && ./install.sh
+    ```
+
+    Step 3:
+    从本地源下载依赖和进行配置
+
+    ```
+    bash> cd nebula && ./build_dep.sh N
+    ```
 
 #### 步骤 3: 应用 **~/.bashrc** 修改
 

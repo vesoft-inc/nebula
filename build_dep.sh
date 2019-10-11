@@ -5,7 +5,7 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 #
-# step 1: ./build_dep.sh <C|U>   C: the user in China, U: the user in US
+# step 1: ./build_dep.sh <C|U|N>
 # step 2: source ~/.bashrc
 #
 
@@ -14,12 +14,15 @@ mkdir $DIR
 trap "rm -fr $DIR" EXIT
 
 url_addr=https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb
-if [[ $1 != C ]] && [[ $1 != U ]]; then
-    echo "Usage: ${0} <C|U>  # C: the user in China, U: the user in US"
+no_deps=0
+if [[ $1 != C ]] && [[ $1 != U ]] && [[ $1 != N ]]; then
+    echo "Usage: ${0} <C|U|N>  # C: the user in China, U: the user in US, N: no need packages"
     exit -1
 fi
 
 [[ $1 == U ]] && url_addr=https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/
+
+[[ $1 == N ]] && no_deps=1
 
 # fedora
 function fedora_install {
@@ -50,12 +53,9 @@ function fedora_install {
         unzip \
         xz-devel \
         wget
-    wget $url_addr/fedora.tar.gz
-    tar xf fedora.tar.gz
-    sudo rpm -ivh fedora/*.rpm
-    wget $url_addr/vs-nebula-3rdparty.fc.x86_64.rpm
-    sudo rpm -ivh vs-nebula-3rdparty.fc.x86_64.rpm
+
     echo "alias cmake='cmake -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind'" >> ~/.bashrc
+
     return 0
 }
 
@@ -78,12 +78,7 @@ function centos6_install {
         maven \
         java-1.8.0-openjdk \
         unzip
-    wget $url_addr/centos6.tar.gz
-    tar xf centos6.tar.gz
-    sudo rpm -ivh centos6/*.rpm
 
-    wget $url_addr/vs-nebula-3rdparty.el6.x86_64.rpm
-    sudo rpm -ivh vs-nebula-3rdparty.el6.x86_64.rpm
     echo "export PATH=/opt/nebula/autoconf/bin:/opt/nebula/automake/bin:/opt/nebula/libtool/bin:/opt/nebula/gettext/bin:/opt/nebula/flex/bin:/opt/nebula/binutils/bin:\$PATH" >> ~/.bashrc
     echo "export ACLOCAL_PATH=/opt/nebula/automake/share/aclocal-1.15:/opt/nebula/libtool/share/aclocal:/opt/nebula/autoconf-archive/share/aclocal" >> ~/.bashrc
     return 0
@@ -103,12 +98,6 @@ function centos7_install {
         maven \
         java-1.8.0-openjdk \
         unzip
-    wget $url_addr/centos7.tar.gz
-    tar xf centos7.tar.gz
-    sudo rpm -ivh centos7/*.rpm
-
-    wget $url_addr/vs-nebula-3rdparty.el7.x86_64.rpm
-    sudo rpm -ivh vs-nebula-3rdparty.el7.x86_64.rpm
 
     return 0
 }
@@ -126,13 +115,8 @@ function ubuntu16_install {
         python \
         maven \
         openjdk-8-jdk unzip
-    wget $url_addr/ubuntu.tar.gz
-    tar xf ubuntu.tar.gz
-    sudo dpkg -i ubuntu/*.deb
 
-    wget $url_addr/vs-nebula-3rdparty.ubuntu1604.amd64.deb
-    sudo dpkg -i vs-nebula-3rdparty.ubuntu1604.amd64.deb
-
+    echo "export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:\$LIBRARY_PATH" >> ~/.bashrc
     return 0
 }
 
@@ -149,24 +133,32 @@ function ubuntu18_install {
         python \
         maven \
         openjdk-8-jdk unzip
-    wget $url_addr/ubuntu.tar.gz
-    tar xf ubuntu.tar.gz
-    sudo dpkg -i ubuntu/*.deb
+    echo "export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:\$LIBRARY_PATH" >> ~/.bashrc
+    return 0
+}
 
-    wget $url_addr/vs-nebula-3rdparty.ubuntu1804.amd64.deb
-    sudo dpkg -i vs-nebula-3rdparty.ubuntu1804.amd64.deb
-
+function installPackage {
+    versions=(empty feroda29 centos7.5 centos6.5 ubuntu18 ubuntu16)
+    package_name=${versions[$1]}
+    [[ $package_name = empty ]] && return 0
+    if [[ no_deps -eq 0 ]]; then
+        echo "###### There is no need to rely on packages ######"
+        cd $DIR
+        wget ${url_addr}/${package_name}.tar.gz
+        tar xf ${package_name}.tar.gz
+        cd ${package_name}
+        ./install.sh
+    fi
     return 0
 }
 
 function addAlias {
     echo "alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind -DNEBULA_BISON_ROOT=/opt/nebula/bison'" >> ~/.bashrc
     echo "alias ctest='/opt/nebula/cmake/bin/ctest'" >> ~/.bashrc
-    echo "export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:\$LIBRARY_PATH" >> ~/.bashrc
     return 0
 }
 
-# fedora:1, centos7:2, centos6:3, ubuntu18:4, ubuntu16:5
+# fedora29:1, centos7.5:2, centos6.5:3, ubuntu18:4, ubuntu16:5
 function getSystemVer {
     result=`cat /proc/version|grep fc`
     if [[ -n $result ]]; then
@@ -196,6 +188,8 @@ getSystemVer
 version=$?
 
 set -e
+
+installPackage $version
 
 case $version in
     1)
