@@ -5,7 +5,7 @@
 |   &&     |   Logical AND     | 
 |   !      |   Logical NOT     | 
 |   \|\|   |   Logical OR   | 
-|   ^      |   Logical XOR  |
+|   XOR      |   Logical XOR  |
 
 
 In nGQL, nonzero numbers are evaluated to _true_. The precedence of the operators refer to [Operator Precedence](./operator-precedence.md).
