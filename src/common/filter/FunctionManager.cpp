@@ -409,24 +409,75 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.body_ = [] (const auto &args) {
             switch (args[0].which()) {
-                case 0: {
+                case VAR_INT64: {
                     auto v = Expression::asInt(args[0]);
                     return static_cast<int64_t>(std::hash<int64_t>()(v));
                 }
-                case 1: {
+                case VAR_DOUBLE: {
                     auto v = Expression::asDouble(args[0]);
                     return static_cast<int64_t>(std::hash<double>()(v));
                 }
-                case 2: {
+                case VAR_BOOL: {
                     auto v = Expression::asBool(args[0]);
                     return static_cast<int64_t>(std::hash<bool>()(v));
                 }
-                case 3: {
+                case VAR_STR: {
                     auto &v = Expression::asString(args[0]);
                     return static_cast<int64_t>(std::hash<std::string>()(v));
                 }
                 default:
+                    LOG(ERROR) << "Unkown type: " << args[0].which();
                     return INT64_MIN;
+            }
+        };
+    }
+    {
+        auto &attr = functions_["in"];
+        attr.minArity_ = 2;
+        attr.maxArity_ = INT64_MAX;
+        attr.body_ = [] (const auto &args) {
+            VariantType cmp = args.back();
+            LOG(INFO) << cmp;
+            switch (cmp.which()) {
+                case VAR_INT64: {
+                    auto v = Expression::asInt(cmp);
+                    std::unordered_set<uint64_t> vals;
+                    for (auto iter = args.begin(); iter < (args.end() - 1); ++iter) {
+                        vals.emplace(Expression::toInt(*iter));
+                    }
+                    auto ret = vals.emplace(v);
+                    return !ret.second;
+                }
+                case VAR_DOUBLE: {
+                    auto v = Expression::asDouble(cmp);
+                    std::unordered_set<double> vals;
+                    for (auto iter = args.begin(); iter < (args.end() - 1); ++iter) {
+                        vals.emplace(Expression::toDouble(*iter));
+                    }
+                    auto ret = vals.emplace(v);
+                    return !ret.second;
+                }
+                case VAR_BOOL: {
+                    auto v = Expression::asBool(cmp);
+                    std::unordered_set<bool> vals;
+                    for (auto iter = args.begin(); iter < (args.end() - 1); ++iter) {
+                        vals.emplace(Expression::toBool(*iter));
+                    }
+                    auto ret = vals.emplace(v);
+                    return !ret.second;
+                }
+                case VAR_STR: {
+                    auto v = Expression::asString(cmp);
+                    std::unordered_set<std::string> vals;
+                    for (auto iter = args.begin(); iter < (args.end() - 1); ++iter) {
+                        vals.emplace(Expression::toString(*iter));
+                    }
+                    auto ret = vals.emplace(v);
+                    return !ret.second;
+                }
+                default:
+                    LOG(ERROR) << "Unkown type: " << cmp.which();
+                    return false;
             }
         };
     }
@@ -435,8 +486,12 @@ FunctionManager::FunctionManager() {
 
 // static
 StatusOr<FunctionManager::Function>
-FunctionManager::get(const std::string &func, size_t arity) {
-    return instance().getInternal(func, arity);
+FunctionManager::get(const std::string &func, size_t arity, bool isExprSet) {
+    if ((func != "in" && isExprSet)
+            || (func == "in" && !isExprSet)) {
+        return Status::SyntaxError("syntax error near %s", func.c_str());
+    }
+    return instance().getInternal(func, (arity + (isExprSet ? 1 : 0)));
 }
 
 
