@@ -16,7 +16,7 @@
 #include "kvstore/Part.h"
 #include <folly/Benchmark.h>
 
-DEFINE_int32(part_performance_test_partnum, 1000, "Total partitions");
+DEFINE_int32(part_performance_test_partnum, 10, "Total partitions");
 DEFINE_int64(part_performance_test_rownum, 100000, "Total rows");
 
 namespace nebula {
@@ -214,11 +214,31 @@ Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
 ============================================================================
 PartPerformanceTest.cpprelative                           time/iter  iters/s
 ============================================================================
+1000 parts
+============================================================================
 ParallelMultiplePartNoCache                                967.66ms     1.03
 SerialMultiplePartNoCache                                  834.85ms     1.20
 SerialSinglePartNocache                                     53.25ms    18.78
 ParallelMultiplePartCache                                  733.58ms     1.36
 SerialMultiplePartCache                                    653.07ms     1.53
 SerialSinglePartCache                                       54.96ms    18.19
+============================================================================
+100 parts
+============================================================================
+ParallelMultiplePartNoCache                                258.48ms     3.87
+SerialMultiplePartNoCache                                  450.24ms     2.22
+SerialSinglePartNocache                                     40.82ms    24.50
+ParallelMultiplePartCache                                  154.87ms     6.46
+SerialMultiplePartCache                                    318.12ms     3.14
+SerialSinglePartCache                                       38.93ms    25.69
+============================================================================
+10 parts
+============================================================================
+ParallelMultiplePartNoCache                                235.84ms     4.24
+SerialMultiplePartNoCache                                  406.69ms     2.46
+SerialSinglePartNocache                                     92.42ms    10.82
+ParallelMultiplePartCache                                  121.69ms     8.22
+SerialMultiplePartCache                                    297.08ms     3.37
+SerialSinglePartCache                                       60.43ms    16.55
 ============================================================================
 **/
