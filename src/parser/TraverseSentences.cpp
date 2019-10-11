@@ -296,10 +296,10 @@ std::string FindPathSentence::toString() const {
 }
 
 std::string LimitSentence::toString() const {
-    if (skip_ == 0) {
+    if (offset_ == 0) {
         return folly::stringPrintf("LIMIT %ld", count_);
     }
 
-    return folly::stringPrintf("LIMIT %ld,%ld", skip_, count_);
+    return folly::stringPrintf("LIMIT %ld,%ld", offset_, count_);
 }
 }   // namespace nebula

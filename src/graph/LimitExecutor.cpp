@@ -16,9 +16,9 @@ LimitExecutor::LimitExecutor(Sentence *sentence, ExecutionContext *ectx) : Trave
 
 
 Status LimitExecutor::prepare() {
-    skip_ = sentence_->skip();
-    if (skip_ < 0) {
-        return Status::SyntaxError("skip `%ld' is illegal", skip_);
+    offset_ = sentence_->offset();
+    if (offset_ < 0) {
+        return Status::SyntaxError("skip `%ld' is illegal", offset_);
     }
     count_ = sentence_->count();
     if (count_ < 0) {
@@ -44,13 +44,13 @@ void LimitExecutor::execute() {
         return;
     }
     auto inRows = std::move(ret).value();
-    if (inRows.size() > static_cast<uint64_t>(skip_ + count_)) {
+    if (inRows.size() > static_cast<uint64_t>(offset_ + count_)) {
         rows_.resize(count_);
-        rows_.assign(inRows.begin() + skip_, inRows.begin() + skip_ + count_);
-    } else if (inRows.size() > static_cast<uint64_t>(skip_) &&
-                   inRows.size() <= static_cast<uint64_t>(skip_ + count_)) {
-        rows_.resize(inRows.size() - skip_);
-        rows_.assign(inRows.begin() + skip_, inRows.end());
+        rows_.assign(inRows.begin() + offset_, inRows.begin() + offset_ + count_);
+    } else if (inRows.size() > static_cast<uint64_t>(offset_) &&
+                   inRows.size() <= static_cast<uint64_t>(offset_ + count_)) {
+        rows_.resize(inRows.size() - offset_);
+        rows_.assign(inRows.begin() + offset_, inRows.end());
     }
 
     if (onResult_) {

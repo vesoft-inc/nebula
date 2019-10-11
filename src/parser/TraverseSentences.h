@@ -548,22 +548,22 @@ private:
 
 class LimitSentence final : public Sentence {
 public:
-    explicit LimitSentence(int64_t skip, int64_t count) : skip_(skip), count_(count) {
+    explicit LimitSentence(int64_t offset, int64_t count) : offset_(offset), count_(count) {
         kind_ = Kind::kLimit;
     }
 
-     std::string toString() const override;
+    std::string toString() const override;
 
-     int64_t skip() {
-        return skip_;
+    int64_t offset() {
+        return offset_;
     }
 
-     int64_t count() {
+    int64_t count() {
         return count_;
     }
 
  private:
-    int64_t    skip_{-1};
+    int64_t    offset_{-1};
     int64_t    count_{-1};
 };
 }   // namespace nebula

@@ -37,7 +37,7 @@ private:
     LimitSentence                                            *sentence_{nullptr};
     std::unique_ptr<InterimResult>                            inputs_;
     std::vector<cpp2::RowValue>                               rows_;
-    int64_t                                                   skip_{-1};
+    int64_t                                                   offset_{-1};
     int64_t                                                   count_{-1};
 };
 }  // namespace graph
