@@ -16,11 +16,24 @@
 #include "kvstore/Part.h"
 #include <folly/Benchmark.h>
 
-DEFINE_int32(part_performance_test_partnum, 20, "Total partitions");
-DEFINE_int64(part_performance_test_rownum, 1000000, "Total rows");
+DEFINE_int32(part_performance_test_partnum, 1000, "Total partitions");
+DEFINE_int64(part_performance_test_rownum, 100000, "Total rows");
 
 namespace nebula {
 namespace kvstore {
+
+std::string randomStr(int32_t repeatNum) {
+    std::string str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+                    "!@#$%^&*()_+-={}[]-={}[]:<>,./?~");
+//    Not random for now, because it's too slow
+//    std::random_device rd;
+//    std::mt19937 generator(rd());
+//    std::shuffle(str.begin(), str.end(), generator);
+    for (auto i = 0; i < repeatNum; i++) {
+        str += str;
+    }
+    return str;
+}
 
 void genData(rocksdb::DB* db) {
     rocksdb::WriteBatch updates;
@@ -29,17 +42,22 @@ void genData(rocksdb::DB* db) {
     for (auto i = 1; i <= FLAGS_part_performance_test_rownum; i++) {
         auto partId = i%FLAGS_part_performance_test_partnum;
         std::string key, val;
-        key.reserve(sizeof(partId) + sizeof(uint64_t));
+        auto random = randomStr(10);
+        key.reserve(sizeof(partId) + sizeof(uint64_t) * 3);
         key.append(reinterpret_cast<const char*>(&partId), sizeof(partId))
+           .append(reinterpret_cast<const char*>(&i), sizeof(uint64_t))
+           .append(reinterpret_cast<const char*>(&i), sizeof(uint64_t))
            .append(reinterpret_cast<const char*>(&i), sizeof(uint64_t));
 
-        val.reserve(4 + sizeof(uint64_t));
+        val.reserve(4 + sizeof(uint64_t) * 3 + 1000);
         val.append("VAL_")
-           .append(reinterpret_cast<const char*>(&i), sizeof(uint64_t));
+           .append(reinterpret_cast<const char*>(&i), sizeof(uint64_t))
+           .append(reinterpret_cast<const char*>(&i), sizeof(uint64_t))
+           .append(reinterpret_cast<const char*>(&i), sizeof(uint64_t))
+           .append(std::move(random));
         updates.Put(rocksdb::Slice(key), rocksdb::Slice(val));
         if (i%1000 == 0) {
             rocksdb::Status status = db->Write(woptions, &updates);
-            CHECK(status.ok());
             updates.Clear();
         }
     }
@@ -48,19 +66,29 @@ void genData(rocksdb::DB* db) {
     // flush memTable to sst file
     status = db->Flush(rocksdb::FlushOptions());
     CHECK(status.ok());
+
+    // free system pages cache, prepare run `echo 3 > /proc/sys/vm/drop_caches` via root user.
+    if (system("sync") < 0) {
+        LOG(ERROR) << "Clean system cache error";
+    }
+
     LOG(INFO) << "Data generation completed...";
 }
 
 void range(int32_t partId, rocksdb::DB* db) {
-    uint64_t start = static_cast<uint64_t>(FLAGS_part_performance_test_rownum * 0.5);
-    uint64_t end = static_cast<uint64_t>(FLAGS_part_performance_test_rownum * 0.8);
+    auto start = static_cast<uint64_t>(FLAGS_part_performance_test_rownum * 0.5);
+    auto end = static_cast<uint64_t>(FLAGS_part_performance_test_rownum * 0.8);
     std::string s, e;
     s.reserve(sizeof(partId) + sizeof(partId));
     s.append(reinterpret_cast<const char*>(&partId), sizeof(partId))
+            .append(reinterpret_cast<const char*>(&start), sizeof(uint64_t))
+            .append(reinterpret_cast<const char*>(&start), sizeof(uint64_t))
             .append(reinterpret_cast<const char*>(&start), sizeof(uint64_t));
 
     e.reserve(sizeof(partId) + sizeof(partId));
     e.append(reinterpret_cast<const char*>(&partId), sizeof(partId))
+            .append(reinterpret_cast<const char*>(&end), sizeof(uint64_t))
+            .append(reinterpret_cast<const char*>(&end), sizeof(uint64_t))
             .append(reinterpret_cast<const char*>(&end), sizeof(uint64_t));
 
     rocksdb::Slice sliceStart(s);
@@ -77,34 +105,36 @@ void range(int32_t partId, rocksdb::DB* db) {
     delete iter;
 }
 
-void multiThreadTest(bool inDisk) {
+void multiThreadTest(bool useCache) {
     fs::TempDir dataPath("/tmp/part_multi_thread_test.XXXXXX");
     rocksdb::BlockBasedTableOptions table_options;
     rocksdb::Options options;
-    if (inDisk) {
-        table_options.no_block_cache = true;
-        options.table_factory.reset(rocksdb::NewBlockBasedTableFactory(table_options));
-    } else {
-        table_options.block_cache = rocksdb::NewLRUCache(100 * 1024 * 1024);
-        options.table_factory.reset(NewBlockBasedTableFactory(table_options));
-    }
-    options.create_if_missing = true;
     rocksdb::DB* db = nullptr;
-    rocksdb::Status status = rocksdb::DB::Open(options, dataPath.path(), &db);
-    CHECK(status.ok());
+    std::vector<std::thread> threads;
+
     BENCHMARK_SUSPEND {
+        if (useCache) {
+            table_options.block_cache = rocksdb::NewLRUCache(100 * 1024 * 1024);
+            options.table_factory.reset(NewBlockBasedTableFactory(table_options));
+        } else {
+            table_options.no_block_cache = true;
+            options.table_factory.reset(rocksdb::NewBlockBasedTableFactory(table_options));
+        }
+        options.create_if_missing = true;
+
+        rocksdb::Status status = rocksdb::DB::Open(options, dataPath.path(), &db);
+        CHECK(status.ok());
         genData(db);
     }
 
-    std::vector<std::thread> threads;
-    for (auto i = 0; i < FLAGS_part_performance_test_partnum; i++) {
+    FOR_EACH_RANGE(i, 0, FLAGS_part_performance_test_partnum) {
         threads.emplace_back([db, i]() {
             range(i, db);
         });
     }
 
-    for (auto &t : threads) {
-        t.join();
+    FOR_EACH(t, threads) {
+        t->join();
     }
 
     BENCHMARK_SUSPEND {
@@ -113,62 +143,59 @@ void multiThreadTest(bool inDisk) {
     }
 }
 
-void singleThreadTest(bool inDisk) {
+void singleThreadTest(bool useCache, int32_t partnum) {
     fs::TempDir dataPath("/tmp/part_single_thread_test.XXXXXX");
     rocksdb::BlockBasedTableOptions table_options;
     rocksdb::Options options;
-    if (inDisk) {
-        table_options.no_block_cache = true;
-        options.table_factory.reset(rocksdb::NewBlockBasedTableFactory(table_options));
-    } else {
-        table_options.block_cache = rocksdb::NewLRUCache(100 * 1024 * 1024);
-        options.table_factory.reset(NewBlockBasedTableFactory(table_options));
-    }
-
-    options.create_if_missing = true;
     rocksdb::DB* db = nullptr;
-    rocksdb::Status status = rocksdb::DB::Open(options, dataPath.path(), &db);
-    CHECK(status.ok());
+
     BENCHMARK_SUSPEND {
+        if (useCache) {
+            table_options.block_cache = rocksdb::NewLRUCache(100 * 1024 * 1024);
+            options.table_factory.reset(NewBlockBasedTableFactory(table_options));
+        } else {
+            table_options.no_block_cache = true;
+            options.table_factory.reset(rocksdb::NewBlockBasedTableFactory(table_options));
+        }
+
+        options.create_if_missing = true;
+        rocksdb::Status status = rocksdb::DB::Open(options, dataPath.path(), &db);
+        CHECK(status.ok());
         genData(db);
     }
-    for (auto i = 0 ; i < FLAGS_part_performance_test_partnum; i++) {
+
+    FOR_EACH_RANGE(i, 0, partnum) {
         range(i, db);
     }
+
     BENCHMARK_SUSPEND {
         db->Close();
         delete db;
     };
 }
 
-BENCHMARK(ParallelMultiplePartInCache) {
-    FLAGS_part_performance_test_partnum = 20;
-    multiThreadTest(false);
-}
-
-BENCHMARK(SerialMultiplePartInCache) {
-    FLAGS_part_performance_test_partnum = 20;
-    singleThreadTest(false);
-}
-
-BENCHMARK(SerialSinglePartInCache) {
-    FLAGS_part_performance_test_partnum = 1;
-    singleThreadTest(false);
-}
-
-BENCHMARK(ParallelMultiplePartInDisk) {
-    FLAGS_part_performance_test_partnum = 20;
+BENCHMARK(ParallelMultiplePartNoCache) {
     multiThreadTest(true);
 }
 
-BENCHMARK(SerialMultiplePartInDisk) {
-    FLAGS_part_performance_test_partnum = 20;
-    singleThreadTest(true);
+BENCHMARK(SerialMultiplePartNoCache) {
+    singleThreadTest(true, FLAGS_part_performance_test_partnum);
 }
 
-BENCHMARK(SerialSinglePartInDisk) {
-    FLAGS_part_performance_test_partnum = 1;
-    singleThreadTest(true);
+BENCHMARK(SerialSinglePartNocache) {
+    singleThreadTest(true, 1);
+}
+
+BENCHMARK(ParallelMultiplePartCache) {
+    multiThreadTest(false);
+}
+
+BENCHMARK(SerialMultiplePartCache) {
+    singleThreadTest(false, FLAGS_part_performance_test_partnum);
+}
+
+BENCHMARK(SerialSinglePartCache) {
+    singleThreadTest(false, 1);
 }
 
 }  // namespace kvstore
@@ -187,11 +214,11 @@ Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
 ============================================================================
 PartPerformanceTest.cpprelative                           time/iter  iters/s
 ============================================================================
-ParallelMultiplePartInCache                                  8.60ms   116.32
-SerialMultiplePartInCache                                    7.33ms   136.41
-SerialSinglePartInCache                                      6.65ms   150.27
-ParallelMultiplePartInDisk                                  15.41ms    64.91
-SerialMultiplePartInDisk                                     5.77ms   173.44
-SerialSinglePartInDisk                                       5.50ms   181.89
+ParallelMultiplePartNoCache                                967.66ms     1.03
+SerialMultiplePartNoCache                                  834.85ms     1.20
+SerialSinglePartNocache                                     53.25ms    18.78
+ParallelMultiplePartCache                                  733.58ms     1.36
+SerialMultiplePartCache                                    653.07ms     1.53
+SerialSinglePartCache                                       54.96ms    18.19
 ============================================================================
 **/
