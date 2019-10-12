@@ -832,7 +832,7 @@ public:
         return operand_.get();
     }
 
-    const ColumnType getType() const {
+    ColumnType getType() const {
         return type_;
     }
 

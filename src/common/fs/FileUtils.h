@@ -26,6 +26,9 @@ enum class FileType {
     SOCKET
 };
 
+namespace detail {
+bool removeDir(const char* path, bool recursively);
+}
 
 class FileUtils final {
 public:

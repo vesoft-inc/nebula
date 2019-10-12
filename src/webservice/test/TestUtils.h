@@ -10,7 +10,7 @@
 
 namespace nebula {
 
-bool getUrl(const std::string& urlPath, std::string& respBody) {
+inline bool getUrl(const std::string& urlPath, std::string& respBody) {
     auto url = folly::stringPrintf("http://%s:%d%s",
                                    FLAGS_ws_ip.c_str(),
                                    FLAGS_ws_http_port,

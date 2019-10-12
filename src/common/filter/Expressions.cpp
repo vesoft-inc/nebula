@@ -456,13 +456,10 @@ OptVariantType PrimaryExpression::eval() const {
     switch (operand_.which()) {
         case VAR_INT64:
             return boost::get<int64_t>(operand_);
-            break;
         case VAR_DOUBLE:
             return boost::get<double>(operand_);
-            break;
         case VAR_BOOL:
             return boost::get<bool>(operand_);
-            break;
         case VAR_STR:
             return boost::get<std::string>(operand_);
     }

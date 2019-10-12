@@ -52,7 +52,7 @@ void UpdateVertexProcessor::onProcessFinished(int32_t retNum) {
                    break;
                }
                default: {
-                   LOG(FATAL) << "Unknown VariantType: " << v.which();
+                   LOG(ERROR) << "Unknown VariantType: " << v.which();
                    return;
                }
            }
@@ -218,7 +218,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack() {
                 break;
              }
             default: {
-                LOG(FATAL) << "Unknown VariantType: " << expValue.which();
+                LOG(ERROR) << "Unknown VariantType: " << expValue.which();
                 return std::string("");
             }
         }

@@ -20,11 +20,11 @@ static Expression* getFilterExpr(SequentialSentences *sentences) {
     return go->whereClause()->filter();
 }
 
-size_t Encode(size_t iters, std::string query) {
+static size_t Encode(size_t iters, std::string query) {
     constexpr size_t ops = 1000000UL;
 
     query = "GO FROM 1 AS p OVER q WHERE " + query;
-    Expression *expr;
+    Expression *expr = nullptr;
     StatusOr<std::unique_ptr<SequentialSentences>> result;
     BENCHMARK_SUSPEND {
         GQLParser parser;
@@ -45,7 +45,7 @@ size_t Encode(size_t iters, std::string query) {
     return iters * ops;
 }
 
-size_t Decode(size_t iters, std::string query) {
+static size_t Decode(size_t iters, std::string query) {
     constexpr size_t ops = 1000000UL;
 
     query = "GO FROM 1 AS p OVER q WHERE " + query;

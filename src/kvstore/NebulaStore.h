@@ -49,7 +49,7 @@ public:
             , options_(std::move(options)) {
     }
 
-    ~NebulaStore();
+    ~NebulaStore() override;
 
     // Calculate the raft service address based on the storage service address
     static HostAddr getRaftAddr(HostAddr srvcAddr) {

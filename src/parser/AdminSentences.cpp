@@ -32,7 +32,7 @@ std::string ShowSentence::toString() const {
             return folly::stringPrintf("SHOW CREATE EDGE %s", name_.get()->c_str());
         case ShowType::kUnknown:
         default:
-            FLOG_FATAL("Type illegal");
+            FLOG_ERROR("Type illegal");
     }
     return "Unknown";
 }
@@ -69,7 +69,7 @@ std::string SpaceOptItem::toString() const {
         case REPLICA_FACTOR:
             return folly::stringPrintf("replica_factor = %ld", boost::get<int64_t>(optValue_));
         default:
-             FLOG_FATAL("Space parameter illegal");
+             FLOG_ERROR("Space parameter illegal");
     }
     return "Unknown";
 }
@@ -140,7 +140,7 @@ std::string ConfigSentence::toString() const {
         case SubType::kGet:
             return std::string("GET VARIABLES ") + configItem_->toString();
         default:
-            FLOG_FATAL("Type illegal");
+            FLOG_ERROR("Type illegal");
     }
     return "Unknown";
 }
@@ -150,7 +150,7 @@ std::string BalanceSentence::toString() const {
         case SubType::kLeader:
             return std::string("BALANCE LEADER");
         default:
-            FLOG_FATAL("Type illegal");
+            FLOG_ERROR("Type illegal");
     }
     return "Unknown";
 }

@@ -9,7 +9,7 @@
 
 using nebula::MurmurHash2;
 
-std::string makeString(size_t size) {
+static std::string makeString(size_t size) {
     std::string str;
     str.resize(size);
     for (auto &c : str) {
@@ -18,7 +18,7 @@ std::string makeString(size_t size) {
     return str;
 }
 
-size_t StdHashTest(size_t iters, size_t size) {
+static size_t StdHashTest(size_t iters, size_t size) {
     constexpr size_t ops = 1000000UL;
 
     std::hash<std::string> hash;
@@ -32,7 +32,7 @@ size_t StdHashTest(size_t iters, size_t size) {
     return iters * ops;
 }
 
-size_t MurmurHash2Test(size_t iters, size_t size) {
+static size_t MurmurHash2Test(size_t iters, size_t size) {
     constexpr size_t ops = 1000000UL;
 
     MurmurHash2 hash;

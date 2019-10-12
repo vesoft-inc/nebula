@@ -31,21 +31,21 @@ folly::Future<StatusOr<bool>>
 KVBasedGflagsManager::setConfig(const cpp2::ConfigModule& module, const std::string& name,
                                 const cpp2::ConfigType& type, const VariantType &value) {
     UNUSED(module); UNUSED(name); UNUSED(type); UNUSED(value);
-    LOG(FATAL) << "Unimplement!";
+    LOG(ERROR) << "Unimplement!";
     return Status::NotSupported();
 }
 
 folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
 KVBasedGflagsManager::getConfig(const cpp2::ConfigModule& module, const std::string& name) {
     UNUSED(module); UNUSED(name);
-    LOG(FATAL) << "Unimplement!";
+    LOG(ERROR) << "Unimplement!";
     return Status::NotSupported();
 }
 
 folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
 KVBasedGflagsManager::listConfigs(const cpp2::ConfigModule& module) {
     UNUSED(module);
-    LOG(FATAL) << "Unimplement!";
+    LOG(ERROR) << "Unimplement!";
     return Status::NotSupported();
 }
 

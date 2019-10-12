@@ -18,7 +18,7 @@ std::string SchemaPropItem::toString() const {
             return folly::stringPrintf("ttl_col = %s",
                                        boost::get<std::string>(propValue_).c_str());
         default:
-            FLOG_FATAL("Schema property type illegal");
+            FLOG_WARN("Schema property type illegal");
     }
     return "Unknown";
 }

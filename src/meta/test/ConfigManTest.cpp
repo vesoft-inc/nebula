@@ -185,7 +185,7 @@ TEST(ConfigManTest, ConfigProcessorTest) {
     }
 }
 
-ConfigItem toConfigItem(const cpp2::ConfigItem& item) {
+static ConfigItem toConfigItem(const cpp2::ConfigItem& item) {
     VariantType value;
     switch (item.get_type()) {
         case cpp2::ConfigType::INT64:

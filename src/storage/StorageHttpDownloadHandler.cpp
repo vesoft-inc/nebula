@@ -162,7 +162,7 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& hdfsHost,
             partId = folly::to<PartitionID>(part);
         } catch (const std::exception& ex) {
             isRunning.clear();
-            LOG(ERROR) << "Invalid part: \"" << part << "\"";
+            LOG(ERROR) << "Invalid part: \"" << part << "\"" << ", error: " << ex.what();
             return false;
         }
 

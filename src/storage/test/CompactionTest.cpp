@@ -16,7 +16,7 @@
 namespace nebula {
 namespace storage {
 
-void mockData(kvstore::KVStore* kv) {
+static void mockData(kvstore::KVStore* kv) {
     for (auto partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
         for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {

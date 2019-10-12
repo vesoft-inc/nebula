@@ -40,7 +40,7 @@ void launchTickTockThread() {
 }  // Anonymous namespace
 
 
-volatile uint64_t readTsc() {
+uint64_t readTsc() {
 #ifdef DURATION_USE_RDTSCP
     uint32_t eax, ecx, edx;
     __asm__ volatile ("rdtscp" : "=a" (eax), "=d" (edx) : "c");

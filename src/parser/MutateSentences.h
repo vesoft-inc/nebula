@@ -441,7 +441,7 @@ public:
         hasRank_ = true;
     }
 
-    const int64_t getRank() const {
+    int64_t getRank() const {
         return rank_;
     }
 
@@ -569,7 +569,7 @@ public:
         host_.reset(host);
     }
 
-    const int32_t port() const {
+    int32_t port() const {
         return port_;
     }
 
@@ -603,7 +603,7 @@ public:
                 try {
                     port_ = folly::to<int32_t>(tokens[1].toString().substr(0, position).c_str());
                 } catch (const std::exception& ex) {
-                    LOG(ERROR) << "URL's port parse failed: " << *url;
+                    LOG(ERROR) << "URL's port parse failed: " << *url << ", error: " << ex.what();
                 }
                 path_ = std::make_unique<std::string>(
                             tokens[1].toString().substr(position, tokens[1].size()));

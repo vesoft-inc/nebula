@@ -164,6 +164,7 @@ StatusOr<GraphSpaceID> AdHocSchemaManager::toGraphSpaceID(folly::StringPiece spa
     try {
         return folly::to<GraphSpaceID>(spaceName);
     } catch (const std::exception& e) {
+        LOG(WARNING) << e.what();
         return Status::SpaceNotFound();
     }
 }
@@ -173,7 +174,7 @@ StatusOr<TagID> AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPie
     try {
         return folly::to<TagID>(tagName);
     } catch (const std::exception& e) {
-        LOG(FATAL) << e.what();
+        LOG(ERROR) << e.what();
     }
     return -1;
 }
@@ -183,7 +184,7 @@ StatusOr<EdgeType> AdHocSchemaManager::toEdgeType(GraphSpaceID space, folly::Str
     try {
         return folly::to<EdgeType>(typeName);
     } catch (const std::exception& e) {
-        LOG(FATAL) << e.what();
+        LOG(ERROR) << e.what();
     }
     return -1;
 }
@@ -192,17 +193,16 @@ StatusOr<EdgeType> AdHocSchemaManager::toEdgeType(GraphSpaceID space, folly::Str
 StatusOr<std::string> AdHocSchemaManager::toEdgeName(GraphSpaceID space, EdgeType edgeType) {
     UNUSED(space);
     UNUSED(edgeType);
-    LOG(FATAL) << "Unimplement";
-    return "";
+    LOG(ERROR) << "Unimplement";
+    return Status::NotSupported();
 }
 
 
 // This interface is disabled
 StatusOr<std::vector<std::string>> AdHocSchemaManager::getAllEdge(GraphSpaceID space) {
     UNUSED(space);
-    LOG(FATAL) << "Unimplement";
-    std::vector<std::string> r = { "" };
-    return r;
+    LOG(ERROR) << "Unimplement";
+    return Status::NotSupported();
 }
 
 }  // namespace storage

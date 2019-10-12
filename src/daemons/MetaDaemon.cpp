@@ -54,8 +54,8 @@ const std::string kClusterIdKey = "__meta_cluster_id_key__";  // NOLINT
 
 nebula::ClusterID gClusterId = 0;
 
-std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> peers,
-                                                 nebula::HostAddr localhost) {
+static std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> peers,
+                                                        nebula::HostAddr localhost) {
     auto partMan
         = std::make_unique<nebula::kvstore::MemPartManager>();
     // The meta server has only one space (0), one part (0)
@@ -126,9 +126,9 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
     return kvstore;
 }
 
-bool initWebService(nebula::kvstore::KVStore* kvstore,
-                    nebula::hdfs::HdfsCommandHelper* helper,
-                    nebula::thread::GenericThreadPool* pool) {
+static bool initWebService(nebula::kvstore::KVStore* kvstore,
+                           nebula::hdfs::HdfsCommandHelper* helper,
+                           nebula::thread::GenericThreadPool* pool) {
     LOG(INFO) << "Starting Meta HTTP Service";
     nebula::WebService::registerHandler("/status", [] {
         return new nebula::meta::MetaHttpStatusHandler();
@@ -151,7 +151,7 @@ bool initWebService(nebula::kvstore::KVStore* kvstore,
     return true;
 }
 
-bool initComponents(nebula::kvstore::KVStore* kvstore) {
+static bool initComponents(nebula::kvstore::KVStore* kvstore) {
     auto gflagsManager = std::make_unique<nebula::meta::KVBasedGflagsManager>(kvstore);
     gflagsManager->init();
     return true;

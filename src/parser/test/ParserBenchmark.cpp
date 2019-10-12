@@ -16,7 +16,7 @@ auto complexQuery =  "GO UPTO 2 STEPS FROM 123456789 OVER myedge "
                      "alias.prop5 == alias.prop6 YIELD 1 AS first, 2 AS second";
 
 
-size_t SimpleQuery(size_t iters, size_t nrThreads) {
+static size_t SimpleQuery(size_t iters, size_t nrThreads) {
     constexpr size_t ops = 500000UL;
 
     auto parse = [&] () {
@@ -40,7 +40,7 @@ size_t SimpleQuery(size_t iters, size_t nrThreads) {
     return iters * ops;
 }
 
-size_t ComplexQuery(size_t iters, size_t nrThreads) {
+static size_t ComplexQuery(size_t iters, size_t nrThreads) {
     constexpr size_t ops = 500000UL;
 
     auto parse = [&] () {

@@ -47,9 +47,9 @@ std::unique_ptr<kvstore::KVStore> StorageServer::getStoreInstance() {
         }
         return nbStore;
     } else if (FLAGS_store_type == "hbase") {
-        LOG(FATAL) << "HBase store has not been implemented";
+        LOG(ERROR) << "HBase store has not been implemented";
     } else {
-        LOG(FATAL) << "Unknown store type \"" << FLAGS_store_type << "\"";
+        LOG(ERROR) << "Unknown store type \"" << FLAGS_store_type << "\"";
     }
     return nullptr;
 }

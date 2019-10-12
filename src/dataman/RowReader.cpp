@@ -128,7 +128,7 @@ std::unique_ptr<RowReader> RowReader::getTagPropReader(
     } else {
         // Invalid data
         // TODO We need a better error handler here
-        LOG(FATAL) << "Invalid schema version in the row data!";
+        LOG(ERROR) << "Invalid schema version in the row data!";
         return nullptr;
     }
 }
@@ -149,7 +149,7 @@ std::unique_ptr<RowReader> RowReader::getEdgePropReader(
     } else {
         // Invalid data
         // TODO We need a better error handler here
-        LOG(FATAL) << "Invalid schema version in the row data!";
+        LOG(ERROR) << "Invalid schema version in the row data!";
         return nullptr;
     }
 }

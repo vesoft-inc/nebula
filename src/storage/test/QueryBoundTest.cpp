@@ -21,7 +21,7 @@ DECLARE_int32(min_vertices_per_bucket);
 namespace nebula {
 namespace storage {
 
-void mockData(kvstore::KVStore* kv) {
+static void mockData(kvstore::KVStore* kv) {
     for (auto partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
         for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
@@ -82,7 +82,7 @@ void mockData(kvstore::KVStore* kv) {
     }
 }
 
-void buildRequest(cpp2::GetNeighborsRequest& req, const std::vector<EdgeType>& et) {
+static void buildRequest(cpp2::GetNeighborsRequest& req, const std::vector<EdgeType>& et) {
     req.set_space_id(0);
     decltype(req.parts) tmpIds;
     for (auto partId = 0; partId < 3; partId++) {
@@ -114,7 +114,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req, const std::vector<EdgeType>& e
     req.set_return_columns(std::move(tmpColumns));
 }
 
-void checkResponse(cpp2::QueryResponse& resp,
+static void checkResponse(cpp2::QueryResponse& resp,
                    int32_t vertexNum,
                    int32_t edgeFields,
                    int32_t dstIdFrom,

@@ -47,7 +47,7 @@ public:
     KVCompactionFilterFactory(GraphSpaceID spaceId, int32_t customFilterIntervalSecs):
         spaceId_(spaceId), customFilterIntervalSecs_(customFilterIntervalSecs) {}
 
-    virtual ~KVCompactionFilterFactory() = default;
+    ~KVCompactionFilterFactory() override = default;
 
     std::unique_ptr<rocksdb::CompactionFilter>
     CreateCompactionFilter(const rocksdb::CompactionFilter::Context& context) override {

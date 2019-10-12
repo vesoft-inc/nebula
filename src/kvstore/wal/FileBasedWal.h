@@ -51,7 +51,7 @@ public:
         FileBasedWalPolicy policy,
         PreProcessor preProcessor);
 
-    virtual ~FileBasedWal();
+    ~FileBasedWal() override;
 
     // Signal all WAL holders to stop using this WAL
     void stop() {

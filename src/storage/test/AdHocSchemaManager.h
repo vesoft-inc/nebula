@@ -19,7 +19,7 @@ namespace storage {
 class AdHocSchemaManager final : public nebula::meta::SchemaManager {
 public:
     AdHocSchemaManager() = default;
-    ~AdHocSchemaManager() = default;
+    ~AdHocSchemaManager() override = default;
 
     void addTagSchema(GraphSpaceID space,
                       TagID tag,

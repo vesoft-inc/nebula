@@ -114,7 +114,7 @@ public:
     explicit StorageCompactionFilterFactoryBuilder(meta::SchemaManager* schemaMan)
         : schemaMan_(schemaMan) {}
 
-    virtual ~StorageCompactionFilterFactoryBuilder() = default;
+    ~StorageCompactionFilterFactoryBuilder() override = default;
 
     std::shared_ptr<kvstore::KVCompactionFilterFactory>
     buildCfFactory(GraphSpaceID spaceId, int32_t customFilterIntervalSecs) override {

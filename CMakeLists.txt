@@ -307,20 +307,19 @@ if(NOT ENABLE_ASAN AND NOT ENABLE_NATIVE)
     add_compile_options(-Winvalid-pch)
 endif()
 
-add_compile_options(-Wall)
 add_compile_options(-Werror)
 add_compile_options(-Wunused-parameter)
 add_compile_options(-Wshadow)
 
+include(NebulaCompilerFlags)
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # This requries GCC 5.1+
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.1)
         add_compile_options(-Wsuggest-override)
     endif()
+    add_compile_options(${NEBULA_GCC_FLAGS})
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  add_compile_options(-Wno-overloaded-virtual)
-  add_compile_options(-Wno-self-assign-overloaded)
-  add_compile_options(-Wno-self-move)
+  add_compile_options(${NEBULA_CLANG_FLAGS})
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -latomic")
 endif()
 

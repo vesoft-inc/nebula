@@ -12,7 +12,7 @@
 namespace nebula {
 namespace time {
 
-volatile uint64_t readTsc();
+uint64_t readTsc();
 
 extern const std::chrono::steady_clock::time_point kUptime;
 extern const uint64_t kFirstTick;

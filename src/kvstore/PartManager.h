@@ -17,6 +17,8 @@ namespace kvstore {
 
 class Handler {
 public:
+    Handler() = default;
+    virtual ~Handler() = default;
     virtual void addSpace(GraphSpaceID spaceId) = 0;
     virtual void addPart(GraphSpaceID spaceId, PartitionID partId, bool asLearner) = 0;
     virtual void removeSpace(GraphSpaceID spaceId) = 0;
@@ -77,7 +79,7 @@ class MemPartManager final : public PartManager {
 public:
     MemPartManager() = default;
 
-    ~MemPartManager() = default;
+    ~MemPartManager() override = default;
 
     PartsMap parts(const HostAddr& host) override;
 
@@ -134,7 +136,7 @@ class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedL
 public:
      explicit MetaServerBasedPartManager(HostAddr host, meta::MetaClient *client = nullptr);
 
-     ~MetaServerBasedPartManager();
+     ~MetaServerBasedPartManager() override;
 
      PartsMap parts(const HostAddr& host) override;
 

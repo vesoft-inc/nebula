@@ -58,10 +58,8 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";
-            break;
         default:
             LOG(FATAL) << "Sentence kind illegal: " << kind;
-            break;
     }
     return executor;
 }
@@ -131,7 +129,6 @@ VariantType Collector::getProp(const std::string &prop,
         }
         default:
             LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(type);
-            return "";
     }
 }
 

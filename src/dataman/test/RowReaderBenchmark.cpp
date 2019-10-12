@@ -31,7 +31,7 @@ static std::string dataAllTimestamps;	// NOLINT
 static std::string dataMix;             // NOLINT
 
 
-void prepareSchema() {
+static void prepareSchema() {
     for (int i = 0; i < 32; i++) {
         schemaAllInts->appendCol(
             folly::stringPrintf("col%02d", i),
@@ -88,7 +88,7 @@ void prepareSchema() {
 }
 
 
-void prepareData() {
+static void prepareData() {
     RowWriter wInts(schemaAllInts);
     RowWriter wBools(schemaAllBools);
     RowWriter wDoubles(schemaAllDoubles);
@@ -125,7 +125,7 @@ void prepareData() {
 }
 
 
-void readMix(int32_t iters) {
+static void readMix(int32_t iters) {
     for (int i = 0; i < iters; i++) {
         auto reader = RowReader::getRowReader(dataMix, schemaMix);
         bool bVal;

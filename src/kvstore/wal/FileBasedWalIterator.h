@@ -32,7 +32,7 @@ public:
     FileBasedWalIterator(std::shared_ptr<FileBasedWal> wal,
                          LogID startId,
                          LogID lastId = -1);
-    virtual ~FileBasedWalIterator();
+    ~FileBasedWalIterator() override;
 
     LogIterator& operator++() override;
 

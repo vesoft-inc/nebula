@@ -21,7 +21,7 @@ auto schemaAllVids = std::make_shared<SchemaWriter>();
 auto schemaAllTimestamps = std::make_shared<SchemaWriter>();
 auto schemaMix = std::make_shared<SchemaWriter>();
 
-void prepareSchema() {
+static void prepareSchema() {
     for (int i = 0; i < 32; i++) {
         schemaAllInts->appendCol(folly::stringPrintf("col%02d", i),
                                  nebula::cpp2::SupportedType::INT);
@@ -72,7 +72,7 @@ void prepareSchema() {
 }
 
 
-void writeMix(std::shared_ptr<SchemaProviderIf> schema, int32_t iters) {
+static void writeMix(std::shared_ptr<SchemaProviderIf> schema, int32_t iters) {
     for (int32_t i = 0; i < iters; i++) {
         RowWriter writer(schema);
         writer << true << false << true << false

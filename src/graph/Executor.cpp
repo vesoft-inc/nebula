@@ -157,10 +157,8 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";
-            break;
         default:
             LOG(FATAL) << "Sentence kind illegal: " << kind;
-            break;
     }
     return executor;
 }

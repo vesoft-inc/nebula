@@ -29,7 +29,7 @@ protected:
     }
 };
 
-std::vector<meta::cpp2::ConfigItem> mockRegisterGflags() {
+static std::vector<meta::cpp2::ConfigItem> mockRegisterGflags() {
     std::vector<meta::cpp2::ConfigItem> configItems;
     {
         auto module = meta::cpp2::ConfigModule::STORAGE;

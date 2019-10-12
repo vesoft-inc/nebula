@@ -259,7 +259,7 @@ const char* RaftPart::roleStr(Role role) const {
     case Role::LEARNER:
         return "Learner";
     default:
-        LOG(FATAL) << idStr_ << "Invalid role";
+        LOG(ERROR) << idStr_ << "Invalid role";
     }
     return nullptr;
 }
@@ -1112,12 +1112,10 @@ bool RaftPart::leaderElection() {
         }
         case Role::LEARNER: {
             LOG(FATAL) << idStr_ << " Impossible! There must be some bugs!";
-            return false;
         }
     }
 
     LOG(FATAL) << "Should not reach here";
-    return false;
 }
 
 
