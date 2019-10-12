@@ -248,12 +248,13 @@ folly::Future<Status> AdminClient::getResponse(
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
     auto* evb = ioThreadPool_->getEventBase();
-    folly::via(evb, [evb, pro = std::move(pro), host, req = std::move(req),
+    auto partId = req.get_part_id();
+    folly::via(evb, [evb, pro = std::move(pro), host, req = std::move(req), partId,
                      remoteFunc = std::move(remoteFunc), respGen = std::move(respGen),
                      this] () mutable {
         auto client = clientsMan_->client(host, evb);
         remoteFunc(client, std::move(req))
-            .then(evb, [p = std::move(pro), respGen = std::move(respGen)](
+            .then(evb, [p = std::move(pro), partId, respGen = std::move(respGen)](
                            folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
                 // exception occurred during RPC
                 if (t.hasException()) {
@@ -261,8 +262,16 @@ folly::Future<Status> AdminClient::getResponse(
                                                                  t.exception().what().c_str())));
                     return;
                 }
-                auto&& resp = std::move(t).value();
-                p.setValue(respGen(std::move(resp)));
+                auto&& result = std::move(t).value().get_result();
+                if (result.get_failed_codes().empty()) {
+                    storage::cpp2::ResultCode resultCode;
+                    resultCode.set_code(storage::cpp2::ErrorCode::SUCCEEDED);
+                    resultCode.set_part_id(partId);
+                    p.setValue(respGen(resultCode));
+                } else {
+                    auto resp = result.get_failed_codes().front();
+                    p.setValue(respGen(std::move(resp)));
+                }
             });
     });
     return f;
@@ -280,13 +289,14 @@ void AdminClient::getResponse(
     auto* evb = ioThreadPool_->getEventBase();
     CHECK_GE(index, 0);
     CHECK_LT(index, hosts.size());
-    folly::via(evb, [evb, hosts = std::move(hosts), index, req = std::move(req),
+    auto partId = req.get_part_id();
+    folly::via(evb, [evb, hosts = std::move(hosts), index, req = std::move(req), partId,
                      remoteFunc = std::move(remoteFunc), retry, pro = std::move(pro),
                      retryLimit, this] () mutable {
         auto client = clientsMan_->client(hosts[index], evb);
         remoteFunc(client, req)
             .then(evb, [p = std::move(pro), hosts = std::move(hosts), index, req = std::move(req),
-                        remoteFunc = std::move(remoteFunc), retry, retryLimit,
+                        partId, remoteFunc = std::move(remoteFunc), retry, retryLimit,
                         this] (folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
@@ -308,15 +318,20 @@ void AdminClient::getResponse(
                                                              t.exception().what().c_str())));
                 return;
             }
-            auto resp = std::move(t).value();
+            auto&& result = std::move(t).value().get_result();
+            if (result.get_failed_codes().empty()) {
+                p.setValue(Status::OK());
+                return;
+            }
+            auto resp = result.get_failed_codes().front();
             switch (resp.get_code()) {
-                case storage::cpp2::ErrorCode::SUCCEEDED: {
-                    p.setValue(Status::OK());
-                    return;
-                }
                 case storage::cpp2::ErrorCode::E_LEADER_CHANGED: {
                     if (retry < retryLimit) {
-                        HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
+                        HostAddr leader(0, 0);
+                        if (resp.get_leader() != nullptr) {
+                            leader = HostAddr(resp.get_leader()->get_ip(),
+                                              resp.get_leader()->get_port());
+                        }
                         if (leader == HostAddr(0, 0)) {
                             usleep(1000 * 50);
                             LOG(INFO) << "The leader is in election"
