@@ -1,3 +1,5 @@
+# Use Syntax
+
 ```
 USE graph_space_name
 ```
