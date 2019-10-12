@@ -420,26 +420,23 @@ StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, Part
     return Status::Error("Get Failed");
 }
 
-void AdminClient::getLeaderDist(const HostAddr& host,
-                                folly::Promise<Status> pro,
+void AdminClient::getLeaderDist(HostAddr host,
+                                folly::Promise<StatusOr<storage::cpp2::GetLeaderResp>> pro,
                                 int32_t retry,
-                                int32_t retryLimit,
-                                HostLeaderMap* result,
-                                std::mutex& lock) {
+                                int32_t retryLimit) {
     auto* evb = ioThreadPool_->getEventBase();
-    folly::via(evb, [evb, host, pro = std::move(pro), retry, retryLimit, result, &lock,
-                     this] () mutable {
+    folly::via(evb, [evb, host, pro = std::move(pro), retry, retryLimit, this] () mutable {
         storage::cpp2::GetLeaderReq req;
         auto client = clientsMan_->client(host, evb);
         client->future_getLeaderPart(std::move(req))
-            .then(evb, [pro = std::move(pro), host, retry, retryLimit, result, &lock, this]
+            .then(evb, [pro = std::move(pro), host, retry, retryLimit, this]
                        (folly::Try<storage::cpp2::GetLeaderResp>&& t) mutable {
             if (t.hasException()) {
                 LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
                                                   t.exception().what().c_str());
                 if (retry < retryLimit) {
                     usleep(1000 * 50);
-                    getLeaderDist(host, std::move(pro), retry + 1, retryLimit, result, lock);
+                    getLeaderDist(host, std::move(pro), retry + 1, retryLimit);
                 } else {
                     pro.setValue(Status::Error("RPC failure in AdminClient"));
                 }
@@ -447,11 +444,7 @@ void AdminClient::getLeaderDist(const HostAddr& host,
             }
             auto&& resp = std::move(t).value();
             LOG(INFO) << "Get leader for host " << host;
-            {
-                std::lock_guard<std::mutex> lg(lock);
-                result->emplace(host, std::move(resp).get_leader_parts());
-            }
-            pro.setValue(Status::OK());
+            pro.setValue(std::move(resp));
         });
     });
 }
@@ -465,17 +458,32 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
     auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
     std::mutex lock;
 
-    std::vector<folly::Future<Status>> hostFutures;
+    std::vector<folly::Future<StatusOr<storage::cpp2::GetLeaderResp>>> hostFutures;
     for (const auto& h : allHosts) {
-        folly::Promise<Status> pro;
+        folly::Promise<StatusOr<storage::cpp2::GetLeaderResp>> pro;
         auto fut = pro.getFuture();
-        getLeaderDist(h, std::move(pro), 0, 3, result, lock);
+        getLeaderDist(h, std::move(pro), 0, 3);
         hostFutures.emplace_back(std::move(fut));
     }
 
-    folly::collectAll(hostFutures)
-        .then([p = std::move(promise)] (std::vector<folly::Try<Status>>&& tries) mutable {
-        UNUSED(tries);
+    folly::collectAll(hostFutures).then([p = std::move(promise), result, allHosts]
+            (std::vector<folly::Try<StatusOr<storage::cpp2::GetLeaderResp>>>&& tries) mutable {
+        size_t idx = 0;
+        for (auto& t : tries) {
+            if (t.hasException()) {
+                continue;
+            }
+            auto&& status = std::move(t.value());
+            if (!status.ok()) {
+                continue;
+            }
+            auto resp = status.value();
+            if (resp.code != storage::cpp2::ErrorCode::SUCCEEDED) {
+                continue;
+            }
+            result->emplace(allHosts[idx++], std::move(resp.leader_parts));
+        }
+
         p.setValue(Status::OK());
     });
 
