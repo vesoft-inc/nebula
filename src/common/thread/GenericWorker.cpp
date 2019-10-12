@@ -25,6 +25,9 @@ GenericWorker::~GenericWorker() {
         event_base_free(evbase_);
         evbase_ = nullptr;
     }
+    if (evfd_ >= 0) {
+        ::close(evfd_);
+    }
 }
 
 bool GenericWorker::start(std::string name) {
