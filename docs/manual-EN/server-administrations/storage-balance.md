@@ -1,10 +1,12 @@
 # Storage Balance Usage
-Nebula's services are composed of  three parts: graphd, storaged and metad. The **balance** in this document focuses on the operation of storage. Currently, storage can be scaled horizontally by the command `balance`. There are two kinds of balance command, one is to move data, which is `balance data`; the other one only changes the distribution of leader partition to balance load without moving data, which is `balance leader`.
+Nebula's services are composed of  three parts: graphd, storaged and metad. The **balance** in this document focuses on the operation of storage. 
+
+Currently, storage can be scaled horizontally by the command `balance`. There are two kinds of balance command, one is to move data, which is `balance data`; the other one only changes the distribution of leader partition to balance load without moving data, which is `balance leader`.
 
 ## Balance data
 Let's use an example to expand the cluster from 3 instances to 8 to show how to balance data.
 ### Step 1 Prerequisites
-Deploy a cluster with three replicas, one graphd, one metad and three storaged. Details on deployment please refer [Cluster Deploy](). Check cluster status using command `SHOW HOSTS`.
+Deploy a cluster with three replicas, one graphd, one metad and three storaged. Details on deployment please refer [Cluster Deploy](https://github.com/Amber1990Zhang/nebula/blob/master/docs/get-started/deploy-cluster-on-docker.md). Check cluster status using command `SHOW HOSTS`.
 #### Step 1.1
 ```
 (user@127.0.0.1) [(none)]> SHOW HOSTS
@@ -135,7 +137,7 @@ Got 190 rows (Time spent: 5454/11095 us)
   - **1:88**, 1 is the spaceId, 88 is the moved partId
   - **192.168.8.210:34700->192.168.8.210:3594**, moving data from 192.168.8.210:34700 to 192.168.8.210:35940
 
--  The second column shows the state (result) of the task, there are four states:
+- The second column shows the state (result) of the task, there are four states:
   - Succeeded
   - Failed
   - In progress
@@ -208,7 +210,6 @@ Seconds later, check the results using the command `SHOW HOSTS`. The RAFT leader
 | 192.168.8.210 | 34800 | online | 13           | test: 13            | test: 38               |
 ------------------------------------------------------------------------------------------------
 Got 8 rows (Time spent: 5039/6346 us)
-
 ```
 
 
