@@ -723,6 +723,29 @@ AssertionResult TraverseTestBase::prepareData() {
         }
     }
     {
+        // Insert vertices `team' with uuid
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query += "INSERT VERTEX team(name) VALUES ";
+        for (auto &team : teams_) {
+            query += "uuid(\"";
+            query += team.name();
+            query += "\"): ";
+            query += "(";
+            query += "\"";
+            query += team.name();
+            query += "\"";
+            query += "),\n\t";
+        }
+        query.resize(query.size() - 3);
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert `teams' failed: "
+                               << static_cast<int32_t>(code);
+        }
+    }
+    {
         // Insert edges `serve'
         cpp2::ExecutionResponse resp;
         std::string query;
@@ -764,9 +787,9 @@ AssertionResult TraverseTestBase::prepareData() {
                 auto endYear = std::get<2>(serve);
                 query += "uuid(\"";
                 query += player.name();
-                query += "\") -> ";
-                query += std::to_string(teams_[team].vid());
-                query += ": ";
+                query += "\") -> uuid(\"";
+                query += teams_[team].name();
+                query += "\"): ";
                 query += "(";
                 query += std::to_string(startYear);
                 query += ", ";
