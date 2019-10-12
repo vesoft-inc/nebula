@@ -63,19 +63,19 @@ list(APPEND NEBULA_CLANG_FLAGS
 
 list(APPEND NEBULA_GCC_FLAGS
     "-Wall"
-    "-Wextra"
-    "-Wcast-qual"
-    "-Wconversion-null"
-    "-Wmissing-declarations"
-    "-Woverlength-strings"
-    "-Wpointer-arith"
-    "-Wunused-local-typedefs"
-    "-Wunused-result"
-    "-Wvarargs"
-    "-Wvla"
-    "-Wwrite-strings"
-    "-Wno-missing-field-initializers"
-    "-Wno-sign-compare"
-#We will enable these warnings in the future.
-    "-Wno-implicit-fallthrough"
+#Since there are no more versions of gcc for testing at this time, only -Wall is turned on by default, 
+#and the rest We will enable it in the future.
+    # "-Wextra"
+    # "-Wcast-qual"
+    # "-Wconversion-null"
+    # "-Wmissing-declarations"
+    # "-Woverlength-strings"
+    # "-Wpointer-arith"
+    # "-Wunused-local-typedefs"
+    # "-Wunused-result"
+    # "-Wvarargs"
+    # "-Wvla"
+    # "-Wwrite-strings"
+    # "-Wno-missing-field-initializers"
+    # "-Wno-sign-compare"
 )

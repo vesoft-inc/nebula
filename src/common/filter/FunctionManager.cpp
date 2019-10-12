@@ -341,13 +341,13 @@ FunctionManager::FunctionManager() {
 
             if (size < 0) {
                 return std::string("");
-            } else if (size < value.size()) {
+            } else if (size < static_cast<int64_t>(value.size())) {
                 return value.substr(0, static_cast<int32_t>(size));
             } else {
                 auto extra = Expression::asString(args[2]);
                 size -= value.size();
                 std::stringstream stream;
-                while (size > extra.size()) {
+                while (size > static_cast<int64_t>(extra.size())) {
                     stream << extra;
                     size -= extra.size();
                 }
@@ -367,14 +367,14 @@ FunctionManager::FunctionManager() {
 
             if (size < 0) {
                 return std::string("");
-            } else if (size < value.size()) {
+            } else if (size < static_cast<int64_t>(value.size())) {
                 return value.substr(0, static_cast<int32_t>(size));
             } else {
                 auto extra = Expression::asString(args[2]);
                 std::stringstream stream;
                 stream << value;
                 size -= value.size();
-                while (size > extra.size()) {
+                while (size > static_cast<int64_t>(extra.size())) {
                     stream << extra;
                     size -= extra.size();
                 }
