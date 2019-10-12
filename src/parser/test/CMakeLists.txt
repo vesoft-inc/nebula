@@ -37,4 +37,6 @@ nebula_add_executable(
     LIBRARIES follybenchmark boost_regex ${THRIFT_LIBRARIES} wangle
 )
 
-nebula_add_subdirectory(fuzzing)
+if(ENABLE_FUZZ_TEST)
+    nebula_add_subdirectory(fuzzing)
+endif()

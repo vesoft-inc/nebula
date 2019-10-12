@@ -40,10 +40,12 @@ option(ENABLE_CCACHE "Whether to use ccache to speed up compiling" ON)
 option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
 option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
 option(ENABLE_UBSAN "Whether to turn Undefined Behavior Sanitizer ON or OFF" OFF)
+option(ENABLE_FUZZ_TEST "Whether to turn Fuzz Test ON or OFF" OFF)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
 message(STATUS "ENABLE_UBSAN: ${ENABLE_UBSAN}")
+message(STATUS "ENABLE_FUZZ_TEST: ${ENABLE_FUZZ_TEST}")
 
 
 if (ENABLE_NATIVE)
@@ -352,6 +354,13 @@ if(ENABLE_UBSAN)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined")
 endif()
 
+if(ENABLE_FUZZ_TEST)
+    check_cxx_compiler_flag("-fsanitize=fuzzer" ENABLE_FUZZ_OK)
+    if (NOT ENABLE_FUZZ_OK)
+        MESSAGE(FATAL_ERROR "The compiler does not support fuzz testing")
+    endif()
+endif()
+
 macro(nebula_add_executable)
     cmake_parse_arguments(
         nebula_exec                 # prefix
@@ -388,14 +397,12 @@ macro(nebula_add_test)
     )
 
     if (${nebula_test_FUZZER})
-        #Currently only Clang supports fuzzy test
+        #Currently only Clang supports fuzz test
         if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
             set_target_properties(${nebula_test_NAME} PROPERTIES COMPILE_FLAGS "-g -fsanitize=fuzzer")
             set_target_properties(${nebula_test_NAME} PROPERTIES LINK_FLAGS "-fsanitize=fuzzer")
         endif()
-    endif()
-
-    if (NOT ${nebula_test_DISABLED})
+    elseif (NOT ${nebula_test_DISABLED})
         string(REGEX REPLACE "${CMAKE_SOURCE_DIR}/src/(.*)/test" "\\1" test_group ${CMAKE_CURRENT_SOURCE_DIR})
         add_test(NAME ${nebula_test_NAME} COMMAND ${nebula_test_NAME})
         set_tests_properties(${nebula_test_NAME} PROPERTIES LABELS ${test_group})
