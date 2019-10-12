@@ -291,13 +291,13 @@ template<typename Request,
          typename RespGenerator,
          typename RpcResponse,
          typename Response>
-void MetaClient::retry(Request req,
-                       RemoteFunc remoteFunc,
-                       RespGenerator respGen,
-                       folly::Promise<StatusOr<Response>> pro,
-                       bool toLeader,
-                       int32_t retry,
-                       int32_t retryLimit) {
+void MetaClient::retryGetResponse(Request req,
+                                  RemoteFunc remoteFunc,
+                                  RespGenerator respGen,
+                                  folly::Promise<StatusOr<Response>> pro,
+                                  bool toLeader,
+                                  int32_t retry,
+                                  int32_t retryLimit) {
     folly::EventBase retryEvb;
     auto observer = folly::AsyncTimeout::make(retryEvb,
             [req = std::move(req), remoteFunc = std::move(remoteFunc),
@@ -346,8 +346,8 @@ void MetaClient::getResponse(Request req,
                     updateActive();
                 }
                 if (retry < retryLimit) {
-                    retryResponse(std::move(req), std::move(remoteFunc), std::move(respGen),
-                                  std::move(pro), toLeader, retry + 1, retryLimit);
+                    retryGetResponse(std::move(req), std::move(remoteFunc), std::move(respGen),
+                                     std::move(pro), toLeader, retry + 1, retryLimit);
                     return;
                 } else {
                     LOG(INFO) << "Exceed retry limit";
@@ -368,8 +368,8 @@ void MetaClient::getResponse(Request req,
                     leader_ = leader;
                 }
                 if (retry < retryLimit) {
-                    retryResponse(std::move(req), std::move(remoteFunc), std::move(respGen),
-                                  std::move(pro), toLeader, retry + 1, retryLimit);
+                    retryGetResponse(std::move(req), std::move(remoteFunc), std::move(respGen),
+                                     std::move(pro), toLeader, retry + 1, retryLimit);
                     return;
                 }
             }

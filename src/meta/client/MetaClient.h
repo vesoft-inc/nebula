@@ -341,13 +341,13 @@ protected:
              class Response =
                 typename std::result_of<RespGenerator(RpcResponse)>::type
     >
-    void retry(Request req,
-               RemoteFunc remoteFunc,
-               RespGenerator respGen,
-               folly::Promise<StatusOr<Response>> pro,
-               bool toLeader,
-               int32_t retry,
-               int32_t retryLimit);
+    void retryGetResponse(Request req,
+                          RemoteFunc remoteFunc,
+                          RespGenerator respGen,
+                          folly::Promise<StatusOr<Response>> pro,
+                          bool toLeader,
+                          int32_t retry,
+                          int32_t retryLimit);
 
     std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
