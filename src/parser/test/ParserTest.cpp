@@ -756,25 +756,20 @@ TEST(Parser, DeleteVertex) {
 TEST(Parser, DeleteEdge) {
     {
         GQLParser parser;
-        std::string query = "DELETE EDGE 12345 -> 54321";
+        std::string query = "DELETE EDGE transfer 12345 -> 54321";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "DELETE EDGE 123 -> 321,456 -> 654,789 -> 987";
+        std::string query = "DELETE EDGE transfer 123 -> 321,456 -> 654@11,789 -> 987@12";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "DELETE EDGE 12345 -> 54321 WHERE amount > 3.14";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-    }
-    {
-        GQLParser parser;
-        std::string query = "DELETE EDGE 123 -> 321,456 -> 654,789 -> 987 WHERE amount > 3.14";
+        std::string query = "DELETE EDGE transfer uuid(\"jack\") -> uuid(\"rose\"),"
+                            "uuid(\"mr\") -> uuid(\"miss\")@13";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

@@ -64,7 +64,6 @@ class GraphScanner;
     nebula::EdgeRowItem                    *edge_row_item;
     nebula::UpdateList                     *update_list;
     nebula::UpdateItem                     *update_item;
-    nebula::EdgeList                       *edge_list;
     nebula::ArgumentList                   *argument_list;
     nebula::SpaceOptList                   *space_opt_list;
     nebula::SpaceOptItem                   *space_opt_item;
@@ -164,6 +163,8 @@ class GraphScanner;
 %type <update_list> update_list
 %type <update_item> update_item
 %type <edge_list> edge_list
+%type <host_list> host_list
+%type <host_item> host_item
 %type <space_opt_list> space_opt_list
 %type <space_opt_item> space_opt_item
 %type <alter_schema_opt_list> alter_schema_opt_list
@@ -1406,21 +1407,9 @@ download_sentence
     }
     ;
 
-edge_list
-    : vid R_ARROW vid {
-        $$ = new EdgeList();
-        $$->addEdge($1, $3);
-    }
-    | edge_list COMMA vid R_ARROW vid {
-        $$ = $1;
-        $$->addEdge($3, $5);
-    }
-    ;
-
 delete_edge_sentence
-    : KW_DELETE KW_EDGE edge_list where_clause {
-        auto sentence = new DeleteEdgeSentence($3);
-        sentence->setWhereClause($4);
+    : KW_DELETE KW_EDGE name_label edge_keys {
+        auto sentence = new DeleteEdgesSentence($3, $4);
         $$ = sentence;
     }
     ;
