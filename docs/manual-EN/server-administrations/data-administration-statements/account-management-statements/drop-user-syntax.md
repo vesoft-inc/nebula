@@ -1,3 +1,5 @@
+# Drop User Syntax
+
 >DROP USER [IF EXISTS] user_name
 
 Only `God` and `Admin` user have the DROP privilege for the sentence. 

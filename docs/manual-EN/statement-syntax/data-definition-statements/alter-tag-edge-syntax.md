@@ -1,3 +1,5 @@
+# Alter Tag/Edge Syntax
+
 ```
 ALTER {TAG | EDGE} tag_name | edge_name
     [alter_definition [, alter_definition] ...]
