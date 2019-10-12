@@ -10,6 +10,11 @@
 
 * [**[Getting Started](https://github.com/vesoft-inc/nebula/blob/master/docs/get-started.md)**] Tutorial to help start with Nebula Graph
 * [**[Query Language nGQL](https://github.com/vesoft-inc/nebula/blob/master/docs/nGQL-tutorial.md)**] Tutorial of Nebula Graph's query language nGQL
+* [**[Data Model](https://github.com/vesoft-inc/nebula/blob/masterdo[**cs/manual-EN/overview/data-model.md)**]
+* [**[Design and Arc](https://github.com/vesoft-inc/nebula/blobma[**ster/docs/manual-EN/overview/design-and-arc.md)**] Architecture information of Nebula Graph
+* [**[Manual Example Graph](https://github.com/vesoft-inc/nebula/blobma[**ster/docs/manual-EN/overview/manual-example-graph.md)**]
+* [**[Manual Introduction](https://github.com/vesoft-inc/nebula/blobma[**ster/docs/manual-EN/overview/manual-introduction.md)**]
+* [**[Overview of Nebula Graph](https://github.com/vesoft-inc/nebulabl[**ob/master/docs/manual-EN/overview/overview-of-nebula-graph.md)**]
 
 
 ## User Manual
@@ -54,13 +59,6 @@
   * [Schema Object Names](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/language-structure/schema-object-names.md)
   * [Statement Composition](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/language-structure/statement-composition.md)
   * [User Defined Variable](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/language-structure/user-defined_variable.md)
-
-* Overview
-  * [Data Model](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/overview/data-model.md)
-  * [Design and Arc](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/overview/design-and-arc.md)
-  * [Manual Example Graph](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/overview/manual-example-graph.md)
-  * [Manual Introduction](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/overview/manual-introduction.md)
-  * [Overview of Nebula Graph](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/overview/overview-of-nebula-graph.md)
 
 * Server Administrations
   * Data Administration Statements
