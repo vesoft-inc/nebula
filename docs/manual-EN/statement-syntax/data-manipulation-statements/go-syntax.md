@@ -1,3 +1,5 @@
+# Go Syntax
+
 `GO` statement is the MOST commonly used clause in Nebula. 
 
 It indicates to travel in a graph with specific filter conditions (the `WHERE` clause), to fetch nodes and edges properties, and return results (the `YIELD` clause) with given order (the `ORDER BY ASC | DESC` clause) and numbers (the `LIMIT` clause).

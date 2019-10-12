@@ -1,3 +1,5 @@
+# Show Syntax
+
 ```
 SHOW {SPACES | TAGS | EDGES | HOSTS}
 SHOW VARIABLES [graph|meta|storage] 
