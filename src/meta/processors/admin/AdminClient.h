@@ -114,6 +114,13 @@ private:
                      folly::Promise<Status> pro,
                      int32_t retryLimit);
 
+    void getLeaderDist(const HostAddr& host,
+                       folly::Promise<Status> pro,
+                       int32_t retry,
+                       int32_t retryLimit,
+                       HostLeaderMap* result,
+                       std::mutex& lock);
+
     Status handleResponse(const storage::cpp2::AdminExecResp& resp);
 
     nebula::cpp2::HostAddr toThriftHost(const HostAddr& addr);

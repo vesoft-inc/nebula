@@ -420,6 +420,42 @@ StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, Part
     return Status::Error("Get Failed");
 }
 
+void AdminClient::getLeaderDist(const HostAddr& host,
+                                folly::Promise<Status> pro,
+                                int32_t retry,
+                                int32_t retryLimit,
+                                HostLeaderMap* result,
+                                std::mutex& lock) {
+    auto* evb = ioThreadPool_->getEventBase();
+    folly::via(evb, [evb, host, pro = std::move(pro), retry, retryLimit, result, &lock,
+                     this] () mutable {
+        storage::cpp2::GetLeaderReq req;
+        auto client = clientsMan_->client(host, evb);
+        client->future_getLeaderPart(std::move(req))
+            .then(evb, [pro = std::move(pro), host, retry, retryLimit, result, &lock, this]
+                       (folly::Try<storage::cpp2::GetLeaderResp>&& t) mutable {
+            if (t.hasException()) {
+                LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
+                                                  t.exception().what().c_str());
+                if (retry < retryLimit) {
+                    usleep(1000 * 50);
+                    getLeaderDist(host, std::move(pro), retry + 1, retryLimit, result, lock);
+                } else {
+                    pro.setValue(Status::Error("RPC failure in AdminClient"));
+                }
+                return;
+            }
+            auto&& resp = std::move(t).value();
+            LOG(INFO) << "Get leader for host " << host;
+            {
+                std::lock_guard<std::mutex> lg(lock);
+                result->emplace(host, std::move(resp).get_leader_parts());
+            }
+            pro.setValue(Status::OK());
+        });
+    });
+}
+
 folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
     if (injector_) {
         return injector_->getLeaderDist(result);
@@ -429,37 +465,11 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
     auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
     std::mutex lock;
 
-    auto getLeader = [result, &lock, this] (const HostAddr& host) {
-        folly::Promise<Status> pro;
-        auto f = pro.getFuture();
-        auto* evb = ioThreadPool_->getEventBase();
-        folly::via(evb, [pro = std::move(pro), host, evb, result, &lock, this] () mutable {
-            storage::cpp2::GetLeaderReq req;
-            auto client = clientsMan_->client(host, evb);
-            client->future_getLeaderPart(std::move(req))
-                .then(evb, [p = std::move(pro), host, result, &lock, this]
-                           (folly::Try<storage::cpp2::GetLeaderResp>&& t) mutable {
-                if (t.hasException()) {
-                    LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
-                                                      t.exception().what().c_str());
-                    p.setValue(Status::Error("RPC failure in AdminClient"));
-                    return;
-                }
-                auto&& resp = std::move(t).value();
-                LOG(INFO) << "Get leader for host " << host;
-                {
-                    std::lock_guard<std::mutex> lg(lock);
-                    result->emplace(host, std::move(resp).get_leader_parts());
-                }
-                p.setValue(Status::OK());
-            });
-        });
-        return f;
-    };
-
-    std::vector<folly::SemiFuture<Status>> hostFutures;
+    std::vector<folly::Future<Status>> hostFutures;
     for (const auto& h : allHosts) {
-        auto fut = getLeader(h);
+        folly::Promise<Status> pro;
+        auto fut = pro.getFuture();
+        getLeaderDist(h, std::move(pro), 0, 3, result, lock);
         hostFutures.emplace_back(std::move(fut));
     }
 
