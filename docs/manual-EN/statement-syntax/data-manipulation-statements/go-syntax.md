@@ -2,13 +2,13 @@
 
 `GO` statement is the MOST commonly used clause in Nebula. 
 
-It indicates to travel in a graph with specific filter conditions (the `WHERE` clause), to fetch nodes and edges properties, and return results (the `YIELD` clause) with given order (the `ORDER BY ASC | DESC` clause) and numbers (the `LIMIT` clause).
+It indicates to travel in a graph with specific filters (the `WHERE` clause), to fetch nodes and edges properties, and return results (the `YIELD` clause) with given order (the `ORDER BY ASC | DESC` clause) and numbers (the `LIMIT` clause).
 
->The syntax of `GO` statement (and `FIND` statement) is very similar to `SELECT` in SQL. Notice that the major difference is that `GO` must start traversing from a (set of) node(s)
+>The syntax of `GO` statement (and `FIND` statement) is very similar to `SELECT` in SQL. Notice that the major difference is that `GO` must start traversing from a (set of) node(s).
 
 >You can refer to `FIND` statement (in progress), which is the counterpart of `SELECT` in SQL.
 
-```
+```bash
 GO FROM <node_list> 
 OVER <edge_type_list> 
 WHERE (expression [ AND | OR expression ...])  
@@ -20,15 +20,16 @@ YIELD | YIELDS  [DISTINCT] <return_list>
    
 <edge_type_list>
    edge_type [, edge_type ...]
+   * # `*` will select all the available edge types
 
 <return_list>   
     <col_name> [AS <col_alias>] [, <col_name> [AS <col_alias>] ...]
 ```
 
-* <node_list> is either a list of node's vid separated by comma(,), or a special place holder `$-.id` (see `PIPE` syntax).
+* <node_list> is either a list of node's vid separated by comma(,), or a special place holder `$-.id` (refer `PIPE` syntax).
 * <edge_type_list> is a list of edge types which graph traversal can go through.
-* WHERE <filter_list> specify the logical conditions that must satisfy to be selected. WHERE-syntax can be conditions for src-vertex, the edges, and dst-vertex. The logical AND, OR, NOT are also supported. see WHERE-syntax for more information.
-* YIELD [DISTINCT] <return_list> statement returns the result in column format and rename as an alias name. see `YIELD`-syntax for more information. The `DISTINCT`-syntax works the same as SQL.
+* WHERE <filter_list> extracts only those results that fulfill the specified conditions. WHERE-syntax can be conditions for src-vertex, the edges, and dst-vertex. The logical AND, OR, NOT are also supported. see WHERE-syntax for more information.
+* YIELD [DISTINCT] <return_list> statement returns the result in column format and rename as an alias name. See `YIELD`-syntax for more information. The `DISTINCT` syntax works the same as SQL.
 
 ### Examples
 
