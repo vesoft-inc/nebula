@@ -1,30 +1,33 @@
-### Create TAG / EDGE Syntax
+# Create TAG / EDGE Syntax
 
 ```
-CREATE {TAG | EDGE} tag_name|edge_name
-    (create_definition, ...)
+CREATE {TAG | EDGE} <tag_name> | <edge_name>
+    (<create_definition>, ...)
     [tag_edge_options]
   
-create_definition:
-    prop_name data_type
-    
-tag_edge_options:
-    option [, option ...]
+<create_definition> ::=
+    <prop_name> <data_type>
 
-option:
-    TTL_DURATION [=] ttl_duration
-    | TTL_COL [=] prop_name
+<tag_edge_options> ::=
+    <option> [, <option> ...]
+
+<option> ::=
+    TTL_DURATION [=] <ttl_duration>
+    | TTL_COL [=] <prop_name>
+    | DEFAULT <default_value>
 ```
 
-Nebula's graph schema is composed of tags and edges, either of which may have properties. `CREATE TAG` statement defines a tag with the given name. `CREATE EDGE` statement is to define an edge type.
+Nebula's graph schema is composed of tags and edges, either of which may have properties. `CREATE TAG` statement defines a tag with the given name. While `CREATE EDGE` statement is to define an edge type.
 
 There are several aspects to this syntax, described under the following topics in this section:
 
+<!---
 * [Tag Name and Edge Type Name](#tag-name-and-edgetype-name)
 
 * [Property Name and Data Type](#property-name-and-data-type)
+-->
 
-### Tag Name and EdgeType Name
+### Tag Name and Edge Type Name
 
 * **tag_name and edge_name**
 
@@ -41,6 +44,12 @@ There are several aspects to this syntax, described under the following topics i
     data_type represents the data type of each property. For more information about data types that Nebula Graph supports, see data types section.
     
     > NULL and NOT NULL constrain are not supported yet when creating tags/edges (comparing with relational databases).
+
+* **default values**
+
+    You can set the default value of a property when creating a tag/edge. When inserting a new vertex or edge, you don't have to provide the value for that property. Also you can write a user-specify value if you don't want to use the default one.
+
+    > Since it's so error-prone to modify the default value with new one, using `Alter` to change the default value is not supported.
 
 ### Time-to-Live (TTL) syntax
 
@@ -66,6 +75,9 @@ CREATE TAG notag()  -- empty properties
 
 CREATE EDGE follow(start_time timestamp, likeness double)
 CREATE EDGE noedge()  -- empty properties
+
+CREATE TAG course_with_default(name string, credits int DEFAULT 0)  -- credits is set 0 by default
+CREATE EDGE follow_with_default(start_time timestamp DEFAULT 0, likeness double 0.0)
 
 CREATE TAG woman(name string, age int, 
    married bool, salary double, create_time timestamp)

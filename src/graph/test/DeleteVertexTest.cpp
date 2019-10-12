@@ -163,6 +163,40 @@ TEST_F(DeleteVertexTest, base) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+
+    // Delete non-existing vertex
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "DELETE VERTEX uuid(\"Non-existing Vertex\")";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+
+    // Delete a vertex without edges
+    {
+        // Insert a vertex without edges
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX player(name, age) "
+                     "VALUES uuid(\"A Loner\"): (\"A Loner\", 0)";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "DELETE VERTEX uuid(\"A Loner\")";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP ON player uuid(\"A Loner\") "
+                     "YIELD player.name, player.age";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 
 }  // namespace graph
