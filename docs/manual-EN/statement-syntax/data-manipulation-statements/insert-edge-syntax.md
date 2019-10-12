@@ -1,12 +1,14 @@
+# Insert Edge Syntax
+
 ```
 INSERT EDGE edge_name ( <prop_name_list> ) {VALUES | VALUE} 
 <src_vid> -> <dst_vid> : ( <prop_value_list> )
 [, <src_vid> -> <dst_vid> : ( <prop_value_list> )]
 
-<prop_name_list>:
+<prop_name_list> ::=
   [ <prop_name> [, <prop_name> ] ...]
 
-<prop_value_list>:
+<prop_value_list> ::=
   [ <prop_value> [, <prop_value> ] ...]
 ```
 
@@ -21,7 +23,7 @@ INSERT EDGE edge_name ( <prop_name_list> ) {VALUES | VALUE}
 ### Examples
 
 ```
-# CREATE EDGE e1()                    -- create edge t1 with empty property
+# CREATE EDGE e1()                    -- create edge t1 with empty property or default values
 INSERT EDGE e1 () VALUES 10->11:()    -- insert an edge from vertex 10 to vertex 11 with empty property
 ```
 
