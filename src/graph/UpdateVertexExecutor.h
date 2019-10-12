@@ -57,6 +57,8 @@ private:
     std::vector<storage::cpp2::UpdateItem>      updateItems_;
     Expression                                 *filter_{nullptr};
     std::vector<YieldColumn*>                   yields_;
+    std::unique_ptr<ExpressionContext>          expCtx_;
+    GraphSpaceID                                spaceId_{-1};
 };
 
 }   // namespace graph

@@ -160,7 +160,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         }
         ASSERT_TRUE(resp.succeeded());
         auto& results = resp.responses();
-        ASSERT_EQ(partition, results.size());
+        EXPECT_EQ(partition, results.size());
         EXPECT_EQ(0, results[0].result.failed_codes.size());
         EXPECT_EQ(1, results[0].vertex_schema[tagId].columns.size());
         auto tagProvider = std::make_shared<ResultSchemaProvider>(results[0].vertex_schema[tagId]);

@@ -1,3 +1,5 @@
+# Where Syntax
+
 Currently, the `WHERE` statement only applies to the `GO` statement.
 
 ```

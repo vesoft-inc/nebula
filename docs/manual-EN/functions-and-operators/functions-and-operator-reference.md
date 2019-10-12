@@ -1,4 +1,6 @@
-|  ***Name***        |  ***Description***                                                        |
+# Functions And Operator Reference
+
+|  ***Name***        |  ***Description*** |
 |:-------------|:-------------------------------------------------------------------:|
 |  abs         |  Return the absolute value                                          |
 |  acos        |  Return the arc cosine                                              |

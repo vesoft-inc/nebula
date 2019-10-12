@@ -1,4 +1,4 @@
-# PIPE-syntax
+# PIPE Syntax
 
 One major difference between nGQL and SQL is how subqueries are composed.
 

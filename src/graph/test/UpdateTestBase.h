@@ -174,6 +174,36 @@ AssertionResult UpdateTestBase::prepareData() {
                                << static_cast<int32_t>(code);
         }
     }
+    {   // Insert vertices 'student' with uuid
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query = "INSERT VERTEX student(name, age, gender) VALUES "
+                "uuid(\"Monica\"):(\"Monica\", 16, \"female\"), "
+                "uuid(\"Mike\"):(\"Mike\", 18, \"male\"), "
+                "uuid(\"Jane\"):(\"Jane\", 17, \"female\")";
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert 'student' failed: "
+                               << static_cast<int32_t>(code);
+        }
+        query.clear();
+        query = "INSERT VERTEX course(name, credits),building(name) VALUES "
+                "uuid(\"Math\"):(\"Math\", 3, \"No5\"), "
+                "uuid(\"English\"):(\"English\", 6, \"No11\")";
+        code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert 'course' and 'building' failed: "
+                               << static_cast<int32_t>(code);
+        }
+        query.clear();
+        query = "INSERT VERTEX course(name, credits) VALUES uuid(\"CS\"):(\"CS\", 5)";
+        code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert 'course' failed: "
+                               << static_cast<int32_t>(code);
+        }
+    }
     {   // Insert edges 'select' and 'like'
         cpp2::ExecutionResponse resp;
         std::string query;
@@ -193,6 +223,31 @@ AssertionResult UpdateTestBase::prepareData() {
                 "200 -> 201@0:(92.5), "
                 "201 -> 200@0:(85.6), "
                 "201 -> 202@0:(93.2)";
+        code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert 'like' failed: "
+                               << static_cast<int32_t>(code);
+        }
+    }
+    {   // Insert edges 'select' and 'like' with uuid
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query = "INSERT EDGE select(grade, year) VALUES "
+                "uuid(\"Monica\") -> uuid(\"Math\")@0:(5, 2018), "
+                "uuid(\"Monica\") -> uuid(\"English\")@0:(3, 2018), "
+                "uuid(\"Mike\") -> uuid(\"English\")@0:(3, 2019), "
+                "uuid(\"Jane\") -> uuid(\"English\")@0:(3, 2019)";
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert 'select' failed: "
+                               << static_cast<int32_t>(code);
+        }
+        query.clear();
+        query = "INSERT EDGE like(likeness) VALUES "
+                "uuid(\"Monica\") -> uuid(\"Mike\")@0:(92.5), "
+                "uuid(\"Mike\") -> uuid(\"Monica\")@0:(85.6), "
+                "uuid(\"Mike\") -> uuid(\"Jane\")@0:(93.2)";
         code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert 'like' failed: "

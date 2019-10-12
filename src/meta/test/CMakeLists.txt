@@ -354,6 +354,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:gflags_man_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:stats_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
