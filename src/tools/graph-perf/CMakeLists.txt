@@ -13,6 +13,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:storage_client>
         $<TARGET_OBJECTS:storage_service_handler>
         $<TARGET_OBJECTS:storage_thrift_obj>
+        $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:parser_obj>
         $<TARGET_OBJECTS:kvstore_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
