@@ -11,7 +11,7 @@ namespace nebula {
 namespace graph {
 
 FindPathExecutor::FindPathExecutor(Sentence *sentence, ExecutionContext *exct)
-        : TraverseExecutor(exct), barrier_(3) {
+        : TraverseExecutor(exct) {
     sentence_ = static_cast<FindPathSentence*>(sentence);
 }
 
@@ -154,7 +154,7 @@ void FindPathExecutor::execute() {
         return;
     }
 
-    auto steps = step_.steps_ / 2 + step_.steps_ % 2;
+    steps_ = step_.steps_ / 2 + step_.steps_ % 2;
     fromVids_ = from_.vids_;
     toVids_ = to_.vids_;
     visitedFrom_.insert(fromVids_.begin(), fromVids_.end());
@@ -169,31 +169,46 @@ void FindPathExecutor::execute() {
         pathTo_.emplace(v, std::move(path));
     }
 
-    while (currentStep_ < steps) {
-        if (shortest_ && targetNotFound_.empty()) {
-            break;
-        }
-        auto props = getStepOutProps(false);
-        if (!props.ok()) {
-            onError_(std::move(props).status());
-            return;
-        }
-        getFromFrontiers(std::move(props).value());
+    getNeighborsAndFindPath();
+}
 
-        props = getStepOutProps(true);
-        if (!props.ok()) {
-            onError_(std::move(props).status());
+void FindPathExecutor::getNeighborsAndFindPath() {
+    fPro_ = std::make_unique<folly::Promise<folly::Unit>>();
+    tPro_ = std::make_unique<folly::Promise<folly::Unit>>();
+    std::vector<folly::Future<folly::Unit>> futures;
+    futures.emplace_back(fPro_->getFuture());
+    futures.emplace_back(tPro_->getFuture());
+
+    auto props = getStepOutProps(false);
+    if (!props.ok()) {
+        onError_(std::move(props).status());
+        return;
+    }
+    getFromFrontiers(std::move(props).value());
+
+    props = getStepOutProps(true);
+    if (!props.ok()) {
+        onError_(std::move(props).status());
+        return;
+    }
+    getToFrontiers(std::move(props).value());
+
+    auto *runner = ectx()->rctx()->runner();
+    auto cb = [this] (auto &&result) {
+        UNUSED(result);
+        if (!fStatus_.ok() || !tStatus_.ok()) {
+            std::string msg = fStatus_.toString() + " " + tStatus_.toString();
+            onError_(Status::Error(std::move(msg)));
             return;
         }
-        getToFrontiers(std::move(props).value());
-        barrier_.wait();
 
         findPath();
-
-        VLOG(1) << "Current step:" << currentStep_;
-        ++currentStep_;;
-    }
-    onFinish_();
+    };
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        onError_(Status::Error("Internal error."));
+    };
+    folly::collectAll(futures).via(runner).thenValue(cb).thenError(error);
 }
 
 void FindPathExecutor::findPath() {
@@ -249,12 +264,23 @@ void FindPathExecutor::findPath() {
     // if frontiersF meets frontiersT, we found an even path
     if (!intersect.empty()) {
         if (shortest_ && targetNotFound_.empty()) {
+            onFinish_();
             return;
         }
         for (auto intersectId : intersect) {
             meetEvenPath(intersectId);
         }  // `intersectId'
     }
+
+    if (isFinalStep() ||
+         (shortest_ && targetNotFound_.empty())) {
+        onFinish_();
+        return;
+    } else {
+        LOG(INFO) << "Current step:" << currentStep_;
+        ++currentStep_;
+    }
+    getNeighborsAndFindPath();
 }
 
 inline void FindPathExecutor::meetOddPath(VertexID src, VertexID dst, Neighbor &neighbor) {
@@ -434,7 +460,7 @@ void FindPathExecutor::getFromFrontiers(
         auto completeness = result.completeness();
         if (completeness == 0) {
             fStatus_ = Status::Error("Get neighbors failed.");
-            barrier_.wait();
+            fPro_->setValue();
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get neighbors partially failed: "  << completeness << "%";
@@ -446,13 +472,17 @@ void FindPathExecutor::getFromFrontiers(
         auto status = doFilter(std::move(result), where_.filter_, true, frontiers);
         if (!status.ok()) {
             fStatus_ = std::move(status);
-            barrier_.wait();
+            fPro_->setValue();
             return;
         }
         fromFrontiers_ = std::make_pair(VisitedBy::FROM, std::move(frontiers));
-        barrier_.wait();
+        fPro_->setValue();
     };
-    std::move(future).via(runner, folly::Executor::HI_PRI).thenValue(cb);
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        fStatus_ = Status::Error("Get neighbors failed.");
+    };
+    std::move(future).via(runner, folly::Executor::HI_PRI).thenValue(cb).thenError(error);
 }
 
 void FindPathExecutor::getToFrontiers(
@@ -468,7 +498,7 @@ void FindPathExecutor::getToFrontiers(
         auto completeness = result.completeness();
         if (completeness == 0) {
             tStatus_ = Status::Error("Get neighbors failed.");
-            barrier_.wait();
+            tPro_->setValue();
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get neighbors partially failed: "  << completeness << "%";
@@ -480,13 +510,17 @@ void FindPathExecutor::getToFrontiers(
         auto status = doFilter(std::move(result), where_.filter_, false, frontiers);
         if (!status.ok()) {
             tStatus_ = std::move(status);
-            barrier_.wait();
+            tPro_->setValue();
             return;
         }
         toFrontiers_ = std::make_pair(VisitedBy::TO, std::move(frontiers));
-        barrier_.wait();
+        tPro_->setValue();
     };
-    std::move(future).via(runner, folly::Executor::HI_PRI).thenValue(cb);
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        tStatus_ = Status::Error("Get neighbors failed.");
+    };
+    std::move(future).via(runner, folly::Executor::HI_PRI).thenValue(cb).thenError(error);
 }
 
 Status FindPathExecutor::doFilter(

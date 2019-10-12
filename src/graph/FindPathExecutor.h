@@ -64,6 +64,12 @@ private:
 
     Status prepareOverAll();
 
+    void getNeighborsAndFindPath();
+
+    bool isFinalStep() {
+        return currentStep_ == steps_;
+    }
+
     void getFromFrontiers(std::vector<storage::cpp2::PropDef> props);
 
     void getToFrontiers(std::vector<storage::cpp2::PropDef> props);
@@ -96,41 +102,43 @@ private:
     StatusOr<std::vector<storage::cpp2::PropDef>> getDstProps();
 
 private:
-    FindPathSentence                           *sentence_{nullptr};
-    std::unique_ptr<ExpressionContext>          expCtx_;
-    GraphSpaceID                                spaceId_{INT_MIN};
-    Clause::Vertices                            from_;
-    Clause::Vertices                            to_;
-    Clause::Over                                over_;
-    Clause::Step                                step_;
-    Clause::Where                               where_;
-    bool                                        shortest_{false};
-    std::unique_ptr<InterimResult>              inputs_;
+    FindPathSentence                               *sentence_{nullptr};
+    std::unique_ptr<ExpressionContext>              expCtx_;
+    GraphSpaceID                                    spaceId_{INT_MIN};
+    Clause::Vertices                                from_;
+    Clause::Vertices                                to_;
+    Clause::Over                                    over_;
+    Clause::Step                                    step_;
+    Clause::Where                                   where_;
+    bool                                            shortest_{false};
+    std::unique_ptr<InterimResult>                  inputs_;
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
-    SchemaPropIndex                             srcTagProps_;
-    SchemaPropIndex                             dstTagProps_;
-    std::unordered_map<EdgeType, std::string>   edgeTypeNameMap_;
-    concurrent::Barrier                         barrier_;
-    Status                                      fStatus_;
-    Status                                      tStatus_;
-    std::unordered_set<VertexID>                targetNotFound_;
+    SchemaPropIndex                                 srcTagProps_;
+    SchemaPropIndex                                 dstTagProps_;
+    std::unordered_map<EdgeType, std::string>       edgeTypeNameMap_;
+    std::unique_ptr<folly::Promise<folly::Unit>>    fPro_;
+    std::unique_ptr<folly::Promise<folly::Unit>>    tPro_;
+    Status                                          fStatus_;
+    Status                                          tStatus_;
+    std::unordered_set<VertexID>                    targetNotFound_;
     using StepOutHolder = std::unordered_set<std::unique_ptr<StepOut>>;
-    StepOutHolder                               stepOutHolder_;
+    StepOutHolder                                   stepOutHolder_;
     // next step starting vertices
-    std::unordered_set<VertexID>                visitedFrom_;
-    std::unordered_set<VertexID>                visitedTo_;
+    std::unordered_set<VertexID>                    visitedFrom_;
+    std::unordered_set<VertexID>                    visitedTo_;
     // next step starting vertices
-    std::vector<VertexID>                       fromVids_;
-    std::vector<VertexID>                       toVids_;
+    std::vector<VertexID>                           fromVids_;
+    std::vector<VertexID>                           toVids_;
     // frontiers of vertices
-    std::pair<VisitedBy, Frontiers>             fromFrontiers_;
-    std::pair<VisitedBy, Frontiers>             toFrontiers_;
+    std::pair<VisitedBy, Frontiers>                 fromFrontiers_;
+    std::pair<VisitedBy, Frontiers>                 toFrontiers_;
     // interim path
-    std::multimap<VertexID, Path>               pathFrom_;
-    std::multimap<VertexID, Path>               pathTo_;
+    std::multimap<VertexID, Path>                   pathFrom_;
+    std::multimap<VertexID, Path>                   pathTo_;
     // final path(shortest or all)
-    std::multimap<VertexID, Path>               finalPath_;
-    uint64_t                                    currentStep_{0};
+    std::multimap<VertexID, Path>                   finalPath_;
+    uint64_t                                        currentStep_{1};
+    uint64_t                                        steps_{0};
 };
 }  // namespace graph
 }  // namespace nebula
