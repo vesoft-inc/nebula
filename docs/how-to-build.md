@@ -43,7 +43,7 @@ bash> git clone https://github.com/vesoft-inc/nebula.git
     **user in China**
     - [Fedora29/30](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/fedora29.tar.gz)
     - [Centos7.5](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos7.5.tar.gz)
-    - [Centos6.5](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos7.5.tar.gz)
+    - [Centos6.5](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos6.5.tar.gz)
     - [Ubuntu1604](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu16.tar.gz)
     - [Ubuntu1804](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu18.tar.gz)
 
@@ -51,7 +51,7 @@ bash> git clone https://github.com/vesoft-inc/nebula.git
 
     - [Fedora29/30](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/fedora29.tar.gz)
     - [Centos7.5](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos7.5.tar.gz)
-    - [Centos6.5](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos7.5.tar.gz)
+    - [Centos6.5](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos6.5.tar.gz)
     - [Ubuntu1604](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/ubuntu16.tar.gz)
     - [Ubuntu1804](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/ubuntu18.tar.gz)
 
