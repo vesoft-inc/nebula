@@ -19,7 +19,10 @@
         folly::Promise<storage::cpp2::AdminExecResp> pro; \
         auto f = pro.getFuture(); \
         storage::cpp2::AdminExecResp resp; \
-        resp.set_code(storage::cpp2::ErrorCode::SUCCEEDED); \
+        storage::cpp2::ResponseCommon result; \
+        std::vector<storage::cpp2::ResultCode> partRetCode; \
+        result.set_failed_codes(partRetCode); \
+        resp.set_result(result); \
         pro.setValue(std::move(resp)); \
         return f; \
     } while (false)
@@ -30,8 +33,14 @@
         folly::Promise<storage::cpp2::AdminExecResp> pro; \
         auto f = pro.getFuture(); \
         storage::cpp2::AdminExecResp resp; \
-        resp.set_code(storage::cpp2::ErrorCode::E_LEADER_CHANGED); \
-        resp.set_leader(leader); \
+        storage::cpp2::ResponseCommon result; \
+        std::vector<storage::cpp2::ResultCode> partRetCode; \
+        storage::cpp2::ResultCode thriftRet; \
+        thriftRet.set_code(storage::cpp2::ErrorCode::E_LEADER_CHANGED); \
+        thriftRet.set_leader(leader); \
+        partRetCode.emplace_back(std::move(thriftRet)); \
+        result.set_failed_codes(partRetCode); \
+        resp.set_result(result); \
         pro.setValue(std::move(resp)); \
         return f; \
     } while (false)

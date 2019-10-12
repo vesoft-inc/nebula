@@ -22,7 +22,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     // Add edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr);
+        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
@@ -49,7 +49,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
     }
     // Add multi version edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr);
+        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
