@@ -15,15 +15,19 @@ namespace storage {
 
 class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
-    static AddEdgesProcessor* instance(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan) {
-        return new AddEdgesProcessor(kvstore, schemaMan);
+    static AddEdgesProcessor* instance(kvstore::KVStore* kvstore,
+                                       meta::SchemaManager* schemaMan,
+                                       StorageStats* stats) {
+        return new AddEdgesProcessor(kvstore, schemaMan, stats);
     }
 
     void process(const cpp2::AddEdgesRequest& req);
 
 private:
-    explicit AddEdgesProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
-            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan) {}
+    explicit AddEdgesProcessor(kvstore::KVStore* kvstore,
+                               meta::SchemaManager* schemaMan,
+                               StorageStats* stats)
+            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats) {}
 };
 
 }  // namespace storage
