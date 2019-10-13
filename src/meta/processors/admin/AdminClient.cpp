@@ -478,9 +478,6 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
                 continue;
             }
             auto resp = status.value();
-            if (resp.code != storage::cpp2::ErrorCode::SUCCEEDED) {
-                continue;
-            }
             result->emplace(allHosts[idx++], std::move(resp.leader_parts));
         }
 
