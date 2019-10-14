@@ -1,3 +1,5 @@
+# String Literals
+
 A string is a sequence of bytes or characters, enclosed within either single quote (') or double quote (") characters. Examples:
 
 ```
@@ -14,7 +16,7 @@ Certain backslash escapes (\\) have been supported (also known as the *escape ch
 | \t   | A tab character                | 
 | \n   | A newline character            | 
 | \b   | A backspace character          | 
-| \\  | A backslash (\\) character     | 
+| \\  | A backslash (\\) character      | 
 
 Here are some examples:
 

@@ -41,7 +41,6 @@ void DeleteVertexProcessor::process(const cpp2::DeleteVertexRequest& req) {
             if (thriftResult.code != cpp2::ErrorCode::SUCCEEDED) {
                 this->codes_.emplace_back(std::move(thriftResult));
             }
-            result_.set_failed_codes(std::move(this->codes_));
         }
         this->onFinished();
     });

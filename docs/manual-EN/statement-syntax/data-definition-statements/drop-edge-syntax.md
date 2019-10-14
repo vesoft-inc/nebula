@@ -1,3 +1,5 @@
+# Drop Edge Syntax
+
 ```
 DROP EDGE edge_type_name
 ```

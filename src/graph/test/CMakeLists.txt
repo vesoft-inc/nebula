@@ -29,6 +29,7 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:meta_gflags_man_obj>
     $<TARGET_OBJECTS:gflags_man_obj>
     $<TARGET_OBJECTS:ws_common_obj>
+    $<TARGET_OBJECTS:stats_obj>
 )
 
 nebula_add_library(

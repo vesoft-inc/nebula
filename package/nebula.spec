@@ -34,7 +34,7 @@ A high performance distributed graph database
 
 %build
 cmake -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=%{_version} -DCMAKE_INSTALL_PREFIX=%{_install_dir} -DENABLE_TESTING=OFF./
-make -j2
+make -j$(nproc)
 
 %install
 rm -rf %{buildroot}
@@ -72,6 +72,11 @@ Group: Applications/Databases
 Summary: tool for storage
 Group: Applications/Databases
 %description storage_perf
+
+%package simple_kv_verify
+Summary: tool for storage
+Group: Applications/Databases
+%description simple_kv_verify
 
 
 # the files include exe, config file, scripts
@@ -129,6 +134,10 @@ fi
 # storage_perf rpm
 %files storage_perf
 %attr(0755,root,root) %{_bindir}/storage_perf
+
+# simple_kv_verify rpm
+%files simple_kv_verify
+%attr(0755,root,root) %{_bindir}/simple_kv_verify
 
 %debug_package
 

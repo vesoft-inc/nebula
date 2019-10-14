@@ -1,3 +1,5 @@
+# Comment Syntax
+
 Nebula supports four comment styles:
 
 * From a # character to the end of the line.
