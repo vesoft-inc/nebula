@@ -17,16 +17,20 @@ class RemoveProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static RemoveProcessor* instance(kvstore::KVStore* kvstore,
                                      meta::SchemaManager* schemaMan,
+                                     StorageStats* stats,
                                      folly::Executor* executor) {
-        return new RemoveProcessor(kvstore, schemaMan, executor);
+        return new RemoveProcessor(kvstore, schemaMan, stats, executor);
     }
 
     void process(const cpp2::RemoveRequest& req);
 
 private:
-    explicit RemoveProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan,
+    explicit RemoveProcessor(kvstore::KVStore* kvstore,
+                             meta::SchemaManager* schemaMan,
+                             StorageStats* stats,
                              folly::Executor* executor = nullptr)
-            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan), executor_(executor) {}
+            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats),
+            executor_(executor) {}
 
     folly::Future<PartCode>
     asyncProcess(PartitionID partId, const std::vector<std::string>& keys);

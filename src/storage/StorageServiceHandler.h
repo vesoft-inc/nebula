@@ -28,17 +28,22 @@ public:
         : kvstore_(kvstore)
         , schemaMan_(schemaMan)
         , metaClient_(client) {
-        getBoundQpsStat_ = StorageStats("get_bound");
-        boundStatsQpsStat_ = StorageStats("bound_stats");
-        vertexPropsQpsStat_ = StorageStats("vertex_props");
-        edgePropsQpsStat_ = StorageStats("edge_props");
-        addVertexQpsStat_ = StorageStats("add_vertex");
-        addEdgeQpsStat_ = StorageStats("add_edge");
-        delVertexQpsStat_ = StorageStats("del_vertex");
-        updateVertexQpsStat_ = StorageStats("update_vertex");
-        updateEdgeQpsStat_ = StorageStats("update_edge");
-        getKvQpsStat_ = StorageStats("get_kv");
-        putKvQpsStat_ = StorageStats("put_kv");
+        getBoundQpsStat_      = StorageStats("get_bound");
+        boundStatsQpsStat_    = StorageStats("bound_stats");
+        vertexPropsQpsStat_   = StorageStats("vertex_props");
+        edgePropsQpsStat_     = StorageStats("edge_props");
+        addVertexQpsStat_     = StorageStats("add_vertex");
+        addEdgeQpsStat_       = StorageStats("add_edge");
+        delVertexQpsStat_     = StorageStats("del_vertex");
+        updateVertexQpsStat_  = StorageStats("update_vertex");
+        updateEdgeQpsStat_    = StorageStats("update_edge");
+
+        getQpsStat_           = StorageStats("get");
+        putQpsStat_           = StorageStats("put");
+        removeOpsStat_        = StorageStats("remove");
+        removeRangeOpsStat_   = StorageStats("remove_range");
+        prefixOpsStat_        = StorageStats("prefix");
+        scanOpsStat_          = StorageStats("scan");
     }
 
     folly::Future<cpp2::QueryResponse>
@@ -131,8 +136,12 @@ private:
     StorageStats delVertexQpsStat_;
     StorageStats updateVertexQpsStat_;
     StorageStats updateEdgeQpsStat_;
-    StorageStats getKvQpsStat_;
-    StorageStats putKvQpsStat_;
+    StorageStats getQpsStat_;
+    StorageStats putQpsStat_;
+    StorageStats removeOpsStat_;
+    StorageStats removeRangeOpsStat_;
+    StorageStats prefixOpsStat_;
+    StorageStats scanOpsStat_;
 };
 
 }  // namespace storage

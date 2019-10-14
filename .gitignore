@@ -26,3 +26,11 @@ Testing/
 target/
 cluster.id
 pids/
+
+# IDE
+.project
+.classpath
+.settings/
+.idea/
+.vscode/
+cmake-build-debug/

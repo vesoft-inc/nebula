@@ -153,7 +153,10 @@ StorageServiceHandler::future_getLeaderPart(const cpp2::GetLeaderReq& req) {
 
 folly::Future<cpp2::ExecResponse>
 StorageServiceHandler::future_put(const cpp2::PutRequest& req) {
-    auto* processor = PutProcessor::instance(kvstore_, schemaMan_, &putKvQpsStat_);
+    auto* processor = PutProcessor::instance(kvstore_,
+                                             schemaMan_,
+                                             &putQpsStat_,
+                                             getThreadManager());
     RETURN_FUTURE(processor);
 }
 
@@ -161,32 +164,44 @@ folly::Future<cpp2::GeneralResponse>
 StorageServiceHandler::future_get(const cpp2::GetRequest& req) {
     auto* processor = GetProcessor::instance(kvstore_,
                                              schemaMan_,
-                                             &getKvQpsStat_,
+                                             &getQpsStat_,
                                              getThreadManager());
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::ExecResponse>
 StorageServiceHandler::future_remove(const cpp2::RemoveRequest& req) {
-    auto* processor = RemoveProcessor::instance(kvstore_, schemaMan_, getThreadManager());
+    auto* processor = RemoveProcessor::instance(kvstore_,
+                                                schemaMan_,
+                                                &removeOpsStat_,
+                                                getThreadManager());
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::ExecResponse>
 StorageServiceHandler::future_removeRange(const cpp2::RemoveRangeRequest& req) {
-    auto* processor = RemoveRangeProcessor::instance(kvstore_, schemaMan_, getThreadManager());
+    auto* processor = RemoveRangeProcessor::instance(kvstore_,
+                                                     schemaMan_,
+                                                     &removeRangeOpsStat_,
+                                                     getThreadManager());
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::GeneralResponse>
 StorageServiceHandler::future_prefix(const cpp2::PrefixRequest& req) {
-    auto* processor = PrefixProcessor::instance(kvstore_, schemaMan_, getThreadManager());
+    auto* processor = PrefixProcessor::instance(kvstore_,
+                                                schemaMan_,
+                                                &prefixOpsStat_,
+                                                getThreadManager());
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::GeneralResponse>
 StorageServiceHandler::future_scan(const cpp2::ScanRequest& req) {
-    auto* processor = ScanProcessor::instance(kvstore_, schemaMan_, getThreadManager());
+    auto* processor = ScanProcessor::instance(kvstore_,
+                                              schemaMan_,
+                                              &scanOpsStat_,
+                                              getThreadManager());
     RETURN_FUTURE(processor);
 }
 

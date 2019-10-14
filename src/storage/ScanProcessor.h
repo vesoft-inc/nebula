@@ -17,16 +17,20 @@ class ScanProcessor : public BaseProcessor<cpp2::GeneralResponse> {
 public:
     static ScanProcessor* instance(kvstore::KVStore* kvstore,
                                    meta::SchemaManager* schemaMan,
+                                   StorageStats* stats,
                                    folly::Executor* executor) {
-        return new ScanProcessor(kvstore, schemaMan, executor);
+        return new ScanProcessor(kvstore, schemaMan, stats, executor);
     }
 
      void process(const cpp2::ScanRequest& req);
 
 private:
-    explicit ScanProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan,
+    explicit ScanProcessor(kvstore::KVStore* kvstore,
+                           meta::SchemaManager* schemaMan,
+                           StorageStats* stats,
                            folly::Executor* executor = nullptr)
-            : BaseProcessor<cpp2::GeneralResponse>(kvstore, schemaMan), executor_(executor) {}
+            : BaseProcessor<cpp2::GeneralResponse>(kvstore, schemaMan, stats),
+            executor_(executor) {}
 
     folly::Future<PartCode>
     asyncProcess(PartitionID part, const std::string& start, const std::string& end);
