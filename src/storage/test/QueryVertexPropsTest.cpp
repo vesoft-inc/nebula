@@ -76,6 +76,7 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryVertexPropsProcessor::instance(kv.get(),
                                                           schemaMan.get(),
+                                                          nullptr,
                                                           executor.get());
     auto f = processor->getFuture();
     processor->process(req);

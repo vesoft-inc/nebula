@@ -517,6 +517,9 @@ protected:
     int64_t lastTotalCount_ = 0;
     int64_t lastTotalSize_ = 0;
     time::Duration lastSnapshotRecvDur_;
+
+    // Used to bypass the stale command
+    int64_t startTimeMs_ = 0;
 };
 
 }  // namespace raftex

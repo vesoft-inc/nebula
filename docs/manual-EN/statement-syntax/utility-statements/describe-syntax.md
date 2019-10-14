@@ -1,3 +1,4 @@
+# Describe Syntax
 
 ```
 {DESCRIBE | DESC } SPACE space_name
