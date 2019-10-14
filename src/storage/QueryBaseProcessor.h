@@ -43,9 +43,11 @@ public:
 protected:
     explicit QueryBaseProcessor(kvstore::KVStore* kvstore,
                                 meta::SchemaManager* schemaMan,
+                                StorageStats* stats,
                                 folly::Executor* executor = nullptr)
-        : BaseProcessor<RESP>(kvstore, schemaMan)
+        : BaseProcessor<RESP>(kvstore, schemaMan, stats)
         , executor_(executor) {}
+
     /**
      * Check whether current operation on the data is valid or not.
      * */
