@@ -331,24 +331,6 @@ protected:
                      int32_t retry = 0,
                      int32_t retryLimit = FLAGS_meta_client_retry_times);
 
-    template<class Request,
-             class RemoteFunc,
-             class RespGenerator,
-             class RpcResponse =
-                typename std::result_of<
-                    RemoteFunc(std::shared_ptr<meta::cpp2::MetaServiceAsyncClient>, Request)
-                >::type::value_type,
-             class Response =
-                typename std::result_of<RespGenerator(RpcResponse)>::type
-    >
-    void retryGetResponse(Request req,
-                          RemoteFunc remoteFunc,
-                          RespGenerator respGen,
-                          folly::Promise<StatusOr<Response>> pro,
-                          bool toLeader,
-                          int32_t retry,
-                          int32_t retryLimit);
-
     std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
     std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);

@@ -291,31 +291,6 @@ template<typename Request,
          typename RespGenerator,
          typename RpcResponse,
          typename Response>
-void MetaClient::retryGetResponse(Request req,
-                                  RemoteFunc remoteFunc,
-                                  RespGenerator respGen,
-                                  folly::Promise<StatusOr<Response>> pro,
-                                  bool toLeader,
-                                  int32_t retry,
-                                  int32_t retryLimit) {
-    folly::EventBase retryEvb;
-    auto observer = folly::AsyncTimeout::make(retryEvb,
-            [req = std::move(req), remoteFunc = std::move(remoteFunc),
-             respGen = std::move(respGen), pro = std::move(pro), toLeader, retry,
-             retryLimit, this] () mutable noexcept {
-        getResponse(std::move(req), std::move(remoteFunc), std::move(respGen),
-                    std::move(pro), toLeader, retry + 1, retryLimit);
-    });
-    observer->scheduleTimeout(
-            std::chrono::milliseconds(FLAGS_meta_client_retry_interval_secs * 1000));
-    retryEvb.loop();
-}
-
-template<typename Request,
-         typename RemoteFunc,
-         typename RespGenerator,
-         typename RpcResponse,
-         typename Response>
 void MetaClient::getResponse(Request req,
                              RemoteFunc remoteFunc,
                              RespGenerator respGen,
@@ -337,7 +312,7 @@ void MetaClient::getResponse(Request req,
         remoteFunc(client, req)
             .then(evb, [req = std::move(req), remoteFunc = std::move(remoteFunc),
                         respGen = std::move(respGen), pro = std::move(pro), toLeader, retry,
-                        retryLimit, this] (folly::Try<RpcResponse>&& t) mutable {
+                        retryLimit, evb, this] (folly::Try<RpcResponse>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
                 if (toLeader) {
@@ -346,8 +321,17 @@ void MetaClient::getResponse(Request req,
                     updateActive();
                 }
                 if (retry < retryLimit) {
-                    retryGetResponse(std::move(req), std::move(remoteFunc), std::move(respGen),
-                                     std::move(pro), toLeader, retry + 1, retryLimit);
+                    evb->runAfterDelay([req = std::move(req), remoteFunc = std::move(remoteFunc),
+                                        respGen = std::move(respGen), pro = std::move(pro),
+                                        toLeader, retry, retryLimit, this] () mutable {
+                        getResponse(std::move(req),
+                                    std::move(remoteFunc),
+                                    std::move(respGen),
+                                    std::move(pro),
+                                    toLeader,
+                                    retry + 1,
+                                    retryLimit);
+                    }, FLAGS_meta_client_retry_interval_secs * 1000);
                     return;
                 } else {
                     LOG(INFO) << "Exceed retry limit";
@@ -368,8 +352,17 @@ void MetaClient::getResponse(Request req,
                     leader_ = leader;
                 }
                 if (retry < retryLimit) {
-                    retryGetResponse(std::move(req), std::move(remoteFunc), std::move(respGen),
-                                     std::move(pro), toLeader, retry + 1, retryLimit);
+                    evb->runAfterDelay([req = std::move(req), remoteFunc = std::move(remoteFunc),
+                                        respGen = std::move(respGen), pro = std::move(pro),
+                                        toLeader, retry, retryLimit, this] () mutable {
+                        getResponse(std::move(req),
+                                    std::move(remoteFunc),
+                                    std::move(respGen),
+                                    std::move(pro),
+                                    toLeader,
+                                    retry + 1,
+                                    retryLimit);
+                    }, FLAGS_meta_client_retry_interval_secs * 1000);
                     return;
                 }
             }
