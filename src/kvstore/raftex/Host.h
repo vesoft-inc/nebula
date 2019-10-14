@@ -96,11 +96,6 @@ private:
 
     void setResponse(const cpp2::AppendLogResponse& r);
 
-    thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>& tcManager() {
-        static thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient> manager;
-        return manager;
-    }
-
 private:
     // <term, logId, committedLogId>
     using Request = std::tuple<TermID, LogID, LogID>;
@@ -132,6 +127,8 @@ private:
 
     LogID committedLogId_{0};
     std::atomic_bool sendingSnapshot_{false};
+
+    thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient> connManager_;
 };
 
 }  // namespace raftex
