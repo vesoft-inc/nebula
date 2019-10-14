@@ -1,3 +1,4 @@
+# Drop Tag Syntax
 ```
 DROP TAG tag_name
 ```

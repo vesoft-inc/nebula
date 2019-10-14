@@ -1,3 +1,5 @@
+# Schema Object Names
+
 Certain objects within Nebula graph, including space, tag, edge, alias, customer variables and other object names are referred as identifiers. This section describes the rules for identifiers in Nebula Graph:
 
 * Permitted characters in identifiers:

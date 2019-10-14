@@ -47,7 +47,7 @@ int32_t StatsManager::registerStats(folly::StringPiece counterName) {
         auto it = sm.nameMap_.find(name);
         if (it != sm.nameMap_.end()) {
             // Found
-            LOG(FATAL) << "The counter \"" << name << "\" already exists";
+            LOG(ERROR) << "The counter \"" << name << "\" already exists";
         }
 
         sm.nameMap_.emplace(name, 0);
@@ -95,7 +95,7 @@ int32_t StatsManager::registerHisto(folly::StringPiece counterName,
         auto it = sm.nameMap_.find(name);
         if (it != sm.nameMap_.end()) {
             // Found
-            LOG(FATAL) << "The counter \"" << name << "\" already exists";
+            LOG(ERROR) << "The counter \"" << name << "\" already exists";
         }
 
         sm.nameMap_.emplace(name, 0);
