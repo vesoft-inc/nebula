@@ -114,8 +114,8 @@ private:
                      folly::Promise<Status> pro,
                      int32_t retryLimit);
 
-    void getLeaderDist(HostAddr host,
-                       folly::Promise<StatusOr<storage::cpp2::GetLeaderResp>> pro,
+    void getLeaderDist(const HostAddr& host,
+                       folly::Promise<StatusOr<storage::cpp2::GetLeaderResp>>&& pro,
                        int32_t retry,
                        int32_t retryLimit);
 
