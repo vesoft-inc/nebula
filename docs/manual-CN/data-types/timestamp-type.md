@@ -9,3 +9,23 @@
 - 做数据存储的时候，会先将时间转化为**UTC时间**，读取的时候会将存储的**UTC时间**转换为**本地时间**给用户
 
 - 底层存储数据类型为: **int64**
+
+**示例**
+
+先创建一个tag为school
+
+```
+nebula> CREATE TAG school(name string , create_time timestamp);
+```
+
+插入一个名为"xiwang"，建校时间为"2010-09-01 08:00:00"
+
+```
+nebula> INSERT VERTEX school(name, create_time) VALUES hash("xiwang"):("xiwang", "2010-09-01 08:00:00")
+```
+
+插入一个名为"guangming"，建校时间为现在
+
+```
+nebula> INSERT VERTEX school(name, create_time) VALUES hash("guangming"):("guangming", now())
+```
