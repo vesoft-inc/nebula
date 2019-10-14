@@ -18,13 +18,13 @@
 nebula> CREATE TAG school(name string , create_time timestamp);
 ```
 
-插入一个名为"xiwang"，建校时间为"2010-09-01 08:00:00"
+插入一个名为"xiwang"，建校时间为"2010-09-01 08:00:00"的点
 
 ```
 nebula> INSERT VERTEX school(name, create_time) VALUES hash("xiwang"):("xiwang", "2010-09-01 08:00:00")
 ```
 
-插入一个名为"guangming"，建校时间为现在
+插入一个名为"guangming"，建校时间为现在的点
 
 ```
 nebula> INSERT VERTEX school(name, create_time) VALUES hash("guangming"):("guangming", now())
