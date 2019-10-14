@@ -53,12 +53,6 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    if (FLAGS_daemonize) {
-        google::SetStderrLogging(google::FATAL);
-    } else {
-        google::SetStderrLogging(google::INFO);
-    }
-
     // Setup logging
     auto status = setupLogging();
     if (!status.ok()) {

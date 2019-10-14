@@ -4,7 +4,7 @@ services:
     image: vesoft/nebula-metad:nightly
     environment:
       USER: root
-    command: ["--meta_server_addrs=172.28.1.1:45500", "--local_ip=172.28.1.1", "--port=45500"]
+    command: ["--meta_server_addrs=172.28.1.1:45500", "--local_ip=172.28.1.1", "--port=45500", "--load_data_interval_secs=5"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:11000/status"]
       interval: 1m30s
@@ -36,7 +36,7 @@ services:
     image: vesoft/nebula-graphd:nightly
     environment:
       USER: root
-    command: ["--meta_server_addrs=172.28.1.1:45500", "--port=3699"]
+    command: ["--meta_server_addrs=172.28.1.1:45500", "--port=3699", "--load_data_interval_secs=5"]
     depends_on:
       - metad
     healthcheck:

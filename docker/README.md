@@ -2,7 +2,7 @@
 
 **NOTE:** The `Dockerfile` is used to build docker image only for **testing** nebula graph in local machine.
 
-Following Dockerfiles are ready for production.
+Following Dockerfiles will be ready in production.
 
 - `Dockerfile.graphd`: nebula-graphd service
 - `Dockerfile.metad`: nebula-metad service
@@ -11,10 +11,10 @@ Following Dockerfiles are ready for production.
 
 ## docker-compose
 
-Use git to clone nebula project to your local directory and `cd` to `docker` folder in nebula root path.
+Use git to clone nebula project to your local directory and `cd` to `docker` folder in nebula root directory.
 
 ```shell
-$ cd /path/to/nebula/project/ # replace your real nebula clone path
+$ cd /path/to/nebula/root/directory/ # replace your real nebula clone path
 $ cd docker
 ```
 

@@ -33,7 +33,7 @@ A high performance distributed graph database
 %prep
 
 %build
-cmake -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=%{_version} -DCMAKE_INSTALL_PREFIX=%{_install_dir} -DENABLE_TESTING=OFF./
+cmake -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=%{_version} -DCMAKE_INSTALL_PREFIX=%{_install_dir} -DENABLE_TESTING=OFF ./
 make -j$(nproc)
 
 %install
@@ -149,6 +149,10 @@ fi
 # simple_kv_verify rpm
 %files simple_kv_verify
 %attr(0755,root,root) %{_bindir}/simple_kv_verify
+
+# storage_integrity rpm
+%files storage_integrity
+%attr(0755,root,root) %{_bindir}/storage_integrity
 
 %debug_package
 

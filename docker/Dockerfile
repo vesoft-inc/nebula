@@ -15,3 +15,7 @@ WORKDIR /usr/local/nebula
 RUN rpm -ivh *.rpm \
   && mkdir -p ./{logs,data,pids} \
   && rm -rf *.rpm
+
+EXPOSE 45500 45501 11000 11002
+EXPOSE 44500 44501 12000 12002
+EXPOSE 3369 13000 13002
