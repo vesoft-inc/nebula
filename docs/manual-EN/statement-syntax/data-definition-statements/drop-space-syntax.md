@@ -1,3 +1,5 @@
+# Drop Space Syntax
+
 ```
 DROP SPACE space_name
 ```
