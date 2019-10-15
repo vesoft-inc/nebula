@@ -1,3 +1,3 @@
 #!/bin/bash
 
-mvn clean package -X -f $1/pom.xml
+mvn clean package -f $1/pom.xml
