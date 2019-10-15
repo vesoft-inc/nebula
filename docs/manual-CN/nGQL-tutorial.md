@@ -260,4 +260,4 @@ you to follow these syntax norms:
   |Key words | Upper case   | SHOW SPACES     |
   |Vertex tags | Upper camel case, beginning with an upper-case character   | ManageTeam   |
   |Edges | Upper snake case, beginning with an upper-case character   | Play_for   |
-  |Property names | Lower camel case, beginning with a lower-case character   | inService   | --> -->
+  |Property names | Lower camel case, beginning with a lower-case character   | inService   | --> 

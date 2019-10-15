@@ -35,6 +35,41 @@ bash> git clone https://github.com/vesoft-inc/nebula.git
     bash> cd nebula && ./build_dep.sh U
     ```
 
+- user's environment cannot download oss packages directly
+
+    Step 1:
+    Download the corresponding version of the dependency package
+
+    **user in China**
+    - [Fedora29/30](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/fedora29.tar.gz)
+    - [Centos7.5](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos7.5.tar.gz)
+    - [Centos6.5](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos6.5.tar.gz)
+    - [Ubuntu1604](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu16.tar.gz)
+    - [Ubuntu1804](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu18.tar.gz)
+
+    **user in US**
+
+    - [Fedora29/30](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/fedora29.tar.gz)
+    - [Centos7.5](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos7.5.tar.gz)
+    - [Centos6.5](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos6.5.tar.gz)
+    - [Ubuntu1604](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/ubuntu16.tar.gz)
+    - [Ubuntu1804](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/ubuntu18.tar.gz)
+
+    Step 2:
+    Install the package
+
+    ```
+    tar xf ${package_name}.tar.gz
+    cd ${package_name} && ./install.sh
+    ```
+
+    Step 3:
+    Install others through local sources
+
+    ```
+    bash> cd nebula && ./build_dep.sh N
+    ```
+
 #### Step 3: update **~/.bashrc**
 
 ```
@@ -72,7 +107,7 @@ bash> source ~/.bashrc
     [root@centos7.5 nebula]# ls /usr/local/nebula/
     bin  etc  scripts  share
     ```
-    
+
     **Now, you can start nebula!** [Getting Started](get-started.md)
 
 ### Building with Docker container
@@ -114,7 +149,7 @@ Once the preceding installation is completed, you can run nebula service within 
 docker> cd /usr/local/nebula
 ```
 
-Rename config files of nebula service 
+Rename config files of nebula service
 
 ```shell
 docker> cp etc/nebula-graphd.conf.default etc/nebula-graphd.conf
