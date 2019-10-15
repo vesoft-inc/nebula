@@ -45,9 +45,9 @@ auto resp = std::move(future).get()
 ```
 
 ### Processing returned results
-Check the returned results of the rpc to examine if the corresponding operation runs successfully. In addition, since nebula storage shards data, if one partition fails, the error code is also returned. If any of the partition fails, the entire requirement fails (resp.succeeded()为 false). But those succeed are still read and written.
+Check the returned results of the rpc to examine if the corresponding operation runs successfully. In addition, since nebula storage shards data, if one partition fails, the error code is also returned. If any of the partition fails, the entire requirement fails (resp.succeeded() is false). But those succeed are still read and written.
 
-Users can retry until all the requirements run successfully. Currently, auto retry is not supported by StorageClient. Users can decide when to retry based on the error code.
+Users can retry until all the requirements run successfully. Currently, auto retry is not supported by StorageClient. Users can decide whether to retry based on the error code.
 ```cpp
 // Check if the call is successful
 if (!resp.succeeded()) {
@@ -69,7 +69,7 @@ if (!resp.failedParts().empty()) {
 As for the Get instance, the corresponding values are needed. The  key-value pairs returned by each storage server is stored in an unordered_map. Nebula storage is multi copies based on RAFT, all read and write can only be sent to the leader. For a get requirement with multiple keys, the StorageClient needs to send a get requirement to the corresponding partition leader of each key. Therefore, multiple storage servers return multiple maps. Currently, users need to traverse the values of each key in several maps, consider the following example:
 
 ```cpp
-//Examine whether the value corresponding to the key is in the returned result. If it exists, it is saved in the value.
+// Examine whether the value corresponding to the key is in the returned result. If it exists, it is saved in the value.
 
 bool found = false;
 std::string value;
