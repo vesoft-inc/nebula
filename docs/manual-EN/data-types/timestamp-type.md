@@ -15,12 +15,12 @@ Create a tag named shcool
 nebula> CREATE TAG school(name string , create_time timestamp);
 ```
 
-Insert a vertex named "xiwang" with the foundation date "2010-09-01 08:00:00"
+Insert a vertex named "stanford" with the foundation date "1885-10-01 08:00:00"
 ```
-nebula> INSERT VERTEX school(name, create_time) VALUES hash("xiwang"):("xiwang", "2010-09-01 08:00:00")
+nebula> INSERT VERTEX school(name, create_time) VALUES hash("stanford"):("stanford", "1885-10-01 08:00:00")
 ```
 
-Insert a vertex named "guangming" with the foundation date now
+Insert a vertex named "dut" with the foundation date now
 ```
-nebula> INSERT VERTEX school(name, create_time) VALUES hash("guangming"):("guangming", now())
+nebula> INSERT VERTEX school(name, create_time) VALUES hash("dut"):("dut", now())
 ```
