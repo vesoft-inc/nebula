@@ -63,6 +63,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>native-maven-plugin</artifactId>
+                <version>1.0-alpha-9</version>
                 <executions>
                     <execution>
                         <id>javah</id>
@@ -101,7 +102,7 @@
                             </outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>_build</directory>
+                                    <directory>${basedir}/_build</directory>
                                     <includes>
                                         <include>libnebula_native_client.so
                                         </include>
