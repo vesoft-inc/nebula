@@ -173,7 +173,7 @@ folly::Future<cpp2::ExecResponse>
 StorageServiceHandler::future_remove(const cpp2::RemoveRequest& req) {
     auto* processor = RemoveProcessor::instance(kvstore_,
                                                 schemaMan_,
-                                                &removeOpsStat_,
+                                                &removeQpsStat_,
                                                 getThreadManager());
     RETURN_FUTURE(processor);
 }
@@ -182,7 +182,7 @@ folly::Future<cpp2::ExecResponse>
 StorageServiceHandler::future_removeRange(const cpp2::RemoveRangeRequest& req) {
     auto* processor = RemoveRangeProcessor::instance(kvstore_,
                                                      schemaMan_,
-                                                     &removeRangeOpsStat_,
+                                                     &removeRangeQpsStat_,
                                                      getThreadManager());
     RETURN_FUTURE(processor);
 }
@@ -191,7 +191,7 @@ folly::Future<cpp2::GeneralResponse>
 StorageServiceHandler::future_prefix(const cpp2::PrefixRequest& req) {
     auto* processor = PrefixProcessor::instance(kvstore_,
                                                 schemaMan_,
-                                                &prefixOpsStat_,
+                                                &prefixQpsStat_,
                                                 getThreadManager());
     RETURN_FUTURE(processor);
 }
@@ -200,7 +200,7 @@ folly::Future<cpp2::GeneralResponse>
 StorageServiceHandler::future_scan(const cpp2::ScanRequest& req) {
     auto* processor = ScanProcessor::instance(kvstore_,
                                               schemaMan_,
-                                              &scanOpsStat_,
+                                              &scanQpsStat_,
                                               getThreadManager());
     RETURN_FUTURE(processor);
 }

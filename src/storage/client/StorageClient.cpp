@@ -421,6 +421,7 @@ StorageClient::put(GraphSpaceID space,
         auto& req = requests[host];
         req.set_space_id(space);
         req.set_parts(std::move(c.second));
+        LOG(INFO) << "Space " << space;
     }
 
     return collectResponse(evb, std::move(requests),

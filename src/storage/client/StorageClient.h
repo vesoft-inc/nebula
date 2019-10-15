@@ -85,38 +85,6 @@ public:
                   meta::MetaClient *client);
     virtual ~StorageClient();
 
-    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> put(
-      GraphSpaceID space,
-      std::vector<nebula::cpp2::Pair> values,
-      folly::EventBase* evb = nullptr);
-
-    folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> get(
-      GraphSpaceID space,
-      std::vector<std::string> keys,
-      folly::EventBase* evb = nullptr);
-
-    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> remove(
-      GraphSpaceID space,
-      std::vector<std::string> keys,
-      folly::EventBase* evb = nullptr);
-
-    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> removeRange(
-      GraphSpaceID space,
-      std::string start,
-      std::string end,
-      folly::EventBase* evb = nullptr);
-
-    folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> prefix(
-      GraphSpaceID space,
-      std::vector<std::string> keys,
-      folly::EventBase* evb = nullptr);
-
-    folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> scan(
-      GraphSpaceID space,
-      std::string start,
-      std::string end,
-      folly::EventBase* evb = nullptr);
-
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addVertices(
         GraphSpaceID space,
         std::vector<storage::cpp2::Vertex> vertices,
@@ -195,6 +163,38 @@ public:
         const std::string& name,
         folly::EventBase* evb = nullptr);
 
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> put(
+      GraphSpaceID space,
+      std::vector<nebula::cpp2::Pair> values,
+      folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> get(
+      GraphSpaceID space,
+      std::vector<std::string> keys,
+      folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> remove(
+      GraphSpaceID space,
+      std::vector<std::string> keys,
+      folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> removeRange(
+      GraphSpaceID space,
+      std::string start,
+      std::string end,
+      folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> prefix(
+      GraphSpaceID space,
+      std::vector<std::string> keys,
+      folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> scan(
+      GraphSpaceID space,
+      std::string start,
+      std::string end,
+      folly::EventBase* evb = nullptr);
+
 protected:
     // Calculate the partition id for the given vertex id
     PartitionID partId(GraphSpaceID spaceId, int64_t id) const;
@@ -271,6 +271,19 @@ protected:
             CHECK_GT(partMeta.peers_.size(), 0U);
             const auto& leader = this->leader(partMeta);
             clusters[leader][part].emplace_back(std::move(id));
+        }
+        return clusters;
+    }
+
+    std::unordered_map<HostAddr, std::vector<PartitionID>>
+    leaderHosts(GraphSpaceID spaceId) {
+        std::unordered_map<HostAddr, std::vector<PartitionID>> clusters;
+        auto partNum = partsNum(spaceId);
+        for (PartitionID part = 1; part <= partNum; part++) {
+            auto partMeta = getPartMeta(spaceId, part);
+            CHECK_GT(partMeta.peers_.size(), 0U);
+            const auto& leader = this->leader(partMeta);
+            clusters[leader].emplace_back(part);
         }
         return clusters;
     }

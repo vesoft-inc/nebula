@@ -10,16 +10,19 @@ namespace nebula {
 namespace storage {
 
 void PutProcessor::process(const cpp2::PutRequest& req) {
+    LOG(INFO) << "PutProcessor running";
     CHECK_NOTNULL(kvstore_);
-    const auto& pairs = req.get_parts();
     space_ = req.get_space_id();
-    callingNum_ = pairs.size();
+    LOG(INFO) << "Put Space " << space_;
+    const auto& parts = req.get_parts();
+    callingNum_ = parts.size();
 
     std::vector<folly::Future<PartCode>> results;
-    for (auto& part : req.get_parts()) {
+    for (auto& part : parts) {
         std::vector<kvstore::KV> data;
         for (auto& pair : part.second) {
-            data.emplace_back(pair.key, pair.value);
+            LOG(INFO) << "Put Run " << pair.key;
+            data.emplace_back(std::move(pair.key), std::move(pair.value));
         }
         results.emplace_back(asyncProcess(part.first, data));
     }
@@ -54,6 +57,7 @@ PutProcessor::asyncProcess(PartitionID part, const std::vector<kvstore::KV>& key
     executor_->add([this, p = std::move(promise), part, keyValues] () mutable {
         this->kvstore_->asyncMultiPut(space_, part, keyValues,
                                       [part, &p] (kvstore::ResultCode code) {
+            LOG(INFO) << "Part " << part << " code " << code;
             p.setValue(std::make_pair(part, code));
         });
     });

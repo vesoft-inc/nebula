@@ -40,10 +40,10 @@ public:
 
         getQpsStat_           = StorageStats("get");
         putQpsStat_           = StorageStats("put");
-        removeOpsStat_        = StorageStats("remove");
-        removeRangeOpsStat_   = StorageStats("remove_range");
-        prefixOpsStat_        = StorageStats("prefix");
-        scanOpsStat_          = StorageStats("scan");
+        removeQpsStat_        = StorageStats("remove");
+        removeRangeQpsStat_   = StorageStats("remove_range");
+        prefixQpsStat_        = StorageStats("prefix");
+        scanQpsStat_          = StorageStats("scan");
     }
 
     folly::Future<cpp2::QueryResponse>
@@ -138,10 +138,10 @@ private:
     StorageStats updateEdgeQpsStat_;
     StorageStats getQpsStat_;
     StorageStats putQpsStat_;
-    StorageStats removeOpsStat_;
-    StorageStats removeRangeOpsStat_;
-    StorageStats prefixOpsStat_;
-    StorageStats scanOpsStat_;
+    StorageStats removeQpsStat_;
+    StorageStats removeRangeQpsStat_;
+    StorageStats prefixQpsStat_;
+    StorageStats scanQpsStat_;
 };
 
 }  // namespace storage
