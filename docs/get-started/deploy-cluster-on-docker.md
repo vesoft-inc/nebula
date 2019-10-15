@@ -70,7 +70,7 @@ Therefore, this article will deploy Nebula cluster on three hosts as follows:
 172.17.0.4 # cluster-4: metad/storaged/graphd
 ```
 
-**_Note_:** Nebula's services need to open some ports for communication, so make sure you have turned off the firewall. In production, please choose deployment method based on your actual conditions. This is for testing only. 
+**_Note_:** Nebula's services need to open some ports for communication, so make sure you have turned off the firewall temporarily. For the ports details, please refer configuration files in `/usr/local/nebula/etc/ `. In production, please choose deployment method based on your actual conditions. This is for testing only. 
 
 ## Configuration
 All the configuration files of Nebula are located in `/usr/local/nebula/etc`, and three default configuration files are provided there. Edit them separately:
@@ -230,4 +230,5 @@ The returned data is the same as above, indicating that the deployment is succes
 ## Custom Configuration File
 
 Nebula supports loading advanced parameters by specifying configuration files for performance tuning. Please refer [Configuration Properties](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-CN/deploy-cluster.md#%E9%85%8D%E7%BD%AE%E5%BC%95%E7%94%A8) for detail.
+
 
