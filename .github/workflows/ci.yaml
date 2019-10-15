@@ -9,25 +9,23 @@ jobs:
   build:
     name: build
     runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        tag: [centos6, centos7, ubuntu16, ubuntu18]
     container:
-      image: vesoft/nebula-dev:centos
+      image: vesoft/nebula-dev:${{ matrix.tag }}
     steps:
       - uses: actions/checkout@v1
         with:
           fetch-depth: 1
       - name: cmake
         run: |
-          . /etc/profile.d/devtoolset-8-enable.sh
           mkdir _build
           cd _build && cmake ..
         shell: bash
       - name: make
-        run: |
-          . /etc/profile.d/devtoolset-8-enable.sh
-          cd _build && make -j $(nproc)
+        run: cd _build && make -j $(nproc)
         shell: bash
       - name: test
-        run: |
-          . /etc/profile.d/devtoolset-8-enable.sh
-          cd _build && ctest -j $(nproc) --output-on-failure
+        run: cd _build && ctest -j $(nproc) --output-on-failure
         shell: bash

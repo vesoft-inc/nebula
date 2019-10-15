@@ -99,3 +99,83 @@ jobs:
           docker build -t ${IMAGE_NAME} -f docker/Dockerfile .
           docker push ${IMAGE_NAME}
         shell: bash
+
+  pkg_ubuntu16:
+    name: nebula package for ubuntu16.04
+    runs-on: ubuntu-18.04
+    container:
+      image: vesoft/nebula-dev:ubuntu16
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Package
+        run: |
+          cd package
+          ./package.sh -v $(git rev-parse --short HEAD) -t DEB
+        shell: bash
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: ubuntu16
+          path: build/nebula-$(git rev-parse --short HEAD).ubuntu1604.amd64.deb
+
+  pkg_ubuntu18:
+    name: nebula package for ubuntu18.04
+    runs-on: ubuntu-18.04
+    container:
+      image: vesoft/nebula-dev:ubuntu18
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Package
+        run: |
+          cd package
+          ./package.sh -v $(git rev-parse --short HEAD) -t DEB
+        shell: bash
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: ubuntu18
+          path: build/nebula-$(git rev-parse --short HEAD).ubuntu1804.amd64.deb
+
+  pkg_centos6:
+    name: nebula package for centos6
+    runs-on: ubuntu-18.04
+    container:
+      image: vesoft/nebula-dev:centos6
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Package
+        run: |
+          cd package
+          ./package.sh -v $(git rev-parse --short HEAD) -t RPM
+        shell: bash
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: centos6
+          path: build/nebula-$(git rev-parse --short HEAD).el6-5.x86_64.rpm
+
+  pkg_centos7:
+    name: nebula package for centos7
+    runs-on: ubuntu-18.04
+    container:
+      image: vesoft/nebula-dev:centos7
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Package
+        run: |
+          cd package
+          ./package.sh -v $(git rev-parse --short HEAD) -t RPM
+        shell: bash
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: centos7
+          path: build/nebula-$(git rev-parse --short HEAD).el7-5.x86_64.rpm

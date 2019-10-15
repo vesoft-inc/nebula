@@ -1,9 +1,9 @@
-FROM vesoft/nebula-dev:centos as builder
+FROM vesoft/nebula-dev:centos7 as builder
 
 COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \
-  && . /etc/profile.d/devtoolset-8-enable.sh \
+  && . ~/.bashrc \
   && ./make_srpm.sh -v $(git rev-parse --short HEAD) -p /home/nebula
 
 FROM centos:7
@@ -16,6 +16,9 @@ RUN rpm -ivh *.rpm \
   && mkdir -p ./{logs,data,pids} \
   && rm -rf *.rpm
 
+# meta ports
 EXPOSE 45500 45501 11000 11002
+# storage ports
 EXPOSE 44500 44501 12000 12002
+# graph ports
 EXPOSE 3369 13000 13002
