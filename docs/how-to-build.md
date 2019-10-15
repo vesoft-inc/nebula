@@ -8,7 +8,7 @@ Nebula is developed based C++14, so it requires a compiler supporting C++14 feat
 
 ### Supported system version
 - Fedora29, 30
-- Centos6.5, 7.5
+- Centos6.5, Centos7.0~7.6
 - Ubuntu16.04, 18.04
 
 ### Required storage
@@ -42,7 +42,7 @@ bash> git clone https://github.com/vesoft-inc/nebula.git
 
     **user in China**
     - [Fedora29/30](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/third-party/fedora29.tar.gz)
-    - [Centos7.5](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/third-party/centos7.5.tar.gz)
+    - [Centos7.0~7.6](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/third-party/centos7.5.tar.gz)
     - [Centos6.5](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/third-party/centos6.5.tar.gz)
     - [Ubuntu1604](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/third-party/ubuntu16.tar.gz)
     - [Ubuntu1804](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/third-party/ubuntu18.tar.gz)
@@ -50,7 +50,7 @@ bash> git clone https://github.com/vesoft-inc/nebula.git
     **user in US**
 
     - [Fedora29/30](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/third-party/fedora29.tar.gz)
-    - [Centos7.5](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/third-party/centos7.5.tar.gz)
+    - [Centos7.0~7.6](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/third-party/centos7.5.tar.gz)
     - [Centos6.5](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/third-party/centos6.5.tar.gz)
     - [Ubuntu1604](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/third-party/ubuntu16.tar.gz)
     - [Ubuntu1804](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/third-party/ubuntu18.tar.gz)
@@ -76,24 +76,13 @@ bash> git clone https://github.com/vesoft-inc/nebula.git
 bash> source ~/.bashrc
 ```
 #### Step 4: build
-- without java client
 
-    ```
-    bash> mkdir build && cd build
-    bash> cmake ..
-    bash> make
-    bash> sudo make install
-    ```
-- with java client
-
-    ```
-    bash> mvn install:install-file -Dfile=/opt/nebula/third-party/fbthrift/thrift-1.0-SNAPSHOT.jar -DgroupId="com.facebook" -DartifactId="thrift" -Dversion="1.0-SNAPSHOT" -Dpackaging=jar
-    bash> mkdir build && cd build
-    bash> cmake -DSKIP_JAVA_CLIENT=OFF ..
-    bash> make
-    bash> sudo make install
-    ```
-
+```
+bash> mkdir build && cd build
+bash> cmake ..
+bash> make
+bash> sudo make install
+```
 #### **Building completed**
 - If no errors are shown
 
@@ -211,3 +200,22 @@ nebula> SHOW HOSTS;
     sudo update-alternatives --config java
     ```
     and select the java-1.8.0-openjdk/java-8-openjdk
+
+- **Error info**: `internal error`
+
+    **resolve**
+
+    You need to compile the third-party by yourself, the installation path is **/opt/nebula/third-party**
+
+    ```
+    bash> wget https://nebula-graph-us.oss-us-west-1.aliyuncs.com/third-party/nebula-3rdparty.tar.gz
+    bash> tar xf nebula-3rdparty.tar.gz && cd nebula-3rdparty
+    bash> ./install_deps.sh
+    bash> sudo make
+    bash> cd nebula && ./build_dep.sh N
+    bash> source ~/.bashrc
+    bash> mkdir build && cd build
+    bash> cmake ..
+    bash> make
+    bash> sudo make install
+    ```
