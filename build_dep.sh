@@ -54,8 +54,9 @@ function fedora_install {
         xz-devel \
         wget
 
-    echo "alias cmake='cmake -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind'" >> ~/.bashrc
+    installPackage $1
 
+    echo "alias cmake='cmake -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind'" >> ~/.bashrc
     return 0
 }
 
@@ -79,6 +80,8 @@ function centos6_install {
         java-1.8.0-openjdk \
         unzip
 
+    installPackage $1
+
     echo "export PATH=/opt/nebula/autoconf/bin:/opt/nebula/automake/bin:/opt/nebula/libtool/bin:/opt/nebula/gettext/bin:/opt/nebula/flex/bin:/opt/nebula/binutils/bin:\$PATH" >> ~/.bashrc
     echo "export ACLOCAL_PATH=/opt/nebula/automake/share/aclocal-1.15:/opt/nebula/libtool/share/aclocal:/opt/nebula/autoconf-archive/share/aclocal" >> ~/.bashrc
     return 0
@@ -99,6 +102,8 @@ function centos7_install {
         java-1.8.0-openjdk \
         unzip
 
+    installPackage $1
+
     return 0
 }
 
@@ -115,6 +120,8 @@ function ubuntu16_install {
         python \
         maven \
         openjdk-8-jdk unzip
+
+    installPackage $1
 
     echo "export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:\$LIBRARY_PATH" >> ~/.bashrc
     return 0
@@ -133,6 +140,9 @@ function ubuntu18_install {
         python \
         maven \
         openjdk-8-jdk unzip
+
+    installPackage $1
+
     echo "export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:\$LIBRARY_PATH" >> ~/.bashrc
     return 0
 }
@@ -189,26 +199,24 @@ version=$?
 
 set -e
 
-installPackage $version
-
 case $version in
     1)
-        fedora_install
+        fedora_install $version
         ;;
     2)
-        centos7_install
+        centos7_install $version
         addAlias
         ;;
     3)
-        centos6_install
+        centos6_install $version
         addAlias
         ;;
     4)
-        ubuntu18_install
+        ubuntu18_install $version
         addAlias
         ;;
     5)
-        ubuntu16_install
+        ubuntu16_install $version
         addAlias
         ;;
     *)
