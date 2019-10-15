@@ -304,7 +304,7 @@ void AdminClient::getResponse(
                     LOG(INFO) << "Rpc failure to " << hosts[index]
                               << ", retry " << retry
                               << ", limit " << retryLimit;
-                    index = ++index % hosts.size();
+                    index = (index + 1) % hosts.size();
                     getResponse(std::move(hosts),
                                 index,
                                 std::move(req),
@@ -337,7 +337,7 @@ void AdminClient::getResponse(
                             LOG(INFO) << "The leader is in election"
                                       << ", retry " << retry
                                       << ", limit " << retryLimit;
-                            index = ++index % hosts.size();
+                            index = (index + 1) % hosts.size();
                             getResponse(std::move(hosts),
                                     index,
                                     std::move(req),
@@ -385,7 +385,7 @@ void AdminClient::getResponse(
                                   << " from " << hosts[index]
                                   << ", retry " << retry
                                   << ", limit " << retryLimit;
-                        index = ++index % hosts.size();
+                        index = (index + 1) % hosts.size();
                         getResponse(std::move(hosts),
                                     index,
                                     std::move(req),
