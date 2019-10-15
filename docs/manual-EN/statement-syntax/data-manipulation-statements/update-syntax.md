@@ -16,8 +16,8 @@ UPDATE VERTEX $vid SET $update_columns WHEN $condition YIELD $columns
 - `$columns` is the columns to be returned, `YIELD` returns the latest updated values.
 
 Consider the following example:
-```
-UPDATE VERTEX 101 SET course.credits = $^.course.credits + 1, building.name = "No8" WHEN $^.course.name == "Math" && $^.course.credits > 2 YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name
+```sql
+nebula> UPDATE VERTEX 101 SET course.credits = $^.course.credits + 1, building.name = "No8" WHEN $^.course.name == "Math" && $^.course.credits > 2 YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name
 ```
 There are two tags in vertex 101, namely course and building.
 ## Update edge
@@ -33,7 +33,7 @@ UPDATE EDGE $edge SET $update_columns WHEN $condition YIELD $columns
 - `$columns` is the columns to be returned, `YIELD` returns the latest updated values.
 
 Consider the following example:
-```
-UPDATE EDGE 200 -> 101@0 OF select SET grade = select.grade + 1, year = 2000 WHEN select.grade > 4 && $^.student.age > 15 YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year
+```sql
+nebula> UPDATE EDGE 200 -> 101@0 OF select SET grade = select.grade + 1, year = 2000 WHEN select.grade > 4 && $^.student.age > 15 YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year
 ```
 **NOTE:** The constraints are the source student's age, the returns are properties of the vertex and edge.

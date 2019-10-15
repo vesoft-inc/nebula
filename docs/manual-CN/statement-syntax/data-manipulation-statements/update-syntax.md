@@ -17,8 +17,8 @@ UPDATE VERTEX $vid SET $update_columns WHEN $condition YIELD $columns
 - `$columns` 表示需要返回的columns，此处 `YIELD` 可返回update以后最新的columns值。
 
 举一个例子：
-```
-UPDATE VERTEX 101 SET course.credits = $^.course.credits + 1, building.name = "No8" WHEN $^.course.name == "Math" && $^.course.credits > 2 YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name
+```sql
+nebula> UPDATE VERTEX 101 SET course.credits = $^.course.credits + 1, building.name = "No8" WHEN $^.course.name == "Math" && $^.course.credits > 2 YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name
 ```
 这个例子里面，101 共有两个tag，即course和building。
 
@@ -36,7 +36,7 @@ UPDATE EDGE $edge SET $update_columns WHEN $condition YIELD $columns
 
 举个例子:
 
-```
-UPDATE EDGE 200 -> 101@0 OF select SET grade = select.grade + 1, year = 2000 WHEN select.grade > 4 && $^.student.age > 15 YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year
+```sql
+nebula> UPDATE EDGE 200 -> 101@0 OF select SET grade = select.grade + 1, year = 2000 WHEN select.grade > 4 && $^.student.age > 15 YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year
 ```
 **注意：**本例中 `WHEN` 后面的约束条件为 source student 这个tag的age属性，同时也返回了点和边的属性。
