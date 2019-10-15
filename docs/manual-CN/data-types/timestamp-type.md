@@ -12,7 +12,7 @@
 
 **示例**
 
-先创建一个tag school
+先创建一个各为 school 的 tag
 
 ```
 nebula> CREATE TAG school(name string , create_time timestamp);
