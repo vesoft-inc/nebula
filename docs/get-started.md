@@ -76,11 +76,13 @@ to connect to the graph server. -->
 connect to Nebula:
 
 ```
-> bin/nebula -u=user -p=password
+> bin/nebula -u=user -p=password --addr {graphd IP address} --port {graphd listening port}
 ```
 
 * -u is to set the user name, `user` is the default Nebula user account
 * -p is to set password, `password` is the default password for account `user`
+* --addr is the graphd IP address
+* --port is the graphd server port and the default value is `3699`
 
 If you have any questions or concerns about the deployment procedures, please do not hesitate to open an issue on [GitHub](https://github.com/vesoft-inc/nebula/issues).
 
@@ -152,21 +154,14 @@ Make sure all the services are working
 **Connect to Nebula Graph**
 
 ```
-> bin/nebula -u=user -p=password
+> bin/nebula -u=user -p=password --addr={graphd IP address} --port={graphd listening port}
 ```
 
 * -u is to set the user name, `user` is the default Nebula user account
 * -p is to set password, `password` is the default password for account `user`
+* --addr is the graphd IP address
+* --port is the the graphd server port and the default value is `3699`
 
-<!--
-`Add HOSTS` is to register the storage hosts:
-
-```
-> ADD HOSTS $storage_ip:$storage_port
-```
-
-Replace the `$storage_ip` and `$storage_port` here according to the `local_ip`
-and `port` in nebula-storaged.conf -->
 
 Then you’re now ready to start using Nebula Graph.
 
