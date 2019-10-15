@@ -435,6 +435,35 @@ StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, Part
     return Status::Error("Get Failed");
 }
 
+void AdminClient::getLeaderDist(const HostAddr& host,
+                                folly::Promise<StatusOr<storage::cpp2::GetLeaderResp>>&& pro,
+                                int32_t retry,
+                                int32_t retryLimit) {
+    auto* evb = ioThreadPool_->getEventBase();
+    folly::via(evb, [evb, host, pro = std::move(pro), retry, retryLimit, this] () mutable {
+        storage::cpp2::GetLeaderReq req;
+        auto client = clientsMan_->client(host, evb);
+        client->future_getLeaderPart(std::move(req))
+            .then(evb, [pro = std::move(pro), host, retry, retryLimit, this]
+                       (folly::Try<storage::cpp2::GetLeaderResp>&& t) mutable {
+            if (t.hasException()) {
+                LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
+                                                  t.exception().what().c_str());
+                if (retry < retryLimit) {
+                    usleep(1000 * 50);
+                    getLeaderDist(host, std::move(pro), retry + 1, retryLimit);
+                } else {
+                    pro.setValue(Status::Error("RPC failure in AdminClient"));
+                }
+                return;
+            }
+            auto&& resp = std::move(t).value();
+            LOG(INFO) << "Get leader for host " << host;
+            pro.setValue(std::move(resp));
+        });
+    });
+}
+
 folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
     if (injector_) {
         return injector_->getLeaderDist(result);
@@ -443,40 +472,32 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
     auto future = promise.getFuture();
     auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
 
-    auto getLeader = [result, this] (const HostAddr& host) {
-        folly::Promise<Status> pro;
-        auto f = pro.getFuture();
-        auto* evb = ioThreadPool_->getEventBase();
-        folly::via(evb, [pro = std::move(pro), host, evb, result, this] () mutable {
-            storage::cpp2::GetLeaderReq req;
-            auto client = clientsMan_->client(host, evb);
-            client->future_getLeaderPart(std::move(req))
-                .then(evb, [p = std::move(pro), host,
-                            result] (folly::Try<storage::cpp2::GetLeaderResp>&& t) mutable {
-                if (t.hasException()) {
-                    LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
-                                                      t.exception().what().c_str());
-                    p.setValue(Status::Error("RPC failure in AdminClient"));
-                    return;
-                }
-                auto&& resp = std::move(t).value();
-                LOG(INFO) << "Get leader for host " << host;
-                result->emplace(host, std::move(resp).get_leader_parts());
-                p.setValue(Status::OK());
-            });
-        });
-        return f;
-    };
-
-    std::vector<folly::SemiFuture<Status>> hostFutures;
+    std::vector<folly::Future<StatusOr<storage::cpp2::GetLeaderResp>>> hostFutures;
     for (const auto& h : allHosts) {
-        auto fut = getLeader(h);
+        folly::Promise<StatusOr<storage::cpp2::GetLeaderResp>> pro;
+        auto fut = pro.getFuture();
+        getLeaderDist(h, std::move(pro), 0, 3);
         hostFutures.emplace_back(std::move(fut));
     }
 
-    folly::collectAll(hostFutures)
-        .then([p = std::move(promise)] (std::vector<folly::Try<Status>>&& tries) mutable {
-        UNUSED(tries);
+    folly::collectAll(std::move(hostFutures)).then([p = std::move(promise), result, allHosts]
+            (std::vector<folly::Try<StatusOr<storage::cpp2::GetLeaderResp>>>&& tries) mutable {
+        size_t idx = 0;
+        for (auto& t : tries) {
+            if (t.hasException()) {
+                ++idx;
+                continue;
+            }
+            auto&& status = std::move(t.value());
+            if (!status.ok()) {
+                ++idx;
+                continue;
+            }
+            auto resp = status.value();
+            result->emplace(allHosts[idx], std::move(resp.leader_parts));
+            ++idx;
+        }
+
         p.setValue(Status::OK());
     });
 
