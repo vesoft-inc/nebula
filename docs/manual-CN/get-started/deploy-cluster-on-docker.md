@@ -2,7 +2,7 @@
 
 本文介绍如何使用 Docker 部署一个多节点的 Nebula 集群。
 
-**_注意_：** 对于生产环境，不要使用该方式进行部署。
+**_注意_：** 由于 Nebula 的服务之间通信需要开放一些端口，所以可以临时关掉防火墙。对于生产环境，不要使用该方式进行部署。
 
 
 ## 环境准备
@@ -83,7 +83,7 @@ $ docker inspect 591e2f6f48e2 | grep IPAddress
 172.17.0.4 # cluster-4: metad/storaged/graphd
 ```
 
-**_注意_：** 也可根据实际情况灵活选取部署方式，此处仅做测试用。
+**_注意_：** 由于 Nebula 的服务之间通信需要开放一些端口，所以可以临时关掉所有机器上的防火墙，具体使用端口见 `/usr/local/nebula/etc/ `下面的配置文件。也可根据实际情况灵活选取部署方式，此处仅做测试用。
 
 ## 配置
 
@@ -255,3 +255,4 @@ $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD 
 ## 自定义配置文件
 
 Nebula 支持通过指定配置文件的方式来加载更加丰富的启动参数，用于性能调优。详情请参考[配置属性](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-CN/deploy-cluster.md#%E9%85%8D%E7%BD%AE%E5%BC%95%E7%94%A8)。
+

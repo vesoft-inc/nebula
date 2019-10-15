@@ -20,20 +20,34 @@ sbt|1.2.8
 
 # Spark-submit command line reference
 This is what we used in production environment:
+
 ```bash
-${SPARK_HOME}/bin/spark-submit --master yarn --queue fmprod --conf spark.executor.instances=24 --conf spark.executor.memory=90g --conf spark.executor.cores=2  --conf spark.executorEnv.LD_LIBRARY_PATH='/soft/server/nebula_native_client:/usr/local/lib:/usr/local/lib64' --conf spark.driver.extraJavaOptions='-Djava.library.path=/soft/server/nebula_native_client/:/usr/local/lib64:/usr/local/lib' --class com.vesoft.tools.SparkSstFileGenerator --files mapping.json nebula-spark-sstfile-generator.jar -di "2019-05-13" -mi mapping.json -pi dt -so file://home/hdp/nebula_output
+${SPARK_HOME}/bin/spark-submit --master yarn \
+                               --queue ${QUEUE_NAME} \
+                               --conf spark.executor.instances=${EXECUTOR_NUM} \
+                               --conf spark.executor.memory=${EXECUTOR_MEMORY} \
+                               --conf spark.executor.cores=${EXECUTOR_CORES} \
+                               --conf spark.executorEnv.LD_LIBRARY_PATH=${LD_LIBRARY_PATH} \
+                               --conf spark.driver.extraJavaOptions=${EXTRA_OPTIONS} \
+                               --class com.vesoft.tools.SparkSstFileGenerator \
+                               --files ${MAPPING_FILE} \
+                               nebula-spark-sstfile-generator.jar \
+                               -di ${LATEST_DATE} \
+                               -mi ${MAPPING_FILE} \
+                               -pi ${PARTITION_FIELD} \
+                               -so ${SSTFILE_OUTPUT_PATH}
 ```
 The application options are described as following.
 
 # Spark application command line reference
-We keep a convention when naming the option,those suffix with _i_ will be an INPUT type option, while those suffix with _o_ will be an OUTPUT type option.
+We keep a convention when naming the option, those suffix with _i_ will be an INPUT type option, while those suffix with _o_ will be an OUTPUT type option.
 
 ```bash
 usage: nebula spark sst file generator
  -ci,--default_column_mapping_policy <arg>   If omitted, use the policy when mapping column to property, all columns except primary_key's will be mapped to tag's property with the same name by default
  -di,--latest_date_input <arg>               Latest date to query, date format is YYYY-MM-dd
  -hi,--string_value_charset_input <arg>      When the value is string, the default charset encoding is UTF-8
- -ho,--hdfs_sst_file_output <arg>            Hdfs directory of stfiles should not start with file:///
+ -ho,--hdfs_sst_file_output <arg>            Hdfs directory of SST files should not start with file:///
  -li,--limit_input <arg>                     Return limited number of edges/vertexes, usually used in POC stage, when omitted, fetch all data.
  -mi,--mapping_file_input <arg>              Hive tables to nebula graph schema mapping file
  -pi,--date_partition_input <arg>            A partition field of type String of hive table, which represent a Date, and has format of YYY-MM-dd
@@ -44,7 +58,8 @@ usage: nebula spark sst file generator
 
 # Mapping file schema
 
-The format of the mapping files is json. File Schema is provided as [mapping-schema.json](mapping-schema.json) according to [Json Schema Standard](http://json-schema.org). Here is an example of mapping file: [mapping.json](mapping.json)
+The format of the mapping files is json. File Schema is provided as [mapping-schema.json](mapping-schema.json) according to [Json Schema Standard](http://json-schema.org).
+Here is an example of mapping file: [mapping.json](mapping.json)
 
 # FAQ
 ## How to use libnebula-native-client.so under CentOS6.5(2.6.32-431 x86-64)
@@ -58,7 +73,8 @@ DEBUG_LEVEL=0 make rocksdbjava
 *make sure to keep consistent with DEBUG_LEVEL when building, or there will be some link error like `symbol not found`*
 
 2. run `sbt assembly` to package this project to a spark job jar, whose default name is: `nebula-spark-sstfile-generator.jar`  
-3. run `jar uvf nebula-spark-sstfile-generator.jar librocksdbjni-linux64.so libnebula_native_client.so` to replace the `*.so` files packaged inside the dependency org.rocksdb:rocksdbjni:5.17.2, or the following error will occur when spark-submit:  
+3. run `jar uvf nebula-spark-sstfile-generator.jar librocksdbjni-linux64.so libnebula_native_client.so` to replace the `*.so` files packaged inside the dependency org.rocksdb:rocksdbjni:5.17.2,
+    or the following error will occur when spark-submit:
 
 ```
 *** glibc detected *** /soft/java/bin/java: free(): invalid pointer: 0x00007f7985b9f0a0 ***
@@ -73,5 +89,5 @@ DEBUG_LEVEL=0 make rocksdbjava
 # TODO
 1. Add database_name property to graph space level and tag/edge level,with the latter will override the former when provided in both levels.
 2. Schema column definitions' order is important, keep it when parsing mapping file and encoding.
-3. Integrated build with maven or cmake, where this spark assembly should be build after nebula native client  
-4. To handle following situation: different tables share a common tag, like one with properties of (start_time, end_time).
+3. Integrated build with maven or cmake, where this spark assembly should be built after nebula native client
+4. To handle the following situation: different tables share a common tag, like one with properties of (start_time, end_time).
