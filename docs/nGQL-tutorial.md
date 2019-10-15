@@ -20,7 +20,7 @@ other query language out there.
 
 nGQL key words are case-insensitive but we recommend them written in all caps for easy reading. To help you get a quick understanding of nGQL, we have created a simple graph `myspace_test` with 4 vertices and 3 edges.
 
-### Cluster administration
+<!-- ### Cluster administration
 
 * Add hosts
 
@@ -42,7 +42,7 @@ Replace the $storage_ip and $storage_port here according to the local_ip and por
 
 ```
 ADD HOSTS 192.168.8.5:65500
-```
+``` -->
 
 
 - Show hosts
@@ -58,7 +58,7 @@ SHOW HOSTS
 ---------------------------------
 ```
 
-* Remove hosts
+<!-- * Remove hosts
 
 Remove a single host
 
@@ -72,7 +72,7 @@ Remove multiple hosts
 REMOVE HOSTS $storage_ip1:$storage_port1, $storage_ip2:$storage_port2,...
 ```
 
-**Note:** Separate the hosts by comma.
+**Note:** Separate the hosts by comma. -->
 
 ### Graph administration
 
