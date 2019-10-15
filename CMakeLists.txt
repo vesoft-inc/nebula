@@ -147,7 +147,7 @@ if(NOT ${NEBULA_OTHER_ROOT} STREQUAL "")
         list(INSERT CMAKE_LIBRARY_PATH 0 ${DIR}/lib)
         list(INSERT CMAKE_PROGRAM_PATH 0 ${DIR}/bin)
         include_directories(SYSTEM ${DIR}/include)
-        link_directories(${DIR}/lib64)
+        link_directories(${DIR}/lib)
     endforeach()
 endif()
 
