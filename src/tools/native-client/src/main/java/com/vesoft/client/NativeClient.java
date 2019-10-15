@@ -53,7 +53,8 @@ public class NativeClient {
     private static final int EDGE_RANKING = 8;
     private static final int EDGE_VERSION = 8;
     private static final int VERTEX_SIZE = PARTITION_ID + VERTEX_ID + TAG_ID + TAG_VERSION;
-    private static final int EDGE_SIZE = PARTITION_ID + VERTEX_ID + EDGE_TYPE + EDGE_RANKING + VERTEX_ID + EDGE_VERSION;
+    private static final int EDGE_SIZE = PARTITION_ID + VERTEX_ID + EDGE_TYPE + EDGE_RANKING
+        + VERTEX_ID + EDGE_VERSION;
 
     private static final int DATA_KEY_TYPE = 0x00000001;
     private static final int TAG_MASK      = 0xBFFFFFFF;
