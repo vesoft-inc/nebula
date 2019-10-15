@@ -215,6 +215,8 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("space", TokenType::KW_SPACE),
         CHECK_SEMANTIC_TYPE("SPACES", TokenType::KW_SPACES),
         CHECK_SEMANTIC_TYPE("spaces", TokenType::KW_SPACES),
+        CHECK_SEMANTIC_TYPE("PARTS", TokenType::KW_PARTS),
+        CHECK_SEMANTIC_TYPE("Parts", TokenType::KW_PARTS),
         CHECK_SEMANTIC_TYPE("BIGINT", TokenType::KW_BIGINT),
         CHECK_SEMANTIC_TYPE("bigint", TokenType::KW_BIGINT),
         CHECK_SEMANTIC_TYPE("DOUBLE", TokenType::KW_DOUBLE),

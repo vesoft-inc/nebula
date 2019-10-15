@@ -14,6 +14,8 @@ std::string ShowSentence::toString() const {
             return std::string("SHOW HOSTS");
         case ShowType::kShowSpaces:
             return std::string("SHOW SPACES");
+        case ShowType::kShowParts:
+            return std::string("SHOW PARTS");
         case ShowType::kShowTags:
             return std::string("SHOW TAGS");
         case ShowType::kShowEdges:
