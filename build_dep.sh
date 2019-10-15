@@ -148,7 +148,7 @@ function ubuntu18_install {
 }
 
 function installPackage {
-    versions=(empty feroda29 centos7.5 centos6.5 ubuntu18 ubuntu16)
+    versions=(empty fedora29 centos7.5 centos6.5 ubuntu18 ubuntu16)
     package_name=${versions[$1]}
     [[ $package_name = empty ]] && return 0
     if [[ no_deps -eq 0 ]]; then
