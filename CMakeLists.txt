@@ -330,6 +330,7 @@ set(THRIFT_LIBRARIES
     thrift-core
 )
 
+set(ROCKSDB_LIBRARIES ${Rocksdb_LIBRARY})
 
 # All compression libraries
 set(COMPRESSION_LIBRARIES bz2 snappy zstd z)
