@@ -5,24 +5,23 @@
 It indicates to travel in a graph with specific filters (the `WHERE` clause), to fetch nodes and edges properties, and return results (the `YIELD` clause) with given order (the `ORDER BY ASC | DESC` clause) and numbers (the `LIMIT` clause).
 
 >The syntax of `GO` statement (and `FIND` statement) is very similar to `SELECT` in SQL. Notice that the major difference is that `GO` must start traversing from a (set of) node(s).
-
 >You can refer to `FIND` statement (in progress), which is the counterpart of `SELECT` in SQL.
 
 ```bash
-GO FROM <node_list> 
-OVER <edge_type_list> 
+GO FROM <node_list>
+OVER <edge_type_list>
 WHERE (expression [ AND | OR expression ...])  
 YIELD | YIELDS  [DISTINCT] <return_list>
 
 <node_list>
    | vid [, vid ...]
    | $-.id
-   
+
 <edge_type_list>
    edge_type [, edge_type ...]
    * # `*` will select all the available edge types
 
-<return_list>   
+<return_list>
     <col_name> [AS <col_alias>] [, <col_name> [AS <col_alias>] ...]
 ```
 
@@ -31,9 +30,9 @@ YIELD | YIELDS  [DISTINCT] <return_list>
 * WHERE <filter_list> extracts only those results that fulfill the specified conditions. WHERE-syntax can be conditions for src-vertex, the edges, and dst-vertex. The logical AND, OR, NOT are also supported. see WHERE-syntax for more information.
 * YIELD [DISTINCT] <return_list> statement returns the result in column format and rename as an alias name. See `YIELD`-syntax for more information. The `DISTINCT` syntax works the same as SQL.
 
-### Examples
+## Examples
 
-```
+```sql
 nebula> GO FROM 101 OVER serve  \
    /* start from vertex 101 along with edge type serve, and get vertex 204, 215 */
 =======
@@ -45,21 +44,20 @@ nebula> GO FROM 101 OVER serve  \
 -------
 ```
 
-
-```
+```sql
 nebula> GO FROM 101 OVER serve  \
-   WHERE serve.start_year > 1990       /* check edge (serve) property ( start_year) */ \ 
+   WHERE serve.start_year > 1990       /* check edge (serve) property ( start_year) */ \
    YIELD $$.team.name AS team_name,    /* target vertex (team) property serve.start_year */
 ================================
 | team_name | serve.start_year |
 ================================
 | Spurs     | 1999             |
--------------------------------- 
-| Hornets   | 2018             | 
---------------------------------   
+--------------------------------
+| Hornets   | 2018             |
+--------------------------------
 ```
 
-```
+```sql
 nebula> GO FROM 100,102 OVER serve           \
    WHERE serve.start_year > 1995             /* check edge property */ \
    YIELD DISTINCT $$.team.name AS team_name, /* DISTINCT as SQL */ \ 
@@ -73,10 +71,46 @@ nebula> GO FROM 100,102 OVER serve           \
 | Spurs         | 2015             | LaMarcus Aldridge |
 --------------------------------------------------------
 | Spurs         | 1997             | Tim Duncan        |
---------------------------------------------------------   
+--------------------------------------------------------
 ```
 
+### Traverse Multiple Edges
 
-### Reference
+Currently, nebula supports traversing multiple edges with `GO`, the syntax is:
 
- 
+```sql
+GO OVER edge1, edge2....  // or
+GO OVER *
+```
+
+Please note that multiple edges are yet supported in filter currently, for example `WHERE edge1.prop1 > edge2.prop2` is not supported.
+
+As for return results, if multiple edge properties are to be returned, nebula will place them in different rows. For example:
+
+```sql
+GO FROM 100 OVER edge1, edge2 yield edge1.prop1, edge2.prop2
+```
+
+ If vertex 100 has three edges in edge 1, two edges in edge 2, the final results is five rows as follows:
+
+| edge1.prop1 | edge2.prop2 |
+| --- | --- |
+| 10 | "" |
+| 20 | "" |
+| 30 | "" |
+| 0 | "nebula" |
+| 0 | "vesoft" |
+
+If there is no properties, the default value will be placed. The default value for numeric type is 0, and that for string type is an empty string.
+
+Of course you can query without specifying `YIELD`, this will return the ids of the dest vertices of each edge. Again, default values will be placed if there is no properties. For example, query `GO FROM 100 OVER edge1, edge2` returns the follow lines:
+
+| edge1.dst | edge2.dst |
+| --- | --- |
+| 101 | 0 |
+| 102 | 0 |
+| 103 | 0 |
+| 0 | 201 |
+| 0 | 202 |
+
+For query `GO FROM 100 OVER *`, the result is the same as above. Please note that we can't tell which row belongs to which edge in the results, the future version will show the edge type in the result.
