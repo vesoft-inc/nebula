@@ -563,7 +563,7 @@ TEST(MetaClientTest, SimpleTest) {
     }
 }
 
-TEST(MetaClientTest, RetryWithExceptioniTest) {
+TEST(MetaClientTest, RetryWithExceptionTest) {
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
@@ -573,7 +573,7 @@ TEST(MetaClientTest, RetryWithExceptioniTest) {
     auto client = std::make_shared<MetaClient>(threadPool,
                                                std::vector<HostAddr>{HostAddr(0, 0)},
                                                localHost);
-    // Retry with exception, thenfailed
+    // Retry with exception, then failed
     {
         LOG(INFO) << "Test add hosts...";
         folly::Baton<true, std::atomic> baton;
