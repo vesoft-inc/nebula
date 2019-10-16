@@ -312,8 +312,8 @@ FunctionManager::FunctionManager() {
         attr.body_ = [] (const auto &args) {
             auto value = Expression::asString(args[0]);
             auto length = Expression::asInt(args[1]);
-            if (length < 0) {
-                length = 0;
+            if (length <= 0) {
+                return std::string();
             }
             return value.substr(0, length);
         };
@@ -324,11 +324,11 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 2;
         attr.body_ = [] (const auto &args) {
             auto value  = Expression::asString(args[0]);
-            auto length = static_cast<size_t>(Expression::asInt(args[1]));
+            auto length = Expression::asInt(args[1]);
             if (length <= 0) {
-                length = 0;
+                return std::string();
             }
-            if (length > value.size()) {
+            if (length > static_cast<int64_t>(value.size())) {
                 length = value.size();
             }
             return value.substr(value.size() - length);
