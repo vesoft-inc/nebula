@@ -41,7 +41,7 @@ struct KVOptions {
     /**
      * Custom CompactionFilter used in compaction.
      * */
-    std::shared_ptr<KVCompactionFilterFactory> cfFactory_{nullptr};
+    std::unique_ptr<CompactionFilterFactoryBuilder> cffBuilder_{nullptr};
 };
 
 

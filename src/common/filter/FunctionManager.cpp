@@ -194,10 +194,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 2;
         attr.body_ = [] (const auto &args) {
             if (args.empty()) {
-                return static_cast<int64_t>(folly::Random::rand32());
+                auto value = folly::Random::rand32();
+                return static_cast<int64_t>(static_cast<int32_t>(value));
             } else if (args.size() == 1UL) {
                 auto max = Expression::asInt(args[0]);
-                return static_cast<int64_t>(folly::Random::rand32(max));
+                auto value = folly::Random::rand32(max);
+                return static_cast<int64_t>(static_cast<int32_t>(value));
             }
             DCHECK_EQ(2UL, args.size());
             auto min = Expression::asInt(args[0]);
@@ -466,7 +468,6 @@ FunctionManager::getInternal(const std::string &func, size_t arity) const {
     return iter->second.body_;
 }
 
-
 // static
 Status FunctionManager::load(const std::string &name,
                              const std::vector<std::string> &funcs) {
@@ -474,10 +475,8 @@ Status FunctionManager::load(const std::string &name,
 }
 
 
-Status FunctionManager::loadInternal(const std::string &name,
-                                     const std::vector<std::string> &funcs) {
-    UNUSED(name);
-    UNUSED(funcs);
+Status FunctionManager::loadInternal(const std::string &,
+                                     const std::vector<std::string> &) {
     return Status::Error("Dynamic function loading not supported yet");
 }
 
@@ -489,10 +488,8 @@ Status FunctionManager::unload(const std::string &name,
 }
 
 
-Status FunctionManager::unloadInternal(const std::string &name,
-                                       const std::vector<std::string> &funcs) {
-    UNUSED(name);
-    UNUSED(funcs);
+Status FunctionManager::unloadInternal(const std::string &,
+                                       const std::vector<std::string> &) {
     return Status::Error("Dynamic function unloading not supported yet");
 }
 

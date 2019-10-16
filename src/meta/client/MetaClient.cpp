@@ -116,15 +116,15 @@ void MetaClient::loadDataThreadFunc() {
     addLoadDataTask();
 }
 
-void MetaClient::loadData() {
+bool MetaClient::loadData() {
     if (ioThreadPool_->numThreads() <= 0) {
         LOG(ERROR) << "The threads number in ioThreadPool should be greater than 0";
-        return;
+        return false;
     }
     auto ret = listSpaces().get();
     if (!ret.ok()) {
         LOG(ERROR) << "List space failed, status:" << ret.status();
-        return;
+        return false;
     }
     decltype(localCache_) cache;
     decltype(spaceIndexByName_) spaceIndexByName;
@@ -141,7 +141,7 @@ void MetaClient::loadData() {
         if (!r.ok()) {
             LOG(ERROR) << "Get parts allocation failed for spaceId " << spaceId
                        << ", status " << r.status();
-            return;
+            return false;
         }
 
         auto spaceCache = std::make_shared<SpaceInfoCache>();
@@ -161,7 +161,7 @@ void MetaClient::loadData() {
                          spaceNewestTagVerMap,
                          spaceNewestEdgeVerMap,
                          spaceAllEdgeMap)) {
-            return;
+            return false;
         }
 
         cache.emplace(spaceId, spaceCache);
@@ -183,6 +183,7 @@ void MetaClient::loadData() {
     diff(oldCache, localCache_);
     ready_ = true;
     LOG(INFO) << "Load data completed!";
+    return true;
 }
 
 void MetaClient::addLoadDataTask() {
@@ -310,8 +311,8 @@ void MetaClient::getResponse(Request req,
         LOG(INFO) << "Send request to meta " << host;
         remoteFunc(client, req)
             .then(evb, [req = std::move(req), remoteFunc = std::move(remoteFunc),
-                        respGen = std::move(respGen), p = std::move(pro), toLeader, retry,
-                        retryLimit, this] (folly::Try<RpcResponse>&& t) mutable {
+                        respGen = std::move(respGen), pro = std::move(pro), toLeader, retry,
+                        retryLimit, evb, this] (folly::Try<RpcResponse>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
                 if (toLeader) {
@@ -320,19 +321,29 @@ void MetaClient::getResponse(Request req,
                     updateActive();
                 }
                 if (retry < retryLimit) {
-                    sleep(FLAGS_meta_client_retry_interval_secs);
-                    getResponse(std::move(req), std::move(remoteFunc), std::move(respGen),
-                                std::move(p), toLeader, retry + 1, retryLimit);
+                    evb->runAfterDelay([req = std::move(req), remoteFunc = std::move(remoteFunc),
+                                        respGen = std::move(respGen), pro = std::move(pro),
+                                        toLeader, retry, retryLimit, this] () mutable {
+                        getResponse(std::move(req),
+                                    std::move(remoteFunc),
+                                    std::move(respGen),
+                                    std::move(pro),
+                                    toLeader,
+                                    retry + 1,
+                                    retryLimit);
+                    }, FLAGS_meta_client_retry_interval_secs * 1000);
+                    return;
                 } else {
-                    p.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
-                                                                 t.exception().what().c_str())));
+                    LOG(INFO) << "Exceed retry limit";
+                    pro.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
+                                                                   t.exception().what().c_str())));
                 }
                 return;
             }
             auto&& resp = t.value();
             if (resp.code == cpp2::ErrorCode::SUCCEEDED) {
                 // succeeded
-                p.setValue(respGen(std::move(resp)));
+                pro.setValue(respGen(std::move(resp)));
                 return;
             } else if (resp.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
                 HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
@@ -340,15 +351,22 @@ void MetaClient::getResponse(Request req,
                     folly::RWSpinLock::WriteHolder holder(hostLock_);
                     leader_ = leader;
                 }
+                if (retry < retryLimit) {
+                    evb->runAfterDelay([req = std::move(req), remoteFunc = std::move(remoteFunc),
+                                        respGen = std::move(respGen), pro = std::move(pro),
+                                        toLeader, retry, retryLimit, this] () mutable {
+                        getResponse(std::move(req),
+                                    std::move(remoteFunc),
+                                    std::move(respGen),
+                                    std::move(pro),
+                                    toLeader,
+                                    retry + 1,
+                                    retryLimit);
+                    }, FLAGS_meta_client_retry_interval_secs * 1000);
+                    return;
+                }
             }
-            // errored
-            if (retry < retryLimit) {
-                sleep(FLAGS_meta_client_retry_interval_secs);
-                getResponse(std::move(req), std::move(remoteFunc), std::move(respGen),
-                            std::move(p), toLeader, retry + 1, retryLimit);
-            } else {
-                p.setValue(this->handleResponse(resp));
-            }
+            pro.setValue(this->handleResponse(resp));
         });  // then
     });  // via
 }
@@ -390,7 +408,13 @@ Status MetaClient::handleResponse(const RESP& resp) {
         case cpp2::ErrorCode::E_WRONGCLUSTER:
             return Status::Error("wrong cluster!");
         case cpp2::ErrorCode::E_LEADER_CHANGED: {
-            return Status::LeaderChanged();
+            return Status::LeaderChanged("Leader changed!");
+        case cpp2::ErrorCode::E_BALANCED:
+            return Status::Error("The cluster is balanced!");
+        case cpp2::ErrorCode::E_BALANCER_RUNNING:
+            return Status::Error("The balancer is running!");
+        case cpp2::ErrorCode::E_BAD_BALANCE_PLAN:
+            return Status::Error("Bad balance plan!");
         }
         default:
             return Status::Error("Unknown code %d", static_cast<int32_t>(resp.get_code()));
@@ -695,7 +719,7 @@ MetaClient::multiPut(std::string segment,
         return Status::Error("arguments invalid!");
     }
     cpp2::MultiPutReq req;
-    std::vector<cpp2::Pair> data;
+    std::vector<nebula::cpp2::Pair> data;
     for (auto& element : pairs) {
         data.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                           std::move(element.first), std::move(element.second));
@@ -1168,6 +1192,20 @@ folly::Future<StatusOr<int64_t>> MetaClient::balance() {
     return future;
 }
 
+folly::Future<StatusOr<std::vector<cpp2::BalanceTask>>>
+MetaClient::showBalance(int64_t balanceId) {
+    cpp2::BalanceReq req;
+    req.set_id(balanceId);
+    folly::Promise<StatusOr<std::vector<cpp2::BalanceTask>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_balance(request);
+                }, [] (cpp2::BalanceResp&& resp) -> std::vector<cpp2::BalanceTask> {
+                    return resp.tasks;
+                }, std::move(promise), true);
+    return future;
+}
+
 folly::Future<StatusOr<bool>> MetaClient::balanceLeader() {
     cpp2::LeaderBalanceReq req;
     folly::Promise<StatusOr<bool>> promise;
@@ -1361,6 +1399,11 @@ ConfigItem MetaClient::toConfigItem(const cpp2::ConfigItem& item) {
             break;
     }
     return ConfigItem(item.get_module(), item.get_name(), item.get_type(), item.get_mode(), value);
+}
+
+Status MetaClient::refreshCache() {
+    auto ret = bgThread_->addTask(&MetaClient::loadData, this).get();
+    return ret ? Status::OK() : Status::Error("Load data failed");
 }
 
 }  // namespace meta

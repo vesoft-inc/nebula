@@ -1,3 +1,5 @@
+# Statement Composition
+
 There are only two ways to compose statements (or subqueries):
 * More than one statements can be batched together, separated by semicolon (;). The result of the last statement will be returned as the result of the batch.
 * Statements could be piped together using operator (|), much like the pipe in the shell scripts. The result yielded from the previous statement could be redirected to the next statement as input.

@@ -26,28 +26,38 @@ UpdateEdgeExecutor::UpdateEdgeExecutor(Sentence *sentence,
 Status UpdateEdgeExecutor::prepare() {
     DCHECK(sentence_ != nullptr);
     Status status = Status::OK();
+
+    spaceId_ = ectx()->rctx()->session()->space();
+    expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setSpace(spaceId_);
+    expCtx_->setStorageClient(ectx()->getStorageClient());
+
     do {
         status = checkIfGraphSpaceChosen();
         if (!status.ok()) {
             break;
         }
         insertable_ = sentence_->getInsertable();
-        status = sentence_->getSrcId()->prepare();
+        auto sid = sentence_->getSrcId();
+        sid->setContext(expCtx_.get());
+        status = sid->prepare();
         if (!status.ok()) {
             break;
         }
-        auto src = sentence_->getSrcId()->eval();
+        auto src = sid->eval();
         if (!src.ok() || !Expression::isInt(src.value())) {
             status = Status::Error("SRC Vertex ID should be of type integer");
             break;
         }
         edge_.set_src(Expression::asInt(src.value()));
 
-        status = sentence_->getDstId()->prepare();
+        auto did = sentence_->getDstId();
+        did->setContext(expCtx_.get());
+        status = did->prepare();
         if (!status.ok()) {
             break;
         }
-        auto dst = sentence_->getDstId()->eval();
+        auto dst = did->eval();
         if (!dst.ok() || !Expression::isInt(dst.value())) {
             status = Status::Error("DST Vertex ID should be of type integer");
             break;
@@ -55,9 +65,8 @@ Status UpdateEdgeExecutor::prepare() {
         edge_.set_dst(Expression::asInt(dst.value()));
         edge_.set_ranking(sentence_->getRank());
 
-        auto spaceId = ectx()->rctx()->session()->space();
         edgeTypeName_ = sentence_->getEdgeType();
-        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *edgeTypeName_);
+        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId_, *edgeTypeName_);
         if (!edgeStatus.ok()) {
             status = edgeStatus.status();
             break;
@@ -200,8 +209,7 @@ void UpdateEdgeExecutor::insertReverselyEdge(storage::cpp2::UpdateResponse &&rpc
     reverselyEdge.key.set_edge_type(-edge_.edge_type);
     reverselyEdge.props = "";
     edges.emplace_back(reverselyEdge);
-    auto space = ectx()->rctx()->session()->space();
-    auto future = ectx()->storage()->addEdges(space, std::move(edges), false);
+    auto future = ectx()->getStorageClient()->addEdges(spaceId_, std::move(edges), false);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this, updateResp = std::move(rpcResp)] (auto &&resp) mutable {
         auto completeness = resp.completeness();
@@ -225,15 +233,14 @@ void UpdateEdgeExecutor::insertReverselyEdge(storage::cpp2::UpdateResponse &&rpc
 
 void UpdateEdgeExecutor::execute() {
     FLOG_INFO("Executing UpdateEdge: %s", sentence_->toString().c_str());
-    auto space = ectx()->rctx()->session()->space();
     std::string filterStr = filter_ ? Expression::encode(filter_) : "";
     auto returns = getReturnColumns();
-    auto future = ectx()->storage()->updateEdge(space,
-                                                edge_,
-                                                filterStr,
-                                                std::move(updateItems_),
-                                                std::move(returns),
-                                                insertable_);
+    auto future = ectx()->getStorageClient()->updateEdge(spaceId_,
+                                                         edge_,
+                                                         filterStr,
+                                                         std::move(updateItems_),
+                                                         std::move(returns),
+                                                         insertable_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {

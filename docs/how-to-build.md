@@ -4,26 +4,25 @@ This tutorial provides an introduction to building `Nebula` code.
 
 ### Compiler
 
-The project Nebula is developed using C++14, so it requires a compiler supporting C++14 features.
+Nebula is developed based C++14, so it requires a compiler supporting C++14 features.
 
-### Support system version
+### Supported system version
 - Fedora29, 30
 - Centos6.5, 7.5
 - Ubuntu16.04, 18.04
 
-### The amount of disk space required
+### Required storage
 
-When build type is **DEBUG**, **Nebula-3rdparty** and **nebula** build require approximately **13G** of disk space to compile.
-Please allow for adequate disk space. Better reserve more than **16G** of space.
+When building type is **DEBUG**, suggestion reserve disk space is **30G** at least.
 
-### How to build
-#### Step1: clone code
+### Building locally
+#### Step 1: clone code
 
 ```
 bash> git clone https://github.com/vesoft-inc/nebula.git
 ```
 
-#### Step2: install dependencies
+#### Step 2: install dependencies
 - user in China
 
     ```
@@ -36,12 +35,47 @@ bash> git clone https://github.com/vesoft-inc/nebula.git
     bash> cd nebula && ./build_dep.sh U
     ```
 
-#### Step3: update **~/.bashrc**
+- user's environment cannot download oss packages directly
+
+    Step 1:
+    Download the corresponding version of the dependency package
+
+    **user in China**
+    - [Fedora29/30](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/fedora29.tar.gz)
+    - [Centos7.5](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos7.5.tar.gz)
+    - [Centos6.5](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos6.5.tar.gz)
+    - [Ubuntu1604](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu16.tar.gz)
+    - [Ubuntu1804](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu18.tar.gz)
+
+    **user in US**
+
+    - [Fedora29/30](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/fedora29.tar.gz)
+    - [Centos7.5](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos7.5.tar.gz)
+    - [Centos6.5](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/centos6.5.tar.gz)
+    - [Ubuntu1604](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/ubuntu16.tar.gz)
+    - [Ubuntu1804](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/ubuntu18.tar.gz)
+
+    Step 2:
+    Install the package
+
+    ```
+    tar xf ${package_name}.tar.gz
+    cd ${package_name} && ./install.sh
+    ```
+
+    Step 3:
+    Install others through local sources
+
+    ```
+    bash> cd nebula && ./build_dep.sh N
+    ```
+
+#### Step 3: update **~/.bashrc**
 
 ```
 bash> source ~/.bashrc
 ```
-#### Step4: build
+#### Step 4: build
 - without java client
 
     ```
@@ -60,24 +94,82 @@ bash> source ~/.bashrc
     bash> sudo make install
     ```
 
-#### **Now build finish**
-- If you don't see any error messages，and the end has
+#### **Building completed**
+- If no errors are shown
 
     ```
     [100%] Built target ....
     ```
     **Congratulations! Compile successfully...**
-- You can see the installation directory **/usr/local/nebula** with four folders **etc/**, **bin/**, **scripts/** **share/** below
+- You can see there are four folders in the the installation directory **/usr/local/nebula**: **etc/**, **bin/**, **scripts/**, **share/**.
 
     ```
     [root@centos7.5 nebula]# ls /usr/local/nebula/
     bin  etc  scripts  share
     ```
-    
+
     **Now, you can start nebula!** [Getting Started](get-started.md)
 
+### Building with Docker container
 
-### Problems and solutions you may encounter
+Nebula has provided a docker image with the whole compiling environment [vesoft/nebula-dev](https://hub.docker.com/r/vesoft/nebula-dev), which will make it possible to change source code locally, build and debug within the container. Performing the following steps to start quick development:
+
+#### Pull image from Docker Hub
+
+```shell
+bash> docker pull vesoft/nebula-dev
+```
+
+#### Run docker container and mount your local source code directory into the container working_dir `/home/nebula`
+
+```shell
+bash> docker run --rm -ti \
+  --security-opt seccomp=unconfined \
+  -v /path/to/nebula/:/home/nebula \
+  vesoft/nebula-dev \
+  bash
+```
+
+ Replace `/path/to/nebula/` with your **local nebula source code directory**.
+
+#### Compiling within the container
+
+```shell
+docker> mkdir _build && cd _build
+docker> cmake ..
+docker> make
+docker> make install
+```
+
+#### Run nebula service
+
+Once the preceding installation is completed, you can run nebula service within the container, the default installation directory is `/usr/local/nebula`.
+
+```shell
+docker> cd /usr/local/nebula
+```
+
+Rename config files of nebula service
+
+```shell
+docker> cp etc/nebula-graphd.conf.default etc/nebula-graphd.conf
+docker> cp etc/nebula-metad.conf.default etc/nebula-metad.conf
+docker> cp etc/nebula-storaged.conf.default etc/nebula-storaged.conf
+```
+
+Start service
+
+```shell
+docker> ./scripts/nebula.service start all
+docker> ./bin/nebula -u user -p password --port 3699 --addr="127.0.0.1"
+nebula> SHOW HOSTS;
+```
+
+
+
+
+
+### FAQs
 
 - **Error info**: `/usr/bin/ld: cannot find Scrt1.o: No such file or directory`
 

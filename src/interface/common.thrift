@@ -84,4 +84,9 @@ struct HostAddr {
     2: Port  port,
 }
 
+struct Pair {
+    1: string key,
+    2: string value,
+}
+
 const ValueType kInvalidValueType = {"type" : UNKNOWN}

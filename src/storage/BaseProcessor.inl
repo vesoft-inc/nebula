@@ -21,6 +21,8 @@ cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
         return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
     case kvstore::ResultCode::ERR_PART_NOT_FOUND:
         return cpp2::ErrorCode::E_PART_NOT_FOUND;
+    case kvstore::ResultCode::ERR_CONSENSUS_ERROR:
+        return cpp2::ErrorCode::E_CONSENSUS_ERROR;
     default:
         return cpp2::ErrorCode::E_UNKNOWN;
     }
@@ -57,7 +59,6 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
             }
             this->callingNum_--;
             if (this->callingNum_ == 0) {
-                result_.set_failed_codes(std::move(this->codes_));
                 finished = true;
             }
         }
@@ -97,7 +98,6 @@ void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
             }
             this->callingNum_--;
             if (this->callingNum_ == 0) {
-                result_.set_failed_codes(std::move(this->codes_));
                 finished = true;
             }
         }
@@ -136,7 +136,6 @@ void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
             }
             this->callingNum_--;
             if (this->callingNum_ == 0) {
-                result_.set_failed_codes(std::move(this->codes_));
                 finished = true;
             }
         }
