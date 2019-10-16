@@ -234,7 +234,6 @@ unreserved_keyword
      | KW_GOD                { $$ = new std::string("god"); }
      | KW_ADMIN              { $$ = new std::string("admin"); }
      | KW_GUEST              { $$ = new std::string("guest"); }
-     | KW_IN                 { $$ = new std::string("in"); }
      ;
 
 primary_expression
@@ -328,11 +327,8 @@ alias_ref_expression
     ;
 
 function_call_expression
-    : name_label L_PAREN opt_argument_list R_PAREN {
-        $$ = new FunctionCallExpression(nullptr, $1, $3);
-    }
-    | primary_expression name_label L_PAREN opt_argument_list R_PAREN {
-        $$ = new FunctionCallExpression($1, $2, $4);
+    : LABEL L_PAREN opt_argument_list R_PAREN {
+        $$ = new FunctionCallExpression($1, $3);
     }
     ;
 

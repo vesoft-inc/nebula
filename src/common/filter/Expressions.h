@@ -701,18 +701,6 @@ public:
         }
     }
 
-    FunctionCallExpression(Expression *expr,
-                           std::string *name,
-                           ArgumentList *args) {
-        kind_ = kFunctionCall;
-        expr_.reset(expr);
-        name_.reset(name);
-        if (args != nullptr) {
-            args_ = args->args();
-            delete args;
-        }
-    }
-
     std::string toString() const override;
 
     OptVariantType eval() const override;
@@ -721,9 +709,6 @@ public:
 
     void setContext(ExpressionContext *ctx) override {
         context_ = ctx;
-        if (expr_ != nullptr) {
-            expr_->setContext(ctx);
-        }
         for (auto &arg : args_) {
             arg->setContext(ctx);
         }
@@ -737,7 +722,6 @@ private:
 private:
     std::unique_ptr<std::string>                name_;
     std::vector<std::unique_ptr<Expression>>    args_;
-    std::unique_ptr<Expression>                 expr_;
     std::function<VariantType(const std::vector<VariantType>&)> function_;
 };
 

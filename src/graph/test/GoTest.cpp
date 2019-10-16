@@ -627,12 +627,12 @@ TEST_F(GoTest, NotExistTagProp) {
     }
 }
 
-TEST_F(GoTest, inCall) {
+TEST_F(GoTest, is_inCall) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
         auto *fmt = "GO FROM %ld OVER serve "
-                    "WHERE $$.team.name in (\"Hawks\", \"Suns\") "
+                    "WHERE udf_is_in($$.team.name, \"Hawks\", \"Suns\") "
                     "YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
@@ -652,7 +652,7 @@ TEST_F(GoTest, inCall) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER like YIELD like._dst AS id"
-                    "| GO FROM $-.id OVER serve WHERE $-.id in(%ld, 123)";
+                    "| GO FROM $-.id OVER serve WHERE udf_is_in($-.id, %ld, 123)";
         auto query = folly::stringPrintf(fmt,
                 players_["Tim Duncan"].vid(), players_["Tony Parker"].vid());
         auto code = client_->execute(query, resp);
@@ -672,7 +672,7 @@ TEST_F(GoTest, inCall) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER like YIELD like._dst AS id"
-                    "| GO FROM $-.id OVER serve WHERE $-.id in(%ld, 123) && 1 == 1";
+                    "| GO FROM $-.id OVER serve WHERE udf_is_in($-.id, %ld, 123) && 1 == 1";
         auto query = folly::stringPrintf(fmt,
                 players_["Tim Duncan"].vid(), players_["Tony Parker"].vid());
         auto code = client_->execute(query, resp);

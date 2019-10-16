@@ -209,11 +209,11 @@ TEST_F(YieldTest, inCall) {
     ASSERT_NE(nullptr, client);
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "YIELD 1 in(0,1,2), 123";
+        std::string query = "YIELD udf_is_in(1,0,1,2), 123";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *resp.get_error_msg();
         std::vector<std::string> expectedColNames{
-            {"1 in(0,1,2)"}, {"123"}
+            {"udf_is_in(1,0,1,2)"}, {"123"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
         std::vector<std::tuple<bool, uint64_t>> expected{

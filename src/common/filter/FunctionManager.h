@@ -29,7 +29,7 @@ public:
     /**
      * To obtain a function named `func', with the actual arity.
      */
-    static StatusOr<Function> get(const std::string &func, size_t arity, bool isExprSet);
+    static StatusOr<Function> get(const std::string &func, size_t arity);
 
     /**
      * To load a set of functions from a shared object dynamically.

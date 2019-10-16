@@ -432,17 +432,16 @@ FunctionManager::FunctionManager() {
         };
     }
     {
-        auto &attr = functions_["in"];
+        auto &attr = functions_["udf_is_in"];
         attr.minArity_ = 2;
         attr.maxArity_ = INT64_MAX;
         attr.body_ = [] (const auto &args) {
-            VariantType cmp = args.back();
-            LOG(INFO) << cmp;
+            VariantType cmp = args.front();
             switch (cmp.which()) {
                 case VAR_INT64: {
                     auto v = Expression::asInt(cmp);
                     std::unordered_set<uint64_t> vals;
-                    for (auto iter = args.begin(); iter < (args.end() - 1); ++iter) {
+                    for (auto iter = (args.begin() + 1); iter < args.end(); ++iter) {
                         vals.emplace(Expression::toInt(*iter));
                     }
                     auto ret = vals.emplace(v);
@@ -451,7 +450,7 @@ FunctionManager::FunctionManager() {
                 case VAR_DOUBLE: {
                     auto v = Expression::asDouble(cmp);
                     std::unordered_set<double> vals;
-                    for (auto iter = args.begin(); iter < (args.end() - 1); ++iter) {
+                    for (auto iter = (args.begin() + 1); iter < args.end(); ++iter) {
                         vals.emplace(Expression::toDouble(*iter));
                     }
                     auto ret = vals.emplace(v);
@@ -460,7 +459,7 @@ FunctionManager::FunctionManager() {
                 case VAR_BOOL: {
                     auto v = Expression::asBool(cmp);
                     std::unordered_set<bool> vals;
-                    for (auto iter = args.begin(); iter < (args.end() - 1); ++iter) {
+                    for (auto iter = (args.begin() + 1); iter < args.end(); ++iter) {
                         vals.emplace(Expression::toBool(*iter));
                     }
                     auto ret = vals.emplace(v);
@@ -469,7 +468,7 @@ FunctionManager::FunctionManager() {
                 case VAR_STR: {
                     auto v = Expression::asString(cmp);
                     std::unordered_set<std::string> vals;
-                    for (auto iter = args.begin(); iter < (args.end() - 1); ++iter) {
+                    for (auto iter = (args.begin() + 1); iter < args.end(); ++iter) {
                         vals.emplace(Expression::toString(*iter));
                     }
                     auto ret = vals.emplace(v);
@@ -486,12 +485,8 @@ FunctionManager::FunctionManager() {
 
 // static
 StatusOr<FunctionManager::Function>
-FunctionManager::get(const std::string &func, size_t arity, bool isExprSet) {
-    if ((func != "in" && isExprSet)
-            || (func == "in" && !isExprSet)) {
-        return Status::SyntaxError("syntax error near %s", func.c_str());
-    }
-    return instance().getInternal(func, (arity + (isExprSet ? 1 : 0)));
+FunctionManager::get(const std::string &func, size_t arity) {
+    return instance().getInternal(func, arity);
 }
 
 

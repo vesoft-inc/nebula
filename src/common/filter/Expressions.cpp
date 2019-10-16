@@ -538,10 +538,6 @@ const char* PrimaryExpression::decode(const char *pos, const char *end) {
 std::string FunctionCallExpression::toString() const {
     std::string buf;
     buf.reserve(256);
-    if (expr_ != nullptr) {
-        buf += expr_->toString();
-        buf += " ";
-    }
     buf += *name_;
     buf += "(";
     for (auto &arg : args_) {
@@ -566,21 +562,13 @@ OptVariantType FunctionCallExpression::eval() const {
         args.emplace_back(std::move(result.value()));
     }
 
-    if (expr_ != nullptr) {
-        auto result = expr_->eval();
-        if (!result.ok()) {
-            return result;
-        }
-        args.emplace_back(std::move(result.value()));
-    }
-
     // TODO(simon.liu)
     auto r = function_(args);
     return OptVariantType(r);
 }
 
 Status FunctionCallExpression::prepare() {
-    auto result = FunctionManager::get(*name_, args_.size(), expr_ != nullptr);
+    auto result = FunctionManager::get(*name_, args_.size());
     if (!result.ok()) {
         return std::move(result).status();
     }
@@ -588,21 +576,12 @@ Status FunctionCallExpression::prepare() {
     function_ = std::move(result).value();
 
     auto status = Status::OK();
-    do {
-        if (expr_ != nullptr) {
-            status = expr_->prepare();
-            if (!status.ok()) {
-                break;
-            }
+    for (auto &arg : args_) {
+        status = arg->prepare();
+        if (!status.ok()) {
+            break;
         }
-
-        for (auto &arg : args_) {
-            status = arg->prepare();
-            if (!status.ok()) {
-                break;
-            }
-        }
-    } while (false);
+    }
     return status;
 }
 
