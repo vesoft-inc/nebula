@@ -214,7 +214,8 @@ RaftPart::RaftPart(ClusterID clusterId,
         , ioThreadPool_{pool}
         , bgWorkers_{workers}
         , executor_(executor)
-        , snapshot_(snapshotMan) {
+        , snapshot_(snapshotMan)
+        , weight_(1) {
     FileBasedWalPolicy policy;
     policy.ttl = FLAGS_wal_ttl;
     policy.fileSize = FLAGS_wal_file_size;
@@ -934,7 +935,7 @@ bool RaftPart::needToStartElection() {
     std::lock_guard<std::mutex> g(raftLock_);
     if (status_ == Status::RUNNING &&
         role_ == Role::FOLLOWER &&
-        (lastMsgRecvDur_.elapsedInSec() >= FLAGS_raft_heartbeat_interval_secs ||
+        (lastMsgRecvDur_.elapsedInSec() >= weight_ * FLAGS_raft_heartbeat_interval_secs ||
          term_ == 0)) {
         LOG(INFO) << idStr_ << "Start leader election, reason: lastMsgDur "
                   << lastMsgRecvDur_.elapsedInSec()
@@ -982,7 +983,8 @@ bool RaftPart::prepareElectionRequest(
 
 
 typename RaftPart::Role RaftPart::processElectionResponses(
-        const RaftPart::ElectionResponses& results) {
+        const RaftPart::ElectionResponses& results,
+        const std::vector<std::shared_ptr<Host>>& hosts) {
     std::lock_guard<std::mutex> g(raftLock_);
 
     // Make sure the partition is running
@@ -1002,6 +1004,10 @@ typename RaftPart::Role RaftPart::processElectionResponses(
     for (auto& r : results) {
         if (r.second.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
             ++numSucceeded;
+        } else if (r.second.get_error_code() == cpp2::ErrorCode::E_LOG_STALE) {
+            VLOG(2) << idStr_ << "My last log id is less than " << hosts[r.first]
+                    << ", increase my election interval.";
+            ++weight_;
         }
     }
 
@@ -1081,7 +1087,7 @@ bool RaftPart::leaderElection() {
     }
 
     // Process the responses
-    switch (processElectionResponses(resps)) {
+    switch (processElectionResponses(resps, hosts)) {
         case Role::LEADER: {
             // Elected
             LOG(INFO) << idStr_
@@ -1096,6 +1102,7 @@ bool RaftPart::leaderElection() {
                     });
                 }
             }
+            weight_ = 1;
             sendHeartbeat();
             return true;
         }
@@ -1259,6 +1266,7 @@ void RaftPart::processAskForVoteRequest(
 
     // Reset the last message time
     lastMsgRecvDur_.reset();
+    weight_ = 1;
 
     // If the partition used to be a leader, need to fire the callback
     if (oldRole == Role::LEADER) {
@@ -1533,6 +1541,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
     leader_ = std::make_pair(req.get_leader_ip(),
                              req.get_leader_port());
     term_ = proposedTerm_ = req.get_current_term();
+    weight_ = 1;
     if (oldRole == Role::LEADER) {
         VLOG(2) << idStr_ << "Was a leader, need to do some clean-up";
         if (wal_->lastLogId() > lastLogId_) {

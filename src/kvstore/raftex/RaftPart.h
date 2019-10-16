@@ -334,7 +334,8 @@ private:
         std::vector<std::shared_ptr<Host>>& hosts);
 
     // The method returns the partition's role after the election
-    Role processElectionResponses(const ElectionResponses& results);
+    Role processElectionResponses(const ElectionResponses& results,
+                                  const std::vector<std::shared_ptr<Host>>& hosts);
 
     // Check whether new logs can be appended
     // Pre-condition: The caller needs to hold the raftLock_
@@ -520,6 +521,8 @@ protected:
 
     // Used to bypass the stale command
     int64_t startTimeMs_ = 0;
+
+    uint64_t weight_;
 };
 
 }  // namespace raftex
