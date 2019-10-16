@@ -1,6 +1,6 @@
 # Download and Ingest
 
-Nebula uses `RocksDB` as the default `key-value` storage engine. Therefore, when you are trying to load a large amount of data, the sst files of RocksDB can be generated offline by running a map-reduce job and distributed directly to the servers.
+Nebula uses `RocksDB` as the default `key-value` storage engine. Therefore, when you are trying to load a large amount of data, the SST files of RocksDB can be generated offline by running a map-reduce job and distributed directly to the servers.
 
 Nebula provides `Spark-SSTFile-Generator` tool.
 
@@ -20,7 +20,7 @@ The execution will generate SST files on `HDFS`. The directory structure is as f
 
 Each directory is a partition number.
 
-SST file name format is `{TYPE}-${FIRST_KEY_IN_THIS_FILE}.sst`, where `TYPE` is `vertex` or `edge`, `FIRST_KEY_IN_THIS_FILE` is the start Key of the file. (If you want to write your own tools to generate sst files, you need to ensure that the keys in each `SST` file are ordered.)
+SST file name format is `{TYPE}-${FIRST_KEY_IN_THIS_FILE}.sst`, where `TYPE` is data type, `FIRST_KEY_IN_THIS_FILE` is the start Key of the file. (If you want to write your own tools to generate SST files, you need to ensure that the keys in each `SST` file are ordered.)
 
 Please confirm that all servers have `Hadoop` installed and `HADOOP_HOME ` set. 
 
@@ -38,7 +38,7 @@ Download the `SST` files of each server into directory `data/download` respectiv
 
 If error occurs when downloading, delete the corresponding data files in `data/download` directory and try to download again. If error occurs again, please raise us an issue on [GitHub](https://github.com/vesoft-inc/nebula/issues). When data download is done, re-execute the command leads to no actions.
 
-When the offline sst data download is done, it can be ingested into the storage service via `INGEST` command.
+When the offline SST data download is done, it can be ingested into the storage service via `INGEST` command.
 `INGEST` command is as follows:
 
 ```bash

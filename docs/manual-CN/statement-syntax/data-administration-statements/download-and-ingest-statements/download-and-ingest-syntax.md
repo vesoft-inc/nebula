@@ -1,6 +1,6 @@
 # Download and Ingest
 
-Nebula 存储访问默认使用 `RocksDB` 作为 `key-value` 存储引擎。因此在大量数据加载时，可以通过运行一个 map-reduce job 离线生成 RocksDB 的 sst 文件，再直接分发到服务器上。
+Nebula 存储访问默认使用 `RocksDB` 作为 `key-value` 存储引擎。因此在大量数据加载时，可以通过运行一个 map-reduce job 离线生成 RocksDB 的 SST 文件，再直接分发到服务器上。
 
 Nebula 提供了 `Spark-SSTFile-Generator` 工具。
 
@@ -22,7 +22,7 @@ Nebula 提供了 `Spark-SSTFile-Generator` 工具。
 
 其中各个目录为 partition 编号。
 
-SST 文件名格式为 `{TYPE}-${FIRST_KEY_IN_THIS_FILE}.sst`，其中 `TYPE` 为 `vertex` 或 `edge`，`FIRST_KEY_IN_THIS_FILE` 为文件中的起始 key。（如果你想自己写工具生成 sst 文件，需要保证每个 `SST`  文件中的 key 是有序的。)
+SST 文件名格式为 `{TYPE}-${FIRST_KEY_IN_THIS_FILE}.sst`，其中 `TYPE` 表示数据类型，`FIRST_KEY_IN_THIS_FILE` 为文件中的起始 key。（如果你想自己写工具生成 SST 文件，需要保证每个 `SST`  文件中的 key 是有序的。)
 
 请确认所有 server 已安装 `Hadoop`，并且 `HADOOP_HOME ` 已设置。
 
@@ -40,7 +40,7 @@ nebula > DOWNLOAD HDFS "hdfs://${HADOOP_HOST}:${HADOOP_PORT}/${HADOOP_PATH}"
 
 如果 `download` 过程出现错误，请删除 `data/download` 目录下相应的数据文件，并尝试重新下载。如果遇到多次失败，请在 [GitHub](https://github.com/vesoft-inc/nebula/issues) 给我们提 issue。数据下载完毕后，重新执行该命令不会发生任何操作。
 
-sst 数据离线下载完成后，通过 `INGEST` 命令在线**加载**到存储服务中。
+SST 数据离线下载完成后，通过 `INGEST` 命令在线**加载**到存储服务中。
 
 Ingest 命令如下：
 
