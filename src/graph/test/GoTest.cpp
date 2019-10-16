@@ -895,5 +895,174 @@ TEST_F(GoTest, returnTest) {
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
 }
+
+
+TEST_F(GoTest, ReverselyOneStep) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO FROM hash('Tim Duncan') OVER like REVERSELY "
+                     "YIELD like._src";
+        client_->execute(query, resp);
+        std::vector<std::tuple<int64_t>> expected = {
+            { players_["Tony Parker"].vid() },
+            { players_["Manu Ginobili"].vid() },
+            { players_["LaMarcus Aldridge"].vid() },
+            { players_["Marco Belinelli"].vid() },
+            { players_["Danny Green"].vid() },
+            { players_["Aron Baynes"].vid() },
+            { players_["Boris Diaw"].vid() },
+            { players_["Tiago Splitter"].vid() },
+            { players_["Dejounte Murray"].vid() },
+            { players_["Shaquile O'Neal"].vid() },
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO FROM hash('Tim Duncan') OVER like REVERSELY "
+                      "YIELD $$.player.name";
+        client_->execute(query, resp);
+        std::vector<std::tuple<std::string>> expected = {
+            { "Tony Parker" },
+            { "Manu Ginobili" },
+            { "LaMarcus Aldridge" },
+            { "Marco Belinelli" },
+            { "Danny Green" },
+            { "Aron Baynes" },
+            { "Boris Diaw" },
+            { "Tiago Splitter" },
+            { "Dejounte Murray" },
+            { "Shaquile O'Neal" },
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO FROM hash('Tim Duncan') OVER like REVERSELY "
+                     "WHERE $$.player.age < 35 "
+                     "YIELD $$.player.name";
+        client_->execute(query, resp);
+        std::vector<std::tuple<std::string>> expected = {
+            { "LaMarcus Aldridge" },
+            { "Marco Belinelli" },
+            { "Danny Green" },
+            { "Aron Baynes" },
+            { "Tiago Splitter" },
+            { "Dejounte Murray" },
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+
+TEST_F(GoTest, ReverselyTwoStep) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO 2 STEPS FROM hash('Kobe Bryant') OVER like REVERSELY "
+                     "YIELD $$.player.name";
+        client_->execute(query, resp);
+        std::vector<std::tuple<std::string>> expected = {
+            { "Marc Gasol" },
+            { "Vince Carter" },
+            { "Yao Ming" },
+            { "Grant Hill" },
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+
+TEST_F(GoTest, ReverselyWithPipe) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO FROM hash('LeBron James') OVER serve YIELD serve._dst AS id |"
+                     "GO FROM $-.id OVER serve REVERSELY YIELD $^.team.name, $$.player.name";
+        client_->execute(query, resp);
+        std::vector<std::tuple<std::string, std::string>> expected = {
+            { "Cavaliers", "Kyrie Irving" },
+            { "Cavaliers", "Dwyane Wade" },
+            { "Cavaliers", "Shaquile O'Neal" },
+            { "Cavaliers", "Danny Green" },
+            { "Cavaliers", "LeBron James" },
+            { "Heat", "Dwyane Wade" },
+            { "Heat", "LeBron James" },
+            { "Heat", "Ray Allen" },
+            { "Heat", "Shaquile O'Neal" },
+            { "Heat", "Amar'e Stoudemire" },
+            { "Lakers", "Kobe Bryant" },
+            { "Lakers", "LeBron James" },
+            { "Lakers", "Rajon Rondo" },
+            { "Lakers", "Steve Nash" },
+            { "Lakers", "Paul Gasol" },
+            { "Lakers", "Shaquile O'Neal" },
+            { "Lakers", "JaVale McGee" },
+            { "Lakers", "Dwight Howard" },
+        };
+
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO FROM hash('LeBron James') OVER serve "
+                        "YIELD serve._dst AS id |"
+                     "GO FROM $-.id OVER serve REVERSELY "
+                        "WHERE $$.player.name != 'LeBron James' "
+                        "YIELD $^.team.name, $$.player.name";
+        client_->execute(query, resp);
+        std::vector<std::tuple<std::string, std::string>> expected = {
+            { "Cavaliers", "Kyrie Irving" },
+            { "Cavaliers", "Dwyane Wade" },
+            { "Cavaliers", "Shaquile O'Neal" },
+            { "Cavaliers", "Danny Green" },
+            { "Heat", "Dwyane Wade" },
+            { "Heat", "Ray Allen" },
+            { "Heat", "Shaquile O'Neal" },
+            { "Heat", "Amar'e Stoudemire" },
+            { "Lakers", "Kobe Bryant" },
+            { "Lakers", "Rajon Rondo" },
+            { "Lakers", "Steve Nash" },
+            { "Lakers", "Paul Gasol" },
+            { "Lakers", "Shaquile O'Neal" },
+            { "Lakers", "JaVale McGee" },
+            { "Lakers", "Dwight Howard" },
+        };
+
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    /**
+     * TODO(dutor)
+     * For the time being, reference to the pipe inputs is faulty.
+     * Because there might be multiple associated records with the same column value,
+     * which is used as the source id by the right statement.
+     *
+     * So the following case is disabled temporarily.
+     */
+    /*
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO FROM hash('LeBron James') OVER serve "
+                        "YIELD serve._dst AS id, serve.start_year AS start, "
+                            "serve.end_year AS end |"
+                     "GO FROM $-.id OVER serve REVERSELY "
+                        "WHERE $$.player.name != 'LeBron James' && "
+                            "serve.start_year <= $-.end && serve.end_year >= $-.end "
+                        "YIELD $^.team.name, $$.player.name";
+        client_->execute(query, resp);
+        std::vector<std::tuple<std::string, std::string>> expected = {
+            { "Cavaliers", "Kyrie Irving" },
+            { "Cavaliers", "Shaquile O'Neal" },
+            { "Cavaliers", "Danny Green" },
+            { "Cavaliers", "Dwyane Wade" },
+            { "Heat", "Dwyane Wade" },
+            { "Heat", "Ray Allen" },
+            { "Lakers", "Rajon Rondo" },
+            { "Lakers", "JaVale McGee" },
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    */
+}
+
 }   // namespace graph
 }   // namespace nebula
