@@ -2,7 +2,7 @@
 
  Keyword `YIELD` can be used as a clause in a `FETCH` or `GO` statement, or as a separate statement in `PIPE`, or as a single sentence for calculation.
 
-## As Clause
+## As Clause (with GO-syntax)
 
 ```sql
 YIELD
@@ -89,11 +89,9 @@ YIELD
 ---------------------
 ```
 
-## Note
+**Note**
 
-- DISTINCT
-
-YIELD DISTINCT is not supported for use in single sentences.
+You can not use `YIELD DISTINCT` as a separate statement. This is a syntax error.
 
 ```sql
 nebula> YIELD DISTINCT 1     --- syntax error!
