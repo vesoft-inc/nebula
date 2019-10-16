@@ -52,9 +52,9 @@ public:
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
-    static std::string buildPathString(Path &path);
+    static std::string buildPathString(const Path &path);
 
-    cpp2::RowValue buildPathRow(Path &path);
+    cpp2::RowValue buildPathRow(const Path &path);
 
 private:
     // Do some prepare work that can not do in prepare()

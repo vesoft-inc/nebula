@@ -77,8 +77,7 @@ Status FindPathExecutor::beforeExecute() {
 }
 
 Status FindPathExecutor::prepareOverAll() {
-    auto spaceId = ectx()->rctx()->session()->space();
-    auto edgeAllStatus = ectx()->schemaManager()->getAllEdge(spaceId);
+    auto edgeAllStatus = ectx()->schemaManager()->getAllEdge(spaceId_);
 
     if (!edgeAllStatus.ok()) {
         return edgeAllStatus.status();
@@ -86,7 +85,7 @@ Status FindPathExecutor::prepareOverAll() {
 
     auto allEdge = edgeAllStatus.value();
     for (auto &e : allEdge) {
-        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, e);
+        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId_, e);
         if (!edgeStatus.ok()) {
             return edgeStatus.status();
         }
@@ -113,8 +112,7 @@ Status FindPathExecutor::prepareOver() {
             return prepareOverAll();
         }
 
-        auto spaceId = ectx()->rctx()->session()->space();
-        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *e->edge());
+        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId_, *e->edge());
         if (!edgeStatus.ok()) {
             return edgeStatus.status();
         }
@@ -606,7 +604,7 @@ FindPathExecutor::getStepOutProps(bool reversely) {
     return props;
 }
 
-std::string FindPathExecutor::buildPathString(Path &path) {
+std::string FindPathExecutor::buildPathString(const Path &path) {
     std::string pathStr;
     auto iter = path.begin();
     for (; iter != path.end(); ++iter) {
@@ -635,7 +633,7 @@ std::string FindPathExecutor::buildPathString(Path &path) {
     return pathStr;
 }
 
-cpp2::RowValue FindPathExecutor::buildPathRow(Path &path) {
+cpp2::RowValue FindPathExecutor::buildPathRow(const Path &path) {
     cpp2::RowValue rowValue;
     std::vector<cpp2::ColumnValue> row;
     cpp2::Path pathValue;
