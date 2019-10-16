@@ -13,7 +13,9 @@ Nebula storage provides key-value interfaces. Users can perform kv operations th
       folly::EventBase* evb = nullptr);
 ```
 
-Methods like remove, removeRange and scan will be provided later. <br /> Interfaces usage are demonstrated as follows:
+Methods like remove, removeRange and scan will be provided later. 
+
+Interfaces usage are demonstrated as follows:
 
 ```cpp
 // Put interface
@@ -45,7 +47,7 @@ auto resp = std::move(future).get()
 ```
 
 ### Processing returned results
-Check the returned results of the rpc to examine if the corresponding operation runs successfully. In addition, since nebula storage shards data, if one partition fails, the error code is also returned. If any of the partition fails, the entire requirement fails (resp.succeeded() is false). But those succeed are still read and written.
+Check the returned results of the rpc to examine if the corresponding operation runs successfully. In addition, since nebula storage shards data, if one partition fails, the error code is also returned. If any of the partition fails, the entire requirement fails (resp.succeeded() is false). But those succeed are still read/written.
 
 Users can retry until all the requirements run successfully. Currently, auto retry is not supported by StorageClient. Users can decide whether to retry based on the error code.
 ```cpp
@@ -66,7 +68,8 @@ if (!resp.failedParts().empty()) {
 ```
 
 #### Read values
-As for the Get instance, the corresponding values are needed. The  key-value pairs returned by each storage server is stored in an unordered_map. Nebula storage is multi copies based on RAFT, all read and write can only be sent to the leader. For a get requirement with multiple keys, the StorageClient needs to send a get requirement to the corresponding partition leader of each key. Therefore, multiple storage servers return multiple maps. Currently, users need to traverse the values of each key in several maps, consider the following example:
+对于 Get 接口，我们需要获取相应的 values。Nebula storage 是基于 Raft 的多副本，所有读写操作只能发送给对应 partition 的 leader。当一个 rpc 请求包含了多个跨 partition 的 get 时，Storage Client 会给访问这些 key 所对应的 Partition leader。每个 rpc 返回都单独保存在一个 unordered_map 中，目前还需要用户在这些 unordered_map 中遍历查找 key 是否存在。示例如下：
+For the Get interface, we need some more work to get the corresponding values. Nebula storage is a multi-copy based on Raft, and all read/written operations can only be sent to the leader of the corresponding partition. When an rpc request contains multiple gets across partitions, the Storage Client gives the corresponding Partition leader to access these keys. Each rpc return is stored separately in an unordered_map, and the user is currently required to traverse these unordered_maps to find out if the key exists. An example is as follows:
 
 ```cpp
 // Examine whether the value corresponding to the key is in the returned result. If it exists, it is saved in the value.
