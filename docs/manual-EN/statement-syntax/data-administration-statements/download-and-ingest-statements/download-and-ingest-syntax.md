@@ -1,10 +1,10 @@
 # Download and Ingest
 
-Nebula uses `RocksDB` as the default `key-value` storage engine. Therefore, when a large amount of data is loaded, the sst files of RocksDB can be generated offline by running a map-reduce job and distributed directly to the servers.
+Nebula uses `RocksDB` as the default `key-value` storage engine. Therefore, when you are trying to load a large amount of data, the sst files of RocksDB can be generated offline by running a map-reduce job and distributed directly to the servers.
 
 Nebula provides `Spark-SSTFile-Generator` tool.
 
-`Spark-SSTFile-Generator` generates SST files from the hive table via the mapping files. For details on how to use it, please refer [Spark application command line reference] (https://github.com/vesoft-inc/nebula/blob/master/src/tools/spark-sstfile-generator/README.md).
+`Spark-SSTFile-Generator` generates SST files from the hive table via the mapping files. For details on how to use it, please refer [Spark application command line reference](https://github.com/vesoft-inc/nebula/blob/master/src/tools/spark-sstfile-generator/README.md).
 
 The execution will generate SST files on `HDFS`. The directory structure is as follows:
 
@@ -18,9 +18,13 @@ The execution will generate SST files on `HDFS`. The directory structure is as f
 ....
 ```
 
-Each directory is a partition number.<br />SST file name format is `{TYPE}-${FIRST_KEY_IN_THIS_FILE}.sst`, where `TYPE` is `vertex` or `edge`, `FIRST_KEY_IN_THIS_FILE` is the start Key of the file. (If you want to write your own tools to generate sst files, you need to ensure that the keys in each `SST` file are ordered.)
+Each directory is a partition number.
 
-Please confirm that all servers have `Hadoop` installed and `HADOOP_HOME ` set. <br /> Run nebula console and execute the download command:
+SST file name format is `{TYPE}-${FIRST_KEY_IN_THIS_FILE}.sst`, where `TYPE` is `vertex` or `edge`, `FIRST_KEY_IN_THIS_FILE` is the start Key of the file. (If you want to write your own tools to generate sst files, you need to ensure that the keys in each `SST` file are ordered.)
+
+Please confirm that all servers have `Hadoop` installed and `HADOOP_HOME ` set. 
+
+Run nebula console and execute the download command:
 
 ```bash
 nebula > DOWNLOAD HDFS "hdfs://${HADOOP_HOST}:${HADOOP_PORT}/${HADOOP_PATH}"
@@ -32,15 +36,15 @@ Download the `SST` files of each server into directory `data/download` respectiv
 - HADOOP_PORT specifies Hadoop NameNode port number
 - HADOOP_PATH specifies Hadoop data storage directory
 
-If error occurs when downloading, delete the corresponding data files in `data/download` directory and try to download again. If error occurs again, please raise us an issue on [GitHub](https://github.com/vesoft-inc/nebula/issues). <br /> When data download is done, re-execute the command leads to no actions.
+If error occurs when downloading, delete the corresponding data files in `data/download` directory and try to download again. If error occurs again, please raise us an issue on [GitHub](https://github.com/vesoft-inc/nebula/issues). When data download is done, re-execute the command leads to no actions.
 
-When the offline sst data download is done, it can be loaded into the storage service via `INGEST` command.
+When the offline sst data download is done, it can be ingested into the storage service via `INGEST` command.
 `INGEST` command is as follows:
 
 ```bash
 nebula > INGEST
 ```
 
-The command will load the `SST` files in `data/download` directory.
+The command will ingest the `SST` files in `data/download` directory.
 
 **Note:** `ingest` will block `RocksDB` when the data amount is large, please avoid running the command at requirement peak.
