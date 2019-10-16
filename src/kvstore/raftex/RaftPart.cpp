@@ -1005,9 +1005,9 @@ typename RaftPart::Role RaftPart::processElectionResponses(
         if (r.second.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
             ++numSucceeded;
         } else if (r.second.get_error_code() == cpp2::ErrorCode::E_LOG_STALE) {
-            VLOG(2) << idStr_ << "My last log id is less than " << hosts[r.first]
-                    << ", increase my election interval.";
-            ++weight_;
+            LOG(INFO) << idStr_ << "My last log id is less than " << hosts[r.first]
+                      << ", double my election interval.";
+            weight_ *= 2;
         }
     }
 
