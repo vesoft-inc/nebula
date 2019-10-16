@@ -559,7 +559,7 @@ OptVariantType FunctionCallExpression::eval() const {
         if (!result.ok()) {
             return result;
         }
-        args.push_back(std::move(result.value()));
+        args.emplace_back(std::move(result.value()));
     }
 
     // TODO(simon.liu)
