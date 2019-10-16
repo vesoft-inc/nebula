@@ -1,7 +1,7 @@
 # YIELD 子句、语句
 YIELD 关键字可以在FETCH、GO语句中作为子句使用，也可以在PIPE中作为独立的语句使用，同时可以作为用于计算的单句使用。
 
-## 子句
+## 作为子句
 ```
 YIELD
     [DISTINCT]
@@ -23,7 +23,7 @@ nebula> GO FROM 201 OVER relations_edge YIELD $$.student.name AS Friend, $$.stud
 
 e.g., $$.student.name用来获取目标点（$$)的属性。
 
-## 语句
+## 作为语句
 
 ### 引用输入或者变量
 
@@ -47,8 +47,7 @@ YIELD
 =========
 | 200   |
 ---------
-```
-```
+
 (user@127.0.0.1) [myspace_test2]> $var2 = GO FROM 200 OVER like;$var1 = GO FROM 201 OVER like;YIELD $var1.* UNION YIELD $var2.*;
 
 ===================
@@ -74,7 +73,7 @@ YIELD
 | 2     |
 ---------
 
-(user@127.0.0.1) [myspace_test2]> YIELD "Hel" + "\tlo" AS HELLO_1, ", World!" as WORLD_2
+(user@127.0.0.1) [myspace_test2]> YIELD "Hel" + "\tlo" AS HELLO_1, ", World!" AS WORLD_2
 ======================
 | HELLO_1 | WORLD_2  |
 ======================
