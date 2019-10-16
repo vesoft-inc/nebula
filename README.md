@@ -24,7 +24,12 @@ As a graph database, **Nebula** has these features
 * SQL-like query language
 
 ## How can I get Nebula ##
-Apart from installing **Nebula Graph** from source code, you can use the [official Nebula Graph image](https://hub.docker.com/r/vesoft/nebula-graph/tags). For more details on how to install Nebula Graph, see [Get Started](docs/get-started.md).
+
+Apart from [installing from source code](docs/how-to-build.md), you can use the docker image to [try](https://hub.docker.com/r/vesoft/nebula-graph) or for [develop](https://hub.docker.com/u/vesoft).
+
+## How to use Nebula
+
+See [manual](docs/README.md) or download the [pdf](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/doc/nebulagraph.pdf).
 
 ## How can I contribute ##
 As the team behind **Nebula**, we fully commit to the community and all-in to the open source project. All the core features are and will be implemented in the open source repository.

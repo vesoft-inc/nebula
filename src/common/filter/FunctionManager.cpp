@@ -194,10 +194,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 2;
         attr.body_ = [] (const auto &args) {
             if (args.empty()) {
-                return static_cast<int64_t>(folly::Random::rand32());
+                auto value = folly::Random::rand32();
+                return static_cast<int64_t>(static_cast<int32_t>(value));
             } else if (args.size() == 1UL) {
                 auto max = Expression::asInt(args[0]);
-                return static_cast<int64_t>(folly::Random::rand32(max));
+                auto value = folly::Random::rand32(max);
+                return static_cast<int64_t>(static_cast<int32_t>(value));
             }
             DCHECK_EQ(2UL, args.size());
             auto min = Expression::asInt(args[0]);

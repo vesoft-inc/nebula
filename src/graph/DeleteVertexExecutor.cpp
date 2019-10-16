@@ -33,7 +33,7 @@ Status DeleteVertexExecutor::prepare() {
 }
 
 void DeleteVertexExecutor::execute() {
-    // TODO(zlcook) Get edgeKes of a vertex by Go
+    // TODO(zlcook) Get edgeKeys of a vertex by Go
     auto future = ectx()->getStorageClient()->getEdgeKeys(spaceId_, vid_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
@@ -53,7 +53,11 @@ void DeleteVertexExecutor::execute() {
             allEdges.emplace_back(std::move(edge));
             allEdges.emplace_back(std::move(reverseEdge));
         }
-        deleteEdges(&allEdges);
+        if (allEdges.size() > 0) {
+            deleteEdges(&allEdges);
+        } else {
+            deleteVertex();
+        }
         return;
     };
 
