@@ -1,10 +1,9 @@
 # GO 语句
 
-`GO`是Nebula中最常用的关键字，表示以指定过滤条件（如`WHERE`）遍历图数据并获取点和边的属性，
-以指定顺序（`ORDER BY ASC | DESC`）返回指定数目（`LIMIT`）结果。
+`GO`是 Nebula 中最常用的关键字，表示以指定过滤条件（如`WHERE`）遍历图数据并获取点和边的属性，以指定顺序（`ORDER BY ASC | DESC`）返回指定数目（`LIMIT`）的结果。
 
->`GO`和`FIND`的用法与SQL中的`SELECT`类似，重要区别是`GO`必须从遍历一系列的节点开始。
->请参考`FIND`的用法，它对应于SQL中的`SELECT`。
+>`GO` 的用法与 SQL 中的`SELECT`类似，重要区别是`GO`必须从遍历一系列的节点开始。
+<!-- >请参考`FIND`的用法，它对应于SQL中的`SELECT`。 -->
 
 ```sql
 GO FROM <node_list>
@@ -47,7 +46,7 @@ nebula> GO FROM 101 OVER serve  \
 ```sql
 nebula> GO FROM 101 OVER serve  \
    WHERE serve.start_year > 1990       /* 筛选边serve的start_year属性  */ \
-   YIELD $$.team.name AS team_name,    /* 目标点team的serve.start_year属性 serve.start_year */
+   YIELD $$.team.name AS team_name    /* 目标点team的serve.start_year属性 serve.start_year */
 ================================
 | team_name | serve.start_year |
 ================================
@@ -74,7 +73,7 @@ nebula> GO FROM 100,102 OVER serve           \
 --------------------------------------------------------
 ```
 
-### 遍历多条边
+## 沿着多种类型的边进行遍历
 
 目前 nebula 支持 `GO` 沿着多条边遍历，语法为：
 

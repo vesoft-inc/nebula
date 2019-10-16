@@ -1,13 +1,13 @@
 # Go Syntax
 
-`GO` statement is the MOST commonly used clause in Nebula. 
+`GO` statement is the MOST commonly used clause in Nebula.
 
 It indicates to travel in a graph with specific filters (the `WHERE` clause), to fetch nodes and edges properties, and return results (the `YIELD` clause) with given order (the `ORDER BY ASC | DESC` clause) and numbers (the `LIMIT` clause).
 
->The syntax of `GO` statement (and `FIND` statement) is very similar to `SELECT` in SQL. Notice that the major difference is that `GO` must start traversing from a (set of) node(s).
->You can refer to `FIND` statement (in progress), which is the counterpart of `SELECT` in SQL.
+>The syntax of `GO` statement is very similar to `SELECT` in SQL. Notice that the major difference is that `GO` must start traversing from a (set of) node(s).
+<!-- >You can refer to `FIND` statement (in progress), which is the counterpart of `SELECT` in SQL. -->
 
-```bash
+```sql
 GO FROM <node_list>
 OVER <edge_type_list>
 WHERE (expression [ AND | OR expression ...])  
@@ -47,7 +47,7 @@ nebula> GO FROM 101 OVER serve  \
 ```sql
 nebula> GO FROM 101 OVER serve  \
    WHERE serve.start_year > 1990       /* check edge (serve) property ( start_year) */ \
-   YIELD $$.team.name AS team_name,    /* target vertex (team) property serve.start_year */
+   YIELD $$.team.name AS team_name   /* target vertex (team) property serve.start_year */
 ================================
 | team_name | serve.start_year |
 ================================
@@ -60,7 +60,7 @@ nebula> GO FROM 101 OVER serve  \
 ```sql
 nebula> GO FROM 100,102 OVER serve           \
    WHERE serve.start_year > 1995             /* check edge property */ \
-   YIELD DISTINCT $$.team.name AS team_name, /* DISTINCT as SQL */ \ 
+   YIELD DISTINCT $$.team.name AS team_name, /* DISTINCT as SQL */ \
    serve.start_year,                         /* edge property */ \
    $^.player.name AS player_name             /* source vertex (player) property */
 ========================================================
@@ -74,9 +74,9 @@ nebula> GO FROM 100,102 OVER serve           \
 --------------------------------------------------------
 ```
 
-### Traverse Multiple Edges
+### Traverse Along Multiple Edges Types
 
-Currently, nebula supports traversing multiple edges with `GO`, the syntax is:
+Currently, nebula supports traversing via multiple edge types with `GO`, the syntax is:
 
 ```sql
 GO OVER edge1, edge2....  // or
