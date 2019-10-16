@@ -13,7 +13,9 @@ nebula storage 提供 key-value 接口，用户可以通过 StorageClient 进行
       folly::EventBase* evb = nullptr);
 ```
 
-后续将提供 remove，removeRange 以及 scan 的方法。<br />下面结合示例说明 kv 接口的使用方法：
+后续将提供 remove，removeRange 以及 scan 的方法。
+
+下面结合示例说明 kv 接口的使用方法：
 
 ```cpp
 // Put接口
@@ -67,7 +69,8 @@ if (!resp.failedParts().empty()) {
 ```
 
 #### 读取 value
-对于 Get 接口，我们需要获取相应的 values。每个 storage server 返回的 key-value pairs 都保存在一个 unordered_map 中。nebula storage 是基于 Raft 的多副本，所有读写操作只能发送给 leader，对于一个请求包含多个 key 的 get 请求，StorageClient 需要给各个 key 对应的 Partition leader 发送 get 请求。因此多个 storage server 返回多个 map，目前还需要用户在若干 map 中遍历查找各个 key 对应的 value，示例如下：
+对于 Get 接口，我们需要获取相应的 values。Nebula storage 是基于 Raft 的多副本，所有读写操作只能发送给对应 partition 的 leader。当一个 rpc 请求包含了多个跨 partition 的 get 时，Storage Client 会给访问这些 key 所对应的 Partition leader。每个 rpc 返回都单独保存在一个 unordered_map 中，目前还需要用户在这些 unordered_map 中遍历查找 key 是否存在。示例如下：
+
 ```cpp
 // 查找key对应的value是否在返回结果中，如果存在，则保存在value中
 bool found = false;
