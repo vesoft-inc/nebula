@@ -68,8 +68,7 @@ if (!resp.failedParts().empty()) {
 ```
 
 #### Read values
-对于 Get 接口，我们需要获取相应的 values。Nebula storage 是基于 Raft 的多副本，所有读写操作只能发送给对应 partition 的 leader。当一个 rpc 请求包含了多个跨 partition 的 get 时，Storage Client 会给访问这些 key 所对应的 Partition leader。每个 rpc 返回都单独保存在一个 unordered_map 中，目前还需要用户在这些 unordered_map 中遍历查找 key 是否存在。示例如下：
-For the Get interface, we need some more work to get the corresponding values. Nebula storage is a multi-copy based on Raft, and all read/written operations can only be sent to the leader of the corresponding partition. When an rpc request contains multiple gets across partitions, the Storage Client gives the corresponding Partition leader to access these keys. Each rpc return is stored separately in an unordered_map, and the user is currently required to traverse these unordered_maps to find out if the key exists. An example is as follows:
+For the Get interface, we need some more work to get the corresponding values. Nebula storage is a multi-copy based on Raft, and all read/written operations can only be sent to the leader of the corresponding partition. When a get request contains multiple keys across partitions, the Storage Client requests the keys from the Partition leader. Each rpc return is stored separately in an unordered_map, and the user is currently required to traverse these unordered_maps to find out if the key exists. An example is as follows:
 
 ```cpp
 // Examine whether the value corresponding to the key is in the returned result. If it exists, it is saved in the value.
