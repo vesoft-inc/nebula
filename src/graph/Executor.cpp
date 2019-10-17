@@ -45,6 +45,7 @@
 #include "graph/DeleteVertexExecutor.h"
 #include "graph/UpdateVertexExecutor.h"
 #include "graph/UpdateEdgeExecutor.h"
+#include "graph/FindPathExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -154,6 +155,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kUpdateEdge:
             executor = std::make_unique<UpdateEdgeExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kFindPath:
+            executor = std::make_unique<FindPathExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";

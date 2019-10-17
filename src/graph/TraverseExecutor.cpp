@@ -17,6 +17,7 @@
 #include "graph/SetExecutor.h"
 #include "graph/FindExecutor.h"
 #include "graph/MatchExecutor.h"
+#include "graph/FindPathExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -55,6 +56,9 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
             break;
         case Sentence::Kind::kFind:
             executor = std::make_unique<FindExecutor>(sentence, ectx);
+            break;
+        case Sentence::Kind::kFindPath:
+            executor = std::make_unique<FindPathExecutor>(sentence, ectx);
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";
