@@ -36,6 +36,7 @@ function fedora_install {
         curl \
         gcc \
         gcc-c++ \
+        make \
         java-1.8.0-openjdk \
         java-1.8.0-openjdk-devel \
         libstdc++-static \
@@ -68,6 +69,7 @@ function centos6_install {
         autoconf \
         autoconf-archive \
         automake \
+        make \
         perl-WWW-Curl \
         perl-YAML \
         perl-CGI \
@@ -95,6 +97,7 @@ function centos7_install {
         autoconf \
         autoconf-archive \
         automake \
+        make \
         ncurses-devel \
         readline-devel \
         perl-WWW-Curl \
@@ -115,6 +118,7 @@ function ubuntu16_install {
         autoconf \
         autoconf-archive \
         automake \
+        make \
         libncurses5-dev \
         libreadline-dev \
         python \
@@ -135,6 +139,7 @@ function ubuntu18_install {
         autoconf \
         autoconf-archive \
         automake \
+        make \
         libncurses5-dev \
         libreadline-dev \
         python \
