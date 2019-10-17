@@ -314,8 +314,8 @@ FunctionManager::FunctionManager() {
         attr.body_ = [] (const auto &args) {
             auto value = Expression::asString(args[0]);
             auto length = Expression::asInt(args[1]);
-            if (length < 0) {
-                length = 0;
+            if (length <= 0) {
+                return std::string();
             }
             return value.substr(0, length);
         };
@@ -328,7 +328,10 @@ FunctionManager::FunctionManager() {
             auto value  = Expression::asString(args[0]);
             auto length = Expression::asInt(args[1]);
             if (length <= 0) {
-                length = 0;
+                return std::string();
+            }
+            if (length > static_cast<int64_t>(value.size())) {
+                length = value.size();
             }
             return value.substr(value.size() - length);
         };
@@ -411,24 +414,74 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.body_ = [] (const auto &args) {
             switch (args[0].which()) {
-                case 0: {
+                case VAR_INT64: {
                     auto v = Expression::asInt(args[0]);
                     return static_cast<int64_t>(std::hash<int64_t>()(v));
                 }
-                case 1: {
+                case VAR_DOUBLE: {
                     auto v = Expression::asDouble(args[0]);
                     return static_cast<int64_t>(std::hash<double>()(v));
                 }
-                case 2: {
+                case VAR_BOOL: {
                     auto v = Expression::asBool(args[0]);
                     return static_cast<int64_t>(std::hash<bool>()(v));
                 }
-                case 3: {
+                case VAR_STR: {
                     auto &v = Expression::asString(args[0]);
                     return static_cast<int64_t>(std::hash<std::string>()(v));
                 }
                 default:
+                    LOG(ERROR) << "Unkown type: " << args[0].which();
                     return INT64_MIN;
+            }
+        };
+    }
+    {
+        auto &attr = functions_["udf_is_in"];
+        attr.minArity_ = 2;
+        attr.maxArity_ = INT64_MAX;
+        attr.body_ = [] (const auto &args) {
+            VariantType cmp = args.front();
+            switch (cmp.which()) {
+                case VAR_INT64: {
+                    auto v = Expression::asInt(cmp);
+                    std::unordered_set<uint64_t> vals;
+                    for (auto iter = (args.begin() + 1); iter < args.end(); ++iter) {
+                        vals.emplace(Expression::toInt(*iter));
+                    }
+                    auto ret = vals.emplace(v);
+                    return !ret.second;
+                }
+                case VAR_DOUBLE: {
+                    auto v = Expression::asDouble(cmp);
+                    std::unordered_set<double> vals;
+                    for (auto iter = (args.begin() + 1); iter < args.end(); ++iter) {
+                        vals.emplace(Expression::toDouble(*iter));
+                    }
+                    auto ret = vals.emplace(v);
+                    return !ret.second;
+                }
+                case VAR_BOOL: {
+                    auto v = Expression::asBool(cmp);
+                    std::unordered_set<bool> vals;
+                    for (auto iter = (args.begin() + 1); iter < args.end(); ++iter) {
+                        vals.emplace(Expression::toBool(*iter));
+                    }
+                    auto ret = vals.emplace(v);
+                    return !ret.second;
+                }
+                case VAR_STR: {
+                    auto v = Expression::asString(cmp);
+                    std::unordered_set<std::string> vals;
+                    for (auto iter = (args.begin() + 1); iter < args.end(); ++iter) {
+                        vals.emplace(Expression::toString(*iter));
+                    }
+                    auto ret = vals.emplace(v);
+                    return !ret.second;
+                }
+                default:
+                    LOG(ERROR) << "Unkown type: " << cmp.which();
+                    return false;
             }
         };
     }
