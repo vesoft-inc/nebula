@@ -76,19 +76,19 @@ nebula> GO FROM 100,102 OVER serve           \
 
 ### Traverse Along Multiple Edges Types
 
-Currently, nebula supports traversing via multiple edge types with `GO`, the syntax is:
+Currently, nebula also supports traversing via multiple edge types with `GO`, the syntax is:
 
 ```sql
-GO OVER edge1, edge2....  // or
-GO OVER *
+GO OVER edge1, edge2....  // traverse alone edge1 and edge2 or
+GO OVER *   // * means traverse along all edge types
 ```
 
-Please note that multiple edges are yet supported in filter currently, for example `WHERE edge1.prop1 > edge2.prop2` is not supported.
+>Please note that multiple edges are yet supported in filter currently, for example `WHERE edge1.prop1 > edge2.prop2` is not supported.
 
 As for return results, if multiple edge properties are to be returned, nebula will place them in different rows. For example:
 
 ```sql
-GO FROM 100 OVER edge1, edge2 yield edge1.prop1, edge2.prop2
+GO FROM 100 OVER edge1, edge2 YIELD edge1.prop1, edge2.prop2
 ```
 
  If vertex 100 has three edges in edge 1, two edges in edge 2, the final results is five rows as follows:
@@ -103,7 +103,7 @@ GO FROM 100 OVER edge1, edge2 yield edge1.prop1, edge2.prop2
 
 If there is no properties, the default value will be placed. The default value for numeric type is 0, and that for string type is an empty string.
 
-Of course you can query without specifying `YIELD`, this will return the ids of the dest vertices of each edge. Again, default values will be placed if there is no properties. For example, query `GO FROM 100 OVER edge1, edge2` returns the follow lines:
+Of course you can query without specifying `YIELD`, this will return the vids of the dest vertices of each edge. Again, default values (0) will be placed if there is no properties. For example, query `GO FROM 100 OVER edge1, edge2` returns the follow lines:
 
 | edge1.dst | edge2.dst |
 | --- | --- |
@@ -113,4 +113,5 @@ Of course you can query without specifying `YIELD`, this will return the ids of 
 | 0 | 201 |
 | 0 | 202 |
 
-For query `GO FROM 100 OVER *`, the result is the same as above. Please note that we can't tell which row belongs to which edge in the results, the future version will show the edge type in the result.
+For query `GO FROM 100 OVER *`, the result is similar to the above example: the non-existing property or vid is populated with default values.
+Please note that we can't tell which row belongs to which edge in the results, the future version will show the edge type in the result.

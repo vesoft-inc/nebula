@@ -75,19 +75,19 @@ nebula> GO FROM 100,102 OVER serve           \
 
 ## 沿着多种类型的边进行遍历
 
-目前 nebula 支持 `GO` 沿着多条边遍历，语法为：
+目前 nebula 还支持 `GO` 沿着多条边遍历，语法为：
 
 ```sql
-GO OVER edge1, edge2....  //或者
-GO OVER *
+GO OVER edge1, edge2....  //沿着 edge1 和 edge2 遍历，或者
+GO OVER *    //这里 * 意味着沿着任意类型的边遍历
 ```
 
-请注意目前 filter 还不支持同时操作多条边，比如 `WHERE edge1.prop1 > edge2.prop2`，这种过滤条件是不支持的。
+>请注意目前 filter 还不支持同时操作多条边，比如 `WHERE edge1.prop1 > edge2.prop2`，这种过滤条件是不支持的。
 
 对于返回的结果，如果存在多条边的属性需要返回，会把他们放在不同的行。比如：
 
 ```sql
-GO FROM 100 OVER edge1, edge2 yield edge1.prop1, edge2.prop2
+GO FROM 100 OVER edge1, edge2 YIELD edge1.prop1, edge2.prop2
 ```
 
  如果 100 这个顶点 edge1 存在 3 条边，edge2 存在 2 条边， 最终的返回结果会有 5 行，如下所示：
@@ -102,7 +102,7 @@ GO FROM 100 OVER edge1, edge2 yield edge1.prop1, edge2.prop2
 
 没有的属性当前会填充默认值， 数值型的默认值为 0， 字符型的默认值为空字符串。
 
-当然也可以不指定 `YIELD`， 这时会返回每条边目标点的 id， 不存在同样用默认值替代。比如 `GO FROM 100 OVER edge1, edge2`，返回结果如下：
+当然也可以不指定 `YIELD`， 这时会返回每条边目标点的 vid。如果目标点不存在，同样用默认值(0)填充。比如 `GO FROM 100 OVER edge1, edge2`，返回结果如下：
 
 | edge1.dst | edge2.dst |
 | --- | --- |
@@ -112,5 +112,5 @@ GO FROM 100 OVER edge1, edge2 yield edge1.prop1, edge2.prop2
 | 0 | 201 |
 | 0 | 202 |
 
-对于 `GO FROM 100 OVER *` 来说，返回结果也和上面一样。
-请注意从结果里面我们没有办法分辨每一行是属于哪条边， 未来版本会把 edge type 也在结果里面表示出来。
+对于 `GO FROM 100 OVER *` 这样的例子来说，返回结果也和上面例子类似：不存在的属性或者 vid 使用用默认值来填充。
+请注意从结果里面我们没有办法分辨每一行属于哪条边， 未来版本会把 edge type 也在结果里面表示出来。
