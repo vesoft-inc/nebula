@@ -7,7 +7,7 @@ It indicates to travel in a graph with specific filters (the `WHERE` clause), to
 >The syntax of `GO` statement is very similar to `SELECT` in SQL. Notice that the major difference is that `GO` must start traversing from a (set of) node(s).
 <!-- >You can refer to `FIND` statement (in progress), which is the counterpart of `SELECT` in SQL. -->
 
-```sql
+```ngql
   GO FROM <node_list>
   OVER <edge_type_list>
   WHERE (expression [ AND | OR expression ...])  
@@ -32,7 +32,7 @@ It indicates to travel in a graph with specific filters (the `WHERE` clause), to
 
 ## Examples
 
-```sql
+```ngql
 nebula> GO FROM 101 OVER serve  \
    /* start from vertex 101 along with edge type serve, and get vertex 204, 215 */
 =======
@@ -44,7 +44,7 @@ nebula> GO FROM 101 OVER serve  \
 -------
 ```
 
-```sql
+```ngql
 nebula> GO FROM 101 OVER serve  \
    WHERE serve.start_year > 1990       /* check edge (serve) property ( start_year) */ \
    YIELD $$.team.name AS team_name   /* target vertex (team) property serve.start_year */
@@ -57,7 +57,7 @@ nebula> GO FROM 101 OVER serve  \
 --------------------------------
 ```
 
-```sql
+```ngql
 nebula> GO FROM 100,102 OVER serve           \
         WHERE serve.start_year > 1995             /* check edge property */ \
         YIELD DISTINCT $$.team.name AS team_name, /* DISTINCT as SQL */ \
@@ -78,7 +78,13 @@ nebula> GO FROM 100,102 OVER serve           \
 
 Currently, nebula also supports traversing via multiple edge types with `GO`, the syntax is:
 
-```sql
+```ngql
+GO FROM <node_list> OVER <edge_type_list | *> YIELD | YIELDS [DISTINCT] <return_list>
+```
+
+For example:
+
+```ngql
 GO OVER edge1, edge2....  // traverse alone edge1 and edge2 or
 GO OVER *   // * means traverse along all edge types
 ```
@@ -87,7 +93,7 @@ GO OVER *   // * means traverse along all edge types
 
 As for return results, if multiple edge properties are to be returned, nebula will place them in different rows. For example:
 
-```sql
+```ngql
 GO FROM 100 OVER edge1, edge2 YIELD edge1.prop1, edge2.prop2
 ```
 
