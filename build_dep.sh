@@ -170,25 +170,15 @@ function addAlias {
 
 # fedora29:1, centos7.5:2, centos6.5:3, ubuntu18:4, ubuntu16:5
 function getSystemVer {
-    result=`cat /proc/version|grep fc`
-    if [[ -n $result ]]; then
-        return 1
+    if [[ -e /etc/redhat-release ]]; then
+        [[ -n `cat /etc/redhat-release|grep Fedora` ]] && return 1
+        [[ -n `cat /etc/redhat-release|grep "release 7."` ]] && return 2
+        [[ -n `cat /etc/redhat-release|grep "release 6."` ]] && return 3
     fi
-    result=`cat /proc/version|grep el7`
-    if [[ -n $result ]]; then
-        return 2
-    fi
-    result=`cat /proc/version|grep el6`
-    if [[ -n $result ]]; then
-        return 3
-    fi
-    result=`cat /proc/version|grep ubuntu1~18`
-    if [[ -n $result ]]; then
-        return 4
-    fi
-    result=`cat /proc/version|grep ubuntu1~16`
-    if [[ -n $result ]]; then
-        return 5
+    if [[ -e /etc/issue ]]; then
+        result=`cat /etc/issue|cut -d " " -f 2 |cut -d "." -f 1`
+        [[ result -eq 18 ]] && return 4
+        [[ result -eq 16 ]] && return 5
     fi
     return 0
 }

@@ -38,6 +38,13 @@ bash> git clone https://github.com/vesoft-inc/nebula.git
 - user's environment cannot download oss packages directly
 
     Step 1:
+    Install others through local sources
+
+    ```
+    bash> cd nebula && ./build_dep.sh N
+    ```
+
+    Step 2:
     Download the corresponding version of the dependency package
 
     **user in China**
@@ -55,19 +62,12 @@ bash> git clone https://github.com/vesoft-inc/nebula.git
     - [Ubuntu1604](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/ubuntu16.tar.gz)
     - [Ubuntu1804](https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/ubuntu18.tar.gz)
 
-    Step 2:
+    Step 3:
     Install the package
 
     ```
     tar xf ${package_name}.tar.gz
     cd ${package_name} && ./install.sh
-    ```
-
-    Step 3:
-    Install others through local sources
-
-    ```
-    bash> cd nebula && ./build_dep.sh N
     ```
 
 #### Step 3: update **~/.bashrc**
