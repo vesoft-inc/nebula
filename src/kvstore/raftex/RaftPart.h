@@ -322,6 +322,8 @@ private:
 
     void cleanupSnapshot();
 
+    bool needToCleanWal();
+
     // The method sends out AskForVote request
     // It return true if a leader is elected, otherwise returns false
     bool leaderElection();
@@ -334,8 +336,7 @@ private:
         std::vector<std::shared_ptr<Host>>& hosts);
 
     // The method returns the partition's role after the election
-    Role processElectionResponses(const ElectionResponses& results,
-                                  const std::vector<std::shared_ptr<Host>>& hosts);
+    Role processElectionResponses(const ElectionResponses& results);
 
     // Check whether new logs can be appended
     // Pre-condition: The caller needs to hold the raftLock_
@@ -522,7 +523,7 @@ protected:
     // Used to bypass the stale command
     int64_t startTimeMs_ = 0;
 
-    uint64_t weight_;
+    std::atomic<uint64_t> weight_;
 };
 
 }  // namespace raftex

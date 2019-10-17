@@ -983,8 +983,7 @@ bool RaftPart::prepareElectionRequest(
 
 
 typename RaftPart::Role RaftPart::processElectionResponses(
-        const RaftPart::ElectionResponses& results,
-        const std::vector<std::shared_ptr<Host>>& hosts) {
+        const RaftPart::ElectionResponses& results) {
     std::lock_guard<std::mutex> g(raftLock_);
 
     // Make sure the partition is running
@@ -1004,10 +1003,6 @@ typename RaftPart::Role RaftPart::processElectionResponses(
     for (auto& r : results) {
         if (r.second.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
             ++numSucceeded;
-        } else if (r.second.get_error_code() == cpp2::ErrorCode::E_LOG_STALE) {
-            LOG(INFO) << idStr_ << "My last log id is less than " << hosts[r.first]
-                      << ", double my election interval.";
-            weight_ *= 2;
         }
     }
 
@@ -1069,9 +1064,14 @@ bool RaftPart::leaderElection() {
             // Number of succeeded required
             quorum_,
             // Result evaluator
-            [](size_t, cpp2::AskForVoteResponse& resp) {
-                return resp.get_error_code()
-                    == cpp2::ErrorCode::SUCCEEDED;
+            [hosts, this](size_t idx, cpp2::AskForVoteResponse& resp) {
+                if (resp.get_error_code() == cpp2::ErrorCode::E_LOG_STALE) {
+                    LOG(INFO) << idStr_ << "My last log id is less than " << hosts[idx]
+                              << ", double my election interval.";
+                    uint64_t curWeight = weight_.load();
+                    weight_.store(curWeight * 2);
+                }
+                return resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED;
             });
 
         VLOG(2) << idStr_
@@ -1087,7 +1087,7 @@ bool RaftPart::leaderElection() {
     }
 
     // Process the responses
-    switch (processElectionResponses(resps, hosts)) {
+    switch (processElectionResponses(resps)) {
         case Role::LEADER: {
             // Elected
             LOG(INFO) << idStr_
@@ -1138,7 +1138,7 @@ void RaftPart::statusPolling() {
             // No leader has been elected, need to continue
             // (After sleeping a random period betwen [500ms, 2s])
             VLOG(2) << idStr_ << "Wait for a while and continue the leader election";
-            delay = folly::Random::rand32(1500) + 500;
+            delay = (folly::Random::rand32(1500) + 500) * weight_;
         }
     } else if (needToSendHeartbeat()) {
         VLOG(2) << idStr_ << "Need to send heartbeat";
@@ -1148,7 +1148,9 @@ void RaftPart::statusPolling() {
         LOG(INFO) << idStr_ << "Clean up the snapshot";
         cleanupSnapshot();
     }
-    wal_->cleanWAL(FLAGS_wal_ttl);
+    if (needToCleanWal()) {
+        wal_->cleanWAL(FLAGS_wal_ttl);
+    }
     {
         std::lock_guard<std::mutex> g(raftLock_);
         if (status_ == Status::RUNNING || status_ == Status::WAITING_SNAPSHOT) {
@@ -1174,6 +1176,15 @@ void RaftPart::cleanupSnapshot() {
     std::lock_guard<std::mutex> g(raftLock_);
     reset();
     status_ = Status::RUNNING;
+}
+
+bool RaftPart::needToCleanWal() {
+    for (auto& host : hosts_) {
+        if (host->sendingSnapshot_) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void RaftPart::processAskForVoteRequest(
@@ -1380,7 +1391,11 @@ void RaftPart::processAppendLogRequest(
                                 req.get_log_term(),
                                 req.get_log_str_list());
         if (wal_->appendLogs(iter)) {
-            CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId());
+            // When leader has been sending a snapshot already, sometimes it would send a request
+            // with empty log list, and lastLogId in wal may be 0 because of reset.
+            if (!numLogs) {
+                CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId());
+            }
             lastLogId_ = wal_->lastLogId();
             lastLogTerm_ = wal_->lastLogTerm();
             resp.set_last_log_id(lastLogId_);
@@ -1619,6 +1634,10 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
         if (lastLogId_ < committedLogId_) {
             lastLogId_ = committedLogId_;
             lastLogTerm_ = req.get_committed_log_term();
+        }
+        if (wal_->lastLogId() <= committedLogId_) {
+            LOG(INFO) << "Reset invalid wal after snapshot received";
+            wal_->reset();
         }
         status_ = Status::RUNNING;
         LOG(INFO) << idStr_ << "Receive all snapshot, committedLogId_ " << committedLogId_
