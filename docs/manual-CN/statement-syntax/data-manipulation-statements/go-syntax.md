@@ -98,7 +98,7 @@ GO FROM 100 OVER edge1, edge2 YIELD edge1.prop1, edge2.prop2
 
  如果 100 这个顶点存在 3 条类型为 edge1 的边， 2 条类型为 edge2 的边，最终的返回结果会有 5 行，如下所示：
 
-| edge1.prop1 | edge2.prop2 |
+| edge1._prop1 | edge2._prop2 |
 | --- | --- |
 | 10 | "" |
 | 20 | "" |
@@ -110,7 +110,7 @@ GO FROM 100 OVER edge1, edge2 YIELD edge1.prop1, edge2.prop2
 
 当然也可以不指定 `YIELD`， 这时会返回每条边目标点的 vid。如果目标点不存在，同样用默认值(此处为 0)填充。比如 `GO FROM 100 OVER edge1, edge2`，返回结果如下：
 
-| edge1.dst | edge2.dst |
+| edge1._dst | edge2._dst |
 | --- | --- |
 | 101 | 0 |
 | 102 | 0 |

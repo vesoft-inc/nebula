@@ -99,7 +99,7 @@ GO FROM 100 OVER edge1, edge2 YIELD edge1.prop1, edge2.prop2
 
  If vertex 100 has three edges in edge 1, two edges in edge 2, the final results is five rows as follows:
 
-| edge1.prop1 | edge2.prop2 |
+| edge1._prop1 | edge2._prop2 |
 | --- | --- |
 | 10 | "" |
 | 20 | "" |
@@ -107,11 +107,11 @@ GO FROM 100 OVER edge1, edge2 YIELD edge1.prop1, edge2.prop2
 | 0 | "nebula" |
 | 0 | "vesoft" |
 
-If there is no properties, the default value will be placed. The default value for numeric type is 0, and that for string type is an empty string.
+If there is no properties, the default value will be placed. The default value for numeric type is 0, and that for string type is an empty string, for bool is false, for timestamp is 0 (namely “1970-01-01 00:00:00”) and for double is 0.0.
 
-Of course you can query without specifying `YIELD`, this will return the vids of the dest vertices of each edge. Again, default values (0) will be placed if there is no properties. For example, query `GO FROM 100 OVER edge1, edge2` returns the follow lines:
+Of course you can query without specifying `YIELD`, this will return the vids of the dest vertices of each edge. Again, default values (here is 0) will be placed if there is no properties. For example, query `GO FROM 100 OVER edge1, edge2` returns the follow lines:
 
-| edge1.dst | edge2.dst |
+| edge1._dst | edge2._dst |
 | --- | --- |
 | 101 | 0 |
 | 102 | 0 |
