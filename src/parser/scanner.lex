@@ -122,6 +122,8 @@ LEADER                      ([Ll][Ee][Aa][Dd][Ee][Rr])
 UUID                        ([Uu][Uu][Ii][Dd])
 OF                          ([Oo][Ff])
 DATA                        ([Dd][Aa][Tt][Aa])
+SHORTEST                    ([Ss][Hh][Oo][Rr][Tt][Ee][Ss][Tt])
+PATH                        ([Pp][Aa][Tt][Hh])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -233,6 +235,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {LEADER}                    { return TokenType::KW_LEADER; }
 {UUID}                      { return TokenType::KW_UUID; }
 {DATA}                      { return TokenType::KW_DATA; }
+{SHORTEST}                  { return TokenType::KW_SHORTEST; }
+{PATH}                      { return TokenType::KW_PATH; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

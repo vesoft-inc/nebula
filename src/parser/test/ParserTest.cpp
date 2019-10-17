@@ -1368,4 +1368,12 @@ TEST(Parser, CrashByFuzzer) {
     }
 }
 
+TEST(Parser, FindPath) {
+    {
+        GQLParser parser;
+        std::string query = "FIND SHORTEST PATH FROM 1 TO 2 OVER like";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
 }   // namespace nebula
