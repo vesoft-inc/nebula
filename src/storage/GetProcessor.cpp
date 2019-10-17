@@ -37,6 +37,7 @@ GetProcessor::asyncProcess(PartitionID part,
     folly::Promise<std::pair<PartitionID, kvstore::ResultCode>> promise;
     auto future = promise.getFuture();
     std::vector<std::string> kvKeys;
+    kvKeys.reserve(keys.size());
     std::transform(keys.begin(), keys.end(), std::back_inserter(kvKeys),
                    [part](const auto& key) { return NebulaKeyUtils::kvKey(part, key); });
 
