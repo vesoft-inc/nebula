@@ -1032,8 +1032,6 @@ traverse_sentence
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }
     | find_path_sentence { $$ = $1; }
-    | L_PAREN piped_sentence R_PAREN { $$ = $2; }
-    | L_PAREN set_sentence R_PAREN { $$ = $2; }
     | limit_sentence { $$ = $1; }
     ;
 

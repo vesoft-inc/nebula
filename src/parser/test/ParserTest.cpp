@@ -1403,6 +1403,5 @@ TEST(Parser, Limit) {
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());
     }
->>>>>>> Rebase upstream
 }
 }   // namespace nebula
