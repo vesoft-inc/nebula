@@ -36,12 +36,35 @@ void YieldExecutor::execute() {
     std::vector<VariantType> values;
     values.reserve(size);
 
+    using nebula::cpp2::SupportedType;
+    std::vector<SupportedType> colTypes;
     for (auto *col : yields_) {
         auto expr = col->expr();
         auto v = expr->eval();
         if (!v.ok()) {
             onError_(v.status());
             return;
+        }
+        if (col->expr()->isTypeCastingExpression()) {
+            auto exprPtr = static_cast<TypeCastingExpression *>(col->expr());
+            colTypes.emplace_back(ColumnTypeToSupportedType(exprPtr->getType()));
+        } else {
+            switch (v.value().which()) {
+                case VAR_INT64:
+                    colTypes.emplace_back(SupportedType::INT);
+                    break;
+                case VAR_DOUBLE:
+                    colTypes.emplace_back(SupportedType::DOUBLE);
+                    break;
+                case VAR_BOOL:
+                    colTypes.emplace_back(SupportedType::BOOL);
+                    break;
+                case VAR_STR:
+                    colTypes.emplace_back(SupportedType::STRING);
+                    break;
+                default:
+                    LOG(FATAL) << "Unknown VariantType: " << v.value().which();
+            }
         }
         values.emplace_back(v.value());
     }
@@ -57,21 +80,24 @@ void YieldExecutor::execute() {
          *  We are having so many tedious, duplicated type conversion codes.
          *  We shall reuse the conversion code and try to reduce conversion itself.
          */
-        switch (value.which()) {
-            case VAR_INT64:
+        switch (colTypes[i]) {
+            case SupportedType::INT:
                 row.back().set_integer(boost::get<int64_t>(value));
                 break;
-            case VAR_DOUBLE:
+            case SupportedType::DOUBLE:
                 row.back().set_double_precision(boost::get<double>(value));
                 break;
-            case VAR_BOOL:
+            case SupportedType::BOOL:
                 row.back().set_bool_val(boost::get<bool>(value));
                 break;
-            case VAR_STR:
+            case SupportedType::STRING:
                 row.back().set_str(boost::get<std::string>(value));
                 break;
+            case SupportedType::TIMESTAMP:
+                row.back().set_timestamp(boost::get<int64_t>(value));
+                break;
             default:
-                LOG(FATAL) << "Unknown VariantType: " << value.which();
+                LOG(FATAL) << "Unknown SupportedType: " << static_cast<int32_t>(colTypes[i]);
         }
     }
     rows.back().set_columns(std::move(row));
