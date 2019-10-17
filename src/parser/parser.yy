@@ -66,8 +66,6 @@ class GraphScanner;
     nebula::UpdateItem                     *update_item;
     nebula::EdgeList                       *edge_list;
     nebula::ArgumentList                   *argument_list;
-    nebula::HostList                       *host_list;
-    nebula::HostAddr                       *host_item;
     nebula::SpaceOptList                   *space_opt_list;
     nebula::SpaceOptItem                   *space_opt_item;
     nebula::AlterSchemaOptList             *alter_schema_opt_list;
@@ -161,8 +159,6 @@ class GraphScanner;
 %type <update_list> update_list
 %type <update_item> update_item
 %type <edge_list> edge_list
-%type <host_list> host_list
-%type <host_item> host_item
 %type <space_opt_list> space_opt_list
 %type <space_opt_item> space_opt_item
 %type <alter_schema_opt_list> alter_schema_opt_list
@@ -181,7 +177,7 @@ class GraphScanner;
 %type <to_clause> to_clause
 %type <find_path_upto_clause> find_path_upto_clause
 
-%type <intval> port unary_integer rank
+%type <intval> unary_integer rank
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
@@ -203,7 +199,7 @@ class GraphScanner;
 %type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
 %type <sentence> ingest_sentence
-%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence describe_space_sentence
+%type <sentence> show_sentence create_space_sentence describe_space_sentence
 %type <sentence> drop_space_sentence
 %type <sentence> yield_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
@@ -1394,47 +1390,6 @@ show_sentence
     }
     ;
 
-add_hosts_sentence
-    : KW_ADD KW_HOSTS host_list {
-        auto sentence = new AddHostsSentence();
-        sentence->setHosts($3);
-        $$ = sentence;
-    }
-    ;
-
-remove_hosts_sentence
-    : KW_REMOVE KW_HOSTS host_list {
-        auto sentence = new RemoveHostsSentence();
-        sentence->setHosts($3);
-        $$ = sentence;
-    }
-    ;
-
-host_list
-    : host_item {
-        $$ = new HostList();
-        $$->addHost($1);
-    }
-    | host_list COMMA host_item {
-        $$ = $1;
-        $$->addHost($3);
-    }
-    | host_list COMMA {
-        $$ = $1;
-    }
-    ;
-
-host_item
-    : IPV4 COLON port {
-        $$ = new nebula::HostAddr();
-        $$->first = $1;
-        $$->second = $3;
-    }
-    /* TODO(dutor) Support hostname and IPv6 */
-    ;
-
-port : INTEGER { $$ = $1; }
-
 config_module_enum
     : KW_GRAPH      { $$ = ConfigModule::GRAPH; }
     | KW_META       { $$ = ConfigModule::META; }
@@ -1686,8 +1641,6 @@ maintain_sentence
     | drop_tag_sentence { $$ = $1; }
     | drop_edge_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
-    | add_hosts_sentence { $$ = $1; }
-    | remove_hosts_sentence { $$ = $1; }
     | create_space_sentence { $$ = $1; }
     | describe_space_sentence { $$ = $1; }
     | drop_space_sentence { $$ = $1; }
