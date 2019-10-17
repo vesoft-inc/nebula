@@ -6,10 +6,10 @@
 <!-- >请参考`FIND`的用法，它对应于SQL中的`SELECT`。 -->
 
 ```sql
-GO FROM <node_list>
-OVER <edge_type_list>
-WHERE (expression [ AND | OR expression ...])  
-YIELD | YIELDS  [DISTINCT] <return_list>
+  GO FROM <node_list>
+  OVER <edge_type_list>
+  WHERE (expression [ AND | OR expression ...])  
+  YIELD | YIELDS  [DISTINCT] <return_list>
 
 <node_list>
    | vid [, vid ...]
@@ -58,10 +58,10 @@ nebula> GO FROM 101 OVER serve  \
 
 ```sql
 nebula> GO FROM 100,102 OVER serve           \
-   WHERE serve.start_year > 1995             /* 筛选边属性*/ \
-   YIELD DISTINCT $$.team.name AS team_name, /* DISTINCT与SQL用法相同 */ \
-   serve.start_year,                         /* 边属性 */ \
-   $^.player.name AS player_name             /* 起点(player)属性 */
+        WHERE serve.start_year > 1995             /* 筛选边属性*/ \
+        YIELD DISTINCT $$.team.name AS team_name, /* DISTINCT与SQL用法相同 */ \
+        serve.start_year,                         /* 边属性 */ \
+        $^.player.name AS player_name             /* 起点(player)属性 */
 ========================================================
 | team_name     | serve.start_year | player_name       |
 ========================================================
@@ -82,7 +82,7 @@ GO OVER edge1, edge2....  //沿着 edge1 和 edge2 遍历，或者
 GO OVER *    //这里 * 意味着沿着任意类型的边遍历
 ```
 
->请注意目前 filter 还不支持同时操作多条边，比如 `WHERE edge1.prop1 > edge2.prop2`，这种过滤条件是不支持的。
+>请注意，当沿着多种类型边遍历时，对于使用过滤条件有特别限制(也即 WHERE 语句），比如 `WHERE edge1.prop1 > edge2.prop2` 这种过滤条件是不支持的。
 
 对于返回的结果，如果存在多条边的属性需要返回，会把他们放在不同的行。比如：
 

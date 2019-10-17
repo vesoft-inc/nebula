@@ -8,10 +8,10 @@ It indicates to travel in a graph with specific filters (the `WHERE` clause), to
 <!-- >You can refer to `FIND` statement (in progress), which is the counterpart of `SELECT` in SQL. -->
 
 ```sql
-GO FROM <node_list>
-OVER <edge_type_list>
-WHERE (expression [ AND | OR expression ...])  
-YIELD | YIELDS  [DISTINCT] <return_list>
+  GO FROM <node_list>
+  OVER <edge_type_list>
+  WHERE (expression [ AND | OR expression ...])  
+  YIELD | YIELDS  [DISTINCT] <return_list>
 
 <node_list>
    | vid [, vid ...]
@@ -59,10 +59,10 @@ nebula> GO FROM 101 OVER serve  \
 
 ```sql
 nebula> GO FROM 100,102 OVER serve           \
-   WHERE serve.start_year > 1995             /* check edge property */ \
-   YIELD DISTINCT $$.team.name AS team_name, /* DISTINCT as SQL */ \
-   serve.start_year,                         /* edge property */ \
-   $^.player.name AS player_name             /* source vertex (player) property */
+        WHERE serve.start_year > 1995             /* check edge property */ \
+        YIELD DISTINCT $$.team.name AS team_name, /* DISTINCT as SQL */ \
+        serve.start_year,                         /* edge property */ \
+        $^.player.name AS player_name             /* source vertex (player) property */
 ========================================================
 | team_name     | serve.start_year | player_name       |
 ========================================================
@@ -83,7 +83,7 @@ GO OVER edge1, edge2....  // traverse alone edge1 and edge2 or
 GO OVER *   // * means traverse along all edge types
 ```
 
->Please note that multiple edges are yet supported in filter currently, for example `WHERE edge1.prop1 > edge2.prop2` is not supported.
+>Please note that when traversing along multiple edges, there are some special restrictions on the use of filters(namely the `WHERE` statement), for example filters like `WHERE edge1.prop1 > edge2.prop2` is not supported.
 
 As for return results, if multiple edge properties are to be returned, nebula will place them in different rows. For example:
 
