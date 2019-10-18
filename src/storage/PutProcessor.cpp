@@ -27,6 +27,7 @@ void PutProcessor::process(const cpp2::PutRequest& req) {
         results.emplace_back(asyncProcess(part.first, data));
     }
 
+    /*
     folly::collectAll(results).via(executor_)
                               .then([&] (const std::vector<folly::Try<PartCode>>& tries) mutable {
         for (const auto& t : tries) {
@@ -37,6 +38,7 @@ void PutProcessor::process(const cpp2::PutRequest& req) {
         }
         this->onFinished();
     });
+    */
 
     /*
     std::for_each(pairs.begin(), pairs.end(), [&](auto& value) {

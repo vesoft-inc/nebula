@@ -408,11 +408,11 @@ PartitionID StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
 
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>>
 StorageClient::put(GraphSpaceID space,
-                   std::vector<nebula::cpp2::Pair> values,
+                   std::vector<nebula::cpp2::Pair> pairs,
                    folly::EventBase* evb) {
-    auto clusters = clusterIdsToHosts(space, values,
-                                      [] (const nebula::cpp2::Pair& v) {
-                                          return std::hash<std::string>{}(v.get_key());
+    auto clusters = clusterIdsToHosts(space, pairs,
+                                      [] (const nebula::cpp2::Pair& pair) {
+                                          return std::hash<std::string>{}(pair.get_key());
                                       });
 
     std::unordered_map<HostAddr, cpp2::PutRequest> requests;
