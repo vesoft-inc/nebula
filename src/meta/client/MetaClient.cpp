@@ -311,8 +311,8 @@ void MetaClient::getResponse(Request req,
         LOG(INFO) << "Send request to meta " << host;
         remoteFunc(client, req)
             .then(evb, [req = std::move(req), remoteFunc = std::move(remoteFunc),
-                        respGen = std::move(respGen), p = std::move(pro), toLeader, retry,
-                        retryLimit, this] (folly::Try<RpcResponse>&& t) mutable {
+                        respGen = std::move(respGen), pro = std::move(pro), toLeader, retry,
+                        retryLimit, evb, this] (folly::Try<RpcResponse>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
                 if (toLeader) {
@@ -321,19 +321,29 @@ void MetaClient::getResponse(Request req,
                     updateActive();
                 }
                 if (retry < retryLimit) {
-                    sleep(FLAGS_meta_client_retry_interval_secs);
-                    getResponse(std::move(req), std::move(remoteFunc), std::move(respGen),
-                                std::move(p), toLeader, retry + 1, retryLimit);
+                    evb->runAfterDelay([req = std::move(req), remoteFunc = std::move(remoteFunc),
+                                        respGen = std::move(respGen), pro = std::move(pro),
+                                        toLeader, retry, retryLimit, this] () mutable {
+                        getResponse(std::move(req),
+                                    std::move(remoteFunc),
+                                    std::move(respGen),
+                                    std::move(pro),
+                                    toLeader,
+                                    retry + 1,
+                                    retryLimit);
+                    }, FLAGS_meta_client_retry_interval_secs * 1000);
+                    return;
                 } else {
-                    p.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
-                                                                 t.exception().what().c_str())));
+                    LOG(INFO) << "Exceed retry limit";
+                    pro.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
+                                                                   t.exception().what().c_str())));
                 }
                 return;
             }
             auto&& resp = t.value();
             if (resp.code == cpp2::ErrorCode::SUCCEEDED) {
                 // succeeded
-                p.setValue(respGen(std::move(resp)));
+                pro.setValue(respGen(std::move(resp)));
                 return;
             } else if (resp.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
                 HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
@@ -341,15 +351,22 @@ void MetaClient::getResponse(Request req,
                     folly::RWSpinLock::WriteHolder holder(hostLock_);
                     leader_ = leader;
                 }
+                if (retry < retryLimit) {
+                    evb->runAfterDelay([req = std::move(req), remoteFunc = std::move(remoteFunc),
+                                        respGen = std::move(respGen), pro = std::move(pro),
+                                        toLeader, retry, retryLimit, this] () mutable {
+                        getResponse(std::move(req),
+                                    std::move(remoteFunc),
+                                    std::move(respGen),
+                                    std::move(pro),
+                                    toLeader,
+                                    retry + 1,
+                                    retryLimit);
+                    }, FLAGS_meta_client_retry_interval_secs * 1000);
+                    return;
+                }
             }
-            // errored
-            if (retry < retryLimit) {
-                sleep(FLAGS_meta_client_retry_interval_secs);
-                getResponse(std::move(req), std::move(remoteFunc), std::move(respGen),
-                            std::move(p), toLeader, retry + 1, retryLimit);
-            } else {
-                p.setValue(this->handleResponse(resp));
-            }
+            pro.setValue(this->handleResponse(resp));
         });  // then
     });  // via
 }
