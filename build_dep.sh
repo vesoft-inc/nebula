@@ -13,144 +13,83 @@ DIR=/tmp/download
 mkdir $DIR
 trap "rm -fr $DIR" EXIT
 
-url_addr=https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb
+url_addr=https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/third-party
 no_deps=0
 if [[ $1 != C ]] && [[ $1 != U ]] && [[ $1 != N ]]; then
     echo "Usage: ${0} <C|U|N>  # C: the user in China, U: the user in US, N: no need packages"
     exit -1
 fi
 
-[[ $1 == U ]] && url_addr=https://nebula-graph-us.oss-us-west-1.aliyuncs.com/build-deb/
+[[ $1 == U ]] && url_addr=https://nebula-graph-us.oss-us-west-1.aliyuncs.com/third-party
 
 [[ $1 == N ]] && no_deps=1
 
-# fedora
-function fedora_install {
-    echo "###### start install dep in fedora ######"
-    sudo yum -y install autoconf \
-        autoconf-archive \
-        automake \
-        bison \
-        bzip2-devel \
-        cmake \
-        curl \
-        gcc \
-        gcc-c++ \
-        java-1.8.0-openjdk \
-        java-1.8.0-openjdk-devel \
-        libstdc++-static \
-        libstdc++-devel \
-        libtool \
+function yum_install {
+    # clean the installed third-party
+    result=`rpm -qa | grep vs-nebula-3rdparty | wc -l`
+    if [[ $result -ne 0 ]]; then
+        echo "#### vs-nebula-3rdparty have been installed, uninstall it firstly ####"
+        sudo rpm -e vs-nebula-3rdparty
+    fi
+
+    sudo yum -y install wget \
         make \
-        maven \
-        ncurses \
-        ncurses-devel \
-        perl \
-        perl-WWW-Curl \
-        python \
-        readline \
-        readline-devel \
-        unzip \
-        xz-devel \
-        wget
-
-    installPackage $1
-
-    echo "alias cmake='cmake -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind'" >> ~/.bashrc
-    return 0
-}
-
-# centos6
-function centos6_install {
-    echo "###### start install dep in centos6.5 ######"
-    sudo yum -y install wget \
-        libtool \
-        autoconf \
-        autoconf-archive \
-        automake \
-        perl-WWW-Curl \
-        perl-YAML \
-        perl-CGI \
-        perl-DBI \
-        perl-Pod-Simple \
         glibc-devel \
-        ncurses-devel \
-        readline-devel \
-        maven \
-        java-1.8.0-openjdk \
-        unzip
-
-    installPackage $1
-
-    echo "export PATH=/opt/nebula/autoconf/bin:/opt/nebula/automake/bin:/opt/nebula/libtool/bin:/opt/nebula/gettext/bin:/opt/nebula/flex/bin:/opt/nebula/binutils/bin:\$PATH" >> ~/.bashrc
-    echo "export ACLOCAL_PATH=/opt/nebula/automake/share/aclocal-1.15:/opt/nebula/libtool/share/aclocal:/opt/nebula/autoconf-archive/share/aclocal" >> ~/.bashrc
-    return 0
-}
-
-# centos7
-function centos7_install {
-    echo "###### start install dep in centos7.5 ######"
-    sudo yum -y install wget \
-        libtool \
-        autoconf \
-        autoconf-archive \
-        automake \
-        ncurses-devel \
-        readline-devel \
+        m4 \
         perl-WWW-Curl \
+        ncurses-devel \
+        readline-devel \
         maven \
         java-1.8.0-openjdk \
         unzip
 
-    installPackage $1
+    # feroda and centos7 has it
+    if [[ $1 == 1 || $1 == 2 ]]; then
+        sudo yum -y install perl-Data-Dumper
+    fi
 
+    if [[ $1 == 3 ]]; then
+        sudo yum -y install perl-YAML \
+            perl-CGI \
+            perl-DBI \
+            perl-Pod-Simple
+    fi
+
+    installPackage $1
+    addAlias $1
     return 0
 }
 
-# ubuntu1604
-function ubuntu16_install {
-    echo "###### start install dep in ubuntu16 ######"
-    sudo apt-get -y install gcc-multilib \
-        libtool \
-        autoconf \
-        autoconf-archive \
-        automake \
+function aptget_install {
+    # clean the installed third-party
+    result=`dpkg -l | grep vs-nebula-3rdparty | wc -l`
+    if [[ $result -ne 0 ]]; then
+        echo "#### vs-nebula-3rdparty have been installed, uninstall it firstly ####"
+        sudo dpkg -P vs-nebula-3rdparty
+    fi
+
+    sudo apt-get -y install wget \
+        make \
+        gcc-multilib \
+        m4 \
         libncurses5-dev \
         libreadline-dev \
         python \
         maven \
-        openjdk-8-jdk unzip
+        openjdk-8-jdk \
+        unzip
 
     installPackage $1
-
-    echo "export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:\$LIBRARY_PATH" >> ~/.bashrc
-    return 0
-}
-
-# ubuntu1804
-function ubuntu18_install {
-    echo "###### start install dep in ubuntu18 ######"
-    sudo apt-get -y install gcc-multilib \
-        libtool \
-        autoconf \
-        autoconf-archive \
-        automake \
-        libncurses5-dev \
-        libreadline-dev \
-        python \
-        maven \
-        openjdk-8-jdk unzip
-
-    installPackage $1
-
-    echo "export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:\$LIBRARY_PATH" >> ~/.bashrc
+    addAlias $1
     return 0
 }
 
 function installPackage {
     versions=(empty fedora29 centos7.5 centos6.5 ubuntu18 ubuntu16)
     package_name=${versions[$1]}
+    echo "###### start install dep in $package_name ######"
     [[ $package_name = empty ]] && return 0
+    [[ ! -n $package_name ]] && return 0
     if [[ no_deps -eq 0 ]]; then
         echo "###### There is no need to rely on packages ######"
         cd $DIR
@@ -163,32 +102,28 @@ function installPackage {
 }
 
 function addAlias {
-    echo "alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind -DNEBULA_BISON_ROOT=/opt/nebula/bison'" >> ~/.bashrc
-    echo "alias ctest='/opt/nebula/cmake/bin/ctest'" >> ~/.bashrc
+    echo "export PATH=/opt/nebula/third-party/bin:\$PATH" >> ~/.bashrc
+    echo "export ACLOCAL_PATH=/opt/nebula/third-party/share/aclocal-1.15:/opt/nebula/third-party/share/aclocal" >> ~/.bashrc
+    echo "alias cmake='/opt/nebula/third-party/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/third-party/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/third-party/bin/g++'" >> ~/.bashrc
+    echo "alias ctest='/opt/nebula/third-party/bin/ctest'" >> ~/.bashrc
+    if [[ $1 == 4 || $1 == 5 ]]; then
+        echo "export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:\$LIBRARY_PATH" >> ~/.bashrc
+    fi
     return 0
 }
 
 # fedora29:1, centos7.5:2, centos6.5:3, ubuntu18:4, ubuntu16:5
 function getSystemVer {
-    result=`cat /proc/version|grep fc`
-    if [[ -n $result ]]; then
-        return 1
+    if [[ -e /etc/redhat-release ]]; then
+        [[ -n `cat /etc/redhat-release|grep Fedora` ]] && return 1
+        [[ -n `cat /etc/redhat-release|grep "release 7."` ]] && return 2
+        [[ -n `cat /etc/redhat-release|grep "release 6."` ]] && return 3
+        return 0
     fi
-    result=`cat /proc/version|grep el7`
-    if [[ -n $result ]]; then
-        return 2
-    fi
-    result=`cat /proc/version|grep el6`
-    if [[ -n $result ]]; then
-        return 3
-    fi
-    result=`cat /proc/version|grep ubuntu1~18`
-    if [[ -n $result ]]; then
-        return 4
-    fi
-    result=`cat /proc/version|grep ubuntu1~16`
-    if [[ -n $result ]]; then
-        return 5
+    if [[ -e /etc/issue ]]; then
+        result=`cat /etc/issue|cut -d " " -f 2 |cut -d "." -f 1`
+        [[ result -eq 18 ]] && return 4
+        [[ result -eq 16 ]] && return 5
     fi
     return 0
 }
@@ -200,24 +135,11 @@ version=$?
 set -e
 
 case $version in
-    1)
-        fedora_install $version
+    1|2|3)
+        yum_install $version
         ;;
-    2)
-        centos7_install $version
-        addAlias
-        ;;
-    3)
-        centos6_install $version
-        addAlias
-        ;;
-    4)
-        ubuntu18_install $version
-        addAlias
-        ;;
-    5)
-        ubuntu16_install $version
-        addAlias
+    4|5)
+        aptget_install $version
         ;;
     *)
         echo "unknown system"
@@ -227,3 +149,4 @@ esac
 
 echo "###### install succeed ######"
 exit 0
+
