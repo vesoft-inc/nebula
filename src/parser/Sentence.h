@@ -59,6 +59,7 @@ public:
         kFetchVertices,
         kFetchEdges,
         kBalance,
+        kFindPath,
     };
 
     Kind kind() const {
