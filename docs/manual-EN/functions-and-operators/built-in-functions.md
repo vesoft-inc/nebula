@@ -14,7 +14,7 @@ double sqrt(double x) | Return the square root of the argument |
 double cbrt(double x) | Return the cubic root of the argument |
 double hypot(double x, double x) | Return the hypotenuse of a right-angled triangle |
 double pow(double x, double y) | Compute the power of the argument |
-double exp(double x) | Return exponential of the argument |
+double exp(double x) | Return the value of e raised to the x power |
 double exp2(double x) | Return 2 raised to the argument |
 double log(double x) | Return natural logarithm of the argument |
 double log2(double x) | Return the base-2 logarithm of the argument |

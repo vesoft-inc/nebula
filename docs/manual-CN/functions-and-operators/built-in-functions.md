@@ -14,7 +14,7 @@ double sqrt(double x) | 返回参数的平方根 |
 double cbrt(double x) | 返回参数的立方根 |
 double hypot(double x, double x) | 返回一个正三角形的斜边 |
 double pow(double x, double y) | 将参数增加到指定次幂 |
-double exp(double x) | 将参数增加到自然指数的指定次幂 |
+double exp(double x) | 计算 e（欧拉数，2.7182818 ）的 x 次幂 |
 double exp2(double x) | 返回 2 的指定次方 |
 double log(double x) | 返回参数的自然对数 |
 double log2(double x) | 返回底数为 2 的对数 |
