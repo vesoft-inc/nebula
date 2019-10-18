@@ -22,6 +22,7 @@ public:
 
     Status indexCellsForLineString(const LineString line, std::vector<S2CellId> &cells);
 
+    Status indexCellsForPolygon(const Polygon polygon, std::vector<S2CellId> &cells);
 private:
     RegionCoverParams    rcParams_;
 };

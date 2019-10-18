@@ -484,7 +484,7 @@ FunctionManager::FunctionManager() {
                     LOG(ERROR) << "Unkown type: " << cmp.which();
                     return false;
             }
-        }
+        };
     }
     {
         auto &attr = functions_["near"];

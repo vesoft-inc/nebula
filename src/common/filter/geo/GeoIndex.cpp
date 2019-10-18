@@ -63,6 +63,8 @@ Status GeoIndex::indexCellsForLineString(const LineString line, std::vector<S2Ce
 }
 
 Status GeoIndex::indexCellsForPolygon(const Polygon polygon, std::vector<S2CellId> &cells) {
+    UNUSED(polygon);
+    UNUSED(cells);
     // TODO:
     // 1. No ajacent in a loop
     // 2. No intersect in loops
