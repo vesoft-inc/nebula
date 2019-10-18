@@ -5,7 +5,7 @@ Nebula Graph supports calling built-in functions of the following types:
 ## Math
 
 Function| Description |
----   | ---|
+----  |  ----|
 double abs(double x) | Return absolute value of the argument |
 double floor(double x) | Return the largest integer value smaller than or equal to the argument. (Rounds down)|
 double ceil(double x) | Return the smallest integer greater than or equal to the argument. (Rounds up) |
@@ -35,8 +35,9 @@ int rand64(int min, int max) | Return a random 64 bit integer in [min, max)|
 ## String
 
 **NOTE:** Like SQL, nGQL's character index (location) starts at `1`, not like C language from `0`.
+
 Function| Description |
----  |  ---|
+----  |  ----|
 int strcasecmp(string a, string b) | Compare strings without case sensitivity, when a = b, return 0, when a > b returned value is greater than 0, otherwise less than 0 |
 string lower(string a) | Return the argument in lowercase |
 string upper(string a) | Return the argument in uppercase |
@@ -62,5 +63,5 @@ int hash(string a) | Encode the data into integer value |
 ## Timestamp
 
 Function| Description |
----   |  ---|
+----  |  ----|
 int now()  |Return the current date and time |

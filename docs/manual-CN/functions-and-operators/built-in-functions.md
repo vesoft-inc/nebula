@@ -35,8 +35,9 @@ int rand64(int min, int max) | 返回 [min, max) 区间内的 64bit 整型伪随
 ## 字符串相关
 
 **注意：** 和 SQL 一样，nGQL 的字符索引（位置）从 `1` 开始，而不是类似 C 语言从 `0` 开始。
+
 函数| 描述 |
----  |  ----|
+----  |  ----|
 int strcasecmp(string a, string b) | 大小写不敏感的字符串比较，相等时返回零，a > b 时返回值大于零，否则返回值小于零 |
 string lower(string a) | 将字符串转换为小写 |
 string upper(string a) | 将字符串转换为大写 |
