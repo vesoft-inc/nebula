@@ -118,6 +118,7 @@ function getSystemVer {
         [[ -n `cat /etc/redhat-release|grep Fedora` ]] && return 1
         [[ -n `cat /etc/redhat-release|grep "release 7."` ]] && return 2
         [[ -n `cat /etc/redhat-release|grep "release 6."` ]] && return 3
+        return 0
     fi
     if [[ -e /etc/issue ]]; then
         result=`cat /etc/issue|cut -d " " -f 2 |cut -d "." -f 1`
@@ -137,10 +138,7 @@ case $version in
     1|2|3)
         yum_install $version
         ;;
-    4)
-        aptget_install $version
-        ;;
-    5)
+    4|5)
         aptget_install $version
         ;;
     *)
