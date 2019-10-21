@@ -5,7 +5,6 @@
  */
 
 #include "base/Base.h"
-#include <gtest/gtest.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
 #include "storage/PutProcessor.h"
@@ -15,18 +14,24 @@
 #include "storage/PrefixProcessor.h"
 #include "storage/ScanProcessor.h"
 
+#include <gtest/gtest.h>
+#include <folly/Executor.h>
+#include <folly/executors/CPUThreadPoolExecutor.h>
+
 namespace nebula {
 namespace storage {
 
 TEST(GeneralStorageTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/GeneralStorageTest.XXXXXX");
     auto kv = TestUtils::initKV(rootPath.path());
+    std::unique_ptr<folly::Executor> executor;
+    executor.reset(new folly::CPUThreadPoolExecutor(1));
     GraphSpaceID space = 0;
 
     {
         cpp2::PutRequest req;
         req.set_space_id(space);
-        auto* processor = PutProcessor::instance(kv.get(), nullptr);
+        auto* processor = PutProcessor::instance(kv.get(), nullptr, nullptr, executor.get());
         for (PartitionID part = 1; part <= 3; part++) {
             std::vector<nebula::cpp2::Pair> pairs;
             for (int32_t i = 0; i < 10; i++) {
@@ -36,6 +41,105 @@ TEST(GeneralStorageTest, SimpleTest) {
             }
             req.parts.emplace(part, std::move(pairs));
         }
+        auto future = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(future).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+    }
+    {
+        // Get Test
+        cpp2::GetRequest req;
+        req.set_space_id(space);
+        auto* processor = GetProcessor::instance(kv.get(), nullptr, nullptr, executor.get());
+        PartitionID part = 1;
+        std::vector<std::string> keys;
+        for (int32_t i = 0; i < 10; i+=2) {
+            keys.emplace_back(folly::stringPrintf("key_%d_%d", part, i));
+        }
+        req.parts.emplace(part, std::move(keys));
+        auto future = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(future).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+        auto result = resp.values;
+        EXPECT_EQ(5, result.size());
+        EXPECT_EQ("value_1_0", result["key_1_0"]);
+        EXPECT_EQ("value_1_2", result["key_1_2"]);
+        EXPECT_EQ("value_1_4", result["key_1_4"]);
+        EXPECT_EQ("value_1_6", result["key_1_6"]);
+        EXPECT_EQ("value_1_8", result["key_1_8"]);
+    }
+    {
+        // Remove Test
+        cpp2::RemoveRequest req;
+        req.set_space_id(space);
+        auto* processor = RemoveProcessor::instance(kv.get(), nullptr, nullptr, executor.get());
+        PartitionID part = 1;
+        std::vector<std::string> keys;
+        for (int32_t i = 0; i < 10; i+=2) {
+            keys.emplace_back(folly::stringPrintf("key_%d_%d", part, i));
+        }
+        req.parts.emplace(part, std::move(keys));
+        auto future = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(future).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+    }
+    {
+        // Get Test
+        cpp2::GetRequest req;
+        req.set_space_id(space);
+        auto* processor = GetProcessor::instance(kv.get(), nullptr, nullptr, executor.get());
+        PartitionID part = 1;
+        std::vector<std::string> keys;
+        for (int32_t i = 0; i < 10; i+=2) {
+            keys.emplace_back(folly::stringPrintf("key_%d_%d", part, i));
+        }
+        req.parts.emplace(part, std::move(keys));
+        auto future = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(future).get();
+        EXPECT_EQ(1, resp.result.failed_codes.size());
+        EXPECT_EQ(0, resp.values.size());
+    }
+    {
+        // Prefix Test
+        cpp2::PrefixRequest req;
+        req.set_space_id(space);
+        auto* processor = PrefixProcessor::instance(kv.get(), nullptr, nullptr, executor.get());
+        PartitionID part = 2;
+        req.parts.emplace(part, "key_2");
+        auto future = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(future).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(10, resp.values.size());
+    }
+    {
+        // Scan Test
+        cpp2:: ScanRequest req;
+        req.set_space_id(space);
+        auto* processor = ScanProcessor::instance(kv.get(), nullptr, nullptr, executor.get());
+        PartitionID part = 2;
+        auto range = nebula::cpp2::Range(apache::thrift::FragileConstructor::FRAGILE,
+                                         "key_2_0", "key_2_99");
+        req.parts.emplace(part, std::move(range));
+        auto future = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(future).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(10, resp.values.size());
+    }
+    {
+        // Remove Range Test
+        cpp2:: RemoveRangeRequest req;
+        req.set_space_id(space);
+        auto* processor = RemoveRangeProcessor::instance(kv.get(), nullptr,
+                                                         nullptr, executor.get());
+        PartitionID part = 2;
+        auto range = nebula::cpp2::Range(apache::thrift::FragileConstructor::FRAGILE,
+                                         "key_2_3", "key_2_6");
+        req.parts.emplace(part, range);
         auto future = processor->getFuture();
         processor->process(req);
         auto resp = std::move(future).get();

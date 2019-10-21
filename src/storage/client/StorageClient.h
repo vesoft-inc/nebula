@@ -186,7 +186,7 @@ public:
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> prefix(
         GraphSpaceID space,
-        std::vector<std::string> keys,
+        std::string key,
         folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> scan(

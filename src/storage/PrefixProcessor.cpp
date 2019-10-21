@@ -12,6 +12,23 @@ namespace storage {
 void PrefixProcessor::process(const cpp2::PrefixRequest& req) {
     CHECK_NOTNULL(kvstore_);
     space_ = req.get_space_id();
+    std::vector<folly::Future<PartCode>> results;
+    for (auto& part : req.get_parts()) {
+        results.emplace_back(asyncProcess(part.first, std::move(part.second)));
+    }
+
+    folly::collectAll(results).via(executor_)
+                              .then([&] (const std::vector<folly::Try<PartCode>>& tries) mutable {
+        for (const auto& t : tries) {
+            auto ret = t.value();
+            auto part = std::get<0>(ret);
+            auto resultCode = std::get<1>(ret);
+            this->pushResultCode(this->to(resultCode), part);
+        }
+
+        resp_.set_values(std::move(pairs_));
+        this->onFinished();
+    });
 }
 
 folly::Future<PartCode>

@@ -32,7 +32,7 @@ private:
             : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats),
             executor_(executor) {}
 
-    folly::Future<std::pair<PartitionID, kvstore::ResultCode>>
+    folly::Future<PartCode>
     asyncProcess(PartitionID partId, const std::string& start, const std::string& end);
 
 private:

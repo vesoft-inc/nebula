@@ -13,6 +13,8 @@
 namespace nebula {
 namespace storage {
 
+using apache::thrift::FragileConstructor::FRAGILE;
+
 StorageClient::StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> threadPool,
                              meta::MetaClient *client)
         : ioThreadPool_(threadPool)
@@ -421,7 +423,6 @@ StorageClient::put(GraphSpaceID space,
         auto& req = requests[host];
         req.set_space_id(space);
         req.set_parts(std::move(c.second));
-        LOG(INFO) << "Space " << space;
     }
 
     return collectResponse(evb, std::move(requests),
@@ -452,6 +453,105 @@ StorageClient::get(GraphSpaceID space,
                            [](cpp2::StorageServiceAsyncClient* client,
                               const cpp2::GetRequest& r) {
                                   return client->future_get(r);
+                              });
+}
+
+folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>>
+StorageClient::remove(GraphSpaceID space,
+                      std::vector<std::string> keys,
+                      folly::EventBase* evb) {
+    auto clusters = clusterIdsToHosts(space, keys,
+                                      [] (const std::string& v) {
+                                          return std::hash<std::string>{}(v);
+                                      });
+    std::unordered_map<HostAddr, cpp2::RemoveRequest> requests;
+    for (auto& c : clusters) {
+        auto& host = c.first;
+        auto& req = requests[host];
+        req.set_space_id(space);
+        req.set_parts(std::move(c.second));
+    }
+
+    return collectResponse(evb, std::move(requests),
+                           [](cpp2::StorageServiceAsyncClient* client,
+                              const cpp2::RemoveRequest& r) {
+                                  return client->future_remove(r);
+                              });
+}
+
+folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>>
+StorageClient::removeRange(GraphSpaceID space,
+                           std::string start,
+                           std::string end,
+                           folly::EventBase* evb) {
+    auto clusters = leaderHosts(space);
+    std::unordered_map<HostAddr, cpp2::RemoveRangeRequest> requests;
+    UNUSED(start); UNUSED(end);
+    for (auto& c : clusters) {
+        auto& host = c.first;
+        auto& req = requests[host];
+        req.set_space_id(space);
+        std::unordered_map<PartitionID, nebula::cpp2::Range> parts;
+        for (auto part : c.second) {
+            parts.emplace(part, nebula::cpp2::Range(FRAGILE, start, end));
+        }
+        req.set_parts(std::move(parts));
+    }
+
+    return collectResponse(evb, std::move(requests),
+                           [](cpp2::StorageServiceAsyncClient* client,
+                              const cpp2::RemoveRangeRequest& r) {
+                                  return client->future_removeRange(r);
+                              });
+}
+
+folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>>
+StorageClient::prefix(GraphSpaceID space,
+                      std::string key,
+                      folly::EventBase* evb) {
+    auto clusters = leaderHosts(space);
+    std::unordered_map<HostAddr, cpp2::PrefixRequest> requests;
+    for (auto& c : clusters) {
+        auto& host = c.first;
+        auto& req = requests[host];
+        req.set_space_id(space);
+        std::unordered_map<PartitionID, std::string> parts;
+        for (auto part : c.second) {
+            parts.emplace(part, key);
+        }
+        req.set_parts(std::move(parts));
+    }
+
+    return collectResponse(evb, std::move(requests),
+                           [](cpp2::StorageServiceAsyncClient* client,
+                              const cpp2::PrefixRequest& r) {
+                                  return client->future_prefix(r);
+                              });
+}
+
+folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>>
+StorageClient::scan(GraphSpaceID space,
+                    std::string start,
+                    std::string end,
+                    folly::EventBase* evb) {
+    auto clusters = leaderHosts(space);
+    std::unordered_map<HostAddr, cpp2::ScanRequest> requests;
+    UNUSED(start); UNUSED(end);
+    for (auto& c : clusters) {
+        auto& host = c.first;
+        auto& req = requests[host];
+        req.set_space_id(space);
+        std::unordered_map<PartitionID, nebula::cpp2::Range> parts;
+        for (auto part : c.second) {
+            parts.emplace(part, nebula::cpp2::Range(FRAGILE, start, end));
+        }
+        req.set_parts(std::move(parts));
+    }
+
+    return collectResponse(evb, std::move(requests),
+                           [](cpp2::StorageServiceAsyncClient* client,
+                              const cpp2::ScanRequest& r) {
+                                  return client->future_scan(r);
                               });
 }
 

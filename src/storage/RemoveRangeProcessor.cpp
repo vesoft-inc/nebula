@@ -39,9 +39,9 @@ RemoveRangeProcessor::asyncProcess(PartitionID part,
     folly::Promise<PartCode> promise;
     auto future = promise.getFuture();
 
-    executor_->add([this, p = std::move(promise), part, start, end] () mutable {
-        this->kvstore_->asyncRemoveRange(space_, part, start, end,
-                                         [part, &p] (kvstore::ResultCode code) {
+    executor_->add([this, pro = std::move(promise), part, start, end] () mutable {
+        this->kvstore_->asyncRemoveRange(space_, part, start, end, [part, p = std::move(pro)]
+                                         (kvstore::ResultCode code) mutable {
             p.setValue(std::make_pair(part, code));
         });
     });

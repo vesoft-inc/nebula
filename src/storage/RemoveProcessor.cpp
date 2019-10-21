@@ -35,9 +35,9 @@ RemoveProcessor::asyncProcess(PartitionID part, const std::vector<std::string>& 
     folly::Promise<PartCode> promise;
     auto future = promise.getFuture();
 
-    executor_->add([this, p = std::move(promise), part, keys] () mutable {
-        this->kvstore_->asyncMultiRemove(space_, part, keys,
-                                         [part, &p] (kvstore::ResultCode code) {
+    executor_->add([this, pro = std::move(promise), part, keys] () mutable {
+        this->kvstore_->asyncMultiRemove(space_, part, keys, [part, p = std::move(pro)]
+                                         (kvstore::ResultCode code) mutable {
             p.setValue(std::make_pair(part, code));
         });
     });

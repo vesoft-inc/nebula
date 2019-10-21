@@ -37,7 +37,7 @@ private:
     asyncProcess(PartitionID part, const std::vector<std::string>& keys);
 
     GraphSpaceID  space_;
-    folly::Executor *executor_{nullptr};
+    folly::Executor  *executor_{nullptr};
     std::unordered_map<std::string, std::string> pairs_;
 };
 

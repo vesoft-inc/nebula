@@ -433,6 +433,136 @@ TEST(StorageClientTest, LeaderChangeTest) {
     ASSERT_EQ(HostAddr(localIp, 10010), tsc.leaders_[std::make_pair(0, 1)]);
 }
 
+TEST(StorageClientTest, GeneralStorageTest) {
+    FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
+    const nebula::ClusterID kClusterId = 10;
+    fs::TempDir rootPath("/tmp/GeneralStorageTest.XXXXXX");
+    IPv4 localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+
+    // Let the system choose an available port for us
+    uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
+    std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
+    auto metaServerContext = meta::TestUtils::mockMetaServer(localMetaPort,
+                                                             metaPath.c_str(),
+                                                             kClusterId);
+
+    localMetaPort =  metaServerContext->port_;
+
+    LOG(INFO) << "Create meta client...";
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    auto addrsRet
+        = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", localMetaPort));
+    CHECK(addrsRet.ok()) << addrsRet.status();
+
+    auto& addrs = addrsRet.value();
+    uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
+    auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
+    auto& localHost = hostRet.value();
+    auto mClient = std::make_unique<meta::MetaClient>(threadPool,
+                                                      std::move(addrs),
+                                                      localHost,
+                                                      kClusterId,
+                                                      true);
+
+
+    LOG(INFO) << "Add hosts and create space....";
+    auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
+    ASSERT_TRUE(r.ok());
+    mClient->waitForMetadReady();
+
+    LOG(INFO) << "Start data server....";
+    std::string dataPath = folly::stringPrintf("%s/data", rootPath.path());
+    auto sc = TestUtils::mockStorageServer(mClient.get(),
+                                           dataPath.c_str(),
+                                           localIp,
+                                           localDataPort,
+                                           false);
+
+    auto ret = mClient->createSpace("default", 10, 1).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    GraphSpaceID space = ret.value();
+    LOG(INFO) << "Created space \"default\", its id is " << space;
+    sleep(FLAGS_load_data_interval_secs + 1);
+    auto* kv = static_cast<kvstore::NebulaStore*>(sc->kvStore_.get());
+    while (true) {
+        int readyNum = 0;
+        for (auto part = 1; part <= 10; part++) {
+            auto retLeader = kv->partLeader(space, part);
+            if (ok(retLeader)) {
+                auto leader = value(std::move(retLeader));
+                if (leader != HostAddr(0, 0)) {
+                    readyNum++;
+                }
+            }
+        }
+        if (readyNum == 10) {
+            LOG(INFO) << "All leaders have been elected!";
+            break;
+        }
+        usleep(100000);
+    }
+    auto client = std::make_unique<StorageClient>(threadPool, mClient.get());
+
+    {
+        std::vector<nebula::cpp2::Pair> pairs;
+        for (int32_t i = 0; i < 100; i ++) {
+            auto key = folly::stringPrintf("key_%d", i);
+            auto value = folly::stringPrintf("value_%d", i);
+            pairs.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                    std::move(key), std::move(value));
+        }
+
+        auto f = client->put(space, std::move(pairs));
+        auto resp = std::move(f).get();
+        ASSERT_TRUE(resp.succeeded());
+    }
+    {
+        std::vector<std::string> keys;
+        for (int32_t i = 0; i < 10; i++) {
+            keys.emplace_back(folly::stringPrintf("key_%d", i));
+        }
+        auto f = client->get(space, std::move(keys));
+        auto resp = std::move(f).get();
+        ASSERT_TRUE(resp.succeeded());
+        ASSERT_TRUE(resp.failedParts().empty());
+        for (int32_t i = 0; i < 10; i++) {
+            bool found = false;
+            auto key = folly::stringPrintf("key_%d", i);
+            for (const auto& result : resp.responses()) {
+                auto iter = result.values.find(key);
+                if (iter != result.values.end()) {
+                    ASSERT_EQ(folly::stringPrintf("value_%d", i), iter->second);
+                    found = true;
+                    break;
+                }
+            }
+            ASSERT_TRUE(found);
+        }
+    }
+    {
+        std::vector<std::string> keys;
+        for (int32_t i = 0; i < 10; i+=2) {
+            keys.emplace_back(folly::stringPrintf("key_%d", i));
+        }
+        auto f = client->remove(space, std::move(keys));
+        auto resp = std::move(f).get();
+        ASSERT_TRUE(resp.succeeded());
+    }
+    {
+        std::vector<std::string> keys;
+        for (int32_t i = 0; i < 10; i++) {
+            keys.emplace_back(folly::stringPrintf("key_%d", i));
+        }
+        auto f = client->get(space, std::move(keys));
+        auto resp = std::move(f).get();
+        ASSERT_FALSE(resp.succeeded());
+        ASSERT_FALSE(resp.failedParts().empty());
+        ASSERT_EQ(5, resp.failedParts().size());
+    }
+}
+
 }  // namespace storage
 }  // namespace nebula
 

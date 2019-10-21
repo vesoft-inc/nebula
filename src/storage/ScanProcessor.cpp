@@ -25,6 +25,7 @@ void ScanProcessor::process(const cpp2::ScanRequest& req) {
             auto resultCode = std::get<1>(ret);
             this->pushResultCode(this->to(resultCode), part);
         }
+        resp_.set_values(std::move(pairs_));
         this->onFinished();
     });
 }

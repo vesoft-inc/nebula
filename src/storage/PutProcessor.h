@@ -37,7 +37,7 @@ private:
 
 private:
     GraphSpaceID  space_;
-    folly::Executor *executor_ = nullptr;
+    folly::Executor  *executor_{nullptr};
 };
 
 }  // namespace storage

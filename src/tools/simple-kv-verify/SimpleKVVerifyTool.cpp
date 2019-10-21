@@ -60,7 +60,6 @@ public:
             auto key = std::to_string(folly::Random::rand32(1000000000));
             auto value = std::to_string(folly::Random::rand32(1000000000));
             data[key] = value;
-            LOG(INFO) << "Key " << key << " value " << value;
 
             pairs.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                std::move(key), std::move(value));
@@ -80,7 +79,6 @@ public:
             }
             return;
         }
-        LOG(INFO) << "Put Successfully";
     }
 
 
@@ -124,8 +122,6 @@ public:
                 LOG(ERROR) << "Check Fail: key = " << key << " not found";
             }
         }
-
-        LOG(INFO) << "Get Successfully";
     }
 
 private:

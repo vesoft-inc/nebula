@@ -31,7 +31,7 @@ void GetProcessor::process(const cpp2::GetRequest& req) {
     });
 }
 
-folly::Future<PartCode>
+folly::Future<std::pair<PartitionID, kvstore::ResultCode>>
 GetProcessor::asyncProcess(PartitionID part,
                            const std::vector<std::string>& keys) {
     folly::Promise<std::pair<PartitionID, kvstore::ResultCode>> promise;
