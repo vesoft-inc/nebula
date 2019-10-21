@@ -8,6 +8,8 @@
 #include "fs/FileUtils.h"
 #include <dirent.h>
 #include <fnmatch.h>
+#include <limits.h>
+#include <stdlib.h>
 
 namespace nebula {
 namespace fs {
@@ -93,6 +95,15 @@ StatusOr<std::string> FileUtils::readLink(const char *path) {
     return std::string(buffer, len);
 }
 
+StatusOr<std::string> FileUtils::realPath(const char *path) {
+    char *buffer  = ::realpath(path, NULL);
+    if (buffer == NULL) {
+        return Status::Error("realpath %s: %s", path, ::strerror(errno));
+    }
+    std::string truePath(buffer);
+    ::free(buffer);
+    return truePath;
+}
 
 std::string FileUtils::dirname(const char *path) {
     DCHECK(path != nullptr && *path != '\0');
@@ -502,6 +513,14 @@ void FileUtils::Iterator::openFileOrDirectory() {
             status_ = Status::Error("open `%s': %s", path_.c_str(), ::strerror(errno));
             return;
         }
+    } else if (type_ == FileType::SYM_LINK) {
+        auto result = FileUtils::realPath(path_.c_str());
+        if (!result.ok()) {
+            status_ = std::move(result).status();
+            return;
+        }
+        path_ = std::move(result).value();
+        openFileOrDirectory();
     } else {
         status_ = Status::Error("Filetype not supported `%s': %s",
                                 path_.c_str(), FileUtils::getFileTypeName(type_));
