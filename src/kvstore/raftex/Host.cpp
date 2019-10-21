@@ -190,10 +190,7 @@ void Host::appendLogsInternal(folly::EventBase* eb,
             {
                 std::lock_guard<std::mutex> g(self->lock_);
                 self->setResponse(r);
-                self->lastLogIdSent_++;
-                if (self->lastLogIdSent_ < self->logIdToSend_) {
-                    ++self->lastLogIdSent_;
-                }
+                self->lastLogIdSent_ = self->logIdToSend_;
             }
             self->noMoreRequestCV_.notify_all();
             return;

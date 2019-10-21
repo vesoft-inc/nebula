@@ -1180,6 +1180,7 @@ void RaftPart::cleanupSnapshot() {
 
 bool RaftPart::needToCleanWal() {
     for (auto& host : hosts_) {
+        std::lock_guard<std::mutex> g(raftLock_);
         if (host->sendingSnapshot_) {
             return false;
         }
@@ -1393,7 +1394,7 @@ void RaftPart::processAppendLogRequest(
         if (wal_->appendLogs(iter)) {
             // When leader has been sending a snapshot already, sometimes it would send a request
             // with empty log list, and lastLogId in wal may be 0 because of reset.
-            if (!numLogs) {
+            if (numLogs != 0) {
                 CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId());
             }
             lastLogId_ = wal_->lastLogId();
