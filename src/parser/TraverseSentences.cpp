@@ -261,4 +261,37 @@ std::string FetchEdgesSentence::toString() const {
     }
     return buf;
 }
+
+std::string FindPathSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "FIND ";
+    if (isShortest_) {
+        buf += "SHORTEST PATH ";
+    } else {
+        buf += "ALL PATH ";
+    }
+
+    if (from_ != nullptr) {
+        buf += from_->toString();
+        buf += " ";
+    }
+    if (to_ != nullptr) {
+        buf += to_->toString();
+        buf += " ";
+    }
+    if (over_ != nullptr) {
+        buf += over_->toString();
+        buf += " ";
+    }
+    if (step_ != nullptr) {
+        buf += step_->toString();
+        buf += " ";
+    }
+    if (where_ != nullptr) {
+        buf += where_->toString();
+        buf += " ";
+    }
+    return buf;
+}
 }   // namespace nebula
