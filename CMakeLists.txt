@@ -8,19 +8,10 @@
 #
 #   CMAKE_C_COMPILER               -- Specify the compiler for C language
 #   CMAKE_CXX_COMPILER             -- Specify the compiler for C++ language
-
-#   NEBULA_GPERF_BIN_DIR           -- Specify the full path to the directory
-#                                      containing gperf binary
-#   NEBULA_FLEX_ROOT               -- Specify the root directory for flex
-#   NEBULA_BISON_ROOT              -- Specify the root directory for bison
-#   NEBULA_READLINE_ROOT           -- Specify the root directory for readline
-#   NEBULA_NCURSES_ROOT            -- Specify the root directory for ncurses
-#   NEBULA_KRB5_ROOT               -- Specify the root directory for KRB5
-#   NEBULA_LIBUNWIND_ROOT          -- Specify the root directory for libunwind
-#   NEBULA_OPENSSL_ROOT            -- Specify the root directory for openssl
-#   NEBULA_BOOST_ROOT              -- Specify the root directory for boost
-
-#   NEBULA_THIRDPARTY_ROOT          -- Specify the root directory for third-party
+#
+#   NEBULA_THIRDPARTY_ROOT         -- Specify the root directory for third-party
+#   NEBULA_OTHER_ROOT              -- Specify the root directory for user build
+#                                  -- Split with ":", exp: DIR:DIR
 #
 #   SKIP_JAVA_CLIENT               -- Skip building the java client
 #   ENABLE_JEMALLOC                -- Link jemalloc into all executables
@@ -129,61 +120,6 @@ endif()
 # To include customized FindXXX.cmake modules
 set(CMAKE_MODULE_PATH "${NEBULA_HOME}/cmake" ${CMAKE_MODULE_PATH})
 
-if(NOT ${NEBULA_KRB5_ROOT} STREQUAL "")
-    message(STATUS "Specified NEBULA_KRB5_ROOT: " ${NEBULA_KRB5_ROOT})
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_KRB5_ROOT}/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_KRB5_ROOT}/lib)
-    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_KRB5_ROOT}/bin)
-endif()
-
-if(NOT ${NEBULA_LIBUNWIND_ROOT} STREQUAL "")
-    message(STATUS "Specified NEBULA_LIBUNWIND_ROOT: " ${NEBULA_LIBUNWIND_ROOT})
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_LIBUNWIND_ROOT}/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_LIBUNWIND_ROOT}/lib)
-endif()
-
-if(NOT ${NEBULA_OPENSSL_ROOT} STREQUAL "")
-    message(STATUS "Specified NEBULA_OPENSSL_ROOT: " ${NEBULA_OPENSSL_ROOT})
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_OPENSSL_ROOT}/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_OPENSSL_ROOT}/lib)
-endif()
-
-if(NOT ${NEBULA_BOOST_ROOT} STREQUAL "")
-    message(STATUS "Specified NEBULA_BOOST_ROOT: " ${NEBULA_BOOST_ROOT})
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_BOOST_ROOT}/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_BOOST_ROOT}/lib)
-endif()
-
-if(NOT ${NEBULA_READLINE_ROOT} STREQUAL "")
-    message(STATUS "Specified NEBULA_READLINE_ROOT: " ${NEBULA_READLINE_ROOT})
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_READLINE_ROOT}/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_READLINE_ROOT}/lib)
-endif()
-
-if(NOT ${NEBULA_NCURSES_ROOT} STREQUAL "")
-    message(STATUS "Specified NEBULA_NCURSES_ROOT: " ${NEBULA_NCURSES_ROOT})
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_NCURSES_ROOT}/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_NCURSES_ROOT}/lib)
-endif()
-
-if(NOT ${NEBULA_FLEX_ROOT} STREQUAL "")
-    message(STATUS "Specified NEBULA_FLEX_ROOT: " ${NEBULA_FLEX_ROOT})
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_FLEX_ROOT}/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_FLEX_ROOT}/lib)
-    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_FLEX_ROOT}/bin)
-endif()
-
-if(NOT ${NEBULA_BISON_ROOT} STREQUAL "")
-    message(STATUS "Specified NEBULA_BISON_ROOT: " ${NEBULA_BISON_ROOT})
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_BISON_ROOT}/lib)
-    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_BISON_ROOT}/bin)
-endif()
-
-if(NOT ${NEBULA_GPERF_BIN_DIR} STREQUAL "")
-    message(STATUS "Specified NEBULA_GPERF_BIN_DIR: " ${NEBULA_GPERF_BIN_DIR})
-    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_GPERF_BIN_DIR})
-endif()
-
 # When NEBULA_THIRDPARTY_ROOT is null, set default value as /opt/nebula/third-party
 if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
     SET(NEBULA_THIRDPARTY_ROOT "/opt/nebula/third-party")
@@ -192,80 +128,27 @@ endif()
 # third-party
 if(NOT ${NEBULA_THIRDPARTY_ROOT} STREQUAL "")
     message(STATUS "Specified NEBULA_THIRDPARTY_ROOT: " ${NEBULA_THIRDPARTY_ROOT})
-    # bzip2
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/bzip2/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/bzip2/lib)
-    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/bzip2/bin)
+    list(APPEND CMAKE_INCLUDE_PATH ${NEBULA_THIRDPARTY_ROOT}/include)
+    list(APPEND CMAKE_LIBRARY_PATH ${NEBULA_THIRDPARTY_ROOT}/lib)
+    list(APPEND CMAKE_LIBRARY_PATH ${NEBULA_THIRDPARTY_ROOT}/lib64)
+    list(APPEND CMAKE_PROGRAM_PATH ${NEBULA_THIRDPARTY_ROOT}/bin)
+    include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/include)
+    link_directories(
+        ${NEBULA_THIRDPARTY_ROOT}/lib
+        ${NEBULA_THIRDPARTY_ROOT}/lib64
+    )
+endif()
 
-    # double-conversion
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/double-conversion/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/double-conversion/lib)
-
-    # fatal
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/fatal/include)
-
-    # fbthrift
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/fbthrift/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/fbthrift/lib)
-    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/fbthrift/bin)
-
-    # folly
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/folly/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/folly/lib)
-
-    # gflags
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/gflags/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/gflags/lib)
-    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/gflags/bin)
-
-    # glog
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/glog/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/glog/lib)
-
-    # googletest
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/googletest/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/googletest/lib)
-
-    # jemalloc
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/jemalloc/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/jemalloc/lib)
-    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/jemalloc/bin)
-
-    # libevent
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/libevent/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/libevent/lib)
-    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/libevent/bin)
-
-    # mstch
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/mstch/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/mstch/lib)
-
-    # proxygen
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/proxygen/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/proxygen/lib)
-
-    # rocksdb
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/rocksdb/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/rocksdb/lib)
-    set(ROCKSDB_LIBRARIES ${NEBULA_ROCKSDB_ROOT}/lib/librocksdb.a)
-
-    # snappy
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/snappy/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/snappy/lib)
-
-    # wangle
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/wangle/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/wangle/lib)
-
-    # zlib
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/zlib/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/zlib/lib)
-
-    # zstd
-    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/zstd/include)
-    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/zstd/lib)
-    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/zstd/bin)
-
+if(NOT ${NEBULA_OTHER_ROOT} STREQUAL "")
+    string(REPLACE ":" ";" DIR_LIST ${NEBULA_OTHER_ROOT})
+    list(LENGTH DIR_LIST len)
+    foreach(DIR IN LISTS DIR_LIST )
+        list(INSERT CMAKE_INCLUDE_PATH 0 ${DIR}/include)
+        list(INSERT CMAKE_LIBRARY_PATH 0 ${DIR}/lib)
+        list(INSERT CMAKE_PROGRAM_PATH 0 ${DIR}/bin)
+        include_directories(SYSTEM ${DIR}/include)
+        link_directories(${DIR}/lib)
+    endforeach()
 endif()
 
 string(REPLACE ";" ":" INCLUDE_PATH_STR "${CMAKE_INCLUDE_PATH}")
@@ -424,29 +307,6 @@ macro(nebula_add_library name type)
     )
 endmacro()
 
-include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/bzip2/include)
-include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/double-conversion/include)
-include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/fatal/include)
-include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/fbthrift/include)
-include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/folly/include)
-include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/gflags/include)
-include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/glog/include)
-include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/googletest/include)
-include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/jemalloc/include)
-include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/libevent/include)
-include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/mstch/include)
-include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/proxygen/include)
-include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/rocksdb/include)
-include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/snappy/include)
-include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/wangle/include)
-include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/zlib/include)
-include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/zstd/include)
-include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
-include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
-include_directories(SYSTEM ${KRB5_INCLUDE_DIRS})
-include_directories(SYSTEM ${FLEX_INCLUDE_DIRS})
-include_directories(SYSTEM ${NCURSES_INCLUDE_DIR})
-include_directories(SYSTEM ${Readline_INCLUDE_DIR})
 include_directories(AFTER ${NEBULA_HOME}/src)
 include_directories(AFTER src/common)
 include_directories(AFTER src/interface)
@@ -455,28 +315,6 @@ include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/interface)
 include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/kvstore/plugins)
 include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/kvstore/plugins/hbase)
 include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/parser)
-
-link_directories(
-    ${NEBULA_THIRDPARTY_ROOT}/bzip2/lib
-    ${NEBULA_THIRDPARTY_ROOT}/double-conversion/lib
-    ${NEBULA_THIRDPARTY_ROOT}/fatal/lib
-    ${NEBULA_THIRDPARTY_ROOT}/fbthrift/lib
-    ${NEBULA_THIRDPARTY_ROOT}/folly/lib
-    ${NEBULA_THIRDPARTY_ROOT}/gflags/lib
-    ${NEBULA_THIRDPARTY_ROOT}/glog/lib
-    ${NEBULA_THIRDPARTY_ROOT}/googletest/lib
-    ${NEBULA_THIRDPARTY_ROOT}/jemalloc/lib
-    ${NEBULA_THIRDPARTY_ROOT}/libevent/lib
-    ${NEBULA_THIRDPARTY_ROOT}/mstch/lib
-    ${NEBULA_THIRDPARTY_ROOT}/proxygen/lib
-    ${NEBULA_THIRDPARTY_ROOT}/rocksdb/lib
-    ${NEBULA_THIRDPARTY_ROOT}/snappy/lib
-    ${NEBULA_THIRDPARTY_ROOT}/wangle/lib
-    ${NEBULA_THIRDPARTY_ROOT}/zlib/lib
-    ${NEBULA_THIRDPARTY_ROOT}/zstd/lib
-    ${Boost_LIBRARY_DIRS}
-    ${KRB5_LIBRARY_DIRS}
-)
 
 # All thrift libraries
 set(THRIFT_LIBRARIES
