@@ -19,7 +19,8 @@ void PutProcessor::process(const cpp2::PutRequest& req) {
         auto part = value.first;
         std::vector<kvstore::KV> data;
         for (auto& pair : value.second) {
-            data.emplace_back(pair.key, pair.value);
+            data.emplace_back(std::move(NebulaKeyUtils::kvKey(part, pair.key)),
+                              std::move(pair.value));
         }
         doPut(space, part, std::move(data));
     });
