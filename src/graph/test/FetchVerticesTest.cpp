@@ -289,7 +289,7 @@ TEST_F(FetchVerticesTest, executionError) {
     }
 }
 
-TEST_F(FetchVerticesTest, nonExistVetex) {
+TEST_F(FetchVerticesTest, nonExistVertex) {
     std::string name = "NON EXIST VERTEX ID";
     int64_t nonExistPlayerID = std::hash<std::string>()(name);
     auto iter = players_.begin();
