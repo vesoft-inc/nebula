@@ -7,14 +7,14 @@ Nebula Graph 支持在表达式中调用如下类型的内建函数。
 函数| 描述 |
 ----  |  ----|
 double abs(double x) | 返回绝对值    |
-double floor(double x) | 返回小于参数的最大整数（向下取整   |
+double floor(double x) | 返回小于参数的最大整数（向下取整）   |
 double ceil(double x) | 返回大于参数的最小整数（向上取整）  |
 double round(double x) | 对参数取整，如果参数位于中间位置，则返回远离 0 的数字 |
 double sqrt(double x) | 返回参数的平方根 |
 double cbrt(double x) | 返回参数的立方根 |
 double hypot(double x, double x) | 返回一个正三角形的斜边 |
-double pow(double x, double y) | 将参数增加到指定次幂 |
-double exp(double x) | 计算 e（欧拉数，2.7182818 ）的 x 次幂 |
+double pow(double x, double y) | 返回 x 的 y 次幂 |
+double exp(double x) | 计算 e 的 x 次幂 |
 double exp2(double x) | 返回 2 的指定次方 |
 double log(double x) | 返回参数的自然对数 |
 double log2(double x) | 返回底数为 2 的对数 |
