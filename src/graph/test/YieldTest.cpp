@@ -205,7 +205,6 @@ TEST_F(YieldTest, Logic) {
     }
 }
 
-<<<<<<< HEAD
 TEST_F(YieldTest, inCall) {
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
@@ -256,7 +255,7 @@ TEST_F(YieldTest, yieldPipe) {
         }
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-	{
+    {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
         auto fmt = go + "| YIELD $-.team WHERE $-.start > 2005";
