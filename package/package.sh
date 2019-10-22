@@ -65,7 +65,7 @@ function build {
 
     cmake -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=${version} -DCMAKE_INSTALL_PREFIX=/usr/local/nebula ..
 
-    if !( make -j10 ); then
+    if !( make -j$(nproc) ); then
         echo ">>> build nebula failed <<<"
         exit -1
     fi
