@@ -163,7 +163,7 @@ public:
         return std::make_shared<ResultSchemaProvider>(std::move(schema));
     }
 
-    static cpp2::PropDef vetexPropDef(std::string name, TagID tagId) {
+    static cpp2::PropDef vertexPropDef(std::string name, TagID tagId) {
         cpp2::PropDef prop;
         prop.set_name(std::move(name));
         prop.set_owner(cpp2::PropOwner::SOURCE);
@@ -179,8 +179,8 @@ public:
         return prop;
     }
 
-    static cpp2::PropDef vetexPropDef(std::string name, cpp2::StatType type, TagID tagId) {
-        auto prop = TestUtils::vetexPropDef(std::move(name), tagId);
+    static cpp2::PropDef vertexPropDef(std::string name, cpp2::StatType type, TagID tagId) {
+        auto prop = TestUtils::vertexPropDef(std::move(name), tagId);
         prop.set_stat(type);
         return prop;
     }

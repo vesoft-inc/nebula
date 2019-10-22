@@ -46,6 +46,7 @@
 #include "graph/UpdateVertexExecutor.h"
 #include "graph/UpdateEdgeExecutor.h"
 #include "graph/FindPathExecutor.h"
+#include "graph/LimitExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -159,12 +160,15 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kFindPath:
             executor = std::make_unique<FindPathExecutor>(sentence, ectx());
             break;
+        case Sentence::Kind::kLimit:
+            executor = std::make_unique<LimitExecutor>(sentence, ectx());
+            break;
         case Sentence::Kind::kUnknown:
-            LOG(FATAL) << "Sentence kind unknown";
-            break;
+            LOG(ERROR) << "Sentence kind unknown";
+            return nullptr;
         default:
-            LOG(FATAL) << "Sentence kind illegal: " << kind;
-            break;
+            LOG(ERROR) << "Sentence kind illegal: " << kind;
+            return nullptr;
     }
     return executor;
 }
