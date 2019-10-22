@@ -437,5 +437,68 @@ TEST_F(FindPathTest, multiEdgesAll) {
         ASSERT_TRUE(verifyPath(resp, expected));
     }
 }
+
+TEST_F(FindPathTest, vertexNotExist) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like UPTO 5 STEPS";
+        auto query = folly::stringPrintf(fmt,
+                std::hash<std::string>()("Nobody1"), std::hash<std::string>()("Nobody2"));
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected;
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like UPTO 5 STEPS";
+        auto &tim = players_["Tim Duncan"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), std::hash<std::string>()("Nobody"));
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected;
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like UPTO 5 STEPS";
+        auto &tim = players_["Tim Duncan"];
+        auto query = folly::stringPrintf(fmt, std::hash<std::string>()("Nobody"), tim.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected;
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND ALL PATH FROM %ld TO %ld OVER like UPTO 5 STEPS";
+        auto query = folly::stringPrintf(fmt,
+                std::hash<std::string>()("Nobody1"), std::hash<std::string>()("Nobody2"));
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected;
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND ALL PATH FROM %ld TO %ld OVER like UPTO 5 STEPS";
+        auto &tim = players_["Tim Duncan"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), std::hash<std::string>()("Nobody"));
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected;
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FIND ALL PATH FROM %ld TO %ld OVER like UPTO 5 STEPS";
+        auto &tim = players_["Tim Duncan"];
+        auto query = folly::stringPrintf(fmt, std::hash<std::string>()("Nobody"), tim.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+        std::vector<std::string> expected;
+        ASSERT_TRUE(verifyPath(resp, expected));
+    }
+}
 }  // namespace graph
 }  // namespace nebula
