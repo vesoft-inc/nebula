@@ -46,11 +46,13 @@ void LimitExecutor::execute() {
     auto inRows = std::move(ret).value();
     if (inRows.size() > static_cast<uint64_t>(offset_ + count_)) {
         rows_.resize(count_);
-        rows_.assign(inRows.begin() + offset_, inRows.begin() + offset_ + count_);
+        rows_.assign(std::make_move_iterator(inRows.begin()) + offset_,
+                     std::make_move_iterator(inRows.begin()) + offset_ + count_);
     } else if (inRows.size() > static_cast<uint64_t>(offset_) &&
                    inRows.size() <= static_cast<uint64_t>(offset_ + count_)) {
         rows_.resize(inRows.size() - offset_);
-        rows_.assign(inRows.begin() + offset_, inRows.end());
+        rows_.assign(std::make_move_iterator(inRows.begin()) + offset_,
+                     std::make_move_iterator(inRows.end()));
     }
 
     if (onResult_) {
@@ -134,7 +136,7 @@ void LimitExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
         return;
     }
 
-    resp.set_rows(rows_);
+    resp.set_rows(std::move(rows_));
 }
 }   // namespace graph
 }   // namespace nebula
