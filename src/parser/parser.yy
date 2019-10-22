@@ -106,7 +106,7 @@ class GraphScanner;
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
 %token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL_DURATION KW_TTL_COL
-%token KW_ORDER KW_ASC
+%token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER KW_DATA
@@ -193,7 +193,7 @@ class GraphScanner;
 %type <acl_item_clause> acl_item_clause
 
 %type <sentence> go_sentence match_sentence use_sentence find_sentence find_path_sentence
-%type <sentence> order_by_sentence
+%type <sentence> order_by_sentence limit_sentence
 %type <sentence> fetch_vertices_sentence fetch_edges_sentence
 %type <sentence> create_tag_sentence create_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
@@ -809,6 +809,12 @@ to_clause
     }
     ;
 
+limit_sentence
+    : KW_LIMIT INTEGER { $$ = new LimitSentence(0, $2); }
+    | KW_LIMIT INTEGER COMMA INTEGER { $$ = new LimitSentence($2, $4); }
+    | KW_LIMIT INTEGER KW_OFFSET INTEGER { $$ = new LimitSentence($2, $4); }
+    ;
+
 use_sentence
     : KW_USE name_label { $$ = new UseSentence($2); }
     ;
@@ -1026,6 +1032,7 @@ traverse_sentence
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }
     | find_path_sentence { $$ = $1; }
+    | limit_sentence { $$ = $1; }
     ;
 
 set_sentence
