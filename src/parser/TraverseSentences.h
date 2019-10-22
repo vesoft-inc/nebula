@@ -545,5 +545,27 @@ private:
     std::unique_ptr<StepClause>     step_;
     std::unique_ptr<WhereClause>    where_;
 };
+
+class LimitSentence final : public Sentence {
+public:
+    explicit LimitSentence(int64_t offset, int64_t count) : offset_(offset), count_(count) {
+        kind_ = Kind::kLimit;
+    }
+
+    std::string toString() const override;
+
+    int64_t offset() {
+        return offset_;
+    }
+
+    int64_t count() {
+        return count_;
+    }
+
+ private:
+    int64_t    offset_{-1};
+    int64_t    count_{-1};
+};
 }   // namespace nebula
 #endif  // PARSER_TRAVERSESENTENCES_H_
+

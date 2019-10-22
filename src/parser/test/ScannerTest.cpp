@@ -388,6 +388,10 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("OF", TokenType::KW_OF),
         CHECK_SEMANTIC_TYPE("Of", TokenType::KW_OF),
         CHECK_SEMANTIC_TYPE("of", TokenType::KW_OF),
+        CHECK_SEMANTIC_TYPE("LIMIT", TokenType::KW_LIMIT),
+        CHECK_SEMANTIC_TYPE("limit", TokenType::KW_LIMIT),
+        CHECK_SEMANTIC_TYPE("OFFSET", TokenType::KW_OFFSET),
+        CHECK_SEMANTIC_TYPE("offset", TokenType::KW_OFFSET),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),
