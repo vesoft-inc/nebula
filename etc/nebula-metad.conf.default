@@ -15,6 +15,8 @@
 --logbufsecs=0
 
 ########## networking ##########
+# Meta Server Address
+--meta_server_addrs=127.0.0.1:45500
 # Local ip
 --local_ip=127.0.0.1
 # Meta daemon listening port
@@ -27,7 +29,7 @@
 --ws_h2_port=11002
 
 ########## storage ##########
-# Root data path, multi paths should be split by comma.For rocksdb engine, one path one instance.
+# Root data path, here should be only single path for metad
 --data_path=data/meta
 
 
