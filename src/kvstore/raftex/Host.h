@@ -97,7 +97,7 @@ private:
     void setResponse(const cpp2::AppendLogResponse& r);
 
     thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>& tcManager() {
-        static thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient> manager;
+        static thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient> manager(true);
         return manager;
     }
 

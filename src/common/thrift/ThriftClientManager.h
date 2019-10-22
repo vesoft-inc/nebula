@@ -29,6 +29,8 @@ public:
         VLOG(3) << "ThriftClientManager";
     }
 
+    explicit ThriftClientManager(bool shared) : shared_{shared} {}
+
 private:
     using ClientMap = std::unordered_map<
         std::pair<HostAddr, folly::EventBase*>,     // <ip, port> pair
@@ -36,6 +38,7 @@ private:
     >;
 
     folly::ThreadLocal<ClientMap> clientMap_;
+    bool                          shared_{false};
 };
 
 }  // namespace thrift
