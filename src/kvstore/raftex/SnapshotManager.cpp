@@ -6,6 +6,7 @@
 #include "kvstore/raftex/SnapshotManager.h"
 #include "base/NebulaKeyUtils.h"
 #include "kvstore/raftex/RaftPart.h"
+#include "kvstore/raftex/Host.h"
 
 DEFINE_int32(snapshot_worker_threads, 4, "Threads number for snapshot");
 DEFINE_int32(snapshot_io_threads, 4, "Threads number for snapshot");
@@ -21,10 +22,11 @@ SnapshotManager::SnapshotManager() {
 }
 
 folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> part,
+                                                    std::shared_ptr<Host> host,
                                                     const HostAddr& dst) {
     folly::Promise<Status> p;
     auto fut = p.getFuture();
-    executor_->add([this, p = std::move(p), part, dst] () mutable {
+    executor_->add([this, p = std::move(p), part, host, dst] () mutable {
         auto spaceId = part->spaceId_;
         auto partId = part->partId_;
         auto termId = part->term_;
@@ -65,21 +67,29 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
                             LOG(INFO) << part->idStr_ << "Finished, totalCount " << totalCount
                                                       << ", totalSize " << totalSize;
                             p.setValue(Status::OK());
+                            onFinished(host);
                         }
                         return;
                     }
                 } catch (const std::exception& e) {
                     LOG(ERROR) << part->idStr_ << "Send snapshot failed, exception " << e.what();
                     p.setValue(Status::Error("Send snapshot failed!"));
+                    onFinished(host);
                     return;
                 }
             }
             LOG(WARNING) << part->idStr_ << "Send snapshot failed!";
             p.setValue(Status::Error("Send snapshot failed"));
+            onFinished(host);
             return;
         });
     });
     return fut;
+}
+
+void SnapshotManager::onFinished(std::shared_ptr<Host> host) {
+    std::lock_guard<std::mutex> g(host->lock_);
+    host->sendingSnapshot_ = false;
 }
 
 folly::Future<raftex::cpp2::SendSnapshotResponse> SnapshotManager::send(

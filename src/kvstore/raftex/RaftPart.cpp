@@ -1179,8 +1179,8 @@ void RaftPart::cleanupSnapshot() {
 }
 
 bool RaftPart::needToCleanWal() {
+    std::lock_guard<std::mutex> g(raftLock_);
     for (auto& host : hosts_) {
-        std::lock_guard<std::mutex> g(raftLock_);
         if (host->sendingSnapshot_) {
             return false;
         }

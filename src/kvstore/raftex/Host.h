@@ -25,6 +25,7 @@ class RaftPart;
 
 class Host final : public std::enable_shared_from_this<Host> {
     friend class RaftPart;
+    friend class SnapshotManager;
 public:
     Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner = false);
 
