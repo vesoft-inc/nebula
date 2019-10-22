@@ -13,6 +13,7 @@
 | +     | 加法运算符   | 
 | *     | 乘法运算符  | 
 | -     | 负号运算符   | 
+| udf_is_in() | 比较函数，判断值是否在指定的列表中 |
 
 
 比较运算的结果是 _true_ 或 _false_ 。
@@ -100,4 +101,31 @@ nebula> YIELD 1 != '1'
 ============
 | true     |
 ------------
+```
+
+* udf_is_on()
+
+第一个参数为要比较的值。
+
+```
+(user@127.0.0.1) [myspace_test2]> YIELD udf_is_in(1,0,1,2)
+======================
+| udf_is_in(1,0,1,2) |
+======================
+| true               |
+----------------------
+
+(user@127.0.0.1) [myspace_test2]> GO FROM 201 OVER like WHERE udf_is_in($$.student.name, "Jane")
+=============
+| like._dst |
+=============
+| 202       |
+-------------
+
+(user@127.0.0.1) [myspace_test2]> GO FROM 201 OVER like YIELD like._dst AS id | GO FROM $-.id OVER like WHERE udf_is_in($-.id, 200, 200+1)
+=============
+| like._dst |
+=============
+| 201       |
+-------------
 ```
