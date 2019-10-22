@@ -77,7 +77,7 @@ union Entry {
     Edge       edge;
 };
 
-class PathEntry {
+class PathEntry final {
 public:
     PathEntry();
     PathEntry(const PathEntry &rhs);
@@ -107,7 +107,8 @@ private:
     Entry       entry_;
 };
 
-class Path {
+class Path final {
+    friend class nebula::graph::NebulaClientImpl;
 public:
     Path() {}
     Path(const Path &rhs);
@@ -115,8 +116,9 @@ public:
 
     std::vector<PathEntry> const & getEntryList() const;
     std::vector<PathEntry> getEntryList();
-    void setEntryList(std::vector<PathEntry> entryList);
 
+protected:
+    void setEntryList(std::vector<PathEntry> entryList);
 
 private:
     std::vector<PathEntry> entryList_;
@@ -173,6 +175,7 @@ enum ValueType {
 };
 
 class ColValue final {
+    friend class nebula::graph::NebulaClientImpl;
 public:
     ColValue();
     ColValue(const ColValue &rhs);
@@ -182,15 +185,7 @@ public:
     ColValue& operator=(const ColValue &rhs);
     bool operator==(const ColValue &rhs) const;
 
-    // set value
-    void setBoolValue(bool val);
-    void setIntValue(int64_t val);
-    void setIdValue(int64_t val);
-    void setFloatValue(float val);
-    void setDoubleValue(double val);
-    void setStrValue(const std::string &val);
-    void setTimestampValue(int64_t val);
-    void setPathValue(Path val);
+    // TODO: need provide move semantics
 
     // get value
     bool getBoolValue() const;
@@ -253,6 +248,17 @@ public:
     ValueType getType() const {
         return type_;
     }
+
+protected:
+    // set value
+    void setBoolValue(bool val);
+    void setIntValue(int64_t val);
+    void setIdValue(int64_t val);
+    void setFloatValue(float val);
+    void setDoubleValue(double val);
+    void setStrValue(const std::string &val);
+    void setTimestampValue(int64_t val);
+    void setPathValue(Path val);
 
 private:
     template <class T>

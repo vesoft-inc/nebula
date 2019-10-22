@@ -15,13 +15,13 @@
 namespace nebula {
 namespace graph {
 
-class NebulaClientImpl {
+class NebulaClientImpl final {
 public:
     NebulaClientImpl(const std::string& addr,
                      uint16_t port,
                      int32_t timeout = 1000,
                      int16_t threadNum = 2);
-    virtual ~NebulaClientImpl();
+    ~NebulaClientImpl();
 
     // must be call on the front of the main()
     static void initEnv(int argc, char *argv[]);
