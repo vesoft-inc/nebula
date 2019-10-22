@@ -6,68 +6,33 @@
 
 #include <gtest/gtest.h>
 #include "base/Base.h"
-#include "fs/TempDir.h"
-#include "test/ServerContext.h"
-#include "graph/test/TestUtils.h"
+#include "graph/test/TestEnv.h"
+#include "graph/test/TestBase.h"
 #include "meta/test/TestUtils.h"
-#include "storage/test/TestUtils.h"
 #include "nebula/NebulaClient.h"
 #include "nebula/ExecuteResponse.h"
 
 DECLARE_int32(load_data_interval_secs);
-DECLARE_string(meta_server_addrs);
 
 namespace nebula {
 namespace graph {
 
-TEST(CppClientTest, all) {
-    FLAGS_load_data_interval_secs = 1;
-    const nebula::ClusterID kClusterId = 10;
-    nebula::fs::TempDir metaRootPath{"/tmp/MetaTest.XXXXXX"};
-    nebula::fs::TempDir storageRootPath{"/tmp/StorageTest.XXXXXX"};
-    // Create metaServer
-    auto metaServer = nebula::meta::TestUtils::mockMetaServer(
-                                            network::NetworkUtils::getAvailablePort(),
-                                            metaRootPath.path(),
-                                            kClusterId);
-    auto meteServerPort = metaServer->port_;
-    FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", meteServerPort);
-
-
-    // Create storageServer
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    auto addrsRet
-        = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", meteServerPort));
-    CHECK(addrsRet.ok()) << addrsRet.status();
-    auto storagePort = network::NetworkUtils::getAvailablePort();
-    auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", storagePort);
-    if (!hostRet.ok()) {
-        LOG(ERROR) << "Bad local host addr, status:" << hostRet.status();
+class CppClientTest : public TestBase {
+protected:
+    void SetUp() override {
+        TestBase::SetUp();
+        // ...
     }
-    auto& localhost = hostRet.value();
 
-    auto mClient = std::make_unique<meta::MetaClient>(threadPool,
-                                                      std::move(addrsRet.value()),
-                                                      localhost,
-                                                      kClusterId,
-                                                      true);
-    mClient->waitForMetadReady();
+    void TearDown() override {
+        // ...
+        TestBase::TearDown();
+    }
+};
 
-    IPv4 localIp;
-    nebula::network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto storageServer = nebula::storage::TestUtils::mockStorageServer(mClient.get(),
-                                                  storageRootPath.path(),
-                                                  localIp,
-                                                  storagePort,
-                                                  true);
 
-    // Create graphServer
-    auto graphServer = TestUtils::mockGraphServer(0);
-
-    auto graphServerPort = graphServer->port_;
-    sleep(FLAGS_load_data_interval_secs);
-
-    NebulaClient client("127.0.0.1", graphServerPort);
+TEST_F(CppClientTest, all) {
+    NebulaClient client("127.0.0.1", gEnv->graphServerPort());
     auto code = client.connect("user", "password");
     if (code != kSucceed) {
         LOG(INFO) << "Connect graphd failed, code: " << code;
@@ -77,9 +42,8 @@ TEST(CppClientTest, all) {
     ExecuteResponse resp;
     std::string cmd = "SHOW SPACES";
     code = client.execute(cmd, resp);
-    if (resp.getRows() != nullptr) {
-        ASSERT_EQ(resp.getRows()->size(), 0);
-    }
+
+    ASSERT_EQ(resp.getRows().size(), 0);
 
     cmd = "CREATE SPACE mySpace(partition_num=1, replica_factor=1)";
     code = client.execute(cmd, resp);
@@ -123,61 +87,117 @@ TEST(CppClientTest, all) {
     cmd = "GO FROM hash(\"Aero\") OVER schoolmate "
           "YIELD schoolmate._dst, $$.person.name, $$.person.age, "
           "$$.person.birthday, schoolmate.likeness, $$.person.isBoy";
+
+    auto checkFun = [] (ExecuteResponse* response, ErrorCode resultCode) {
+        LOG(INFO) << "Now into checkFun...";
+        ASSERT_EQ(resultCode, kSucceed);
+        std::vector<std::tuple<int64_t, std::string, int64_t, int64_t, double, bool>> expected = {
+                {std::hash<std::string>()("Lily"), "Lily", 9, 1280628000, 88.5, false},
+                {std::hash<std::string>()("Tom"), "Tom", 11, 1214892000, 90.0, true},
+        };
+        ASSERT_EQ(response->getRows().size(), expected.size());
+        std::vector<std::tuple<int64_t, std::string, int64_t, int64_t, double, bool>> result;
+        for (auto row : response->getRows()) {
+            auto cols = row.getColumns();
+            ASSERT_EQ(cols.size(), 6);
+            ASSERT_EQ(cols[0].getType(), kIdType);
+            ASSERT_EQ(cols[1].getType(), kStringType);
+            ASSERT_EQ(cols[2].getType(), kIntType);
+            ASSERT_EQ(cols[3].getType(), kTimestampType);
+            ASSERT_EQ(cols[4].getType(), kDoubleType);
+            ASSERT_EQ(cols[5].getType(), kBoolType);
+            result.emplace_back(std::make_tuple(cols[0].getIdValue(),
+                                                cols[1].getStrValue(),
+                                                cols[2].getIntValue(),
+                                                cols[3].getTimestampValue(),
+                                                cols[4].getDoubleValue(),
+                                                cols[5].getBoolValue()));
+        }
+        std::sort(result.begin(), result.end());
+        std::sort(expected.begin(), expected.end());
+        for (auto i = 0u; i < result.size(); i++) {
+            if (result[i] != expected[i]) {
+                ASSERT_TRUE(testing::AssertionFailure() << "result vs expect: "
+                                                        << std::get<0>(result[i]) << ","
+                                                        << std::get<1>(result[i]) << ", "
+                                                        << std::get<2>(result[i]) << ", "
+                                                        << std::get<3>(result[i]) << ", "
+                                                        << std::get<4>(result[i]) << ", "
+                                                        << std::get<5>(result[i]) << " vs "
+                                                        << std::get<0>(expected[i]) << ", "
+                                                        << std::get<1>(expected[i]) << ", "
+                                                        << std::get<2>(expected[i]) << ", "
+                                                        << std::get<3>(expected[i]) << ", "
+                                                        << std::get<4>(expected[i]) << ", "
+                                                        << std::get<5>(expected[i]));
+            }
+        }
+    };
+
+    // async
+    client.asyncExecute(cmd, checkFun);
+
+    sleep(1);
+
+    // sync
     code = client.execute(cmd, resp);
     ASSERT_EQ(code, kSucceed);
-    ASSERT_NE(resp.getRows(), nullptr);
-    ASSERT_EQ(resp.getRows()->size(), 2);
+    ASSERT_EQ(resp.getRows().size(), 2);
+    checkFun(&resp, code);
 
-    std::vector<std::tuple<int64_t, std::string, int64_t, int64_t, double, bool>> expected = {
-            {std::hash<std::string>()("Lily"), "Lily", 9, 1280628000, 88.5, false},
-            {std::hash<std::string>()("Tom"), "Tom", 11, 1214892000, 90.0, true},
-    };
-    ASSERT_NE(resp.getRows(), nullptr);
-    ASSERT_EQ(resp.getRows()->size(), expected.size());
-    std::vector<std::tuple<int64_t, std::string, int64_t, int64_t, double, bool>> result;
-    for (auto row : *resp.getRows()) {
-        auto cols = row.getColumns();
-        ASSERT_EQ(cols.size(), 6);
-        ASSERT_EQ(cols[0].getType(), kIdType);
-        ASSERT_EQ(cols[1].getType(), kStringType);
-        ASSERT_EQ(cols[2].getType(), kIntType);
-        ASSERT_EQ(cols[3].getType(), kTimestampType);
-        ASSERT_EQ(cols[4].getType(), kDoubleType);
-        ASSERT_EQ(cols[5].getType(), kBoolType);
-        result.emplace_back(std::make_tuple(cols[0].getIdValue(),
-                                            cols[1].getStrValue(),
-                                            cols[2].getIntValue(),
-                                            cols[3].getTimestampValue(),
-                                            cols[4].getDoubleValue(),
-                                            cols[5].getBoolValue()));
-    }
-    std::sort(result.begin(), result.end());
-    std::sort(expected.begin(), expected.end());
-    for (auto i = 0u; i < result.size(); i++) {
-        if (result[i] != expected[i]) {
-            ASSERT_TRUE(testing::AssertionFailure() << "result vs expect: "
-                                                    << std::get<0>(result[i]) << ","
-                                                    << std::get<1>(result[i]) << ", "
-                                                    << std::get<2>(result[i]) << ", "
-                                                    << std::get<3>(result[i]) << ", "
-                                                    << std::get<4>(result[i]) << ", "
-                                                    << std::get<5>(result[i]) << " vs "
-                                                    << std::get<0>(expected[i]) << ", "
-                                                    << std::get<1>(expected[i]) << ", "
-                                                    << std::get<2>(expected[i]) << ", "
-                                                    << std::get<3>(expected[i]) << ", "
-                                                    << std::get<4>(expected[i]) << ", "
-                                                    << std::get<5>(expected[i]));
+    cmd = "INSERT EDGE schoolmate(likeness) VALUES "
+          "hash(\"Tom\")->hash(\"Lily\"):(90.0)";
+    code = client.execute(cmd, resp);
+    ASSERT_EQ(code, kSucceed);
+
+    auto checkPath = [] (ExecuteResponse* response, ErrorCode resultCode) {
+        LOG(INFO) << "To do checkPath.....";
+        const std::string path1 = folly::stringPrintf("%ld<schoolmate,0>%ld",
+                                  std::hash<std::string>()("Aero"),
+                                  std::hash<std::string>()("Lily"));
+        const std::string path2 = folly::stringPrintf("%ld<schoolmate,0>%ld<schoolmate,0>%ld",
+                                  std::hash<std::string>()("Aero"),
+                                  std::hash<std::string>()("Tom"),
+                                  std::hash<std::string>()("Lily"));
+        std::vector<std::string> expectPaths = {path1, path2};
+        ASSERT_EQ(resultCode, kSucceed);
+        ASSERT_EQ(response->getRows().size(), expectPaths.size());
+        std::vector<std::string> paths;
+        auto rows = response->getRows();
+        for (auto &row : rows) {
+            auto cols = row.getColumns();
+            auto &pathValue = row.getColumns().back().getPathValue();
+            auto entrys = pathValue.getEntryList();
+            std::string pathStr;
+            auto iter = entrys.begin();
+            while (iter < (entrys.end() - 1)) {
+                pathStr += folly::stringPrintf("%ld<%s,%ld>",
+                                iter->getVertexValue().id,
+                                (iter + 1)->getEdgeValue().type.c_str(),
+                                (iter + 1)->getEdgeValue().ranking);
+                iter = iter + 2;
+            }
+            pathStr += folly::to<std::string>(iter->getVertexValue().id);
+            paths.emplace_back(std::move(pathStr));
         }
-    }
+
+        std::sort(paths.begin(), paths.end());
+        std::sort(expectPaths.begin(), expectPaths.end());
+        for (decltype(paths.size()) i = 0; i < paths.size(); ++i) {
+            if (paths[i] != expectPaths[i]) {
+                ASSERT_TRUE(testing::AssertionFailure() << paths[i] << " vs. " << expectPaths[i]);
+            }
+        }
+    };
+
+    cmd = "FIND ALL PATH FROM hash(\"Aero\") TO hash(\"Lily\") OVER schoolmate UPTO 2 STEPS";
+    client.asyncExecute(cmd, checkPath);
+
+    sleep(1);
+
+    code = client.execute(cmd, resp);
+    checkPath(&resp, code);
 }
 }   // namespace graph
 }   // namespace nebula
 
-
-int main(int argc, char** argv) {
-    testing::InitGoogleTest(&argc, argv);
-    folly::init(&argc, &argv, true);
-    google::SetStderrLogging(google::INFO);
-    return RUN_ALL_TESTS();
-}

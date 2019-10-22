@@ -39,7 +39,7 @@ function createRpmSpec {
 Name: nebula-client
 Version: %{_version}
 Release: 0%{?dist}
-Summary: nebula_client
+Summary: nebula-client
 Group: vesoft-inc
 License: Apache 2.0 + Common Clause 1.0 
 
@@ -94,7 +94,7 @@ function make_rpm {
 function make_deb {
     createDebSpec
     dpkg-deb --build _debian
-    mv _debian.deb nebula_client-$VERSION-amd64.deb
+    mv _debian.deb nebula-client-$VERSION.$SYSTEM.amd64.deb
 }
 
 # main

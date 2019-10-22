@@ -11,14 +11,14 @@
 #include "ExecuteResponse.h"
 
 namespace nebula {
-namespace graph {
 
-class NebulaClientImpl;
-
-class NebulaClient {
+class NebulaClient final {
 public:
-    NebulaClient(const std::string& addr, uint16_t port);
-    virtual ~NebulaClient();
+    NebulaClient(const std::string& addr,
+                 uint16_t port,
+                 int32_t timeout = 1000 /* ms */,
+                 int16_t threadNum = 2);
+    ~NebulaClient();
 
     // must be call on the front of the main()
     static void init(int argc, char *argv[]);
@@ -29,12 +29,15 @@ public:
 
     void disconnect();
 
+    // sync interface
     ErrorCode execute(std::string stmt, ExecuteResponse& resp);
 
+    // async interface
+    void asyncExecute(std::string stmt, CallbackFun cb);
+
 private:
-    std::unique_ptr<NebulaClientImpl>           client_;
+    std::unique_ptr<nebula::graph::NebulaClientImpl>           client_;
 };
 
-}  // namespace graph
 }  // namespace nebula
 #endif  // CLIENT_CPP_NEBULACLIENT_H_

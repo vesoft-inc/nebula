@@ -8,9 +8,83 @@
 #include <assert.h>
 
 namespace nebula {
-namespace graph {
 
-ColValue::ColValue() : type_(kEmtypType) {
+PathEntry::PathEntry() : type_(kEmpty) {
+}
+
+PathEntry::PathEntry(const PathEntry &rhs) {
+    switch (rhs.getType()) {
+        case kVertexType:
+            setVertexValue(rhs.getVertexValue());
+            break;
+        case kEdgeType:
+            setEdgeValue(rhs.getEdgeValue());
+            break;
+        default:
+            break;
+    }
+}
+
+PathEntry::~PathEntry() {
+    clear();
+}
+
+void PathEntry::setVertexValue(Vertex vertex) {
+    clear();
+    type_ = kVertexType;
+    ::new (std::addressof(entry_.vertex)) Vertex(vertex);
+}
+
+void PathEntry::setEdgeValue(Edge edge) {
+    clear();
+    type_ = kEdgeType;
+    ::new (std::addressof(entry_.edge)) Edge(edge);
+}
+
+Vertex const & PathEntry::getVertexValue() const {
+    assert(type_ == kVertexType);
+    return entry_.vertex;
+}
+
+Edge const & PathEntry::getEdgeValue() const {
+    assert(type_ == kEdgeType);
+    return entry_.edge;
+}
+
+
+void PathEntry::clear() {
+    if (type_ == kEmpty) {
+        return;
+    }
+    switch (type_) {
+        case kVertexType:
+            destruct(entry_.vertex);
+            break;
+        case kEdgeType:
+            destruct(entry_.edge);
+            break;
+        default:
+            break;
+    }
+}
+
+Path::Path(const Path &rhs) {
+    setEntryList(rhs.getEntryList());
+}
+
+std::vector<PathEntry> const & Path::getEntryList() const {
+    return entryList_;
+}
+
+std::vector<PathEntry> Path::getEntryList() {
+    return std::move(entryList_);
+}
+
+void Path::setEntryList(std::vector<PathEntry> entryList) {
+    entryList_ = std::move(entryList);
+}
+
+ColValue::ColValue() : type_(kEmptyType) {
 }
 
 ColValue::~ColValue() {
@@ -93,27 +167,33 @@ void ColValue::setTimestampValue(int64_t val) {
     ::new (std::addressof(value_.timestamp)) int64_t(val);
 }
 
-bool const & ColValue::getBoolValue() const {
+void ColValue::setPathValue(Path val) {
+    clear();
+    type_ = kPathType;
+    ::new (std::addressof(value_.path)) Path(val);
+}
+
+bool ColValue::getBoolValue() const {
     assert(type_ == kBoolType);
     return value_.bool_val;
 }
 
-int64_t const & ColValue::getIntValue() const {
+int64_t ColValue::getIntValue() const {
     assert(type_ == kIntType);
     return value_.integer;
 }
 
-int64_t const & ColValue::getIdValue() const {
+int64_t ColValue::getIdValue() const {
     assert(type_ == kIdType);
     return value_.id;
 }
 
-float const & ColValue::getFloatValue() const {
+float ColValue::getFloatValue() const {
     assert(type_ == kFloatType);
     return value_.single_precision;
 }
 
-double const & ColValue::getDoubleValue() const {
+double ColValue::getDoubleValue() const {
     assert(type_ == kDoubleType);
     return value_.double_precision;
 }
@@ -123,9 +203,34 @@ std::string const & ColValue::getStrValue() const {
     return value_.str;
 }
 
-int64_t const & ColValue::getTimestampValue() const {
+int64_t ColValue::getTimestampValue() const {
     assert(type_ == kTimestampType);
     return value_.timestamp;
+}
+
+Year const & ColValue::getYearValue() const {
+    assert(type_ == kYearType);
+    return value_.year;
+}
+
+YearMonth const & ColValue::getYearMonthValue() const {
+    assert(type_ == kMonthType);
+    return value_.month;
+}
+
+Date const & ColValue::getDateValue() const {
+    assert(type_ == kDateType);
+    return value_.date;
+}
+
+DateTime const & ColValue::getDateTimeValue() const {
+    assert(type_ == kDatetimeType);
+    return value_.datetime;
+}
+
+Path const & ColValue::getPathValue() const {
+    assert(type_ == kPathType);
+    return value_.path;
 }
 
 void ColValue::assign(const ColValue &rhs) {
@@ -151,13 +256,16 @@ void ColValue::assign(const ColValue &rhs) {
         case kTimestampType:
             setTimestampValue(rhs.getTimestampValue());
             break;
+        case kPathType:
+            setPathValue(rhs.getPathValue());
+            break;
         default:
             break;
     }
 }
 
 void ColValue::clear() {
-    if (type_ == kEmtypType) {
+    if (type_ == kEmptyType) {
         return;
     }
     switch (type_) {
@@ -184,7 +292,7 @@ void ColValue::clear() {
         default:
             break;
     }
-    type_ = kEmtypType;
+    type_ = kEmptyType;
 }
 
 void ExecuteResponse::setErrorCode(ErrorCode code) {
@@ -196,22 +304,18 @@ void ExecuteResponse::setLatencyInUs(int32_t latency) {
 }
 
 void ExecuteResponse::setErrorMsg(std::string errorMsg) {
-    hasErrorMsg_ = true;
     errorMsg_ = std::move(errorMsg);
 }
 
 void ExecuteResponse::setSpaceName(std::string spaceName) {
-    hasSpaceName_ = true;
     spaceName_ = std::move(spaceName);
 }
 
 void ExecuteResponse::setColumnNames(std::vector<std::string> columnNames) {
-    hasColumnNames_ = true;
     columnNames_ = std::move(columnNames);
 }
 
 void ExecuteResponse::setRows(std::vector<RowValue> rows) {
-    hasRows_ = true;
     rows_ = std::move(rows);
 }
 
@@ -223,20 +327,19 @@ int32_t ExecuteResponse::getLatencyInUs() {
     return latencyInUs_;
 }
 
-std::string* ExecuteResponse::getErrorMsg() {
-    return hasErrorMsg_ ? std::addressof(errorMsg_) : nullptr;
+std::string const & ExecuteResponse::getErrorMsg() const & {
+    return errorMsg_;
 }
 
-std::string* ExecuteResponse::getSpaceName() {
-    return hasSpaceName_ ? std::addressof(spaceName_) : nullptr;
+std::string const & ExecuteResponse::getSpaceName() const & {
+    return spaceName_;
 }
 
-std::vector<std::string>* ExecuteResponse::getColumnNames() {
-    return hasColumnNames_ ? std::addressof(columnNames_) : nullptr;
+std::vector<std::string> const & ExecuteResponse::getColumnNames() const & {
+    return columnNames_;
 }
 
-std::vector<RowValue>* ExecuteResponse::getRows() {
-    return hasRows_ ? std::addressof(rows_) : nullptr;
+std::vector<RowValue> const & ExecuteResponse::getRows() const & {
+    return rows_;
 }
-}  // namespace graph
 }  // namespace nebula

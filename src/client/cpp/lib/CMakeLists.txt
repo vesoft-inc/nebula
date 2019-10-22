@@ -9,7 +9,7 @@ if (NOT ENABLE_CPPCLIENT_LIB)
 endif()
 
 nebula_add_library(
-    nebula_cpp_client SHARED
+    nebulaClient SHARED
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
@@ -29,7 +29,7 @@ nebula_add_library(
 
 
 target_link_libraries(
-    nebula_cpp_client
+    nebulaClient
     ${OPENSSL_SSL_LIBRARY}
     ${OPENSSL_CRYPTO_LIBRARY}
     ${THRIFT_LIBRARIES}

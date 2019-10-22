@@ -9,6 +9,7 @@ nebula_add_test(
         ../lib/NebulaClientImpl.cpp
         ../lib/NebulaClient.cpp
     OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:process_obj>

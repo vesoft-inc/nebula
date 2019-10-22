@@ -8,14 +8,16 @@
 #include "client/cpp/include/nebula/NebulaClient.h"
 
 namespace nebula {
-namespace graph {
 
 void NebulaClient::init(int argc, char *argv[]) {
-    NebulaClientImpl::initEnv(argc, argv);
+    graph::NebulaClientImpl::initEnv(argc, argv);
 }
 
-NebulaClient::NebulaClient(const std::string& addr, uint16_t port) {
-    client_ = std::make_unique<NebulaClientImpl>(addr, port);
+NebulaClient::NebulaClient(const std::string& addr,
+                           uint16_t port,
+                           int32_t timeout,
+                           int16_t threadNum) {
+    client_ = std::make_unique<graph::NebulaClientImpl>(addr, port, timeout, threadNum);
 }
 
 NebulaClient::~NebulaClient() {
@@ -36,5 +38,8 @@ ErrorCode NebulaClient::execute(std::string stmt, ExecuteResponse& resp) {
     return client_->doExecute(stmt, resp);
 }
 
-}  // namespace graph
+void NebulaClient::asyncExecute(std::string stmt, CallbackFun cb) {
+    return client_->doAsyncExecute(stmt, std::move(cb));
+}
+
 }  // namespace nebula

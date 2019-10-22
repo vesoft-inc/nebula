@@ -23,6 +23,8 @@ if (NEBULA_CLIENT_LIB_INCLUDE_DIR)
     link_directories(${NEBULA_CLIENT_LIB_LIB_DIR})
 endif()
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "_build")
+
 add_executable(
     nebula_client_test
     NebulaClientTest.cpp
@@ -30,6 +32,10 @@ add_executable(
 
 target_link_libraries(
     nebula_client_test 
-    nebula_cpp_client
+    nebulaClient
+    ssl
+    bz2
+    crypto
+    pthread
 )
 
