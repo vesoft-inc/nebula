@@ -1523,6 +1523,13 @@ ingest_sentence
     }
     ;
 
+compaction_sentence
+    : KW_COMPACTION {
+        auto sentence = new CompactionSentence();
+        $$ = sentence;
+    }
+    ;
+
 show_sentence
     : KW_SHOW KW_HOSTS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowHosts);
@@ -1883,6 +1890,7 @@ mutate_sentence
     | delete_edge_sentence { $$ = $1; }
     | download_sentence { $$ = $1; }
     | ingest_sentence { $$ = $1; }
+    | compaction_sentence { $$ = $1; }
     ;
 
 maintain_sentence
