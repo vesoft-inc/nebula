@@ -1,20 +1,20 @@
 # Describe Syntax
 
 ```
-{DESCRIBE | DESC } SPACE space_name
-{DESCRIBE | DESC } TAG tag_name
-{DESCRIBE | DESC } EDGE edge_name
+DESCRIBE SPACE <space_name>
+DESCRIBE TAG <tag_name>
+DESCRIBE EDGE <edge_name>
 ```
 
-The DESCRIBE/DESC, and EXPLAIN statements are DIFFERENT in Nebula. The DESCRIBE/DESC keyword is used to obtain information about space, tag, edge structure. Meanwhile, EXPLAIN is used to obtain a query execution plan. Please refer to XXX for more details about EXPLAIN.
+The DESCRIBE keyword is used to obtain information about space, tag, edge structure.
 
-Also notice that DESCRIBE is different from SHOW. check XXX for SHOW.
+Also notice that DESCRIBE is different from SHOW.
 
-### Examples
+## Example
 
-Providing information about space. As regards information about CREATE SPACE.
+Providing information about space. <!-- As regards information about CREATE SPACE. -->
 
-```
+```SQL
 nebula> DESCRIBE SPACE laura_space;
 ========================================================
 | ID |        Name | Partition number | Replica Factor |
@@ -23,9 +23,9 @@ nebula> DESCRIBE SPACE laura_space;
 --------------------------------------------------------  
 ```
 
-Providing information about tag. As regards information about CREATE TAG.
+Providing information about tag. <!-- As regards information about CREATE TAG. -->
 
-```
+```SQL
 nebula> DESCRIBE TAG player
 ==================
 | Field |   Type |
@@ -36,9 +36,9 @@ nebula> DESCRIBE TAG player
 ------------------  
 ```
 
-Providing information about edge. As regards information about CREATE EDGE.
+Providing information about edge. <!-- As regards information about CREATE EDGE. -->
 
-```
+```SQL
 nebula> DESCRIBE EDGE serve
 =====================
 |      Field | Type |
