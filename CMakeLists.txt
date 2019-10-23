@@ -128,10 +128,10 @@ endif()
 # third-party
 if(NOT ${NEBULA_THIRDPARTY_ROOT} STREQUAL "")
     message(STATUS "Specified NEBULA_THIRDPARTY_ROOT: " ${NEBULA_THIRDPARTY_ROOT})
-    list(APPEND CMAKE_INCLUDE_PATH ${NEBULA_THIRDPARTY_ROOT}/include)
-    list(APPEND CMAKE_LIBRARY_PATH ${NEBULA_THIRDPARTY_ROOT}/lib)
-    list(APPEND CMAKE_LIBRARY_PATH ${NEBULA_THIRDPARTY_ROOT}/lib64)
-    list(APPEND CMAKE_PROGRAM_PATH ${NEBULA_THIRDPARTY_ROOT}/bin)
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/lib)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/lib64)
+    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/bin)
     include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/include)
     link_directories(
         ${NEBULA_THIRDPARTY_ROOT}/lib
@@ -148,6 +148,7 @@ if(NOT ${NEBULA_OTHER_ROOT} STREQUAL "")
         list(INSERT CMAKE_PROGRAM_PATH 0 ${DIR}/bin)
         include_directories(SYSTEM ${DIR}/include)
         link_directories(${DIR}/lib)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${DIR}/lib")
     endforeach()
 endif()
 
@@ -315,6 +316,9 @@ include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/interface)
 include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/kvstore/plugins)
 include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/kvstore/plugins/hbase)
 include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/parser)
+
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib64")
 
 # All thrift libraries
 set(THRIFT_LIBRARIES
