@@ -214,7 +214,7 @@ protected:
             std::sort(rows.begin(), rows.end());
             std::sort(expected.begin(), expected.end());
         }
-        for (auto i = 0u; i < rows.size(); i++) {
+        for (decltype(rows.size()) i = 0; i < rows.size(); ++i) {
             if (rows[i] != expected[i]) {
                 return TestError() << rows[i] << " vs. " << expected[i];
             }

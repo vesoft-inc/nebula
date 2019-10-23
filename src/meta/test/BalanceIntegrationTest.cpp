@@ -146,7 +146,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         for (int32_t vId = 0; vId < 10000; vId++) {
             vIds.emplace_back(vId);
         }
-        retCols.emplace_back(storage::TestUtils::vetexPropDef("c", tagId));
+        retCols.emplace_back(storage::TestUtils::vertexPropDef("c", tagId));
         auto f = sClient->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
         auto resp = std::move(f).get();
         if (!resp.succeeded()) {

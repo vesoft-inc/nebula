@@ -11,11 +11,60 @@
 
 namespace nebula {
 
-class StepClause final {
+class OverEdge;
+class Clause {
+public:
+    struct Vertices {
+        std::string             *colname_{nullptr};
+        std::string             *varname_{nullptr};
+        std::vector<VertexID>    vids_;
+    };
+
+    struct Over {
+        std::vector<OverEdge*>  edges_{nullptr};
+        std::vector<EdgeType>   edgeTypes_;
+        std::vector<EdgeType>   oppositeTypes_;
+    };
+
+    struct Step {
+        uint32_t steps_{0};
+        bool     upto_{false};
+    };
+
+    struct Where {
+        Expression *filter_{nullptr};
+    };
+
+protected:
+    enum Kind : uint8_t {
+        kUnknown = 0,
+
+        kStepClause,
+        kOverClause,
+        kFromClause,
+        kToClause,
+        kWhereClause,
+        kYieldClause,
+
+        kMax,
+    };
+
+protected:
+    Kind    kind_{kUnknown};
+};
+
+class StepClause final : public Clause {
 public:
     explicit StepClause(uint64_t steps = 1, bool isUpto = false) {
         steps_ = steps;
         isUpto_ = isUpto;
+        kind_ = Kind::kStepClause;
+    }
+
+    Status prepare(Step &step) const {
+        step.steps_ = steps_;
+        step.upto_ = isUpto_;
+        return Status::OK();
     }
 
     uint32_t steps() const {
@@ -51,7 +100,6 @@ private:
 };
 
 
-
 class VertexIDList final {
 public:
     void add(Expression *expr) {
@@ -74,13 +122,13 @@ private:
 };
 
 
-class FromClause final {
+class VerticesClause : public Clause {
 public:
-    explicit FromClause(VertexIDList *vidList) {
+    explicit VerticesClause(VertexIDList *vidList) {
         vidList_.reset(vidList);
     }
 
-    explicit FromClause(Expression *ref) {
+    explicit VerticesClause(Expression *ref) {
         ref_.reset(ref);
     }
 
@@ -96,11 +144,37 @@ public:
         return ref_.get();
     }
 
-    std::string toString() const;
+    Status prepare(Vertices &vertices) const;
 
-private:
+protected:
     std::unique_ptr<VertexIDList>               vidList_;
     std::unique_ptr<Expression>                 ref_;
+};
+
+class FromClause final : public VerticesClause {
+public:
+    explicit FromClause(VertexIDList *vidList) : VerticesClause(vidList) {
+        kind_ = kFromClause;
+    }
+
+    explicit FromClause(Expression *ref) : VerticesClause(ref) {
+        kind_ = kFromClause;
+    }
+
+    std::string toString() const;
+};
+
+class ToClause final : public VerticesClause {
+public:
+    explicit ToClause(VertexIDList *vidList) : VerticesClause(vidList) {
+        kind_ = kToClause;
+    }
+
+    explicit ToClause(Expression *ref) : VerticesClause(ref) {
+        kind_ = kToClause;
+    }
+
+    std::string toString() const;
 };
 
 class OverEdge final {
@@ -146,11 +220,16 @@ private:
     std::vector<std::unique_ptr<OverEdge>> edges_;
 };
 
-class OverClause final {
+class OverClause final : public Clause {
 public:
-    explicit OverClause(OverEdges *edges) { overEdges_.reset(edges); }
+    explicit OverClause(OverEdges *edges) {
+        kind_ = kOverClause;
+        overEdges_.reset(edges);
+    }
 
     std::vector<OverEdge *> edges() const { return overEdges_->edges(); }
+
+    Status prepare(Over &over) const;
 
     std::string toString() const;
 
@@ -158,7 +237,7 @@ private:
     std::unique_ptr<OverEdges> overEdges_;
 };
 
-class WhereClause final {
+class WhereClause final : public Clause {
 public:
     explicit WhereClause(Expression *filter) {
         filter_.reset(filter);
@@ -167,6 +246,8 @@ public:
     Expression* filter() const {
         return filter_.get();
     }
+
+    Status prepare(Where &where) const;
 
     std::string toString() const;
 
@@ -239,7 +320,5 @@ private:
     std::unique_ptr<YieldColumns>               yieldColumns_;
     bool                                        distinct_;
 };
-
-}  // namespace nebula
-
+}   // namespace nebula
 #endif  // PARSER_CLAUSES_H_
