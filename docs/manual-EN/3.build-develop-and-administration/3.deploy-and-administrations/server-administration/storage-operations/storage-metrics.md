@@ -33,7 +33,7 @@ _error_qps
 
 The complete metric concatenates the interface name with the corresponding metric, such as `add_vertex_latency`, `add_vertex_qps`, and `add_vertex_error_qps`, representing the latency of inserting a vertex, QPS, and the QPS with errors, respectively.
 
-### Statictics Type
+### Statistics Type
 
 Currently supported types are SUM, COUNT, AVG, RATE, and P99, P999, the maximum supported range is P999999.
 
