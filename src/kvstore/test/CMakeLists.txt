@@ -83,3 +83,11 @@ nebula_add_executable(
     OBJECTS $<TARGET_OBJECTS:base_obj> $<TARGET_OBJECTS:fs_obj>
     LIBRARIES follybenchmark ${ROCKSDB_LIBRARIES} boost_regex
 )
+
+nebula_add_executable(
+    NAME multi_part_perf_test_bm
+    SOURCES PartPerformanceTest.cpp
+    OBJECTS $<TARGET_OBJECTS:base_obj> $<TARGET_OBJECTS:fs_obj>
+    LIBRARIES follybenchmark ${ROCKSDB_LIBRARIES} boost_regex
+)
+
