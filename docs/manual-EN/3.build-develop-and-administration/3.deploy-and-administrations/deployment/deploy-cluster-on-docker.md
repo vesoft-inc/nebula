@@ -1,61 +1,69 @@
 # Deploy Clusters on Docker
+
 This article describes how to deploy a multi-node Nebula cluster on Docker.
 
 **_Note_:** This is for testing only. DO NOT USE in production.
+
 ## Preparation
+
 ### Install Docker
+
 Before you start, make sure that you have installed the latest version of [Docker](https://docs.docker.com/).
+
 ### Pull Docker Image
+
 Pull the latest image of nebula from [Docker Hub](https://hub.docker.com/r/vesoft/nebula-graph/tags) using the following command
 
 ```bash
-$ docker pull vesoft/nebula-graph:latest
+$docker pull vesoft/nebula-graph:nightly
 
 Pulling from vesoft/nebula-graph
 d8d02d457314: Pull complete
 f7022daf2b4f: Pull complete
 106b632a856a: Pull complete
 Digest: sha256:313214ca1a4482183a0352450639d6dd79d77c56143654c57674c06131d00a47
-Status: Downloaded newer image for vesoft/nebula-graph:latest
+Status: Downloaded newer image for vesoft/nebula-graph:nightly
 ```
 
 ## Multi Nodes Deployment
+
 ### Check The IP of Each Container
+
 After the image is pulled completely, start three containers using the following command
 
 ```bash
-$ docker run -it vesoft/nebula-graph:latest /bin/bash
+$docker run -it vesoft/nebula-graph:latest /bin/bash
 ```
 
 View their processes using the following command
 
 ```bash
-$ docker ps
+$docker ps
 
 CONTAINER ID        IMAGE                         COMMAND             CREATED             STATUS              PORTS               NAMES
-c2134fd5ccc3        vesoft/nebula-graph:latest   "/bin/bash"         5 minutes ago       Up 5 minutes                            thirsty_grothendieck
-1d7a441d4f40        vesoft/nebula-graph:latest   "/bin/bash"         5 minutes ago       Up 5 minutes                            elastic_feistel
-591e2f6f48e2        vesoft/nebula-graph:latest   "/bin/bash"         7 minutes ago       Up 7 minutes                            sad_chaum
+c2134fd5ccc3        vesoft/nebula-graph:nightly   "/bin/bash"         5 minutes ago       Up 5 minutes                            thirsty_grothendieck
+1d7a441d4f40        vesoft/nebula-graph:nightly   "/bin/bash"         5 minutes ago       Up 5 minutes                            elastic_feistel
+591e2f6f48e2        vesoft/nebula-graph:nightly   "/bin/bash"         7 minutes ago       Up 7 minutes                            sad_chaum
 ```
 
 Use the following command to check the IP address of each docker process:
 
 ```bash
-$ docker inspect {container ID} | grep IPAddress
+$docker inspect {container ID} | grep IPAddress
 ```
 
 ```bash
-$ docker inspect c2134fd5ccc3 | grep IPAddress
+$docker inspect c2134fd5ccc3 | grep IPAddress
 
             "SecondaryIPAddresses": null,
             "IPAddress": "172.17.0.4",
                     "IPAddress": "172.17.0.4",
-$ docker inspect 1d7a441d4f40 | grep IPAddress
+$docker inspect 1d7a441d4f40 | grep IPAddress
 
             "SecondaryIPAddresses": null,
             "IPAddress": "172.17.0.3",
                     "IPAddress": "172.17.0.3",
-$ docker inspect 591e2f6f48e2 | grep IPAddress
+$docker inspect 591e2f6f48e2 | grep IPAddress
 
             "SecondaryIPAddresses": null,
             "IPAddress": "172.17.0.2",
@@ -64,7 +72,7 @@ $ docker inspect 591e2f6f48e2 | grep IPAddress
 
 Therefore, this article will deploy Nebula cluster on three hosts as follows:
 
-```
+```plain
 172.17.0.2 # cluster-2: metad/storaged/graphd
 172.17.0.3 # cluster-3: metad/storaged/graphd
 172.17.0.4 # cluster-4: metad/storaged/graphd
@@ -73,13 +81,14 @@ Therefore, this article will deploy Nebula cluster on three hosts as follows:
 **_Note_:** In production, please choose deployment method based on your actual conditions. This is for testing only. 
 
 ## Configuration
+
 All the configuration files of Nebula are located in `/usr/local/nebula/etc`, and three default configuration files are provided there. Edit them separately:
 
 First configuration file: **nebula-metad.conf**
 
 Metad ensures high availability through the raft protocol. So you need to configure the ip and port deployed for each metad service. You need to configure `meta_server_addrs` and `local_ip` and leave other parameters with the default values. Consider cluster-2 configuration as example:
 
-```
+```plain
 # Peers
 --meta_server_addrs=172.17.0.2:45500,172.17.0.3:45500,172.17.0.4:45500
 # Local ip
@@ -92,7 +101,7 @@ Second configuration file: **Nebula-graphd.conf**
 
 Graphd needs to obtain the Schema data from metad when running, so metad's IP address and port `meta_server_addrs` must be specified in configuration, other parameters can use the default values. Consider cluster-2 configuration as example:
 
-```
+```plain
 # Meta Server Address
 --meta_server_addrs=172.17.0.2:45500,172.17.0.3:45500,172.17.0.4:45500
 ```
@@ -101,7 +110,7 @@ Third configuration file: **Nebula-storaged.conf**
 
 Storaged also uses the raft protocol to ensure high availability and communicates with metad during data migration. Therefore, you need to configure the address and port `meta_server_addrs` of metad and the `local_ip`, which can be obtained by its peers through metad. Consider cluster-2 configuration as example:
 
-```
+```plain
 # Meta server address
 --meta_server_addrs=172.17.0.2:45500,172.17.0.3:45500,172.17.0.4:45500
 # Local ip
@@ -117,7 +126,7 @@ Repeat the above steps to configure cluster-3 and cluster-4. A total of 9 files 
 Restart the service after the cluster configuration is complete:
 
 ```bash
-$ /usr/local/nebula/scripts/nebula.service stop all
+$/usr/local/nebula/scripts/nebula.service stop all
 
 [INFO] Stopping nebula-metad...
 [INFO] Done
@@ -126,7 +135,7 @@ $ /usr/local/nebula/scripts/nebula.service stop all
 [INFO] Stopping nebula-storaged...
 [INFO] Done
 
-$ /usr/local/nebula/scripts/nebula.service start all
+$/usr/local/nebula/scripts/nebula.service start all
 
 [INFO] Starting nebula-metad...
 [INFO] Done
@@ -139,10 +148,11 @@ $ /usr/local/nebula/scripts/nebula.service start all
 Repeat the above command to restart cluster-3 and cluster-4.
 
 ## Test Clusters
+
 Now use the console to log on to one of the clusters and run the following command
 
 ```bash
-$ /usr/local/nebula/bin/nebula -u user -p password --addr 172.17.0.2 --port 3699
+$/usr/local/nebula/bin/nebula -u user -p password --addr 172.17.0.2 --port 3699
 
 Welcome to Nebula Graph (Version 5f656b5)
 
@@ -159,10 +169,9 @@ Welcome to Nebula Graph (Version 5f656b5)
 ---------------------------------------------------------------------------------------------
 ```
 
-The three shown hosts indicate that the clusters are successfully deployed, now we can insert [Sample data](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-CN/get-started.md#%E5%88%9B%E5%BB%BA%E5%9B%BE%E6%95%B0%E6%8D%AE) to test the clusters.
+The three shown hosts indicate that the clusters are successfully deployed.
 
-
-```
+```SQL
 $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade
 
 =============================
@@ -179,7 +188,7 @@ $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD 
 Stop the storage process of cluster-4:
 
 ```bash
-$ /usr/local/nebula/scripts/nebula.service stop storaged
+$/usr/local/nebula/scripts/nebula.service stop storaged
 ```
 
 Check the status of the process to confirm the process is successfully stopped:
@@ -191,7 +200,7 @@ $ /usr/local/nebula/scripts/nebula.service status storaged
 
 Log on to cluster-2 and check hosts using command `SHOW HOSTS`:
 
-```
+```SQL
 > SHOW HOSTS
 
 =============================================================================================
@@ -207,11 +216,11 @@ Log on to cluster-2 and check hosts using command `SHOW HOSTS`:
 
 At this time the status of cluster-4 is offline, indicating it has been stopped successfully.
 
-**_Note:_** The status of 172.17.0.4 will be online due to the 10 minutes default value of `expired_threshold_sec`. You can change it in `nebula-metad.conf` and change `heartbeat_interval_secs` in `nebula-storaged.conf`. Data can only be read when most of the relicas are available.
+**_Note:_** The status of 172.17.0.4 will be online due to the 10 minutes default value of `expired_threshold_sec`. You can change it in `nebula-metad.conf` and change `heartbeat_interval_secs` in `nebula-storaged.conf`. Data can only be read when most of the replicas are available.
 
 Test whether the data is readable with one storage killed:
 
-```
+```SQL
 $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade
 
 =============================
@@ -229,5 +238,4 @@ The returned data is the same as above, indicating that the deployment is succes
 
 ## Custom Configuration File
 
-Nebula supports loading advanced parameters by specifying configuration files for performance tuning. Please refer [Configuration Properties](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-CN/deploy-cluster.md#%E9%85%8D%E7%BD%AE%E5%BC%95%E7%94%A8) for detail.
-
+Nebula supports loading advanced parameters by specifying configuration files for performance tuning. <!-- Please refer [Configuration Properties](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-CN/deploy-cluster.md#%E9%85%8D%E7%BD%AE%E5%BC%95%E7%94%A8) for detail. -->

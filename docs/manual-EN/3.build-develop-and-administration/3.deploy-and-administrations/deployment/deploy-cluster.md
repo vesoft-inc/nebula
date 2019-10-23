@@ -1,22 +1,20 @@
----
+# Deploy Cluster
 
 This tutorial provides an introduction to deploy `Nebula` cluster.
 
----
+## Download and install package
 
-#### Download and install package
-
-Currently, we have offered packages for `CentOS 7.5`, `CentOS 6.5`, `Ubuntu 1604` and `Ubuntu 1804`. You can download rpm or deb packages [here](https://github.com/vesoft-inc/nebula/releases).
+Currently, we have offered packages for `CentOS 7.5`, `CentOS 6.5`, `Ubuntu 1604` and `Ubuntu 1804`. You can download rpm or deb packages by click the [**Assets**](https://github.com/vesoft-inc/nebula/releases).
 
 For `CentOS` :
 
-```
+```sh
 rpm -ivh nebula-{VERSION}.{SYSTEM_VERSION}.x86_64.rpm
 ```
 
 For `Ubuntu` :
 
-```
+```sh
 dpkg -i nebula-{VERSION}.{SYSTEM_VERSION}.amd64.deb
 ```
 
@@ -26,9 +24,7 @@ In order to enable multi copy Meta services, you should set the meta addresses s
 
 Use `data_path` to set `Meta` and `Storage`'s underlying storage directory.
 
-***
-
-#### StartUp Nebula Cluster
+## StartUp Nebula Cluster
 
 Currently, we support `scripts/services.sh` to manage the nebula cluster.
 
@@ -42,9 +38,20 @@ scripts/services.sh <start|stop|restart|status|kill>
 
 The metas, storages and graphs contain the host of themselves.
 
-***
+## Connect to Nebula Graph
 
-#### Config reference
+```sh
+> bin/nebula -u=user -p=password --addr={graphd IP address} --port={graphd listening port}
+```
+
+* -u is to set the user name, `user` is the default Nebula user account
+* -p is to set password, `password` is the default password for account `user`
+* --addr is the graphd IP address
+* --port is the the graphd server port and the default value is `3699`
+
+Then you’re now ready to start using Nebula Graph.
+
+## Config reference
 
 **Meta Service** supports the following config properties.
 
@@ -118,8 +125,6 @@ Property Name                   | Default Value            | Description
 `daemonize`                     | true                     | Whether run as a daemon process.
 `meta_server_addrs`             | ""                       | List of meta server addresses, the format looks like ip1:port1, ip2:port2, ip3:port3.
 
-
-
 **Web Service** supports the following config properties.
 
 Property Name          | Default Value | Description
@@ -145,4 +150,3 @@ Property Name            | Default Value | Description
 `server_conn_timeout_ms` | 1000          | Connection timeout in milliseconds.
 
 **Note:** Please make sure the ports are not blocked by the firewall during configuration.
-
