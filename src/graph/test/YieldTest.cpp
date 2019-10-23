@@ -437,7 +437,7 @@ TEST_F(YieldTest, error) {
         UNUSED(code);
     }
     std::string var = " $var = GO FROM %ld OVER serve YIELD "
-                     "$^.player.name as name, serve.start_year as start, $$.team.name as team;";
+                     "$^.player.name AS name, serve.start_year AS start, $$.team.name AS team;";
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
@@ -452,6 +452,24 @@ TEST_F(YieldTest, error) {
         auto &player = players_["Boris Diaw"];
         // Not support reference two diffrent variable
         auto fmt = var + "YIELD $var.team WHERE $var1.start > 2005";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        // Reference a non-existed prop is meaningless.
+        auto fmt = var + "YIELD $var.abc";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        // Reference a non-existed prop is meaningless.
+        std::string fmt = "GO FROM %ld OVER like | YIELD $-.abc;";
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);

@@ -126,8 +126,7 @@ Status FetchExecutor::getOutputSchema(
         record.emplace_back(std::move(value.value()));
     }
 
-    Collector::getSchema(record, resultColNames_, colTypes_, outputSchema);
-    return Status::OK();
+    return Collector::getSchema(record, resultColNames_, colTypes_, outputSchema);
 }
 
 void FetchExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {

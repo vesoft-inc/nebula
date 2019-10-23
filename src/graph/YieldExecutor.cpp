@@ -190,7 +190,10 @@ Status YieldExecutor::executeInputs() {
             if (!value.ok()) {
                 return value.status();
             }
-            Collector::collect(value.value(), writer.get());
+            status = Collector::collect(value.value(), writer.get());
+            if (!status.ok()) {
+                return status;
+            }
         }
         rsWriter->addRow(*writer);
         return Status::OK();
@@ -211,19 +214,25 @@ Status YieldExecutor::getOutputSchema(const InterimResult *inputs,
     }
 
     auto *inputSchema = inputs->schema().get();
+
     auto varProps = expCtx_->variableProps();
-    for (auto &pair : varProps) {
-        if (inputSchema->getFieldIndex(pair.second) < 0) {
-            return Status::Error(
-                "column `%s' not exist in variable.", pair.second.c_str());
-        }
+    auto varPropFind = std::find_if(varProps.begin(), varProps.end(),
+            [inputSchema] (const auto &pair) {
+                return inputSchema->getFieldIndex(pair.second) < 0;
+            });
+    if (varPropFind != varProps.end()) {
+        return Status::Error(
+            "column `%s' not exist in variable.", varPropFind->second.c_str());
     }
+
     auto inProps = expCtx_->inputProps();
-    for (auto &prop : inProps) {
-        if (inputSchema->getFieldIndex(prop) < 0) {
-            return Status::Error(
-                "column `%s' not exist in input.", prop.c_str());
-        }
+    auto inPropFind = std::find_if(inProps.begin(), inProps.end(),
+            [inputSchema] (const auto &prop) {
+                return inputSchema->getFieldIndex(prop) < 0;
+            });
+    if (inPropFind != inProps.end()) {
+        return Status::Error(
+            "column `%s' not exist in input.", inPropFind->c_str());
     }
 
     std::vector<VariantType> record;
@@ -248,8 +257,7 @@ Status YieldExecutor::getOutputSchema(const InterimResult *inputs,
     };
     inputs->applyTo(visitor, 1);
 
-    Collector::getSchema(record, resultColNames_, colTypes_, outputSchema);
-    return Status::OK();
+    return Collector::getSchema(record, resultColNames_, colTypes_, outputSchema);
 }
 
 Status YieldExecutor::executeConstant() {
@@ -267,12 +275,19 @@ Status YieldExecutor::executeConstant() {
     }
 
     auto outputSchema = std::make_shared<SchemaWriter>();
-    Collector::getSchema(values, resultColNames_, colTypes_, outputSchema.get());
+    auto status = Collector::getSchema(
+            values, resultColNames_, colTypes_, outputSchema.get());
+    if (!status.ok()) {
+        return status;
+    }
 
     RowWriter writer(outputSchema);
     auto rsWriter = std::make_unique<RowSetWriter>(outputSchema);
     for (auto col : values) {
-        Collector::collect(col, &writer);
+        status = Collector::collect(col, &writer);
+        if (!status.ok()) {
+            return status;
+        }
     }
     rsWriter->addRow(writer);
     finishExecution(std::move(rsWriter));

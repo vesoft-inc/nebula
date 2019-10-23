@@ -80,7 +80,7 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
     return executor;
 }
 
-void Collector::collect(VariantType &var, RowWriter *writer) {
+Status Collector::collect(VariantType &var, RowWriter *writer) {
     switch (var.which()) {
         case VAR_INT64:
             (*writer) << boost::get<int64_t>(var);
@@ -95,11 +95,15 @@ void Collector::collect(VariantType &var, RowWriter *writer) {
             (*writer) << boost::get<std::string>(var);
             break;
         default:
-            LOG(FATAL) << "Unknown VariantType: " << var.which();
+            std::string errMsg =
+                folly::stringPrintf("Unknown VariantType: %d", var.which());
+            LOG(ERROR) << errMsg;
+            return Status::Error(errMsg);
     }
+    return Status::OK();
 }
 
-VariantType Collector::getProp(const meta::SchemaProviderIf *schema,
+OptVariantType Collector::getProp(const meta::SchemaProviderIf *schema,
                                const std::string &prop,
                                const RowReader *reader) {
     DCHECK(reader != nullptr);
@@ -145,12 +149,14 @@ VariantType Collector::getProp(const meta::SchemaProviderIf *schema,
             return v.toString();
         }
         default:
-            LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(type);
-            return "";
+            std::string errMsg =
+                folly::stringPrintf("Unknown type: %d", static_cast<int32_t>(type));
+            LOG(ERROR) << errMsg;
+            return Status::Error(errMsg);
     }
 }
 
-void Collector::getSchema(const std::vector<VariantType> &vals,
+Status Collector::getSchema(const std::vector<VariantType> &vals,
                           const std::vector<std::string> &colNames,
                           const std::vector<nebula::cpp2::SupportedType> &colTypes,
                           SchemaWriter *outputSchema) {
@@ -177,7 +183,10 @@ void Collector::getSchema(const std::vector<VariantType> &vals,
                     type = SupportedType::STRING;
                     break;
                 default:
-                    LOG(FATAL) << "Unknown VariantType: " << vals[index].which();
+                    std::string errMsg =
+                        folly::stringPrintf("Unknown VariantType: %d", vals[index].which());
+                    LOG(ERROR) << errMsg;
+                    return Status::Error(errMsg);
             }
         } else {
             type = it;
@@ -186,6 +195,7 @@ void Collector::getSchema(const std::vector<VariantType> &vals,
         outputSchema->appendCol(colNames[index], type);
         index++;
     }
+    return Status::OK();
 }
 
 Status YieldClauseWrapper::prepare(
@@ -196,46 +206,15 @@ Status YieldClauseWrapper::prepare(
     yieldColsHolder_ = std::make_unique<YieldColumns>();
     for (auto *col : cols) {
         if (col->expr()->isInputExpression()) {
-            auto *inputExpr = static_cast<InputPropertyExpression*>(col->expr());
-            auto *colName = inputExpr->prop();
-            if (*colName == "*") {
-                if (inputs != nullptr) {
-                    auto schema = inputs->schema();
-                    auto iter = schema->begin();
-                    while (iter) {
-                        auto *prop = iter->getName();
-                        Expression *expr =
-                            new InputPropertyExpression(new std::string(prop));
-                        YieldColumn *column = new YieldColumn(expr);
-                        yieldColsHolder_->addColumn(column);
-                        yields.emplace_back(column);
-                        ++iter;
-                    }
-                }
+            if (needAllPropsFromInput(col, inputs, yields)) {
                 continue;
             }
         } else if (col->expr()->isVariableExpression()) {
-            auto *variableExpr = static_cast<VariablePropertyExpression*>(col->expr());
-            auto *colName = variableExpr->prop();
-            if (*colName == "*") {
-                bool existing = false;
-                auto *varname = variableExpr->alias();
-                auto varInputs = varHolder->get(*varname, &existing);
-                if (varInputs == nullptr && !existing) {
-                    return Status::Error("Variable `%s' not defined.", varname->c_str());
-                }
-                auto schema = varInputs->schema();
-                auto iter = schema->begin();
-                while (iter) {
-                    auto *alias = new std::string(*(variableExpr->alias()));
-                    auto *prop = iter->getName();
-                    Expression *expr =
-                            new VariablePropertyExpression(alias, new std::string(prop));
-                    YieldColumn *column = new YieldColumn(expr);
-                    yieldColsHolder_->addColumn(column);
-                    yields.emplace_back(column);
-                    ++iter;
-                }
+            auto ret = needAllPropsFromVar(col, varHolder, yields);
+            if (!ret.ok()) {
+                return std::move(ret).status();
+            }
+            if (ret.value()) {
                 continue;
             }
         }
@@ -243,6 +222,59 @@ Status YieldClauseWrapper::prepare(
     }
 
     return Status::OK();
+}
+
+bool YieldClauseWrapper::needAllPropsFromInput(const YieldColumn *col,
+                                               const InterimResult *inputs,
+                                               std::vector<YieldColumn*> &yields) {
+    auto *inputExpr = static_cast<InputPropertyExpression*>(col->expr());
+    auto *colName = inputExpr->prop();
+    if (*colName == "*") {
+        if (inputs != nullptr) {
+            auto schema = inputs->schema();
+            auto iter = schema->begin();
+            while (iter) {
+                auto *prop = iter->getName();
+                Expression *expr = new InputPropertyExpression(new std::string(prop));
+                YieldColumn *column = new YieldColumn(expr);
+                yieldColsHolder_->addColumn(column);
+                yields.emplace_back(column);
+                ++iter;
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
+StatusOr<bool> YieldClauseWrapper::needAllPropsFromVar(
+                                             const YieldColumn *col,
+                                             const VariableHolder *varHolder,
+                                             std::vector<YieldColumn*> &yields) {
+    auto *variableExpr = static_cast<VariablePropertyExpression*>(col->expr());
+    auto *colName = variableExpr->prop();
+    bool existing = false;
+    auto *varname = variableExpr->alias();
+    auto varInputs = varHolder->get(*varname, &existing);
+    if (varInputs == nullptr && !existing) {
+        return Status::Error("Variable `%s' not defined.", varname->c_str());
+    }
+    if (*colName == "*") {
+        auto schema = varInputs->schema();
+        auto iter = schema->begin();
+        while (iter) {
+            auto *alias = new std::string(*(variableExpr->alias()));
+            auto *prop = iter->getName();
+            Expression *expr =
+                    new VariablePropertyExpression(alias, new std::string(prop));
+            YieldColumn *column = new YieldColumn(expr);
+            yieldColsHolder_->addColumn(column);
+            yields.emplace_back(column);
+            ++iter;
+        }
+        return true;
+    }
+    return false;
 }
 }   // namespace graph
 }   // namespace nebula

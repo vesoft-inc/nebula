@@ -325,7 +325,7 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             outputSchema = std::make_shared<SchemaWriter>();
             auto status = getOutputSchema(eschema.get(), &*iter, outputSchema.get());
             if (!status.ok()) {
-                LOG(ERROR) << "Get getOutputSchema failed" << status;
+                LOG(ERROR) << "Get getOutputSchema failed: " << status;
                 DCHECK(onError_);
                 onError_(Status::Error("Internal error."));
                 return;
@@ -347,7 +347,13 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
                     onError_(value.status());
                     return;
                 }
-                Collector::collect(value.value(), writer.get());
+                auto status = Collector::collect(value.value(), writer.get());
+                if (!status.ok()) {
+                    LOG(ERROR) << "Collect prop error: " << status;
+                    DCHECK(onError_);
+                    onError_(std::move(status));
+                    return;
+                }
             }
 
             // TODO Consider float/double, and need to reduce mem copy.

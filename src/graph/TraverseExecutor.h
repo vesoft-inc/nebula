@@ -54,16 +54,16 @@ private:
 
 class Collector final {
 public:
-    static void collect(VariantType &var, RowWriter *writer);
+    static Status collect(VariantType &var, RowWriter *writer);
 
-    static VariantType getProp(const meta::SchemaProviderIf *schema,
-                               const std::string &prop,
-                               const RowReader *reader);
+    static OptVariantType getProp(const meta::SchemaProviderIf *schema,
+                                  const std::string &prop,
+                                  const RowReader *reader);
 
-    static void getSchema(const std::vector<VariantType> &vals,
-                          const std::vector<std::string> &colNames,
-                          const std::vector<nebula::cpp2::SupportedType> &colTypes,
-                          SchemaWriter *outputSchema);
+    static Status getSchema(const std::vector<VariantType> &vals,
+                            const std::vector<std::string> &colNames,
+                            const std::vector<nebula::cpp2::SupportedType> &colTypes,
+                            SchemaWriter *outputSchema);
 };
 
 class YieldClauseWrapper final {
@@ -75,6 +75,15 @@ public:
     Status prepare(const InterimResult *inputs,
                    const VariableHolder *varHolder,
                    std::vector<YieldColumn*> &yields);
+
+private:
+    bool needAllPropsFromInput(const YieldColumn *col,
+                               const InterimResult *inputs,
+                               std::vector<YieldColumn*> &yields);
+
+    StatusOr<bool> needAllPropsFromVar(const YieldColumn *col,
+                                       const VariableHolder *varHolder,
+                                       std::vector<YieldColumn*> &yields);
 
 private:
     const YieldClause              *clause_;
