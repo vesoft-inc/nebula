@@ -380,7 +380,7 @@ void GroupByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
         return;
     }
     rows_ = std::move(ret).value();
-    schema_ = std::move(result->schema()); 
+    schema_ = std::move(result->schema());
 }
 
 
@@ -422,7 +422,6 @@ void GroupByExecutor::generateOutputSchema() {
 
 
 std::unique_ptr<InterimResult> GroupByExecutor::setupInterimResult() {
-    auto result = std::make_unique<InterimResult>(getResultColumnNames());
     if (rows_.empty() || resultSchema_ == nullptr) {
         return nullptr;
     }

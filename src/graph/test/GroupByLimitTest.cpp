@@ -370,7 +370,6 @@ TEST_F(GroupByLimitTest, GroupByTest) {
                     "$-.age AS sumAge";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
-        LOG(INFO) << "ERROR : " << *resp.get_error_msg();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, int64_t>> expected = {
                 {"Grizzlies", 34},
@@ -420,6 +419,26 @@ TEST_F(GroupByLimitTest, GroupByOrderByLimitTest) {
         ASSERT_TRUE(verifyResult(resp, expected, false));
     }
     // Test with Limit
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player1 = players_["Carmelo Anthony"];
+        auto &player2 = players_["Dwyane Wade"];
+        auto *fmt = "GO FROM %ld,%ld OVER like "
+                    "YIELD $$.player.name AS name"
+                    "| GROUP BY $-.name, abs(5) "
+                    "YIELD $-.name AS name, "
+                    "SUM(1.5) AS sum, "
+                    "COUNT(*) AS count "
+                    "| ORDER BY $-.sum | LIMIT 2";
+        auto query = folly::stringPrintf(fmt, player1.vid(), player2.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, double, uint64_t>> expected = {
+                {"Dwyane Wade", 1.5, 1},
+                {"Carmelo Anthony", 1.5, 1},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected, false));
+    }
 }
 
 }   // namespace graph

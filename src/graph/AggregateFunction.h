@@ -33,8 +33,7 @@ public:
     GroupByHash() = default;
     ~GroupByHash() = default;
 
-    static std::size_t getHashVal(const cpp2::ColumnValue &iCol) {
-        cpp2::ColumnValue col = iCol;
+    static std::size_t getHashVal(const cpp2::ColumnValue &col) {
         switch (col.getType()) {
             case ColumnType::bool_type: {
                 return std::hash<bool>()(col.get_bool_val());
@@ -57,13 +56,11 @@ public:
             case ColumnType::timestamp_type: {
                 return std::hash<int64_t>()(col.get_timestamp());
             }
-            case ColumnType::empty_type:
-            case ColumnType::year_type:
-            case ColumnType::month_type:
-            case ColumnType::date_type:
-            case ColumnType::datetime_type:
-            case ColumnType::path_type: {
-                // TODO(laura): To calculate the hash val
+            case ColumnType::empty_type: {
+                return 0;
+            }
+            default: {
+                LOG(FATAL) << "Untreated value type: " << static_cast<int32_t>(col.getType());
                 return 0;
             }
         }
