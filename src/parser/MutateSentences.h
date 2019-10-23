@@ -632,5 +632,14 @@ public:
 
     std::string toString() const override;
 };
+
+class CompactionSentence final : public Sentence {
+public:
+    CompactionSentence() {
+        kind_ = Kind::kCompaction;
+    }
+
+    std::string toString() const override;
+};
 }  // namespace nebula
 #endif  // PARSER_MUTATESENTENCES_H_

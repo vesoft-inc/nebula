@@ -276,4 +276,7 @@ std::string IngestSentence::toString() const {
     return "INGEST";
 }
 
+std::string CompactionSentence::toString() const {
+    return "COMPACTION";
+}
 }   // namespace nebula
