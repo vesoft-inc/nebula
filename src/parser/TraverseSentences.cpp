@@ -294,4 +294,12 @@ std::string FindPathSentence::toString() const {
     }
     return buf;
 }
+
+std::string LimitSentence::toString() const {
+    if (offset_ == 0) {
+        return folly::stringPrintf("LIMIT %ld", count_);
+    }
+
+    return folly::stringPrintf("LIMIT %ld,%ld", offset_, count_);
+}
 }   // namespace nebula
