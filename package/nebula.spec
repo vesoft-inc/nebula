@@ -69,15 +69,19 @@ Group: Applications/Databases
 %description console
 
 %package storage_perf
-Summary: tool for storage
+Summary: perf tool for storage
 Group: Applications/Databases
 %description storage_perf
 
+%package storage_integrity
+Summary: integrity tool for storage
+Group: Applications/Databases
+%description storage_integrity
+
 %package simple_kv_verify
-Summary: tool for storage
+Summary: kv verify tool
 Group: Applications/Databases
 %description simple_kv_verify
-
 
 # the files include exe, config file, scripts
 # base rpm include files
@@ -134,6 +138,10 @@ fi
 # storage_perf rpm
 %files storage_perf
 %attr(0755,root,root) %{_bindir}/storage_perf
+
+# storage_integrity rpm
+%files storage_integrity
+%attr(0755,root,root) %{_bindir}/storage_integrity
 
 # simple_kv_verify rpm
 %files simple_kv_verify
