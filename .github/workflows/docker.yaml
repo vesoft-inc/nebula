@@ -104,7 +104,7 @@ jobs:
     name: nebula package for ubuntu16.04
     runs-on: ubuntu-18.04
     container:
-      image: vesoft/nebula-dev:ubuntu16
+      image: vesoft/nebula-dev:ubuntu1604
     steps:
       - uses: actions/checkout@v1
         with:
@@ -124,7 +124,7 @@ jobs:
     name: nebula package for ubuntu18.04
     runs-on: ubuntu-18.04
     container:
-      image: vesoft/nebula-dev:ubuntu18
+      image: vesoft/nebula-dev:ubuntu1804
     steps:
       - uses: actions/checkout@v1
         with:

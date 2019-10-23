@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        tag: [centos6, centos7, ubuntu16, ubuntu18]
+        tag: [centos6, centos7, ubuntu1604, ubuntu1804]
     container:
       image: vesoft/nebula-dev:${{ matrix.tag }}
     steps:
