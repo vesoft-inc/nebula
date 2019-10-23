@@ -44,6 +44,11 @@ Status YieldExecutor::prepareYield() {
     }
 
     for (auto *col : yields_) {
+        if (!col->getFunName().empty()) {
+            status = Status::SyntaxError("Do not support in aggregated query without group by");
+            break;
+        }
+
         col->expr()->setContext(expCtx_.get());
         status = col->expr()->prepare();
         if (!status.ok()) {

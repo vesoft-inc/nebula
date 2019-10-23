@@ -62,13 +62,13 @@ Status GroupByExecutor::prepareYield() {
         }
 
         if (yields.empty()) {
-            status = Status::Error("Yield cols is empty");
+            status = Status::SyntaxError("Yield cols is empty");
             break;
         }
         for (auto *col : yields) {
             if ((col->getFunName() != kCount && col->getFunName() != kCountDist)
                     && col->expr()->toString() == "*") {
-                status = Status::Error("Syntax error: near `*'");
+                status = Status::SyntaxError("Syntax error: near `*'");
                 break;
             }
             col->expr()->setContext(expCtx_.get());
@@ -104,13 +104,13 @@ Status GroupByExecutor::prepareGroup() {
         }
 
         if (groups.empty()) {
-            status = Status::Error("Group cols is empty");
+            status = Status::SyntaxError("Group cols is empty");
             break;
         }
         for (auto *col : groups) {
             if (col->getFunName() != "") {
-                status = Status::Error("Use invalid group function `%s'",
-                                            col->getFunName().c_str());
+                status = Status::SyntaxError("Use invalid group function `%s'",
+                                              col->getFunName().c_str());
                 break;
             }
             col->expr()->setContext(expCtx_.get());
@@ -138,24 +138,24 @@ Status GroupByExecutor::buildIndex() {
     }
 
     for (auto &it : groupCols_) {
-        // get input index
+        // Get input index
         if (it.first->expr()->isInputExpression()) {
             auto groupName = static_cast<InputPropertyExpression*>(it.first->expr())->prop();
             auto findIt = schemaMap.find(*groupName);
             if (findIt == schemaMap.end()) {
                 LOG(ERROR) << "Group `" << *groupName << "' isn't in output fields";
-                return Status::Error("Group `%s' isn't in output fields", *groupName);
+                return Status::SyntaxError("Group `%s' isn't in output fields", groupName->c_str());
             }
             it.second = findIt->second.first;
             continue;
         }
 
-        // function call
+        // Function call
         if (it.first->expr()->isFunCallExpression()) {
             continue;
         }
 
-        // get alias index
+        // Get alias index
         auto groupName = it.first->expr()->toString();
         auto alisaIt = aliases_.find(groupName);
         if (alisaIt != aliases_.end()) {
@@ -163,12 +163,12 @@ Status GroupByExecutor::buildIndex() {
             auto findIt = schemaMap.find(inputName);
             if (findIt == schemaMap.end()) {
                 LOG(ERROR) << "Group `" << groupName << "' isn't in output fields";
-                return Status::Error("Group `%s' isn't in output fields", groupName);
+                return Status::SyntaxError("Group `%s' isn't in output fields", groupName.c_str());
             }
             it.second = findIt->second.first;
             continue;
         }
-        return Status::Error("Group `%s' isn't in output fields", groupName);
+        return Status::SyntaxError("Group `%s' isn't in output fields", groupName.c_str());
     }
 
     // Build index of input data for yield cols
@@ -178,12 +178,12 @@ Status GroupByExecutor::buildIndex() {
             auto findIt = schemaMap.find(*yieldName);
             if (findIt == schemaMap.end()) {
                 LOG(ERROR) << "Yield `" << *yieldName << "' isn't in output fields";
-                return Status::Error("Yield `%s' isn't in output fields", *yieldName);
+                return Status::SyntaxError("Yield `%s' isn't in output fields", *yieldName);
             }
             it.second = findIt->second.first;
         } else if (it.first->expr()->isVariableExpression()) {
             LOG(ERROR) << "Can't support variableExpression: " << it.first->expr()->toString();
-            return Status::Error("Can't support variableExpression");
+            return Status::SyntaxError("Can't support variableExpression");
         }
         // TODO(laura): to check other expr
     }
@@ -249,6 +249,7 @@ cpp2::ColumnValue GroupByExecutor::toColumnValue(const VariantType& value) {
         }
     } catch (const std::exception& e) {
         LOG(ERROR) << "Exception caught: " << e.what();
+        colVal.set_str("");
     }
     return colVal;
 }
@@ -336,7 +337,7 @@ Status GroupByExecutor::groupingData() {
         }
 
         if (findIt == data.end()) {
-            data.emplace(groupVals, calVals);
+            data.emplace(std::move(groupVals), std::move(calVals));
         }
     }
 

@@ -41,6 +41,19 @@ TEST_F(GroupByLimitTest, SyntaxError) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
+    // use groupby without input
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Marco Belinelli"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD $$.team.name AS name"
+                    "| GROUP BY 1+1 "
+                    "YIELD COUNT(1), 1+1";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        LOG(INFO) << "ERROR " << *resp.get_error_msg();
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
     // use var
     {
         cpp2::ExecutionResponse resp;
@@ -52,7 +65,7 @@ TEST_F(GroupByLimitTest, SyntaxError) {
                     "YIELD COUNT($var)";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
     // use dst
     {
@@ -65,7 +78,7 @@ TEST_F(GroupByLimitTest, SyntaxError) {
                     "YIELD COUNT($$.team.name)";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
     // Group input nonexistent
     {
@@ -78,7 +91,7 @@ TEST_F(GroupByLimitTest, SyntaxError) {
                     "YIELD COUNT($-.id)";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
     // Group alias nonexistent
     {
@@ -92,7 +105,7 @@ TEST_F(GroupByLimitTest, SyntaxError) {
                     "$-.name AS teamName";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
     // Field nonexistent
     {
@@ -105,9 +118,9 @@ TEST_F(GroupByLimitTest, SyntaxError) {
                     "YIELD COUNT($-.start_year)";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
-    // use sum(*)
+    // Use SUM(*)
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Marco Belinelli"];
@@ -115,10 +128,47 @@ TEST_F(GroupByLimitTest, SyntaxError) {
                     "YIELD $$.team.name AS name, "
                     "serve._dst AS id"
                     "| GROUP BY $-.name "
-                    "YIELD sum(*)";
+                    "YIELD SUM(*)";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+    // Use cal fun has more than two inputs
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Marco Belinelli"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD $$.team.name AS name, "
+                    "serve._dst AS id"
+                    "| GROUP BY $-.name "
+                    "YIELD COUNT($-.name, $-.id)";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+    // Group col has cal fun
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Marco Belinelli"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD $$.team.name AS name, "
+                    "serve._dst AS id"
+                    "| GROUP BY $-.name, SUM($-.id) "
+                    "YIELD $-.name,  SUM($-.id)";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+    // Yield without group by
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Marco Belinelli"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD $$.team.name AS name, "
+                    "COUNT(serve._dst) AS id";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
 }
 
@@ -243,7 +293,7 @@ TEST_F(GroupByLimitTest, GroupByTest) {
                 {1, 2012, 2013.0},
                 {1, 2015, 2016.0},
         };
-       // ASSERT_TRUE(verifyResult(resp, expected));
+       ASSERT_TRUE(verifyResult(resp, expected));
     }
     // Group multi col, on alisa col
     {

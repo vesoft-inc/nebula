@@ -497,6 +497,16 @@ TEST_F(YieldTest, error) {
         auto fmt = var + "YIELD a.team";
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
+    }
+}
+
+TEST_F(YieldTest, AggCall) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD COUNT(1), 1+1";
+        auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
 }

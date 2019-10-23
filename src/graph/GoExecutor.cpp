@@ -284,6 +284,11 @@ Status GoExecutor::prepareYield() {
         auto status = yieldClauseWrapper_->prepare(inputs_.get(), varHolder, yields_);
         if (!status.ok()) {
             return status;
+	}
+        for (auto *col : yields_) {
+            if (!col->getFunName().empty()) {
+                return Status::SyntaxError("Do not support in aggregated query without group by");
+            }
         }
     }
     return Status::OK();

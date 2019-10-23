@@ -61,7 +61,6 @@ public:
             }
             default: {
                 LOG(FATAL) << "Untreated value type: " << static_cast<int32_t>(col.getType());
-                return 0;
             }
         }
         return 0;
@@ -118,12 +117,16 @@ struct ColsHasher {
 
 class AggFun {
 public:
+    AggFun() {}
+    virtual ~AggFun() {}
+
+public:
     virtual void apply(cpp2::ColumnValue &val) = 0;
     virtual cpp2::ColumnValue getResult() = 0;
 };
 
 
-class Group: public AggFun {
+class Group final : public AggFun {
 public:
     void apply(cpp2::ColumnValue &val) override {
         col_ = val;
@@ -138,7 +141,7 @@ private:
 };
 
 
-class Count: public AggFun {
+class Count final : public AggFun {
 public:
     void apply(cpp2::ColumnValue &val) override {
         UNUSED(val);
@@ -156,7 +159,7 @@ private:
 };
 
 
-class Sum: public AggFun {
+class Sum final : public AggFun {
 public:
     void apply(cpp2::ColumnValue &val) override {
         if (val.getType() != ColumnType::int_type &&
@@ -205,7 +208,7 @@ private:
 };
 
 
-class Avg: public AggFun {
+class Avg final : public AggFun {
 public:
     void apply(cpp2::ColumnValue &val) override {
         sum_.apply(val);
@@ -235,7 +238,7 @@ private:
 };
 
 
-class CountDistinct: public AggFun {
+class CountDistinct final : public AggFun {
 public:
     void apply(cpp2::ColumnValue &val) override {
         ColVal col;
@@ -254,7 +257,7 @@ private:
 };
 
 
-class Max: public AggFun {
+class Max final : public AggFun {
 public:
     void apply(cpp2::ColumnValue &val) override {
         if (!has_) {
@@ -275,7 +278,7 @@ private:
 };
 
 
-class Min: public AggFun {
+class Min final : public AggFun {
 public:
     void apply(cpp2::ColumnValue &val) override {
         if (!has_) {
@@ -296,7 +299,7 @@ private:
 };
 
 
-class Stdev: public AggFun {
+class Stdev final : public AggFun {
 public:
     void apply(cpp2::ColumnValue &val) override {
         avg_.apply(val);
@@ -332,7 +335,7 @@ private:
 };
 
 
-class BitAnd: public AggFun {
+class BitAnd final : public AggFun {
 public:
     void apply(cpp2::ColumnValue &val) override {
         if (val.getType() != ColumnType::int_type) {
@@ -361,7 +364,7 @@ private:
 };
 
 
-class BitOr: public AggFun {
+class BitOr final : public AggFun {
 public:
     void apply(cpp2::ColumnValue &val) override {
         if (val.getType() != ColumnType::int_type) {
@@ -390,7 +393,7 @@ private:
 };
 
 
-class BitXor: public AggFun {
+class BitXor final : public AggFun {
 public:
     void apply(cpp2::ColumnValue &val) override {
         if (val.getType() != ColumnType::int_type) {

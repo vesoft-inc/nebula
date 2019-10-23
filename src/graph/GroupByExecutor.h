@@ -45,7 +45,6 @@ private:
 
 private:
     GroupBySentence                                          *sentence_{nullptr};
-    //std::unique_ptr<InterimResult>                            inputs_;
     std::vector<cpp2::RowValue>                               rows_;
     std::shared_ptr<const meta::SchemaProviderIf>             schema_{nullptr};
 
