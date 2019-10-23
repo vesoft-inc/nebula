@@ -21,4 +21,5 @@ nebula> YIELD 11 +             \
 Use backslash as line break.   \
 */ 12
 ```
+
 The backslash `\` at the line of line indicates a line break.
