@@ -14,7 +14,7 @@ This statement creates a new space. SPACE is a region that provides physically i
 
 * **space_name**
 
-    The name uniquely identifies the space in a cluster. The rules for the naming are given in [Schema Object Names](../../language-structure/schema-object-names.md)
+    The name uniquely identifies the space in a cluster. The rules for the naming are given in [Schema Object Names](../../3.language-structure/schema-object-names.md)
 
 ### Space Options
 
