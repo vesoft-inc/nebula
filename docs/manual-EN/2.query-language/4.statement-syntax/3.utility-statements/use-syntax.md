@@ -1,7 +1,7 @@
 # Use Syntax
 
 ```
-USE graph_space_name
+USE <graph_space_name>
 ```
 
 The `USE` statement tells Nebula to use the named (graph) space as the current working space. This statement requires some privileges.

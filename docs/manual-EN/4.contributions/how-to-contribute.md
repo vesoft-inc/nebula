@@ -63,7 +63,7 @@ cd $working_dir/nebula/.git/hooks
 chmod +x pre-commit
 ```
 
-### Step 3: Branch
+## Step 3: Branch
 
 Get your local master up to date:
 
@@ -80,7 +80,7 @@ Checkout a new branch from master:
 git checkout -b myfeature
 ```
 
-> **NOTE**: Because your PR often consists of several commits, which might be squashed while being merged into upstream,
+**NOTE**: Because your PR often consists of several commits, which might be squashed while being merged into upstream,
 we strongly suggest you open a separate topic branch to make your changes on. After merged,
 this topic branch could be just abandoned, thus you could synchronize your master branch with
 upstream easily with a rebase like above. Otherwise, if you commit your changes directly into master,
@@ -106,16 +106,16 @@ to run Nebula Graph in stand-alone mode.
 
 ```sh
 # Build the binary.
-make server
+> make server
 
 # Run in stand-alone mode.
-nebula-graphd
+> nebula-graphd
 ```
 
 Then you can connect the Nebula Graph console to your local server
 
 ```sh
-nebula
+> nebula
 ```
 
 #### Run Test

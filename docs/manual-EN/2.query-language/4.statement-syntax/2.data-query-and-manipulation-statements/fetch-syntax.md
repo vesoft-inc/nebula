@@ -18,18 +18,19 @@ FETCH PROP ON <tag_name> <vertex_id_list> [YIELD [DISTINCT] <return_list>]
 
 ### Examples
 
-```
-nebula> FETCH PROP ON player 1   -- return all the properties of vertex id 1 if no yield field is given.
-
-nebula> FETCH PROP ON player 1 YIELD player.name, player.age    -- return property name and age of vertex id 1
-
-nebula> FETCH PROP ON player hash(\"nebula\")  YIELD player.name, player.age    -- hash string to int64 as vertex id, fetch name and player
-
-nebula> GO FROM 1 over e1 | FETCH PROP ON player $- YIELD player.name, player.age    -- find all neighbors of vertex 1 through edge e1. Then Get the neighbors' name and age.
-
-nebula> $var = GO FROM 1 over e1; FETCH PROP ON player $var.id YIELD player.name, player.age  -- the same as above sentence.
-
-nebula> FETCH PROP ON player 1,2,3 YIELD DISTINCT player.name, player.age    -- get three vertices 1,2,3, return by unique(distinct) name and age
+```SQL
+-- return all the properties of vertex id 1 if no yield field is given.
+nebula> FETCH PROP ON player 1
+-- return property name and age of vertex id 1
+nebula> FETCH PROP ON player 1 YIELD player.name, player.age
+-- hash string to int64 as vertex id, fetch name and player
+nebula> FETCH PROP ON player hash(\"nebula\")  YIELD player.name, player.age
+-- find all neighbors of vertex 1 through edge e1. Then Get the neighbors' name and age.
+nebula> GO FROM 1 over e1 | FETCH PROP ON player $- YIELD player.name, player.age
+-- the same as above sentence.
+nebula> $var = GO FROM 1 over e1; FETCH PROP ON player $var.id YIELD player.name, player.age
+-- get three vertices 1,2,3, return by unique(distinct) name and age
+nebula> FETCH PROP ON player 1,2,3 YIELD DISTINCT player.name, player.age
 ```
 
 ## Fetch Edge Property
@@ -50,12 +51,17 @@ FETCH PROP ON <edge_type> <vid> -> <vid> [, <vid> -> <vid> ...] [YIELD [DISTINCT
 
 ### Example
 
-```
-nebula> FETCH PROP ON e1 100 -> 200    -- from vertex 100 to 200 with edge type e1, get all the properties since no YIELD is given.
-nebula> FETCH PROP ON e1 100 -> 200 YIELD e1.p1   -- only return property p1 
-nebula> GO FROM 1 OVER e1 YIELD e1.prop1       -- for all the out going edges of vertex 1, get edge property prop1.
+```SQL
+-- from vertex 100 to 200 with edge type e1, get all the properties since no YIELD is given.
+nebula> FETCH PROP ON e1 100 -> 200
+-- only return property p1
+nebula> FETCH PROP ON e1 100 -> 200 YIELD e1.p1
+-- for all the out going edges of vertex 1, get edge property prop1.
+nebula> GO FROM 1 OVER e1 YIELD e1.prop1
+-- the same as above sentence
 nebula> GO FROM 1 OVER e1 YIELD e1._src AS s, serve._dst AS d \
- | FETCH PROP ON e1 $-.s -> $-.d YIELD e1.prop1              -- the same as above sentence
+ | FETCH PROP ON e1 $-.s -> $-.d YIELD e1.prop1
+-- the same as above.
 nebula> $var = GO FROM 1 OVER e1 YIELD e1._src AS s, e2._dst AS d;\
- FETCH PROP ON e3 $var.s -> $var.d YIELD e3.prop1.        -- the same as above.
+ FETCH PROP ON e3 $var.s -> $var.d YIELD e3.prop1
 ```
