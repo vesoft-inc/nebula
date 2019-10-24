@@ -10,7 +10,7 @@ Let's use an example to expand the cluster from 3 instances to 8 to show how to 
 
 ### Step 1 Prerequisites
 
-Deploy a cluster with three replicas, one graphd, one metad and three storaged. Details on deployment please refer [Cluster Deploy](https://github.com/Amber1990Zhang/nebula/blob/master/docs/get-started/deploy-cluster-on-docker.md). Check cluster status using command `SHOW HOSTS`.
+Deploy a cluster with three replicas, one graphd, one metad and three storaged. Details on deployment please refer [Cluster Deploy](../../deployment/deploy-cluster.md). Check cluster status using command `SHOW HOSTS`.
 
 #### Step 1.1
 
