@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "time/WallClock.h"
+#include "base/StatusOr.h"
 #include <folly/RWSpinLock.h>
 #include <folly/stats/MultiLevelTimeSeries.h>
 #include <folly/stats/TimeseriesHistogram.h>
@@ -73,16 +74,16 @@ public:
 
     static void addValue(int32_t index, VT value = 1);
 
-    static VT readValue(folly::StringPiece counter);
-    static VT readStats(int32_t index,
-                        TimeRange range,
-                        StatsMethod method);
-    static VT readStats(const std::string& counterName,
-                        TimeRange range,
-                        StatsMethod method);
-    static VT readHisto(const std::string& counterName,
-                        TimeRange range,
-                        double pct);
+    static StatusOr<VT> readValue(folly::StringPiece counter);
+    static StatusOr<VT> readStats(int32_t index,
+                                  TimeRange range,
+                                  StatsMethod method);
+    static StatusOr<VT> readStats(const std::string& counterName,
+                                  TimeRange range,
+                                  StatsMethod method);
+    static StatusOr<VT> readHisto(const std::string& counterName,
+                                  TimeRange range,
+                                  double pct);
     static void readAllValue(folly::dynamic& vals);
 
 private:

@@ -28,18 +28,18 @@ TEST(StatsManager, StatsTest) {
     }
 
     // Let's check
-    EXPECT_EQ(5050, StatsManager::readValue("stat01.sum.60"));
-    EXPECT_EQ(5050, StatsManager::readValue("stat01.SUM.600"));
-    EXPECT_EQ(5050, StatsManager::readValue("stat01.Sum.3600"));
-    EXPECT_EQ(0, StatsManager::readValue("stat01.Sum.300"));
-    EXPECT_EQ(100, StatsManager::readValue("stat01.count.60"));
-    EXPECT_EQ(100, StatsManager::readValue("stat01.COUNT.600"));
-    EXPECT_EQ(100, StatsManager::readValue("stat01.Count.3600"));
-    EXPECT_EQ(0, StatsManager::readValue("stat01.Count.4600"));
-    EXPECT_EQ(50, StatsManager::readValue("stat01.avg.60"));
-    EXPECT_EQ(50, StatsManager::readValue("stat01.AVG.600"));
-    EXPECT_EQ(50, StatsManager::readValue("stat01.Avg.3600"));
-    EXPECT_EQ(0, StatsManager::readValue("stat01.Avg1.3600"));
+    EXPECT_EQ(5050, StatsManager::readValue("stat01.sum.60").value());
+    EXPECT_EQ(5050, StatsManager::readValue("stat01.SUM.600").value());
+    EXPECT_EQ(5050, StatsManager::readValue("stat01.Sum.3600").value());
+    EXPECT_FALSE(StatsManager::readValue("stat01.Sum.300").ok());
+    EXPECT_EQ(100, StatsManager::readValue("stat01.count.60").value());
+    EXPECT_EQ(100, StatsManager::readValue("stat01.COUNT.600").value());
+    EXPECT_EQ(100, StatsManager::readValue("stat01.Count.3600").value());
+    EXPECT_FALSE(StatsManager::readValue("stat01.Count.4600").ok());
+    EXPECT_EQ(50, StatsManager::readValue("stat01.avg.60").value());
+    EXPECT_EQ(50, StatsManager::readValue("stat01.AVG.600").value());
+    EXPECT_EQ(50, StatsManager::readValue("stat01.Avg.3600").value());
+    EXPECT_FALSE(StatsManager::readValue("stat01.Avg1.3600").ok());
 }
 
 
@@ -59,27 +59,27 @@ TEST(StatsManager, HistogramTest) {
     }
 
     // Let's check
-    EXPECT_EQ(5050, StatsManager::readValue("stat02.sum.60"));
-    EXPECT_EQ(5050, StatsManager::readValue("stat02.SUM.600"));
-    EXPECT_EQ(5050, StatsManager::readValue("stat02.Sum.3600"));
-    EXPECT_EQ(0, StatsManager::readValue("stat02.Sum.300"));
-    EXPECT_EQ(100, StatsManager::readValue("stat02.count.60"));
-    EXPECT_EQ(100, StatsManager::readValue("stat02.COUNT.600"));
-    EXPECT_EQ(100, StatsManager::readValue("stat02.Count.3600"));
-    EXPECT_EQ(0, StatsManager::readValue("stat02.Count.4600"));
-    EXPECT_EQ(50, StatsManager::readValue("stat02.avg.60"));
-    EXPECT_EQ(50, StatsManager::readValue("stat02.AVG.600"));
-    EXPECT_EQ(50, StatsManager::readValue("stat02.Avg.3600"));
-    EXPECT_EQ(0, StatsManager::readValue("stat02.Avg1.3600"));
+    EXPECT_EQ(5050, StatsManager::readValue("stat02.sum.60").value());
+    EXPECT_EQ(5050, StatsManager::readValue("stat02.SUM.600").value());
+    EXPECT_EQ(5050, StatsManager::readValue("stat02.Sum.3600").value());
+    EXPECT_FALSE(StatsManager::readValue("stat02.Sum.300").ok());
+    EXPECT_EQ(100, StatsManager::readValue("stat02.count.60").value());
+    EXPECT_EQ(100, StatsManager::readValue("stat02.COUNT.600").value());
+    EXPECT_EQ(100, StatsManager::readValue("stat02.Count.3600").value());
+    EXPECT_FALSE(StatsManager::readValue("stat02.Count.4600").ok());
+    EXPECT_EQ(50, StatsManager::readValue("stat02.avg.60").value());
+    EXPECT_EQ(50, StatsManager::readValue("stat02.AVG.600").value());
+    EXPECT_EQ(50, StatsManager::readValue("stat02.Avg.3600").value());
+    EXPECT_FALSE(StatsManager::readValue("stat02.Avg1.3600").ok());
 
-    EXPECT_EQ(100, StatsManager::readValue("stat02.p99.60"));
-    EXPECT_EQ(100, StatsManager::readValue("stat02.P99.600"));
-    EXPECT_EQ(100, StatsManager::readValue("stat02.p99.3600"));
-    EXPECT_EQ(0, StatsManager::readValue("stat02.t99.60"));
-    EXPECT_EQ(96, StatsManager::readValue("stat02.p9599.60"));
-    EXPECT_EQ(96, StatsManager::readValue("stat02.P9599.600"));
-    EXPECT_EQ(96, StatsManager::readValue("stat02.p9599.3600"));
-    EXPECT_EQ(0, StatsManager::readValue("stat02.t9599.60"));
+    EXPECT_EQ(100, StatsManager::readValue("stat02.p99.60").value());
+    EXPECT_EQ(100, StatsManager::readValue("stat02.P99.600").value());
+    EXPECT_EQ(100, StatsManager::readValue("stat02.p99.3600").value());
+    EXPECT_FALSE(StatsManager::readValue("stat02.t99.60").ok());
+    EXPECT_EQ(96, StatsManager::readValue("stat02.p9599.60").value());
+    EXPECT_EQ(96, StatsManager::readValue("stat02.P9599.600").value());
+    EXPECT_EQ(96, StatsManager::readValue("stat02.p9599.3600").value());
+    EXPECT_FALSE(StatsManager::readValue("stat02.t9599.60").ok());
 }
 
 
