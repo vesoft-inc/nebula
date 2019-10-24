@@ -20,11 +20,11 @@ jobs:
           fetch-depth: 1
       - name: cmake
         env:
-          NEBULA_BIN: /opt/nebula/third-party/bin
+          NEBULA_DEP_BIN: /opt/nebula/third-party/bin
           LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
         run: |
           mkdir _build && cd _build
-          ${NEBULA_BIN}/cmake -DCMAKE_C_COMPILER=${NEBULA_BIN}/gcc -DCMAKE_CXX_COMPILER=${NEBULA_BIN}/g++ ..
+          ${NEBULA_DEP_BIN}/cmake -DCMAKE_C_COMPILER=${NEBULA_DEP_BIN}/gcc -DCMAKE_CXX_COMPILER=${NEBULA_DEP_BIN}/g++ ..
         shell: bash
       - name: make
         env:
@@ -34,9 +34,9 @@ jobs:
         shell: bash
       - name: test
         env:
-          NEBULA_BIN: /opt/nebula/third-party/bin
+          NEBULA_DEP_BIN: /opt/nebula/third-party/bin
           LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
         run: |
           cd _build
-          ${NEBULA_BIN}/ctest -j $(nproc) --output-on-failure
+          ${NEBULA_DEP_BIN}/ctest --output-on-failure
         shell: bash
