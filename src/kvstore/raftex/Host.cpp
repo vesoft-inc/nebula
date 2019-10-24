@@ -402,14 +402,15 @@ Host::prepareAppendLogRequest() {
             LOG(INFO) << idStr_ << "Can't find log " << lastLogIdSent_ + 1
                       << " in wal, send the snapshot";
             sendingSnapshot_ = true;
-            part_->snapshot_->sendSnapshot(part_, shared_from_this(), addr_)
-                .then([idStr = this->idStr_] (Status&& status) {
+            part_->snapshot_->sendSnapshot(part_, addr_)
+                .then([self = shared_from_this()] (Status&& status) {
                 if (status.ok()) {
-                    LOG(INFO) << idStr << "Send snapshot succeeded!";
+                    LOG(INFO) << self->idStr_ << "Send snapshot succeeded!";
                 } else {
-                    LOG(INFO) << idStr << "Send snapshot failed!";
+                    LOG(INFO) << self->idStr_ << "Send snapshot failed!";
                     // TODO(heng): we should tell the follower i am failed.
                 }
+                self->sendingSnapshot_ = false;
             });
         } else {
             LOG(INFO) << idStr_ << "The snapshot req is in queue, please wait for a moment";

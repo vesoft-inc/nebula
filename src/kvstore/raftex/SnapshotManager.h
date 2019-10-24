@@ -24,7 +24,6 @@ using SnapshotCallback = folly::Function<void(std::vector<std::string>&& rows,
                                               int64_t totalSize,
                                               bool finished)>;
 class RaftPart;
-class Host;
 
 class SnapshotManager {
 public:
@@ -33,7 +32,6 @@ public:
 
     // Send snapshot for spaceId, partId to host dst.
     folly::Future<Status> sendSnapshot(std::shared_ptr<RaftPart> part,
-                                       std::shared_ptr<Host> host,
                                        const HostAddr& dst);
 
 private:
@@ -53,8 +51,6 @@ private:
     virtual void accessAllRowsInSnapshot(GraphSpaceID spaceId,
                                          PartitionID partId,
                                          SnapshotCallback cb) = 0;
-
-    void onFinished(std::shared_ptr<Host> host);
 
 private:
     std::unique_ptr<folly::IOThreadPoolExecutor> executor_;
