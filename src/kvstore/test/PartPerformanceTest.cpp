@@ -24,14 +24,23 @@ namespace kvstore {
 std::string randomStr(int32_t repeatNum) {
     std::string str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
                     "!@#$%^&*()_+-={}[]-={}[]:<>,./?~");
-//    Not random for now, because it's too slow
-//    std::random_device rd;
-//    std::mt19937 generator(rd());
-//    std::shuffle(str.begin(), str.end(), generator);
     for (auto i = 0; i < repeatNum; i++) {
         str += str;
     }
     return str;
+}
+
+bool cleanSystemCache() {
+    if (system("sync") < 0) {
+        LOG(ERROR) << "Clean system cache error : sync";
+        return false;
+    }
+
+    if (system("echo 1 > /proc/sys/vm/drop_caches") < 0) {
+        LOG(ERROR) << "Clean system cache error : drop_caches";
+        return false;
+    }
+    return true;
 }
 
 void genData(rocksdb::DB* db, int32_t partnum) {
@@ -53,30 +62,21 @@ void genData(rocksdb::DB* db, int32_t partnum) {
            .append(reinterpret_cast<const char*>(&i), sizeof(uint64_t))
            .append(reinterpret_cast<const char*>(&i), sizeof(uint64_t))
            .append(reinterpret_cast<const char*>(&i), sizeof(uint64_t))
-           .append(std::move(random));
+           .append(random);
         updates.Put(rocksdb::Slice(key), rocksdb::Slice(val));
         if (i%1000 == 0) {
             rocksdb::Status status = db->Write(woptions, &updates);
+            status = db->Flush(rocksdb::FlushOptions());
+            CHECK(status.ok());
             updates.Clear();
         }
     }
-    rocksdb::Status status = db->Write(woptions, &updates);
-    CHECK(status.ok());
-    // flush memTable to sst file
-    status = db->Flush(rocksdb::FlushOptions());
-    CHECK(status.ok());
-
-    // free system pages cache, prepare run `echo 3 > /proc/sys/vm/drop_caches` via root user.
-    if (system("sync") < 0) {
-        LOG(ERROR) << "Clean system cache error";
-    }
-
     LOG(INFO) << "Data generation completed...";
 }
 
 void range(int32_t partId, rocksdb::DB* db) {
-    auto start = static_cast<uint64_t>(FLAGS_part_performance_test_rownum * 0.5);
-    auto end = static_cast<uint64_t>(FLAGS_part_performance_test_rownum * 0.8);
+    auto start = static_cast<uint64_t>(FLAGS_part_performance_test_rownum * 0.95);
+    auto end = static_cast<uint64_t>(FLAGS_part_performance_test_rownum * 0.96);
     std::string s, e;
     s.reserve(sizeof(partId) + sizeof(partId));
     s.append(reinterpret_cast<const char*>(&partId), sizeof(partId))
@@ -104,39 +104,6 @@ void range(int32_t partId, rocksdb::DB* db) {
     delete iter;
 }
 
-void multiThreadTest(int32_t partnum) {
-    fs::TempDir dataPath("/tmp/part_multi_thread_test.XXXXXX");
-    rocksdb::BlockBasedTableOptions table_options;
-    rocksdb::Options options;
-    rocksdb::DB* db = nullptr;
-    std::vector<std::thread> threads;
-
-    BENCHMARK_SUSPEND {
-        table_options.no_block_cache = true;
-        options.table_factory.reset(rocksdb::NewBlockBasedTableFactory(table_options));
-        options.create_if_missing = true;
-
-        rocksdb::Status status = rocksdb::DB::Open(options, dataPath.path(), &db);
-        CHECK(status.ok());
-        genData(db, partnum);
-    }
-
-    FOR_EACH_RANGE(i, 0, partnum) {
-        threads.emplace_back([db, i]() {
-            range(i, db);
-        });
-    }
-
-    FOR_EACH(t, threads) {
-        t->join();
-    }
-
-    BENCHMARK_SUSPEND {
-        db->Close();
-        delete db;
-    }
-}
-
 void singleThreadTest(int32_t partnum) {
     fs::TempDir dataPath("/tmp/part_single_thread_test.XXXXXX");
     rocksdb::BlockBasedTableOptions table_options;
@@ -152,7 +119,13 @@ void singleThreadTest(int32_t partnum) {
         genData(db, partnum);
     }
 
-    FOR_EACH_RANGE(i, 0, partnum) {
+    for (auto i = 0; i < partnum; i++) {
+        BENCHMARK_SUSPEND {
+            if (!cleanSystemCache()) {
+                LOG(ERROR) << "Data generation completed...";
+                exit(1);
+            }
+        };
         range(i, db);
     }
 
@@ -162,32 +135,20 @@ void singleThreadTest(int32_t partnum) {
     };
 }
 
-BENCHMARK(Part1000_MultThread) {
-    multiThreadTest(1000);
+BENCHMARK(Part2000_SingleThread) {
+    singleThreadTest(2000);
 }
 
 BENCHMARK(Part1000_SingleThread) {
     singleThreadTest(1000);
 }
 
-BENCHMARK(Part500_MultThread) {
-    multiThreadTest(500);
-}
-
 BENCHMARK(Part500_SingleThread) {
     singleThreadTest(500);
 }
 
-BENCHMARK(Part100_MultThread) {
-    multiThreadTest(100);
-}
-
 BENCHMARK(Part100_SingleThread) {
     singleThreadTest(100);
-}
-
-BENCHMARK(Part50_MultThread) {
-    multiThreadTest(50);
 }
 
 BENCHMARK(Part50_SingleThread) {
@@ -209,19 +170,24 @@ int main(int argc, char** argv) {
 }
 
 /**
-Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+ * Through real simulations could be drop system cache by each partition before scan.
+ *
+ * The test data count is 100,000 rows, query result set totals 1,000 rows.
+ *
+ * This test case must use the root user,Because the system cache cleanup operation was called.
+ */
+
+/**
+Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
 ============================================================================
 PartPerformanceTest.cpprelative                           time/iter  iters/s
 ============================================================================
-Part1000_MultThread                                        177.65ms     5.63
-Part1000_SingleThread                                      515.40ms     1.94
-Part500_MultThread                                         140.08ms     7.14
-Part500_SingleThread                                       597.76ms     1.67
-Part100_MultThread                                          99.45ms    10.05
-Part100_SingleThread                                       420.03ms     2.38
-Part50_MultThread                                           96.06ms    10.41
-Part50_SingleThread                                        400.83ms     2.49
-Part1_SingleThread                                         371.62ms     2.69
+Part2000_SingleThread                                      545.08ms     1.83
+Part1000_SingleThread                                      342.73ms     2.92
+Part500_SingleThread                                       194.87ms     5.13
+Part100_SingleThread                                        71.83ms    13.92
+Part50_SingleThread                                         57.61ms    17.36
+Part1_SingleThread                                          32.77ms    30.52
 ============================================================================ 
  
 **/
