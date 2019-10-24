@@ -76,12 +76,11 @@ Status GroupByExecutor::prepareYield() {
             if (!status.ok()) {
                 break;
             }
-            yieldCols_.emplace_back(std::make_pair(col, -1));
+            yieldCols_.emplace_back(col);
 
             if (col->alias() != nullptr) {
                 if (col->expr()->isInputExpression()) {
-                    auto inputName = static_cast<InputPropertyExpression*>(col->expr())->prop();
-                    aliases_.emplace(*col->alias(), *inputName);
+                    aliases_.emplace(*col->alias(), col);
                 }
             }
         }
@@ -118,7 +117,7 @@ Status GroupByExecutor::prepareGroup() {
             if (!status.ok()) {
                 break;
             }
-            groupCols_.emplace_back(std::make_pair(col, -1));
+            groupCols_.emplace_back(col);
         }
         if (!status.ok()) {
             break;
@@ -129,60 +128,64 @@ Status GroupByExecutor::prepareGroup() {
 }
 
 
-Status GroupByExecutor::buildIndex() {
-    // Build index of input data for group cols
-    std::unordered_map<std::string, std::pair<int64_t, nebula::cpp2::ValueType>> schemaMap;
+Status GroupByExecutor::checkAll() {
+    // Get index of input data
     for (auto i = 0u; i < schema_->getNumFields(); i++) {
         auto fieldName = schema_->getFieldName(i);
-        schemaMap[fieldName] = std::make_pair(i, schema_->getFieldType(i));
+        schemaMap_[fieldName] = i;
     }
 
+    // Check group col
+    std::unordered_set<std::string> inputGroupCols;
     for (auto &it : groupCols_) {
-        // Get input index
-        if (it.first->expr()->isInputExpression()) {
-            auto groupName = static_cast<InputPropertyExpression*>(it.first->expr())->prop();
-            auto findIt = schemaMap.find(*groupName);
-            if (findIt == schemaMap.end()) {
+        // Check input col
+        if (it->expr()->isInputExpression()) {
+            auto groupName = static_cast<InputPropertyExpression*>(it->expr())->prop();
+            auto findIt = schemaMap_.find(*groupName);
+            if (findIt == schemaMap_.end()) {
                 LOG(ERROR) << "Group `" << *groupName << "' isn't in output fields";
                 return Status::SyntaxError("Group `%s' isn't in output fields", groupName->c_str());
             }
-            it.second = findIt->second.first;
+            inputGroupCols.emplace(*groupName);
             continue;
         }
 
         // Function call
-        if (it.first->expr()->isFunCallExpression()) {
+        if (it->expr()->isFunCallExpression()) {
             continue;
         }
 
-        // Get alias index
-        auto groupName = it.first->expr()->toString();
+        // Check alias col
+        auto groupName = it->expr()->toString();
         auto alisaIt = aliases_.find(groupName);
         if (alisaIt != aliases_.end()) {
-            auto inputName = alisaIt->second;
-            auto findIt = schemaMap.find(inputName);
-            if (findIt == schemaMap.end()) {
-                LOG(ERROR) << "Group `" << groupName << "' isn't in output fields";
-                return Status::SyntaxError("Group `%s' isn't in output fields", groupName.c_str());
+            it = alisaIt->second;
+            auto gName = static_cast<InputPropertyExpression*>(it->expr())->prop();
+            if (it->expr()->isInputExpression()) {
+                inputGroupCols.emplace(*gName);
             }
-            it.second = findIt->second.first;
             continue;
         }
         return Status::SyntaxError("Group `%s' isn't in output fields", groupName.c_str());
     }
 
-    // Build index of input data for yield cols
+    // Check yield cols
     for (auto &it : yieldCols_) {
-        if (it.first->expr()->isInputExpression()) {
-            auto yieldName = static_cast<InputPropertyExpression*>(it.first->expr())->prop();
-            auto findIt = schemaMap.find(*yieldName);
-            if (findIt == schemaMap.end()) {
+        if (it->expr()->isInputExpression()) {
+            auto yieldName = static_cast<InputPropertyExpression*>(it->expr())->prop();
+            auto findIt = schemaMap_.find(*yieldName);
+            if (findIt == schemaMap_.end()) {
                 LOG(ERROR) << "Yield `" << *yieldName << "' isn't in output fields";
-                return Status::SyntaxError("Yield `%s' isn't in output fields", *yieldName);
+                return Status::SyntaxError("Yield `%s' isn't in output fields", yieldName->c_str());
             }
-            it.second = findIt->second.first;
-        } else if (it.first->expr()->isVariableExpression()) {
-            LOG(ERROR) << "Can't support variableExpression: " << it.first->expr()->toString();
+            // Check input yield filed without agg fun and not in group cols
+            if (inputGroupCols.find(*yieldName) == inputGroupCols.end() &&
+                    it->getFunName().empty()) {
+                LOG(ERROR) << "Yield `" << *yieldName << "' isn't in group fields";
+                return Status::SyntaxError("Yield `%s' isn't in group fields", yieldName->c_str());
+            }
+        } else if (it->expr()->isVariableExpression()) {
+            LOG(ERROR) << "Can't support variableExpression: " << it->expr()->toString();
             return Status::SyntaxError("Can't support variableExpression");
         }
         // TODO(laura): to check other expr
@@ -200,7 +203,7 @@ void GroupByExecutor::execute() {
         return;
     }
 
-    auto status = buildIndex();
+    auto status = checkAll();
     if (!status.ok()) {
         DCHECK(onError_);
         onError_(std::move(status));
@@ -226,24 +229,52 @@ void GroupByExecutor::execute() {
 }
 
 
-cpp2::ColumnValue GroupByExecutor::toColumnValue(const VariantType& value) {
+cpp2::ColumnValue GroupByExecutor::toColumnValue(const VariantType& value,
+                                                 cpp2::ColumnValue::Type type) {
     cpp2::ColumnValue colVal;
     try {
-        switch (value.which()) {
-            case VAR_INT64:
+        if (type == cpp2::ColumnValue::Type::__EMPTY__) {
+            switch (value.which()) {
+                case VAR_INT64:
+                    colVal.set_integer(boost::get<int64_t>(value));
+                    break;
+                case VAR_DOUBLE:
+                    colVal.set_double_precision(boost::get<double>(value));
+                    break;
+                case VAR_BOOL:
+                    colVal.set_bool_val(boost::get<bool>(value));
+                    break;
+                case VAR_STR:
+                    colVal.set_str(boost::get<std::string>(value));
+                    break;
+                default:
+                    LOG(ERROR) << "Wrong Type: " << value.which();
+                    colVal.set_str("");
+                    break;
+            }
+            return colVal;
+        }
+        switch (type) {
+            case cpp2::ColumnValue::Type::id:
+                colVal.set_id(boost::get<int64_t>(value));
+                break;
+            case cpp2::ColumnValue::Type::integer:
                 colVal.set_integer(boost::get<int64_t>(value));
                 break;
-            case VAR_DOUBLE:
+            case cpp2::ColumnValue::Type::timestamp:
+                colVal.set_timestamp(boost::get<int64_t>(value));
+                break;
+            case cpp2::ColumnValue::Type::double_precision:
                 colVal.set_double_precision(boost::get<double>(value));
                 break;
-            case VAR_BOOL:
+            case cpp2::ColumnValue::Type::bool_val:
                 colVal.set_bool_val(boost::get<bool>(value));
                 break;
-            case VAR_STR:
+            case cpp2::ColumnValue::Type::str:
                 colVal.set_str(boost::get<std::string>(value));
                 break;
             default:
-                LOG(ERROR) << "Wrong Type: " << value.which();
+                LOG(ERROR) << "Wrong Type: " << static_cast<int32_t>(type);
                 colVal.set_str("");
                 break;
         }
@@ -252,6 +283,28 @@ cpp2::ColumnValue GroupByExecutor::toColumnValue(const VariantType& value) {
         colVal.set_str("");
     }
     return colVal;
+}
+
+
+VariantType GroupByExecutor::toVariantType(const cpp2::ColumnValue& value) {
+    switch (value.getType()) {
+        case cpp2::ColumnValue::Type::id:
+            return value.get_id();
+        case cpp2::ColumnValue::Type::integer:
+            return value.get_integer();
+        case cpp2::ColumnValue::Type::bool_val:
+            return value.get_bool_val();
+        case cpp2::ColumnValue::Type::double_precision:
+            return value.get_double_precision();
+        case cpp2::ColumnValue::Type::str:
+            return value.get_str();
+        case cpp2::ColumnValue::Type::timestamp:
+            return value.get_timestamp();
+        default:
+            LOG(ERROR) << "Unknown ColumnType: " << static_cast<int32_t>(value.getType());
+            break;
+    }
+    return "";
 }
 
 
@@ -280,23 +333,27 @@ Status GroupByExecutor::groupingData() {
 
         // Firstly: group the cols
         for (auto &col : groupCols_) {
-            auto index = col.second;
             auto &getters = expCtx_->getters();
-            cpp2::ColumnValue val;
-            getters.getInputProp = [&] (const std::string &) -> OptVariantType {
-                CHECK_GE(index, 0);
-                val = it.columns[index];
-                return true;
+            cpp2::ColumnValue::Type valType = cpp2::ColumnValue::Type::__EMPTY__;
+            getters.getInputProp = [&] (const std::string & prop) -> OptVariantType {
+                auto indexIt = schemaMap_.find(prop);
+                if (indexIt == schemaMap_.end()) {
+                    LOG(ERROR) << prop <<  " is nonexistent";
+                    return Status::Error("%s is nonexistent", prop.c_str());
+                }
+                CHECK_GE(indexIt->second, 0);
+                auto val = it.columns[indexIt->second];
+                valType = val.getType();
+                return toVariantType(val);
             };
 
-            auto eval = col.first->expr()->eval();
+            auto eval = col->expr()->eval();
             if (!eval.ok()) {
                 return eval.status();
             }
-            if (val.getType() == cpp2::ColumnValue::Type::__EMPTY__) {
-                val = toColumnValue(eval.value());
-            }
-            groupVals.vec.emplace_back(val);
+
+            auto val = toColumnValue(eval.value(), valType);
+            groupVals.vec.emplace_back(std::move(val));
         }
 
         auto findIt = data.find(groupVals);
@@ -306,7 +363,7 @@ Status GroupByExecutor::groupingData() {
         // Init fun handler
         if (findIt == data.end()) {
             for (auto &col : yieldCols_) {
-                auto funPtr = funVec[col.first->getFunName()]();
+                auto funPtr = funVec[col->getFunName()]();
                 calVals.emplace_back(funPtr);
             }
         } else {
@@ -316,22 +373,25 @@ Status GroupByExecutor::groupingData() {
         // Apply value
         auto i = 0u;
         for (auto &col : calVals) {
-            auto index = yieldCols_[i].second;
             auto &getters = expCtx_->getters();
-
-            cpp2::ColumnValue val;
-            getters.getInputProp = [&] (const std::string &) -> OptVariantType{
-                CHECK_GE(index, 0);
-                val = it.columns[index];
-                return true;
+            cpp2::ColumnValue::Type valType = cpp2::ColumnValue::Type::__EMPTY__;
+            getters.getInputProp = [&] (const std::string &prop) -> OptVariantType{
+                auto indexIt = schemaMap_.find(prop);
+                if (indexIt == schemaMap_.end()) {
+                    LOG(ERROR) << prop <<  " is nonexistent";
+                    return Status::Error("%s is nonexistent");
+                }
+                CHECK_GE(indexIt->second, 0);
+                auto val = it.columns[indexIt->second];
+                valType = val.getType();
+                return toVariantType(val);
             };
-            auto eval = yieldCols_[i].first->expr()->eval();
+            auto eval = yieldCols_[i]->expr()->eval();
             if (!eval.ok()) {
                 return eval.status();
             }
-            if (val.getType() == cpp2::ColumnValue::Type::__EMPTY__) {
-                val = toColumnValue(eval.value());
-            }
+
+            auto val = toColumnValue(eval.value(), valType);
             col->apply(val);
             i++;
         }
@@ -360,10 +420,10 @@ std::vector<std::string> GroupByExecutor::getResultColumnNames() const {
     std::vector<std::string> result;
     result.reserve(yieldCols_.size());
     for (auto col : yieldCols_) {
-        if (col.first->alias() == nullptr) {
-            result.emplace_back(col.first->toString());
+        if (col->alias() == nullptr) {
+            result.emplace_back(col->toString());
         } else {
-            result.emplace_back(*col.first->alias());
+            result.emplace_back(*col->alias());
         }
     }
     return result;

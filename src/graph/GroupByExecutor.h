@@ -32,7 +32,7 @@ public:
 private:
     Status prepareGroup();
     Status prepareYield();
-    Status buildIndex();
+    Status checkAll();
 
     Status groupingData();
     void generateOutputSchema();
@@ -40,23 +40,23 @@ private:
     std::vector<std::string> getResultColumnNames() const;
     std::unique_ptr<InterimResult> setupInterimResult();
 
-    cpp2::ColumnValue toColumnValue(const VariantType& value);
+    cpp2::ColumnValue toColumnValue(const VariantType& value, cpp2::ColumnValue::Type type);
+    VariantType toVariantType(const cpp2::ColumnValue& value);
 
 
 private:
-    GroupBySentence                                          *sentence_{nullptr};
-    std::vector<cpp2::RowValue>                               rows_;
-    std::shared_ptr<const meta::SchemaProviderIf>             schema_{nullptr};
+    GroupBySentence                                           *sentence_{nullptr};
+    std::vector<cpp2::RowValue>                                rows_;
+    std::shared_ptr<const meta::SchemaProviderIf>              schema_{nullptr};
 
-    // index of input data and YieldColumn
-    using ColumnIndexs = std::vector<std::pair<YieldColumn*, int64_t>>;
-
-    ColumnIndexs                                               groupCols_;
-    ColumnIndexs                                               yieldCols_;
+    std::vector<YieldColumn*>                                  groupCols_;
+    std::vector<YieldColumn*>                                  yieldCols_;
     std::shared_ptr<SchemaWriter>                              resultSchema_{nullptr};
     std::unique_ptr<ExpressionContext>                         expCtx_;
     // key: alias , value input name
-    std::unordered_map<std::string, std::string>               aliases_;
+    std::unordered_map<std::string, YieldColumn*>              aliases_;
+    // input <fieldName, index>
+    std::unordered_map<std::string, int64_t>                   schemaMap_;
 };
 }  // namespace graph
 }  // namespace nebula

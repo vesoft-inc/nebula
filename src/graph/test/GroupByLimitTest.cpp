@@ -295,7 +295,7 @@ TEST_F(GroupByLimitTest, GroupByTest) {
         };
        ASSERT_TRUE(verifyResult(resp, expected));
     }
-    // Group multi col, on alisa col
+    // Has alias col
     {
         cpp2::ExecutionResponse resp;
         auto &player1 = players_["Aron Baynes"];
@@ -305,7 +305,7 @@ TEST_F(GroupByLimitTest, GroupByTest) {
                     "serve._dst AS id, "
                     "serve.start_year AS start, "
                     "serve.end_year AS end"
-                    "| GROUP BY $-.name, start_year "
+                    "| GROUP BY teamName, start_year "
                     "YIELD $-.name AS teamName, "
                     "$-.start AS start_year, "
                     "MAX($-.start), "
@@ -392,15 +392,16 @@ TEST_F(GroupByLimitTest, GroupByTest) {
                     "| GROUP BY $-.name, abs(5) "
                     "YIELD $-.name AS name, "
                     "SUM(1.5) AS sum, "
-                    "COUNT(*) AS count";
+                    "COUNT(*) AS count,"
+                    "1+1 AS cal";
         auto query = folly::stringPrintf(fmt, player1.vid(), player2.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, double, uint64_t>> expected = {
-                {"LeBron James", 3.0, 2},
-                {"Chris Paul", 3.0, 2},
-                {"Dwyane Wade", 1.5, 1},
-                {"Carmelo Anthony", 1.5, 1},
+        std::vector<std::tuple<std::string, double, uint64_t, uint64_t>> expected = {
+                {"LeBron James", 3.0, 2, 2},
+                {"Chris Paul", 3.0, 2, 2},
+                {"Dwyane Wade", 1.5, 1, 2},
+                {"Carmelo Anthony", 1.5, 1, 2},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
