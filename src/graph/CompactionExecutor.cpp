@@ -44,11 +44,7 @@ void CompactionExecutor::execute() {
                                        "compact-dispatch",
                                        spaceName.c_str(), spaceId);
         auto result = http::HttpClient::get(url);
-        if (result.ok()) {
-            return true;
-        } else {
-            return false;
-        }
+        return result.ok();
     };
     auto future = folly::async(func);
 
