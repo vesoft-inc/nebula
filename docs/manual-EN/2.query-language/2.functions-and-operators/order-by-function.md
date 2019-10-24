@@ -1,18 +1,19 @@
 # Order By Function
 
 Similar with SQL, `ORDER BY` can be used to sort in ascending (`ASC`) or descending (`DESC`) order for return results.
-And it can only be used in the `PIEP`-syntax ("|")
+And it can only be used in the `PIPE`-syntax ("|")
 
 ```
 | ORDER BY <prop> ASC | DESC [, <prop> ASC | DESC ...] 
 ```
+
 By default, `ORDER BY` sorts the records in ascending order if no `ASC` or `DESC` is given.
 
 ## Example
 
 ```
-nebula> FETCH PROP ON player 1,2,3,4 YIELD player.age AS age, player.weight as weight | ORDER BY $-.age, $-.weight DESC  
--- get four of vertices and sort by their age begin with the youngest one, and for those with the same age, sort by their weight. 
+nebula> FETCH PROP ON player 1,2,3,4 YIELD player.age AS age, player.weight AS weight | ORDER BY $-.age, $-.weight DESC  
+-- get four of vertices and sort by their age begin with the youngest one, and for those with the same age, sort by their weight.
 ```
 (see `FETCH` for the usage)
 

@@ -59,7 +59,6 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
     * [Drop Edge Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-edge-syntax.md)
     * [Drop Space Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-space-syntax.md)
     * [Drop Tag Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-tag-syntax.md)
-    * [Show Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/show-syntax.md)
   * Data Query And Manipulation Statements
     * [Delete Vertex Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-vertex-syntax.md)
     * [Fetch Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/fetch-syntax.md)
@@ -72,6 +71,7 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
   * Utility Statements
     * [Describe Syntax](2.query-language/4.statement-syntax/3.utility-statements/describe-syntax.md)
     * [Use Syntax](2.query-language/4.statement-syntax/3.utility-statements/use-syntax.md)
+    * [Show Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/show-syntax.md)
   * Graph Algorithms
     * [Find Path Syntax](2.query-language/4.statement-syntax/4.graph-algorithms/find-path-syntax.md)
 
@@ -110,5 +110,4 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
 ### Video
 
 * [YouTube](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw/)
-* [bilibili](https://www.bilibili.com/video/av67454132)
-
+* [bilibili](https://space.bilibili.com/472621355)
