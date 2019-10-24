@@ -328,7 +328,7 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             if (!status.ok()) {
                 LOG(ERROR) << "Get getOutputSchema failed" << status;
                 DCHECK(onError_);
-                onError_(std::move(status));
+                onError_(Status::Error("Internal error."));
                 return;
             }
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
