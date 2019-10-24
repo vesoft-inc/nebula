@@ -1,6 +1,6 @@
 # CREATE TAG / EDGE 语法
 
-```
+```sql
 CREATE {TAG | EDGE} tag_name|edge_name
     (create_definition, ...)
     [tag_edge_options]
@@ -28,11 +28,11 @@ Nebula 的图结构由带有属性的 tags 和 edges 组成。`CREATE TAG` 使�
 
 * **tag_name 和 edge_name**
 
-    tags 和 edgeTypes 的名称在图中必须 **唯一**，且名称被定义后无法被修改。Tag 和 edgeType 的命名规则和 space 的命名规则一致。参见 [Schema Object Name](../../language-structure/schema-object-names.md)。
+    tags 和 edgeTypes 的名称在图中必须 **唯一**，且名称被定义后无法被修改。Tag 和 edgeType 的命名规则和 space 的命名规则一致。参见 [Schema Object Name](../../3.language-structure/schema-object-names.md)。
 
 ### 属性名和数据类
 
-* **prop_name** 
+* **prop_name**
 
     prop_name 表示每个属性的名称。在每个 tag 和 edgeType 中必须唯一。
 
