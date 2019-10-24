@@ -11,7 +11,7 @@ YIELD
     [, <col_name> [AS <col_alias>] ...]
 ```
 
-`YIELD` is commonly used to return results generated with `GO`.<!-- `GO` usage please refer [GO](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-manipulation-statements/go-syntax.md).-->
+`YIELD` is commonly used to return results generated with `GO`.
 
 ```sql
 nebula> GO FROM 201 OVER relations_edge YIELD $$.student.name AS Friend,\

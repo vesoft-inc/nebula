@@ -56,11 +56,7 @@ Greater than or equal:
 
 ```ngql
 nebula> YIELD 2 >= 2;
-==========
-| (2>=2) |
-==========
-| true |
-----------
+[ERROR (-8)]: A string type can not be compared with a non-string type.
 ```
 
 * &lt;
@@ -95,11 +91,7 @@ Not equal:
 
 ```ngql
 nebula> YIELD 1 != '1'
-============
-| (1!="1") |
-============
-| true |
-------------
+A string type can not be compared with a non-string type.
 ```
 
 * udf_is_in()
