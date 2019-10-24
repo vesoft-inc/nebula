@@ -11,10 +11,11 @@ YIELD
     [, <col_name> [AS <col_alias>] ...]
 ```
 
-`YIELD` is commonly used to return results generated with `GO`. `GO` usage please refer [GO](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-manipulation-statements/go-syntax.md).
+`YIELD` is commonly used to return results generated with `GO`.
 
 ```sql
-nebula> GO FROM 201 OVER relations_edge YIELD $$.student.name AS Friend, $$.student.age AS Age, $$.student.gender AS Gender
+nebula> GO FROM 201 OVER relations_edge YIELD $$.student.name AS Friend,\
+        $$.student.age AS Age, $$.student.gender AS Gender
 =========================
 | Friend | Age | Gender |
 =========================
@@ -41,7 +42,7 @@ YIELD
 ```
 
 ```sql
-(user@127.0.0.1) [myspace_test2]> GO FROM 201 OVER like YIELD like._dst AS id | YIELD $-.* WHERE $-.id == 200;
+nebula> GO FROM 201 OVER like YIELD like._dst AS id | YIELD $-.* WHERE $-.id == 200;
 
 =========
 | $-.id |
@@ -49,7 +50,8 @@ YIELD
 | 200   |
 ---------
 
-(user@127.0.0.1) [myspace_test2]> $var2 = GO FROM 200 OVER like;$var1 = GO FROM 201 OVER like;YIELD $var1.* UNION YIELD $var2.*;
+nebula> $var2 = GO FROM 200 OVER like;$var1 = GO FROM 201 OVER like; \
+    YIELD $var1.* UNION YIELD $var2.*;
 
 ===================
 | $var1.like._dst |
@@ -67,21 +69,21 @@ YIELD
 `YIELD` statement can be used independently to retrieve computation results without reference to any graph. You can use `AS` to rename an alias.
 
 ```sql
-(user@127.0.0.1) [myspace_test2]> YIELD 1 + 1
+nebula> YIELD 1 + 1
 =========
 | (1+1) |
 =========
 | 2     |
 ---------
 
-(user@127.0.0.1) [myspace_test2]> YIELD "Hel" + "\tlo" AS HELLO_1, ", World!" AS WORLD_2
+nebula> YIELD "Hel" + "\tlo" AS HELLO_1, ", World!" AS WORLD_2
 ======================
 | HELLO_1 | WORLD_2  |
 ======================
 | Hel  lo  | , World! |
 ----------------------
 
-(user@127.0.0.1) [myspace_test2]> YIELD hash("Tim") % 100
+nebula> YIELD hash("Tim") % 100
 =====================
 | (hash("Tim")%100) |
 =====================

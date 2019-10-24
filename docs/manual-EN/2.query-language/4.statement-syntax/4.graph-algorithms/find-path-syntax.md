@@ -27,7 +27,7 @@ FIND SHORTEST | ALL PATH FROM <vertex_id_list> TO <vertex_id_list> OVER <edge_ty
 Path is displayed as `id <edge_name, ranking> id` in console.
 
 ```
-(user@127.0.0.1) [myspace_test2]> FIND SHORTEST PATH FROM 200 to 201 OVER *
+nebula> FIND SHORTEST PATH FROM 200 to 201 OVER *
 ============================
 | _path_ |
 ============================
@@ -36,7 +36,7 @@ Path is displayed as `id <edge_name, ranking> id` in console.
 ```
 
 ```
-(user@127.0.0.1) [myspace_test2]> FIND ALL PATH FROM 200 to 201 OVER *
+nebula> FIND ALL PATH FROM 200 to 201 OVER *
 ====================================================================================================
 | _path_ |
 ====================================================================================================

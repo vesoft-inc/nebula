@@ -1,123 +1,113 @@
-# Welcome to the official Nebula Graph documentation.
+# Welcome to the official Nebula Graph documentation
 
-**Nebula Graph** is a distributed, scalable, lightning-fast graph database. 
+**Nebula Graph** is a distributed, scalable, lightning-fast graph database.
 
-It is the only solution in the world capable to host graphs with dozens of billions of vertices (nodes) and trillions of edges, while still provides millisecond latency.
+It is the optimal solution in the world capable to host graphs with dozens of billions of vertices (nodes) and trillions of edges, while still provides millisecond latency.
 
-----
+## Prefix
 
-* [**[Abouts](0.about-this-manual.md)**] About this manual.
-* [**[Changes](CHANGELOG.md)**] Manual change log.
+* [About This Manual](0.about-this-manual.md)
+* [Manual Change Log](CHANGELOG.md)
 
-----
+## Overview (For Beginners)
 
-<!-- TODO fix links -->
+* [Introduction](1.overview/0.introduction.md)
+* Concepts
+  * [Data Model](1.overview/1.concepts/1.data-model.md)
+  * [Query Language Overview](1.overview/1.concepts/2.nGQL-overview.md)
+* Quick Start
+  * [Get Started](1.overview/2.quick-start/1.get-started.md)
+  * [Build Source Code](3.build-develop-and-administration/1.build/1.build-source-code.md)
+  * [Deploy Cluster](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
+  * [Import .csv File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-operations/data-import/import-csv-file.md)
+  * [Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-operations/data-import/download-and-ingest-sst-file.md)
+* Design And Architecture
+  * [Design Overview](1.overview/3.design-and-architecture/1.design-and-architecture.md)
+  * [Storage Architecture](1.overview/3.design-and-architecture/2.storage-design.md)
 
-## Overview
-
-* [**[Concepts](https://github.com/vesoft-inc/nebula/blob/master/README.md)**] An overall concept of Nebula Graph
-
-* [**[Getting Started](https://github.com/vesoft-inc/nebula/blob/master/docs/get-started.md)**] Tutorial to help start with Nebula Graph
-* [**[Query Language nGQL](https://github.com/vesoft-inc/nebula/blob/master/docs/nGQL-tutorial.md)**] Tutorial of Nebula Graph's query language nGQL
-* [**[Data Model](https://github.com/vesoft-inc/nebula/blob/masterdo[**cs/manual-EN/overview/data-model.md)**]
-* [**[Design and Arc](https://github.com/vesoft-inc/nebula/blobma[**ster/docs/manual-EN/overview/design-and-arc.md)**] Architecture information of Nebula Graph
-* [**[Manual Example Graph](https://github.com/vesoft-inc/nebula/blobma[**ster/docs/manual-EN/overview/manual-example-graph.md)**]
-* [**[Manual Introduction](https://github.com/vesoft-inc/nebula/blobma[**ster/docs/manual-EN/overview/manual-introduction.md)**]
-* [**[Overview of Nebula Graph](https://github.com/vesoft-inc/nebulabl[**ob/master/docs/manual-EN/overview/overview-of-nebula-graph.md)**]
-
-## Query Language
-
-* Algorithm
-  * [Find Path Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/algorithm/find-path-syntax.md)
+## Query Language (For All Users)
 
 * Data Types
-
-  * [Numeric Types](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/data-types/numeric-types.md)
-  * [String Types](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/data-types/string-types.md)
-  * [Timestamp Types](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/data-types/.timestamp-types.md)
-
-
-* Function and Operators
-
-  * [Bitwise Operators](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/functions-and-operators/bitwise-operators.md)
-  * [Comparison Functions and Operators](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/functions-and-operators/comparison-functions-and-operators.md)
-  * [Functions and Operator Reference](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/functions-and-operators/functions-and-operator-reference.md)
-  * [Group by Function](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/functions-and-operators/group-by-function.md)
-  * [Limit Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/functions-and-operators/limit-syntax.md)
-  * [Logical Operators](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/functions-and-operators/logical-operators.md)
-  * [Operator Precedence](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/functions-and-operators/operator-precedence.md)
-  * [Order by Function](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/functions-and-operators/order-by-function.md)
-  * [Set Operations](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/functions-and-operators/set-operations.md)
-  * [Type Conversion](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/functions-and-operators/type-conversion.md)
-
-
+  * [Data Types](2.query-language/1.data-types/data-types.md)
+  * [Type Conversion](2.query-language/1.data-types/type-conversion.md)
+* Functions And Operators
+  * [Bitwise Operators](2.query-language/2.functions-and-operators/bitwise-operators.md)
+  * [Build-In Functions](2.query-language/2.functions-and-operators/build-in-functions.md)
+  * [Comparison Functions And Operators](2.query-language/2.functions-and-operators/comparison-functions-and-operators.md)
+  * [Group By Function](2.query-language/2.functions-and-operators/group-by-function.md)
+  * [Limit Syntax](2.query-language/2.functions-and-operators/limit-syntax.md)
+  * [Logical Operators](2.query-language/2.functions-and-operators/logical-operators.md)
+  * [Order By Function](2.query-language/2.functions-and-operators/order-by-function.md)
+  * [Set Operations](2.query-language/2.functions-and-operators/set-operations.md)
+  * [uuid Function](2.query-language/2.functions-and-operators/uuid.md)
 * Language Structure
   * Literal Values
-
-    * [Null Values](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/language-structure/literal-values/NULL-values.md)
-    * [Boolean Literals](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/language-structure/literal-values/boolean-literals.md)
-    * [Numeric Literals](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/language-structure/literal-values/numeric-literals.md)
-    * [String Literals](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/language-structure/literal-values/string-literals.md)
-
-  * [Comment Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/language-structure/comment-syntax.md)
-  * [Expression](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/language-structure/expression.md)
-  * [Identifier Case Sensitivity](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/language-structure/identifier-case-sensitivity.md)
-  * [Keywords and Reserved Words](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/language-structure/keywords-and-reserved-words.md)
-  * [Property Reference](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/language-structure/property-reference.md)
-  * [Schema Object Names](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/language-structure/schema-object-names.md)
-  * [Statement Composition](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/language-structure/statement-composition.md)
-  * [User Defined Variable](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/language-structure/user-defined_variable.md)
-
-
+    * [Boolean Literals](2.query-language/3.language-structure/literal-values/boolean-literals.md)
+    * [Numeric Literals](2.query-language/3.language-structure/literal-values/numeric-literals.md)
+    * [String Literals](2.query-language/3.language-structure/literal-values/string-literals.md)
+  * [Comment Syntax](2.query-language/3.language-structure/comment-syntax.md)
+  * [Identifier Case Sensitivity](2.query-language/3.language-structure/identifier-case-sensitivity.md)
+  * [Pipe Syntax](2.query-language/3.language-structure/pipe-syntax.md)
+  * [Property Reference](2.query-language/3.language-structure/property-reference.md)
+  * [Schema Object Names](2.query-language/3.language-structure/schema-object-names.md)
+  * [Statement Composition](2.query-language/3.language-structure/statement-composition.md)
 * Statement Syntax
-  
-  * Data Definition Syntax
-    * [Alter Tag Edge Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-definition-statements/alter-tag-edge-syntax.md)
-    * [Create Space Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-definition-statements/create-space-syntax.md)
-    * [Create Tag Edge Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-definition-statements/create-tag-edge-syntax.md)
-    * [Drop Edge Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-definition-statements/drop-edge-syntax.md)
-    * [Drop Space Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-definition-statements/drop-space-syntax.md)
-    * [Drop Tag Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-definition-statements/drop-tag-syntax.md)
-    * [Show Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-definition-statements/show-syntax.md)
-
-  * Data Manipulation Statements
-
-    * [Fetch Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-manipulation-statements/fetch-syntax.md)
-    * [Go Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-manipulation-statements/go-syntax.md)
-    * [Insert Edge Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-manipulation-statements/insert-edge-syntax.md)
-    * [Insert Vertex Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-manipulation-statements/insert-vertex-syntax.md)
-    * [Pipe Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-manipulation-statements/pipe-syntax.md)
-    * [Where Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-manipulation-statements/where-syntax.md)
-    * [Yield Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-manipulation-statements/yield-syntax.md)
-
+  * Data Definition Statements
+    * [Alter Tag/Edge Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/alter-tag-edge-syntax.md)
+    * [Create Space Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/create-space-syntax.md)
+    * [Create Tag/Edge Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/create-tag-edge-syntax.md)
+    * [Drop Edge Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-edge-syntax.md)
+    * [Drop Space Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-space-syntax.md)
+    * [Drop Tag Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-tag-syntax.md)
+  * Data Query And Manipulation Statements
+    * [Delete Vertex Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-vertex-syntax.md)
+    * [Fetch Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/fetch-syntax.md)
+    * [Go Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/go-syntax.md)
+    * [Insert Edge Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/insert-edge-syntax.md)
+    * [Insert Vertex Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/insert-vertex-syntax.md)
+    * [Update Vertex/Edge Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/update-vertex-edge-syntax.md)
+    * [Where Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/where-syntax.md)
+    * [Yield Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/yield-syntax.md)
   * Utility Statements
-    * [Describe Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/utility-statements/describe-syntax.md)
-    * [Use Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/utility-statements/use-syntax.md)
+    * [Describe Syntax](2.query-language/4.statement-syntax/3.utility-statements/describe-syntax.md)
+    * [Use Syntax](2.query-language/4.statement-syntax/3.utility-statements/use-syntax.md)
+    * [Show Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/show-syntax.md)
+  * Graph Algorithms
+    * [Find Path Syntax](2.query-language/4.statement-syntax/4.graph-algorithms/find-path-syntax.md)
 
-## Build and Administration
+## Build Develop And Administration (For Developers And DBA)
 
-  * Data Administration Statements
+* Build
+  * [Build Source Code](3.build-develop-and-administration/1.build/1.build-source-code.md)
+  * [Build By Docker](3.build-develop-and-administration/1.build/2.build-by-docker.md)
+* Develop And Interface
+  * [Key Value API](3.build-develop-and-administration/2.develop-and-interface/kv-interfaces.md)
+* Deploy And Administrations
+  * Deployment
+    * [Deploy Cluster On Docker](3.build-develop-and-administration/2.develop-and-interface/kv-interfaces.md)
+    * [Deploy Cluster](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
+  * Server Administration
     * Account Management Statements
-      * [Drop User Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-administration-statements/account-management-statements/drop-user-syntax.md)
+      * [Drop User Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/drop-user-syntax.md)
     * Configuration Statements
-      * [Variables Syntax](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/statement-syntax/data-administration-statements/configuration-statements/variables-syntax.md)
+      * [Variables Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/variables-syntax.md)
+    * Storage Service Operation
+      * Data Import
+        * [Download And Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-operations/data-import/download-and-ingest-sst-file.md)
+        * [Import .csv File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-operations/data-import/import-csv-file.md)
+      * [Storage Balance](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-operations/storage-balance.md)
+      * [Storage Metrics](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-operations/storage-metrics.md)
 
+## Contributions (For Contributors)
 
-## Development Guild
-
-* Build and Deployment
-    * [**[Build Nebula Graph](https://github.com/vesoft-inc/nebula/blob/master/docs/how-to-build.md)**] Introductions on how to build source code
-    * [**[Deploy Clustter](https://github.com/vesoft-inc/nebula/blob/master/docs/deploy-cluster.md)**]
-    How to deploy cluster
-* Misc
-    * [**[Contribute to Nebula Graph](https://github.com/vesoft-inc/nebula/blob/master/docs/how-to-contribute.md)**] Introductions on how to contribute to Nebula Graph
-    * [**[Contribute to Documentation](https://github.com/vesoft-inc/nebula/blob/master/docs/contribute-to-documentation.md)**] Contribute to document 
-    * [**[Style Guild](https://github.com/vesoft-inc/nebula/blob/master/docs/developer-documentation-style-guide.md)**] Develop style guild
+* [Contribute To Documentations](4.contributions/contribute-to-documentation.md)
+* [Cpp Coding Style](4.contributions/cpp-coding-style.md)
+* [Developer Documentation Style Guide](4.contributions/developer-documentation-style-guide.md)
+* [How to Contribute](4.contributions/how-to-contribute.md)
 
 ## Misc
 
 ### Video
 
-   * [YouTube](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw/)
-   * [bilibili](https://www.bilibili.com/video/av67454132)
-
+* [YouTube](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw/)
+* [bilibili](https://space.bilibili.com/472621355)

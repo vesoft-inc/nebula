@@ -1,6 +1,6 @@
 # Deploy Cluster
 
-This tutorial provides an introduction to deploy `Nebula` cluster.
+This section provides an introduction to deploy `Nebula` cluster.
 
 ## Download and install package
 
