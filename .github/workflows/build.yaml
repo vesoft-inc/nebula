@@ -32,7 +32,16 @@ jobs:
         run: |
           cd _build && make -j $(nproc)
         shell: bash
-      - name: test
+      - name: test in multithreads
+        env:
+          NEBULA_DEP_BIN: /opt/nebula/third-party/bin
+          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
+        run: |
+          cd _build
+          ${NEBULA_DEP_BIN}/ctest -j $(nproc) --output-on-failure
+        shell: bash
+      - name: test in singlethread
+        if: failure()
         env:
           NEBULA_DEP_BIN: /opt/nebula/third-party/bin
           LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}

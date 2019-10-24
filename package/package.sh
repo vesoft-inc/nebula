@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 #  package nebula as one deb/rpm
 # ./package.sh -v <version> -s <strip_enable> the version should be match tag name
@@ -31,7 +31,7 @@ do
 done
 
 # version is null, get from tag name
-[[ -z $version ]] && version=`git describe --match 'v*' | sed 's/^v//'`
+[[ -z $version ]] && version=`git describe --tags $(git rev-list --tags --max-count=1) | sed 's/^v//'`
 
 if [[ -z $version ]]; then
     echo "version is null, exit"
@@ -92,7 +92,7 @@ function package {
     fi
 
     if [[ "$tagetPackageName" == "" ]]; then
-        echo "Unsupported system"
+        echo ">>> Unsupported system <<<"
         exit -1
     fi
 

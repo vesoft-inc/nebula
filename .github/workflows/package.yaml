@@ -3,6 +3,9 @@ name: package
 on:
   schedule:
     - cron: '0 18 * * *'
+  release:
+    types:
+      - published
 
 jobs:
   package:
@@ -19,10 +22,13 @@ jobs:
       image: vesoft/nebula-dev:${{ matrix.os }}
     steps:
       - uses: actions/checkout@v1
-        with:
-          fetch-depth: 1
-      - name: Package
+      - name: Package nightly
+        if: github.event_name == 'schedule'
         run: ./package/package.sh -v $(git rev-parse --short HEAD)
+        shell: bash
+      - name: Package release
+        if: github.event_name == 'release'
+        run: ./package/package.sh
         shell: bash
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
