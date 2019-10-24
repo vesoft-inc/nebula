@@ -187,4 +187,3 @@ nebula> SHOW HOSTS;
   sudo yum remove openssl
   sudo yum install openssl
   ```
-

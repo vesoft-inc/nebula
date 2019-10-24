@@ -26,3 +26,4 @@ Testing/
 target/
 cluster.id
 pids/
+.idea/
