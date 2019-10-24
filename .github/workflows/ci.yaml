@@ -1,4 +1,4 @@
-name: Nebula Build and Test Workflow
+name: build
 
 on:
   push:
@@ -19,13 +19,24 @@ jobs:
         with:
           fetch-depth: 1
       - name: cmake
+        env:
+          NEBULA_BIN: /opt/nebula/third-party/bin
+          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
         run: |
-          mkdir _build
-          cd _build && cmake ..
+          mkdir _build && cd _build
+          ${NEBULA_BIN}/cmake -DCMAKE_C_COMPILER=${NEBULA_BIN}/gcc -DCMAKE_CXX_COMPILER=${NEBULA_BIN}/g++ ..
         shell: bash
       - name: make
-        run: cd _build && make -j $(nproc)
+        env:
+          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
+        run: |
+          cd _build && make -j $(nproc)
         shell: bash
       - name: test
-        run: cd _build && ctest -j $(nproc) --output-on-failure
+        env:
+          NEBULA_BIN: /opt/nebula/third-party/bin
+          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
+        run: |
+          cd _build
+          ${NEBULA_BIN}/ctest -j $(nproc) --output-on-failure
         shell: bash

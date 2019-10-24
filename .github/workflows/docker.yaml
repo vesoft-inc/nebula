@@ -1,4 +1,4 @@
-name: Nebula Service Docker Image Building Workflow
+name: docker
 
 on:
   schedule:
@@ -31,28 +31,3 @@ jobs:
           docker build -t ${IMAGE_NAME} -f docker/Dockerfile.${{ matrix.service }} .
           docker push ${IMAGE_NAME}
         shell: bash
-
-  package:
-    name: build package
-    runs-on: ubuntu-18.04
-    strategy:
-      matrix:
-        os:
-          - ubuntu1604
-          - ubuntu1804
-          - centos6
-          - centos7
-    container:
-      image: vesoft/nebula-dev:${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v1
-        with:
-          fetch-depth: 1
-      - name: Package
-        run: ./package/package.sh -v $(git rev-parse --short HEAD)
-        shell: bash
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v1
-        with:
-          name: ${{ matrix.os }}
-          path: build/nebula-$(git rev-parse --short HEAD).*

@@ -28,7 +28,3 @@ Testing/
 target/
 cluster.id
 pids/
-
-# docker
-docker/data/
-docker/logs/

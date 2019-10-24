@@ -151,10 +151,6 @@ fi
 %files simple_kv_verify
 %attr(0755,root,root) %{_bindir}/simple_kv_verify
 
-# storage_integrity rpm
-%files storage_integrity
-%attr(0755,root,root) %{_bindir}/storage_integrity
-
 %debug_package
 
 # missing not found ids
