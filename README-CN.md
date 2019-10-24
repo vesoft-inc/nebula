@@ -23,7 +23,7 @@
 
 ## 获取 `Nebula` ##
 
-除编译源代码外，也可使用 [Nebula Graph 镜像](ttps://hub.docker.com/r/vesoft/nebula-graph) 进行试用。
+除编译源代码外，也可使用 [Nebula Graph 镜像](https://hub.docker.com/r/vesoft/nebula-graph) 进行试用。
 更多详情参见 [Get Started](docs/manual-CN/1.overview/2.quick-start/1.get-started.md). 您也可以在这里访问 [详细文档](docs/manual-CN/README.md)
 
 ## 参与 `Nebula` ##
