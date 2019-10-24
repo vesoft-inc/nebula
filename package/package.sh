@@ -4,6 +4,8 @@
 # ./package.sh -v <version> -s <strip_enable> the version should be match tag name
 #
 
+set -ex
+
 export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:$LIBRARY_PATH
 
 NEBULA_BIN=/opt/nebula/third-party/bin
@@ -80,9 +82,9 @@ function package {
 
     if [[ -f "/etc/redhat-release" ]]; then
         # TODO: update minor version according to OS
-        centosVersion=`cat /etc/redhat-release | cut -d' ' -f4 | cut -d. -f1`
-        [[ $centosVersion == "7" ]] && tagetPackageName="nebula-${version}.el7-5.x86_64.rpm"
-        [[ $centosVersion == "6" ]] && tagetPackageName="nebula-${version}.el6-5.x86_64.rpm"
+        centosMajorVersion=`cat /etc/redhat-release | tr -dc '0-9.' | cut -d \. -f1`
+        [[ "$centosMajorVersion" == "7" ]] && tagetPackageName="nebula-${version}.el7-5.x86_64.rpm"
+        [[ "$centosMajorVersion" == "6" ]] && tagetPackageName="nebula-${version}.el6-5.x86_64.rpm"
     elif [[ -f "/etc/lsb-release" ]]; then
         ubuntuVersion=`cat /etc/lsb-release | grep DISTRIB_RELEASE | cut -d "=" -f 2 | sed 's/\.//'`
         tagetPackageName="nebula-${version}.ubuntu${ubuntuVersion}.amd64.deb"
