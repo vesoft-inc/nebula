@@ -47,15 +47,15 @@ Status FetchExecutor::prepareYield() {
 
     if (expCtx_->hasSrcTagProp() || expCtx_->hasDstTagProp()) {
         return Status::SyntaxError(
-                    "Only support form of alias.prop in fetch sentence.");
+                    "tag.prop and edgetype.prop are supported in fetch sentence.");
     }
 
     auto aliasProps = expCtx_->aliasProps();
     for (auto pair : aliasProps) {
         if (pair.first != *labelName_) {
             return Status::SyntaxError(
-                "[%s.%s] tag not declared in %s.",
-                    pair.first.c_str(), pair.second.c_str(), (*labelName_).c_str());
+                "Near [%s.%s], tag or edge should be declared in statement first.",
+                    pair.first.c_str(), pair.second.c_str());
         }
     }
 
@@ -103,7 +103,7 @@ Status FetchExecutor::getOutputSchema(
         const RowReader *reader,
         SchemaWriter *outputSchema) const {
     if (expCtx_ == nullptr || resultColNames_.empty()) {
-        LOG(FATAL) << "Input is empty";
+        return Status::Error("Input is empty.");
     }
     auto collector = std::make_unique<Collector>(schema);
     auto &getters = expCtx_->getters();
@@ -121,7 +121,7 @@ Status FetchExecutor::getOutputSchema(
     }
 
     if (colTypes_.size() != record.size()) {
-        return Status::Error("Input is not equal to output");
+        return Status::Error("Input size is not equal to output");
     }
     using nebula::cpp2::SupportedType;
     auto index = 0u;
@@ -143,7 +143,10 @@ Status FetchExecutor::getOutputSchema(
                     type = SupportedType::STRING;
                     break;
                 default:
-                    LOG(FATAL) << "Unknown VariantType: " << record[index].which();
+                    std::string msg = folly::stringPrintf(
+                            "Unknown VariantType: %d", record[index].which());
+                    LOG(ERROR) << msg;
+                    return Status::Error(msg);
             }
         } else {
             type = it;
