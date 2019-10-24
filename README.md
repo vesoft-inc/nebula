@@ -1,11 +1,16 @@
 <p align="center">
   <img src="docs/logo.png"/>
   <br> English | <a href="README-CN.md">中文</a>
-  <br>A distributed, scalable, lighting-fast graph database
-  <br>
-  <img src="https://github.com/vesoft-inc/nebula/workflows/build/badge.svg" />
-  <img src="https://github.com/vesoft-inc/nebula/workflows/docker/badge.svg" />
-  <img src="https://github.com/vesoft-inc/nebula/workflows/package/badge.svg" />
+  <br>A distributed, scalable, lighting-fast graph database<br>
+  <a href="https://github.com/vesoft-inc/nebula/actions?workflow=build">
+    <img src="https://github.com/vesoft-inc/nebula/workflows/build/badge.svg" />
+  </a>
+  <a href="https://github.com/vesoft-inc/nebula/actions?workflow=docker">
+    <img src="https://github.com/vesoft-inc/nebula/workflows/docker/badge.svg" />
+  </a>
+  <a href="https://github.com/vesoft-inc/nebula/actions?workflow=package">
+    <img src="https://github.com/vesoft-inc/nebula/workflows/package/badge.svg" />
+  </a>
   <br>
 </p>
 

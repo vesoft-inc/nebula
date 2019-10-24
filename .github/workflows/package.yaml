@@ -22,16 +22,18 @@ jobs:
       image: vesoft/nebula-dev:${{ matrix.os }}
     steps:
       - uses: actions/checkout@v1
-      - name: Package nightly
-        if: github.event_name == 'schedule'
-        run: ./package/package.sh -v $(git rev-parse --short HEAD)
-        shell: bash
-      - name: Package release
-        if: github.event_name == 'release'
+      - name: package
         run: ./package/package.sh
         shell: bash
-      - name: Upload artifacts
+      - name: Upload nightly artifacts
+        if: github.event_name == 'schedule'
         uses: actions/upload-artifact@v1
         with:
-          name: ${{ matrix.os }}
+          name: ${{ matrix.os }}-nightly
+          path: build/cpack_output
+      - name: Upload release artifacts
+        if: github.event_name == 'release'
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ matrix.os }}-release
           path: build/cpack_output

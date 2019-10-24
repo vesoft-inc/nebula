@@ -13,7 +13,7 @@ NEBULA_DEP_BIN=/opt/nebula/third-party/bin
 version=""
 strip_enable="FALSE"
 usage="Usage: ${0} -v <version> -s <TRUE/FALSE>"
-PROJ_DIR="$(cd "$(dirname "$0")" && pwd)"/../
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"/../
 
 while getopts v:t:s: opt;
 do
@@ -31,7 +31,9 @@ do
 done
 
 # version is null, get from tag name
-[[ -z $version ]] && version=`git describe --tags $(git rev-list --tags --max-count=1) | sed 's/^v//'`
+[[ -z $version ]] && version=`git describe --exact-match --abbrev=0 --tags | sed 's/^v//'`
+# version is null, get from short commit sha
+[[ -z $version ]] && version=`git describe --always`
 
 if [[ -z $version ]]; then
     echo "version is null, exit"
@@ -51,7 +53,7 @@ echo "current version is [ $version ], strip enable is [$strip_enable]"
 # args: <version>
 function build {
     version=$1
-    build_dir=$PROJ_DIR/build
+    build_dir=$PROJECT_DIR/build
     if [[ -d $build_dir ]]; then
         rm -rf ${build_dir}/*
     else
@@ -60,7 +62,7 @@ function build {
 
     pushd ${build_dir}
 
-    $NEBULA_DEP_BIN/cmake -DCMAKE_C_COMPILER=$NEBULA_DEP_BIN/gcc -DCMAKE_CXX_COMPILER=$NEBULA_DEP_BIN/g++ -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=${version} -DCMAKE_INSTALL_PREFIX=/usr/local/nebula -DENABLE_TESTING=OFF $PROJ_DIR
+    $NEBULA_DEP_BIN/cmake -DCMAKE_C_COMPILER=$NEBULA_DEP_BIN/gcc -DCMAKE_CXX_COMPILER=$NEBULA_DEP_BIN/g++ -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=${version} -DCMAKE_INSTALL_PREFIX=/usr/local/nebula -DENABLE_TESTING=OFF $PROJECT_DIR
 
     if !( make -j$(nproc) ); then
         echo ">>> build nebula failed <<<"
@@ -73,7 +75,7 @@ function build {
 # args: <strip_enable>
 function package {
     strip_enable=$1
-    pushd $PROJ_DIR/build/
+    pushd $PROJECT_DIR/build/
     args=""
     [[ $strip_enable == TRUE ]] && args="-D CPACK_STRIP_FILES=TRUE -D CPACK_RPM_SPEC_MORE_DEFINE="
 
@@ -102,7 +104,7 @@ function package {
     else
         # rename package file
         pkgName=`ls | grep nebula-graph | grep ${version}`
-        outputDir=$PROJ_DIR/build/cpack_output
+        outputDir=$PROJECT_DIR/build/cpack_output
         mkdir -p ${outputDir}
         mv ${pkgName} ${outputDir}/${tagetPackageName}
         echo "####### taget package file is ${outputDir}/${tagetPackageName}"
