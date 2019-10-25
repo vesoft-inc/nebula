@@ -33,7 +33,9 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
         auto commitLogIdAndTerm = part->lastCommittedLogId();
         const auto& localhost = part->address();
         std::vector<folly::Future<raftex::cpp2::SendSnapshotResponse>> results;
-        LOG(INFO) << part->idStr_ << "Begin to send the snapshot";
+        LOG(INFO) << part->idStr_ << "Begin to send the snapshot"
+                                  << ", commitLogId = " << commitLogIdAndTerm.first
+                                  << ", commitLogTerm = " << commitLogIdAndTerm.second;
         accessAllRowsInSnapshot(spaceId,
                                 partId,
                                 [&, this, p = std::move(p)] (
