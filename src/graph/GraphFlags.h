@@ -27,5 +27,8 @@ DECLARE_string(stderr_log_file);
 DECLARE_bool(daemonize);
 DECLARE_string(meta_server_addrs);
 
+DECLARE_int32(min_cell_level);
+DECLARE_int32(max_cell_level);
+DECLARE_int32(max_cover_cell_num);
 
 #endif  // GRAPH_GRAPHFLAGS_H_

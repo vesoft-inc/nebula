@@ -14,6 +14,10 @@
 #include <boost/geometry/geometries/polygon.hpp>
 #include <s2/s2region_coverer.h>
 
+DECLARE_int32(min_cell_level);
+DECLARE_int32(max_cell_level);
+DECLARE_int32(max_cover_cell_num);
+
 namespace nebula {
 namespace geo {
 // We use boost to parse wkt and stores the location info
@@ -48,11 +52,11 @@ public:
 
 public:
     // minCellLevel indicates the min level that used by covering. [0, 30]
-    int minCellLevel_ = 5;
+    int minCellLevel_ = FLAGS_min_cell_level;
     // maxCellLevel_ indicates the max level that used by covering. [0, 30]
-    int maxCellLevel_ = 24;
+    int maxCellLevel_ = FLAGS_max_cell_level;
     // maxCoverCellNum_ indicates the max number cells that covering the regin.
-    int maxCoverCellNum_ = 18;
+    int maxCoverCellNum_ = FLAGS_max_cover_cell_num;
 };
 
 }  // namespace geo

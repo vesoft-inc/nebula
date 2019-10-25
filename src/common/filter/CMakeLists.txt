@@ -5,6 +5,7 @@ nebula_add_library(
     FunctionManager.cpp
     geo/GeoFilter.cpp
     geo/GeoIndex.cpp
+    geo/GeoParams.cpp
 )
 
 nebula_add_subdirectory(test)
