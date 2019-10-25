@@ -17,14 +17,14 @@ Docker 安装方法请参考 [Docker 官方文档](https://docs.docker.com/)。
 从 Docker 镜像仓库获取最新 [Nebula Graph 镜像](https://hub.docker.com/r/vesoft/nebula-graph)
 
 ```bash
-$ docker pull vesoft/nebula-graph:latest
+$ docker pull vesoft/nebula-graph:nightly
 
 Pulling from vesoft/nebula-graph
 d8d02d457314: Pull complete
 f7022daf2b4f: Pull complete
 106b632a856a: Pull complete
 Digest: sha256:313214ca1a4482183a0352450639d6dd79d77c56143654c57674c06131d00a47
-Status: Downloaded newer image for vesoft/nebula-graph:latest
+Status: Downloaded newer image for vesoft/nebula-graph:nightly
 ```
 
 
@@ -36,7 +36,7 @@ Status: Downloaded newer image for vesoft/nebula-graph:latest
 镜像拉取完成后，使用以下命令打开三个 docker 容器
 
 ```bash
-$ docker run -it vesoft/nebula-graph:latest /bin/bash
+$ docker run -it vesoft/nebula-graph:nightly /bin/bash
 ```
 
 查看 docker 进程
@@ -45,9 +45,9 @@ $ docker run -it vesoft/nebula-graph:latest /bin/bash
 $ docker ps
 
 CONTAINER ID        IMAGE                         COMMAND             CREATED             STATUS              PORTS               NAMES
-c2134fd5ccc3        vesoft/nebula-graph:latest   "/bin/bash"         5 minutes ago       Up 5 minutes                            thirsty_grothendieck
-1d7a441d4f40        vesoft/nebula-graph:latest   "/bin/bash"         5 minutes ago       Up 5 minutes                            elastic_feistel
-591e2f6f48e2        vesoft/nebula-graph:latest   "/bin/bash"         7 minutes ago       Up 7 minutes                            sad_chaum
+c2134fd5ccc3        vesoft/nebula-graph:nightly   "/bin/bash"         5 minutes ago       Up 5 minutes                            thirsty_grothendieck
+1d7a441d4f40        vesoft/nebula-graph:nightly   "/bin/bash"         5 minutes ago       Up 5 minutes                            elastic_feistel
+591e2f6f48e2        vesoft/nebula-graph:nightly   "/bin/bash"         7 minutes ago       Up 7 minutes                            sad_chaum
 ```
 
 使用以下命令查看每个 docker 进程的 IP
