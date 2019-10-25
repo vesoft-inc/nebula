@@ -1,4 +1,4 @@
-# INSERT VERTEX 语句
+# INSERT VERTEX 语法
 
 ```sql
 INSERT VERTEX tag_name[, tag_name] (prop_name_list[, prop_name_list])

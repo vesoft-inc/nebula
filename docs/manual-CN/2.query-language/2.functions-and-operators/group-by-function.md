@@ -1,6 +1,6 @@
 # 聚合函数 (Group by)
 
- `GROUP BY` 函数类似于SQL。 只能在 `YIELD` 语句中使用.
+ `GROUP BY` 函数类似于SQL。 只能在 `YIELD` 语法中使用.
 
 |名称 | 描述 |
 |:----|:----:|

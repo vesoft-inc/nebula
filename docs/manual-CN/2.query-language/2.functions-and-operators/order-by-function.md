@@ -1,7 +1,7 @@
 # Order By 函数
 
 类似于 SQL, `ORDER BY` 可以进行升序 (`ASC`) 或降序 (`DESC`) 的排序来返回结果.
-并且它只能在`PIPE`语句 ("|") 中使用
+并且它只能在`PIPE`语法 ("|") 中使用
 
 ```plain
 ORDER BY <prop> ASC | DESC [, <prop> ASC | DESC ...]

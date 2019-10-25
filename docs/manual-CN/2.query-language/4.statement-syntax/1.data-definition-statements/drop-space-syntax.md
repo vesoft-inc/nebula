@@ -1,4 +1,4 @@
-# DROP SPACE 语句
+# DROP SPACE 语法
 
 ```sql
 DROP SPACE space_name

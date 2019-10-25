@@ -1,4 +1,4 @@
-# INSERT EDGE 语句
+# INSERT EDGE 语法
 
 ```sq
 INSERT EDGE edge_name ( <prop_name_list> ) {VALUES | VALUE}

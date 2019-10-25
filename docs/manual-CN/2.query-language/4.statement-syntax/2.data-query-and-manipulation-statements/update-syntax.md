@@ -1,4 +1,4 @@
-# UPDATE 语句
+# UPDATE 语法
 
 Nebula 支持 `UPDATE` 一个点或者一条边的属性，支持CAS操作，支持返回相关的属性。
 

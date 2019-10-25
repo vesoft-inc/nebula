@@ -1,4 +1,4 @@
-# DROP TAG 语句
+# DROP TAG 语法
 
 ```sql
 DROP TAG tag_name

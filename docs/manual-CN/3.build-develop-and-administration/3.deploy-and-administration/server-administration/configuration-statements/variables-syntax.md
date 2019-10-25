@@ -1,17 +1,17 @@
-# VARIABLE 语句
+# VARIABLE 语法
 
 Nebula使用`gflags`进行运行时配置。
 
 ## 显示变量
 
 ```sql
-SHOW CONFIG graph|meta|storage
+SHOW VARIABLE graph|meta|storage
 ```
 
 例如
 
 ```sql
-nebula> SHOW CONFIG meta
+nebula> SHOW VARIABLE meta
 ============================================================================================================================
 | module | name                                        | type   | mode      | value                                        |
 ============================================================================================================================
@@ -26,13 +26,13 @@ nebula> SHOW CONFIG meta
 ### 获取变量
 
 ```sql
-GET CONFIG [graph|meta|storage :] var
+GET VARIABLE [graph|meta|storage :] var
 ```
 
 例如
 
 ```sql
-nebula> GET CONFIG storage:load_data_interval_secs
+nebula> GET VARIABLE storage:load_data_interval_secs
 =================================================================
 | module  | name                      | type  | mode    | value |
 =================================================================
@@ -41,7 +41,7 @@ nebula> GET CONFIG storage:load_data_interval_secs
 ```
 
 ```sql
-nebula> GET CONFIG load_data_interval_secs
+nebula> GET VARIABLE load_data_interval_secs
 =================================================================
 | module  | name                    | type  | mode      | value |
 =================================================================
@@ -57,7 +57,7 @@ Got 3 rows (Time spent: 1449/2339 us)
 ### 更新变量
 
 ```sql
-UPDATE CONFIG [graph|meta|storage :] var = value
+UPDATE VARIABLE [graph|meta|storage :] var = value
 ```
 
 > 更新的变量将永久存储于meta-service中。
@@ -66,9 +66,9 @@ UPDATE CONFIG [graph|meta|storage :] var = value
 例如
 
 ```sql
-nebula> UPDATE CONFIG storage:load_data_interval_secs=1
+nebula> UPDATE VARIABLE storage:load_data_interval_secs=1
 Execution succeeded (Time spent: 1750/2484 us)
-nebula> GET CONFIG storage:load_data_interval_secs
+nebula> GET VARIABLE storage:load_data_interval_secs
 ===============================================================
 | module  | name                    | type  | mode    | value |
 ===============================================================

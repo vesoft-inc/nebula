@@ -26,7 +26,7 @@ $$.tag_name.prop_name
 GO FROM 1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
 ```
 
-该语句用于获取起点的属性名称和终点的属性年龄。
+该语法用于获取起点的属性名称和终点的属性年龄。
 
 ## 引用边
 
@@ -61,4 +61,4 @@ GO FROM 1 OVER e1 YIELD e1.prop1
 nebula> GO FROM 1 OVER e1 YIELD e1._src AS startVID /* 起点为1 */, e1._dst AS endVID
 ```
 
-该语句通过引用 `e1._src` 作为起始顶点id（当然，这是 `1` ）和` e1._dst` 作为结束顶点，返回 `1` 边类型为 `e1` 的所有邻居节点。其中 `e1._src` 返回起点ID，此处为1，`e1._dst` 返回终点ID。
+该语法通过引用 `e1._src` 作为起始顶点id（当然，这是 `1` ）和` e1._dst` 作为结束顶点，返回 `1` 边类型为 `e1` 的所有邻居节点。其中 `e1._src` 返回起点ID，此处为1，`e1._dst` 返回终点ID。

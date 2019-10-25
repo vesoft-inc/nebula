@@ -1,6 +1,6 @@
-# WHERE 语句
+# WHERE 语法
 
-目前，`WHERE`语句仅适用于`GO`语句。
+目前，`WHERE`语法仅适用于`GO`语法。
 
 ```sql
 WHERE (expression [ AND | OR expression ...])  

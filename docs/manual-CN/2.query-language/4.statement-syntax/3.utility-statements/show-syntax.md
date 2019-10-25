@@ -1,4 +1,4 @@
-# SHOW 语句
+# SHOW 语法
 
 ```sql
 SHOW {SPACES | TAGS | EDGES | HOSTS}

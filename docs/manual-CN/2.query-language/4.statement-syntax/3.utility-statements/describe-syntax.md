@@ -1,4 +1,4 @@
-# DESCRIBE 语句
+# DESCRIBE 语法
 
 ```sql
 DESCRIBE SPACE space_name

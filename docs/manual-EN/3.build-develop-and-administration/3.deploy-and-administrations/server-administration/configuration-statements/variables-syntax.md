@@ -5,13 +5,13 @@ Nebula use `gflags` for run-time configurations.
 ## Show variables
 
 ```sql
-SHOW CONFIG [graph|meta|storage]
+SHOW VARIABLE [graph|meta|storage]
 ```
 
 For example
 
 ```sql
-nebula> SHOW CONFIG meta
+nebula> SHOW VARIABLE meta
 ============================================================================================================================
 | module | name                                        | type   | mode      | value                                        |
 ============================================================================================================================
@@ -26,13 +26,13 @@ nebula> SHOW CONFIG meta
 ## Get variables
 
 ```sql
-GET CONFIG [graph|meta|storage :] var
+GET VARIABLE [graph|meta|storage :] var
 ```
 
 For example
 
 ```sql
-nebula> GET CONFIG storage:load_data_interval_secs
+nebula> GET VARIABLE storage:load_data_interval_secs
 =================================================================
 | module  | name                      | type  | mode    | value |
 =================================================================
@@ -41,7 +41,7 @@ nebula> GET CONFIG storage:load_data_interval_secs
 ```
 
 ```sql
-nebula> GET CONFIG load_data_interval_secs
+nebula> GET VARIABLE load_data_interval_secs
 =================================================================
 | module  | name                    | type  | mode      | value |
 =================================================================
@@ -57,7 +57,7 @@ Got 3 rows (Time spent: 1449/2339 us)
 ## Update variables
 
 ```sql
-UPDATE CONFIG [graph|meta|storage :] var = value
+UPDATE VARIABLE [graph|meta|storage :] var = value
 ```
 
 > The updated variables will be stored into meta-service permanently.
@@ -66,9 +66,9 @@ UPDATE CONFIG [graph|meta|storage :] var = value
 For example
 
 ```sql
-nebula> UPDATE CONFIG storage:load_data_interval_secs=1
+nebula> UPDATE VARIABLE storage:load_data_interval_secs=1
 Execution succeeded (Time spent: 1750/2484 us)
-nebula> GET CONFIG storage:load_data_interval_secs
+nebula> GET VARIABLE storage:load_data_interval_secs
 ===============================================================
 | module  | name                    | type  | mode    | value |
 ===============================================================
