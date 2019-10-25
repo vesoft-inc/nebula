@@ -214,7 +214,8 @@ RaftPart::RaftPart(ClusterID clusterId,
         , ioThreadPool_{pool}
         , bgWorkers_{workers}
         , executor_(executor)
-        , snapshot_(snapshotMan) {
+        , snapshot_(snapshotMan)
+        , weight_(1) {
     FileBasedWalPolicy policy;
     policy.ttl = FLAGS_wal_ttl;
     policy.fileSize = FLAGS_wal_file_size;
@@ -934,7 +935,7 @@ bool RaftPart::needToStartElection() {
     std::lock_guard<std::mutex> g(raftLock_);
     if (status_ == Status::RUNNING &&
         role_ == Role::FOLLOWER &&
-        (lastMsgRecvDur_.elapsedInSec() >= FLAGS_raft_heartbeat_interval_secs ||
+        (lastMsgRecvDur_.elapsedInSec() >= weight_ * FLAGS_raft_heartbeat_interval_secs ||
          term_ == 0)) {
         LOG(INFO) << idStr_ << "Start leader election, reason: lastMsgDur "
                   << lastMsgRecvDur_.elapsedInSec()
@@ -1063,9 +1064,14 @@ bool RaftPart::leaderElection() {
             // Number of succeeded required
             quorum_,
             // Result evaluator
-            [](size_t, cpp2::AskForVoteResponse& resp) {
-                return resp.get_error_code()
-                    == cpp2::ErrorCode::SUCCEEDED;
+            [hosts, this](size_t idx, cpp2::AskForVoteResponse& resp) {
+                if (resp.get_error_code() == cpp2::ErrorCode::E_LOG_STALE) {
+                    LOG(INFO) << idStr_ << "My last log id is less than " << hosts[idx]
+                              << ", double my election interval.";
+                    uint64_t curWeight = weight_.load();
+                    weight_.store(curWeight * 2);
+                }
+                return resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED;
             });
 
         VLOG(2) << idStr_
@@ -1096,6 +1102,7 @@ bool RaftPart::leaderElection() {
                     });
                 }
             }
+            weight_ = 1;
             sendHeartbeat();
             return true;
         }
@@ -1131,7 +1138,7 @@ void RaftPart::statusPolling() {
             // No leader has been elected, need to continue
             // (After sleeping a random period betwen [500ms, 2s])
             VLOG(2) << idStr_ << "Wait for a while and continue the leader election";
-            delay = folly::Random::rand32(1500) + 500;
+            delay = (folly::Random::rand32(1500) + 500) * weight_;
         }
     } else if (needToSendHeartbeat()) {
         VLOG(2) << idStr_ << "Need to send heartbeat";
@@ -1141,7 +1148,9 @@ void RaftPart::statusPolling() {
         LOG(INFO) << idStr_ << "Clean up the snapshot";
         cleanupSnapshot();
     }
-    wal_->cleanWAL(FLAGS_wal_ttl);
+    if (needToCleanWal()) {
+        wal_->cleanWAL(FLAGS_wal_ttl);
+    }
     {
         std::lock_guard<std::mutex> g(raftLock_);
         if (status_ == Status::RUNNING || status_ == Status::WAITING_SNAPSHOT) {
@@ -1167,6 +1176,16 @@ void RaftPart::cleanupSnapshot() {
     std::lock_guard<std::mutex> g(raftLock_);
     reset();
     status_ = Status::RUNNING;
+}
+
+bool RaftPart::needToCleanWal() {
+    std::lock_guard<std::mutex> g(raftLock_);
+    for (auto& host : hosts_) {
+        if (host->sendingSnapshot_) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void RaftPart::processAskForVoteRequest(
@@ -1259,6 +1278,7 @@ void RaftPart::processAskForVoteRequest(
 
     // Reset the last message time
     lastMsgRecvDur_.reset();
+    weight_ = 1;
 
     // If the partition used to be a leader, need to fire the callback
     if (oldRole == Role::LEADER) {
@@ -1372,7 +1392,11 @@ void RaftPart::processAppendLogRequest(
                                 req.get_log_term(),
                                 req.get_log_str_list());
         if (wal_->appendLogs(iter)) {
-            CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId());
+            // When leader has been sending a snapshot already, sometimes it would send a request
+            // with empty log list, and lastLogId in wal may be 0 because of reset.
+            if (numLogs != 0) {
+                CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId());
+            }
             lastLogId_ = wal_->lastLogId();
             lastLogTerm_ = wal_->lastLogTerm();
             resp.set_last_log_id(lastLogId_);
@@ -1533,6 +1557,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
     leader_ = std::make_pair(req.get_leader_ip(),
                              req.get_leader_port());
     term_ = proposedTerm_ = req.get_current_term();
+    weight_ = 1;
     if (oldRole == Role::LEADER) {
         VLOG(2) << idStr_ << "Was a leader, need to do some clean-up";
         if (wal_->lastLogId() > lastLogId_) {
@@ -1610,6 +1635,10 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
         if (lastLogId_ < committedLogId_) {
             lastLogId_ = committedLogId_;
             lastLogTerm_ = req.get_committed_log_term();
+        }
+        if (wal_->lastLogId() <= committedLogId_) {
+            LOG(INFO) << "Reset invalid wal after snapshot received";
+            wal_->reset();
         }
         status_ = Status::RUNNING;
         LOG(INFO) << idStr_ << "Receive all snapshot, committedLogId_ " << committedLogId_
