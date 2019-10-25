@@ -377,6 +377,7 @@ ResultCode RocksEngine::setOption(const std::string& configKey,
 
     rocksdb::Status status = db_->SetOptions(configOptions);
     if (status.ok()) {
+        LOG(INFO) << "SetOption Succeeded: " << configKey << ":" << configValue;
         return ResultCode::SUCCEEDED;
     } else {
         LOG(ERROR) << "SetOption Failed: " << configKey << ":" << configValue;
@@ -393,6 +394,7 @@ ResultCode RocksEngine::setDBOption(const std::string& configKey,
 
     rocksdb::Status status = db_->SetDBOptions(configOptions);
     if (status.ok()) {
+        LOG(INFO) << "SetDBOption Succeeded: " << configKey << ":" << configValue;
         return ResultCode::SUCCEEDED;
     } else {
         LOG(ERROR) << "SetDBOption Failed: " << configKey << ":" << configValue;

@@ -134,11 +134,11 @@ std::string ConfigRowItem::toString() const {
 std::string ConfigSentence::toString() const {
     switch (subType_) {
         case SubType::kShow:
-            return std::string("SHOW VARIABLES ") + configItem_->toString();
+            return std::string("SHOW CONFIGS ") + configItem_->toString();
         case SubType::kSet:
-            return std::string("SET VARIABLES ") + configItem_->toString();
+            return std::string("SET CONFIGS ") + configItem_->toString();
         case SubType::kGet:
-            return std::string("GET VARIABLES ") + configItem_->toString();
+            return std::string("GET CONFIGS ") + configItem_->toString();
         default:
             FLOG_FATAL("Type illegal");
     }

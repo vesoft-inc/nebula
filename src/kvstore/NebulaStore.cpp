@@ -274,15 +274,11 @@ void NebulaStore::updateSpaceOption(GraphSpaceID spaceId,
                                     bool isDbOption) {
     if (isDbOption) {
         for (const auto& kv : options) {
-            if (setDBOption(spaceId, kv.first, kv.second) != ResultCode::SUCCEEDED) {
-                LOG(ERROR) << "Set rocksdb db option failed: " << kv.first << " " << kv.second;
-            }
+            setDBOption(spaceId, kv.first, kv.second);
         }
     } else {
         for (const auto& kv : options) {
-            if (setOption(spaceId, kv.first, kv.second) != ResultCode::SUCCEEDED) {
-                LOG(ERROR) << "Set rocksdb option failed: " << kv.first << " " << kv.second;
-            }
+            setOption(spaceId, kv.first, kv.second);
         }
     }
 }
