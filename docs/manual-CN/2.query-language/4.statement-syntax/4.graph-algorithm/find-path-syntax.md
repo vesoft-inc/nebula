@@ -2,7 +2,7 @@
 
 `FIND PATH` 语句用于获取最短路径及全路径
 
-```
+```sql
 FIND SHORTEST | ALL PATH FROM <vertex_id_list> TO <vertex_id_list>
 OVER <edge_type_list> [UPTO <N> STEPS]
 ```

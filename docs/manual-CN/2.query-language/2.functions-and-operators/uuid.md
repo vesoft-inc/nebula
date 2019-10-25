@@ -10,7 +10,7 @@
 
 Insert with UUID:
 
-```
+```sql
 nebula> INSERT VERTEX player (name, age) VALUES uuid("n0"):("n0", 13)
 
 nebula> INSERT EDGE like(likeness) VALUES uuid("n0") -> uuid("n1"): (90)
@@ -18,7 +18,7 @@ nebula> INSERT EDGE like(likeness) VALUES uuid("n0") -> uuid("n1"): (90)
 
 Fetch with UUID:
 
-```
+```sql
 nebula> FETCH PROP ON player uuid("n0")  YIELD player.name, player.age
 
 nebula> FETCH PROP ON like uuid("n0") -> uuid("n1")
@@ -26,6 +26,6 @@ nebula> FETCH PROP ON like uuid("n0") -> uuid("n1")
 
 Go with UUID:
 
-```
+```sql
 nebula> GO FROM uuid("n0") OVER like
 ```

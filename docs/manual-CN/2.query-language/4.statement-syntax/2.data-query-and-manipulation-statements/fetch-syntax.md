@@ -6,7 +6,7 @@
 
 `FETCH PROP ON`可返回节点的一系列属性，目前已支持一条语句返回多个节点属性。
 
-```
+```sql
 FETCH PROP ON <tag_name> <vertex_id_list> [YIELD [DISTINCT] <return_list>]
 ```
 
@@ -37,7 +37,7 @@ nebula> FETCH PROP ON player 1,2,3 YIELD DISTINCT player.name, player.age
 
 使用`FETCH`获取边属性的用法与点属性大致相同，且可同时获取相同类型多条边的属性。
 
-```
+```sql
 FETCH PROP ON <edge_type> <vid> -> <vid> [, <vid> -> <vid> ...] [YIELD [DISTINCT] <return_list>]
 ```
 

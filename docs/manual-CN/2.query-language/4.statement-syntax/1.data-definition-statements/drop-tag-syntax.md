@@ -1,4 +1,6 @@
-```
+# DROP TAG 语句
+
+```sql
 DROP TAG tag_name
 ```
 

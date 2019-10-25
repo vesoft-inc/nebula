@@ -123,7 +123,7 @@ GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS ri
 
 ## MINUS
 
-返回 A - B 数据集，此处请注意运算顺序。例如：
+返回 A - B 的差集（属于 A 且不属于 B 的元素），此处请注意运算顺序。例如：
 
 ```sql
 GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2

@@ -4,10 +4,10 @@
 并且它只能在`PIPE`语句 ("|") 中使用
 
 ```plain
-ORDER BY <prop> ASC | DESC [, <prop> ASC | DESC ...] 
+ORDER BY <prop> ASC | DESC [, <prop> ASC | DESC ...]
 ```
 
-如果没有指明 ASC 或 DESC，`ORDER BY` 将默认进行升序排序。 
+如果没有指明 ASC 或 DESC，`ORDER BY` 将默认进行升序排序。
 
 ## 示例
 

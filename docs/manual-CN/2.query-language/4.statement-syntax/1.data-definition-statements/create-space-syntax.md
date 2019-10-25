@@ -1,6 +1,6 @@
 # CREATE SPACE 语法
 
-```
+```sql
 CREATE SPACE space_name
     (space_option,...)
 
@@ -31,10 +31,9 @@ space_option:
 
 ### 示例
 
-```
+```sql
 CREATE SPACE my_space_1; -- 使用默认选项创建图空间
 CREATE SPACE my_space_2(partition_num=100); -- 使用默认 replica_factor 创建图空间
 CREATE SPACE my_space_3(replica_factor=1);  -- 使用默认 partition_number 创建图空间
 CREATE SPACE my_space_4(partition_num=100, replica_factor=1);
 ```
-

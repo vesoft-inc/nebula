@@ -14,7 +14,7 @@ $^.tag_name.prop_name
 
 ### 引用终点的属性
 
-```
+```sql
 $$.tag_name.prop_name
 ```
 
@@ -22,7 +22,7 @@ $$.tag_name.prop_name
 
 ### 示例
 
-```
+```sql
 GO FROM 1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
 ```
 
@@ -34,13 +34,13 @@ GO FROM 1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
 
 使用如下方式获取边属性：
 
-```
+```sql
 edge_type.edge_prop
 ```
 
 此处，`edge_type`为边的类型，`edge_prop`为属性，例如：
 
-```
+```sql
 GO FROM 1 OVER e1 YIELD e1.prop1
 ```
 
@@ -57,7 +57,7 @@ GO FROM 1 OVER e1 YIELD e1.prop1
 
 例如：
 
-```
+```sql
 nebula> GO FROM 1 OVER e1 YIELD e1._src AS startVID /* 起点为1 */, e1._dst AS endVID
 ```
 

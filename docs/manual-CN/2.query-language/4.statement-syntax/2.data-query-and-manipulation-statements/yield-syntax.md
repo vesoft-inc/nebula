@@ -4,7 +4,7 @@ YIELD 关键字可以在FETCH、GO语句中作为子句使用，也可以在PIPE
 
 ## 作为子句
 
-```
+```sql
 YIELD
     [DISTINCT]
     <col_name> [AS <col_alias>]
@@ -33,7 +33,7 @@ e.g., `$$.student.name` 用来获取目标点（$$)的属性。
 - 可以用于引用变量。
 - 对于那些不支持YIELD子句的语句，可以使用YIELD语句作为一个工具，控制输出。
 
-```
+```sql
 YIELD
     [DISTINCT]
     <col_name> [AS <col_alias>]
@@ -67,7 +67,7 @@ nebula> $var2 = GO FROM 200 OVER like;$var1 = GO FROM 201 OVER like;YIELD $var1.
 
 - YIELD语句可以独立使用，用于一些简单的计算。您可以使用`AS`重命名返回的列。
 
-```
+```sql
 nebula> YIELD 1 + 1
 =========
 | (1+1) |

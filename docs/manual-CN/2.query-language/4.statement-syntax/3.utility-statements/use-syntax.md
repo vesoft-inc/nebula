@@ -1,6 +1,6 @@
 # USE 语句
 
-```
+```sql
 USE <graph_space_name>
 ```
 
