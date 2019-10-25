@@ -71,7 +71,7 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
   * Utility Statements
     * [Describe Syntax](2.query-language/4.statement-syntax/3.utility-statements/describe-syntax.md)
     * [Use Syntax](2.query-language/4.statement-syntax/3.utility-statements/use-syntax.md)
-    * [Show Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/show-syntax.md)
+    * [Show Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-syntax.md)
   * Graph Algorithms
     * [Find Path Syntax](2.query-language/4.statement-syntax/4.graph-algorithms/find-path-syntax.md)
 
@@ -91,12 +91,12 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
       * [Drop User Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/drop-user-syntax.md)
     * Configuration Statements
       * [Variables Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/variables-syntax.md)
-    * Storage Service Operation
+    * Storage Service Administration
       * Data Import
-        * [Download And Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-operations/data-import/download-and-ingest-sst-file.md)
-        * [Import .csv File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-operations/data-import/import-csv-file.md)
-      * [Storage Balance](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-operations/storage-balance.md)
-      * [Storage Metrics](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-operations/storage-metrics.md)
+        * [Download And Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
+        * [Import .csv File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
+      * [Storage Balance](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-balance.md)
+      * [Storage Metrics](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-metrics.md)
 
 ## Contributions (For Contributors)
 
