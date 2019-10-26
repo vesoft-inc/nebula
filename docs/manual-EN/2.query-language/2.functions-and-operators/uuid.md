@@ -9,16 +9,16 @@ Values generated with the UUID are stored in the `Nebula` Storage service in key
 Insert with UUID:
 
 ```SQL
-nebula> INSERT VERTEX player (name, age) VALUES uuid("n0"):("n0", 13)
-
-nebula> INSERT EDGE like(likeness) VALUES uuid("n0") -> uuid("n1"): (90)
+-- INSERT VERTEX player (name, age) VALUES hash("n0"):("n0", 13.0)
+nebula> INSERT VERTEX player (name, age) VALUES uuid("n0"):("n0", 13.0)
+-- INSERT EDGE like(likeness) VALUES hash("n0") -> hash("n1"): (90.0)
+nebula> INSERT EDGE like(likeness) VALUES uuid("n0") -> uuid("n1"): (90.0)
 ```
 
 Fetch with UUID:
 
 ```SQL
 nebula> FETCH PROP ON player uuid("n0")  YIELD player.name, player.age
-
 nebula> FETCH PROP ON like uuid("n0") -> uuid("n1")
 ```
 

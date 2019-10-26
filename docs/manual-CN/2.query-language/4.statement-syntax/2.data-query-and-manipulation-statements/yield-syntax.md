@@ -23,7 +23,7 @@ nebula> GO FROM 201 OVER relations_edge YIELD $$.student.name AS Friend, \
 -------------------------
 ```
 
-e.g., $$.student.name用来获取目标点（$$)的属性。
+e.g., `$$.student.name` 用来获取目标点（$$)的属性。
 
 ## 作为语句
 

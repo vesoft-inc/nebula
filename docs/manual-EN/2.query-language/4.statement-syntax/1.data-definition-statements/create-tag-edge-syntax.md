@@ -27,11 +27,11 @@ There are several aspects to this syntax, described under the following topics i
 * [Property Name and Data Type](#property-name-and-data-type)
 -->
 
-### Tag Name and Edge Type Name
+## Tag Name and Edge Type Name
 
 * **tag_name and edge_name**
 
-    The name of tags and edgeTypes should be **unique** within the space. Once the name is defined, it can not be altered. The rules of tag and edgeType names are the same as those for names of spaces. See [Schema Object Name](../../language-structure/schema-object-names.md)
+    The name of tags and edgeTypes should be **unique** within the space. Once the name is defined, it can not be altered. The rules of tag and edgeType names are the same as those for names of spaces. See [Schema Object Name](../../3.language-structure/schema-object-names.md)
 
 ### Property Name and Data Type
 
@@ -81,19 +81,19 @@ CREATE EDGE follow_with_default(start_time timestamp DEFAULT 0, likeness double 
 
 CREATE TAG woman(name string, age int, 
    married bool, salary double, create_time timestamp)
-   TTL_DRUATION = 100, TTL_COL = create_time -- expired when now is later than create_time + 100
+   TTL_DURATION = 100, TTL_COL = create_time -- expired when now is later than create_time + 100
    
 CREATE EDGE marriage(location string, since timestamp)
     TTL_DURATION = 0, TTL_COL = since -- negative or zero, not expire
    
 CREATE TAG icecream(made timestamp, temprature int)
    TTL_DURATION = 100, TTL_COL = made,
-   TTL_DRUATION = 10, TTL_COL = temprature 
+   TTL_DURATION = 10, TTL_COL = temprature 
    --  no matter which comes first: made + 100 or temprature + 10
  
 CREATE EDGE garbge (thrown timestamp, temprature int)
    TTL_DURATION = -2, TTL_COL = thrown, 
-   TTL_DRUATION = 10, TTL_COL = thrown 
+   TTL_DURATION = 10, TTL_COL = thrown 
    --  legal, but not recommended. expired at thrown + 10
 ```
 

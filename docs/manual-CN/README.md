@@ -71,7 +71,7 @@
   * 辅助功能语句
     * [Describe](2.query-language/4.statement-syntax/3.utility-statements/describe-syntax.md)
     * [Use](2.query-language/4.statement-syntax/3.utility-statements/use-syntax.md)
-    * [Show](2.query-language/4.statement-syntax/1.data-definition-statements/show-syntax.md)
+    * [Show](2.query-language/4.statement-syntax/3.utility-statements/show-syntax.md)
   * 图算法
     * [查找路径](2.query-language/4.statement-syntax/4.graph-algorithms/find-path-syntax.md)
 
