@@ -17,10 +17,10 @@
   * [查询语言概览](1.overview/1.concepts/2.nGQL-overview.md)
 * 快速开始
   * [开始试用](1.overview/2.quick-start/1.get-started.md)
-  * [编译源代码](3.build-develop-and-administration/1.build/1.build-source-code.md)
-  * [部署集群](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
-  * [导入.csv文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-operations/data-import/import-csv-file.md)
-  * [加载.sst文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-operations/data-import/download-and-ingest-sst-file.md)
+  * [编译源代码](3.build-develop-and-administration/1.build/build-source-code.md)
+  * [部署集群](3.build-develop-and-administration/3.deploy-and-administration/deployment/deploy-cluster.md)
+  * [导入.csv文件](3.build-develop-and-administration/3.deploy-and-administration/server-administration/storage-service-administration/data-import/import-csv-file.md)
+  * [加载.sst文件](3.build-develop-and-administration/3.deploy-and-administration/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
 * 系统设计与架构
   * [设计总览](1.overview/3.design-and-architecture/1.design-and-architecture.md)
   * [存储层架构](1.overview/3.design-and-architecture/2.storage-design.md)
@@ -32,13 +32,13 @@
   * [类型转换](2.query-language/1.data-types/type-conversion.md)
 * 函数与操作符
   * [位运算](2.query-language/2.functions-and-operators/bitwise-operators.md)
-  * [内置函数](2.query-language/2.functions-and-operators/build-in-functions.md)
+  * [内置函数](2.query-language/2.functions-and-operators/built-in-functions.md)
   * [比较运算](2.query-language/2.functions-and-operators/comparison-functions-and-operators.md)
   * [聚合运算](2.query-language/2.functions-and-operators/group-by-function.md)
   * [分页(Limit)](2.query-language/2.functions-and-operators/limit-syntax.md)
   * [逻辑运算](2.query-language/2.functions-and-operators/logical-operators.md)
   * [排序(Order By)](2.query-language/2.functions-and-operators/order-by-function.md)
-  * [集合运算](2.query-language/2.functions-and-operators/set-operations.md)
+  * [集合运算](2.query-language/2.functions-and-operators/set-operation.md)
   * [uuid函数](2.query-language/2.functions-and-operators/uuid.md)
 * 语言结构
   * 字面值常量
@@ -73,30 +73,30 @@
     * [Use](2.query-language/4.statement-syntax/3.utility-statements/use-syntax.md)
     * [Show](2.query-language/4.statement-syntax/3.utility-statements/show-syntax.md)
   * 图算法
-    * [查找路径](2.query-language/4.statement-syntax/4.graph-algorithms/find-path-syntax.md)
+    * [查找路径](2.query-language/4.statement-syntax/4.graph-algorithm/find-path-syntax.md)
 
 ## 编译、部署与运维 (程序员和DBA)
 
 * 编译
-  * [编译源代码](3.build-develop-and-administration/1.build/1.build-source-code.md)
-  * [使用docker编译](3.build-develop-and-administration/1.build/2.build-by-docker.md)
+  * [编译源代码](3.build-develop-and-administration/1.build/build-source-code.md)
+  * [使用docker编译](3.build-develop-and-administration/1.build/build-by-docker.md)
 * 源码开发和API
-  * [Key Value 接口](3.build-develop-and-administration/2.develop-and-interface/kv-interfaces.md)
+  * [Key Value 接口](3.build-develop-and-administration/2.develop/kv-interfaces.md)
 * 部署与运维
   * 部署
     * [用Docker部署](3.build-develop-and-administration/2.develop-and-interface/kv-interfaces.md)
-    * [部署集群](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
+    * [部署集群](3.build-develop-and-administration/3.deploy-and-administration/deployment/deploy-cluster.md)
   * 服务器管理操作
     * 账号管理
-      * [Drop User](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/drop-user-syntax.md)
+      * [Drop User](3.build-develop-and-administration/3.deploy-and-administration/server-administration/account-management-statements/drop-user-syntax.md)
     * 服务器配置
-      * [服务器配置](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/variables-syntax.md)
+      * [服务器配置](3.build-develop-and-administration/3.deploy-and-administration/server-administration/configuration-statements/variables-syntax.md)
     * 存储服务相关运维
       * 离线数据加载
-        * [加载.sst文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-operations/data-import/download-and-ingest-sst-file.md)
-        * [读取.csv文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-operations/data-import/import-csv-file.md)
-      * [负载均衡和数据迁移](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-operations/storage-balance.md)
-      * [存储层运行统计(metric)](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-operations/storage-metrics.md)
+        * [加载.sst文件](3.build-develop-and-administration/3.deploy-and-administration/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
+        * [读取.csv文件](3.build-develop-and-administration/3.deploy-and-administration/server-administration/storage-service-administration/data-import/import-csv-file.md)
+      * [负载均衡和数据迁移](3.build-develop-and-administration/3.deploy-and-administration/server-administration/storage-service-administration/storage-balance.md)
+      * [存储层运行统计(metric)](3.build-develop-and-administration/3.deploy-and-administration/server-administration/storage-service-administration/storage-metrics.md)
 
 ## 社区贡献 (开源社区爱好者)
 
