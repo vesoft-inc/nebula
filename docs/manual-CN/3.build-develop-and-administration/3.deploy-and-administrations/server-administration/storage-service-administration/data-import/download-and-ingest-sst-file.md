@@ -10,7 +10,7 @@ Nebula 提供了 `Spark-SSTFile-Generator` 工具。
 
 执行后会在 `HDFS` 上生成 SST 文件，目录结构如下：
 
-```
+```text
 |---1 (this is partition number)
 |        | ---- vertex-${FIRST_KEY_IN_THIS_FILE}.sst
 |        | ---- edge-${FIRST_KEY_IN_THIS_FILE}.sst

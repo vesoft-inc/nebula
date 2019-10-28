@@ -1,8 +1,8 @@
-# Delete Syntax
+# Delete Vertex Syntax
 
 Nebula 支持给定一个 vertex Id，删掉这个顶点和与它相关联的入边和出边，语法如下：
 
-```
+```sql
 DELETE VERTEX $vid
 ```
 

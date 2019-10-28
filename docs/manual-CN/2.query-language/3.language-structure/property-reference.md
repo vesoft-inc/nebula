@@ -14,7 +14,7 @@ $^.tag_name.prop_name
 
 ### 引用终点的属性
 
-```
+```sql
 $$.tag_name.prop_name
 ```
 
@@ -22,11 +22,11 @@ $$.tag_name.prop_name
 
 ### 示例
 
-```
+```sql
 GO FROM 1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
 ```
 
-该语句用于获取起点的属性名称和终点的属性年龄。
+该语法用于获取起点的属性名称和终点的属性年龄。
 
 ## 引用边
 
@@ -34,13 +34,13 @@ GO FROM 1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
 
 使用如下方式获取边属性：
 
-```
+```sql
 edge_type.edge_prop
 ```
 
 此处，`edge_type`为边的类型，`edge_prop`为属性，例如：
 
-```
+```sql
 GO FROM 1 OVER e1 YIELD e1.prop1
 ```
 
@@ -57,8 +57,8 @@ GO FROM 1 OVER e1 YIELD e1.prop1
 
 例如：
 
-```
+```sql
 nebula> GO FROM 1 OVER e1 YIELD e1._src AS startVID /* 起点为1 */, e1._dst AS endVID
 ```
 
-该语句通过引用 `e1._src` 作为起始顶点id（当然，这是 `1` ）和` e1._dst` 作为结束顶点，返回 `1` 边类型为 `e1` 的所有邻居节点。其中 `e1._src` 返回起点ID，此处为1，`e1._dst` 返回终点ID。
+该语法通过引用 `e1._src` 作为起始顶点id（当然，这是 `1` ）和` e1._dst` 作为结束顶点，返回 `1` 边类型为 `e1` 的所有邻居节点。其中 `e1._src` 返回起点ID，此处为1，`e1._dst` 返回终点ID。

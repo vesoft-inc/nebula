@@ -322,6 +322,8 @@ private:
 
     void cleanupSnapshot();
 
+    bool needToCleanWal();
+
     // The method sends out AskForVote request
     // It return true if a leader is elected, otherwise returns false
     bool leaderElection();
@@ -520,6 +522,8 @@ protected:
 
     // Used to bypass the stale command
     int64_t startTimeMs_ = 0;
+
+    std::atomic<uint64_t> weight_;
 };
 
 }  // namespace raftex

@@ -34,7 +34,7 @@ Status: Downloaded newer image for vesoft/nebula-graph:nightly
 After the image is pulled completely, start three containers using the following command
 
 ```bash
-$docker run -it vesoft/nebula-graph:latest /bin/bash
+$docker run -it vesoft/nebula-graph:nightly /bin/bash
 ```
 
 View their processes using the following command

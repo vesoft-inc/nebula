@@ -1,4 +1,6 @@
-```
+# DROP EDGE 语法
+
+```sql
 DROP EDGE edge_type_name
 ```
 

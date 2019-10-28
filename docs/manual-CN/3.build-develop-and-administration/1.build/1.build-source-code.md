@@ -1,8 +1,9 @@
-###  编译器
+#  编译器
 
 Nebula 基于 C++14 开发，因此它需要一个支持 C++14 的编译器。
 
-### 支持系统版本
+## 支持系统版本
+
 - Fedora29, 30
 - Centos6.5, Centos7.0~7.6
 - Ubuntu16.04, 18.04
@@ -12,9 +13,10 @@ Nebula 基于 C++14 开发，因此它需要一个支持 C++14 的编译器。
 当编译类型为 **Debug** 的时候，最好预留 **30G** 磁盘空间
 
 ### 本地构建
+
 #### 步骤 1: 克隆代码
 
-```
+```sh
 bash> git clone https://github.com/vesoft-inc/nebula.git
 ```
 
@@ -22,21 +24,22 @@ bash> git clone https://github.com/vesoft-inc/nebula.git
 
 - 中国用户
 
-    ```
+    ```sh
     bash> cd nebula && ./build_dep.sh C
     ```
 
 - 美国用户
 
-    ```
+    ```sh
     bash> cd nebula && ./build_dep.sh U
     ```
+
 - 环境不能直接下载oss包的用户
 
     步骤 1:
     从本地源下载依赖和进行配置
 
-    ```
+    ```sh
     bash> cd nebula && ./build_dep.sh N
     ```
 
@@ -44,6 +47,7 @@ bash> git clone https://github.com/vesoft-inc/nebula.git
     从下面链接中下载对应版本的压缩包
 
     **中国用户**
+
     - [Fedora29/30](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/fedora29.tar.gz)
     - [Centos7.5](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos7.5.tar.gz)
     - [Centos6.5](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos6.5.tar.gz)
@@ -61,19 +65,20 @@ bash> git clone https://github.com/vesoft-inc/nebula.git
     步骤 3:
     安装下载好的压缩包
 
-    ```
+    ```sh
     tar xf ${package_name}.tar.gz
     cd ${package_name} && ./install.sh
     ```
 
 #### 步骤 3: 应用 **~/.bashrc** 修改
 
-```
+```sh
 bash> source ~/.bashrc
 ```
+
 #### 步骤 4: 构建
 
-```
+```sh
 bash> mkdir build && cd build
 bash> cmake ..
 bash> make
@@ -81,16 +86,17 @@ bash> sudo make install
 ```
 
 #### **构建完成**
+
 - 如果没有任何错误信息
 
-    ```
+    ```sh
     [100%] Built target ....
     ```
     **编译成功！**
     
 - 在安装目录 **/usr/local/nebula** 下有如下四个子目录 **etc/**, **bin/**, **scripts/** **share/**
 
-    ```
+    ```sh
     [root@centos7.5 nebula]# ls /usr/local/nebula/
     bin  etc  scripts  share
     ```
@@ -159,13 +165,13 @@ nebula> SHOW HOSTS;
 
     **步骤 1**: 在 **~/.bashrc** 末添加如下行
 
-    ```
+    ```sh
     export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LIBRARY_PATH
     ```
 
     **步骤 2**: 应用 **~/.bashrc** 修改
 
-    ```
+    ```sh
     bash> source ~/.bashrc
     ```
 
@@ -177,20 +183,21 @@ nebula> SHOW HOSTS;
 
     **ubuntu**
 
-    ```
+    ```sh
     sudo apt-get -y install openjdk-8-jdk
     ```
 
     **centos**
 
-    ```
+    ```sh
     sudo yum -y install java-1.8.0-openjdk
     ```
 
     3) 在 **~/.bashrc** 末添加
 
     **ubuntu**
-    ```
+
+    ```sh
     export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64
     export JRE_HOME=$JAVA_HOME/jre
     export CLASSPATH=$JAVA_HOME/lib:$JRE_HOME/lib:$CLASSPATH
@@ -199,7 +206,7 @@ nebula> SHOW HOSTS;
 
     **centos**
 
-    ```
+    ```sh
     export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
     export JRE_HOME=$JAVA_HOME/jre
     export CLASSPATH=$JAVA_HOME/lib:$JRE_HOME/lib:$CLASSPATH
@@ -212,7 +219,7 @@ nebula> SHOW HOSTS;
 
     你需要自己编译第三方库，第三方库的安装路径为 **/opt/nebula/third-party**
 
-    ```
+    ```sh
     bash> wget https://nebula-graph-us.oss-us-west-1.aliyuncs.com/third-party/nebula-3rdparty.tar.gz
     bash> tar xf nebula-3rdparty.tar.gz && cd nebula-3rdparty
     bash> ./install_deps.sh
