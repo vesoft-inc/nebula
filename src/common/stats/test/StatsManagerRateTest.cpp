@@ -25,7 +25,7 @@ TEST(StatsManager, RateTest) {
 
     ::usleep(60 * 1000 * 1000);
 
-    auto actual = StatsManager::readValue("ratetest.rate.60");
+    auto actual = StatsManager::readValue("ratetest.rate.60").value();
 
     ASSERT_LT(std::max(qps, actual) - std::min(qps, actual), 10L) << "expected: " << qps
                                                                   << ", actual: " << actual;
