@@ -1,6 +1,6 @@
 # 聚合函数 (Group by)
 
- `GROUP BY` 函数类似于SQL。 只能在 `YIELD` 语法中使用.
+ `GROUP BY` 函数类似于SQL。 只能在 `YIELD` 语句中使用.
 
 |名称 | 描述 |
 |:----|:----:|
@@ -9,14 +9,14 @@
 | COUNT(DISTINCT) | 返回独立记录值的总数 |
 | MAX()           | 返回最大值 |
 | MIN()           | 返回最小值 |
-| STD()           | 返回总体标准差 |
-| SUM()       | 返回总合 |
+| STD()           | 返回总体标准差 | 
+| SUM()	          | 返回总合 |
 
 以上函数只作用于 int64 和 double。
 
 ## 示例
 
-```sql
+```
 nebula> GO FROM 1 OVER e1 | YIELD $-.id AS fid, COUNT(*) AS cnt GROUP BY fid
 -- 统计与节点"1" 有e1关系的点的id出现的次数
 

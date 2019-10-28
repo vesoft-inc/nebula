@@ -4,14 +4,14 @@ Nebula use `gflags` for run-time configurations.
 
 ## Show variables
 
-```sql
-SHOW VARIABLE [graph|meta|storage]
+```
+SHOW VARIABLES [graph|meta|storage]
 ```
 
 For example
 
-```sql
-nebula> SHOW VARIABLE meta
+```
+nebula> SHOW VARIABLES meta
 ============================================================================================================================
 | module | name                                        | type   | mode      | value                                        |
 ============================================================================================================================
@@ -25,14 +25,14 @@ nebula> SHOW VARIABLE meta
 
 ## Get variables
 
-```sql
-GET VARIABLE [graph|meta|storage :] var
+```
+GET VARIABLES [graph|meta|storage :] var
 ```
 
 For example
 
-```sql
-nebula> GET VARIABLE storage:load_data_interval_secs
+```
+nebula> GET VARIABLES storage:load_data_interval_secs
 =================================================================
 | module  | name                      | type  | mode    | value |
 =================================================================
@@ -40,8 +40,8 @@ nebula> GET VARIABLE storage:load_data_interval_secs
 -----------------------------------------------------------------
 ```
 
-```sql
-nebula> GET VARIABLE load_data_interval_secs
+```
+nebula> GET VARIABLES load_data_interval_secs
 =================================================================
 | module  | name                    | type  | mode      | value |
 =================================================================
@@ -56,8 +56,8 @@ Got 3 rows (Time spent: 1449/2339 us)
 
 ## Update variables
 
-```sql
-UPDATE VARIABLE [graph|meta|storage :] var = value
+```
+UPDATE VARIABLES [graph|meta|storage :] var = value
 ```
 
 > The updated variables will be stored into meta-service permanently.
@@ -65,10 +65,10 @@ UPDATE VARIABLE [graph|meta|storage :] var = value
 
 For example
 
-```sql
-nebula> UPDATE VARIABLE storage:load_data_interval_secs=1
+```
+nebula> UPDATE VARIABLES storage:load_data_interval_secs=1
 Execution succeeded (Time spent: 1750/2484 us)
-nebula> GET VARIABLE storage:load_data_interval_secs
+nebula> GET VARIABLES storage:load_data_interval_secs
 ===============================================================
 | module  | name                    | type  | mode    | value |
 ===============================================================

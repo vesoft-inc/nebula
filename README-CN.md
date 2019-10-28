@@ -11,7 +11,7 @@
   <a href="https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place"><img src="https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red" alt="Sina Weibo"></a>
 </p>
 
-**Nebula Graph** 的目标是为超大规模图数据提供高并发，低延时的读、写及计算。Nebula 是一个开源项目，我们期待与社区合作共同推广图数据库。
+**Nebula Graph** 的目标是为超大规模图数据提供高并发，低延时的读、写及计算。Nebula是一个开源项目，我们期待与社区合作共同推广图数据库。
 
 **Nebula Graph** 的主要特点：
 
