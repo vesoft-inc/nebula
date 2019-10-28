@@ -14,7 +14,7 @@ void GetProcessor::process(const cpp2::GetRequest& req) {
     space_ = req.get_space_id();
     std::vector<folly::Future<std::pair<PartitionID, kvstore::ResultCode>>> results;
     for (auto& part : req.get_parts()) {
-        results.emplace_back(asyncProcess(part.first, part.second));
+        results.emplace_back(asyncProcess(part.first, std::move(part.second)));
     }
 
     folly::collectAll(results).via(executor_)
@@ -33,7 +33,7 @@ void GetProcessor::process(const cpp2::GetRequest& req) {
 
 folly::Future<std::pair<PartitionID, kvstore::ResultCode>>
 GetProcessor::asyncProcess(PartitionID part,
-                           const std::vector<std::string>& keys) {
+                           std::vector<std::string> keys) {
     folly::Promise<std::pair<PartitionID, kvstore::ResultCode>> promise;
     auto future = promise.getFuture();
     std::vector<std::string> kvKeys;
@@ -41,7 +41,7 @@ GetProcessor::asyncProcess(PartitionID part,
     std::transform(keys.begin(), keys.end(), std::back_inserter(kvKeys),
                    [part](const auto& key) { return NebulaKeyUtils::kvKey(part, key); });
 
-    executor_->add([this, p = std::move(promise), part, &keys,
+    executor_->add([this, p = std::move(promise), part, keys = std::move(keys),
                     kvKeys = std::move(kvKeys)] () mutable {
         std::vector<std::string> values;
         auto ret = this->kvstore_->multiGet(space_, part, kvKeys, &values);
