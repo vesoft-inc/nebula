@@ -73,7 +73,7 @@ Status Configuration::parseFromString(const std::string &content) {
     return Status::OK();
 }
 
-std::string Configuration::dumpToString() {
+std::string Configuration::dumpToString() const {
     std::string json;
     if (content_ != nullptr) {
         json = folly::toJson(*content_);
@@ -81,7 +81,7 @@ std::string Configuration::dumpToString() {
     return json;
 }
 
-std::string Configuration::dumpToPrettyString() {
+std::string Configuration::dumpToPrettyString() const {
     std::string json;
     if (content_ != nullptr) {
         json = folly::toPrettyJson(*content_);

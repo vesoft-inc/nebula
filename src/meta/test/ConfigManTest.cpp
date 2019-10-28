@@ -190,8 +190,8 @@ TEST(ConfigManTest, ConfigProcessorTest) {
         updated.set_name("nested");
         updated.set_type(cpp2::ConfigType::NESTED);
         updated.set_mode(cpp2::ConfigMode::MUTABLE);
-        // upate from consle as format of update list
-        updated.set_value("max_background_compactions=8");
+        // update from consle as format of update list
+        updated.set_value("max_background_compactions=8,level0_file_num_compaction_trigger=10");
 
         cpp2::SetConfigReq req;
         req.set_item(updated);
@@ -225,6 +225,9 @@ TEST(ConfigManTest, ConfigProcessorTest) {
         auto status = conf.fetchAsString("max_background_compactions", val);
         ASSERT_TRUE(status.ok());
         ASSERT_EQ(val, "8");
+        status = conf.fetchAsString("level0_file_num_compaction_trigger", val);
+        ASSERT_TRUE(status.ok());
+        ASSERT_EQ(val, "10");
     }
     // list all configs in all module
     {

@@ -33,9 +33,9 @@ public:
      */
     Status MUST_USE_RESULT parseFromString(const std::string &content);
 
-    std::string dumpToString();
+    std::string dumpToString() const;
 
-    std::string dumpToPrettyString();
+    std::string dumpToPrettyString() const;
 
     /**
      * Fetch the config item.

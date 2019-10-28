@@ -124,10 +124,10 @@ void MetaServerBasedPartManager::onSpaceOptionUpdated(
     }
 
     if (handler_ != nullptr) {
-        if (opt.size() > 0) {
+        if (!opt.empty()) {
             handler_->updateSpaceOption(spaceId, opt, false);
         }
-        if (dbOpt.size() > 0) {
+        if (!dbOpt.empty()) {
             handler_->updateSpaceOption(spaceId, dbOpt, true);
         }
     } else {
