@@ -104,7 +104,7 @@ class GraphScanner;
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
-%token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
+%token KW_CONFIGS KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL_DURATION KW_TTL_COL
 %token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
@@ -1368,7 +1368,7 @@ show_sentence
     | KW_SHOW KW_ROLES KW_IN name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowRoles, $4);
     }
-    | KW_SHOW KW_VARIABLES show_config_item {
+    | KW_SHOW KW_CONFIGS show_config_item {
         $$ = new ConfigSentence(ConfigSentence::SubType::kShow, $3);
     }
     | KW_SHOW KW_CREATE KW_SPACE name_label {
@@ -1444,6 +1444,12 @@ set_config_item
     }
     | name_label ASSIGN expression {
         $$ = new ConfigRowItem(ConfigModule::ALL, $1, $3);
+    }
+    | config_module_enum COLON name_label ASSIGN L_BRACE update_list R_BRACE {
+        $$ = new ConfigRowItem($1, $3, $6);
+    }
+    | name_label ASSIGN L_BRACE update_list R_BRACE {
+        $$ = new ConfigRowItem(ConfigModule::ALL, $1, $4);
     }
     ;
 
@@ -1624,13 +1630,13 @@ revoke_sentence
     ;
 
 get_config_sentence
-    : KW_GET KW_VARIABLES get_config_item {
+    : KW_GET KW_CONFIGS get_config_item {
         $$ = new ConfigSentence(ConfigSentence::SubType::kGet, $3);
     }
     ;
 
 set_config_sentence
-    : KW_UPDATE KW_VARIABLES set_config_item  {
+    : KW_UPDATE KW_CONFIGS set_config_item  {
         $$ = new ConfigSentence(ConfigSentence::SubType::kSet, $3);
     }
     ;
