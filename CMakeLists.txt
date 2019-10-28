@@ -12,6 +12,8 @@
 #   NEBULA_THIRDPARTY_ROOT         -- Specify the root directory for third-party
 #   NEBULA_OTHER_ROOT              -- Specify the root directory for user build
 #                                  -- Split with ":", exp: DIR:DIR
+#   LINK_EXTRA_LIB                 -- Added the library name of the requirement link
+#                                  -- Split with ":", exp: LIB:LIB
 #
 #   SKIP_JAVA_CLIENT               -- Skip building the java client
 #   ENABLE_JEMALLOC                -- Link jemalloc into all executables
@@ -145,10 +147,13 @@ if(NOT ${NEBULA_OTHER_ROOT} STREQUAL "")
     foreach(DIR IN LISTS DIR_LIST )
         list(INSERT CMAKE_INCLUDE_PATH 0 ${DIR}/include)
         list(INSERT CMAKE_LIBRARY_PATH 0 ${DIR}/lib)
+        list(INSERT CMAKE_LIBRARY_PATH 0 ${DIR}/lib64)
         list(INSERT CMAKE_PROGRAM_PATH 0 ${DIR}/bin)
         include_directories(SYSTEM ${DIR}/include)
         link_directories(${DIR}/lib)
+        link_directories(${DIR}/lib64)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${DIR}/lib")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${DIR}/lib64")
     endforeach()
 endif()
 
@@ -189,6 +194,22 @@ find_package(LibLZMA MODULE)
 if(NOT ENABLE_ASAN AND NOT ENABLE_NATIVE)
     find_package(PCHSupport)
     add_compile_options(-Winvalid-pch)
+endif()
+
+set(EXTRA_LIBRARIES "")
+
+if(NOT ${LINK_EXTRA_LIB} STREQUAL "")
+    message(STATUS "Specified LINK_EXTRA_LIB: " ${LINK_EXTRA_LIB})
+    string(REPLACE ":" ";" LIB_LIST ${LINK_EXTRA_LIB})
+    list(LENGTH LIB_LIST len)
+    foreach(LIB IN LISTS LIB_LIST )
+        find_library(EXTRA_LIBRARY NAMES lib${LIB}.so lib${LIB}.so.a)
+        if (NOT EXTRA_LIBRARY)
+            message(FATAL_ERROR "Library ${LIB} cannot be found")
+        endif()
+        list(APPEND EXTRA_LIBRARIES ${LIB})
+        set(EXTRA_LIBRARY "")
+    endforeach()
 endif()
 
 add_compile_options(-Wall)
@@ -365,6 +386,8 @@ else()
     set(GETTIME_LIB)
 endif()
 
+message(STATUS "EXTRA_LIBRARIES: ${EXTRA_LIBRARIES}")
+
 # A wrapper for target_link_libraries()
 macro(nebula_link_libraries target)
     target_link_libraries(
@@ -378,6 +401,7 @@ macro(nebula_link_libraries target)
         event
         double-conversion
         resolv
+        ${EXTRA_LIBRARIES}
         ${OPENSSL_SSL_LIBRARY}
         ${OPENSSL_CRYPTO_LIBRARY}
         ${KRB5_LIBRARIES}
