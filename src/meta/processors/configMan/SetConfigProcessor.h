@@ -24,9 +24,15 @@ public:
                       const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
                       const std::string& value, std::vector<kvstore::KV>& data);
 
+    void setNestedConfig(const cpp2::ConfigModule& module, const std::string& name,
+                         const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
+                         const std::string& value, std::vector<kvstore::KV>& data);
+
 private:
     explicit SetConfigProcessor(kvstore::KVStore* kvstore)
         : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+    static std::unordered_set<std::string> mutableFields_;
 };
 
 }  // namespace meta

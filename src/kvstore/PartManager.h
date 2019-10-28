@@ -19,6 +19,9 @@ class Handler {
 public:
     virtual void addSpace(GraphSpaceID spaceId) = 0;
     virtual void addPart(GraphSpaceID spaceId, PartitionID partId, bool asLearner) = 0;
+    virtual void updateSpaceOption(GraphSpaceID spaceId,
+                                   const std::unordered_map<std::string, std::string>& options,
+                                   bool isDbOption) = 0;
     virtual void removeSpace(GraphSpaceID spaceId) = 0;
     virtual void removePart(GraphSpaceID spaceId, PartitionID partId) = 0;
 };
@@ -150,6 +153,10 @@ public:
      void onSpaceAdded(GraphSpaceID spaceId) override;
 
      void onSpaceRemoved(GraphSpaceID spaceId) override;
+
+     void onSpaceOptionUpdated(GraphSpaceID spaceId,
+                               const std::unordered_map<std::string, std::string>& options)
+                               override;
 
      void onPartAdded(const PartMeta& partMeta) override;
 

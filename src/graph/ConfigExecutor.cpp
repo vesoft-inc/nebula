@@ -5,6 +5,7 @@
  */
 
 #include "graph/ConfigExecutor.h"
+#include "base/Configuration.h"
 
 namespace nebula {
 namespace graph {
@@ -93,6 +94,7 @@ void ConfigExecutor::setVariables() {
     meta::cpp2::ConfigModule module = meta::cpp2::ConfigModule::UNKNOWN;
     std::string name;
     VariantType value;
+    meta::cpp2::ConfigType type;
     if (configItem_ != nullptr) {
         if (configItem_->getModule() != nullptr) {
             module = toThriftConfigModule(*configItem_->getModule());
@@ -108,6 +110,28 @@ void ConfigExecutor::setVariables() {
                 return;
             }
             value = v.value();
+            switch (value.which()) {
+                case VAR_INT64:
+                    type = meta::cpp2::ConfigType::INT64;
+                    break;
+                case VAR_DOUBLE:
+                    type = meta::cpp2::ConfigType::DOUBLE;
+                    break;
+                case VAR_BOOL:
+                    type = meta::cpp2::ConfigType::BOOL;
+                    break;
+                case VAR_STR:
+                    type = meta::cpp2::ConfigType::STRING;
+                    break;
+                default:
+                    DCHECK(onError_);
+                    onError_(Status::Error("Parse value type error"));
+                    return;
+            }
+        } else if (configItem_->getUpdateItems() != nullptr) {
+            value = configItem_->getUpdateItems()->toString();
+            // all nested options are regarded as string
+            type = meta::cpp2::ConfigType::NESTED;
         }
     }
 
@@ -115,26 +139,6 @@ void ConfigExecutor::setVariables() {
         DCHECK(onError_);
         onError_(Status::Error("Parse config module error"));
         return;
-    }
-
-    meta::cpp2::ConfigType type;
-    switch (value.which()) {
-        case VAR_INT64:
-            type = meta::cpp2::ConfigType::INT64;
-            break;
-        case VAR_DOUBLE:
-            type = meta::cpp2::ConfigType::DOUBLE;
-            break;
-        case VAR_BOOL:
-            type = meta::cpp2::ConfigType::BOOL;
-            break;
-        case VAR_STR:
-            type = meta::cpp2::ConfigType::STRING;
-            break;
-        default:
-            DCHECK(onError_);
-            onError_(Status::Error("Parse value type error"));
-            return;
     }
 
     auto future = ectx()->gflagsManager()->setConfig(module, name, type, value);
@@ -243,6 +247,16 @@ std::vector<cpp2::ColumnValue> ConfigExecutor::genRow(const meta::cpp2::ConfigIt
         case meta::cpp2::ConfigType::STRING:
             value = item.get_value();
             row[4].set_str(boost::get<std::string>(value));
+            break;
+        case meta::cpp2::ConfigType::NESTED:
+            value = item.get_value();
+            Configuration conf;
+            auto status = conf.parseFromString(boost::get<std::string>(value));
+            if (!status.ok()) {
+                row[4].set_str(boost::get<std::string>(value));
+            } else {
+                row[4].set_str(conf.dumpToPrettyString());
+            }
             break;
     }
     return row;
