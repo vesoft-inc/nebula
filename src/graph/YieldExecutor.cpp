@@ -165,12 +165,13 @@ Status YieldExecutor::executeInputs() {
     }
 
     auto rsWriter = std::make_unique<RowSetWriter>(outputSchema);
-    auto visitor = [&] (const RowReader *reader) -> Status {
+    auto visitor =
+        [inputs, &outputSchema, &rsWriter, &status, this] (const RowReader *reader) -> Status {
         auto &getters = expCtx_->getters();
-        getters.getVariableProp = [&] (const std::string &prop) {
+        getters.getVariableProp = [inputs, reader] (const std::string &prop) {
             return Collector::getProp(inputs->schema().get(), prop, reader);
         };
-        getters.getInputProp = [&] (const std::string &prop) {
+        getters.getInputProp = [inputs, reader] (const std::string &prop) {
             return Collector::getProp(inputs->schema().get(), prop, reader);
         };
         if (filter_ != nullptr) {
@@ -237,12 +238,12 @@ Status YieldExecutor::getOutputSchema(const InterimResult *inputs,
 
     std::vector<VariantType> record;
     record.reserve(yields_.size());
-    auto visitor = [&] (const RowReader *reader) -> Status {
+    auto visitor = [inputSchema, &record, this] (const RowReader *reader) -> Status {
         auto &getters = expCtx_->getters();
-        getters.getVariableProp = [&] (const std::string &prop) {
+        getters.getVariableProp = [inputSchema, reader] (const std::string &prop) {
             return Collector::getProp(inputSchema, prop, reader);
         };
-        getters.getInputProp = [&] (const std::string &prop) {
+        getters.getInputProp = [inputSchema, reader] (const std::string &prop) {
             return Collector::getProp(inputSchema, prop, reader);
         };
         for (auto *column : yields_) {

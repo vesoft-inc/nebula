@@ -65,10 +65,18 @@ Status FetchEdgesExecutor::prepareEdgeKeys() {
             auto *edgeKeyRef = sentence_->ref();
 
             srcid_ = edgeKeyRef->srcid();
-            DCHECK_NOTNULL(srcid_);
+            if (srcid_ == nullptr) {
+                status = Status::Error("Internal error.");
+                LOG(ERROR) << "Get src nullptr.";
+                break;
+            }
 
             dstid_ = edgeKeyRef->dstid();
-            DCHECK_NOTNULL(dstid_);
+            if (dstid_ == nullptr) {
+                status = Status::Error("Internal error.");
+                LOG(ERROR) << "Get dst nullptr.";
+                break;
+            }
 
             rank_ = edgeKeyRef->rank();
 
@@ -336,8 +344,9 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             auto writer = std::make_unique<RowWriter>(outputSchema);
 
             auto &getters = expCtx_->getters();
-            getters.getAliasProp = [&] (const std::string&,
-                                        const std::string &prop) -> OptVariantType {
+            getters.getAliasProp =
+                [&iter, &eschema] (const std::string&,
+                                   const std::string &prop) -> OptVariantType {
                 return Collector::getProp(eschema.get(), prop, &*iter);
             };
             for (auto *column : yields_) {

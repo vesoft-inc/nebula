@@ -113,7 +113,7 @@ Status FetchExecutor::getOutputSchema(
         return Status::Error("Input is empty.");
     }
     auto &getters = expCtx_->getters();
-    getters.getAliasProp = [&] (const std::string&, const std::string &prop) {
+    getters.getAliasProp = [schema, reader] (const std::string&, const std::string &prop) {
         return Collector::getProp(schema, prop, reader);
     };
     std::vector<VariantType> record;

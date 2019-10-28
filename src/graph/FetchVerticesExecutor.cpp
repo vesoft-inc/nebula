@@ -196,8 +196,9 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
 
             auto writer = std::make_unique<RowWriter>(outputSchema);
             auto &getters = expCtx_->getters();
-            getters.getAliasProp = [&] (const std::string&,
-                                        const std::string &prop) -> OptVariantType {
+            getters.getAliasProp =
+                [&vreader, &vschema] (const std::string&,
+                                      const std::string &prop) -> OptVariantType {
                 return Collector::getProp(vschema.get(), prop, vreader.get());
             };
             for (auto *column : yields_) {
