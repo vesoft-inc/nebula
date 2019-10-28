@@ -10,6 +10,9 @@ scalaVersion := "2.10.5"
 name := "nebula-spark-sstfile-generator"
 version := "1.0.0-beta"
 
+// Add maven local repository
+resolvers += "Local Maven" at Path.userHome.asFile.toURI.toURL + ".m2/repository"
+
 test in assembly in ThisBuild := {}
 
 //not include src and doc when dist
@@ -50,7 +53,7 @@ libraryDependencies ++= Seq(
   "org.joda" % "joda-convert" % "2.2.0" % "provided",
   //need nebula native client for encoding, need to run mvn install to deploy to local repo before used
   "org.rocksdb" % "rocksdbjni"    % "5.17.2",
-  "com.vesoft"  % "native-client" % "0.1.0"
+  "com.vesoft"  % "native-client" % "1.0.0-beta"
 )
 
 //CAUTION: when dependency with version of X-SNAPSHOT is updated, you should comment out the following line, and run sbt update

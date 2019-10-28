@@ -26,3 +26,5 @@ Testing/
 target/
 cluster.id
 pids/
+
+.vscode/
