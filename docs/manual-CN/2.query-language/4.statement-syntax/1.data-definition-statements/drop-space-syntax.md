@@ -1,6 +1,4 @@
-# DROP SPACE 语法
-
-```sql
+```
 DROP SPACE space_name
 ```
 
