@@ -1,4 +1,4 @@
-# Download and Ingest
+# 下载及提取
 
 Nebula 存储访问默认使用 `RocksDB` 作为 `key-value` 存储引擎。因此在大量数据加载时，可以通过运行一个 map-reduce job 离线生成 RocksDB 的 SST 文件，再直接分发到服务器上。
 
@@ -10,7 +10,7 @@ Nebula 提供了 `Spark-SSTFile-Generator` 工具。
 
 执行后会在 `HDFS` 上生成 SST 文件，目录结构如下：
 
-```
+```sql
 |---1 (this is partition number)
 |        | ---- vertex-${FIRST_KEY_IN_THIS_FILE}.sst
 |        | ---- edge-${FIRST_KEY_IN_THIS_FILE}.sst
