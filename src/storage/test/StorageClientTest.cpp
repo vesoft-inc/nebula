@@ -142,7 +142,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             vIds.emplace_back(vId);
         }
         for (int i = 0; i < 3; i++) {
-            retCols.emplace_back(TestUtils::vetexPropDef(
+            retCols.emplace_back(TestUtils::vertexPropDef(
                 folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2), 3001 + i * 2));
         }
         auto f = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
@@ -314,7 +314,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 std::vector<VertexID> vIds{srcId};
                 std::vector<cpp2::PropDef> retCols;
                 retCols.emplace_back(
-                    TestUtils::vetexPropDef(folly::stringPrintf("tag_%d_col_%d", 3001, 0), 3001));
+                    TestUtils::vertexPropDef(folly::stringPrintf("tag_%d_col_%d", 3001, 0), 3001));
                 auto cf = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
                 auto cresp = std::move(cf).get();
                 ASSERT_TRUE(cresp.succeeded());
@@ -325,6 +325,24 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 EXPECT_EQ(1, results[0].vertices.size());
                 EXPECT_EQ(0, results[0].vertices[0].tag_data.size());
             }
+        }
+    }
+
+    {
+        // get not existed uuid
+        std::vector<VertexID> vIds;
+        for (int i = 0; i < 10; i++) {
+            auto status = client->getUUID(spaceId, std::to_string(i)).get();
+            ASSERT_TRUE(status.ok());
+            auto resp = status.value();
+            vIds.emplace_back(resp.get_id());
+        }
+
+        for (int i = 0; i < 10; i++) {
+            auto status = client->getUUID(spaceId, std::to_string(i)).get();
+            ASSERT_TRUE(status.ok());
+            auto resp = status.value();
+            ASSERT_EQ(resp.get_id(), vIds[i]);
         }
     }
     LOG(INFO) << "Stop meta client";

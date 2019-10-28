@@ -198,12 +198,13 @@ public class GraphClientImpl implements GraphClient {
         }
 
         ExecutionResponse executionResponse = client.execute(sessionId_, stmt);
-        if (executionResponse.getError_code() == ErrorCode.SUCCEEDED) {
+        int code = executionResponse.getError_code();
+        if (code == ErrorCode.SUCCEEDED) {
             return new ResultSet(executionResponse.getColumn_names(),
                                  executionResponse.getRows());
         } else {
             LOGGER.error("Execute error: " + executionResponse.getError_msg());
-            throw new NGQLException();
+            throw new NGQLException(code);
         }
     }
 

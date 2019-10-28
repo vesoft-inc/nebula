@@ -17,7 +17,7 @@ void DeleteVertexProcessor::process(const cpp2::DeleteVertexRequest& req) {
     auto partId = req.get_part_id();
     auto vId = req.get_vid();
 
-    auto prefix = NebulaKeyUtils::prefix(partId, vId);
+    auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId);
     this->kvstore_->asyncRemovePrefix(spaceId,
                                       partId,
                                       prefix,
@@ -41,7 +41,6 @@ void DeleteVertexProcessor::process(const cpp2::DeleteVertexRequest& req) {
             if (thriftResult.code != cpp2::ErrorCode::SUCCEEDED) {
                 this->codes_.emplace_back(std::move(thriftResult));
             }
-            result_.set_failed_codes(std::move(this->codes_));
         }
         this->onFinished();
     });

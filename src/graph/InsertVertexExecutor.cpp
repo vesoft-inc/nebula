@@ -18,6 +18,8 @@ InsertVertexExecutor::InsertVertexExecutor(Sentence *sentence,
 
 
 Status InsertVertexExecutor::prepare() {
+    expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setStorageClient(ectx()->getStorageClient());
     return Status::OK();
 }
 
@@ -75,12 +77,16 @@ Status InsertVertexExecutor::check() {
     return Status::OK();
 }
 
-
 StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertices() {
+    expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->setSpace(spaceId_);
+
     std::vector<storage::cpp2::Vertex> vertices(rows_.size());
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto rid = row->id();
+        rid->setContext(expCtx_.get());
+
         auto status = rid->prepare();
         if (!status.ok()) {
             return status;
@@ -182,9 +188,9 @@ void InsertVertexExecutor::execute() {
         onError_(std::move(result).status());
         return;
     }
-    auto future = ectx()->storage()->addVertices(spaceId_,
-                                                 std::move(result).value(),
-                                                 overwritable_);
+    auto future = ectx()->getStorageClient()->addVertices(spaceId_,
+                                                          std::move(result).value(),
+                                                          overwritable_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {

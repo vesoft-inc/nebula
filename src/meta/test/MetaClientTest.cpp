@@ -324,7 +324,8 @@ TEST(MetaClientTest, TagTest) {
         columns.emplace_back(FRAGILE, "column_s",
                              ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr));
         nebula::cpp2::Schema schema;
-        auto result = client->createTagSchema(spaceId, "test_tag", schema).get();
+        schema.set_columns(std::move(columns));
+        auto result = client->createTagSchema(spaceId, "test_tag", std::move(schema)).get();
         ASSERT_TRUE(result.ok());
         id = result.value();
     }
@@ -342,6 +343,7 @@ TEST(MetaClientTest, TagTest) {
         ASSERT_TRUE(result1.ok());
         auto result2 = client->getTagSchema(spaceId, "test_tag").get();
         ASSERT_TRUE(result2.ok());
+        ASSERT_EQ(3, result2.value().columns.size());
         ASSERT_EQ(result1.value().columns.size(), result2.value().columns.size());
         for (auto i = 0u; i < result1.value().columns.size(); i++) {
             ASSERT_EQ(result1.value().columns[i].name, result2.value().columns[i].name);
@@ -561,7 +563,7 @@ TEST(MetaClientTest, SimpleTest) {
     }
 }
 
-TEST(MetaClientTest, RetryWithExceptioniTest) {
+TEST(MetaClientTest, RetryWithExceptionTest) {
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
@@ -571,7 +573,7 @@ TEST(MetaClientTest, RetryWithExceptioniTest) {
     auto client = std::make_shared<MetaClient>(threadPool,
                                                std::vector<HostAddr>{HostAddr(0, 0)},
                                                localHost);
-    // Retry with exception, thenfailed
+    // Retry with exception, then failed
     {
         LOG(INFO) << "Test add hosts...";
         folly::Baton<true, std::atomic> baton;

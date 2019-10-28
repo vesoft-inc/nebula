@@ -28,6 +28,7 @@ Status FetchEdgesExecutor::prepareClauses() {
             break;
         }
         expCtx_ = std::make_unique<ExpressionContext>();
+        expCtx_->setStorageClient(ectx()->getStorageClient());
         spaceId_ = ectx()->rctx()->session()->space();
         yieldClause_ = sentence_->yieldClause();
         labelName_ = sentence_->edge();
@@ -135,13 +136,13 @@ Status FetchEdgesExecutor::setupEdgeKeysFromRef() {
     const InterimResult *inputs;
     if (sentence_->ref()->isInputExpr()) {
         inputs = inputs_.get();
-        if (inputs == nullptr) {
+        if (inputs == nullptr || !inputs->hasData()) {
             // we have empty imputs from pipe.
             return Status::OK();
         }
     } else {
         inputs = ectx()->variableHolder()->get(varname_);
-        if (inputs == nullptr) {
+        if (inputs == nullptr || !inputs->hasData()) {
             return Status::Error("Variable `%s' not defined", varname_.c_str());
         }
     }
@@ -196,12 +197,18 @@ Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
     if (distinct_) {
         uniq = std::make_unique<EdgeKeyHashSet>(256, hash_);
     }
+
     auto edgeKeyExprs = sentence_->keys()->keys();
+    expCtx_->setSpace(spaceId_);
+
     for (auto *keyExpr : edgeKeyExprs) {
         auto *srcExpr = keyExpr->srcid();
-        auto *dstExpr = keyExpr->dstid();
-        auto rank = keyExpr->rank();
+        srcExpr->setContext(expCtx_.get());
 
+        auto *dstExpr = keyExpr->dstid();
+        dstExpr->setContext(expCtx_.get());
+
+        auto rank = keyExpr->rank();
         status = srcExpr->prepare();
         if (!status.ok()) {
             break;
@@ -258,7 +265,7 @@ void FetchEdgesExecutor::fetchEdges() {
         return;
     }
 
-    auto future = ectx()->storage()->getEdgeProps(spaceId_, edgeKeys_, std::move(props));
+    auto future = ectx()->getStorageClient()->getEdgeProps(spaceId_, edgeKeys_, std::move(props));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
@@ -321,13 +328,12 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             if (!status.ok()) {
                 LOG(ERROR) << "Get getOutputSchema failed" << status;
                 DCHECK(onError_);
-                onError_(std::move(status));
+                onError_(Status::Error("Internal error."));
                 return;
             }
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
         }
         while (iter) {
-            VLOG(3) << "collect.";
             auto collector = std::make_unique<Collector>(eschema.get());
             auto writer = std::make_unique<RowWriter>(outputSchema);
 
@@ -362,5 +368,6 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
 
     finishExecution(std::move(rsWriter));
 }
+
 }  // namespace graph
 }  // namespace nebula

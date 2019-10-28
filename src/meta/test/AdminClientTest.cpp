@@ -19,7 +19,10 @@
         folly::Promise<storage::cpp2::AdminExecResp> pro; \
         auto f = pro.getFuture(); \
         storage::cpp2::AdminExecResp resp; \
-        resp.set_code(storage::cpp2::ErrorCode::SUCCEEDED); \
+        storage::cpp2::ResponseCommon result; \
+        std::vector<storage::cpp2::ResultCode> partRetCode; \
+        result.set_failed_codes(partRetCode); \
+        resp.set_result(result); \
         pro.setValue(std::move(resp)); \
         return f; \
     } while (false)
@@ -30,8 +33,14 @@
         folly::Promise<storage::cpp2::AdminExecResp> pro; \
         auto f = pro.getFuture(); \
         storage::cpp2::AdminExecResp resp; \
-        resp.set_code(storage::cpp2::ErrorCode::E_LEADER_CHANGED); \
-        resp.set_leader(leader); \
+        storage::cpp2::ResponseCommon result; \
+        std::vector<storage::cpp2::ResultCode> partRetCode; \
+        storage::cpp2::ResultCode thriftRet; \
+        thriftRet.set_code(storage::cpp2::ErrorCode::E_LEADER_CHANGED); \
+        thriftRet.set_leader(leader); \
+        partRetCode.emplace_back(std::move(thriftRet)); \
+        result.set_failed_codes(partRetCode); \
+        resp.set_result(result); \
         pro.setValue(std::move(resp)); \
         return f; \
     } while (false)
@@ -115,8 +124,8 @@ TEST(AdminClientTest, SimpleTest) {
     {
         LOG(INFO) << "Test transLeader...";
         folly::Baton<true, std::atomic> baton;
-        client->transLeader(0, 0, {localIp, sc->port_}).then([&baton](auto&& st) {
-            CHECK(st.ok());
+        client->transLeader(0, 0, {localIp, sc->port_}, HostAddr(1, 1)).then([&baton](auto&& st) {
+            CHECK(st.ok()) << st.toString();
             baton.post();
         });
         baton.wait();
@@ -188,7 +197,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test transLeader, return ok if target is not leader";
         folly::Baton<true, std::atomic> baton;
-        client->transLeader(0, 1, {localIp, sc2->port_}).then([&baton](auto&& st) {
+        client->transLeader(0, 1, {localIp, sc2->port_}, HostAddr(1, 1)).then([&baton](auto&& st) {
             CHECK(st.ok());
             baton.post();
         });
@@ -197,7 +206,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test member change...";
         folly::Baton<true, std::atomic> baton;
-        client->memberChange(0, 1).then([&baton](auto&& st) {
+        client->memberChange(0, 1, HostAddr(0, 0), true).then([&baton](auto&& st) {
             CHECK(st.ok());
             baton.post();
         });
@@ -206,7 +215,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test add learner...";
         folly::Baton<true, std::atomic> baton;
-        client->addLearner(0, 1).then([&baton](auto&& st) {
+        client->addLearner(0, 1, HostAddr(0, 0)).then([&baton](auto&& st) {
             CHECK(st.ok());
             baton.post();
         });
@@ -215,7 +224,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test waitingForCatchUpData...";
         folly::Baton<true, std::atomic> baton;
-        client->waitingForCatchUpData(0, 1).then([&baton](auto&& st) {
+        client->waitingForCatchUpData(0, 1, HostAddr(0, 0)).then([&baton](auto&& st) {
             CHECK(st.ok());
             baton.post();
         });
@@ -225,7 +234,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test member change...";
         folly::Baton<true, std::atomic> baton;
-        client->memberChange(0, 1).then([&baton](auto&& st) {
+        client->memberChange(0, 1, HostAddr(0, 0), true).then([&baton](auto&& st) {
             CHECK(!st.ok());
             CHECK_EQ("Leader changed!", st.toString());
             baton.post();

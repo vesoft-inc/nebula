@@ -18,7 +18,7 @@ namespace storage {
 TEST(AddEdgesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/AddEdgesTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
-    auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr);
+    auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
 
     LOG(INFO) << "Build AddEdgesRequest...";
     cpp2::AddEdgesRequest req;
@@ -46,7 +46,7 @@ TEST(AddEdgesTest, SimpleTest) {
     LOG(INFO) << "Check data in kv store...";
     for (auto partId = 0; partId < 3; partId++) {
         for (auto srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
-            auto prefix = NebulaKeyUtils::prefix(partId, srcId, srcId*100 + 1);
+            auto prefix = NebulaKeyUtils::edgePrefix(partId, srcId, srcId*100 + 1);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             int num = 0;

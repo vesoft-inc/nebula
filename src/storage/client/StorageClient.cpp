@@ -370,11 +370,88 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateEdge
 }
 
 
+folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(
+        GraphSpaceID space,
+        const std::string& name,
+        folly::EventBase* evb) {
+    std::pair<HostAddr, cpp2::GetUUIDReq> request;
+    std::hash<std::string> hashFunc;
+    auto hashValue = hashFunc(name);
+    PartitionID part = partId(space, hashValue);
+    auto partMeta = getPartMeta(space, part);
+    CHECK_GT(partMeta.peers_.size(), 0U);
+    const auto& leader = this->leader(partMeta);
+    request.first = leader;
+
+    cpp2::GetUUIDReq req;
+    req.set_space_id(space);
+    req.set_part_id(part);
+    req.set_name(name);
+    request.second = std::move(req);
+
+    return getResponse(
+        evb,
+        std::move(request),
+        [] (cpp2::StorageServiceAsyncClient* client,
+            const cpp2::GetUUIDReq& r) {
+            return client->future_getUUID(r);
+    });
+}
+
+
 PartitionID StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
     auto parts = partsNum(spaceId);
     auto s = ID_HASH(id, parts);
     CHECK_GE(s, 0U);
     return s;
+}
+
+folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>>
+StorageClient::put(GraphSpaceID space,
+                   std::vector<nebula::cpp2::Pair> values,
+                   folly::EventBase* evb) {
+    auto clusters = clusterIdsToHosts(space, values,
+                                      [] (const nebula::cpp2::Pair& v) {
+                                          return std::hash<std::string>{}(v.get_key());
+                                      });
+
+    std::unordered_map<HostAddr, cpp2::PutRequest> requests;
+    for (auto& c : clusters) {
+        auto& host = c.first;
+        auto& req = requests[host];
+        req.set_space_id(space);
+        req.set_parts(std::move(c.second));
+    }
+
+    return collectResponse(evb, std::move(requests),
+                           [](cpp2::StorageServiceAsyncClient* client,
+                              const cpp2::PutRequest& r) {
+                                  return client->future_put(r);
+                              });
+}
+
+folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>>
+StorageClient::get(GraphSpaceID space,
+                   const std::vector<std::string>& keys,
+                   folly::EventBase* evb) {
+    auto clusters = clusterIdsToHosts(space, keys,
+                                      [] (const std::string& v) {
+                                          return std::hash<std::string>{}(v);
+                                      });
+
+    std::unordered_map<HostAddr, cpp2::GetRequest> requests;
+    for (auto& c : clusters) {
+        auto& host = c.first;
+        auto& req = requests[host];
+        req.set_space_id(space);
+        req.set_parts(std::move(c.second));
+    }
+
+    return collectResponse(evb, std::move(requests),
+                           [](cpp2::StorageServiceAsyncClient* client,
+                              const cpp2::GetRequest& r) {
+                                  return client->future_get(r);
+                              });
 }
 
 }   // namespace storage

@@ -28,9 +28,16 @@ private:
             , adminClient_(adminClient) {}
 
     /**
-     * Get all hosts with online/offline status.
+     * Get all hosts with online/offline status and partition distribution.
      * */
-    StatusOr<std::vector<cpp2::HostItem>> allHostsWithStatus();
+    StatusOr<std::vector<cpp2::HostItem>>
+    allHostsWithStatus(std::unordered_map<GraphSpaceID, std::string>& spaceIdNameMap);
+
+    /**
+     * Get all hosts with storage leader distribution.
+     * */
+    void getLeaderDist(std::vector<cpp2::HostItem>& hostItems,
+                       std::unordered_map<GraphSpaceID, std::string>& spaceIdNameMap);
 
     AdminClient* adminClient_;
 };

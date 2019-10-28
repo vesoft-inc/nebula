@@ -49,6 +49,8 @@ std::unique_ptr<Expression> Expression::makeExpr(uint8_t kind) {
             return std::make_unique<UnaryExpression>();
         case kTypeCasting:
             return std::make_unique<TypeCastingExpression>();
+        case kUUID:
+            return std::make_unique<UUIDExpression>();
         case kArithmetic:
             return std::make_unique<ArithmeticExpression>();
         case kRelational:
@@ -557,7 +559,7 @@ OptVariantType FunctionCallExpression::eval() const {
         if (!result.ok()) {
             return result;
         }
-        args.push_back(std::move(result.value()));
+        args.emplace_back(std::move(result.value()));
     }
 
     // TODO(simon.liu)
@@ -619,6 +621,24 @@ const char* FunctionCallExpression::decode(const char *pos, const char *end) {
     return pos;
 }
 
+std::string UUIDExpression::toString() const {
+    return folly::stringPrintf("uuid(%s)", field_->c_str());
+}
+
+OptVariantType UUIDExpression::eval() const {
+     auto client = context_->storageClient();
+     auto space = context_->space();
+     auto uuidResult = client->getUUID(space, *field_).get();
+     if (!uuidResult.ok() ||
+         !uuidResult.value().get_result().get_failed_codes().empty()) {
+         return OptVariantType(Status::Error("Get UUID Failed"));
+     }
+     return uuidResult.value().get_id();
+}
+
+Status UUIDExpression::prepare() {
+    return Status::OK();
+}
 
 std::string UnaryExpression::toString() const {
     std::string buf;
@@ -684,17 +704,17 @@ const char* UnaryExpression::decode(const char *pos, const char *end) {
 
 std::string columnTypeToString(ColumnType type) {
     switch (type) {
-        case INT:
+        case ColumnType::INT:
             return "int";
-        case STRING:
+        case ColumnType::STRING:
             return "string";
-        case DOUBLE:
+        case ColumnType::DOUBLE:
             return "double";
-        case BIGINT:
+        case ColumnType::BIGINT:
             return "bigint";
-        case BOOL:
+        case ColumnType::BOOL:
             return "bool";
-        case TIMESTAMP:
+        case ColumnType::TIMESTAMP:
             return  "timestamp";
         default:
             return "unknown";
@@ -722,16 +742,16 @@ OptVariantType TypeCastingExpression::eval() const {
     }
 
     switch (type_) {
-        case INT:
-        case TIMESTAMP:
+        case ColumnType::INT:
+        case ColumnType::TIMESTAMP:
             return Expression::toInt(result.value());
-        case STRING:
+        case ColumnType::STRING:
             return Expression::toString(result.value());
-        case DOUBLE:
+        case ColumnType::DOUBLE:
             return Expression::toDouble(result.value());
-        case BOOL:
+        case ColumnType::BOOL:
             return Expression::toBool(result.value());
-        case BIGINT:
+        case ColumnType::BIGINT:
             return Status::Error("Type bigint not supported yet");
     }
     LOG(FATAL) << "casting to unknown type: " << static_cast<int>(type_);
@@ -743,8 +763,7 @@ Status TypeCastingExpression::prepare() {
 }
 
 
-void TypeCastingExpression::encode(Cord &cord) const {
-    UNUSED(cord);
+void TypeCastingExpression::encode(Cord &) const {
 }
 
 
@@ -933,6 +952,13 @@ OptVariantType RelationalExpression::eval() const {
 
     auto l = left.value();
     auto r = right.value();
+    if (l.which() != r.which()) {
+        auto s = implicitCasting(l, r);
+        if (!s.ok()) {
+            return s;
+        }
+    }
+
     switch (op_) {
         case LT:
             return OptVariantType(l < r);
@@ -961,6 +987,26 @@ OptVariantType RelationalExpression::eval() const {
     }
 
     return OptVariantType(Status::Error("Wrong operator"));
+}
+
+Status RelationalExpression::implicitCasting(VariantType &lhs, VariantType &rhs) const {
+    // Rule: bool -> int64_t -> double
+    if (lhs.which() == VAR_STR || rhs.which() == VAR_STR) {
+        return Status::Error("A string type can not be compared with a non-string type.");
+    } else if (lhs.which() == VAR_DOUBLE || rhs.which() == VAR_DOUBLE) {
+        lhs = toDouble(lhs);
+        rhs = toDouble(rhs);
+    } else if (lhs.which() == VAR_INT64 || rhs.which() == VAR_INT64) {
+        lhs = toInt(lhs);
+        rhs = toInt(rhs);
+    } else if (lhs.which() == VAR_BOOL || rhs.which() == VAR_BOOL) {
+        // No need do cast here.
+    } else {
+        // If the variant type is expanded, we should update the rule.
+        LOG(FATAL) << "Unknown type: " << lhs.which() << ", " << rhs.which();
+    }
+
+    return Status::OK();
 }
 
 Status RelationalExpression::prepare() {

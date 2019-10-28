@@ -190,6 +190,7 @@ void Host::appendLogsInternal(folly::EventBase* eb,
             {
                 std::lock_guard<std::mutex> g(self->lock_);
                 self->setResponse(r);
+                self->lastLogIdSent_ = self->logIdToSend_;
             }
             self->noMoreRequestCV_.notify_all();
             return;
@@ -321,9 +322,22 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                         << " to the followers lastLodId " << resp.get_last_log_id();
                 {
                     std::lock_guard<std::mutex> g(self->lock_);
-                    self->lastLogIdSent_ = resp.get_last_log_id();
-                    self->lastLogTermSent_ = resp.get_last_log_term();
-                    self->setResponse(resp);
+                    auto res = self->checkStatus();
+                    if (res != cpp2::ErrorCode::SUCCEEDED) {
+                        VLOG(2) << self->idStr_
+                                << "The host is not in a proper status,"
+                                   " skip waiting the snapshot";
+                        cpp2::AppendLogResponse r;
+                        r.set_error_code(res);
+                        self->setResponse(r);
+                    } else {
+                        self->lastLogIdSent_ = resp.get_last_log_id();
+                        self->lastLogTermSent_ = resp.get_last_log_term();
+                        // For log stale, we think the request has been succeeded
+                        cpp2::AppendLogResponse r;
+                        r.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+                        self->setResponse(r);
+                    }
                 }
                 self->noMoreRequestCV_.notify_all();
                 return;
@@ -388,14 +402,15 @@ Host::prepareAppendLogRequest() {
             LOG(INFO) << idStr_ << "Can't find log " << lastLogIdSent_ + 1
                       << " in wal, send the snapshot";
             sendingSnapshot_ = true;
-            part_->snapshot_->sendSnapshot(part_, addr_).then([this] (Status&& status) {
+            part_->snapshot_->sendSnapshot(part_, addr_)
+                .then([self = shared_from_this()] (Status&& status) {
                 if (status.ok()) {
-                    LOG(INFO) << idStr_ << "Send snapshot succeeded!";
+                    LOG(INFO) << self->idStr_ << "Send snapshot succeeded!";
                 } else {
-                    LOG(INFO) << idStr_ << "Send snapshot failed!";
+                    LOG(INFO) << self->idStr_ << "Send snapshot failed!";
                     // TODO(heng): we should tell the follower i am failed.
                 }
-                sendingSnapshot_ = false;
+                self->sendingSnapshot_ = false;
             });
         } else {
             LOG(INFO) << idStr_ << "The snapshot req is in queue, please wait for a moment";

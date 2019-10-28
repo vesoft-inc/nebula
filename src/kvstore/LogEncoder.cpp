@@ -164,59 +164,33 @@ std::vector<folly::StringPiece> decodeMultiValues(folly::StringPiece encoded) {
     return values;
 }
 
-std::string encodeLearner(const HostAddr& learner) {
+std::string encodeHost(LogType type, const HostAddr& host) {
     std::string encoded;
-    encoded.reserve(kHeadLen + sizeof(HostAddr));
+    encoded.reserve(sizeof(int64_t) + 1 + sizeof(HostAddr));
     // Timestamp (8 bytes)
     int64_t ts = time::WallClock::fastNowInMilliSec();
     encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t));
     // Log type
-    auto type = LogType::OP_ADD_LEARNER;
     encoded.append(reinterpret_cast<char*>(&type), 1);
-    // Value length
-    uint32_t len = static_cast<uint32_t>(sizeof(HostAddr));
-    encoded.append(reinterpret_cast<char*>(&len), sizeof(len));
-    // Learner addr
-    encoded.append(reinterpret_cast<const char*>(&learner), sizeof(HostAddr));
+    encoded.append(reinterpret_cast<const char*>(&host), sizeof(HostAddr));
     return encoded;
 }
 
-HostAddr decodeLearner(const std::string& encoded) {
+HostAddr decodeHost(LogType type, const folly::StringPiece& encoded) {
     HostAddr addr;
-    CHECK_EQ(kHeadLen + sizeof(HostAddr), encoded.size());
-    memcpy(&addr.first, encoded.data() + kHeadLen, sizeof(addr.first));
+    CHECK_EQ(sizeof(int64_t) + 1 + sizeof(HostAddr), encoded.size());
+    CHECK(encoded[sizeof(int64_t)] == type);
+    memcpy(&addr.first, encoded.begin() + sizeof(int64_t) + 1, sizeof(addr.first));
     memcpy(&addr.second,
-           encoded.data() + kHeadLen + sizeof(addr.first),
+           encoded.begin() + sizeof(int64_t) + 1 + sizeof(addr.first),
            sizeof(addr.second));
     return addr;
 }
 
-std::string encodeTransLeader(const HostAddr& targetAddr) {
-    std::string encoded;
-    encoded.reserve(kHeadLen + sizeof(HostAddr));
-    // Timestamp (8 bytes)
-    int64_t ts = time::WallClock::fastNowInMilliSec();
-    encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t));
-    // Log type
-    auto type = LogType::OP_TRANS_LEADER;
-    encoded.append(reinterpret_cast<char*>(&type), 1);
-    // Value length
-    uint32_t len = static_cast<uint32_t>(sizeof(HostAddr));
-    encoded.append(reinterpret_cast<char*>(&len), sizeof(len));
-    // Target addr
-    encoded.append(reinterpret_cast<const char*>(&targetAddr), sizeof(HostAddr));
-    return encoded;
+int64_t getTimestamp(const folly::StringPiece& command) {
+    return *reinterpret_cast<const int64_t*>(command.begin());
 }
 
-HostAddr decodeTransLeader(folly::StringPiece encoded) {
-    HostAddr addr;
-    CHECK_EQ(kHeadLen + sizeof(HostAddr), encoded.size());
-    memcpy(&addr.first, encoded.begin() + kHeadLen, sizeof(addr.first));
-    memcpy(&addr.second,
-           encoded.begin() + kHeadLen + sizeof(addr.first),
-           sizeof(addr.second));
-    return addr;
-}
 }  // namespace kvstore
 }  // namespace nebula
 

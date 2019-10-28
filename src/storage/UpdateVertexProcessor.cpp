@@ -69,7 +69,7 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
                             const VertexID vId,
                             const TagID tagId,
                             const std::vector<PropContext>& props) {
-    auto prefix = NebulaKeyUtils::prefix(partId, vId, tagId);
+    auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId, tagId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(this->spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -227,7 +227,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack() {
     std::vector<kvstore::KV> data;
     for (const auto& u : tagUpdaters_) {
         data.emplace_back(std::move(u.second->key),
-                          std::move(u.second->updater->encode()));
+                          u.second->updater->encode());
     }
     auto log = kvstore::encodeMultiValues(kvstore::OP_MULTI_PUT, data);
     return log;
@@ -273,12 +273,12 @@ cpp2::ErrorCode UpdateVertexProcessor::checkAndBuildContexts(
 
     // build context of the update items
     for (auto& item : req.get_update_items()) {
-        std::string name = item.get_name();
-        std::string prop = item.get_prop();
-        auto* sourcePropExp = new SourcePropertyExpression(&name, &prop);
-        sourcePropExp->setContext(this->expCtx_.get());
-        auto status = sourcePropExp->prepare();
-        if (!status.ok() || !this->checkExp(sourcePropExp)) {
+        auto name = item.get_name();
+        SourcePropertyExpression sourcePropExp(new std::string(name),
+                                               new std::string(item.get_prop()));
+        sourcePropExp.setContext(this->expCtx_.get());
+        auto status = sourcePropExp.prepare();
+        if (!status.ok() || !this->checkExp(&sourcePropExp)) {
             return cpp2::ErrorCode::E_INVALID_UPDATER;
         }
         auto tagRet = this->schemaMan_->toTagID(this->spaceId_, name);
@@ -335,7 +335,7 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
             }
             return std::string("");
         },
-        [&, this] (kvstore::ResultCode code) {
+        [this, partId, vId, req] (kvstore::ResultCode code) {
             this->pushResultCode(this->to(code), partId);
             if (code == kvstore::ResultCode::SUCCEEDED) {
                 onProcessFinished(req.get_return_columns().size());

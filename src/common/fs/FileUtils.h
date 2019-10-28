@@ -37,6 +37,8 @@ public:
     static std::string basename(const char *path);
     // Get the content of a symbol link
     static StatusOr<std::string> readLink(const char *path);
+    // Get the canonicalized absolute pathname of a path
+    static StatusOr<std::string> realPath(const char *path);
 
     // return the size of the given file
     static size_t fileSize(const char* path);

@@ -18,7 +18,7 @@ void QueryEdgeKeysProcessor::process(const cpp2::EdgeKeyRequest& req) {
     CHECK_NOTNULL(kvstore_);
 
     std::vector<cpp2::EdgeKey> edges;
-    auto prefix = NebulaKeyUtils::prefix(partId, vId);
+    auto prefix = NebulaKeyUtils::edgePrefix(partId, vId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {

@@ -57,7 +57,14 @@ bool NebulaStore::init() {
             for (auto& dir : dirs) {
                 LOG(INFO) << "Scan path \"" << path << "/" << dir << "\"";
                 try {
-                    auto spaceId = folly::to<GraphSpaceID>(dir);
+                    GraphSpaceID spaceId;
+                    try {
+                        spaceId = folly::to<GraphSpaceID>(dir);
+                    } catch (const std::exception& ex) {
+                        LOG(ERROR) << "Data path invalid: " << ex.what();
+                        return false;
+                    }
+
                     if (!options_.partMan_->spaceExist(storeSvcAddr_, spaceId)) {
                         // TODO We might want to have a second thought here.
                         // Removing the data directly feels a little strong
@@ -90,7 +97,8 @@ bool NebulaStore::init() {
                             spaceIt->second->parts_.emplace(partId,
                                                             newPart(spaceId,
                                                                     partId,
-                                                                    enginePtr.get()));
+                                                                    enginePtr.get(),
+                                                                    false));
                         }
                     }
                 } catch (std::exception& e) {
@@ -111,7 +119,7 @@ bool NebulaStore::init() {
         }
         std::sort(partIds.begin(), partIds.end());
         for (auto& partId : partIds) {
-            addPart(spaceId, partId);
+            addPart(spaceId, partId, false);
         }
     }
 
@@ -124,13 +132,15 @@ bool NebulaStore::init() {
 std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
                                                  const std::string& path) {
     if (FLAGS_engine_type == "rocksdb") {
-        if (options_.cfFactory_ != nullptr) {
-            options_.cfFactory_->construct(spaceId, FLAGS_custom_filter_interval_secs);
+        std::shared_ptr<KVCompactionFilterFactory> cfFactory = nullptr;
+        if (options_.cffBuilder_ != nullptr) {
+            cfFactory = options_.cffBuilder_->buildCfFactory(spaceId,
+                                                             FLAGS_custom_filter_interval_secs);
         }
         return std::make_unique<RocksEngine>(spaceId,
                                              path,
                                              options_.mergeOp_,
-                                             options_.cfFactory_);
+                                             cfFactory);
     } else {
         LOG(FATAL) << "Unknown engine type " << FLAGS_engine_type;
         return nullptr;
@@ -165,7 +175,7 @@ void NebulaStore::addSpace(GraphSpaceID spaceId) {
 }
 
 
-void NebulaStore::addPart(GraphSpaceID spaceId, PartitionID partId) {
+void NebulaStore::addPart(GraphSpaceID spaceId, PartitionID partId, bool asLearner) {
     folly::RWSpinLock::WriteHolder wh(&lock_);
     auto spaceIt = this->spaces_.find(spaceId);
     CHECK(spaceIt != this->spaces_.end()) << "Space should exist!";
@@ -192,13 +202,15 @@ void NebulaStore::addPart(GraphSpaceID spaceId, PartitionID partId) {
     targetEngine->addPart(partId);
     spaceIt->second->parts_.emplace(
         partId,
-        newPart(spaceId, partId, targetEngine.get()));
-    LOG(INFO) << "Space " << spaceId << ", part " << partId << " has been added!";
+        newPart(spaceId, partId, targetEngine.get(), asLearner));
+    LOG(INFO) << "Space " << spaceId << ", part " << partId
+              << " has been added, asLearner " << asLearner;
 }
 
 std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                            PartitionID partId,
-                                           KVEngine* engine) {
+                                           KVEngine* engine,
+                                           bool asLearner) {
     auto part = std::make_shared<Part>(spaceId,
                                        partId,
                                        raftAddr_,
@@ -219,7 +231,7 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
         }
     }
     raftService_->addPartition(part);
-    part->start(std::move(peers));
+    part->start(std::move(peers), asLearner);
     return part;
 }
 
@@ -249,6 +261,7 @@ void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId) {
             auto* e = partIt->second->engine();
             CHECK_NOTNULL(e);
             raftService_->removePartition(partIt->second);
+            partIt->second->reset();
             spaceIt->second->parts_.erase(partId);
             e->removePart(partId);
         }

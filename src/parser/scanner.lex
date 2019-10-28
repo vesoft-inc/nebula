@@ -119,7 +119,13 @@ PROP                        ([Pp][Rr][Oo][Pp])
 ALL                         ([Aa][Ll][Ll])
 BALANCE                     ([Bb][Aa][Ll][Aa][Nn][Cc][Ee])
 LEADER                      ([Ll][Ee][Aa][Dd][Ee][Rr])
+UUID                        ([Uu][Uu][Ii][Dd])
 OF                          ([Oo][Ff])
+DATA                        ([Dd][Aa][Tt][Aa])
+SHORTEST                    ([Ss][Hh][Oo][Rr][Tt][Ee][Ss][Tt])
+PATH                        ([Pp][Aa][Tt][Hh])
+LIMIT                       ([Ll][Ii][Mm][Ii][Tt])
+OFFSET                      ([Oo][Ff][Ff][Ss][Ee][Tt])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -229,6 +235,12 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {ALL}                       { return TokenType::KW_ALL; }
 {BALANCE}                   { return TokenType::KW_BALANCE; }
 {LEADER}                    { return TokenType::KW_LEADER; }
+{UUID}                      { return TokenType::KW_UUID; }
+{DATA}                      { return TokenType::KW_DATA; }
+{SHORTEST}                  { return TokenType::KW_SHORTEST; }
+{PATH}                      { return TokenType::KW_PATH; }
+{LIMIT}                     { return TokenType::KW_LIMIT; }
+{OFFSET}                    { return TokenType::KW_OFFSET; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
@@ -358,17 +370,11 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 <DQ_STR>\"                  {
                                 yylval->strval = new std::string(sbuf, pos);
                                 BEGIN(INITIAL);
-                                if (yylval->strval->size() > MAX_STRING) {
-                                    yyterminate();
-                                }
                                 return TokenType::STRING;
                             }
 <SQ_STR>\'                  {
                                 yylval->strval = new std::string(sbuf, pos);
                                 BEGIN(INITIAL);
-                                if (yylval->strval->size() > MAX_STRING) {
-                                    yyterminate();
-                                }
                                 return TokenType::STRING;
                             }
 <DQ_STR,SQ_STR><<EOF>>      {
@@ -377,29 +383,67 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                             }
 <DQ_STR,SQ_STR>\n           { yyterminate(); }
 <DQ_STR>[^\\\n\"]+          {
+                                if (pos + yyleng > MAX_STRING) {
+                                    throw GraphParser::syntax_error(*yylloc, "string too long");
+                                }
                                 ::strncpy(sbuf + pos, yytext, yyleng);
                                 pos += yyleng;
                             }
 <SQ_STR>[^\\\n\']+          {
+                                if (pos + yyleng > MAX_STRING) {
+                                    throw GraphParser::syntax_error(*yylloc, "string too long");
+                                }
                                 ::strncpy(sbuf + pos, yytext, yyleng);
                                 pos += yyleng;
                             }
 <DQ_STR,SQ_STR>\\{OCT}{1,3} {
+                                if (pos + 1 > MAX_STRING) {
+                                    throw GraphParser::syntax_error(*yylloc, "string too long");
+                                }
                                 int val = 0;
                                 sscanf(yytext + 1, "%o", &val);
                                 if (val > 0xFF) {
                                     yyterminate();
                                 }
-                                sbuf[pos] = val;
-                                pos++;
+                                sbuf[pos++] = val;
                             }
 <DQ_STR,SQ_STR>\\{DEC}+     { yyterminate(); }
-<DQ_STR,SQ_STR>\\n          { sbuf[pos] = '\n'; pos++; }
-<DQ_STR,SQ_STR>\\t          { sbuf[pos] = '\t'; pos++; }
-<DQ_STR,SQ_STR>\\r          { sbuf[pos] = '\r'; pos++; }
-<DQ_STR,SQ_STR>\\b          { sbuf[pos] = '\b'; pos++; }
-<DQ_STR,SQ_STR>\\f          { sbuf[pos] = '\f'; pos++; }
-<DQ_STR,SQ_STR>\\(.|\n)     { sbuf[pos] = yytext[1]; pos++; }
+<DQ_STR,SQ_STR>\\n          {
+                                if (pos + 1 > MAX_STRING) {
+                                    throw GraphParser::syntax_error(*yylloc, "string too long");
+                                }
+                                sbuf[pos++] = '\n';
+                            }
+<DQ_STR,SQ_STR>\\t          {
+                                if (pos + 1 > MAX_STRING) {
+                                    throw GraphParser::syntax_error(*yylloc, "string too long");
+                                }
+                                sbuf[pos++] = '\t';
+                            }
+<DQ_STR,SQ_STR>\\r          {
+                                if (pos + 1 > MAX_STRING) {
+                                    throw GraphParser::syntax_error(*yylloc, "string too long");
+                                }
+                                sbuf[pos++] = '\r';
+                            }
+<DQ_STR,SQ_STR>\\b          {
+                                if (pos + 1 > MAX_STRING) {
+                                    throw GraphParser::syntax_error(*yylloc, "string too long");
+                                }
+                                sbuf[pos++] = '\b';
+                            }
+<DQ_STR,SQ_STR>\\f          {
+                                if (pos + 1 > MAX_STRING) {
+                                    throw GraphParser::syntax_error(*yylloc, "string too long");
+                                }
+                                sbuf[pos++] = '\f';
+                            }
+<DQ_STR,SQ_STR>\\(.|\n)     {
+                                if (pos + 1 > MAX_STRING) {
+                                    throw GraphParser::syntax_error(*yylloc, "string too long");
+                                }
+                                sbuf[pos++] = yytext[1];
+                            }
 <DQ_STR,SQ_STR>\\           {
                                 // This rule should have never been matched,
                                 // but without this, it somehow triggers the `nodefault' warning of flex.

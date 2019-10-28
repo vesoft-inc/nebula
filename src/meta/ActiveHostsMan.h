@@ -53,6 +53,8 @@ public:
 
     static std::vector<HostAddr> getActiveHosts(kvstore::KVStore* kv, int32_t expiredTTL = 0);
 
+    static bool isLived(kvstore::KVStore* kv, const HostAddr& host);
+
 protected:
     ActiveHostsMan() = default;
 };

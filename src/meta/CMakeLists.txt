@@ -59,43 +59,20 @@ nebula_add_library(
     meta_client OBJECT
     client/MetaClient.cpp
 )
-add_dependencies(
-    meta_client
-    gflags_man_obj
-)
 
-add_library(
+nebula_add_library(
     gflags_man_obj OBJECT
     GflagsManager.cpp
 )
-add_dependencies(
-    gflags_man_obj
-    base_obj
-)
 
-add_library(
+nebula_add_library(
     meta_gflags_man_obj OBJECT
     ClientBasedGflagsManager.cpp
 )
-add_dependencies(
-    meta_gflags_man_obj
-    gflags_man_obj
-    meta_service_handler
-    base_obj
-    meta_client
-    meta_thrift_obj
-)
 
-add_library(
+nebula_add_library(
     kv_gflags_man_obj OBJECT
     KVBasedGflagsManager.cpp
-)
-add_dependencies(
-    kv_gflags_man_obj
-    gflags_man_obj
-    meta_service_handler
-    base_obj
-    kvstore_obj
 )
 
 nebula_add_subdirectory(test)

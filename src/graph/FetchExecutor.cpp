@@ -34,11 +34,11 @@ Status FetchExecutor::prepareYield() {
         // such as YIELD 1+1, it has not type in schema, the type from the eval()
         colTypes_.emplace_back(nebula::cpp2::SupportedType::UNKNOWN);
         if (col->expr()->isAliasExpression()) {
-            colNames_.emplace_back(*static_cast<InputPropertyExpression*>(col->expr())->prop());
+            colNames_.emplace_back(*dynamic_cast<AliasPropertyExpression*>(col->expr())->prop());
             continue;
         } else if (col->expr()->isTypeCastingExpression()) {
             // type cast
-            auto exprPtr = static_cast<TypeCastingExpression*>(col->expr());
+            auto exprPtr = dynamic_cast<TypeCastingExpression*>(col->expr());
             colTypes_.back() = ColumnTypeToSupportedType(exprPtr->getType());
         }
 
@@ -47,15 +47,15 @@ Status FetchExecutor::prepareYield() {
 
     if (expCtx_->hasSrcTagProp() || expCtx_->hasDstTagProp()) {
         return Status::SyntaxError(
-                    "Only support form of alias.prop in fetch sentence.");
+                    "tag.prop and edgetype.prop are supported in fetch sentence.");
     }
 
     auto aliasProps = expCtx_->aliasProps();
     for (auto pair : aliasProps) {
         if (pair.first != *labelName_) {
             return Status::SyntaxError(
-                "[%s.%s] tag not declared in %s.",
-                    pair.first.c_str(), pair.second.c_str(), (*labelName_).c_str());
+                "Near [%s.%s], tag or edge should be declared in statement first.",
+                    pair.first.c_str(), pair.second.c_str());
         }
     }
 
@@ -90,7 +90,8 @@ void FetchExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
 
 void FetchExecutor::onEmptyInputs() {
     if (onResult_) {
-        onResult_(nullptr);
+        auto outputs = std::make_unique<InterimResult>(std::move(resultColNames_));
+        onResult_(std::move(outputs));
     } else if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
     }
@@ -102,7 +103,7 @@ Status FetchExecutor::getOutputSchema(
         const RowReader *reader,
         SchemaWriter *outputSchema) const {
     if (expCtx_ == nullptr || resultColNames_.empty()) {
-        LOG(FATAL) << "Input is empty";
+        return Status::Error("Input is empty.");
     }
     auto collector = std::make_unique<Collector>(schema);
     auto &getters = expCtx_->getters();
@@ -120,7 +121,7 @@ Status FetchExecutor::getOutputSchema(
     }
 
     if (colTypes_.size() != record.size()) {
-        return Status::Error("Input is not equal to output");
+        return Status::Error("Input size is not equal to output");
     }
     using nebula::cpp2::SupportedType;
     auto index = 0u;
@@ -142,7 +143,10 @@ Status FetchExecutor::getOutputSchema(
                     type = SupportedType::STRING;
                     break;
                 default:
-                    LOG(FATAL) << "Unknown VariantType: " << record[index].which();
+                    std::string msg = folly::stringPrintf(
+                            "Unknown VariantType: %d", record[index].which());
+                    LOG(ERROR) << msg;
+                    return Status::Error(msg);
             }
         } else {
             type = it;
@@ -155,19 +159,25 @@ Status FetchExecutor::getOutputSchema(
 }
 
 void FetchExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
-    std::unique_ptr<InterimResult> outputs;
+    auto outputs = std::make_unique<InterimResult>(std::move(resultColNames_));
     if (rsWriter != nullptr) {
-        outputs = std::make_unique<InterimResult>(std::move(rsWriter));
+        outputs->setInterim(std::move(rsWriter));
     }
 
     if (onResult_) {
         onResult_(std::move(outputs));
     } else {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        resp_->set_column_names(std::move(resultColNames_));
-        if (outputs != nullptr) {
-            auto rows = outputs->getRows();
-            resp_->set_rows(std::move(rows));
+        auto colNames = outputs->getColNames();
+        resp_->set_column_names(std::move(colNames));
+        if (outputs->hasData()) {
+            auto ret = outputs->getRows();
+            if (!ret.ok()) {
+                LOG(ERROR) << "Get rows failed: " << ret.status();
+                onError_(std::move(ret).status());
+                return;
+            }
+            resp_->set_rows(std::move(ret).value());
         }
     }
     DCHECK(onFinish_);

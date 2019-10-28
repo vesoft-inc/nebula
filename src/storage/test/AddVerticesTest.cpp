@@ -18,7 +18,7 @@ namespace storage {
 TEST(AddVerticesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/AddVerticesTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
-    auto* processor = AddVerticesProcessor::instance(kv.get(), nullptr);
+    auto* processor = AddVerticesProcessor::instance(kv.get(), nullptr, nullptr);
 
     LOG(INFO) << "Build AddVerticesRequest...";
     cpp2::AddVerticesRequest req;
@@ -52,7 +52,7 @@ TEST(AddVerticesTest, SimpleTest) {
     LOG(INFO) << "Check data in kv store...";
     for (auto partId = 0; partId < 3; partId++) {
         for (auto vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
-            auto prefix = NebulaKeyUtils::prefix(partId, vertexId);
+            auto prefix = NebulaKeyUtils::vertexPrefix(partId, vertexId);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             TagID tagId = 0;
