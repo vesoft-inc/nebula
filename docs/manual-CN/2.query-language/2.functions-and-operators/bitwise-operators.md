@@ -1,7 +1,7 @@
-# 位运算
+# Bitwise Operators
 
-|  ***名称***    |  ***描述***    |
+|  ***Name***    |  ***Description***    |
 |:----|:----:|
-|   &     |    与     |
-|   \|   |    或   |
-|   ^    |   异或  |
+|   &     |   Bitwise AND     |
+|   \|   |   Bitwise OR   |
+|   ^    |   Bitwise exclusive OR (XOR)  |
