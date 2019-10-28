@@ -27,6 +27,7 @@ void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
     keys.emplace_back(MetaServiceUtils::indexTagIndexKey(spaceID, indexName));
     keys.emplace_back(MetaServiceUtils::tagIndexKey(spaceID, tagIndexID.value()));
 
+    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     LOG(INFO) << "Drop Tag Index " << indexName;
     resp_.set_id(to(tagIndexID.value(), EntryType::TAG_INDEX));
     doMultiRemove(keys);
