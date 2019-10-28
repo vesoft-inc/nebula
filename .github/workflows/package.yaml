@@ -1,0 +1,39 @@
+name: package
+
+on:
+  schedule:
+    - cron: '0 18 * * *'
+  release:
+    types:
+      - published
+
+jobs:
+  package:
+    name: build package
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        os:
+          - ubuntu1604
+          - ubuntu1804
+          - centos6
+          - centos7
+    container:
+      image: vesoft/nebula-dev:${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v1
+      - name: package
+        run: ./package/package.sh
+        shell: bash
+      - name: Upload nightly artifacts
+        if: github.event_name == 'schedule'
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ matrix.os }}-nightly
+          path: build/cpack_output
+      - name: Upload release artifacts
+        if: github.event_name == 'release'
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ matrix.os }}-release
+          path: build/cpack_output

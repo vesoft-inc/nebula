@@ -1,5 +1,4 @@
 *.md
-
 LICENSES/
 docs/
 
@@ -7,10 +6,11 @@ docs/
 *.so
 *.DS_Store
 
-build
-_build
+# build
+build/
+_build/
 _build.log
-_install
+_install/
 install_manifest.txt
 
 # ccls
