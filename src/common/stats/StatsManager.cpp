@@ -151,12 +151,12 @@ void StatsManager::addValue(int32_t index, VT value) {
 
 
 // static
-StatsManager::VT StatsManager::readValue(folly::StringPiece metricName) {
+StatusOr<StatsManager::VT> StatsManager::readValue(folly::StringPiece metricName) {
     std::vector<std::string> parts;
     folly::split(".", metricName, parts, true);
     if (parts.size() != 3) {
         LOG(ERROR) << "\"" << metricName << "\" is not a valid metric name";
-        return 0;
+        return Status::Error("\"%s\" is not a valid metric name", metricName.data());
     }
 
     TimeRange range;
@@ -169,7 +169,8 @@ StatsManager::VT StatsManager::readValue(folly::StringPiece metricName) {
     } else {
         // Unsupported time range
         LOG(ERROR) << "Unsupported time range \"" << parts[2] << "\"";
-        return 0;
+        return Status::Error(folly::stringPrintf("Unsupported time range \"%s\"",
+                                                 parts[2].c_str()));
     }
 
     // Now check the statistic method
@@ -197,10 +198,12 @@ StatsManager::VT StatsManager::readValue(folly::StringPiece metricName) {
         }
 
         LOG(ERROR) << "\"" << parts[1] << "\" is not a valid percentile form";
-        return 0;
+        return Status::Error(folly::stringPrintf("\"%s\" is not a valid percentile form",
+                                                 parts[1].c_str()));
     } else {
         LOG(ERROR) << "Unsupported statistic method \"" << parts[1] << "\"";
-        return 0;
+        return Status::Error(folly::stringPrintf("Unsupported statistic method \"%s\"",
+                                                 parts[1].c_str()));
     }
 }
 
@@ -217,7 +220,9 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
             for (auto range = TimeRange::ONE_MINUTE; range <= TimeRange::ONE_HOUR;
                  range = static_cast<TimeRange>(static_cast<int>(range) + 1)) {
                 std::string metricName = statsName.first;
-                int64_t metricValue = readStats(statsName.second, range, method);
+                auto status = readStats(statsName.second, range, method);
+                CHECK(status.ok());
+                int64_t metricValue = status.value();
                 folly::dynamic stat = folly::dynamic::object();
 
                 switch (method) {
@@ -259,14 +264,15 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
 
 
 // static
-StatsManager::VT StatsManager::readStats(int32_t index,
+StatusOr<StatsManager::VT> StatsManager::readStats(int32_t index,
                                          StatsManager::TimeRange range,
                                          StatsManager::StatsMethod method) {
     using std::chrono::seconds;
     auto& sm = get();
 
-
-    CHECK_NE(index, 0);
+    if (index == 0) {
+        return Status::Error("Invalid stats");
+    }
 
     if (index > 0) {
         // stats
@@ -287,9 +293,9 @@ StatsManager::VT StatsManager::readStats(int32_t index,
 
 
 // static
-StatsManager::VT StatsManager::readStats(const std::string& counterName,
-                                         StatsManager::TimeRange range,
-                                         StatsManager::StatsMethod method) {
+StatusOr<StatsManager::VT> StatsManager::readStats(const std::string& counterName,
+                                                   StatsManager::TimeRange range,
+                                                   StatsManager::StatsMethod method) {
     auto& sm = get();
 
     // Look up the counter name
@@ -300,7 +306,7 @@ StatsManager::VT StatsManager::readStats(const std::string& counterName,
         auto it = sm.nameMap_.find(counterName);
         if (it == sm.nameMap_.end()) {
             // Not found
-            return 0;
+            return Status::Error("Stats not found \"%s\"", counterName);
         }
 
         index = it->second;
@@ -311,9 +317,9 @@ StatsManager::VT StatsManager::readStats(const std::string& counterName,
 
 
 // static
-StatsManager::VT StatsManager::readHisto(const std::string& counterName,
-                                         StatsManager::TimeRange range,
-                                         double pct) {
+StatusOr<StatsManager::VT> StatsManager::readHisto(const std::string& counterName,
+                                                   StatsManager::TimeRange range,
+                                                   double pct) {
     using std::chrono::seconds;
     auto& sm = get();
 
@@ -324,15 +330,19 @@ StatsManager::VT StatsManager::readHisto(const std::string& counterName,
         auto it = sm.nameMap_.find(counterName);
         if (it == sm.nameMap_.end()) {
             // Not found
-            return 0;
+            return Status::Error("Stats not found \"%s\"", counterName);
         }
 
         index = it->second;
     }
 
-    CHECK_LT(index, 0);
+    if (index >= 0) {
+        return Status::Error("Invalid stats");
+    }
     index = - (index + 1);
-    DCHECK_LT(index, sm.histograms_.size());
+    if (static_cast<size_t>(index) >= sm.histograms_.size()) {
+        return Status::Error("Invalid stats");
+    }
 
     std::lock_guard<std::mutex> g(*(sm.histograms_[index].first));
     sm.histograms_[index].second->update(seconds(time::WallClock::fastNowInSec()));
