@@ -1,6 +1,6 @@
-# DESCRIBE
+# DESCRIBE 语法
 
-```
+```sql
 DESCRIBE SPACE space_name
 DESCRIBE TAG tag_name
 DESCRIBE EDGE edge_name
