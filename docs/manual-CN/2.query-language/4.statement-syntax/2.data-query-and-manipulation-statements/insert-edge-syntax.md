@@ -1,4 +1,4 @@
-# Insert Edge
+# INSERT EDGE 语法
 
 ```
 INSERT EDGE edge_name ( <prop_name_list> ) {VALUES | VALUE}
@@ -20,7 +20,7 @@ INSERT EDGE用于插入从起点（src_vid）到终点（dst_vid）的一条边�
 
 >目前版本尚不支持默认属性值。
 
-### 示例
+## 示例
 
 ```
 # CREATE EDGE e1()                    -- 创建空属性边t1
@@ -36,11 +36,11 @@ INSERT EDGE e2 (name, age) VALUES \
 INSERT EDGE e2 (name, age) VALUES 11->13:("n1", "a13")      -- 错误操作，"a13"不是int类型
 ```
 
-
 同一条边可被多次插入或写入，读取时以最后一次插入为准。
+
 ```
 -- 为插入边赋新值
-insert edge with new version of values. 
+insert edge with new version of values.
 INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 12)
 INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 13)
 INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 14) -- 读取最后插入的值

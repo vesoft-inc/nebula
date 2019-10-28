@@ -1,4 +1,4 @@
-# Update
+# UPDATE 语法
 
 Nebula 支持 `UPDATE` 一个点或者一条边的属性，支持CAS操作，支持返回相关的属性。
 
@@ -8,7 +8,7 @@ Nebula 支持 `UPDATE` 一个点或者一条边的属性，支持CAS操作，支
 UPDATE VERTEX $vid SET $update_columns WHEN $condition YIELD $columns
 ```
 
-**注意：**`WHEN` 和 `YIELD` 是可选的。 
+**注意：**`WHEN` 和 `YIELD` 是可选的。
 
 - `$vid` 表示需要更新的vertex id。
 - `$update_columns` 表示需要更新的 tag 上的 columns，比如 `tag1.col1 = $^.tag2.col2 + 1`表示把这个点的 `tag1.col1` 更新成 `tag2.col2 + 1`。
@@ -23,6 +23,7 @@ UPDATE VERTEX $vid SET $update_columns WHEN $condition YIELD $columns
 ```sql
 nebula> UPDATE VERTEX 101 SET course.credits = $^.course.credits + 1, building.name = "No8" WHEN $^.course.name == "Math" && $^.course.credits > 2 YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name
 ```
+
 这个例子里面，101 共有两个tag，即course和building。
 
 ## Update edge

@@ -1,6 +1,9 @@
+# Variable 语法
+
 Nebula使用`gflags`进行运行时配置。
 
-### 显示变量
+## 显示变量
+
 ```
 SHOW VARIABLES graph|meta|storage
 ```
@@ -20,13 +23,14 @@ nebula> SHOW VARIABLES meta
 ----------------------------------------------------------------------------------------------------------------------------
 ```
 
-
 ### 获取变量
+
 ```
 GET VARIABLES [graph|meta|storage :] var
 ```
 
 例如
+
 ```
 nebula> GET VARIABLES storage:load_data_interval_secs
 =================================================================
@@ -51,13 +55,16 @@ Got 3 rows (Time spent: 1449/2339 us)
 ```
 
 ### 更新变量
+
 ```
 UPDATE VARIABLES [graph|meta|storage :] var = value
 ```
-> 更新的变量将永久存储于meta-service中。
-> 如果变量模式为`MUTABLE`，更改会即时生效。如果模式为`REBOOT`，更改在服务器重启后生效。
+
+> 更新的变量将永久存储于 meta-service 中。
+> 如果变量模式为 `MUTABLE`，更改会即时生效。如果模式为 `REBOOT`，更改在服务器重启后生效。
 
 例如
+
 ```
 nebula> UPDATE VARIABLES storage:load_data_interval_secs=1
 Execution succeeded (Time spent: 1750/2484 us)

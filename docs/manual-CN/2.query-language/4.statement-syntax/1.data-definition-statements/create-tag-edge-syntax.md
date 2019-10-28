@@ -1,4 +1,4 @@
-# CREATE TAG / EDGE 语法
+# CREATE TAG / EDGE 语句
 
 ```sql
 CREATE {TAG | EDGE} tag_name|edge_name

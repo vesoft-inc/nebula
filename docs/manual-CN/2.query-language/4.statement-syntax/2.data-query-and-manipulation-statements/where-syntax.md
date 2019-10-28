@@ -1,4 +1,4 @@
-# Where
+# WHERE 语法
 
 目前，`WHERE`语句仅适用于`GO`语句。
 
@@ -18,7 +18,7 @@ nebula> GO FROM 201 OVER likes WHERE e1.prop1 >= 17
 -- 起点v1的prop1属性与终点v2的prop2属性值相等
 nebula> GO FROM 201 OVER likes WHERE $^.v1.prop1 == $$.v2.prop2
 -- 多种逻辑组合logical combination is allowed
-nebula> GO FROM 201 OVER likes WHERE ((e3.prop3 < 0.5) \ 
+nebula> GO FROM 201 OVER likes WHERE ((e3.prop3 < 0.5) \
    OR ($^.v4.prop4 != "hello")) AND $$.v5.prop5 == "world"
 --下面这个条件总是为TRUE
 nebula> GO FROM 201 OVER likes WHERE 1 == 1 OR TRUE
