@@ -251,8 +251,6 @@ $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD 
 
 数据可读，说明部署成功。
 
-
 ## 自定义配置文件
 
 Nebula 支持通过指定配置文件的方式来加载更加丰富的启动参数，用于性能调优。详情请参考[配置属性](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-CN/deploy-cluster.md#%E9%85%8D%E7%BD%AE%E5%BC%95%E7%94%A8)。
-

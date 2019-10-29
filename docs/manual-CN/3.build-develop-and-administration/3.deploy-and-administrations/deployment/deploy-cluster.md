@@ -1,9 +1,11 @@
+# 集群部署
+
 ---
 
 本节介绍`Nebula`的部署
 ---
 
-#### 下载并安装包
+## 下载并安装包
 
 目前，Nebula官方提供 `CentOS 7.5`， `CentOS 6.5`，`Ubuntu 1604`和`Ubuntu 1804`包，rpm或deb包下载点击[此处](https://github.com/vesoft-inc/nebula/releases)。
 
@@ -26,8 +28,7 @@ dpkg -i nebula-{VERSION}.{SYSTEM_VERSION}.amd64.deb
 使用`data_path`设置`Meta`的底层存储路径。
 ***
 
-#### 启动 Nebula 集群
-
+### 启动 Nebula 集群
 
 目前，nebula 集群由`scripts/services.sh`运维，可使用此脚本`start`，`stop`或 `restart`重启集群。
 
@@ -39,7 +40,7 @@ scripts/services.sh <start|stop|restart|status|kill>
 
 metas， storages 和 graphs 包含其自身的 hosts。
 
-***
+---
 
 #### 配置引用
 
@@ -114,8 +115,6 @@ metas， storages 和 graphs 包含其自身的 hosts。
 `stderr_log_file`               | "graphd-stderr.log"      | stderr 目标文件名
 `daemonize`                     | true                     | 作为 daemon 进程运行
 `meta_server_addrs`             | ""                       |  meta server 地址列表，格式为 ip1:port1， ip2:port2， ip3:port3.
-
-
 
 **Web Service** 支持如下配置属性：
 
