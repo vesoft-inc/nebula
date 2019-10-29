@@ -15,7 +15,7 @@ namespace wal {
 /// Check empty status
 TEST(InMemoryLogBuffer, Empty) {
     constexpr LogID i = 0;
-    constexpr std::pair<LogID, TermID> p = std::make_pair<LogID, TermID>(-1, -1);
+    constexpr std::pair<LogID, TermID> p(-1, -1);
     InMemoryLogBuffer b(i);
     EXPECT_EQ(p, b.accessAllLogs([](
         LogID id,
@@ -31,13 +31,7 @@ TEST(InMemoryLogBuffer, Empty) {
     EXPECT_EQ(b.size(), 0UL);
     EXPECT_TRUE(b.empty());
     EXPECT_EQ(i, b.firstLogId());
-    // How to handle out of range?
-    // Throw std::out_of_range?
-    //EXPECT_EQ(3, b.getCluster(3));
-    //EXPECT_EQ(log,  b.getLog(2));
-    //EXPECT_EQ(4,  b.getTerm(4));
     EXPECT_EQ(i - 1, b.lastLogId());
-//    EXPECT_TRUE(0 > b.lastLogTerm());
     EXPECT_EQ(0, b.numLogs());
     EXPECT_EQ(0, b.size());
 }
@@ -49,7 +43,7 @@ TEST(InMemoryLogBuffer, Simple) {
     constexpr ClusterID c = 0;
     constexpr std::size_t inc = 10;
     constexpr auto log = "Log";
-    constexpr std::pair<LogID, TermID> p = std::make_pair<LogID, TermID>(inc-1, inc-1);
+    constexpr std::pair<LogID, TermID> p(inc-1, inc-1);
     InMemoryLogBuffer b(i);
     for (std::size_t j = 0; j < inc; j++) {
         b.push(t + j, c + j, log);
@@ -73,7 +67,8 @@ TEST(InMemoryLogBuffer, Simple) {
     EXPECT_EQ(inc - 1, b.lastLogId());
     EXPECT_EQ(inc - 1, b.lastLogTerm());
     EXPECT_EQ(inc, b.numLogs());
-    EXPECT_EQ(inc * (std::strlen(log) + sizeof(LogID) + sizeof(TermID) + sizeof(ClusterID)), b.size());
+    EXPECT_EQ(inc * (std::strlen(log) + sizeof(LogID) + sizeof(TermID) + sizeof(ClusterID)),
+        b.size());
 }
 
 }  // namespace wal
