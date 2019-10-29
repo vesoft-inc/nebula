@@ -317,12 +317,21 @@ TEST(MetaClientTest, TagTest) {
 
     {
         std::vector<nebula::cpp2::ColumnDef> columns;
-        columns.emplace_back(FRAGILE, "column_i",
-                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr));
-        columns.emplace_back(FRAGILE, "column_d",
-                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr));
-        columns.emplace_back(FRAGILE, "column_s",
-                             ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr));
+        ValueType vt;
+        vt.set_type(SupportedType::INT);
+        columns.emplace_back();
+        columns.back().set_name("column_i");
+        columns.back().set_type(vt);
+
+        vt.set_type(SupportedType::DOUBLE);
+        columns.emplace_back();
+        columns.back().set_name("column_d");
+        columns.back().set_type(vt);
+
+        vt.set_type(SupportedType::STRING);
+        columns.emplace_back();
+        columns.back().set_name("column_s");
+        columns.back().set_type(vt);
         nebula::cpp2::Schema schema;
         schema.set_columns(std::move(columns));
         auto result = client->createTagSchema(spaceId, "test_tag", std::move(schema)).get();
@@ -555,7 +564,7 @@ TEST(MetaClientTest, SimpleTest) {
     {
         LOG(INFO) << "Test add hosts...";
         folly::Baton<true, std::atomic> baton;
-        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+        client->addHosts({{0, 0}}).thenValue([&baton] (auto&& status) {
             ASSERT_TRUE(status.ok());
             baton.post();
         });
@@ -577,7 +586,7 @@ TEST(MetaClientTest, RetryWithExceptionTest) {
     {
         LOG(INFO) << "Test add hosts...";
         folly::Baton<true, std::atomic> baton;
-        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+        client->addHosts({{0, 0}}).thenValue([&baton] (auto&& status) {
             ASSERT_TRUE(!status.ok());
             baton.post();
         });
@@ -617,7 +626,7 @@ TEST(MetaClientTest, RetryOnceTest) {
     {
         LOG(INFO) << "Test add hosts...";
         folly::Baton<true, std::atomic> baton;
-        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+        client->addHosts({{0, 0}}).thenValue([&baton] (auto&& status) {
             ASSERT_TRUE(status.ok());
             baton.post();
         });
@@ -655,7 +664,7 @@ TEST(MetaClientTest, RetryUntilLimitTest) {
     {
         LOG(INFO) << "Test add hosts...";
         folly::Baton<true, std::atomic> baton;
-        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+        client->addHosts({{0, 0}}).thenValue([&baton] (auto&& status) {
             ASSERT_TRUE(!status.ok());
             baton.post();
         });

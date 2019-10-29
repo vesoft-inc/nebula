@@ -10,10 +10,12 @@
 namespace nebula {
 namespace graph {
 namespace cpp2 {
+/*
 bool RowValue::operator<(const RowValue& rhs) const {
     auto &lhs = *this;
     return (lhs.columns < rhs.columns);
 }
+*/
 }
 
 SetExecutor::SetExecutor(Sentence *sentence, ExecutionContext *ectx)

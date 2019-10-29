@@ -13,8 +13,10 @@ nebula_add_test(
         $<TARGET_OBJECTS:base_obj>
     LIBRARIES
         proxygenhttpserver
-        proxygenlib
+        proxygen
         wangle
+        fizz
+        sodium
         gtest
         gtest_main
 )

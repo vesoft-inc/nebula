@@ -18,7 +18,7 @@ void GetProcessor::process(const cpp2::GetRequest& req) {
     }
 
     folly::collectAll(results).via(executor_)
-                              .then([&] (const std::vector<folly::Try<PartCode>>& tries) mutable {
+        .thenValue([&] (const std::vector<folly::Try<PartCode>>& tries) mutable {
         for (const auto& t : tries) {
             auto ret = t.value();
             auto part = std::get<0>(ret);

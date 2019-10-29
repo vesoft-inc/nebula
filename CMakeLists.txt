@@ -122,7 +122,7 @@ set(CMAKE_MODULE_PATH "${NEBULA_HOME}/cmake" ${CMAKE_MODULE_PATH})
 
 # When NEBULA_THIRDPARTY_ROOT is null, set default value as /opt/nebula/third-party
 if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
-    SET(NEBULA_THIRDPARTY_ROOT "/opt/nebula/third-party")
+#    SET(NEBULA_THIRDPARTY_ROOT "/opt/nebula/third-party")
 endif()
 
 # third-party
@@ -145,10 +145,12 @@ if(NOT ${NEBULA_OTHER_ROOT} STREQUAL "")
     foreach(DIR IN LISTS DIR_LIST )
         list(INSERT CMAKE_INCLUDE_PATH 0 ${DIR}/include)
         list(INSERT CMAKE_LIBRARY_PATH 0 ${DIR}/lib)
+        list(INSERT CMAKE_LIBRARY_PATH 0 ${DIR}/lib64)
         list(INSERT CMAKE_PROGRAM_PATH 0 ${DIR}/bin)
         include_directories(SYSTEM ${DIR}/include)
         link_directories(${DIR}/lib)
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${DIR}/lib")
+        link_directories(${DIR}/lib64)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${DIR}/lib -L ${DIR}/lib64")
     endforeach()
 endif()
 
@@ -158,10 +160,11 @@ string(REPLACE ";" ":" PROGRAM_PATH_STR "${CMAKE_PROGRAM_PATH}")
 message(STATUS "CMAKE_INCLUDE_PATH: " ${INCLUDE_PATH_STR})
 message(STATUS "CMAKE_LIBRARY_PATH: " ${LIBRARY_PATH_STR})
 message(STATUS "CMAKE_PROGRAM_PATH: " ${PROGRAM_PATH_STR})
+message(STATUS "CMAKE_PREFIX_PATH: " ${CMAKE_PREFIX_PATH})
 
 find_package(Bzip2 REQUIRED)
 find_package(DoubleConversion REQUIRED)
-find_package(Fatal REQUIRED)
+#find_package(Fatal REQUIRED)
 find_package(Fbthrift REQUIRED)
 find_package(Folly REQUIRED)
 find_package(Gflags REQUIRED)
@@ -323,15 +326,21 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROO
 # All thrift libraries
 set(THRIFT_LIBRARIES
     thriftcpp2
-    thrift
+    #thrift
     thriftprotocol
     async
     protocol
     transport
     concurrency
-    security
+    #security
     thriftfrozen2
     thrift-core
+    fmt
+    wangle
+    fizz
+    sodium
+    yarpl
+    crypto
 )
 
 set(ROCKSDB_LIBRARIES ${Rocksdb_LIBRARY})
@@ -371,10 +380,14 @@ macro(nebula_link_libraries target)
         ${target}
         ${ARGN}
         folly
+        lz4
         glog
         gflags
         boost_context
         boost_system
+	boost_filesystem
+        boost_regex
+        boost_program_options
         event
         double-conversion
         resolv

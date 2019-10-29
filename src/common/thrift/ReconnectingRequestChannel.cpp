@@ -15,78 +15,59 @@
  */
 #include <thrift/lib/cpp2/async/ReconnectingRequestChannel.h>
 
-#include <thrift/lib/cpp2/async/ClientChannel.h>
+#include <memory>
+#include <utility>
 
-#include <folly/io/async/AsyncSocketException.h>
+#include <folly/ExceptionWrapper.h>
 
 namespace apache {
 namespace thrift {
 
-class ReconnectingRequestChannel::RequestCallback
-    : public apache::thrift::RequestCallback {
+namespace {
+class ChannelKeepAlive : public RequestClientCallback {
  public:
-  RequestCallback(
-      ReconnectingRequestChannel& channel,
-      std::unique_ptr<apache::thrift::RequestCallback> cob)
-      : channel_(channel), impl_(channel_.impl_), cob_(std::move(cob)) {}
+  ChannelKeepAlive(
+      ReconnectingRequestChannel::ImplPtr impl,
+      RequestClientCallback::Ptr cob)
+      : keepAlive_(std::move(impl)), cob_(std::move(cob)) {}
 
-  void requestSent() override {
-    cob_->requestSent();
+  void onRequestSent() noexcept override {
+    cob_->onRequestSent();
   }
 
-  void replyReceived(apache::thrift::ClientReceiveState&& state) override {
-    handleTransportException(state);
-    cob_->replyReceived(std::move(state));
+  void onResponse(ClientReceiveState&& state) noexcept override {
+    cob_.release()->onResponse(std::move(state));
+    delete this;
   }
 
-  void requestError(apache::thrift::ClientReceiveState&& state) override {
-    handleTransportException(state);
-    cob_->requestError(std::move(state));
+  void onResponseError(folly::exception_wrapper ex) noexcept override {
+    cob_.release()->onResponseError(std::move(ex));
+    delete this;
   }
 
  private:
-  void handleTransportException(apache::thrift::ClientReceiveState& state) {
-    if (!state.isException()) {
-      return;
-    }
-    if (!state.exception()
-             .is_compatible_with<
-                 apache::thrift::transport::TTransportException>()) {
-      return;
-    }
-    if (channel_.impl_ != impl_) {
-      return;
-    }
-    channel_.impl_.reset();
-  }
-
-  ReconnectingRequestChannel& channel_;
-  ReconnectingRequestChannel::ImplPtr impl_;
-  std::unique_ptr<apache::thrift::RequestCallback> cob_;
+  ReconnectingRequestChannel::ImplPtr keepAlive_;
+  RequestClientCallback::Ptr cob_;
 };
+}  // namespace
 
-uint32_t ReconnectingRequestChannel::sendRequest(
-    apache::thrift::RpcOptions& options,
-    std::unique_ptr<apache::thrift::RequestCallback> cob,
-    std::unique_ptr<apache::thrift::ContextStack> ctx,
+void ReconnectingRequestChannel::sendRequestResponse(
+    RpcOptions& options,
     std::unique_ptr<folly::IOBuf> buf,
-    std::shared_ptr<apache::thrift::transport::THeader> header) {
-  cob = std::make_unique<RequestCallback>(*this, std::move(cob));
+    std::shared_ptr<transport::THeader> header,
+    RequestClientCallback::Ptr cob) {
+  cob = RequestClientCallback::Ptr(new ChannelKeepAlive(impl_, std::move(cob)));
 
-  return impl().sendRequest(
-      options,
-      std::move(cob),
-      std::move(ctx),
-      std::move(buf),
-      std::move(header));
+  return impl().sendRequestResponse(
+      options, std::move(buf), std::move(header), std::move(cob));
 }
 
 ReconnectingRequestChannel::Impl& ReconnectingRequestChannel::impl() {
-  if (!impl_ || !std::dynamic_pointer_cast<apache::thrift::ClientChannel>(impl_)->good()) {
+  if (!impl_ || !impl_->good()) {
     impl_ = implCreator_(evb_);
   }
-
   return *impl_;
 }
+
 }  // namespace thrift
 }  // namespace apache

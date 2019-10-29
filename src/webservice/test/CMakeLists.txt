@@ -13,8 +13,10 @@ nebula_add_test(
         $<TARGET_OBJECTS:time_obj>
     LIBRARIES
         proxygenhttpserver
-        proxygenlib
+        proxygen
         wangle
+	fizz
+	sodium
         gtest
 )
 
@@ -34,7 +36,9 @@ nebula_add_test(
         $<TARGET_OBJECTS:time_obj>
     LIBRARIES
         proxygenhttpserver
-        proxygenlib
+        proxygen
         wangle
+        fizz 
+	sodium
         gtest
 )

@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
     gServer->setCPUWorkerThreadName("executor");
     gServer->setNumAcceptThreads(FLAGS_num_accept_threads);
     gServer->setListenBacklog(FLAGS_listen_backlog);
-    gServer->setThreadStackSizeMB(5);
+    // gServer->setThreadStackSizeMB(5);
 
     // Setup the signal handlers
     status = setupSignalHandler();

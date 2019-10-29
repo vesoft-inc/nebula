@@ -3,7 +3,7 @@
 %no-lines
 %locations
 %define api.namespace { nebula }
-%define parser_class_name { GraphParser }
+%define api.parser.class { GraphParser }
 %lex-param { nebula::GraphScanner& scanner }
 %parse-param { nebula::GraphScanner& scanner }
 %parse-param { std::string &errmsg }

@@ -24,6 +24,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:fs_obj>
     LIBRARIES
+        ${THRIFT_LIBRARIES}
         wangle
         follybenchmark
         boost_regex

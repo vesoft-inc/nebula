@@ -80,7 +80,7 @@ add_custom_command(
   OUTPUT ${${file_name}-cpp2-HEADERS} ${${file_name}-cpp2-SOURCES}
   COMMAND ${THRIFT1}
     --strict "--allow-neg-enum-vals"
-    --templates ${THRIFT_TEMPLATES}
+#    --templates ${THRIFT_TEMPLATES}
     --gen "mstch_cpp2:include_prefix=${include_prefix},process_in_event_base,stack_arguments"
     --gen "py"
     --gen "java:hashcode"

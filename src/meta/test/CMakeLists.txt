@@ -208,7 +208,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         proxygenhttpserver
-        proxygenlib
+        proxygen
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
@@ -248,7 +248,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         proxygenhttpserver
-        proxygenlib
+        proxygen
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
@@ -288,7 +288,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         proxygenhttpserver
-        proxygenlib
+        proxygen
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle

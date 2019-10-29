@@ -17,7 +17,6 @@
 find_path(Bzip2_INCLUDE_DIR NAMES bzlib.h)
 find_library(Bzip2_LIBRARY NAMES libbz2.a)
 find_program(Bzip2_BIN NAMES bzip2)
-
 if(Bzip2_INCLUDE_DIR AND Bzip2_LIBRARY AND Bzip2_BIN)
     set(Bzip2_FOUND TRUE)
     mark_as_advanced(

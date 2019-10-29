@@ -6,8 +6,8 @@
 
 #include "base/Base.h"
 #include "stats/StatsManager.h"
-#include <folly/stats/MultiLevelTimeSeries-defs.h>
-#include <folly/stats/TimeseriesHistogram-defs.h>
+#include <folly/stats/MultiLevelTimeSeries.h>
+#include <folly/stats/TimeseriesHistogram.h>
 
 namespace nebula {
 namespace stats {

@@ -145,7 +145,7 @@ nebula_add_test(
         ${storage_test_deps}
     LIBRARIES
         proxygenhttpserver
-        proxygenlib
+        proxygen
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
@@ -168,7 +168,7 @@ nebula_add_test(
         ${storage_test_deps}
     LIBRARIES
         proxygenhttpserver
-        proxygenlib
+        proxygen
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
@@ -191,7 +191,7 @@ nebula_add_test(
         ${storage_test_deps}
     LIBRARIES
         proxygenhttpserver
-        proxygenlib
+        proxygen
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
@@ -214,7 +214,7 @@ nebula_add_test(
         ${storage_test_deps}
     LIBRARIES
         proxygenhttpserver
-        proxygenlib
+        proxygen
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle

@@ -10,7 +10,7 @@
 namespace nebula {
 namespace graph {
 namespace cpp2 {
-
+/*
 bool ColumnValue::operator < (const ColumnValue& rhs) const {
     DCHECK_EQ(type_, rhs.type_);
     auto& lhs = *this;
@@ -66,6 +66,7 @@ bool ColumnValue::operator < (const ColumnValue& rhs) const {
     }
     return false;
 }
+*/
 }  // namespace cpp2
 
 OrderByExecutor::OrderByExecutor(Sentence *sentence, ExecutionContext *ectx)
