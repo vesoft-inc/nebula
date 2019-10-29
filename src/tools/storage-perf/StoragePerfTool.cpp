@@ -218,7 +218,7 @@ private:
         auto f =
           client_->getNeighbors(spaceId_, randomVertices(), std::move(e), "", randomCols())
                 .via(evb)
-                .then([this](auto&& resps) {
+                .thenValue([this](auto&& resps) {
                     if (!resps.succeeded()) {
                         LOG(ERROR) << "Request failed!";
                     } else {
@@ -227,13 +227,13 @@ private:
                     this->finishedRequests_++;
                     VLOG(3) << "request successed!";
                 })
-                .onError([](folly::FutureException&) { LOG(ERROR) << "request failed!"; });
+                .thenError([](auto&&) { LOG(ERROR) << "request failed!"; });
     }
 
     void addVerticesTask() {
         auto* evb = threadPool_->getEventBase();
         auto f = client_->addVertices(spaceId_, genVertices(), true)
-                    .via(evb).then([this](auto&& resps) {
+                    .via(evb).thenValue([this](auto&& resps) {
                         if (!resps.succeeded()) {
                             for (auto& entry : resps.failedParts()) {
                                 LOG(ERROR) << "Request failed, part " << entry.first
@@ -243,15 +243,15 @@ private:
                             VLOG(3) << "request successed!";
                         }
                         this->finishedRequests_++;
-                     }).onError([](folly::FutureException& e) {
-                        LOG(ERROR) << "Request failed, e = " << e.what();
+                     }).thenError([](auto&&) {
+//                        LOG(ERROR) << "Request failed, e = " << e.what();
                      });
     }
 
     void addEdgesTask() {
         auto* evb = threadPool_->getEventBase();
         auto f = client_->addEdges(spaceId_, genEdges(), true)
-                    .via(evb).then([this](auto&& resps) {
+                    .via(evb).thenValue([this](auto&& resps) {
                         if (!resps.succeeded()) {
                             LOG(ERROR) << "Request failed!";
                         } else {
@@ -259,7 +259,7 @@ private:
                         }
                         this->finishedRequests_++;
                         VLOG(3) << "request successed!";
-                     }).onError([](folly::FutureException&) {
+                     }).thenError([](auto&&) {
                         LOG(ERROR) << "Request failed!";
                      });
     }
@@ -267,7 +267,7 @@ private:
     void getVerticesTask() {
         auto* evb = threadPool_->getEventBase();
         auto f = client_->getVertexProps(spaceId_, randomVertices(), randomCols())
-                    .via(evb).then([this](auto&& resps) {
+                    .via(evb).thenValue([this](auto&& resps) {
                         if (!resps.succeeded()) {
                             LOG(ERROR) << "Request failed!";
                         } else {
@@ -275,7 +275,7 @@ private:
                         }
                         this->finishedRequests_++;
                         VLOG(3) << "request successed!";
-                     }).onError([](folly::FutureException&) {
+                     }).thenError([](auto&&) {
                         LOG(ERROR) << "Request failed!";
                      });
     }

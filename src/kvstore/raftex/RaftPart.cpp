@@ -775,7 +775,7 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
             return resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED
                     && !hosts[index]->isLearner();
         })
-        .then(executor_.get(), [self = shared_from_this(),
+        .via(executor_.get()).then([self = shared_from_this(),
                    eb,
                    it = std::move(iter),
                    currTerm,
