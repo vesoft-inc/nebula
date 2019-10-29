@@ -35,6 +35,7 @@ jobs:
           cd _build && make -j $(nproc)
         shell: bash
       - name: test in multithreads
+        continue-on-error: true
         env:
           NEBULA_DEP_BIN: /opt/nebula/third-party/bin
           LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
