@@ -15,17 +15,18 @@ License:  Apache 2.0 + Common Clause 1.0
 BuildRoot:%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 # TODO: we should check dependence's version after adapt to different system versions
-BuildRequires:   make
-BuildRequires:   autoconf
-BuildRequires:   automake
-BuildRequires:   libtool
-BuildRequires:   unzip
-BuildRequires:   readline
-BuildRequires:   ncurses
-BuildRequires:   ncurses-devel
-BuildRequires:   python
-BuildRequires:   java-1.8.0-openjdk
-BuildRequires:   java-1.8.0-openjdk-devel
+# BuildRequires only find dynamic libraries but all of nebula dependencies have been compiled to static libraries, so comment out them temporarily
+# BuildRequires:   make
+# BuildRequires:   autoconf
+# BuildRequires:   automake
+# BuildRequires:   libtool
+# BuildRequires:   unzip
+# BuildRequires:   readline
+# BuildRequires:   ncurses
+# BuildRequires:   ncurses-devel
+# BuildRequires:   python
+# BuildRequires:   java-1.8.0-openjdk
+# BuildRequires:   java-1.8.0-openjdk-devel
 
 %description
 A high performance distributed graph database
@@ -33,7 +34,7 @@ A high performance distributed graph database
 %prep
 
 %build
-cmake -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=%{_version} -DCMAKE_INSTALL_PREFIX=%{_install_dir} -DENABLE_TESTING=OFF./
+cmake -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=%{_version} -DCMAKE_INSTALL_PREFIX=%{_install_dir} -DENABLE_TESTING=OFF ./
 make -j$(nproc)
 
 %install

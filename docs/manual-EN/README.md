@@ -32,7 +32,7 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
   * [Type Conversion](2.query-language/1.data-types/type-conversion.md)
 * Functions And Operators
   * [Bitwise Operators](2.query-language/2.functions-and-operators/bitwise-operators.md)
-  * [Build-In Functions](2.query-language/2.functions-and-operators/build-in-functions.md)
+  * [Built-In Functions](2.query-language/2.functions-and-operators/built-in-functions.md)
   * [Comparison Functions And Operators](2.query-language/2.functions-and-operators/comparison-functions-and-operators.md)
   * [Group By Function](2.query-language/2.functions-and-operators/group-by-function.md)
   * [Limit Syntax](2.query-language/2.functions-and-operators/limit-syntax.md)

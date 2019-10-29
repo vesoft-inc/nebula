@@ -10,6 +10,7 @@
 #include "meta/NebulaSchemaProvider.h"
 #include "meta/ClusterIdMan.h"
 #include "meta/GflagsManager.h"
+#include "base/Configuration.h"
 
 DEFINE_int32(load_data_interval_secs, 2 * 60, "Load data interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
@@ -1334,8 +1335,6 @@ void MetaClient::loadCfg() {
                 auto it = metaConfigMap_.find(key);
                 if (it == metaConfigMap_.end() || metaConfigMap[key].value_ != it->second.value_) {
                     updateGflagsValue(entry.second);
-                    LOG(INFO) << "update config in cache " << key.second
-                              << " to " << metaConfigMap[key].value_;
                     metaConfigMap_[key] = entry.second;
                 }
             }
@@ -1369,6 +1368,7 @@ void MetaClient::updateGflagsValue(const ConfigItem& item) {
             metaValue = boost::get<bool>(item.value_) ? "true" : "false";
             break;
         case cpp2::ConfigType::STRING:
+        case cpp2::ConfigType::NESTED:
             metaValue = boost::get<std::string>(item.value_);
             break;
     }
@@ -1377,8 +1377,32 @@ void MetaClient::updateGflagsValue(const ConfigItem& item) {
     if (!gflags::GetCommandLineOption(item.name_.c_str(), &curValue)) {
         return;
     } else if (curValue != metaValue) {
-        LOG(INFO) << "update " << item.name_ << " from " << curValue << " to " << metaValue;
         gflags::SetCommandLineOption(item.name_.c_str(), metaValue.c_str());
+        // TODO: we simply judge the rocksdb by nested type for now
+        if (listener_ != nullptr && item.type_ == cpp2::ConfigType::NESTED) {
+            updateNestedGflags(item.name_);
+        }
+        LOG(INFO) << "update " << item.name_ << " from " << curValue << " to " << metaValue;
+    }
+}
+
+void MetaClient::updateNestedGflags(const std::string& name) {
+    std::string json;
+    gflags::GetCommandLineOption(name.c_str(), &json);
+    // generate option string map
+    Configuration conf;
+    auto status = conf.parseFromString(json);
+    if (!status.ok()) {
+        LOG(ERROR) << "Parse nested gflags " << name << " failed";
+        return;
+    }
+    std::unordered_map<std::string, std::string> optionMap;
+    conf.forEachItem([&optionMap] (const std::string& key, const folly::dynamic& val) {
+        optionMap.emplace(key, val.asString());
+    });
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    for (const auto& spaceEntry : localCache_) {
+        listener_->onSpaceOptionUpdated(spaceEntry.first, optionMap);
     }
 }
 
@@ -1395,6 +1419,7 @@ ConfigItem MetaClient::toConfigItem(const cpp2::ConfigItem& item) {
             value = *reinterpret_cast<const double*>(item.get_value().data());
             break;
         case cpp2::ConfigType::STRING:
+        case cpp2::ConfigType::NESTED:
             value = item.get_value();
             break;
     }
