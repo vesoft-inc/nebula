@@ -28,7 +28,6 @@ UNION ALL\
 GO FROM 2 OVER e1
 ```
 
-returns all the neighbors of vertex `1` and `2`, with all possible duplications.
 以上语句返回点 `1` 和 `2` 关联的点，其中存在重复点。
 
 `UNION` 亦可与 `YIELD` 同时使用，例如以下语句：
@@ -123,7 +122,7 @@ GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS ri
 
 ## MINUS
 
-返回 A - B 数据集，此处请注意运算顺序。例如：
+返回 A - B 数据的差集，此处请注意运算顺序。例如：
 
 ```sql
 GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2

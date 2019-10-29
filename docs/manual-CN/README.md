@@ -21,6 +21,14 @@
   * [部署集群](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
   * [导入 .csv 文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
   * [加载 .sst 文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
+  <!-- * 下载安装包
+    * [md5.txt](https://github.com/vesoft-inc/nebula/releases/download/v1.0.0-beta/md5.txt)
+    * [nebula-1.0.0-beta.el6-5.x86_64.rpm](https://github.com/vesoft-inc/nebula/releases/download/v1.0.0-beta/nebula-1.0.0-beta.el6-5.x86_64.rpm)
+    * [nebula-1.0.0-beta.el7-5.x86_64.rpm](https://github.com/vesoft-inc/nebula/releases/download/v1.0.0-beta/nebula-1.0.0-beta.el7-5.x86_64.rpm)
+    * [nebula-1.0.0-beta.ubuntu1604.amd64.deb](https://github.com/vesoft-inc/nebula/releases/download/v1.0.0-beta/nebula-1.0.0-beta.ubuntu1604.amd64.deb)
+    * [nebula-1.0.0-beta.ubuntu1804.amd64.deb](https://github.com/vesoft-inc/nebula/releases/download/v1.0.0-beta/nebula-1.0.0-beta.ubuntu1804.amd64.deb)
+    * [Source code (zip)](https://github.com/vesoft-inc/nebula/archive/v1.0.0-beta.zip)
+    * [Source code (tar.gz)](https://github.com/vesoft-inc/nebula/archive/v1.0.0-beta.tar.gz) -->
 * 系统设计与架构
   * [设计总览](1.overview/3.design-and-architecture/1.design-and-architecture.md)
   * [存储层架构](1.overview/3.design-and-architecture/2.storage-design.md)
