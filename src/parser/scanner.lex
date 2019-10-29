@@ -254,7 +254,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 {ORDER}                     { return TokenType::KW_ORDER; }
 {INGEST}                    { return TokenType::KW_INGEST; }
-{COMPACT}                   { return TokenType::KW_COMPACTION; }
+{COMPACT}                   { return TokenType::KW_COMPACT; }
 {ASC}                       { return TokenType::KW_ASC; }
 {DISTINCT}                  { return TokenType::KW_DISTINCT; }
 {DEFAULT}                   { return TokenType::KW_DEFAULT; }

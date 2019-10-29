@@ -1523,8 +1523,8 @@ ingest_sentence
     }
     ;
 
-compaction_sentence
-    : KW_COMPACTION {
+compact_sentence
+    : KW_COMPACT {
         auto sentence = new CompactionSentence();
         $$ = sentence;
     }
@@ -1890,7 +1890,7 @@ mutate_sentence
     | delete_edge_sentence { $$ = $1; }
     | download_sentence { $$ = $1; }
     | ingest_sentence { $$ = $1; }
-    | compaction_sentence { $$ = $1; }
+    | compact_sentence { $$ = $1; }
     ;
 
 maintain_sentence
