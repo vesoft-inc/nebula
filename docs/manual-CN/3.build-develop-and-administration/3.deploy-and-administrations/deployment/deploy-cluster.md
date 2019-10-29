@@ -7,7 +7,7 @@
 
 ## 下载并安装包
 
-目前，Nebula 官方提供 `CentOS 7.5`， `CentOS 6.5`，`Ubuntu 1604` 和 `Ubuntu 1804`包，rpm或deb包下载点击[此处](https://github.com/vesoft-inc/nebula/releases)。
+目前，Nebula 官方提供 `CentOS 7.5`， `CentOS 6.5`，`Ubuntu 1604` 和 `Ubuntu 1804`包，rpm 或 deb 包下载点击[此处](https://github.com/vesoft-inc/nebula/releases)。
 
 ![image](https://user-images.githubusercontent.com/42762957/67747062-e0fe1e00-fa62-11e9-9640-008d2c82bae3.png)
 

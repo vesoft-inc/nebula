@@ -43,16 +43,16 @@ For example
 `update VARIABLE storage:rocksdb_column_family_options = { disable_auto_compactions = false , level0_file_num_compaction_trigger = 10 } `
 
 
-## Show VARIABLE
+## Show CONFIG
 
 ```sql
-SHOW CONFIG [graph|meta|storage]
+SHOW CONFIGS [graph|meta|storage]
 ```
 
 For example
 
 ```sql
-nebula> SHOW CONFIG meta
+nebula> SHOW CONFIGS meta
 ============================================================================================================================
 | module | name                                        | type   | mode      | value                                        |
 ============================================================================================================================
@@ -64,16 +64,16 @@ nebula> SHOW CONFIG meta
 ----------------------------------------------------------------------------------------------------------------------------
 ```
 
-## Get VARIABLE
+## Get CONFIG
 
 ```sql
-GET CONFIG [graph|meta|storage :] var
+GET CONFIGS [graph|meta|storage :] var
 ```
 
 For example
 
 ```sql
-nebula> GET CONFIG storage:load_data_interval_secs
+nebula> GET CONFIGS storage:load_data_interval_secs
 =================================================================
 | module  | name                      | type  | mode    | value |
 =================================================================
@@ -82,7 +82,7 @@ nebula> GET CONFIG storage:load_data_interval_secs
 ```
 
 ```sql
-nebula> GET CONFIG load_data_interval_secs
+nebula> GET CONFIGS load_data_interval_secs
 =================================================================
 | module  | name                    | type  | mode      | value |
 =================================================================
@@ -95,10 +95,10 @@ nebula> GET CONFIG load_data_interval_secs
 Got 3 rows (Time spent: 1449/2339 us)
 ```
 
-## Update VARIABLE
+## Update CONFIG
 
 ```sql
-UPDATE CONFIG [graph|meta|storage :] var = value
+UPDATE CONFIGS [graph|meta|storage :] var = value
 ```
 
 > The updated VARIABLE will be stored into meta-service permanently.
@@ -107,9 +107,9 @@ UPDATE CONFIG [graph|meta|storage :] var = value
 For example
 
 ```sql
-nebula> UPDATE CONFIG storage:load_data_interval_secs=1
+nebula> UPDATE CONFIGS storage:load_data_interval_secs=1
 Execution succeeded (Time spent: 1750/2484 us)
-nebula> GET CONFIG storage:load_data_interval_secs
+nebula> GET CONFIGS storage:load_data_interval_secs
 ===============================================================
 | module  | name                    | type  | mode    | value |
 ===============================================================

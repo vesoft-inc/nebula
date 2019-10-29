@@ -11,7 +11,7 @@ nebula> use MY_SPACE;
 
 ## 关键词和保留关键词为大小写不敏感
 
-下面四条语句是等价的（因为show和spaces都是保留字）
+下面四条语句是等价的（因为 show 和 spaces 都是保留字）
 
 ```SQL
 nebula> show spaces;

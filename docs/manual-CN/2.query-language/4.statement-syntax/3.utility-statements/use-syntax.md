@@ -12,9 +12,9 @@ USE <graph_space_name>
 nebula> USE space1
 nebula> GO FROM 1 OVER edge1   -- 遍历 space1
 nebula> USE space2
--- 使用space2。space2里面的所有点和边都与space1无关.
+-- 使用 space2。space2 里面的所有点和边都与 space1 无关。
 nebula> GO FROM 1 OVER edge1
--- 回到space1。至此你不能从space2中读取数据。
+-- 回到 space1。至此你不能从 space2 中读取数据。
 nebula> USE space1;
 ```
 

@@ -50,7 +50,7 @@ SHOW CONFIG graph|meta|storage
 例如
 
 ```sql
-nebula> SHOW CONFIG meta
+nebula> SHOW CONFIGS meta
 ============================================================================================================================
 | module | name                                        | type   | mode      | value                                        |
 ============================================================================================================================
@@ -65,13 +65,13 @@ nebula> SHOW CONFIG meta
 ### 获取变量
 
 ```sql
-GET CONFIG [graph|meta|storage :] var
+GET CONFIGS [graph|meta|storage :] var
 ```
 
 例如
 
 ```sql
-nebula> GET CONFIG storage:load_data_interval_secs
+nebula> GET CONFIGS storage:load_data_interval_secs
 =================================================================
 | module  | name                      | type  | mode    | value |
 =================================================================
@@ -80,7 +80,7 @@ nebula> GET CONFIG storage:load_data_interval_secs
 ```
 
 ```sql
-nebula> GET CONFIG load_data_interval_secs
+nebula> GET CONFIGS load_data_interval_secs
 =================================================================
 | module  | name                    | type  | mode      | value |
 =================================================================
@@ -96,7 +96,7 @@ Got 3 rows (Time spent: 1449/2339 us)
 ### 更新变量
 
 ```sql
-UPDATE CONFIG [graph|meta|storage :] var = value
+UPDATE CONFIGS [graph|meta|storage :] var = value
 ```
 
 > 更新的变量将永久存储于 meta-service 中。
@@ -105,9 +105,9 @@ UPDATE CONFIG [graph|meta|storage :] var = value
 例如
 
 ```sql
-nebula> UPDATE CONFIG storage:load_data_interval_secs=1
+nebula> UPDATE CONFIGS storage:load_data_interval_secs=1
 Execution succeeded (Time spent: 1750/2484 us)
-nebula> GET CONFIG storage:load_data_interval_secs
+nebula> GET CONFIGS storage:load_data_interval_secs
 ===============================================================
 | module  | name                    | type  | mode    | value |
 ===============================================================
