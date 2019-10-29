@@ -539,7 +539,7 @@ object SparkSstFileGenerator {
                       graphPartitionId,
                       id.toLong,
                       1,
-                      -1L,
+                      0,
                       dstId.toLong,
                       DefaultVersion
                     )
