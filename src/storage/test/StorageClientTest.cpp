@@ -78,24 +78,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     spaceId = ret.value();
     LOG(INFO) << "Created space \"default\", its id is " << spaceId;
     sleep(FLAGS_load_data_interval_secs + 1);
-    auto* nKV = static_cast<kvstore::NebulaStore*>(sc->kvStore_.get());
-    while (true) {
-        int readyNum = 0;
-        for (auto partId = 1; partId <= 10; partId++) {
-            auto retLeader = nKV->partLeader(spaceId, partId);
-            if (ok(retLeader)) {
-                auto leader = value(std::move(retLeader));
-                if (leader != HostAddr(0, 0)) {
-                    readyNum++;
-                }
-            }
-        }
-        if (readyNum == 10) {
-            LOG(INFO) << "All leaders have been elected!";
-            break;
-        }
-        usleep(100000);
-    }
+    TestUtils::waitUntilAllElected(sc->kvStore_.get(), spaceId, 10);
     auto client = std::make_unique<StorageClient>(threadPool, mClient.get());
 
     // VerticesInterfacesTest(addVertices and getVertexProps)
