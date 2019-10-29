@@ -43,7 +43,7 @@ For example
 `update VARIABLE storage:rocksdb_column_family_options = { disable_auto_compactions = false , level0_file_num_compaction_trigger = 10 } `
 
 
-## Show CONFIG
+## Show CONFIGS
 
 ```sql
 SHOW CONFIGS [graph|meta|storage]
@@ -64,7 +64,7 @@ nebula> SHOW CONFIGS meta
 ----------------------------------------------------------------------------------------------------------------------------
 ```
 
-## Get CONFIG
+## Get CONFIGS
 
 ```sql
 GET CONFIGS [graph|meta|storage :] var
@@ -95,7 +95,7 @@ nebula> GET CONFIGS load_data_interval_secs
 Got 3 rows (Time spent: 1449/2339 us)
 ```
 
-## Update CONFIG
+## Update CONFIGS
 
 ```sql
 UPDATE CONFIGS [graph|meta|storage :] var = value

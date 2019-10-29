@@ -1,7 +1,6 @@
 # DROP TAG 语法
 
 ```sql
->>>>>>> fix rebase error
 DROP TAG tag_name
 ```
 
