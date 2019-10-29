@@ -16,4 +16,12 @@ RUN  .  ~/.bashrc \
     && curl https://bintray.com/sbt/rpm/rpm | sudo tee /etc/yum.repos.d/bintray-sbt-rpm.repo \
     && yum install -y sbt \
     && cd /home/nebula/BUILD/src/tools/spark-sstfile-generator \
-    && sbt assembly
+    && sbt assembly \
+    \
+# Build rocksdbjni
+    && cd /home/nebula/ \
+    && yum install -y bzip2-devel \
+    && wget -q https://codeload.github.com/facebook/rocksdb/zip/v5.15.10 \
+    && unzip v5.15.10 \
+    && cd rocksdb-5.15.10 \
+    && DEBUG_LEVEL=0 make -j$(nproc) shared_lib rocksdbjava
