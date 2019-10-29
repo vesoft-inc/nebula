@@ -85,6 +85,9 @@ class MetaChangedListener {
 public:
     virtual void onSpaceAdded(GraphSpaceID spaceId) = 0;
     virtual void onSpaceRemoved(GraphSpaceID spaceId) = 0;
+    virtual void onSpaceOptionUpdated(GraphSpaceID spaceId,
+                                      const std::unordered_map<std::string, std::string>& options)
+                                      = 0;
     virtual void onPartAdded(const PartMeta& partMeta) = 0;
     virtual void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) = 0;
     virtual void onPartUpdated(const PartMeta& partMeta) = 0;
@@ -93,6 +96,8 @@ public:
 class MetaClient {
     FRIEND_TEST(ConfigManTest, MetaConfigManTest);
     FRIEND_TEST(ConfigManTest, MockConfigTest);
+    FRIEND_TEST(ConfigManTest, RocksdbOptionsTest);
+    FRIEND_TEST(MetaClientTest, RocksdbOptionsTest);
 
 public:
     explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
@@ -284,6 +289,7 @@ protected:
     bool registerCfg();
     void addLoadCfgTask();
     void updateGflagsValue(const ConfigItem& item);
+    void updateNestedGflags(const std::string& name);
 
     bool loadSchemas(GraphSpaceID spaceId,
                      std::shared_ptr<SpaceInfoCache> spaceInfoCache,
