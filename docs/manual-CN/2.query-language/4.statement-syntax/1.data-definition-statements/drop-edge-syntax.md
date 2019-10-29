@@ -1,4 +1,4 @@
-# Drop Edge 语法
+# DROP EDGE 语法
 
 ```
 DROP EDGE edge_type_name

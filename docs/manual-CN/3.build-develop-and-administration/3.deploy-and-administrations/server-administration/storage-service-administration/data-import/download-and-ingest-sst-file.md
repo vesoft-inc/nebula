@@ -13,6 +13,9 @@ Nebula 提供了 `Spark-SSTFile-Generator` 工具。
 ```plain
 >>>>>>> docker and typo:docs/manual-CN/3.build-develop-and-administration/3.deploy-and-administration/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md
 >>>>>>> fix rebase error
+=======
+```text
+>>>>>>> fix rebase error
 |---1 (this is partition number)
 |        | ---- vertex-${FIRST_KEY_IN_THIS_FILE}.sst
 |        | ---- edge-${FIRST_KEY_IN_THIS_FILE}.sst
