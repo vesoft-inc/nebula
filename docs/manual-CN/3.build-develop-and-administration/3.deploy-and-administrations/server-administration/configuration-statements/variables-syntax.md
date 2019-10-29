@@ -1,17 +1,56 @@
-# VARIABLE 语法
+# CONFIG 语法
 
 Nebula使用`gflags`进行运行时配置。
+
+相关的 `gflags` 参数有三个分别为 rocksdb_db_options，rocksdb_column_family_options，rocksdb_block_based_table_options。
+三个参数均为 json 格式，其中每个参数 key 和 value 均为 string 格式，例如可以在 storage 的 conf 文件中设置
+
+```
+    rocksdb_db_options = {"stats_dump_period_sec":"200", "enable_write_thread_adaptive_yield":"false", "write_thread_max_yield_usec":"600"}
+    rocksdb_column_family_options = {"max_write_buffer_number":"4", "min_write_buffer_number_to_merge":"2", "max_write_buffer_number_to_maintain":"1"}
+    rocksdb_block_based_table_options = {"block_restart_interval":"2"}
+```
+
+另外目前支持动态修改 storage service 的部分 rocksdb 参数, 如下
+
+```
+    snap_refresh_nanos
+    disable_auto_compactions
+    write_buffer_size
+    compression
+    level0_file_num_compaction_trigger
+    max_bytes_for_level_base
+    snap_refresh_nanos
+    block_size
+    block_restart_interval
+    max_total_wal_size
+    delete_obsolete_files_period_micros
+    max_background_jobs
+    base_background_compactions
+    max_background_compactions
+    stats_dump_period_sec
+    compaction_readahead_size
+    writable_file_max_buffer_size
+    bytes_per_sync
+    wal_bytes_per_sync
+    delayed_write_rate
+    avoid_flush_during_shutdown
+    max_open_files
+```
+
+示例
+`update configs storage:rocksdb_column_family_options = { disable_auto_compactions = false , level0_file_num_compaction_trigger = 10 } `
 
 ## 显示变量
 
 ```sql
-SHOW VARIABLE graph|meta|storage
+SHOW CONFIG graph|meta|storage
 ```
 
 例如
 
 ```sql
-nebula> SHOW VARIABLE meta
+nebula> SHOW CONFIG meta
 ============================================================================================================================
 | module | name                                        | type   | mode      | value                                        |
 ============================================================================================================================
@@ -26,13 +65,13 @@ nebula> SHOW VARIABLE meta
 ### 获取变量
 
 ```sql
-GET VARIABLE [graph|meta|storage :] var
+GET CONFIG [graph|meta|storage :] var
 ```
 
 例如
 
 ```sql
-nebula> GET VARIABLE storage:load_data_interval_secs
+nebula> GET CONFIG storage:load_data_interval_secs
 =================================================================
 | module  | name                      | type  | mode    | value |
 =================================================================
@@ -41,7 +80,7 @@ nebula> GET VARIABLE storage:load_data_interval_secs
 ```
 
 ```sql
-nebula> GET VARIABLE load_data_interval_secs
+nebula> GET CONFIG load_data_interval_secs
 =================================================================
 | module  | name                    | type  | mode      | value |
 =================================================================
@@ -57,7 +96,7 @@ Got 3 rows (Time spent: 1449/2339 us)
 ### 更新变量
 
 ```sql
-UPDATE VARIABLE [graph|meta|storage :] var = value
+UPDATE CONFIG [graph|meta|storage :] var = value
 ```
 
 > 更新的变量将永久存储于 meta-service 中。
@@ -66,9 +105,9 @@ UPDATE VARIABLE [graph|meta|storage :] var = value
 例如
 
 ```sql
-nebula> UPDATE VARIABLE storage:load_data_interval_secs=1
+nebula> UPDATE CONFIG storage:load_data_interval_secs=1
 Execution succeeded (Time spent: 1750/2484 us)
-nebula> GET VARIABLE storage:load_data_interval_secs
+nebula> GET CONFIG storage:load_data_interval_secs
 ===============================================================
 | module  | name                    | type  | mode    | value |
 ===============================================================
