@@ -27,6 +27,7 @@ using proxygen::ResponseBuilder;
 
 void MetaHttpCompactHandler::init(nebula::kvstore::KVStore *kvstore,
                                  nebula::thread::GenericThreadPool *pool) {
+    LOG(INFO) << "MetaHttpCompactHandler::init";
     kvstore_ = kvstore;
     pool_ = pool;
     CHECK_NOTNULL(kvstore_);
@@ -54,18 +55,21 @@ void MetaHttpCompactHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
 }
 
 void MetaHttpCompactHandler::onEOM() noexcept {
+    LOG(INFO) << "enter MetaHttpCompactHandler::onEOM()";
     switch (err_) {
         case HttpCode::E_UNSUPPORTED_METHOD:
             ResponseBuilder(downstream_)
                 .status(WebServiceUtils::to(HttpStatusCode::METHOD_NOT_ALLOWED),
                         WebServiceUtils::toString(HttpStatusCode::METHOD_NOT_ALLOWED))
                 .sendWithEOM();
+            LOG(INFO) << "error E_UNSUPPORTED_METHOD";
             return;
         case HttpCode::E_ILLEGAL_ARGUMENT:
             ResponseBuilder(downstream_)
                 .status(WebServiceUtils::to(HttpStatusCode::BAD_REQUEST),
                         WebServiceUtils::toString(HttpStatusCode::BAD_REQUEST))
                 .sendWithEOM();
+            LOG(INFO) << "error E_ILLEGAL_ARGUMENT";
             return;
         default:
             break;
@@ -103,6 +107,7 @@ void MetaHttpCompactHandler::onError(ProxygenError error) noexcept {
 }
 
 bool MetaHttpCompactHandler::compact(const std::string& spaceName, GraphSpaceID spaceId) {
+    LOG(INFO) << "meta server do compact dispatch";
     std::unique_ptr<kvstore::KVIterator> iter;
     auto prefix = MetaServiceUtils::partPrefix(spaceId);
 
@@ -132,6 +137,7 @@ bool MetaHttpCompactHandler::compact(const std::string& spaceName, GraphSpaceID 
             auto url = folly::stringPrintf(tmp, storageIP.c_str(),
                                            FLAGS_ws_storage_http_port,
                                            spaceName.c_str());
+            LOG(INFO) << "make compact url: " << url;
             auto compactResult = nebula::http::HttpClient::get(url);
             return compactResult.ok() && compactResult.value() == "Compact successfully";
         };
@@ -140,7 +146,8 @@ bool MetaHttpCompactHandler::compact(const std::string& spaceName, GraphSpaceID 
     }
 
     bool successfully{true};
-    folly::collectAll(std::move(futures)).then([&](const std::vector<folly::Try<bool>>& tries) {
+    folly::collectAll(std::move(futures))
+        .thenValue([&](const std::vector<folly::Try<bool>>& tries) {
         for (const auto& t : tries) {
             if (t.hasException()) {
                 LOG(ERROR) << "Compact Failed: " << t.exception();

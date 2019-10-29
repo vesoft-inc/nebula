@@ -52,6 +52,7 @@ void StorageHttpAdminHandler::onRequest(std::unique_ptr<HTTPMessage> headers) no
     auto spaceId = ret.value();
 
     if (*op == "compact") {
+        LOG(INFO) << "do compact at space=" << *space;
         auto status = kv_->compact(spaceId);
         if (status != kvstore::ResultCode::SUCCEEDED) {
             resp_ = folly::stringPrintf("Compact failed! error=%d", static_cast<int32_t>(status));
