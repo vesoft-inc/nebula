@@ -89,6 +89,8 @@ class SstFileOutputFormat
   }
 }
 
+import SstRecordWriter._
+
 /**
   * custom outputFormat, which generates a sub dir per partition per worker
   *
@@ -101,12 +103,6 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
       PropertyValueAndTypeWritable
     ] {
   private[this] val log = LoggerFactory.getLogger(this.getClass)
-
-  /**
-    * all sst files opened, (vertexOrEdge,partitionId)->(SstFileWriter,localSstFilePath,hdfsParentPath)
-    */
-  private var sstFilesMap =
-    mutable.Map.empty[(VertexOrEdgeEnum, Int), (SstFileWriter, String, String)]
 
   /**
     * need local file system only, for rocksdb sstFileWriter can't write to remote file system(only can back up to HDFS) for now
@@ -128,12 +124,6 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
   private val hdfsParentDir =
     configuration.get(SparkSstFileGenerator.SSF_OUTPUT_HDFS_DIR_CONF_KEY)
 
-  /**
-    * how many partition this graph space has
-    */
-  private val nebulaGraphSpacePartitions =
-    configuration.getInt(SparkSstFileGenerator.NEBULA_PARTITION_NUMBER_KEY, 3)
-
   log.debug(s"SstRecordWriter read hdfs dir:${hdfsParentDir}")
 
   // all RocksObject should be closed
@@ -146,7 +136,7 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
   ): Unit = {
     var sstFileWriter: SstFileWriter = null
 
-    val partitionId = (key.id % nebulaGraphSpacePartitions).toInt
+    val partitionId = key.partitionId
     //cache per partition per vertex/edge type's sstfile writer
     val sstWriterOptional = sstFilesMap.get((value.vertexOrEdgeEnum, partitionId))
     if (sstWriterOptional.isEmpty) {
@@ -163,7 +153,6 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
       //TODO: how to make sure the options used here is consistent with the server's
       // What's the fastest way to load data into RocksDB: https://rocksdb.org.cn/doc/RocksDB-FAQ.html
       env = new EnvOptions
-      // TODO: prove setWritableFileMaxBufferSize is working?
       options = new Options()
         .setCreateIfMissing(true)
         .setCreateMissingColumnFamilies(true)
@@ -292,4 +281,13 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
       )
     }
   }
+}
+
+object SstRecordWriter {
+
+  /**
+    * all sst files opened, (vertexOrEdge,partitionId)->(SstFileWriter,localSstFilePath,hdfsParentPath)
+    */
+  private var sstFilesMap =
+    mutable.Map.empty[(VertexOrEdgeEnum, Int), (SstFileWriter, String, String)]
 }

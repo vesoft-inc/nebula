@@ -178,6 +178,7 @@ class MappingConfigurationTest extends FlatSpec with BeforeAndAfter {
       Some("flag"),
       Some(Seq(Column("src_pri_value", "src_pri_value", "string")))
     )
+
     val tag2 = Tag(
       "dmt_risk_graph_idmp_node_s_d",
       "user_pin",
@@ -202,6 +203,14 @@ class MappingConfigurationTest extends FlatSpec with BeforeAndAfter {
 
     Seq(tag1, tag2) should contain theSameElementsInOrderAs config.tags
     List(edge1) should contain theSameElementsInOrderAs config.edges
+  }
+
+  "tags" should "be grouped properly in a MappingConfiguration" in {
+    val config   = MappingConfiguration("mapping.json")
+    val tagGroup = config.getVertexTagGroupWithinSameTableAndPartition()
+
+    assert(tagGroup.size == 1)
+    tagGroup.foreach(a => a._2 == " ('mac','user_pin') ")
   }
 
   "a MappingConfiguration" should "be throw exception from an ill-formatted configuration file" in {

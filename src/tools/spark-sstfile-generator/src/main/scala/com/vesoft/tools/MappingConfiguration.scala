@@ -12,11 +12,11 @@ import scala.io.{Codec, Source}
 import scala.language.implicitConversions
 
 /**
-* column mapping
-*
-* @param columnName   hive column name
-* @param propertyName the property name this column maps to
-* @param `type`       map to certain data type of nebula graph
+  * column mapping
+  *
+  * @param columnName   hive column name
+  * @param propertyName the property name this column maps to
+  * @param `type`       map to certain data type of nebula graph
   */
 case class Column(
     columnName: String,
@@ -58,48 +58,43 @@ object Column {
 }
 
 /**
-* a trait that both Tag and Edge should extends
-*/
-trait WithColumnMapping {
+  * a trait that both Tag and Edge should extends
+  */
+trait TableColumnMappingAware {
 
   def tableName: String
 
-  def name: String
-
   def columnMappings: Option[Seq[Column]]
+
+  override def equals(obj: Any): Boolean =
+    if (!obj.isInstanceOf[TableColumnMappingAware]) {
+      false
+    } else {
+      val other = obj.asInstanceOf[TableColumnMappingAware]
+      tableName == other.tableName && columnMappings == other.columnMappings
+    }
+
+  override def hashCode(): Int = tableName.hashCode + columnMappings.hashCode()
 }
 
 /**
-* tag section of configuration file
-*
-* @param tableName        hive table name
-* @param name             tag name
-* @param primaryKey       show the PK column
-* @param datePartitionKey date partition column,Hive table in production is usually Date partitioned
-* @param typePartitionKey type partition columns, when different vertex/edge's properties are identical,they are stored in one hive table, and partitioned by a `type` column
-* @param columnMappings   map of hive table column to properties
+  * tag section of configuration file
+  *
+  * @param tableName        hive table name
+  * @param name             tag name
+  * @param primaryKey       show the PK column
+  * @param datePartitionKey date partition column,Hive table in production is usually Date partitioned
+  * @param typePartitionKey type partition columns, when different vertex/edge's properties are identical,they are stored in one hive table, and partitioned by a `type` column
+  * @param columnMappings   map of hive table column to properties
   */
 case class Tag(
     override val tableName: String,
-    override val name: String,
+    name: String,
     primaryKey: String,
     datePartitionKey: Option[String] = None,
     typePartitionKey: Option[String] = None,
     override val columnMappings: Option[Seq[Column]] = None
-) extends WithColumnMapping {
-  def allColumnNames(): Option[Seq[String]] =
-    columnMappings.map(_.map(_.columnName))
-
-  def getColumn(name: String): Option[Column] = {
-    columnMappings
-      .map(_.find { col =>
-        {
-          col.columnName.equalsIgnoreCase(name)
-        }
-      })
-      .head
-  }
-}
+) extends TableColumnMappingAware
 
 object Tag {
   // json implicit converter
@@ -158,19 +153,19 @@ object Tag {
 }
 
 /**
-* edge section of configuration file
-*
-* @param tableName            hive table name
-* @param name                 edge type name
-* @param fromForeignKeyColumn  srcID column
-* @param fromReferenceTag      Tag srcID column referenced
-* @param toForeignKeyColumn   dstID column
-* @param toReferenceTag        Tag dstID column referenced
-* @param columnMappings       map of hive table column to properties
+  * edge section of configuration file
+  *
+  * @param tableName            hive table name
+  * @param name                 edge type name
+  * @param fromForeignKeyColumn  srcID column
+  * @param fromReferenceTag      Tag srcID column referenced
+  * @param toForeignKeyColumn   dstID column
+  * @param toReferenceTag        Tag dstID column referenced
+  * @param columnMappings       map of hive table column to properties
   */
 case class Edge(
     override val tableName: String,
-    override val name: String,
+    name: String,
     fromForeignKeyColumn: String,
     fromReferenceTag: String,
     toForeignKeyColumn: String,
@@ -178,10 +173,7 @@ case class Edge(
     datePartitionKey: Option[String] = None,
     typePartitionKey: Option[String] = None,
     override val columnMappings: Option[Seq[Column]] = None
-) extends WithColumnMapping {
-  def allColumnNames(): Option[Seq[String]] =
-    columnMappings.map(columns => columns.map(_.columnName))
-}
+) extends TableColumnMappingAware
 
 object Edge {
   implicit val EdgeWrites: Writes[Edge] = new Writes[Edge] {
@@ -254,13 +246,13 @@ object Edge {
 }
 
 /**
-* a mapping file in-memory representation
-*
-* @param databaseName hive database name for this mapping configuration
-* @param partitions   partition number of the target graphspace
-* @param tags         tag's mapping
-* @param edges        edge's mapping
-* @param keyPolicy    policy used to generate unique id, default=hash_primary_key
+  * a mapping file in-memory representation
+  *
+  * @param databaseName hive database name for this mapping configuration
+  * @param partitions   partition number of the target graphspace
+  * @param tags         tag's mapping
+  * @param edges        edge's mapping
+  * @param keyPolicy    policy used to generate unique id, default=hash_primary_key
   */
 case class MappingConfiguration(
     databaseName: String,
@@ -268,7 +260,58 @@ case class MappingConfiguration(
     tags: Seq[Tag],
     edges: Seq[Edge],
     keyPolicy: Option[String] = Some("hash_primary_key")
-)
+) {
+
+  def getVertexTagGroupWithinSameTableAndPartition() = {
+    tags
+      .groupBy(
+        tag =>
+          (new TableColumnMappingAware {
+            def tableName: String                   = tag.tableName
+            def columnMappings: Option[Seq[Column]] = tag.columnMappings
+          }, tag.primaryKey, tag.typePartitionKey, tag.datePartitionKey)
+      )
+      .map {
+        case (group, tags) =>
+          (group, tags.map(a => s"'${a.name.toLowerCase}'").mkString(" (", ",", ") ")) //HIVE version 0.13+ required for IN clause support
+      }
+  }
+
+  //TODO: Fixed tag id = 1, so that all tag has same type, when nebula support a single vertex with multiple tags, replace the following with "tags.map(a => a.name.toLowerCase).zipWithIndex.toMap"
+  lazy val tagNameIdMap = tags.map(a => (a.name.toLowerCase, 1)).toMap
+
+  def getEdgeTagGroupWithinSameTableAndPartition() = {
+    edges
+      .groupBy(
+        edge =>
+          (
+            new TableColumnMappingAware {
+              def tableName: String                   = edge.tableName
+              def columnMappings: Option[Seq[Column]] = edge.columnMappings
+            },
+            edge.fromForeignKeyColumn,
+            edge.toForeignKeyColumn,
+            edge.typePartitionKey,
+            edge.datePartitionKey
+          )
+      )
+      .map {
+        case (group, edges) =>
+          (group, edges.map(a => s"'${a.name.toLowerCase}'").mkString(" (", ",", ") "))
+      }
+  }
+
+  lazy val edgeTagTypeMap = edges.map(a => a.name.toLowerCase).zipWithIndex.toMap
+
+  lazy val edgeName2FromReferenceTagMap =
+    edges.map(a => (a.name.toLowerCase, a.fromReferenceTag)).toMap
+
+  lazy val edgeName2ToReferenceTagMap = edges.map(a => (a.name.toLowerCase, a.toReferenceTag)).toMap
+
+  def getFromReferenceTagByEdgeName(edgeName: String) = edgeName2FromReferenceTagMap.get(edgeName)
+
+  def getToReferenceTagByEdgeName(edgeName: String) = edgeName2ToReferenceTagMap.get(edgeName)
+}
 
 object MappingConfiguration {
   implicit val MappingConfigurationWrites: Writes[MappingConfiguration] =
@@ -292,7 +335,6 @@ object MappingConfiguration {
         )
       }
     }
-
 
   implicit val MappingConfigurationReads: Reads[MappingConfiguration] =
     new Reads[MappingConfiguration] {
@@ -343,11 +385,11 @@ object MappingConfiguration {
     }
 
   /**
-* construct from a mapping file
-*
-* @param mappingFile mapping file should be provided through "--files" option, and specified the application arg "---mapping_file_input"(--mi for short) at the same time,
-*                    it will be consumed as a classpath resource
-* @return MappingConfiguration instance
+    * construct from a mapping file
+    *
+    * @param mappingFile mapping file should be provided through "--files" option, and specified the application arg "---mapping_file_input"(--mi for short) at the same time,
+    *                    it will be consumed as a classpath resource
+    * @return MappingConfiguration instance
     */
   def apply(mappingFile: String): MappingConfiguration = {
     val bufferedSource = Source.fromFile(mappingFile)(Codec("UTF-8"))
