@@ -1,4 +1,4 @@
-# VARIABLE Syntax
+# CONFIG Syntax
 
 Nebula use `gflags` for run-time configurations.
 

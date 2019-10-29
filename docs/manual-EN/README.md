@@ -90,7 +90,7 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
     * Account Management Statements
       * [Drop User Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/drop-user-syntax.md)
     * Configuration Statements
-      * [Variables Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/variables-syntax.md)
+      * [Configs Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/configs-syntax.md)
     * Storage Service Administration
       * Data Import
         * [Download And Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)

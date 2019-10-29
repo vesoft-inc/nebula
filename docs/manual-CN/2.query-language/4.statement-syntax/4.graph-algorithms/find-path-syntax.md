@@ -1,4 +1,4 @@
-# FIND PATH 语句
+# FIND PATH 语法
 
 `FIND PATH` 语句用于获取最短路径及全路径
 

@@ -1,4 +1,4 @@
-# USE 语句
+# USE 语法
 
 ```
 USE <graph_space_name>
