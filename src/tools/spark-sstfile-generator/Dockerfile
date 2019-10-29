@@ -24,4 +24,11 @@ RUN  .  ~/.bashrc \
     && wget -q https://codeload.github.com/facebook/rocksdb/zip/v5.15.10 \
     && unzip v5.15.10 \
     && cd rocksdb-5.15.10 \
-    && DEBUG_LEVEL=0 make -j$(nproc) shared_lib rocksdbjava
+    && DEBUG_LEVEL=0 make -j$(nproc) shared_lib rocksdbjava \
+    \
+# Replace
+    && cd /home/nebula \
+    && cp BUILD/src/tools/native-client/_build/libnebula_native_client.so . \
+    && cp BUILD/src/tools/spark-sstfile-generator/target/scala-*/nebula-spark-sstfile-generator.jar . \
+    && cp rocksdb-5.15.10/java/target/librocksdbjni-linux64.so . \
+    && jar -uvf nebula-spark-sstfile-generator.jar librocksdbjni-linux64.so libnebula_native_client.so
