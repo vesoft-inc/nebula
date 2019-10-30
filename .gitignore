@@ -28,3 +28,6 @@ Testing/
 target/
 cluster.id
 pids/
+
+# vscode
+.vscode/
