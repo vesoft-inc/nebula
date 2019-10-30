@@ -110,12 +110,10 @@ object SparkSstFileGenerator {
       )
       .build
 
-
     // when the newest data arrive, used in non-incremental environment
     val latestDate = CliOption
       .builder("di")
       .longOpt("latest_date_input")
-
       .required()
       .hasArg()
       .desc("Latest date to query,date format YYYY-MM-dd")
@@ -130,12 +128,10 @@ object SparkSstFileGenerator {
       )
       .build
 
-
     // may be used in some test run to prove the correctness
     val limit = CliOption
       .builder("li")
       .longOpt("limit_input")
-
       .hasArg()
       .desc(
         "Return at most this number of edges/vertex, usually used in POC stage, when omitted, fetch all data."
@@ -332,7 +328,6 @@ object SparkSstFileGenerator {
         case None => (key: String) => FNVHash.hash64(key)
       }
 
-
     // implicit ordering used by PairedRDD.repartitionAndSortWithinPartitions whose key is PartitionIdAndBytesEncoded typed
     implicit def ordering[A <: GraphPartitionIdAndKeyValueEncoded]: Ordering[A] = new Ordering[A] {
       override def compare(x: A, y: A): Int = {
@@ -399,7 +394,7 @@ object SparkSstFileGenerator {
               val keyEncoded: Array[Byte] = NativeClient.createVertexKey(
                 graphPartitionId,
                 vertexId,
-                tagType,
+                tag.tagID,
                 DefaultVersion
               )
               val valuesEncoded: Array[Byte] =
@@ -412,7 +407,7 @@ object SparkSstFileGenerator {
               (
                 GraphPartitionIdAndKeyValueEncoded(
                   graphPartitionId,
-                  tagType,
+                  tag.tagID,
                   new BytesWritable(keyEncoded)
                 ),
                 new PropertyValueAndTypeWritable(
@@ -453,7 +448,6 @@ object SparkSstFileGenerator {
           mappingConfiguration.databaseName
         )
 
-
         val columnExpression = {
           assert(allColumns.size > 0)
           s"${edge.fromForeignKeyColumn},${edge.toForeignKeyColumn}," + allColumns
@@ -466,7 +460,6 @@ object SparkSstFileGenerator {
             key => s"${key}='${edge.name}' AND ${datePartitionKey}='${latestDate}'"
           )
           .getOrElse(s"${datePartitionKey}='${latestDate}'")
-
 
         //TODO: join FROM_COLUMN and join TO_COLUMN from the table where this columns referencing, to make sure that the claimed id really exists in the reference table.BUT with HUGE Perf penalty
         val edgeDf = sqlContext.sql(
@@ -491,7 +484,6 @@ object SparkSstFileGenerator {
                   .map(valueExtractor(row, _, charset))
               )
             }
-
           )
 
         edgeKeyAndValues
@@ -509,17 +501,17 @@ object SparkSstFileGenerator {
               val keyEncoded = NativeClient.createEdgeKey(
                 graphPartitionId,
                 srcId,
-                1,
+                edge.edgeType,
                 -1L,
                 dstId,
                 DefaultVersion
               )
-              //val keyEncoded = NativeClient.createEdgeKey(partitionId, srcId, edgeType, -1L, dstId, DefaultVersion)
 
               // TODO: only support a single edge type , put edge_type value in 0th index. Nebula server side must define extra edge property: edge_type
               val valuesEncoded: Array[Byte] = NativeClient.encode(
                 (edge.name.getBytes(charset) +: values).toArray
               )
+
               //val valuesEncoded: Array[Byte] = NativeClient.encode(values.toArray)
               log.debug(
                 s"Edge(partition=${graphPartitionId}): " + DatatypeConverter
@@ -529,7 +521,7 @@ object SparkSstFileGenerator {
               (
                 GraphPartitionIdAndKeyValueEncoded(
                   graphPartitionId,
-                  1,
+                  edge.edgeType,
                   new BytesWritable(keyEncoded)
                 ),
                 new PropertyValueAndTypeWritable(
@@ -614,7 +606,6 @@ object SparkSstFileGenerator {
           allColumnsMapInDB.slice(commentsEnd + 1, allColumnsMapInDB.size)
         )
       }
-
 
     // check the claimed columns really exist in db
     colsMustCheck.map(_.toUpperCase).foreach { col =>

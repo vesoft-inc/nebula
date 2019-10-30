@@ -39,6 +39,10 @@
               "description": "Tag's name",
               "type": "string"
             },
+            "tag_id" : {
+                "description": "Tag's ID",
+                "type": "integer"
+            },
             "date_partition_key": {
               "description": "Date partition key used by datasource table",
               "type": "string"
@@ -94,6 +98,10 @@
             "edge_name": {
               "description": "edge's name",
               "type": "string"
+            },
+            "edge_type": {
+              "description": "edge's type",
+              "type": "integer"
             },
             "date_partition_key": {
               "description": "date partition key used by datasource table",
