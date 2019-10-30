@@ -227,6 +227,28 @@ public:
                   << ", data path is at \"" << dataPath << "\"";
         return sc;
     }
+
+    static void waitUntilAllElected(kvstore::KVStore* kvstore, GraphSpaceID spaceId, int partNum) {
+        auto* nKV = static_cast<kvstore::NebulaStore*>(kvstore);
+        // wait until all part leader exists
+        while (true) {
+            int readyNum = 0;
+            for (auto partId = 1; partId <= partNum; partId++) {
+                auto retLeader = nKV->partLeader(spaceId, partId);
+                if (ok(retLeader)) {
+                    auto leader = value(std::move(retLeader));
+                    if (leader != HostAddr(0, 0)) {
+                        readyNum++;
+                    }
+                }
+            }
+            if (readyNum == partNum) {
+                LOG(INFO) << "All leaders have been elected!";
+                break;
+            }
+            usleep(100000);
+        }
+    }
 };
 
 template <typename T>
