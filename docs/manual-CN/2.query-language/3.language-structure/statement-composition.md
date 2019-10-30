@@ -26,4 +26,4 @@ nebula> SHOW TAGS; SHOW EDGES;          -- 仅列出边
 nebula> GO FROM 201 OVER edge_serve | GO FROM $-.id OVER edge_fans | GO FROM $-.id ...
 ```
 
-占位符 `$-.id` 获取第一个语句 `GO FROM 201 OVER edge_serve` 返回的结果。
+占位符 `$-.id` 获取第一个语句 `GO FROM 201 OVER edge_serve YIELD edge_serve._dst AS id` 返回的结果。

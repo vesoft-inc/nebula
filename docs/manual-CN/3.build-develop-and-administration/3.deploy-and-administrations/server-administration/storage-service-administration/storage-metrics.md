@@ -8,6 +8,7 @@
 
 | counter\_name | statistic\_type | time_range |
 | ----  |  ----|-------|
+
 下面将分别介绍这三部分。
 
 ### 指标名
@@ -15,7 +16,6 @@
 每个指标名都由接口名加指标名构成，目前支持获取如下接口
 
 ```
-获取一个点周边节点的 ID 和属性，以及相关边的属性 get_bound
 获取点的属性 vertex_props
 获取边的属性 edge_props
 插入一个点 add_vertex
@@ -49,9 +49,9 @@ _error_qps
 根据上面的介绍，就可以写出一个完整的指标名称了，下面是一些示例：
 
 ```
-add_vertex_latency.avg.60    				# 最近一分钟插入一个点的平均延时
-get_bound_qps.rate.600			 				# 最近十分钟获取邻居的 QPS
-update_edge_error_qps.count.3600	  # 最近一小时更新一条边发生错误的总计数量
+add_vertex_latency.avg.60        # 最近一分钟插入一个点的平均延时
+get_bound_qps.rate.600        # 最近十分钟获取邻居的 QPS
+update_edge_error_qps.count.3600   # 最近一小时更新一条边发生错误的总计数量
 ```
 
 假设本地启动了一个 nebula storage service，同时启动时设置的 `ws_http_port` 端口号为 50005。通过 HTTP 的 GET 接口发送，方法名为 get_stats，参数为 stats 加对应的指标名字。下面是通过 HTTP 接口获取指标的示例：

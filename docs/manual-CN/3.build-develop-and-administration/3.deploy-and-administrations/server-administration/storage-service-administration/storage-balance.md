@@ -1,10 +1,10 @@
 # 存储服务的负载均衡和数据迁移操作
 
-Nebula 的服务可分为 graphd，storaged，metad。此文档中的 balance 仅针对 storaged 进行操作。目前，storaged 的 scale 是通过 balance 命令来实现的。balance 命令有两种，一种需要迁移数据，命令为 **balance data**；另一种不需要迁移数据，只改变 partition 的 leader 分布，来达到负载均衡的目的，命令为 **balance leader**。
+Nebula 的服务可分为 graphd，storaged，metad。此文档中的 balance 仅针对 storaged 进行操作。目前，storaged 的 scale 是通过 balance 命令来实现的。balance 命令有两种，一种需要迁移数据，命令为 **BALANCE DATA**；另一种不需要迁移数据，只改变 partition 的 leader 分布，来达到负载均衡的目的，命令为 **BALANCE LEADER**。
 
 ## Balance data
 
-以下举例说明 balance data 的使用方式. 本例将集群从 3 个实例（进程）扩展到 8 个实例（进程）：
+以下举例说明 `BALANCE DATA` 的使用方式. 本例将集群从 3 个实例（进程）扩展到 8 个实例（进程）：
 
 ### Step 1 准备
 
@@ -28,7 +28,7 @@ Got 3 rows (Time spent: 5886/6835 us)
 
 `SHOW HOSTS` 返回结果说明：
 
-- IP, Port 表示当前的 storage 实例. 这个集群启动了 3 个 storaged 服务，并且没有任何数据。( 192.168.8.210:34600，192.168.8.210:34700，192.168.8.210:34500 )
+- IP, Port 表示当前的 storage 实例. 这个集群启动了 3 个 storaged 服务，并且没有任何数据。(192.168.8.210:34600，192.168.8.210:34700，192.168.8.210:34500)
 - Status 表示当前实例的状态，目前有 online/offline 两种。当机器下线以后（metad 在一段间隔内收不到其心跳），将把其更改为 offline。 这个时间间隔可以在启动 metad 的时候通过设置 `expired_threshold_sec` 来修改，当前默认值是 10 分钟。
 - Leader count：表示当前实例 Raft leader 数目。
 - Leader distribution：表示当前 leader 在每个图空间上的分布，目前尚未创建任何图空间。
@@ -88,7 +88,7 @@ nebula> SHOW HOSTS
 
 ### Step 3 迁移数据
 
-运行 `balance data` 命令， 查看当前的 balance 计划 id。如果当前集群有新机器加入，则会生成一个新的计划 id。对于已经平衡的集群，重复运行 `balance data` 不会有任何新操作。
+运行 `BALANCE DATA` 命令， 查看当前的 balance 计划 id。如果当前集群有新机器加入，则会生成一个新的计划 id。对于已经平衡的集群，重复运行 `BALANCE DATA` 不会有任何新操作。
 
 ```SQL
 nebula> BALANCE DATA
@@ -136,7 +136,7 @@ nebula> BALANCE ID 1570761786
 
 ### Step 4 查看结果
 
-大多数情况下，搬迁数据是个比较漫长的过程。但是搬迁过程不会影响已有服务。运行结束后，进度会提示 100%。如果有运行失败的 task，可再次运行 `balance data` 命令进行修复。如果多次运行仍无法修复，请与社区联系 [GitHub](https://github.com/vesoft-inc/nebula/issues)。最后，通过 `SHOW HOSTS` 查看运行后的 partition 分布。
+大多数情况下，搬迁数据是个比较漫长的过程。但是搬迁过程不会影响已有服务。运行结束后，进度会提示 100%。如果有运行失败的 task，可再次运行 `BALANCE DATA` 命令进行修复。如果多次运行仍无法修复，请与社区联系 [GitHub](https://github.com/vesoft-inc/nebula/issues)。最后，通过 `SHOW HOSTS` 查看运行后的 partition 分布。
 
 ```SQL
 nebula> SHOW HOSTS

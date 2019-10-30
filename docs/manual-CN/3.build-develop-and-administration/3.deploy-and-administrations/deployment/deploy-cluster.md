@@ -139,7 +139,7 @@ metas， storages 和 graphs 包含其自身的 hosts。
 `port`                   | 0             | Nebula daemon 监听端口
 `u`                      | ""            | 用于身份验证的用户名
 `p`                      | ""            | 用于身份验证的密码
-`enable_history`         | false         | 是否强制保存 command 历史
+`enable_history`         | false         | 是否保存历史命令
 `server_conn_timeout_ms` | 1000          | 连接超时时长，单位毫秒
 
 **注意：** 配置时请确保端口未被防火墙阻拦

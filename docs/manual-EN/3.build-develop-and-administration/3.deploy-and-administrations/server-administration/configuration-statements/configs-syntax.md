@@ -2,7 +2,7 @@
 
 Nebula use `gflags` for run-time configurations.
 
-The related three gflags parameters are: `rocksdb_db_options`,`rocksdb_column_family_options` and `rocksdb_block_based_table_options`.
+The related three gflags parameters are: `rocksdb_db_options`, `rocksdb_column_family_options` and `rocksdb_block_based_table_options`.
 
 The three parameters are all in json formet, and the key and value of them are in string format. For example, you can set as follows in the conf file of storage:
 
@@ -40,10 +40,9 @@ Nebula supports changing some rocksdb parameters in storage service as follows:
 ```
 
 For example
-`update VARIABLE storage:rocksdb_column_family_options = { disable_auto_compactions = false , level0_file_num_compaction_trigger = 10 } `
+`UPDATE VARIABLE storage:rocksdb_column_family_options = { disable_auto_compactions = false , level0_file_num_compaction_trigger = 10 } `
 
-
-## Show CONFIGS
+## SHOW CONFIGS
 
 ```sql
 SHOW CONFIGS [graph|meta|storage]
@@ -101,7 +100,7 @@ Got 3 rows (Time spent: 1449/2339 us)
 UPDATE CONFIGS [graph|meta|storage :] var = value
 ```
 
-> The updated VARIABLE will be stored into meta-service permanently.
+> The updated CONFIGS will be stored into meta-service permanently.
 > If the CONFIG's mode is `MUTABLE`, the change will take effects immediately. Otherwise, if the mode is `REBOOT`, the change will not work until server restart.
 
 For example
