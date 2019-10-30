@@ -60,7 +60,7 @@ public class GraphClientImpl implements GraphClient {
         checkArgument(timeout > 0);
         checkArgument(connectionRetry > 0);
         addresses.forEach(address -> {
-            String host = address.getHost();
+            String host = address.getHostText();
             int port = address.getPort();
             if (!InetAddresses.isInetAddress(host) || (port <= 0 || port >= 65535)) {
                 throw new IllegalArgumentException(String.format("%s:%d is not a valid address",
@@ -98,7 +98,7 @@ public class GraphClientImpl implements GraphClient {
             Random random = new Random(System.currentTimeMillis());
             int position = random.nextInt(addresses.size());
             HostAndPort address = addresses.get(position);
-            transport = new TSocket(address.getHost(), address.getPort(), timeout);
+            transport = new TSocket(address.getHostText(), address.getPort(), timeout);
             TProtocol protocol = new TBinaryProtocol(transport);
 
             try {
