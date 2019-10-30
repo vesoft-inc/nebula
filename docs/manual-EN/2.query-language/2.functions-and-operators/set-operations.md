@@ -34,7 +34,7 @@ GO FROM 2 OVER e1
 
 returns all the neighbors of vertex `1` and `2`, with all possible duplications.
 
-`UNION` can also work with the `YIELD`-syntax-returned properties. For example, let's suppose the results of the following two queries 
+`UNION` can also work with the `YIELD` statement. For example, let's suppose the results of the following two queries 
 
 ```
 nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2 -- query 1
@@ -56,7 +56,7 @@ nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.pro
 ---------------------------
 ```
 
-And the following statement 
+And the following statement
 
 ```
 GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2
