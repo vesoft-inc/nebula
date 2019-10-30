@@ -435,6 +435,30 @@ StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, Part
     return Status::Error("Get Failed");
 }
 
+StatusOr<std::vector<HostAddr>> AdminClient::getSpacePeers(GraphSpaceID spaceId) {
+    CHECK_NOTNULL(kv_);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto prefix = MetaServiceUtils::partPrefix(spaceId);
+
+    auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Fetch Spaces Failed";
+        return Status::Error("Fetch Spaces Faile");;
+    }
+
+    std::vector<HostAddr> hosts;
+    while (iter->valid()) {
+        for (auto &host : MetaServiceUtils::parsePartVal(iter->val())) {
+            HostAddr h(host.get_ip(), host.get_port());
+            if (std::find(hosts.begin(), hosts.end(), h) == hosts.end()) {
+                hosts.emplace_back(std::move(h));
+            }
+        }
+        iter->next();
+    }
+    return hosts;
+}
+
 void AdminClient::getLeaderDist(const HostAddr& host,
                                 folly::Promise<StatusOr<storage::cpp2::GetLeaderResp>>&& pro,
                                 int32_t retry,
@@ -502,6 +526,70 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
     });
 
     return future;
+}
+
+folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId, const std::string& name) {
+    if (injector_) {
+        return injector_->createSnapshot();
+    }
+    storage::cpp2::CreateCPRequest req;
+    req.set_space_id(spaceId);
+    req.set_name(name);
+
+    auto ret = getSpacePeers(spaceId);
+    if (!ret.ok()) {
+        return ret.status();
+    }
+
+    folly::Promise<Status> pro;
+    auto f = pro.getFuture();
+    getResponse(ret.value(), 0, std::move(req), [] (auto client, auto request) {
+        return client->future_createCheckpoint(request);
+    }, 0, std::move(pro), 1 /*The snapshot operation only needs to be retried twice*/);
+    return f;
+}
+
+folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId, const std::string& name) {
+    if (injector_) {
+        return injector_->dropSnapshot();
+    }
+    storage::cpp2::DropCPRequest req;
+    req.set_space_id(spaceId);
+    req.set_name(name);
+
+    auto ret = getSpacePeers(spaceId);
+    if (!ret.ok()) {
+        return ret.status();
+    }
+
+    folly::Promise<Status> pro;
+    auto f = pro.getFuture();
+    getResponse(ret.value(), 0, std::move(req), [] (auto client, auto request) {
+        return client->future_dropCheckpoint(request);
+    }, 0, std::move(pro), 1 /*The snapshot operation only needs to be retried twice*/);
+    return f;
+}
+
+folly::Future<Status> AdminClient::sendBlockSign(GraphSpaceID spaceId,
+                                                 storage::cpp2::EngineSignType sign) {
+    if (injector_) {
+        return injector_->sendBlockSign();
+    }
+    storage::cpp2::EngineSignRequest req;
+    req.set_sign(sign);
+    req.set_space_id(spaceId);
+
+    auto ret = getSpacePeers(spaceId);
+    if (!ret.ok()) {
+        return ret.status();
+    }
+
+    folly::Promise<Status> pro;
+    auto f = pro.getFuture();
+    getResponse(ret.value(), 0, std::move(req), [] (auto client, auto request) {
+        return client->future_sendBlockSign(request);
+    }, 0, std::move(pro), 1 /*The send sing operation only needs to be retried twice*/);
+    return f;
 }
 
 }  // namespace meta

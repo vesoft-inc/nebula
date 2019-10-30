@@ -32,6 +32,9 @@ public:
     virtual folly::Future<Status> updateMeta() = 0;
     virtual folly::Future<Status> removePart() = 0;
     virtual folly::Future<Status> getLeaderDist(HostLeaderMap* hostLeaderMap) = 0;
+    virtual folly::Future<Status> createSnapshot() = 0;
+    virtual folly::Future<Status> dropSnapshot() = 0;
+    virtual folly::Future<Status> sendBlockSign() = 0;
 };
 
 static const HostAddr kRandomPeer(0, 0);
@@ -92,6 +95,12 @@ public:
 
     folly::Future<Status> getLeaderDist(HostLeaderMap* result);
 
+    folly::Future<Status> createSnapshot(GraphSpaceID spaceId, const std::string& name);
+
+    folly::Future<Status> dropSnapshot(GraphSpaceID spaceId, const std::string& name);
+
+    folly::Future<Status> sendBlockSign(GraphSpaceID spaceId, storage::cpp2::EngineSignType sign);
+
     FaultInjector* faultInjector() {
         return injector_.get();
     }
@@ -124,6 +133,8 @@ private:
     nebula::cpp2::HostAddr toThriftHost(const HostAddr& addr);
 
     StatusOr<std::vector<HostAddr>> getPeers(GraphSpaceID spaceId, PartitionID partId);
+
+    StatusOr<std::vector<HostAddr>> getSpacePeers(GraphSpaceID spaceId);
 
 private:
     std::unique_ptr<FaultInjector> injector_{nullptr};

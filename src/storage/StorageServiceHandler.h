@@ -110,6 +110,16 @@ public:
     folly::Future<cpp2::GetUUIDResp>
     future_getUUID(const cpp2::GetUUIDReq& req) override;
 
+    folly::Future<cpp2::AdminExecResp>
+    future_createCheckpoint(const cpp2::CreateCPRequest& req) override;
+
+    folly::Future<cpp2::AdminExecResp>
+    future_dropCheckpoint(const cpp2::DropCPRequest& req) override;
+
+    folly::Future<cpp2::AdminExecResp>
+    future_sendBlockSign(const cpp2::EngineSignRequest& req) override;
+
+
 private:
     kvstore::KVStore* kvstore_ = nullptr;
     meta::SchemaManager* schemaMan_ = nullptr;

@@ -9,6 +9,7 @@
 
 #include <gtest/gtest_prod.h>
 #include <rocksdb/db.h>
+#include <rocksdb/utilities/checkpoint.h>
 #include "base/Base.h"
 #include "kvstore/KVIterator.h"
 #include "kvstore/KVEngine.h"
@@ -97,6 +98,7 @@ class RocksEngine : public KVEngine {
 public:
     RocksEngine(GraphSpaceID spaceId,
                 const std::string& dataPath,
+                const std::string& checkpointPath = "",
                 std::shared_ptr<rocksdb::MergeOperator> mergeOp = nullptr,
                 std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory = nullptr);
 
@@ -165,11 +167,20 @@ public:
 
     ResultCode flush() override;
 
+    /*********************
+     * Checkpoint operation
+     ********************/
+    ResultCode createCheckpoint(const std::string& path) override;
+
+    ResultCode dropCheckpoint(const std::string& path) override;
+
+
 private:
     std::string partKey(PartitionID partId);
 
 private:
     std::string  dataPath_;
+    std::string  checkpointPath_;
     std::unique_ptr<rocksdb::DB> db_{nullptr};
     int32_t partsNum_ = -1;
 };

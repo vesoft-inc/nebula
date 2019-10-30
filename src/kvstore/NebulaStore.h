@@ -36,6 +36,8 @@ class NebulaStore : public KVStore, public Handler {
     FRIEND_TEST(NebulaStoreTest, PartsTest);
     FRIEND_TEST(NebulaStoreTest, ThreeCopiesTest);
     FRIEND_TEST(NebulaStoreTest, TransLeaderTest);
+    FRIEND_TEST(NebulaStoreTest, CheckpointTest);
+    FRIEND_TEST(NebulaStoreTest, ThreeCopiesCheckpointTest);
 
 public:
     NebulaStore(KVOptions options,
@@ -161,6 +163,10 @@ public:
 
     ResultCode flush(GraphSpaceID spaceId) override;
 
+    ResultCode createCheckpoint(GraphSpaceID spaceId, const std::string& path) override;
+
+    ResultCode dropCheckpoint(GraphSpaceID spaceId, const std::string& path) override;
+
     int32_t allLeader(std::unordered_map<GraphSpaceID,
                                          std::vector<PartitionID>>& leaderIds) override;
 
@@ -179,12 +185,26 @@ public:
 
     ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
 
+    void setBlocking(bool sign) override {
+        raftexBlocking = sign;
+    }
+
+    bool getBlocking() override {
+        return raftexBlocking;
+    }
+
+    std::vector<std::string> getCheckpointPath() override {
+        return options_.checkpointPaths_;
+    }
+
 private:
     void updateSpaceOption(GraphSpaceID spaceId,
                            const std::unordered_map<std::string, std::string>& options,
                            bool isDbOption) override;
 
-    std::unique_ptr<KVEngine> newEngine(GraphSpaceID spaceId, const std::string& path);
+    std::unique_ptr<KVEngine> newEngine(GraphSpaceID spaceId,
+                                        const std::string& path,
+                                        const std::string& checkpointPath = "");
 
     std::shared_ptr<Part> newPart(GraphSpaceID spaceId,
                                   PartitionID partId,
@@ -207,6 +227,8 @@ private:
 
     std::shared_ptr<raftex::RaftexService> raftService_;
     std::shared_ptr<raftex::SnapshotManager> snapshot_;
+
+    bool raftexBlocking{false};
 };
 
 }  // namespace kvstore

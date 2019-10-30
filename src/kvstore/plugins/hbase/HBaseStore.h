@@ -151,6 +151,28 @@ public:
         return ResultCode::ERR_UNSUPPORTED;
     }
 
+    ResultCode createCheckpoint(GraphSpaceID, const std::string&) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
+    ResultCode dropCheckpoint(GraphSpaceID, const std::string&) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
+    void setBlocking(bool) override {
+        LOG(FATAL) << "Not supportted yet!";
+    };
+
+    bool getBlocking() override {
+        LOG(FATAL) << "Not supportted yet!";
+        return false;
+    };
+
+    std::vector<std::string> getCheckpointPath() override {
+        LOG(FATAL) << "Not supportted yet!";
+        return {};
+    }
+
 private:
     std::string getRowKey(const std::string& key) {
         return key.substr(sizeof(PartitionID), key.size() - sizeof(PartitionID));

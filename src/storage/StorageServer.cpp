@@ -32,6 +32,7 @@ namespace storage {
 std::unique_ptr<kvstore::KVStore> StorageServer::getStoreInstance() {
     kvstore::KVOptions options;
     options.dataPaths_ = dataPaths_;
+    options.checkpointPaths_ = checkpointPaths_;
     options.partMan_ = std::make_unique<kvstore::MetaServerBasedPartManager>(
                                                 localHost_,
                                                 metaClient_.get());

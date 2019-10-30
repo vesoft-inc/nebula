@@ -24,6 +24,8 @@ enum ResultCode {
     ERR_INVALID_ARGUMENT    = -6,
     ERR_IO_ERROR            = -7,
     ERR_UNSUPPORTED         = -8,
+    ERR_CHECKPOINT_ERROR    = -9,
+    ERR_CHECKPOINT_BLOCKED  = -10,
     ERR_UNKNOWN             = -100,
 };
 

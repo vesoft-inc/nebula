@@ -93,6 +93,7 @@ public:
  **************************************/
 RocksEngine::RocksEngine(GraphSpaceID spaceId,
                          const std::string& dataPath,
+                         const std::string& checkpointPath,
                          std::shared_ptr<rocksdb::MergeOperator> mergeOp,
                          std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory)
         : KVEngine(spaceId)
@@ -100,6 +101,10 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     auto path = folly::stringPrintf("%s/data", dataPath_.c_str());
     if (FileUtils::fileType(path.c_str()) == FileType::NOTEXIST) {
         FileUtils::makeDir(path);
+    }
+    if (!checkpointPath.empty()) {
+        checkpointPath_ = folly::stringPrintf("%s/%%s/nebula/%d/data",
+                                              checkpointPath.c_str(), spaceId);
     }
     LOG(INFO) << "open rocksdb on " << path;
 
@@ -423,6 +428,49 @@ ResultCode RocksEngine::flush() {
         LOG(ERROR) << "Flush Failed: " << status.ToString();
         return ResultCode::ERR_UNKNOWN;
     }
+}
+
+ResultCode RocksEngine::createCheckpoint(const std::string& path) {
+    LOG(INFO) << "Begin checkpoint : " << dataPath_;
+    auto checkpointPath = folly::stringPrintf(checkpointPath_.c_str(), path.c_str());
+    LOG(INFO) << "Target checkpoint path : " << checkpointPath;
+    if (fs::FileUtils::exist(checkpointPath)) {
+        LOG(ERROR) << "The snapshot file already exists: " << checkpointPath;
+        return ResultCode::ERR_CHECKPOINT_ERROR;
+    }
+
+    auto parent = checkpointPath.substr(0, checkpointPath.rfind('/'));
+    if (!FileUtils::exist(parent.data())) {
+        FileUtils::makeDir(parent.data());
+    }
+
+    rocksdb::Checkpoint* checkpoint;
+    rocksdb::Status status = rocksdb::Checkpoint::Create(db_.get(), &checkpoint);
+    if (!status.ok()) {
+        LOG(ERROR) << "Init checkpoint Failed: " << status.ToString();
+        return ResultCode::ERR_CHECKPOINT_ERROR;
+    }
+    status = checkpoint->CreateCheckpoint(checkpointPath, 0);
+    if (!status.ok()) {
+        LOG(ERROR) << "Create checkpoint Failed: " << status.ToString();
+        return ResultCode::ERR_CHECKPOINT_ERROR;
+    }
+    delete checkpoint;
+    return ResultCode::SUCCEEDED;
+}
+
+ResultCode RocksEngine::dropCheckpoint(const std::string& path) {
+    LOG(INFO) << "Drop checkpoint : " << dataPath_;
+    auto checkpointPath = folly::stringPrintf(checkpointPath_.c_str(), path.c_str());
+    LOG(INFO) << "Target checkpoint path : " << checkpointPath;
+    if (!fs::FileUtils::exist(checkpointPath)) {
+        return ResultCode::SUCCEEDED;
+    }
+
+    if (!fs::FileUtils::remove(checkpointPath.data(), true)) {
+        return ResultCode::ERR_IO_ERROR;
+    }
+    return ResultCode::SUCCEEDED;
 }
 
 }  // namespace kvstore

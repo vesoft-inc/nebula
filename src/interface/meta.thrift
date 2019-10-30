@@ -43,6 +43,8 @@ enum ErrorCode {
     E_INVALID_PASSWORD       = -41,
     E_INPROPER_ROLE          = -42,
 
+    E_SNAPSHOT_FAILURE   = -51;
+
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
 
@@ -524,6 +526,23 @@ struct ListConfigsResp {
     3: list<ConfigItem>     items,
 }
 
+struct CreateSnapshotReq {
+}
+
+struct DropSnapshotReq {
+    1: string       name,
+}
+
+struct ListSnapshotsReq {
+}
+
+struct ListSnapshotsResp {
+    1: ErrorCode            code,
+    // Valid if code equals E_LEADER_CHANGED.
+    2: common.HostAddr      leader,
+    3: list<string>         snapshots,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -573,5 +592,9 @@ service MetaService {
     GetConfigResp getConfig(1: GetConfigReq req);
     ExecResp setConfig(1: SetConfigReq req);
     ListConfigsResp listConfigs(1: ListConfigsReq req);
+
+    ExecResp createSnapshot(1: CreateSnapshotReq req);
+    ExecResp dropSnapshot(1: DropSnapshotReq req);
+    ListSnapshotsResp listSnapshots(1: ListSnapshotsReq req);
 }
 
