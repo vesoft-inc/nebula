@@ -1,5 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
+ *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
@@ -111,6 +112,9 @@ std::string AliasPropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
     buf += *ref_;
+    if (*ref_ != "" && *ref_ != VAR_REF) {
+        buf += ".";
+    }
     buf += *alias_;
     if (*alias_ != "") {
         buf += ".";
