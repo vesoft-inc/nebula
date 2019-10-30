@@ -103,12 +103,10 @@ object SparkSstFileGenerator {
       )
       .build
 
-
     // when the newest data arrive, used in non-incremental environment
     val latestDate = CliOption
       .builder("di")
       .longOpt("latest_date_input")
-
       .required()
       .hasArg()
       .desc("Latest date to query,date format YYYY-MM-dd")
@@ -123,12 +121,10 @@ object SparkSstFileGenerator {
       )
       .build
 
-
     // may be used in some test run to prove the correctness
     val limit = CliOption
       .builder("li")
       .longOpt("limit_input")
-
       .hasArg()
       .desc(
         "Return at most this number of edges/vertex, usually used in POC stage, when omitted, fetch all data."
@@ -326,7 +322,6 @@ object SparkSstFileGenerator {
         (key: String) => FNVHash.hash64a(key.getBytes("UTF-8"))
     }
 
-
     // implicit ordering used by PairedRDD.repartitionAndSortWithinPartitions whose key is PartitionIdAndBytesEncoded typed
     implicit def ordering[A <: GraphPartitionIdAndKeyValueEncoded]: Ordering[A] = new Ordering[A] {
       override def compare(x: A, y: A): Int = {
@@ -427,7 +422,7 @@ object SparkSstFileGenerator {
             }
 
           }
-          .persist(StorageLevel.MEMORY_AND_DISK_SER) // Try to reduce memory consumption
+          .persist(StorageLevel.DISK_ONLY) // Try to reduce memory consumption
           .repartitionAndSortWithinPartitions(partIdPartitioner)
 
         tagKeyAndValuesPersisted.saveAsNewAPIHadoopFile(
@@ -445,12 +440,6 @@ object SparkSstFileGenerator {
     // so we work around it: All edges are of same type, and given fixed names. Use edge name as an extra property to distinguish them.
     // TODO: when nebula supports the above features, we will undo those changes.
     //2)  handle edges
-<<<<<<< HEAD
-    mappingConfiguration.edges.zipWithIndex.foreach {
-      //edge index used as edge_type
-      case (edge: Edge, edgeType: Int) => {
-
-=======
     val edgeGroups = mappingConfiguration.getEdgeTagGroupWithinSameTableAndPartition()
 
     edgeGroups.foreach {
@@ -458,7 +447,6 @@ object SparkSstFileGenerator {
           (tagWithColumnMapping, fromForeignKey, toForeignKey, typePartitionKey, datePartitionKey),
           inClause
           ) => {
->>>>>>> e42c9a77... aggregate all vertex tag to query together and generate sst files together, in order to reduce sst files count and keep sst file in reasonable size like 100M+
         //all column w/o PK column
         val (allColumns, _) =
           validateColumns(
@@ -471,7 +459,6 @@ object SparkSstFileGenerator {
             typePartitionKey.get
           )
 
-
         val columnExpression = {
           assert(allColumns.size > 0)
           s"${fromForeignKey},${fromForeignKey}," + allColumns
@@ -482,7 +469,6 @@ object SparkSstFileGenerator {
         val whereClause = typePartitionKey
           .map(key => s"${key} IN ${inClause} AND ${datePartitionKey}='${latestDate}'")
           .getOrElse(s"${datePartitionKey.get}='${latestDate}'")
-
 
         //TODO: join FROM_COLUMN and join TO_COLUMN from the table where this columns referencing, to make sure that the claimed id really exists in the reference table.BUT with HUGE Perf penalty
         val edgeDf = sqlContext.sql(
@@ -554,7 +540,7 @@ object SparkSstFileGenerator {
               )
             }
           }
-          .persist(StorageLevel.MEMORY_AND_DISK_SER)
+          .persist(StorageLevel.DISK_ONLY)
           .repartitionAndSortWithinPartitions(partIdPartitioner)
 
         edgeKeyAndValuesPersisted.saveAsNewAPIHadoopFile(
@@ -634,7 +620,6 @@ object SparkSstFileGenerator {
           allColumnsMapInDB.slice(commentsEnd + 1, allColumnsMapInDB.size)
         )
       }
-
 
     // check the claimed columns really exist in db
     colsMustCheck.map(_.toUpperCase).foreach { col =>
