@@ -22,6 +22,6 @@
 nebula> GO FROM 1 OVER e1 YIELD $-.id AS fid | GROUP BY $-.fid YIELD COUNT(*)
 -- 统计与节点 "1" 有 e1 关系的点的的数量
 
-nebula> GO FROM 1 YIELD e1._dst AS fid, e1.prop1 AS prop1 | GROUP BY $-.fid YIELD SUM(prop1)
+nebula> GO FROM 1 YIELD e1._dst AS fid, e1.prop1 AS prop1 | GROUP BY $-.fid YIELD SUM($-.prop1)
 -- 对与节点 "1" 有 e1 关系的点的属性 prop1 进行加法运算
 ```
