@@ -24,6 +24,11 @@ enum class ColumnType {
 
 std::string columnTypeToString(ColumnType type);
 
+constexpr char INPUT_REF[] = "$-";
+constexpr char VAR_REF[]   = "$";
+constexpr char SRC_REF[]   = "$^";
+constexpr char DST_REF[]   = "$$";
+
 class ExpressionContext final {
 public:
     using EdgeInfo = boost::variant<std::string, EdgeType>;
@@ -89,6 +94,10 @@ public:
 
     const std::unordered_set<std::string>& variables() const {
         return variables_;
+    }
+
+    std::vector<std::string> inputProps() const {
+        return std::vector<std::string>(inputProps_.begin(), inputProps_.end());
     }
 
     bool hasSrcTagProp() const {
@@ -437,7 +446,7 @@ public:
 
     explicit InputPropertyExpression(std::string *prop) {
         kind_ = kInputProp;
-        ref_.reset(new std::string("$-."));
+        ref_.reset(new std::string(INPUT_REF));
         alias_.reset(new std::string(""));
         prop_.reset(prop);
     }
@@ -462,7 +471,7 @@ public:
 
     DestPropertyExpression(std::string *tag, std::string *prop) {
         kind_ = kDestProp;
-        ref_.reset(new std::string("$$."));
+        ref_.reset(new std::string(DST_REF));
         alias_.reset(tag);
         prop_.reset(prop);
     }
@@ -487,7 +496,7 @@ public:
 
     VariablePropertyExpression(std::string *var, std::string *prop) {
         kind_ = kVariableProp;
-        ref_.reset(new std::string("$"));
+        ref_.reset(new std::string(VAR_REF));
         alias_.reset(var);
         prop_.reset(prop);
     }
@@ -514,7 +523,7 @@ public:
         kind_ = kEdgeType;
         ref_.reset(new std::string(""));
         alias_.reset(alias);
-        prop_.reset(new std::string("_type"));
+        prop_.reset(new std::string(_TYPE));
     }
 
     OptVariantType eval() const override;
@@ -539,7 +548,7 @@ public:
         kind_ = kEdgeSrcId;
         ref_.reset(new std::string(""));
         alias_.reset(alias);
-        prop_.reset(new std::string("_src"));
+        prop_.reset(new std::string(_SRC));
     }
 
     OptVariantType eval() const override;
@@ -564,7 +573,7 @@ public:
         kind_ = kEdgeDstId;
         ref_.reset(new std::string(""));
         alias_.reset(alias);
-        prop_.reset(new std::string("_dst"));
+        prop_.reset(new std::string(_DST));
     }
 
     OptVariantType eval() const override;
@@ -589,7 +598,7 @@ public:
         kind_ = kEdgeRank;
         ref_.reset(new std::string(""));
         alias_.reset(alias);
-        prop_.reset(new std::string("_rank"));
+        prop_.reset(new std::string(_RANK));
     }
 
     OptVariantType eval() const override;
@@ -612,7 +621,7 @@ public:
 
     SourcePropertyExpression(std::string *tag, std::string *prop) {
         kind_ = kSourceProp;
-        ref_.reset(new std::string("$^."));
+        ref_.reset(new std::string(SRC_REF));
         alias_.reset(tag);
         prop_.reset(prop);
     }
