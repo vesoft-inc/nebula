@@ -302,4 +302,15 @@ std::string LimitSentence::toString() const {
 
     return folly::stringPrintf("LIMIT %ld,%ld", offset_, count_);
 }
+
+std::string YieldSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += yieldClause_->toString();
+    if (whereClause_ != nullptr) {
+        buf += " ";
+        buf += whereClause_->toString();
+    }
+    return buf;
+}
 }   // namespace nebula
