@@ -269,6 +269,19 @@ void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId) {
     LOG(INFO) << "Space " << spaceId << ", part " << partId << " has been removed!";
 }
 
+void NebulaStore::updateSpaceOption(GraphSpaceID spaceId,
+                                    const std::unordered_map<std::string, std::string>& options,
+                                    bool isDbOption) {
+    if (isDbOption) {
+        for (const auto& kv : options) {
+            setDBOption(spaceId, kv.first, kv.second);
+        }
+    } else {
+        for (const auto& kv : options) {
+            setOption(spaceId, kv.first, kv.second);
+        }
+    }
+}
 
 ResultCode NebulaStore::get(GraphSpaceID spaceId,
                             PartitionID partId,
