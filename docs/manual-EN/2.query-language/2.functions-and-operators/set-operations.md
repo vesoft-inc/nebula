@@ -34,21 +34,21 @@ GO FROM 2 OVER e1
 
 returns all the neighbors of vertex `1` and `2`, with all possible duplications.
 
-`UNION` can also work with the `YIELD` statement. For example, let's suppose the results of the following two queries 
+`UNION` can also work with the `YIELD` statement. For example, let's suppose the results of the following two queries.
 
 ```
-nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2 -- query 1
+nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2 -- query 1
 ==========================
-| id  | left.1 | left.2  |
+| id  | left_1 | left_2  |
 ==========================
 | 104 |    1   |    2    |    -- line 1
 --------------------------
 | 215 |    4   |    3    |    -- line 3
 --------------------------
 
-nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS right.2  -- query 2
+nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2  -- query 2
 ===========================
-| id  | right.1 | right.2 |
+| id  | right_1 | right_2 |
 ===========================
 | 104 |    1    |    2    |    -- line 1
 ---------------------------
@@ -59,15 +59,16 @@ nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.pro
 And the following statement
 
 ```
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2
+GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 UNION /* DISTINCT */
-GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS right.2
+GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 ```
 
 will return as follows:
+
 ```
 =========================
-| id  | left.1 | left.2 |    -- UNION or UNION DISTINCT. The column names come from query 1
+| id  | left_1 | left_2 |    -- UNION or UNION DISTINCT. The column names come from query 1
 =========================
 | 104 |    1   |    2   |    -- line 1
 -------------------------
@@ -82,12 +83,12 @@ Notice that line 1 and line 2 return the same id (104) with different column val
 You can expect the `UNION ALL` result
 
 ```
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2
+GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 UNION ALL
-GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS right.2
+GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 
 =========================
-| id  | left.1 | left.2 |    -- UNION ALL
+| id  | left_1 | left_2 |    -- UNION ALL
 =========================
 | 104 |    1   |    2   |    -- line 1
 -------------------------
@@ -114,16 +115,16 @@ Besides, only the same line of `<left>` and `<right>` will be returned.
 You can imagine
 
 ```
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2
+GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 INTERSECT
-GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS right.2
+GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 ```
 
 will return
 
 ```
 =========================
-| id  | left.1 | left.2 |
+| id  | left_1 | left_2 |
 =========================
 | 104 |    1   |    2   |    -- line 1
 -------------------------
@@ -137,16 +138,16 @@ The set subtraction (or difference), A - B, consists of elements that are in A b
 
 
 ```
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2
+GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 MINUS
-GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS right.2
+GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 ```
 
 comes out
 
 ```
 ==========================
-| id  | left.1 | left.2  |
+| id  | left_1 | left_2  |
 ==========================
 | 215 |    4   |    3    |     -- line 3
 --------------------------
@@ -155,18 +156,17 @@ comes out
 And if we reverse the `MINUS` order
 
 ```
-GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS right.2
+GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 MINUS
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2
+GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 ```
 
 results in
 
 ```
 ===========================
-| id  | right.1 | right.2 |    -- column named from query 2
+| id  | right_1 | right_2 |    -- column named from query 2
 ===========================
 | 104 |    2    |    2    |    -- line 2
 ---------------------------
 ```
-
