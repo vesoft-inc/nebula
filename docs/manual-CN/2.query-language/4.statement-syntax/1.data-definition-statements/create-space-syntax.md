@@ -14,7 +14,7 @@ space_option:
 
 * **space_name**
 
-    图空间的名称在集群中标明了一个唯一的空间。命名规则详见 [Schema Object Names](../../language-structure/schema-object-names.md)
+    图空间的名称在集群中标明了一个唯一的空间。命名规则详见 [Schema Object Names](../../3.language-structure/schema-object-names.md)
 
 ### Space Options 图空间选项
 

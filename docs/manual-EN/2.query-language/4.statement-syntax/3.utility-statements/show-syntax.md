@@ -11,7 +11,7 @@ SHOW VARIABLES [graph|meta|storage]
 
 `SHOW HOSTS` is to list storage hosts registered by the meta server. There are 6 columns: ip, port, status (online/offline), leader partitions count in all spaces, leader partitions count in each space, total partitions count in all spaces.
 
-For more information about `SHOW VARIABLES [graph|meta|storage]`, please refer to [variable syntax](../data-administration-statements/configuration-statements/variables-syntax.md).
+For more information about `SHOW VARIABLES [graph|meta|storage]`, please refer to [variable syntax](../../../3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/variables-syntax.md).
 
 ## Example
 

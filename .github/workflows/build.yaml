@@ -1,0 +1,53 @@
+name: build
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'docs/**'
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        tag: [centos6, centos7, ubuntu1604, ubuntu1804]
+    container:
+      image: vesoft/nebula-dev:${{ matrix.tag }}
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: cmake
+        env:
+          NEBULA_DEP_BIN: /opt/nebula/third-party/bin
+          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
+        run: |
+          mkdir _build && cd _build
+          ${NEBULA_DEP_BIN}/cmake -DCMAKE_C_COMPILER=${NEBULA_DEP_BIN}/gcc -DCMAKE_CXX_COMPILER=${NEBULA_DEP_BIN}/g++ ..
+        shell: bash
+      - name: make
+        env:
+          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
+        run: |
+          cd _build && make -j $(nproc)
+        shell: bash
+      - name: test in multithreads
+        env:
+          NEBULA_DEP_BIN: /opt/nebula/third-party/bin
+          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
+        run: |
+          cd _build
+          ${NEBULA_DEP_BIN}/ctest -j $(nproc) --output-on-failure
+        shell: bash
+      - name: test in singlethread
+        if: failure()
+        env:
+          NEBULA_DEP_BIN: /opt/nebula/third-party/bin
+          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
+        run: |
+          cd _build
+          ${NEBULA_DEP_BIN}/ctest --output-on-failure
+        shell: bash

@@ -6,7 +6,7 @@ Converting an expression of a given type to another type is known as type-conver
 
 Implicit conversions are automatically performed when a value is copied to a compatible type.
 
-1. All types can implicitly converted to `bool`:
+1. Following types can implicitly converted to `bool`:
 
 - The conversions from/to bool consider `false` equivalent to `0` for empty string types, true is equivalent to all other values.
 - The conversions from/to bool consider `false` equivalent to `0` for int types, true is equivalent to all other values.

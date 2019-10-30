@@ -1,6 +1,6 @@
 # SHOW 语法
 
-```
+```sql
 SHOW {SPACES | TAGS | EDGES | HOSTS}
 SHOW VARIABLES [graph|meta|storage]
 ```

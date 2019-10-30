@@ -190,6 +190,7 @@ void Host::appendLogsInternal(folly::EventBase* eb,
             {
                 std::lock_guard<std::mutex> g(self->lock_);
                 self->setResponse(r);
+                self->lastLogIdSent_ = self->logIdToSend_;
             }
             self->noMoreRequestCV_.notify_all();
             return;
@@ -401,14 +402,15 @@ Host::prepareAppendLogRequest() {
             LOG(INFO) << idStr_ << "Can't find log " << lastLogIdSent_ + 1
                       << " in wal, send the snapshot";
             sendingSnapshot_ = true;
-            part_->snapshot_->sendSnapshot(part_, addr_).then([this] (Status&& status) {
+            part_->snapshot_->sendSnapshot(part_, addr_)
+                .then([self = shared_from_this()] (Status&& status) {
                 if (status.ok()) {
-                    LOG(INFO) << idStr_ << "Send snapshot succeeded!";
+                    LOG(INFO) << self->idStr_ << "Send snapshot succeeded!";
                 } else {
-                    LOG(INFO) << idStr_ << "Send snapshot failed!";
+                    LOG(INFO) << self->idStr_ << "Send snapshot failed!";
                     // TODO(heng): we should tell the follower i am failed.
                 }
-                sendingSnapshot_ = false;
+                self->sendingSnapshot_ = false;
             });
         } else {
             LOG(INFO) << idStr_ << "The snapshot req is in queue, please wait for a moment";

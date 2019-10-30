@@ -2,6 +2,7 @@
 *.so
 *.DS_Store
 
+# build
 build
 _build
 _build.log
@@ -15,6 +16,7 @@ compile_commands.json
 src/common/base/Base.h.gch
 gen-*
 
+# cmake
 CPackConfig.cmake
 CPackSourceConfig.cmake
 CMakeCache.txt
