@@ -8,10 +8,7 @@ package com.vesoft.tools
 
 import java.io.{File, IOException}
 
-import com.vesoft.tools.SparkSstFileGenerator.{
-  GraphPartitionIdAndKeyValueEncoded,
-  NEBULA_PARTITION_NUMBER_KEY
-}
+import com.vesoft.tools.SparkSstFileGenerator.GraphPartitionIdAndKeyValueEncoded
 import com.vesoft.tools.VertexOrEdgeEnum.VertexOrEdgeEnum
 import javax.xml.bind.DatatypeConverter
 import org.apache.hadoop.conf.Configuration
@@ -89,7 +86,7 @@ class SstFileOutputFormat
   }
 }
 
-import SstRecordWriter._
+import com.vesoft.tools.SstRecordWriter._
 
 /**
   * custom outputFormat, which generates a sub dir per partition per worker
@@ -164,7 +161,6 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
       // Each partition can generated multiple sst files, among which keys will be ordered, and keys could overlap between different sst files.
       // All these sst files will be  `hdfs -copyFromLocal` to the same HDFS dir(and consumed by subsequent nebula `DOWNLOAD & INGEST` command), so we need different suffixes to distinguish between them.
       val hdfsSubDirectory = s"${File.separator}${partitionId}${File.separator}"
-
 
       val localDir = s"${localSstFileOutput}${hdfsSubDirectory}"
       val sstFileName =

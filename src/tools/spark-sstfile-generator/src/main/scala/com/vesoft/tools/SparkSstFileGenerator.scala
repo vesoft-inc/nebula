@@ -4,7 +4,6 @@ import java.io.File
 import java.nio.charset.{Charset, UnsupportedCharsetException}
 
 import com.vesoft.client.NativeClient
-import com.vesoft.tools.SparkSstFileGenerator.valueExtractor
 import org.apache.commons.cli.{
   CommandLine,
   DefaultParser,
@@ -346,8 +345,9 @@ object SparkSstFileGenerator {
           tagWithColumnMapping,
           Seq(primaryKey),
           Seq(primaryKey),
+          //TODO: typePartitionKey be None
           Seq(typePartitionKey.get),
-          typePartitionKey.get //TODO: Could be None
+          typePartitionKey.get //The cell relates to typePartitionKey used as tag's property which to distinguish different tag, By Convention, put this property first
         )
 
         val columnExpression = {
@@ -404,7 +404,7 @@ object SparkSstFileGenerator {
                 GraphPartitionIdAndKeyValueEncoded(
                   graphPartitionId,
                   vertexId,
-                  tagType.getOrElse(1), //TODO:支持多种类型的顶点，但是不支持多种类型的边？？
+                  tagType.getOrElse(1), //TODO:support multiple tagId
                   new BytesWritable(
                     NativeClient
                       .createVertexKey(
@@ -475,10 +475,6 @@ object SparkSstFileGenerator {
           s"SELECT ${columnExpression} FROM ${mappingConfiguration.databaseName}.${tagWithColumnMapping.tableName} WHERE ${whereClause} ${limit}"
         )
 
-        println(
-          s"查询edge的sql:SELECT ${columnExpression} FROM ${mappingConfiguration.databaseName}.${tagWithColumnMapping.tableName} WHERE ${whereClause} ${limit}"
-        )
-
         //assert(edgeDf.count() > 0)
         val edgeKeyAndValues =
           edgeDf.rdd.map(
@@ -519,7 +515,7 @@ object SparkSstFileGenerator {
                 GraphPartitionIdAndKeyValueEncoded(
                   graphPartitionId,
                   id,
-                  1, //TODO: All Edges are of same type
+                  1, //TODO:support multiple EdgeType
                   new BytesWritable(
                     NativeClient.createEdgeKey(
                       graphPartitionId,
@@ -532,6 +528,7 @@ object SparkSstFileGenerator {
                   )
                 ),
                 new PropertyValueAndTypeWritable(
+                  // By Convention, encode edgeType first
                   new BytesWritable(
                     NativeClient.encode((edgeName.getBytes(charset) +: values).toArray)
                   ),

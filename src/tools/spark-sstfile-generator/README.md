@@ -10,11 +10,12 @@ To complete the task, *$HADOOP_HOME* env needs to be set correctly.
 # Environment
 component|version
 ---|---
-os|centos6.5 final(kernel 2.6.32-431.el6.x86_64)
-spark|1.6.2
-hadoop|2.7.4
+os|Centos6.5 final(kernel 2.6.32-431.el6.x86_64)
+spark|2.4.3
+hadoop|2.6.0
+hive|1.2.1
 jdk|1.8+
-scala|2.10.5
+scala|2.12.8
 sbt|1.2.8
 
 
@@ -53,7 +54,7 @@ usage: nebula spark sst file generator
  -pi,--date_partition_input <arg>            A partition field of type String of hive table, which represent a Date, and has format of YYY-MM-dd
  -ri,--repartition_number_input <arg>        Repartition number. Optimization trick is adapted to improve generation speed and data skewness. Need tuning to suit your data.
  -so,--local_sst_file_output <arg>           Local directories of the generated sst files should start with file:///
- -ti,--datasource_type_input <arg>           Currently supported source data types are hive|hbase|csv], and the default type is hive
+ -ti,--datasource_type_input <arg>           Currently supported source data types are [hive|hbase|csv], and the default type is hive
 ```
 
 # Mapping file schema
