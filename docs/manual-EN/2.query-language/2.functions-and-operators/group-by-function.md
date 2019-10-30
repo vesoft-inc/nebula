@@ -6,11 +6,15 @@ The `GROUP BY` functions are similar with SQL. It can only be applied in the `YI
 |:----|:----:|
 | AVG() | Return the average value of the argument |
 | COUNT() | Return the number of records |
-| COUNT(DISTINCT) | Return the number of different values |
+| COUNT_DISTINCT()) | Return the number of different values |
 | MAX() | Return the maximum value |
 | MIN() | Return the minimum value |
-| STD() | Return the population standard deviation | 
-| SUM()	| Return the sum |
+| STD() | Return the population standard deviation |
+| SUM() | Return the sum |
+| BIT_AND()      |   Bitwise AND |
+| BIT_OR()        |   Bitwise OR |
+| BIT_XOR()     |   Bitwise exclusive OR (XOR) |
+
 
 All the functions above can only applies for int64 and double.
 

@@ -5,6 +5,7 @@
 |   &&     |   逻辑与 AND     |
 |   !      |   逻辑非 NOT     |
 |   \|\|   |   逻辑或 OR   |
+|  XOR |    逻辑异或 XOR|
 
 在 nGQL 中，非 0 数字将被视为 _true_ 。逻辑运算符的优先级参见 [Operator Precedence](./operator-precedence.md)。
 
