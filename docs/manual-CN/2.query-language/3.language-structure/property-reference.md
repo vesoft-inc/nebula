@@ -23,7 +23,7 @@ $$.tag_name.prop_name
 ### 示例
 
 ```
-GO FROM 1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
+GO FROM 1 OVER e1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
 ```
 
 该语句用于获取起点的属性名称和终点的属性年龄。
@@ -53,7 +53,7 @@ GO FROM 1 OVER e1 YIELD e1.prop1
 - _type: 边类型
 - _rank: 边的权重
 
-获取起点和终点id可通过 `_src` 和 `_dst` 获取，这在显示图路径时经常会用到。
+获取起点和终点 ID 可通过 `_src` 和 `_dst` 获取，这在显示图路径时经常会用到。
 
 例如：
 
