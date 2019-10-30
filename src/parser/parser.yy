@@ -259,6 +259,10 @@ unreserved_keyword
      | KW_BIT_AND            { $$ = new std::string("bit_and"); }
      | KW_BIT_OR             { $$ = new std::string("bit_or"); }
      | KW_BIT_XOR            { $$ = new std::string("bit_xor"); }
+     | KW_PATH               { $$ = new std::string("path"); }
+     | KW_DATA               { $$ = new std::string("data"); }
+     | KW_LEADER             { $$ = new std::string("leader"); }
+     | KW_UUID               { $$ = new std::string("uuid"); }
      ;
 
 agg_function

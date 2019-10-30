@@ -445,37 +445,80 @@ TEST_F(YieldTest, Error) {
         auto fmt = var + "YIELD $var.team WHERE $-.start > 2005";
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
+=======
+TEST_F(YieldTest, calculateOverflow) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 9223372036854775807+1";
+        auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -9223372036854775807-2";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -9223372036854775807+-2";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 1-(-9223372036854775807)";
+        auto code = client->execute(query, resp);
+>>>>>>> Fix arithmetic overflow
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+<<<<<<< HEAD
         auto &player = players_["Boris Diaw"];
         // Not support reference two diffrent variable
         auto fmt = var + "YIELD $var.team WHERE $var1.start > 2005";
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
+=======
+        std::string query = "YIELD 9223372036854775807*2";
+        auto code = client->execute(query, resp);
+>>>>>>> Fix arithmetic overflow
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;
+<<<<<<< HEAD
         auto &player = players_["Boris Diaw"];
         // Reference a non-existed prop is meaningless.
         auto fmt = var + "YIELD $var.abc";
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
+=======
+        std::string query = "YIELD -9223372036854775807*-2";
+        auto code = client->execute(query, resp);
+>>>>>>> Fix arithmetic overflow
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;
+<<<<<<< HEAD
         auto &player = players_["Boris Diaw"];
         // Reference a non-existed prop is meaningless.
         std::string fmt = "GO FROM %ld OVER like | YIELD $-.abc;";
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
+=======
+        std::string query = "YIELD 9223372036854775807*-2";
+        auto code = client->execute(query, resp);
+>>>>>>> Fix arithmetic overflow
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;
+<<<<<<< HEAD
         auto &player = players_["Boris Diaw"];
         // Reference properties in single yield sentence is meaningless.
         auto fmt = var + "YIELD $$.a.team";
@@ -498,6 +541,23 @@ TEST_F(YieldTest, Error) {
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+=======
+        std::string query = "YIELD -9223372036854775807*2";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 1/0";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 2%0";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+>>>>>>> Fix arithmetic overflow
     }
 }
 
