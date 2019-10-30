@@ -144,6 +144,14 @@ public:
         bool returnFullPath = false,
         const char* namePattern = nullptr);
 
+    static bool isReg(struct dirent* dEnt, const char* path);
+    static bool isDir(struct dirent* dEnt, const char* path);
+    static bool isLink(struct dirent* dEnt, const char* path);
+    static bool isChr(struct dirent* dEnt, const char* path);
+    static bool isBlk(struct dirent* dEnt, const char* path);
+    static bool isFifo(struct dirent* dEnt, const char* path);
+    static bool isSock(struct dirent* dEnt, const char* path);
+
     /**
      * class Iterator works like other iterators,
      * which iterates over lines in a file or entries in a directory.
@@ -235,6 +243,16 @@ public:
 
 }  // namespace fs
 }  // namespace nebula
+
+#define CHECK_TYPE(NAME, FTYPE, DTYPE) \
+    bool FileUtils::is ## NAME(struct dirent *dEnt, const char* path) { \
+        if (dEnt->d_type == DT_UNKNOWN) { \
+            const char* subPath = FileUtils::joinPath(path, dEnt->d_name).c_str(); \
+            return FileUtils::fileType(subPath) == FileType::FTYPE; \
+        } else { \
+            return dEnt->d_type == DT_ ## DTYPE; \
+        } \
+    }
 
 #endif  // COMMON_FS_FILEUTILS_H_
 
