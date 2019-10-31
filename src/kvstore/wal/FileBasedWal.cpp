@@ -51,15 +51,10 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
     if (!walFiles_.empty()) {
         firstLogId_ = walFiles_.begin()->second->firstId();
         auto& info = walFiles_.rbegin()->second;
-        if (info->lastId() <= 0 && walFiles_.size() > 1) {
-            auto it = walFiles_.rbegin();
-            it++;
-            lastLogId_ = info->firstId() - 1;
-            lastLogTerm_ = readTermId(it->second->path(), lastLogId_);
-        } else {
-            lastLogId_ = info->lastId();
-            lastLogTerm_ = info->lastTerm();
-        }
+        lastLogId_ = info->lastId();
+        lastLogTerm_ = info->lastTerm();
+        LOG(INFO) << idStr_ << "lastLogId in wal is " << lastLogId_
+                  << ", lastLogTerm is " << lastLogTerm_;
         currFd_ = open(info->path(), O_WRONLY | O_APPEND);
         currInfo_ = info;
         CHECK_GE(currFd_, 0);
@@ -77,8 +72,7 @@ FileBasedWal::~FileBasedWal() {
 
 
 void FileBasedWal::scanAllWalFiles() {
-    std::vector<std::string> files =
-        FileUtils::listAllFilesInDir(dir_.c_str(), false, "*.wal");
+    std::vector<std::string> files = FileUtils::listAllFilesInDir(dir_.c_str(), false, "*.wal");
     for (auto& fn : files) {
         // Split the file name
         // The file name convention is "<first id in the file>.wal"
@@ -100,6 +94,7 @@ void FileBasedWal::scanAllWalFiles() {
         WalFileInfoPtr info = std::make_shared<WalFileInfo>(
             FileUtils::joinPath(dir_, fn),
             startIdFromName);
+        walFiles_.insert(std::make_pair(startIdFromName, info));
 
         // Get the size of the file and the mtime
         struct stat st;
@@ -116,7 +111,6 @@ void FileBasedWal::scanAllWalFiles() {
             LOG(WARNING) << "Found empty wal file \"" << fn << "\"";
             info->setLastId(0);
             info->setLastTerm(0);
-            walFiles_.insert(std::make_pair(startIdFromName, info));
             continue;
         }
 
@@ -238,7 +232,28 @@ void FileBasedWal::scanAllWalFiles() {
 
         // We now get all necessary info
         close(fd);
-        walFiles_.insert(std::make_pair(startIdFromName, info));
+    }
+
+    if (!walFiles_.empty()) {
+        auto it = walFiles_.rbegin();
+        if (it->second->lastId() == 0) {
+            // if last wal is empty, scan previous wal
+            auto expectedLastWalId = it->second->firstId() - 1;
+            unlink(it->second->path());
+            walFiles_.erase(it->first);
+            it = walFiles_.rbegin();
+            scanLastWal(it->second, it->second->firstId(), expectedLastWalId);
+        } else {
+            // scan last wal, if it is illegal, scan the previous wal
+            scanLastWal(it->second, it->second->firstId(), -1);
+            if (it->second->lastId() < 0) {
+                auto expectedLastWalId = it->second->firstId() - 1;
+                unlink(it->second->path());
+                walFiles_.erase(it->first);
+                it = walFiles_.rbegin();
+                scanLastWal(it->second, it->second->firstId(), expectedLastWalId);
+            }
+        }
     }
 
     // Make sure there is no gap in the logs
@@ -374,6 +389,80 @@ TermID FileBasedWal::readTermId(const char* path, LogID logId) {
     }
 
     LOG(FATAL) << "Should never reach here";
+}
+
+
+void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId, LogID expectedLastWalId) {
+    auto* path = info->path();
+    int32_t fd = open(path, O_RDONLY);
+    if (fd < 0) {
+        LOG(FATAL) << "Failed to open file \"" << path
+                   << "\" (errno: " << errno << "): "
+                   << strerror(errno);
+    }
+
+    LogID curLogId = firstId;
+    size_t pos = 0;
+    LogID id = 0;
+    TermID term = 0;
+    int32_t head = 0;
+    int32_t foot = 0;
+    while (true) {
+        // Read the log Id
+        if (pread(fd, &id, sizeof(LogID), pos) != sizeof(LogID)) {
+            break;
+        }
+
+        if (id != curLogId) {
+            LOG(ERROR) << "LogId is not consistent" << id << " " << curLogId;
+            break;
+        }
+
+        // Read the term Id
+        if (pread(fd, &term, sizeof(TermID), pos + sizeof(LogID)) != sizeof(TermID)) {
+            break;
+        }
+
+        // Read the message length
+        if (pread(fd, &head, sizeof(int32_t), pos + sizeof(LogID) + sizeof(TermID))
+                != sizeof(int32_t)) {
+            break;
+        }
+
+        if (pread(fd, &foot, sizeof(int32_t),
+                  pos + sizeof(LogID) + sizeof(TermID) + sizeof(int32_t) + sizeof(ClusterID) + head)
+                != sizeof(int32_t)) {
+            break;
+        }
+
+        if (head != foot) {
+            LOG(ERROR) << "Message size doen't match: " << head << " != " << foot;
+            break;
+        }
+
+        info->setLastTerm(term);
+        info->setLastId(id);
+
+        if (expectedLastWalId > 0 && curLogId == expectedLastWalId) {
+            break;
+        }
+
+        // Move to the next log
+        pos += sizeof(LogID)
+               + sizeof(TermID)
+               + sizeof(ClusterID)
+               + sizeof(int32_t)
+               + head
+               + sizeof(int32_t);
+        ++curLogId;
+    }
+
+    if (pos < 0 && pos < FileUtils::fileSize(path)) {
+        LOG(WARNING) << "Invalid wal " << path << ", truncate from offset " << pos;
+        ftruncate(fd, pos);
+    }
+
+    close(fd);
 }
 
 

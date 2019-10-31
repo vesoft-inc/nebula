@@ -428,6 +428,46 @@ TEST(FileBasedWal, TTLTest) {
     }
 }
 
+TEST(FileBasedWal, CheckLastWalTest) {
+    FileBasedWalPolicy policy;
+    TempDir walDir("/tmp/testWal.XXXXXX");
+
+    auto wal = FileBasedWal::getWal(walDir.path(),
+                                    "",
+                                    policy,
+                                    [](LogID, TermID, ClusterID, const std::string&) {
+                                        return true;
+                                    });
+    EXPECT_EQ(0, wal->lastLogId());
+
+    for (int i = 1; i <= 10; i++) {
+        EXPECT_TRUE(
+            wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+                           folly::stringPrintf("Test string %02d", i)));
+    }
+    wal.reset();
+
+    std::vector<std::string> files = FileUtils::listAllFilesInDir(walDir.path(), true, "*.wal");
+    LOG(INFO) << files[0];
+    CHECK_EQ(files.size(), 1);
+    size_t size = FileUtils::fileSize(files[0].c_str());
+    auto fd = open(files[0].c_str(), O_WRONLY | O_APPEND);
+    // Modify the wal file, make last wal invalid
+    ftruncate(fd, size - sizeof(int32_t));
+    close(fd);
+    {
+        // Now let's open it to read
+        wal = FileBasedWal::getWal(walDir.path(),
+                                   "",
+                                   policy,
+                                   [](LogID, TermID, ClusterID, const std::string&) {
+                                       return true;
+                                   });
+        EXPECT_EQ(9, wal->lastLogId());
+    }
+}
+
+
 }  // namespace wal
 }  // namespace nebula
 
