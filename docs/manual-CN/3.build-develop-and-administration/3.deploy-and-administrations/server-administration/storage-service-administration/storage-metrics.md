@@ -28,6 +28,7 @@
 ```
 
 每一个接口都有三个性能指标，分别为延迟(单位为 us)、QPS、发生错误的 QPS，后缀名如下：
+
 ```
 _latency
 _qps
@@ -49,9 +50,9 @@ _error_qps
 根据上面的介绍，就可以写出一个完整的指标名称了，下面是一些示例：
 
 ```
-add_vertex_latency.avg.60        # 最近一分钟插入一个点的平均延时
-get_bound_qps.rate.600        # 最近十分钟获取邻居的 QPS
-update_edge_error_qps.count.3600   # 最近一小时更新一条边发生错误的总计数量
+add_vertex_latency.avg.60    				# 最近一分钟插入一个点的平均延时
+get_bound_qps.rate.600			 				# 最近十分钟获取邻点的 QPS
+update_edge_error_qps.count.3600	  # 最近一小时更新一条边发生错误的总计数量
 ```
 
 假设本地启动了一个 nebula storage service，同时启动时设置的 `ws_http_port` 端口号为 50005。通过 HTTP 的 GET 接口发送，方法名为 get_stats，参数为 stats 加对应的指标名字。下面是通过 HTTP 接口获取指标的示例：

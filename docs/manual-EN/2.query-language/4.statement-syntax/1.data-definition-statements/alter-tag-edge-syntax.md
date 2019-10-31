@@ -14,8 +14,6 @@ ttl_definition:
     TTL_DURATION = ttl_duration, TTL_COL = prop_name
 ```
 
->`ALTER` statement results in multiple versions. It's an UNDEFINED behavior if you interpret data with the mis-match version/schema.
-
 `ALTER` statement changes the structure of a tag or edge. For example, you can add or delete properties, change the type of an existing property, or rename properties. You can also set a property as TTL (Time-To-Live), or change the TTL duration.
 
 Multiple `ADD`, `DROP`, `CHANGE` clauses are permitted in a single `ALTER` statements, separated by commas. But do NOT add, drop, change the same property in one statement. If you have to do so, make it one of each clause per `ALTER` statement.

@@ -14,8 +14,6 @@ ttl_definition:
     TTL_DURATION = ttl_duration, TTL_COL = prop_name
 ```
 
-> `ALTER` 可产生不同的结果，如果使用不匹配的版本 schema，其行为是未定义的。
-
 `ALTER` 语句可改变标签或边的结构，例如，可以添加或删除属性，更改已有属性的类型或重命名属性，也可
 将属性设置为 TTL（生存时间），或更改 TTL 时间。
 
