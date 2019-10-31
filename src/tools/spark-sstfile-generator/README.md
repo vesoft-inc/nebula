@@ -79,6 +79,15 @@ t3 : |p7|p12|p13|p14|p15|
 
 The mapping file map table to vertex, foreign key to edge, and flat the table records to graph.
 
+# Docker container usage
+
+1. You need have a hadoop environment in host;
+2. Write a mapping json file which specify how transfer tables to graph;
+3. `docker run -t --env-file=<envfile> --net=host vesoft/spark-sstfile-generator`,
+the `envfile` specify the arguments in *invoker.sh*, such as spark executor configuration,
+the mapping file path etc.
+4. Finally the transform job will be submit to the hadoop cluster.
+
 # FAQ
 ## How to use libnebula-native-client.so under CentOS6.5(2.6.32-431 x86-64)
 
