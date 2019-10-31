@@ -1377,6 +1377,10 @@ void MetaClient::updateGflagsValue(const ConfigItem& item) {
     if (!gflags::GetCommandLineOption(item.name_.c_str(), &curValue)) {
         return;
     } else if (curValue != metaValue) {
+        if (item.type_ == cpp2::ConfigType::NESTED && metaValue.empty()) {
+            // Be compatible with previous configuration
+            metaValue = "{}";
+        }
         gflags::SetCommandLineOption(item.name_.c_str(), metaValue.c_str());
         // TODO: we simply judge the rocksdb by nested type for now
         if (listener_ != nullptr && item.type_ == cpp2::ConfigType::NESTED) {
