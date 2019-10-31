@@ -13,7 +13,7 @@ LIMIT [<offset_value>,] <number_rows>
 
 * **number_rows**
 
-    _number_rows_指定返回结果行数。例如， LIMIT 10 返回前 10 行结果。请合理使用 `ORDER BY` 对返回结果进行排序。
+    _number_rows_ 指定返回结果行数。例如， LIMIT 10 返回前 10 行结果。由于排序顺序会影响返回结果，所以使用 `ORDER BY` 时请注意排序顺序。
 
 * **offset_value**
 

@@ -16,4 +16,4 @@
 
 ## 显式转换
 
-除隐式类型转换外，在符合语义的情况下，还可以使用显式类型转换。语法规则类似 C 语言： `(type_name)expression` 。例如， `YIELD length((string)123), (int)"123" + 1` 执行结果为 `3, 124`。`YIELD (int)("12ab3")` 则会转换失败。
+除隐式类型转换外，在符合语义的情况下，还可以使用显式类型转换。语法规则类似 C 语言： `(type_name)expression` 。例如， `YIELD length((string)(123)), (int)"123" + 1` 执行结果为 `3, 124`。`YIELD (int)("12ab3")` 则会转换失败。

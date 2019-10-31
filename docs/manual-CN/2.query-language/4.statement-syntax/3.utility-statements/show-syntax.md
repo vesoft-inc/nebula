@@ -2,7 +2,7 @@
 
 ```sql
 SHOW {SPACES | TAGS | EDGES | HOSTS}
-SHOW VARIABLES [graph|meta|storage]
+SHOW CONFIG [graph|meta|storage]
 ```
 
 `SHOW SPACES` 列出 Nebula Graph 集群中的所有图空间。

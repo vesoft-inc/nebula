@@ -21,4 +21,3 @@
 nebula> YIELD 2+3*5;
 nebula> YIELD (2+3)*5;
 ```
-
