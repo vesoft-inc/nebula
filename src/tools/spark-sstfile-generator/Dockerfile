@@ -52,6 +52,10 @@ ENV SPARK_HOME='/root/spark-1.6.2-bin-hadoop2.6'
 
 WORKDIR /root
 
+# Just Hint the yarn resource manager port
+# In fact, the container is client, so you can't bind this port which used by
+# yarn resource manager, you need run this container and yarn in the same
+# network bridge!
 EXPOSE 8032
 
 RUN yum update -y \
