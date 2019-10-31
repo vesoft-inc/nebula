@@ -1,4 +1,4 @@
-# DESCRIBE
+# DESCRIBE 语法
 
 ```
 DESCRIBE SPACE space_name

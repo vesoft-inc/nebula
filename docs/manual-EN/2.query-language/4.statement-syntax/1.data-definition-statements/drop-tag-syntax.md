@@ -1,4 +1,5 @@
 # Drop Tag Syntax
+
 ```
 DROP TAG tag_name
 ```
@@ -13,4 +14,4 @@ In the former case, such a vertex can NOT be accessible after the statement -- w
 
 In the latter case, such a vertex is still accessible. But all the properties defined by this dropped tag are not accessible.
 
-All the files and directories in the disk are NOT deleted directly. They can only be released by future operations (see TODO).
+This operation only deletes the Schema data, all the files and directories in the disk are NOT deleted directly, data is deleted in the next compaction.

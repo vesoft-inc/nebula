@@ -10,7 +10,7 @@
 $^.tag_name.prop_name
 ```
 
-其中符号`$ ^`用于获取起点属性，`tag_name`表示起点的`标签`，`prop_name`为指定属性的名称。
+其中符号 `$ ^` 用于获取起点属性，`tag_name` 表示起点的 `标签`，`prop_name` 为指定属性的名称。
 
 ### 引用终点的属性
 
@@ -18,12 +18,12 @@ $^.tag_name.prop_name
 $$.tag_name.prop_name
 ```
 
-其中符号`$$`用于获取终点属性，`tag_name`表示终点的`标签`，`prop_name`为指定属性的名称。
+其中符号 `$$` 用于获取终点属性，`tag_name` 表示终点的 `标签`，`prop_name` 为指定属性的名称。
 
 ### 示例
 
 ```
-GO FROM 1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
+GO FROM 1 OVER e1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
 ```
 
 该语句用于获取起点的属性名称和终点的属性年龄。
@@ -48,12 +48,12 @@ GO FROM 1 OVER e1 YIELD e1.prop1
 
 一条边有四个内置属性：
 
-- _src: 边起点id
-- _dst: 边终点id
+- _src: 边起点 ID
+- _dst: 边终点 ID
 - _type: 边类型
 - _rank: 边的权重
 
-获取起点和终点id可通过`_src`和`_dst`获取，这在显示图路径时经常会用到。
+获取起点和终点 ID 可通过 `_src` 和 `_dst` 获取，这在显示图路径时经常会用到。
 
 例如：
 
@@ -61,4 +61,4 @@ GO FROM 1 OVER e1 YIELD e1.prop1
 nebula> GO FROM 1 OVER e1 YIELD e1._src AS startVID /* 起点为1 */, e1._dst AS endVID
 ```
 
-该语句通过引用 `e1._src` 作为起始顶点id（当然，这是 `1` ）和` e1._dst` 作为结束顶点，返回 `1` 边类型为 `e1` 的所有邻居节点。其中 `e1._src` 返回起点ID，此处为1，`e1._dst` 返回终点ID。
+该语句通过引用 `e1._src` 作为起始顶点 ID（当然，这是 `1` ）和 ` e1._dst` 作为结束顶点，返回 `1` 边类型为 `e1` 的所有邻居节点。其中 `e1._src` 返回起点 ID，此处为 1，`e1._dst` 返回终点 ID。
