@@ -1,4 +1,4 @@
-name: docker
+name: tools
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   docker:
-    name: build docker image
+    name: build tools docker image
     runs-on: ubuntu-18.04
     steps:
       - uses: azure/container-actions/docker-login@master
