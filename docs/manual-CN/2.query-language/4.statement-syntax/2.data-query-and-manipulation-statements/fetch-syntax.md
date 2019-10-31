@@ -52,7 +52,7 @@ FETCH PROP ON <edge_type> <vid> -> <vid> [, <vid> -> <vid> ...] [YIELD [DISTINCT
 ```SQL
 -- 本语句未指定 YIELD，因此获取从节点 100 到节点 200 边 e1 的所有属性
 nebula> FETCH PROP ON e1 100 -> 200
--- 仅返回属性p1
+-- 仅返回属性 p1
 nebula> FETCH PROP ON e1 100 -> 200 YIELD e1.p1
 -- 获取节点 1 出边 e1 的 prop1 属性
 nebula> GO FROM 1 OVER e1 YIELD e1.prop1
