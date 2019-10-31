@@ -61,6 +61,24 @@ usage: nebula spark sst file generator
 The format of the mapping files is json. File Schema is provided as [mapping-schema.json](mapping-schema.json) according to [Json Schema Standard](http://json-schema.org).
 Here is an example of mapping file: [mapping.json](mapping.json)
 
+# Principle
+
+The mapping from tables to V/E
+
+```
+t1 : |p1|p2|p3|p4|
+                |                      |t2 V|
+          --------                       ^ p4
+          V                              |    p4          p7
+t2 : |p5|p4|p7|p8|           =======>  |t1 V| --> |t2 V| --> |t3 V|
+             |                                       | p7
+       -------                                       V
+       V                                           |t3 V|
+t3 : |p7|p12|p13|p14|p15|
+```
+
+The mapping file map table to vertex, foreign key to edge, and flat the table records to graph.
+
 # FAQ
 ## How to use libnebula-native-client.so under CentOS6.5(2.6.32-431 x86-64)
 
