@@ -26,9 +26,9 @@ nebula> FETCH PROP ON player 1 YIELD player.name, player.age
 -- hash string to int64 as vertex id, fetch name and player
 nebula> FETCH PROP ON player hash(\"nebula\")  YIELD player.name, player.age
 -- find all neighbors of vertex 1 through edge e1. Then Get the neighbors' name and age.
-nebula> GO FROM 1 over e1 | FETCH PROP ON player $- YIELD player.name, player.age
+nebula> GO FROM 1 over e1 YIELD e1._dst AS id | FETCH PROP ON player $-.id YIELD player.name, player.age
 -- the same as above sentence.
-nebula> $var = GO FROM 1 over e1; FETCH PROP ON player $var.id YIELD player.name, player.age
+nebula> $var = GO FROM 1 over e1 YIELD e1._dst AS id; FETCH PROP ON player $var.id YIELD player.name, player.age
 -- get three vertices 1,2,3, return by unique(distinct) name and age
 nebula> FETCH PROP ON player 1,2,3 YIELD DISTINCT player.name, player.age
 ```
