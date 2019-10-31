@@ -5,6 +5,8 @@
 ```SQL
 nebula> yield TRUE, true, FALSE, false, FalsE
 =========================================
-|  true |  true | false | false | false |  
+| true  | true  | false | false | false |
 =========================================
+| true  | true  | false | false | false |
+-----------------------------------------
 ```

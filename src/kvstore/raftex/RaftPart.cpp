@@ -18,6 +18,7 @@
 #include "kvstore/raftex/LogStrListIterator.h"
 #include "kvstore/raftex/Host.h"
 #include "time/WallClock.h"
+#include "base/SlowOpTracker.h"
 
 
 DEFINE_uint32(raft_heartbeat_interval_secs, 5,
@@ -681,12 +682,17 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
         prevLogTerm = lastLogTerm_;
         committed = committedLogId_;
         // Step 1: Write WAL
+        SlowOpTracker tracker;
         if (!wal_->appendLogs(iter)) {
             LOG(ERROR) << idStr_ << "Failed to write into WAL";
             res = AppendLogResult::E_WAL_FAILURE;
             break;
         }
         lastId = wal_->lastLogId();
+        if (tracker.slow()) {
+            tracker.output(idStr_, folly::stringPrintf("Write WAL, total %ld",
+                                                       lastId - prevLogId + 1));
+        }
         VLOG(2) << idStr_ << "Succeeded writing logs ["
                 << iter.firstLogId() << ", " << lastId << "] to WAL";
     } while (false);
@@ -746,6 +752,7 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
 
     VLOG(2) << idStr_ << "About to replicate logs to all peer hosts";
 
+    SlowOpTracker tracker;
     collectNSucceeded(
         gen::from(hosts)
         | gen::map([self = shared_from_this(),
@@ -775,7 +782,8 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
             return resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED
                     && !hosts[index]->isLearner();
         })
-        .then(executor_.get(), [self = shared_from_this(),
+        .then(executor_.get(),
+                  [self = shared_from_this(),
                    eb,
                    it = std::move(iter),
                    currTerm,
@@ -783,10 +791,14 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
                    committedId,
                    prevLogId,
                    prevLogTerm,
-                   pHosts = std::move(hosts)] (folly::Try<AppendLogResponses>&& result) mutable {
+                   pHosts = std::move(hosts),
+                   tracker] (folly::Try<AppendLogResponses>&& result) mutable {
             VLOG(2) << self->idStr_ << "Received enough response";
             CHECK(!result.hasException());
-
+            if (tracker.slow()) {
+                tracker.output(self->idStr_, folly::stringPrintf("Total send wals: %ld",
+                                                                  lastLogId - prevLogId + 1));
+            }
             self->processAppendLogResponses(*result,
                                             eb,
                                             std::move(it),
@@ -851,12 +863,17 @@ void RaftPart::processAppendLogResponses(
             lastMsgSentDur_.reset();
 
             auto walIt = wal_->iterator(committedId + 1, lastLogId);
+            SlowOpTracker tracker;
             // Step 3: Commit the batch
             if (commitLogs(std::move(walIt))) {
                 committedLogId_ = lastLogId;
                 firstLogId = lastLogId_ + 1;
             } else {
                 LOG(FATAL) << idStr_ << "Failed to commit logs";
+            }
+            if (tracker.slow()) {
+                tracker.output(idStr_, folly::stringPrintf("Total commit: %ld",
+                                                           committedLogId_ - committedId));
             }
             VLOG(2) << idStr_ << "Leader succeeded in committing the logs "
                               << committedId + 1 << " to " << lastLogId;
