@@ -237,13 +237,10 @@ void FileBasedWal::scanAllWalFiles() {
     if (!walFiles_.empty()) {
         auto it = walFiles_.rbegin();
         // Try to scan last wal, if it is invalid or empty, scan the privous one
-        scanLastWal(it->second, it->second->firstId(), -1);
+        scanLastWal(it->second, it->second->firstId());
         if (it->second->lastId() <= 0) {
-            auto expectedLastWalId = it->second->firstId() - 1;
             unlink(it->second->path());
             walFiles_.erase(it->first);
-            it = walFiles_.rbegin();
-            scanLastWal(it->second, it->second->firstId(), expectedLastWalId);
         }
     }
 
@@ -327,7 +324,7 @@ void FileBasedWal::prepareNewFile(LogID startLogId) {
 }
 
 
-TermID FileBasedWal::readTermId(WalFileInfoPtr info, LogID logId) {
+void FileBasedWal::rollbackInFile(WalFileInfoPtr info, LogID logId) {
     auto path = info->path();
     int32_t fd = open(path, O_RDWR);
     if (fd < 0) {
@@ -337,23 +334,21 @@ TermID FileBasedWal::readTermId(WalFileInfoPtr info, LogID logId) {
     }
 
     size_t pos = 0;
+    LogID id = 0;
     TermID term = 0;
     while (true) {
         // Read the log Id
-        LogID id = 0;
         if (pread(fd, &id, sizeof(LogID), pos) != sizeof(LogID)) {
             LOG(ERROR) << "Failed to read the log id (errno "
                        << errno << "): " << strerror(errno);
-            close(fd);
-            return 0;
+            break;
         }
 
         // Read the term Id
         if (pread(fd, &term, sizeof(TermID), pos + sizeof(LogID)) != sizeof(TermID)) {
             LOG(ERROR) << "Failed to read the term id (errno "
                        << errno << "): " << strerror(errno);
-            close(fd);
-            return 0;
+            break;
         }
 
         // Read the message length
@@ -362,8 +357,7 @@ TermID FileBasedWal::readTermId(WalFileInfoPtr info, LogID logId) {
                 != sizeof(int32_t)) {
             LOG(ERROR) << "Failed to read the message length (errno "
                        << errno << "): " << strerror(errno);
-            close(fd);
-            return 0;
+            break;
         }
 
         // Move to the next log
@@ -378,8 +372,15 @@ TermID FileBasedWal::readTermId(WalFileInfoPtr info, LogID logId) {
         }
     }
 
+    if (id != logId) {
+        LOG(FATAL) << idStr_ << "Didn't found log " << logId << " in " << path;
+    }
+    lastLogId_ = logId;
+    lastLogTerm_ = term;
+    LOG(INFO) << idStr_ << "Rollback to log " << logId;
+
     if (0 < pos && pos < FileUtils::fileSize(path)) {
-        LOG(INFO) << "Found log " << logId << ", truncate from offset " << pos;
+        LOG(INFO) << idStr_ << "Need to truncate from offset " << pos;
         if (ftruncate(fd, pos) < 0) {
             LOG(FATAL) << "Failed to truncate file \"" << path
                        << "\" (errno: " << errno << "): "
@@ -388,11 +389,10 @@ TermID FileBasedWal::readTermId(WalFileInfoPtr info, LogID logId) {
         info->setSize(pos);
     }
     close(fd);
-    return term;
 }
 
 
-void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId, LogID expectedLastWalId) {
+void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId) {
     auto* path = info->path();
     int32_t fd = open(path, O_RDWR);
     if (fd < 0) {
@@ -451,11 +451,9 @@ void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId, LogID expecte
                + head
                + sizeof(int32_t);
 
-        if (expectedLastWalId > 0 && curLogId == expectedLastWalId) {
-            break;
-        }
         ++curLogId;
     }
+    LOG(INFO) << idStr_ << "Scan last wal " << path << ", last wal id is " << id;
 
     if (0 < pos && pos < FileUtils::fileSize(path)) {
         LOG(WARNING) << "Invalid wal " << path << ", truncate from offset " << pos;
@@ -635,8 +633,7 @@ bool FileBasedWal::rollbackToLog(LogID id) {
             VLOG(1) << "Roll back to log " << id
                     << ", the last WAL file is now \""
                     << walFiles_.rbegin()->second->path() << "\"";
-            lastLogId_ = id;
-            lastLogTerm_ = readTermId(walFiles_.rbegin()->second, lastLogId_);
+            rollbackInFile(walFiles_.rbegin()->second, id);
         }
 
         // Create the next WAL file

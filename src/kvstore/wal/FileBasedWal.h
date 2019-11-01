@@ -142,14 +142,14 @@ private:
     // Scan all WAL files
     void scanAllWalFiles();
 
-    void scanLastWal(WalFileInfoPtr info, LogID firstId, LogID expectedLastWalId);
+    void scanLastWal(WalFileInfoPtr info, LogID firstId);
 
     // Close down the current wal file
     void closeCurrFile();
     // Prepare a new wal file starting from the given log id
     void prepareNewFile(LogID startLogId);
-    // Retrieve the term id for the given log id in the given WAL file
-    TermID readTermId(WalFileInfoPtr info, LogID logId);
+    // Rollback to logId in given file
+    void rollbackInFile(WalFileInfoPtr info, LogID logId);
 
     // Return the last buffer.
     // If the last buffer is big enough, create a new one
