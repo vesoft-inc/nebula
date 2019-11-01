@@ -53,7 +53,7 @@ nebula> CREATE TAG school(name string , create_time timestamp);
 Insert a vertex named "stanford" with the foundation date "1885-10-01 08:00:00"
 
 ```sql
-nebula> INSERT VERTEX school(name, create_time) VALUES hash("stanford"):("stanford", "1885-10-01 08:00:00")
+nebula> INSERT VERTEX school(name, create_time) VALUES hash("new"):("new", "1985-10-01 08:00:00")
 ```
 
 Insert a vertex named "dut" with the foundation date now

@@ -25,7 +25,7 @@ space_option:
 
 * _replica_factor_
 
-    _replica_factor_ 表示副本数量。默认值是 1, 集群建议为 3
+    _replica_factor_ 表示副本数量。默认值是 1，集群建议为 3
 
 如果没有自定义选项，Nebula 会使用默认的值（partition_number 和 replica_factor）来创建图空间。
 
@@ -37,4 +37,3 @@ CREATE SPACE my_space_2(partition_num=100); -- 使用默认 replica_factor 创�
 CREATE SPACE my_space_3(replica_factor=1);  -- 使用默认 partition_number 创建图空间
 CREATE SPACE my_space_4(partition_num=100, replica_factor=1);
 ```
-
