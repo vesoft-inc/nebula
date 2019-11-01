@@ -236,23 +236,14 @@ void FileBasedWal::scanAllWalFiles() {
 
     if (!walFiles_.empty()) {
         auto it = walFiles_.rbegin();
-        if (it->second->lastId() == 0) {
-            // if last wal is empty, scan previous wal
+        // Try to scan last wal, if it is invalid or empty, scan the privous one
+        scanLastWal(it->second, it->second->firstId(), -1);
+        if (it->second->lastId() <= 0) {
             auto expectedLastWalId = it->second->firstId() - 1;
             unlink(it->second->path());
             walFiles_.erase(it->first);
             it = walFiles_.rbegin();
             scanLastWal(it->second, it->second->firstId(), expectedLastWalId);
-        } else {
-            // scan last wal, if it is illegal, scan the previous wal
-            scanLastWal(it->second, it->second->firstId(), -1);
-            if (it->second->lastId() < 0) {
-                auto expectedLastWalId = it->second->firstId() - 1;
-                unlink(it->second->path());
-                walFiles_.erase(it->first);
-                it = walFiles_.rbegin();
-                scanLastWal(it->second, it->second->firstId(), expectedLastWalId);
-            }
         }
     }
 
@@ -394,7 +385,8 @@ TermID FileBasedWal::readTermId(const char* path, LogID logId) {
 
 void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId, LogID expectedLastWalId) {
     auto* path = info->path();
-    int32_t fd = open(path, O_RDONLY);
+    // qwer
+    int32_t fd = open(path, O_RDWR);
     if (fd < 0) {
         LOG(FATAL) << "Failed to open file \"" << path
                    << "\" (errno: " << errno << "): "
@@ -459,7 +451,11 @@ void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId, LogID expecte
 
     if (pos < 0 && pos < FileUtils::fileSize(path)) {
         LOG(WARNING) << "Invalid wal " << path << ", truncate from offset " << pos;
-        ftruncate(fd, pos);
+        if (ftruncate(fd, pos) < 0) {
+            LOG(FATAL) << "Failed to truncate file \"" << path
+                       << "\" (errno: " << errno << "): "
+                       << strerror(errno);
+        }
     }
 
     close(fd);
