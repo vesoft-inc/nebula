@@ -383,6 +383,21 @@ TEST_F(GoTest, MULTI_EDGES) {
 
     {
         cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve, like yield serve.start_year, like.likeness";
+        auto &player = players_["Russell Westbrook"];
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {2008, 0},
+            {0, 90},
+            {0, 90},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve, like";
         auto &player = players_["Shaquile O'Neal"];
         auto query = folly::stringPrintf(fmt, player.vid());
