@@ -1,6 +1,7 @@
 # Drop Tag Syntax
+
 ```
-DROP TAG tag_name
+DROP TAG <tag_name>
 ```
 
 You must have the DROP privilege for the tag.
