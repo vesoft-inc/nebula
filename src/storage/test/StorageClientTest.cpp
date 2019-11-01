@@ -22,65 +22,90 @@ DECLARE_int32(heartbeat_interval_secs);
 namespace nebula {
 namespace storage {
 
-TEST(StorageClientTest, VerticesInterfacesTest) {
-    FLAGS_load_data_interval_secs = 1;
-    FLAGS_heartbeat_interval_secs = 1;
-    const nebula::ClusterID kClusterId = 10;
-    fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
-    GraphSpaceID spaceId = 0;
-    IPv4 localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+// Fixture with meta and storage environments
+class StorageClientTestF : public ::testing::Test {
+protected:
+    void SetUp() override {
+        FLAGS_load_data_interval_secs = 1;
+        FLAGS_heartbeat_interval_secs = 1;
+        const nebula::ClusterID kClusterId = 10;
+        testing_dir_ = std::make_unique<fs::TempDir>("/tmp/StorageClientTest.XXXXXX");
+        IPv4 localIp;
+        network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
-    // Let the system choose an available port for us
-    uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
-    LOG(INFO) << "Start meta server....";
-    std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
-    auto metaServerContext = meta::TestUtils::mockMetaServer(localMetaPort,
-                                                             metaPath.c_str(),
-                                                             kClusterId);
-    localMetaPort =  metaServerContext->port_;
+        // Let the system choose an available port for us
+        uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
+        LOG(INFO) << "Start meta server....";
+        std::string metaPath = folly::stringPrintf("%s/meta", testing_dir_->path());
+        ms_ = meta::TestUtils::mockMetaServer(localMetaPort,
+                                                                metaPath.c_str(),
+                                                                kClusterId);
+        localMetaPort =  ms_->port_;
 
-    LOG(INFO) << "Create meta client...";
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    auto addrsRet
-        = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", localMetaPort));
-    CHECK(addrsRet.ok()) << addrsRet.status();
-    auto& addrs = addrsRet.value();
-    uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
-    auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
-    auto& localHost = hostRet.value();
-    auto mClient = std::make_unique<meta::MetaClient>(threadPool,
-                                                      std::move(addrs),
-                                                      localHost,
-                                                      kClusterId,
-                                                      true);
-    LOG(INFO) << "Add hosts and create space....";
-    auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
-    ASSERT_TRUE(r.ok());
-    mClient->waitForMetadReady();
-    VLOG(1) << "The storage server has been added to the meta service";
+        LOG(INFO) << "Create meta client...";
+        threads_ = std::make_shared<folly::IOThreadPoolExecutor>(1);
+        auto addrsRet
+            = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", localMetaPort));
+        CHECK(addrsRet.ok()) << addrsRet.status();
+        auto& addrs = addrsRet.value();
+        uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
+        auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
+        auto& localHost = hostRet.value();
+        mc_ = std::make_unique<meta::MetaClient>(threads_,
+                                                        std::move(addrs),
+                                                        localHost,
+                                                        kClusterId,
+                                                        true);
+        LOG(INFO) << "Add hosts and create space....";
+        auto r = mc_->addHosts({HostAddr(localIp, localDataPort)}).get();
+        ASSERT_TRUE(r.ok());
+        mc_->waitForMetadReady();
+        VLOG(1) << "The storage server has been added to the meta service";
 
-    LOG(INFO) << "Start data server....";
+        LOG(INFO) << "Start data server....";
 
-    // for mockStorageServer MetaServerBasedPartManager, use ephemeral port
-    std::string dataPath = folly::stringPrintf("%s/data", rootPath.path());
-    auto sc = TestUtils::mockStorageServer(mClient.get(),
-                                           dataPath.c_str(),
-                                           localIp,
-                                           localDataPort,
-                                           // TODO We are using the memory version of
-                                           // SchemaMan We need to switch to Meta Server
-                                           // based version
-                                           false);
+        // for mockStorageServer MetaServerBasedPartManager, use ephemeral port
+        std::string dataPath = folly::stringPrintf("%s/data", testing_dir_->path());
+        server_ = TestUtils::mockStorageServer(mc_.get(),
+                                            dataPath.c_str(),
+                                            localIp,
+                                            localDataPort,
+                                            // TODO We are using the memory version of
+                                            // SchemaMan We need to switch to Meta Server
+                                            // based version
+                                            false);
 
-    auto ret = mClient->createSpace("default", 10, 1).get();
-    ASSERT_TRUE(ret.ok()) << ret.status();
-    spaceId = ret.value();
-    LOG(INFO) << "Created space \"default\", its id is " << spaceId;
-    sleep(FLAGS_load_data_interval_secs + 1);
-    TestUtils::waitUntilAllElected(sc->kvStore_.get(), spaceId, 10);
-    auto client = std::make_unique<StorageClient>(threadPool, mClient.get());
+        auto ret = mc_->createSpace("default", 10, 1).get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+        space_ = ret.value();
+        LOG(INFO) << "Created space \"default\", its id is " << space_;
+        sleep(FLAGS_load_data_interval_secs + 1);
+        TestUtils::waitUntilAllElected(server_->kvStore_.get(), space_, 10);
+        client_ = std::make_unique<StorageClient>(threads_, mc_.get());
+    }
 
+    void TearDown() override {
+        LOG(INFO) << "Stop meta client...";
+        mc_.reset();
+        LOG(INFO) << "Stop data server...";
+        server_.reset();
+        LOG(INFO) << "Stop data client...";
+        client_.reset();
+        LOG(INFO) << "Stop meta server...";
+        ms_.reset();
+        threads_.reset();
+    }
+
+    std::unique_ptr<meta::MetaClient> mc_ = nullptr;
+    std::unique_ptr<test::ServerContext> ms_ = nullptr;
+    std::unique_ptr<storage::StorageClient> client_ = nullptr;
+    std::unique_ptr<test::ServerContext> server_ = nullptr;
+    std::shared_ptr<folly::IOThreadPoolExecutor> threads_ = nullptr;
+    GraphSpaceID space_ = 0;
+    std::unique_ptr<fs::TempDir> testing_dir_ = nullptr;
+};
+
+TEST_F(StorageClientTestF, VerticesInterfacesTest) {
     // VerticesInterfacesTest(addVertices and getVertexProps)
     {
         LOG(INFO) << "Prepare vertices data...";
@@ -106,7 +131,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             v.set_tags(std::move(tags));
             vertices.emplace_back(std::move(v));
         }
-        auto f = client->addVertices(spaceId, std::move(vertices), true);
+        auto f = client_->addVertices(space_, std::move(vertices), true);
         LOG(INFO) << "Waiting for the response...";
         auto resp = std::move(f).get();
         if (!resp.succeeded()) {
@@ -128,7 +153,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             retCols.emplace_back(TestUtils::vertexPropDef(
                 folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2), 3001 + i * 2));
         }
-        auto f = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
+        auto f = client_->getVertexProps(space_, std::move(vIds), std::move(retCols));
         auto resp = std::move(f).get();
         if (VLOG_IS_ON(2)) {
             if (!resp.succeeded()) {
@@ -190,7 +215,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             edge.set_props(writer.encode());
             edges.emplace_back(std::move(edge));
         }
-        auto f = client->addEdges(spaceId, std::move(edges), true);
+        auto f = client_->addEdges(space_, std::move(edges), true);
         LOG(INFO) << "Waiting for the response...";
         auto resp = std::move(f).get();
         ASSERT_TRUE(resp.succeeded());
@@ -211,7 +236,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         for (int i = 0; i < 20; i++) {
             retCols.emplace_back(TestUtils::edgePropDef(folly::stringPrintf("col_%d", i), 101));
         }
-        auto f = client->getEdgeProps(spaceId, std::move(edgeKeys), std::move(retCols));
+        auto f = client_->getEdgeProps(space_, std::move(edgeKeys), std::move(retCols));
         auto resp = std::move(f).get();
         ASSERT_TRUE(resp.succeeded());
 
@@ -253,7 +278,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             std::vector<cpp2::EdgeKey> edgeKeys;
             // Get all edgeKeys of a vertex
             {
-                auto f = client->getEdgeKeys(spaceId, srcId);
+                auto f = client_->getEdgeKeys(space_, srcId);
                 auto resp = std::move(f).get();
                 ASSERT_TRUE(resp.ok());
                 auto edgeKeyResp =  std::move(resp).value();
@@ -271,12 +296,12 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             }
             // Delete all edges of a vertex
             {
-                auto f = client->deleteEdges(spaceId, edgeKeys);
+                auto f = client_->deleteEdges(space_, edgeKeys);
                 auto resp = std::move(f).get();
                 ASSERT_TRUE(resp.succeeded());
 
                 // Check that edges have been successfully deleted
-                auto cf = client->getEdgeKeys(spaceId, srcId);
+                auto cf = client_->getEdgeKeys(space_, srcId);
                 auto cresp = std::move(cf).get();
                 ASSERT_TRUE(cresp.ok());
                 auto edgeKeyResp =  std::move(cresp).value();
@@ -286,7 +311,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             }
             // Delete a vertex
             {
-                auto f = client->deleteVertex(spaceId, srcId);
+                auto f = client_->deleteVertex(space_, srcId);
                 auto resp = std::move(f).get();
                 ASSERT_TRUE(resp.ok());
                 auto  execResp = std::move(resp).value();
@@ -298,7 +323,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 std::vector<cpp2::PropDef> retCols;
                 retCols.emplace_back(
                     TestUtils::vertexPropDef(folly::stringPrintf("tag_%d_col_%d", 3001, 0), 3001));
-                auto cf = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
+                auto cf = client_->getVertexProps(space_, std::move(vIds), std::move(retCols));
                 auto cresp = std::move(cf).get();
                 ASSERT_TRUE(cresp.succeeded());
                 auto& results = cresp.responses();
@@ -315,28 +340,35 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         // get not existed uuid
         std::vector<VertexID> vIds;
         for (int i = 0; i < 10; i++) {
-            auto status = client->getUUID(spaceId, std::to_string(i)).get();
+            auto status = client_->getUUID(space_, std::to_string(i)).get();
             ASSERT_TRUE(status.ok());
             auto resp = status.value();
             vIds.emplace_back(resp.get_id());
         }
 
         for (int i = 0; i < 10; i++) {
-            auto status = client->getUUID(spaceId, std::to_string(i)).get();
+            auto status = client_->getUUID(space_, std::to_string(i)).get();
             ASSERT_TRUE(status.ok());
             auto resp = status.value();
             ASSERT_EQ(resp.get_id(), vIds[i]);
         }
     }
-    LOG(INFO) << "Stop meta client";
-    mClient->stop();
-    LOG(INFO) << "Stop data server...";
-    sc.reset();
-    LOG(INFO) << "Stop data client...";
-    client.reset();
-    LOG(INFO) << "Stop meta server...";
-    metaServerContext.reset();
-    threadPool.reset();
+}
+
+TEST_F(StorageClientTestF, FetchLeaders) {
+    {
+        auto resps = client_->getSpaceLeaders(space_).get();
+        ASSERT_TRUE(resps.succeeded());
+        // show the leaders
+        for (auto& resp : resps.responses()) {
+            for (auto& val : resp.get_leader_parts()) {
+                LOG(INFO) << "Space: " << val.first;
+                for (auto& p : val.second) {
+                    LOG(INFO) << "Leader Part: " << p;
+                }
+            }
+        }
+    }
 }
 
 #define RETURN_LEADER_CHANGED(req, leader) \

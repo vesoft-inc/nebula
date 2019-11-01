@@ -173,6 +173,11 @@ public:
         const std::string& name,
         folly::EventBase* evb = nullptr);
 
+    // Get All leaders of one space
+    folly::SemiFuture<StorageRpcResponse<cpp2::GetLeaderResp>> getSpaceLeaders(
+        const GraphSpaceID space,
+        folly::EventBase* evb = nullptr);
+
 protected:
     // Calculate the partition id for the given vertex id
     PartitionID partId(GraphSpaceID spaceId, int64_t id) const;
@@ -203,6 +208,11 @@ protected:
         }
     }
 
+    inline void resetLeaders(
+            std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>&& leaders) {
+        leaders_ = std::move(leaders);
+    }
+
     template<class Request,
              class RemoteFunc,
              class Response =
@@ -211,6 +221,19 @@ protected:
                 >::type::value_type
             >
     folly::SemiFuture<StorageRpcResponse<Response>> collectResponse(
+        folly::EventBase* evb,
+        std::unordered_map<HostAddr, Request> requests,
+        RemoteFunc&& remoteFunc);
+
+    // Handle the RPC without leader require
+    template<class Request,
+             class RemoteFunc,
+             class Response =
+                typename std::result_of<
+                    RemoteFunc(storage::cpp2::StorageServiceAsyncClient*, const Request&)
+                >::type::value_type
+            >
+    folly::SemiFuture<StorageRpcResponse<Response>> collectResponseWithoutLeader(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc);
@@ -251,6 +274,16 @@ protected:
             clusters[leader][part].emplace_back(std::move(id));
         }
         return clusters;
+    }
+
+    inline StatusOr<std::vector<meta::SpaceIdName>> listSpaces() {
+        DCHECK_NOTNULL(client_);
+        return client_->listSpaces().get();
+    }
+
+    inline StatusOr<meta::PartsAlloc> getPartsAlloc(GraphSpaceID space) {
+        DCHECK_NOTNULL(client_);
+        return client_->getPartsAlloc(space).get();
     }
 
     virtual int32_t partsNum(GraphSpaceID spaceId) const {

@@ -290,7 +290,8 @@ void FileBasedWal::closeCurrFile() {
     timebuf.modtime = currInfo_->mtime();
     timebuf.actime = currInfo_->mtime();
     VLOG(1) << "Close cur file " << currInfo_->path() << ", mtime: " << currInfo_->mtime();
-    CHECK_EQ(utime(currInfo_->path(), &timebuf), 0);
+    CHECK_EQ(utime(currInfo_->path(), &timebuf), 0) << "file: " << currInfo_->path()
+        << ";" << "fd: " << currFd_ << "; " << "err: " << strerror(errno);
     currInfo_.reset();
 }
 

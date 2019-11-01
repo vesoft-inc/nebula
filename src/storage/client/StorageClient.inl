@@ -161,6 +161,100 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
 
 
 template<class Request, class RemoteFunc, class Response>
+folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponseWithoutLeader(
+        folly::EventBase* evb,
+        std::unordered_map<HostAddr, Request> requests,
+        RemoteFunc&& remoteFunc) {
+    auto context = std::make_shared<ResponseContext<Request, RemoteFunc, Response>>(
+        requests.size(), std::move(remoteFunc));
+
+    if (evb == nullptr) {
+        DCHECK(!!ioThreadPool_);
+        evb = ioThreadPool_->getEventBase();
+    }
+
+    for (auto& req : requests) {
+        auto& host = req.first;
+//        auto spaceId = req.second.get_space_id();
+        auto res = context->insertRequest(host, std::move(req.second));
+        DCHECK(res.second);
+        // Invoke the remote method
+        folly::via(evb, [this, evb, context, host, /*spaceId,*/ res] () mutable {
+            auto client = this->clientsMan_->client(host, evb);
+            // Result is a pair of <Request&, bool>
+            context->serverMethod(client.get(), *res.first)
+            // Future process code will be executed on the IO thread
+            // Since all requests are sent using the same eventbase, all then-callback
+            // will be executed on the same IO thread
+            .then(evb, [/*this,*/ context, host/*, spaceId*/] (folly::Try<Response>&& val) {
+//                auto& r = context->findRequest(host);
+                if (UNLIKELY(val.hasException())) {
+                    LOG(ERROR) << "Request to " << host << " failed: " << val.exception().what();
+//                    for (auto& part : r.parts) {
+//                        VLOG(3) << "Exception! Failed part " << part.first;
+//                        context->resp.failedParts().emplace(
+//                            part.first,
+//                            storage::cpp2::ErrorCode::E_RPC_FAILURE);
+//                        invalidLeader(spaceId, part.first);
+//                    }
+                    context->resp.markFailure();
+                } else {
+                    auto resp = std::move(val.value());
+                    auto& result = resp.get_result();
+                    bool hasFailure{false};
+                    for (auto& code : result.get_failed_codes()) {
+                        VLOG(3) << "Failure! Failed part " << code.get_part_id()
+                                << ", failed code " << static_cast<int32_t>(code.get_code());
+                        hasFailure = true;
+                        if (UNLIKELY(code.get_code() ==
+                                storage::cpp2::ErrorCode::E_LEADER_CHANGED)) {
+                            DCHECK(false) << "Impossible leader require!";
+//                            auto* leader = code.get_leader();
+//                            if (leader != nullptr
+//                                    && leader->get_ip() != 0
+//                                    && leader->get_port() != 0) {
+//                                updateLeader(spaceId,
+//                                             code.get_part_id(),
+//                                             HostAddr(leader->get_ip(), leader->get_port()));
+//                            }
+                        } else if (UNLIKELY(code.get_code() ==
+                                storage::cpp2::ErrorCode::E_PART_NOT_FOUND)) {
+                            LOG(ERROR) << "Error in Part not Found!";
+//                            invalidLeader(spaceId, code.get_part_id());
+                        }
+//                        else {
+                            // Simply keep the result
+                            context->resp.failedParts().emplace(code.get_part_id(),
+                                                                code.get_code());
+//                        }
+                    }
+                    if (UNLIKELY(hasFailure)) {
+                        context->resp.markFailure();
+                    }
+
+                    // Adjust the latency
+                    context->resp.setLatency(result.get_latency_in_us());
+
+                    // Keep the response
+                    context->resp.responses().emplace_back(std::move(resp));
+                }
+
+                if (context->removeRequest(host)) {
+                    // Received all responses
+                    context->promise.setValue(std::move(context->resp));
+                }
+            });  // then
+        });  // via
+    }  // for
+    if (context->finishSending()) {
+        // Received all responses, most likely, all rpc failed
+        context->promise.setValue(std::move(context->resp));
+    }
+
+    return context->promise.getSemiFuture();
+}
+
+template<class Request, class RemoteFunc, class Response>
 folly::Future<StatusOr<Response>> StorageClient::getResponse(
         folly::EventBase* evb,
         std::pair<HostAddr, Request> request,

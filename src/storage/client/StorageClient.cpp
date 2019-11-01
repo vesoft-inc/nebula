@@ -399,6 +399,30 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(
 }
 
 
+// Get All leaders of one space
+folly::SemiFuture<StorageRpcResponse<cpp2::GetLeaderResp>> StorageClient::getSpaceLeaders(
+        const GraphSpaceID space,
+        folly::EventBase* evb) {
+    std::unordered_map<HostAddr, storage::cpp2::GetLeaderReq> requests;
+    auto res_parts_alloc = getPartsAlloc(space);
+    if (UNLIKELY(!res_parts_alloc.ok())) {
+        return folly::makeSemiFuture<StorageRpcResponse<cpp2::GetLeaderResp>>(
+            StorageRpcResponse<cpp2::GetLeaderResp>(0));
+    }
+    requests.reserve(res_parts_alloc.value().size());
+
+    for (auto& p : res_parts_alloc.value()) {
+        requests.emplace(p.second.front(), cpp2::GetLeaderReq());
+    }
+
+    return collectResponseWithoutLeader(evb, std::move(requests),
+                           [](cpp2::StorageServiceAsyncClient* client,
+                              const cpp2::GetLeaderReq& r) {
+                                  return client->future_getLeaderPart(r);
+                              });
+}
+
+
 PartitionID StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
     auto parts = partsNum(spaceId);
     auto s = ID_HASH(id, parts);

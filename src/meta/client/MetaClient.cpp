@@ -627,7 +627,7 @@ folly::Future<StatusOr<bool>> MetaClient::removeHosts(const std::vector<HostAddr
 }
 
 
-folly::Future<StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>>
+folly::Future<StatusOr<PartsAlloc>>
 MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
     cpp2::GetPartsAllocReq req;
     req.set_space_id(spaceId);
