@@ -35,7 +35,7 @@ The complete metric concatenates the interface name with the corresponding metri
 
 ### Statistics Type
 
-Currently supported types are SUM, COUNT, AVG, RATE, and P99, P999, the maximum supported range is P999999.
+Currently supported types are SUM, COUNT, AVG, RATE, and P99, P999, the maximum supported range is P999999. Only latency supports P99.
 
 ### Time Range
 

@@ -15,7 +15,7 @@
 
 每个指标名都由接口名加指标名构成，目前支持获取如下接口
 
-```
+```text
 获取点的属性 vertex_props
 获取边的属性 edge_props
 插入一个点 add_vertex
@@ -25,11 +25,12 @@
 更新一条边的属性 update_edge
 读取一个键值对 get_kv
 写入一个键值对 put_kv
+仅限内部使用 get_bound
 ```
 
 每一个接口都有三个性能指标，分别为延迟(单位为 us)、QPS、发生错误的 QPS，后缀名如下：
 
-```
+```text
 _latency
 _qps
 _error_qps
@@ -39,7 +40,7 @@ _error_qps
 
 ### 统计类型
 
-目前支持的类型有 SUM，COUNT，AVG，RATE，以及 P99，P999 等，最高支持到 P999999。
+目前支持的类型有 SUM，COUNT，AVG，RATE，以及 P99，P999 等，最高支持到 P999999。只有 latency 支持 P99 等指标。
 
 ### 时间范围
 
@@ -49,7 +50,7 @@ _error_qps
 
 根据上面的介绍，就可以写出一个完整的指标名称了，下面是一些示例：
 
-```
+```shell
 add_vertex_latency.avg.60        # 最近一分钟插入一个点的平均延时
 get_bound_qps.rate.600        # 最近十分钟获取邻点的 QPS
 update_edge_error_qps.count.3600   # 最近一小时更新一条边发生错误的总计数量
