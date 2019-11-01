@@ -59,6 +59,7 @@ TEST(ConfigManTest, ConfigProcessorTest) {
     item2.set_mode(cpp2::ConfigMode::MUTABLE);
     item2.set_value("v2");
 
+    sleep(1);
     // set and get without register
     {
         cpp2::SetConfigReq req;

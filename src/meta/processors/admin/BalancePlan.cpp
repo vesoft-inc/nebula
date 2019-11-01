@@ -21,7 +21,7 @@ void BalancePlan::dispatchTasks() {
     std::unordered_map<std::pair<GraphSpaceID, PartitionID>, std::vector<int32_t>> partTasks;
     int32_t index = 0;
     for (auto& task : tasks_) {
-        partTasks[std::make_pair(task.spaceId_, task.partId_)].emplace_back(index++);
+        partTasks[std::make_pair(task->spaceId_, task->partId_)].emplace_back(index++);
     }
     buckets_.resize(std::min(partTasks.size(), (size_t)FLAGS_task_concurrency));
     for (auto it = partTasks.begin(); it != partTasks.end(); it++) {
@@ -41,12 +41,11 @@ void BalancePlan::dispatchTasks() {
 }
 
 void BalancePlan::invoke() {
-    status_ = Status::IN_PROGRESS;
     dispatchTasks();
     for (size_t i = 0; i < buckets_.size(); i++) {
         for (size_t j = 0; j < buckets_[i].size(); j++) {
             auto taskIndex = buckets_[i][j];
-            tasks_[taskIndex].onFinished_ = [this, i, j]() {
+            tasks_[taskIndex]->onFinished_ = [this, i, j]() {
                 bool finished = false;
                 {
                     std::lock_guard<std::mutex> lg(lock_);
@@ -57,20 +56,19 @@ void BalancePlan::invoke() {
                             status_ = Status::SUCCEEDED;
                             LOG(INFO) << "Balance " << id_ << " succeeded!";
                         }
+                        saveInStore(true);
                     }
                 }
                 if (finished) {
                     CHECK_EQ(j, this->buckets_[i].size() - 1);
-                    saveInStore(true);
                     onFinished_();
                 } else {
                     if (j + 1 < this->buckets_[i].size()) {
-                        auto& task = this->tasks_[this->buckets_[i][j + 1]];
-                        task.invoke();
+                        this->tasks_[this->buckets_[i][j + 1]]->invoke();
                     }
                 }
             };  // onFinished
-            tasks_[taskIndex].onError_ = [this, i, j]() {
+            tasks_[taskIndex]->onError_ = [this, i, j]() {
                 bool finished = false;
                 {
                     std::lock_guard<std::mutex> lg(lock_);
@@ -79,26 +77,29 @@ void BalancePlan::invoke() {
                     if (finishedTaskNum_ == tasks_.size()) {
                         finished = true;
                         LOG(INFO) << "Balance " << id_ << " failed!";
+                        saveInStore(true);
                     }
                 }
                 if (finished) {
                     CHECK_EQ(j, this->buckets_[i].size() - 1);
-                    saveInStore(true);
                     onFinished_();
                 } else {
                     if (j + 1 < this->buckets_[i].size()) {
-                        auto& task = this->tasks_[this->buckets_[i][j + 1]];
-                        task.invoke();
+                        this->tasks_[this->buckets_[i][j + 1]]->invoke();
                     }
                 }
             };  // onError
         }  // for (auto j = 0; j < buckets_[i].size(); j++)
     }  // for (auto i = 0; i < buckets_.size(); i++)
 
-    saveInStore(true);
+    {
+        std::lock_guard<std::mutex> lg(lock_);
+        status_ = Status::IN_PROGRESS;
+        saveInStore(true);
+    }
     for (auto& bucket : buckets_) {
         if (!bucket.empty()) {
-            tasks_[bucket[0]].invoke();
+            tasks_[bucket[0]]->invoke();
         }
     }
 }
@@ -109,7 +110,7 @@ bool BalancePlan::saveInStore(bool onlyPlan) {
         data.emplace_back(planKey(), planVal());
         if (!onlyPlan) {
             for (auto& task : tasks_) {
-                data.emplace_back(task.taskKey(), task.taskVal());
+                data.emplace_back(task->taskKey(), task->taskVal());
             }
         }
         folly::Baton<true, std::atomic> baton;
@@ -141,37 +142,34 @@ bool BalancePlan::recovery(bool resume) {
             return false;
         }
         while (iter->valid()) {
-            BalanceTask task;
-            task.kv_ = kv_;
-            task.client_ = client_;
+            auto task = std::make_unique<BalanceTask>();
+            task->kv_ = kv_;
+            task->client_ = client_;
             {
                 auto tup = BalanceTask::parseKey(iter->key());
-                task.balanceId_ = std::get<0>(tup);
-                task.spaceId_ = std::get<1>(tup);
-                task.partId_ = std::get<2>(tup);
-                task.src_ = std::get<3>(tup);
-                task.dst_ = std::get<4>(tup);
-                task.taskIdStr_ = task.buildTaskId();
+                task->balanceId_ = std::get<0>(tup);
+                task->spaceId_ = std::get<1>(tup);
+                task->partId_ = std::get<2>(tup);
+                task->src_ = std::get<3>(tup);
+                task->dst_ = std::get<4>(tup);
+                task->taskIdStr_ = task->buildTaskId();
             }
             {
                 auto tup = BalanceTask::parseVal(iter->val());
-                task.status_ = std::get<0>(tup);
-                task.ret_ = std::get<1>(tup);
-                task.srcLived_ = std::get<2>(tup);
-                task.startTimeMs_ = std::get<3>(tup);
-                task.endTimeMs_ = std::get<4>(tup);
-                if (resume && task.ret_ != BalanceTask::Result::SUCCEEDED) {
-                    // Resume the failed task.
-                    task.ret_ = BalanceTask::Result::IN_PROGRESS;
-                    task.status_ = BalanceTask::Status::START;
-                    if (ActiveHostsMan::isLived(kv_, task.src_)) {
-                        task.srcLived_ = true;
-                    } else {
-                        task.srcLived_ = false;
+                task->status_ = std::get<0>(tup);
+                task->ret_ = std::get<1>(tup);
+                task->srcLived_ = std::get<2>(tup);
+                task->startTimeMs_ = std::get<3>(tup);
+                task->endTimeMs_ = std::get<4>(tup);
+                if (resume && task->ret_ != BalanceTask::Result::SUCCEEDED) {
+                    // Resume the failed or stopped task
+                    task->ret_ = BalanceTask::Result::IN_PROGRESS;
+                    task->status_ = BalanceTask::Status::START;
+                    task->srcLived_ = ActiveHostsMan::isLived(kv_, task->src_);
+                    if (!ActiveHostsMan::isLived(kv_, task->dst_)) {
+                        task->ret_ = BalanceTask::Result::INVALID;
                     }
-                    if (!ActiveHostsMan::isLived(kv_, task.dst_)) {
-                        task.ret_ = BalanceTask::Result::INVALID;
-                    }
+                    task->saveInStore();
                 }
             }
             tasks_.emplace_back(std::move(task));
@@ -179,6 +177,17 @@ bool BalancePlan::recovery(bool resume) {
         }
     }
     return true;
+}
+
+void BalancePlan::stop() {
+    for (auto& task : tasks_) {
+        task->markInvalidIfNotStarted();
+    }
+    {
+        std::lock_guard<std::mutex> lg(lock_);
+        status_ = BalancePlan::Status::STOPPED;
+        saveInStore(true);
+    }
 }
 
 std::string BalancePlan::planKey() const {

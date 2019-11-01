@@ -138,6 +138,7 @@ public:
                   << ", add/remove " << (req.get_add() ? "add" : "remove");
         auto ret = kvstore_->part(spaceId, partId);
         if (!ok(ret)) {
+            LOG(INFO) << "[Processor] ???";
             this->pushResultCode(to(error(ret)), partId);
             onFinished();
             return;
@@ -155,10 +156,10 @@ public:
             onFinished();
         };
         if (req.get_add()) {
-            LOG(INFO) << "Add peer " << peer;
+            LOG(INFO) << "Add peer " << peer << " " << partId;
             part->asyncAddPeer(peer, cb);
         } else {
-            LOG(INFO) << "Remove peer " << peer;
+            LOG(INFO) << "Remove peer " << peer << " " << partId;
             part->asyncRemovePeer(peer, cb);
         }
     }
@@ -229,20 +230,28 @@ public:
                                                                req.get_target().get_port()));
 
         folly::async([this, part, peer, spaceId, partId] {
+            // qwer
+            sleep(10);
             int retry = FLAGS_waiting_catch_up_retry_times;
             while (retry-- > 0) {
-                LOG(INFO) << "Waiting for catching up data, peer " << peer
+                LOG(INFO) << "Waiting for " << partId << " catching up data, peer " << peer
                           << ", try " << retry << " times";
                 auto res = part->isCatchedUp(peer);
                 switch (res) {
                     case raftex::AppendLogResult::SUCCEEDED:
+                        // qwer
+                        LOG(INFO) << partId << " aaa";
                         onFinished();
                         return;
                     case raftex::AppendLogResult::E_INVALID_PEER:
+                        // qwer
+                        LOG(INFO) << partId << " bbb";
                         this->pushResultCode(cpp2::ErrorCode::E_INVALID_PEER, partId);
                         onFinished();
                         return;
                     case raftex::AppendLogResult::E_NOT_A_LEADER: {
+                        // qwer
+                        LOG(INFO) << partId << " ccc";
                         auto leaderRet = kvstore_->partLeader(spaceId, partId);
                         CHECK(ok(leaderRet));
                         auto leader = value(std::move(leaderRet));

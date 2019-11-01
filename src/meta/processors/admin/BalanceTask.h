@@ -24,6 +24,7 @@ class BalanceTask {
     FRIEND_TEST(BalanceTest, BalancePlanTest);
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
+    FRIEND_TEST(BalanceTest, StopBalanceDataTest);
 
 public:
     enum class Status : uint8_t {
@@ -73,7 +74,17 @@ public:
 
     void rollback();
 
-    Result result() const {
+    void markInvalidIfNotStarted() {
+        std::lock_guard<std::mutex> lg(lock_);
+        if (status_ == Status::START) {
+            LOG(INFO) << "mark invalid of task " << partId_;
+            ret_ = Result::INVALID;
+            saveInStore();
+        }
+    }
+
+    Result result() {
+        std::lock_guard<std::mutex> lg(lock_);
         return ret_;
     }
 
@@ -119,6 +130,7 @@ private:
     int64_t      endTimeMs_ = 0;
     std::function<void()> onFinished_;
     std::function<void()> onError_;
+    std::mutex   lock_;
 };
 
 }  // namespace meta

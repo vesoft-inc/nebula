@@ -19,6 +19,7 @@ class BalancePlan {
     FRIEND_TEST(BalanceTest, BalancePlanTest);
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
+    FRIEND_TEST(BalanceTest, StopBalanceDataTest);
     FRIEND_TEST(BalanceTest, DispatchTasksTest);
 
 public:
@@ -32,6 +33,7 @@ public:
          * forever, it this cases, we should rollback the plan.
          * */
         FAILED             = 0x04,
+        STOPPED            = 0x05,
     };
 
     BalancePlan(BalanceID id, kvstore::KVStore* kv, AdminClient* client)
@@ -39,15 +41,16 @@ public:
         , kv_(kv)
         , client_(client) {}
 
-    BalancePlan(const BalancePlan& plan)
+    BalancePlan(BalancePlan&& plan)
         : id_(plan.id_)
         , kv_(plan.kv_)
         , client_(plan.client_)
-        , tasks_(plan.tasks_)
+        , tasks_(std::move(plan.tasks_))
         , finishedTaskNum_(plan.finishedTaskNum_)
-        , status_(plan.status_) {}
+        , status_(plan.status_) {
+    }
 
-    void addTask(BalanceTask task) {
+    void addTask(std::unique_ptr<BalanceTask> task) {
         tasks_.emplace_back(std::move(task));
     }
 
@@ -71,9 +74,11 @@ public:
         return id_;
     }
 
-    const std::vector<BalanceTask>& tasks() const {
+    const std::vector<std::unique_ptr<BalanceTask>>& tasks() const {
         return tasks_;
     }
+
+    void stop();
 
 private:
     bool recovery(bool resume = true);
@@ -94,7 +99,7 @@ private:
     BalanceID id_ = 0;
     kvstore::KVStore* kv_ = nullptr;
     AdminClient* client_ = nullptr;
-    std::vector<BalanceTask> tasks_;
+    std::vector<std::unique_ptr<BalanceTask>> tasks_;
     std::mutex lock_;
     size_t finishedTaskNum_ = 0;
     std::function<void()> onFinished_;

@@ -10,6 +10,7 @@
 
 DEFINE_int32(wait_time_after_open_part_ms, 3000,
              "The wait time after open part, zero means no wait");
+DECLARE_uint32(raft_heartbeat_interval_secs);
 
 namespace nebula {
 namespace meta {
@@ -25,10 +26,11 @@ const std::string kBalanceTaskTable = "__b_task__"; // NOLINT
 
 void BalanceTask::invoke() {
     CHECK_NOTNULL(client_);
+    std::lock_guard<std::mutex> guard(lock_);
     if (ret_ == Result::INVALID) {
         endTimeMs_ = time::WallClock::fastNowInMilliSec();
         saveInStore();
-        LOG(ERROR) << taskIdStr_ << "Task invalid!";
+        LOG(ERROR) << taskIdStr_ << "Task invalid or stopped";
         onFinished_();
         return;
     }
@@ -51,10 +53,13 @@ void BalanceTask::invoke() {
             SAVE_STATE();
             if (srcLived_) {
                 client_->transLeader(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
-                    if (!resp.ok()) {
-                        ret_ = Result::FAILED;
-                    } else {
-                        status_ = Status::ADD_PART_ON_DST;
+                    {
+                        std::lock_guard<std::mutex> lg(lock_);
+                        if (!resp.ok()) {
+                            ret_ = Result::FAILED;
+                        } else {
+                            status_ = Status::ADD_PART_ON_DST;
+                        }
                     }
                     invoke();
                 });
@@ -68,13 +73,18 @@ void BalanceTask::invoke() {
             LOG(INFO) << taskIdStr_ << "Open the part as learner on dst.";
             SAVE_STATE();
             client_->addPart(spaceId_, partId_, dst_, true).thenValue([this](auto&& resp) {
-                if (!resp.ok()) {
-                    ret_ = Result::FAILED;
-                } else {
-                    status_ = Status::ADD_LEARNER;
-                    if (FLAGS_wait_time_after_open_part_ms > 0) {
-                        usleep(FLAGS_wait_time_after_open_part_ms * 1000);
+                bool waitFlag = false;
+                {
+                    std::lock_guard<std::mutex> lg(lock_);
+                    if (!resp.ok()) {
+                        ret_ = Result::FAILED;
+                    } else {
+                        status_ = Status::ADD_LEARNER;
+                        waitFlag = true;
                     }
+                }
+                if (waitFlag && FLAGS_wait_time_after_open_part_ms > 0) {
+                    usleep(FLAGS_wait_time_after_open_part_ms * 1000);
                 }
                 invoke();
             });
@@ -84,10 +94,13 @@ void BalanceTask::invoke() {
             LOG(INFO) << taskIdStr_ << "Add learner dst.";
             SAVE_STATE();
             client_->addLearner(spaceId_, partId_, dst_).thenValue([this](auto&& resp) {
-                if (!resp.ok()) {
-                    ret_ = Result::FAILED;
-                } else {
-                    status_ = Status::CATCH_UP_DATA;
+                {
+                    std::lock_guard<std::mutex> lg(lock_);
+                    if (!resp.ok()) {
+                        ret_ = Result::FAILED;
+                    } else {
+                        status_ = Status::CATCH_UP_DATA;
+                    }
                 }
                 invoke();
             });
@@ -97,11 +110,15 @@ void BalanceTask::invoke() {
             LOG(INFO) << taskIdStr_ << "Waiting for the data catch up.";
             SAVE_STATE();
             client_->waitingForCatchUpData(spaceId_, partId_, dst_).thenValue([this](auto&& resp) {
-                if (!resp.ok()) {
-                    ret_ = Result::FAILED;
-                } else {
-                    status_ = Status::MEMBER_CHANGE_ADD;
+                {
+                    std::lock_guard<std::mutex> lg(lock_);
+                    if (!resp.ok()) {
+                        ret_ = Result::FAILED;
+                    } else {
+                        status_ = Status::MEMBER_CHANGE_ADD;
+                    }
                 }
+                sleep(FLAGS_raft_heartbeat_interval_secs);
                 invoke();
             });
             break;
@@ -111,10 +128,17 @@ void BalanceTask::invoke() {
                       << ", it will add the new member on dst host";
             SAVE_STATE();
             client_->memberChange(spaceId_, partId_, dst_, true).thenValue([this](auto&& resp) {
-                if (!resp.ok()) {
-                    ret_ = Result::FAILED;
-                } else {
-                    status_ = Status::MEMBER_CHANGE_REMOVE;
+                {
+                    std::lock_guard<std::mutex> lg(lock_);
+                    if (!resp.ok()) {
+                        // qwer
+                        LOG(INFO) << "eeee " << partId_;
+                        ret_ = Result::FAILED;
+                    } else {
+                        // qwer
+                        LOG(INFO) << "rrrr " << partId_;
+                        status_ = Status::MEMBER_CHANGE_REMOVE;
+                    }
                 }
                 invoke();
             });
@@ -126,10 +150,13 @@ void BalanceTask::invoke() {
             SAVE_STATE();
             client_->memberChange(spaceId_, partId_, src_, false).thenValue(
                     [this] (auto&& resp) {
-                if (!resp.ok()) {
-                    ret_ = Result::FAILED;
-                } else {
-                    status_ = Status::UPDATE_PART_META;
+                {
+                    std::lock_guard<std::mutex> lg(lock_);
+                    if (!resp.ok()) {
+                        ret_ = Result::FAILED;
+                    } else {
+                        status_ = Status::UPDATE_PART_META;
+                    }
                 }
                 invoke();
             });
@@ -143,10 +170,13 @@ void BalanceTask::invoke() {
                 // The callback will be called inside raft set value. So don't call invoke directly
                 // here.
                 LOG(INFO) << "Update meta succeeded!";
-                if (!resp.ok()) {
-                    ret_ = Result::FAILED;
-                } else {
-                    status_ = Status::REMOVE_PART_ON_SRC;
+                {
+                    std::lock_guard<std::mutex> lg(lock_);
+                    if (!resp.ok()) {
+                        ret_ = Result::FAILED;
+                    } else {
+                        status_ = Status::REMOVE_PART_ON_SRC;
+                    }
                 }
                 invoke();
             });
@@ -157,11 +187,14 @@ void BalanceTask::invoke() {
             SAVE_STATE();
             if (srcLived_) {
                 client_->removePart(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
-                    if (!resp.ok()) {
-                        ret_ = Result::FAILED;
-                    } else {
-                        ret_ = Result::SUCCEEDED;
-                        status_ = Status::END;
+                    {
+                        std::lock_guard<std::mutex> lg(lock_);
+                        if (!resp.ok()) {
+                            ret_ = Result::FAILED;
+                        } else {
+                            ret_ = Result::SUCCEEDED;
+                            status_ = Status::END;
+                        }
                     }
                     invoke();
                 });
@@ -184,6 +217,7 @@ void BalanceTask::invoke() {
 }
 
 void BalanceTask::rollback() {
+    std::lock_guard<std::mutex> lg(lock_);
     if (status_ < Status::UPDATE_PART_META) {
         // TODO(heng): restart the part on its peers.
     } else {

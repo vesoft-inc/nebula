@@ -138,6 +138,10 @@ folly::Future<Status> AdminClient::memberChange(GraphSpaceID spaceId,
     if (!ret.ok()) {
         return ret.status();
     }
+    // qwer
+    for (const auto& h : ret.value()) {
+        LOG(INFO) << "[AdminClient] send member change to " << h << " " << partId;
+    }
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
     getResponse(ret.value(), 0, std::move(req), [] (auto client, auto request) {
@@ -354,12 +358,12 @@ void AdminClient::getResponse(
                             leaderIndex++;
                         }
                         if (leaderIndex == (int32_t)hosts.size()) {
-                            LOG(ERROR) << "The new leader is " << leader;
-                            for (auto& h : hosts) {
-                                LOG(ERROR) << "The peer is " << h;
-                            }
-                            p.setValue(Status::Error("Can't find leader in current peers"));
-                            return;
+                            // In some cases (e.g. balance task is failed in member change remove
+                            // phase, and the new host is elected as leader somehow), the peers of
+                            // this partition in meta doesn't include new host, which will make
+                            // this task failed forever.
+                            index = leaderIndex;
+                            hosts.emplace_back(leader);
                         }
                         LOG(INFO) << "Return leader change from " << hosts[index]
                                   << ", new leader is " << leader

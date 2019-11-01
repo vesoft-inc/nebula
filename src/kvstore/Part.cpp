@@ -152,7 +152,9 @@ void Part::asyncAtomicOp(raftex::AtomicOp op, KVCallback cb) {
 void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
     std::string log = encodeHost(OP_ADD_LEARNER, learner);
     sendCommandAsync(std::move(log))
-        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
+        .thenValue([callback = std::move(cb), learner, this] (AppendLogResult res) mutable {
+        LOG(INFO) << idStr_ << "[xxx] add learner " << learner
+                  << ", result: " << static_cast<int32_t>(toResultCode(res));
         callback(toResultCode(res));
     });
 }
@@ -160,7 +162,9 @@ void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
 void Part::asyncTransferLeader(const HostAddr& target, KVCallback cb) {
     std::string log = encodeHost(OP_TRANS_LEADER, target);
     sendCommandAsync(std::move(log))
-        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
+        .thenValue([callback = std::move(cb), target, this] (AppendLogResult res) mutable {
+        LOG(INFO) << idStr_ << "[xxx] transfer leader to " << target
+                  << ", result: " << static_cast<int32_t>(toResultCode(res));
         callback(toResultCode(res));
     });
 }
@@ -168,7 +172,9 @@ void Part::asyncTransferLeader(const HostAddr& target, KVCallback cb) {
 void Part::asyncAddPeer(const HostAddr& peer, KVCallback cb) {
     std::string log = encodeHost(OP_ADD_PEER, peer);
     sendCommandAsync(std::move(log))
-        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
+        .thenValue([callback = std::move(cb), peer, this] (AppendLogResult res) mutable {
+        LOG(INFO) << idStr_ << "[xxx] add peer " << peer
+                  << ", result: " << static_cast<int32_t>(toResultCode(res));
         callback(toResultCode(res));
     });
 }
@@ -176,7 +182,9 @@ void Part::asyncAddPeer(const HostAddr& peer, KVCallback cb) {
 void Part::asyncRemovePeer(const HostAddr& peer, KVCallback cb) {
     std::string log = encodeHost(OP_REMOVE_PEER, peer);
     sendCommandAsync(std::move(log))
-        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
+        .thenValue([callback = std::move(cb), peer, this] (AppendLogResult res) mutable {
+        LOG(INFO) << idStr_ << "[xxx] remove peer " << peer
+                  << ", result: " << static_cast<int32_t>(toResultCode(res));
         callback(toResultCode(res));
     });
 }
@@ -360,6 +368,7 @@ bool Part::preProcessLog(LogID logId,
                 auto learner = decodeHost(OP_ADD_LEARNER, log);
                 auto ts = getTimestamp(log);
                 if (ts > startTimeMs_) {
+                    LOG(INFO) << idStr_ << "qwer add learner " << learner;
                     addLearner(learner);
                 } else {
                     LOG(INFO) << idStr_ << "Skip stale add learner " << learner;
@@ -370,6 +379,7 @@ bool Part::preProcessLog(LogID logId,
                 auto newLeader = decodeHost(OP_TRANS_LEADER, log);
                 auto ts = getTimestamp(log);
                 if (ts > startTimeMs_) {
+                    LOG(INFO) << idStr_ << "qwer trans leader " << newLeader;
                     preProcessTransLeader(newLeader);
                 } else {
                     LOG(INFO) << idStr_ << "Skip stale transfer leader " << newLeader;
@@ -380,6 +390,8 @@ bool Part::preProcessLog(LogID logId,
                 auto peer = decodeHost(OP_ADD_PEER, log);
                 auto ts = getTimestamp(log);
                 if (ts > startTimeMs_) {
+                    LOG(INFO) << idStr_ << "qwer add peer " << peer
+                              << " " << static_cast<int32_t>(role_);
                     addPeer(peer);
                 } else {
                     LOG(INFO) << idStr_ << "Skip stale add peer " << peer;
@@ -390,6 +402,7 @@ bool Part::preProcessLog(LogID logId,
                 auto peer = decodeHost(OP_REMOVE_PEER, log);
                 auto ts = getTimestamp(log);
                 if (ts > startTimeMs_) {
+                    LOG(INFO) << idStr_ << "qwer remove peer " << peer;
                     preProcessRemovePeer(peer);
                 } else {
                     LOG(INFO) << idStr_ << "Skip stale remove peer " << peer;
