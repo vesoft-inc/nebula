@@ -327,8 +327,9 @@ void FileBasedWal::prepareNewFile(LogID startLogId) {
 }
 
 
-TermID FileBasedWal::readTermId(const char* path, LogID logId) {
-    int32_t fd = open(path, O_RDONLY);
+TermID FileBasedWal::readTermId(WalFileInfoPtr info, LogID logId) {
+    auto path = info->path();
+    int32_t fd = open(path, O_RDWR);
     if (fd < 0) {
         LOG(FATAL) << "Failed to open file \"" << path
                    << "\" (errno: " << errno << "): "
@@ -336,6 +337,7 @@ TermID FileBasedWal::readTermId(const char* path, LogID logId) {
     }
 
     size_t pos = 0;
+    TermID term = 0;
     while (true) {
         // Read the log Id
         LogID id = 0;
@@ -347,18 +349,11 @@ TermID FileBasedWal::readTermId(const char* path, LogID logId) {
         }
 
         // Read the term Id
-        TermID term = 0;
         if (pread(fd, &term, sizeof(TermID), pos + sizeof(LogID)) != sizeof(TermID)) {
             LOG(ERROR) << "Failed to read the term id (errno "
                        << errno << "): " << strerror(errno);
             close(fd);
             return 0;
-        }
-
-        if (id == logId) {
-            // Found
-            close(fd);
-            return term;
         }
 
         // Read the message length
@@ -377,15 +372,28 @@ TermID FileBasedWal::readTermId(const char* path, LogID logId) {
                + sizeof(ClusterID)
                + 2 * sizeof(int32_t)
                + len;
+
+        if (id == logId) {
+            break;
+        }
     }
 
-    LOG(FATAL) << "Should never reach here";
+    if (0 < pos && pos < FileUtils::fileSize(path)) {
+        LOG(INFO) << "Found log " << logId << ", truncate from offset " << pos;
+        if (ftruncate(fd, pos) < 0) {
+            LOG(FATAL) << "Failed to truncate file \"" << path
+                       << "\" (errno: " << errno << "): "
+                       << strerror(errno);
+        }
+        info->setSize(pos);
+    }
+    close(fd);
+    return term;
 }
 
 
 void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId, LogID expectedLastWalId) {
     auto* path = info->path();
-    // qwer
     int32_t fd = open(path, O_RDWR);
     if (fd < 0) {
         LOG(FATAL) << "Failed to open file \"" << path
@@ -435,10 +443,6 @@ void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId, LogID expecte
         info->setLastTerm(term);
         info->setLastId(id);
 
-        if (expectedLastWalId > 0 && curLogId == expectedLastWalId) {
-            break;
-        }
-
         // Move to the next log
         pos += sizeof(LogID)
                + sizeof(TermID)
@@ -446,16 +450,21 @@ void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId, LogID expecte
                + sizeof(int32_t)
                + head
                + sizeof(int32_t);
+
+        if (expectedLastWalId > 0 && curLogId == expectedLastWalId) {
+            break;
+        }
         ++curLogId;
     }
 
-    if (pos < 0 && pos < FileUtils::fileSize(path)) {
+    if (0 < pos && pos < FileUtils::fileSize(path)) {
         LOG(WARNING) << "Invalid wal " << path << ", truncate from offset " << pos;
         if (ftruncate(fd, pos) < 0) {
             LOG(FATAL) << "Failed to truncate file \"" << path
                        << "\" (errno: " << errno << "): "
                        << strerror(errno);
         }
+        info->setSize(pos);
     }
 
     close(fd);
@@ -627,7 +636,7 @@ bool FileBasedWal::rollbackToLog(LogID id) {
                     << ", the last WAL file is now \""
                     << walFiles_.rbegin()->second->path() << "\"";
             lastLogId_ = id;
-            lastLogTerm_ = readTermId(walFiles_.rbegin()->second->path(), lastLogId_);
+            lastLogTerm_ = readTermId(walFiles_.rbegin()->second, lastLogId_);
         }
 
         // Create the next WAL file
@@ -638,24 +647,8 @@ bool FileBasedWal::rollbackToLog(LogID id) {
     // 2. Roll back in-memory buffers
     //------------------------------
     {
-        // First rollback from buffers
         std::unique_lock<std::mutex> g(buffersMutex_);
-
-        // Remove all buffers that are rolled back
-        auto it = buffers_.begin();
-        while (it != buffers_.end() && (*it)->firstLogId() <= id) {
-            it++;
-        }
-        while (it != buffers_.end()) {
-            it = buffers_.erase(it);
-        }
-
-        // Need to rollover to a new buffer
-        if (buffers_.size() == policy_.numBuffers) {
-            // Need to pop the first one
-            buffers_.pop_front();
-        }
-        buffers_.emplace_back(std::make_shared<InMemoryLogBuffer>(id + 1));
+        buffers_.clear();
     }
 
     return true;

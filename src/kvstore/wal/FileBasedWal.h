@@ -149,7 +149,7 @@ private:
     // Prepare a new wal file starting from the given log id
     void prepareNewFile(LogID startLogId);
     // Retrieve the term id for the given log id in the given WAL file
-    TermID readTermId(const char* path, LogID logId);
+    TermID readTermId(WalFileInfoPtr info, LogID logId);
 
     // Return the last buffer.
     // If the last buffer is big enough, create a new one
