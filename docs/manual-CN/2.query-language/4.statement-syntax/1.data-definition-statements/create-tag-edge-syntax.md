@@ -39,7 +39,7 @@ Nebula 的图结构由带有属性的 tags 和 edges 组成。`CREATE TAG` 使�
 * **data_type**
 
     data_type 表示每个属性的数据类。更多关于 Nebula 支持的数据类型信息请参见 data-type 区文档。
-    
+
     > NULL 和 NOT NULL 在创建 tag 和 edge 时不可用。(相比于关系型数据库).
 
 ### Time-to-Live (TTL) 语法
@@ -48,7 +48,7 @@ Nebula 的图结构由带有属性的 tags 和 edges 组成。`CREATE TAG` 使�
 
     TTL_DURATION 指定了 vertices 和 edges 的有效期，超过有效期的数据会失效。失效时间为 TTL_COL 设置的属性值加 TTL_DURATION 设置的秒数。
 
-    > 如果 TTL_DURATION 的值为负或0，则该 edge 不会失效。
+    > 如果 TTL_DURATION 的值为负或 0，则该 edge 不会失效。
 
 * TTL_COL
 
@@ -61,27 +61,26 @@ Nebula 的图结构由带有属性的 tags 和 edges 组成。`CREATE TAG` 使�
 ### 示例
 
 ```
-CREATE TAG course(name string, credits int) 
+CREATE TAG course(name string, credits int)
 CREATE TAG notag()  -- empty properties
 
 CREATE EDGE follow(start_time timestamp, likeness double)
 CREATE EDGE noedge()  -- empty properties
 
-CREATE TAG woman(name string, age int, 
+CREATE TAG woman(name string, age int,
    married bool, salary double, create_time timestamp)
    TTL_DURATION = 100, TTL_COL = create_time -- expired when now is later than create_time + 100
-   
+
 CREATE EDGE marriage(location string, since timestamp)
     TTL_DURATION = 0, TTL_COL = since -- negative or zero, not expire
-   
+
 CREATE TAG icecream(made timestamp, temperature int)
    TTL_DURATION = 100, TTL_COL = made,
-   TTL_DURATION = 10, TTL_COL = temperature 
+   TTL_DURATION = 10, TTL_COL = temperature
    --  no matter which comes first: made + 100 or temperature + 10
- 
+
 CREATE EDGE garbage (thrown timestamp, temperature int)
-   TTL_DURATION = -2, TTL_COL = thrown, 
-   TTL_DURATION = 10, TTL_COL = thrown 
+   TTL_DURATION = -2, TTL_COL = thrown,
+   TTL_DURATION = 10, TTL_COL = thrown
    --  legal, but not recommended. expired at thrown + 10
 ```
-

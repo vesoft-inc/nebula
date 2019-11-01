@@ -35,7 +35,8 @@ bool removeDir(const char* path, bool recursively) {
             // Skip "." and ".."
             continue;
         }
-        if (dEnt->d_type == DT_DIR && !recursively) {
+
+        if (FileUtils::isDir(dEnt, path) && !recursively) {
             LOG(ERROR) << "Cannot remove the directory \"" << path
                        << "\" because it contains sub-directory \""
                        << dEnt->d_name << "\"";
@@ -378,13 +379,13 @@ std::vector<std::string> FileUtils::listAllTypedEntitiesInDir(
     }
 
     while ((dirInfo = readdir(dir)) != nullptr) {
-        if ((type == FileType::REGULAR && dirInfo->d_type == DT_REG) ||
-            (type == FileType::DIRECTORY && dirInfo->d_type == DT_DIR) ||
-            (type == FileType::SYM_LINK && dirInfo->d_type == DT_LNK) ||
-            (type == FileType::CHAR_DEV && dirInfo->d_type == DT_CHR) ||
-            (type == FileType::BLOCK_DEV && dirInfo->d_type == DT_BLK) ||
-            (type == FileType::FIFO && dirInfo->d_type == DT_FIFO) ||
-            (type == FileType::SOCKET && dirInfo->d_type == DT_SOCK)) {
+        if ((type == FileType::REGULAR && FileUtils::isReg(dirInfo, dirpath)) ||
+            (type == FileType::DIRECTORY && FileUtils::isDir(dirInfo, dirpath)) ||
+            (type == FileType::SYM_LINK && FileUtils::isLink(dirInfo, dirpath)) ||
+            (type == FileType::CHAR_DEV && FileUtils::isChr(dirInfo, dirpath)) ||
+            (type == FileType::BLOCK_DEV && FileUtils::isBlk(dirInfo, dirpath)) ||
+            (type == FileType::FIFO && FileUtils::isFifo(dirInfo, dirpath)) ||
+            (type == FileType::SOCKET && FileUtils::isSock(dirInfo, dirpath))) {
             if (!strcmp(dirInfo->d_name, ".") || !strcmp(dirInfo->d_name, "..")) {
                 // Skip the "." and ".."
                 continue;
@@ -529,6 +530,14 @@ void FileUtils::Iterator::openFileOrDirectory() {
     status_ = Status::OK();
 }
 
+
+CHECK_TYPE(Reg, REGULAR, REG)
+CHECK_TYPE(Dir, DIRECTORY, DIR)
+CHECK_TYPE(Link, SYM_LINK, LNK)
+CHECK_TYPE(Chr, CHAR_DEV, CHR)
+CHECK_TYPE(Blk, BLOCK_DEV, BLK)
+CHECK_TYPE(Fifo, FIFO, FIFO)
+CHECK_TYPE(Sock, SOCKET, SOCK)
 }  // namespace fs
 }  // namespace nebula
 

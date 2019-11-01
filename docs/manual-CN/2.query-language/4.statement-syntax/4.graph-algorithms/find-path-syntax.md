@@ -1,4 +1,4 @@
-# FIND PATH 语句
+# FIND PATH 语法
 
 `FIND PATH` 语句用于获取最短路径及全路径
 
@@ -11,20 +11,20 @@ OVER <edge_type_list> [UPTO <N> STEPS]
 
 `ALL` 寻找全路径关键词。
 
-`<vertex_id_list>::=[vertex_id [, vertex_id]]` 节点列表，用逗号隔开。支持输入```$-```及变量```$var```。
+`<vertex_id_list>::=[vertex_id [, vertex_id]]` 节点列表，用逗号隔开。支持输入 ```$-``` 及变量 ```$var```。
 
-`<edge_type_list>` 指定边的类型，多种边类型用```,```隔开，用```*```表示所有边类型。
+`<edge_type_list>` 指定边的类型，多种边类型用 ```,``` 隔开，用 ```*``` 表示所有边类型。
 
-`<N>` 跳数，默认值5。
+`<N>` 跳数，默认值 5。
 
 ## 注意事项
 
-- 当起点及终点是ID列表时，表示寻找从任意起点开始到终点的最短路径。
+- 当起点及终点是 ID 列表时，表示寻找从任意起点开始到终点的最短路径。
 - 全路径会有环。
 
 ## 示例
 
-在console中，路径显示方式为 `id <edge_name, ranking> id`。
+在 console 中，路径显示方式为 `id <edge_name, ranking> id`。
 
 ```SQL
 nebula> FIND SHORTEST PATH FROM 200 to 201 OVER *
