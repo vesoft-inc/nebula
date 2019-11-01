@@ -668,7 +668,8 @@ StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceTagIndexByName_.find(std::make_pair(space, name));
     if (it == spaceTagIndexByName_.end()) {
-        return Status::Error("Tag is not exist!");
+        std::string error = folly::stringPrintf("TagName `%s'  is nonexistent", name.c_str());
+        return Status::Error(std::move(error));
     }
     return it->second;
 }
@@ -682,7 +683,8 @@ StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& sp
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceEdgeIndexByName_.find(std::make_pair(space, name));
     if (it == spaceEdgeIndexByName_.end()) {
-        return Status::Error("Edge is no exist!");
+        std::string error = folly::stringPrintf("EdgeName `%s'  is nonexistent", name.c_str());
+        return Status::Error(std::move(error));
     }
     return it->second;
 }
@@ -695,7 +697,8 @@ StatusOr<std::string> MetaClient::getEdgeNameByTypeFromCache(const GraphSpaceID&
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceEdgeIndexByType_.find(std::make_pair(space, edgeType));
     if (it == spaceEdgeIndexByType_.end()) {
-        return Status::Error("Edge is no exist!");
+        std::string error = folly::stringPrintf("EdgeType `%d'  is nonexistent", edgeType);
+        return Status::Error(std::move(error));
     }
     return it->second;
 }
@@ -707,7 +710,8 @@ StatusOr<std::vector<std::string>> MetaClient::getAllEdgeFromCache(const GraphSp
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceAllEdgeMap_.find(space);
     if (it == spaceAllEdgeMap_.end()) {
-        return Status::Error("Edge is no exist!");
+        std::string error = folly::stringPrintf("SpaceId `%d'  is nonexistent", space);
+        return Status::Error(std::move(error));
     }
     return it->second;
 }
