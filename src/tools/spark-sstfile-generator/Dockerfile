@@ -1,4 +1,4 @@
-from vesoft/nebula-dev:centos7 as builder
+FROM vesoft/nebula-dev:centos7 as builder
 
 ENV JAVA_HOME='/usr/lib/jvm/java-1.8.0'
 ENV JRE_HOME="$JAVA_HOME/jre"
@@ -65,6 +65,8 @@ RUN yum update -y \
     && wget -qO- https://mirrors.tuna.tsinghua.edu.cn/apache/hadoop/common/hadoop-2.7.7/hadoop-2.7.7.tar.gz | tar -xvzf - \
     \
 # Spark
-    && wget -qO- https://archive.apache.org/dist/spark/spark-1.6.2/spark-1.6.2-bin-hadoop2.6.tgz | tar -xvzf -
+    && wget -qO- https://archive.apache.org/dist/spark/spark-1.6.2/spark-1.6.2-bin-hadoop2.6.tgz | tar -xvzf - \
+    && yum clean all \
+    && rm -rf /var/cache/yum
 
 ENTRYPOINT ["/root/invoke.sh"]
