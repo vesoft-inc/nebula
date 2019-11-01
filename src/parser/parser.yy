@@ -27,6 +27,9 @@ class GraphScanner;
     static int yylex(nebula::GraphParser::semantic_type* yylval,
                      nebula::GraphParser::location_type *yylloc,
                      nebula::GraphScanner& scanner);
+
+    void ifOutOfRange(const int64_t input,
+                      const nebula::GraphParser::location_type& loc);
 }
 
 %union {
@@ -131,7 +134,7 @@ class GraphScanner;
 %type <strval> name_label unreserved_keyword agg_function
 %type <expr> expression logic_xor_expression logic_or_expression logic_and_expression
 %type <expr> relational_expression multiplicative_expression additive_expression arithmetic_xor_expression
-%type <expr> unary_expression primary_expression equality_expression
+%type <expr> unary_expression primary_expression equality_expression base_expression
 %type <expr> src_ref_expression
 %type <expr> dst_ref_expression
 %type <expr> input_ref_expression
@@ -280,9 +283,21 @@ agg_function
 
 primary_expression
     : INTEGER {
+        ifOutOfRange($1, @1);
         $$ = new PrimaryExpression($1);
     }
-    | DOUBLE {
+    | MINUS INTEGER {
+        $$ = new PrimaryExpression(-$2);;
+    }
+    | MINUS base_expression {
+        $$ = new UnaryExpression(UnaryExpression::NEGATE, $2);
+    }
+    | base_expression {
+        $$ = $1;
+    }
+
+base_expression
+    : DOUBLE {
         $$ = new PrimaryExpression($1);
     }
     | STRING {
@@ -410,9 +425,6 @@ unary_expression
     : primary_expression { $$ = $1; }
     | PLUS unary_expression {
         $$ = new UnaryExpression(UnaryExpression::PLUS, $2);
-    }
-    | MINUS unary_expression {
-        $$ = new UnaryExpression(UnaryExpression::NEGATE, $2);
     }
     | NOT unary_expression {
         $$ = new UnaryExpression(UnaryExpression::NOT, $2);
@@ -548,8 +560,14 @@ go_sentence
 
 step_clause
     : %empty { $$ = new StepClause(); }
-    | INTEGER KW_STEPS { $$ = new StepClause($1); }
-    | KW_UPTO INTEGER KW_STEPS { $$ = new StepClause($2, true); }
+    | INTEGER KW_STEPS {
+        ifOutOfRange($1, @1);
+        $$ = new StepClause($1);
+    }
+    | KW_UPTO INTEGER KW_STEPS {
+        ifOutOfRange($2, @2);
+        $$ = new StepClause($2, true);
+    }
     ;
 
 from_clause
@@ -586,12 +604,14 @@ vid
 
 unary_integer
     : PLUS INTEGER {
+        ifOutOfRange($2, @2);
         $$ = $2;
     }
     | MINUS INTEGER {
         $$ = -$2;
     }
     | INTEGER {
+        ifOutOfRange($1, @1);
         $$ = $1;
     }
     ;
@@ -865,7 +885,10 @@ find_path_sentence
 
 find_path_upto_clause
     : %empty { $$ = new StepClause(5, true); }
-    | KW_UPTO INTEGER KW_STEPS { $$ = new StepClause($2, true); }
+    | KW_UPTO INTEGER KW_STEPS {
+        ifOutOfRange($2, @2);
+        $$ = new StepClause($2, true);
+    }
     ;
 
 to_clause
@@ -878,9 +901,20 @@ to_clause
     ;
 
 limit_sentence
-    : KW_LIMIT INTEGER { $$ = new LimitSentence(0, $2); }
-    | KW_LIMIT INTEGER COMMA INTEGER { $$ = new LimitSentence($2, $4); }
-    | KW_LIMIT INTEGER KW_OFFSET INTEGER { $$ = new LimitSentence($2, $4); }
+    : KW_LIMIT INTEGER {
+        ifOutOfRange($2, @2);
+        $$ = new LimitSentence(0, $2);
+    }
+    | KW_LIMIT INTEGER COMMA INTEGER {
+        ifOutOfRange($2, @2);
+        ifOutOfRange($4, @2);
+        $$ = new LimitSentence($2, $4);
+    }
+    | KW_LIMIT INTEGER KW_OFFSET INTEGER {
+        ifOutOfRange($2, @2);
+        ifOutOfRange($4, @4);
+        $$ = new LimitSentence($2, $4);
+    }
     ;
 
 group_by_sentence
@@ -1558,9 +1592,11 @@ space_opt_list
 
 space_opt_item
     : KW_PARTITION_NUM ASSIGN INTEGER {
+        ifOutOfRange($3, @3);
         $$ = new SpaceOptItem(SpaceOptItem::PARTITION_NUM, $3);
     }
     | KW_REPLICA_FACTOR ASSIGN INTEGER {
+        ifOutOfRange($3, @3);
         $$ = new SpaceOptItem(SpaceOptItem::REPLICA_FACTOR, $3);
     }
     // TODO(YT) Create Spaces for different engines
@@ -1748,6 +1784,7 @@ balance_sentence
         $$ = new BalanceSentence(BalanceSentence::SubType::kData);
     }
     | KW_BALANCE KW_DATA INTEGER {
+        ifOutOfRange($3, @3);
         $$ = new BalanceSentence($3);
     }
     | KW_BALANCE KW_DATA KW_STOP {
@@ -1859,6 +1896,12 @@ void nebula::GraphParser::error(const nebula::GraphParser::location_type& loc,
     errmsg = os.str();
 }
 
+void ifOutOfRange(const int64_t input,
+                  const nebula::GraphParser::location_type& loc) {
+    if ((uint64_t)input == 9223372036854775808ULL) {
+        throw nebula::GraphParser::syntax_error(loc, "out of range");
+    }
+}
 
 #include "GraphScanner.h"
 static int yylex(nebula::GraphParser::semantic_type* yylval,
