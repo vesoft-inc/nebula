@@ -117,7 +117,7 @@ nebula_add_test(
         data_test
     SOURCES
         DataTest.cpp
-        OBJECTS
+    OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:client_cpp_obj>

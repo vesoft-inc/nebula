@@ -14,9 +14,9 @@
 #include <boost/geometry/geometries/polygon.hpp>
 #include <s2/s2region_coverer.h>
 
-DECLARE_int32(min_cell_level);
-DECLARE_int32(max_cell_level);
-DECLARE_int32(max_cover_cell_num);
+DECLARE_uint32(min_cell_level);
+DECLARE_uint32(max_cell_level);
+DECLARE_uint32(max_cover_cell_num);
 
 namespace nebula {
 namespace geo {
@@ -42,6 +42,16 @@ constexpr double kEarthRadiusMeters = (6371.000 * 1000);
 
 struct RegionCoverParams {
 public:
+    static bool maxCellLevelValidator(const char *flag, uint32_t value) {
+        UNUSED(flag);
+        return value <= 30;
+    }
+
+    static bool minCellLevelValidator(const char *flag, uint32_t value) {
+        UNUSED(flag);
+        return value <= 30;
+    }
+
     S2RegionCoverer::Options regionCovererOpts() const {
         S2RegionCoverer::Options opts;
         opts.set_min_level(minCellLevel_);
@@ -52,11 +62,11 @@ public:
 
 public:
     // minCellLevel indicates the min level that used by covering. [0, 30]
-    int minCellLevel_ = FLAGS_min_cell_level;
+    uint32_t minCellLevel_ = FLAGS_min_cell_level;
     // maxCellLevel_ indicates the max level that used by covering. [0, 30]
-    int maxCellLevel_ = FLAGS_max_cell_level;
+    uint32_t maxCellLevel_ = FLAGS_max_cell_level;
     // maxCoverCellNum_ indicates the max number cells that covering the regin.
-    int maxCoverCellNum_ = FLAGS_max_cover_cell_num;
+    uint32_t maxCoverCellNum_ = FLAGS_max_cover_cell_num;
 };
 
 }  // namespace geo

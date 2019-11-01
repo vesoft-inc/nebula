@@ -30,7 +30,7 @@ Status GeoIndex::indexCells(const GeoVariant &gv, std::vector<S2CellId> &cells) 
     return status;
 }
 
-Status GeoIndex::indexCellsForPoint(const Point p, std::vector<S2CellId> &cells) {
+Status GeoIndex::indexCellsForPoint(const Point &p, std::vector<S2CellId> &cells) {
     const auto sll = S2LatLng::FromDegrees(p.x(), p.y());
     const S2CellId s2Id(sll);
 
@@ -41,7 +41,7 @@ Status GeoIndex::indexCellsForPoint(const Point p, std::vector<S2CellId> &cells)
     return Status::OK();
 }
 
-Status GeoIndex::indexCellsForLineString(const LineString line, std::vector<S2CellId> &cells) {
+Status GeoIndex::indexCellsForLineString(const LineString &line, std::vector<S2CellId> &cells) {
     S2Polyline s2Line;
     std::vector<S2LatLng> slls;
     for (auto &p : line) {
@@ -62,7 +62,7 @@ Status GeoIndex::indexCellsForLineString(const LineString line, std::vector<S2Ce
     return Status::OK();
 }
 
-Status GeoIndex::indexCellsForPolygon(const Polygon polygon, std::vector<S2CellId> &cells) {
+Status GeoIndex::indexCellsForPolygon(const Polygon &polygon, std::vector<S2CellId> &cells) {
     UNUSED(polygon);
     UNUSED(cells);
     // TODO:

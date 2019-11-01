@@ -15,6 +15,7 @@ DECLARE_int32(load_data_interval_secs);
 
 namespace nebula {
 namespace graph {
+
 class GeoTest : public TestBase {
 protected:
     void SetUp() override {
@@ -139,7 +140,7 @@ AssertionResult GeoTest::prepareSchema() {
         }
     }
 
-    sleep(12);
+    sleep(10 + 3);
     return TestOK();
 }
 

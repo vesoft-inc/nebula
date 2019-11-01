@@ -18,7 +18,14 @@
 namespace nebula {
 namespace geo {
 StatusOr<std::string> GeoFilter::near(const std::vector<VariantType> &args) {
+    if (args.size() < 3) {
+        return Status::Error("Function `near' should be given 3 args.");
+    }
+
+    // `predicate' is a reserved args,
+    // we might use it when we support geo with index.
     auto predicate = args[0];
+    UNUSED(predicate);
 
     std::string pointWkt = kWktPointPrefix;
     pointWkt.append(boost::get<std::string>(args[1]));
