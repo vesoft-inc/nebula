@@ -1,6 +1,6 @@
 # CREATE SPACE 语法
 
-```sql
+```
 CREATE SPACE space_name
     (space_option,...)
 
@@ -8,7 +8,7 @@ space_option:
     option_name = value
 ```
 
-以上语法作用是创建一个新的图空间。不同的图空间是物理隔离的。 
+以上语句作用是创建一个新的图空间。不同的图空间是物理隔离的。 
 
 ## Space Name 图空间名
 
@@ -25,13 +25,13 @@ space_option:
 
 * _replica_factor_
 
-    _replica_factor_ 表示副本数量。默认值是 1, 集群建议为 3
+    _replica_factor_ 表示副本数量。默认值是 1，集群建议为 3
 
 如果没有自定义选项，Nebula 会使用默认的值（partition_number 和 replica_factor）来创建图空间。
 
 ### 示例
 
-```sql
+```
 CREATE SPACE my_space_1; -- 使用默认选项创建图空间
 CREATE SPACE my_space_2(partition_num=100); -- 使用默认 replica_factor 创建图空间
 CREATE SPACE my_space_3(replica_factor=1);  -- 使用默认 partition_number 创建图空间

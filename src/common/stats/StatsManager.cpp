@@ -306,7 +306,7 @@ StatusOr<StatsManager::VT> StatsManager::readStats(const std::string& counterNam
         auto it = sm.nameMap_.find(counterName);
         if (it == sm.nameMap_.end()) {
             // Not found
-            return Status::Error("Stats not found \"%s\"", counterName);
+            return Status::Error("Stats not found \"%s\"", counterName.c_str());
         }
 
         index = it->second;
@@ -330,7 +330,7 @@ StatusOr<StatsManager::VT> StatsManager::readHisto(const std::string& counterNam
         auto it = sm.nameMap_.find(counterName);
         if (it == sm.nameMap_.end()) {
             // Not found
-            return Status::Error("Stats not found \"%s\"", counterName);
+            return Status::Error("Stats not found \"%s\"", counterName.c_str());
         }
 
         index = it->second;

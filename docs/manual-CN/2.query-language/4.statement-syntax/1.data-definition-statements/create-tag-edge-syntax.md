@@ -7,7 +7,7 @@ CREATE {TAG | EDGE} tag_name|edge_name
   
 create_definition:
     prop_name data_type
-
+    
 tag_edge_options:
     option [, option ...]
 
@@ -39,6 +39,7 @@ Nebula 的图结构由带有属性的 tags 和 edges 组成。`CREATE TAG` 使�
 * **data_type**
 
     data_type 表示每个属性的数据类。更多关于 Nebula 支持的数据类型信息请参见 data-type 区文档。
+
     > NULL 和 NOT NULL 在创建 tag 和 edge 时不可用。(相比于关系型数据库).
 
 ### Time-to-Live (TTL) 语法
@@ -47,7 +48,7 @@ Nebula 的图结构由带有属性的 tags 和 edges 组成。`CREATE TAG` 使�
 
     TTL_DURATION 指定了 vertices 和 edges 的有效期，超过有效期的数据会失效。失效时间为 TTL_COL 设置的属性值加 TTL_DURATION 设置的秒数。
 
-    > 如果 TTL_DURATION 的值为负或0，则该 edge 不会失效。
+    > 如果 TTL_DURATION 的值为负或 0，则该 edge 不会失效。
 
 * TTL_COL
 
@@ -59,7 +60,7 @@ Nebula 的图结构由带有属性的 tags 和 edges 组成。`CREATE TAG` 使�
 
 ### 示例
 
-```sql
+```
 CREATE TAG course(name string, credits int)
 CREATE TAG notag()  -- empty properties
 

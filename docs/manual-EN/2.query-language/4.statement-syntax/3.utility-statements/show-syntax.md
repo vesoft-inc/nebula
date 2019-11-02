@@ -2,7 +2,7 @@
 
 ```
 SHOW {SPACES | TAGS | EDGES | HOSTS}
-SHOW VARIABLES [graph|meta|storage] 
+SHOW CONFIGS [graph|meta|storage]
 ```
 
 `SHOW SPACES` lists the SPACES on the Nebula Graph cluster. x

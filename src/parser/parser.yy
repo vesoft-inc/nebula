@@ -104,7 +104,7 @@ class GraphScanner;
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
-%token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
+%token KW_CONFIGS KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL_DURATION KW_TTL_COL
 %token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
@@ -290,6 +290,9 @@ input_ref_expression
         // To reference the `id' column implicitly
         $$ = new InputPropertyExpression(new std::string("id"));
     }
+    | INPUT_REF DOT MUL {
+        $$ = new InputPropertyExpression(new std::string("*"));
+    }
     ;
 
 src_ref_expression
@@ -310,6 +313,9 @@ var_ref_expression
     }
     | VARIABLE {
         $$ = new VariablePropertyExpression($1, new std::string("id"));
+    }
+    | VARIABLE DOT MUL {
+        $$ = new VariablePropertyExpression($1, new std::string("*"));
     }
     ;
 
@@ -647,8 +653,10 @@ yield_column
     ;
 
 yield_sentence
-    : KW_YIELD yield_columns {
-        $$ = new YieldSentence($2);
+    : KW_YIELD yield_columns where_clause {
+        auto *s = new YieldSentence($2);
+		s->setWhereClause($3);
+		$$ = s;
     }
     ;
 
@@ -1033,6 +1041,7 @@ traverse_sentence
     | fetch_sentence { $$ = $1; }
     | find_path_sentence { $$ = $1; }
     | limit_sentence { $$ = $1; }
+    | yield_sentence { $$ = $1; }
     ;
 
 set_sentence
@@ -1368,7 +1377,7 @@ show_sentence
     | KW_SHOW KW_ROLES KW_IN name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowRoles, $4);
     }
-    | KW_SHOW KW_VARIABLES show_config_item {
+    | KW_SHOW KW_CONFIGS show_config_item {
         $$ = new ConfigSentence(ConfigSentence::SubType::kShow, $3);
     }
     | KW_SHOW KW_CREATE KW_SPACE name_label {
@@ -1444,6 +1453,12 @@ set_config_item
     }
     | name_label ASSIGN expression {
         $$ = new ConfigRowItem(ConfigModule::ALL, $1, $3);
+    }
+    | config_module_enum COLON name_label ASSIGN L_BRACE update_list R_BRACE {
+        $$ = new ConfigRowItem($1, $3, $6);
+    }
+    | name_label ASSIGN L_BRACE update_list R_BRACE {
+        $$ = new ConfigRowItem(ConfigModule::ALL, $1, $4);
     }
     ;
 
@@ -1624,13 +1639,13 @@ revoke_sentence
     ;
 
 get_config_sentence
-    : KW_GET KW_VARIABLES get_config_item {
+    : KW_GET KW_CONFIGS get_config_item {
         $$ = new ConfigSentence(ConfigSentence::SubType::kGet, $3);
     }
     ;
 
 set_config_sentence
-    : KW_UPDATE KW_VARIABLES set_config_item  {
+    : KW_UPDATE KW_CONFIGS set_config_item  {
         $$ = new ConfigSentence(ConfigSentence::SubType::kSet, $3);
     }
     ;
@@ -1673,11 +1688,6 @@ maintain_sentence
     | create_space_sentence { $$ = $1; }
     | describe_space_sentence { $$ = $1; }
     | drop_space_sentence { $$ = $1; }
-    | yield_sentence {
-        // Now we take YIELD as a normal maintenance sentence.
-        // In the future, we might make it able to be used in pipe.
-        $$ = $1;
-    }
     ;
     | create_user_sentence { $$ = $1; }
     | alter_user_sentence { $$ = $1; }

@@ -1,7 +1,6 @@
 # Order By 函数
 
-类似于 SQL, `ORDER BY` 可以进行升序 (`ASC`) 或降序 (`DESC`) 的排序来返回结果.
-并且它只能在`PIPE`语法 ("|") 中使用
+类似于 SQL, `ORDER BY` 可以进行升序 (`ASC`) 或降序 (`DESC`) 的排序来返回结果，并且它只能在 `PIPE` 语句 ("|") 中使用
 
 ```plain
 ORDER BY <prop> ASC | DESC [, <prop> ASC | DESC ...]
@@ -14,7 +13,7 @@ ORDER BY <prop> ASC | DESC [, <prop> ASC | DESC ...]
 ```SQL
 nebula> FETCH PROP ON player 1,2,3,4 YIELD player.age AS age, player.weight AS weight | ORDER BY $-.age, $-.weight DESC  
 
--- 取4个顶点并将他们以age从小到大的顺序排列，如 age 一致，则按 weight 从大到小的顺序排列。
+-- 取 4 个顶点并将他们以 age 从小到大的顺序排列，如 age 一致，则按 weight 从大到小的顺序排列。
 ```
 
 (参见 `FETCH` 文档来了解使用方法)

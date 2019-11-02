@@ -24,7 +24,10 @@ TEST(Load, SSTLoad) {
     auto s = writer.Open(file);
     ASSERT_TRUE(s.ok());
 
-    writer.Put("key", "value");
+    s = writer.Put("key", "value");
+    ASSERT_TRUE(s.ok());
+    s = writer.Put("key-empty", "");
+    ASSERT_TRUE(s.ok());
     writer.Finish();
 
     auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
@@ -34,6 +37,9 @@ TEST(Load, SSTLoad) {
     std::string result;
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &result));
     EXPECT_EQ("value", result);
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key-empty", &result));
+    EXPECT_EQ("", result);
+    EXPECT_EQ(ResultCode::ERR_KEY_NOT_FOUND, engine->get("key-404", &result));
 }
 
 }   // namespace kvstore

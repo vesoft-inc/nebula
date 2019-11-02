@@ -20,7 +20,7 @@ UNION \
 GO FROM 2 OVER e1
 ```
 
-以上语法返回点 `1` 和 `2` (沿边 `e1`) 关联的唯一的点。
+以上语句返回点 `1` 和 `2` (沿边 `e1`) 关联的唯一的点。
 
 ```sql
 GO FROM 1 OVER e1 \
@@ -28,24 +28,23 @@ UNION ALL\
 GO FROM 2 OVER e1
 ```
 
-returns all the neighbors of vertex `1` and `2`, with all possible duplications.
-以上语法返回点 `1` 和 `2` 关联的点，其中存在重复点。
+以上语句返回点 `1` 和 `2` 关联的点，其中存在重复点。
 
-`UNION` 亦可与 `YIELD` 同时使用，例如以下语法：
+`UNION` 亦可与 `YIELD` 同时使用，例如以下语句：
 
 ```sql
-nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2 -- query 1
+nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2 -- query 1
 ==========================
-| id  | left.1 | left.2  |
+| id  | left_1 | left_2  |
 ==========================
 | 104 |    1   |    2    |    -- line 1
 --------------------------
 | 215 |    4   |    3    |    -- line 3
 --------------------------
 
-nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS right.2  -- query 2
+nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2  -- query 2
 ===========================
-| id  | right.1 | right.2 |
+| id  | right_1 | right_2 |
 ===========================
 | 104 |    1    |    2    |    -- line 1
 ---------------------------
@@ -54,16 +53,16 @@ nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.pro
 ```
 
 ```sql
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2
+GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 UNION /* DISTINCT */
-GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS right.2
+GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 ```
 
-以上语法返回
+以上语句返回
 
 ```sql
 =========================
-| id  | left.1 | left.2 |    -- UNION or UNION DISTINCT. The column names come from query 1
+| id  | left_1 | left_2 |    -- UNION or UNION DISTINCT. The column names come from query 1
 =========================
 | 104 |    1   |    2   |    -- line 1
 -------------------------
@@ -77,12 +76,12 @@ GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS ri
 `UNION ALL` 返回结果为
 
 ```sql
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2
+GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 UNION ALL
-GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS right.2
+GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 
 =========================
-| id  | left.1 | left.2 |    -- UNION ALL
+| id  | left_1 | left_2 |    -- UNION ALL
 =========================
 | 104 |    1   |    2   |    -- line 1
 -------------------------
@@ -106,16 +105,16 @@ GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS ri
 此外，只返回 `<left>` 右 `<right>` 相同的行。例如：
 
 ```sql
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2
+GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 INTERSECT
-GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS right.2
+GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 ```
 
 返回
 
 ```sql
 =========================
-| id  | left.1 | left.2 |
+| id  | left_1 | left_2 |
 =========================
 | 104 |    1   |    2   |    -- line 1
 -------------------------
@@ -123,19 +122,19 @@ GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS ri
 
 ## MINUS
 
-返回 A - B 的差集（属于 A 且不属于 B 的元素），此处请注意运算顺序。例如：
+返回 A - B 数据的差集，此处请注意运算顺序。例如：
 
 ```sql
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2
+GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 MINUS
-GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS right.2
+GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 ```
 
 返回
 
 ```sql
 ==========================
-| id  | left.1 | left.2  |
+| id  | left_1 | left_2  |
 ==========================
 | 215 |    4   |    3    |     -- line 3
 --------------------------
@@ -144,16 +143,16 @@ GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS ri
 如果更改 `MINUS` 顺序
 
 ```sql
-GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS right.2
+GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 MINUS
-GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2
+GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 ```
 
 则返回
 
 ```sql
 ===========================
-| id  | right.1 | right.2 |    -- column named from query 2
+| id  | right_1 | right_2 |    -- column named from query 2
 ===========================
 | 104 |    2    |    2    |    -- line 2
 ---------------------------

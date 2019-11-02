@@ -10,20 +10,20 @@
 
 namespace nebula {
 
-TEST(Cord, Empty) {
-    {
-        Cord cord;
-        auto empty = cord.str();
-        ASSERT_TRUE(empty.empty()) << "size: " << empty.size();
-    }
-    {
-        Cord cord;
-        std::string empty;
-        cord.appendTo(empty);
-        ASSERT_TRUE(empty.empty()) << "size: " << empty.size();
-    }
+TEST(Cord, empty) {
+    Cord cord;
+    std::string a;
+    std::string b;
+    EXPECT_TRUE(cord.empty());
+    EXPECT_EQ(0, cord.size());
+    EXPECT_EQ(a, cord.str());
+    cord.appendTo(b);
+    EXPECT_EQ(a, b);
+    EXPECT_TRUE(cord.applyTo([](const char* s, int32_t len) -> bool {
+        return s == nullptr && len == 0;
+    }));
+    cord.clear();
 }
-
 
 TEST(Cord, write) {
     Cord cord;

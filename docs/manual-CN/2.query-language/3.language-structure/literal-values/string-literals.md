@@ -9,7 +9,7 @@ nebula> YIELD "another string"
 
 一些转义字符 (\\) 已被支持，如下表所示:
 
-| **转移字符**   | **对应的字符**   |
+| **转义字符**   | **对应的字符**   |
 |:----|:----|
 | \'   | 单引号 (')  |
 | \"   | 双引号 (")  |
@@ -22,15 +22,22 @@ nebula> YIELD "another string"
 
 ```SQL
 nebula> YIELD 'This\nIs\nFour\nLines'
---------------------
+========================
+| "This
+Is
+Four
+Lines" |
+========================
 | This
 Is
 Four
-Lines |
---------------------
+Lines   |
+------------------------
 
 nebula> YIELD 'disappearing\ backslash'  
---------------------
-|   disappearing backslash |
---------------------
+============================
+| "disappearing backslash" |
+============================
+| disappearing backslash   |
+----------------------------
 ```
