@@ -54,6 +54,8 @@ class ReconnectingRequestChannel::RequestCallback
                  apache::thrift::transport::TTransportException>()) {
       return;
     }
+    // qwer
+    LOG(INFO) << "Reset connection !!!";
     if (channel_.impl_ != impl_) {
       return;
     }

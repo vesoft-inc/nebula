@@ -43,6 +43,7 @@ enum class AppendLogResult {
     E_SENDING_SNAPSHOT = -8,
     E_INVALID_PEER = -9,
     E_NOT_ENOUGH_ACKS = -10,
+    E_RPC_EXCEPTION = -11,
 };
 
 enum class LogType {

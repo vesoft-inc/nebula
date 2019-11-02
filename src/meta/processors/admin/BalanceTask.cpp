@@ -10,7 +10,6 @@
 
 DEFINE_int32(wait_time_after_open_part_ms, 3000,
              "The wait time after open part, zero means no wait");
-DECLARE_uint32(raft_heartbeat_interval_secs);
 
 namespace nebula {
 namespace meta {
@@ -118,7 +117,6 @@ void BalanceTask::invoke() {
                         status_ = Status::MEMBER_CHANGE_ADD;
                     }
                 }
-                sleep(FLAGS_raft_heartbeat_interval_secs);
                 invoke();
             });
             break;
@@ -131,12 +129,8 @@ void BalanceTask::invoke() {
                 {
                     std::lock_guard<std::mutex> lg(lock_);
                     if (!resp.ok()) {
-                        // qwer
-                        LOG(INFO) << "eeee " << partId_;
                         ret_ = Result::FAILED;
                     } else {
-                        // qwer
-                        LOG(INFO) << "rrrr " << partId_;
                         status_ = Status::MEMBER_CHANGE_REMOVE;
                     }
                 }

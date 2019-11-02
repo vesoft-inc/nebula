@@ -350,7 +350,7 @@ AppendLogResult RaftPart::canAppendLogs() {
         return AppendLogResult::E_STOPPED;
     }
     if (role_ != Role::LEADER) {
-        LOG(ERROR) << idStr_ << "The partition is not a leader";
+        VLOG(2) << idStr_ << "The partition is not a leader";
         return AppendLogResult::E_NOT_A_LEADER;
     }
 
@@ -448,10 +448,6 @@ void RaftPart::updateQuorum() {
 
 void RaftPart::addPeer(const HostAddr& peer) {
     CHECK(!raftLock_.try_lock());
-    // qwer
-    for (const auto& h : hosts_) {
-        LOG(INFO) << idStr_ << "wwww " << h->address();
-    }
     if (peer == addr_) {
         if (role_ == Role::LEARNER) {
             LOG(INFO) << idStr_ << "I am learner, promote myself to be follower";
@@ -491,10 +487,6 @@ void RaftPart::removePeer(const HostAddr& peer) {
     auto it = std::find_if(hosts_.begin(), hosts_.end(), [&peer] (const auto& h) {
                   return h->address() == peer;
               });
-    // qwer
-    for (const auto& h : hosts_) {
-        LOG(INFO) << idStr_ << "qqqq " << h->address();
-    }
     if (it == hosts_.end()) {
         LOG(INFO) << idStr_ << "The peer " << peer << " not exist!";
     } else {
@@ -1732,6 +1724,12 @@ AppendLogResult RaftPart::isCatchedUp(const HostAddr& peer) {
     }
     for (auto& host : hosts_) {
         if (host->addr_ == peer) {
+            if (host->hasException_) {
+                // qwer
+                LOG(INFO) << idStr_ << "wtf wtf Connection between " << peer << " has exception";
+                return AppendLogResult::E_RPC_EXCEPTION;
+            }
+            // qwer
             LOG(INFO) << idStr_ << "wtf " << host->sendingSnapshot_;
             return host->sendingSnapshot_ ? AppendLogResult::E_SENDING_SNAPSHOT
                                           : AppendLogResult::SUCCEEDED;

@@ -582,7 +582,6 @@ int32_t NebulaStore::allLeader(std::unordered_map<GraphSpaceID,
         int32_t leaderCount = 0;
         int32_t followerCount = 0;
         int32_t learnerCount = 0;
-        bool flag = false;
 
         auto spaceId = spaceIt.first;
         for (const auto& partIt : spaceIt.second->parts_) {
@@ -594,13 +593,12 @@ int32_t NebulaStore::allLeader(std::unordered_map<GraphSpaceID,
             } else if (partIt.second->isFollower()) {
                 followerCount++;
             } else if (partIt.second->isLearner()) {
-                if (!flag) {
-                    flag = false;
-                    LOG(INFO) << "rewq " << partId;
-                }
+                // qwer
+                LOG(INFO) << "rewq " << partId;
                 learnerCount++;
             }
         }
+        // qwer
         LOG(INFO) << " !!! Space " << spaceId
                   << " Leader: " << leaderCount
                   << " Follower : " << followerCount

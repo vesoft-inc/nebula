@@ -230,28 +230,21 @@ public:
                                                                req.get_target().get_port()));
 
         folly::async([this, part, peer, spaceId, partId] {
-            // qwer
-            sleep(10);
             int retry = FLAGS_waiting_catch_up_retry_times;
             while (retry-- > 0) {
                 LOG(INFO) << "Waiting for " << partId << " catching up data, peer " << peer
-                          << ", try " << retry << " times";
+                          << ", remaining retry times: " << retry;
                 auto res = part->isCatchedUp(peer);
                 switch (res) {
                     case raftex::AppendLogResult::SUCCEEDED:
-                        // qwer
-                        LOG(INFO) << partId << " aaa";
+                        LOG(INFO) << "Finished sending snapshot to " << peer;
                         onFinished();
                         return;
                     case raftex::AppendLogResult::E_INVALID_PEER:
-                        // qwer
-                        LOG(INFO) << partId << " bbb";
                         this->pushResultCode(cpp2::ErrorCode::E_INVALID_PEER, partId);
                         onFinished();
                         return;
                     case raftex::AppendLogResult::E_NOT_A_LEADER: {
-                        // qwer
-                        LOG(INFO) << partId << " ccc";
                         auto leaderRet = kvstore_->partLeader(spaceId, partId);
                         CHECK(ok(leaderRet));
                         auto leader = value(std::move(leaderRet));
@@ -261,6 +254,9 @@ public:
                     }
                     case raftex::AppendLogResult::E_SENDING_SNAPSHOT:
                         LOG(INFO) << "Still sending snapshot, please wait...";
+                        break;
+                    case raftex::AppendLogResult::E_RPC_EXCEPTION:
+                        LOG(INFO) << "RPC exception between " << peer << ", will retry later";
                         break;
                     default:
                         LOG(INFO) << "Unknown error " << static_cast<int32_t>(res);

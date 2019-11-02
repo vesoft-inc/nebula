@@ -132,6 +132,7 @@ private:
 
     LogID committedLogId_{0};
     std::atomic_bool sendingSnapshot_{false};
+    std::atomic_bool hasException_{false};
 };
 
 }  // namespace raftex

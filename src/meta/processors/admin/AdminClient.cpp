@@ -11,6 +11,7 @@
 #include "kvstore/Part.h"
 
 DEFINE_int32(max_retry_times_admin_op, 30, "max retry times for admin request!");
+DECLARE_uint32(raft_heartbeat_interval_secs);
 
 namespace nebula {
 namespace meta {
@@ -106,6 +107,7 @@ folly::Future<Status> AdminClient::waitingForCatchUpData(GraphSpaceID spaceId,
     if (injector_) {
         return injector_->waitingForCatchUpData();
     }
+    sleep(FLAGS_raft_heartbeat_interval_secs);
     storage::cpp2::CatchUpDataReq req;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
@@ -137,10 +139,6 @@ folly::Future<Status> AdminClient::memberChange(GraphSpaceID spaceId,
     auto ret = getPeers(spaceId, partId);
     if (!ret.ok()) {
         return ret.status();
-    }
-    // qwer
-    for (const auto& h : ret.value()) {
-        LOG(INFO) << "[AdminClient] send member change to " << h << " " << partId;
     }
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
