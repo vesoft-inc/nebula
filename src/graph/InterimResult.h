@@ -43,6 +43,9 @@ public:
     static Status castToBool(cpp2::ColumnValue *col);
     static Status castToStr(cpp2::ColumnValue *col);
 
+    static Status getResultWriter(const std::vector<cpp2::RowValue> &rows,
+                                  RowSetWriter *rsWriter);
+
     void setColNames(std::vector<std::string> &&colNames) {
         colNames_ = std::move(colNames);
     }

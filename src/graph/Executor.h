@@ -88,10 +88,10 @@ protected:
 
     StatusOr<int64_t> toTimestamp(const VariantType &value);
 
-    cpp2::ColumnValue toColumnValue(const VariantType& value,
-                                    cpp2::ColumnValue::Type type) const;
+    StatusOr<cpp2::ColumnValue> toColumnValue(const VariantType& value,
+                                              cpp2::ColumnValue::Type type) const;
 
-    VariantType toVariantType(const cpp2::ColumnValue& value) const;
+    OptVariantType toVariantType(const cpp2::ColumnValue& value) const;
 
     Status checkIfGraphSpaceChosen() const {
         if (ectx()->rctx()->session()->space() == -1) {

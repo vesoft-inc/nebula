@@ -504,7 +504,7 @@ TEST_F(YieldTest, error) {
 TEST_F(YieldTest, AggCall) {
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
-    // syntax error
+    // Syntax error
     {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD COUNT(1), $-.name";
@@ -521,7 +521,7 @@ TEST_F(YieldTest, AggCall) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    // test input
+    // Test input
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Carmelo Anthony"];
@@ -537,7 +537,7 @@ TEST_F(YieldTest, AggCall) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    // test var
+    // Test var
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Carmelo Anthony"];

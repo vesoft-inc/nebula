@@ -41,7 +41,7 @@ TEST_F(GroupByLimitTest, SyntaxError) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
-    // use groupby without input
+    // Use groupby without input
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Marco Belinelli"];
@@ -54,7 +54,7 @@ TEST_F(GroupByLimitTest, SyntaxError) {
         LOG(INFO) << "ERROR " << *resp.get_error_msg();
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
-    // use var
+    // Use var
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Marco Belinelli"];
@@ -67,7 +67,7 @@ TEST_F(GroupByLimitTest, SyntaxError) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
-    // use dst
+    // Use dst
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Marco Belinelli"];

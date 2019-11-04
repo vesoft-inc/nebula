@@ -52,6 +52,8 @@ private:
 
     Status getAggResultWriter(cpp2::RowValue row, RowSetWriter* rsWriter);
 
+    Status AggregateConstant();
+
 private:
     YieldSentence                              *sentence_;
     std::vector<YieldColumn*>                   yields_;

@@ -35,10 +35,10 @@ private:
     Status checkAll();
 
     Status groupingData();
-    void generateOutputSchema();
+    Status generateOutputSchema();
 
     std::vector<std::string> getResultColumnNames() const;
-    std::unique_ptr<InterimResult> setupInterimResult();
+    StatusOr<std::unique_ptr<InterimResult>> setupInterimResult();
 
 private:
     GroupBySentence                                           *sentence_{nullptr};

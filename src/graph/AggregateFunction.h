@@ -92,15 +92,7 @@ struct ColVals {
     std::vector<cpp2::ColumnValue> vec;
 
     bool operator==(const ColVals &other) const {
-        if (vec.size() != other.vec.size()) {
-            return false;
-        }
-        for (auto i = 0u; i < vec.size(); i++) {
-            if (vec[i] != other.vec[i]) {
-                return false;
-            }
-        }
-        return true;
+        return vec == other.vec;
     }
 };
 
@@ -242,7 +234,6 @@ public:
 private:
     Sum                 sum_;
     uint64_t            count_{0};
-    bool                has_{false};
 };
 
 

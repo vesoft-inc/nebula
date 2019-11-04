@@ -173,7 +173,6 @@ Status GroupByExecutor::checkAll() {
             LOG(ERROR) << "Can't support variableExpression: " << it->expr()->toString();
             return Status::SyntaxError("Can't support variableExpression");
         }
-        // TODO(laura): to check other expr
     }
     return Status::OK();
 }
@@ -202,11 +201,21 @@ void GroupByExecutor::execute() {
         return;
     }
 
-    generateOutputSchema();
+    status = generateOutputSchema();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
 
     if (onResult_) {
-        auto outputs = setupInterimResult();
-        onResult_(std::move(outputs));
+        auto ret = setupInterimResult();
+        if (!ret.ok()) {
+            DCHECK(onError_);
+            onError_(std::move(ret).status());
+            return;
+        }
+        onResult_(std::move(ret).value());
     }
 
     DCHECK(onFinish_);
@@ -215,8 +224,8 @@ void GroupByExecutor::execute() {
 
 
 Status GroupByExecutor::groupingData() {
-    // key : group col vals, val: cal funptr
     using FunCols = std::vector<std::shared_ptr<AggFun>>;
+    // key : the column values of group by, val: function table of aggregated columns
     using GroupData = std::unordered_map<ColVals, FunCols, ColsHasher>;
 
     GroupData data;
@@ -234,7 +243,6 @@ Status GroupByExecutor::groupingData() {
                     LOG(ERROR) << prop <<  " is nonexistent";
                     return Status::Error("%s is nonexistent", prop.c_str());
                 }
-                CHECK_GE(indexIt->second, 0);
                 auto val = it.columns[indexIt->second];
                 valType = val.getType();
                 return toVariantType(val);
@@ -245,15 +253,18 @@ Status GroupByExecutor::groupingData() {
                 return eval.status();
             }
 
-            auto val = toColumnValue(eval.value(), valType);
-            groupVals.vec.emplace_back(std::move(val));
+            auto cVal = toColumnValue(eval.value(), valType);
+            if (!cVal.ok()) {
+                return cVal.status();
+            }
+            groupVals.vec.emplace_back(std::move(cVal).value());
         }
 
         auto findIt = data.find(groupVals);
 
-        // Secondly: get the cal col
+        // Secondly: get the value of the aggregated column
 
-        // Init fun handler
+        // Get all aggregation function
         if (findIt == data.end()) {
             for (auto &col : yieldCols_) {
                 auto funPtr = funVec[col->getFunName()]();
@@ -272,9 +283,8 @@ Status GroupByExecutor::groupingData() {
                 auto indexIt = schemaMap_.find(prop);
                 if (indexIt == schemaMap_.end()) {
                     LOG(ERROR) << prop <<  " is nonexistent";
-                    return Status::Error("%s is nonexistent");
+                    return Status::Error("%s is nonexistent", prop.c_str());
                 }
-                CHECK_GE(indexIt->second, 0);
                 auto val = it.columns[indexIt->second];
                 valType = val.getType();
                 return toVariantType(val);
@@ -284,8 +294,11 @@ Status GroupByExecutor::groupingData() {
                 return eval.status();
             }
 
-            auto val = toColumnValue(eval.value(), valType);
-            col->apply(val);
+            auto cVal = toColumnValue(std::move(eval).value(), valType);
+            if (!cVal.ok()) {
+                return cVal.status();
+            }
+            col->apply(cVal.value());
             i++;
         }
 
@@ -331,6 +344,7 @@ void GroupByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
 
     auto ret = result->getRows();
     if (!ret.ok()) {
+        LOG(ERROR) << "Get rows failed: " << ret.status();
         return;
     }
     rows_ = std::move(ret).value();
@@ -338,7 +352,7 @@ void GroupByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
 }
 
 
-void GroupByExecutor::generateOutputSchema() {
+Status GroupByExecutor::generateOutputSchema() {
     using nebula::cpp2::SupportedType;
     if (resultSchema_ == nullptr) {
         resultSchema_ = std::make_shared<SchemaWriter>();
@@ -366,55 +380,25 @@ void GroupByExecutor::generateOutputSchema() {
                     type = SupportedType::TIMESTAMP;
                     break;
                 default:
-                    LOG(FATAL) << "Unknown VariantType: " << rows_[0].columns[i].getType();
+                    LOG(ERROR) << "Unknown VariantType: " << rows_[0].columns[i].getType();
+                    return Status::Error("Unknown VariantType: %d", rows_[0].columns[i].getType());
             }
             // TODO(laura) : should handle exist colname
             resultSchema_->appendCol(colnames[i], type);
         }
     }
+    return Status::OK();
 }
 
 
-std::unique_ptr<InterimResult> GroupByExecutor::setupInterimResult() {
+StatusOr<std::unique_ptr<InterimResult>> GroupByExecutor::setupInterimResult() {
     if (rows_.empty() || resultSchema_ == nullptr) {
         return nullptr;
     }
-    // Generic results
+    // Generate results
     std::unique_ptr<RowSetWriter> rsWriter = std::make_unique<RowSetWriter>(resultSchema_);
 
-    using Type = cpp2::ColumnValue::Type;
-    for (auto &row : rows_) {
-        RowWriter writer(resultSchema_);
-        auto columns = row.get_columns();
-        for (auto &column : columns) {
-            switch (column.getType()) {
-                case Type::id:
-                    writer << column.get_id();
-                    break;
-                case Type::integer:
-                    writer << column.get_integer();
-                    break;
-                case Type::double_precision:
-                    writer << column.get_double_precision();
-                    break;
-                case Type::bool_val:
-                    writer << column.get_bool_val();
-                    break;
-                case Type::str:
-                    writer << column.get_str();
-                    break;
-                case Type::timestamp:
-                    writer << column.get_timestamp();
-                    break;
-                default:
-                    LOG(FATAL) << "Not Support: " << column.getType();
-            }
-        }
-        if (rsWriter != nullptr) {
-            rsWriter->addRow(writer);
-        }
-    }
-
+    InterimResult::getResultWriter(rows_, rsWriter.get());
     auto result = std::make_unique<InterimResult>(getResultColumnNames());
     if (rsWriter != nullptr) {
         result->setInterim(std::move(rsWriter));

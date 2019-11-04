@@ -286,8 +286,8 @@ StatusOr<int64_t> Executor::toTimestamp(const VariantType &value) {
     return timestamp;
 }
 
-cpp2::ColumnValue Executor::toColumnValue(const VariantType& value,
-                                          cpp2::ColumnValue::Type type) const {
+StatusOr<cpp2::ColumnValue> Executor::toColumnValue(const VariantType& value,
+                                                    cpp2::ColumnValue::Type type) const {
     cpp2::ColumnValue colVal;
     try {
         if (type == cpp2::ColumnValue::Type::__EMPTY__) {
@@ -306,8 +306,7 @@ cpp2::ColumnValue Executor::toColumnValue(const VariantType& value,
                     break;
                 default:
                     LOG(ERROR) << "Wrong Type: " << value.which();
-                    colVal.set_str("");
-                    break;
+                    return Status::Error("Wrong Type: %d", value.which());
             }
             return colVal;
         }
@@ -332,17 +331,16 @@ cpp2::ColumnValue Executor::toColumnValue(const VariantType& value,
                 break;
             default:
                 LOG(ERROR) << "Wrong Type: " << static_cast<int32_t>(type);
-                colVal.set_str("");
-                break;
+                return Status::Error("Wrong Type: %d", static_cast<int32_t>(type));
         }
     } catch (const std::exception& e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        colVal.set_str("");
+        return Status::Error("Wrong Type: %d", static_cast<int32_t>(type));
     }
     return colVal;
 }
 
-VariantType Executor::toVariantType(const cpp2::ColumnValue& value) const {
+OptVariantType Executor::toVariantType(const cpp2::ColumnValue& value) const {
     switch (value.getType()) {
         case cpp2::ColumnValue::Type::id:
             return value.get_id();
@@ -357,10 +355,11 @@ VariantType Executor::toVariantType(const cpp2::ColumnValue& value) const {
         case cpp2::ColumnValue::Type::timestamp:
             return value.get_timestamp();
         default:
-            LOG(ERROR) << "Unknown ColumnType: " << static_cast<int32_t>(value.getType());
             break;
     }
-    return "";
+
+    LOG(ERROR) << "Unknown ColumnType: " << static_cast<int32_t>(value.getType());
+    return Status::Error("Unknown ColumnType: %d", static_cast<int32_t>(value.getType()));
 }
 
 }   // namespace graph
