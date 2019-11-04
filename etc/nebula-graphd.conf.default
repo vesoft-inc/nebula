@@ -24,6 +24,8 @@
 ########## networking ##########
 # Meta Server Address
 --meta_server_addrs=127.0.0.1:45500
+# Local ip
+--local_ip=127.0.0.1
 # Network device to listen on
 --listen_netdev=any
 # Port to listen on
