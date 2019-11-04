@@ -10,7 +10,7 @@ You can refer a vertex or edge's property in `WHERE` or `YIELD` syntax.
 $^.tag_name.prop_name
 ```
 
-where symbol `$^` is used to get a source vertex's property, 
+where symbol `$^` is used to get a source vertex's property,
 `tag_name` indicates the source vertex's `tag`,
 and `prop_name` specifies the property name.
 
@@ -25,10 +25,10 @@ where symbol `$$` indicates the ending vertex, `tag_name` and `prop_name` are th
 ### Example
 
 ```
-GO FROM 1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
+GO FROM 1 OVER e1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
 ```
 
-to get the starting vertex's property name and ending vertex's property age. 
+to get the starting vertex's property name and ending vertex's property age.
 
 ## Reference from edge
 
@@ -54,10 +54,10 @@ There are four build-in properties in the edge:
 
 * _src: source vertex id of the edge
 * _dst: destination id of the edge
-* _type: edge type 
+* _type: edge type
 * _rank: the edge's ranking
 
-You can use `_src` and `_dst` to get the starting and ending vertices' id, so they are very commonly used to show a graph path.
+You can use `_src` and `_dst` to get the starting and ending vertices' id, and they are very commonly used to show a graph path.
 
 For example,
 

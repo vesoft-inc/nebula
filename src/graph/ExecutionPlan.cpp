@@ -19,6 +19,7 @@ void ExecutionPlan::execute() {
         auto result = GQLParser().parse(rctx->query());
         if (!result.ok()) {
             status = std::move(result).status();
+            LOG(ERROR) << status;
             break;
         }
 
