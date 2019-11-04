@@ -24,7 +24,7 @@ LIMIT [<offset_value>,] <number_rows>
 For example:
 
 ```ngql
-nebula> go FROM 105 OVER like YIELD $$.player.name as Friend, $$.player.age as Age, like._dst as Like | limit 2
+nebula> GO FROM 105 OVER like YIELD $$.player.name AS Friend, $$.player.age AS Age, like._dst AS Like | LIMIT 2
 ================================
 | Friend          | Age | Like |
 ================================
