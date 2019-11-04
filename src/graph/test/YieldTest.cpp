@@ -497,17 +497,61 @@ TEST_F(YieldTest, error) {
         auto fmt = var + "YIELD a.team";
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
 }
 
 TEST_F(YieldTest, AggCall) {
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
+    // syntax error
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "YIELD COUNT(1), 1+1";
+        std::string query = "YIELD COUNT(1), $-.name";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD COUNT(*), 1+1";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected{
+            {1, 2}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // test input
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Carmelo Anthony"];
+        auto *fmt = "GO FROM %ld OVER like "
+                    "YIELD $$.player.age AS age, "
+                    "like.likeness AS like"
+                    "| YIELD AVG($-.age), SUM($-.like), COUNT(*), 1+1";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<double, uint64_t, uint64_t, int64_t>> expected = {
+                {34.666666666666664, 270, 3, 2},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // test var
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Carmelo Anthony"];
+        auto *fmt = "$var = GO FROM %ld OVER like "
+                    "YIELD $$.player.age AS age, "
+                    "like.likeness AS like;"
+                    "YIELD AVG($var.age), SUM($var.like), COUNT(*)";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<double, uint64_t, uint64_t>> expected = {
+                {34.666666666666664, 270, 3},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 }   // namespace graph

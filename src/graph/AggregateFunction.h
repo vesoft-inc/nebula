@@ -28,6 +28,17 @@ namespace ColumnType {
     const auto empty_type = cpp2::ColumnValue::Type::__EMPTY__;
 }  // namespace ColumnType
 
+constexpr char kCount[] = "COUNT";
+constexpr char kCountDist[] = "COUNT_DISTINCT";
+constexpr char kSum[] = "SUM";
+constexpr char kAvg[] = "AVG";
+constexpr char kMax[] = "MAX";
+constexpr char kMin[] = "MIN";
+constexpr char kStd[] = "STD";
+constexpr char kBitAnd[] = "BIT_AND";
+constexpr char kBitOr[] = "BIT_OR";
+constexpr char kBitXor[] = "BIT_XOR";
+
 class GroupByHash {
 public:
     GroupByHash() = default;
@@ -72,10 +83,7 @@ struct ColVal {
     cpp2::ColumnValue col;
 
     bool operator==(const ColVal &other) const {
-        if (col != other.col) {
-            return false;
-        }
-        return true;
+        return col == other.col;
     }
 };
 
@@ -420,6 +428,22 @@ private:
     bool                  has_{false};
     cpp2::ColumnValue     bitXor_;
 };
+
+static std::unordered_map<std::string, std::function<std::shared_ptr<AggFun>()>> funVec = {
+    { "", []() -> auto { return std::make_shared<Group>();} },
+    { kCount, []() -> auto { return std::make_shared<Count>();} },
+    { kCountDist, []() -> auto { return std::make_shared<CountDistinct>();} },
+    { kSum, []() -> auto { return std::make_shared<Sum>();} },
+    { kAvg, []() -> auto { return std::make_shared<Avg>();} },
+    { kMax, []() -> auto { return std::make_shared<Max>();} },
+    { kMin, []() -> auto { return std::make_shared<Min>();} },
+    { kStd, []() -> auto { return std::make_shared<Stdev>();} },
+    { kBitAnd, []() -> auto { return std::make_shared<BitAnd>();} },
+    { kBitOr, []() -> auto { return std::make_shared<BitOr>();} },
+    { kBitXor, []() -> auto { return std::make_shared<BitXor>();} }
+};
+
+
 }  // namespace graph
 }  // namespace nebula
 

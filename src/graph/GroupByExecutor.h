@@ -40,10 +40,6 @@ private:
     std::vector<std::string> getResultColumnNames() const;
     std::unique_ptr<InterimResult> setupInterimResult();
 
-    cpp2::ColumnValue toColumnValue(const VariantType& value, cpp2::ColumnValue::Type type);
-    VariantType toVariantType(const cpp2::ColumnValue& value);
-
-
 private:
     GroupBySentence                                           *sentence_{nullptr};
     std::vector<cpp2::RowValue>                                rows_;

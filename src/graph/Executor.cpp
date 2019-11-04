@@ -286,22 +286,82 @@ StatusOr<int64_t> Executor::toTimestamp(const VariantType &value) {
     return timestamp;
 }
 
-nebula::cpp2::SupportedType Executor::ColumnTypeToSupportedType(ColumnType type) const {
-    switch (type) {
-        case ColumnType::INT:
-            return nebula::cpp2::SupportedType::INT;
-        case ColumnType::STRING:
-            return nebula::cpp2::SupportedType::STRING;
-        case ColumnType::DOUBLE:
-            return nebula::cpp2::SupportedType::DOUBLE;
-        case ColumnType::BOOL:
-            return nebula::cpp2::SupportedType::BOOL;
-        case ColumnType::TIMESTAMP:
-            return nebula::cpp2::SupportedType::TIMESTAMP;
-        default:
-            LOG(ERROR) << "Unknown type: " << static_cast<int32_t>(type);
-            return nebula::cpp2::SupportedType::UNKNOWN;
+cpp2::ColumnValue Executor::toColumnValue(const VariantType& value,
+                                          cpp2::ColumnValue::Type type) const {
+    cpp2::ColumnValue colVal;
+    try {
+        if (type == cpp2::ColumnValue::Type::__EMPTY__) {
+            switch (value.which()) {
+                case VAR_INT64:
+                    colVal.set_integer(boost::get<int64_t>(value));
+                    break;
+                case VAR_DOUBLE:
+                    colVal.set_double_precision(boost::get<double>(value));
+                    break;
+                case VAR_BOOL:
+                    colVal.set_bool_val(boost::get<bool>(value));
+                    break;
+                case VAR_STR:
+                    colVal.set_str(boost::get<std::string>(value));
+                    break;
+                default:
+                    LOG(ERROR) << "Wrong Type: " << value.which();
+                    colVal.set_str("");
+                    break;
+            }
+            return colVal;
+        }
+        switch (type) {
+            case cpp2::ColumnValue::Type::id:
+                colVal.set_id(boost::get<int64_t>(value));
+                break;
+            case cpp2::ColumnValue::Type::integer:
+                colVal.set_integer(boost::get<int64_t>(value));
+                break;
+            case cpp2::ColumnValue::Type::timestamp:
+                colVal.set_timestamp(boost::get<int64_t>(value));
+                break;
+            case cpp2::ColumnValue::Type::double_precision:
+                colVal.set_double_precision(boost::get<double>(value));
+                break;
+            case cpp2::ColumnValue::Type::bool_val:
+                colVal.set_bool_val(boost::get<bool>(value));
+                break;
+            case cpp2::ColumnValue::Type::str:
+                colVal.set_str(boost::get<std::string>(value));
+                break;
+            default:
+                LOG(ERROR) << "Wrong Type: " << static_cast<int32_t>(type);
+                colVal.set_str("");
+                break;
+        }
+    } catch (const std::exception& e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        colVal.set_str("");
     }
+    return colVal;
 }
+
+VariantType Executor::toVariantType(const cpp2::ColumnValue& value) const {
+    switch (value.getType()) {
+        case cpp2::ColumnValue::Type::id:
+            return value.get_id();
+        case cpp2::ColumnValue::Type::integer:
+            return value.get_integer();
+        case cpp2::ColumnValue::Type::bool_val:
+            return value.get_bool_val();
+        case cpp2::ColumnValue::Type::double_precision:
+            return value.get_double_precision();
+        case cpp2::ColumnValue::Type::str:
+            return value.get_str();
+        case cpp2::ColumnValue::Type::timestamp:
+            return value.get_timestamp();
+        default:
+            LOG(ERROR) << "Unknown ColumnType: " << static_cast<int32_t>(value.getType());
+            break;
+    }
+    return "";
+}
+
 }   // namespace graph
 }   // namespace nebula
