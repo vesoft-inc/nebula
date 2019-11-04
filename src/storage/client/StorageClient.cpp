@@ -404,23 +404,24 @@ folly::SemiFuture<StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>>
 StorageClient::getSpaceLeaders(
         const GraphSpaceID space,
         folly::EventBase* evb) {
-    std::unordered_map<HostAddr, storage::cpp2::GetLeaderReq> requests;
-    auto res_parts_alloc = getPartsAlloc(space);
-    if (UNLIKELY(!res_parts_alloc.ok())) {
-        return folly::makeSemiFuture<StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>>(
-            StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>(0));
-    }
-    requests.reserve(res_parts_alloc.value().size());
-
-    for (auto& p : res_parts_alloc.value()) {
-        requests.emplace(p.second.front(), cpp2::GetLeaderReq());
-    }
-
-    return collectResponseWithoutLeader(evb, std::move(requests),
-                           [](cpp2::StorageServiceAsyncClient* client,
-                              const cpp2::GetLeaderReq& r) {
-                                  return client->future_getLeaderPart(r);
-                              });
+    auto fParts = client_->getPartsAlloc(space);
+    return std::move(fParts).thenValue([](auto&& parts){
+        std::unordered_map<HostAddr, storage::cpp2::GetLeaderReq> requests;
+        if (UNLIKELY(!parts.ok())) {
+            return requests;
+        }
+        requests.reserve(parts.value().size());
+        for (auto& p : parts.value()) {
+            requests.emplace(p.second.front(), cpp2::GetLeaderReq());
+        }
+        return requests;
+    }).thenValue([this, evb](auto&& requests){
+        return collectResponseWithoutLeader(evb, std::move(requests),
+                            [](cpp2::StorageServiceAsyncClient* client,
+                                const cpp2::GetLeaderReq& r) {
+                                    return client->future_getLeaderPart(r);
+                                });
+    })
 }
 
 
