@@ -25,6 +25,8 @@ namespace storage {
 // Fixture with meta and storage environments
 class StorageClientTestF : public ::testing::Test {
 protected:
+    static constexpr int32_t kPartsNum = 10;
+
     void SetUp() override {
         FLAGS_load_data_interval_secs = 1;
         FLAGS_heartbeat_interval_secs = 1;
@@ -75,7 +77,7 @@ protected:
                                             // based version
                                             false);
 
-        auto ret = mc_->createSpace("default", 10, 1).get();
+        auto ret = mc_->createSpace("default", kPartsNum, 1).get();
         ASSERT_TRUE(ret.ok()) << ret.status();
         space_ = ret.value();
         LOG(INFO) << "Created space \"default\", its id is " << space_;
@@ -104,6 +106,8 @@ protected:
     GraphSpaceID space_ = 0;
     std::unique_ptr<fs::TempDir> testing_dir_ = nullptr;
 };
+
+constexpr int32_t StorageClientTestF::kPartsNum;
 
 TEST_F(StorageClientTestF, VerticesInterfacesTest) {
     // VerticesInterfacesTest(addVertices and getVertexProps)
@@ -355,11 +359,29 @@ TEST_F(StorageClientTestF, VerticesInterfacesTest) {
     }
 }
 
-TEST_F(StorageClientTestF, FetchLeaders) {
+TEST_F(StorageClientTestF, Misc) {
+    // Spaces
+    {
+        auto spaces = client_->listSpaces();
+        ASSERT_TRUE(spaces.ok());
+        EXPECT_EQ(spaces.value().size(), 1);  // Hard Code \TODO(shylock)
+        EXPECT_EQ(spaces.value().front().first, space_);
+    }
+
+    // parts
+    {
+        auto parts = client_->getPartsAlloc(space_);
+        ASSERT_TRUE(parts.ok());
+        EXPECT_EQ(parts.value().size(), kPartsNum);
+    }
+
+    // Leaders
     {
         auto resps = client_->getSpaceLeaders(space_).get();
         ASSERT_TRUE(resps.succeeded());
+        ASSERT_EQ(resps.responses().size(), 1);  //< one host
         // show the leaders
+        LOG(INFO) << "The leaders of space " << space_ << ":";
         for (auto& resp : resps.responses()) {
             LOG(INFO) << "Host: " << resp.first;
             for (auto& val : resp.second.get_leader_parts()) {
@@ -368,6 +390,21 @@ TEST_F(StorageClientTestF, FetchLeaders) {
                     LOG(INFO) << "\t\t" << "Leader Part: " << p;
                 }
             }
+        }
+    }
+
+    // All Leaders
+    {
+        auto leaders = client_->preHeartLeaders();
+        ASSERT_TRUE(leaders.ok());
+        ASSERT_EQ(leaders.value().size(), kPartsNum);  //< 1*kPartsNum
+        LOG(INFO) << "The all leader:";
+        for (auto& leader : leaders.value()) {
+            // TODO(shylock) (std::pair<GraphSpaceID, PartitionID>) to ostream as HostAddr?
+            // The operator<< overlap for HostAddr(aka. std::pair<in32_t, int32_t>)
+            // LOG(INFO) << "\t" << leader.first << ": " << leader.second;
+            LOG(INFO) << "\t" << leader.first.first << "-" << leader.first.second
+                << ":" << leader.second;
         }
     }
 }

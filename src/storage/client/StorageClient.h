@@ -79,6 +79,7 @@ private:
  */
 class StorageClient {
     FRIEND_TEST(StorageClientTest, LeaderChangeTest);
+    FRIEND_TEST(StorageClientTestF, Misc);
 
 public:
     StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
@@ -285,6 +286,33 @@ protected:
     inline StatusOr<meta::PartsAlloc> getPartsAlloc(GraphSpaceID space) {
         DCHECK_NOTNULL(client_);
         return client_->getPartsAlloc(space).get();
+    }
+
+    // fetch all leaders before work
+    inline StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>
+    preHeartLeaders() {
+        std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> r;
+        auto rSpaces = listSpaces();
+        if (!rSpaces.ok()) {
+            return StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>();
+        }
+        // ASYNC BY collect/future? \TODO(shylock)
+        for (auto& s : rSpaces.value()) {
+            auto leaders = getSpaceLeaders(s.first).get();
+            if (!leaders.succeeded()) {
+                return StatusOr<
+                    std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>();
+            }
+            for (auto& resp : leaders.responses()) {
+                for (auto& val : resp.second.get_leader_parts()) {
+                    for (auto& p : val.second) {
+                        r.emplace(std::make_pair(val.first, p), resp.first);
+                    }
+                }
+            }
+        }
+        return StatusOr<
+            std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>(std::move(r));
     }
 
     virtual int32_t partsNum(GraphSpaceID spaceId) const {
