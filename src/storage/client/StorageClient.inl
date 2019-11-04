@@ -161,11 +161,13 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
 
 
 template<class Request, class RemoteFunc, class Response>
-folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponseWithoutLeader(
+folly::SemiFuture<StorageRpcResponse<std::pair<HostAddr, Response>>>
+StorageClient::collectResponseWithoutLeader(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc) {
-    auto context = std::make_shared<ResponseContext<Request, RemoteFunc, Response>>(
+    auto context = std::make_shared<ResponseContext<
+            Request, RemoteFunc, std::pair<HostAddr, Response>>>(
         requests.size(), std::move(remoteFunc));
 
     if (evb == nullptr) {
@@ -177,7 +179,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponseWi
         auto& host = req.first;
 //        auto spaceId = req.second.get_space_id();
         auto res = context->insertRequest(host, std::move(req.second));
-        DCHECK(res.second);
+        DCHECK(res.second) << "Empty RPC request!";
         // Invoke the remote method
         folly::via(evb, [this, evb, context, host, /*spaceId,*/ res] () mutable {
             auto client = this->clientsMan_->client(host, evb);
@@ -236,7 +238,8 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponseWi
                     context->resp.setLatency(result.get_latency_in_us());
 
                     // Keep the response
-                    context->resp.responses().emplace_back(std::move(resp));
+                    context->resp.responses().emplace_back(
+                        std::move(std::pair<HostAddr, Response>(host, resp)));
                 }
 
                 if (context->removeRequest(host)) {

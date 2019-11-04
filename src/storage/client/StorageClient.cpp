@@ -400,14 +400,15 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(
 
 
 // Get All leaders of one space
-folly::SemiFuture<StorageRpcResponse<cpp2::GetLeaderResp>> StorageClient::getSpaceLeaders(
+folly::SemiFuture<StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>>
+StorageClient::getSpaceLeaders(
         const GraphSpaceID space,
         folly::EventBase* evb) {
     std::unordered_map<HostAddr, storage::cpp2::GetLeaderReq> requests;
     auto res_parts_alloc = getPartsAlloc(space);
     if (UNLIKELY(!res_parts_alloc.ok())) {
-        return folly::makeSemiFuture<StorageRpcResponse<cpp2::GetLeaderResp>>(
-            StorageRpcResponse<cpp2::GetLeaderResp>(0));
+        return folly::makeSemiFuture<StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>>(
+            StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>(0));
     }
     requests.reserve(res_parts_alloc.value().size());
 

@@ -361,10 +361,11 @@ TEST_F(StorageClientTestF, FetchLeaders) {
         ASSERT_TRUE(resps.succeeded());
         // show the leaders
         for (auto& resp : resps.responses()) {
-            for (auto& val : resp.get_leader_parts()) {
-                LOG(INFO) << "Space: " << val.first;
+            LOG(INFO) << "Host: " << resp.first;
+            for (auto& val : resp.second.get_leader_parts()) {
+                LOG(INFO) << "\t" << "Space: " << val.first;
                 for (auto& p : val.second) {
-                    LOG(INFO) << "Leader Part: " << p;
+                    LOG(INFO) << "\t\t" << "Leader Part: " << p;
                 }
             }
         }
