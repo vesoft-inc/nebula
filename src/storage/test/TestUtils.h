@@ -32,7 +32,6 @@ class TestUtils {
 public:
     static std::unique_ptr<kvstore::KVStore> initKV(
             const char* rootPath,
-            const char* checkpointPath = nullptr,
             int32_t partitionNumber = 6,
             HostAddr localhost = {0, 0},
             meta::MetaClient* mClient = nullptr,
@@ -65,13 +64,6 @@ public:
         std::vector<std::string> paths;
         paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath));
         paths.emplace_back(folly::stringPrintf("%s/disk2", rootPath));
-
-        if (checkpointPath != nullptr) {
-            std::vector<std::string> checkpoint;
-            checkpoint.emplace_back(folly::stringPrintf("%s/disk1", checkpointPath));
-            checkpoint.emplace_back(folly::stringPrintf("%s/disk2", checkpointPath));
-            options.checkpointPaths_ = std::move(checkpoint);
-        }
 
         // Prepare KVStore
         options.dataPaths_ = std::move(paths);
@@ -202,11 +194,13 @@ public:
 
     // If kvstore should init files in dataPath, input port can't be 0
     static std::unique_ptr<test::ServerContext> mockStorageServer(meta::MetaClient* mClient,
-            const char* dataPath, uint32_t ip, uint32_t port = 0, bool useMetaServer = false,
-            const char* checkpointPath = nullptr) {
+                                                                  const char* dataPath,
+                                                                  uint32_t ip,
+                                                                  uint32_t port = 0,
+                                                                  bool useMetaServer = false) {
         auto sc = std::make_unique<test::ServerContext>();
         // Always use the Meta Service in this case
-        sc->kvStore_ = TestUtils::initKV(dataPath, checkpointPath, 6, {ip, port}, mClient, true);
+        sc->kvStore_ = TestUtils::initKV(dataPath, 6, {ip, port}, mClient, true);
 
         if (!useMetaServer) {
             sc->schemaMan_ = TestUtils::mockSchemaMan(1);

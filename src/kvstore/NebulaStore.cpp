@@ -51,7 +51,6 @@ bool NebulaStore::init() {
     LOG(INFO) << "Scan the local path, and init the spaces_";
     {
         folly::RWSpinLock::WriteHolder wh(&lock_);
-        auto checkpoint = options_.checkpointPaths_.begin();
         for (auto& path : options_.dataPaths_) {
             auto rootPath = folly::stringPrintf("%s/nebula", path.c_str());
             auto dirs = fs::FileUtils::listAllDirsInDir(rootPath.c_str());
@@ -77,10 +76,7 @@ bool NebulaStore::init() {
                         CHECK(fs::FileUtils::remove(dataPath.c_str(), true));
                         continue;
                     }
-                    auto engine = options_.checkpointPaths_.empty() ?
-                                  newEngine(spaceId, path) :
-                                  newEngine(spaceId, path, (++checkpoint)->c_str());
-
+                    auto engine = newEngine(spaceId, path);
                     auto spaceIt = this->spaces_.find(spaceId);
                     if (spaceIt == this->spaces_.end()) {
                         LOG(INFO) << "Load space " << spaceId << " from disk";
@@ -182,8 +178,7 @@ bool NebulaStore::init() {
 
 
 std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
-                                                 const std::string& path,
-                                                 const std::string& checkpointPath) {
+                                                 const std::string& path) {
     if (FLAGS_engine_type == "rocksdb") {
         std::shared_ptr<KVCompactionFilterFactory> cfFactory = nullptr;
         if (options_.cffBuilder_ != nullptr) {
@@ -192,7 +187,6 @@ std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
         }
         return std::make_unique<RocksEngine>(spaceId,
                                              path,
-                                             checkpointPath,
                                              options_.mergeOp_,
                                              cfFactory);
     } else {
@@ -223,17 +217,8 @@ void NebulaStore::addSpace(GraphSpaceID spaceId) {
     }
     LOG(INFO) << "Create space " << spaceId;
     this->spaces_[spaceId] = std::make_unique<SpacePartInfo>();
-    auto dataPath = options_.dataPaths_.begin();
-    if (options_.checkpointPaths_.empty()) {
-        for (auto& path : options_.dataPaths_) {
-            this->spaces_[spaceId]->engines_.emplace_back(newEngine(spaceId, path));
-        }
-    } else {
-        auto checkpointPath = options_.checkpointPaths_.begin();
-        for (; dataPath != options_.dataPaths_.end(); ++dataPath, ++checkpointPath) {
-            this->spaces_[spaceId]->engines_.emplace_back(
-                    newEngine(spaceId, *dataPath, *checkpointPath));
-        }
+    for (auto& path : options_.dataPaths_) {
+        this->spaces_[spaceId]->engines_.emplace_back(newEngine(spaceId, path));
     }
 }
 
@@ -613,14 +598,14 @@ ResultCode NebulaStore::flush(GraphSpaceID spaceId) {
     return ResultCode::SUCCEEDED;
 }
 
-ResultCode NebulaStore::createCheckpoint(GraphSpaceID spaceId, const std::string& path) {
+ResultCode NebulaStore::createCheckpoint(GraphSpaceID spaceId, const std::string& name) {
     auto spaceRet = space(spaceId);
     if (!ok(spaceRet)) {
         return error(spaceRet);
     }
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
-        auto code = engine->createCheckpoint(path);
+        auto code = engine->createCheckpoint(name);
         if (code != ResultCode::SUCCEEDED) {
             return code;
         }
@@ -628,14 +613,14 @@ ResultCode NebulaStore::createCheckpoint(GraphSpaceID spaceId, const std::string
     return ResultCode::SUCCEEDED;
 }
 
-ResultCode NebulaStore::dropCheckpoint(GraphSpaceID spaceId, const std::string& path) {
+ResultCode NebulaStore::dropCheckpoint(GraphSpaceID spaceId, const std::string& name) {
     auto spaceRet = space(spaceId);
     if (!ok(spaceRet)) {
         return error(spaceRet);
     }
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
-        auto code = engine->dropCheckpoint(path);
+        auto code = engine->dropCheckpoint(name);
         if (code != ResultCode::SUCCEEDED) {
             return code;
         }

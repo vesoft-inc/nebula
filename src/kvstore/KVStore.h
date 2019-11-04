@@ -33,8 +33,6 @@ struct KVOptions {
     // otherwise it would mix up the data on disk.
     std::vector<std::string> dataPaths_;
 
-    std::vector<std::string> checkpointPaths_;
-
     //  PartManager instance for kvstore.
     std::unique_ptr<PartManager> partMan_{nullptr};
 
@@ -156,9 +154,9 @@ public:
 
     virtual ResultCode flush(GraphSpaceID spaceId) = 0;
 
-    virtual ResultCode createCheckpoint(GraphSpaceID spaceId, const std::string& path) = 0;
+    virtual ResultCode createCheckpoint(GraphSpaceID spaceId, const std::string& name) = 0;
 
-    virtual ResultCode dropCheckpoint(GraphSpaceID spaceId, const std::string& path) = 0;
+    virtual ResultCode dropCheckpoint(GraphSpaceID spaceId, const std::string& name) = 0;
 
     virtual void setBlocking(bool sign) = 0;
 

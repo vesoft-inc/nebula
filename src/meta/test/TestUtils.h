@@ -114,12 +114,9 @@ public:
 
         std::vector<std::string> paths;
         paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath));
-        std::vector<std::string> snapshots;
-        snapshots.emplace_back(folly::stringPrintf("%s/snapshot1", rootPath));
 
         kvstore::KVOptions options;
         options.dataPaths_ = std::move(paths);
-        options.checkpointPaths_ = std::move(snapshots);
         options.partMan_ = std::move(partMan);
         IPv4 localIp;
         network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);

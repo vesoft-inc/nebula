@@ -31,10 +31,6 @@
 ########## storage ##########
 # Root data path, here should be only single path for metad
 --data_path=data/meta
-# Root checkpoint path, here should be only single path for metad
---checkpoint_path=data/checkpoint
-#wal synchronization delay when checkpoint
--- checkpoint_delay_secs=30
 
 ########## Misc #########
 # The default number of parts when a space is created

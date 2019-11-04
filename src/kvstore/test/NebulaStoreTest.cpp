@@ -538,14 +538,8 @@ TEST(NebulaStoreTest, CheckpointTest) {
     spaths.emplace_back(folly::stringPrintf("%s/disk1", srcPath.path()));
     spaths.emplace_back(folly::stringPrintf("%s/disk2", srcPath.path()));
 
-    fs::TempDir destPath("/tmp/nebula_checkpoint_dest_test.XXXXXX");
-    std::vector<std::string> dpaths;
-    dpaths.emplace_back(folly::stringPrintf("%s/disk1", destPath.path()));
-    dpaths.emplace_back(folly::stringPrintf("%s/disk2", destPath.path()));
-
     KVOptions options;
     options.dataPaths_ = std::move(spaths);
-    options.checkpointPaths_ = std::move(dpaths);
     options.partMan_ = std::move(partMan);
     HostAddr local = {0, 0};
     auto store = std::make_unique<NebulaStore>(std::move(options),
@@ -605,7 +599,7 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
     auto initNebulaStore = [](const std::vector<HostAddr>& peers,
                               int32_t index,
                               const std::string& path,
-                              bool useCheckpoint) -> std::unique_ptr<NebulaStore> {
+                              bool useSnapshot = false) -> std::unique_ptr<NebulaStore> {
         LOG(INFO) << "Start nebula store on " << peers[index];
         auto sIoThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
         auto partMan = std::make_unique<MemPartManager>();
@@ -617,15 +611,12 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
             partMan->partsMap_[0][partId] = std::move(pm);
         }
         std::vector<std::string> paths;
-        std::string dataDir = useCheckpoint ?
-                              folly::stringPrintf("%s/disk%d/checkpoint", path.c_str(), index) :
-                              folly::stringPrintf("%s/disk%d", path.c_str(), index);
+        std::string dataDir = useSnapshot ?
+                  folly::stringPrintf("%s/disk%d/checkpoint/snapshot", path.c_str(), index)
+                : folly::stringPrintf("%s/disk%d", path.c_str(), index);
         paths.emplace_back(std::move(dataDir));
         KVOptions options;
         options.dataPaths_ = paths;
-        if (!useCheckpoint) {
-            options.checkpointPaths_ = std::move(paths);
-        }
         options.partMan_ = std::move(partMan);
         HostAddr local = peers[index];
         return std::make_unique<NebulaStore>(std::move(options),
@@ -667,7 +658,7 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
 
     std::vector<std::unique_ptr<NebulaStore>> stores;
     for (int i = 0; i < replicas; i++) {
-        stores.emplace_back(initNebulaStore(peers, i, rootPath.path(), false));
+        stores.emplace_back(initNebulaStore(peers, i, rootPath.path()));
         stores.back()->init();
     }
     LOG(INFO) << "Waiting for all leaders elected!";
@@ -751,7 +742,7 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
     }
 
     for (int i = 0; i < replicas; i++) {
-        auto ret = stores[i]->createCheckpoint(0, "checkpoint");
+        auto ret = stores[i]->createCheckpoint(0, "snapshot");
         ASSERT_EQ(ResultCode::SUCCEEDED, ret);
     }
 

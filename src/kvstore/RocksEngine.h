@@ -98,7 +98,6 @@ class RocksEngine : public KVEngine {
 public:
     RocksEngine(GraphSpaceID spaceId,
                 const std::string& dataPath,
-                const std::string& checkpointPath = "",
                 std::shared_ptr<rocksdb::MergeOperator> mergeOp = nullptr,
                 std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory = nullptr);
 
@@ -180,7 +179,6 @@ private:
 
 private:
     std::string  dataPath_;
-    std::string  checkpointPath_;
     std::unique_ptr<rocksdb::DB> db_{nullptr};
     int32_t partsNum_ = -1;
 };

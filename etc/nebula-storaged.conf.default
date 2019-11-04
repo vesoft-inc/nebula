@@ -32,9 +32,6 @@
 # Root data path, multiple paths should be splitted by comma.
 # One path per instance, if --engine_type is `rocksdb'
 --data_path=data/storage
-# Root checkpoint path, multiple paths should be splitted by comma and path number must same with data_path.
-# One path per instance, if --engine_type is `rocksdb'
---checkpoint_path=data/checkpoint
 # The type of part manager, [memory | meta]
 --part_man_type=memory
 # The default reserved bytes for one batch operation

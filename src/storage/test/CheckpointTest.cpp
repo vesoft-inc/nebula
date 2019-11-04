@@ -16,8 +16,7 @@ namespace nebula {
 namespace storage {
 TEST(CheckpointTest, simpleTest) {
     fs::TempDir dataPath("/tmp/Checkpoint_Test_src.XXXXXX");
-    fs::TempDir checkpointPath("/tmp/Checkpoint_Test_dest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath.path(), checkpointPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath.path()));
     // Add vertices
     {
         auto* processor = AddVerticesProcessor::instance(kv.get(), nullptr, nullptr);
@@ -56,13 +55,13 @@ TEST(CheckpointTest, simpleTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_codes.size());
-        auto checkpoint1 = folly::stringPrintf("%s/disk1/checkpoint_test/nebula/0/data/",
-                                               checkpointPath.path());
+        auto checkpoint1 = folly::stringPrintf("%s/disk1/checkpoint/checkpoint_test/nebula/0/data/",
+                                               dataPath.path());
         auto files = fs::FileUtils::listAllFilesInDir(checkpoint1.data());
         ASSERT_EQ(4, files.size());
         files.clear();
-        auto checkpoint2 = folly::stringPrintf("%s/disk1/checkpoint_test/nebula/0/data/",
-                                               checkpointPath.path());
+        auto checkpoint2 = folly::stringPrintf("%s/disk2/checkpoint/checkpoint_test/nebula/0/data/",
+                                               dataPath.path());
         fs::FileUtils::listAllFilesInDir(checkpoint2.data());
         files = fs::FileUtils::listAllFilesInDir(checkpoint2.data());
         ASSERT_EQ(4, files.size());

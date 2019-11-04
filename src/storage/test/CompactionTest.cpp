@@ -78,7 +78,7 @@ TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
     auto schemaMan = TestUtils::mockSchemaMan();
     std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
                                     new StorageCompactionFilterFactoryBuilder(schemaMan.get()));
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(), nullptr,
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
                                                            6,
                                                            {0, 0},
                                                            nullptr,

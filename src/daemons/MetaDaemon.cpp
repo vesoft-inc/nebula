@@ -30,8 +30,6 @@ using nebula::Status;
 DEFINE_int32(port, 45500, "Meta daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_string(data_path, "", "Root data path");
-DEFINE_string(checkpoint_path, "", "Root database checkpoint path");
-
 DEFINE_string(meta_server_addrs, "", "It is a list of IPs split by comma,"
                                      "the ips number equals replica number."
                                      "If empty, it means replica is 0");
@@ -73,7 +71,6 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
     threadManager->start();
     nebula::kvstore::KVOptions options;
     options.dataPaths_ = {FLAGS_data_path};
-    options.checkpointPaths_ = {FLAGS_checkpoint_path};
     options.partMan_ = std::move(partMan);
     auto kvstore = std::make_unique<nebula::kvstore::NebulaStore>(
                                                         std::move(options),
@@ -165,44 +162,6 @@ int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
     if (FLAGS_data_path.empty()) {
         LOG(ERROR) << "Meta Data Path should not empty";
-        return EXIT_FAILURE;
-    }
-
-    if (FLAGS_checkpoint_path.empty()) {
-        LOG(ERROR) << "Meta Backup Path should not empty";
-        return EXIT_FAILURE;
-    }
-
-    std::vector<std::string> paths;
-    folly::split(",", FLAGS_data_path, paths, true);
-    std::transform(paths.begin(), paths.end(), paths.begin(), [](auto& p) {
-        return folly::trimWhitespace(p).str();
-    });
-    if (paths.empty()) {
-        LOG(ERROR) << "Bad data_path format:" << FLAGS_data_path;
-        return EXIT_FAILURE;
-    }
-
-    if (paths.size() > 1) {
-        LOG(ERROR) << "Meta server only one directory is required:" << FLAGS_data_path;
-        return EXIT_FAILURE;
-    }
-
-    std::vector<std::string> checkpointPaths;
-    folly::split(",", FLAGS_checkpoint_path, checkpointPaths, true);
-    std::transform(checkpointPaths.begin(),
-                   checkpointPaths.end(),
-                   checkpointPaths.begin(), [](auto& p) {
-        return folly::trimWhitespace(p).str();
-    });
-    if (paths.empty()) {
-        LOG(ERROR) << "Bad checkpoint_path format:" << FLAGS_checkpoint_path;
-        return EXIT_FAILURE;
-    }
-
-    if (paths.size() != checkpointPaths.size()) {
-        LOG(ERROR) << "The checkpoint directory data must be equal to data path"
-                   << FLAGS_checkpoint_path;
         return EXIT_FAILURE;
     }
 

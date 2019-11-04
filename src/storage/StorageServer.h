@@ -22,15 +22,10 @@ class StorageServer final {
 public:
     StorageServer(HostAddr localHost,
                   std::vector<HostAddr> metaAddrs,
-                  std::vector<std::string> dataPaths,
-                  std::vector<std::string> checkpointPaths = {})
+                  std::vector<std::string> dataPaths)
         : localHost_(localHost)
         , metaAddrs_(std::move(metaAddrs))
-        , dataPaths_(std::move(dataPaths)) {
-        if (checkpointPaths.size() > 0) {
-            checkpointPaths_ = checkpointPaths;
-        }
-    }
+        , dataPaths_(std::move(dataPaths)) {}
 
     ~StorageServer() {
         stop();
@@ -68,7 +63,6 @@ private:
     HostAddr localHost_;
     std::vector<HostAddr> metaAddrs_;
     std::vector<std::string> dataPaths_;
-    std::vector<std::string> checkpointPaths_{0};
     std::atomic<Status> webStatus_{Status::STOPPED};
 };
 

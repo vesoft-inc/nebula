@@ -13,7 +13,6 @@
 
 DEFINE_string(data_path, "", "Root data path, multi paths should be split by comma."
                              "For rocksdb engine, one path one instance.");
-DEFINE_string(checkpoint_path, "", "Root database checkpoint path.");
 DEFINE_string(local_ip, "", "IP address which is used to identify this server, "
                             "combined with the listen port");
 DEFINE_bool(daemonize, true, "Whether to run the process as a daemon");
@@ -70,11 +69,6 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    if (FLAGS_checkpoint_path.empty()) {
-        LOG(ERROR) << "Storage Checkpoint Path should not empty";
-        return EXIT_FAILURE;
-    }
-
     auto result = nebula::network::NetworkUtils::getLocalIP(FLAGS_local_ip);
     if (!result.ok()) {
         LOG(ERROR) << "Get localIp failed, ip " << FLAGS_local_ip
@@ -103,24 +97,6 @@ int main(int argc, char *argv[]) {
          return EXIT_FAILURE;
     }
 
-    std::vector<std::string> checkpointPaths;
-    folly::split(",", FLAGS_checkpoint_path, checkpointPaths, true);
-    std::transform(checkpointPaths.begin(),
-                   checkpointPaths.end(),
-                   checkpointPaths.begin(), [](auto& p) {
-        return folly::trimWhitespace(p).str();
-    });
-    if (paths.empty()) {
-        LOG(ERROR) << "Bad checkpoint_path format:" << FLAGS_checkpoint_path;
-        return EXIT_FAILURE;
-    }
-
-    if (paths.size() != checkpointPaths.size()) {
-        LOG(ERROR) << "The checkpoint directory data must be equal to data path"
-                      << FLAGS_checkpoint_path;
-        return EXIT_FAILURE;
-    }
-
     // Setup the signal handlers
     status = setupSignalHandler();
     if (!status.ok()) {
@@ -130,9 +106,7 @@ int main(int argc, char *argv[]) {
 
     gStorageServer = std::make_unique<nebula::storage::StorageServer>(hostRet.value(),
                                                                       metaAddrsRet.value(),
-                                                                      paths,
-                                                                      checkpointPaths);
-
+                                                                      paths);
     if (!gStorageServer->start()) {
         LOG(ERROR) << "Storage server start failed";
         gStorageServer->stop();

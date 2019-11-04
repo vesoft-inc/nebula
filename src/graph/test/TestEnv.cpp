@@ -63,8 +63,7 @@ void TestEnv::SetUp() {
                                                         storageRootPath_.path(),
                                                         localIp,
                                                         storagePort,
-                                                        true,
-                                                        checkpointRootPath_.path());
+                                                        true);
 
     // Create graphServer
     graphServer_ = TestUtils::mockGraphServer(0);

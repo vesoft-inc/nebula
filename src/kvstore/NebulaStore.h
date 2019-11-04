@@ -163,9 +163,9 @@ public:
 
     ResultCode flush(GraphSpaceID spaceId) override;
 
-    ResultCode createCheckpoint(GraphSpaceID spaceId, const std::string& path) override;
+    ResultCode createCheckpoint(GraphSpaceID spaceId, const std::string& name) override;
 
-    ResultCode dropCheckpoint(GraphSpaceID spaceId, const std::string& path) override;
+    ResultCode dropCheckpoint(GraphSpaceID spaceId, const std::string& name) override;
 
     int32_t allLeader(std::unordered_map<GraphSpaceID,
                                          std::vector<PartitionID>>& leaderIds) override;
@@ -194,7 +194,11 @@ public:
     }
 
     std::vector<std::string> getCheckpointPath() override {
-        return options_.checkpointPaths_;
+        std::vector<std::string> cps;
+        for (auto& p : options_.dataPaths_) {
+            cps.emplace_back(folly::stringPrintf("%s/checkpoint", p.c_str()));
+        }
+        return cps;
     }
 
 private:
@@ -202,9 +206,7 @@ private:
                            const std::unordered_map<std::string, std::string>& options,
                            bool isDbOption) override;
 
-    std::unique_ptr<KVEngine> newEngine(GraphSpaceID spaceId,
-                                        const std::string& path,
-                                        const std::string& checkpointPath = "");
+    std::unique_ptr<KVEngine> newEngine(GraphSpaceID spaceId, const std::string& path);
 
     std::shared_ptr<Part> newPart(GraphSpaceID spaceId,
                                   PartitionID partId,
