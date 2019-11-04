@@ -12,7 +12,7 @@
 #include "meta/GflagsManager.h"
 #include "base/Configuration.h"
 
-DEFINE_int32(load_data_interval_secs, 2 * 60, "Load data interval");
+DEFINE_int32(load_data_interval_secs, 1, "Load data interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
