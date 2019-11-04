@@ -8,7 +8,7 @@ DESCRIBE EDGE edge_name
 
 DESCRIBE 关键词的作用是获取关于 space, tag, edge 结构的信息。
 
-同时需要注意的是，DESCRIBE 和 SHOW 也是不同的。 详细参见 SHOW 文档。
+同时需要注意的是，DESCRIBE 和 SHOW 也是不同的。 详细参见 [SHOW](show-syntax.md) 文档。
 
 ## 示例
 
