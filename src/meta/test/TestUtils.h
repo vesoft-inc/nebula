@@ -32,7 +32,7 @@ using nebula::cpp2::SupportedType;
 using apache::thrift::FragileConstructor::FRAGILE;
 class TestUtils {
 public:
-    static std::unique_ptr<kvstore::KVStore> initKV(const char* rootPath) {
+    static std::unique_ptr<kvstore::KVStore> initKV(const char* rootPath, uint16_t port = 0) {
         auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
         auto partMan = std::make_unique<kvstore::MemPartManager>();
         auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
@@ -51,14 +51,29 @@ public:
         kvstore::KVOptions options;
         options.dataPaths_ = std::move(paths);
         options.partMan_ = std::move(partMan);
-        HostAddr localhost = HostAddr(0, 0);
+        IPv4 localIp;
+        network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+        if (port == 0) {
+            port = network::NetworkUtils::getAvailablePort();
+        }
+        HostAddr localhost = HostAddr(localIp, port);
 
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
                                                             localhost,
                                                             workers);
         store->init();
-        sleep(1);
+        while (true) {
+            auto retLeader = store->partLeader(0, 0);
+            if (ok(retLeader)) {
+                auto leader = value(std::move(retLeader));
+                LOG(INFO) << leader;
+                if (leader == localhost) {
+                    break;
+                }
+            }
+            usleep(100000);
+        }
         return std::move(store);
     }
 
@@ -211,7 +226,7 @@ public:
         LOG(INFO) << "Initializing KVStore at \"" << dataPath << "\"";
 
         auto sc = std::make_unique<test::ServerContext>();
-        sc->kvStore_ = TestUtils::initKV(dataPath);
+        sc->kvStore_ = TestUtils::initKV(dataPath, port);
 
         auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(sc->kvStore_.get(),
                                                                           clusterId);
