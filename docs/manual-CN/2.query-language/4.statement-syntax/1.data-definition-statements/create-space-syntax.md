@@ -8,7 +8,7 @@ space_option:
     option_name = value
 ```
 
-以上语句作用是创建一个新的图空间。不同的图空间是物理隔离的。 
+以上语句用于创建一个新的图空间。不同的图空间是物理隔离的。
 
 ## Space Name 图空间名
 
@@ -19,6 +19,7 @@ space_option:
 ### Space Options 图空间选项
 
 在创建图空间的时候，可以传入自定义选项。选项名称 _option_name_ 可以是以下任何一个：
+
 * _partition_num_
 
     _partition_num_ 表示数据分片数量。默认值为 1024。

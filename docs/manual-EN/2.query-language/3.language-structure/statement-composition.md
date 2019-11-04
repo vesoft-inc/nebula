@@ -7,7 +7,7 @@ There are only two ways to compose statements (or subqueries):
 
 > Notice that compose statements are not `Transactional` queries.
 > For example, a statement composed of three subqueries: A | B | C, where A is a read operation, B is a computation, and C is a write operation.
-> If any part fails in the execution, the whole result could be undefined -- currently, there is no so call roll back -- what was written dependents on the query executor.
+> If any part fails in the execution, the whole result could be undefined -- currently, there is no so called roll back -- what was written depends on the query executor.
 
 ## Examples
 

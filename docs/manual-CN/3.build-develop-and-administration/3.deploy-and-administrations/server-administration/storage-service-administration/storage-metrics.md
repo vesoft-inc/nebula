@@ -28,6 +28,7 @@
 ```
 
 每一个接口都有三个性能指标，分别为延迟(单位为 us)、QPS、发生错误的 QPS，后缀名如下：
+
 ```
 _latency
 _qps
@@ -50,7 +51,7 @@ _error_qps
 
 ```
 add_vertex_latency.avg.60        # 最近一分钟插入一个点的平均延时
-get_bound_qps.rate.600        # 最近十分钟获取邻居的 QPS
+get_bound_qps.rate.600        # 最近十分钟获取邻点的 QPS
 update_edge_error_qps.count.3600   # 最近一小时更新一条边发生错误的总计数量
 ```
 

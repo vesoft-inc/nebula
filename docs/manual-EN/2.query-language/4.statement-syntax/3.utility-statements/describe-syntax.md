@@ -8,11 +8,11 @@ DESCRIBE EDGE <edge_name>
 
 The DESCRIBE keyword is used to obtain information about space, tag, edge structure.
 
-Also notice that DESCRIBE is different from SHOW.
+Also notice that DESCRIBE is different from SHOW. Refer [SHOW](show-syntax.md).
 
 ## Example
 
-Providing information about space. <!-- As regards information about CREATE SPACE. -->
+Obtain information about space.
 
 ```SQL
 nebula> DESCRIBE SPACE laura_space;
@@ -23,7 +23,7 @@ nebula> DESCRIBE SPACE laura_space;
 --------------------------------------------------------  
 ```
 
-Providing information about tag. <!-- As regards information about CREATE TAG. -->
+Obtain information about tag.
 
 ```SQL
 nebula> DESCRIBE TAG player
@@ -36,7 +36,7 @@ nebula> DESCRIBE TAG player
 ------------------  
 ```
 
-Providing information about edge. <!-- As regards information about CREATE EDGE. -->
+Obtain information about edge.
 
 ```SQL
 nebula> DESCRIBE EDGE serve
