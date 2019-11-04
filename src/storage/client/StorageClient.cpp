@@ -480,5 +480,43 @@ StorageClient::get(GraphSpaceID space,
                               });
 }
 
+StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>
+StorageClient::preHeartLeaders() {
+    auto fSpaces = client_->listSpaces();
+    return std::move(fSpaces).thenValue([](auto&& spaces){
+        return std::move(spaces);
+    }).thenValue([this](auto&& spaces){
+        std::vector<folly::SemiFuture<
+            StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>>> leaders;
+        if (UNLIKELY(!spaces.ok())) {
+            LOG(ERROR) << "Get spaces failed!";
+            return folly::collect(leaders.begin(), leaders.end());
+        }
+        leaders.reserve(spaces.value().size());
+        for (auto& s : spaces.value()) {
+            auto fLeader = getSpaceLeaders(s.first);
+            leaders.emplace_back(std::move(fLeader));
+        }
+        return folly::collect(leaders.begin(), leaders.end());
+    }).thenValue([](auto&& leaders){
+        if (UNLIKELY(leaders.empty())) {
+            return StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>();
+        }
+        std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> r;
+        for (auto& leader : leaders) {
+            for (auto& resp : leader.responses()) {
+                for (auto& val : resp.second.get_leader_parts()) {
+                    for (auto& p : val.second) {
+                        r.emplace(std::make_pair(val.first, p), resp.first);
+                    }
+                }
+            }
+        }
+        return StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>
+            (std::move(r));
+    }).get();
+}
+
+
 }   // namespace storage
 }   // namespace nebula

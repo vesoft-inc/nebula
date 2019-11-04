@@ -62,7 +62,7 @@ public:
     }
 
 private:
-    const size_t totalReqsSent_;
+    /*const*/ size_t totalReqsSent_;
     size_t failedReqs_{0};
 
     Result result_{Result::ALL_SUCCEEDED};
@@ -289,31 +289,8 @@ protected:
     }
 
     // fetch all leaders before work
-    inline StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>
-    preHeartLeaders() {
-        std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> r;
-        auto rSpaces = listSpaces();
-        if (UNLIKELY(!rSpaces.ok())) {
-            return StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>();
-        }
-        // ASYNC BY collect/future? \TODO(shylock)
-        for (auto& s : rSpaces.value()) {
-            auto leaders = getSpaceLeaders(s.first).get();
-            if (UNLIKELY(!leaders.succeeded())) {
-                return StatusOr<
-                    std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>();
-            }
-            for (auto& resp : leaders.responses()) {
-                for (auto& val : resp.second.get_leader_parts()) {
-                    for (auto& p : val.second) {
-                        r.emplace(std::make_pair(val.first, p), resp.first);
-                    }
-                }
-            }
-        }
-        return StatusOr<
-            std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>(std::move(r));
-    }
+    StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>
+    preHeartLeaders();
 
     virtual int32_t partsNum(GraphSpaceID spaceId) const {
         CHECK(client_ != nullptr);
