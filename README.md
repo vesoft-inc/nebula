@@ -3,13 +3,13 @@
   <br> English | <a href="README-CN.md">中文</a>
   <br>A distributed, scalable, lighting-fast graph database<br>
   <a href="https://github.com/vesoft-inc/nebula/actions?workflow=build">
-    <img src="https://github.com/vesoft-inc/nebula/workflows/build/badge.svg" />
+    <img src="https://github.com/vesoft-inc/nebula/workflows/build/badge.svg" alt="build and test workflow"/>
   </a>
   <a href="https://github.com/vesoft-inc/nebula/actions?workflow=docker">
-    <img src="https://github.com/vesoft-inc/nebula/workflows/docker/badge.svg" />
+    <img src="https://github.com/vesoft-inc/nebula/workflows/docker/badge.svg" alt="build docker image workflow"/>
   </a>
   <a href="https://github.com/vesoft-inc/nebula/actions?workflow=package">
-    <img src="https://github.com/vesoft-inc/nebula/workflows/package/badge.svg" />
+    <img src="https://github.com/vesoft-inc/nebula/workflows/package/badge.svg" alt="make nebula packages workflow"/>
   </a>
   <br>
 </p>
