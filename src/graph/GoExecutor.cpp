@@ -841,17 +841,24 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     bool saveTypeFlag = false;
                     auto &getters = expCtx_->getters();
 
-                    getters.getAliasProp = [&iter, &spaceId, &edgeType, &saveTypeFlag, &colTypes,
-                                            this](const std::string &edgeName,
-                                                  const std::string &prop) -> OptVariantType {
+                    getters.getAliasProp =
+                        [&iter, &spaceId, &edgeType, &saveTypeFlag, &colTypes, &edgeSchema, this](
+                            const std::string &edgeName,
+                            const std::string &prop) -> OptVariantType {
                         auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, edgeName);
-                        CHECK(edgeStatus.ok());
+                        if (!edgeStatus.ok()) {
+                            return edgeStatus.status();
+                        }
 
                         if (saveTypeFlag) {
                             colTypes.back() = iter->getSchema()->getFieldType(prop).type;
                         }
                         if (edgeType != edgeStatus.value()) {
-                            return RowReader::getDefaultProp(iter->getSchema().get(), prop);
+                            auto sit = edgeSchema.find(edgeStatus.value());
+                            if (sit == edgeSchema.end()) {
+                                return Status::Error("get schema failed");
+                            }
+                            return RowReader::getDefaultProp(sit->second.get(), prop);
                         }
 
                         auto res = RowReader::getPropByName(&*iter, prop);
@@ -866,7 +873,9 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         [&iter, &spaceId, &tagData, &tagSchema, &saveTypeFlag, &colTypes, this](
                             const std::string &tag, const std::string &prop) -> OptVariantType {
                         auto status = ectx()->schemaManager()->toTagID(spaceId, tag);
-                        CHECK(status.ok());
+                        if (!status.ok()) {
+                            return status.status();
+                        }
                         auto tagId = status.value();
                         auto it2 =
                             std::find_if(tagData.cbegin(), tagData.cend(), [&tagId](auto &td) {
@@ -897,7 +906,10 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                                                 const std::string &tag,
                                                 const std::string &prop) -> OptVariantType {
                         auto dst = RowReader::getPropByName(&*iter, "_dst");
-                        CHECK(ok(dst));
+                        if (!ok(dst)) {
+                            return Status::Error(
+                                folly::sformat("get prop({}.{}) failed", tag, prop));
+                        }
                         auto vid = boost::get<int64_t>(value(std::move(dst)));
                         auto status = ectx()->schemaManager()->toTagID(spaceId, tag);
                         if (!status.ok()) {
