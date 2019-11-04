@@ -11,7 +11,7 @@ YIELD
     [, <col_name> [AS <col_alias>] ...]
 ```
 
-`YIELD` is commonly used to return results generated with `GO`.
+`YIELD` is commonly used to return results generated with `GO` (Refer [GO](go-syntax.md)).
 
 ```sql
 nebula> GO FROM 201 OVER relations_edge YIELD $$.student.name AS Friend,\
@@ -91,9 +91,7 @@ nebula> YIELD hash("Tim") % 100
 ---------------------
 ```
 
-**Note**
-
-You can not use `YIELD DISTINCT` as a separate statement. This is a syntax error.
+**Note**: You can not use `YIELD DISTINCT` as a separate statement. This is a syntax error.
 
 ```sql
 nebula> YIELD DISTINCT 1     --- syntax error!
