@@ -151,7 +151,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
             });
         });  // via
     }  // for
-    if (context->finishSending()) {
+    if (UNLIKELY(context->finishSending())) {
         // Received all responses, most likely, all rpc failed
         context->promise.setValue(std::move(context->resp));
     }

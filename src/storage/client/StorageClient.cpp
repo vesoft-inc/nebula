@@ -421,7 +421,7 @@ StorageClient::getSpaceLeaders(
                                 const cpp2::GetLeaderReq& r) {
                                     return client->future_getLeaderPart(r);
                                 });
-    })
+    });
 }
 
 
