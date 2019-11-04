@@ -293,13 +293,13 @@ protected:
     preHeartLeaders() {
         std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> r;
         auto rSpaces = listSpaces();
-        if (!rSpaces.ok()) {
+        if (UNLIKELY(!rSpaces.ok())) {
             return StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>();
         }
         // ASYNC BY collect/future? \TODO(shylock)
         for (auto& s : rSpaces.value()) {
             auto leaders = getSpaceLeaders(s.first).get();
-            if (!leaders.succeeded()) {
+            if (UNLIKELY(!leaders.succeeded())) {
                 return StatusOr<
                     std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>();
             }
