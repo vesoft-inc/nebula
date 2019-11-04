@@ -10,13 +10,13 @@
 
  `CentOS` 系统：
 
-```sh
+```bash
 rpm -ivh nebula-{VERSION}.{SYSTEM_VERSION}.x86_64.rpm
 ```
 
  `Ubuntu` 系统：
 
-```sh
+```bash
 dpkg -i nebula-{VERSION}.{SYSTEM_VERSION}.amd64.deb
 ```
 

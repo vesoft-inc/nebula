@@ -30,7 +30,7 @@ for (int32_t i = 0; i < 1000; i ++) {
                        std::move(key), std::move(value));
 }
 
-// 通过 StorageClient 发送请求，相应的参数为 spaceId，以及写入的 key-value pairs
+// 通过 StorageClient 发送请求，相应的参数为 spaceId，以及写入的銉值对
 auto future = storageClient->put(spaceId, std::move(pairs));
 // 获取结果
 auto resp = std::move(future).get();

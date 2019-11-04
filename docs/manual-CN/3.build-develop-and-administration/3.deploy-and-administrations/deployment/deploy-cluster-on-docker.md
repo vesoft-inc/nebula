@@ -177,7 +177,7 @@ Welcome to Nebula Graph (Version 5f656b5)
 
 表明三台集群已部署成功，插入[数据](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-CN/get-started.md#%E5%88%9B%E5%BB%BA%E5%9B%BE%E6%95%B0%E6%8D%AE)进行测试。
 
-```sql
+```ngql
 $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade
 
 =============================
@@ -206,7 +206,7 @@ $ /usr/local/nebula/scripts/nebula.service status storaged
 
 登录 cluster-2，使用 `SHOW HOSTS` 查看
 
-```sql
+```ngql
 > SHOW HOSTS
 
 =============================================================================================
@@ -226,7 +226,7 @@ $ /usr/local/nebula/scripts/nebula.service status storaged
 
 测试数据是否可读
 
-```sql
+```ngql
 $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade
 
 =============================

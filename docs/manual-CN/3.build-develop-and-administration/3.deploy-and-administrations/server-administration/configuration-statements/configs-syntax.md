@@ -48,7 +48,7 @@ UPDATE CONFIGS storage:rocksdb_column_family_options =
 ## 显示变量
 
 ```ngql
-SHOW CONFIG graph|meta|storage
+SHOW CONFIGS graph|meta|storage
 ```
 
 例如
