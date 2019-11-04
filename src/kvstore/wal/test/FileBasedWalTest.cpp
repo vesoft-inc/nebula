@@ -453,6 +453,7 @@ TEST(FileBasedWal, CheckLastWalTest) {
     {
         // Modify the wal file, make last wal invalid
         std::vector<std::string> files = FileUtils::listAllFilesInDir(walDir.path(), true, "*.wal");
+        std::sort(files.begin(), files.end());
         size_t size = FileUtils::fileSize(files.back().c_str());
         auto fd = open(files.back().c_str(), O_WRONLY | O_APPEND);
         ftruncate(fd, size - sizeof(int32_t));
@@ -470,6 +471,7 @@ TEST(FileBasedWal, CheckLastWalTest) {
     {
         // get lastId in previous wal, make last wal invalid
         std::vector<std::string> files = FileUtils::listAllFilesInDir(walDir.path(), true, "*.wal");
+        std::sort(files.begin(), files.end());
         auto lastWalPath = files.back();
         auto it = wal->walFiles_.rbegin();
         it++;
