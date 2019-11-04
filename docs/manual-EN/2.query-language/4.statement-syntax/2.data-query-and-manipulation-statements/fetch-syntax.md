@@ -4,7 +4,7 @@ The `FETCH` syntax is used to get vertex/edge's properties.
 
 ## Fetch Vertex property
 
-Use `FETCH PROP ON` to return a (list of) vertex's properties. Currently, you can get multiple vertices' properties with the same in one sentence.  
+Use `FETCH PROP ON` to return a (list of) vertex's properties. Currently, you can get multiple vertices' properties with the same tag in one sentence.  
 
 ```sql
 FETCH PROP ON <tag_name> <vertex_id_list> [YIELD [DISTINCT] <return_list>]
@@ -12,7 +12,7 @@ FETCH PROP ON <tag_name> <vertex_id_list> [YIELD [DISTINCT] <return_list>]
 
 `<tag_name>` is the tag name. It should be the same tag within return_list
 
-`<vertex_id_list>::=[vertex_id [, vertex_id]]` is a list of vertex id separated by comma(,)
+`<vertex_id_list>::=[vertex_id [, vertex_id]]` is a list of vertex IDs separated by comma(,)
 
 `[YIELD [DISTINCT] <return_list>]` is the property list returned. Please refer here [YIELD Syntax](yield-syntax.md).
 
@@ -35,7 +35,7 @@ nebula> FETCH PROP ON player 1,2,3 YIELD DISTINCT player.name, player.age
 
 ## Fetch Edge Property
 
-The `FETCH` usage of an edge is almost the same as for vertex.
+The `FETCH` usage of an edge is almost the same with vertex.
 You can get properties from multiple edges with the same type.
 
 ```sql
