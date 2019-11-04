@@ -290,6 +290,9 @@ input_ref_expression
         // To reference the `id' column implicitly
         $$ = new InputPropertyExpression(new std::string("id"));
     }
+    | INPUT_REF DOT MUL {
+        $$ = new InputPropertyExpression(new std::string("*"));
+    }
     ;
 
 src_ref_expression
@@ -310,6 +313,9 @@ var_ref_expression
     }
     | VARIABLE {
         $$ = new VariablePropertyExpression($1, new std::string("id"));
+    }
+    | VARIABLE DOT MUL {
+        $$ = new VariablePropertyExpression($1, new std::string("*"));
     }
     ;
 
@@ -647,8 +653,10 @@ yield_column
     ;
 
 yield_sentence
-    : KW_YIELD yield_columns {
-        $$ = new YieldSentence($2);
+    : KW_YIELD yield_columns where_clause {
+        auto *s = new YieldSentence($2);
+		s->setWhereClause($3);
+		$$ = s;
     }
     ;
 
@@ -1033,6 +1041,7 @@ traverse_sentence
     | fetch_sentence { $$ = $1; }
     | find_path_sentence { $$ = $1; }
     | limit_sentence { $$ = $1; }
+    | yield_sentence { $$ = $1; }
     ;
 
 set_sentence
@@ -1679,11 +1688,6 @@ maintain_sentence
     | create_space_sentence { $$ = $1; }
     | describe_space_sentence { $$ = $1; }
     | drop_space_sentence { $$ = $1; }
-    | yield_sentence {
-        // Now we take YIELD as a normal maintenance sentence.
-        // In the future, we might make it able to be used in pipe.
-        $$ = $1;
-    }
     ;
     | create_user_sentence { $$ = $1; }
     | alter_user_sentence { $$ = $1; }

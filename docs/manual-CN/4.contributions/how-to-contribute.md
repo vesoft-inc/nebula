@@ -1,9 +1,9 @@
 # 如何提交代码和文档
 
-## Step 1: 通过GitHub Fork
+## Step 1: 通过 GitHub Fork
 
 1. 访问 https://github.com/vesoft-inc/nebula
-1. 点击右上角`Fork` 按钮创建远程分支
+1. 点击右上角 `Fork` 按钮创建远程分支
 
 ## Step 2: 将分支克隆到本地
 
@@ -14,13 +14,13 @@
 working_dir=$HOME/Workspace
 ```
 
-将`user` 设置为GitHub账户名：
+将 `user` 设置为 GitHub 账户名：
 
 ```sh
 user={GitHub账户名}
 ```
 
-clone代码：
+clone 代码：
 
 ```sh
 mkdir -p $working_dir
@@ -45,9 +45,9 @@ git remote set-url --push upstream no_push
 git remote -v
 ```
 
-### 定义预提交hook
+### 定义预提交 hook
 
-请将Nebula Graph预提交挂钩链接到`.git`目录。
+请将 Nebula Graph 预提交挂钩链接到 `.git` 目录。
 
 此挂钩检查提交格式，构建，文档生成等。
 
@@ -81,7 +81,7 @@ git checkout -b myfeature
 ```
 
 **注意**
-由于一个PR通常包含多个commit，在合并至master时容易被挤压(squash)，因此建议创建一个独立的分支进行更改。合并后，这个分支已无用处，因此可以使用上述rebase命令将本地master与upstream同步。此外，如果直接将commit提交至master，则需要hard reset主分支，例如：
+由于一个 PR 通常包含多个 commit，在合并至 master 时容易被挤压 ( squash )，因此建议创建一个独立的分支进行更改。合并后，这个分支已无用处，因此可以使用上述 rebase 命令将本地 master 与 upstream 同步。此外，如果直接将 commit 提交至 master，则需要 hard reset 主分支，例如：
 
 ```sh
 git fetch upstream
@@ -98,7 +98,7 @@ git push --force origin master
 
 ### 运行独立模式
 
-如需重现并检查问题，则需在独立模式下运行nebula。
+如需重现并检查问题，则需在独立模式下运行 nebula。
 
 ```sh
 # 构建二进制文件
@@ -108,7 +108,7 @@ git push --force origin master
 > nebula-graphd
 ```
 
-将Nebula Graph与本地服务器相连
+将 Nebula Graph 与本地服务器相连
 
 ```sh
 > nebula
@@ -123,7 +123,7 @@ git push --force origin master
 ## Step 5: 保持分支同步
 
 ```sh
-# 当处于myfeature分支时：
+# 当处于 myfeature 分支时：
 git fetch upstream
 git rebase upstream/master
 ```
@@ -138,17 +138,17 @@ git commit
 
 ### Step 7: Push
 
-代码更改完成或需要备份代码时，将本地仓库创建的分支push到GitHub端的远程仓库：
+代码更改完成或需要备份代码时，将本地仓库创建的分支 push 到 GitHub 端的远程仓库：
 
 ```sh
 git push -f origin myfeature
 ```
 
-### Step 8: 创建pull request
+### Step 8: 创建 pull request
 
-1. 点击此处访问fork仓库https://github.com/$user/nebula (替换此处的 `$user` 用户名)。
-1. 点击`myfeature`分支旁的 `Compare & pull request` 按钮。
+1. 点击此处访问 fork 仓库https://github.com/$user/nebula (替换此处的 `$user` 用户名)。
+1. 点击 `myfeature` 分支旁的 `Compare & pull request` 按钮。
 
 ### Step 9: 代码审查
 
-公开的pull request至少需要两人审查，代码审查包括查找bug，审查代码风格等。
+公开的 pull request 至少需要两人审查，代码审查包括查找 bug，审查代码风格等。

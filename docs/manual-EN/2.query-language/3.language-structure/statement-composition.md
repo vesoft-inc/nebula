@@ -7,7 +7,7 @@ There are only two ways to compose statements (or subqueries):
 
 > Notice that compose statements are not `Transactional` queries.
 > For example, a statement composed of three subqueries: A | B | C, where A is a read operation, B is a computation, and C is a write operation.
-> If any part fails in the execution, the whole result could be undefined -- currently, there is no so call roll back -- what was written dependents on the query executor.
+> If any part fails in the execution, the whole result could be undefined -- currently, there is no so called roll back -- what was written depends on the query executor.
 
 ## Examples
 
@@ -16,7 +16,7 @@ There are only two ways to compose statements (or subqueries):
 ```
 SHOW TAGS; SHOW EDGES;          -- only edges are shown
 
-INSERT VERTEX player(name, age) VALUES 100:("Tim Duncan", 42); \ 
+INSERT VERTEX player(name, age) VALUES 100:("Tim Duncan", 42); \
 INSERT VERTEX player(name, age) VALUES 101:("Tony Parker", 36); \
 INSERT VERTEX player(name, age) VALUES 102:("LaMarcus Aldridge", 33);  /* multiple vertices are added in a compose statement. */
 
@@ -28,4 +28,4 @@ INSERT VERTEX player(name, age) VALUES 102:("LaMarcus Aldridge", 33);  /* multip
 GO FROM 201 OVER edge_serve | GO FROM $-.id OVER edge_fans | GO FROM $-.id ...
 ```
 
-Placeholder `$-.id` takes the result from the first statment `GO FROM 201 OVER edge_serve`
+Placeholder `$-.id` takes the result from the first statement `GO FROM 201 OVER edge_serve YIELD edge_serve._dst AS id`.

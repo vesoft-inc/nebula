@@ -22,4 +22,4 @@ Use backslash as line break.   \
 */ 12
 ```
 
-The backslash `\` at the line of line indicates a line break.
+The backslash `\` in a line indicates a line break.
