@@ -41,7 +41,7 @@ INSERT VERTEX  t1 (i1), t2(s2) VALUES 21: (321, "hello")   -- 插入有两个标
 同一节点可被多次插入或写入，读取时以最后一次插入为准。
 
 ```
--- 为点11多次插入新值
+-- 为点 11 多次插入新值
 INSERT VERTEX t2 (name, age) VALUES 11:("n2", 13)
 INSERT VERTEX t2 (name, age) VALUES 11:("n3", 14)
 INSERT VERTEX t2 (name, age) VALUES 11:("n4", 15)  -- 读取最后插入的值
