@@ -97,7 +97,7 @@ public:
         std::size_t retry = 3;
         StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>> resp;
         do {
-            resp = preHeartLeaders();
+            resp = preHeatLeaders();
         } while (retry-- && !resp.ok());
         if (!resp.ok()) {
             LOG(ERROR) << "Prepare storage client failed!";
@@ -323,7 +323,7 @@ protected:
 
     // fetch all leaders before work
     StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>
-    preHeartLeaders();
+    preHeatLeaders();
 
     virtual int32_t partsNum(GraphSpaceID spaceId) const {
         CHECK(client_ != nullptr);

@@ -399,7 +399,7 @@ TEST_F(StorageClientTestF, Misc) {
 
     // All Leaders
     {
-        auto leaders = client_->preHeartLeaders();
+        auto leaders = client_->preHeatLeaders();
         ASSERT_TRUE(leaders.ok());
         ASSERT_EQ(leaders.value().size(), kPartsNum);  //< 1*kPartsNum
         LOG(INFO) << "The all leader:";

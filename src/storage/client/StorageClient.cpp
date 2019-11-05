@@ -492,7 +492,7 @@ StorageClient::get(GraphSpaceID space,
 }
 
 StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>
-StorageClient::preHeartLeaders() {
+StorageClient::preHeatLeaders() {
     auto fSpaces = client_->listSpaces();
     return std::move(fSpaces).thenValue([](auto&& spaces){
         return std::move(spaces);
