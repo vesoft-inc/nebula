@@ -84,6 +84,7 @@ protected:
         sleep(FLAGS_load_data_interval_secs + 1);
         TestUtils::waitUntilAllElected(server_->kvStore_.get(), space_, 10);
         client_ = std::make_unique<StorageClient>(threads_, mc_.get());
+        client_->prepare();
     }
 
     void TearDown() override {

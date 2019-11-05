@@ -93,6 +93,21 @@ public:
                   meta::MetaClient *client);
     virtual ~StorageClient();
 
+    void prepare() {
+        std::size_t retry = 3;
+        StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>> resp;
+        do {
+            resp = preHeartLeaders();
+        } while (retry-- && !resp.ok());
+        if (!resp.ok()) {
+            LOG(ERROR) << "Prepare storage client failed!";
+            return;
+        }
+        resetLeaders(std::move(resp.value()));
+        showLeaders();
+        LOG(INFO) << "Prepare storage client ok!";
+    }
+
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> put(
       GraphSpaceID space,
       std::vector<nebula::cpp2::Pair> values,
@@ -218,7 +233,18 @@ protected:
 
     inline void resetLeaders(
             std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>&& leaders) {
+        folly::RWSpinLock::WriteHolder wh(leadersLock_);
         leaders_ = std::move(leaders);
+    }
+
+    inline void showLeaders() {
+        LOG(INFO) << "The all leaders cached:";
+        LOG(INFO) << "\t[GraphSpaceID:PartitionID]-[Host]";
+        folly::RWSpinLock::ReadHolder rh(leadersLock_);
+        for (auto& leader : leaders_) {
+            LOG(INFO) << "\t" << "[" << leader.first.first << ":" << leader.first.second << "]"
+                << "-" << leader.second;
+        }
     }
 
     template<class Request,

@@ -42,6 +42,7 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
     gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(metaClient_.get());
 
     storage_ = std::make_unique<storage::StorageClient>(ioExecutor, metaClient_.get());
+    storage_->prepare();
     return Status::OK();
 }
 

@@ -497,26 +497,28 @@ StorageClient::preHeartLeaders() {
     return std::move(fSpaces).thenValue([](auto&& spaces){
         return std::move(spaces);
     }).thenError([](auto&& e){
-        LOG(ERROR) << e.what();
+        LOG(ERROR) << "Get spaces failed: " << e.what();
         return StatusOr<std::vector<meta::SpaceIdName>>();
     }).thenValue([this](auto&& spaces){
         std::vector<folly::SemiFuture<
             StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>>> leaders;
         if (UNLIKELY(!spaces.ok())) {
-            LOG(ERROR) << "Get spaces failed!";
+            LOG(WARNING) << "Get spaces failed!";
             return folly::collect(leaders.begin(), leaders.end());
         }
         leaders.reserve(spaces.value().size());
+        LOG(INFO) << "Spaces size " << spaces.value().size();
         for (auto& s : spaces.value()) {
             auto fLeader = getSpaceLeaders(s.first);
             leaders.emplace_back(std::move(fLeader));
         }
         return folly::collect(leaders.begin(), leaders.end());
     }).thenError([](auto&& e){
-        LOG(ERROR) << e.what();
+        LOG(ERROR) << "Get spaces failed!" << e.what();
         return std::vector<StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>>();
     }).thenValue([](auto&& leaders){
         if (UNLIKELY(leaders.empty())) {
+            LOG(WARNING) << "Get leaders failed!";
             return StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>();
         }
         std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> r;
@@ -536,7 +538,7 @@ StorageClient::preHeartLeaders() {
         return StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>
             (std::move(r));
     }).thenError([](auto&& e){
-        LOG(ERROR) << e.what();
+        LOG(ERROR) << "Get leaders failed: " << e.what();
         return StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>();
     }).get();
 }
