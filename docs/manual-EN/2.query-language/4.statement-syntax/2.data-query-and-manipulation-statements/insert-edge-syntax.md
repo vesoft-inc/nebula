@@ -1,7 +1,7 @@
 # Insert Edge Syntax
 
 ```
-INSERT EDGE edge_name ( <prop_name_list> ) {VALUES | VALUE} 
+INSERT EDGE edge_name ( <prop_name_list> ) {VALUES | VALUE}
 <src_vid> -> <dst_vid> : ( <prop_value_list> )
 [, <src_vid> -> <dst_vid> : ( <prop_value_list> )]
 
@@ -18,9 +18,9 @@ INSERT EDGE edge_name ( <prop_name_list> ) {VALUES | VALUE}
 * `<prop_name_list>` is the property name list as the given `<edge_name>`.
 * `<prop_value_list>` must provide the value list according to `<prop_name_list>`. If no value matches the type, an error will be returned.
 
->No default value is given in this release.
+> No default value is given in this release.
 
-### Examples
+## Examples
 
 ```
 # CREATE EDGE e1()                    -- create edge t1 with empty property or default values
@@ -30,18 +30,16 @@ INSERT EDGE e1 () VALUES 10->11:()    -- insert an edge from vertex 10 to vertex
 ```
 # CREATE EDGE e2 (name string, age int)                     -- create edge e2 with two properties
 INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 1)          -- insert edge from 11 to 13 with two properties
-INSERT EDGE e2 (name, age) VALUES \ 
+INSERT EDGE e2 (name, age) VALUES \
 12->13:("n1", 1), 13->14("n2", 2)                           -- insert two edges
-INSERT EDGE e2 (name, age) VALUES 11->13:("n1", "a13")      -- WRONG. "a13" is not int
+INSERT EDGE e2 (name, age) VALUES 11->13:("n1", "a13")      -- ERROR. "a13" is not int
 ```
 
-
-An edge can be inserted/wrote multiple times. Only the last write values can be read.
+An edge can be inserted/wrote multiple times. Only the last written values can be read.
 
 ```
--- insert edge with the new version of values. 
-INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 12) 
-INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 13) 
+-- insert edge with the new values.
+INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 12)
+INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 13)
 INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 14) -- the last version can be read
 ```
-
