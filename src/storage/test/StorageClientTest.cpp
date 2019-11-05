@@ -378,14 +378,10 @@ TEST_F(StorageClientTestF, Misc) {
 
     // Leaders
     {
-        auto resps = client_->getSpaceLeaders(space_).get();
+        auto resps = client_->getLeaders().get();
         ASSERT_TRUE(resps.succeeded());
         ASSERT_EQ(resps.responses().size(), 1);  //< one host
-        // show the leaders
-        if (UNLIKELY(!resps.succeeded())) {
-            LOG(ERROR) << "At least one RPC call failed!";
-        }
-        LOG(INFO) << "The leaders of space " << space_ << ":";
+        LOG(INFO) << "The leaders: ";
         for (auto& resp : resps.responses()) {
             LOG(INFO) << "Host: " << resp.first;
             for (auto& val : resp.second.get_leader_parts()) {
@@ -397,7 +393,7 @@ TEST_F(StorageClientTestF, Misc) {
         }
     }
 
-    // All Leaders
+    // Leaders more intuition
     {
         auto leaders = client_->preHeatLeaders();
         ASSERT_TRUE(leaders.ok());

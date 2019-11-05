@@ -178,7 +178,6 @@ StorageClient::collectResponseWithoutLeader(
 
     for (auto& req : requests) {
         auto& host = req.first;
-//        auto spaceId = req.second.get_space_id();
         auto res = context->insertRequest(host, std::move(req.second));
         DCHECK(res.second) << "Empty RPC request!";
         // Invoke the remote method
@@ -190,16 +189,8 @@ StorageClient::collectResponseWithoutLeader(
             // Since all requests are sent using the same eventbase, all then-callback
             // will be executed on the same IO thread
             .then(evb, [/*this,*/ context, host/*, spaceId*/] (folly::Try<Response>&& val) {
-//                auto& r = context->findRequest(host);
                 if (UNLIKELY(val.hasException())) {
                     LOG(ERROR) << "Request to " << host << " failed: " << val.exception().what();
-//                    for (auto& part : r.parts) {
-//                        VLOG(3) << "Exception! Failed part " << part.first;
-//                        context->resp.failedParts().emplace(
-//                            part.first,
-//                            storage::cpp2::ErrorCode::E_RPC_FAILURE);
-//                        invalidLeader(spaceId, part.first);
-//                    }
                     context->resp.markFailure();
                 } else {
                     auto resp = std::move(val.value());
@@ -212,24 +203,12 @@ StorageClient::collectResponseWithoutLeader(
                         if (UNLIKELY(code.get_code() ==
                                 storage::cpp2::ErrorCode::E_LEADER_CHANGED)) {
                             DCHECK(false) << "Impossible leader require!";
-//                            auto* leader = code.get_leader();
-//                            if (leader != nullptr
-//                                    && leader->get_ip() != 0
-//                                    && leader->get_port() != 0) {
-//                                updateLeader(spaceId,
-//                                             code.get_part_id(),
-//                                             HostAddr(leader->get_ip(), leader->get_port()));
-//                            }
                         } else if (UNLIKELY(code.get_code() ==
                                 storage::cpp2::ErrorCode::E_PART_NOT_FOUND)) {
                             LOG(ERROR) << "Error in Part not Found!";
-//                            invalidLeader(spaceId, code.get_part_id());
                         }
-//                        else {
-                            // Simply keep the result
-                            context->resp.failedParts().emplace(code.get_part_id(),
-                                                                code.get_code());
-//                        }
+                        context->resp.failedParts().emplace(code.get_part_id(),
+                                                            code.get_code());
                     }
                     if (UNLIKELY(hasFailure)) {
                         context->resp.markFailure();

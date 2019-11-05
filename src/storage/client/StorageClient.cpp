@@ -399,27 +399,50 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(
 }
 
 
-// Get All leaders of one space
+// Get All leaders
 folly::SemiFuture<StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>>
-StorageClient::getSpaceLeaders(
-        const GraphSpaceID space,
+StorageClient::getLeaders(
         folly::EventBase* evb) {
-    auto fParts = client_->getPartsAlloc(space);
-    return std::move(fParts).thenValue([](auto&& parts){
-        std::unordered_map<HostAddr, storage::cpp2::GetLeaderReq> requests;
-        if (UNLIKELY(!parts.ok())) {
-            return requests;
+    return client_->listSpaces().thenValue([](auto&& spaces){
+        return std::move(spaces);
+    }).thenError([](auto&& e){
+        LOG(ERROR) << "Get spaces failed: " << e.what();
+        return StatusOr<std::vector<meta::SpaceIdName>>();
+    }).thenValue([this](auto&& spaces) {
+        std::vector<folly::Future<StatusOr<meta::PartsAlloc>>> fParts;
+        if (UNLIKELY(!spaces.ok())) {
+            return folly::collect(fParts.begin(), fParts.end());
         }
-        requests.reserve(parts.value().size());
-        for (auto& p : parts.value()) {
-            requests.emplace(p.second.front(), cpp2::GetLeaderReq());
+        fParts.reserve(spaces.value().size());
+        for (auto& s : spaces.value()) {
+            fParts.emplace_back(this->client_->getPartsAlloc(s.first));
+        }
+        return folly::collect(fParts.begin(), fParts.end());
+    }).thenError([](auto&& e) {
+        LOG(ERROR) << "Get spaces failed: " << e.what();
+        return folly::makeFuture<std::vector<StatusOr<meta::PartsAlloc>>>(
+            std::vector<StatusOr<meta::PartsAlloc>>());
+    }).thenValue([](auto&& parts) {
+        std::unordered_map<HostAddr, cpp2::GetLeaderReq> requests;
+        if (UNLIKELY(parts.empty())) {
+            LOG(WARNING) << "Get parts failed!";
+        }
+        for (auto part : parts) {
+            if (part.ok()) {
+                for (auto p : part.value()) {
+                    requests.emplace(p.second.front(), cpp2::GetLeaderReq());
+                }
+            } else {
+                LOG(WARNING) << "One Get PartAlloc RPC failed!";
+            }
         }
         return requests;
-    }).thenError([](auto&& e){
-        LOG(ERROR) << e.what();
-        return std::unordered_map<HostAddr, storage::cpp2::GetLeaderReq>();
-    }).thenValue([this, evb](auto&& requests){
+    }).thenError([](auto&& e) {
+        LOG(ERROR) << "Get parts failed: " << e.what();
+        return std::unordered_map<HostAddr, cpp2::GetLeaderReq>();
+    }).thenValue([this, evb](auto&& requests) {
         if (UNLIKELY(requests.empty())) {
+            LOG(ERROR) << "Get requests failed!";
             return folly::makeSemiFuture(
                 StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>::fastFailed());
         }
@@ -428,8 +451,8 @@ StorageClient::getSpaceLeaders(
                                 const cpp2::GetLeaderReq& r) {
                                     return client->future_getLeaderPart(r);
                                 });
-    }).thenError([](auto&& e){
-        LOG(ERROR) << e.what();
+    }).thenError([](auto&& e) {
+        LOG(ERROR) << "Get requests failed: " << e.what();
         return folly::makeSemiFuture(
             StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>::fastFailed());
     });
@@ -493,45 +516,15 @@ StorageClient::get(GraphSpaceID space,
 
 StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>
 StorageClient::preHeatLeaders() {
-    auto fSpaces = client_->listSpaces();
-    return std::move(fSpaces).thenValue([](auto&& spaces){
-        return std::move(spaces);
-    }).thenError([](auto&& e){
-        LOG(ERROR) << "Get spaces failed: " << e.what();
-        return StatusOr<std::vector<meta::SpaceIdName>>();
-    }).thenValue([this](auto&& spaces){
-        std::vector<folly::SemiFuture<
-            StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>>> leaders;
-        if (UNLIKELY(!spaces.ok())) {
-            LOG(WARNING) << "Get spaces failed!";
-            return folly::collect(leaders.begin(), leaders.end());
-        }
-        leaders.reserve(spaces.value().size());
-        LOG(INFO) << "Spaces size " << spaces.value().size();
-        for (auto& s : spaces.value()) {
-            auto fLeader = getSpaceLeaders(s.first);
-            leaders.emplace_back(std::move(fLeader));
-        }
-        return folly::collect(leaders.begin(), leaders.end());
-    }).thenError([](auto&& e){
-        LOG(ERROR) << "Get spaces failed!" << e.what();
-        return std::vector<StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>>();
-    }).thenValue([](auto&& leaders){
-        if (UNLIKELY(leaders.empty())) {
-            LOG(WARNING) << "Get leaders failed!";
-            return StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>();
+    return getLeaders().via(ioThreadPool_->getEventBase()).thenValue([](auto&& leaders){
+        if (UNLIKELY(!leaders.succeeded())) {
+            LOG(WARNING) << "At least one RPC call failed";
         }
         std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> r;
-        for (auto& leader : leaders) {
-            if (leader.succeeded()) {
-                LOG(ERROR) << "At least one RPC call failed on Host "
-                    << leader.responses().front().first;
-            }
-            for (auto& resp : leader.responses()) {
-                for (auto& val : resp.second.get_leader_parts()) {
-                    for (auto& p : val.second) {
-                        r.emplace(std::make_pair(val.first, p), resp.first);
-                    }
+        for (auto& leader : leaders.responses()) {
+            for (auto& val : leader.second.get_leader_parts()) {
+                for (auto& p : val.second) {
+                    r.emplace(std::make_pair(val.first, p), leader.first);
                 }
             }
         }

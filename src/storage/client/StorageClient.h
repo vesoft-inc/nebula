@@ -68,8 +68,7 @@ public:
     }
 
 private:
-    // copy for collect
-    /*const*/ size_t totalReqsSent_;
+    const size_t totalReqsSent_;
     size_t failedReqs_{0};
 
     Result result_{Result::ALL_SUCCEEDED};
@@ -197,8 +196,7 @@ public:
         folly::EventBase* evb = nullptr);
 
     // Get All leaders of one space
-    folly::SemiFuture<StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>> getSpaceLeaders(
-        const GraphSpaceID space,
+    folly::SemiFuture<StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>> getLeaders(
         folly::EventBase* evb = nullptr);
 
 protected:
