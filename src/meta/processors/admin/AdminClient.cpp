@@ -41,19 +41,23 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
         }
     }
     req.set_new_leader(toThriftHost(target));
-    return getResponse(leader, std::move(req), [] (auto client, auto request) {
-               return client->future_transLeader(request);
-           }, [] (auto&& resp) -> Status {
-               switch (resp.get_code()) {
-                   case storage::cpp2::ErrorCode::SUCCEEDED:
-                   case storage::cpp2::ErrorCode::E_LEADER_CHANGED: {
-                       return Status::OK();
+
+    folly::Promise<Status> pro;
+    auto f = pro.getFuture();
+    getResponse(leader, std::move(req), [] (auto client, auto request) {
+                    return client->future_transLeader(request);
+                }, [] (auto&& resp) -> Status {
+                    switch (resp.get_code()) {
+                        case storage::cpp2::ErrorCode::SUCCEEDED:
+                        case storage::cpp2::ErrorCode::E_LEADER_CHANGED: {
+                            return Status::OK();
+                        }
+                        default:
+                            return Status::Error("Unknown code %d",
+                                                 static_cast<int32_t>(resp.get_code()));
                    }
-                   default:
-                       return Status::Error("Unknown code %d",
-                                            static_cast<int32_t>(resp.get_code()));
-               }
-           });
+                }, std::move(pro), 0, 3);
+    return f;
 }
 
 folly::Future<Status> AdminClient::addPart(GraphSpaceID spaceId,
@@ -67,16 +71,21 @@ folly::Future<Status> AdminClient::addPart(GraphSpaceID spaceId,
     req.set_space_id(spaceId);
     req.set_part_id(partId);
     req.set_as_learner(asLearner);
-    return getResponse(host, std::move(req), [] (auto client, auto request) {
-               return client->future_addPart(request);
-           }, [] (auto&& resp) -> Status {
-               if (resp.get_code() == storage::cpp2::ErrorCode::SUCCEEDED) {
-                   return Status::OK();
-               } else {
-                   return Status::Error("Add part failed! code=%d",
-                                        static_cast<int32_t>(resp.get_code()));
-               }
-           });
+
+    folly::Promise<Status> pro;
+    auto f = pro.getFuture();
+    getResponse(host, std::move(req),
+                [] (auto client, auto request) {
+                    return client->future_addPart(request);
+                }, [] (auto&& resp) -> Status {
+                    if (resp.get_code() == storage::cpp2::ErrorCode::SUCCEEDED) {
+                        return Status::OK();
+                    } else {
+                        return Status::Error("Add part failed! code=%d",
+                                             static_cast<int32_t>(resp.get_code()));
+                    }
+                }, std::move(pro), 0, 3);
+    return f;
 }
 
 folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId,
@@ -227,41 +236,50 @@ folly::Future<Status> AdminClient::removePart(GraphSpaceID spaceId,
     storage::cpp2::RemovePartReq req;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
-    return getResponse(host, std::move(req), [] (auto client, auto request) {
-               return client->future_removePart(request);
-           }, [] (auto&& resp) -> Status {
-               if (resp.get_code() == storage::cpp2::ErrorCode::SUCCEEDED) {
-                   return Status::OK();
-               } else {
-                   return Status::Error("Remove part failed! code=%d",
-                                        static_cast<int32_t>(resp.get_code()));
-               }
-           });
-}
 
-template<typename Request,
-         typename RemoteFunc,
-         typename RespGenerator>
-folly::Future<Status> AdminClient::getResponse(
-                                     const HostAddr& host,
-                                     Request req,
-                                     RemoteFunc remoteFunc,
-                                     RespGenerator respGen) {
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
+    getResponse(host, std::move(req), [] (auto client, auto request) {
+                    return client->future_removePart(request);
+                }, [] (auto&& resp) -> Status {
+                    if (resp.get_code() == storage::cpp2::ErrorCode::SUCCEEDED) {
+                        return Status::OK();
+                    } else {
+                        return Status::Error("Remove part failed! code=%d",
+                                             static_cast<int32_t>(resp.get_code()));
+                    }
+                }, std::move(pro), 0, 3);
+    return f;
+}
+
+template<typename Request, typename RemoteFunc, typename RespGenerator>
+void AdminClient::getResponse(const HostAddr& host,
+                              Request req,
+                              RemoteFunc remoteFunc,
+                              RespGenerator respGen,
+                              folly::Promise<Status> pro,
+                              int32_t retry,
+                              int32_t retryLimit) {
     auto* evb = ioThreadPool_->getEventBase();
     auto partId = req.get_part_id();
+    LOG(INFO) << "!!! " << retry;
     folly::via(evb, [evb, pro = std::move(pro), host, req = std::move(req), partId,
                      remoteFunc = std::move(remoteFunc), respGen = std::move(respGen),
-                     this] () mutable {
+                     retry, retryLimit, this] () mutable {
         auto client = clientsMan_->client(host, evb);
-        remoteFunc(client, std::move(req)).via(evb)
-            .then([p = std::move(pro), partId, respGen = std::move(respGen)](
-                           folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
+        remoteFunc(client, req).via(evb)
+            .then([host, req = std::move(req), remoteFunc = std::move(remoteFunc),
+                   respGen = std::move(respGen), pro = std::move(pro), partId, retry,
+                   retryLimit, this] (folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
                 // exception occurred during RPC
                 if (t.hasException()) {
-                    p.setValue(Status::Error(folly::stringPrintf("RPC failure in AdminClient: %s",
-                                                                 t.exception().what().c_str())));
+                    if (retry < retryLimit) {
+                        getResponse(host, std::move(req), std::move(remoteFunc), std::move(respGen),
+                                    std::move(pro), retry + 1, retryLimit);
+                        return;
+                    }
+                    pro.setValue(Status::Error(folly::stringPrintf("RPC failure in AdminClient: %s",
+                                                                   t.exception().what().c_str())));
                     return;
                 }
                 auto&& result = std::move(t).value().get_result();
@@ -269,14 +287,19 @@ folly::Future<Status> AdminClient::getResponse(
                     storage::cpp2::ResultCode resultCode;
                     resultCode.set_code(storage::cpp2::ErrorCode::SUCCEEDED);
                     resultCode.set_part_id(partId);
-                    p.setValue(respGen(resultCode));
+                    pro.setValue(respGen(resultCode));
                 } else {
+                    if (retry < retryLimit) {
+                        getResponse(host, std::move(req), std::move(remoteFunc), std::move(respGen),
+                                    std::move(pro), retry + 1, retryLimit);
+                        return;
+                    }
                     auto resp = result.get_failed_codes().front();
-                    p.setValue(respGen(std::move(resp)));
+                    pro.setValue(respGen(std::move(resp)));
+                    return;
                 }
             });
     });
-    return f;
 }
 
 template<typename Request, typename RemoteFunc>

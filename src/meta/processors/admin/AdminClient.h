@@ -106,10 +106,13 @@ private:
     template<class Request,
              class RemoteFunc,
              class RespGenerator>
-    folly::Future<Status> getResponse(const HostAddr& host,
-                                      Request req,
-                                      RemoteFunc remoteFunc,
-                                      RespGenerator respGen);
+    void getResponse(const HostAddr& host,
+                     Request req,
+                     RemoteFunc remoteFunc,
+                     RespGenerator respGen,
+                     folly::Promise<Status> pro,
+                     int32_t retry,
+                     int32_t retryLimit);
 
     template<typename Request, typename RemoteFunc>
     void getResponse(std::vector<HostAddr> hosts,
