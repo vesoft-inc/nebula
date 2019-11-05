@@ -160,6 +160,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
 }
 
 
+// \TODO(shylock) more general?
 template<class Request, class RemoteFunc, class Response>
 folly::SemiFuture<StorageRpcResponse<std::pair<HostAddr, Response>>>
 StorageClient::collectResponseWithoutLeader(
