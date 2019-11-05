@@ -20,7 +20,7 @@ Certain backslash escapes (\\) have been supported (also known as the *escape ch
 
 Here are some examples:
 
-```sql
+```ngql
 nebula> YIELD 'This\nIs\nFour\nLines'
 ========================
 | "This

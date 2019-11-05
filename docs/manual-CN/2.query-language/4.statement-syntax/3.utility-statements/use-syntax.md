@@ -8,7 +8,7 @@ USE <graph_space_name>
 
 当前的图空间会保持默认直至当前会话结束或另一个 USE 被执行。
 
-```SQL
+```ngql
 nebula> USE space1
 nebula> GO FROM 1 OVER edge1   -- 遍历 space1
 nebula> USE space2

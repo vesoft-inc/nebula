@@ -9,7 +9,7 @@ Nebula 支持四种注释方式：
 尚不支持嵌套注释。
 注释方式示例如下：
 
-```SQL
+```ngql
 nebula> -- Do nothing this line
 nebula> YIELD 1+1     # 注释在本行末结束
 nebula> YIELD 1+1     -- 注释在本行末结束

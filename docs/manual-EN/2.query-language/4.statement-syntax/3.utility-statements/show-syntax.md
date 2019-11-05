@@ -15,7 +15,7 @@ For more information about `SHOW CONFIGS [graph|meta|storage]`, please refer to 
 
 ## Example
 
-```SQL
+```ngql
 nebula> SHOW SPACES;
 ========
 | Name |

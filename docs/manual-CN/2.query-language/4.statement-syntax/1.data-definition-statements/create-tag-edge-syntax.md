@@ -1,6 +1,6 @@
 # CREATE TAG / EDGE 语法
 
-```sql
+```ngql
 CREATE {TAG | EDGE} tag_name|edge_name
     (create_definition, ...)
     [tag_edge_options]

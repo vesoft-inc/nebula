@@ -44,13 +44,13 @@ For example
 
 ## SHOW CONFIGS
 
-```sql
+```ngql
 SHOW CONFIGS [graph|meta|storage]
 ```
 
 For example
 
-```sql
+```ngql
 nebula> SHOW CONFIGS meta
 ============================================================================================================================
 | module | name                                        | type   | mode      | value                                        |
@@ -65,13 +65,13 @@ nebula> SHOW CONFIGS meta
 
 ## Get CONFIGS
 
-```sql
+```ngql
 GET CONFIGS [graph|meta|storage :] var
 ```
 
 For example
 
-```sql
+```ngql
 nebula> GET CONFIGS storage:load_data_interval_secs
 =================================================================
 | module  | name                      | type  | mode    | value |
@@ -80,7 +80,7 @@ nebula> GET CONFIGS storage:load_data_interval_secs
 -----------------------------------------------------------------
 ```
 
-```sql
+```ngql
 nebula> GET CONFIGS load_data_interval_secs
 =================================================================
 | module  | name                    | type  | mode      | value |
@@ -96,7 +96,7 @@ Got 3 rows (Time spent: 1449/2339 us)
 
 ## Update CONFIGS
 
-```sql
+```ngql
 UPDATE CONFIGS [graph|meta|storage :] var = value
 ```
 
@@ -105,7 +105,7 @@ UPDATE CONFIGS [graph|meta|storage :] var = value
 
 For example
 
-```sql
+```ngql
 nebula> UPDATE CONFIGS storage:load_data_interval_secs=1
 Execution succeeded (Time spent: 1750/2484 us)
 nebula> GET CONFIGS storage:load_data_interval_secs

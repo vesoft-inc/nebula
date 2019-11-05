@@ -8,7 +8,7 @@ The `USE` statement tells Nebula to use the named (graph) space as the current w
 
 The named space remains the default until the end of the session or another `USE` statement is issued:
 
-```SQL
+```ngql
 nebula> USE space1
 -- Traverse in graph space1
 nebula> GO FROM 1 OVER edge1

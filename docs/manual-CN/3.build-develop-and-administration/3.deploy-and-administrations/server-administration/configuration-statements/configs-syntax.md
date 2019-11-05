@@ -47,13 +47,13 @@ UPDATE CONFIGS storage:rocksdb_column_family_options =
 
 ## 显示变量
 
-```sql
+```ngql
 SHOW CONFIG graph|meta|storage
 ```
 
 例如
 
-```sql
+```ngql
 nebula> SHOW CONFIGS meta
 ============================================================================================================================
 | module | name                                        | type   | mode      | value                                        |
@@ -68,13 +68,13 @@ nebula> SHOW CONFIGS meta
 
 ### 获取变量
 
-```sql
+```ngql
 GET CONFIGS [graph|meta|storage :] var
 ```
 
 例如
 
-```sql
+```ngql
 nebula> GET CONFIGS storage:load_data_interval_secs
 =================================================================
 | module  | name                      | type  | mode    | value |
@@ -83,7 +83,7 @@ nebula> GET CONFIGS storage:load_data_interval_secs
 -----------------------------------------------------------------
 ```
 
-```sql
+```ngql
 nebula> GET CONFIGS load_data_interval_secs
 =================================================================
 | module  | name                    | type  | mode      | value |
@@ -99,7 +99,7 @@ Got 3 rows (Time spent: 1449/2339 us)
 
 ### 更新变量
 
-```sql
+```ngql
 UPDATE CONFIGS [graph|meta|storage :] var = value
 ```
 
@@ -108,7 +108,7 @@ UPDATE CONFIGS [graph|meta|storage :] var = value
 
 例如
 
-```sql
+```ngql
 nebula> UPDATE CONFIGS storage:load_data_interval_secs=1
 Execution succeeded (Time spent: 1750/2484 us)
 nebula> GET CONFIGS storage:load_data_interval_secs

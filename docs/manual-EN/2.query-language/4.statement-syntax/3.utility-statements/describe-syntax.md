@@ -14,7 +14,7 @@ Also notice that DESCRIBE is different from SHOW. Refer [SHOW](show-syntax.md).
 
 Obtain information about space.
 
-```SQL
+```ngql
 nebula> DESCRIBE SPACE laura_space;
 ========================================================
 | ID |        Name | Partition number | Replica Factor |
@@ -25,7 +25,7 @@ nebula> DESCRIBE SPACE laura_space;
 
 Obtain information about tag.
 
-```SQL
+```ngql
 nebula> DESCRIBE TAG player
 ==================
 | Field |   Type |
@@ -38,7 +38,7 @@ nebula> DESCRIBE TAG player
 
 Obtain information about edge.
 
-```SQL
+```ngql
 nebula> DESCRIBE EDGE serve
 =====================
 |      Field | Type |
