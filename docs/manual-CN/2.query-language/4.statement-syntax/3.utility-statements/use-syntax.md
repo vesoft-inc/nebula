@@ -1,6 +1,6 @@
 # USE 语法
 
-```
+```ngql
 USE <graph_space_name>
 ```
 

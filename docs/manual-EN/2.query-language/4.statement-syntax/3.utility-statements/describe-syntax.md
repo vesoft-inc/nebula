@@ -1,6 +1,6 @@
 # Describe Syntax
 
-```
+```ngql
 DESCRIBE SPACE <space_name>
 DESCRIBE TAG <tag_name>
 DESCRIBE EDGE <edge_name>
@@ -23,7 +23,7 @@ nebula> DESCRIBE SPACE laura_space;
 --------------------------------------------------------  
 ```
 
-Obtain information about tag.
+Obtain information about tag in a given space.
 
 ```ngql
 nebula> DESCRIBE TAG player
@@ -36,7 +36,7 @@ nebula> DESCRIBE TAG player
 ------------------  
 ```
 
-Obtain information about edge.
+Obtain information about edge in a given space.
 
 ```ngql
 nebula> DESCRIBE EDGE serve
