@@ -570,12 +570,12 @@ folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId, const std:
     return f;
 }
 
-folly::Future<Status> AdminClient::sendBlockSign(GraphSpaceID spaceId,
+folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
                                                  storage::cpp2::EngineSignType sign) {
     if (injector_) {
-        return injector_->sendBlockSign();
+        return injector_->blockingWrites();
     }
-    storage::cpp2::EngineSignRequest req;
+    storage::cpp2::BlockingSignRequest req;
     req.set_sign(sign);
     req.set_space_id(spaceId);
 
@@ -587,7 +587,7 @@ folly::Future<Status> AdminClient::sendBlockSign(GraphSpaceID spaceId,
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
     getResponse(ret.value(), 0, std::move(req), [] (auto client, auto request) {
-        return client->future_sendBlockSign(request);
+        return client->future_blockingWrites(request);
     }, 0, std::move(pro), 1 /*The send sing operation only needs to be retried twice*/);
     return f;
 }

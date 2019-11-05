@@ -347,7 +347,7 @@ struct GetUUIDResp {
     2: common.VertexID id,
 }
 
-struct EngineSignRequest {
+struct BlockingSignRequest {
     1: required EngineSignType      sign,
     2: required common.GraphSpaceID space_id,
 }
@@ -391,7 +391,7 @@ service StorageService {
     // Interfaces for nebula cluster checkpoint
     AdminExecResp createCheckpoint(1: CreateCPRequest req);
     AdminExecResp dropCheckpoint(1: DropCPRequest req);
-    AdminExecResp sendBlockSign(1: EngineSignRequest req);
+    AdminExecResp blockingWrites(1: BlockingSignRequest req);
 
     GetLeaderResp getLeaderPart(1: GetLeaderReq req);
 

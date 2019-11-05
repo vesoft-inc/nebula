@@ -20,7 +20,7 @@ public:
         return new SendBlockSignProcessor(kvstore);
     }
 
-    void process(const cpp2::EngineSignRequest& req);
+    void process(const cpp2::BlockingSignRequest& req);
 
 private:
     explicit SendBlockSignProcessor(kvstore::KVStore* kvstore)

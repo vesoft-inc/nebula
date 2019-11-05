@@ -199,7 +199,7 @@ StorageServiceHandler::future_dropCheckpoint(const cpp2::DropCPRequest& req) {
 }
 
 folly::Future<cpp2::AdminExecResp>
-StorageServiceHandler::future_sendBlockSign(const cpp2::EngineSignRequest& req) {
+StorageServiceHandler::future_blockingWrites(const cpp2::BlockingSignRequest& req) {
     auto* processor = SendBlockSignProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }

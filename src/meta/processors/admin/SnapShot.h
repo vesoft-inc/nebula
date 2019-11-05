@@ -31,7 +31,7 @@ public:
 
     cpp2::ErrorCode dropSnapshot(const std::string& name);
 
-    cpp2::ErrorCode sendBlockSign(storage::cpp2::EngineSignType sign);
+    cpp2::ErrorCode blockingWrites(storage::cpp2::EngineSignType sign);
 
 private:
     Snapshot(kvstore::KVStore* kv, std::unique_ptr<AdminClient> client)

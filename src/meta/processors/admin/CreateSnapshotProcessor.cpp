@@ -19,7 +19,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
     auto snapshot = currentSnapshot();
     folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
 
-    auto signRet = Snapshot::instance(kvstore_)->sendBlockSign(SignType::BLOCK_ON);
+    auto signRet = Snapshot::instance(kvstore_)->blockingWrites(SignType::BLOCK_ON);
     if (signRet != cpp2::ErrorCode::SUCCEEDED) {
         resp_.set_code(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
         onFinished();
@@ -43,7 +43,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
         resp_.set_code(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
     }
     kvstore_->setBlocking(false);
-    signRet = Snapshot::instance(kvstore_)->sendBlockSign(SignType::BLOCK_OFF);
+    signRet = Snapshot::instance(kvstore_)->blockingWrites(SignType::BLOCK_OFF);
     if (signRet != cpp2::ErrorCode::SUCCEEDED) {
         resp_.set_code(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
     }

@@ -10,7 +10,7 @@
 namespace nebula {
 namespace storage {
 
-void SendBlockSignProcessor::process(const cpp2::EngineSignRequest& req) {
+void SendBlockSignProcessor::process(const cpp2::BlockingSignRequest& req) {
     auto sign = req.get_sign();
     switch (sign) {
         case cpp2::EngineSignType::BLOCK_ON :

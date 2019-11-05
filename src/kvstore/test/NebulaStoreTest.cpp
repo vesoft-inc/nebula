@@ -598,8 +598,7 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
     fs::TempDir rootPath("/tmp/nebula_store_test.XXXXXX");
     auto initNebulaStore = [](const std::vector<HostAddr>& peers,
                               int32_t index,
-                              const std::string& path,
-                              bool useSnapshot = false) -> std::unique_ptr<NebulaStore> {
+                              const std::string& path) -> std::unique_ptr<NebulaStore> {
         LOG(INFO) << "Start nebula store on " << peers[index];
         auto sIoThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
         auto partMan = std::make_unique<MemPartManager>();
@@ -611,9 +610,7 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
             partMan->partsMap_[0][partId] = std::move(pm);
         }
         std::vector<std::string> paths;
-        std::string dataDir = useSnapshot ?
-                  folly::stringPrintf("%s/disk%d/checkpoint/snapshot", path.c_str(), index)
-                : folly::stringPrintf("%s/disk%d", path.c_str(), index);
+        std::string dataDir = folly::stringPrintf("%s/disk%d", path.c_str(), index);
         paths.emplace_back(std::move(dataDir));
         KVOptions options;
         options.dataPaths_ = paths;
@@ -746,6 +743,23 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
         ASSERT_EQ(ResultCode::SUCCEEDED, ret);
     }
 
+    sleep(FLAGS_raft_heartbeat_interval_secs);
+
+    for (int i = 0; i < replicas; i++) {
+        stores[i].reset(nullptr);
+    }
+
+    for (int i = 0; i < replicas; i++) {
+        std::string rm = folly::stringPrintf("%s/disk%d/nebula/0", rootPath.path(), i);
+        fs::FileUtils::remove(folly::stringPrintf("%s/data", rm.data()).c_str(), true);
+        fs::FileUtils::remove(folly::stringPrintf("%s/wal", rm.data()).c_str(), true);
+        std::string mv = folly::stringPrintf(
+                "/usr/bin/mv %s/disk%d/nebula/0/checkpoints/snapshot %s/disk%d/nebula/0/data",
+                rootPath.path(), i , rootPath.path(), i);
+        sleep(1);
+        auto ret = system(mv.c_str());
+        ASSERT_EQ(0, ret);
+    }
 
     LOG(INFO) << "Let's open the engine via checkpoint";
     std::vector<HostAddr> cPeers;
@@ -755,7 +769,7 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
 
     std::vector<std::unique_ptr<NebulaStore>> cStores;
     for (int i = 0; i < replicas; i++) {
-        cStores.emplace_back(initNebulaStore(peers, i, rootPath.path(), true));
+        cStores.emplace_back(initNebulaStore(cPeers, i, rootPath.path()));
         cStores.back()->init();
     }
 
@@ -782,7 +796,7 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
             s = prefix + s;
             e = prefix + e;
             for (int i = 0; i < replicas; i++) {
-                LOG(INFO) << "Check the data on " << stores[i]->raftAddr_ << " for part " << part;
+                LOG(INFO) << "Check the data on " << cStores[i]->raftAddr_ << " for part " << part;
                 auto ret = cStores[i]->engine(0, part);
                 ASSERT(ok(ret));
                 auto* engine = value(std::move(ret));

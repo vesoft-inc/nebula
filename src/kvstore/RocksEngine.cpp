@@ -449,9 +449,7 @@ ResultCode RocksEngine::createCheckpoint(const std::string& name) {
      *      --checkpoint_n
      *
      */
-    auto path = folly::stringPrintf("checkpoint/%s/nebula", name.c_str());
-    auto dPath = dataPath_.replace(dataPath_.rfind("nebula"), 6, path);
-    auto checkpointPath = folly::stringPrintf("%s/data", dPath.c_str());
+    auto checkpointPath = folly::stringPrintf("%s/checkpoints/%s", dataPath_.c_str(), name.c_str());
     LOG(INFO) << "Target checkpoint path : " << checkpointPath;
     if (fs::FileUtils::exist(checkpointPath)) {
         LOG(ERROR) << "The snapshot file already exists: " << checkpointPath;

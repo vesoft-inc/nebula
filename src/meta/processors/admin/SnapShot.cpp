@@ -73,7 +73,7 @@ bool Snapshot::getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCo
     return true;
 }
 
-cpp2::ErrorCode Snapshot::sendBlockSign(storage::cpp2::EngineSignType sign) {
+cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
     folly::Promise<Status> promise;
     auto future = promise.getFuture();
 
@@ -85,7 +85,7 @@ cpp2::ErrorCode Snapshot::sendBlockSign(storage::cpp2::EngineSignType sign) {
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
     for (auto& space : spaces) {
-        auto status = client_->sendBlockSign(space, sign).get();
+        auto status = client_->blockingWrites(space, sign).get();
 
         if (!status.ok()) {
             return cpp2::ErrorCode::E_RPC_FAILURE;

@@ -196,7 +196,7 @@ public:
     std::vector<std::string> getCheckpointPath() override {
         std::vector<std::string> cps;
         for (auto& p : options_.dataPaths_) {
-            cps.emplace_back(folly::stringPrintf("%s/checkpoint", p.c_str()));
+            cps.emplace_back(folly::stringPrintf("%s/nebula/0/checkpoints", p.c_str()));
         }
         return cps;
     }

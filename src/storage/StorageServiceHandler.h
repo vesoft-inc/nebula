@@ -117,7 +117,7 @@ public:
     future_dropCheckpoint(const cpp2::DropCPRequest& req) override;
 
     folly::Future<cpp2::AdminExecResp>
-    future_sendBlockSign(const cpp2::EngineSignRequest& req) override;
+    future_blockingWrites(const cpp2::BlockingSignRequest& req) override;
 
 
 private:
