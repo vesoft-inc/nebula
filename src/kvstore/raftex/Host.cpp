@@ -192,10 +192,6 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                 self->setResponse(r);
                 self->lastLogIdSent_ = self->logIdToSend_;
                 self->hasException_ = true;
-                // qwer
-                if (self->isLearner_) {
-                    LOG(INFO) << self->idStr_ << "Exception !!! " << t.exception().what();
-                }
             }
             self->noMoreRequestCV_.notify_all();
             return;
@@ -452,16 +448,8 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
               << ", last_log_term_sent" << req->get_last_log_term_sent()
               << ", last_log_id_sent " << req->get_last_log_id_sent();
     // Get client connection
-    // qwer
     auto client = tcManager().client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
     return client->future_appendLog(*req);
-    /*
-    return folly::via(eb, [this, eb, req] () mutable {
-        // Get client connection
-        auto client = tcManager().client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
-        return client->future_appendLog(*req);
-    });
-    */
 }
 
 bool Host::noRequest() const {

@@ -579,30 +579,14 @@ int32_t NebulaStore::allLeader(std::unordered_map<GraphSpaceID,
     folly::RWSpinLock::ReadHolder rh(&lock_);
     int32_t count = 0;
     for (const auto& spaceIt : spaces_) {
-        int32_t leaderCount = 0;
-        int32_t followerCount = 0;
-        int32_t learnerCount = 0;
-
         auto spaceId = spaceIt.first;
         for (const auto& partIt : spaceIt.second->parts_) {
             auto partId = partIt.first;
             if (partIt.second->isLeader()) {
                 leaderIds[spaceId].emplace_back(partId);
-                leaderCount++;
                 ++count;
-            } else if (partIt.second->isFollower()) {
-                followerCount++;
-            } else if (partIt.second->isLearner()) {
-                // qwer
-                LOG(INFO) << "rewq " << partId;
-                learnerCount++;
             }
         }
-        // qwer
-        LOG(INFO) << " !!! Space " << spaceId
-                  << " Leader: " << leaderCount
-                  << " Follower : " << followerCount
-                  << " Learner: " << learnerCount;
     }
     return count;
 }

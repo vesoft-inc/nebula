@@ -51,7 +51,6 @@ public:
 
     explicit AdminClient(std::unique_ptr<FaultInjector> injector)
         : injector_(std::move(injector)) {
-        ioThreadPool_ = std::make_unique<folly::IOThreadPoolExecutor>(10);
     }
 
     ~AdminClient() = default;
@@ -96,10 +95,6 @@ public:
 
     FaultInjector* faultInjector() {
         return injector_.get();
-    }
-
-    folly::IOThreadPoolExecutor* ioThreadPool() {
-        return ioThreadPool_.get();
     }
 
 private:

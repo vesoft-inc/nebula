@@ -985,19 +985,6 @@ TEST(BalanceTest, LeaderBalanceTest) {
     ASSERT_EQ(ret, cpp2::ErrorCode::SUCCEEDED);
 }
 
-class Wtf {
-public:
-    Wtf() = default;
-private:
-    std::mutex lock;
-};
-
-TEST(BalanceTest, WtfTest) {
-    std::vector<std::unique_ptr<Wtf>> vec;
-    auto wtf = std::make_unique<Wtf>();
-    vec.emplace_back(std::move(wtf));
-}
-
 }  // namespace meta
 }  // namespace nebula
 

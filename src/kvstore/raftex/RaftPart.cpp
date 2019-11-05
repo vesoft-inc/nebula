@@ -1725,12 +1725,9 @@ AppendLogResult RaftPart::isCatchedUp(const HostAddr& peer) {
     for (auto& host : hosts_) {
         if (host->addr_ == peer) {
             if (host->hasException_) {
-                // qwer
-                LOG(INFO) << idStr_ << "wtf wtf Connection between " << peer << " has exception";
+                LOG(INFO) << idStr_ << "Connection between " << peer << " has exception";
                 return AppendLogResult::E_RPC_EXCEPTION;
             }
-            // qwer
-            LOG(INFO) << idStr_ << "wtf " << host->sendingSnapshot_;
             return host->sendingSnapshot_ ? AppendLogResult::E_SENDING_SNAPSHOT
                                           : AppendLogResult::SUCCEEDED;
         }

@@ -262,7 +262,6 @@ void AdminClient::getResponse(const HostAddr& host,
                               int32_t retryLimit) {
     auto* evb = ioThreadPool_->getEventBase();
     auto partId = req.get_part_id();
-    LOG(INFO) << "!!! " << retry;
     folly::via(evb, [evb, pro = std::move(pro), host, req = std::move(req), partId,
                      remoteFunc = std::move(remoteFunc), respGen = std::move(respGen),
                      retry, retryLimit, this] () mutable {
@@ -274,6 +273,7 @@ void AdminClient::getResponse(const HostAddr& host,
                 // exception occurred during RPC
                 if (t.hasException()) {
                     if (retry < retryLimit) {
+                        usleep(1000 * 50);
                         getResponse(host, std::move(req), std::move(remoteFunc), std::move(respGen),
                                     std::move(pro), retry + 1, retryLimit);
                         return;
@@ -290,6 +290,7 @@ void AdminClient::getResponse(const HostAddr& host,
                     pro.setValue(respGen(resultCode));
                 } else {
                     if (retry < retryLimit) {
+                        usleep(1000 * 50);
                         getResponse(host, std::move(req), std::move(remoteFunc), std::move(respGen),
                                     std::move(pro), retry + 1, retryLimit);
                         return;
