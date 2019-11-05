@@ -13,7 +13,7 @@ nebula> use MY_SPACE;  -- my_space and MY_SPACE are two different spaces
 
 The following statements are equivalent:
 
-```
+```ngql
 nebula> show spaces;  -- show and spaces are keywords.
 nebula> SHOW SPACES;
 nebula> SHOW spaces;

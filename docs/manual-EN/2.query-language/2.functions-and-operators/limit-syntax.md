@@ -2,8 +2,8 @@
 
 `limit` works the same as in `SQL`.
 
-```
-ORDER BY <expressions> [ASC | DESC] 
+```ngql
+ORDER BY <expressions> [ASC | DESC]
 LIMIT [<offset_value>,] <number_rows>
 ```
 

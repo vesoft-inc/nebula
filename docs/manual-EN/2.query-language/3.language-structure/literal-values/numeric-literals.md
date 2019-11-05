@@ -20,7 +20,7 @@ Scientific notations is not supported yet.
 
 Here are some examples:
 
-```
+```ngql
 1, -5, +10000100000
 -2.3, +1.00000000000
 ```

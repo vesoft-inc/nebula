@@ -4,7 +4,7 @@ Nebula supports `UPDATE` properties of a vertex or an edge, as well as CAS opera
 
 ## Update vertex
 
-```
+```ngql
 UPDATE VERTEX $vid SET $update_columns WHEN $condition YIELD $columns
 ```
 
@@ -27,7 +27,7 @@ There are two tags in vertex 101, namely course and building.
 
 ## Update edge
 
-```
+```ngql
 UPDATE EDGE $edge SET $update_columns WHEN $condition YIELD $columns
 ```
 

@@ -56,7 +56,7 @@ Nebula 的图结构由带有属性的 tags 和 edges 组成。`CREATE TAG` 使�
 
 ### 示例
 
-```
+```ngql
 CREATE TAG course(name string, credits int)
 CREATE TAG notag()  -- 属性为空
 

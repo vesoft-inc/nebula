@@ -2,7 +2,7 @@
 
 A string is a sequence of bytes or characters, enclosed within either single quote (') or double quote (") characters. Examples:
 
-```
+```ngql
 nebula> YIELD 'a string'
 nebula> YIELD "another string"
 ```

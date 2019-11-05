@@ -2,7 +2,7 @@
 
 目前，`WHERE` 语句仅适用于 `GO` 语句。
 
-```
+```ngql
 WHERE (expression [ AND | OR expression ...])  
 ```
 

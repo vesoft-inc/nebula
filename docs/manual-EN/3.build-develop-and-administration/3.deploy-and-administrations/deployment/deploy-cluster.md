@@ -34,7 +34,7 @@ You can `start`, `stop` and `restart` the cluster using this script.
 
 It looks like the following command:
 
-```
+```bash
 scripts/services.sh <start|stop|restart|status|kill>
 ```
 

@@ -2,7 +2,7 @@
 
 `FIND PATH` 语法用于获取最短路径及全路径
 
-```
+```ngql
 FIND SHORTEST | ALL PATH FROM <vertex_id_list> TO <vertex_id_list>
 OVER <edge_type_list> [UPTO <N> STEPS]
 ```
