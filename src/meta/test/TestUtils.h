@@ -87,7 +87,7 @@ public:
     }
 
     static void registerHB(kvstore::KVStore* kv, const std::vector<HostAddr>& hosts) {
-        auto now = time::WallClock::fastNowInSec();
+        auto now = time::WallClock::fastNowInMilliSec();
         for (auto& h : hosts) {
             auto ret = ActiveHostsMan::updateHostInfo(kv, h, HostInfo(now));
             CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
