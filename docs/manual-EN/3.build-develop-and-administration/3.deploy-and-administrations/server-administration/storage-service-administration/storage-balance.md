@@ -1,6 +1,6 @@
 # Storage Balance Usage
 
-Nebula's services are composed of  three parts: graphd, storaged and metad. The **balance** in this document focuses on the operation of storage.
+Nebula's services are composed of three parts: graphd, storaged and metad. The **balance** in this document focuses on the operation of storage.
 
 Currently, storage can be scaled horizontally by the command `balance`. There are two kinds of balance command, one is to move data, which is `BALANCE DATA`; the other one only changes the distribution of leader partition to balance load without moving data, which is `BALANCE LEADER`.
 
