@@ -983,8 +983,7 @@ OptVariantType GoExecutor::VertexHolder::getDefaultProp(TagID tid, const std::st
         }
     }
 
-    DCHECK(false);
-    return Status::Error("Unknown tid");
+    return Status::Error("Unknown Vertex");
 }
 
 SupportedType GoExecutor::VertexHolder::getDefaultPropType(TagID tid,
@@ -996,7 +995,6 @@ SupportedType GoExecutor::VertexHolder::getDefaultPropType(TagID tid,
         }
     }
 
-    DCHECK(false);
     return nebula::cpp2::SupportedType::UNKNOWN;
 }
 
