@@ -415,12 +415,23 @@ StorageClient::getSpaceLeaders(
             requests.emplace(p.second.front(), cpp2::GetLeaderReq());
         }
         return requests;
+    }).thenError([](auto&& e){
+        LOG(ERROR) << e.what();
+        return std::unordered_map<HostAddr, storage::cpp2::GetLeaderReq>();
     }).thenValue([this, evb](auto&& requests){
+        if (UNLIKELY(requests.empty())) {
+            return folly::makeSemiFuture(
+                StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>::fastFailed());
+        }
         return collectResponseWithoutLeader(evb, std::move(requests),
                             [](cpp2::StorageServiceAsyncClient* client,
                                 const cpp2::GetLeaderReq& r) {
                                     return client->future_getLeaderPart(r);
                                 });
+    }).thenError([](auto&& e){
+        LOG(ERROR) << e.what();
+        return folly::makeSemiFuture(
+            StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>::fastFailed());
     });
 }
 
@@ -485,6 +496,9 @@ StorageClient::preHeartLeaders() {
     auto fSpaces = client_->listSpaces();
     return std::move(fSpaces).thenValue([](auto&& spaces){
         return std::move(spaces);
+    }).thenError([](auto&& e){
+        LOG(ERROR) << e.what();
+        return StatusOr<std::vector<meta::SpaceIdName>>();
     }).thenValue([this](auto&& spaces){
         std::vector<folly::SemiFuture<
             StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>>> leaders;
@@ -498,12 +512,19 @@ StorageClient::preHeartLeaders() {
             leaders.emplace_back(std::move(fLeader));
         }
         return folly::collect(leaders.begin(), leaders.end());
+    }).thenError([](auto&& e){
+        LOG(ERROR) << e.what();
+        return std::vector<StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>>();
     }).thenValue([](auto&& leaders){
         if (UNLIKELY(leaders.empty())) {
             return StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>();
         }
         std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> r;
         for (auto& leader : leaders) {
+            if (leader.succeeded()) {
+                LOG(ERROR) << "At least one RPC call failed on Host "
+                    << leader.responses().front().first;
+            }
             for (auto& resp : leader.responses()) {
                 for (auto& val : resp.second.get_leader_parts()) {
                     for (auto& p : val.second) {
@@ -514,6 +535,9 @@ StorageClient::preHeartLeaders() {
         }
         return StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>
             (std::move(r));
+    }).thenError([](auto&& e){
+        LOG(ERROR) << e.what();
+        return StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>();
     }).get();
 }
 

@@ -381,6 +381,9 @@ TEST_F(StorageClientTestF, Misc) {
         ASSERT_TRUE(resps.succeeded());
         ASSERT_EQ(resps.responses().size(), 1);  //< one host
         // show the leaders
+        if (UNLIKELY(!resps.succeeded())) {
+            LOG(ERROR) << "At least one RPC call failed!";
+        }
         LOG(INFO) << "The leaders of space " << space_ << ":";
         for (auto& resp : resps.responses()) {
             LOG(INFO) << "Host: " << resp.first;

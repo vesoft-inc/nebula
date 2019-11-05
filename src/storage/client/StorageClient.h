@@ -29,6 +29,12 @@ public:
 
     explicit StorageRpcResponse(size_t reqsSent) : totalReqsSent_(reqsSent) {}
 
+    static StorageRpcResponse fastFailed() {
+        StorageRpcResponse resp(0);
+        resp.markFailure();
+        return resp;
+    }
+
     bool succeeded() const {
         return result_ == Result::ALL_SUCCEEDED;
     }
@@ -62,6 +68,7 @@ public:
     }
 
 private:
+    // copy for collect
     /*const*/ size_t totalReqsSent_;
     size_t failedReqs_{0};
 
