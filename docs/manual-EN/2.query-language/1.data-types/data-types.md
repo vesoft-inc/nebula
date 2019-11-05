@@ -34,6 +34,7 @@ The string type is used to store a sequence of characters (text). The literal co
 ## Timestamp
 
 - The supported range of timestamp type is '1970-01-01 00:00:01' UTC to '2262-04-11 23:47:16' UTC
+- Timestamp is measured in units of seconds
 - Supported data inserting methods
   - call function now()
   - Time string, for example: "2019-10-01 10:00:00"

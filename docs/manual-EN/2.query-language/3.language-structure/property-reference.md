@@ -10,7 +10,7 @@ You can refer a vertex or edge's property in `WHERE` or `YIELD` syntax.
 $^.tag_name.prop_name
 ```
 
-where symbol `$^` is used to get a source vertex's property, 
+where symbol `$^` is used to get a source vertex's property,
 `tag_name` indicates the source vertex's `tag`,
 and `prop_name` specifies the property name.
 
