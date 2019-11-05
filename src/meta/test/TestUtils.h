@@ -87,10 +87,11 @@ public:
     }
 
     static void registerHB(kvstore::KVStore* kv, const std::vector<HostAddr>& hosts) {
-         auto now = time::WallClock::fastNowInSec();
-         for (auto& h : hosts) {
-             ActiveHostsMan::updateHostInfo(kv, h, HostInfo(now));
-         }
+        auto now = time::WallClock::fastNowInSec();
+        for (auto& h : hosts) {
+            auto ret = ActiveHostsMan::updateHostInfo(kv, h, HostInfo(now));
+            CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
+        }
      }
 
     static int32_t createSomeHosts(kvstore::KVStore* kv,

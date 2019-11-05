@@ -46,7 +46,7 @@ std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv, int32
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseHostKey(iter->key());
         HostInfo info = HostInfo::decode(iter->val());
-        if (now - info.lastHBTimeInSec_ < expiredTTL) {
+        if (now - info.lastHBTimeInSec_ <= expiredTTL) {
             hosts.emplace_back(host.ip, host.port);
         }
         iter->next();
