@@ -70,8 +70,13 @@ function aptget_install {
         libreadline-dev \
         python \
         maven \
-        openjdk-8-jdk \
         unzip
+
+    if [[ $1 == 4 || $1 == 5 ]]; then
+        sudo apt-get -y install openjdk-8-jdk
+    else
+        echo "#### Please install the openjdk-8-jdk by yourself, if you need to build native client ####"
+    fi
 
     installPackage $1
     addAlias $1
@@ -79,7 +84,7 @@ function aptget_install {
 }
 
 function installPackage {
-    versions=(empty fedora29 centos7.5 centos6.5 ubuntu18 ubuntu16)
+    versions=(empty fedora29 centos7.5 centos6.5 ubuntu18 ubuntu16 debian8)
     package_name=${versions[$1]}
     echo "###### start install dep in $package_name ######"
     [[ $package_name = empty ]] && return 0
@@ -100,13 +105,13 @@ function addAlias {
     echo "export ACLOCAL_PATH=/opt/nebula/third-party/share/aclocal-1.15:/opt/nebula/third-party/share/aclocal" >> ~/.bashrc
     echo "alias cmake='/opt/nebula/third-party/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/third-party/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/third-party/bin/g++'" >> ~/.bashrc
     echo "alias ctest='/opt/nebula/third-party/bin/ctest'" >> ~/.bashrc
-    if [[ $1 == 4 || $1 == 5 ]]; then
+    if [[ $1 == 4 || $1 == 5 || $1 == 6 ]]; then
         echo "export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:\$LIBRARY_PATH" >> ~/.bashrc
     fi
     return 0
 }
 
-# fedora29:1, centos7.5:2, centos6.5:3, ubuntu18:4, ubuntu16:5
+# fedora29:1, centos7.5:2, centos6.5:3, ubuntu18:4, ubuntu16:5, debian8:6
 function getSystemVer {
     if [[ -e /etc/redhat-release ]]; then
         if [[ -n `cat /etc/redhat-release|grep Fedora` ]]; then
@@ -119,13 +124,22 @@ function getSystemVer {
             echo 0
         fi
     elif [[ -e /etc/issue ]]; then
-        result=`cat /etc/issue|cut -d " " -f 2 |cut -d "." -f 1`
-        if [[ result -eq 18 ]]; then
-            echo 4
-        elif [[ result -eq 16 ]]; then
-            echo 5
-        else
-            echo 0
+        if [[ -n `cat /etc/issue|grep Ubuntu` ]]; then
+            result=`cat /etc/issue|cut -d " " -f 2 |cut -d "." -f 1`
+            if [[ result -eq 18 ]]; then
+                echo 4
+            elif [[ result -eq 16 ]]; then
+                echo 5
+            else
+                echo 0
+            fi
+        elif [[ -n `cat /etc/issue|grep Debian` ]]; then
+            result=`cat /etc/issue|cut -d " " -f 3`
+            if [[ result -eq 8 ]]; then
+                echo 6
+            else
+                echo 0
+            fi
         fi
     else
         echo 0
@@ -140,7 +154,7 @@ case $version in
     1|2|3)
         yum_install $version
         ;;
-    4|5)
+    4|5|6)
         aptget_install $version
         ;;
     *)
