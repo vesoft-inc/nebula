@@ -528,11 +528,10 @@ StorageClient::preHeatLeaders() {
                 }
             }
         }
-        return StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>
-            (std::move(r));
+        return decltype(preHeatLeaders())(std::move(r));
     }).thenError([](auto&& e){
         LOG(ERROR) << "Get leaders failed: " << e.what();
-        return StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>();
+        return decltype(preHeatLeaders())();
     }).get();
 }
 

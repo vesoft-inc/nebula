@@ -94,7 +94,7 @@ public:
 
     void prepare() {
         std::size_t retry = 3;
-        StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>> resp;
+        decltype(preHeatLeaders()) resp;
         do {
             resp = preHeatLeaders();
         } while (retry-- && !resp.ok());
