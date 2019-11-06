@@ -6,7 +6,7 @@ The `FETCH` syntax is used to get vertex/edge's properties.
 
 Use `FETCH PROP ON` to return a (list of) vertex's properties. Currently, you can get multiple vertices' properties with the same tag in one sentence.  
 
-```sql
+```ngql
 FETCH PROP ON <tag_name> <vertex_id_list> [YIELD [DISTINCT] <return_list>]
 ```
 
@@ -18,7 +18,7 @@ FETCH PROP ON <tag_name> <vertex_id_list> [YIELD [DISTINCT] <return_list>]
 
 ### Examples
 
-```SQL
+```ngql
 -- return all the properties of vertex id 1 if no yield field is given.
 nebula> FETCH PROP ON player 1
 -- return property name and age of vertex id 1
@@ -38,7 +38,7 @@ nebula> FETCH PROP ON player 1,2,3 YIELD DISTINCT player.name, player.age
 The `FETCH` usage of an edge is almost the same with vertex.
 You can get properties from multiple edges with the same type.
 
-```sql
+```ngql
 FETCH PROP ON <edge_type> <vid> -> <vid> [, <vid> -> <vid> ...] [YIELD [DISTINCT] <return_list>]
 ```
 
@@ -50,7 +50,7 @@ FETCH PROP ON <edge_type> <vid> -> <vid> [, <vid> -> <vid> ...] [YIELD [DISTINCT
 
 ### Example
 
-```SQL
+```ngql
 -- from vertex 100 to 200 with edge type e1, get all the properties since no YIELD is given.
 nebula> FETCH PROP ON e1 100 -> 200
 -- only return property p1

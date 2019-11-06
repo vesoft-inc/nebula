@@ -2,7 +2,7 @@
 
 `FIND PATH` statement can be used to get the shortest path and the full path.
 
-```
+```ngql
 FIND SHORTEST | ALL PATH FROM <vertex_id_list> TO <vertex_id_list> OVER <edge_type_list> [UPTO <N> STEPS]
 ```
 
@@ -25,7 +25,7 @@ FIND SHORTEST | ALL PATH FROM <vertex_id_list> TO <vertex_id_list> OVER <edge_ty
 
 Path is displayed as `id <edge_name, ranking> id` in console.
 
-```
+```ngql
 nebula> FIND SHORTEST PATH FROM 200 to 201 OVER *
 ============================
 | _path_ |
@@ -34,7 +34,7 @@ nebula> FIND SHORTEST PATH FROM 200 to 201 OVER *
 ----------------------------
 ```
 
-```
+```ngql
 nebula> FIND ALL PATH FROM 200 to 201 OVER *
 ====================================================================================================
 | _path_ |

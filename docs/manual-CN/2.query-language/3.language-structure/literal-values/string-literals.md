@@ -2,7 +2,7 @@
 
 字符串由一串字节或字符组成，并由一对单引号 (') 或双引号 (") 包装。
 
-```SQL
+```ngql
 nebula> YIELD 'a string'
 nebula> YIELD "another string"
 ```
@@ -20,7 +20,7 @@ nebula> YIELD "another string"
 
 示例:
 
-```SQL
+```ngql
 nebula> YIELD 'This\nIs\nFour\nLines'
 ========================
 | "This

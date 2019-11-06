@@ -1,6 +1,6 @@
 # Drop Tag Syntax
 
-```
+```ngql
 DROP TAG tag_name
 ```
 
