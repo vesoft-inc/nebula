@@ -32,7 +32,7 @@ dpkg -i nebula-{VERSION}.{SYSTEM_VERSION}.amd64.deb
 
 示例命令如下：
 
-```sh
+```bash
 scripts/services.sh <start|stop|restart|status|kill>
 ```
 
@@ -40,7 +40,7 @@ metas， storages 和 graphs 包含其自身的 hosts。
 
 ### 连接 Nebula Graph
 
-```sh
+```bash
 > bin/nebula -u=user -p=password --addr={graphd IP address} --port={graphd listening port}
 ```
 

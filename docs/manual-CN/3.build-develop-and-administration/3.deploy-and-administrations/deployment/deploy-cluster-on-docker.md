@@ -53,17 +53,17 @@ $ docker inspect 容器ID | grep IPAddress
 ```
 
 ```bash
-$docker inspect c2134fd5ccc3 | grep IPAddress
+$ docker inspect c2134fd5ccc3 | grep IPAddress
 
             "SecondaryIPAddresses": null,
             "IPAddress": "172.17.0.4",
                     "IPAddress": "172.17.0.4",
-$docker inspect 1d7a441d4f40 | grep IPAddress
+$ docker inspect 1d7a441d4f40 | grep IPAddress
 
             "SecondaryIPAddresses": null,
             "IPAddress": "172.17.0.3",
                     "IPAddress": "172.17.0.3",
-$docker inspect 591e2f6f48e2 | grep IPAddress
+$ docker inspect 591e2f6f48e2 | grep IPAddress
 
             "SecondaryIPAddresses": null,
             "IPAddress": "172.17.0.2",

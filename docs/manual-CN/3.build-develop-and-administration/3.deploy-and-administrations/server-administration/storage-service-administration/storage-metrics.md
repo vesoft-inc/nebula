@@ -50,7 +50,7 @@ _error_qps
 
 根据上面的介绍，就可以写出一个完整的指标名称了，下面是一些示例：
 
-```shell
+```bash
 add_vertex_latency.avg.60        # 最近一分钟插入一个点的平均延时
 get_bound_qps.rate.600        # 最近十分钟获取邻点的 QPS
 update_edge_error_qps.count.3600   # 最近一小时更新一条边发生错误的总计数量
