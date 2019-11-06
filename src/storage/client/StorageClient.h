@@ -195,7 +195,7 @@ public:
         const std::string& name,
         folly::EventBase* evb = nullptr);
 
-    // Get All leaders of one space
+    // Get All leaders
     folly::SemiFuture<StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>> getLeaders(
         folly::EventBase* evb = nullptr);
 
