@@ -361,12 +361,20 @@ TEST_F(StorageClientTestF, VerticesInterfacesTest) {
 }
 
 TEST_F(StorageClientTestF, Misc) {
+    // extra two space
+    auto ret = mc_->createSpace("default2", kPartsNum, 1).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    ret = mc_->createSpace("default3", kPartsNum, 1).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    sleep(FLAGS_load_data_interval_secs + 1);
+    TestUtils::waitUntilAllElected(server_->kvStore_.get(), space_+1, kPartsNum);
+    TestUtils::waitUntilAllElected(server_->kvStore_.get(), space_+2, kPartsNum);
+
     // Spaces
     {
         auto spaces = client_->listSpaces();
         ASSERT_TRUE(spaces.ok());
-        EXPECT_EQ(spaces.value().size(), 1);  // Hard Code \TODO(shylock)
-        EXPECT_EQ(spaces.value().front().first, space_);
+        EXPECT_EQ(spaces.value().size(), 3);  // Hard Code \TODO(shylock)
     }
 
     // parts
@@ -397,7 +405,7 @@ TEST_F(StorageClientTestF, Misc) {
     {
         auto leaders = client_->preHeatLeaders();
         ASSERT_TRUE(leaders.ok());
-        ASSERT_EQ(leaders.value().size(), kPartsNum);  //< 1*kPartsNum
+        ASSERT_EQ(leaders.value().size(), 3*kPartsNum);  //< Spaces*kPartsNum
         LOG(INFO) << "The all leader:";
         for (auto& leader : leaders.value()) {
             // TODO(shylock) (std::pair<GraphSpaceID, PartitionID>) to ostream as HostAddr?

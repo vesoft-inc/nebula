@@ -403,42 +403,26 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(
 folly::SemiFuture<StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>>
 StorageClient::getLeaders(
         folly::EventBase* evb) {
-    return client_->listSpaces().thenValue([](auto&& spaces){
-        return std::move(spaces);
-    }).thenError([](auto&& e){
-        LOG(ERROR) << "Get spaces failed: " << e.what();
-        return StatusOr<std::vector<meta::SpaceIdName>>();
-    }).thenValue([this](auto&& spaces) {
-        std::vector<folly::Future<StatusOr<meta::PartsAlloc>>> fParts;
-        if (UNLIKELY(!spaces.ok())) {
-            return folly::collect(fParts.begin(), fParts.end());
-        }
-        fParts.reserve(spaces.value().size());
-        for (auto& s : spaces.value()) {
-            fParts.emplace_back(this->client_->getPartsAlloc(s.first));
-        }
-        return folly::collect(fParts.begin(), fParts.end());
-    }).thenError([](auto&& e) {
-        LOG(ERROR) << "Get spaces failed: " << e.what();
-        return folly::makeFuture<std::vector<StatusOr<meta::PartsAlloc>>>(
-            std::vector<StatusOr<meta::PartsAlloc>>());
-    }).thenValue([](auto&& parts) {
+    return client_->listHosts().thenValue([](auto&& hosts) {
         std::unordered_map<HostAddr, cpp2::GetLeaderReq> requests;
-        if (UNLIKELY(parts.empty())) {
-            LOG(WARNING) << "Get parts failed!";
+        if (UNLIKELY(!hosts.ok())) {
+           LOG(WARNING) << "Get hosts failed!";
+           return requests;
         }
-        for (auto part : parts) {
-            if (part.ok()) {
-                for (auto p : part.value()) {
-                    requests.emplace(p.second.front(), cpp2::GetLeaderReq());
-                }
+        requests.reserve(hosts.value().size());
+        for (auto& host : hosts.value()) {
+            if (host.get_status() == meta::cpp2::HostStatus::ONLINE) {
+                requests.emplace(
+                    std::make_pair(host.get_hostAddr().get_ip(), host.get_hostAddr().get_port()),
+                    cpp2::GetLeaderReq());
             } else {
-                LOG(WARNING) << "One Get PartAlloc RPC failed!";
+                LOG(WARNING) << "Host " << std::make_pair(
+                    host.get_hostAddr().get_ip(), host.get_hostAddr().get_port()) << "not work!";
             }
         }
         return requests;
     }).thenError([](auto&& e) {
-        LOG(ERROR) << "Get parts failed: " << e.what();
+        LOG(ERROR) << "Get hosts failed: " << e.what();
         return std::unordered_map<HostAddr, cpp2::GetLeaderReq>();
     }).thenValue([this, evb](auto&& requests) {
         if (UNLIKELY(requests.empty())) {
