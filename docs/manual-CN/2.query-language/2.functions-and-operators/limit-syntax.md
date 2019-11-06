@@ -2,7 +2,7 @@
 
 `LIMIT` 用法与 `SQL` 中的相同。
 
-```sql
+```ngql
 ORDER BY <expressions> [ASC | DESC]
 LIMIT [<offset_value>,] <number_rows>
 ```

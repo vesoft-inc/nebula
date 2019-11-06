@@ -1,6 +1,6 @@
 # DROP SPACE 语法
 
-```sql
+```ngql
 DROP SPACE space_name
 ```
 
