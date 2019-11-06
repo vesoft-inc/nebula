@@ -10,13 +10,13 @@ Currently, we have offered packages for `CentOS 7.5`, `CentOS 6.5`, `Ubuntu 1604
 
 For `CentOS` :
 
-```sh
+```bash
 rpm -ivh nebula-{VERSION}.{SYSTEM_VERSION}.x86_64.rpm
 ```
 
 For `Ubuntu` :
 
-```sh
+```bash
 dpkg -i nebula-{VERSION}.{SYSTEM_VERSION}.amd64.deb
 ```
 
@@ -42,7 +42,7 @@ The metas, storages and graphs contain the host of themselves.
 
 ## Connect to Nebula Graph
 
-```sh
+```bash
 > bin/nebula -u=user -p=password --addr={graphd IP address} --port={graphd listening port}
 ```
 

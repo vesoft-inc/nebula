@@ -57,7 +57,7 @@ update_edge_error_qps.count.3600   # 最近一小时更新一条边发生错误�
 
 假设本地启动了一个 nebula storage service，同时启动时设置的 `ws_http_port` 端口号为 50005。通过 HTTP 的 GET 接口发送，方法名为 get_stats，参数为 stats 加对应的指标名字。下面是通过 HTTP 接口获取指标的示例：
 
-```shell
+```bash
 # 获取一个指标
 curl -G "http://127.0.0.1:50005/get_stats?stats=vertex_props_qps.rate.60"
 # vertex_props_qps.rate.60=2674
