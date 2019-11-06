@@ -237,6 +237,7 @@ StorageClient::collectResponseWithoutLeader(
     return context->promise.getSemiFuture();
 }
 
+
 template<class Request, class RemoteFunc, class Response>
 folly::Future<StatusOr<Response>> StorageClient::getResponse(
         folly::EventBase* evb,
