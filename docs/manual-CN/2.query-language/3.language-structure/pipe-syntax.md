@@ -6,7 +6,7 @@ SQL 中的查询语句通常由子查询嵌套组成，而 nGQL 则使用类似�
 
 ## 示例
 
-```SQL
+```ngql
 nebula> GO FROM 201 OVER edge_serve | GO FROM $-.id OVER edge_fans | GO FROM $-.id ...
 nebula> GO FROM 100 OVER like YIELD like._dst AS Id, $$.player.name AS Name \
   | GO FROM $-.Id OVER like YIELD like._dst, like.likeness, $-.Name

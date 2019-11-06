@@ -13,7 +13,7 @@
 
 ### 分号复合语句
 
-```
+```ngql
 nebula> SHOW TAGS; SHOW EDGES;          -- 仅列出边
   INSERT VERTEX player(name, age) VALUES 100:("Tim Duncan", 42); \
   INSERT VERTEX player(name, age) VALUES 101:("Tony Parker", 36); \
@@ -22,7 +22,7 @@ nebula> SHOW TAGS; SHOW EDGES;          -- 仅列出边
 
 ### 管道复合语句
 
-```
+```ngql
 nebula> GO FROM 201 OVER edge_serve | GO FROM $-.id OVER edge_fans | GO FROM $-.id ...
 ```
 

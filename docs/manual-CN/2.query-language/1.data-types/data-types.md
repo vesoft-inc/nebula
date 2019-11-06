@@ -46,18 +46,18 @@ Nebula Graph 支持的内建数据类型如下：
 
 先创建一个名为 school 的 tag
 
-```sql
+```ngql
 nebula> CREATE TAG school(name string , create_time timestamp);
 ```
 
 插入一个点，名为 "xiwang"，建校时间为 "2010-09-01 08:00:00"
 
-```sql
+```ngql
 nebula> INSERT VERTEX school(name, create_time) VALUES hash("xiwang"):("xiwang", "2010-09-01 08:00:00")
 ```
 
 插入一个点，名为 "guangming"，建校时间为现在
 
-```sql
+```ngql
 nebula> INSERT VERTEX school(name, create_time) VALUES hash("guangming"):("guangming", now())
 ```

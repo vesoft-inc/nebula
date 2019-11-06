@@ -2,7 +2,7 @@
 
 Currently, the `WHERE` statement only applies to the `GO` statement.
 
-```
+```ngql
 WHERE (expression [ AND | OR expression ...])  
 ```
 
@@ -12,7 +12,7 @@ Usually, `WHERE` is a set of logical combination that filter vertex or edge prop
 
 ## Examples
 
-```
+```ngql
 /* GO FROM 201 OVER like */  -- Apply in a GO statement
 WHERE e1.prop1 >= 17     -- the edge e1's property prop1 is larger than 17
 

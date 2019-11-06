@@ -1,14 +1,14 @@
 # Use Syntax
 
-```
+```ngql
 USE <graph_space_name>
 ```
 
-The `USE` statement tells Nebula to use the named (graph) space as the current working space. This statement requires some privileges.
+The `USE` statement tells Nebula to use the named (graph) space as the current working space for subsequent statements. This statement requires some privileges.
 
 The named space remains the default until the end of the session or another `USE` statement is issued:
 
-```SQL
+```ngql
 nebula> USE space1
 -- Traverse in graph space1
 nebula> GO FROM 1 OVER edge1
