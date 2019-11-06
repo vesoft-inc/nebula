@@ -25,7 +25,7 @@ get_bound // internal use only
 
 Each interface has three metrics, namely latency (in the units of us), QPS and QPS with errors. The suffixes are as follows:
 
-```
+```text
 _latency
 _qps
 _error_qps
