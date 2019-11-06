@@ -181,7 +181,7 @@ Command `BALANCE DATA` only migrates partitions. But the leader distribution rem
 nebula> BALANCE LEADER
 ```
 
-Seconds later, check the results using the command `SHOW HOSTS`. The RAFT leaders are distributed evenly over all the hosts in the clusters.
+Seconds later, check the results using the command `SHOW HOSTS`. The RAFT leaders are distributed evenly over all the hosts in the cluster.
 
 ```ngql
 nebula> SHOW HOSTS
