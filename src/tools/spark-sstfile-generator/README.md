@@ -83,7 +83,7 @@ DEBUG_LEVEL=0 make rocksdbjava
 3. run `jar uvf nebula-spark-sstfile-generator.jar librocksdbjni-linux64.so libnebula_native_client.so` to replace the `*.so` files packaged inside the dependency org.rocksdb:rocksdbjni:5.17.2,
     or the following error will occur when spark-submit:
 
-```bash
+```text
 *** glibc detected *** /soft/java/bin/java: free(): invalid pointer: 0x00007f7985b9f0a0 ***
 ======= Backtrace: =========
 /lib64/libc.so.6(+0x75f4e)[0x7f7c7d5e6f4e]
