@@ -42,8 +42,8 @@ enum ErrorCode {
     E_LOAD_META_FAILED = -41,
 
     // checkpoint failed
-    E_FAILED_TO_CHECKPOINT = 50,
-    E_CHECKPOINT_BLOCKED = 51,
+    E_FAILED_TO_CHECKPOINT = -50,
+    E_CHECKPOINT_BLOCKED = -51,
 
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
@@ -348,8 +348,9 @@ struct GetUUIDResp {
 }
 
 struct BlockingSignRequest {
-    1: required EngineSignType      sign,
-    2: required common.GraphSpaceID space_id,
+    1: common.GraphSpaceID          space_id,
+    2: common.PartitionID           part_id,
+    3: required EngineSignType      sign,
 }
 
 struct CreateCPRequest {

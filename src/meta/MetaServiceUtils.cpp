@@ -11,16 +11,17 @@
 namespace nebula {
 namespace meta {
 
-const std::string kSpacesTable = "__spaces__";  // NOLINT
-const std::string kPartsTable  = "__parts__";   // NOLINT
-const std::string kHostsTable  = "__hosts__";   // NOLINT
-const std::string kTagsTable   = "__tags__";    // NOLINT
-const std::string kEdgesTable  = "__edges__";   // NOLINT
-const std::string kIndexTable  = "__index__";   // NOLINT
-const std::string kUsersTable  = "__users__";    // NOLINT
-const std::string kRolesTable  = "__roles__";    // NOLINT
-const std::string kConfigsTable = "__configs__"; // NOLINT
-const std::string kDefaultTable = "__default__"; // NOLINT
+const std::string kSpacesTable      = "__spaces__";    // NOLINT
+const std::string kPartsTable       = "__parts__";     // NOLINT
+const std::string kHostsTable       = "__hosts__";     // NOLINT
+const std::string kTagsTable        = "__tags__";      // NOLINT
+const std::string kEdgesTable       = "__edges__";     // NOLINT
+const std::string kIndexTable       = "__index__";     // NOLINT
+const std::string kUsersTable       = "__users__";     // NOLINT
+const std::string kRolesTable       = "__roles__";     // NOLINT
+const std::string kConfigsTable     = "__configs__";   // NOLINT
+const std::string kDefaultTable     = "__default__";   // NOLINT
+const std::string kSnapshotsTable   = "__snapshots__"; // NOLINT
 
 const std::string kHostOnline  = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";      // NOLINT
@@ -571,6 +572,34 @@ cpp2::ConfigItem MetaServiceUtils::parseConfigValue(folly::StringPiece rawData) 
     item.set_mode(mode);
     item.set_value(value.str());
     return item;
+}
+
+std::string MetaServiceUtils::snapshotKey(const std::string& name) {
+    std::string key;
+    key.reserve(kSnapshotsTable.size() + name.size());
+    key.append(kSnapshotsTable.data(), kSnapshotsTable.size());
+    key.append(name);
+    return key;
+}
+
+std::string MetaServiceUtils::snapshotVal(const cpp2::SnapshotStatus& status) {
+    std::string val;
+    val.reserve(sizeof(cpp2::SnapshotStatus));
+    val.append(reinterpret_cast<const char*>(&status), sizeof(cpp2::SnapshotStatus));
+    return val;
+}
+
+cpp2::SnapshotStatus MetaServiceUtils::parseSnapshotStatus(folly::StringPiece rawData) {
+    return *reinterpret_cast<const cpp2::SnapshotStatus*>(rawData.data());
+}
+
+std::string MetaServiceUtils::parseSnapshotName(folly::StringPiece rawData) {
+    int32_t offset = kSnapshotsTable.size();
+    return rawData.subpiece(offset, rawData.size() - offset).str();
+}
+
+const std::string& MetaServiceUtils::snapshotPrefix() {
+    return kSnapshotsTable;
 }
 
 }  // namespace meta

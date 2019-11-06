@@ -119,6 +119,12 @@ enum HostStatus {
     UNKNOWN = 0x02,
 } (cpp.enum_strict)
 
+enum SnapshotStatus {
+    VALID    = 0x00,
+    INVALID  = 0x01,
+    CREATING = 0x03,
+} (cpp.enum_strict)
+
 struct HostItem {
     1: common.HostAddr      hostAddr,
     2: HostStatus           status,
@@ -536,11 +542,16 @@ struct DropSnapshotReq {
 struct ListSnapshotsReq {
 }
 
+struct Snapshot {
+    1: string         name,
+    2: SnapshotStatus status,
+}
+
 struct ListSnapshotsResp {
     1: ErrorCode            code,
     // Valid if code equals E_LEADER_CHANGED.
     2: common.HostAddr      leader,
-    3: list<string>         snapshots,
+    3: list<Snapshot>         snapshots,
 }
 
 service MetaService {

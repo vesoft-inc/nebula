@@ -594,16 +594,32 @@ void ShowExecutor::showSnapshots() {
             return;
         }
 
+        auto getStatus = [](meta::cpp2::SnapshotStatus status) -> std::string {
+            std::string str;
+            switch (status) {
+                case meta::cpp2::SnapshotStatus::INVALID :
+                    str = "INVALID";
+                    break;
+                case meta::cpp2::SnapshotStatus::VALID :
+                    str = "VALID";
+                    break;
+                case meta::cpp2::SnapshotStatus::CREATING :
+                    str = "CREATING";
+                    break;
+            }
+            return str;
+        };
+
         auto retShowSnapshots = std::move(resp).value();
         std::vector<cpp2::RowValue> rows;
-        std::vector<std::string> header{"Snapshot"};
+        std::vector<std::string> header{"Name", "Status"};
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(std::move(header));
-
         for (auto &snapshot : retShowSnapshots) {
             std::vector<cpp2::ColumnValue> row;
-            row.emplace_back();
-            row.back().set_str(std::move(snapshot));
+            row.resize(2);
+            row[0].set_str(snapshot.name);
+            row[1].set_str(getStatus(snapshot.status));
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }

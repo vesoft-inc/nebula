@@ -167,6 +167,8 @@ public:
 
     ResultCode dropCheckpoint(GraphSpaceID spaceId, const std::string& name) override;
 
+    ResultCode setPartBlocking(GraphSpaceID spaceId, PartitionID partId, bool sign) override;
+
     int32_t allLeader(std::unordered_map<GraphSpaceID,
                                          std::vector<PartitionID>>& leaderIds) override;
 
@@ -184,22 +186,6 @@ public:
     void removePart(GraphSpaceID spaceId, PartitionID partId) override;
 
     ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
-
-    void setBlocking(bool sign) override {
-        raftexBlocking = sign;
-    }
-
-    bool getBlocking() override {
-        return raftexBlocking;
-    }
-
-    std::vector<std::string> getCheckpointPath() override {
-        std::vector<std::string> cps;
-        for (auto& p : options_.dataPaths_) {
-            cps.emplace_back(folly::stringPrintf("%s/nebula/0/checkpoints", p.c_str()));
-        }
-        return cps;
-    }
 
 private:
     void updateSpaceOption(GraphSpaceID spaceId,
@@ -229,8 +215,6 @@ private:
 
     std::shared_ptr<raftex::RaftexService> raftService_;
     std::shared_ptr<raftex::SnapshotManager> snapshot_;
-
-    bool raftexBlocking{false};
 };
 
 }  // namespace kvstore

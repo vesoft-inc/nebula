@@ -20,7 +20,7 @@ public:
     }
     void process(const cpp2::CreateSnapshotReq& req);
 
-    std::string currentSnapshot();
+    std::string genSnapshotName();
 
 private:
     explicit CreateSnapshotProcessor(kvstore::KVStore* kvstore)

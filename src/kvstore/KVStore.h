@@ -158,11 +158,7 @@ public:
 
     virtual ResultCode dropCheckpoint(GraphSpaceID spaceId, const std::string& name) = 0;
 
-    virtual void setBlocking(bool sign) = 0;
-
-    virtual bool getBlocking() = 0;
-
-    virtual std::vector<std::string> getCheckpointPath() = 0;
+    virtual ResultCode setPartBlocking(GraphSpaceID spaceId, PartitionID partId, bool sign) = 0;
 
 protected:
     KVStore() = default;

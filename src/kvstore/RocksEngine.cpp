@@ -430,25 +430,18 @@ ResultCode RocksEngine::createCheckpoint(const std::string& name) {
 
     /*
      * The default checkpoint directory structure is :
-     * --FLAGS_data_path
-     *   --nebula
-     *      --space0
-     *      --space1
-     *      --.....
-     *   --checkpoint
-     *      --checkpoint_1
-     *        --nebula
-     *          --space1
-     *          --space2
-     *          --......
-     *      --checkpoint_2
-     *        --nebula
-     *          --space1
-     *          --space2
-     *          --......
-     *      --checkpoint_n
+     *   |--FLAGS_data_path
+     *   |----nebula
+     *   |------space1
+     *   |--------data
+     *   |--------wal
+     *   |--------checkpoints
+     *   |----------snapshot1
+     *   |----------snapshot2
+     *   |----------snapshot3
      *
      */
+
     auto checkpointPath = folly::stringPrintf("%s/checkpoints/%s", dataPath_.c_str(), name.c_str());
     LOG(INFO) << "Target checkpoint path : " << checkpointPath;
     if (fs::FileUtils::exist(checkpointPath)) {
@@ -477,9 +470,8 @@ ResultCode RocksEngine::createCheckpoint(const std::string& name) {
 }
 
 ResultCode RocksEngine::dropCheckpoint(const std::string& name) {
-    LOG(INFO) << "Drop checkpoint : " << dataPath_;
-    auto checkpointPath = folly::stringPrintf("%s/checkpoint/%s", dataPath_.c_str(), name.c_str());
-    LOG(INFO) << "Target checkpoint path : " << checkpointPath;
+    auto checkpointPath = folly::stringPrintf("%s/checkpoints/%s", dataPath_.c_str(), name.c_str());
+    LOG(INFO) << "Drop checkpoint : " << checkpointPath;
     if (!fs::FileUtils::exist(checkpointPath)) {
         return ResultCode::SUCCEEDED;
     }

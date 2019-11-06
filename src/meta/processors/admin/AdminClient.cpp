@@ -532,14 +532,15 @@ folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId, const st
     if (injector_) {
         return injector_->createSnapshot();
     }
-    storage::cpp2::CreateCPRequest req;
-    req.set_space_id(spaceId);
-    req.set_name(name);
 
     auto ret = getSpacePeers(spaceId);
     if (!ret.ok()) {
         return ret.status();
     }
+
+    storage::cpp2::CreateCPRequest req;
+    req.set_space_id(spaceId);
+    req.set_name(name);
 
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
@@ -571,25 +572,27 @@ folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId, const std:
 }
 
 folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
-                                                 storage::cpp2::EngineSignType sign) {
+                                                  PartitionID partId,
+                                                  const HostAddr& host,
+                                                  storage::cpp2::EngineSignType sign) {
     if (injector_) {
-        return injector_->blockingWrites();
+        return injector_->transLeader();
     }
     storage::cpp2::BlockingSignRequest req;
-    req.set_sign(sign);
     req.set_space_id(spaceId);
-
-    auto ret = getSpacePeers(spaceId);
-    if (!ret.ok()) {
-        return ret.status();
-    }
-
-    folly::Promise<Status> pro;
-    auto f = pro.getFuture();
-    getResponse(ret.value(), 0, std::move(req), [] (auto client, auto request) {
+    req.set_part_id(partId);
+    req.set_sign(sign);
+    return getResponse(host, std::move(req), [] (auto client, auto request) {
         return client->future_blockingWrites(request);
-    }, 0, std::move(pro), 1 /*The send sing operation only needs to be retried twice*/);
-    return f;
+    }, [] (auto&& resp) -> Status {
+        switch (resp.get_code()) {
+            case storage::cpp2::ErrorCode::SUCCEEDED:
+                return Status::OK();
+            default:
+                return Status::Error("Unknown code %d",
+                                     static_cast<int32_t>(resp.get_code()));
+        }
+    });
 }
 
 }  // namespace meta

@@ -33,6 +33,9 @@ public:
 
     cpp2::ErrorCode blockingWrites(storage::cpp2::EngineSignType sign);
 
+    std::unordered_map<HostAddr, std::vector<PartitionID>>
+    buildLeaderPlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId);
+
 private:
     Snapshot(kvstore::KVStore* kv, std::unique_ptr<AdminClient> client)
             : kv_(kv)

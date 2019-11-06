@@ -1376,9 +1376,9 @@ folly::Future<StatusOr<bool>> MetaClient::dropSnapshot(const std::string& name) 
     return future;
 }
 
-folly::Future<StatusOr<std::vector<std::string>>> MetaClient::listSnapshots() {
+folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> MetaClient::listSnapshots() {
     cpp2::ListSnapshotsReq req;
-    folly::Promise<StatusOr<std::vector<std::string>>> promise;
+    folly::Promise<StatusOr<std::vector<cpp2::Snapshot>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_listSnapshots(request);

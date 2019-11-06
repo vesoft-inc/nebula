@@ -15,37 +15,64 @@ namespace meta {
 void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
     auto& snapshot = req.get_name();
     folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
+    std::string val;
 
-    auto paths = kvstore_->getCheckpointPath();
-    if (paths.empty()) {
+    // Check snapshot is exists
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId,
+                             MetaServiceUtils::snapshotKey(snapshot),
+                             &val);
+
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "No snapshots found";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        resp_.set_code(to(ret));
         onFinished();
         return;
     }
 
-    if (!fs::FileUtils::exist(paths[0])) {
-        resp_.set_code({});
-        onFinished();
-        return;
-    }
-
-    auto dirs = fs::FileUtils::listAllDirsInDir(paths[0].data());
-
-    if (std::find(dirs.begin(), dirs.end(), snapshot) == dirs.end()) {
-        LOG(ERROR) << "Snapshot " << snapshot << " does not exist";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-        onFinished();
-        return;
-    }
-
-    auto ret = Snapshot::instance(kvstore_)->dropSnapshot(snapshot);
-    if (ret != cpp2::ErrorCode::SUCCEEDED) {
+    // Check snapshot is creating
+    if (MetaServiceUtils::parseSnapshotStatus(val) == cpp2::SnapshotStatus::CREATING) {
+        LOG(ERROR) << "snapshot is creating";
         resp_.set_code(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
         onFinished();
         return;
     }
-    onFinished();
+    std::vector<kvstore::KV> data;
+    auto dsRet = Snapshot::instance(kvstore_)->dropSnapshot(snapshot);
+    if (dsRet != cpp2::ErrorCode::SUCCEEDED) {
+        LOG(ERROR) << "Drop snapshot error on storage engine";
+        // Need update the snapshot status to invalid, maybe some storage engine drop done.
+        data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
+                          MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID));
+        if (!doSyncPut(std::move(data))) {
+            LOG(ERROR) << "Update snapshot status error. "
+                          "snapshot : " << snapshot;
+            resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
+        } else {
+            resp_.set_code(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
+        }
+        onFinished();
+        return;
+    }
+
+    auto dmRet = kvstore_->dropCheckpoint(kDefaultSpaceId, snapshot);
+    // TODO sky : need remove meta checkpoint from slave hosts.
+    if (dmRet != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Drop snapshot error on meta engine";
+        // Need update the snapshot status to invalid, maybe storage engines drop done.
+        data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
+                          MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID));
+        if (!doSyncPut(std::move(data))) {
+            LOG(ERROR) << "Update snapshot status error. "
+                          "snapshot : " << snapshot;
+            resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
+        } else {
+            resp_.set_code(to(dmRet));
+        }
+        onFinished();
+        return;
+    }
+    // Delete metadata of checkpoint
+    doRemove(MetaServiceUtils::snapshotKey(snapshot));
 }
 }  // namespace meta
 }  // namespace nebula

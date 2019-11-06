@@ -243,7 +243,7 @@ public:
 
     folly::Future<StatusOr<bool>> dropSnapshot(const std::string& name);
 
-    folly::Future<StatusOr<std::vector<std::string>>> listSnapshots();
+    folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> listSnapshots();
 
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);

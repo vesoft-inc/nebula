@@ -159,18 +159,8 @@ public:
         return ResultCode::ERR_UNSUPPORTED;
     }
 
-    void setBlocking(bool) override {
-        LOG(FATAL) << "Not supportted yet!";
-    };
-
-    bool getBlocking() override {
-        LOG(FATAL) << "Not supportted yet!";
-        return false;
-    };
-
-    std::vector<std::string> getCheckpointPath() override {
-        LOG(FATAL) << "Not supportted yet!";
-        return {};
+    ResultCode setPartBlocking(GraphSpaceID, PartitionID, bool) override {
+        return ResultCode::ERR_UNSUPPORTED;
     }
 
 private:

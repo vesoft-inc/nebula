@@ -58,12 +58,46 @@ TEST_F(SnapshotCommandTest, TestSnapshot) {
         sname.append(snapshots[0].data()->get_columns().data()->get_str());
     }
 
+    {
+        std::vector<std::string> checkpoints;
+        checkpoints.emplace_back(folly::stringPrintf("%s/disk1/nebula/1/checkpoints/%s",
+                                                     gEnv->getStorageRootPath().data(),
+                                                     sname.data()));
+        checkpoints.emplace_back(folly::stringPrintf("%s/disk2/nebula/1/checkpoints/%s",
+                                                     gEnv->getStorageRootPath().data(),
+                                                     sname.data()));
+        checkpoints.emplace_back(folly::stringPrintf("%s/disk1/nebula/0/checkpoints/%s",
+                                                     gEnv->getMetaRootPath().data(),
+                                                     sname.data()));
+        for (auto& cp : checkpoints) {
+            ASSERT_TRUE(fs::FileUtils::exist(cp));
+            auto files = fs::FileUtils::listAllFilesInDir(cp.data());
+            ASSERT_LE(3, files.size());
+        }
+    }
+
     ASSERT_NE(nullptr, client);
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "DROP SNAPSHOT " + sname;
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+
+    {
+        std::vector<std::string> checkpoints;
+        checkpoints.emplace_back(folly::stringPrintf("%s/disk1/nebula/1/checkpoints/%s",
+                                                     gEnv->getStorageRootPath().data(),
+                                                     sname.data()));
+        checkpoints.emplace_back(folly::stringPrintf("%s/disk2/nebula/1/checkpoints/%s",
+                                                     gEnv->getStorageRootPath().data(),
+                                                     sname.data()));
+        checkpoints.emplace_back(folly::stringPrintf("%s/disk1/nebula/0/checkpoints/%s",
+                                                     gEnv->getMetaRootPath().data(),
+                                                     sname.data()));
+        for (auto& cp : checkpoints) {
+            ASSERT_FALSE(fs::FileUtils::exist(cp));
+        }
     }
 }
 

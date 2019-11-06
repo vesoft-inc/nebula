@@ -50,7 +50,6 @@ bool NebulaStore::init() {
     CHECK(!!options_.partMan_);
     LOG(INFO) << "Scan the local path, and init the spaces_";
     {
-        folly::RWSpinLock::WriteHolder wh(&lock_);
         for (auto& path : options_.dataPaths_) {
             auto rootPath = folly::stringPrintf("%s/nebula", path.c_str());
             auto dirs = fs::FileUtils::listAllDirsInDir(rootPath.c_str());
@@ -76,13 +75,20 @@ bool NebulaStore::init() {
                         CHECK(fs::FileUtils::remove(dataPath.c_str(), true));
                         continue;
                     }
-                    auto engine = newEngine(spaceId, path);
-                    auto spaceIt = this->spaces_.find(spaceId);
-                    if (spaceIt == this->spaces_.end()) {
-                        LOG(INFO) << "Load space " << spaceId << " from disk";
-                        spaceIt = this->spaces_.emplace(
-                            spaceId,
-                            std::make_unique<SpacePartInfo>()).first;
+
+                    KVEngine* enginePtr = nullptr;
+                    {
+                        folly::RWSpinLock::WriteHolder wh(&lock_);
+                        auto engine = newEngine(spaceId, path);
+                        auto spaceIt = this->spaces_.find(spaceId);
+                        if (spaceIt == this->spaces_.end()) {
+                            LOG(INFO) << "Load space " << spaceId << " from disk";
+                            spaceIt = this->spaces_.emplace(
+                                spaceId,
+                                std::make_unique<SpacePartInfo>()).first;
+                        }
+                        spaceIt->second->engines_.emplace_back(std::move(engine));
+                        enginePtr = spaceIt->second->engines_.back().get();
                     }
 
                     // partIds is the partition in this host waiting to open
@@ -392,10 +398,6 @@ void NebulaStore::asyncMultiPut(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 std::vector<KV> keyValues,
                                 KVCallback cb) {
-    if (this->getBlocking()) {
-        cb(kvstore::ResultCode::ERR_CHECKPOINT_BLOCKED);
-        return;
-    }
     auto ret = part(spaceId, partId);
     if (!ok(ret)) {
         cb(error(ret));
@@ -410,10 +412,6 @@ void NebulaStore::asyncRemove(GraphSpaceID spaceId,
                               PartitionID partId,
                               const std::string& key,
                               KVCallback cb) {
-    if (this->getBlocking()) {
-        cb(kvstore::ResultCode::ERR_CHECKPOINT_BLOCKED);
-        return;
-    }
     auto ret = part(spaceId, partId);
     if (!ok(ret)) {
         cb(error(ret));
@@ -428,10 +426,6 @@ void NebulaStore::asyncMultiRemove(GraphSpaceID spaceId,
                                    PartitionID  partId,
                                    std::vector<std::string> keys,
                                    KVCallback cb) {
-    if (this->getBlocking()) {
-        cb(kvstore::ResultCode::ERR_CHECKPOINT_BLOCKED);
-        return;
-    }
     auto ret = part(spaceId, partId);
     if (!ok(ret)) {
         cb(error(ret));
@@ -626,6 +620,28 @@ ResultCode NebulaStore::dropCheckpoint(GraphSpaceID spaceId, const std::string& 
         }
     }
     return ResultCode::SUCCEEDED;
+}
+
+ResultCode NebulaStore::setPartBlocking(GraphSpaceID spaceId, PartitionID partId, bool sign) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
+    ResultCode ret = ResultCode::SUCCEEDED;
+    auto it = spaces_.find(spaceId);
+    if (UNLIKELY(it == spaces_.end())) {
+        return ResultCode::ERR_SPACE_NOT_FOUND;
+    }
+    auto& parts = it->second->parts_;
+    auto partIt = parts.find(partId);
+    if (UNLIKELY(partIt == parts.end())) {
+        return ResultCode::ERR_PART_NOT_FOUND;
+    }
+
+    partIt->second->asyncBlockingLeader(sign, [&ret] (kvstore::ResultCode code) {
+        if (code != kvstore::ResultCode::SUCCEEDED) {
+            ret = ResultCode::ERR_WRITE_BLOCK_ERROR;
+        }
+    });
+
+    return ret;
 }
 
 bool NebulaStore::isLeader(GraphSpaceID spaceId, PartitionID partId) {

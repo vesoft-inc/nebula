@@ -189,6 +189,15 @@ void Part::asyncRemovePeer(const HostAddr& peer, KVCallback cb) {
     });
 }
 
+
+void Part::asyncBlockingLeader(bool sign, KVCallback cb) {
+    blocking_ = sign;
+    sendCommandAsync("")
+            .then([callback = std::move(cb)] (AppendLogResult res) mutable {
+                callback(toResultCode(res));
+            });
+}
+
 void Part::onLostLeadership(TermID term) {
     VLOG(1) << "Lost the leadership for the term " << term;
 }

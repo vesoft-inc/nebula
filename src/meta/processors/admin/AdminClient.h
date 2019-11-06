@@ -99,7 +99,10 @@ public:
 
     folly::Future<Status> dropSnapshot(GraphSpaceID spaceId, const std::string& name);
 
-    folly::Future<Status> blockingWrites(GraphSpaceID spaceId, storage::cpp2::EngineSignType sign);
+    folly::Future<Status> blockingWrites(GraphSpaceID spaceId,
+                                         PartitionID partId,
+                                         const HostAddr& host,
+                                         storage::cpp2::EngineSignType sign);
 
     FaultInjector* faultInjector() {
         return injector_.get();
