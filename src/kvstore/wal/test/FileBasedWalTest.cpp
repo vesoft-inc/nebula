@@ -456,7 +456,11 @@ TEST(FileBasedWal, CheckLastWalTest) {
         std::sort(files.begin(), files.end());
         size_t size = FileUtils::fileSize(files.back().c_str());
         auto fd = open(files.back().c_str(), O_WRONLY | O_APPEND);
-        ftruncate(fd, size - sizeof(int32_t));
+        if (ftruncate(fd, size - sizeof(int32_t)) < 0) {
+            LOG(ERROR) << "truncate failed";
+            close(fd);
+            return;
+        }
         close(fd);
 
         // Now let's open it to read
@@ -479,7 +483,11 @@ TEST(FileBasedWal, CheckLastWalTest) {
         wal.reset();
 
         auto fd = open(lastWalPath.c_str(), O_WRONLY | O_APPEND);
-        ftruncate(fd, sizeof(LogID) + sizeof(TermID));
+        if (ftruncate(fd, sizeof(LogID) + sizeof(TermID)) < 0) {
+            LOG(ERROR) << "truncate failed";
+            close(fd);
+            return;
+        }
         close(fd);
 
         // Now let's open it to read
@@ -494,7 +502,11 @@ TEST(FileBasedWal, CheckLastWalTest) {
 
         // truncate last wal
         fd = open(lastWalPath.c_str(), O_WRONLY | O_APPEND);
-        ftruncate(fd, 0);
+        if (ftruncate(fd, 0) < 0) {
+            LOG(ERROR) << "truncate failed";
+            close(fd);
+            return;
+        }
         close(fd);
 
         // Now let's open it to read
