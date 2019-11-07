@@ -12,6 +12,7 @@
 #include "meta/processors/partsMan/GetSpaceProcessor.h"
 #include "meta/processors/partsMan/AddHostsProcessor.h"
 #include "meta/processors/partsMan/ListHostsProcessor.h"
+#include "meta/processors/partsMan/ListPartsProcessor.h"
 #include "meta/processors/partsMan/RemoveHostsProcessor.h"
 #include "meta/processors/partsMan/GetPartsAllocProcessor.h"
 #include "meta/processors/schemaMan/CreateTagProcessor.h"
@@ -80,6 +81,12 @@ MetaServiceHandler::future_addHosts(const cpp2::AddHostsReq& req) {
 folly::Future<cpp2::ListHostsResp>
 MetaServiceHandler::future_listHosts(const cpp2::ListHostsReq& req) {
     auto* processor = ListHostsProcessor::instance(kvstore_, adminClient_.get());
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListPartsResp>
+MetaServiceHandler::future_listParts(const cpp2::ListPartsReq& req) {
+    auto* processor = ListPartsProcessor::instance(kvstore_, adminClient_.get());
     RETURN_FUTURE(processor);
 }
 

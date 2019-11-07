@@ -1,6 +1,6 @@
 # INSERT VERTEX 语法
 
-```
+```ngql
 INSERT VERTEX tag_name[, tag_name] (prop_name_list[, prop_name_list])
      {VALUES | VALUE} vid: (prop_value_list[, prop_value_list])
 
@@ -21,18 +21,18 @@ INSERT VERTEX 可向 Nebula 插入节点。
 
 ## 示例
 
-```
+```ngql
 # CREATE TAG t1()                   -- 创建空属性标签 t1
 INSERT VERTEX t1 () VALUES 10:()    -- 插入空属性点 100
 ```
 
-```
+```ngql
 # CREATE TAG t2 (name string, age int)                -- 创建有两种属性的标签 t2
 INSERT VERTEX t2 (name, age) VALUES 11:("n1", 12)     -- 插入有两种属性的点 11
 INSERT VERTEX t2 (name, age) VALUES 12:("n1", "a13")  -- 错误操作，"a13" 不是 int 类型
 ```
 
-```
+```ngql
 # CREATE TAG t1(i1 int)
 # CREATE TAG t2(s2 string)
 INSERT VERTEX  t1 (i1), t2(s2) VALUES 21: (321, "hello")   -- 插入有两个标签的点 21
@@ -40,8 +40,8 @@ INSERT VERTEX  t1 (i1), t2(s2) VALUES 21: (321, "hello")   -- 插入有两个标
 
 同一节点可被多次插入或写入，读取时以最后一次插入为准。
 
-```
--- 为点11多次插入新值
+```ngql
+-- 为点 11 多次插入新值
 INSERT VERTEX t2 (name, age) VALUES 11:("n2", 13)
 INSERT VERTEX t2 (name, age) VALUES 11:("n3", 14)
 INSERT VERTEX t2 (name, age) VALUES 11:("n4", 15)  -- 读取最后插入的值

@@ -13,7 +13,7 @@ In nGQL, nonzero numbers are evaluated to _true_. The precedence of the operator
 
 Logical AND:
 
-```sql
+```ngql
 nebula> YIELD -1 && true
 ================
 | (-(1)&&true) |
@@ -26,7 +26,7 @@ nebula> YIELD -1 && true
 
 Logical NOT:
 
-```sql
+```ngql
 nebula> YIELD !(-1)
 ===========
 | !(-(1)) |
@@ -40,7 +40,7 @@ nebula> YIELD !(-1)
 
 Logical OR:
 
-```sql
+```ngql
 nebula> YIELD 1 || !1
 =============
 | (1||!(1)) |
@@ -52,7 +52,7 @@ nebula> YIELD 1 || !1
 
 Logical XOR:
 
-```sql
+```ngql
 nebula> YIELD (NOT 0 || 0) AND 0 XOR 1 AS ret
 =========
 |  ret  |

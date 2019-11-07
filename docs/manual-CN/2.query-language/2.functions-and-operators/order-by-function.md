@@ -10,7 +10,7 @@ ORDER BY <prop> ASC | DESC [, <prop> ASC | DESC ...]
 
 ## 示例
 
-```SQL
+```ngql
 nebula> FETCH PROP ON player 1,2,3,4 YIELD player.age AS age, player.weight AS weight | ORDER BY $-.age, $-.weight DESC  
 
 -- 取 4 个顶点并将他们以 age 从小到大的顺序排列，如 age 一致，则按 weight 从大到小的顺序排列。
@@ -18,7 +18,7 @@ nebula> FETCH PROP ON player 1,2,3,4 YIELD player.age AS age, player.weight AS w
 
 (参见 `FETCH` 文档来了解使用方法)
 
-```SQL
+```ngql
 nebula> GO FROM 1 OVER edge2 YIELD $^.t1.prop1 AS s1_p1, edge2.prop2 AS e2_p2, $$.t3.prop3 AS d3_p3 | ORDER BY s1_p1 ASC, e2_p2 DESC, d3_p3 ASC
 
 -- 返回类似如下的列表
