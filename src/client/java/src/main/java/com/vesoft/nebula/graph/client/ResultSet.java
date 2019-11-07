@@ -6,9 +6,9 @@
 
 package com.vesoft.nebula.graph.client;
 
-import com.google.common.collect.Lists;
 import com.vesoft.nebula.graph.RowValue;
 
+import java.util.LinkedList;
 import java.util.List;
 
 public class ResultSet {
@@ -17,7 +17,7 @@ public class ResultSet {
     private List<RowValue> rows;
 
     public ResultSet() {
-        this(Lists.newArrayList(), Lists.newArrayList());
+        this(new LinkedList<byte[]>(), new LinkedList<RowValue>());
     }
 
     public ResultSet(List<byte[]> columns, List<RowValue> rows) {
