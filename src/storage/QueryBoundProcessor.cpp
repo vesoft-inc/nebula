@@ -104,11 +104,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
     if (!vResp.edge_data.empty()) {
         // Only return the vertex if edges existed.
         std::lock_guard<std::mutex> lg(this->lock_);
-        if (vertices_.size() < static_cast<size_t>(FLAGS_max_edge_returned_per_vertex)) {
-            vertices_.emplace_back(std::move(vResp));
-        } else {
-            stop_ = true;
-        }
+        vertices_.emplace_back(std::move(vResp));
     }
 
     return kvstore::ResultCode::SUCCEEDED;

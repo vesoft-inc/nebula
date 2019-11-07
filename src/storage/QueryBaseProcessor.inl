@@ -394,7 +394,8 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
     EdgeRanking lastRank  = -1;
     VertexID    lastDstId = 0;
     bool        firstLoop = true;
-    for (; iter->valid(); iter->next()) {
+    int         cnt = 0;
+    for (; iter->valid() && cnt < FLAGS_max_edge_returned_per_vertex; iter->next()) {
         auto key = iter->key();
         auto val = iter->val();
         auto rank = NebulaKeyUtils::getRank(key);
@@ -448,6 +449,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
             }
         }
         proc(reader.get(), key, props);
+        ++cnt;
         if (firstLoop) {
             firstLoop = false;
         }
@@ -467,9 +469,6 @@ QueryBaseProcessor<REQ, RESP>::asyncProcessBucket(Bucket bucket) {
             codes.emplace_back(pv.first,
                                pv.second,
                                processVertex(pv.first, pv.second));
-            if (stop_) {
-                break;
-            }
         }
         p.setValue(std::move(codes));
     });

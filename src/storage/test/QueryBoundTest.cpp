@@ -225,8 +225,8 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
     checkResponse(resp, 30, 12, 10001, 7, true);
 }
 
-TEST(QueryBoundTest, MaxEdgesTest) {
-    int original_max_sub_vertices = FLAGS_max_edge_returned_per_vertex;
+TEST(QueryBoundTest, MaxEdgesReturenedTest) {
+    int old_max_edge_returned = FLAGS_max_edge_returned_per_vertex;
     FLAGS_max_edge_returned_per_vertex = 5;
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
@@ -248,8 +248,8 @@ TEST(QueryBoundTest, MaxEdgesTest) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    checkResponse(resp, FLAGS_max_edge_returned_per_vertex, 12, 10001, 7, true);
-    FLAGS_max_edge_returned_per_vertex = original_max_sub_vertices;
+    checkResponse(resp, 30, 12, 10001, FLAGS_max_edge_returned_per_vertex, true);
+    FLAGS_max_edge_returned_per_vertex = old_max_edge_returned;
 }
 
 TEST(QueryBoundTest, FilterTest_OnlyEdgeFilter) {
