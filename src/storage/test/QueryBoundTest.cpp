@@ -225,9 +225,7 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
     checkResponse(resp, 30, 12, 10001, 7, true);
 }
 
-TEST(QueryBoundTest, MaxEdgesReturenedTest) {
-    int old_max_edge_returned = FLAGS_max_edge_returned_per_vertex;
-    FLAGS_max_edge_returned_per_vertex = 5;
+TEST(QueryBoundTest, inBoundSimpleTest) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
@@ -236,10 +234,10 @@ TEST(QueryBoundTest, MaxEdgesReturenedTest) {
     mockData(kv.get());
 
     cpp2::GetNeighborsRequest req;
-    std::vector<EdgeType> et = {101};
+    std::vector<EdgeType> et = {-101};
     buildRequest(req, et);
 
-    LOG(INFO) << "Test QueryOutBoundRequest...";
+    LOG(INFO) << "Test QueryInBoundRequest...";
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(), nullptr,
                                                     executor.get());
@@ -248,8 +246,7 @@ TEST(QueryBoundTest, MaxEdgesReturenedTest) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    checkResponse(resp, 30, 12, 10001, FLAGS_max_edge_returned_per_vertex, true);
-    FLAGS_max_edge_returned_per_vertex = old_max_edge_returned;
+    checkResponse(resp, 30, 2, 20001, 5, false);
 }
 
 TEST(QueryBoundTest, FilterTest_OnlyEdgeFilter) {
@@ -475,6 +472,33 @@ TEST(QueryBoundTest, MultiEdgeQueryTest) {
 
     LOG(INFO) << "Check the results...";
     checkResponse(resp, 30, 12, 10001, 7, true);
+}
+
+TEST(QueryBoundTest, MaxEdgesReturenedTest) {
+    int old_max_edge_returned = FLAGS_max_edge_returned_per_vertex;
+    FLAGS_max_edge_returned_per_vertex = 5;
+    fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
+    LOG(INFO) << "Prepare meta...";
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+
+    auto schemaMan = TestUtils::mockSchemaMan();
+    mockData(kv.get());
+
+    cpp2::GetNeighborsRequest req;
+    std::vector<EdgeType> et = {101};
+    buildRequest(req, et);
+
+    LOG(INFO) << "Test QueryOutBoundRequest...";
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(), nullptr,
+                                                    executor.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    checkResponse(resp, 30, 12, 10001, FLAGS_max_edge_returned_per_vertex, true);
+    FLAGS_max_edge_returned_per_vertex = old_max_edge_returned;
 }
 
 }  // namespace storage
