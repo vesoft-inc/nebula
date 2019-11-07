@@ -104,5 +104,13 @@ meta::ClientBasedGflagsManager* TestEnv::gflagsManager() {
     return gflagsManager_.get();
 }
 
+test::ServerContext* TestEnv::storageServer() {
+    return storageServer_.get();
+}
+
+meta::MetaClient* TestEnv::metaClient() {
+    return mClient_.get();
+}
+
 }   // namespace graph
 }   // namespace nebula

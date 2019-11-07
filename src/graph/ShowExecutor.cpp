@@ -24,7 +24,8 @@ Status ShowExecutor::prepare() {
 
 
 void ShowExecutor::execute() {
-    if (sentence_->showType() == ShowSentence::ShowType::kShowTags ||
+    if (sentence_->showType() == ShowSentence::ShowType::kShowParts ||
+        sentence_->showType() == ShowSentence::ShowType::kShowTags ||
         sentence_->showType() == ShowSentence::ShowType::kShowEdges ||
         sentence_->showType() == ShowSentence::ShowType::kShowCreateTag ||
         sentence_->showType() == ShowSentence::ShowType::kShowCreateEdge) {
@@ -42,6 +43,9 @@ void ShowExecutor::execute() {
             break;
         case ShowSentence::ShowType::kShowSpaces:
             showSpaces();
+            break;
+        case ShowSentence::ShowType::kShowParts:
+            showParts();
             break;
         case ShowSentence::ShowType::kShowTags:
             showTags();
@@ -182,6 +186,77 @@ void ShowExecutor::showSpaces() {
             std::vector<cpp2::ColumnValue> row;
             row.emplace_back();
             row.back().set_str(std::move(space.second));
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+        resp_->set_rows(std::move(rows));
+
+        DCHECK(onFinish_);
+        onFinish_();
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+                                                   e.what().c_str())));
+        return;
+    };
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+
+void ShowExecutor::showParts() {
+    auto spaceId = ectx()->rctx()->session()->space();
+    auto future = ectx()->getMetaClient()->listParts(spaceId);
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(std::move(resp).status());
+            return;
+        }
+
+        auto partItems = std::move(resp).value();
+        std::vector<cpp2::RowValue> rows;
+        std::vector<std::string> header{"Partition ID", "Leader", "Peers", "Losts"};
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(header));
+
+        std::sort(partItems.begin(), partItems.end(),
+            [] (const auto& a, const auto& b) {
+                return a.get_part_id() < b.get_part_id();
+            });
+
+        for (auto& item : partItems) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(4);
+            row[0].set_integer(item.get_part_id());
+
+            if (item.__isset.leader) {
+                auto leader = item.get_leader();
+                std::vector<HostAddr> leaders = {{leader->ip, leader->port}};
+                std::string leaderStr = NetworkUtils::toHosts(leaders);
+                row[1].set_str(leaderStr);
+            } else {
+                row[1].set_str("");
+            }
+
+            std::vector<HostAddr> peers;
+            for (auto& peer : item.get_peers()) {
+                peers.emplace_back(peer.ip, peer.port);
+            }
+            std::string peersStr = NetworkUtils::toHosts(peers);
+            row[2].set_str(peersStr);
+
+            std::vector<HostAddr> losts;
+            for (auto& lost : item.get_losts()) {
+                losts.emplace_back(lost.ip, lost.port);
+            }
+            std::string lostsStr = NetworkUtils::toHosts(losts);
+            row[3].set_str(lostsStr);
+
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }
