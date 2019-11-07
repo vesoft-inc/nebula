@@ -102,7 +102,7 @@ nebula> BALANCE DATA
 也可通过 `BALANCE DATA $id` 查看具 balance 的具体执行进度。
 
 ```ngql
-nebula> BALANCE ID 1570761786
+nebula> BALANCE DATA 1570761786
 ===============================================================================
 | balanceId, spaceId:partId, src->dst                           | status      |
 ===============================================================================
