@@ -39,6 +39,8 @@ private:
     std::vector<TagSchema>                      schemas_;
     std::vector<std::vector<std::string*>>      tagProps_;
     GraphSpaceID                                spaceId_{-1};
+    using NameIndex = std::vector<std::unordered_map<std::string, int64_t>>;
+    NameIndex                                   schemaIndexes_;
 };
 
 }   // namespace graph
