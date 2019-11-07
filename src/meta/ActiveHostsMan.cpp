@@ -41,12 +41,12 @@ std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv, int32
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         return hosts;
     }
-    expiredTTL = (expiredTTL == 0 ? FLAGS_expired_threshold_sec : expiredTTL);
-    auto now = time::WallClock::fastNowInSec();
+    int64_t threshold = (expiredTTL == 0 ? FLAGS_expired_threshold_sec : expiredTTL) * 1000;
+    auto now = time::WallClock::fastNowInMilliSec();
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseHostKey(iter->key());
         HostInfo info = HostInfo::decode(iter->val());
-        if (now - info.lastHBTimeInSec_ < expiredTTL) {
+        if (now - info.lastHBTimeInMilliSec_ < threshold) {
             hosts.emplace_back(host.ip, host.port);
         }
         iter->next();

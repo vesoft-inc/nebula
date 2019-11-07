@@ -44,7 +44,7 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus(
         return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(kvRet));
     }
 
-    auto now = time::WallClock::fastNowInSec();
+    auto now = time::WallClock::fastNowInMilliSec();
     while (iter->valid()) {
         cpp2::HostItem item;
         nebula::cpp2::HostAddr host;
@@ -52,7 +52,7 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus(
         memcpy(&host, hostAddrPiece.data(), hostAddrPiece.size());
         item.set_hostAddr(host);
         HostInfo info = HostInfo::decode(iter->val());
-        if (now - info.lastHBTimeInSec_ < FLAGS_expired_threshold_sec) {
+        if (now - info.lastHBTimeInMilliSec_ < FLAGS_expired_threshold_sec * 1000) {
             item.set_status(cpp2::HostStatus::ONLINE);
         } else {
             item.set_status(cpp2::HostStatus::OFFLINE);
