@@ -66,9 +66,9 @@ usage: nebula spark sst file generator
 The format of the mapping files is json. File Schema is provided as [mapping-schema.json](mapping-schema.json) according to [Json Schema Standard](http://json-schema.org).
 Here is an example of mapping file: [mapping.json](mapping.json)
 
-### FAQ
+## FAQ
 
-#### How to use libnebula-native-client.so under CentOS6.5(2.6.32-431 x86-64)
+### How to use libnebula-native-client.so under CentOS6.5(2.6.32-431 x86-64)
 
 1. Don't use officially distributed librocksdbjni-linux64.so, build locally on CentOS6.5.
 
@@ -93,7 +93,7 @@ DEBUG_LEVEL=0 make rocksdbjava
 [0x7f7c689c1747]
 ```
 
-### TODO
+## TODO
 
 1. Add database_name property to graph space level and tag/edge level,with the latter will override the former when provided in both levels.
 2. Schema column definitions' order is important, keep it when parsing mapping file and encoding.
