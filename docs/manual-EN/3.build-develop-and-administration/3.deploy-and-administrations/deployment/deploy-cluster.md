@@ -6,15 +6,17 @@ This section provides an introduction to deploy `Nebula` cluster.
 
 Currently, we have offered packages for `CentOS 7.5`, `CentOS 6.5`, `Ubuntu 1604` and `Ubuntu 1804`. You can download rpm or deb packages by click the [**Assets**](https://github.com/vesoft-inc/nebula/releases).
 
+![image](https://user-images.githubusercontent.com/42762957/67747062-e0fe1e00-fa62-11e9-9640-008d2c82bae3.png)
+
 For `CentOS` :
 
-```sh
+```bash
 rpm -ivh nebula-{VERSION}.{SYSTEM_VERSION}.x86_64.rpm
 ```
 
 For `Ubuntu` :
 
-```sh
+```bash
 dpkg -i nebula-{VERSION}.{SYSTEM_VERSION}.amd64.deb
 ```
 
@@ -32,7 +34,7 @@ You can `start`, `stop` and `restart` the cluster using this script.
 
 It looks like the following command:
 
-```
+```bash
 scripts/services.sh <start|stop|restart|status|kill>
 ```
 
@@ -40,7 +42,7 @@ The metas, storages and graphs contain the host of themselves.
 
 ## Connect to Nebula Graph
 
-```sh
+```bash
 > bin/nebula -u=user -p=password --addr={graphd IP address} --port={graphd listening port}
 ```
 

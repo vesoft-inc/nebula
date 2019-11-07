@@ -5,7 +5,7 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 #
-# step 1: ./build_dep.sh <C|U|N>
+# step 1: ./build_dep.sh [N] # N: no need packages
 # step 2: source ~/.bashrc
 #
 
@@ -13,14 +13,8 @@ DIR=/tmp/download
 mkdir $DIR
 trap "rm -fr $DIR" EXIT
 
-url_addr=https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/third-party
+url_addr=https://nebula-graph.oss-accelerate.aliyuncs.com/third-party
 no_deps=0
-if [[ $1 != C ]] && [[ $1 != U ]] && [[ $1 != N ]]; then
-    echo "Usage: ${0} <C|U|N>  # C: the user in China, U: the user in US, N: no need packages"
-    exit -1
-fi
-
-[[ $1 == U ]] && url_addr=https://nebula-graph-us.oss-us-west-1.aliyuncs.com/third-party
 
 [[ $1 == N ]] && no_deps=1
 

@@ -289,14 +289,13 @@ void AdminClient::getResponse(
     auto* evb = ioThreadPool_->getEventBase();
     CHECK_GE(index, 0);
     CHECK_LT(index, hosts.size());
-    auto partId = req.get_part_id();
-    folly::via(evb, [evb, hosts = std::move(hosts), index, req = std::move(req), partId,
+    folly::via(evb, [evb, hosts = std::move(hosts), index, req = std::move(req),
                      remoteFunc = std::move(remoteFunc), retry, pro = std::move(pro),
                      retryLimit, this] () mutable {
         auto client = clientsMan_->client(hosts[index], evb);
         remoteFunc(client, req).via(evb)
             .then([p = std::move(pro), hosts = std::move(hosts), index, req = std::move(req),
-                   partId, remoteFunc = std::move(remoteFunc), retry, retryLimit,
+                   remoteFunc = std::move(remoteFunc), retry, retryLimit,
                    this] (folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {

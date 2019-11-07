@@ -22,7 +22,7 @@ In addition to implicit type conversion, explicit type conversion is also suppor
 
 For example, the results of
 
-`YIELD length((string)123), (int)"123" + 1`
+`YIELD length((string)(123)), (int)"123" + 1`
 
 are `3, 124` respectively.
 
