@@ -68,7 +68,7 @@ Here is an example of mapping file: [mapping.json](mapping.json)
 
 ### FAQ
 
-## How to use libnebula-native-client.so under CentOS6.5(2.6.32-431 x86-64)
+#### How to use libnebula-native-client.so under CentOS6.5(2.6.32-431 x86-64)
 
 1. Don't use officially distributed librocksdbjni-linux64.so, build locally on CentOS6.5.
 
