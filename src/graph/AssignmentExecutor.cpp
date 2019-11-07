@@ -27,9 +27,9 @@ Status AssignmentExecutor::prepare() {
         DCHECK(onError_);
         onError_(std::move(s));
     };
-    auto onFinish = [this] () {
+    auto onFinish = [this] (Executor::ProcessControl ctr) {
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(ctr);
     };
     auto onResult = [this] (std::unique_ptr<InterimResult> result) {
         ectx()->variableHolder()->add(*var_, std::move(result));

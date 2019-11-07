@@ -151,7 +151,7 @@ void ShowExecutor::showHosts() {
         resp_->set_rows(std::move(rows));
 
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -192,7 +192,7 @@ void ShowExecutor::showSpaces() {
         resp_->set_rows(std::move(rows));
 
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -263,7 +263,7 @@ void ShowExecutor::showParts() {
         resp_->set_rows(std::move(rows));
 
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -312,7 +312,7 @@ void ShowExecutor::showTags() {
 
         resp_->set_rows(std::move(rows));
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -359,7 +359,7 @@ void ShowExecutor::showEdges() {
         }
         resp_->set_rows(std::move(rows));
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -411,7 +411,7 @@ void ShowExecutor::showCreateSpace() {
         resp_->set_rows(std::move(rows));
 
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -490,7 +490,7 @@ void ShowExecutor::showCreateTag() {
         resp_->set_rows(std::move(rows));
 
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {

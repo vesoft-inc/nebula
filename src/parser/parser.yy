@@ -111,6 +111,7 @@ class GraphScanner;
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER KW_DATA KW_STOP
 %token KW_SHORTEST KW_PATH
+%token KW_IS KW_NULL
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -209,6 +210,7 @@ class GraphScanner;
 %type <sentence> grant_sentence revoke_sentence
 %type <sentence> download_sentence
 %type <sentence> set_config_sentence get_config_sentence balance_sentence
+%type <sentence> process_control_sentence return_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -1721,6 +1723,18 @@ maintain_sentence
     | balance_sentence { $$ = $1; }
     ;
 
+return_sentence
+    : KW_RETURN VARIABLE {
+        $$ = new ReturnSentence($2, nullptr);
+    }
+    | KW_RETURN VARIABLE KW_IF VARIABLE KW_IS KW_NOT KW_NULL {
+        $$ = new ReturnSentence($2, $4);
+    }
+
+process_control_sentence
+    : return_sentence { $$ = $1; }
+    ;
+
 sentence
     : maintain_sentence { $$ = $1; }
     | use_sentence { $$ = $1; }
@@ -1728,6 +1742,7 @@ sentence
     | piped_sentence { $$ = $1; }
     | assignment_sentence { $$ = $1; }
     | mutate_sentence { $$ = $1; }
+    | process_control_sentence { $$ = $1; }
     ;
 
 sentences

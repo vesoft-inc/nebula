@@ -56,7 +56,7 @@ void BalanceExecutor::balanceLeader() {
             return;
         }
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -95,7 +95,7 @@ void BalanceExecutor::balanceData(bool isStop) {
         resp_->set_rows(std::move(rows));
 
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -166,7 +166,7 @@ void BalanceExecutor::showBalancePlan() {
         rows.back().set_columns(std::move(row));
         resp_->set_rows(std::move(rows));
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
