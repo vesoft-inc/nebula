@@ -26,6 +26,7 @@ public:
     void execute() override;
     void showHosts();
     void showSpaces();
+    void showParts();
     void showTags();
     void showEdges();
     void showCreateSpace();
