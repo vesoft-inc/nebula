@@ -162,10 +162,11 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
 
 // \TODO(shylock) more general?
 template<class Request, class RemoteFunc, class Response>
-folly::SemiFuture<StorageRpcResponse<std::pair<HostAddr, Response>>>
+folly::SemiFuture<StorageRpcResponse<Response>>
 StorageClient::collectResponseWithoutLeader(
         folly::EventBase* evb,
-        std::unordered_map<HostAddr, Request> requests,
+//        std::unordered_map<HostAddr, Request> requests,
+        std::vector<std::pair<HostAddr, Request>> requests,
         RemoteFunc&& remoteFunc) {
     auto context = std::make_shared<ResponseContext<
             Request, RemoteFunc, std::pair<HostAddr, Response>>>(
@@ -176,12 +177,18 @@ StorageClient::collectResponseWithoutLeader(
         evb = ioThreadPool_->getEventBase();
     }
 
-    for (auto& req : requests) {
-        auto& host = req.first;
-        auto res = context->insertRequest(host, std::move(req.second));
+    const std::size_t len = requests.size();
+//    context->resp->responses().reserve(len);
+    context->resp->responses().resize(len);
+//    for (auto& req : requests) {
+    for (std::size_t i = 0; i < len; ++i) {
+//        auto& host = req.first;
+        auto& host = requests[i].first;
+//        auto res = context->insertRequest(host, std::move(req.second));
+        auto res = context->insertRequest(host, std::move(requests[i].second));
         DCHECK(res.second) << "Empty RPC request!";
         // Invoke the remote method
-        folly::via(evb, [this, evb, context, host, /*spaceId,*/ res] () mutable {
+        folly::via(evb, [this, evb, context, host, /*spaceId,*/ res, i] () mutable {
             auto client = this->clientsMan_->client(host, evb);
             // Result is a pair of <Request&, bool>
             context->serverMethod(client.get(), *res.first)
@@ -217,9 +224,9 @@ StorageClient::collectResponseWithoutLeader(
                     // Adjust the latency
                     context->resp.setLatency(result.get_latency_in_us());
 
-                    // Keep the response
-                    context->resp.responses().emplace_back(
-                        std::move(std::pair<HostAddr, Response>(host, resp)));
+                    // Keep Order in-inplace
+                    // But may contains holes
+                    context->resp.responses()[i] = std::move(resp);
                 }
 
                 if (context->removeRequest(host)) {

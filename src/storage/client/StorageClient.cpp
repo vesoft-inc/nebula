@@ -400,7 +400,7 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(
 
 
 // Get All leaders
-folly::SemiFuture<StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>>
+folly::SemiFuture<StorageRpcResponse<cpp2::GetLeaderResp>>
 StorageClient::getLeaders(
         folly::EventBase* evb) {
     return client_->listHosts().thenValue([](auto&& hosts) {
@@ -502,7 +502,9 @@ StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>
 StorageClient::preHeatLeaders() {
     return getLeaders().via(ioThreadPool_->getEventBase()).thenValue([](auto&& leaders){
         if (UNLIKELY(!leaders.succeeded())) {
+            // Require complete successded for the holes in responses
             LOG(WARNING) << "At least one RPC call failed";
+            return decltype(preHeatLeaders())();
         }
         std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> r;
         for (auto& leader : leaders.responses()) {

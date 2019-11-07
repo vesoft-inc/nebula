@@ -196,7 +196,7 @@ public:
         folly::EventBase* evb = nullptr);
 
     // Get All leaders
-    folly::SemiFuture<StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>> getLeaders(
+    folly::SemiFuture<StorageRpcResponse<cpp2::GetLeaderResp>> getLeaders(
         folly::EventBase* evb = nullptr);
 
 protected:
@@ -265,7 +265,7 @@ protected:
                     RemoteFunc(storage::cpp2::StorageServiceAsyncClient*, const Request&)
                 >::type::value_type
             >
-    folly::SemiFuture<StorageRpcResponse<std::pair<HostAddr, Response>>>
+    folly::SemiFuture<StorageRpcResponse<Response>>
     collectResponseWithoutLeader(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
