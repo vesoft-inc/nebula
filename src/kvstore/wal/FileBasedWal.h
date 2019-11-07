@@ -25,7 +25,7 @@ struct FileBasedWalPolicy {
     int32_t ttl = 86400;
     // The maximum size of each log message file (in byte). When the existing
     // log file reaches this size, a new file will be created
-    size_t fileSize = 128 * 1024L * 1024L;
+    size_t fileSize = 16 * 1024L * 1024L;
 
     // Size of each buffer (in byte)
     size_t bufferSize = 8 * 1024L * 1024L;

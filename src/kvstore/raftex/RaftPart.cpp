@@ -1724,9 +1724,11 @@ AppendLogResult RaftPart::isCatchedUp(const HostAddr& peer) {
     }
     for (auto& host : hosts_) {
         if (host->addr_ == peer) {
-            if (host->hasException_) {
-                LOG(INFO) << idStr_ << "Connection between " << peer << " has exception";
-                return AppendLogResult::E_RPC_EXCEPTION;
+            if (host->followerCommittedLogId_ < wal_->firstLogId()) {
+                LOG(INFO) << idStr_ << "The committed log id of peer is "
+                          << host->followerCommittedLogId_
+                          << ", which is invalid or less than my first wal log id";
+                return AppendLogResult::E_SENDING_SNAPSHOT;
             }
             return host->sendingSnapshot_ ? AppendLogResult::E_SENDING_SNAPSHOT
                                           : AppendLogResult::SUCCEEDED;

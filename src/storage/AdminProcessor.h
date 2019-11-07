@@ -232,9 +232,10 @@ public:
         folly::async([this, part, peer, spaceId, partId] {
             int retry = FLAGS_waiting_catch_up_retry_times;
             while (retry-- > 0) {
-                LOG(INFO) << "Waiting for " << partId << " catching up data, peer " << peer
-                          << ", remaining retry times: " << retry;
                 auto res = part->isCatchedUp(peer);
+                LOG(INFO) << "Waiting for " << partId << " catching up data, peer " << peer
+                          << ", remaining retry times: " << retry
+                          << ", result " << static_cast<int32_t>(res);
                 switch (res) {
                     case raftex::AppendLogResult::SUCCEEDED:
                         LOG(INFO) << "Finished sending snapshot to " << peer;

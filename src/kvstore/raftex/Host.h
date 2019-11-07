@@ -130,9 +130,11 @@ private:
     LogID lastLogIdSent_{0};
     TermID lastLogTermSent_{0};
 
+    // CommittedLogId of follower
+    LogID followerCommittedLogId_{0};
+
     LogID committedLogId_{0};
     std::atomic_bool sendingSnapshot_{false};
-    std::atomic_bool hasException_{false};
 };
 
 }  // namespace raftex
