@@ -173,7 +173,7 @@ Welcome to Nebula Graph (Version 5f656b5)
 
 The three shown hosts indicate that the clusters are successfully deployed.
 
-```SQL
+```ngql
 $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade
 
 =============================
@@ -202,7 +202,7 @@ $ /usr/local/nebula/scripts/nebula.service status storaged
 
 Log on to cluster-2 and check hosts using command `SHOW HOSTS`:
 
-```SQL
+```ngql
 > SHOW HOSTS
 
 =============================================================================================
@@ -222,7 +222,7 @@ At this time the status of cluster-4 is offline, indicating it has been stopped 
 
 Test whether the data is readable with one storage killed:
 
-```SQL
+```ngql
 $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade
 
 =============================

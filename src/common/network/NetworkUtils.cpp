@@ -306,6 +306,19 @@ StatusOr<std::vector<HostAddr>> NetworkUtils::toHosts(const std::string& peersSt
     return hosts;
 }
 
+std::string NetworkUtils::toHosts(const std::vector<HostAddr>& hosts) {
+    std::string hostsString = "";
+    for (auto& host : hosts) {
+        std::string addrStr = network::NetworkUtils::ipFromHostAddr(host);
+        int32_t port = network::NetworkUtils::portFromHostAddr(host);
+        hostsString += folly::stringPrintf("%s:%d, ", addrStr.c_str(), port);
+    }
+    if (!hostsString.empty()) {
+        hostsString.resize(hostsString.size() - 2);
+    }
+    return hostsString;
+}
+
 std::string NetworkUtils::ipFromHostAddr(const HostAddr& host) {
     return intToIPv4(host.first);
 }

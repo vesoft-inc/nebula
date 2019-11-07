@@ -87,6 +87,24 @@ TEST(NetworkUtils, getAvailablePort) {
     ASSERT_GT(port, 0);
 }
 
+
+TEST(NetworkUtils, toHosts) {
+    std::string hostsString = "192.168.1.1:10001, 192.168.1.2:10002, 192.168.1.3:10003";
+    auto addresRet = NetworkUtils::toHosts(hostsString);
+    ASSERT_TRUE(addresRet.ok());
+    std::vector<HostAddr> hosts = std::move(addresRet.value());
+    EXPECT_EQ(3, hosts.size());
+    IPv4 ip;
+    NetworkUtils::ipv4ToInt("192.168.1.1", ip);
+    int32_t count = 0;
+    for (auto& host : hosts) {
+        EXPECT_EQ(ip + count, host.first);
+        EXPECT_EQ(10001 + count, host.second);
+        count++;
+    }
+    EXPECT_STREQ(hostsString.c_str(), NetworkUtils::toHosts(hosts).c_str());
+}
+
 }   // namespace network
 }   // namespace nebula
 

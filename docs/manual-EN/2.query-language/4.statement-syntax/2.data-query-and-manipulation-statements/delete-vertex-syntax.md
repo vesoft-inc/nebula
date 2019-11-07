@@ -2,7 +2,7 @@
 
 Given a vertex Id, Nebula supports `DELETE` the vertex and its associated in and out edges, syntax as the follows:
 
-```
+```ngql
 DELETE VERTEX $vid
 ```
 

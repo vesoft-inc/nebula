@@ -6,7 +6,7 @@ The related three gflags parameters are: `rocksdb_db_options`, `rocksdb_column_f
 
 The three parameters are all in json formet, and the key and value of them are in string format. For example, you can set as follows in the conf file of storage:
 
-```
+```text
     rocksdb_db_options = {"stats_dump_period_sec":"200", "enable_write_thread_adaptive_yield":"false", "write_thread_max_yield_usec":"600"}
     rocksdb_column_family_options = {"max_write_buffer_number":"4", "min_write_buffer_number_to_merge":"2", "max_write_buffer_number_to_maintain":"1"}
     rocksdb_block_based_table_options = {"block_restart_interval":"2"}
@@ -14,7 +14,7 @@ The three parameters are all in json formet, and the key and value of them are i
 
 Nebula supports changing some rocksdb parameters in storage service as follows:
 
-```
+```text
     snap_refresh_nanos
     disable_auto_compactions
     write_buffer_size
@@ -40,17 +40,17 @@ Nebula supports changing some rocksdb parameters in storage service as follows:
 ```
 
 For example
-`UPDATE VARIABLE storage:rocksdb_column_family_options = { disable_auto_compactions = false , level0_file_num_compaction_trigger = 10 } `
+`UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = false , level0_file_num_compaction_trigger = 10 }`
 
 ## SHOW CONFIGS
 
-```sql
+```ngql
 SHOW CONFIGS [graph|meta|storage]
 ```
 
 For example
 
-```sql
+```ngql
 nebula> SHOW CONFIGS meta
 ============================================================================================================================
 | module | name                                        | type   | mode      | value                                        |
@@ -65,13 +65,13 @@ nebula> SHOW CONFIGS meta
 
 ## Get CONFIGS
 
-```sql
+```ngql
 GET CONFIGS [graph|meta|storage :] var
 ```
 
 For example
 
-```sql
+```ngql
 nebula> GET CONFIGS storage:load_data_interval_secs
 =================================================================
 | module  | name                      | type  | mode    | value |
@@ -80,7 +80,7 @@ nebula> GET CONFIGS storage:load_data_interval_secs
 -----------------------------------------------------------------
 ```
 
-```sql
+```ngql
 nebula> GET CONFIGS load_data_interval_secs
 =================================================================
 | module  | name                    | type  | mode      | value |
@@ -96,7 +96,7 @@ Got 3 rows (Time spent: 1449/2339 us)
 
 ## Update CONFIGS
 
-```sql
+```ngql
 UPDATE CONFIGS [graph|meta|storage :] var = value
 ```
 
@@ -105,7 +105,7 @@ UPDATE CONFIGS [graph|meta|storage :] var = value
 
 For example
 
-```sql
+```ngql
 nebula> UPDATE CONFIGS storage:load_data_interval_secs=1
 Execution succeeded (Time spent: 1750/2484 us)
 nebula> GET CONFIGS storage:load_data_interval_secs
