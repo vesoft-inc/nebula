@@ -13,41 +13,50 @@ install(
         etc
 )
 
-install(
-    FILES
+if(NOT EXISTS ${CMAKE_INSTALL_PREFIX}/etc/nebula-graphd.conf)
+    install(
+        FILES
         nebula-graphd.conf.default
-    PERMISSIONS
-        OWNER_READ
-        GROUP_READ
-        WORLD_READ
-    DESTINATION
+        PERMISSIONS
+            OWNER_READ
+            OWNER_WRITE
+            GROUP_READ
+            WORLD_READ
+        DESTINATION
         etc
-    RENAME
+        RENAME
         nebula-graphd.conf
-)
+    )
+endif()
 
-install(
-    FILES
-        nebula-storaged.conf.default
-    PERMISSIONS
-        OWNER_READ
-        GROUP_READ
-        WORLD_READ
-    DESTINATION
-        etc
-    RENAME
-        nebula-storaged.conf
-)
+if(NOT EXISTS ${CMAKE_INSTALL_PREFIX}/etc/nebula-storaged.conf)
+    install(
+        FILES
+            nebula-storaged.conf.default
+        PERMISSIONS
+            OWNER_READ
+            OWNER_WRITE
+            GROUP_READ
+            WORLD_READ
+        DESTINATION
+            etc
+        RENAME
+            nebula-storaged.conf
+    )
+endif()
 
-install(
-    FILES
-        nebula-metad.conf.default
-    PERMISSIONS
-        OWNER_READ
-        GROUP_READ
-        WORLD_READ
-    DESTINATION
-        etc
-    RENAME
-        nebula-metad.conf
-)
+if(NOT EXISTS ${CMAKE_INSTALL_PREFIX}/etc/nebula-metad.conf)
+    install(
+        FILES
+            nebula-metad.conf.default
+        PERMISSIONS
+            OWNER_READ
+            OWNER_WRITE
+            GROUP_READ
+            WORLD_READ
+        DESTINATION
+            etc
+        RENAME
+            nebula-metad.conf
+    )
+endif()
