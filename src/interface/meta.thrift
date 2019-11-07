@@ -277,6 +277,23 @@ struct ListHostsResp {
     3: list<HostItem> hosts,
 }
 
+struct PartItem {
+    1: required common.PartitionID       part_id,
+    2: optional common.HostAddr          leader,
+    3: required list<common.HostAddr>    peers,
+    4: required list<common.HostAddr>    losts,
+}
+
+struct ListPartsReq {
+    1: common.GraphSpaceID space_id,
+}
+
+struct ListPartsResp {
+    1: ErrorCode code,
+    2: common.HostAddr leader,
+    3: list<PartItem> parts,
+}
+
 struct RemoveHostsReq {
     1: list<common.HostAddr> hosts;
 }
@@ -535,6 +552,7 @@ service MetaService {
     ListHostsResp listHosts(1: ListHostsReq req);
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
+    ListPartsResp listParts(1: ListPartsReq req);
 
     ExecResp multiPut(1: MultiPutReq req);
     GetResp get(1: GetReq req);
