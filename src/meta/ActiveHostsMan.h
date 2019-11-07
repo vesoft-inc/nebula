@@ -16,29 +16,29 @@ namespace meta {
 
 struct HostInfo {
     HostInfo() = default;
-    explicit HostInfo(int64_t lastHBTimeInSec)
-        : lastHBTimeInSec_(lastHBTimeInSec) {}
+    explicit HostInfo(int64_t lastHBTimeInMilliSec)
+        : lastHBTimeInMilliSec_(lastHBTimeInMilliSec) {}
 
     bool operator==(const HostInfo& that) const {
-        return this->lastHBTimeInSec_ == that.lastHBTimeInSec_;
+        return this->lastHBTimeInMilliSec_ == that.lastHBTimeInMilliSec_;
     }
 
     bool operator!=(const HostInfo& that) const {
         return !(*this == that);
     }
 
-    int64_t lastHBTimeInSec_ = 0;
+    int64_t lastHBTimeInMilliSec_ = 0;
 
     static std::string encode(const HostInfo& info) {
         std::string encode;
         encode.reserve(sizeof(int64_t));
-        encode.append(reinterpret_cast<const char*>(&info.lastHBTimeInSec_), sizeof(int64_t));
+        encode.append(reinterpret_cast<const char*>(&info.lastHBTimeInMilliSec_), sizeof(int64_t));
         return encode;
     }
 
     static HostInfo decode(const folly::StringPiece& data) {
         HostInfo info;
-        info.lastHBTimeInSec_ = *reinterpret_cast<const int64_t*>(data.data());
+        info.lastHBTimeInMilliSec_ = *reinterpret_cast<const int64_t*>(data.data());
         return info;
     }
 };
