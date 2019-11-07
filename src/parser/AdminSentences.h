@@ -23,6 +23,7 @@ public:
         kUnknown,
         kShowHosts,
         kShowSpaces,
+        kShowParts,
         kShowTags,
         kShowEdges,
         kShowUsers,

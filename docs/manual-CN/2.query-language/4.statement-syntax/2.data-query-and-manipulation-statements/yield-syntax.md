@@ -13,7 +13,7 @@ YIELD
 
 常用于返回由 `GO`（详情请参阅 [GO](go-syntax.md) 用法）语句生成的结果。
 
-```SQL
+```ngql
 nebula> GO FROM 201 OVER relations_edge YIELD $$.student.name AS Friend, \
   $$.student.age AS Age, $$.student.gender AS Gender
 =========================
@@ -41,7 +41,7 @@ YIELD
     [WHERE <conditions>]
 ```
 
-```SQL
+```ngql
 nebula> GO FROM 201 OVER like YIELD like._dst AS id | YIELD $-.* WHERE $-.id == 200;
 
 =========
@@ -97,6 +97,6 @@ nebula> YIELD hash("Tim") % 100
 
 不支持 `YIELD DISTINCT` 在单句中使用
 
-```SQL
+```ngql
 nebula> YIELD DISTINCT 1     --- 语法错误
 ```

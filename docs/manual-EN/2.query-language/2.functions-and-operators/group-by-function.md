@@ -19,7 +19,7 @@ All the functions above can only applies for int64 and double.
 
 ## Example
 
-```
+```ngql
 nebula> GO FROM 1 OVER e1 YIELD $-.id AS fid | GROUP BY $-.fid YIELD COUNT(*)
 -- for each fid, return the occurrence count.
 

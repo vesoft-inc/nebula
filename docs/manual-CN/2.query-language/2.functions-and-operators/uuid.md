@@ -8,7 +8,7 @@
 
 插入 UUID：
 
-```SQL
+```ngql
 -- INSERT VERTEX player (name, age) VALUES hash("n0"):("n0", 13.0)
 nebula> INSERT VERTEX player (name, age) VALUES uuid("n0"):("n0", 13.0)
 -- INSERT EDGE like(likeness) VALUES hash("n0") -> hash("n1"): (90.0)
@@ -17,13 +17,13 @@ nebula> INSERT EDGE like(likeness) VALUES uuid("n0") -> uuid("n1"): (90.0)
 
 获取 UUID：
 
-```SQL
+```ngql
 nebula> FETCH PROP ON player uuid("n0")  YIELD player.name, player.age
 nebula> FETCH PROP ON like uuid("n0") -> uuid("n1")
 ```
 
 结合 Go 使用 UUID:
 
-```SQL
+```ngql
 nebula> GO FROM uuid("n0") OVER like
 ```

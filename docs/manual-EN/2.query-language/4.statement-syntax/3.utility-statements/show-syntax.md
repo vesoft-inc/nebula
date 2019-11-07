@@ -1,13 +1,13 @@
 # Show Syntax
 
-```
+```ngql
 SHOW {SPACES | TAGS | EDGES | HOSTS}
 SHOW CONFIGS [graph|meta|storage]
 ```
 
 `SHOW SPACES` lists the SPACES on the Nebula Graph cluster.
 
-`SHOW TAGS` and `SHOW EDGES` return the defined tags and edge types in the space, respectively.
+`SHOW TAGS` and `SHOW EDGES` return the defined tags and edge types in a given space, respectively.
 
 `SHOW HOSTS` is to list storage hosts registered by the meta server. There are 6 columns: ip, port, status (online/offline), leader partitions count in all spaces, leader partitions count in each space, total partitions count in all spaces.
 
@@ -15,7 +15,7 @@ For more information about `SHOW CONFIGS [graph|meta|storage]`, please refer to 
 
 ## Example
 
-```SQL
+```ngql
 nebula> SHOW SPACES;
 ========
 | Name |

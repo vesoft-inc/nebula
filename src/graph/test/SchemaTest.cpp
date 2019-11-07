@@ -8,6 +8,7 @@
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
 #include "meta/test/TestUtils.h"
+#include "storage/test/TestUtils.h"
 
 DECLARE_int32(load_data_interval_secs);
 
@@ -136,6 +137,20 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // show parts of default_space
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW PARTS; # before leader election";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(9, (*(resp.get_rows())).size());
+        std::string host = "127.0.0.1:" + std::to_string(gEnv->storageServerPort());
+        std::vector<std::tuple<int, std::string, std::string, std::string>> expected;
+        for (int32_t partId = 1; partId <= 9; partId++) {
+            expected.emplace_back(std::make_tuple(partId, "", host, ""));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     // Test same prop name
     {
         cpp2::ExecutionResponse resp;
@@ -242,7 +257,6 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
-
     // Test unreserved keyword
     {
         cpp2::ExecutionResponse resp;
@@ -528,7 +542,6 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    // Test different tag and edge in different space
     {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW CREATE EDGE education";
@@ -544,7 +557,26 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         EXPECT_TRUE(verifyResult(resp, expected));
     }
+    // show parts of default_space
+    {
+        auto kvstore = gEnv->storageServer()->kvStore_.get();
+        auto spaceResult = gEnv->metaClient()->getSpaceIdByNameFromCache("default_space");
+        ASSERT_TRUE(spaceResult.ok());
+        GraphSpaceID spaceId = spaceResult.value();
+        nebula::storage::TestUtils::waitUntilAllElected(kvstore, spaceId, 9);
 
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW PARTS; # after leader election";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(9, (*(resp.get_rows())).size());
+        std::string host = "127.0.0.1:" + std::to_string(gEnv->storageServerPort());
+        std::vector<std::tuple<int, std::string, std::string, std::string>> expected;
+        for (int32_t partId = 1; partId <= 9; partId++) {
+            expected.emplace_back(std::make_tuple(partId, host, host, ""));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     // Test different tag and edge in different space
     {
         cpp2::ExecutionResponse resp;
