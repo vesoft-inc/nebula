@@ -403,7 +403,7 @@ Host::prepareAppendLogRequest() {
                       << " in wal, send the snapshot";
             sendingSnapshot_ = true;
             part_->snapshot_->sendSnapshot(part_, addr_)
-                .then([self = shared_from_this()] (Status&& status) {
+                .thenValue([self = shared_from_this()] (Status&& status) {
                 if (status.ok()) {
                     LOG(INFO) << self->idStr_ << "Send snapshot succeeded!";
                 } else {
