@@ -42,6 +42,7 @@ using PreProcessor = folly::Function<bool(LogID, TermID, ClusterID, const std::s
 class FileBasedWal final : public Wal
                          , public std::enable_shared_from_this<FileBasedWal> {
     FRIEND_TEST(FileBasedWal, TTLTest);
+    FRIEND_TEST(FileBasedWal, CheckLastWalTest);
     friend class FileBasedWalIterator;
 public:
     // A factory method to create a new WAL
@@ -141,12 +142,14 @@ private:
     // Scan all WAL files
     void scanAllWalFiles();
 
+    void scanLastWal(WalFileInfoPtr info, LogID firstId);
+
     // Close down the current wal file
     void closeCurrFile();
     // Prepare a new wal file starting from the given log id
     void prepareNewFile(LogID startLogId);
-    // Retrieve the term id for the given log id in the given WAL file
-    TermID readTermId(const char* path, LogID logId);
+    // Rollback to logId in given file
+    void rollbackInFile(WalFileInfoPtr info, LogID logId);
 
     // Return the last buffer.
     // If the last buffer is big enough, create a new one

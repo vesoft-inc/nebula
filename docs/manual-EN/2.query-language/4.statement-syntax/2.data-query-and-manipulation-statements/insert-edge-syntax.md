@@ -1,6 +1,6 @@
 # Insert Edge Syntax
 
-```
+```ngql
 INSERT EDGE edge_name ( <prop_name_list> ) {VALUES | VALUE}
 <src_vid> -> <dst_vid> : ( <prop_value_list> )
 [, <src_vid> -> <dst_vid> : ( <prop_value_list> )]
@@ -22,12 +22,12 @@ INSERT EDGE edge_name ( <prop_name_list> ) {VALUES | VALUE}
 
 ## Examples
 
-```
+```ngql
 # CREATE EDGE e1()                    -- create edge t1 with empty property or default values
 INSERT EDGE e1 () VALUES 10->11:()    -- insert an edge from vertex 10 to vertex 11 with empty property
 ```
 
-```
+```ngql
 # CREATE EDGE e2 (name string, age int)                     -- create edge e2 with two properties
 INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 1)          -- insert edge from 11 to 13 with two properties
 INSERT EDGE e2 (name, age) VALUES \
@@ -37,7 +37,7 @@ INSERT EDGE e2 (name, age) VALUES 11->13:("n1", "a13")      -- ERROR. "a13" is n
 
 An edge can be inserted/wrote multiple times. Only the last written values can be read.
 
-```
+```ngql
 -- insert edge with the new values.
 INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 12)
 INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 13)

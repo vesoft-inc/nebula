@@ -1,6 +1,6 @@
 # Describe Syntax
 
-```
+```ngql
 DESCRIBE SPACE <space_name>
 DESCRIBE TAG <tag_name>
 DESCRIBE EDGE <edge_name>
@@ -14,7 +14,7 @@ Also notice that DESCRIBE is different from SHOW. Refer [SHOW](show-syntax.md).
 
 Obtain information about space.
 
-```SQL
+```ngql
 nebula> DESCRIBE SPACE laura_space;
 ========================================================
 | ID |        Name | Partition number | Replica Factor |
@@ -23,9 +23,9 @@ nebula> DESCRIBE SPACE laura_space;
 --------------------------------------------------------  
 ```
 
-Obtain information about tag.
+Obtain information about tag in a given space.
 
-```SQL
+```ngql
 nebula> DESCRIBE TAG player
 ==================
 | Field |   Type |
@@ -36,9 +36,9 @@ nebula> DESCRIBE TAG player
 ------------------  
 ```
 
-Obtain information about edge.
+Obtain information about edge in a given space.
 
-```SQL
+```ngql
 nebula> DESCRIBE EDGE serve
 =====================
 |      Field | Type |

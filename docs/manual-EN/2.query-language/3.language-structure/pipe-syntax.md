@@ -5,15 +5,15 @@ One major difference between nGQL and SQL is how subqueries are composed.
 In SQL, sub-queries are nested (embedded) to form a statement.
 Meanwhile, nGQL uses shell style `PIPE (|)`.
 
-### Examples
+## Examples
 
-```
+```ngql
 GO FROM 201 OVER edge_serve | GO FROM $-.id OVER edge_fans | GO FROM $-.id ...
 
 GO FROM 100 OVER like YIELD like._dst AS dstid, $$.player.name AS Name  | GO FROM $-.dstid OVER like YIELD like._dst, like.likeness, $-.Name
 ```
 
-The dest (vertex) `id` will be given as the default value if no `YIELD` is used. 
+The dest (vertex) `id` will be given as the default value if no `YIELD` is used.
 
 But if `YIELD` is declared explicitly, (the default value) `id` will not be given.
 

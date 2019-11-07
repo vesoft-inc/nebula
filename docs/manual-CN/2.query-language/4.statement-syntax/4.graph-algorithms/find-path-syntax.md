@@ -2,7 +2,7 @@
 
 `FIND PATH` 语法用于获取最短路径及全路径
 
-```
+```ngql
 FIND SHORTEST | ALL PATH FROM <vertex_id_list> TO <vertex_id_list>
 OVER <edge_type_list> [UPTO <N> STEPS]
 ```
@@ -26,7 +26,7 @@ OVER <edge_type_list> [UPTO <N> STEPS]
 
 在 console 中，路径显示方式为 `id <edge_name, ranking> id`。
 
-```SQL
+```ngql
 nebula> FIND SHORTEST PATH FROM 200 to 201 OVER *
 ============================
 | _path_ |
@@ -35,7 +35,7 @@ nebula> FIND SHORTEST PATH FROM 200 to 201 OVER *
 ----------------------------
 ```
 
-```SQL
+```ngql
 nebula> FIND ALL PATH FROM 200 to 201 OVER *
 ====================================================================================================
 | _path_ |
