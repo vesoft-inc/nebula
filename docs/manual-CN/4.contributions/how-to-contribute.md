@@ -1,28 +1,28 @@
 # 如何提交代码和文档
 
-## Step 1: 通过GitHub Fork
+## Step 1: 通过 GitHub Fork
 
 1. 访问 https://github.com/vesoft-inc/nebula
-1. 点击右上角`Fork` 按钮创建远程分支
+1. 点击右上角 `Fork` 按钮创建远程分支
 
 ## Step 2: 将分支克隆到本地
 
 定义本地工作目录：
 
-```sh
+```bash
 # 定义工作目录
 working_dir=$HOME/Workspace
 ```
 
-将`user` 设置为GitHub账户名：
+将 `user` 设置为 GitHub 账户名：
 
-```sh
+```bash
 user={GitHub账户名}
 ```
 
-clone代码：
+clone 代码：
 
-```sh
+```bash
 mkdir -p $working_dir
 cd $working_dir
 git clone https://github.com/$user/nebula.git
@@ -45,20 +45,20 @@ git remote set-url --push upstream no_push
 git remote -v
 ```
 
-### 定义预提交hook
+### 定义预提交 hook
 
-请将Nebula Graph预提交挂钩链接到`.git`目录。
+请将 Nebula Graph 预提交挂钩链接到 `.git` 目录。
 
 此挂钩检查提交格式，构建，文档生成等。
 
-```sh
+```bash
 cd $working_dir/nebula/.git/hooks
 ln -s ../../cpplint/bin/pre-commit.sh .
 ```
 
 有时，预提交挂钩不能执行，在这种情况下，需要手动执行。
 
-```sh
+```bash
 cd $working_dir/nebula/.git/hooks
 chmod +x pre-commit
 ```
@@ -67,7 +67,7 @@ chmod +x pre-commit
 
 更新本地主分支：
 
-```sh
+```bash
 cd $working_dir/nebula
 git fetch upstream
 git checkout master
@@ -76,14 +76,14 @@ git rebase upstream/master
 
 从主分支创建并切换分支：
 
-```sh
+```bash
 git checkout -b myfeature
 ```
 
 **注意**
-由于一个PR通常包含多个commit，在合并至master时容易被挤压(squash)，因此建议创建一个独立的分支进行更改。合并后，这个分支已无用处，因此可以使用上述rebase命令将本地master与upstream同步。此外，如果直接将commit提交至master，则需要hard reset主分支，例如：
+由于一个 PR 通常包含多个 commit，在合并至 master 时容易被挤压 ( squash )，因此建议创建一个独立的分支进行更改。合并后，这个分支已无用处，因此可以使用上述 rebase 命令将本地 master 与 upstream 同步。此外，如果直接将 commit 提交至 master，则需要 hard reset 主分支，例如：
 
-```sh
+```bash
 git fetch upstream
 git checkout master
 git reset --hard upstream/master
@@ -98,9 +98,9 @@ git push --force origin master
 
 ### 运行独立模式
 
-如需重现并检查问题，则需在独立模式下运行nebula。
+如需重现并检查问题，则需在独立模式下运行 nebula。
 
-```sh
+```bash
 # 构建二进制文件
 > make server
 
@@ -108,22 +108,22 @@ git push --force origin master
 > nebula-graphd
 ```
 
-将Nebula Graph与本地服务器相连
+将 Nebula Graph 与本地服务器相连
 
-```sh
+```bash
 > nebula
 ```
 
 ### 运行测试
 
-```sh
+```bash
 # !!务必运行所有单元测试，确保所有测试顺利通过。
 ```
 
 ## Step 5: 保持分支同步
 
-```sh
-# 当处于myfeature分支时：
+```bash
+# 当处于 myfeature 分支时：
 git fetch upstream
 git rebase upstream/master
 ```
@@ -132,23 +132,23 @@ git rebase upstream/master
 
 提交代码更改
 
-```sh
+```bash
 git commit
 ```
 
 ### Step 7: Push
 
-代码更改完成或需要备份代码时，将本地仓库创建的分支push到GitHub端的远程仓库：
+代码更改完成或需要备份代码时，将本地仓库创建的分支 push 到 GitHub 端的远程仓库：
 
-```sh
+```bash
 git push -f origin myfeature
 ```
 
-### Step 8: 创建pull request
+### Step 8: 创建 pull request
 
-1. 点击此处访问fork仓库https://github.com/$user/nebula (替换此处的 `$user` 用户名)。
-1. 点击`myfeature`分支旁的 `Compare & pull request` 按钮。
+1. 点击此处访问 fork 仓库https://github.com/$user/nebula (替换此处的 `$user` 用户名)。
+1. 点击 `myfeature` 分支旁的 `Compare & pull request` 按钮。
 
 ### Step 9: 代码审查
 
-公开的pull request至少需要两人审查，代码审查包括查找bug，审查代码风格等。
+公开的 pull request 至少需要两人审查，代码审查包括查找 bug，审查代码风格等。

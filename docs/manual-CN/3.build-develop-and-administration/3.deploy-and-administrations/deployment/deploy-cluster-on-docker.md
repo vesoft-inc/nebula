@@ -4,13 +4,11 @@
 
 **_注意_：** 由于 Nebula 的服务之间通信需要开放一些端口，所以可以临时关掉防火墙。对于生产环境，不要使用该方式进行部署。
 
-
 ## 环境准备
 
 ### 安装 Docker
 
 Docker 安装方法请参考 [Docker 官方文档](https://docs.docker.com/)。
-
 
 ### 拉取镜像
 
@@ -27,9 +25,7 @@ Digest: sha256:313214ca1a4482183a0352450639d6dd79d77c56143654c57674c06131d00a47
 Status: Downloaded newer image for vesoft/nebula-graph:nightly
 ```
 
-
 ## 部署一个多节点集群
-
 
 ### 查看每个容器的IP
 
@@ -115,7 +111,6 @@ graphd 运行时需要从 metad 中获取 Schema 数据，所以在配置中必�
 
 ![image](https://user-images.githubusercontent.com/42762957/66463601-fb6e5880-eaaf-11e9-8067-1c7a8b2a52b0.png)
 
-
 第三份配置文件 **nebula-storaged.conf**
 
 storaged 也使用 raft 协议保证高可用，在数据迁移时会与 metad 通信，所以需要配置 metad 的地址和端口 `meta_server_addrs` 和本机地址 `local_ip` ，其 peers 可以通过 metad 获得。cluster-2 上的部分配置选项如下
@@ -131,9 +126,7 @@ storaged 也使用 raft 协议保证高可用，在数据迁移时会与 metad �
 
 ![image](https://user-images.githubusercontent.com/42762957/66463419-99adee80-eaaf-11e9-921f-c5648093d6c9.png)
 
-
 请重复上述步骤，为 cluster-3、cluster-4 进行配置，一共需配置9个文件。
-
 
 ## 启动集群
 
@@ -160,7 +153,6 @@ $ /usr/local/nebula/scripts/nebula.service start all
 ```
 
 重复以上命令重启 cluster-3、cluster-4。
-
 
 ## 测试集群
 
@@ -251,8 +243,6 @@ $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD 
 
 数据可读，说明部署成功。
 
-
 ## 自定义配置文件
 
 Nebula 支持通过指定配置文件的方式来加载更加丰富的启动参数，用于性能调优。详情请参考[配置属性](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-CN/deploy-cluster.md#%E9%85%8D%E7%BD%AE%E5%BC%95%E7%94%A8)。
-

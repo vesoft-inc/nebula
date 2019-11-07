@@ -99,7 +99,7 @@ class GraphScanner;
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
-%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
+%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PARTS KW_TIMESTAMP KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_UUID
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
@@ -290,6 +290,9 @@ input_ref_expression
         // To reference the `id' column implicitly
         $$ = new InputPropertyExpression(new std::string("id"));
     }
+    | INPUT_REF DOT MUL {
+        $$ = new InputPropertyExpression(new std::string("*"));
+    }
     ;
 
 src_ref_expression
@@ -310,6 +313,9 @@ var_ref_expression
     }
     | VARIABLE {
         $$ = new VariablePropertyExpression($1, new std::string("id"));
+    }
+    | VARIABLE DOT MUL {
+        $$ = new VariablePropertyExpression($1, new std::string("*"));
     }
     ;
 
@@ -647,8 +653,10 @@ yield_column
     ;
 
 yield_sentence
-    : KW_YIELD yield_columns {
-        $$ = new YieldSentence($2);
+    : KW_YIELD yield_columns where_clause {
+        auto *s = new YieldSentence($2);
+		s->setWhereClause($3);
+		$$ = s;
     }
     ;
 
@@ -1033,6 +1041,7 @@ traverse_sentence
     | fetch_sentence { $$ = $1; }
     | find_path_sentence { $$ = $1; }
     | limit_sentence { $$ = $1; }
+    | yield_sentence { $$ = $1; }
     ;
 
 set_sentence
@@ -1352,6 +1361,9 @@ show_sentence
     }
     | KW_SHOW KW_SPACES {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowSpaces);
+    }
+    | KW_SHOW KW_PARTS {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowParts);
     }
     | KW_SHOW KW_TAGS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowTags);
@@ -1679,11 +1691,6 @@ maintain_sentence
     | create_space_sentence { $$ = $1; }
     | describe_space_sentence { $$ = $1; }
     | drop_space_sentence { $$ = $1; }
-    | yield_sentence {
-        // Now we take YIELD as a normal maintenance sentence.
-        // In the future, we might make it able to be used in pipe.
-        $$ = $1;
-    }
     ;
     | create_user_sentence { $$ = $1; }
     | alter_user_sentence { $$ = $1; }

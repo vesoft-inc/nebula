@@ -4,16 +4,16 @@
 
 ## As Clause (with GO-syntax)
 
-```sql
+```ngql
 YIELD
     [DISTINCT]
     <col_name> [AS <col_alias>]
     [, <col_name> [AS <col_alias>] ...]
 ```
 
-`YIELD` is commonly used to return results generated with `GO`.
+`YIELD` is commonly used to return results generated with `GO` (Refer [GO](go-syntax.md)).
 
-```sql
+```ngql
 nebula> GO FROM 201 OVER relations_edge YIELD $$.student.name AS Friend,\
         $$.student.age AS Age, $$.student.gender AS Gender
 =========================
@@ -33,7 +33,7 @@ For example: `$$.student.name` is used to get the properties of the dest vertex 
 - You can use the `YIELD` statement to reference variables.
 - For statements that do not support `YIELD` statement, you can use it as a tool to control the outputs.
 
-```sql
+```ngql
 YIELD
     [DISTINCT]
     <col_name> [AS <col_alias>]
@@ -41,7 +41,7 @@ YIELD
     [WHERE <conditions>]
 ```
 
-```sql
+```ngql
 nebula> GO FROM 201 OVER like YIELD like._dst AS id | YIELD $-.* WHERE $-.id == 200;
 
 =========
@@ -68,7 +68,7 @@ nebula> $var2 = GO FROM 200 OVER like;$var1 = GO FROM 201 OVER like; \
 
 `YIELD` statement can be used independently to retrieve computation results without reference to any graph. You can use `AS` to rename an alias.
 
-```sql
+```ngql
 nebula> YIELD 1 + 1
 =========
 | (1+1) |
@@ -91,10 +91,8 @@ nebula> YIELD hash("Tim") % 100
 ---------------------
 ```
 
-**Note**
+**Note**: You can not use `YIELD DISTINCT` as a separate statement. This is a syntax error.
 
-You can not use `YIELD DISTINCT` as a separate statement. This is a syntax error.
-
-```sql
+```ngql
 nebula> YIELD DISTINCT 1     --- syntax error!
 ```

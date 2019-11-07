@@ -155,6 +155,11 @@ Status GoExecutor::prepareFrom() {
                 // No way to happen except memory corruption
                 LOG(FATAL) << "Unknown kind of expression";
             }
+
+            if (colname_ != nullptr && *colname_ == "*") {
+                status = Status::Error("Can not use `*' to reference a vertex id column.");
+                break;
+            }
             break;
         }
 
@@ -268,8 +273,18 @@ Status GoExecutor::prepareWhere() {
 
 Status GoExecutor::prepareYield() {
     auto *clause = sentence_->yieldClause();
+    // this preparation depends on interim result,
+    // it can only be called after getting results of the previous executor,
+    // but if we can do the semantic analysis before execution,
+    // then we can do the preparation before execution
+    // TODO: make it possible that this preparation not depends on interim result
     if (clause != nullptr) {
-        yields_ = clause->columns();
+        yieldClauseWrapper_ = std::make_unique<YieldClauseWrapper>(clause);
+        auto *varHolder = ectx()->variableHolder();
+        auto status = yieldClauseWrapper_->prepare(inputs_.get(), varHolder, yields_);
+        if (!status.ok()) {
+            return status;
+        }
     }
     return Status::OK();
 }
@@ -826,17 +841,24 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     bool saveTypeFlag = false;
                     auto &getters = expCtx_->getters();
 
-                    getters.getAliasProp = [&iter, &spaceId, &edgeType, &saveTypeFlag, &colTypes,
-                                            this](const std::string &edgeName,
-                                                  const std::string &prop) -> OptVariantType {
+                    getters.getAliasProp =
+                        [&iter, &spaceId, &edgeType, &saveTypeFlag, &colTypes, &edgeSchema, this](
+                            const std::string &edgeName,
+                            const std::string &prop) -> OptVariantType {
                         auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, edgeName);
-                        CHECK(edgeStatus.ok());
+                        if (!edgeStatus.ok()) {
+                            return edgeStatus.status();
+                        }
 
                         if (saveTypeFlag) {
                             colTypes.back() = iter->getSchema()->getFieldType(prop).type;
                         }
                         if (edgeType != edgeStatus.value()) {
-                            return RowReader::getDefaultProp(iter->getSchema().get(), prop);
+                            auto sit = edgeSchema.find(edgeStatus.value());
+                            if (sit == edgeSchema.end()) {
+                                return Status::Error("get schema failed");
+                            }
+                            return RowReader::getDefaultProp(sit->second.get(), prop);
                         }
 
                         auto res = RowReader::getPropByName(&*iter, prop);
@@ -851,7 +873,9 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         [&iter, &spaceId, &tagData, &tagSchema, &saveTypeFlag, &colTypes, this](
                             const std::string &tag, const std::string &prop) -> OptVariantType {
                         auto status = ectx()->schemaManager()->toTagID(spaceId, tag);
-                        CHECK(status.ok());
+                        if (!status.ok()) {
+                            return status.status();
+                        }
                         auto tagId = status.value();
                         auto it2 =
                             std::find_if(tagData.cbegin(), tagData.cend(), [&tagId](auto &td) {
@@ -882,7 +906,10 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                                                 const std::string &tag,
                                                 const std::string &prop) -> OptVariantType {
                         auto dst = RowReader::getPropByName(&*iter, "_dst");
-                        CHECK(ok(dst));
+                        if (!ok(dst)) {
+                            return Status::Error(
+                                folly::sformat("get prop({}.{}) failed", tag, prop));
+                        }
                         auto vid = boost::get<int64_t>(value(std::move(dst)));
                         auto status = ectx()->schemaManager()->toTagID(spaceId, tag);
                         if (!status.ok()) {
@@ -956,8 +983,7 @@ OptVariantType GoExecutor::VertexHolder::getDefaultProp(TagID tid, const std::st
         }
     }
 
-    DCHECK(false);
-    return Status::Error("Unknown tid");
+    return Status::Error("Unknown Vertex");
 }
 
 SupportedType GoExecutor::VertexHolder::getDefaultPropType(TagID tid,
@@ -969,7 +995,6 @@ SupportedType GoExecutor::VertexHolder::getDefaultPropType(TagID tid,
         }
     }
 
-    DCHECK(false);
     return nebula::cpp2::SupportedType::UNKNOWN;
 }
 

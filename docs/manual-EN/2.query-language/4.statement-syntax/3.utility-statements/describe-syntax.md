@@ -1,6 +1,6 @@
 # Describe Syntax
 
-```
+```ngql
 DESCRIBE SPACE <space_name>
 DESCRIBE TAG <tag_name>
 DESCRIBE EDGE <edge_name>
@@ -8,13 +8,13 @@ DESCRIBE EDGE <edge_name>
 
 The DESCRIBE keyword is used to obtain information about space, tag, edge structure.
 
-Also notice that DESCRIBE is different from SHOW.
+Also notice that DESCRIBE is different from SHOW. Refer [SHOW](show-syntax.md).
 
 ## Example
 
-Providing information about space. <!-- As regards information about CREATE SPACE. -->
+Obtain information about space.
 
-```SQL
+```ngql
 nebula> DESCRIBE SPACE laura_space;
 ========================================================
 | ID |        Name | Partition number | Replica Factor |
@@ -23,9 +23,9 @@ nebula> DESCRIBE SPACE laura_space;
 --------------------------------------------------------  
 ```
 
-Providing information about tag. <!-- As regards information about CREATE TAG. -->
+Obtain information about tag in a given space.
 
-```SQL
+```ngql
 nebula> DESCRIBE TAG player
 ==================
 | Field |   Type |
@@ -36,9 +36,9 @@ nebula> DESCRIBE TAG player
 ------------------  
 ```
 
-Providing information about edge. <!-- As regards information about CREATE EDGE. -->
+Obtain information about edge in a given space.
 
-```SQL
+```ngql
 nebula> DESCRIBE EDGE serve
 =====================
 |      Field | Type |

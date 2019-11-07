@@ -67,6 +67,11 @@ Status InsertEdgeExecutor::check() {
         }
     } while (false);
 
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return status;
+    }
+
     return status;
 }
 
