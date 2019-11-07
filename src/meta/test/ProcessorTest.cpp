@@ -51,7 +51,9 @@ TEST(ProcessorTest, AddHostsTest) {
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
         for (auto i = 0; i < 10; i++) {
-            thriftHosts.emplace_back(FRAGILE, i, i);
+            thriftHosts.emplace_back();
+            thriftHosts.back().set_ip(i);
+        thriftHosts.back().set_port(i);
         }
         cpp2::AddHostsReq req;
         req.set_hosts(std::move(thriftHosts));
@@ -76,7 +78,9 @@ TEST(ProcessorTest, AddHostsTest) {
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
         for (auto i = 10; i < 20; i++) {
-            thriftHosts.emplace_back(FRAGILE, i, i);
+            thriftHosts.emplace_back();
+            thriftHosts.back().set_ip(i);
+        thriftHosts.back().set_port(i);
         }
         cpp2::AddHostsReq req;
         req.set_hosts(std::move(thriftHosts));
@@ -101,7 +105,9 @@ TEST(ProcessorTest, AddHostsTest) {
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
         for (auto i = 0; i < 20; i++) {
-            thriftHosts.emplace_back(apache::thrift::FragileConstructor::FRAGILE, i, i);
+            thriftHosts.emplace_back();
+            thriftHosts.back().set_ip(i);
+        thriftHosts.back().set_port(i);
         }
         cpp2::RemoveHostsReq req;
         req.set_hosts(std::move(thriftHosts));
@@ -999,10 +1005,17 @@ TEST(ProcessorTest, AlterTagTest) {
         nebula::cpp2::ColumnDef column;
         column.name = folly::stringPrintf("tag_%d_col_%d", 0, 0);
         dropSch.columns.emplace_back(std::move(column));
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::ADD);
+        items.back().set_schema(std::move(addSch));
 
-        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::ADD, std::move(addSch));
-        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::CHANGE, std::move(changeSch));
-        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::DROP, std::move(dropSch));
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
+        items.back().set_schema(std::move(changeSch));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::DROP);
+        items.back().set_schema(std::move(dropSch));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
         req.set_tag_items(items);
@@ -1137,7 +1150,9 @@ TEST(ProcessorTest, AlterTagTest) {
         column.name = folly::stringPrintf("tag_%d_col_%d", 0, 10);
         dropSch.columns.emplace_back(std::move(column));
 
-        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::DROP, std::move(dropSch));
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::DROP);
+        items.back().set_schema(std::move(dropSch));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
         req.set_tag_items(items);
@@ -1156,10 +1171,10 @@ TEST(ProcessorTest, AlterTagTest) {
         column.name = "tag_0_col_1";
         column.type.type = SupportedType::INT;
         addSch.columns.emplace_back(std::move(column));
-        auto addItem = cpp2::AlterSchemaItem(FRAGILE,
-                                             cpp2::AlterSchemaOp::ADD,
-                                             std::move(addSch));
-        items.emplace_back(std::move(addItem));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::ADD);
+        items.back().set_schema(std::move(addSch));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
         req.set_tag_items(items);
@@ -1178,10 +1193,10 @@ TEST(ProcessorTest, AlterTagTest) {
         column.name = "tag_0_col_2";
         column.type.type = SupportedType::INT;
         changeSch.columns.emplace_back(std::move(column));
-        auto changeItem = cpp2::AlterSchemaItem(FRAGILE,
-                                                cpp2::AlterSchemaOp::CHANGE,
-                                                std::move(changeSch));
-        items.emplace_back(std::move(changeItem));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
+        items.back().set_schema(std::move(changeSch));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
         req.set_tag_items(items);
@@ -1199,8 +1214,11 @@ TEST(ProcessorTest, AlterTagTest) {
         nebula::cpp2::ColumnDef column;
         column.name = "tag_0_col_0";
         column.type.type = SupportedType::INT;
-        dropSch.columns.emplace_back(std::move(column));
-        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::DROP, std::move(dropSch));
+    dropSch.columns.emplace_back(std::move(column));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::DROP);
+        items.back().set_schema(std::move(dropSch));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
         req.set_tag_items(items);
@@ -1230,10 +1248,9 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.name = folly::stringPrintf("edge_%d_col_%d", 0, 1);
         dropSch.columns.emplace_back(std::move(column));
 
-        auto dropItem = cpp2::AlterSchemaItem(FRAGILE,
-                                              cpp2::AlterSchemaOp::DROP,
-                                              std::move(dropSch));
-        items.emplace_back(std::move(dropItem));
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::DROP);
+        items.back().set_schema(std::move(dropSch));
         req.set_space_id(1);
         req.set_edge_name("edge_0");
         req.set_edge_items(items);
@@ -1269,10 +1286,9 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.name = folly::stringPrintf("edge_%d_col_%d", 0, 1);
         addSch.columns.emplace_back(std::move(column));
 
-        auto addItem = cpp2::AlterSchemaItem(FRAGILE,
-                                             cpp2::AlterSchemaOp::ADD,
-                                             std::move(addSch));
-        items.emplace_back(std::move(addItem));
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::ADD);
+        items.back().set_schema(std::move(addSch));
         req.set_space_id(1);
         req.set_edge_name("edge_0");
         req.set_edge_items(items);
@@ -1304,18 +1320,18 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.name = folly::stringPrintf("edge_%d_col_%d", 0, 0);
         dropSch.columns.emplace_back(std::move(column));
 
-        auto addItem = cpp2::AlterSchemaItem(FRAGILE,
-                                             cpp2::AlterSchemaOp::ADD,
-                                             std::move(addSch));
-        auto changeItem = cpp2::AlterSchemaItem(FRAGILE,
-                                                cpp2::AlterSchemaOp::CHANGE,
-                                                std::move(changeSch));
-        auto dropItem = cpp2::AlterSchemaItem(FRAGILE,
-                                              cpp2::AlterSchemaOp::DROP,
-                                              std::move(dropSch));
-        items.emplace_back(std::move(addItem));
-        items.emplace_back(std::move(changeItem));
-        items.emplace_back(std::move(dropItem));
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::ADD);
+        items.back().set_schema(std::move(addSch));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
+        items.back().set_schema(std::move(changeSch));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::DROP);
+        items.back().set_schema(std::move(dropSch));
+
         req.set_space_id(1);
         req.set_edge_name("edge_0");
         req.set_edge_items(items);
@@ -1456,10 +1472,9 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.name = folly::stringPrintf("edge_%d_col_%d", 0, 10);
         dropSch.columns.emplace_back(std::move(column));
 
-        auto dropItem = cpp2::AlterSchemaItem(FRAGILE,
-                                              cpp2::AlterSchemaOp::DROP,
-                                              std::move(dropSch));
-        items.emplace_back(std::move(dropItem));
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::DROP);
+        items.back().set_schema(std::move(dropSch));
         req.set_space_id(1);
         req.set_edge_name("edge_0");
         req.set_edge_items(items);
@@ -1478,10 +1493,10 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.name = "edge_0_col_1";
         column.type.type = SupportedType::INT;
         addSch.columns.emplace_back(std::move(column));
-        auto addItem = cpp2::AlterSchemaItem(FRAGILE,
-                                             cpp2::AlterSchemaOp::ADD,
-                                             std::move(addSch));
-        items.emplace_back(std::move(addItem));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::ADD);
+        items.back().set_schema(std::move(addSch));
 
         req.set_space_id(1);
         req.set_edge_name("edge_0");
@@ -1501,10 +1516,11 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.name = "edge_0_col_2";
         column.type.type = SupportedType::INT;
         changeSch.columns.emplace_back(std::move(column));
-        auto changeItem = cpp2::AlterSchemaItem(FRAGILE,
-                                                cpp2::AlterSchemaOp::CHANGE,
-                                                std::move(changeSch));
-        items.emplace_back(std::move(changeItem));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
+        items.back().set_schema(std::move(changeSch));
+
         req.set_space_id(1);
         req.set_edge_name("edge_0");
         req.set_edge_items(items);
@@ -1523,10 +1539,11 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.name = "edge_0_col_2";
         column.type.type = SupportedType::INT;
         dropSch.columns.emplace_back(std::move(column));
-        auto dropItem = cpp2::AlterSchemaItem(FRAGILE,
-                                              cpp2::AlterSchemaOp::DROP,
-                                              std::move(dropSch));
-        items.emplace_back(dropItem);
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::DROP);
+        items.back().set_schema(std::move(dropSch));
+
         req.set_space_id(1);
         req.set_edge_name("edge_0");
         req.set_edge_items(items);
