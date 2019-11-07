@@ -17,6 +17,7 @@
 #include "meta/MetaServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include <folly/synchronization/Baton.h>
+#include <folly/executors/CPUThreadPoolExecutor.h>
 #include "meta/processors/usersMan/AuthenticationProcessor.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "time/WallClock.h"
@@ -30,6 +31,73 @@ namespace meta {
 
 using nebula::cpp2::SupportedType;
 using apache::thrift::FragileConstructor::FRAGILE;
+
+class TestFaultInjector : public FaultInjector {
+public:
+    explicit TestFaultInjector(std::vector<Status> sts)
+        : statusArray_(std::move(sts)) {
+        executor_.reset(new folly::CPUThreadPoolExecutor(1));
+    }
+
+    ~TestFaultInjector() {
+    }
+
+    folly::Future<Status> response(int index) {
+        folly::Promise<Status> pro;
+        auto f = pro.getFuture();
+        LOG(INFO) << "Response " << index;
+        executor_->add([this, p = std::move(pro), index]() mutable {
+            LOG(INFO) << "Call callback";
+            p.setValue(this->statusArray_[index]);
+        });
+        return f;
+    }
+
+    folly::Future<Status> transLeader() override {
+        return response(0);
+    }
+
+    folly::Future<Status> addPart() override {
+        return response(1);
+    }
+
+    folly::Future<Status> addLearner() override {
+        return response(2);
+    }
+
+    folly::Future<Status> waitingForCatchUpData() override {
+        return response(3);
+    }
+
+    folly::Future<Status> memberChange() override {
+        return response(4);
+    }
+
+    folly::Future<Status> updateMeta() override {
+        return response(5);
+    }
+
+    folly::Future<Status> removePart() override {
+        return response(6);
+    }
+
+    folly::Future<Status> getLeaderDist(HostLeaderMap* hostLeaderMap) override {
+        (*hostLeaderMap)[HostAddr(0, 0)][1] = {1, 2, 3, 4, 5};
+        (*hostLeaderMap)[HostAddr(1, 1)][1] = {6, 7, 8};
+        (*hostLeaderMap)[HostAddr(2, 2)][1] = {9};
+        return response(7);
+    }
+
+    void reset(std::vector<Status> sts) {
+        statusArray_ = std::move(sts);
+    }
+
+private:
+    std::vector<Status> statusArray_;
+    std::unique_ptr<folly::Executor> executor_;
+};
+
+
 class TestUtils {
 public:
     static std::unique_ptr<kvstore::KVStore> initKV(const char* rootPath) {
