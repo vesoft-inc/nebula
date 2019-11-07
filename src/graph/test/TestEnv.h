@@ -35,6 +35,10 @@ public:
 
     meta::ClientBasedGflagsManager* gflagsManager();
 
+    test::ServerContext* storageServer();
+
+    meta::MetaClient* metaClient();
+
 private:
     nebula::fs::TempDir                             metaRootPath_{"/tmp/MetaTest.XXXXXX"};
     nebula::fs::TempDir                             storageRootPath_{"/tmp/StorageTest.XXXXXX"};

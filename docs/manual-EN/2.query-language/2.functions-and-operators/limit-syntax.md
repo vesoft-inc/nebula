@@ -1,6 +1,6 @@
 # Limit Syntax
 
-`limit` works the same as in `SQL`.
+`limit` works the same as in `SQL`, and must be used with pipe `|`.
 
 ```ngql
 ORDER BY <expressions> [ASC | DESC]
@@ -20,3 +20,16 @@ LIMIT [<offset_value>,] <number_rows>
     Optional. It says to skip that many rows before the first row returned. The offset starts from zero.
 
 > When using `LIMIT`, it is important to use an `ORDER BY` clause that constrains the result rows into a unique order. Otherwise you will get an unpredictable subset of the query's rows.
+
+For example:
+
+```ngql
+nebula> GO FROM 105 OVER like YIELD $$.player.name AS Friend, $$.player.age AS Age, like._dst AS Like | LIMIT 2
+================================
+| Friend          | Age | Like |
+================================
+| Tim Duncan      | 42  | 100  |
+--------------------------------
+| Marco Belinelli | 32  | 104  |
+--------------------------------
+```
