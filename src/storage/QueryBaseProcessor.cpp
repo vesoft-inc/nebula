@@ -8,7 +8,7 @@
 
 DEFINE_int32(max_handlers_per_req, 10, "The max handlers used to handle one request");
 DEFINE_int32(min_vertices_per_bucket, 3, "The min vertices number in one bucket");
-DEFINE_int32(max_edges_considered, 1000, "The max edge number to traverse");
+DEFINE_int32(max_edge_returned_per_vertex, 1000, "The max edge number to traverse");
 
 namespace nebula {
 namespace storage {

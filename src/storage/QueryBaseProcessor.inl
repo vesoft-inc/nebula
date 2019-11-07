@@ -11,7 +11,7 @@
 
 DECLARE_int32(max_handlers_per_req);
 DECLARE_int32(min_vertices_per_bucket);
-DECLARE_int32(max_edges_considered);
+DECLARE_int32(max_edge_returned_per_vertex);
 
 namespace nebula {
 namespace storage {
