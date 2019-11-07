@@ -40,7 +40,7 @@ Nebula supports changing some rocksdb parameters in storage service as follows:
 ```
 
 For example
-`UPDATE VARIABLE storage:rocksdb_column_family_options = { disable_auto_compactions = false , level0_file_num_compaction_trigger = 10 }`
+`UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = false , level0_file_num_compaction_trigger = 10 }`
 
 ## SHOW CONFIGS
 

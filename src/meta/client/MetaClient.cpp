@@ -605,6 +605,20 @@ folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts() {
 }
 
 
+folly::Future<StatusOr<std::vector<cpp2::PartItem>>> MetaClient::listParts(GraphSpaceID spaceId) {
+    cpp2::ListPartsReq req;
+    req.set_space_id(std::move(spaceId));
+    folly::Promise<StatusOr<std::vector<cpp2::PartItem>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_listParts(request);
+                }, [] (cpp2::ListPartsResp&& resp) -> decltype(auto) {
+                    return resp.parts;
+                }, std::move(promise));
+    return future;
+}
+
+
 folly::Future<StatusOr<bool>> MetaClient::removeHosts(const std::vector<HostAddr>& hosts) {
     std::vector<nebula::cpp2::HostAddr> thriftHosts;
     thriftHosts.resize(hosts.size());

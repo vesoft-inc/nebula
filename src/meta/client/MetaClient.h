@@ -147,6 +147,9 @@ public:
     folly::Future<StatusOr<std::vector<cpp2::HostItem>>>
     listHosts();
 
+    folly::Future<StatusOr<std::vector<cpp2::PartItem>>>
+    listParts(GraphSpaceID spaceId);
+
     folly::Future<StatusOr<bool>>
     removeHosts(const std::vector<HostAddr>& hosts);
 
