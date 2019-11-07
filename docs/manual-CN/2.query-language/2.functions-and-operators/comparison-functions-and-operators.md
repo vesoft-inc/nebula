@@ -21,7 +21,7 @@
 
 等于。String的比较大小写敏感。不同类的值不相同：
 
-```sql
+```ngql
 nebula> YIELD 'A' == 'a';
 ==============
 | ("A"=="a") |
@@ -37,7 +37,7 @@ nebula> YIELD '2' == 2;
 
 大于：
 
-```sql
+```ngql
 nebula> YIELD 3 > 2;
 =========
 | (3>2) |
@@ -50,7 +50,7 @@ nebula> YIELD 3 > 2;
 
 大于或等于：
 
-```sql
+```ngql
 nebula> YIELD 2 >= 2;
 ==========
 | (2>=2) |
@@ -63,7 +63,7 @@ nebula> YIELD 2 >= 2;
 
 小于：
 
-```sql
+```ngql
 nebula> YIELD 2.0 < 1.9;
 =======================
 | (2.000000<1.900000) |
@@ -76,7 +76,7 @@ nebula> YIELD 2.0 < 1.9;
 
 小于或等于：
 
-```sql
+```ngql
 nebula> YIELD 0.11 <= 0.11;
 ========================
 | (0.110000<=0.110000) |
@@ -89,7 +89,7 @@ nebula> YIELD 0.11 <= 0.11;
 
 不等于：
 
-```sql
+```ngql
 nebula> YIELD 1 != '1'
 [ERROR (-8)]: A string type can not be compared with a non-string type.
 ```
@@ -98,7 +98,7 @@ nebula> YIELD 1 != '1'
 
 第一个参数为要比较的值。
 
-```sql
+```ngql
 nebula> YIELD udf_is_in(1,0,1,2)
 ======================
 | udf_is_in(1,0,1,2) |

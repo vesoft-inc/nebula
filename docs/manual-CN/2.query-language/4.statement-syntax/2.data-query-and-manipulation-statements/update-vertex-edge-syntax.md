@@ -4,7 +4,7 @@ Nebula 支持 `UPDATE` 一个点或者一条边的属性，支持 CAS 操作，�
 
 ## 更新点
 
-```
+```ngql
 UPDATE VERTEX $vid SET $update_columns WHEN $condition YIELD $columns
 ```
 
@@ -20,7 +20,7 @@ UPDATE VERTEX $vid SET $update_columns WHEN $condition YIELD $columns
 
 ### 示例
 
-```sql
+```ngql
 nebula> UPDATE VERTEX 101 SET course.credits = $^.course.credits + 1, building.name = "No8" WHEN $^.course.name == "Math" && $^.course.credits > 2 YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name
 ```
 
@@ -28,7 +28,7 @@ nebula> UPDATE VERTEX 101 SET course.credits = $^.course.credits + 1, building.n
 
 ## 更新边
 
-```
+```ngql
 UPDATE EDGE $edge SET $update_columns WHEN $condition YIELD $columns
 ```
 
@@ -41,7 +41,7 @@ UPDATE EDGE $edge SET $update_columns WHEN $condition YIELD $columns
 
 ### 示例
 
-```sql
+```ngql
 nebula> UPDATE EDGE 200 -> 101@0 OF select SET grade = select.grade + 1, \
   year = 2000 WHEN select.grade > 4 && $^.student.age > 15 \
   YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year
