@@ -293,18 +293,19 @@ void ShowExecutor::showTags() {
         auto value = std::move(resp).value();
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         std::vector<cpp2::RowValue> rows;
-        std::vector<std::string> header{"Name"};
+        std::vector<std::string> header{"ID", "Name"};
         resp_->set_column_names(std::move(header));
 
-        std::set<std::string> uniqueTags;
+        std::map<nebula::cpp2::TagID, std::string> tagItems;
         for (auto &tag : value) {
-            uniqueTags.emplace(tag.get_tag_name());
+            tagItems.emplace(tag.get_tag_id(), tag.get_tag_name());
         }
 
-        for (auto &item : uniqueTags) {
+        for (auto &item : tagItems) {
             std::vector<cpp2::ColumnValue> row;
-            row.resize(1);
-            row[0].set_str(item);
+            row.resize(2);
+            row[0].set_integer(item.first);
+            row[1].set_str(item.second);
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }
@@ -340,18 +341,19 @@ void ShowExecutor::showEdges() {
         auto value = std::move(resp).value();
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         std::vector<cpp2::RowValue> rows;
-        std::vector<std::string> header{"Name"};
+        std::vector<std::string> header{"ID", "Name"};
         resp_->set_column_names(std::move(header));
 
-        std::set<std::string> uniqueEdges;
+        std::map<nebula::cpp2::EdgeType, std::string> edgeItems;
         for (auto &edge : value) {
-            uniqueEdges.emplace(edge.get_edge_name());
+            edgeItems.emplace(edge.get_edge_type(), edge.get_edge_name());
         }
 
-        for (auto &item : uniqueEdges) {
+        for (auto &item : edgeItems) {
             std::vector<cpp2::ColumnValue> row;
-            row.resize(1);
-            row[0].set_str(item);
+            row.resize(2);
+            row[0].set_integer(item.first);
+            row[1].set_str(item.second);
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }
