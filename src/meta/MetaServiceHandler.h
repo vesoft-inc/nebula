@@ -44,6 +44,9 @@ public:
     folly::Future<cpp2::ListHostsResp>
     future_listHosts(const cpp2::ListHostsReq& req) override;
 
+    folly::Future<cpp2::ListPartsResp>
+    future_listParts(const cpp2::ListPartsReq& req) override;
+
     folly::Future<cpp2::ExecResp>
     future_removeHosts(const cpp2::RemoveHostsReq& req) override;
 

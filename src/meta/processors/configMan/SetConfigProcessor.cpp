@@ -120,10 +120,10 @@ void SetConfigProcessor::setNestedConfig(const cpp2::ConfigModule& module, const
             LOG(ERROR) << "Should not reach here";
             continue;
         }
-        auto key = field.substr(0, pos).c_str();
+        auto key = field.substr(0, pos);
         auto value = field.substr(pos + 1);
         // TODO: Maybe need to handle illegal value here
-        if (mutableFields_.count(key) && conf.updateStringField(key, value).ok()) {
+        if (mutableFields_.count(key) && conf.updateStringField(key.c_str(), value).ok()) {
             updated = true;
         }
     }

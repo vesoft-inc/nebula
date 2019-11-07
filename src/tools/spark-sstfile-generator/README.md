@@ -1,24 +1,27 @@
-Guided by a mapping file, `sst` files are generated from hive tables datasource. A mapping file maps hive tables to vertexes and edges.
+# Guide
+
+Guided by a mapping file, `sst` files are generated from hive tables data source. A mapping file maps hive tables to vertexes and edges.
 Multiple vertexes or edges can map to a single hive table, where a partition column will be used to distinguish different
 vertexes and edges.  
 
-Hive tables generated periodically by the upstream system can reflect the latest data at present, and be
+Hive tables generated periodically by the upstream system and can reflect the latest data at present, and be
 partitioned by a time column to indicate the time when data are generated.
 
 To complete the task, *$HADOOP_HOME* env needs to be set correctly.  
 
-# Environment
+## Environment
+
 component|version
 ---|---
-os|centos6.5 final(kernel 2.6.32-431.el6.x86_64)
+os|CentOS 6.5 final(kernel 2.6.32-431.el6.x86_64)
 spark|1.6.2
 hadoop|2.7.4
 jdk|1.8+
 scala|2.10.5
 sbt|1.2.8
 
+## Spark-submit command line reference
 
-# Spark-submit command line reference
 This is what we used in production environment:
 
 ```bash
@@ -37,9 +40,11 @@ ${SPARK_HOME}/bin/spark-submit --master yarn \
                                -pi ${PARTITION_FIELD} \
                                -so ${SSTFILE_OUTPUT_PATH}
 ```
+
 The application options are described as following.
 
-# Spark application command line reference
+### Spark application command line reference
+
 We keep a convention when naming the option, those suffix with _i_ will be an INPUT type option, while those suffix with _o_ will be an OUTPUT type option.
 
 ```bash
@@ -56,13 +61,14 @@ usage: nebula spark sst file generator
  -ti,--datasource_type_input <arg>           Currently supported source data types are hive|hbase|csv], and the default type is hive
 ```
 
-# Mapping file schema
+### Mapping file schema
 
 The format of the mapping files is json. File Schema is provided as [mapping-schema.json](mapping-schema.json) according to [Json Schema Standard](http://json-schema.org).
 Here is an example of mapping file: [mapping.json](mapping.json)
 
-# FAQ
-## How to use libnebula-native-client.so under CentOS6.5(2.6.32-431 x86-64)
+## FAQ
+
+### How to use libnebula-native-client.so under CentOS6.5(2.6.32-431 x86-64)
 
 1. Don't use officially distributed librocksdbjni-linux64.so, build locally on CentOS6.5.
 
@@ -70,13 +76,14 @@ Here is an example of mapping file: [mapping.json](mapping.json)
 DEBUG_LEVEL=0 make shared_lib
 DEBUG_LEVEL=0 make rocksdbjava
 ```
+
 *make sure to keep consistent with DEBUG_LEVEL when building, or there will be some link error like `symbol not found`*
 
 2. run `sbt assembly` to package this project to a spark job jar, whose default name is: `nebula-spark-sstfile-generator.jar`  
 3. run `jar uvf nebula-spark-sstfile-generator.jar librocksdbjni-linux64.so libnebula_native_client.so` to replace the `*.so` files packaged inside the dependency org.rocksdb:rocksdbjni:5.17.2,
     or the following error will occur when spark-submit:
 
-```
+```text
 *** glibc detected *** /soft/java/bin/java: free(): invalid pointer: 0x00007f7985b9f0a0 ***
 ======= Backtrace: =========
 /lib64/libc.so.6(+0x75f4e)[0x7f7c7d5e6f4e]
@@ -86,7 +93,8 @@ DEBUG_LEVEL=0 make rocksdbjava
 [0x7f7c689c1747]
 ```
 
-# TODO
+## TODO
+
 1. Add database_name property to graph space level and tag/edge level,with the latter will override the former when provided in both levels.
 2. Schema column definitions' order is important, keep it when parsing mapping file and encoding.
 3. Integrated build with maven or cmake, where this spark assembly should be built after nebula native client

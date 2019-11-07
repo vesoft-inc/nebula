@@ -1,10 +1,10 @@
-# 存储服务的负载均衡和数据迁移操作
+# 存储服务的负载均衡和数据迁移
 
-Nebula 的服务可分为 graphd，storaged，metad。此文档中的 balance 仅针对 storaged 进行操作。目前，storaged 的 scale 是通过 balance 命令来实现的。balance 命令有两种，一种需要迁移数据，命令为 **BALANCE DATA**；另一种不需要迁移数据，只改变 partition 的 leader 分布，来达到负载均衡的目的，命令为 **BALANCE LEADER**。
+Nebula 的服务可分为 graphd，storaged，metad。此文档中的 balance 仅针对 storaged 进行操作。目前，storaged 的扩缩容是通过 balance 命令来实现的。balance 命令有两种，一种需要迁移数据，命令为 **BALANCE DATA**；另一种不需要迁移数据，只改变 partition 的 leader 分布，来达到负载均衡的目的，命令为 **BALANCE LEADER**。
 
 ## Balance data
 
-以下举例说明 `BALANCE DATA` 的使用方式. 本例将集群从 3 个实例（进程）扩展到 8 个实例（进程）：
+以下举例说明 `BALANCE DATA` 的使用方式。本例将集群从 3 个实例（进程）扩展到 8 个实例（进程）：
 
 ### Step 1 准备
 
@@ -12,7 +12,7 @@ Nebula 的服务可分为 graphd，storaged，metad。此文档中的 balance �
 
 #### Step 1.1
 
-```SQL
+```ngql
 nebula> SHOW HOSTS
 ================================================================================================
 | Ip            | Port  | Status | Leader count | Leader distribution | Partition distribution |
@@ -38,13 +38,13 @@ Got 3 rows (Time spent: 5886/6835 us)
 
 创建一个名为 test 的图空间，包含 100 个 partition 和 3 个 replica。
 
-```SQL
+```ngql
 nebula> CREATE SPACE test(PARTITION_NUM=100, REPLICA_FACTOR=3)
 ```
 
 片刻后，使用 `SHOW HOSTS` 命令显示集群的分布。
 
-```SQL
+```ngql
 nebula> SHOW HOSTS
 ================================================================================================
 | Ip            | Port  | Status | Leader count | Leader distribution | Partition distribution |
@@ -61,7 +61,7 @@ nebula> SHOW HOSTS
 
 启动 5 个新 storaged 进程进行扩容。启动完毕后，使用 `SHOW HOSTS` 命令查看新的状态：
 
-```SQL
+```ngql
 nebula> SHOW HOSTS
 ================================================================================================
 | Ip            | Port  | Status | Leader count | Leader distribution | Partition distribution |
@@ -90,7 +90,7 @@ nebula> SHOW HOSTS
 
 运行 `BALANCE DATA` 命令， 查看当前的 balance 计划 id。如果当前集群有新机器加入，则会生成一个新的计划 id。对于已经平衡的集群，重复运行 `BALANCE DATA` 不会有任何新操作。
 
-```SQL
+```ngql
 nebula> BALANCE DATA
 ==============
 | ID         |
@@ -101,8 +101,8 @@ nebula> BALANCE DATA
 
 也可通过 `BALANCE DATA $id` 查看具 balance 的具体执行进度。
 
-```SQL
-nebula> BALANCE ID 1570761786
+```ngql
+nebula> BALANCE DATA 1570761786
 ===============================================================================
 | balanceId, spaceId:partId, src->dst                           | status      |
 ===============================================================================
@@ -138,7 +138,7 @@ nebula> BALANCE ID 1570761786
 
 大多数情况下，搬迁数据是个比较漫长的过程。但是搬迁过程不会影响已有服务。运行结束后，进度会提示 100%。如果有运行失败的 task，可再次运行 `BALANCE DATA` 命令进行修复。如果多次运行仍无法修复，请与社区联系 [GitHub](https://github.com/vesoft-inc/nebula/issues)。最后，通过 `SHOW HOSTS` 查看运行后的 partition 分布。
 
-```SQL
+```ngql
 nebula> SHOW HOSTS
 ================================================================================================
 | Ip            | Port  | Status | Leader count | Leader distribution | Partition distribution |
@@ -168,13 +168,13 @@ Got 8 rows (Time spent: 5074/6488 us)
 
 `BALANCE DATA` 仅能 balance partition，但是 leader 分布仍然不均衡，这意味着旧服务过载，而新服务未得到充分使用。运行 `BALANCE LEADER` 重新分布 Raft leader：
 
-```SQL
+```ngql
 nebula> BALANCE LEADER
 ```
 
 片刻后，使用 `SHOW HOSTS` 命令查看，此时 Raft leader 已均匀分布至所有的实例。
 
-```SQL
+```ngql
 nebula> SHOW HOSTS
 ================================================================================================
 | Ip            | Port  | Status | Leader count | Leader distribution | Partition distribution |

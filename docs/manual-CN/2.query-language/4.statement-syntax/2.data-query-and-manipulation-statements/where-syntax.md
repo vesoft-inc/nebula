@@ -2,7 +2,7 @@
 
 目前，`WHERE` 语句仅适用于 `GO` 语句。
 
-```
+```ngql
 WHERE (expression [ AND | OR expression ...])  
 ```
 
@@ -12,7 +12,7 @@ WHERE (expression [ AND | OR expression ...])
 
 ## 示例
 
-```SQL
+```ngql
 -- 边 e1 的 prop1 属性大于 17
 nebula> GO FROM 201 OVER likes WHERE e1.prop1 >= 17
 -- 起点 v1 的 prop1 属性与终点 v2 的 prop2 属性值相等

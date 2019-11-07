@@ -310,10 +310,10 @@ void MetaClient::getResponse(Request req,
                      toLeader, retry, retryLimit, this] () mutable {
         auto client = clientsMan_->client(host, evb);
         LOG(INFO) << "Send request to meta " << host;
-        remoteFunc(client, req)
-            .then(evb, [req = std::move(req), remoteFunc = std::move(remoteFunc),
-                        respGen = std::move(respGen), pro = std::move(pro), toLeader, retry,
-                        retryLimit, evb, this] (folly::Try<RpcResponse>&& t) mutable {
+        remoteFunc(client, req).via(evb)
+            .then([req = std::move(req), remoteFunc = std::move(remoteFunc),
+                   respGen = std::move(respGen), pro = std::move(pro), toLeader, retry,
+                   retryLimit, evb, this] (folly::Try<RpcResponse>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
                 if (toLeader) {
@@ -600,6 +600,20 @@ folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts() {
                     return client->future_listHosts(request);
                 }, [] (cpp2::ListHostsResp&& resp) -> decltype(auto) {
                     return resp.hosts;
+                }, std::move(promise));
+    return future;
+}
+
+
+folly::Future<StatusOr<std::vector<cpp2::PartItem>>> MetaClient::listParts(GraphSpaceID spaceId) {
+    cpp2::ListPartsReq req;
+    req.set_space_id(std::move(spaceId));
+    folly::Promise<StatusOr<std::vector<cpp2::PartItem>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_listParts(request);
+                }, [] (cpp2::ListPartsResp&& resp) -> decltype(auto) {
+                    return resp.parts;
                 }, std::move(promise));
     return future;
 }

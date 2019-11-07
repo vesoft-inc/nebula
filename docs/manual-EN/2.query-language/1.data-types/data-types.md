@@ -47,18 +47,18 @@ The string type is used to store a sequence of characters (text). The literal co
 
 Create a tag named school
 
-```sql
+```ngql
 nebula> CREATE TAG school(name string , create_time timestamp);
 ```
 
 Insert a vertex named "stanford" with the foundation date "1885-10-01 08:00:00"
 
-```sql
+```ngql
 nebula> INSERT VERTEX school(name, create_time) VALUES hash("new"):("new", "1985-10-01 08:00:00")
 ```
 
 Insert a vertex named "dut" with the foundation date now
 
-```sql
+```ngql
 nebula> INSERT VERTEX school(name, create_time) VALUES hash("dut"):("dut", now())
 ```

@@ -1,6 +1,6 @@
 # Create TAG / EDGE Syntax
 
-```
+```ngql
 CREATE {TAG | EDGE} <tag_name> | <edge_name>
     (<create_definition>, ...)
     [tag_edge_options]
@@ -64,7 +64,7 @@ The features of this syntax are described in the following sections:
 
 ### Examples
 
-```
+```ngql
 CREATE TAG course(name string, credits int)
 CREATE TAG notag()  -- empty properties
 

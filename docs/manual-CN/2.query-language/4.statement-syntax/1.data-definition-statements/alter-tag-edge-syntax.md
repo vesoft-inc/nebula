@@ -1,6 +1,6 @@
 # 修改 Tag / Edge
 
-```
+```ngql
 ALTER {TAG | EDGE} tag_name | edge_name
     [alter_definition [, alter_definition] ...]
     [ttl_definition [, ttl_definition] ... ]
@@ -18,7 +18,7 @@ ttl_definition:
 
 一个 `ALTER` 语句允许使用多个 `ADD`，`DROP`，`CHANGE` 语句，语句之间需用逗号隔开。但是不要在一个语句中添加，删除或更改相同的属性。如果必须进行此操作，请将其作为 `ALTER` 语句的子语句。
 
-```
+```ngql
 nebula> ALTER TAG t1 ADD (id int, name string)
 
 nebula> ALTER EDGE e1 ADD (prop1 int, prop2 string),    /* 添加 prop1 */
