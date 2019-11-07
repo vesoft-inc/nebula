@@ -1,6 +1,6 @@
 # Deploy Clusters on Docker
 
->**TODO(yee)** docker-compose
+> **TODO(yee)** docker-compose
 
 This article describes how to deploy a multi-node Nebula cluster on Docker.
 
@@ -80,7 +80,7 @@ Therefore, this article will deploy Nebula cluster on three hosts as follows:
 172.17.0.4 # cluster-4: metad/storaged/graphd
 ```
 
-**_Note_:** In production, please choose deployment method based on your actual conditions. This is for testing only. 
+**_Note_:** Please turn off the firewall on all the nodes temporarily as some ports are needed in nebula services communications. Refer to config file in `/usr/local/nebula/etc/` to check the in use ports. In production, please choose deployment method based on your actual conditions. This is for testing only.
 
 ## Configuration
 
@@ -240,4 +240,4 @@ The returned data is the same as above, indicating that the deployment is succes
 
 ## Custom Configuration File
 
-Nebula supports loading advanced parameters by specifying configuration files for performance tuning. <!-- Please refer [Configuration Properties](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-CN/deploy-cluster.md#%E9%85%8D%E7%BD%AE%E5%BC%95%E7%94%A8) for detail. -->
+Nebula supports loading advanced parameters by specifying configuration files for performance tuning.

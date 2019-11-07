@@ -264,9 +264,10 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
             onFinished();
             return;
         }
-        cpp2::RoleItem role(apache::thrift::FragileConstructor::FRAGILE,
-                            userId, spaceId,
-                            *reinterpret_cast<const cpp2::RoleType *>(val.begin()));
+        cpp2::RoleItem role;
+        role.set_user_id(userId);
+        role.set_space_id(spaceId);
+        role.set_role_type(*reinterpret_cast<const cpp2::RoleType *>(val.begin()));
         roles.emplace_back(std::move(role));
         iter->next();
     }

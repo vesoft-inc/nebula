@@ -45,11 +45,11 @@ void DeleteVertexExecutor::execute() {
         auto rpcResp = std::move(resp).value();
         std::vector<storage::cpp2::EdgeKey> allEdges;
         for (auto& edge : *rpcResp.get_edge_keys()) {
-            auto reverseEdge = storage::cpp2::EdgeKey(apache::thrift::FragileConstructor::FRAGILE,
-                                                      edge.get_dst(),
-                                                      -(edge.get_edge_type()),
-                                                      edge.get_ranking(),
-                                                      edge.get_src());
+            storage::cpp2::EdgeKey reverseEdge;
+            reverseEdge.set_src(edge.get_dst());
+            reverseEdge.set_edge_type(-(edge.get_edge_type()));
+            reverseEdge.set_ranking(edge.get_ranking());
+            reverseEdge.set_dst(edge.get_src());
             allEdges.emplace_back(std::move(edge));
             allEdges.emplace_back(std::move(reverseEdge));
         }

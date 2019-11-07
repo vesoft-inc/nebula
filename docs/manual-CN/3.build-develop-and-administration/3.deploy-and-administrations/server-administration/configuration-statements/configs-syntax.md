@@ -1,6 +1,6 @@
 # CONFIG 语法
 
-Nebula使用`gflags`进行运行时配置。
+Nebula使用 `gflags` 进行运行时配置。
 
 相关的 `gflags` 参数有三个，分别为 rocksdb_db_options，rocksdb_column_family_options，rocksdb_block_based_table_options。
 三个参数均为 json 格式，其中每个参数 key 和 value 均为 string 格式。例如可以在 storage 的 conf 文件中做如下设置
@@ -48,7 +48,7 @@ UPDATE CONFIGS storage:rocksdb_column_family_options =
 ## 显示变量
 
 ```ngql
-SHOW CONFIG graph|meta|storage
+SHOW CONFIGS graph|meta|storage
 ```
 
 例如

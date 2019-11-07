@@ -1,9 +1,6 @@
 # 集群部署
 
----
-
 本节介绍 `Nebula` 的部署
----
 
 ## 下载并安装包
 
@@ -13,13 +10,13 @@
 
  `CentOS` 系统：
 
-```
+```bash
 rpm -ivh nebula-{VERSION}.{SYSTEM_VERSION}.x86_64.rpm
 ```
 
  `Ubuntu` 系统：
 
-```
+```bash
 dpkg -i nebula-{VERSION}.{SYSTEM_VERSION}.amd64.deb
 ```
 
@@ -28,7 +25,6 @@ dpkg -i nebula-{VERSION}.{SYSTEM_VERSION}.amd64.deb
 启动多副本 Meta 服务需将多个地址配置到 `meta_server_addrs`，地址间需使用逗号分隔。
 
 使用 `data_path` 设置 `Meta` 的底层存储路径。
-***
 
 ### 启动 Nebula 集群
 
@@ -36,13 +32,22 @@ dpkg -i nebula-{VERSION}.{SYSTEM_VERSION}.amd64.deb
 
 示例命令如下：
 
-```
+```bash
 scripts/services.sh <start|stop|restart|status|kill>
 ```
 
 metas， storages 和 graphs 包含其自身的 hosts。
 
----
+### 连接 Nebula Graph
+
+```bash
+> bin/nebula -u=user -p=password --addr={graphd IP address} --port={graphd listening port}
+```
+
+* -u 用来设置用户名称，默认值为 `user`
+* -p 用来设置密码，用户 `user` 的密码为 `password`
+* --addr 为 graphd IP 地址
+* --port 为 graphd 服务端口，默认值为 `3699`
 
 #### 配置引用
 

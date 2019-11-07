@@ -6,6 +6,5 @@ Nebula 文档完全开源，欢迎更多贡献者帮助改进文档。Nebula 文
 
 贡献文档有多种方式：
 
-- 使用每页右侧的铅笔标记直接在网站编辑或提交问题。
 - 在 GitHub 上提 [issue](https://github.com/vesoft-inc/nebula/issues)。
 - Fork 仓库，在本地分支上做更改，然后提交 PR。
