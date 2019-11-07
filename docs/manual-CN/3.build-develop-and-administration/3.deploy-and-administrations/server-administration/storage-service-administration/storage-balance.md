@@ -1,10 +1,10 @@
-# 存储服务的负载均衡和数据迁移操作
+# 存储服务的负载均衡和数据迁移
 
-Nebula 的服务可分为 graphd，storaged，metad。此文档中的 balance 仅针对 storaged 进行操作。目前，storaged 的 scale 是通过 balance 命令来实现的。balance 命令有两种，一种需要迁移数据，命令为 **BALANCE DATA**；另一种不需要迁移数据，只改变 partition 的 leader 分布，来达到负载均衡的目的，命令为 **BALANCE LEADER**。
+Nebula 的服务可分为 graphd，storaged，metad。此文档中的 balance 仅针对 storaged 进行操作。目前，storaged 的扩缩容是通过 balance 命令来实现的。balance 命令有两种，一种需要迁移数据，命令为 **BALANCE DATA**；另一种不需要迁移数据，只改变 partition 的 leader 分布，来达到负载均衡的目的，命令为 **BALANCE LEADER**。
 
 ## Balance data
 
-以下举例说明 `BALANCE DATA` 的使用方式. 本例将集群从 3 个实例（进程）扩展到 8 个实例（进程）：
+以下举例说明 `BALANCE DATA` 的使用方式。本例将集群从 3 个实例（进程）扩展到 8 个实例（进程）：
 
 ### Step 1 准备
 
