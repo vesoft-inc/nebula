@@ -396,7 +396,8 @@ cpp2::ErrorCode Balancer::leaderBalance() {
         }
 
         int32_t failed = 0;
-        folly::collectAll(futures).then([&](const std::vector<folly::Try<Status>>& tries) {
+        folly::collectAll(futures).thenTry([&](const auto& result) {
+            auto tries = result.value();
             for (const auto& t : tries) {
                 if (!t.value().ok()) {
                     ++failed;
