@@ -16,7 +16,7 @@ Nebula storage provides key-value interfaces. Users can perform kv operations th
       folly::EventBase* evb = nullptr);
 ```
 
-Methods like remove, removeRange and scan will be provided later. 
+Methods like remove, removeRange and scan will be provided later.
 
 Interfaces usage are demonstrated as follows:
 
@@ -74,7 +74,7 @@ if (!resp.failedParts().empty()) {
 
 #### Read values
 
-For the Get interface, we need some more work to get the corresponding values. Nebula storage is a multi-copy based on Raft, and all read/written operations can only be sent to the leader of the corresponding partition. When a get request contains multiple keys across partitions, the Storage Client requests the keys from the Partition leader. Each rpc return is stored separately in an unordered_map, and the user is currently required to traverse these unordered_maps to find out if the key exists. An example is as follows:
+For the Get interface, we need some more operations to get the corresponding values. Nebula storage is a multi-copy based on Raft, and all read/written operations can only be sent to the leader of the corresponding partition. When a get request contains multiple keys across partitions, the Storage Client requests the keys from the Partition leader. Each rpc return is stored separately in an unordered_map, and the user is currently required to traverse these unordered_maps to check if the key exists. An example is as follows:
 
 ```cpp
 // Examine whether the value corresponding to the key is in the returned result. If it exists, it is saved in the value.
