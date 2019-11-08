@@ -44,6 +44,7 @@ class Balancer {
     FRIEND_TEST(BalanceTest, BalancePartsTest);
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
+    FRIEND_TEST(BalanceTest, StopBalanceDataTest);
     FRIEND_TEST(BalanceTest, LeaderBalancePlanTest);
     FRIEND_TEST(BalanceTest, SimpleLeaderBalancePlanTest);
     FRIEND_TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest);
@@ -70,6 +71,11 @@ public:
      * Show balance plan id status.
      * */
     StatusOr<BalancePlan> show(BalanceID id) const;
+
+    /**
+     * Stop balance plan by canceling all waiting balance task.
+     * */
+    StatusOr<BalanceID> stop();
 
     /**
      * TODO(heng): rollback some balance plan.
@@ -171,14 +177,15 @@ private:
                           GraphSpaceID spaceId);
 
 private:
-    std::atomic_bool  running_{false};
+    bool running_{false};
     kvstore::KVStore* kv_ = nullptr;
     std::unique_ptr<AdminClient> client_{nullptr};
     // Current running plan.
     std::unique_ptr<BalancePlan> plan_{nullptr};
     std::unique_ptr<folly::Executor> executor_;
-    std::atomic_bool  inLeaderBalance_{false};
+    std::atomic_bool inLeaderBalance_{false};
     std::unique_ptr<HostLeaderMap> hostLeaderMap_;
+    std::mutex lock_;
 };
 
 }  // namespace meta

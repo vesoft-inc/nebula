@@ -181,6 +181,17 @@ bool BalancePlan::recovery(bool resume) {
     return true;
 }
 
+void BalancePlan::stop() {
+    {
+        std::lock_guard<std::mutex> lg(lock_);
+        for (auto& task : tasks_) {
+            task.markInvalidIfNotStarted();
+        }
+        status_ = BalancePlan::Status::FAILED;
+        saveInStore();
+    }
+}
+
 std::string BalancePlan::planKey() const {
     std::string str;
     str.reserve(48);

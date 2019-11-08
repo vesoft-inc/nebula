@@ -373,6 +373,7 @@ public:
         kUnknown,
         kLeader,
         kData,
+        kDataStop,
         kShowBalancePlan,
     };
 

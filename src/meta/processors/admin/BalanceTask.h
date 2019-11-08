@@ -24,6 +24,7 @@ class BalanceTask {
     FRIEND_TEST(BalanceTest, BalancePlanTest);
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
+    FRIEND_TEST(BalanceTest, StopBalanceDataTest);
 
 public:
     enum class Status : uint8_t {
@@ -72,6 +73,13 @@ public:
     void invoke();
 
     void rollback();
+
+    void markInvalidIfNotStarted() {
+        if (status_ == Status::START) {
+            LOG(INFO) << "mark invalid of " << taskIdStr_;
+            ret_ = Result::INVALID;
+        }
+    }
 
     Result result() const {
         return ret_;

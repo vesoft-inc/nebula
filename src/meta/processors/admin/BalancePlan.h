@@ -20,6 +20,7 @@ class BalancePlan {
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
     FRIEND_TEST(BalanceTest, DispatchTasksTest);
+    FRIEND_TEST(BalanceTest, StopBalanceDataTest);
 
 public:
     enum class Status : uint8_t {
@@ -74,6 +75,8 @@ public:
     const std::vector<BalanceTask>& tasks() const {
         return tasks_;
     }
+
+    void stop();
 
 private:
     bool recovery(bool resume = true);

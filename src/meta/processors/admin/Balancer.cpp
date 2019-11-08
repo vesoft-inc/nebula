@@ -19,8 +19,8 @@ namespace nebula {
 namespace meta {
 
 StatusOr<BalanceID> Balancer::balance() {
-    bool expected = false;
-    if (running_.compare_exchange_strong(expected, true)) {
+    std::lock_guard<std::mutex> lg(lock_);
+    if (!running_) {
         if (!recovery()) {
             LOG(ERROR) << "Recovery balancer failed!";
             return Status::Error("Can't do balance because there is one corruptted balance plan!");
@@ -34,6 +34,7 @@ StatusOr<BalanceID> Balancer::balance() {
             }
         }
         executor_->add(std::bind(&BalancePlan::invoke, plan_.get()));
+        running_ = true;
         return plan_->id();
     }
     CHECK(!!plan_);
@@ -49,6 +50,16 @@ StatusOr<BalancePlan> Balancer::show(BalanceID id) const {
         return plan;
     }
     return Status::Error("KV is nullptr");
+}
+
+StatusOr<BalanceID> Balancer::stop() {
+    std::lock_guard<std::mutex> lg(lock_);
+    if (!running_) {
+        return Status::Error("No running balance plan");
+    }
+    CHECK(!!plan_);
+    plan_->stop();
+    return plan_->id();
 }
 
 bool Balancer::recovery() {
@@ -78,14 +89,18 @@ bool Balancer::recovery() {
         CHECK_EQ(1, corruptedPlans.size());
         plan_ = std::make_unique<BalancePlan>(corruptedPlans[0], kv_, client_.get());
         plan_->onFinished_ = [this] () {
-            bool expected = true;
-            auto &running = this->running_;   // Get the reference before the captured `this' lost
-            plan_.reset();
-            CHECK(running.compare_exchange_strong(expected, false));
+            // Get the reference before the captured `this' lost
+            auto &lock = this->lock_;
+            {
+                std::lock_guard<std::mutex> lg(lock);
+                running_ = false;
+                plan_.reset();
+            }
         };
         if (!plan_->recovery()) {
             LOG(ERROR) << "Can't recovery plan " << corruptedPlans[0];
-            plan_->onFinished_();
+            running_ = false;
+            plan_.reset();
             return false;
         }
     }
@@ -99,7 +114,6 @@ bool Balancer::getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCo
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        running_ = false;
         retCode = ret;
         return false;
     }
@@ -116,6 +130,7 @@ Status Balancer::buildBalancePlan() {
     std::vector<GraphSpaceID> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
+        running_ = false;
         return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(ret));
     }
     plan_ = std::make_unique<BalancePlan>(time::WallClock::fastNowInSec(), kv_, client_.get());
@@ -126,17 +141,22 @@ Status Balancer::buildBalancePlan() {
         }
     }
     plan_->onFinished_ = [this] () {
-        bool expected = true;
-        auto &running = this->running_;   // Get the reference before the captured `this' lost
-        plan_.reset();
-        CHECK(running.compare_exchange_strong(expected, false));
+        // Get the reference before the captured `this' lost
+        auto &lock = this->lock_;
+        {
+            std::lock_guard<std::mutex> lg(lock);
+            running_ = false;
+            plan_.reset();
+        }
     };
     if (plan_->tasks_.empty()) {
-        plan_->onFinished_();
+        running_ = false;
+        plan_.reset();
         return Status::Balanced();
     }
     if (!plan_->saveInStore()) {
-        plan_->onFinished_();
+        running_ = false;
+        plan_.reset();
         return Status::Error("Can't persist the plan");
     }
     return Status::OK();
@@ -368,8 +388,7 @@ cpp2::ErrorCode Balancer::leaderBalance() {
     std::vector<GraphSpaceID> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
-        LOG(ERROR) << "Can't access kvstore, ret = d"
-                   << static_cast<int32_t>(ret);
+        LOG(ERROR) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
 
@@ -446,23 +465,26 @@ Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spac
     std::unordered_map<HostAddr, std::vector<PartitionID>> allHostParts;
     getHostParts(spaceId, allHostParts, totalParts);
 
-    size_t avgLoad = leaderParts / hostLeaderMap->size();
+    std::unordered_set<HostAddr> activeHosts;
+    for (const auto& host : *hostLeaderMap) {
+        // only balance leader between hosts which have valid partition
+        if (!allHostParts[host.first].empty()) {
+            activeHosts.emplace(host.first);
+            leaderHostParts[host.first] = std::move((*hostLeaderMap)[host.first][spaceId]);
+        }
+    }
+
+    size_t avgLoad = leaderParts / activeHosts.size();
     size_t minLoad = avgLoad;
     size_t maxLoad = avgLoad + 1;
     if (useDeviation) {
-        minLoad = std::ceil(static_cast<double> (leaderParts) / hostLeaderMap->size() *
+        minLoad = std::ceil(static_cast<double> (leaderParts) / activeHosts.size() *
                             (1 - FLAGS_leader_balance_deviation));
-        maxLoad = std::floor(static_cast<double> (leaderParts) / hostLeaderMap->size() *
+        maxLoad = std::floor(static_cast<double> (leaderParts) / activeHosts.size() *
                             (1 + FLAGS_leader_balance_deviation));
     }
     LOG(INFO) << "Build leader balance plan, expeceted min load: " << minLoad
               << ", max load: " << maxLoad;
-
-    std::unordered_set<HostAddr> activeHosts;
-    for (const auto& host : *hostLeaderMap) {
-        activeHosts.emplace(host.first);
-        leaderHostParts[host.first] = std::move((*hostLeaderMap)[host.first][spaceId]);
-    }
 
     while (true) {
         bool hasUnbalancedHost = false;
