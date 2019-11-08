@@ -39,7 +39,7 @@ Change the logs severity level to **most detailed** with the following command.
 > curl "http://127.0.0.1:12000/set_flags?flag=minloglevel&value=0"
 ```
 
-Or **close** all logs print (FATAL reserved).
+Or **close** all logs print (FATAL only).
 
 ```bash
 > curl "http://127.0.0.1:12000/set_flags?flag=minloglevel&value=4"
