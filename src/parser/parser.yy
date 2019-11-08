@@ -66,8 +66,6 @@ class GraphScanner;
     nebula::UpdateItem                     *update_item;
     nebula::EdgeList                       *edge_list;
     nebula::ArgumentList                   *argument_list;
-    nebula::HostList                       *host_list;
-    nebula::HostAddr                       *host_item;
     nebula::SpaceOptList                   *space_opt_list;
     nebula::SpaceOptItem                   *space_opt_item;
     nebula::AlterSchemaOptList             *alter_schema_opt_list;
@@ -99,7 +97,7 @@ class GraphScanner;
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
-%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
+%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PARTS KW_TIMESTAMP KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_UUID
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
@@ -161,8 +159,6 @@ class GraphScanner;
 %type <update_list> update_list
 %type <update_item> update_item
 %type <edge_list> edge_list
-%type <host_list> host_list
-%type <host_item> host_item
 %type <space_opt_list> space_opt_list
 %type <space_opt_item> space_opt_item
 %type <alter_schema_opt_list> alter_schema_opt_list
@@ -181,7 +177,7 @@ class GraphScanner;
 %type <to_clause> to_clause
 %type <find_path_upto_clause> find_path_upto_clause
 
-%type <intval> port unary_integer rank
+%type <intval> unary_integer rank
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
@@ -203,7 +199,7 @@ class GraphScanner;
 %type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
 %type <sentence> ingest_sentence
-%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence describe_space_sentence
+%type <sentence> show_sentence create_space_sentence describe_space_sentence
 %type <sentence> drop_space_sentence
 %type <sentence> yield_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
@@ -1362,6 +1358,9 @@ show_sentence
     | KW_SHOW KW_SPACES {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowSpaces);
     }
+    | KW_SHOW KW_PARTS {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowParts);
+    }
     | KW_SHOW KW_TAGS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowTags);
     }
@@ -1390,47 +1389,6 @@ show_sentence
         $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateEdge, $4);
     }
     ;
-
-add_hosts_sentence
-    : KW_ADD KW_HOSTS host_list {
-        auto sentence = new AddHostsSentence();
-        sentence->setHosts($3);
-        $$ = sentence;
-    }
-    ;
-
-remove_hosts_sentence
-    : KW_REMOVE KW_HOSTS host_list {
-        auto sentence = new RemoveHostsSentence();
-        sentence->setHosts($3);
-        $$ = sentence;
-    }
-    ;
-
-host_list
-    : host_item {
-        $$ = new HostList();
-        $$->addHost($1);
-    }
-    | host_list COMMA host_item {
-        $$ = $1;
-        $$->addHost($3);
-    }
-    | host_list COMMA {
-        $$ = $1;
-    }
-    ;
-
-host_item
-    : IPV4 COLON port {
-        $$ = new nebula::HostAddr();
-        $$->first = $1;
-        $$->second = $3;
-    }
-    /* TODO(dutor) Support hostname and IPv6 */
-    ;
-
-port : INTEGER { $$ = $1; }
 
 config_module_enum
     : KW_GRAPH      { $$ = ConfigModule::GRAPH; }
@@ -1683,8 +1641,6 @@ maintain_sentence
     | drop_tag_sentence { $$ = $1; }
     | drop_edge_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
-    | add_hosts_sentence { $$ = $1; }
-    | remove_hosts_sentence { $$ = $1; }
     | create_space_sentence { $$ = $1; }
     | describe_space_sentence { $$ = $1; }
     | drop_space_sentence { $$ = $1; }

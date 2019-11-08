@@ -23,6 +23,7 @@ public:
         kUnknown,
         kShowHosts,
         kShowSpaces,
+        kShowParts,
         kShowTags,
         kShowEdges,
         kShowUsers,
@@ -63,70 +64,6 @@ private:
 inline std::ostream& operator<<(std::ostream &os, ShowSentence::ShowType type) {
     return os << static_cast<uint32_t>(type);
 }
-
-
-class HostList final {
-public:
-    void addHost(HostAddr *addr) {
-        hosts_.emplace_back(addr);
-    }
-
-    std::string toString() const;
-
-    std::vector<HostAddr> hosts() const {
-        std::vector<HostAddr> result;
-        result.reserve(hosts_.size());
-        for (auto &host : hosts_) {
-            result.emplace_back(*host);
-        }
-        return result;
-    }
-
-private:
-    std::vector<std::unique_ptr<HostAddr>>      hosts_;
-};
-
-
-class AddHostsSentence final : public Sentence {
-public:
-    AddHostsSentence() {
-        kind_ = Kind::kAddHosts;
-    }
-
-    void setHosts(HostList *hosts) {
-        hosts_.reset(hosts);
-    }
-
-    std::vector<HostAddr> hosts() const {
-        return hosts_->hosts();
-    }
-
-    std::string toString() const override;
-
-private:
-    std::unique_ptr<HostList>               hosts_;
-};
-
-
-class RemoveHostsSentence final : public Sentence {
-public:
-    RemoveHostsSentence() {
-        kind_ = Kind::kRemoveHosts;
-    }
-
-    void setHosts(HostList *hosts) {
-        hosts_.reset(hosts);
-    }
-
-    std::vector<HostAddr> hosts() const {
-        return hosts_->hosts();
-    }
-
-    std::string toString() const override;
-
-private:
-    std::unique_ptr<HostList>               hosts_;
-};
 
 
 class SpaceOptItem final {

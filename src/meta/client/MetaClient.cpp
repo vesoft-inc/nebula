@@ -310,10 +310,10 @@ void MetaClient::getResponse(Request req,
                      toLeader, retry, retryLimit, this] () mutable {
         auto client = clientsMan_->client(host, evb);
         LOG(INFO) << "Send request to meta " << host;
-        remoteFunc(client, req)
-            .then(evb, [req = std::move(req), remoteFunc = std::move(remoteFunc),
-                        respGen = std::move(respGen), pro = std::move(pro), toLeader, retry,
-                        retryLimit, evb, this] (folly::Try<RpcResponse>&& t) mutable {
+        remoteFunc(client, req).via(evb)
+            .then([req = std::move(req), remoteFunc = std::move(remoteFunc),
+                   respGen = std::move(respGen), pro = std::move(pro), toLeader, retry,
+                   retryLimit, evb, this] (folly::Try<RpcResponse>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
                 if (toLeader) {
@@ -570,28 +570,6 @@ folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name) {
     return future;
 }
 
-
-folly::Future<StatusOr<bool>> MetaClient::addHosts(const std::vector<HostAddr>& hosts) {
-    std::vector<nebula::cpp2::HostAddr> thriftHosts;
-    thriftHosts.resize(hosts.size());
-    std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
-        nebula::cpp2::HostAddr th;
-        th.set_ip(h.first);
-        th.set_port(h.second);
-        return th;
-    });
-    cpp2::AddHostsReq req;
-    req.set_hosts(std::move(thriftHosts));
-    folly::Promise<StatusOr<bool>> promise;
-    auto future = promise.getFuture();
-    getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_addHosts(request);
-                }, [] (cpp2::ExecResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                }, std::move(promise), true);
-    return future;
-}
-
 folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts() {
     cpp2::ListHostsReq req;
     folly::Promise<StatusOr<std::vector<cpp2::HostItem>>> promise;
@@ -604,28 +582,19 @@ folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts() {
     return future;
 }
 
-
-folly::Future<StatusOr<bool>> MetaClient::removeHosts(const std::vector<HostAddr>& hosts) {
-    std::vector<nebula::cpp2::HostAddr> thriftHosts;
-    thriftHosts.resize(hosts.size());
-    std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
-        nebula::cpp2::HostAddr th;
-        th.set_ip(h.first);
-        th.set_port(h.second);
-        return th;
-    });
-    cpp2::RemoveHostsReq req;
-    req.set_hosts(std::move(thriftHosts));
-    folly::Promise<StatusOr<bool>> promise;
+folly::Future<StatusOr<std::vector<cpp2::PartItem>>>
+MetaClient::listParts(GraphSpaceID spaceId) {
+    cpp2::ListPartsReq req;
+    req.set_space_id(std::move(spaceId));
+    folly::Promise<StatusOr<std::vector<cpp2::PartItem>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_removeHosts(request);
-                }, [] (cpp2::ExecResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                }, std::move(promise), true);
+                    return client->future_listParts(request);
+                }, [] (cpp2::ListPartsResp&& resp) -> decltype(auto) {
+                    return resp.parts;
+                }, std::move(promise));
     return future;
 }
-
 
 folly::Future<StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>>
 MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
