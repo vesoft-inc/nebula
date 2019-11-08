@@ -58,8 +58,6 @@ protected:
                                                         kClusterId,
                                                         true);
         LOG(INFO) << "Add hosts and create space....";
-        auto r = mc_->addHosts({HostAddr(localIp_, localDataPort_)}).get();
-        ASSERT_TRUE(r.ok());
         mc_->waitForMetadReady();
         VLOG(1) << "The storage server has been added to the meta service";
 
