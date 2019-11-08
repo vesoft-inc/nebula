@@ -13,7 +13,7 @@
 
 逻辑与 AND:
 
-```sql
+```ngql
 nebula> YIELD -1 && true;
 ================
 | (-(1)&&true) |
@@ -26,7 +26,7 @@ nebula> YIELD -1 && true;
 
 逻辑非 NOT:
 
-```sql
+```ngql
 nebula> YIELD !(-1);
 ===========
 | !(-(1)) |
@@ -40,7 +40,7 @@ nebula> YIELD !(-1);
 
 逻辑或 OR:
 
-```sql
+```ngql
 nebula> YIELD 1 || !1;
 =============
 | (1||!(1)) |

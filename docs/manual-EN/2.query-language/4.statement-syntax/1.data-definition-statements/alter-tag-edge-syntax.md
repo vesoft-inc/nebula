@@ -1,6 +1,6 @@
 # Alter Tag/Edge Syntax
 
-```
+```ngql
 ALTER {TAG | EDGE} tag_name | edge_name
     [alter_definition [, alter_definition] ...]
     [ttl_definition [, ttl_definition] ... ]
@@ -18,7 +18,7 @@ ttl_definition:
 
 Multiple `ADD`, `DROP`, `CHANGE` clauses are permitted in a single `ALTER` statements, separated by commas. But do NOT add, drop, change the same property in one statement. If you have to do so, make each operation as a clause of the `ALTER` statement.
 
-```
+```ngql
 ALTER TAG t1 ADD (id int, name string)
 
 ALTER EDGE e1 ADD (prop1 int, prop2 string),    /* add prop1 */

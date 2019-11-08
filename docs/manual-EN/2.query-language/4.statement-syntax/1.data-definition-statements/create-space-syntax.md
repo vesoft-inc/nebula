@@ -1,6 +1,6 @@
 # Create Space Syntax
 
-```
+```ngql
 CREATE SPACE space_name
     (space_option,...)
 
@@ -8,7 +8,7 @@ space_option:
     option_name = value
 ```
 
-This statement creates a new space. SPACE is a region that provides physically isolated graphs in Nebula.
+This statement creates a new space with the given name. SPACE is a region that provides physically isolated graphs in Nebula. An error occurs if the database exists.
 
 ## Space Name
 
@@ -32,7 +32,7 @@ However, if no option is given, Nebula Graph will create the space with the defa
 
 ### Example
 
-```
+```ngql
 CREATE SPACE my_space_1; -- create space with default partition number and replica factor
 CREATE SPACE my_space_2(partition_num=10); -- create space with default replica factor
 CREATE SPACE my_space_3(replica_factor=1); -- create space with default partition number
