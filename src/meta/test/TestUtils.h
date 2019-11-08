@@ -12,7 +12,6 @@
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
-#include "meta/processors/partsMan/AddHostsProcessor.h"
 #include "meta/processors/partsMan/ListHostsProcessor.h"
 #include "meta/MetaServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
@@ -173,15 +172,6 @@ public:
             th.set_port(h.second);
             return th;
         });
-        {
-            cpp2::AddHostsReq req;
-            req.set_hosts(std::move(thriftHosts));
-            auto* processor = AddHostsProcessor::instance(kv);
-            auto f = processor->getFuture();
-            processor->process(req);
-            auto resp = std::move(f).get();
-            EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        }
         registerHB(kv, hosts);
         {
             cpp2::ListHostsReq req;
