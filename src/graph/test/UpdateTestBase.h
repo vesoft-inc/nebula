@@ -64,15 +64,6 @@ std::unique_ptr<GraphClient> UpdateTestBase::client_;
 AssertionResult UpdateTestBase::prepareSchema() {
     {
         cpp2::ExecutionResponse resp;
-        std::string host = folly::stringPrintf("127.0.0.1:%u", storagePort_);
-        std::string cmd = "ADD HOSTS " + host;
-        auto code = client_->execute(cmd, resp);
-        if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
-        }
-    }
-    {
-        cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE SPACE myspace_test2(partition_num=1, replica_factor=1)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
@@ -261,14 +252,6 @@ AssertionResult UpdateTestBase::removeData() {
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "DROP SPACE myspace_test2";
-        auto code = client_->execute(cmd, resp);
-        if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
-        }
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = folly::stringPrintf("REMOVE HOSTS 127.0.0.1:%u", storagePort_);
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd << " failed";
