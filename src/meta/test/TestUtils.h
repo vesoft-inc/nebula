@@ -318,13 +318,13 @@ public:
         cpp2::CreateUserReq req;
         req.set_missing_ok(missingOk);
         req.set_encoded_pwd(password.str());
-        decltype(req.user) user(FRAGILE,
-                                account.str(),
-                                isLock,
-                                maxQueries,
-                                maxUpdates,
-                                maxConnections,
-                                maxConnectors);
+        decltype(req.user) user;
+        user.set_account(account.str());
+        user.set_is_lock(isLock);
+        user.set_max_queries_per_hour(maxQueries);
+        user.set_max_updates_per_hour(maxUpdates);
+        user.set_max_connections_per_hour(maxConnections);
+        user.set_max_user_connections(maxConnectors);
         req.set_user(std::move(user));
         auto* processor = CreateUserProcessor::instance(kv);
         auto f = processor->getFuture();

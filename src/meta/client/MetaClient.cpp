@@ -310,10 +310,10 @@ void MetaClient::getResponse(Request req,
                      toLeader, retry, retryLimit, this] () mutable {
         auto client = clientsMan_->client(host, evb);
         LOG(INFO) << "Send request to meta " << host;
-        remoteFunc(client, req)
-            .then(evb, [req = std::move(req), remoteFunc = std::move(remoteFunc),
-                        respGen = std::move(respGen), pro = std::move(pro), toLeader, retry,
-                        retryLimit, evb, this] (folly::Try<RpcResponse>&& t) mutable {
+        remoteFunc(client, req).via(evb)
+            .then([req = std::move(req), remoteFunc = std::move(remoteFunc),
+                   respGen = std::move(respGen), pro = std::move(pro), toLeader, retry,
+                   retryLimit, evb, this] (folly::Try<RpcResponse>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
                 if (toLeader) {

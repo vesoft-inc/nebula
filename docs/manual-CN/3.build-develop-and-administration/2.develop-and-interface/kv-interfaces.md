@@ -21,7 +21,7 @@ nebula storage 提供 key-value 接口，用户可以通过 StorageClient 进行
 下面结合示例说明 kv 接口的使用方法：
 
 ```cpp
-// Put接口
+// Put 接口
 std::vector<nebula::cpp2::Pair> pairs;
 for (int32_t i = 0; i < 1000; i ++) {
     auto key = std::to_string(folly::Random::rand32(1000000000));
@@ -30,20 +30,20 @@ for (int32_t i = 0; i < 1000; i ++) {
                        std::move(key), std::move(value));
 }
 
-// 通过StorageClient发送请求，相应的参数为spaceId，以及写入的key-value pairs
+// 通过 StorageClient 发送请求，相应的参数为 spaceId，以及写入的键值对
 auto future = storageClient->put(spaceId, std::move(pairs));
 // 获取结果
 auto resp = std::move(future).get();
 ```
 
 ```cpp
-// Get接口
+// Get 接口
 std::vector<std::string> keys;
 for (auto& pair : pairs) {
     keys.emplace_back(pair.first);
 }
 
-// 通过StorageClient发送请求，相应的参数为spaceId，以及要获取的keys
+// 通过 StorageClient 发送请求，相应的参数为 spaceId，以及要获取的 keys
 auto future = storageClient->get(spaceId, std::move(keys));
 // 获取结果
 auto resp = std::move(future).get()
@@ -62,7 +62,7 @@ if (!resp.succeeded()) {
     return;
 }
 
-// 失败的Partition以及相应的错误码
+// 失败的 Partition 以及相应的错误码
 if (!resp.failedParts().empty()) {
     for (const auto& partEntry : resp.failedParts()) {
         LOG(ERROR) << "Operation Failed in " << partEntry.first << ", Code: "
@@ -77,12 +77,12 @@ if (!resp.failedParts().empty()) {
 对于 Get 接口，用户需要一些操作来获取相应的返回值。Nebula storage 是基于 Raft 的多副本，所有读写操作只能发送给对应 partition 的 leader。当一个 rpc 请求包含了多个跨 partition 的 get 时，Storage Client 会给访问这些 key 所对应的 Partition leader。每个 rpc 返回都单独保存在一个 unordered_map 中，目前还需要用户在这些 unordered_map 中遍历查找 key 是否存在。示例如下：
 
 ```cpp
-// 查找key对应的value是否在返回结果中，如果存在，则保存在value中
+// 查找 key 对应的 value 是否在返回结果中，如果存在，则保存在 value 中
 bool found = false;
 std::string value;
-// resp.responses()中是多个storage server返回的结果
+// resp.responses()中是多个 storage server 返回的结果
 for (const auto& result : resp.responses()) {
-    // result.values即为某个storage server返回的key-value paris
+    // result.values 即为某个 storage server 返回的 key-value paris
     auto iter = result.values.find(key);
     if (iter != result.values.end()) {
         value = iter->second;
