@@ -74,13 +74,6 @@ public:
 
     void rollback();
 
-    void markInvalidIfNotStarted() {
-        if (status_ == Status::START) {
-            LOG(INFO) << "mark invalid of " << taskIdStr_;
-            ret_ = Result::INVALID;
-        }
-    }
-
     Result result() const {
         return ret_;
     }

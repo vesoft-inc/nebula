@@ -625,53 +625,6 @@ TEST(BalanceTest, StopBalanceDataTest) {
         }
         ASSERT_EQ(1, num);
     }
-    std::vector<PartitionID> taskWaitingPartIds;
-    PartitionID taskStartedPartId;
-    {
-        const auto& prefix = BalanceTask::prefix(balanceId);
-        std::unique_ptr<kvstore::KVIterator> iter;
-        auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-        ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
-        int32_t num = 0;
-        while (iter->valid()) {
-            BalanceTask task;
-            PartitionID partId = 0;
-            {
-                auto tup = BalanceTask::parseKey(iter->key());
-                task.balanceId_ = std::get<0>(tup);
-                ASSERT_EQ(balanceId, task.balanceId_);
-                task.spaceId_ = std::get<1>(tup);
-                ASSERT_EQ(1, task.spaceId_);
-                task.src_ = std::get<3>(tup);
-                ASSERT_EQ(HostAddr(3, 3), task.src_);
-                partId = std::get<2>(tup);
-            }
-            {
-                auto tup = BalanceTask::parseVal(iter->val());
-                task.status_ = std::get<0>(tup);
-                task.ret_ = std::get<1>(tup);
-                ASSERT_EQ(BalanceTask::Result::IN_PROGRESS, task.ret_);
-                task.srcLived_ = std::get<2>(tup);
-                ASSERT_FALSE(task.srcLived_);
-                task.startTimeMs_ = std::get<3>(tup);
-                // the task status would be CATCH_UP_DATA at most
-                if (task.status_ == BalanceTask::Status::START) {
-                    ASSERT_EQ(task.startTimeMs_, 0);
-                    taskWaitingPartIds.emplace_back(partId);
-                } else {
-                    ASSERT_GT(task.startTimeMs_, 0);
-                    taskStartedPartId = partId;
-                }
-                // the task has not completed yet
-                task.endTimeMs_ = std::get<4>(tup);
-                ASSERT_EQ(task.endTimeMs_, 0);
-            }
-            num++;
-            iter->next();
-        }
-        ASSERT_EQ(5, taskWaitingPartIds.size());
-        ASSERT_EQ(6, num);
-    }
 
     TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
     ret = balancer.stop();
@@ -685,41 +638,34 @@ TEST(BalanceTest, StopBalanceDataTest) {
         std::unique_ptr<kvstore::KVIterator> iter;
         auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
         ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
-        int32_t num = 0;
+        int32_t taskEnded = 0;
+        int32_t taskStopped = 0;
         while (iter->valid()) {
             BalanceTask task;
-            PartitionID partId = std::get<2>(BalanceTask::parseKey(iter->key()));
+            // PartitionID partId = std::get<2>(BalanceTask::parseKey(iter->key()));
             {
                 auto tup = BalanceTask::parseVal(iter->val());
                 task.status_ = std::get<0>(tup);
                 task.ret_ = std::get<1>(tup);
                 task.startTimeMs_ = std::get<3>(tup);
                 task.endTimeMs_ = std::get<4>(tup);
-                if (partId != taskStartedPartId) {
-                    // the task marked as invalid
-                    ASSERT_EQ(task.status_, BalanceTask::Status::START);
-                    ASSERT_EQ(task.ret_, BalanceTask::Result::INVALID);
-                    // startTime = 0, endTime > 0
-                    ASSERT_EQ(task.startTimeMs_, 0);
-                    ASSERT_GT(task.endTimeMs_, 0);
+
+                if (task.status_ == BalanceTask::Status::END) {
+                    taskEnded++;
                 } else {
-                    // the task should have been finished
-                    ASSERT_EQ(task.status_, BalanceTask::Status::END);
-                    ASSERT_EQ(task.ret_, BalanceTask::Result::SUCCEEDED);
-                    // startTime > 0, endTime > 0
-                    ASSERT_GT(task.startTimeMs_, 0);
-                    ASSERT_GT(task.endTimeMs_, 0);
+                    taskStopped++;
                 }
             }
-            num++;
             iter->next();
         }
-        ASSERT_EQ(6, num);
+        ASSERT_EQ(1, taskEnded);
+        ASSERT_EQ(5, taskStopped);
     }
 
     TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
     ret = balancer.balance();
     CHECK(ret.ok());
+    ASSERT_NE(ret.value(), balanceId);
     // resume stopped plan
     sleep(1);
     {
@@ -728,7 +674,6 @@ TEST(BalanceTest, StopBalanceDataTest) {
         auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
         ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
         int32_t num = 0;
-        int32_t taskWaiting = 0;
         int32_t taskStarted = 0;
         int32_t taskEnded = 0;
         while (iter->valid()) {
@@ -742,8 +687,6 @@ TEST(BalanceTest, StopBalanceDataTest) {
                 if (task.status_ == BalanceTask::Status::END) {
                     ++taskEnded;
                 } else if (task.status_ == BalanceTask::Status::START) {
-                    ++taskWaiting;
-                } else {
                     ++taskStarted;
                 }
             }
@@ -751,9 +694,8 @@ TEST(BalanceTest, StopBalanceDataTest) {
             iter->next();
         }
         ASSERT_EQ(6, num);
-        EXPECT_EQ(1, taskStarted);
+        EXPECT_EQ(5, taskStarted);
         EXPECT_EQ(1, taskEnded);
-        EXPECT_EQ(4, taskWaiting);
     }
 }
 

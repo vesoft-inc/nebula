@@ -102,7 +102,14 @@ public:
 
     cpp2::ErrorCode leaderBalance();
 
+    void finish() {
+        CHECK(!lock_.try_lock());
+        plan_.reset();
+        running_ = false;
+    }
+
     bool isRunning() {
+        std::lock_guard<std::mutex> lg(lock_);
         return running_;
     }
 
@@ -177,11 +184,11 @@ private:
                           GraphSpaceID spaceId);
 
 private:
-    bool running_{false};
+    std::atomic_bool running_{false};
     kvstore::KVStore* kv_ = nullptr;
     std::unique_ptr<AdminClient> client_{nullptr};
     // Current running plan.
-    std::unique_ptr<BalancePlan> plan_{nullptr};
+    std::shared_ptr<BalancePlan> plan_{nullptr};
     std::unique_ptr<folly::Executor> executor_;
     std::atomic_bool inLeaderBalance_{false};
     std::unique_ptr<HostLeaderMap> hostLeaderMap_;

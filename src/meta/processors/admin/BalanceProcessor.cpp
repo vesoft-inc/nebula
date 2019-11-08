@@ -32,6 +32,7 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
         }
         resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
         resp_.set_id(ret.value());
+        onFinished();
         return;
     }
     if (req.get_id() != nullptr) {

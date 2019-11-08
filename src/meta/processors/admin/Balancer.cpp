@@ -23,11 +23,15 @@ StatusOr<BalanceID> Balancer::balance() {
     if (!running_) {
         if (!recovery()) {
             LOG(ERROR) << "Recovery balancer failed!";
+            finish();
             return Status::Error("Can't do balance because there is one corruptted balance plan!");
         }
         if (plan_ == nullptr) {
             LOG(INFO) << "There is no corrupted plan need to recovery, so create a new one";
             auto status = buildBalancePlan();
+            if (!status.ok()) {
+                finish();
+            }
             if (plan_ == nullptr) {
                 LOG(ERROR) << "Create balance plan failed, status " << status.toString();
                 return status;
@@ -89,18 +93,14 @@ bool Balancer::recovery() {
         CHECK_EQ(1, corruptedPlans.size());
         plan_ = std::make_unique<BalancePlan>(corruptedPlans[0], kv_, client_.get());
         plan_->onFinished_ = [this] () {
-            // Get the reference before the captured `this' lost
-            auto &lock = this->lock_;
+            auto self = plan_;
             {
-                std::lock_guard<std::mutex> lg(lock);
-                running_ = false;
-                plan_.reset();
+                std::lock_guard<std::mutex> lg(lock_);
+                finish();
             }
         };
         if (!plan_->recovery()) {
             LOG(ERROR) << "Can't recovery plan " << corruptedPlans[0];
-            running_ = false;
-            plan_.reset();
             return false;
         }
     }
@@ -130,7 +130,6 @@ Status Balancer::buildBalancePlan() {
     std::vector<GraphSpaceID> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
-        running_ = false;
         return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(ret));
     }
     plan_ = std::make_unique<BalancePlan>(time::WallClock::fastNowInSec(), kv_, client_.get());
@@ -141,22 +140,16 @@ Status Balancer::buildBalancePlan() {
         }
     }
     plan_->onFinished_ = [this] () {
-        // Get the reference before the captured `this' lost
-        auto &lock = this->lock_;
+        auto self = plan_;
         {
-            std::lock_guard<std::mutex> lg(lock);
-            running_ = false;
-            plan_.reset();
+            std::lock_guard<std::mutex> lg(lock_);
+            finish();
         }
     };
     if (plan_->tasks_.empty()) {
-        running_ = false;
-        plan_.reset();
         return Status::Balanced();
     }
     if (!plan_->saveInStore()) {
-        running_ = false;
-        plan_.reset();
         return Status::Error("Can't persist the plan");
     }
     return Status::OK();
@@ -472,6 +465,11 @@ Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spac
             activeHosts.emplace(host.first);
             leaderHostParts[host.first] = std::move((*hostLeaderMap)[host.first][spaceId]);
         }
+    }
+
+    if (activeHosts.empty()) {
+        LOG(ERROR) << "No active hosts";
+        return leaderHostParts;
     }
 
     size_t avgLoad = leaderParts / activeHosts.size();
