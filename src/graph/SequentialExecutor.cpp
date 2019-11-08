@@ -51,6 +51,7 @@ Status SequentialExecutor::prepare() {
                     DCHECK(onFinish_);
                     respExecutorIndex_ = current;
                     onFinish_(ctr);
+                    break;
                 }
                 case Executor::ProcessControl::kNext:
                 default: {

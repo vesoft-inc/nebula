@@ -20,6 +20,7 @@ Status ReturnExecutor::prepare() {
 }
 
 void ReturnExecutor::execute() {
+    FLOG_INFO("Executing Return: %s", sentence_->toString().c_str());
     DCHECK(onFinish_);
     DCHECK(onError_);
     DCHECK(sentence_);
@@ -57,7 +58,13 @@ void ReturnExecutor::execute() {
             onError_(std::move(ret).status());
             return;
         }
+        auto rows = ret.value();
+        if (rows.empty()) {
+            onFinish_(Executor::ProcessControl::kNext);
+            return;
+        }
         resp_->set_rows(std::move(ret).value());
+        // Will return if variable has values.
         onFinish_(Executor::ProcessControl::kReturn);
     }
 }
