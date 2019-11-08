@@ -1,6 +1,6 @@
 # Delete Edge 语法
 
-Nebula 支持给定一个 edge 类型，及其起点与终点，删除这条边及其相关属性，语法如下：
+Nebula 支持给定一个 edge 类型，及其起点与终点，删除这条边及其相关属性和权重，语法如下：
 
 ```ngql
 DELETE EDGE <edge_type> <vid> -> <vid> [, <vid> -> <vid> ...]
