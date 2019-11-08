@@ -262,11 +262,6 @@ struct ListEdgesResp {
     3: list<EdgeItem> edges,
 }
 
-// Host related operations.
-struct AddHostsReq {
-    1: list<common.HostAddr> hosts;
-}
-
 struct ListHostsReq {
 }
 
@@ -294,11 +289,6 @@ struct ListPartsResp {
     3: list<PartItem> parts,
 }
 
-struct RemoveHostsReq {
-    1: list<common.HostAddr> hosts;
-}
-
-// Parts related operations.
 struct GetPartsAllocReq {
     1: common.GraphSpaceID space_id,
 }
@@ -547,8 +537,6 @@ service MetaService {
     GetEdgeResp getEdge(1: GetEdgeReq req);
     ListEdgesResp listEdges(1: ListEdgesReq req);
 
-    ExecResp addHosts(1: AddHostsReq req);
-    ExecResp removeHosts(1: RemoveHostsReq req);
     ListHostsResp listHosts(1: ListHostsReq req);
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
