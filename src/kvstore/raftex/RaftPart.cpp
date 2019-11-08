@@ -1197,6 +1197,9 @@ void RaftPart::cleanupSnapshot() {
 
 bool RaftPart::needToCleanWal() {
     std::lock_guard<std::mutex> g(raftLock_);
+    if (status_ == Status::WAITING_SNAPSHOT) {
+        return false;
+    }
     for (auto& host : hosts_) {
         if (host->sendingSnapshot_) {
             return false;
@@ -1719,6 +1722,12 @@ AppendLogResult RaftPart::isCatchedUp(const HostAddr& peer) {
     }
     for (auto& host : hosts_) {
         if (host->addr_ == peer) {
+            if (host->followerCommittedLogId_ < wal_->firstLogId()) {
+                LOG(INFO) << idStr_ << "The committed log id of peer is "
+                          << host->followerCommittedLogId_
+                          << ", which is invalid or less than my first wal log id";
+                return AppendLogResult::E_SENDING_SNAPSHOT;
+            }
             return host->sendingSnapshot_ ? AppendLogResult::E_SENDING_SNAPSHOT
                                           : AppendLogResult::SUCCEEDED;
         }
