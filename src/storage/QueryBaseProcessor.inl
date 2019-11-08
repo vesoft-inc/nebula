@@ -11,6 +11,7 @@
 
 DECLARE_int32(max_handlers_per_req);
 DECLARE_int32(min_vertices_per_bucket);
+DECLARE_int32(max_edge_returned_per_vertex);
 
 namespace nebula {
 namespace storage {
@@ -393,7 +394,8 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
     EdgeRanking lastRank  = -1;
     VertexID    lastDstId = 0;
     bool        firstLoop = true;
-    for (; iter->valid(); iter->next()) {
+    int         cnt = 0;
+    for (; iter->valid() && cnt < FLAGS_max_edge_returned_per_vertex; iter->next()) {
         auto key = iter->key();
         auto val = iter->val();
         auto rank = NebulaKeyUtils::getRank(key);
@@ -447,6 +449,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
             }
         }
         proc(reader.get(), key, props);
+        ++cnt;
         if (firstLoop) {
             firstLoop = false;
         }
