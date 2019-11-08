@@ -32,8 +32,7 @@ protected:
         FLAGS_heartbeat_interval_secs = 1;
         const nebula::ClusterID kClusterId = 10;
         testing_dir_ = std::make_unique<fs::TempDir>("/tmp/StorageClientTest.XXXXXX");
-        IPv4 localIp;
-        network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+        network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp_);
 
         // Let the system choose an available port for us
         uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
@@ -50,8 +49,8 @@ protected:
             = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", localMetaPort));
         CHECK(addrsRet.ok()) << addrsRet.status();
         auto& addrs = addrsRet.value();
-        uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
-        auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
+        localDataPort_ = network::NetworkUtils::getAvailablePort();
+        auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort_);
         auto& localHost = hostRet.value();
         mc_ = std::make_unique<meta::MetaClient>(threads_,
                                                         std::move(addrs),
@@ -59,7 +58,7 @@ protected:
                                                         kClusterId,
                                                         true);
         LOG(INFO) << "Add hosts and create space....";
-        auto r = mc_->addHosts({HostAddr(localIp, localDataPort)}).get();
+        auto r = mc_->addHosts({HostAddr(localIp_, localDataPort_)}).get();
         ASSERT_TRUE(r.ok());
         mc_->waitForMetadReady();
         VLOG(1) << "The storage server has been added to the meta service";
@@ -70,8 +69,8 @@ protected:
         std::string dataPath = folly::stringPrintf("%s/data", testing_dir_->path());
         server_ = TestUtils::mockStorageServer(mc_.get(),
                                             dataPath.c_str(),
-                                            localIp,
-                                            localDataPort,
+                                            localIp_,
+                                            localDataPort_,
                                             // TODO We are using the memory version of
                                             // SchemaMan We need to switch to Meta Server
                                             // based version
@@ -106,6 +105,8 @@ protected:
     std::shared_ptr<folly::IOThreadPoolExecutor> threads_ = nullptr;
     GraphSpaceID space_ = 0;
     std::unique_ptr<fs::TempDir> testing_dir_ = nullptr;
+    IPv4 localIp_;
+    uint32_t localDataPort_;
 };
 
 constexpr int32_t StorageClientTestF::kPartsNum;
@@ -386,13 +387,15 @@ TEST_F(StorageClientTestF, Misc) {
 
     // Leaders
     {
-        auto resps = client_->getLeaders().get();
+        std::vector<HostAddr> hosts;
+        hosts.emplace_back(localIp_, localDataPort_);
+        auto resps = client_->getLeaders(hosts).get();
         ASSERT_TRUE(resps.succeeded());
         ASSERT_EQ(resps.responses().size(), 1);  //< one host
         LOG(INFO) << "The leaders: ";
-        for (auto& resp : resps.responses()) {
-            LOG(INFO) << "Host: " << resp.first;
-            for (auto& val : resp.second.get_leader_parts()) {
+        for (std::size_t i = 0; i < resps.responses().size(); ++i) {
+            LOG(INFO) << "Host: " << hosts[i];
+            for (auto& val : resps.responses()[i].get_leader_parts()) {
                 LOG(INFO) << "\t" << "Space: " << val.first;
                 for (auto& p : val.second) {
                     LOG(INFO) << "\t\t" << "Leader Part: " << p;

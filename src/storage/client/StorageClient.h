@@ -195,8 +195,9 @@ public:
         const std::string& name,
         folly::EventBase* evb = nullptr);
 
-    // Get All leaders
+    // Get All leaders about these hosts
     folly::SemiFuture<StorageRpcResponse<cpp2::GetLeaderResp>> getLeaders(
+        const std::vector<HostAddr>& hosts,
         folly::EventBase* evb = nullptr);
 
 protected:
@@ -258,6 +259,7 @@ protected:
         RemoteFunc&& remoteFunc);
 
     // Handle the RPC without leader require
+    // \NOTE there are holes in responses if not complete success
     template<class Request,
              class RemoteFunc,
              class Response =
@@ -268,7 +270,7 @@ protected:
     folly::SemiFuture<StorageRpcResponse<Response>>
     collectResponseWithoutLeader(
         folly::EventBase* evb,
-        std::unordered_map<HostAddr, Request> requests,
+        std::vector<std::pair<HostAddr, Request>> requests,
         RemoteFunc&& remoteFunc);
 
     template<class Request,

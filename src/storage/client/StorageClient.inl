@@ -165,11 +165,10 @@ template<class Request, class RemoteFunc, class Response>
 folly::SemiFuture<StorageRpcResponse<Response>>
 StorageClient::collectResponseWithoutLeader(
         folly::EventBase* evb,
-//        std::unordered_map<HostAddr, Request> requests,
         std::vector<std::pair<HostAddr, Request>> requests,
         RemoteFunc&& remoteFunc) {
     auto context = std::make_shared<ResponseContext<
-            Request, RemoteFunc, std::pair<HostAddr, Response>>>(
+            Request, RemoteFunc, Response>>(
         requests.size(), std::move(remoteFunc));
 
     if (evb == nullptr) {
@@ -178,13 +177,9 @@ StorageClient::collectResponseWithoutLeader(
     }
 
     const std::size_t len = requests.size();
-//    context->resp->responses().reserve(len);
-    context->resp->responses().resize(len);
-//    for (auto& req : requests) {
+    context->resp.responses().resize(len);
     for (std::size_t i = 0; i < len; ++i) {
-//        auto& host = req.first;
         auto& host = requests[i].first;
-//        auto res = context->insertRequest(host, std::move(req.second));
         auto res = context->insertRequest(host, std::move(requests[i].second));
         DCHECK(res.second) << "Empty RPC request!";
         // Invoke the remote method
@@ -195,7 +190,7 @@ StorageClient::collectResponseWithoutLeader(
             // Future process code will be executed on the IO thread
             // Since all requests are sent using the same eventbase, all then-callback
             // will be executed on the same IO thread
-            .then(evb, [/*this,*/ context, host/*, spaceId*/] (folly::Try<Response>&& val) {
+            .then(evb, [/*this,*/ context, host/*, spaceId*/, i] (folly::Try<Response>&& val) {
                 if (UNLIKELY(val.hasException())) {
                     LOG(ERROR) << "Request to " << host << " failed: " << val.exception().what();
                     context->resp.markFailure();

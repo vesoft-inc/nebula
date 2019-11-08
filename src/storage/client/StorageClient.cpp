@@ -399,47 +399,26 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(
 }
 
 
-// Get All leaders
+// Get All leaders about these hosts
 folly::SemiFuture<StorageRpcResponse<cpp2::GetLeaderResp>>
 StorageClient::getLeaders(
+        const std::vector<HostAddr>& hosts,
         folly::EventBase* evb) {
-    return client_->listHosts().thenValue([](auto&& hosts) {
-        std::unordered_map<HostAddr, cpp2::GetLeaderReq> requests;
-        if (UNLIKELY(!hosts.ok())) {
-           LOG(WARNING) << "Get hosts failed!";
-           return requests;
-        }
-        requests.reserve(hosts.value().size());
-        for (auto& host : hosts.value()) {
-            if (host.get_status() == meta::cpp2::HostStatus::ONLINE) {
-                requests.emplace(
-                    std::make_pair(host.get_hostAddr().get_ip(), host.get_hostAddr().get_port()),
-                    cpp2::GetLeaderReq());
-            } else {
-                LOG(WARNING) << "Host " << std::make_pair(
-                    host.get_hostAddr().get_ip(), host.get_hostAddr().get_port()) << "not work!";
-            }
-        }
-        return requests;
-    }).thenError([](auto&& e) {
-        LOG(ERROR) << "Get hosts failed: " << e.what();
-        return std::unordered_map<HostAddr, cpp2::GetLeaderReq>();
-    }).thenValue([this, evb](auto&& requests) {
-        if (UNLIKELY(requests.empty())) {
-            LOG(ERROR) << "Get requests failed!";
-            return folly::makeSemiFuture(
-                StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>::fastFailed());
-        }
-        return collectResponseWithoutLeader(evb, std::move(requests),
-                            [](cpp2::StorageServiceAsyncClient* client,
-                                const cpp2::GetLeaderReq& r) {
-                                    return client->future_getLeaderPart(r);
-                                });
-    }).thenError([](auto&& e) {
-        LOG(ERROR) << "Get requests failed: " << e.what();
-        return folly::makeSemiFuture(
-            StorageRpcResponse<std::pair<HostAddr, cpp2::GetLeaderResp>>::fastFailed());
-    });
+    if (UNLIKELY(hosts.empty())) {
+        return folly::makeSemiFuture(StorageRpcResponse<cpp2::GetLeaderResp>::fastFailed());
+    }
+    std::vector<std::pair<HostAddr, cpp2::GetLeaderReq>> requests;
+    requests.reserve(hosts.size());
+    for (auto& host : hosts) {
+        requests.emplace_back(
+            std::make_pair(host, cpp2::GetLeaderReq()));
+    }
+
+    return collectResponseWithoutLeader(evb, std::move(requests),
+                        [](cpp2::StorageServiceAsyncClient* client,
+                            const cpp2::GetLeaderReq& r) {
+                                return client->future_getLeaderPart(r);
+                            });
 }
 
 
@@ -500,24 +479,52 @@ StorageClient::get(GraphSpaceID space,
 
 StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>
 StorageClient::preHeatLeaders() {
-    return getLeaders().via(ioThreadPool_->getEventBase()).thenValue([](auto&& leaders){
+    static constexpr char host_err[] = "Get hosts failed!";
+    auto hosts = client_->listHosts().thenValue([](auto&& hosts) {
+        std::vector<HostAddr> req_hosts;
+        if (UNLIKELY(!hosts.ok())) {
+            LOG(WARNING) << host_err;
+            return req_hosts;
+        }
+        for (auto& host : hosts.value()) {
+            if (host.get_status() == meta::cpp2::HostStatus::ONLINE) {
+                req_hosts.emplace_back(
+                    std::make_pair(host.get_hostAddr().get_ip(), host.get_hostAddr().get_port()));
+            } else {
+                LOG(WARNING) << "Invalid host at " << std::make_pair(
+                    host.get_hostAddr().get_ip(), host.get_hostAddr().get_port());
+            }
+        }
+        return req_hosts;
+    }).thenError([](auto&& e) {
+        LOG(ERROR) << host_err << e.what();
+        return std::vector<HostAddr>();
+    }).get();
+    return getLeaders(hosts).via(ioThreadPool_->getEventBase()).thenValue([&hosts](auto&& leaders){
         if (UNLIKELY(!leaders.succeeded())) {
+            constexpr char err[] = "At least one RPC call failed";
             // Require complete successded for the holes in responses
-            LOG(WARNING) << "At least one RPC call failed";
-            return decltype(preHeatLeaders())();
+            LOG(WARNING) << err;
+            return decltype(preHeatLeaders())(Status::Error(err));
+        }
+        if (UNLIKELY(hosts.size() != leaders.responses().size())) {
+            constexpr char err[] = "Impossible the req/resp count not equal!";
+            LOG(ERROR) << err;
+            return decltype(preHeatLeaders())(Status::Error(err));
         }
         std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> r;
-        for (auto& leader : leaders.responses()) {
-            for (auto& val : leader.second.get_leader_parts()) {
-                for (auto& p : val.second) {
-                    r.emplace(std::make_pair(val.first, p), leader.first);
+        for (std::size_t i = 0; i < leaders.responses().size(); ++i) {
+            for (auto& parts : leaders.responses()[i].get_leader_parts()) {
+                for (auto& p : parts.second) {
+                    r.emplace(std::make_pair(parts.first, p), hosts[i]);
                 }
             }
         }
         return decltype(preHeatLeaders())(std::move(r));
     }).thenError([](auto&& e){
-        LOG(ERROR) << "Get leaders failed: " << e.what();
-        return decltype(preHeatLeaders())();
+        std::string err = "Get leaders failed!";
+        LOG(ERROR) << err << e.what();
+        return decltype(preHeatLeaders())(Status::Error(err));
     }).get();
 }
 
