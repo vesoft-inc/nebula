@@ -181,6 +181,8 @@ public:
      * */
     AppendLogResult isCatchedUp(const HostAddr& peer);
 
+    bool linkCurrentWAL(const char* newPath);
+
     /*****************************************************
      *
      * Methods to process incoming raft requests
