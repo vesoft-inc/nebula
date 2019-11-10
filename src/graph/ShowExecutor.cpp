@@ -612,14 +612,15 @@ void ShowExecutor::showSnapshots() {
 
         auto retShowSnapshots = std::move(resp).value();
         std::vector<cpp2::RowValue> rows;
-        std::vector<std::string> header{"Name", "Status"};
+        std::vector<std::string> header{"Name", "Status", "Hosts"};
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(std::move(header));
         for (auto &snapshot : retShowSnapshots) {
             std::vector<cpp2::ColumnValue> row;
-            row.resize(2);
+            row.resize(3);
             row[0].set_str(snapshot.name);
             row[1].set_str(getStatus(snapshot.status));
+            row[2].set_str(snapshot.hosts);
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }

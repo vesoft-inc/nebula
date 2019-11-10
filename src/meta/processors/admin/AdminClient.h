@@ -97,7 +97,9 @@ public:
 
     folly::Future<Status> createSnapshot(GraphSpaceID spaceId, const std::string& name);
 
-    folly::Future<Status> dropSnapshot(GraphSpaceID spaceId, const std::string& name);
+    folly::Future<Status> dropSnapshot(GraphSpaceID spaceId,
+                                       const std::string& name,
+                                       const std::vector<HostAddr> hosts);
 
     folly::Future<Status> blockingWrites(GraphSpaceID spaceId,
                                          PartitionID partId,

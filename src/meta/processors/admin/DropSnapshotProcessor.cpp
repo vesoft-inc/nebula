@@ -31,18 +31,27 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
 
     // Check snapshot is creating
     if (MetaServiceUtils::parseSnapshotStatus(val) == cpp2::SnapshotStatus::CREATING) {
-        LOG(ERROR) << "snapshot is creating";
+        LOG(ERROR) << "Snapshot is creating";
         resp_.set_code(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
         onFinished();
         return;
     }
+    auto hosts = MetaServiceUtils::parseSnapshotHosts(val);
+    auto peers = NetworkUtils::toHosts(hosts);
+    if (!peers.ok()) {
+        LOG(ERROR) << "Get checkpoint hosts error";
+        resp_.set_code(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
+        onFinished();
+        return;
+    }
+
     std::vector<kvstore::KV> data;
-    auto dsRet = Snapshot::instance(kvstore_)->dropSnapshot(snapshot);
+    auto dsRet = Snapshot::instance(kvstore_)->dropSnapshot(snapshot, std::move(peers.value()));
     if (dsRet != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Drop snapshot error on storage engine";
         // Need update the snapshot status to invalid, maybe some storage engine drop done.
         data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
-                          MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID));
+                          MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
         if (!doSyncPut(std::move(data))) {
             LOG(ERROR) << "Update snapshot status error. "
                           "snapshot : " << snapshot;
@@ -60,7 +69,7 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
         LOG(ERROR) << "Drop snapshot error on meta engine";
         // Need update the snapshot status to invalid, maybe storage engines drop done.
         data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
-                          MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID));
+                          MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
         if (!doSyncPut(std::move(data))) {
             LOG(ERROR) << "Update snapshot status error. "
                           "snapshot : " << snapshot;

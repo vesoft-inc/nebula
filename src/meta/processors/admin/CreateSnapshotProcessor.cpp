@@ -7,6 +7,7 @@
 
 #include "meta/processors/admin/CreateSnapshotProcessor.h"
 #include "meta/processors/admin/SnapShot.h"
+#include "meta/ActiveHostsMan.h"
 
 namespace nebula {
 namespace meta {
@@ -17,6 +18,14 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
     auto snapshot = genSnapshotName();
     folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
     bool successful = true, rollbackMeta = false, rollbackStorage = false, rollbackDone = true;
+
+    auto hosts = ActiveHostsMan::getActiveHosts(kvstore_);
+    if (hosts.empty()) {
+        LOG(ERROR) << "There is no active hosts";
+        resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
+        onFinished();
+        return;
+    }
 
     // step 1 : Blocking all writes action for storage engines.
     auto signRet = Snapshot::instance(kvstore_)->blockingWrites(SignType::BLOCK_ON);
@@ -31,7 +40,8 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
     //          The purpose of this is to handle the failure of the checkpoint.
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
-                      MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::CREATING));
+                      MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::CREATING,
+                                                    NetworkUtils::toHosts(hosts)));
 
     if (!doSyncPut(std::move(data))) {
         LOG(ERROR) << "Write snapshot meta error";
@@ -90,7 +100,8 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
     if (successful) {
         // update snapshot status from INVALID to VALID.
         data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
-                          MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::VALID));
+                          MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::VALID,
+                                                        NetworkUtils::toHosts(hosts)));
 
         if (!doSyncPut(std::move(data))) {
             LOG(ERROR) << "All checkpoint create done, but update checkpoint status error. "
@@ -100,7 +111,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
     } else {
         // Rollback all checkpoints
         if (rollbackStorage) {
-            auto dsRet = Snapshot::instance(kvstore_)->dropSnapshot(snapshot);
+            auto dsRet = Snapshot::instance(kvstore_)->dropSnapshot(snapshot, hosts);
             if (dsRet != cpp2::ErrorCode::SUCCEEDED) {
                 rollbackDone = false;
                 LOG(ERROR) << "Checkpoint clear error on storage engine";
@@ -122,7 +133,8 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
             return;
         } else {  // Need to keep metadata if rollback fails
             data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
-                              MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID));
+                              MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID,
+                                                            NetworkUtils::toHosts(hosts)));
             if (!doSyncPut(std::move(data))) {
                 LOG(ERROR) << "Update snapshot status error. "
                               "snapshot : " << snapshot;

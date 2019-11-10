@@ -545,6 +545,7 @@ struct ListSnapshotsReq {
 struct Snapshot {
     1: string         name,
     2: SnapshotStatus status,
+    3: string         hosts,
 }
 
 struct ListSnapshotsResp {

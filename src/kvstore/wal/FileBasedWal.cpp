@@ -601,8 +601,18 @@ bool FileBasedWal::linkCurrentWAL(const char* newPath) {
         LOG(INFO) << idStr_ << "Create link failed, there is no wal files!";
         return false;
     }
+    if (!fs::FileUtils::makeDir(newPath)) {
+        LOG(INFO) << idStr_ << "Link file parent dir make failed : " << newPath;
+        return false;
+    }
+
     auto it = walFiles_.rbegin();
-    if (link(it->second->path(), newPath) != 0) {
+
+    // Using the original wal file name.
+    auto targetFile = folly::stringPrintf("%s/%s", newPath,
+            it->second->path() + std::string(it->second->path()).rfind('/') + 1);
+
+    if (link(it->second->path(), targetFile.data()) != 0) {
         LOG(INFO) << idStr_ << "Create link failed for " << it->second->path()
                   << " on " << newPath << ", error:" << strerror(errno);
         return false;

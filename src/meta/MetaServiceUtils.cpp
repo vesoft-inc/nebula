@@ -582,15 +582,22 @@ std::string MetaServiceUtils::snapshotKey(const std::string& name) {
     return key;
 }
 
-std::string MetaServiceUtils::snapshotVal(const cpp2::SnapshotStatus& status) {
+std::string MetaServiceUtils::snapshotVal(const cpp2::SnapshotStatus& status,
+                                          const std::string& hosts) {
     std::string val;
-    val.reserve(sizeof(cpp2::SnapshotStatus));
+    val.reserve(sizeof(cpp2::SnapshotStatus) + sizeof(hosts));
     val.append(reinterpret_cast<const char*>(&status), sizeof(cpp2::SnapshotStatus));
+    val.append(hosts);
     return val;
 }
 
 cpp2::SnapshotStatus MetaServiceUtils::parseSnapshotStatus(folly::StringPiece rawData) {
     return *reinterpret_cast<const cpp2::SnapshotStatus*>(rawData.data());
+}
+
+std::string MetaServiceUtils::parseSnapshotHosts(folly::StringPiece rawData) {
+    return rawData.subpiece(sizeof(cpp2::SnapshotStatus),
+                            rawData.size() - sizeof(cpp2::SnapshotStatus)).str();
 }
 
 std::string MetaServiceUtils::parseSnapshotName(folly::StringPiece rawData) {

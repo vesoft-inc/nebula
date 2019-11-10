@@ -437,12 +437,15 @@ ResultCode RocksEngine::createCheckpoint(const std::string& name) {
      *   |--------wal
      *   |--------checkpoints
      *   |----------snapshot1
+     *   |------------data
+     *   |------------wal
      *   |----------snapshot2
      *   |----------snapshot3
      *
      */
 
-    auto checkpointPath = folly::stringPrintf("%s/checkpoints/%s", dataPath_.c_str(), name.c_str());
+    auto checkpointPath = folly::stringPrintf("%s/checkpoints/%s/data",
+                                              dataPath_.c_str(), name.c_str());
     LOG(INFO) << "Target checkpoint path : " << checkpointPath;
     if (fs::FileUtils::exist(checkpointPath)) {
         LOG(ERROR) << "The snapshot file already exists: " << checkpointPath;
@@ -450,8 +453,8 @@ ResultCode RocksEngine::createCheckpoint(const std::string& name) {
     }
 
     auto parent = checkpointPath.substr(0, checkpointPath.rfind('/'));
-    if (!FileUtils::exist(parent.data())) {
-        FileUtils::makeDir(parent.data());
+    if (!FileUtils::exist(parent)) {
+        FileUtils::makeDir(parent);
     }
 
     rocksdb::Checkpoint* checkpoint;
@@ -460,17 +463,18 @@ ResultCode RocksEngine::createCheckpoint(const std::string& name) {
         LOG(ERROR) << "Init checkpoint Failed: " << status.ToString();
         return ResultCode::ERR_CHECKPOINT_ERROR;
     }
-    status = checkpoint->CreateCheckpoint(checkpointPath, 0);
+    std::unique_ptr<rocksdb::Checkpoint> cp(checkpoint);
+    status = cp->CreateCheckpoint(checkpointPath, 0);
     if (!status.ok()) {
         LOG(ERROR) << "Create checkpoint Failed: " << status.ToString();
         return ResultCode::ERR_CHECKPOINT_ERROR;
     }
-    delete checkpoint;
     return ResultCode::SUCCEEDED;
 }
 
 ResultCode RocksEngine::dropCheckpoint(const std::string& name) {
-    auto checkpointPath = folly::stringPrintf("%s/checkpoints/%s", dataPath_.c_str(), name.c_str());
+    auto checkpointPath = folly::stringPrintf("%s/checkpoints/%s",
+                                              dataPath_.c_str(), name.c_str());
     LOG(INFO) << "Drop checkpoint : " << checkpointPath;
     if (!fs::FileUtils::exist(checkpointPath)) {
         return ResultCode::SUCCEEDED;

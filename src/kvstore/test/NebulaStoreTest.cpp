@@ -754,10 +754,16 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
         fs::FileUtils::remove(folly::stringPrintf("%s/data", rm.data()).c_str(), true);
         fs::FileUtils::remove(folly::stringPrintf("%s/wal", rm.data()).c_str(), true);
         std::string mv = folly::stringPrintf(
-                "/usr/bin/mv %s/disk%d/nebula/0/checkpoints/snapshot %s/disk%d/nebula/0/data",
+                "/usr/bin/mv %s/disk%d/nebula/0/checkpoints/snapshot/data %s/disk%d/nebula/0/data",
                 rootPath.path(), i , rootPath.path(), i);
         sleep(1);
         auto ret = system(mv.c_str());
+        ASSERT_EQ(0, ret);
+        mv = folly::stringPrintf(
+                "/usr/bin/mv %s/disk%d/nebula/0/checkpoints/snapshot/wal %s/disk%d/nebula/0/wal",
+                rootPath.path(), i , rootPath.path(), i);
+        sleep(1);
+        ret = system(mv.c_str());
         ASSERT_EQ(0, ret);
     }
 

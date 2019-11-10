@@ -550,7 +550,9 @@ folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId, const st
     return f;
 }
 
-folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId, const std::string& name) {
+folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
+                                                const std::string& name,
+                                                const std::vector<HostAddr> hosts) {
     if (injector_) {
         return injector_->dropSnapshot();
     }
@@ -558,14 +560,9 @@ folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId, const std:
     req.set_space_id(spaceId);
     req.set_name(name);
 
-    auto ret = getSpacePeers(spaceId);
-    if (!ret.ok()) {
-        return ret.status();
-    }
-
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(ret.value(), 0, std::move(req), [] (auto client, auto request) {
+    getResponse(hosts, 0, std::move(req), [] (auto client, auto request) {
         return client->future_dropCheckpoint(request);
     }, 0, std::move(pro), 1 /*The snapshot operation only needs to be retried twice*/);
     return f;

@@ -597,11 +597,27 @@ ResultCode NebulaStore::createCheckpoint(GraphSpaceID spaceId, const std::string
     if (!ok(spaceRet)) {
         return error(spaceRet);
     }
+
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
         auto code = engine->createCheckpoint(name);
         if (code != ResultCode::SUCCEEDED) {
             return code;
+        }
+        // create wal hard link for all parts
+        auto parts = engine->allParts();
+        for (auto& part : parts) {
+            auto ret = this->part(spaceId, part);
+            if (!ok(ret)) {
+                LOG(ERROR) << "Part not found. space : " << spaceId << " Part : " << part;
+                return error(ret);
+            }
+            auto walPath = folly::stringPrintf("%s/checkpoints/%s/wal/%d",
+                                                      engine->getDataRoot(), name.c_str(), part);
+            auto p = nebula::value(ret);
+            if (!p->linkCurrentWAL(walPath.data())) {
+                return ResultCode::ERR_CHECKPOINT_ERROR;
+            }
         }
     }
     return ResultCode::SUCCEEDED;

@@ -26,7 +26,6 @@ cpp2::ErrorCode Snapshot::createSnapshot(const std::string& name) {
     }
     for (auto& space : spaces) {
         auto status = client_->createSnapshot(space, name).get();
-
         if (!status.ok()) {
             return cpp2::ErrorCode::E_RPC_FAILURE;
         }
@@ -34,9 +33,19 @@ cpp2::ErrorCode Snapshot::createSnapshot(const std::string& name) {
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
-cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name) {
+cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
+                                       const std::vector<HostAddr> hosts) {
     folly::Promise<Status> promise;
     auto future = promise.getFuture();
+
+    // The drop checkpoint will be skip if original host has been lost.
+    auto activeHosts = ActiveHostsMan::getActiveHosts(kv_);
+    std::vector<HostAddr> realHosts;
+    for (auto& host : hosts) {
+        if (std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end()) {
+            realHosts.emplace_back(host);
+        }
+    }
 
     std::vector<GraphSpaceID> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
@@ -46,7 +55,7 @@ cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name) {
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
     for (auto& space : spaces) {
-        auto status = client_->dropSnapshot(space, name).get();
+        auto status = client_->dropSnapshot(space, name, realHosts).get();
 
         if (!status.ok()) {
             return cpp2::ErrorCode::E_RPC_FAILURE;
@@ -94,6 +103,10 @@ cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
     std::vector<folly::SemiFuture<Status>> futures;
     for (const auto& space : spaces) {
         const auto& hostParts = buildLeaderPlan(hostLeaderMap.get(), space);
+        if (hostParts.empty()) {
+            LOG(ERROR) << "Partition collection failed, spaceId is " << space;
+            return cpp2::ErrorCode::E_RPC_FAILURE;
+        }
         for (const auto& hostPart : hostParts) {
             auto host = hostPart.first;
             auto parts = hostPart.second;
@@ -122,7 +135,17 @@ std::unordered_map<HostAddr, std::vector<PartitionID>>
 Snapshot::buildLeaderPlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId) {
     std::unordered_map<PartitionID, std::vector<HostAddr>> peersMap;
     std::unordered_map<HostAddr, std::vector<PartitionID>> leaderHostParts;
-    size_t leaderParts = 0;
+
+    auto key = MetaServiceUtils::spaceKey(spaceId);
+    std::string value;
+    auto code = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &value);
+    if (code != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId;
+        return leaderHostParts;
+    }
+    auto properties = MetaServiceUtils::parseSpace(value);
+
+    auto leaderParts = 0;
     {
         // store peers of all paritions in peerMap
         folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
@@ -133,29 +156,38 @@ Snapshot::buildLeaderPlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId) {
             LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId;
             return leaderHostParts;
         }
+        // Check the current cluster status, If the number of replica is
+        // less than half of the total, return null list.
         while (iter->valid()) {
-            auto key = iter->key();
+            auto k = iter->key();
             PartitionID partId;
-            memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
+            memcpy(&partId, k.data() + prefix.size(), sizeof(PartitionID));
             auto thriftPeers = MetaServiceUtils::parsePartVal(iter->val());
             std::vector<HostAddr> peers;
             peers.resize(thriftPeers.size());
-            std::transform(thriftPeers.begin(), thriftPeers.end(), peers.begin(),
-                           [] (const auto& h) { return HostAddr(h.get_ip(), h.get_port()); });
-            peersMap[partId] = std::move(peers);
+            if (peers.size() < static_cast<size_t>(properties.replica_factor)/2) {
+                LOG(ERROR) << "Replica part must be greater than or equal to half "
+                              "the total of parts. Space : " << spaceId << " Part : " << partId;
+                return leaderHostParts;
+            }
             ++leaderParts;
             iter->next();
         }
     }
 
-    std::unordered_set<HostAddr> activeHosts;
+    if (leaderParts < properties.partition_num) {
+        LOG(ERROR) << "Leader part lost, expected part : " << properties.partition_num
+                   << "actual : " << leaderParts;
+        return leaderHostParts;
+    }
+
     for (const auto& host : *hostLeaderMap) {
-        activeHosts.emplace(host.first);
         leaderHostParts[host.first] = std::move((*hostLeaderMap)[host.first][spaceId]);
     }
 
     return leaderHostParts;
 }
+
 }  // namespace meta
 }  // namespace nebula
 

@@ -55,12 +55,12 @@ TEST(CheckpointTest, simpleTest) {
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_codes.size());
-        auto checkpoint1 = folly::stringPrintf("%s/disk1/nebula/0/checkpoints/checkpoint_test/",
+        auto checkpoint1 = folly::stringPrintf("%s/disk1/nebula/0/checkpoints/checkpoint_test/data",
                                                dataPath.path());
         auto files = fs::FileUtils::listAllFilesInDir(checkpoint1.data());
         ASSERT_EQ(4, files.size());
         files.clear();
-        auto checkpoint2 = folly::stringPrintf("%s/disk2/nebula/0/checkpoints/checkpoint_test",
+        auto checkpoint2 = folly::stringPrintf("%s/disk2/nebula/0/checkpoints/checkpoint_test/data",
                                                dataPath.path());
         fs::FileUtils::listAllFilesInDir(checkpoint2.data());
         files = fs::FileUtils::listAllFilesInDir(checkpoint2.data());

@@ -25,9 +25,11 @@ void ListSnapshotsProcessor::process(const cpp2::ListSnapshotsReq& req) {
     while (iter->valid()) {
         auto name = MetaServiceUtils::parseSnapshotName(iter->key());
         auto status = MetaServiceUtils::parseSnapshotStatus(iter->val());
+        auto hosts = MetaServiceUtils::parseSnapshotHosts(iter->val());
         snapshots.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                std::move(name),
-                               std::move(status));
+                               std::move(status),
+                               std::move(hosts));
         iter->next();
     }
     resp_.set_snapshots(std::move(snapshots));

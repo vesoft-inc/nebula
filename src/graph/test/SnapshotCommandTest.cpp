@@ -60,13 +60,13 @@ TEST_F(SnapshotCommandTest, TestSnapshot) {
 
     {
         std::vector<std::string> checkpoints;
-        checkpoints.emplace_back(folly::stringPrintf("%s/disk1/nebula/1/checkpoints/%s",
+        checkpoints.emplace_back(folly::stringPrintf("%s/disk1/nebula/1/checkpoints/%s/data",
                                                      gEnv->getStorageRootPath().data(),
                                                      sname.data()));
-        checkpoints.emplace_back(folly::stringPrintf("%s/disk2/nebula/1/checkpoints/%s",
+        checkpoints.emplace_back(folly::stringPrintf("%s/disk2/nebula/1/checkpoints/%s/data",
                                                      gEnv->getStorageRootPath().data(),
                                                      sname.data()));
-        checkpoints.emplace_back(folly::stringPrintf("%s/disk1/nebula/0/checkpoints/%s",
+        checkpoints.emplace_back(folly::stringPrintf("%s/disk1/nebula/0/checkpoints/%s/data",
                                                      gEnv->getMetaRootPath().data(),
                                                      sname.data()));
         for (auto& cp : checkpoints) {
