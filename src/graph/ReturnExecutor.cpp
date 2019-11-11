@@ -63,7 +63,7 @@ void ReturnExecutor::execute() {
             onFinish_(Executor::ProcessControl::kNext);
             return;
         }
-        resp_->set_rows(std::move(ret).value());
+        resp_->set_rows(std::move(rows));
         // Will return if variable has values.
         onFinish_(Executor::ProcessControl::kReturn);
     }

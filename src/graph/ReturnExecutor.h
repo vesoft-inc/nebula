@@ -27,7 +27,7 @@ public:
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
-    ReturnSentence                             *sentence_;
+    ReturnSentence                             *sentence_{nullptr};
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
 };
 }  // namespace graph
