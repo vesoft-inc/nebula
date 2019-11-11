@@ -14,9 +14,6 @@
 namespace nebula {
 namespace meta {
 cpp2::ErrorCode Snapshot::createSnapshot(const std::string& name) {
-    folly::Promise<Status> promise;
-    auto future = promise.getFuture();
-
     std::vector<GraphSpaceID> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
@@ -30,14 +27,18 @@ cpp2::ErrorCode Snapshot::createSnapshot(const std::string& name) {
             return cpp2::ErrorCode::E_RPC_FAILURE;
         }
     }
+
+    auto code = kv_->createCheckpoint(kDefaultSpaceId, name);
+    if (code != nebula::kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Checkpoint create error on meta engine";
+        return cpp2::ErrorCode::E_STORE_FAILURE;
+    }
+
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
 cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
                                        const std::vector<HostAddr> hosts) {
-    folly::Promise<Status> promise;
-    auto future = promise.getFuture();
-
     // The drop checkpoint will be skip if original host has been lost.
     auto activeHosts = ActiveHostsMan::getActiveHosts(kv_);
     std::vector<HostAddr> realHosts;
@@ -83,8 +84,11 @@ bool Snapshot::getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCo
 }
 
 cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
-    folly::Promise<Status> promise;
-    auto future = promise.getFuture();
+    auto blk = (storage::cpp2::EngineSignType::BLOCK_OFF == sign) ? false : true;
+    auto code = kv_->setPartBlocking(kDefaultSpaceId, kDefaultPartId, blk);
+    if (code != kvstore::ResultCode::SUCCEEDED) {
+        return cpp2::ErrorCode::E_STORE_FAILURE;
+    }
 
     std::vector<GraphSpaceID> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;

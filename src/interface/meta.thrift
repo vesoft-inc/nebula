@@ -122,7 +122,6 @@ enum HostStatus {
 enum SnapshotStatus {
     VALID    = 0x00,
     INVALID  = 0x01,
-    CREATING = 0x03,
 } (cpp.enum_strict)
 
 struct HostItem {

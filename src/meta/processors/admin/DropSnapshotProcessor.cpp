@@ -29,13 +29,6 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
         return;
     }
 
-    // Check snapshot is creating
-    if (MetaServiceUtils::parseSnapshotStatus(val) == cpp2::SnapshotStatus::CREATING) {
-        LOG(ERROR) << "Snapshot is creating";
-        resp_.set_code(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
-        onFinished();
-        return;
-    }
     auto hosts = MetaServiceUtils::parseSnapshotHosts(val);
     auto peers = NetworkUtils::toHosts(hosts);
     if (!peers.ok()) {

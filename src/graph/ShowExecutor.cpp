@@ -603,9 +603,6 @@ void ShowExecutor::showSnapshots() {
                 case meta::cpp2::SnapshotStatus::VALID :
                     str = "VALID";
                     break;
-                case meta::cpp2::SnapshotStatus::CREATING :
-                    str = "CREATING";
-                    break;
             }
             return str;
         };
