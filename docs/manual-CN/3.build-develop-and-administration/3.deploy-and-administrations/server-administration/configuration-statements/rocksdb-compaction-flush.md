@@ -6,18 +6,18 @@ Nebula 支持对 storage 中的 RocksDB 设置是否自动 compaction，支持�
 
 ### 关闭自动 compaction
 
-在 console 输入如下命令关闭自动 compaction。
+在 console 输入如下命令**关闭**自动 compaction。
 
 ```bash
-update configs storage:rocksdb_column_family_options = { disable_auto_compactions = true }
+UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = true }
 ```
 
 ### 打开自动 Compaction
 
-在 console 输入如下命令打开自动 compaction。
+在 console 输入如下命令**打开**自动 compaction。
 
 ```bash
-update configs storage:rocksdb_column_family_options = { disable_auto_compactions = false }
+UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = false }
 ```
 
 ## 手动触发 compaction 和 flush
@@ -25,7 +25,7 @@ update configs storage:rocksdb_column_family_options = { disable_auto_compaction
 手动触发 compaction 和 flush 需要通过 HTTP 请求，命令如下。
 
 ```bash
-curl ${ws_ip}:${ws_http_port}/admin?space=${spaceName}&${op}
+curl "${ws_ip}:${ws_http_port}/admin?space=${spaceName}&${op}"
 ```
 
 - `ws_ip` 为 HTTP 服务的 IP，可以在 `storage.conf` 配置文件中找到。
@@ -35,6 +35,6 @@ curl ${ws_ip}:${ws_http_port}/admin?space=${spaceName}&${op}
 例如：
 
 ```bash
-curl http://127.0.0.1:50005/admin?space=test&op=compact
-curl http://127.0.0.1:50005/admin?space=test&op=flush
+curl "http://127.0.0.1:50005/admin?space=test&op=compact"
+curl "http://127.0.0.1:50005/admin?space=test&op=flush"
 ```

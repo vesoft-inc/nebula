@@ -6,18 +6,18 @@ Nebula supports auto and manual (through HTTP request) RocksDB compaction or flu
 
 ### Turn off auto Compaction
 
-Input the following command in console to turn off the auto compaction.
+Input the following command in console to **turn off** the auto compaction.
 
 ```bash
-update configs storage:rocksdb_column_family_options = { disable_auto_compactions = true }
+UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = true }
 ```
 
 ### Turn on auto Compaction
 
-Input the following command in console to turn on the auto compaction.
+Input the following command in console to **turn on** the auto compaction.
 
 ```bash
-update configs storage:rocksdb_column_family_options = { disable_auto_compactions = false }
+UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = false }
 ```
 
 ## Manually Trigger compaction and flush
@@ -25,7 +25,7 @@ update configs storage:rocksdb_column_family_options = { disable_auto_compaction
 Use the following command to trigger compaction and flush manually through HTTP request.
 
 ```bash
-curl ${ws_ip}:${ws_http_port}/admin?space=${spaceName}&${op}
+curl "${ws_ip}:${ws_http_port}/admin?space=${spaceName}&${op}"
 ```
 
 - `ws_ip` is the HTTP service IP, which can be found in config file `storage.conf`
@@ -35,6 +35,6 @@ curl ${ws_ip}:${ws_http_port}/admin?space=${spaceName}&${op}
 For example:
 
 ```bash
-curl http://127.0.0.1:50005/admin?space=test&op=compact
-curl http://127.0.0.1:50005/admin?space=test&op=flush
+curl "http://127.0.0.1:50005/admin?space=test&op=compact"
+curl "http://127.0.0.1:50005/admin?space=test&op=flush"
 ```
