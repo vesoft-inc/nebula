@@ -379,7 +379,8 @@ void FileBasedWal::rollbackInFile(WalFileInfoPtr info, LogID logId) {
     lastLogTerm_ = term;
     LOG(INFO) << idStr_ << "Rollback to log " << logId;
 
-    if (0 < pos && pos < FileUtils::fileSize(path)) {
+    CHECK_GT(pos, 0) << "This wal should have been deleted";
+    if (pos < FileUtils::fileSize(path)) {
         LOG(INFO) << idStr_ << "Need to truncate from offset " << pos;
         if (ftruncate(fd, pos) < 0) {
             LOG(FATAL) << "Failed to truncate file \"" << path
@@ -387,6 +388,8 @@ void FileBasedWal::rollbackInFile(WalFileInfoPtr info, LogID logId) {
                        << strerror(errno);
         }
         info->setSize(pos);
+        info->setLastId(id);
+        info->setLastTerm(term);
     }
     close(fd);
 }
@@ -635,9 +638,6 @@ bool FileBasedWal::rollbackToLog(LogID id) {
                     << walFiles_.rbegin()->second->path() << "\"";
             rollbackInFile(walFiles_.rbegin()->second, id);
         }
-
-        // Create the next WAL file
-        prepareNewFile(lastLogId_ + 1);
     }
 
     //------------------------------
