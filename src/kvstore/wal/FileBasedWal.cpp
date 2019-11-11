@@ -594,6 +594,23 @@ std::unique_ptr<LogIterator> FileBasedWal::iterator(LogID firstLogId,
     return std::make_unique<FileBasedWalIterator>(shared_from_this(), firstLogId, lastLogId);
 }
 
+bool FileBasedWal::linkCurrentWAL(const char* newPath) {
+    closeCurrFile();
+    std::lock_guard<std::mutex> g(walFilesMutex_);
+    if (walFiles_.empty()) {
+        LOG(INFO) << idStr_ << "Create link failed, there is no wal files!";
+        return false;
+    }
+    auto it = walFiles_.rbegin();
+    if (link(it->second->path(), newPath) != 0) {
+        LOG(INFO) << idStr_ << "Create link failed for " << it->second->path()
+                  << " on " << newPath << ", error:" << strerror(errno);
+        return false;
+    }
+    LOG(INFO) << idStr_ << "Create link success for " << it->second->path()
+              << " on " << newPath;
+    return true;
+}
 
 bool FileBasedWal::rollbackToLog(LogID id) {
     if (id < firstLogId_ - 1 || id > lastLogId_) {

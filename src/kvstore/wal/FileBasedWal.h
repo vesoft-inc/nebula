@@ -43,6 +43,7 @@ class FileBasedWal final : public Wal
                          , public std::enable_shared_from_this<FileBasedWal> {
     FRIEND_TEST(FileBasedWal, TTLTest);
     FRIEND_TEST(FileBasedWal, CheckLastWalTest);
+    FRIEND_TEST(FileBasedWal, LinkTest);
     friend class FileBasedWalIterator;
 public:
     // A factory method to create a new WAL
@@ -107,6 +108,9 @@ public:
     // This method IS thread-safe
     std::unique_ptr<LogIterator> iterator(LogID firstLogId,
                                           LogID lastLogId) override;
+
+    /** It is not thread-safe */
+    bool linkCurrentWAL(const char* newPath) override;
 
     // Iterates through all wal file info in reversed order
     // (from the latest to the earliest)
