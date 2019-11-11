@@ -30,10 +30,8 @@ StatusOr<BalanceID> Balancer::balance() {
             LOG(INFO) << "There is no corrupted plan need to recovery, so create a new one";
             auto status = buildBalancePlan();
             if (!status.ok()) {
-                finish();
-            }
-            if (plan_ == nullptr) {
                 LOG(ERROR) << "Create balance plan failed, status " << status.toString();
+                finish();
                 return status;
             }
         }
