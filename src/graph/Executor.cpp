@@ -25,8 +25,6 @@
 #include "graph/InsertEdgeExecutor.h"
 #include "graph/AssignmentExecutor.h"
 #include "graph/ShowExecutor.h"
-#include "graph/AddHostsExecutor.h"
-#include "graph/RemoveHostsExecutor.h"
 #include "graph/CreateSpaceExecutor.h"
 #include "graph/DescribeSpaceExecutor.h"
 #include "graph/DropSpaceExecutor.h"
@@ -99,12 +97,6 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kAssignment:
             executor = std::make_unique<AssignmentExecutor>(sentence, ectx());
-            break;
-        case Sentence::Kind::kAddHosts:
-            executor = std::make_unique<AddHostsExecutor>(sentence, ectx());
-            break;
-        case Sentence::Kind::kRemoveHosts:
-            executor = std::make_unique<RemoveHostsExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kCreateSpace:
             executor = std::make_unique<CreateSpaceExecutor>(sentence, ectx());

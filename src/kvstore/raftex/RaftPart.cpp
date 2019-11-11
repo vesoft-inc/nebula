@@ -1728,6 +1728,12 @@ AppendLogResult RaftPart::isCatchedUp(const HostAddr& peer) {
     return AppendLogResult::E_INVALID_PEER;
 }
 
+bool RaftPart::linkCurrentWAL(const char* newPath) {
+    CHECK_NOTNULL(newPath);
+    std::lock_guard<std::mutex> g(raftLock_);
+    return wal_->linkCurrentWAL(newPath);
+}
+
 }  // namespace raftex
 }  // namespace nebula
 

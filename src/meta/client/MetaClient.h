@@ -97,6 +97,10 @@ class MetaClient {
     FRIEND_TEST(ConfigManTest, MetaConfigManTest);
     FRIEND_TEST(ConfigManTest, MockConfigTest);
     FRIEND_TEST(ConfigManTest, RocksdbOptionsTest);
+    FRIEND_TEST(MetaClientTest, SimpleTest);
+    FRIEND_TEST(MetaClientTest, RetryWithExceptionTest);
+    FRIEND_TEST(MetaClientTest, RetryOnceTest);
+    FRIEND_TEST(MetaClientTest, RetryUntilLimitTest);
     FRIEND_TEST(MetaClientTest, RocksdbOptionsTest);
 
 public:
@@ -141,17 +145,11 @@ public:
     folly::Future<StatusOr<bool>>
     dropSpace(std::string name);
 
-    folly::Future<StatusOr<bool>>
-    addHosts(const std::vector<HostAddr>& hosts);
-
     folly::Future<StatusOr<std::vector<cpp2::HostItem>>>
     listHosts();
 
     folly::Future<StatusOr<std::vector<cpp2::PartItem>>>
     listParts(GraphSpaceID spaceId);
-
-    folly::Future<StatusOr<bool>>
-    removeHosts(const std::vector<HostAddr>& hosts);
 
     folly::Future<StatusOr<PartsAlloc>>
     getPartsAlloc(GraphSpaceID spaceId);
