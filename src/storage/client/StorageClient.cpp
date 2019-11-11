@@ -480,51 +480,57 @@ StorageClient::get(GraphSpaceID space,
 StatusOr<std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>>
 StorageClient::preHeatLeaders() {
     static constexpr char host_err[] = "Get hosts failed!";
-    auto hosts = client_->listHosts().thenValue([](auto&& hosts) {
-        std::vector<HostAddr> req_hosts;
+    static constexpr char space_err[] = "Get Spaces failed!";
+    DCHECK_NOTNULL(client_);
+    if (UNLIKELY(client_ == nullptr)) {
+        return decltype(preHeatLeaders())(Status::Error("NULL client_!"));
+    }
+    return client_->listHosts().thenValue([this](auto&& hosts) {
         if (UNLIKELY(!hosts.ok())) {
             LOG(WARNING) << host_err;
-            return req_hosts;
+            return folly::makeFuture(decltype(preHeatLeaders())(Status::Error(host_err)));
         }
-        for (auto& host : hosts.value()) {
-            if (host.get_status() == meta::cpp2::HostStatus::ONLINE) {
-                req_hosts.emplace_back(
-                    std::make_pair(host.get_hostAddr().get_ip(), host.get_hostAddr().get_port()));
-            } else {
-                LOG(WARNING) << "Invalid host at " << std::make_pair(
-                    host.get_hostAddr().get_ip(), host.get_hostAddr().get_port());
+        std::vector<std::result_of_t<
+            decltype(&meta::MetaClient::getSpace)(meta::MetaClient, std::string)>> fSpaces;
+        std::vector<std::string> spaces_name;
+        for (auto host : hosts.value()) {
+            for (auto leader : host.get_leader_parts()) {
+                spaces_name.emplace_back(leader.first);
+                fSpaces.emplace_back(client_->getSpace(leader.first));
             }
         }
-        return req_hosts;
+        return folly::collect(fSpaces).thenValue([hosts, spaces_name](auto&& spaces) {
+                std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> resp;
+                std::unordered_map<std::string, GraphSpaceID> space_name_id;
+                DCHECK_EQ(spaces.size(), spaces_name.size());
+                if (UNLIKELY(spaces.size() != spaces_name.size())) {
+                    return decltype(preHeatLeaders())(Status::Error(space_err));
+                }
+                space_name_id.reserve(spaces.size());
+                for (std::size_t i = 0; i < spaces.size(); ++i) {
+                    if (UNLIKELY(!spaces[i].ok())) {
+                        return decltype(preHeatLeaders())(Status::Error(space_err));
+                    }
+                    space_name_id.emplace(spaces_name[i], spaces[i].value().get_space_id());
+                }
+                for (auto& host : hosts.value()) {
+                    for (auto& parts : host.get_leader_parts()) {
+                        for (auto& p : parts.second) {
+                            resp.emplace(
+                                std::make_pair(space_name_id[parts.first], p),
+                                std::make_pair(
+                                    host.get_hostAddr().get_ip(), host.get_hostAddr().get_port()));
+                        }
+                    }
+                }
+                return decltype(preHeatLeaders())(resp);
+            }).thenError([](auto&& e) {
+                LOG(ERROR) << space_err << e.what();
+                return decltype(preHeatLeaders())(Status::Error(space_err));
+            });
     }).thenError([](auto&& e) {
         LOG(ERROR) << host_err << e.what();
-        return std::vector<HostAddr>();
-    }).get();
-    return getLeaders(hosts).via(ioThreadPool_->getEventBase()).thenValue([&hosts](auto&& leaders){
-        if (UNLIKELY(!leaders.succeeded())) {
-            constexpr char err[] = "At least one RPC call failed";
-            // Require complete successded for the holes in responses
-            LOG(WARNING) << err;
-            return decltype(preHeatLeaders())(Status::Error(err));
-        }
-        if (UNLIKELY(hosts.size() != leaders.responses().size())) {
-            constexpr char err[] = "Impossible the req/resp count not equal!";
-            LOG(ERROR) << err;
-            return decltype(preHeatLeaders())(Status::Error(err));
-        }
-        std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> r;
-        for (std::size_t i = 0; i < leaders.responses().size(); ++i) {
-            for (auto& parts : leaders.responses()[i].get_leader_parts()) {
-                for (auto& p : parts.second) {
-                    r.emplace(std::make_pair(parts.first, p), hosts[i]);
-                }
-            }
-        }
-        return decltype(preHeatLeaders())(std::move(r));
-    }).thenError([](auto&& e){
-        std::string err = "Get leaders failed!";
-        LOG(ERROR) << err << e.what();
-        return decltype(preHeatLeaders())(Status::Error(err));
+        return folly::makeFuture(decltype(preHeatLeaders())(Status::Error(host_err)));
     }).get();
 }
 
