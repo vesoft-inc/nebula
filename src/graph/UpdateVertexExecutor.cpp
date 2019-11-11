@@ -75,8 +75,7 @@ Status UpdateVertexExecutor::prepareSet() {
         storage::cpp2::UpdateItem updateItem;
         auto expRet = Expression::decode(*item->field());
         if (!expRet.ok()) {
-            status = Status::Error("Invalid vertex update item field: " + *item->field());
-            break;
+            return Status::SyntaxError("Invalid vertex update item field: " + *item->field());
         }
         auto expr = std::move(expRet).value();
         // alias_ref_expression(LABLE DOT LABLE): TagName.PropName
@@ -85,9 +84,6 @@ Status UpdateVertexExecutor::prepareSet() {
         updateItem.prop = *eexpr->prop();
         updateItem.value = Expression::encode(item->value());
         updateItems_.emplace_back(std::move(updateItem));
-    }
-    if (updateItems_.empty()) {
-        status = Status::Error("There must be some correct update items!");
     }
     return status;
 }
@@ -200,6 +196,26 @@ void UpdateVertexExecutor::execute() {
             return;
         }
         auto rpcResp = std::move(resp).value();
+        for (auto& code : rpcResp.get_result().get_failed_codes()) {
+            DCHECK(onError_);
+            switch (code.get_code()) {
+                case nebula::storage::cpp2::ErrorCode::E_INVALID_FILTER:
+                      onError_(Status::Error("Maybe invalid tag or property in WHEN clause!"));
+                      return;
+                case nebula::storage::cpp2::ErrorCode::E_INVALID_UPDATER:
+                      onError_(Status::Error("Maybe invalid tag or property in SET/YIELD clasue!"));
+                      return;
+                default:
+                      std::string errMsg =
+                            folly::stringPrintf("Maybe vertex does not exist or filter failed, "
+                                                "part: %d, error code: %d!",
+                                                code.get_part_id(),
+                                                static_cast<int32_t>(code.get_code()));
+                      LOG(ERROR) << errMsg;
+                      onError_(Status::Error(errMsg));
+                      return;
+            }
+        }
         this->finishExecution(std::move(rpcResp));
     };
     auto error = [this] (auto &&e) {
