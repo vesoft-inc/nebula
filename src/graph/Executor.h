@@ -88,7 +88,10 @@ protected:
 
     StatusOr<int64_t> toTimestamp(const VariantType &value);
 
-    nebula::cpp2::SupportedType ColumnTypeToSupportedType(ColumnType type) const;
+    StatusOr<cpp2::ColumnValue> toColumnValue(const VariantType& value,
+                                              cpp2::ColumnValue::Type type) const;
+
+    OptVariantType toVariantType(const cpp2::ColumnValue& value) const;
 
     Status checkIfGraphSpaceChosen() const {
         if (ectx()->rctx()->session()->space() == -1) {

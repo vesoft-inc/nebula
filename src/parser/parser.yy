@@ -85,6 +85,7 @@ class GraphScanner;
     nebula::EdgeKey                        *edge_key;
     nebula::EdgeKeys                       *edge_keys;
     nebula::EdgeKeyRef                     *edge_key_ref;
+    nebula::GroupClause                    *group_clause;
 }
 
 /* destructors */
@@ -104,7 +105,8 @@ class GraphScanner;
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
 %token KW_CONFIGS KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL_DURATION KW_TTL_COL
-%token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET
+%token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET KW_GROUP
+%token KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN KW_STD KW_BIT_AND KW_BIT_OR KW_BIT_XOR
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER KW_DATA
@@ -122,7 +124,7 @@ class GraphScanner;
 %token <doubleval> DOUBLE
 %token <strval> STRING VARIABLE LABEL
 
-%type <strval> name_label unreserved_keyword
+%type <strval> name_label unreserved_keyword agg_function
 %type <expr> expression logic_xor_expression logic_or_expression logic_and_expression
 %type <expr> relational_expression multiplicative_expression additive_expression arithmetic_xor_expression
 %type <expr> unary_expression primary_expression equality_expression
@@ -176,6 +178,7 @@ class GraphScanner;
 %type <edge_key_ref> edge_key_ref
 %type <to_clause> to_clause
 %type <find_path_upto_clause> find_path_upto_clause
+%type <group_clause> group_clause
 
 %type <intval> unary_integer rank
 
@@ -189,7 +192,7 @@ class GraphScanner;
 %type <acl_item_clause> acl_item_clause
 
 %type <sentence> go_sentence match_sentence use_sentence find_sentence find_path_sentence
-%type <sentence> order_by_sentence limit_sentence
+%type <sentence> order_by_sentence limit_sentence group_by_sentence
 %type <sentence> fetch_vertices_sentence fetch_edges_sentence
 %type <sentence> create_tag_sentence create_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
@@ -235,6 +238,29 @@ unreserved_keyword
      | KW_GOD                { $$ = new std::string("god"); }
      | KW_ADMIN              { $$ = new std::string("admin"); }
      | KW_GUEST              { $$ = new std::string("guest"); }
+     | KW_GROUP              { $$ = new std::string("group"); }
+     | KW_COUNT              { $$ = new std::string("count"); }
+     | KW_SUM                { $$ = new std::string("sum"); }
+     | KW_AVG                { $$ = new std::string("avg"); }
+     | KW_MAX                { $$ = new std::string("max"); }
+     | KW_MIN                { $$ = new std::string("min"); }
+     | KW_STD                { $$ = new std::string("std"); }
+     | KW_BIT_AND            { $$ = new std::string("bit_and"); }
+     | KW_BIT_OR             { $$ = new std::string("bit_or"); }
+     | KW_BIT_XOR            { $$ = new std::string("bit_xor"); }
+     ;
+
+agg_function
+     : KW_COUNT              { $$ = new std::string("COUNT"); }
+     | KW_COUNT_DISTINCT     { $$ = new std::string("COUNT_DISTINCT"); }
+     | KW_SUM                { $$ = new std::string("SUM"); }
+     | KW_AVG                { $$ = new std::string("AVG"); }
+     | KW_MAX                { $$ = new std::string("MAX"); }
+     | KW_MIN                { $$ = new std::string("MIN"); }
+     | KW_STD                { $$ = new std::string("STD"); }
+     | KW_BIT_AND            { $$ = new std::string("BIT_AND"); }
+     | KW_BIT_OR             { $$ = new std::string("BIT_OR"); }
+     | KW_BIT_XOR            { $$ = new std::string("BIT_XOR"); }
      ;
 
 primary_expression
@@ -643,9 +669,35 @@ yield_column
     : expression {
         $$ = new YieldColumn($1);
     }
+    | agg_function L_PAREN expression R_PAREN {
+        auto yield = new YieldColumn($3);
+        yield->setFunction($1);
+        $$ = yield;
+    }
     | expression KW_AS name_label {
         $$ = new YieldColumn($1, $3);
     }
+    | agg_function L_PAREN expression R_PAREN KW_AS name_label {
+        auto yield = new YieldColumn($3, $6);
+        yield->setFunction($1);
+        $$ = yield;
+    }
+    | agg_function L_PAREN MUL R_PAREN {
+        auto expr = new PrimaryExpression(std::string("*"));
+        auto yield = new YieldColumn(expr);
+        yield->setFunction($1);
+        $$ = yield;
+    }
+    | agg_function L_PAREN MUL R_PAREN KW_AS name_label {
+        auto expr = new PrimaryExpression(std::string("*"));
+        auto yield = new YieldColumn(expr, $6);
+        yield->setFunction($1);
+        $$ = yield;
+    }
+    ;
+
+group_clause
+    : yield_columns { $$ = new GroupClause($1); }
     ;
 
 yield_sentence
@@ -819,6 +871,15 @@ limit_sentence
     | KW_LIMIT INTEGER KW_OFFSET INTEGER { $$ = new LimitSentence($2, $4); }
     ;
 
+group_by_sentence
+    : KW_GROUP KW_BY group_clause yield_clause {
+        auto group = new GroupBySentence();
+        group->setGroupClause($3);
+        group->setYieldClause($4);
+        $$ = group;
+    }
+    ;
+
 use_sentence
     : KW_USE name_label { $$ = new UseSentence($2); }
     ;
@@ -843,7 +904,7 @@ create_schema_prop_list
     }
     ;
 
- create_schema_prop_item
+create_schema_prop_item
     : KW_TTL_DURATION ASSIGN unary_integer {
         // Less than or equal to 0 means infinity, so less than 0 is equivalent to 0
         if ($3 < 0) {
@@ -1033,6 +1094,7 @@ traverse_sentence
     | go_sentence { $$ = $1; }
     | match_sentence { $$ = $1; }
     | find_sentence { $$ = $1; }
+    | group_by_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }
     | find_path_sentence { $$ = $1; }
@@ -1464,7 +1526,7 @@ space_opt_list
     }
     ;
 
- space_opt_item
+space_opt_item
     : KW_PARTITION_NUM ASSIGN INTEGER {
         $$ = new SpaceOptItem(SpaceOptItem::PARTITION_NUM, $3);
     }
@@ -1704,3 +1766,4 @@ static int yylex(nebula::GraphParser::semantic_type* yylval,
                  nebula::GraphScanner& scanner) {
     return scanner.yylex(yylval, yylloc);
 }
+
