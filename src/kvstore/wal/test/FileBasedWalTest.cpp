@@ -237,7 +237,7 @@ TEST(FileBasedWal, RollbackThenReopen) {
 
     // Check the number of files
     auto files = FileUtils::listAllFilesInDir(walDir.path());
-    ASSERT_EQ(2, files.size());
+    ASSERT_EQ(1, files.size());
 
     // Now let's open it to read
     wal = FileBasedWal::getWal(walDir.path(),
@@ -329,13 +329,19 @@ TEST(FileBasedWal, BackAndForth) {
         ASSERT_EQ(100 * (count + 1), wal->lastLogId());
     }
 
-    // We don't delete the overlaping wals, there must be 10 wal files
-    ASSERT_EQ(11, FileUtils::listAllFilesInDir(walDir.path(), false, "*.wal").size());
+    ASSERT_EQ(10, FileUtils::listAllFilesInDir(walDir.path(), false, "*.wal").size());
 
     // Rollback
     for (int i = 999; i >= 0; i--) {
         ASSERT_TRUE(wal->rollbackToLog(i));
         ASSERT_EQ(i, wal->lastLogId());
+    }
+    ASSERT_EQ(0, FileUtils::listAllFilesInDir(walDir.path(), false, "*.wal").size());
+
+    for (int i = 1; i <= 10; i++) {
+        EXPECT_TRUE(
+            wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+                           folly::stringPrintf("Test string %02d", i)));
     }
     ASSERT_EQ(1, FileUtils::listAllFilesInDir(walDir.path(), false, "*.wal").size());
 }
