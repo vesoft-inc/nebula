@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "graph/GoExecutor.h"
+#include "graph/SchemaHelper.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/ResultSchemaProvider.h"
@@ -285,6 +286,11 @@ Status GoExecutor::prepareYield() {
         if (!status.ok()) {
             return status;
         }
+        for (auto *col : yields_) {
+            if (!col->getFunName().empty()) {
+                return Status::SyntaxError("Do not support in aggregated query without group by");
+            }
+        }
     }
     return Status::OK();
 }
@@ -379,6 +385,7 @@ Status GoExecutor::setupStarts() {
 
     auto result = inputs->getVIDs(*colname_);
     if (!result.ok()) {
+        LOG(ERROR) << "Get vid fail: " << *colname_;
         return std::move(result).status();
     }
     starts_ = std::move(result).value();
@@ -962,7 +969,8 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         }
                         if (column->expr()->isTypeCastingExpression()) {
                             auto exprPtr = static_cast<TypeCastingExpression *>(column->expr());
-                            colTypes.back() = ColumnTypeToSupportedType(exprPtr->getType());
+                            colTypes.back() = SchemaHelper::columnTypeToSupportedType(
+                                                    exprPtr->getType());
                         }
                         record.emplace_back(std::move(value.value()));
                     }

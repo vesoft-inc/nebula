@@ -59,6 +59,7 @@ public:
         kBalance,
         kFindPath,
         kLimit,
+        KGroupBy,
     };
 
     Kind kind() const {
