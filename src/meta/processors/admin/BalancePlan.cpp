@@ -48,6 +48,7 @@ void BalancePlan::invoke() {
             auto taskIndex = buckets_[i][j];
             tasks_[taskIndex].onFinished_ = [this, i, j]() {
                 bool finished = false;
+                bool stopped = false;
                 {
                     std::lock_guard<std::mutex> lg(lock_);
                     finishedTaskNum_++;
@@ -58,20 +59,23 @@ void BalancePlan::invoke() {
                             LOG(INFO) << "Balance " << id_ << " succeeded!";
                         }
                     }
+                    stopped = stopped_;
                 }
                 if (finished) {
                     CHECK_EQ(j, this->buckets_[i].size() - 1);
                     saveInStore(true);
                     onFinished_();
-                } else {
-                    if (j + 1 < this->buckets_[i].size()) {
-                        auto& task = this->tasks_[this->buckets_[i][j + 1]];
-                        task.invoke();
+                } else if (j + 1 < this->buckets_[i].size()) {
+                    auto& task = this->tasks_[this->buckets_[i][j + 1]];
+                    if (stopped) {
+                        task.ret_ = BalanceTask::Result::INVALID;
                     }
+                    task.invoke();
                 }
             };  // onFinished
             tasks_[taskIndex].onError_ = [this, i, j]() {
                 bool finished = false;
+                bool stopped = false;
                 {
                     std::lock_guard<std::mutex> lg(lock_);
                     finishedTaskNum_++;
@@ -85,11 +89,12 @@ void BalancePlan::invoke() {
                     CHECK_EQ(j, this->buckets_[i].size() - 1);
                     saveInStore(true);
                     onFinished_();
-                } else {
-                    if (j + 1 < this->buckets_[i].size()) {
-                        auto& task = this->tasks_[this->buckets_[i][j + 1]];
-                        task.invoke();
+                } else if (j + 1 < this->buckets_[i].size()) {
+                    auto& task = this->tasks_[this->buckets_[i][j + 1]];
+                    if (stopped) {
+                        task.ret_ = BalanceTask::Result::INVALID;
                     }
+                    task.invoke();
                 }
             };  // onError
         }  // for (auto j = 0; j < buckets_[i].size(); j++)

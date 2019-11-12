@@ -109,7 +109,7 @@ class GraphScanner;
 %token KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN KW_STD KW_BIT_AND KW_BIT_OR KW_BIT_XOR
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
 %token KW_DISTINCT KW_ALL KW_OF
-%token KW_BALANCE KW_LEADER KW_DATA
+%token KW_BALANCE KW_LEADER KW_DATA KW_STOP
 %token KW_SHORTEST KW_PATH
 
 /* symbols */
@@ -1679,6 +1679,9 @@ balance_sentence
     }
     | KW_BALANCE KW_DATA INTEGER {
         $$ = new BalanceSentence($3);
+    }
+    | KW_BALANCE KW_DATA KW_STOP {
+        $$ = new BalanceSentence(BalanceSentence::SubType::kDataStop);
     }
     ;
 
