@@ -354,11 +354,12 @@ void AdminClient::getResponse(
                             leaderIndex++;
                         }
                         if (leaderIndex == (int32_t)hosts.size()) {
-                            LOG(ERROR) << "The new leader is " << leader;
-                            for (auto& h : hosts) {
-                                LOG(ERROR) << "The peer is " << h;
-                            }
-                            p.setValue(Status::Error("Can't find leader in current peers"));
+                            // In some cases (e.g. balance task is failed in member change remove
+                            // phase, and the new host is elected as leader somehow), the peers of
+                            // this partition in meta doesn't include new host, which will make
+                            // this task failed forever.
+                            index = leaderIndex;
+                            hosts.emplace_back(leader);
                             return;
                         }
                         LOG(INFO) << "Return leader change from " << hosts[index]
