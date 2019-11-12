@@ -215,7 +215,7 @@ public:
 
     // Operations for admin
     folly::Future<StatusOr<int64_t>>
-    balance();
+    balance(bool isStop = false);
 
     folly::Future<StatusOr<std::vector<cpp2::BalanceTask>>>
     showBalance(int64_t balanceId);
