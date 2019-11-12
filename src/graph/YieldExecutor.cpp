@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "graph/YieldExecutor.h"
+#include "graph/SchemaHelper.h"
 #include "meta/SchemaProviderIf.h"
 
 namespace nebula {
@@ -29,6 +30,33 @@ Status YieldExecutor::prepare() {
     return status;
 }
 
+Status YieldExecutor::checkAggFun() {
+    bool hasAggFun = false;
+    for (auto *col : yields_) {
+        if (!col->getFunName().empty()) {
+            hasAggFun = true;
+            break;
+        }
+    }
+
+    if (!hasAggFun) {
+        return Status::OK();
+    }
+
+    for (auto *col : yields_) {
+        if ((col->expr()->isInputExpression() || col->expr()->isVariableExpression())
+                && col->getFunName().empty()) {
+            std::string error = "Input columns without aggregation "
+                                "are not supported in YIELD statement without GROUP BY, near `"
+                                + col->expr()->toString() + "'";
+            return Status::SyntaxError(std::move(error));
+        }
+        auto funPtr = funVec[col->getFunName()]();
+        aggFuns_.emplace_back(std::move(funPtr));
+    }
+    return Status::OK();
+}
+
 Status YieldExecutor::prepareYield() {
     // this preparation depends on interim result,
     // it can only be called after getting results of the previous executor,
@@ -39,6 +67,11 @@ Status YieldExecutor::prepareYield() {
     yieldClauseWrapper_ = std::make_unique<YieldClauseWrapper>(clause);
     auto *varHolder = ectx()->variableHolder();
     auto status = yieldClauseWrapper_->prepare(inputs_.get(), varHolder, yields_);
+    if (!status.ok()) {
+        return status;
+    }
+
+    status = checkAggFun();
     if (!status.ok()) {
         return status;
     }
@@ -60,7 +93,7 @@ Status YieldExecutor::prepareYield() {
         if (col->expr()->isTypeCastingExpression()) {
             // type cast
             auto exprPtr = static_cast<TypeCastingExpression*>(col->expr());
-            colTypes_.back() = ColumnTypeToSupportedType(exprPtr->getType());
+            colTypes_.back() = SchemaHelper::columnTypeToSupportedType(exprPtr->getType());
         }
     }
 
@@ -184,28 +217,74 @@ Status YieldExecutor::executeInputs() {
             }
         }
 
-        auto writer = std::make_unique<RowWriter>(outputSchema);
-        for (auto col : yields_) {
-            auto *expr = col->expr();
-            auto value = expr->eval();
-            if (!value.ok()) {
-                return value.status();
+        if (aggFuns_.empty()) {
+            auto writer = std::make_unique<RowWriter>(outputSchema);
+            for (auto col : yields_) {
+                auto *expr = col->expr();
+                auto value = expr->eval();
+                if (!value.ok()) {
+                    return value.status();
+                }
+                status = Collector::collect(value.value(), writer.get());
+                if (!status.ok()) {
+                    return status;
+                }
             }
-            status = Collector::collect(value.value(), writer.get());
-            if (!status.ok()) {
-                return status;
+            rsWriter->addRow(*writer);
+        } else {
+            auto i = 0u;
+            for (auto col : yields_) {
+                auto *expr = col->expr();
+                auto value = expr->eval();
+                if (!value.ok()) {
+                    return value.status();
+                }
+                auto cVal = toColumnValue(value.value(), static_cast<cpp2::ColumnValue::Type>(
+                                outputSchema->getFieldType(i).type));
+                if (!cVal.ok()) {
+                    return cVal.status();
+                }
+                aggFuns_[i]->apply(cVal.value());
+                i++;
             }
         }
-        rsWriter->addRow(*writer);
+
         return Status::OK();
     };
+
     status = inputs->applyTo(visitor);
     if (!status.ok()) {
         return status;
     }
 
+    if (!aggFuns_.empty()) {
+        cpp2::RowValue row;
+        auto schema = std::make_shared<SchemaWriter>();
+        std::vector<cpp2::ColumnValue> cols;
+        auto i = 0u;
+        for (auto f : aggFuns_) {
+            auto val = f->getResult();
+            schema->appendCol(outputSchema->getFieldName(i),
+                static_cast<nebula::cpp2::SupportedType>(val.getType()));
+            cols.emplace_back(std::move(val));
+            i++;
+        }
+        row.set_columns(std::move(cols));
+        rsWriter->setSchema(std::move(schema));
+        status = getAggResultWriter(std::move(row), rsWriter.get());
+        if (!status.ok()) {
+            return status;
+        }
+    }
+
     finishExecution(std::move(rsWriter));
     return Status::OK();
+}
+
+Status YieldExecutor::getAggResultWriter(cpp2::RowValue row, RowSetWriter* rsWriter) {
+    std::vector<cpp2::RowValue> rows;
+    rows.emplace_back(std::move(row));
+    return InterimResult::getResultWriter(rows, rsWriter);
 }
 
 Status YieldExecutor::getOutputSchema(const InterimResult *inputs,
@@ -266,31 +345,71 @@ Status YieldExecutor::executeConstant() {
     std::vector<VariantType> values;
     values.reserve(size);
 
-    for (auto *col : yields_) {
-        auto expr = col->expr();
-        auto v = expr->eval();
-        if (!v.ok()) {
-            return v.status();
+    if (aggFuns_.empty()) {
+        for (auto *col : yields_) {
+            auto expr = col->expr();
+            auto v = expr->eval();
+            if (!v.ok()) {
+                return v.status();
+            }
+            values.emplace_back(v.value());
         }
-        values.emplace_back(v.value());
-    }
 
-    auto outputSchema = std::make_shared<SchemaWriter>();
-    auto status = Collector::getSchema(
-            values, resultColNames_, colTypes_, outputSchema.get());
-    if (!status.ok()) {
-        return status;
-    }
-
-    RowWriter writer(outputSchema);
-    auto rsWriter = std::make_unique<RowSetWriter>(outputSchema);
-    for (auto col : values) {
-        status = Collector::collect(col, &writer);
+        auto outputSchema = std::make_shared<SchemaWriter>();
+        auto status = Collector::getSchema(
+                values, resultColNames_, colTypes_, outputSchema.get());
         if (!status.ok()) {
             return status;
         }
+
+        RowWriter writer(outputSchema);
+        auto rsWriter = std::make_unique<RowSetWriter>(outputSchema);
+        for (auto col : values) {
+            status = Collector::collect(col, &writer);
+            if (!status.ok()) {
+                return status;
+            }
+        }
+        rsWriter->addRow(writer);
+        finishExecution(std::move(rsWriter));
+    } else {
+        return AggregateConstant();
     }
-    rsWriter->addRow(writer);
+    return Status::OK();
+}
+
+Status YieldExecutor::AggregateConstant() {
+    auto i = 0u;
+    for (auto col : yields_) {
+        auto *expr = col->expr();
+        auto value = expr->eval();
+        if (!value.ok()) {
+            return value.status();
+        }
+        auto status = toColumnValue(value.value(), cpp2::ColumnValue::Type::__EMPTY__);
+        if (!status.ok()) {
+            return status.status();
+        }
+        aggFuns_[i]->apply(status.value());
+        i++;
+    }
+    cpp2::RowValue row;
+    auto schema = std::make_shared<SchemaWriter>();
+    std::vector<cpp2::ColumnValue> cols;
+    i = 0;
+    for (auto f : aggFuns_) {
+        auto val = f->getResult();
+        schema->appendCol(resultColNames_[i],
+                            static_cast<nebula::cpp2::SupportedType>(val.getType()));
+        cols.emplace_back(std::move(val));
+        i++;
+    }
+    row.set_columns(std::move(cols));
+    auto rsWriter = std::make_unique<RowSetWriter>(schema);
+    auto status = getAggResultWriter(std::move(row), rsWriter.get());
+    if (!status.ok()) {
+        return status;
+    }
     finishExecution(std::move(rsWriter));
     return Status::OK();
 }
