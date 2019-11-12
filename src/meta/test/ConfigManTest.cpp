@@ -613,7 +613,7 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
     }
     {
         // need to sleep a bit to take effect on rocksdb
-        sleep(1);
+        sleep(3);
         rocksdb::DBOptions loadedDbOpt;
         std::vector<rocksdb::ColumnFamilyDescriptor> loadedCfDescs;
         std::string rocksPath = folly::stringPrintf("%s/disk1/nebula/%d/data",
