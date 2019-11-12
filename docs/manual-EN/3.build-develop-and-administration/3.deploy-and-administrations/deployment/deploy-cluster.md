@@ -4,7 +4,7 @@ This section provides an introduction to deploy `Nebula` cluster.
 
 ## Download and install package
 
-Currently, we have offered packages for `CentOS 7.5`, `CentOS 6.5`, `Ubuntu 1604` and `Ubuntu 1804`. You can download rpm or deb packages by click the [**Assets**](https://github.com/vesoft-inc/nebula/releases).
+Currently, we have offered packages for `CentOS 7.5`, `CentOS 6.5`, `Ubuntu 1604` and `Ubuntu 1804`. You can download rpm or deb packages by clicking the [**Assets**](https://github.com/vesoft-inc/nebula/releases).
 
 ![image](https://user-images.githubusercontent.com/42762957/67747062-e0fe1e00-fa62-11e9-9640-008d2c82bae3.png)
 
@@ -26,11 +26,11 @@ In order to enable multi copy Meta services, you should set the meta addresses s
 
 Use `data_path` to set `Meta` and `Storage`'s underlying storage directory.
 
-## StartUp Nebula Cluster
+## Start Up Nebula Cluster
 
-Currently, we support `scripts/services.sh` to manage the nebula cluster.
+Currently, we use `scripts/services.sh` to manage the nebula cluster.
 
-You can `start`, `stop` and `restart` the cluster using this script.
+You can `start`, `stop` and `restart` the cluster with this script.
 
 It looks like the following command:
 

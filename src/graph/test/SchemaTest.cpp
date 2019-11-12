@@ -347,10 +347,10 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "SHOW TAGS";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<uniform_tuple_t<std::string, 1>> expected{
-            {"tag1"},
-            {"person"},
-            {"upper"},
+        std::vector<std::tuple<int32_t, std::string>> expected{
+            {3, "tag1"},
+            {4, "person"},
+            {5, "upper"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -472,10 +472,10 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "SHOW EDGES";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<uniform_tuple_t<std::string, 1>> expected{
-            {"edge1"},
-            {"buy"},
-            {"education"},
+        std::vector<std::tuple<int32_t, std::string>> expected{
+            {6, "edge1"},
+            {7, "buy"},
+            {8, "education"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -560,9 +560,7 @@ TEST_F(SchemaTest, metaCommunication) {
     // show parts of default_space
     {
         auto kvstore = gEnv->storageServer()->kvStore_.get();
-        auto spaceResult = gEnv->metaClient()->getSpaceIdByNameFromCache("default_space");
-        ASSERT_TRUE(spaceResult.ok());
-        GraphSpaceID spaceId = spaceResult.value();
+        GraphSpaceID spaceId = 1;  // default_space id is 1
         nebula::storage::TestUtils::waitUntilAllElected(kvstore, spaceId, 9);
 
         cpp2::ExecutionResponse resp;
@@ -619,9 +617,9 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "SHOW TAGS";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<uniform_tuple_t<std::string, 1>> expected{
-            {"animal"},
-            {"person"},
+        std::vector<std::tuple<int32_t, std::string>> expected{
+            {1010, "animal"},
+            {1011, "person"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -635,17 +633,17 @@ TEST_F(SchemaTest, metaCommunication) {
         query = "USE test_multi; CREATE Tag test_tag(); SHOW TAGS;";
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<uniform_tuple_t<std::string, 1>> expected1{
-            {"test_tag"},
+        std::vector<std::tuple<int32_t, std::string>> expected1{
+            {1013, "test_tag"},
         };
         ASSERT_TRUE(verifyResult(resp, expected1));
 
         query = "USE test_multi; CREATE TAG test_tag1(); USE my_space; SHOW TAGS;";
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<uniform_tuple_t<std::string, 1>> expected2{
-            {"animal"},
-            {"person"},
+        std::vector<std::tuple<int32_t, std::string>> expected2{
+            {1010, "animal"},
+            {1011, "person"},
         };
         ASSERT_TRUE(verifyResult(resp, expected2));
 
@@ -687,7 +685,17 @@ TEST_F(SchemaTest, metaCommunication) {
         client->execute(query, resp);
         ASSERT_EQ(1, (*(resp.get_rows())).size());
     }
+
     sleep(FLAGS_load_data_interval_secs + 1);
+    int retry = 60;
+    while (retry-- > 0) {
+        auto spaceResult = gEnv->metaClient()->getSpaceIdByNameFromCache("default_space");
+        if (!spaceResult.ok()) {
+            return;
+        }
+        sleep(1);
+    }
+    LOG(FATAL) << "Space still exists after sleep " << retry << " seconds";
 }
 
 

@@ -588,7 +588,7 @@ public:
     }
 
     YieldClause* yield() {
-        return yieldClause_.get();
+	return yieldClause_.get();
     }
 
     std::string toString() const override;
@@ -597,6 +597,37 @@ private:
     std::unique_ptr<YieldClause>               yieldClause_;
     std::unique_ptr<WhereClause>               whereClause_;
 };
+
+class GroupBySentence final : public Sentence {
+public:
+    GroupBySentence() {
+        kind_ = Kind::KGroupBy;
+    }
+
+    void setGroupClause(GroupClause *clause) {
+        groupClause_.reset(clause);
+    }
+
+    void setYieldClause(YieldClause *clause) {
+        yieldClause_.reset(clause);
+    }
+
+    const GroupClause* groupClause() const {
+        return groupClause_.get();
+    }
+
+    const YieldClause* yieldClause() const {
+        return yieldClause_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<GroupClause>   groupClause_;
+    std::unique_ptr<YieldClause>   yieldClause_;
+};
+
 }   // namespace nebula
 #endif  // PARSER_TRAVERSESENTENCES_H_
+
 

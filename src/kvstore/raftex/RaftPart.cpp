@@ -1380,7 +1380,8 @@ void RaftPart::processAppendLogRequest(
     lastMsgRecvDur_.reset();
 
     if (req.get_sending_snapshot() && status_ != Status::WAITING_SNAPSHOT) {
-        LOG(INFO) << idStr_ << "Begin to wait for the snapshot";
+        LOG(INFO) << idStr_ << "Begin to wait for the snapshot"
+                  << " " << req.get_committed_log_id();
         reset();
         status_ = Status::WAITING_SNAPSHOT;
         resp.set_error_code(cpp2::ErrorCode::E_WAITING_SNAPSHOT);
@@ -1712,6 +1713,7 @@ void RaftPart::reset() {
 
 AppendLogResult RaftPart::isCatchedUp(const HostAddr& peer) {
     std::lock_guard<std::mutex> lck(logsLock_);
+    LOG(INFO) << idStr_ << "Check whether I catch up";
     if (role_ != Role::LEADER) {
         LOG(INFO) << idStr_ << "I am not the leader";
         return AppendLogResult::E_NOT_A_LEADER;
@@ -1733,6 +1735,12 @@ AppendLogResult RaftPart::isCatchedUp(const HostAddr& peer) {
         }
     }
     return AppendLogResult::E_INVALID_PEER;
+}
+
+bool RaftPart::linkCurrentWAL(const char* newPath) {
+    CHECK_NOTNULL(newPath);
+    std::lock_guard<std::mutex> g(raftLock_);
+    return wal_->linkCurrentWAL(newPath);
 }
 
 }  // namespace raftex
