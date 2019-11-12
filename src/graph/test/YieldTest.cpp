@@ -51,7 +51,7 @@ TEST_F(YieldTest, basic) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> expectedColNames{
-            {"(1+1)"}, {"\"1+1\""}, {"(int)3.140000"}, {"(string)(1+1)"}, {"(string)true"}
+            {"(1+1)"}, {"1+1"}, {"(int)3.140000"}, {"(string)(1+1)"}, {"(string)true"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
         std::vector<std::tuple<int64_t, std::string, int64_t, std::string, std::string>> expected{
@@ -65,7 +65,7 @@ TEST_F(YieldTest, basic) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> expectedColNames{
-            {"\"Hello\""}, {"hash(\"Hello\")"}
+            {"Hello"}, {"hash(Hello)"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
         std::vector<std::tuple<std::string, int64_t>> expected{
@@ -84,7 +84,7 @@ TEST_F(YieldTest, hashCall) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> expectedColNames{
-            {"hash(\"Boris\")"}
+            {"hash(Boris)"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
         std::vector<std::tuple<int64_t>> expected{
@@ -498,6 +498,60 @@ TEST_F(YieldTest, error) {
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+}
+
+TEST_F(YieldTest, AggCall) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    // Syntax error
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD COUNT(1), $-.name";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD COUNT(*), 1+1";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected{
+            {1, 2}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Test input
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Carmelo Anthony"];
+        auto *fmt = "GO FROM %ld OVER like "
+                    "YIELD $$.player.age AS age, "
+                    "like.likeness AS like"
+                    "| YIELD AVG($-.age), SUM($-.like), COUNT(*), 1+1";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<double, uint64_t, uint64_t, int64_t>> expected = {
+                {34.666666666666664, 270, 3, 2},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Test var
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Carmelo Anthony"];
+        auto *fmt = "$var = GO FROM %ld OVER like "
+                    "YIELD $$.player.age AS age, "
+                    "like.likeness AS like;"
+                    "YIELD AVG($var.age), SUM($var.like), COUNT(*)";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<double, uint64_t, uint64_t>> expected = {
+                {34.666666666666664, 270, 3},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 }   // namespace graph
