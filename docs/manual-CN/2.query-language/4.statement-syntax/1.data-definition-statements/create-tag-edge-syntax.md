@@ -1,13 +1,13 @@
 # CREATE TAG / EDGE 语法
 
-```sql
+```ngql
 CREATE {TAG | EDGE} tag_name|edge_name
     (create_definition, ...)
     [tag_edge_options]
   
 create_definition:
     prop_name data_type
-    
+
 tag_edge_options:
     option [, option ...]
 
@@ -20,17 +20,13 @@ Nebula 的图结构由带有属性的 tags 和 edges 组成。`CREATE TAG` 使�
 
 `CREATE TAG/EDGE` 语法有一些特点，在如下分块中将对这些特点进行讨论：
 
-* [Tag 和 Edge Type 名称](#tag-name-and-edgetype-name)
-
-* [属性名和数据类型](#property-name-and-data-type)
-
 ## Tag 名称和 Edge Type 名称
 
 * **tag_name 和 edge_name**
 
     tags 和 edgeTypes 的名称在图中必须 **唯一**，且名称被定义后无法被修改。Tag 和 edgeType 的命名规则和 space 的命名规则一致。参见 [Schema Object Name](../../3.language-structure/schema-object-names.md)。
 
-### 属性名和数据类
+### 属性名和数据类型
 
 * **prop_name**
 
@@ -38,9 +34,9 @@ Nebula 的图结构由带有属性的 tags 和 edges 组成。`CREATE TAG` 使�
 
 * **data_type**
 
-    data_type 表示每个属性的数据类。更多关于 Nebula 支持的数据类型信息请参见 data-type 区文档。
+    data_type 表示每个属性的数据类型。更多关于 Nebula 支持的数据类型信息请参见 [data-type](../../1.data-types/data-types.md)。
 
-    > NULL 和 NOT NULL 在创建 tag 和 edge 时不可用。(相比于关系型数据库).
+    > NULL 和 NOT NULL 在创建 tag 和 edge 时不可用。(相比于关系型数据库)。
 
 ### Time-to-Live (TTL) 语法
 
@@ -52,7 +48,7 @@ Nebula 的图结构由带有属性的 tags 和 edges 组成。`CREATE TAG` 使�
 
 * TTL_COL
 
-    指定的列（或者属性）必须是 int64 或者 timestamp.
+    指定的列（或者属性）必须是 int64 或者 timestamp。
 
 * 多 TTL 定义
 
@@ -60,27 +56,27 @@ Nebula 的图结构由带有属性的 tags 和 edges 组成。`CREATE TAG` 使�
 
 ### 示例
 
-```
+```ngql
 CREATE TAG course(name string, credits int)
-CREATE TAG notag()  -- empty properties
+CREATE TAG notag()  -- 属性为空
 
 CREATE EDGE follow(start_time timestamp, likeness double)
-CREATE EDGE noedge()  -- empty properties
+CREATE EDGE noedge()  -- 属性为空
 
 CREATE TAG woman(name string, age int,
    married bool, salary double, create_time timestamp)
-   TTL_DURATION = 100, TTL_COL = create_time -- expired when now is later than create_time + 100
+   TTL_DURATION = 100, TTL_COL = create_time -- 过期时间是 100， 从当前时间开始
 
 CREATE EDGE marriage(location string, since timestamp)
-    TTL_DURATION = 0, TTL_COL = since -- negative or zero, not expire
+    TTL_DURATION = 0, TTL_COL = since -- 负值或 0 数据不会失效
 
 CREATE TAG icecream(made timestamp, temperature int)
    TTL_DURATION = 100, TTL_COL = made,
    TTL_DURATION = 10, TTL_COL = temperature
-   --  no matter which comes first: made + 100 or temperature + 10
+   --  超过任一 TTL_DURATION 数据即失效
 
 CREATE EDGE garbage (thrown timestamp, temperature int)
    TTL_DURATION = -2, TTL_COL = thrown,
    TTL_DURATION = 10, TTL_COL = thrown
-   --  legal, but not recommended. expired at thrown + 10
+   --  语法合法，但不推荐。数据将在 thrown + 10 后失效
 ```

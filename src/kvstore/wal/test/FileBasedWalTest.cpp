@@ -428,6 +428,133 @@ TEST(FileBasedWal, TTLTest) {
     }
 }
 
+TEST(FileBasedWal, CheckLastWalTest) {
+    FileBasedWalPolicy policy;
+    policy.fileSize = 1024L * 1024L;
+    TempDir walDir("/tmp/testWal.XXXXXX");
+
+    auto wal = FileBasedWal::getWal(walDir.path(),
+                                    "",
+                                    policy,
+                                    [](LogID, TermID, ClusterID, const std::string&) {
+                                        return true;
+                                    });
+    {
+        EXPECT_EQ(0, wal->lastLogId());
+
+        for (int i = 1; i <= 1000; i++) {
+            EXPECT_TRUE(
+                wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+                               folly::stringPrintf(kLongMsg, i)));
+        }
+        EXPECT_EQ(1000, wal->lastLogId());
+        wal.reset();
+    }
+    {
+        // Modify the wal file, make last wal invalid
+        std::vector<std::string> files = FileUtils::listAllFilesInDir(walDir.path(), true, "*.wal");
+        std::sort(files.begin(), files.end());
+        size_t size = FileUtils::fileSize(files.back().c_str());
+        auto fd = open(files.back().c_str(), O_WRONLY | O_APPEND);
+        ftruncate(fd, size - sizeof(int32_t));
+        close(fd);
+
+        // Now let's open it to read
+        wal = FileBasedWal::getWal(walDir.path(),
+                                   "",
+                                   policy,
+                                   [](LogID, TermID, ClusterID, const std::string&) {
+                                       return true;
+                                   });
+        EXPECT_EQ(999, wal->lastLogId());
+    }
+    {
+        // get lastId in previous wal, make last wal invalid
+        std::vector<std::string> files = FileUtils::listAllFilesInDir(walDir.path(), true, "*.wal");
+        std::sort(files.begin(), files.end());
+        auto lastWalPath = files.back();
+        auto it = wal->walFiles_.rbegin();
+        it++;
+        auto expected = it->second->lastId();
+        wal.reset();
+
+        auto fd = open(lastWalPath.c_str(), O_WRONLY | O_APPEND);
+        ftruncate(fd, sizeof(LogID) + sizeof(TermID));
+        close(fd);
+
+        // Now let's open it to read
+        wal = FileBasedWal::getWal(walDir.path(),
+                                   "",
+                                   policy,
+                                   [](LogID, TermID, ClusterID, const std::string&) {
+                                       return true;
+                                   });
+        EXPECT_EQ(expected, wal->lastLogId());
+        wal.reset();
+
+        // truncate last wal
+        fd = open(lastWalPath.c_str(), O_WRONLY | O_APPEND);
+        ftruncate(fd, 0);
+        close(fd);
+
+        // Now let's open it to read
+        wal = FileBasedWal::getWal(walDir.path(),
+                                   "",
+                                   policy,
+                                   [](LogID, TermID, ClusterID, const std::string&) {
+                                       return true;
+                                   });
+        EXPECT_EQ(expected, wal->lastLogId());
+
+        // Append more log, and reset to 1000, the last wal should be an empty file
+        for (int i = expected + 1; i <= expected + 1000; i++) {
+           EXPECT_TRUE(wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+               folly::stringPrintf(kLongMsg, i)));
+        }
+        EXPECT_EQ(expected + 1000, wal->lastLogId());
+
+        wal->rollbackToLog(1000);
+        ASSERT_EQ(1000, wal->lastLogId());
+        wal.reset();
+
+        // Now let's open it to read
+        wal = FileBasedWal::getWal(walDir.path(),
+                                   "",
+                                   policy,
+                                   [](LogID, TermID, ClusterID, const std::string&) {
+                                       return true;
+                                   });
+        EXPECT_EQ(1000, wal->lastLogId());
+    }
+}
+
+TEST(FileBasedWal, LinkTest) {
+    TempDir walDir("/tmp/testWal.XXXXXX");
+    FileBasedWalPolicy policy;
+    policy.fileSize = 1024 * 512;
+    auto wal = FileBasedWal::getWal(walDir.path(),
+                                    "",
+                                    policy,
+                                    [](LogID, TermID, ClusterID, const std::string&) {
+                                        return true;
+                                    });
+    EXPECT_EQ(0, wal->lastLogId());
+    for (int i = 1; i <= 1000; i++) {
+        EXPECT_TRUE(
+            wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+                           folly::stringPrintf(kLongMsg, i)));
+    }
+    auto snapshotFile = folly::stringPrintf("%s/snapshot", walDir.path());
+    CHECK(wal->linkCurrentWAL(snapshotFile.c_str()));
+    auto it = wal->walFiles_.rbegin();
+    EXPECT_EQ(FileUtils::fileSize(it->second->path()), FileUtils::fileSize(snapshotFile.c_str()));
+    auto num = wal->walFiles_.size();
+    EXPECT_TRUE(
+            wal->appendLog(1001 /*id*/, 1 /*term*/, 0 /*cluster*/,
+                           folly::stringPrintf(kLongMsg, 1001)));
+    EXPECT_EQ(num + 1, wal->walFiles_.size());
+}
+
 }  // namespace wal
 }  // namespace nebula
 

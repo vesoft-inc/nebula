@@ -12,7 +12,7 @@
         },
         "SHOW" : {
             "sub_keywords": [
-                "HOSTS", "TAGS", "EDGES", "SPACES", "USERS", "ROLES", "USER", "CONFIGS"
+                "HOSTS", "PARTS", "TAGS", "EDGES", "SPACES", "USERS", "ROLES", "USER", "CONFIGS"
             ]
         },
         "DESCRIBE" : {

@@ -18,7 +18,7 @@
 
 ## 示例
 
-```
+```ngql
 nebula> GO FROM 1 OVER e1 YIELD $-.id AS fid | GROUP BY $-.fid YIELD COUNT(*)
 -- 统计与节点 "1" 有 e1 关系的点的的数量
 

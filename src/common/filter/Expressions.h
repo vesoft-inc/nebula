@@ -24,11 +24,6 @@ enum class ColumnType {
 
 std::string columnTypeToString(ColumnType type);
 
-constexpr char INPUT_REF[] = "$-";
-constexpr char VAR_REF[]   = "$";
-constexpr char SRC_REF[]   = "$^";
-constexpr char DST_REF[]   = "$$";
-
 class ExpressionContext final {
 public:
     using EdgeInfo = boost::variant<std::string, EdgeType>;
@@ -448,12 +443,7 @@ public:
         kind_ = kInputProp;
     }
 
-    explicit InputPropertyExpression(std::string *prop) {
-        kind_ = kInputProp;
-        ref_.reset(new std::string(INPUT_REF));
-        alias_.reset(new std::string(""));
-        prop_.reset(prop);
-    }
+    explicit InputPropertyExpression(std::string *prop);
 
     OptVariantType eval() const override;
 
@@ -473,12 +463,7 @@ public:
         kind_ = kDestProp;
     }
 
-    DestPropertyExpression(std::string *tag, std::string *prop) {
-        kind_ = kDestProp;
-        ref_.reset(new std::string(DST_REF));
-        alias_.reset(tag);
-        prop_.reset(prop);
-    }
+    DestPropertyExpression(std::string *tag, std::string *prop);
 
     OptVariantType eval() const override;
 
@@ -498,12 +483,7 @@ public:
         kind_ = kVariableProp;
     }
 
-    VariablePropertyExpression(std::string *var, std::string *prop) {
-        kind_ = kVariableProp;
-        ref_.reset(new std::string(VAR_REF));
-        alias_.reset(var);
-        prop_.reset(prop);
-    }
+    VariablePropertyExpression(std::string *var, std::string *prop);
 
     OptVariantType eval() const override;
 
@@ -623,12 +603,7 @@ public:
         kind_ = kSourceProp;
     }
 
-    SourcePropertyExpression(std::string *tag, std::string *prop) {
-        kind_ = kSourceProp;
-        ref_.reset(new std::string(SRC_REF));
-        alias_.reset(tag);
-        prop_.reset(prop);
-    }
+    SourcePropertyExpression(std::string *tag, std::string *prop);
 
     OptVariantType eval() const override;
 

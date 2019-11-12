@@ -1,6 +1,6 @@
 # DROP TAG 语法
 
-```sql
+```ngql
 DROP TAG tag_name
 ```
 

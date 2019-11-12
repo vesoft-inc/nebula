@@ -914,25 +914,19 @@ TEST(Parser, Find) {
 TEST(Parser, AdminOperation) {
     {
         GQLParser parser;
-        std::string query = "ADD HOSTS 127.0.0.1:1000, 127.0.0.1:9000";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-    }
-    {
-        GQLParser parser;
         std::string query = "SHOW HOSTS";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "REMOVE HOSTS 127.0.0.1:1000, 127.0.0.1:9000";
+        std::string query = "SHOW SPACES";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "SHOW SPACES";
+        std::string query = "SHOW PARTS";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

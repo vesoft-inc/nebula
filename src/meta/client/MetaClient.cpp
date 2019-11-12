@@ -12,7 +12,7 @@
 #include "meta/GflagsManager.h"
 #include "base/Configuration.h"
 
-DEFINE_int32(load_data_interval_secs, 2 * 60, "Load data interval");
+DEFINE_int32(load_data_interval_secs, 1, "Load data interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
@@ -310,10 +310,10 @@ void MetaClient::getResponse(Request req,
                      toLeader, retry, retryLimit, this] () mutable {
         auto client = clientsMan_->client(host, evb);
         LOG(INFO) << "Send request to meta " << host;
-        remoteFunc(client, req)
-            .then(evb, [req = std::move(req), remoteFunc = std::move(remoteFunc),
-                        respGen = std::move(respGen), pro = std::move(pro), toLeader, retry,
-                        retryLimit, evb, this] (folly::Try<RpcResponse>&& t) mutable {
+        remoteFunc(client, req).via(evb)
+            .then([req = std::move(req), remoteFunc = std::move(remoteFunc),
+                   respGen = std::move(respGen), pro = std::move(pro), toLeader, retry,
+                   retryLimit, evb, this] (folly::Try<RpcResponse>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
                 if (toLeader) {
@@ -570,28 +570,6 @@ folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name) {
     return future;
 }
 
-
-folly::Future<StatusOr<bool>> MetaClient::addHosts(const std::vector<HostAddr>& hosts) {
-    std::vector<nebula::cpp2::HostAddr> thriftHosts;
-    thriftHosts.resize(hosts.size());
-    std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
-        nebula::cpp2::HostAddr th;
-        th.set_ip(h.first);
-        th.set_port(h.second);
-        return th;
-    });
-    cpp2::AddHostsReq req;
-    req.set_hosts(std::move(thriftHosts));
-    folly::Promise<StatusOr<bool>> promise;
-    auto future = promise.getFuture();
-    getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_addHosts(request);
-                }, [] (cpp2::ExecResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                }, std::move(promise), true);
-    return future;
-}
-
 folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts() {
     cpp2::ListHostsReq req;
     folly::Promise<StatusOr<std::vector<cpp2::HostItem>>> promise;
@@ -604,28 +582,19 @@ folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts() {
     return future;
 }
 
-
-folly::Future<StatusOr<bool>> MetaClient::removeHosts(const std::vector<HostAddr>& hosts) {
-    std::vector<nebula::cpp2::HostAddr> thriftHosts;
-    thriftHosts.resize(hosts.size());
-    std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
-        nebula::cpp2::HostAddr th;
-        th.set_ip(h.first);
-        th.set_port(h.second);
-        return th;
-    });
-    cpp2::RemoveHostsReq req;
-    req.set_hosts(std::move(thriftHosts));
-    folly::Promise<StatusOr<bool>> promise;
+folly::Future<StatusOr<std::vector<cpp2::PartItem>>>
+MetaClient::listParts(GraphSpaceID spaceId) {
+    cpp2::ListPartsReq req;
+    req.set_space_id(std::move(spaceId));
+    folly::Promise<StatusOr<std::vector<cpp2::PartItem>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_removeHosts(request);
-                }, [] (cpp2::ExecResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                }, std::move(promise), true);
+                    return client->future_listParts(request);
+                }, [] (cpp2::ListPartsResp&& resp) -> decltype(auto) {
+                    return resp.parts;
+                }, std::move(promise));
     return future;
 }
-
 
 folly::Future<StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>>
 MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
@@ -668,7 +637,8 @@ StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceTagIndexByName_.find(std::make_pair(space, name));
     if (it == spaceTagIndexByName_.end()) {
-        return Status::Error("Tag is not exist!");
+        std::string error = folly::stringPrintf("TagName `%s'  is nonexistent", name.c_str());
+        return Status::Error(std::move(error));
     }
     return it->second;
 }
@@ -682,7 +652,8 @@ StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& sp
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceEdgeIndexByName_.find(std::make_pair(space, name));
     if (it == spaceEdgeIndexByName_.end()) {
-        return Status::Error("Edge is no exist!");
+        std::string error = folly::stringPrintf("EdgeName `%s'  is nonexistent", name.c_str());
+        return Status::Error(std::move(error));
     }
     return it->second;
 }
@@ -695,7 +666,8 @@ StatusOr<std::string> MetaClient::getEdgeNameByTypeFromCache(const GraphSpaceID&
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceEdgeIndexByType_.find(std::make_pair(space, edgeType));
     if (it == spaceEdgeIndexByType_.end()) {
-        return Status::Error("Edge is no exist!");
+        std::string error = folly::stringPrintf("EdgeType `%d'  is nonexistent", edgeType);
+        return Status::Error(std::move(error));
     }
     return it->second;
 }
@@ -707,7 +679,8 @@ StatusOr<std::vector<std::string>> MetaClient::getAllEdgeFromCache(const GraphSp
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceAllEdgeMap_.find(space);
     if (it == spaceAllEdgeMap_.end()) {
-        return Status::Error("Edge is no exist!");
+        std::string error = folly::stringPrintf("SpaceId `%d'  is nonexistent", space);
+        return Status::Error(std::move(error));
     }
     return it->second;
 }

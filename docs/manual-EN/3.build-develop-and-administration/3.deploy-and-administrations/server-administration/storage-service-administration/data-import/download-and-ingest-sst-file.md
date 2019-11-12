@@ -22,7 +22,7 @@ Each directory is a partition number.
 
 SST file name format is `{TYPE}-${FIRST_KEY_IN_THIS_FILE}.sst`, where `TYPE` is data type, `FIRST_KEY_IN_THIS_FILE` is the start Key of the file. (If you want to write your own tools to generate SST files, you need to ensure that the keys in each `SST` file are ordered.)
 
-Please confirm that all servers have `Hadoop` installed and `HADOOP_HOME ` set. 
+Please confirm that all servers have `Hadoop` installed and `HADOOP_HOME` set.
 
 Run nebula console and execute the download command:
 
