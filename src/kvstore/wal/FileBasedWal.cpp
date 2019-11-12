@@ -388,9 +388,9 @@ void FileBasedWal::rollbackInFile(WalFileInfoPtr info, LogID logId) {
                        << strerror(errno);
         }
         info->setSize(pos);
-        info->setLastId(id);
-        info->setLastTerm(term);
     }
+    info->setLastId(id);
+    info->setLastTerm(term);
     close(fd);
 }
 
