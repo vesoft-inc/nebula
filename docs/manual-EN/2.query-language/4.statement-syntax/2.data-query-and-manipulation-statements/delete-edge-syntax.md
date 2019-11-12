@@ -1,6 +1,6 @@
 # Delete Edge Syntax
 
-Given an edge type, the source vertex and the dest vertex, Nebula supports `DELETE` the edge and its associated properties as well as the edge rank, syntax as the follows:
+Given an edge type, the source vertex and the dest vertex, Nebula supports `DELETE` the edge, its associated properties, the edge rank, and edge with a certain rank, the  syntax as the follows:
 
 ```ngql
 DELETE EDGE <edge_type> <vid> -> <vid> [, <vid> -> <vid> ...]
