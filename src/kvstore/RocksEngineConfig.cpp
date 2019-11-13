@@ -45,7 +45,7 @@ DEFINE_string(part_man_type,
  */
 
 // BlockBasedTable block_cache
-DEFINE_int64(rocksdb_block_cache, 4,
+DEFINE_int64(rocksdb_block_cache, 1024,
              "The default block cache size used in BlockBasedTable. The unit is MB");
 
 

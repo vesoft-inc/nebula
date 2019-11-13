@@ -1370,6 +1370,24 @@ TEST(Parser, BalanceOperation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "BALANCE DATA";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "BALANCE DATA 1234567890";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "BALANCE DATA STOP";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, CrashByFuzzer) {
@@ -1420,6 +1438,48 @@ TEST(Parser, Limit) {
     {
         GQLParser parser;
         std::string query = "GO FROM 1 OVER work | LIMIT \"1\"";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+}
+
+TEST(Parser, GroupBy) {
+    // All fun succeed
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 OVER work "
+                            "YIELD $$.company.name, $^.person.name "
+                            "| GROUP BY $$.company.name "
+                            "YIELD $$.company.name as name, "
+                            "COUNT($^.person.name ), "
+                            "COUNT_DISTINCT($^.person.name ), "
+                            "SUM($^.person.name ), "
+                            "AVG($^.person.name ), "
+                            "MAX($^.person.name ), "
+                            "MIN($^.person.name ), "
+                            "F_STD($^.person.name ), "
+                            "F_BIT_AND($^.person.name ), "
+                            "F_BIT_OR($^.person.name ), "
+                            "F_BIT_XOR($^.person.name )";
+
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // Error syntax
+    {
+        GQLParser parser;
+        std::string query = "YIELD rand32() as id, sum(1) as sum, avg(2) as avg GROUP BY id";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    // All fun error, empty group name
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 OVER work "
+                            "YIELD $$.company.name, $^.person.name "
+                            "| GROUP BY "
+                            "YIELD $$.company.name as name, "
+                            "COUNT($^.person.name )";
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());
     }

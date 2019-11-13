@@ -22,6 +22,7 @@
 #include "graph/FindPathExecutor.h"
 #include "graph/LimitExecutor.h"
 #include "graph/YieldExecutor.h"
+#include "graph/GroupByExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -69,6 +70,9 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
             break;
         case Sentence::Kind::kLimit:
             executor = std::make_unique<LimitExecutor>(sentence, ectx);
+            break;
+        case Sentence::Kind::KGroupBy:
+            executor = std::make_unique<GroupByExecutor>(sentence, ectx);
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";
