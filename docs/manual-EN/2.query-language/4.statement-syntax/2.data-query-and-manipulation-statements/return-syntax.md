@@ -12,18 +12,18 @@ The `RETURN` statement is used to return the results when  the filer conditions 
 
 ```ngql
 nebula> $A = GO FROM 200 OVER like YIELD like._dst AS dst; \
-                               -> $rA = YIELD $A.* WHERE $A.dst == 201; \
-                               -> RETURN $rA IF $rA is NOT NULL; \ /* return here since $rA is not empty */
-                               -> GO FROM $A.dst OVER like; /* will never be executed*/
+        $rA = YIELD $A.* WHERE $A.dst == 201; \
+        RETURN $rA IF $rA is NOT NULL; \ /* return here since $rA is not empty */
+        GO FROM $A.dst OVER like; /* will never be executed*/
 ==========
 | $A.dst |
 ==========
 | 201    |
 ----------
 nebula> $A = GO FROM 200 OVER like YIELD like._dst AS dst; \
-                               -> $rA = YIELD $A.* WHERE $A.dst == 300; \
-                               -> RETURN $rA IF $rA is NOT NULL; \ /* not return since $rA is empty */
-                               -> GO FROM $A.dst OVER like;
+        $rA = YIELD $A.* WHERE $A.dst == 300; \
+        RETURN $rA IF $rA is NOT NULL; \ /* not return since $rA is empty */
+        GO FROM $A.dst OVER like;
 =============
 | like._dst |
 =============

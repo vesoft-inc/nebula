@@ -66,10 +66,10 @@
     * [图遍历 (Go)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/go-syntax.md)
     * [插入边](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/insert-edge-syntax.md)
     * [插入顶点](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/insert-vertex-syntax.md)
-    * [返回满足条件的语句 (Return)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/return-syntax.md)
     * [更新点和边](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/update-vertex-edge-syntax.md)
     * [条件语句 (Where)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/where-syntax.md)
     * [返回结果语句 (Yield)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/yield-syntax.md)
+    * [返回满足条件的语句 (Return)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/return-syntax.md)
   * 辅助功能语句
     * [Describe](2.query-language/4.statement-syntax/3.utility-statements/describe-syntax.md)
     * [Use](2.query-language/4.statement-syntax/3.utility-statements/use-syntax.md)
