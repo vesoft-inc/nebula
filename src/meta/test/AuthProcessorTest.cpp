@@ -40,7 +40,7 @@ TEST(AuthProcessorTest, CreateUserTest) {
 
     code = TestUtils::createUser(kv.get(), true, "user1", "pwd",
                                  false, 0, 0, 0, 0);
-        ASSERT_TRUE(code.ok());
+    ASSERT_TRUE(code.ok());
 }
 
 
@@ -97,7 +97,8 @@ TEST(AuthProcessorTest, AlterUserTest) {
     }
     // Test GetUser
     {
-        cpp2::GetUserReq req(FRAGILE, "user1");
+        cpp2::GetUserReq req;
+        req.set_account("user1");
         auto* processor = GetUserProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -124,7 +125,9 @@ TEST(AuthProcessorTest, DropUserTest) {
     }
     // Simple drop.
     {
-        cpp2::DropUserReq req(FRAGILE, "user1", false);
+        cpp2::DropUserReq req;
+        req.set_account("user1");
+        req.set_missing_ok(false);
         auto* processor = DropUserProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -141,7 +144,9 @@ TEST(AuthProcessorTest, DropUserTest) {
      **/
     // missing_ok = false , And user does net exist.
     {
-        cpp2::DropUserReq req(FRAGILE, "user", false);
+        cpp2::DropUserReq req;
+        req.set_account("user");
+        req.set_missing_ok(false);
         auto* processor = DropUserProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -150,7 +155,9 @@ TEST(AuthProcessorTest, DropUserTest) {
     }
     // missing_ok = true , And user does net exist.
     {
-        cpp2::DropUserReq req(FRAGILE, "user", true);
+        cpp2::DropUserReq req;
+        req.set_account("user");
+        req.set_missing_ok(true);
         auto* processor = DropUserProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -170,7 +177,9 @@ TEST(AuthProcessorTest, PasswordTest) {
     }
     // verify password.
     {
-        cpp2::CheckPasswordReq req(FRAGILE, "user1", "pwd");
+        cpp2::CheckPasswordReq req;
+        req.set_account("user1");
+        req.set_encoded_pwd("pwd");
         auto* processor = CheckPasswordProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -179,7 +188,9 @@ TEST(AuthProcessorTest, PasswordTest) {
     }
     // verify password.
     {
-        cpp2::CheckPasswordReq req(FRAGILE, "user1", "pwd1");
+        cpp2::CheckPasswordReq req;
+        req.set_account("user1");
+        req.set_encoded_pwd("pwd1");
         auto* processor = CheckPasswordProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -211,7 +222,9 @@ TEST(AuthProcessorTest, PasswordTest) {
     }
     // verify password.
     {
-        cpp2::CheckPasswordReq req(FRAGILE, "user1", "password");
+        cpp2::CheckPasswordReq req;
+        req.set_account("user1");
+        req.set_encoded_pwd("password");
         auto* processor = CheckPasswordProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -231,7 +244,10 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // grant test : space does not exist
     {
         cpp2::GrantRoleReq req;
-        decltype(req.role_item) role(FRAGILE, userId, 100, cpp2::RoleType::USER);
+        decltype(req.role_item) role;
+        role.set_user_id(userId);
+        role.set_space_id(100);
+        role.set_role_type(cpp2::RoleType::USER);
         req.set_role_item(std::move(role));
         auto* processor = GrantProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -243,7 +259,10 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // revoke test : space does not exist
     {
         cpp2::RevokeRoleReq req;
-        decltype(req.role_item) role(FRAGILE, userId, 100, cpp2::RoleType::USER);
+        decltype(req.role_item) role;
+        role.set_user_id(userId);
+        role.set_space_id(100);
+        role.set_role_type(cpp2::RoleType::USER);
         req.set_role_item(std::move(role));
         auto* processor = RevokeProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -255,8 +274,12 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     GraphSpaceID spaceId;
     {
         TestUtils::createSomeHosts(kv.get());
-        cpp2::CreateSpaceReq req(FRAGILE,
-                                 cpp2::SpaceProperties(FRAGILE, "test_space", 1, 1));
+        cpp2::SpaceProperties sp;
+        sp.set_space_name("test_space");
+        sp.set_replica_factor(1);
+        sp.set_partition_num(1);
+        cpp2::CreateSpaceReq req;
+        req.set_properties(std::move(sp));
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -267,7 +290,11 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // grant test
     {
         cpp2::GrantRoleReq req;
-        decltype(req.role_item) role(FRAGILE, userId, spaceId, cpp2::RoleType::USER);
+        decltype(req.role_item) role;
+        role.set_user_id(userId);
+        role.set_space_id(spaceId);
+        role.set_role_type(cpp2::RoleType::USER);
+
         req.set_role_item(std::move(role));
         auto* processor = GrantProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -277,7 +304,8 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     }
     // List acl by space name.
     {
-        cpp2::ListRolesReq req(FRAGILE, spaceId);
+        cpp2::ListRolesReq req;
+        req.set_space_id(spaceId);
         auto* processor = ListRolesProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -289,7 +317,10 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // revoke test
     {
         cpp2::RevokeRoleReq req;
-        decltype(req.role_item) role(FRAGILE, userId, spaceId, cpp2::RoleType::USER);
+        decltype(req.role_item) role;
+        role.set_user_id(userId);
+        role.set_space_id(spaceId);
+        role.set_role_type(cpp2::RoleType::USER);
         req.set_role_item(std::move(role));
         auto* processor = RevokeProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -310,8 +341,16 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        cpp2::UserItem user;
+        user.set_account("user1");
+        user.set_max_queries_per_hour(1);
+        user.set_max_updates_per_hour(2);
+        user.set_max_connections_per_hour(3);
+        user.set_max_user_connections(4);
+        user.set_is_lock(false);
+
         decltype(resp.users) users;
-        users.emplace(userId, cpp2::UserItem(FRAGILE, "user1", false, 1, 2, 3, 4));
+        users.emplace(userId, std::move(user));
         ASSERT_EQ(users, resp.get_users());
     }
 }

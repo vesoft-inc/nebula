@@ -48,7 +48,7 @@ TEST(MetaClientTest, InterfacesTest) {
                                                localHost);
     client->waitForMetadReady();
     {
-        // Test addHost, listHosts interface.
+        // Add hosts automatically, then testing listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
         TestUtils::registerHB(sc->kvStore_.get(), hosts);
         auto ret = client->listHosts().get();
@@ -282,14 +282,6 @@ TEST(MetaClientTest, InterfacesTest) {
         ASSERT_TRUE(ret1.ok()) << ret1.status();
         ASSERT_EQ(0, ret1.value().size());
     }
-    {
-        std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
-        auto ret = client->removeHosts(hosts).get();
-        ASSERT_TRUE(ret.ok());
-        auto ret1 = client->listHosts().get();
-        ASSERT_TRUE(ret1.ok());
-        ASSERT_EQ(0, ret1.value().size());
-    }
 
     client.reset();
 }
@@ -319,12 +311,21 @@ TEST(MetaClientTest, TagTest) {
 
     {
         std::vector<nebula::cpp2::ColumnDef> columns;
-        columns.emplace_back(FRAGILE, "column_i",
-                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr));
-        columns.emplace_back(FRAGILE, "column_d",
-                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr));
-        columns.emplace_back(FRAGILE, "column_s",
-                             ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr));
+        ValueType vt;
+        vt.set_type(SupportedType::INT);
+        columns.emplace_back();
+        columns.back().set_name("column_i");
+        columns.back().set_type(vt);
+
+        vt.set_type(SupportedType::DOUBLE);
+        columns.emplace_back();
+        columns.back().set_name("column_d");
+        columns.back().set_type(vt);
+
+        vt.set_type(SupportedType::STRING);
+        columns.emplace_back();
+        columns.back().set_name("column_s");
+        columns.back().set_type(vt);
         nebula::cpp2::Schema schema;
         schema.set_columns(std::move(columns));
         auto result = client->createTagSchema(spaceId, "test_tag", std::move(schema)).get();
@@ -431,7 +432,7 @@ TEST(MetaClientTest, DiffTest) {
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {
-        // Test addHost, listHosts interface.
+        // Add hosts automatically, then testing listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}};
         TestUtils::registerHB(sc->kvStore_.get(), hosts);
         auto ret = client->listHosts().get();
@@ -489,7 +490,7 @@ TEST(MetaClientTest, HeartbeatTest) {
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {
-        // Test addHost, listHosts interface.
+        // Add hosts automatically, then testing listHosts interface.
         std::vector<HostAddr> hosts = {localHost};
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
@@ -503,14 +504,15 @@ TEST(MetaClientTest, HeartbeatTest) {
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(sc->kvStore_.get()).size());
 }
 
+
 class TestMetaService : public cpp2::MetaServiceSvIf {
 public:
-    folly::Future<cpp2::ExecResp>
-    future_addHosts(const cpp2::AddHostsReq& req) override {
+    folly::Future<cpp2::HBResp>
+    future_heartBeat(const cpp2::HBReq& req) override {
         UNUSED(req);
-        folly::Promise<cpp2::ExecResp> pro;
+        folly::Promise<cpp2::HBResp> pro;
         auto f = pro.getFuture();
-        cpp2::ExecResp resp;
+        cpp2::HBResp resp;
         resp.set_code(cpp2::ErrorCode::SUCCEEDED);
         pro.setValue(std::move(resp));
         return f;
@@ -529,12 +531,12 @@ public:
         addr_.set_port(addr.second);
     }
 
-    folly::Future<cpp2::ExecResp>
-    future_addHosts(const cpp2::AddHostsReq& req) override {
+    folly::Future<cpp2::HBResp>
+    future_heartBeat(const cpp2::HBReq& req) override {
         UNUSED(req);
-        folly::Promise<cpp2::ExecResp> pro;
+        folly::Promise<cpp2::HBResp> pro;
         auto f = pro.getFuture();
-        cpp2::ExecResp resp;
+        cpp2::HBResp resp;
         if (addr_ == leader_) {
             resp.set_code(cpp2::ErrorCode::SUCCEEDED);
         } else {
@@ -565,9 +567,9 @@ TEST(MetaClientTest, SimpleTest) {
                                                std::vector<HostAddr>{HostAddr(localIp, sc->port_)},
                                                localHost);
     {
-        LOG(INFO) << "Test add hosts...";
+        LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
-        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+        client->heartbeat().thenValue([&baton] (auto&& status) {
             ASSERT_TRUE(status.ok());
             baton.post();
         });
@@ -587,16 +589,15 @@ TEST(MetaClientTest, RetryWithExceptionTest) {
                                                localHost);
     // Retry with exception, then failed
     {
-        LOG(INFO) << "Test add hosts...";
+        LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
-        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+        client->heartbeat().thenValue([&baton] (auto&& status) {
             ASSERT_TRUE(!status.ok());
             baton.post();
         });
         baton.wait();
     }
 }
-
 
 TEST(MetaClientTest, RetryOnceTest) {
     IPv4 localIp;
@@ -627,9 +628,9 @@ TEST(MetaClientTest, RetryOnceTest) {
                                                localHost);
     // First get leader changed and then succeeded
     {
-        LOG(INFO) << "Test add hosts...";
+        LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
-        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+        client->heartbeat().thenValue([&baton] (auto&& status) {
             ASSERT_TRUE(status.ok());
             baton.post();
         });
@@ -665,9 +666,9 @@ TEST(MetaClientTest, RetryUntilLimitTest) {
                                                localHost);
     // always get response of leader changed, then failed
     {
-        LOG(INFO) << "Test add hosts...";
+        LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
-        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+        client->heartbeat().thenValue([&baton] (auto&& status) {
             ASSERT_TRUE(!status.ok());
             baton.post();
         });
@@ -737,7 +738,6 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
     }
 }
 
-
 }  // namespace meta
 }  // namespace nebula
 
@@ -748,5 +748,3 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
-

@@ -1,6 +1,6 @@
 # Drop Edge Syntax
 
-```
+```ngql
 DROP EDGE edge_type_name
 ```
 

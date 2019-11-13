@@ -1,6 +1,6 @@
 # DROP EDGE 语法
 
-```
+```ngql
 DROP EDGE edge_type_name
 ```
 

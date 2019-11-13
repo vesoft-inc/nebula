@@ -18,7 +18,7 @@ FETCH PROP ON <tag_name> <vertex_id_list> [YIELD [DISTINCT] <return_list>]
 
 ### 示例
 
-```SQL
+```ngql
 -- 如未指定 YIELD 字段，则返回节点 1 的所有属性
 nebula> FETCH PROP ON player 1
 -- 返回节点 1 的姓名与年龄属性
@@ -49,7 +49,7 @@ FETCH PROP ON <edge_type> <vid> -> <vid> [, <vid> -> <vid> ...] [YIELD [DISTINCT
 
 ### 获取边属性示例
 
-```SQL
+```ngql
 -- 本语句未指定 YIELD，因此获取从节点 100 到节点 200 边 e1 的所有属性
 nebula> FETCH PROP ON e1 100 -> 200
 -- 仅返回属性 p1

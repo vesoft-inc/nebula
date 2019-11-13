@@ -1,6 +1,6 @@
 # SHOW 语法
 
-```sql
+```ngql
 SHOW {SPACES | TAGS | EDGES | HOSTS}
 SHOW CONFIG [graph|meta|storage]
 ```
@@ -15,7 +15,7 @@ SHOW CONFIG [graph|meta|storage]
 
 ## 示例
 
-```SQL
+```ngql
 nebula> SHOW SPACES;
 ========
 | Name |

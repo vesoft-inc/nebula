@@ -19,13 +19,13 @@ TEST(ActiveHostsManTest, NormalTest) {
     fs::TempDir rootPath("/tmp/ActiveHostsManTest.XXXXXX");
     FLAGS_expired_threshold_sec = 2;
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    auto now = time::WallClock::fastNowInSec();
+    auto now = time::WallClock::fastNowInMilliSec();
     ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(0, 0), HostInfo(now));
     ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(0, 1), HostInfo(now));
     ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(0, 2), HostInfo(now));
     ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
 
-    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(0, 0), HostInfo(now + 2));
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(0, 0), HostInfo(now + 2000));
     ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
     {
         const auto& prefix = MetaServiceUtils::hostPrefix();
@@ -38,7 +38,7 @@ TEST(ActiveHostsManTest, NormalTest) {
             HostInfo info = HostInfo::decode(iter->val());
             ASSERT_EQ(HostAddr(0, i), HostAddr(host.ip, host.port));
             if (i == 0) {
-                ASSERT_EQ(HostInfo(now + 2), info);
+                ASSERT_EQ(HostInfo(now + 2000), info);
             } else {
                 ASSERT_EQ(HostInfo(now), info);
             }

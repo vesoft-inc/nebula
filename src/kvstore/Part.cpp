@@ -78,7 +78,7 @@ void Part::asyncPut(folly::StringPiece key, folly::StringPiece value, KVCallback
     std::string log = encodeMultiValues(OP_PUT, key, value);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
+        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
             callback(toResultCode(res));
         });
 }
@@ -88,7 +88,7 @@ void Part::asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb) {
     std::string log = encodeMultiValues(OP_MULTI_PUT, keyValues);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
+        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
             callback(toResultCode(res));
         });
 }
@@ -98,7 +98,7 @@ void Part::asyncRemove(folly::StringPiece key, KVCallback cb) {
     std::string log = encodeSingleValue(OP_REMOVE, key);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
+        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
             callback(toResultCode(res));
         });
 }
@@ -108,7 +108,7 @@ void Part::asyncMultiRemove(const std::vector<std::string>& keys, KVCallback cb)
     std::string log = encodeMultiValues(OP_MULTI_REMOVE, keys);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
+        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
             callback(toResultCode(res));
         });
 }
@@ -118,7 +118,7 @@ void Part::asyncRemovePrefix(folly::StringPiece prefix, KVCallback cb) {
     std::string log = encodeSingleValue(OP_REMOVE_PREFIX, prefix);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
+        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
             callback(toResultCode(res));
         });
 }
@@ -130,20 +130,21 @@ void Part::asyncRemoveRange(folly::StringPiece start,
     std::string log = encodeMultiValues(OP_REMOVE_RANGE, start, end);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
+        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
             callback(toResultCode(res));
         });
 }
 
 void Part::sync(KVCallback cb) {
     sendCommandAsync("")
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
+        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
         callback(toResultCode(res));
     });
 }
 
 void Part::asyncAtomicOp(raftex::AtomicOp op, KVCallback cb) {
-    atomicOpAsync(std::move(op)).then([callback = std::move(cb)] (AppendLogResult res) mutable {
+    atomicOpAsync(std::move(op)).thenValue(
+            [callback = std::move(cb)] (AppendLogResult res) mutable {
         callback(toResultCode(res));
     });
 }
@@ -151,7 +152,9 @@ void Part::asyncAtomicOp(raftex::AtomicOp op, KVCallback cb) {
 void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
     std::string log = encodeHost(OP_ADD_LEARNER, learner);
     sendCommandAsync(std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
+        .thenValue([callback = std::move(cb), learner, this] (AppendLogResult res) mutable {
+        LOG(INFO) << idStr_ << "add learner " << learner
+                  << ", result: " << static_cast<int32_t>(toResultCode(res));
         callback(toResultCode(res));
     });
 }
@@ -159,7 +162,9 @@ void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
 void Part::asyncTransferLeader(const HostAddr& target, KVCallback cb) {
     std::string log = encodeHost(OP_TRANS_LEADER, target);
     sendCommandAsync(std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
+        .thenValue([callback = std::move(cb), target, this] (AppendLogResult res) mutable {
+        LOG(INFO) << idStr_ << "transfer leader to " << target
+                  << ", result: " << static_cast<int32_t>(toResultCode(res));
         callback(toResultCode(res));
     });
 }
@@ -167,7 +172,9 @@ void Part::asyncTransferLeader(const HostAddr& target, KVCallback cb) {
 void Part::asyncAddPeer(const HostAddr& peer, KVCallback cb) {
     std::string log = encodeHost(OP_ADD_PEER, peer);
     sendCommandAsync(std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
+        .thenValue([callback = std::move(cb), peer, this] (AppendLogResult res) mutable {
+        LOG(INFO) << idStr_ << "add peer " << peer
+                  << ", result: " << static_cast<int32_t>(toResultCode(res));
         callback(toResultCode(res));
     });
 }
@@ -175,7 +182,9 @@ void Part::asyncAddPeer(const HostAddr& peer, KVCallback cb) {
 void Part::asyncRemovePeer(const HostAddr& peer, KVCallback cb) {
     std::string log = encodeHost(OP_REMOVE_PEER, peer);
     sendCommandAsync(std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
+        .thenValue([callback = std::move(cb), peer, this] (AppendLogResult res) mutable {
+        LOG(INFO) << idStr_ << "remove peer " << peer
+                  << ", result: " << static_cast<int32_t>(toResultCode(res));
         callback(toResultCode(res));
     });
 }
@@ -359,6 +368,7 @@ bool Part::preProcessLog(LogID logId,
                 auto learner = decodeHost(OP_ADD_LEARNER, log);
                 auto ts = getTimestamp(log);
                 if (ts > startTimeMs_) {
+                    LOG(INFO) << idStr_ << "preprocess add learner " << learner;
                     addLearner(learner);
                 } else {
                     LOG(INFO) << idStr_ << "Skip stale add learner " << learner;
@@ -369,6 +379,7 @@ bool Part::preProcessLog(LogID logId,
                 auto newLeader = decodeHost(OP_TRANS_LEADER, log);
                 auto ts = getTimestamp(log);
                 if (ts > startTimeMs_) {
+                    LOG(INFO) << idStr_ << "preprocess trans leader " << newLeader;
                     preProcessTransLeader(newLeader);
                 } else {
                     LOG(INFO) << idStr_ << "Skip stale transfer leader " << newLeader;
@@ -379,6 +390,7 @@ bool Part::preProcessLog(LogID logId,
                 auto peer = decodeHost(OP_ADD_PEER, log);
                 auto ts = getTimestamp(log);
                 if (ts > startTimeMs_) {
+                    LOG(INFO) << idStr_ << "preprocess add peer " << peer;
                     addPeer(peer);
                 } else {
                     LOG(INFO) << idStr_ << "Skip stale add peer " << peer;
@@ -389,6 +401,7 @@ bool Part::preProcessLog(LogID logId,
                 auto peer = decodeHost(OP_REMOVE_PEER, log);
                 auto ts = getTimestamp(log);
                 if (ts > startTimeMs_) {
+                    LOG(INFO) << idStr_ << "preprocess remove peer " << peer;
                     preProcessRemovePeer(peer);
                 } else {
                     LOG(INFO) << idStr_ << "Skip stale remove peer " << peer;
