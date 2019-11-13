@@ -6,7 +6,6 @@
 
 #include "base/Base.h"
 #include "kvstore/NebulaStore.h"
-#include <folly/Likely.h>
 #include <algorithm>
 #include <cstdint>
 #include "network/NetworkUtils.h"

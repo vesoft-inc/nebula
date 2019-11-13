@@ -1404,7 +1404,7 @@ void RaftPart::processAppendLogRequest(
         // TODO(heng): if we have 3 node, one is leader, one is wait snapshot and return success,
         // the other is follower, but leader replica log to follow failed,
         // How to deal with leader crash? At this time, no leader will be elected.
-        size_t numLogs = req.get_log_str_list().size();
+        int32_t numLogs = static_cast<int32_t>(req.get_log_str_list().size());
         LogID firstId = req.get_last_log_id_sent() + 1;
 
         VLOG(2) << idStr_ << "Writing log [" << firstId
@@ -1466,7 +1466,7 @@ void RaftPart::processAppendLogRequest(
     }
 
     // Append new logs
-    size_t numLogs = req.get_log_str_list().size();
+    int32_t numLogs = static_cast<int32_t>(req.get_log_str_list().size());
     LogID firstId = req.get_last_log_id_sent() + 1;
     VLOG(2) << idStr_ << "Writing log [" << firstId
             << ", " << firstId + numLogs - 1 << "] to WAL";

@@ -9,7 +9,6 @@
 
 #include "base/Base.h"
 #include "rocksdb/slice.h"
-#include <folly/Function.h>
 
 namespace nebula {
 namespace kvstore {

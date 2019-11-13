@@ -260,7 +260,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 edgeKeys = *(edgeKeyResp.get_edge_keys());
 
                 // Check edgeKeys
-                CHECK_EQ(1, edgeKeys.size());
+                CHECK_EQ(1u, edgeKeys.size());
                 auto& edge = edgeKeys[0];
                 CHECK_EQ(srcId, edge.get_src());
                 CHECK_EQ(101, edge.get_edge_type());
@@ -279,8 +279,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 ASSERT_TRUE(cresp.ok());
                 auto edgeKeyResp =  std::move(cresp).value();
                 auto& result = edgeKeyResp.get_result();
-                ASSERT_EQ(0, result.get_failed_codes().size());
-                ASSERT_EQ(0, edgeKeyResp.get_edge_keys()->size());
+                ASSERT_EQ(0u, result.get_failed_codes().size());
+                ASSERT_EQ(0u, edgeKeyResp.get_edge_keys()->size());
             }
             // Delete a vertex
             {
@@ -289,7 +289,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 ASSERT_TRUE(resp.ok());
                 auto  execResp = std::move(resp).value();
                 auto& result = execResp.get_result();
-                ASSERT_EQ(0, result.get_failed_codes().size());
+                ASSERT_EQ(0u, result.get_failed_codes().size());
 
                 // Check that this vertex has been successfully deleted
                 std::vector<VertexID> vIds{srcId};
@@ -300,11 +300,11 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 auto cresp = std::move(cf).get();
                 ASSERT_TRUE(cresp.succeeded());
                 auto& results = cresp.responses();
-                ASSERT_EQ(1, results.size());
-                EXPECT_EQ(0, results[0].result.failed_codes.size());
+                ASSERT_EQ(1u, results.size());
+                EXPECT_EQ(0u, results[0].result.failed_codes.size());
                 // TODO bug: the results[0].vertices.size should be equal 0
-                EXPECT_EQ(1, results[0].vertices.size());
-                EXPECT_EQ(0, results[0].vertices[0].tag_data.size());
+                EXPECT_EQ(1u, results[0].vertices.size());
+                EXPECT_EQ(0u, results[0].vertices[0].tag_data.size());
             }
         }
     }
@@ -410,8 +410,8 @@ TEST(StorageClientTest, LeaderChangeTest) {
         baton.post();
     });
     baton.wait();
-    ASSERT_EQ(1, tsc.leaders_.size());
-    ASSERT_EQ(HostAddr(localIp, 10010), tsc.leaders_[std::make_pair(1, 1)]);
+    ASSERT_EQ(1u, tsc.leaders_.size());
+    ASSERT_EQ(HostAddr(localIp, 10010), tsc.leaders_[std::make_pair(0, 1)]);
 }
 
 }  // namespace storage

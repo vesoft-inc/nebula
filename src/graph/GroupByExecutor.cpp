@@ -403,7 +403,7 @@ StatusOr<std::unique_ptr<InterimResult>> GroupByExecutor::setupInterimResult() {
     if (rsWriter != nullptr) {
         result->setInterim(std::move(rsWriter));
     }
-    return result;
+    return std::move(result);
 }
 
 

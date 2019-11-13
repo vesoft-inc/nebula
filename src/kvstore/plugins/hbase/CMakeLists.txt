@@ -10,6 +10,7 @@ nebula_add_library(
     HBaseStore.cpp
     HBaseClient.cpp
 )
+target_compile_options(hbasestore_obj PRIVATE -Wno-error=suggest-override)
 
 nebula_add_subdirectory(test)
 

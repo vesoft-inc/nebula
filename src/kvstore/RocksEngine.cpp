@@ -6,7 +6,6 @@
 
 #include "base/Base.h"
 #include "kvstore/RocksEngine.h"
-#include <folly/String.h>
 #include "fs/FileUtils.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/RocksEngineConfig.h"

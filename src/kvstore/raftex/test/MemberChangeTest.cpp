@@ -36,14 +36,14 @@ TEST(MemberChangeTest, AddRemovePeerTest) {
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
 
-    CHECK_EQ(2, leader->hosts_.size());
+    CHECK_EQ(2u, leader->hosts_.size());
 
     {
         auto f = leader->sendCommandAsync(test::encodeAddPeer(allHosts[3]));
         f.wait();
 
         for (auto& c : copies) {
-            CHECK_EQ(3, c->hosts_.size());
+            CHECK_EQ(3u, c->hosts_.size());
         }
     }
     std::vector<std::string> msgs;
@@ -61,7 +61,7 @@ TEST(MemberChangeTest, AddRemovePeerTest) {
         f.wait();
 
         for (auto& c : copies) {
-            CHECK_EQ(3, c->hosts_.size());
+            CHECK_EQ(3u, c->hosts_.size());
         }
     }
     {
@@ -70,7 +70,7 @@ TEST(MemberChangeTest, AddRemovePeerTest) {
         f.wait();
 
         for (size_t i = 0; i < copies.size() - 1; i++) {
-            CHECK_EQ(2, copies[i]->hosts_.size());
+            CHECK_EQ(2u, copies[i]->hosts_.size());
         }
 //        CHECK(copies[3]->isStopped());
     }
@@ -92,7 +92,7 @@ TEST(MemberChangeTest, RemoveLeaderTest) {
     // Check all hosts agree on the same leader
     auto leaderIndex = checkLeadership(copies, leader);
 
-    CHECK_EQ(3, leader->hosts_.size());
+    CHECK_EQ(3u, leader->hosts_.size());
 
     {
         LOG(INFO) << "Send remove peer request, remove " << allHosts[leaderIndex];
@@ -104,7 +104,7 @@ TEST(MemberChangeTest, RemoveLeaderTest) {
 //        CHECK(copies[leaderIndex]->isStopped());
         for (size_t i = 0; i < copies.size(); i++) {
             if (static_cast<int>(i) != leaderIndex) {
-                CHECK_EQ(2, copies[i]->hosts_.size());
+                CHECK_EQ(2u, copies[i]->hosts_.size());
             }
         }
     }

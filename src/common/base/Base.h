@@ -62,6 +62,8 @@
 #include <folly/dynamic.h>
 #include <folly/json.h>
 #include <folly/RWSpinLock.h>
+#include <folly/Likely.h>
+#include <folly/Function.h>
 
 #include "base/Logging.h"
 #include "thread/NamedThread.h"

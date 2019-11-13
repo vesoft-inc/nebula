@@ -136,14 +136,14 @@ void StatsManager::addValue(int32_t index, VT value) {
         // Stats
         --index;
         folly::RWSpinLock::ReadHolder rh(sm.statsLock_);
-        DCHECK_LT(index, sm.stats_.size());
+        DCHECK_LT(static_cast<uint32_t>(index), sm.stats_.size());
         std::lock_guard<std::mutex> g(*(sm.stats_[index].first));
         sm.stats_[index].second->addValue(seconds(time::WallClock::fastNowInSec()), value);
     } else {
         // Histogram
         index = - (index + 1);
         folly::RWSpinLock::ReadHolder rh(sm.histogramsLock_);
-        DCHECK_LT(index, sm.histograms_.size());
+        DCHECK_LT(static_cast<uint32_t>(index), sm.histograms_.size());
         std::lock_guard<std::mutex> g(*(sm.histograms_[index].first));
         sm.histograms_[index].second->addValue(seconds(time::WallClock::fastNowInSec()), value);
     }
@@ -277,14 +277,14 @@ StatusOr<StatsManager::VT> StatsManager::readStats(int32_t index,
     if (index > 0) {
         // stats
         --index;
-        DCHECK_LT(index, sm.stats_.size());
+        DCHECK_LT(static_cast<uint32_t>(index), sm.stats_.size());
         std::lock_guard<std::mutex> g(*(sm.stats_[index].first));
         sm.stats_[index].second->update(seconds(time::WallClock::fastNowInSec()));
         return readValue(*(sm.stats_[index].second), range, method);
     } else {
         // histograms_
         index = - (index + 1);
-        DCHECK_LT(index, sm.histograms_.size());
+        DCHECK_LT(static_cast<uint32_t>(index), sm.histograms_.size());
         std::lock_guard<std::mutex> g(*(sm.histograms_[index].first));
         sm.histograms_[index].second->update(seconds(time::WallClock::fastNowInSec()));
         return readValue(*(sm.histograms_[index].second), range, method);

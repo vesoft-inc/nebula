@@ -161,7 +161,7 @@ public:
     template<typename T>
     static typename std::enable_if<std::is_integral<T>::value, T>::type
     readInt(const char* data, int32_t len) {
-        CHECK_GE(len, sizeof(T));
+        CHECK_GE(len, static_cast<int32_t>(sizeof(T)));
         return *reinterpret_cast<const T*>(data);
     }
 
@@ -194,14 +194,14 @@ private:
     NebulaKeyUtils() = delete;
 
 private:
-    static constexpr int32_t kVertexLen = sizeof(PartitionID) + sizeof(VertexID)
-                                        + sizeof(TagID) + sizeof(TagVersion);
+    static constexpr size_t kVertexLen = sizeof(PartitionID) + sizeof(VertexID)
+                                         + sizeof(TagID) + sizeof(TagVersion);
 
-    static constexpr int32_t kEdgeLen = sizeof(PartitionID) + sizeof(VertexID)
-                                      + sizeof(EdgeType) + sizeof(VertexID)
-                                      + sizeof(EdgeRanking) + sizeof(EdgeVersion);
+    static constexpr size_t kEdgeLen = sizeof(PartitionID) + sizeof(VertexID)
+                                       + sizeof(EdgeType) + sizeof(VertexID)
+                                       + sizeof(EdgeRanking) + sizeof(EdgeVersion);
 
-    static constexpr int32_t kSystemLen = sizeof(PartitionID) + sizeof(NebulaSystemKeyType);
+    static constexpr size_t kSystemLen = sizeof(PartitionID) + sizeof(NebulaSystemKeyType);
 };
 
 }  // namespace nebula

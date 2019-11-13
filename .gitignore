@@ -8,6 +8,7 @@ _build
 _build.log
 _install
 install_manifest.txt
+.third-party
 
 # ccls
 .ccls

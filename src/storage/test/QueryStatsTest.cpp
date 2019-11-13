@@ -86,10 +86,10 @@ void buildRequest(cpp2::GetNeighborsRequest& req) {
 
 
 void checkResponse(const cpp2::QueryStatsResponse& resp) {
-    EXPECT_EQ(0, resp.result.failed_codes.size());
+    EXPECT_EQ(0u, resp.result.failed_codes.size());
 
-    EXPECT_EQ(7, resp.schema.columns.size());
-    CHECK_GT(resp.data.size(), 0);
+    EXPECT_EQ(7u, resp.schema.columns.size());
+    CHECK_GT(resp.data.size(), 0u);
     auto provider = std::make_shared<ResultSchemaProvider>(resp.schema);
     LOG(INFO) << "Check edge props...";
 
