@@ -93,6 +93,7 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
     * Configuration Statements
       * [Configs Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/configs-syntax.md)
       * [RocksDB Compaction & Flush](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/rocksdb-compaction-flush.md)
+      * [Logs](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/log.md)
     * Storage Service Administration
       * Data Import
         * [Download And Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
