@@ -173,6 +173,18 @@ nebula> SHOW HOSTS
 
 Now partitions and data are evenly distributed on the machines.
 
+## Balance stop
+
+`BALANCE STOP` command stops the running balance data plans. If there is no running balance plan, an error is thrown. If there is any running plans, the related plan ID is returned.
+
+> Since each balance plan includes several balance tasks, balance stop doesn't stop the started tasks , but rather cancel the subsequent tasks. The started tasks will continue until the executions completed.
+
+Input `BALANCE DATA $id` after `BALANCE STOP` to check the status of the stopped balance plan.
+
+After all the plans being executed are completed, rerun the `BALANCE DATA` command to restart balance.
+
+If there are failed tasks in the stopped plan, the plan will continue. Otherwise, if all the tasks are succeed, a new balance plan is created and executed.
+
 ## Balance leader
 
 Command `BALANCE DATA` only migrates partitions. But the leader distribution remains unbalanced, which means old hosts are overloaded, while the new ones are not fully used. Redistribute RAFT leader using the command `BALANCE LEADER`.
