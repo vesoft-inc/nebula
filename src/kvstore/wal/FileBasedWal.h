@@ -25,7 +25,7 @@ struct FileBasedWalPolicy {
     int32_t ttl = 86400;
     // The maximum size of each log message file (in byte). When the existing
     // log file reaches this size, a new file will be created
-    size_t fileSize = 128 * 1024L * 1024L;
+    size_t fileSize = 16 * 1024L * 1024L;
 
     // Size of each buffer (in byte)
     size_t bufferSize = 8 * 1024L * 1024L;
@@ -43,6 +43,7 @@ class FileBasedWal final : public Wal
                          , public std::enable_shared_from_this<FileBasedWal> {
     FRIEND_TEST(FileBasedWal, TTLTest);
     FRIEND_TEST(FileBasedWal, CheckLastWalTest);
+    FRIEND_TEST(FileBasedWal, LinkTest);
     friend class FileBasedWalIterator;
 public:
     // A factory method to create a new WAL
@@ -107,6 +108,9 @@ public:
     // This method IS thread-safe
     std::unique_ptr<LogIterator> iterator(LogID firstLogId,
                                           LogID lastLogId) override;
+
+    /** It is not thread-safe */
+    bool linkCurrentWAL(const char* newPath) override;
 
     // Iterates through all wal file info in reversed order
     // (from the latest to the earliest)

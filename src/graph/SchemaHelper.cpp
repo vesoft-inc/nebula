@@ -12,17 +12,17 @@ namespace nebula {
 namespace graph {
 
 // static
-nebula::cpp2::SupportedType SchemaHelper::columnTypeToSupportedType(ColumnType type) {
+nebula::cpp2::SupportedType SchemaHelper::columnTypeToSupportedType(nebula::ColumnType type) {
     switch (type) {
-        case ColumnType::BOOL:
+        case nebula::ColumnType::BOOL:
             return nebula::cpp2::SupportedType::BOOL;
-        case ColumnType::INT:
+        case nebula::ColumnType::INT:
             return nebula::cpp2::SupportedType::INT;
-        case ColumnType::DOUBLE:
+        case nebula::ColumnType::DOUBLE:
             return nebula::cpp2::SupportedType::DOUBLE;
-        case ColumnType::STRING:
+        case nebula::ColumnType::STRING:
             return nebula::cpp2::SupportedType::STRING;
-        case ColumnType::TIMESTAMP:
+        case nebula::ColumnType::TIMESTAMP:
             return nebula::cpp2::SupportedType::TIMESTAMP;
         default:
             return nebula::cpp2::SupportedType::UNKNOWN;

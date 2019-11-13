@@ -1,7 +1,7 @@
 # DROP TAG 语法
 
 ```ngql
-DROP TAG tag_name
+DROP TAG <tag_name>
 ```
 
 仅支持有 DROP 权限的用户进行此操作。

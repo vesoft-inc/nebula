@@ -237,7 +237,7 @@ TEST(FileBasedWal, RollbackThenReopen) {
 
     // Check the number of files
     auto files = FileUtils::listAllFilesInDir(walDir.path());
-    ASSERT_EQ(2, files.size());
+    ASSERT_EQ(1, files.size());
 
     // Now let's open it to read
     wal = FileBasedWal::getWal(walDir.path(),
@@ -329,13 +329,19 @@ TEST(FileBasedWal, BackAndForth) {
         ASSERT_EQ(100 * (count + 1), wal->lastLogId());
     }
 
-    // We don't delete the overlaping wals, there must be 10 wal files
-    ASSERT_EQ(11, FileUtils::listAllFilesInDir(walDir.path(), false, "*.wal").size());
+    ASSERT_EQ(10, FileUtils::listAllFilesInDir(walDir.path(), false, "*.wal").size());
 
     // Rollback
     for (int i = 999; i >= 0; i--) {
         ASSERT_TRUE(wal->rollbackToLog(i));
         ASSERT_EQ(i, wal->lastLogId());
+    }
+    ASSERT_EQ(0, FileUtils::listAllFilesInDir(walDir.path(), false, "*.wal").size());
+
+    for (int i = 1; i <= 10; i++) {
+        EXPECT_TRUE(
+            wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+                           folly::stringPrintf("Test string %02d", i)));
     }
     ASSERT_EQ(1, FileUtils::listAllFilesInDir(walDir.path(), false, "*.wal").size());
 }
@@ -528,6 +534,32 @@ TEST(FileBasedWal, CheckLastWalTest) {
     }
 }
 
+TEST(FileBasedWal, LinkTest) {
+    TempDir walDir("/tmp/testWal.XXXXXX");
+    FileBasedWalPolicy policy;
+    policy.fileSize = 1024 * 512;
+    auto wal = FileBasedWal::getWal(walDir.path(),
+                                    "",
+                                    policy,
+                                    [](LogID, TermID, ClusterID, const std::string&) {
+                                        return true;
+                                    });
+    EXPECT_EQ(0, wal->lastLogId());
+    for (int i = 1; i <= 1000; i++) {
+        EXPECT_TRUE(
+            wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+                           folly::stringPrintf(kLongMsg, i)));
+    }
+    auto snapshotFile = folly::stringPrintf("%s/snapshot", walDir.path());
+    CHECK(wal->linkCurrentWAL(snapshotFile.c_str()));
+    auto it = wal->walFiles_.rbegin();
+    EXPECT_EQ(FileUtils::fileSize(it->second->path()), FileUtils::fileSize(snapshotFile.c_str()));
+    auto num = wal->walFiles_.size();
+    EXPECT_TRUE(
+            wal->appendLog(1001 /*id*/, 1 /*term*/, 0 /*cluster*/,
+                           folly::stringPrintf(kLongMsg, 1001)));
+    EXPECT_EQ(num + 1, wal->walFiles_.size());
+}
 
 }  // namespace wal
 }  // namespace nebula

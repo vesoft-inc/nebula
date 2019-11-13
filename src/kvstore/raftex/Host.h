@@ -132,6 +132,9 @@ private:
 
     LogID committedLogId_{0};
     std::atomic_bool sendingSnapshot_{false};
+
+    // CommittedLogId of follower
+    LogID followerCommittedLogId_{0};
 };
 
 }  // namespace raftex

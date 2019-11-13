@@ -123,10 +123,22 @@ LEADER                      ([Ll][Ee][Aa][Dd][Ee][Rr])
 UUID                        ([Uu][Uu][Ii][Dd])
 OF                          ([Oo][Ff])
 DATA                        ([Dd][Aa][Tt][Aa])
+STOP                        ([Ss][Tt][Oo][Pp])
 SHORTEST                    ([Ss][Hh][Oo][Rr][Tt][Ee][Ss][Tt])
 PATH                        ([Pp][Aa][Tt][Hh])
 LIMIT                       ([Ll][Ii][Mm][Ii][Tt])
 OFFSET                      ([Oo][Ff][Ff][Ss][Ee][Tt])
+GROUP                       ([Gg][Rr][Oo][Uu][Pp])
+COUNT                       ([Cc][Oo][Uu][Nn][Tt])
+COUNT_DISTINCT              ([Cc][Oo][Uu][Nn][Tt][_][Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
+SUM                         ([Ss][Uu][Mm])
+AVG                         ([Aa][Vv][Gg])
+MIN                         ([Mm][Ii][Nn])
+MAX                         ([Mm][Aa][Xx])
+STD                         ([Ss][Tt][Dd])
+BIT_AND                     ([Bb][It][Tt][_][Aa][Nn][Dd])
+BIT_OR                      ([Bb][It][Tt][_][Oo][Rr])
+BIT_XOR                     ([Bb][It][Tt][_][Xx][Oo][Rr])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -239,10 +251,22 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {LEADER}                    { return TokenType::KW_LEADER; }
 {UUID}                      { return TokenType::KW_UUID; }
 {DATA}                      { return TokenType::KW_DATA; }
+{STOP}                      { return TokenType::KW_STOP; }
 {SHORTEST}                  { return TokenType::KW_SHORTEST; }
 {PATH}                      { return TokenType::KW_PATH; }
 {LIMIT}                     { return TokenType::KW_LIMIT; }
 {OFFSET}                    { return TokenType::KW_OFFSET; }
+{GROUP}                     { return TokenType::KW_GROUP; }
+{COUNT}                     { return TokenType::KW_COUNT; }
+{COUNT_DISTINCT}            { return TokenType::KW_COUNT_DISTINCT; }
+{SUM}                       { return TokenType::KW_SUM; }
+{AVG}                       { return TokenType::KW_AVG; }
+{MAX}                       { return TokenType::KW_MAX; }
+{MIN}                       { return TokenType::KW_MIN; }
+{STD}                       { return TokenType::KW_STD; }
+{BIT_AND}                   { return TokenType::KW_BIT_AND; }
+{BIT_OR}                    { return TokenType::KW_BIT_OR; }
+{BIT_XOR}                   { return TokenType::KW_BIT_XOR; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

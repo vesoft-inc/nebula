@@ -197,6 +197,10 @@ public:
         return kind_ == kTypeCasting;
     }
 
+    virtual bool isFunCallExpression() const {
+        return kind_ == kFunctionCall;
+    }
+
     /**
      * To encode an expression into a byte buffer.
      *
