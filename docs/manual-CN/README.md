@@ -60,6 +60,7 @@
     * [Drop Edge](2.query-language/4.statement-syntax/1.data-definition-statements/drop-edge-syntax.md)
     * [Drop Space](2.query-language/4.statement-syntax/1.data-definition-statements/drop-space-syntax.md)
   * 数据查询与操作语句 (DQL 和 DML)
+    * [删除边](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-edge-syntax.md)
     * [删除顶点](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-vertex-syntax.md)
     * [获取点和边属性 (Fetch)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/fetch-syntax.md)
     * [图遍历 (Go)](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/go-syntax.md)
@@ -91,6 +92,7 @@
       * [Drop User](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/drop-user-syntax.md)
     * 服务器配置
       * [服务器配置](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/configs-syntax.md)
+      * [RocksDB Compaction & Flush](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/rocksdb-compaction-flush.md)
     * 存储服务相关运维
       * 离线数据加载
         * [加载 .sst 文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)

@@ -560,9 +560,7 @@ TEST_F(SchemaTest, metaCommunication) {
     // show parts of default_space
     {
         auto kvstore = gEnv->storageServer()->kvStore_.get();
-        auto spaceResult = gEnv->metaClient()->getSpaceIdByNameFromCache("default_space");
-        ASSERT_TRUE(spaceResult.ok());
-        GraphSpaceID spaceId = spaceResult.value();
+        GraphSpaceID spaceId = 1;  // default_space id is 1
         nebula::storage::TestUtils::waitUntilAllElected(kvstore, spaceId, 9);
 
         cpp2::ExecutionResponse resp;
@@ -687,7 +685,17 @@ TEST_F(SchemaTest, metaCommunication) {
         client->execute(query, resp);
         ASSERT_EQ(1, (*(resp.get_rows())).size());
     }
+
     sleep(FLAGS_load_data_interval_secs + 1);
+    int retry = 60;
+    while (retry-- > 0) {
+        auto spaceResult = gEnv->metaClient()->getSpaceIdByNameFromCache("default_space");
+        if (!spaceResult.ok()) {
+            return;
+        }
+        sleep(1);
+    }
+    LOG(FATAL) << "Space still exists after sleep " << retry << " seconds";
 }
 
 
