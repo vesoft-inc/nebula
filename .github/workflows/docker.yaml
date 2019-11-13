@@ -3,14 +3,11 @@ name: docker
 on:
   schedule:
     - cron: '0 18 * * *'
-  release:
-    types:
-      - published
 
 jobs:
   docker:
     name: build docker image
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         service:
@@ -28,19 +25,9 @@ jobs:
         with:
           fetch-depth: 1
       - name: build nightly image
-        if: github.event_name == 'schedule'
         env:
           IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/nebula-${{ matrix.service }}:nightly
         run: |
           docker build -t ${IMAGE_NAME} -f docker/Dockerfile.${{ matrix.service }} .
           docker push ${IMAGE_NAME}
-        shell: bash
-      - name: build release image
-        if: github.event_name == 'release'
-        env:
-          IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/nebula-${{ matrix.service }}
-        run: |
-          TAG=$(git describe --exact-match --abbrev=0 --tags)
-          docker build -t ${IMAGE_NAME}:${TAG} -f docker/Dockerfile.${{ matrix.service }} .
-          docker push ${IMAGE_NAME}:${TAG}
         shell: bash

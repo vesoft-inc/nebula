@@ -32,8 +32,8 @@ done
 
 # version is null, get from tag name
 [[ -z $version ]] && version=`git describe --exact-match --abbrev=0 --tags | sed 's/^v//'`
-# version is null, get from short commit sha
-[[ -z $version ]] && version=`git describe --always`
+# version is null, use UTC date as version
+[[ -z $version ]] && version=$(date -u +%Y.%m.%d)-nightly
 
 if [[ -z $version ]]; then
     echo "version is null, exit"
