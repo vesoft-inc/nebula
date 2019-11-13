@@ -1388,6 +1388,12 @@ TEST(Parser, BalanceOperation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "BALANCE DATA REMOVE 192.168.0.1:50000,192.168.0.1:50001";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, CrashByFuzzer) {
