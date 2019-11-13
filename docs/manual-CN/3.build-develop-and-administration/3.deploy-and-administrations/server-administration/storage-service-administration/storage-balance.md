@@ -166,11 +166,11 @@ Got 8 rows (Time spent: 5074/6488 us)
 
 ## Balance stop
 
-`BALANCE STOP` 命令用于停止已经开始执行的 balance data 计划。如果没有正在运行的 balance 计划，则会返回错误信息。如果有正在运行的 balance 计划，则会返回计划对应的 ID。
+`BALANCE DATA STOP` 命令用于停止已经开始执行的 balance data 计划。如果没有正在运行的 balance 计划，则会返回错误信息。如果有正在运行的 balance 计划，则会返回计划对应的 ID。
 
-> 由于每个 balance 计划对应若干个 balance task，`BALANCE STOP` 不会停止已经开始执行的 balance task，只会取消后续的 task，已经开始的 task 将继续执行直至完成。
+> 由于每个 balance 计划对应若干个 balance task，`BALANCE  DATA STOP` 不会停止已经开始执行的 balance task，只会取消后续的 task，已经开始的 task 将继续执行直至完成。
 
-用户可以在 `BALANCE STOP` 之后输入 `BALANCE DATA $id` 来查看已经停止的 balance 计划状态。
+用户可以在 `BALANCE DATA STOP` 之后输入 `BALANCE DATA $id` 来查看已经停止的 balance 计划状态。
 
 所有已经开始执行的 task 完成后，可以再次执行 `BALANCE DATA`，重新开始 balance。
 

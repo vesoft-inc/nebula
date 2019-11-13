@@ -175,11 +175,11 @@ Now partitions and data are evenly distributed on the machines.
 
 ## Balance stop
 
-`BALANCE STOP` command stops the running balance data plan. If there is no running balance plan, an error is thrown. If there is a running plan, the related plan ID is returned.
+`BALANCE DATA STOP` command stops the running balance data plan. If there is no running balance plan, an error is thrown. If there is a running plan, the related plan ID is returned.
 
-> Since each balance plan includes several balance tasks, `BALANCE STOP` doesn't stop the started tasks , but rather cancel the subsequent tasks. The started tasks will continue until the executions are completed.
+> Since each balance plan includes several balance tasks, `BALANCE DATA STOP` doesn't stop the started tasks , but rather cancel the subsequent tasks. The started tasks will continue until the executions are completed.
 
-Input `BALANCE DATA $id` after `BALANCE STOP` to check the status of the stopped balance plan.
+Input `BALANCE DATA $id` after `BALANCE DATA STOP` to check the status of the stopped balance plan.
 
 After all the tasks being executed are completed, rerun the `BALANCE DATA` command to restart balance.
 
