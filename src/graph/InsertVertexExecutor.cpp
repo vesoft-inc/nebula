@@ -18,6 +18,8 @@ InsertVertexExecutor::InsertVertexExecutor(Sentence *sentence,
 
 
 Status InsertVertexExecutor::prepare() {
+    expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setStorageClient(ectx()->getStorageClient());
     return Status::OK();
 }
 
@@ -45,19 +47,21 @@ Status InsertVertexExecutor::check() {
         auto *tagName = item->tagName();
         auto tagStatus = ectx()->schemaManager()->toTagID(spaceId_, *tagName);
         if (!tagStatus.ok()) {
+            LOG(ERROR) << "No schema found for " << *tagName;
             return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
         auto tagId = tagStatus.value();
         auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
         if (schema == nullptr) {
+            LOG(ERROR) << "No schema found for " << *tagName;
             return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
         auto props = item->properties();
         // Now default value is unsupported, props should equal to schema's fields
         if (schema->getNumFields() != props.size()) {
-            LOG(ERROR) << "props number " << props.size()
+            LOG(ERROR) << "Props number " << props.size()
                         << ", schema field number " << schema->getNumFields();
             return Status::Error("Wrong number of props");
         }
@@ -69,18 +73,23 @@ Status InsertVertexExecutor::check() {
         // Check field name
         auto checkStatus = checkFieldName(schema, props);
         if (!checkStatus.ok()) {
+            LOG(ERROR) << checkStatus;
             return checkStatus;
         }
     }
     return Status::OK();
 }
 
-
 StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertices() {
+    expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->setSpace(spaceId_);
+
     std::vector<storage::cpp2::Vertex> vertices(rows_.size());
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto rid = row->id();
+        rid->setContext(expCtx_.get());
+
         auto status = rid->prepare();
         if (!status.ok()) {
             return status;
@@ -182,9 +191,9 @@ void InsertVertexExecutor::execute() {
         onError_(std::move(result).status());
         return;
     }
-    auto future = ectx()->storage()->addVertices(spaceId_,
-                                                 std::move(result).value(),
-                                                 overwritable_);
+    auto future = ectx()->getStorageClient()->addVertices(spaceId_,
+                                                          std::move(result).value(),
+                                                          overwritable_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {

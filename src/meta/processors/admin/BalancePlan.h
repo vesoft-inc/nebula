@@ -20,6 +20,7 @@ class BalancePlan {
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
     FRIEND_TEST(BalanceTest, DispatchTasksTest);
+    FRIEND_TEST(BalanceTest, StopBalanceDataTest);
 
 public:
     enum class Status : uint8_t {
@@ -39,6 +40,14 @@ public:
         , kv_(kv)
         , client_(client) {}
 
+    BalancePlan(const BalancePlan& plan)
+        : id_(plan.id_)
+        , kv_(plan.kv_)
+        , client_(plan.client_)
+        , tasks_(plan.tasks_)
+        , finishedTaskNum_(plan.finishedTaskNum_)
+        , status_(plan.status_) {}
+
     void addTask(BalanceTask task) {
         tasks_.emplace_back(std::move(task));
     }
@@ -53,14 +62,27 @@ public:
      * */
     void rollback() {}
 
+    Status status() {
+        return status_;
+    }
+
     bool saveInStore(bool onlyPlan = false);
 
     BalanceID id() const {
         return id_;
     }
 
+    const std::vector<BalanceTask>& tasks() const {
+        return tasks_;
+    }
+
+    void stop() {
+        std::lock_guard<std::mutex> lg(lock_);
+        stopped_ = true;
+    }
+
 private:
-    bool recovery();
+    bool recovery(bool resume = true);
 
     std::string planKey() const;
 
@@ -83,6 +105,7 @@ private:
     size_t finishedTaskNum_ = 0;
     std::function<void()> onFinished_;
     Status status_ = Status::NOT_START;
+    bool stopped_ = false;
 
     // List of task index in tasks_;
     using Bucket = std::vector<int32_t>;

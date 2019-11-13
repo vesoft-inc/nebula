@@ -32,6 +32,7 @@ private:
 private:
     using TagSchema = std::shared_ptr<const meta::SchemaProviderIf>;
     InsertVertexSentence                       *sentence_{nullptr};
+    std::unique_ptr<ExpressionContext>          expCtx_;
     bool                                        overwritable_{true};
     std::vector<VertexRowItem*>                 rows_;
     std::vector<TagID>                          tagIds_;

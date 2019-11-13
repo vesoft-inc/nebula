@@ -126,64 +126,76 @@ void CliManager::batch(const std::string& filename) {
 
 
 void CliManager::loop() {
-    // TODO(dutor) Detect if `stdin' is being attached to a TTY
-    std::string cmd;
     loadHistory();
+
     while (true) {
+        std::string cmd;
         std::string line;
-        if (!readLine(line, !cmd.empty())) {
+        auto quit = !this->readLine(line, false/*linebreak*/);
+        // EOF
+        if (quit) {
             break;
         }
+        // Empty line
         if (line.empty()) {
-            cmd.clear();
             continue;
         }
-
-        if (line.back() == '\\') {
+        // Line break
+        while (!quit && !line.empty() && line.back() == '\\') {
             line.resize(line.size() - 1);
-            if (cmd.empty()) {
-                cmd = line;
-            } else if (cmd.back() == ' ') {
-                cmd += line;
-            } else {
-                cmd = cmd + " " + line;
-            }
+            cmd += line;
+            quit = !this->readLine(line, true/*linebreak*/);
             continue;
         }
-
+        // EOF
+        if (quit) {
+            break;
+        }
+        // Execute the whole command
         cmd += line;
-
         if (!cmdProcessor_->process(cmd)) {
             break;
         }
-
-        cmd.clear();
     }
+
     saveHistory();
+    fprintf(stderr, "Bye!\n");
 }
 
 
 bool CliManager::readLine(std::string &line, bool linebreak) {
-    auto ok = true;
-    char prompt[256];
-    if (isInteractive_) {
-        static auto color = 0u;
-        ::snprintf(prompt, sizeof(prompt),
+    // Setup the prompt
+    std::string prompt;
+    static auto color = 0u;
+    do {
+        if (!isInteractive_) {
+            break;
+        }
+        auto purePrompt = folly::stringPrintf("(%s@%s) [%s]> ",
+                                              username_.c_str(), addr_.c_str(),
+                                              cmdProcessor_->getSpaceName().c_str());
+        if (linebreak) {
+            purePrompt.assign(purePrompt.size() - 3, ' ');
+            purePrompt += "-> ";
+        } else {
+            color++;
+        }
+
+        prompt = folly::stringPrintf(
                    "\001"              // RL_PROMPT_START_IGNORE
                    "\033[1;%um"        // color codes start
                    "\002"              // RL_PROMPT_END_IGNORE
-                   "(%s@%s) [%s]> "    // prompt "(user@host) [spaceName]"
+                   "%s"                // prompt "(user@host) [spaceName]"
                    "\001"              // RL_PROMPT_START_IGNORE
                    "\033[0m"           // restore color code
                    "\002",             // RL_PROMPT_END_IGNORE
-                   color++ % 6 + 31, username_.c_str(),
-                   addr_.c_str(), cmdProcessor_->getSpaceName().c_str());
-    } else {
-        prompt[0] = '\0';   // prompt
-    }
+                   color % 6 + 31,
+                   purePrompt.c_str());
+    } while (false);
 
-    auto *input = ::readline(linebreak ? "": prompt);
-
+    // Read one line
+    auto *input = ::readline(prompt.c_str());
+    auto ok = true;
     do {
         // EOF
         if (input == nullptr) {

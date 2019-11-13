@@ -18,6 +18,8 @@ InsertEdgeExecutor::InsertEdgeExecutor(Sentence *sentence,
 
 
 Status InsertEdgeExecutor::prepare() {
+    expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setStorageClient(ectx()->getStorageClient());
     return Status::OK();
 }
 
@@ -41,6 +43,8 @@ Status InsertEdgeExecutor::check() {
         auto props = sentence_->properties();
         rows_ = sentence_->rows();
 
+        expCtx_->setStorageClient(ectx()->getStorageClient());
+
         schema_ = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType_);
         if (schema_ == nullptr) {
             status = Status::Error("No schema found for `%s'", sentence_->edge()->c_str());
@@ -63,16 +67,28 @@ Status InsertEdgeExecutor::check() {
         }
     } while (false);
 
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return status;
+    }
+
     return status;
 }
 
 
 StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
+    expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setStorageClient(ectx()->getStorageClient());
+
+    auto space = ectx()->rctx()->session()->space();
+    expCtx_->setSpace(space);
+
     std::vector<storage::cpp2::Edge> edges(rows_.size() * 2);   // inbound and outbound
     auto index = 0;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto sid = row->srcid();
+        sid->setContext(expCtx_.get());
         auto status = sid->prepare();
         if (!status.ok()) {
             return status;
@@ -89,6 +105,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         auto src = Expression::asInt(v);
 
         auto did = row->dstid();
+        did->setContext(expCtx_.get());
         status = did->prepare();
         if (!status.ok()) {
             return status;
@@ -195,7 +212,9 @@ void InsertEdgeExecutor::execute() {
         return;
     }
     auto space = ectx()->rctx()->session()->space();
-    auto future = ectx()->storage()->addEdges(space, std::move(result).value(), overwritable_);
+    auto future = ectx()->getStorageClient()->addEdges(space,
+                                                       std::move(result).value(),
+                                                       overwritable_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {

@@ -132,10 +132,28 @@ StatusOr<SchemaVer> AdHocSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID spac
     }
 }
 
+StatusOr<GraphSpaceID> AdHocSchemaManager::toGraphSpaceID(folly::StringPiece spaceName) {
+    try {
+        return folly::to<GraphSpaceID>(spaceName);
+    } catch (const std::exception& e) {
+        return Status::SpaceNotFound();
+    }
+}
+
 StatusOr<TagID> AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPiece tagName) {
     UNUSED(space);
     try {
         return folly::to<TagID>(tagName);
+    } catch (const std::exception& e) {
+        LOG(FATAL) << e.what();
+    }
+    return -1;
+}
+
+StatusOr<EdgeType> AdHocSchemaManager::toEdgeType(GraphSpaceID space, folly::StringPiece typeName) {
+    UNUSED(space);
+    try {
+        return folly::to<EdgeType>(typeName);
     } catch (const std::exception& e) {
         LOG(FATAL) << e.what();
     }

@@ -73,6 +73,22 @@ Status Configuration::parseFromString(const std::string &content) {
     return Status::OK();
 }
 
+std::string Configuration::dumpToString() const {
+    std::string json;
+    if (content_ != nullptr) {
+        json = folly::toJson(*content_);
+    }
+    return json;
+}
+
+std::string Configuration::dumpToPrettyString() const {
+    std::string json;
+    if (content_ != nullptr) {
+        json = folly::toPrettyJson(*content_);
+    }
+    return json;
+}
+
 
 Status Configuration::fetchAsInt(const char *key, int64_t &val) const {
     DCHECK(content_ != nullptr);
@@ -141,6 +157,17 @@ Status Configuration::fetchAsSubConf(const char *key, Configuration &subconf) co
     }
     subconf.content_ = std::make_unique<folly::dynamic>(iter->second);
     return Status::OK();
+}
+
+
+Status Configuration::updateStringField(const char* key, const std::string& val) {
+    DCHECK(content_ != nullptr);
+    auto iter = content_->find(key);
+    if (iter == content_->items().end() || iter->second.isString()) {
+        (*content_)[key] = val;
+        return Status::OK();
+    }
+    return Status::Error("Item \"%s\" not found or it is not an string", key);
 }
 
 

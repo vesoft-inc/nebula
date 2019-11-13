@@ -18,7 +18,7 @@ void QueryEdgeKeysProcessor::process(const cpp2::EdgeKeyRequest& req) {
     CHECK_NOTNULL(kvstore_);
 
     std::vector<cpp2::EdgeKey> edges;
-    auto prefix = NebulaKeyUtils::prefix(partId, vId);
+    auto prefix = NebulaKeyUtils::edgePrefix(partId, vId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -35,8 +35,11 @@ void QueryEdgeKeysProcessor::process(const cpp2::EdgeKeyRequest& req) {
             auto dst = NebulaKeyUtils::getDstId(key);
             auto edgeType = NebulaKeyUtils::getEdgeType(key);
             auto rank = NebulaKeyUtils::getRank(key);
-            auto edge = cpp2::EdgeKey(apache::thrift::FragileConstructor::FRAGILE,
-                                      src, edgeType, rank, dst);
+            cpp2::EdgeKey edge;
+            edge.set_src(src);
+            edge.set_edge_type(edgeType);
+            edge.set_ranking(rank);
+            edge.set_dst(dst);
             edges.emplace_back(std::move(edge));
         }
         iter->next();

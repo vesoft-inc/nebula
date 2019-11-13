@@ -166,27 +166,32 @@ public:
 
     bool isLeader(GraphSpaceID spaceId, PartitionID partId);
 
-private:
     /**
      * Implement four interfaces in Handler.
      * */
     void addSpace(GraphSpaceID spaceId) override;
 
-    void addPart(GraphSpaceID spaceId, PartitionID partId) override;
+    void addPart(GraphSpaceID spaceId, PartitionID partId, bool asLearner) override;
 
     void removeSpace(GraphSpaceID spaceId) override;
 
     void removePart(GraphSpaceID spaceId, PartitionID partId) override;
 
+    ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
+
+private:
+    void updateSpaceOption(GraphSpaceID spaceId,
+                           const std::unordered_map<std::string, std::string>& options,
+                           bool isDbOption) override;
+
     std::unique_ptr<KVEngine> newEngine(GraphSpaceID spaceId, const std::string& path);
 
     std::shared_ptr<Part> newPart(GraphSpaceID spaceId,
                                   PartitionID partId,
-                                  KVEngine* engine);
+                                  KVEngine* engine,
+                                  bool asLearner);
 
     ErrorOr<ResultCode, KVEngine*> engine(GraphSpaceID spaceId, PartitionID partId);
-
-    ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
 
 private:
     // The lock used to protect spaces_

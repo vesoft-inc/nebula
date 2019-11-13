@@ -54,15 +54,40 @@ private:
 
 class Collector final {
 public:
-    explicit Collector(meta::SchemaProviderIf* schema) : schema_(schema) {}
+    static Status collect(VariantType &var, RowWriter *writer);
 
-    void collect(VariantType &var, RowWriter *writer) const;
+    static OptVariantType getProp(const meta::SchemaProviderIf *schema,
+                                  const std::string &prop,
+                                  const RowReader *reader);
 
-    VariantType getProp(const std::string &prop,
-                        const RowReader *reader) const;
+    static Status getSchema(const std::vector<VariantType> &vals,
+                            const std::vector<std::string> &colNames,
+                            const std::vector<nebula::cpp2::SupportedType> &colTypes,
+                            SchemaWriter *outputSchema);
+};
+
+class YieldClauseWrapper final {
+public:
+    explicit YieldClauseWrapper(const YieldClause *clause) {
+        clause_ = clause;
+    }
+
+    Status prepare(const InterimResult *inputs,
+                   const VariableHolder *varHolder,
+                   std::vector<YieldColumn*> &yields);
 
 private:
-    meta::SchemaProviderIf   *schema_;
+    bool needAllPropsFromInput(const YieldColumn *col,
+                               const InterimResult *inputs,
+                               std::vector<YieldColumn*> &yields);
+
+    StatusOr<bool> needAllPropsFromVar(const YieldColumn *col,
+                                       const VariableHolder *varHolder,
+                                       std::vector<YieldColumn*> &yields);
+
+private:
+    const YieldClause              *clause_;
+    std::unique_ptr<YieldColumns>   yieldColsHolder_;
 };
 
 class TraverseExecutor : public Executor {

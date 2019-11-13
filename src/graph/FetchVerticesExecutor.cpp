@@ -31,6 +31,8 @@ Status FetchVerticesExecutor::prepareClauses() {
         }
 
         expCtx_ = std::make_unique<ExpressionContext>();
+        expCtx_->setStorageClient(ectx()->getStorageClient());
+
         spaceId_ = ectx()->rctx()->session()->space();
         yieldClause_ = sentence_->yieldClause();
         labelName_ = sentence_->tag();
@@ -47,29 +49,19 @@ Status FetchVerticesExecutor::prepareClauses() {
             break;
         }
 
-        prepareVids();
-
-        status = prepareYield();
+        status = prepareVids();
         if (!status.ok()) {
             break;
         }
-
-        // Save the type
-        auto iter = colTypes_.begin();
-        for (auto i = 0u; i < colNames_.size(); i++) {
-            auto type = labelSchema_->getFieldType(colNames_[i]);
-            if (type == CommonConstants::kInvalidValueType()) {
-                iter++;
-                continue;
-            }
-            *iter = type.type;
-            iter++;
+        status = prepareYield();
+        if (!status.ok()) {
+            break;
         }
     } while (false);
     return status;
 }
 
-void FetchVerticesExecutor::prepareVids() {
+Status FetchVerticesExecutor::prepareVids() {
     if (sentence_->isRef()) {
         auto *expr = sentence_->ref();
         if (expr->isInputExpression()) {
@@ -84,10 +76,15 @@ void FetchVerticesExecutor::prepareVids() {
             //  only support input and variable yet.
             LOG(FATAL) << "Unknown kind of expression.";
         }
+        if (colname_ != nullptr && *colname_ == "*") {
+            return Status::Error("Cant not use `*' to reference a vertex id column.");
+        }
     }
+    return Status::OK();
 }
 
 void FetchVerticesExecutor::execute() {
+    DCHECK(onError_);
     FLOG_INFO("Executing FetchVertices: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
@@ -117,7 +114,7 @@ void FetchVerticesExecutor::fetchVertices() {
         return;
     }
 
-    auto future = ectx()->storage()->getVertexProps(spaceId_, vids_, std::move(props));
+    auto future = ectx()->getStorageClient()->getVertexProps(spaceId_, vids_, std::move(props));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
@@ -189,21 +186,20 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                 outputSchema = std::make_shared<SchemaWriter>();
                 auto status = getOutputSchema(vschema.get(), vreader.get(), outputSchema.get());
                 if (!status.ok()) {
-                    LOG(ERROR) << "Get getOutputSchema failed" << status;
+                    LOG(ERROR) << "Get getOutputSchema failed: " << status;
                     DCHECK(onError_);
-                    onError_(std::move(status));
+                    onError_(Status::Error("Internal error."));
                     return;
                 }
                 rsWriter = std::make_unique<RowSetWriter>(outputSchema);
             }
 
-            auto collector = std::make_unique<Collector>(vschema.get());
             auto writer = std::make_unique<RowWriter>(outputSchema);
-
             auto &getters = expCtx_->getters();
-            getters.getAliasProp = [&](const std::string &,
-                                       const std::string &prop) -> OptVariantType {
-                return collector->getProp(prop, vreader.get());
+            getters.getAliasProp =
+                [&vreader, &vschema] (const std::string&,
+                                      const std::string &prop) -> OptVariantType {
+                return Collector::getProp(vschema.get(), prop, vreader.get());
             };
             for (auto *column : yields_) {
                 auto *expr = column->expr();
@@ -212,7 +208,13 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                     onError_(value.status());
                     return;
                 }
-                collector->collect(value.value(), writer.get());
+                auto status = Collector::collect(value.value(), writer.get());
+                if (!status.ok()) {
+                    LOG(ERROR) << "Collect prop error: " << status;
+                    DCHECK(onError_);
+                    onError_(std::move(status));
+                    return;
+                }
             }
             // TODO Consider float/double, and need to reduce mem copy.
             std::string encode = writer->encode();
@@ -247,8 +249,11 @@ Status FetchVerticesExecutor::setupVidsFromExpr() {
     if (distinct_) {
         uniqID = std::make_unique<std::unordered_set<VertexID>>();
     }
+
+    expCtx_->setSpace(spaceId_);
     auto vidList = sentence_->vidList();
     for (auto *expr : vidList) {
+        expr->setContext(expCtx_.get());
         status = expr->prepare();
         if (!status.ok()) {
             break;
@@ -303,7 +308,5 @@ Status FetchVerticesExecutor::setupVidsFromRef() {
     vids_ = std::move(result).value();
     return Status::OK();
 }
-
-
 }  // namespace graph
 }  // namespace nebula

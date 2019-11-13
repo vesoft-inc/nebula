@@ -67,7 +67,7 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     // Return tag props col_0, col_2, col_4
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 3; i++) {
-        tmpColumns.emplace_back(TestUtils::vetexPropDef(
+        tmpColumns.emplace_back(TestUtils::vertexPropDef(
             folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2), 3001 + i * 2));
     }
     req.set_return_columns(std::move(tmpColumns));
@@ -76,6 +76,7 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryVertexPropsProcessor::instance(kv.get(),
                                                           schemaMan.get(),
+                                                          nullptr,
                                                           executor.get());
     auto f = processor->getFuture();
     processor->process(req);

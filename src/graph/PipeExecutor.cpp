@@ -104,6 +104,10 @@ Status PipeExecutor::syntaxPreCheck() {
         return Status::SyntaxError("Set op not support input.");
     }
 
+    if (sentence_->left()->kind() == Sentence::Kind::kFindPath) {
+        return Status::SyntaxError("Can not reference the result of FindPath.");
+    }
+
     return Status::OK();
 }
 

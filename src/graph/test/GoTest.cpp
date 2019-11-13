@@ -383,6 +383,21 @@ TEST_F(GoTest, MULTI_EDGES) {
 
     {
         cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve, like yield serve.start_year, like.likeness";
+        auto &player = players_["Russell Westbrook"];
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {2008, 0},
+            {0, 90},
+            {0, 90},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve, like";
         auto &player = players_["Shaquile O'Neal"];
         auto query = folly::stringPrintf(fmt, player.vid());
@@ -548,6 +563,34 @@ TEST_F(GoTest, ReferencePipeInYieldAndWhere) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "GO FROM hash('Tim Duncan'),hash('Chris Paul') OVER like "
+                            "YIELD $^.player.name AS name, like._dst AS id "
+                            "| GO FROM $-.id OVER like "
+                            "YIELD $-.*, $^.player.name, $$.player.name";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        auto &manu = players_["Manu Ginobili"];
+        auto &tony = players_["Tony Parker"];
+        auto &lebron = players_["LeBron James"];
+        auto &melo = players_["Carmelo Anthony"];
+        auto &wade = players_["Dwyane Wade"];
+        std::vector<std::tuple<std::string, uint64_t, std::string, std::string>> expected = {
+            {"Tim Duncan", manu.vid(), "Manu Ginobili", "Tim Duncan"},
+            {"Tim Duncan", tony.vid(), "Tony Parker", "LaMarcus Aldridge"},
+            {"Tim Duncan", tony.vid(), "Tony Parker", "Manu Ginobili"},
+            {"Tim Duncan", tony.vid(), "Tony Parker", "Tim Duncan"},
+            {"Chris Paul", lebron.vid(), "LeBron James", "Ray Allen"},
+            {"Chris Paul", melo.vid(), "Carmelo Anthony", "Chris Paul"},
+            {"Chris Paul", melo.vid(), "Carmelo Anthony", "LeBron James"},
+            {"Chris Paul", melo.vid(), "Carmelo Anthony", "Dwyane Wade"},
+            {"Chris Paul", wade.vid(), "Dwyane Wade", "Chris Paul"},
+            {"Chris Paul", wade.vid(), "Dwyane Wade", "LeBron James"},
+            {"Chris Paul", wade.vid(), "Dwyane Wade", "Carmelo Anthony"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 
 
@@ -607,6 +650,34 @@ TEST_F(GoTest, ReferenceVariableInYieldAndWhere) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "$var = GO FROM hash('Tim Duncan'),hash('Chris Paul') OVER like "
+                            "YIELD $^.player.name AS name, like._dst AS id; "
+                            "GO FROM $var.id OVER like "
+                            "YIELD $var.*, $^.player.name, $$.player.name";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        auto &manu = players_["Manu Ginobili"];
+        auto &tony = players_["Tony Parker"];
+        auto &lebron = players_["LeBron James"];
+        auto &melo = players_["Carmelo Anthony"];
+        auto &wade = players_["Dwyane Wade"];
+        std::vector<std::tuple<std::string, uint64_t, std::string, std::string>> expected = {
+            {"Tim Duncan", manu.vid(), "Manu Ginobili", "Tim Duncan"},
+            {"Tim Duncan", tony.vid(), "Tony Parker", "LaMarcus Aldridge"},
+            {"Tim Duncan", tony.vid(), "Tony Parker", "Manu Ginobili"},
+            {"Tim Duncan", tony.vid(), "Tony Parker", "Tim Duncan"},
+            {"Chris Paul", lebron.vid(), "LeBron James", "Ray Allen"},
+            {"Chris Paul", melo.vid(), "Carmelo Anthony", "Chris Paul"},
+            {"Chris Paul", melo.vid(), "Carmelo Anthony", "LeBron James"},
+            {"Chris Paul", melo.vid(), "Carmelo Anthony", "Dwyane Wade"},
+            {"Chris Paul", wade.vid(), "Dwyane Wade", "Chris Paul"},
+            {"Chris Paul", wade.vid(), "Dwyane Wade", "LeBron James"},
+            {"Chris Paul", wade.vid(), "Dwyane Wade", "Carmelo Anthony"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 
 TEST_F(GoTest, NotExistTagProp) {
@@ -624,6 +695,70 @@ TEST_F(GoTest, NotExistTagProp) {
         auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+}
+
+TEST_F(GoTest, is_inCall) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "WHERE udf_is_in($$.team.name, \"Hawks\", \"Suns\") "
+                    "YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *resp.get_error_msg();
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve.start_year"}, {"serve.end_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
+            {player.name(), 2003, 2005, "Hawks"},
+            {player.name(), 2005, 2008, "Suns"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like YIELD like._dst AS id"
+                    "| GO FROM $-.id OVER serve WHERE udf_is_in($-.id, %ld, 123)";
+        auto query = folly::stringPrintf(fmt,
+                players_["Tim Duncan"].vid(), players_["Tony Parker"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Spurs"].vid()},
+            {teams_["Hornets"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like YIELD like._dst AS id"
+                    "| GO FROM $-.id OVER serve WHERE udf_is_in($-.id, %ld, 123) && 1 == 1";
+        auto query = folly::stringPrintf(fmt,
+                players_["Tim Duncan"].vid(), players_["Tony Parker"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Spurs"].vid()},
+            {teams_["Hornets"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 }   // namespace graph

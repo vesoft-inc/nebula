@@ -127,8 +127,8 @@ TEST_F(FetchVerticesTest, base) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
-        auto *fmt = "FETCH PROP ON player hash(\"%s\")"
-                    " YIELD player.name, player.age";
+        auto *fmt = "FETCH PROP ON player hash(\"%s\") "
+                    "YIELD player.name, player.age";
         auto query = folly::stringPrintf(fmt, player.name().c_str());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -138,6 +138,19 @@ TEST_F(FetchVerticesTest, base) {
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {player.name(), player.age()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "FETCH PROP ON player uuid(\"%s\") "
+                    "YIELD player.name, player.age";
+        auto query = folly::stringPrintf(fmt, player.name().c_str());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, int64_t>> expected = {
             {player.name(), player.age()},
         };
@@ -177,6 +190,18 @@ TEST_F(FetchVerticesTest, noYield) {
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {player.name(), player.age()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "FETCH PROP ON player uuid(\"%s\")";
+        auto query = folly::stringPrintf(fmt, player.name().c_str());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, int64_t>> expected = {
             {player.name(), player.age()},
         };
@@ -264,7 +289,7 @@ TEST_F(FetchVerticesTest, executionError) {
     }
 }
 
-TEST_F(FetchVerticesTest, nonExistVetex) {
+TEST_F(FetchVerticesTest, nonExistVertex) {
     std::string name = "NON EXIST VERTEX ID";
     int64_t nonExistPlayerID = std::hash<std::string>()(name);
     auto iter = players_.begin();

@@ -39,11 +39,11 @@ enum SupportedType {
     STRING = 6,
 
     // Date time
-    TIMESTAMP = 21,
-    YEAR = 22,
-    YEARMONTH = 23,
-    DATE = 24,
-    DATETIME = 25,
+    TIMESTAMP = 7,
+    YEAR = 8,
+    YEARMONTH = 9,
+    DATE = 10,
+    DATETIME = 11,
 
     // Graph specific
     PATH = 41,
@@ -82,6 +82,11 @@ struct Schema {
 struct HostAddr {
     1: IPv4  ip,
     2: Port  port,
+}
+
+struct Pair {
+    1: string key,
+    2: string value,
 }
 
 const ValueType kInvalidValueType = {"type" : UNKNOWN}

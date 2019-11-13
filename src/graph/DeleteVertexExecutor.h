@@ -30,8 +30,10 @@ private:
     void deleteVertex();
 
 private:
-    DeleteVertexSentence       *sentence_{nullptr};
-    VertexID                   vid_;
+    DeleteVertexSentence                       *sentence_{nullptr};
+    std::unique_ptr<ExpressionContext>          expCtx_;
+    VertexID                                    vid_;
+    GraphSpaceID                                spaceId_{-1};
 };
 
 }   // namespace graph

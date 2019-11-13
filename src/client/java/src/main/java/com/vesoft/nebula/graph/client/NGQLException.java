@@ -7,13 +7,15 @@
 package com.vesoft.nebula.graph.client;
 
 public class NGQLException extends Exception {
+    private int code;
 
-    public NGQLException() {
+    public NGQLException(int code) {
         super();
+        this.code = code;
     }
 
-    public NGQLException(String message) {
-        super(message);
+    public int getCode() {
+        return code;
     }
 }
 

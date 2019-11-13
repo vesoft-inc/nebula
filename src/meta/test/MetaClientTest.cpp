@@ -15,9 +15,11 @@
 #include "meta/ServerBasedSchemaManager.h"
 #include "dataman/ResultSchemaProvider.h"
 #include "meta/test/TestUtils.h"
+#include "meta/ClientBasedGflagsManager.h"
 
 DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(heartbeat_interval_secs);
+DECLARE_string(rocksdb_db_options);
 
 
 namespace nebula {
@@ -46,7 +48,7 @@ TEST(MetaClientTest, InterfacesTest) {
                                                localHost);
     client->waitForMetadReady();
     {
-        // Test addHost, listHosts interface.
+        // Add hosts automatically, then testing listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
         TestUtils::registerHB(sc->kvStore_.get(), hosts);
         auto ret = client->listHosts().get();
@@ -280,14 +282,6 @@ TEST(MetaClientTest, InterfacesTest) {
         ASSERT_TRUE(ret1.ok()) << ret1.status();
         ASSERT_EQ(0, ret1.value().size());
     }
-    {
-        std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
-        auto ret = client->removeHosts(hosts).get();
-        ASSERT_TRUE(ret.ok());
-        auto ret1 = client->listHosts().get();
-        ASSERT_TRUE(ret1.ok());
-        ASSERT_EQ(0, ret1.value().size());
-    }
 
     client.reset();
 }
@@ -317,14 +311,24 @@ TEST(MetaClientTest, TagTest) {
 
     {
         std::vector<nebula::cpp2::ColumnDef> columns;
-        columns.emplace_back(FRAGILE, "column_i",
-                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr));
-        columns.emplace_back(FRAGILE, "column_d",
-                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr));
-        columns.emplace_back(FRAGILE, "column_s",
-                             ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr));
+        ValueType vt;
+        vt.set_type(SupportedType::INT);
+        columns.emplace_back();
+        columns.back().set_name("column_i");
+        columns.back().set_type(vt);
+
+        vt.set_type(SupportedType::DOUBLE);
+        columns.emplace_back();
+        columns.back().set_name("column_d");
+        columns.back().set_type(vt);
+
+        vt.set_type(SupportedType::STRING);
+        columns.emplace_back();
+        columns.back().set_name("column_s");
+        columns.back().set_type(vt);
         nebula::cpp2::Schema schema;
-        auto result = client->createTagSchema(spaceId, "test_tag", schema).get();
+        schema.set_columns(std::move(columns));
+        auto result = client->createTagSchema(spaceId, "test_tag", std::move(schema)).get();
         ASSERT_TRUE(result.ok());
         id = result.value();
     }
@@ -342,6 +346,7 @@ TEST(MetaClientTest, TagTest) {
         ASSERT_TRUE(result1.ok());
         auto result2 = client->getTagSchema(spaceId, "test_tag").get();
         ASSERT_TRUE(result2.ok());
+        ASSERT_EQ(3, result2.value().columns.size());
         ASSERT_EQ(result1.value().columns.size(), result2.value().columns.size());
         for (auto i = 0u; i < result1.value().columns.size(); i++) {
             ASSERT_EQ(result1.value().columns[i].name, result2.value().columns[i].name);
@@ -381,6 +386,15 @@ public:
         partNum++;
     }
 
+    void onSpaceOptionUpdated(GraphSpaceID spaceId,
+                              const std::unordered_map<std::string, std::string>& update)
+                              override {
+        UNUSED(spaceId);
+        for (const auto& kv : update) {
+            options[kv.first] = kv.second;
+        }
+    }
+
     void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) override {
         LOG(INFO) << "[" << spaceId << ", " << partId << "] removed!";
         partNum--;
@@ -398,6 +412,7 @@ public:
     int32_t spaceNum = 0;
     int32_t partNum = 0;
     int32_t partChanged = 0;
+    std::unordered_map<std::string, std::string> options;
 };
 
 TEST(MetaClientTest, DiffTest) {
@@ -417,7 +432,7 @@ TEST(MetaClientTest, DiffTest) {
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {
-        // Test addHost, listHosts interface.
+        // Add hosts automatically, then testing listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}};
         TestUtils::registerHB(sc->kvStore_.get(), hosts);
         auto ret = client->listHosts().get();
@@ -475,7 +490,7 @@ TEST(MetaClientTest, HeartbeatTest) {
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {
-        // Test addHost, listHosts interface.
+        // Add hosts automatically, then testing listHosts interface.
         std::vector<HostAddr> hosts = {localHost};
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
@@ -489,14 +504,15 @@ TEST(MetaClientTest, HeartbeatTest) {
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(sc->kvStore_.get()).size());
 }
 
+
 class TestMetaService : public cpp2::MetaServiceSvIf {
 public:
-    folly::Future<cpp2::ExecResp>
-    future_addHosts(const cpp2::AddHostsReq& req) override {
+    folly::Future<cpp2::HBResp>
+    future_heartBeat(const cpp2::HBReq& req) override {
         UNUSED(req);
-        folly::Promise<cpp2::ExecResp> pro;
+        folly::Promise<cpp2::HBResp> pro;
         auto f = pro.getFuture();
-        cpp2::ExecResp resp;
+        cpp2::HBResp resp;
         resp.set_code(cpp2::ErrorCode::SUCCEEDED);
         pro.setValue(std::move(resp));
         return f;
@@ -515,12 +531,12 @@ public:
         addr_.set_port(addr.second);
     }
 
-    folly::Future<cpp2::ExecResp>
-    future_addHosts(const cpp2::AddHostsReq& req) override {
+    folly::Future<cpp2::HBResp>
+    future_heartBeat(const cpp2::HBReq& req) override {
         UNUSED(req);
-        folly::Promise<cpp2::ExecResp> pro;
+        folly::Promise<cpp2::HBResp> pro;
         auto f = pro.getFuture();
-        cpp2::ExecResp resp;
+        cpp2::HBResp resp;
         if (addr_ == leader_) {
             resp.set_code(cpp2::ErrorCode::SUCCEEDED);
         } else {
@@ -551,9 +567,9 @@ TEST(MetaClientTest, SimpleTest) {
                                                std::vector<HostAddr>{HostAddr(localIp, sc->port_)},
                                                localHost);
     {
-        LOG(INFO) << "Test add hosts...";
+        LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
-        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+        client->heartbeat().thenValue([&baton] (auto&& status) {
             ASSERT_TRUE(status.ok());
             baton.post();
         });
@@ -561,7 +577,7 @@ TEST(MetaClientTest, SimpleTest) {
     }
 }
 
-TEST(MetaClientTest, RetryWithExceptioniTest) {
+TEST(MetaClientTest, RetryWithExceptionTest) {
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
@@ -571,18 +587,17 @@ TEST(MetaClientTest, RetryWithExceptioniTest) {
     auto client = std::make_shared<MetaClient>(threadPool,
                                                std::vector<HostAddr>{HostAddr(0, 0)},
                                                localHost);
-    // Retry with exception, thenfailed
+    // Retry with exception, then failed
     {
-        LOG(INFO) << "Test add hosts...";
+        LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
-        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+        client->heartbeat().thenValue([&baton] (auto&& status) {
             ASSERT_TRUE(!status.ok());
             baton.post();
         });
         baton.wait();
     }
 }
-
 
 TEST(MetaClientTest, RetryOnceTest) {
     IPv4 localIp;
@@ -613,9 +628,9 @@ TEST(MetaClientTest, RetryOnceTest) {
                                                localHost);
     // First get leader changed and then succeeded
     {
-        LOG(INFO) << "Test add hosts...";
+        LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
-        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+        client->heartbeat().thenValue([&baton] (auto&& status) {
             ASSERT_TRUE(status.ok());
             baton.post();
         });
@@ -651,13 +666,75 @@ TEST(MetaClientTest, RetryUntilLimitTest) {
                                                localHost);
     // always get response of leader changed, then failed
     {
-        LOG(INFO) << "Test add hosts...";
+        LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
-        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+        client->heartbeat().thenValue([&baton] (auto&& status) {
             ASSERT_TRUE(!status.ok());
             baton.post();
         });
         baton.wait();
+    }
+}
+
+TEST(MetaClientTest, RocksdbOptionsTest) {
+    FLAGS_load_data_interval_secs = 1;
+    fs::TempDir rootPath("/tmp/RocksdbOptionsTest.XXXXXX");
+    uint32_t localMetaPort = 0;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    IPv4 localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+
+    auto listener = std::make_unique<TestListener>();
+    auto module = cpp2::ConfigModule::STORAGE;
+    auto type = cpp2::ConfigType::NESTED;
+    auto mode = meta::cpp2::ConfigMode::MUTABLE;
+
+    auto client = std::make_shared<MetaClient>(threadPool,
+        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    client->waitForMetadReady();
+    client->registerListener(listener.get());
+    client->gflagsModule_ = module;
+
+    ClientBasedGflagsManager cfgMan(client.get());
+    // mock some rocksdb gflags to meta
+    {
+        std::vector<cpp2::ConfigItem> configItems;
+        FLAGS_rocksdb_db_options = R"({
+            "disable_auto_compactions":"false",
+            "write_buffer_size":"1048576"
+        })";
+        configItems.emplace_back(toThriftConfigItem(
+            module, "rocksdb_db_options", type,
+            mode, toThriftValueStr(type, FLAGS_rocksdb_db_options)));
+        cfgMan.registerGflags(configItems);
+    }
+    {
+        std::vector<HostAddr> hosts = {{0, 0}};
+        TestUtils::registerHB(sc->kvStore_.get(), hosts);
+        client->createSpace("default_space", 9, 1).get();
+        sleep(FLAGS_load_data_interval_secs + 1);
+    }
+    {
+        std::string name = "rocksdb_db_options";
+        std::string updateValue = "write_buffer_size=2097152,"
+                                  "disable_auto_compactions=true,"
+                                  "level0_file_num_compaction_trigger=4";
+        // update config
+        auto setRet = cfgMan.setConfig(module, name, type, updateValue).get();
+        ASSERT_TRUE(setRet.ok());
+
+        // get from meta server
+        auto getRet = cfgMan.getConfig(module, name).get();
+        ASSERT_TRUE(getRet.ok());
+        auto item = getRet.value().front();
+        auto value = boost::get<std::string>(item.get_value());
+
+        sleep(FLAGS_load_data_interval_secs + 1);
+        ASSERT_EQ(FLAGS_rocksdb_db_options, value);
+        ASSERT_EQ(listener->options["write_buffer_size"], "2097152");
+        ASSERT_EQ(listener->options["disable_auto_compactions"], "true");
+        ASSERT_EQ(listener->options["level0_file_num_compaction_trigger"], "4");
     }
 }
 
@@ -671,5 +748,3 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
-

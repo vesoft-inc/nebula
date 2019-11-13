@@ -33,6 +33,8 @@ enum ErrorCode {
     E_TOO_MANY_REQUESTS = -15;
     E_PERSIST_SNAPSHOT_FAILED = -16;
 
+    E_BAD_ROLE = -17,
+
     E_EXCEPTION = -20;          // An thrift internal exception was thrown
 }
 

@@ -18,9 +18,53 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
         onFinished();
         return;
     }
+    if (req.get_stop() != nullptr) {
+        if (!(*req.get_stop())) {
+            resp_.set_code(cpp2::ErrorCode::E_UNKNOWN);
+            onFinished();
+            return;
+        }
+        auto ret = Balancer::instance(kvstore_)->stop();
+        if (!ret.ok()) {
+            resp_.set_code(cpp2::ErrorCode::E_NO_RUNNING_BALANCE_PLAN);
+            onFinished();
+            return;
+        }
+        resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+        resp_.set_id(ret.value());
+        onFinished();
+        return;
+    }
     if (req.get_id() != nullptr) {
-        LOG(ERROR) << "Unsupport show status for specific balance plan, id=" << *req.get_id();
-        resp_.set_code(cpp2::ErrorCode::E_UNSUPPORTED);
+        auto ret = Balancer::instance(kvstore_)->show(*req.get_id());
+        if (!ret.ok()) {
+            resp_.set_code(cpp2::ErrorCode::E_BAD_BALANCE_PLAN);
+            onFinished();
+            return;
+        }
+        resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+        const auto& plan = ret.value();
+        std::vector<cpp2::BalanceTask> thriftTasks;
+        for (auto& task : plan.tasks()) {
+            cpp2::BalanceTask t;
+            t.set_id(task.taskIdStr());
+            switch (task.result()) {
+                case BalanceTask::Result::SUCCEEDED:
+                    t.set_result(cpp2::TaskResult::SUCCEEDED);
+                    break;
+                case BalanceTask::Result::FAILED:
+                    t.set_result(cpp2::TaskResult::FAILED);
+                    break;
+                case BalanceTask::Result::IN_PROGRESS:
+                    t.set_result(cpp2::TaskResult::IN_PROGRESS);
+                    break;
+                case BalanceTask::Result::INVALID:
+                    t.set_result(cpp2::TaskResult::INVALID);
+                    break;
+            }
+            thriftTasks.emplace_back(std::move(t));
+        }
+        resp_.set_tasks(std::move(thriftTasks));
         onFinished();
         return;
     }
@@ -33,8 +77,11 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
     }
     auto ret = Balancer::instance(kvstore_)->balance();
     if (!ret.ok()) {
-        LOG(INFO) << "The balancer is running.";
-        resp_.set_code(cpp2::ErrorCode::E_BALANCER_RUNNING);
+        if (ret.status() == Status::Balanced()) {
+            resp_.set_code(cpp2::ErrorCode::E_BALANCED);
+        } else {
+            resp_.set_code(cpp2::ErrorCode::E_UNKNOWN);
+        }
         onFinished();
         return;
     }

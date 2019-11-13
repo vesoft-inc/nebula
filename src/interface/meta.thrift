@@ -32,9 +32,11 @@ enum ErrorCode {
     E_CONFLICT         = -29,
     E_WRONGCLUSTER     = -30,
 
-    // KV Failure
     E_STORE_FAILURE          = -31,
     E_STORE_SEGMENT_ILLEGAL  = -32,
+    E_BAD_BALANCE_PLAN     = -33,
+    E_BALANCED             = -34,
+    E_NO_RUNNING_BALANCE_PLAN = -35,
 
     E_INVALID_PASSWORD       = -41,
     E_INPROPER_ROLE          = -42,
@@ -77,11 +79,6 @@ struct IdName {
     2: string name,
 }
 
-struct Pair {
-    1: string key,
-    2: string value,
-}
-
 struct SpaceProperties {
     1: string               space_name,
     2: i32                  partition_num,
@@ -121,8 +118,8 @@ enum HostStatus {
 struct HostItem {
     1: common.HostAddr      hostAddr,
     2: HostStatus           status,
-    3: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts,
-    4: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") all_parts,
+    3: map<string, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts,
+    4: map<string, list<common.PartitionID>> (cpp.template = "std::unordered_map") all_parts,
 }
 
 struct UserItem {
@@ -266,11 +263,6 @@ struct ListEdgesResp {
     3: list<EdgeItem> edges,
 }
 
-// Host related operations.
-struct AddHostsReq {
-    1: list<common.HostAddr> hosts;
-}
-
 struct ListHostsReq {
 }
 
@@ -281,11 +273,23 @@ struct ListHostsResp {
     3: list<HostItem> hosts,
 }
 
-struct RemoveHostsReq {
-    1: list<common.HostAddr> hosts;
+struct PartItem {
+    1: required common.PartitionID       part_id,
+    2: optional common.HostAddr          leader,
+    3: required list<common.HostAddr>    peers,
+    4: required list<common.HostAddr>    losts,
 }
 
-// Parts related operations.
+struct ListPartsReq {
+    1: common.GraphSpaceID space_id,
+}
+
+struct ListPartsResp {
+    1: ErrorCode code,
+    2: common.HostAddr leader,
+    3: list<PartItem> parts,
+}
+
 struct GetPartsAllocReq {
     1: common.GraphSpaceID space_id,
 }
@@ -301,7 +305,7 @@ struct MultiPutReq {
     // segment is used to avoid conflict with system data.
     // it should be comprised of numbers and letters.
     1: string     segment,
-    2: list<Pair> pairs,
+    2: list<common.Pair> pairs,
 }
 
 struct GetReq {
@@ -430,6 +434,20 @@ struct BalanceReq {
     1: optional common.GraphSpaceID space_id,
     // Specify the balance id to check the status of the related balance plan
     2: optional i64 id,
+    3: optional bool stop,
+}
+
+enum TaskResult {
+    SUCCEEDED  = 0x00,
+    FAILED = 0x01,
+    IN_PROGRESS = 0x02,
+    INVALID = 0x03,
+} (cpp.enum_strict)
+
+
+struct BalanceTask {
+    1: string id,
+    2: TaskResult result,
 }
 
 struct BalanceResp {
@@ -437,6 +455,7 @@ struct BalanceResp {
     2: i64              id,
     // Valid if code equals E_LEADER_CHANGED.
     3: common.HostAddr  leader,
+    4: list<BalanceTask> tasks,
 }
 
 struct LeaderBalanceReq {
@@ -455,6 +474,7 @@ enum ConfigType {
     DOUBLE  = 0x01,
     BOOL    = 0x02,
     STRING  = 0x03,
+    NESTED  = 0x04,
 } (cpp.enum_strict)
 
 enum ConfigMode {
@@ -519,11 +539,10 @@ service MetaService {
     GetEdgeResp getEdge(1: GetEdgeReq req);
     ListEdgesResp listEdges(1: ListEdgesReq req);
 
-    ExecResp addHosts(1: AddHostsReq req);
-    ExecResp removeHosts(1: RemoveHostsReq req);
     ListHostsResp listHosts(1: ListHostsReq req);
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
+    ListPartsResp listParts(1: ListPartsReq req);
 
     ExecResp multiPut(1: MultiPutReq req);
     GetResp get(1: GetReq req);

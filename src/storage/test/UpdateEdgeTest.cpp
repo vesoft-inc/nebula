@@ -130,30 +130,29 @@ TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
     item1.set_prop("col_0");
     auto* edge101 = new std::string("101");
     auto* propCol2 = new std::string("col_2");
-    auto* val1 = new AliasPropertyExpression(new std::string(""), edge101, propCol2);
-    item1.set_value(Expression::encode(val1));
+    AliasPropertyExpression val1(new std::string(""), edge101, propCol2);
+    item1.set_value(Expression::encode(&val1));
     items.emplace_back(item1);
     // string: 101.col_10 = string_col_10_2_new
     cpp2::UpdateItem item2;
     item2.set_name("101");
     item2.set_prop("col_10");
     std::string col10new("string_col_10_2_new");
-    auto* val2 = new PrimaryExpression(col10new);
-    item2.set_value(Expression::encode(val2));
+    PrimaryExpression val2(col10new);
+    item2.set_value(Expression::encode(&val2));
     items.emplace_back(item2);
     req.set_update_items(std::move(items));
     decltype(req.return_columns) tmpColumns;
-    tmpColumns.emplace_back(Expression::encode(val1));
-    tmpColumns.emplace_back(Expression::encode(val2));
-    std::string name = folly::to<std::string>(3002);
-    std::string prop = "tag_3002_col_2";
-    auto* sourcePropExp = new SourcePropertyExpression(&name, &prop);
-    tmpColumns.emplace_back(Expression::encode(sourcePropExp));
+    tmpColumns.emplace_back(Expression::encode(&val1));
+    tmpColumns.emplace_back(Expression::encode(&val2));
+    SourcePropertyExpression sourcePropExp(new std::string(folly::to<std::string>(3002)),
+                                           new std::string("tag_3002_col_2"));
+    tmpColumns.emplace_back(Expression::encode(&sourcePropExp));
 
     req.set_return_columns(std::move(tmpColumns));
     req.set_insertable(false);
     LOG(INFO) << "Test UpdateEdgeRequest...";
-    auto* processor = UpdateEdgeProcessor::instance(kv.get(), schemaMan.get());
+    auto* processor = UpdateEdgeProcessor::instance(kv.get(), schemaMan.get(), nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -243,35 +242,37 @@ TEST(UpdateEdgeTest, Insertable_Test) {
     item1.set_prop("col_0");
     auto* tag3002 = new std::string("3002");
     auto* propCol2 = new std::string("tag_3002_col_2");
-    auto* val1 = new SourcePropertyExpression(tag3002, propCol2);
-    item1.set_value(Expression::encode(val1));
+    SourcePropertyExpression val1(tag3002, propCol2);
+    item1.set_value(Expression::encode(&val1));
     items.emplace_back(item1);
     // string: 101.col_10 = string_col_10_2_new
     cpp2::UpdateItem item2;
     item2.set_name("101");
     item2.set_prop("col_10");
     std::string col10new("string_col_10_2_new");
-    auto* val2 = new PrimaryExpression(col10new);
-    item2.set_value(Expression::encode(val2));
+    PrimaryExpression val2(col10new);
+    item2.set_value(Expression::encode(&val2));
     items.emplace_back(item2);
     req.set_update_items(std::move(items));
     decltype(req.return_columns) tmpColumns;
-    auto* noRef = new std::string("");
-    auto* edge101 = new std::string("101");
-    auto* edgePropExp = new AliasPropertyExpression(noRef, edge101, new std::string("col_0"));
-    tmpColumns.emplace_back(Expression::encode(edgePropExp));
-    edgePropExp = new AliasPropertyExpression(noRef, edge101, new std::string("col_1"));
-    tmpColumns.emplace_back(Expression::encode(edgePropExp));
-    edgePropExp = new AliasPropertyExpression(noRef, edge101, new std::string("col_10"));
-    tmpColumns.emplace_back(Expression::encode(edgePropExp));
-    edgePropExp = new AliasPropertyExpression(noRef, edge101, new std::string("col_11"));
-    tmpColumns.emplace_back(Expression::encode(edgePropExp));
-    tmpColumns.emplace_back(Expression::encode(val1));
+    AliasPropertyExpression edgePropExp(
+        new std::string(""), new std::string("101"), new std::string("col_0"));
+    tmpColumns.emplace_back(Expression::encode(&edgePropExp));
+    edgePropExp = AliasPropertyExpression(
+        new std::string(""), new std::string("101"), new std::string("col_1"));
+    tmpColumns.emplace_back(Expression::encode(&edgePropExp));
+    edgePropExp = AliasPropertyExpression(
+        new std::string(""), new std::string("101"), new std::string("col_10"));
+    tmpColumns.emplace_back(Expression::encode(&edgePropExp));
+    edgePropExp = AliasPropertyExpression(
+        new std::string(""), new std::string("101"), new std::string("col_11"));
+    tmpColumns.emplace_back(Expression::encode(&edgePropExp));
+    tmpColumns.emplace_back(Expression::encode(&val1));
     req.set_return_columns(std::move(tmpColumns));
     req.set_insertable(true);
 
     LOG(INFO) << "Test UpdateEdgeRequest...";
-    auto* processor = UpdateEdgeProcessor::instance(kv.get(), schemaMan.get());
+    auto* processor = UpdateEdgeProcessor::instance(kv.get(), schemaMan.get(), nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

@@ -48,15 +48,11 @@ public:
     // Returns a negative number when the schema does not exist
     StatusOr<SchemaVer> getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
 
-    StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece) override {
-        LOG(FATAL) << "Unimplemented";
-    }
+    StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece spaceName) override;
 
     StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
-    StatusOr<EdgeType> toEdgeType(GraphSpaceID, folly::StringPiece) override {
-        LOG(FATAL) << "Unimplemented";
-    }
+    StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
     StatusOr<std::string> toEdgeName(GraphSpaceID, EdgeType) override {
         LOG(FATAL) << "Unimplemented";

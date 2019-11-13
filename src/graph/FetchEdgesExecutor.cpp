@@ -27,7 +27,9 @@ Status FetchEdgesExecutor::prepareClauses() {
         if (!status.ok()) {
             break;
         }
+
         expCtx_ = std::make_unique<ExpressionContext>();
+        expCtx_->setStorageClient(ectx()->getStorageClient());
         spaceId_ = ectx()->rctx()->session()->space();
         yieldClause_ = sentence_->yieldClause();
         labelName_ = sentence_->edge();
@@ -52,55 +54,61 @@ Status FetchEdgesExecutor::prepareClauses() {
         if (!status.ok()) {
             break;
         }
-
-        // Save the type
-        auto iter = colTypes_.begin();
-        for (auto i = 0u; i < colNames_.size(); i++) {
-            auto type = labelSchema_->getFieldType(colNames_[i]);
-            if (type == CommonConstants::kInvalidValueType()) {
-                iter++;
-                continue;
-            }
-            *iter = type.type;
-            iter++;
-        }
     } while (false);
     return status;
 }
 
 Status FetchEdgesExecutor::prepareEdgeKeys() {
     Status status = Status::OK();
-    if (sentence_->isRef()) {
-        auto *edgeKeyRef = sentence_->ref();
+    do {
+        if (sentence_->isRef()) {
+            auto *edgeKeyRef = sentence_->ref();
 
-        srcid_ = edgeKeyRef->srcid();
-        DCHECK_NOTNULL(srcid_);
+            srcid_ = edgeKeyRef->srcid();
+            if (srcid_ == nullptr) {
+                status = Status::Error("Internal error.");
+                LOG(ERROR) << "Get src nullptr.";
+                break;
+            }
 
-        dstid_ = edgeKeyRef->dstid();
-        DCHECK_NOTNULL(dstid_);
+            dstid_ = edgeKeyRef->dstid();
+            if (dstid_ == nullptr) {
+                status = Status::Error("Internal error.");
+                LOG(ERROR) << "Get dst nullptr.";
+                break;
+            }
 
-        rank_ = edgeKeyRef->rank();
-        auto ret = edgeKeyRef->varname();
-        if (!ret.ok()) {
-            status = std::move(ret).status();
+            rank_ = edgeKeyRef->rank();
+
+            if ((*srcid_ == "*")
+                    || (*dstid_ == "*")
+                    || (rank_ != nullptr && *rank_ == "*")) {
+                status = Status::Error("Can not use `*' to reference a vertex id column.");
+                break;
+            }
+
+            auto ret = edgeKeyRef->varname();
+            if (!ret.ok()) {
+                status = std::move(ret).status();
+                break;
+            }
+            varname_ = std::move(ret).value();
         }
-        varname_ = ret.value();
-    }
+    } while (false);
 
     return status;
 }
 
 void FetchEdgesExecutor::execute() {
+    DCHECK(onError_);
     FLOG_INFO("Executing FetchEdges: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
-        DCHECK(onError_);
         onError_(std::move(status));
         return;
     }
     status = setupEdgeKeys();
     if (!status.ok()) {
-        DCHECK(onError_);
         onError_(std::move(status));
         return;
     }
@@ -196,12 +204,18 @@ Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
     if (distinct_) {
         uniq = std::make_unique<EdgeKeyHashSet>(256, hash_);
     }
+
     auto edgeKeyExprs = sentence_->keys()->keys();
+    expCtx_->setSpace(spaceId_);
+
     for (auto *keyExpr : edgeKeyExprs) {
         auto *srcExpr = keyExpr->srcid();
-        auto *dstExpr = keyExpr->dstid();
-        auto rank = keyExpr->rank();
+        srcExpr->setContext(expCtx_.get());
 
+        auto *dstExpr = keyExpr->dstid();
+        dstExpr->setContext(expCtx_.get());
+
+        auto rank = keyExpr->rank();
         status = srcExpr->prepare();
         if (!status.ok()) {
             break;
@@ -258,7 +272,7 @@ void FetchEdgesExecutor::fetchEdges() {
         return;
     }
 
-    auto future = ectx()->storage()->getEdgeProps(spaceId_, edgeKeys_, std::move(props));
+    auto future = ectx()->getStorageClient()->getEdgeProps(spaceId_, edgeKeys_, std::move(props));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
@@ -319,21 +333,21 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             outputSchema = std::make_shared<SchemaWriter>();
             auto status = getOutputSchema(eschema.get(), &*iter, outputSchema.get());
             if (!status.ok()) {
-                LOG(ERROR) << "Get getOutputSchema failed" << status;
+                LOG(ERROR) << "Get getOutputSchema failed: " << status;
                 DCHECK(onError_);
-                onError_(std::move(status));
+                onError_(Status::Error("Internal error."));
                 return;
             }
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
         }
         while (iter) {
-            auto collector = std::make_unique<Collector>(eschema.get());
             auto writer = std::make_unique<RowWriter>(outputSchema);
 
             auto &getters = expCtx_->getters();
-            getters.getAliasProp = [&](const std::string &,
-                                       const std::string &prop) -> OptVariantType {
-                return collector->getProp(prop, &*iter);
+            getters.getAliasProp =
+                [&iter, &eschema] (const std::string&,
+                                   const std::string &prop) -> OptVariantType {
+                return Collector::getProp(eschema.get(), prop, &*iter);
             };
             for (auto *column : yields_) {
                 auto *expr = column->expr();
@@ -342,7 +356,13 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
                     onError_(value.status());
                     return;
                 }
-                collector->collect(value.value(), writer.get());
+                auto status = Collector::collect(value.value(), writer.get());
+                if (!status.ok()) {
+                    LOG(ERROR) << "Collect prop error: " << status;
+                    DCHECK(onError_);
+                    onError_(std::move(status));
+                    return;
+                }
             }
 
             // TODO Consider float/double, and need to reduce mem copy.
@@ -361,5 +381,6 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
 
     finishExecution(std::move(rsWriter));
 }
+
 }  // namespace graph
 }  // namespace nebula

@@ -38,9 +38,7 @@ void SnapshotManagerImpl::accessAllRowsInSnapshot(GraphSpaceID spaceId,
         totalCount++;
         iter->next();
     }
-    if (data.size() > 0) {
-        cb(std::move(data), totalCount, totalSize, true);
-    }
+    cb(std::move(data), totalCount, totalSize, true);
 }
 }  // namespace kvstore
 }  // namespace nebula

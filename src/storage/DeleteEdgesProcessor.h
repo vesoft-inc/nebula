@@ -23,7 +23,8 @@ public:
      void process(const cpp2::DeleteEdgesRequest& req);
 
 private:
-    explicit DeleteEdgesProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
+    explicit DeleteEdgesProcessor(kvstore::KVStore* kvstore,
+                                  meta::SchemaManager* schemaMan)
             : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan) {}
 };
 

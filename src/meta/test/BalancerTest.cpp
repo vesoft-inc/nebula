@@ -5,7 +5,6 @@
  */
 #include "base/Base.h"
 #include <gtest/gtest.h>
-#include <folly/executors/CPUThreadPoolExecutor.h>
 #include <folly/synchronization/Baton.h>
 #include "meta/processors/admin/Balancer.h"
 #include "meta/test/TestUtils.h"
@@ -15,71 +14,20 @@
 DECLARE_uint32(task_concurrency);
 DECLARE_int32(expired_threshold_sec);
 DECLARE_double(leader_balance_deviation);
+DECLARE_int32(wait_time_after_open_part_ms);
 
 namespace nebula {
 namespace meta {
 
-class TestFaultInjector : public FaultInjector {
+class TestFaultInjectorWithSleep : public TestFaultInjector {
 public:
-    explicit TestFaultInjector(std::vector<Status> sts)
-        : statusArray_(std::move(sts)) {
-        executor_.reset(new folly::CPUThreadPoolExecutor(1));
-    }
-
-    ~TestFaultInjector() {
-    }
-
-    folly::Future<Status> response(int index) {
-        folly::Promise<Status> pro;
-        auto f = pro.getFuture();
-        executor_->add([this, p = std::move(pro), index]() mutable {
-            p.setValue(this->statusArray_[index]);
-        });
-        return f;
-    }
-
-    folly::Future<Status> transLeader() override {
-        return response(0);
-    }
-
-    folly::Future<Status> addPart() override {
-        return response(1);
-    }
-
-    folly::Future<Status> addLearner() override {
-        return response(2);
-    }
+    explicit TestFaultInjectorWithSleep(std::vector<Status> sts)
+        : TestFaultInjector(std::move(sts)) {}
 
     folly::Future<Status> waitingForCatchUpData() override {
+        sleep(3);
         return response(3);
     }
-
-    folly::Future<Status> memberChange() override {
-        return response(4);
-    }
-
-    folly::Future<Status> updateMeta() override {
-        return response(5);
-    }
-
-    folly::Future<Status> removePart() override {
-        return response(6);
-    }
-
-    folly::Future<Status> getLeaderDist(HostLeaderMap* hostLeaderMap) override {
-        (*hostLeaderMap)[HostAddr(0, 0)][1] = {1, 2, 3, 4, 5};
-        (*hostLeaderMap)[HostAddr(1, 1)][1] = {6, 7, 8};
-        (*hostLeaderMap)[HostAddr(2, 2)][1] = {9};
-        return response(7);
-    }
-
-    void reset(std::vector<Status> sts) {
-        statusArray_ = std::move(sts);
-    }
-
-private:
-    std::vector<Status> statusArray_;
-    std::unique_ptr<folly::Executor> executor_;
 };
 
 TEST(BalanceTaskTest, SimpleTest) {
@@ -87,7 +35,7 @@ TEST(BalanceTaskTest, SimpleTest) {
         std::vector<Status> sts(7, Status::OK());
         std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
         auto client = std::make_unique<AdminClient>(std::move(injector));
-        BalanceTask task(0, 0, 0, HostAddr(0, 0), HostAddr(1, 1), nullptr, nullptr);
+        BalanceTask task(0, 0, 0, HostAddr(0, 0), HostAddr(1, 1), true, nullptr, nullptr);
         folly::Baton<true, std::atomic> b;
         task.onFinished_ = [&]() {
             LOG(INFO) << "Task finished!";
@@ -112,7 +60,7 @@ TEST(BalanceTaskTest, SimpleTest) {
                                 Status::OK()};
         std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
         auto client = std::make_unique<AdminClient>(std::move(injector));
-        BalanceTask task(0, 0, 0, HostAddr(0, 0), HostAddr(1, 1), nullptr, nullptr);
+        BalanceTask task(0, 0, 0, HostAddr(0, 0), HostAddr(1, 1), true, nullptr, nullptr);
         folly::Baton<true, std::atomic> b;
         task.onFinished_ = []() {
             LOG(FATAL) << "We should not reach here!";
@@ -254,7 +202,7 @@ TEST(BalanceTest, DispatchTasksTest) {
         FLAGS_task_concurrency = 10;
         BalancePlan plan(0L, nullptr, nullptr);
         for (int i = 0; i < 20; i++) {
-            BalanceTask task(0, 0, 0, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+            BalanceTask task(0, 0, 0, HostAddr(i, 0), HostAddr(i, 1), true, nullptr, nullptr);
             plan.addTask(std::move(task));
         }
         plan.dispatchTasks();
@@ -267,7 +215,7 @@ TEST(BalanceTest, DispatchTasksTest) {
         FLAGS_task_concurrency = 10;
         BalancePlan plan(0L, nullptr, nullptr);
         for (int i = 0; i < 5; i++) {
-            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), true, nullptr, nullptr);
             plan.addTask(std::move(task));
         }
         plan.dispatchTasks();
@@ -280,11 +228,11 @@ TEST(BalanceTest, DispatchTasksTest) {
         FLAGS_task_concurrency = 20;
         BalancePlan plan(0L, nullptr, nullptr);
         for (int i = 0; i < 5; i++) {
-            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), true, nullptr, nullptr);
             plan.addTask(std::move(task));
         }
         for (int i = 0; i < 10; i++) {
-            BalanceTask task(0, 0, i, HostAddr(i, 2), HostAddr(i, 3), nullptr, nullptr);
+            BalanceTask task(0, 0, i, HostAddr(i, 2), HostAddr(i, 3), true, nullptr, nullptr);
             plan.addTask(std::move(task));
         }
         plan.dispatchTasks();
@@ -308,7 +256,7 @@ TEST(BalanceTest, BalancePlanTest) {
         auto client = std::make_unique<AdminClient>(std::move(injector));
 
         for (int i = 0; i < 10; i++) {
-            BalanceTask task(0, 0, 0, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+            BalanceTask task(0, 0, 0, HostAddr(i, 0), HostAddr(i, 1), true, nullptr, nullptr);
             task.client_ = client.get();
             plan.addTask(std::move(task));
         }
@@ -333,7 +281,7 @@ TEST(BalanceTest, BalancePlanTest) {
         auto client = std::make_unique<AdminClient>(std::move(injector));
 
         for (int i = 0; i < 10; i++) {
-            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), true, nullptr, nullptr);
             task.client_ = client.get();
             plan.addTask(std::move(task));
         }
@@ -361,7 +309,7 @@ TEST(BalanceTest, BalancePlanTest) {
             std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
             client1 = std::make_unique<AdminClient>(std::move(injector));
             for (int i = 0; i < 9; i++) {
-                BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+                BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), true, nullptr, nullptr);
                 task.client_ = client1.get();
                 plan.addTask(std::move(task));
             }
@@ -377,7 +325,7 @@ TEST(BalanceTest, BalancePlanTest) {
                                 Status::OK()};
             std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
             client2 = std::make_unique<AdminClient>(std::move(injector));
-            BalanceTask task(0, 0, 0, HostAddr(10, 0), HostAddr(10, 1), nullptr, nullptr);
+            BalanceTask task(0, 0, 0, HostAddr(10, 0), HostAddr(10, 1), true, nullptr, nullptr);
             task.client_ = client2.get();
             plan.addTask(std::move(task));
         }
@@ -416,7 +364,7 @@ TEST(BalanceTest, NormalTest) {
     auto client = std::make_unique<AdminClient>(std::move(injector));
     Balancer balancer(kv.get(), std::move(client));
     auto ret = balancer.balance();
-    CHECK_EQ(Status::Error("No tasks"), ret.status());
+    CHECK_EQ(Status::Balanced(), ret.status());
 
     sleep(1);
     LOG(INFO) << "Now, we lost host " << HostAddr(3, 3);
@@ -465,9 +413,11 @@ TEST(BalanceTest, NormalTest) {
                 ASSERT_EQ(BalanceTask::Status::END, task.status_);
                 task.ret_ = std::get<1>(tup);
                 ASSERT_EQ(BalanceTask::Result::SUCCEEDED, task.ret_);
-                task.startTimeMs_ = std::get<2>(tup);
+                task.srcLived_ = std::get<2>(tup);
+                ASSERT_FALSE(task.srcLived_);
+                task.startTimeMs_ = std::get<3>(tup);
                 ASSERT_GT(task.startTimeMs_, 0);
-                task.endTimeMs_ = std::get<3>(tup);
+                task.endTimeMs_ = std::get<4>(tup);
                 ASSERT_GT(task.endTimeMs_, 0);
             }
             num++;
@@ -555,9 +505,11 @@ TEST(BalanceTest, RecoveryTest) {
                 ASSERT_EQ(BalanceTask::Status::CATCH_UP_DATA, task.status_);
                 task.ret_ = std::get<1>(tup);
                 ASSERT_EQ(BalanceTask::Result::FAILED, task.ret_);
-                task.startTimeMs_ = std::get<2>(tup);
+                task.srcLived_ = std::get<2>(tup);
+                ASSERT_FALSE(task.srcLived_);
+                task.startTimeMs_ = std::get<3>(tup);
                 ASSERT_GT(task.startTimeMs_, 0);
-                task.endTimeMs_ = std::get<3>(tup);
+                task.endTimeMs_ = std::get<4>(tup);
                 ASSERT_GT(task.endTimeMs_, 0);
             }
             num++;
@@ -608,12 +560,13 @@ TEST(BalanceTest, RecoveryTest) {
             {
                 auto tup = BalanceTask::parseVal(iter->val());
                 task.status_ = std::get<0>(tup);
-                ASSERT_EQ(BalanceTask::Status::END, task.status_);
                 task.ret_ = std::get<1>(tup);
-                ASSERT_EQ(BalanceTask::Result::SUCCEEDED, task.ret_);
-                task.startTimeMs_ = std::get<2>(tup);
+                ASSERT_EQ(BalanceTask::Result::INVALID, task.ret_);
+                task.srcLived_ = std::get<2>(tup);
+                ASSERT_FALSE(task.srcLived_);
+                task.startTimeMs_ = std::get<3>(tup);
                 ASSERT_GT(task.startTimeMs_, 0);
-                task.endTimeMs_ = std::get<3>(tup);
+                task.endTimeMs_ = std::get<4>(tup);
                 ASSERT_GT(task.endTimeMs_, 0);
             }
             num++;
@@ -622,6 +575,130 @@ TEST(BalanceTest, RecoveryTest) {
         ASSERT_EQ(6, num);
     }
 }
+
+TEST(BalanceTest, StopBalanceDataTest) {
+    FLAGS_task_concurrency = 1;
+    fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    FLAGS_expired_threshold_sec = 1;
+    TestUtils::createSomeHosts(kv.get());
+    {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(8);
+        properties.set_replica_factor(3);
+        cpp2::CreateSpaceReq req;
+        req.set_properties(std::move(properties));
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.get_id().get_space_id());
+    }
+
+    sleep(1);
+    TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
+    std::vector<Status> sts(7, Status::OK());
+    std::unique_ptr<FaultInjector> injector(new TestFaultInjectorWithSleep(std::move(sts)));
+    auto client = std::make_unique<AdminClient>(std::move(injector));
+    Balancer balancer(kv.get(), std::move(client));
+    auto ret = balancer.balance();
+    CHECK(ret.ok());
+    auto balanceId = ret.value();
+
+    sleep(1);
+    LOG(INFO) << "Rebalance should still in progress";
+    {
+        const auto& prefix = BalancePlan::prefix();
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
+        int num = 0;
+        while (iter->valid()) {
+            auto id = BalancePlan::id(iter->key());
+            auto status = BalancePlan::status(iter->val());
+            ASSERT_EQ(balanceId, id);
+            ASSERT_EQ(BalancePlan::Status::IN_PROGRESS, status);
+            num++;
+            iter->next();
+        }
+        ASSERT_EQ(1, num);
+    }
+
+    TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
+    ret = balancer.stop();
+    CHECK(ret.ok());
+    ASSERT_EQ(ret.value(), balanceId);
+
+    // wait until the only IN_PROGRESS task finished;
+    sleep(3);
+    {
+        const auto& prefix = BalanceTask::prefix(balanceId);
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
+        int32_t taskEnded = 0;
+        int32_t taskStopped = 0;
+        while (iter->valid()) {
+            BalanceTask task;
+            // PartitionID partId = std::get<2>(BalanceTask::parseKey(iter->key()));
+            {
+                auto tup = BalanceTask::parseVal(iter->val());
+                task.status_ = std::get<0>(tup);
+                task.ret_ = std::get<1>(tup);
+                task.startTimeMs_ = std::get<3>(tup);
+                task.endTimeMs_ = std::get<4>(tup);
+
+                if (task.status_ == BalanceTask::Status::END) {
+                    taskEnded++;
+                } else {
+                    taskStopped++;
+                }
+            }
+            iter->next();
+        }
+        ASSERT_EQ(1, taskEnded);
+        ASSERT_EQ(5, taskStopped);
+    }
+
+    TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
+    ret = balancer.balance();
+    CHECK(ret.ok());
+    ASSERT_NE(ret.value(), balanceId);
+    // resume stopped plan
+    sleep(1);
+    {
+        const auto& prefix = BalanceTask::prefix(balanceId);
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        ASSERT_EQ(retcode, kvstore::ResultCode::SUCCEEDED);
+        int32_t num = 0;
+        int32_t taskStarted = 0;
+        int32_t taskEnded = 0;
+        while (iter->valid()) {
+            BalanceTask task;
+            {
+                auto tup = BalanceTask::parseVal(iter->val());
+                task.status_ = std::get<0>(tup);
+                task.ret_ = std::get<1>(tup);
+                task.startTimeMs_ = std::get<3>(tup);
+                task.endTimeMs_ = std::get<4>(tup);
+                if (task.status_ == BalanceTask::Status::END) {
+                    ++taskEnded;
+                } else if (task.status_ == BalanceTask::Status::START) {
+                    ++taskStarted;
+                }
+            }
+            num++;
+            iter->next();
+        }
+        ASSERT_EQ(6, num);
+        EXPECT_EQ(5, taskStarted);
+        EXPECT_EQ(1, taskEnded);
+    }
+}
+
 
 void verifyLeaderBalancePlan(std::unordered_map<HostAddr, std::vector<PartitionID>> leaderCount,
         size_t minLoad, size_t maxLoad) {
@@ -850,6 +927,7 @@ int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
+    FLAGS_wait_time_after_open_part_ms = 0;
     return RUN_ALL_TESTS();
 }
 

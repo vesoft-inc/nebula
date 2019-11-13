@@ -14,13 +14,6 @@
 namespace nebula {
 namespace graph {
 
-GraphService::GraphService() {
-}
-
-
-GraphService::~GraphService() = default;
-
-
 Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor) {
     sessionManager_ = std::make_unique<SessionManager>();
     executionEngine_ = std::make_unique<ExecutionEngine>();

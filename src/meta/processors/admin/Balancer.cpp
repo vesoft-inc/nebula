@@ -19,24 +19,49 @@ namespace nebula {
 namespace meta {
 
 StatusOr<BalanceID> Balancer::balance() {
-    bool expected = false;
-    if (running_.compare_exchange_strong(expected, true)) {
+    std::lock_guard<std::mutex> lg(lock_);
+    if (!running_) {
         if (!recovery()) {
             LOG(ERROR) << "Recovery balancer failed!";
+            finish();
             return Status::Error("Can't do balance because there is one corruptted balance plan!");
         }
         if (plan_ == nullptr) {
             LOG(INFO) << "There is no corrupted plan need to recovery, so create a new one";
             auto status = buildBalancePlan();
-            if (plan_ == nullptr) {
-                LOG(ERROR) << "Create balance plan failed!";
+            if (!status.ok()) {
+                LOG(ERROR) << "Create balance plan failed, status " << status.toString();
+                finish();
                 return status;
             }
         }
         executor_->add(std::bind(&BalancePlan::invoke, plan_.get()));
+        running_ = true;
         return plan_->id();
     }
-    return Status::Error("balance running");
+    CHECK(!!plan_);
+    return plan_->id();
+}
+
+StatusOr<BalancePlan> Balancer::show(BalanceID id) const {
+    if (kv_) {
+        BalancePlan plan(id, kv_, client_.get());
+        if (!plan.recovery(false)) {
+            return Status::Error("Get balance plan failed, id %ld", id);
+        }
+        return plan;
+    }
+    return Status::Error("KV is nullptr");
+}
+
+StatusOr<BalanceID> Balancer::stop() {
+    std::lock_guard<std::mutex> lg(lock_);
+    if (!running_) {
+        return Status::Error("No running balance plan");
+    }
+    CHECK(!!plan_);
+    plan_->stop();
+    return plan_->id();
 }
 
 bool Balancer::recovery() {
@@ -66,14 +91,14 @@ bool Balancer::recovery() {
         CHECK_EQ(1, corruptedPlans.size());
         plan_ = std::make_unique<BalancePlan>(corruptedPlans[0], kv_, client_.get());
         plan_->onFinished_ = [this] () {
-            bool expected = true;
-            auto &running = this->running_;   // Get the reference before the captured `this' lost
-            plan_.reset();
-            CHECK(running.compare_exchange_strong(expected, false));
+            auto self = plan_;
+            {
+                std::lock_guard<std::mutex> lg(lock_);
+                finish();
+            }
         };
         if (!plan_->recovery()) {
             LOG(ERROR) << "Can't recovery plan " << corruptedPlans[0];
-            plan_->onFinished_();
             return false;
         }
     }
@@ -87,7 +112,6 @@ bool Balancer::getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCo
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        running_ = false;
         retCode = ret;
         return false;
     }
@@ -114,17 +138,16 @@ Status Balancer::buildBalancePlan() {
         }
     }
     plan_->onFinished_ = [this] () {
-        bool expected = true;
-        auto &running = this->running_;   // Get the reference before the captured `this' lost
-        plan_.reset();
-        CHECK(running.compare_exchange_strong(expected, false));
+        auto self = plan_;
+        {
+            std::lock_guard<std::mutex> lg(lock_);
+            finish();
+        }
     };
     if (plan_->tasks_.empty()) {
-        plan_->onFinished_();
-        return Status::Error("No Tasks");
+        return Status::Balanced();
     }
     if (!plan_->saveInStore()) {
-        plan_->onFinished_();
         return Status::Error("Can't persist the plan");
     }
     return Status::OK();
@@ -145,9 +168,11 @@ std::vector<BalanceTask> Balancer::genTasks(GraphSpaceID spaceId) {
     calDiff(hostParts, activeHosts, newlyAdded, lost);
     decltype(hostParts) newHostParts(hostParts);
     for (auto& h : newlyAdded) {
+        LOG(INFO) << "Found new host " << h;
         newHostParts.emplace(h, std::vector<PartitionID>());
     }
     for (auto& h : lost) {
+        LOG(INFO) << "Lost host " << h;
         newHostParts.erase(h);
     }
     LOG(INFO) << "Now, try to balance the newHostParts";
@@ -157,6 +182,11 @@ std::vector<BalanceTask> Balancer::genTasks(GraphSpaceID spaceId) {
     for (auto& h : lost) {
         auto& lostParts = hostParts[h];
         for (auto& partId : lostParts) {
+            auto srcRet = hostWithPart(newHostParts, partId);
+            if (!srcRet.ok()) {
+                LOG(ERROR) << "Error:" << srcRet.status();
+                return std::vector<BalanceTask>();
+            }
             auto ret = hostWithMinimalParts(newHostParts, partId);
             if (!ret.ok()) {
                 LOG(ERROR) << "Error:" << ret.status();
@@ -169,6 +199,7 @@ std::vector<BalanceTask> Balancer::genTasks(GraphSpaceID spaceId) {
                                partId,
                                h,
                                luckyHost,
+                               false,
                                kv_,
                                client_.get());
         }
@@ -202,6 +233,8 @@ void Balancer::balanceParts(BalanceID balanceId,
         CHECK_GE(avgLoad, minPartsHost.second);
         auto& partsFrom = newHostParts[maxPartsHost.first];
         auto& partsTo = newHostParts[minPartsHost.first];
+        std::sort(partsFrom.begin(), partsFrom.end());
+        std::sort(partsTo.begin(), partsTo.end());
         VLOG(1) << maxPartsHost.first << ":" << partsFrom.size()
                 << "->" << minPartsHost.first << ":" << partsTo.size()
                 << ", lastDelta=" << lastDelta;
@@ -217,9 +250,11 @@ void Balancer::balanceParts(BalanceID balanceId,
                         << maxPartsHost.first << " to " << minPartsHost.first;
                 break;
             }
-            VLOG(1) << maxPartsHost.first << "->" << minPartsHost.first << ": " << partId;
+            LOG(INFO) << "[space:" << spaceId << ", part:" << partId << "] "
+                      << maxPartsHost.first << "->" << minPartsHost.first;
             auto it = std::find(partsFrom.begin(), partsFrom.end(), partId);
             CHECK(it != partsFrom.end());
+            CHECK(std::find(partsTo.begin(), partsTo.end(), partId) == partsTo.end());
             partsFrom.erase(it);
             partsTo.emplace_back(partId);
             tasks.emplace_back(balanceId,
@@ -227,6 +262,7 @@ void Balancer::balanceParts(BalanceID balanceId,
                                partId,
                                maxPartsHost.first,
                                minPartsHost.first,
+                               true,
                                kv_,
                                client_.get());
             noAction = false;
@@ -285,13 +321,13 @@ void Balancer::calDiff(const std::unordered_map<HostAddr, std::vector<PartitionI
                        std::vector<HostAddr>& newlyAdded,
                        std::vector<HostAddr>& lost) {
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-        VLOG(3) << "Host " << it->first << ", parts " << it->second.size();
+        VLOG(1) << "Original Host " << it->first << ", parts " << it->second.size();
         if (std::find(activeHosts.begin(), activeHosts.end(), it->first) == activeHosts.end()) {
             lost.emplace_back(it->first);
         }
     }
     for (auto& h : activeHosts) {
-        VLOG(3) << "Actvie Host " << h;
+        VLOG(1) << "Active host " << h;
         if (hostParts.find(h) == hostParts.end()) {
             newlyAdded.emplace_back(h);
         }
@@ -309,6 +345,17 @@ Balancer::sortedHostsByParts(const std::unordered_map<HostAddr,
         return l.second < r.second;
     });
     return hosts;
+}
+
+StatusOr<HostAddr> Balancer::hostWithPart(
+            const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
+            PartitionID partId) {
+    for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
+        if (std::find(it->second.begin(), it->second.end(), partId) != it->second.end()) {
+            return it->first;
+        }
+    }
+    return Status::Error("No host hold the part %d", partId);
 }
 
 StatusOr<HostAddr> Balancer::hostWithMinimalParts(
@@ -332,8 +379,7 @@ cpp2::ErrorCode Balancer::leaderBalance() {
     std::vector<GraphSpaceID> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
-        LOG(ERROR) << "Can't access kvstore, ret = d"
-                   << static_cast<int32_t>(ret);
+        LOG(ERROR) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
 
@@ -342,7 +388,7 @@ cpp2::ErrorCode Balancer::leaderBalance() {
         hostLeaderMap_.reset(new HostLeaderMap);
         auto status = client_->getLeaderDist(hostLeaderMap_.get()).get();
 
-        if (!status.ok()) {
+        if (!status.ok() || hostLeaderMap_->empty()) {
             inLeaderBalance_ = false;
             return cpp2::ErrorCode::E_RPC_FAILURE;
         }
@@ -360,7 +406,8 @@ cpp2::ErrorCode Balancer::leaderBalance() {
         }
 
         int32_t failed = 0;
-        folly::collectAll(futures).then([&](const std::vector<folly::Try<Status>>& tries) {
+        folly::collectAll(futures).thenTry([&](const auto& result) {
+            auto tries = result.value();
             for (const auto& t : tries) {
                 if (!t.value().ok()) {
                     ++failed;
@@ -409,23 +456,31 @@ Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spac
     std::unordered_map<HostAddr, std::vector<PartitionID>> allHostParts;
     getHostParts(spaceId, allHostParts, totalParts);
 
-    size_t avgLoad = leaderParts / hostLeaderMap->size();
+    std::unordered_set<HostAddr> activeHosts;
+    for (const auto& host : *hostLeaderMap) {
+        // only balance leader between hosts which have valid partition
+        if (!allHostParts[host.first].empty()) {
+            activeHosts.emplace(host.first);
+            leaderHostParts[host.first] = std::move((*hostLeaderMap)[host.first][spaceId]);
+        }
+    }
+
+    if (activeHosts.empty()) {
+        LOG(ERROR) << "No active hosts";
+        return leaderHostParts;
+    }
+
+    size_t avgLoad = leaderParts / activeHosts.size();
     size_t minLoad = avgLoad;
     size_t maxLoad = avgLoad + 1;
     if (useDeviation) {
-        minLoad = std::ceil(static_cast<double> (leaderParts) / hostLeaderMap->size() *
+        minLoad = std::ceil(static_cast<double> (leaderParts) / activeHosts.size() *
                             (1 - FLAGS_leader_balance_deviation));
-        maxLoad = std::floor(static_cast<double> (leaderParts) / hostLeaderMap->size() *
+        maxLoad = std::floor(static_cast<double> (leaderParts) / activeHosts.size() *
                             (1 + FLAGS_leader_balance_deviation));
     }
     LOG(INFO) << "Build leader balance plan, expeceted min load: " << minLoad
               << ", max load: " << maxLoad;
-
-    std::unordered_set<HostAddr> activeHosts;
-    for (const auto& host : *hostLeaderMap) {
-        activeHosts.emplace(host.first);
-        leaderHostParts[host.first] = std::move((*hostLeaderMap)[host.first][spaceId]);
-    }
 
     while (true) {
         bool hasUnbalancedHost = false;
