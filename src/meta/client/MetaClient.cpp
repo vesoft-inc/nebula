@@ -422,8 +422,6 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("No valid host hold the partition");
         case cpp2::ErrorCode::E_CORRUPTTED_BALANCE_PLAN:
             return Status::Error("No corrupted blance plan");
-        case cpp2::ErrorCode::E_REMOVE_A_DEAD_HOST:
-            return Status::Error("Try to remove a dead host");
         }
         default:
             return Status::Error("Unknown code %d", static_cast<int32_t>(resp.get_code()));

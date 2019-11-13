@@ -593,13 +593,6 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
         }
         ASSERT_EQ(12, num);
     }
-
-    LOG(INFO) << "Now, we want to remove dead host";
-    sleep(FLAGS_expired_threshold_sec + 1);
-    TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {4, 4}});
-    // Fail because try to remove a dead host
-    ret = balancer.balance({{5, 5}});
-    ASSERT_EQ(cpp2::ErrorCode::E_REMOVE_A_DEAD_HOST, error(ret));
 }
 
 TEST(BalanceTest, RecoveryTest) {

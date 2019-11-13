@@ -158,7 +158,7 @@ cpp2::ErrorCode Balancer::buildBalancePlan(std::vector<HostAddr> hostDel) {
 }
 
 ErrorOr<cpp2::ErrorCode, std::vector<BalanceTask>>
-Balancer::genTasks(GraphSpaceID spaceId, std::vector<HostAddr>& hostDel) {
+Balancer::genTasks(GraphSpaceID spaceId, std::vector<HostAddr>& lost) {
     CHECK(!!plan_) << "plan should not be nullptr";
     std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
     int32_t totalParts = 0;
@@ -169,37 +169,24 @@ Balancer::genTasks(GraphSpaceID spaceId, std::vector<HostAddr>& hostDel) {
         return cpp2::ErrorCode::E_NOT_FOUND;
     }
     auto activeHosts = ActiveHostsMan::getActiveHosts(kv_);
-    // If hostDel is specified, all host in it must be active host.
-    // (e.g. some partition only exists in host that you want to be removed)
-    // Otherwise, we use active host list to get hostDel in calDiff
-    std::vector<HostAddr> hostAdd;
-    for (const auto& host : hostDel) {
-        if (std::find(activeHosts.begin(), activeHosts.end(), host) == activeHosts.end()) {
-            LOG(ERROR) << "Try to remove a dead host " << host;
-            return cpp2::ErrorCode::E_REMOVE_A_DEAD_HOST;
-        }
-    }
-    calDiff(hostParts, activeHosts, hostAdd, hostDel);
+    std::vector<HostAddr> newlyAdded;
+    calDiff(hostParts, activeHosts, newlyAdded, lost);
     decltype(hostParts) newHostParts(hostParts);
-    for (auto& h : hostAdd) {
+    for (auto& h : newlyAdded) {
         LOG(INFO) << "Found new host " << h;
         newHostParts.emplace(h, std::vector<PartitionID>());
     }
-    for (auto& h : hostDel) {
+    for (auto& h : lost) {
         LOG(INFO) << "Lost host " << h;
         newHostParts.erase(h);
     }
     LOG(INFO) << "Now, try to balance the newHostParts";
-    // We have two parts need to balance, the first one is parts on hostDel hosts
+    // We have two parts need to balance, the first one is parts on lost hosts
     // The seconds one is parts on unbalanced host in newHostParts.
     std::vector<BalanceTask> tasks;
-    if (newHostParts.size() < 2) {
-        LOG(INFO) << "Too few hosts, no need for balance!";
-        return tasks;
-    }
-    for (auto& h : hostDel) {
-        auto& hostDelParts = hostParts[h];
-        for (auto& partId : hostDelParts) {
+    for (auto& h : lost) {
+        auto& lostParts = hostParts[h];
+        for (auto& partId : lostParts) {
             auto srcRet = hostWithPart(newHostParts, partId);
             if (!srcRet.ok()) {
                 LOG(ERROR) << "Error:" << srcRet.status();
@@ -221,6 +208,10 @@ Balancer::genTasks(GraphSpaceID spaceId, std::vector<HostAddr>& hostDel) {
                                kv_,
                                client_.get());
         }
+    }
+    if (newHostParts.size() < 2) {
+        LOG(INFO) << "Too few hosts, no need for balance!";
+        return cpp2::ErrorCode::E_NO_VALID_HOST;
     }
     balanceParts(plan_->id_, spaceId, newHostParts, totalParts, tasks);
     return tasks;
@@ -334,13 +325,11 @@ void Balancer::calDiff(const std::unordered_map<HostAddr, std::vector<PartitionI
                        const std::vector<HostAddr>& activeHosts,
                        std::vector<HostAddr>& newlyAdded,
                        std::vector<HostAddr>& lost) {
-    // if lost is specified, only consider these lost hosts
-    if (lost.empty()) {
-        for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-            VLOG(1) << "Original Host " << it->first << ", parts " << it->second.size();
-            if (std::find(activeHosts.begin(), activeHosts.end(), it->first) == activeHosts.end()) {
-                lost.emplace_back(it->first);
-            }
+    for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
+        VLOG(1) << "Original Host " << it->first << ", parts " << it->second.size();
+        if (std::find(activeHosts.begin(), activeHosts.end(), it->first) == activeHosts.end() &&
+            std::find(lost.begin(), lost.end(), it->first) == lost.end()) {
+            lost.emplace_back(it->first);
         }
     }
     for (auto& h : activeHosts) {

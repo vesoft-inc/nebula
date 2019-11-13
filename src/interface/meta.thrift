@@ -39,7 +39,6 @@ enum ErrorCode {
     E_NO_RUNNING_BALANCE_PLAN   = -35,
     E_NO_VALID_HOST             = -36,
     E_CORRUPTTED_BALANCE_PLAN   = -37,
-    E_REMOVE_A_DEAD_HOST        = -38,
 
     E_INVALID_PASSWORD       = -41,
     E_INPROPER_ROLE          = -42,
