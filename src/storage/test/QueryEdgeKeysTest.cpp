@@ -21,7 +21,7 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     // Add edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr);
+        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
 
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
@@ -31,11 +31,14 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
         for (auto partId = 0; partId < 3; partId++) {
             std::vector<cpp2::Edge> edges;
             for (auto srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
-                edges.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                   cpp2::EdgeKey(apache::thrift::FragileConstructor::FRAGILE,
-                                                 srcId, srcId * 100 + 1,
-                                                 srcId * 100 + 2, srcId * 100 + 3),
-                                   folly::stringPrintf("%d_%d", partId, srcId));
+                cpp2::EdgeKey key;
+                key.set_src(srcId);
+                key.set_edge_type(srcId * 100 + 1);
+                key.set_ranking(srcId * 100 + 2);
+                key.set_dst(srcId * 100 + 3);
+                edges.emplace_back();
+                edges.back().set_key(std::move(key));
+                edges.back().set_props(folly::stringPrintf("%d_%d", partId, srcId));
             }
             req.parts.emplace(partId, std::move(edges));
         }

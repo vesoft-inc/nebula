@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+include "common.thrift"
+
 namespace cpp nebula.graph
 namespace java com.vesoft.nebula.graph
 namespace go nebula.graph
@@ -53,6 +55,22 @@ struct DateTime {
     8: i16 microsec;
 }
 
+struct Vertex {
+    1: common.VertexID id;
+}
+struct Edge {
+    1: binary type;
+    2: common.EdgeRanking ranking;
+    3: optional common.VertexID src;
+    4: optional common.VertexID dst;
+}
+union PathEntry {
+    1: Vertex vertex;
+    2: Edge edge;
+}
+struct Path {
+    1: list<PathEntry> entry_list;
+}
 
 union ColumnValue {
     // Simple types
@@ -71,7 +89,7 @@ union ColumnValue {
     11: DateTime datetime;
 
     // Graph specific
-    // PATH = 41;
+    41: Path path;
 
     // Container types
     // LIST = 101;

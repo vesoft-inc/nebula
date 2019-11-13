@@ -36,7 +36,7 @@ public:
             HostAddr localhost = {0, 0},
             meta::MetaClient* mClient = nullptr,
             bool useMetaServer = false,
-            std::shared_ptr<kvstore::KVCompactionFilterFactory> cfFactory = nullptr) {
+            std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder = nullptr) {
         auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
         auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
                                  1, true /*stats*/);
@@ -67,7 +67,7 @@ public:
 
         // Prepare KVStore
         options.dataPaths_ = std::move(paths);
-        options.cfFactory_ = std::move(cfFactory);
+        options.cffBuilder_ = std::move(cffBuilder);
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
                                                             localhost,
@@ -163,7 +163,7 @@ public:
         return std::make_shared<ResultSchemaProvider>(std::move(schema));
     }
 
-    static cpp2::PropDef vetexPropDef(std::string name, TagID tagId) {
+    static cpp2::PropDef vertexPropDef(std::string name, TagID tagId) {
         cpp2::PropDef prop;
         prop.set_name(std::move(name));
         prop.set_owner(cpp2::PropOwner::SOURCE);
@@ -179,8 +179,8 @@ public:
         return prop;
     }
 
-    static cpp2::PropDef vetexPropDef(std::string name, cpp2::StatType type, TagID tagId) {
-        auto prop = TestUtils::vetexPropDef(std::move(name), tagId);
+    static cpp2::PropDef vertexPropDef(std::string name, cpp2::StatType type, TagID tagId) {
+        auto prop = TestUtils::vertexPropDef(std::move(name), tagId);
         prop.set_stat(type);
         return prop;
     }
@@ -226,6 +226,28 @@ public:
         LOG(INFO) << "The storage daemon started on port " << sc->port_
                   << ", data path is at \"" << dataPath << "\"";
         return sc;
+    }
+
+    static void waitUntilAllElected(kvstore::KVStore* kvstore, GraphSpaceID spaceId, int partNum) {
+        auto* nKV = static_cast<kvstore::NebulaStore*>(kvstore);
+        // wait until all part leader exists
+        while (true) {
+            int readyNum = 0;
+            for (auto partId = 1; partId <= partNum; partId++) {
+                auto retLeader = nKV->partLeader(spaceId, partId);
+                if (ok(retLeader)) {
+                    auto leader = value(std::move(retLeader));
+                    if (leader != HostAddr(0, 0)) {
+                        readyNum++;
+                    }
+                }
+            }
+            if (readyNum == partNum) {
+                LOG(INFO) << "All leaders have been elected!";
+                break;
+            }
+            usleep(100000);
+        }
     }
 };
 

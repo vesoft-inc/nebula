@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "graph/InsertEdgeExecutor.h"
 #include "storage/client/StorageClient.h"
+#include <folly/synchronization/Baton.h>
 
 namespace nebula {
 namespace graph {
@@ -64,16 +65,20 @@ Status InsertEdgeExecutor::check() {
                                    [name](std::string *prop) { return *prop == name;});
 
             if (it == props_.end() && defaultValues_.find(name) == defaultValues_.end()) {
-                auto valueResult = mc->getEdgeDefaultValue(spaceId_, edgeType_, name).get();
-
-                if (!valueResult.ok()) {
-                    LOG(ERROR) << "Not exist default value: " << name;
-                    return Status::Error("Not exist default value");
-                } else {
-                    VLOG(3) << "Default Value: " << name
-                            << ":" << valueResult.value();
-                    defaultValues_.emplace(name, valueResult.value());
-                }
+                folly::Baton<true, std::atomic> baton;
+                mc->getEdgeDefaultValue(spaceId_, edgeType_, name)
+                    .thenValue([name, &status, &baton, this] (auto &&result) {
+                        if (!result.ok()) {
+                            LOG(ERROR) << "Not exist default value: " << name;
+                            status = Status::Error("Not exist default value");
+                        } else {
+                            VLOG(3) << "Default Value: " << name
+                                    << " : " << result.value();
+                            defaultValues_.emplace(name, result.value());
+                        }
+                        baton.post();
+                    });
+                baton.wait();
             }
         }
     } else {
@@ -85,7 +90,12 @@ Status InsertEdgeExecutor::check() {
         }
     }
 
-    return Status::OK();
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return status;
+    }
+
+    return status;
 }
 
 
@@ -98,7 +108,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
 
     std::vector<storage::cpp2::Edge> edges(rows_.size() * 2);   // inbound and outbound
     auto index = 0;
-    for (auto i = 0u; i < rows_.size(); i++) {
+    for (size_t i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto sid = row->srcid();
         sid->setContext(expCtx_.get());

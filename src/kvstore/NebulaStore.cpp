@@ -132,13 +132,15 @@ bool NebulaStore::init() {
 std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
                                                  const std::string& path) {
     if (FLAGS_engine_type == "rocksdb") {
-        if (options_.cfFactory_ != nullptr) {
-            options_.cfFactory_->construct(spaceId, FLAGS_custom_filter_interval_secs);
+        std::shared_ptr<KVCompactionFilterFactory> cfFactory = nullptr;
+        if (options_.cffBuilder_ != nullptr) {
+            cfFactory = options_.cffBuilder_->buildCfFactory(spaceId,
+                                                             FLAGS_custom_filter_interval_secs);
         }
         return std::make_unique<RocksEngine>(spaceId,
                                              path,
                                              options_.mergeOp_,
-                                             options_.cfFactory_);
+                                             cfFactory);
     } else {
         LOG(FATAL) << "Unknown engine type " << FLAGS_engine_type;
         return nullptr;
@@ -267,6 +269,19 @@ void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId) {
     LOG(INFO) << "Space " << spaceId << ", part " << partId << " has been removed!";
 }
 
+void NebulaStore::updateSpaceOption(GraphSpaceID spaceId,
+                                    const std::unordered_map<std::string, std::string>& options,
+                                    bool isDbOption) {
+    if (isDbOption) {
+        for (const auto& kv : options) {
+            setDBOption(spaceId, kv.first, kv.second);
+        }
+    } else {
+        for (const auto& kv : options) {
+            setOption(spaceId, kv.first, kv.second);
+        }
+    }
+}
 
 ResultCode NebulaStore::get(GraphSpaceID spaceId,
                             PartitionID partId,

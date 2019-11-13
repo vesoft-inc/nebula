@@ -48,21 +48,23 @@ Status InsertVertexExecutor::check() {
         auto *tagName = item->tagName();
         auto tagStatus = ectx()->schemaManager()->toTagID(spaceId_, *tagName);
         if (!tagStatus.ok()) {
-            LOG(ERROR) << "No schema found for " << tagName;
+            LOG(ERROR) << "No schema found for " << *tagName;
             return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
         auto tagId = tagStatus.value();
         auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
         if (schema == nullptr) {
-            LOG(ERROR) << "No schema found for " << tagName;
+            LOG(ERROR) << "No schema found for " << *tagName;
             return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
         auto props = item->properties();
         if (props.size() > schema->getNumFields()) {
-            LOG(ERROR) << "Input props number " << props.size()
-                << ", schema fields number " << schema->getNumFields();
+            LOG(ERROR) << "Input props number "
+                       << props.size()
+                       << ", schema fields number "
+                       << schema->getNumFields();
             return Status::Error("Wrong number of props");
         }
 
@@ -106,7 +108,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
     expCtx_->setSpace(spaceId_);
 
     std::vector<storage::cpp2::Vertex> vertices(rows_.size());
-    for (auto i = 0u; i < rows_.size(); i++) {
+    for (size_t i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto rid = row->id();
         rid->setContext(expCtx_.get());
@@ -221,7 +223,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
 
             RowWriter writer(schema);
             auto valueIndex = valuePos;
-            for (auto fieldIndex = 0u; fieldIndex < schemaNumFields; fieldIndex++) {
+            for (size_t fieldIndex = 0u; fieldIndex < schemaNumFields; fieldIndex++) {
                 auto& value = values[valueIndex];
 
                 // Check value type

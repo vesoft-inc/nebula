@@ -254,10 +254,72 @@ std::string FetchEdgesSentence::toString() const {
     } else {
         buf += edgeKeys_->toString();
     }
+    return buf;
+}
 
+std::string GroupBySentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "GROUP BY";
+    if (groupClause_ != nullptr) {
+        buf += " ";
+        buf += groupClause_->toString();
+    }
     if (yieldClause_ != nullptr) {
         buf += " ";
         buf += yieldClause_->toString();
+    }
+    return buf;
+}
+
+std::string FindPathSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "FIND ";
+    if (isShortest_) {
+        buf += "SHORTEST PATH ";
+    } else {
+        buf += "ALL PATH ";
+    }
+
+    if (from_ != nullptr) {
+        buf += from_->toString();
+        buf += " ";
+    }
+    if (to_ != nullptr) {
+        buf += to_->toString();
+        buf += " ";
+    }
+    if (over_ != nullptr) {
+        buf += over_->toString();
+        buf += " ";
+    }
+    if (step_ != nullptr) {
+        buf += step_->toString();
+        buf += " ";
+    }
+    if (where_ != nullptr) {
+        buf += where_->toString();
+        buf += " ";
+    }
+    return buf;
+}
+
+std::string LimitSentence::toString() const {
+    if (offset_ == 0) {
+        return folly::stringPrintf("LIMIT %ld", count_);
+    }
+
+    return folly::stringPrintf("LIMIT %ld,%ld", offset_, count_);
+}
+
+std::string YieldSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += yieldClause_->toString();
+    if (whereClause_ != nullptr) {
+        buf += " ";
+        buf += whereClause_->toString();
     }
     return buf;
 }

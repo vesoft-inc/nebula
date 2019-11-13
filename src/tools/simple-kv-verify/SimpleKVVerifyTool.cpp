@@ -71,12 +71,11 @@ public:
             return;
         }
 
-        auto& result = resp.responses()[0];
-        if (!result.result.failed_codes.empty()) {
-            auto partId = result.result.failed_codes[0].part_id;
-            auto code = result.result.failed_codes[0].code;
-            LOG(ERROR) << "Put Failed in " << partId << ", Code: "
-                       << static_cast<int32_t>(code);
+        if (!resp.failedParts().empty()) {
+            for (const auto& partEntry : resp.failedParts()) {
+                LOG(ERROR) << "Put Failed in " << partEntry.first << ", Code: "
+                           << static_cast<int32_t>(partEntry.second);
+            }
             return;
         }
         LOG(INFO) << "Put Successfully";
@@ -96,20 +95,31 @@ public:
             return;
         }
 
-        auto& result = resp.responses()[0];
-        if (!result.result.failed_codes.empty()) {
-            auto partId = result.result.failed_codes[0].part_id;
-            auto code = result.result.failed_codes[0].code;
-            LOG(ERROR) << "Get Failed in " << partId << ", Code: "
-                       << static_cast<int32_t>(code);
+        if (!resp.failedParts().empty()) {
+            for (const auto& partEntry : resp.failedParts()) {
+                LOG(ERROR) << "Put Failed in " << partEntry.first << ", Code: "
+                           << static_cast<int32_t>(partEntry.second);
+            }
             return;
         }
 
         for (auto& pair : pairs) {
             auto key = pair.first;
-            if (result.values[key] != pairs[key]) {
-                LOG(ERROR) << "Check Fail: " << result.values[key] << " | " << pairs[key];
-                return;
+            bool found = false;
+            for (const auto& result : resp.responses()) {
+                auto iter = result.values.find(key);
+                if (iter != result.values.end()) {
+                    if (iter->second != pairs[key]) {
+                        LOG(ERROR) << "Check Fail: key = " << key << ", values: "
+                                   << iter->second << " != " << pairs[key];
+                        return;
+                    }
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                LOG(ERROR) << "Check Fail: key = " << key << " not found";
             }
         }
 

@@ -23,7 +23,9 @@ Status SequentialExecutor::prepare() {
     for (auto i = 0U; i < sentences_->sentences_.size(); i++) {
         auto *sentence = sentences_->sentences_[i].get();
         auto executor = makeExecutor(sentence);
-        DCHECK(executor != nullptr);
+        if (executor == nullptr) {
+            return Status::Error("The statement has not been implemented");
+        }
         auto status = executor->prepare();
         if (!status.ok()) {
             FLOG_ERROR("Prepare executor `%s' failed: %s",

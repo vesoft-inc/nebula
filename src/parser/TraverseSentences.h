@@ -483,5 +483,151 @@ private:
     std::unique_ptr<EdgeKeyRef>     keyRef_;
     std::unique_ptr<YieldClause>    yieldClause_;
 };
+
+class FindPathSentence final : public Sentence {
+public:
+    explicit FindPathSentence(bool isShortest) {
+        kind_ = Kind::kFindPath;
+        isShortest_ = isShortest;
+    }
+
+    void setFrom(FromClause *clause) {
+        from_.reset(clause);
+    }
+
+    void setTo(ToClause *clause) {
+        to_.reset(clause);
+    }
+
+    void setOver(OverClause *clause) {
+        over_.reset(clause);
+    }
+
+    void setStep(StepClause *clause) {
+        step_.reset(clause);
+    }
+
+    void setWhere(WhereClause *clause) {
+        where_.reset(clause);
+    }
+
+    FromClause* from() const {
+        return from_.get();
+    }
+
+    ToClause* to() const {
+        return to_.get();
+    }
+
+    OverClause* over() const {
+        return over_.get();
+    }
+
+    StepClause* step() const {
+        return step_.get();
+    }
+
+    WhereClause* where() const {
+        return where_.get();
+    }
+
+    bool isShortest() const {
+        return isShortest_;
+    }
+
+    std::string toString() const override;
+
+private:
+    bool                            isShortest_;
+    std::unique_ptr<FromClause>     from_;
+    std::unique_ptr<ToClause>       to_;
+    std::unique_ptr<OverClause>     over_;
+    std::unique_ptr<StepClause>     step_;
+    std::unique_ptr<WhereClause>    where_;
+};
+
+class LimitSentence final : public Sentence {
+public:
+    explicit LimitSentence(int64_t offset, int64_t count) : offset_(offset), count_(count) {
+        kind_ = Kind::kLimit;
+    }
+
+    std::string toString() const override;
+
+    int64_t offset() {
+        return offset_;
+    }
+
+    int64_t count() {
+        return count_;
+    }
+
+ private:
+    int64_t    offset_{-1};
+    int64_t    count_{-1};
+};
+
+class YieldSentence final : public Sentence {
+public:
+    explicit YieldSentence(YieldColumns *fields) {
+        DCHECK(fields != nullptr);
+        yieldClause_ = std::make_unique<YieldClause>(fields);
+        kind_ = Kind::kYield;
+    }
+
+    std::vector<YieldColumn*> columns() const {
+        return yieldClause_->columns();
+    }
+
+    void setWhereClause(WhereClause *clause) {
+        whereClause_.reset(clause);
+    }
+
+    WhereClause* where() {
+        return whereClause_.get();
+    }
+
+    YieldClause* yield() {
+        return yieldClause_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<YieldClause>               yieldClause_;
+    std::unique_ptr<WhereClause>               whereClause_;
+};
+
+class GroupBySentence final : public Sentence {
+public:
+    GroupBySentence() {
+        kind_ = Kind::KGroupBy;
+    }
+
+    void setGroupClause(GroupClause *clause) {
+        groupClause_.reset(clause);
+    }
+
+    void setYieldClause(YieldClause *clause) {
+        yieldClause_.reset(clause);
+    }
+
+    const GroupClause* groupClause() const {
+        return groupClause_.get();
+    }
+
+    const YieldClause* yieldClause() const {
+        return yieldClause_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<GroupClause>   groupClause_;
+    std::unique_ptr<YieldClause>   yieldClause_;
+};
+
 }   // namespace nebula
 #endif  // PARSER_TRAVERSESENTENCES_H_
+
+

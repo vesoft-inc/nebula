@@ -937,25 +937,19 @@ TEST(Parser, Find) {
 TEST(Parser, AdminOperation) {
     {
         GQLParser parser;
-        std::string query = "ADD HOSTS 127.0.0.1:1000, 127.0.0.1:9000";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-    }
-    {
-        GQLParser parser;
         std::string query = "SHOW HOSTS";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "REMOVE HOSTS 127.0.0.1:1000, 127.0.0.1:9000";
+        std::string query = "SHOW SPACES";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "SHOW SPACES";
+        std::string query = "SHOW PARTS";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -1330,39 +1324,65 @@ TEST(Parser, Distinct) {
 TEST(Parser, ConfigOperation) {
     {
         GQLParser parser;
-        std::string query = "SHOW VARIABLES";
+        std::string query = "SHOW CONFIGS";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "SHOW VARIABLES GRAPH";
+        std::string query = "SHOW CONFIGS GRAPH";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "UPDATE VARIABLES storage:name=value";
+        std::string query = "UPDATE CONFIGS storage:name=value";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GET VARIABLES Meta:name";
+        std::string query = "GET CONFIGS Meta:name";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "UPDATE VARIABLES load_data_interval_secs=120";
+        std::string query = "UPDATE CONFIGS load_data_interval_secs=120";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GET VARIABLES load_data_interval_secs";
+        std::string query = "GET CONFIGS load_data_interval_secs";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE CONFIGS storage:rocksdb_db_options = "
+                            "{ stats_dump_period_sec = 200 }";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE CONFIGS rocksdb_db_options={disable_auto_compaction=false}";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE CONFIGS storage:rocksdb_db_options = "
+                            "{stats_dump_period_sec = 200, disable_auto_compaction = false}";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE CONFIGS storage:rocksdb_db_options = {}";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
     }
 }
 
@@ -1373,6 +1393,118 @@ TEST(Parser, BalanceOperation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "BALANCE DATA";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "BALANCE DATA 1234567890";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "BALANCE DATA STOP";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
+TEST(Parser, CrashByFuzzer) {
+    {
+        GQLParser parser;
+        std::string query = ";MATCH";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+
+    {
+        GQLParser parser;
+        std::string query = ";YIELD\nI41( ,1)GEGE.INGEST";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, FindPath) {
+    {
+        GQLParser parser;
+        std::string query = "FIND SHORTEST PATH FROM 1 TO 2 OVER like";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, Limit) {
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 OVER work | LIMIT 1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 OVER work | LIMIT 1,2";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 OVER work | LIMIT 1 OFFSET 2";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // ERROR
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 OVER work | LIMIT \"1\"";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+}
+
+TEST(Parser, GroupBy) {
+    // All fun succeed
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 OVER work "
+                            "YIELD $$.company.name, $^.person.name "
+                            "| GROUP BY $$.company.name "
+                            "YIELD $$.company.name as name, "
+                            "COUNT($^.person.name ), "
+                            "COUNT_DISTINCT($^.person.name ), "
+                            "SUM($^.person.name ), "
+                            "AVG($^.person.name ), "
+                            "MAX($^.person.name ), "
+                            "MIN($^.person.name ), "
+                            "F_STD($^.person.name ), "
+                            "F_BIT_AND($^.person.name ), "
+                            "F_BIT_OR($^.person.name ), "
+                            "F_BIT_XOR($^.person.name )";
+
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // Error syntax
+    {
+        GQLParser parser;
+        std::string query = "YIELD rand32() as id, sum(1) as sum, avg(2) as avg GROUP BY id";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    // All fun error, empty group name
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 OVER work "
+                            "YIELD $$.company.name, $^.person.name "
+                            "| GROUP BY "
+                            "YIELD $$.company.name as name, "
+                            "COUNT($^.person.name )";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+}
 }   // namespace nebula

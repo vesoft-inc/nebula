@@ -91,12 +91,11 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     auto spaceId = ret.value();
 
     std::vector<nebula::cpp2::ColumnDef> columns;
-    nebula::cpp2::ColumnDef column;
-    column.set_name("c");
-    nebula::cpp2::ValueType vType;
-    vType.set_type(nebula::cpp2::SupportedType::STRING);
-    column.set_type(std::move(vType));
-    columns.emplace_back(std::move(column));
+    nebula::cpp2::ValueType vt;
+    vt.set_type(SupportedType::STRING);
+    columns.emplace_back();
+    columns.back().set_name("c");
+    columns.back().set_type(vt);
 
     nebula::cpp2::Schema schema;
     schema.set_columns(std::move(columns));
@@ -148,7 +147,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         for (int32_t vId = 0; vId < 10000; vId++) {
             vIds.emplace_back(vId);
         }
-        retCols.emplace_back(storage::TestUtils::vetexPropDef("c", tagId));
+        retCols.emplace_back(storage::TestUtils::vertexPropDef("c", tagId));
         auto f = sClient->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
         auto resp = std::move(f).get();
         if (!resp.succeeded()) {
@@ -162,7 +161,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         }
         ASSERT_TRUE(resp.succeeded());
         auto& results = resp.responses();
-        ASSERT_EQ(partition, results.size());
+        EXPECT_EQ(partition, results.size());
         EXPECT_EQ(0, results[0].result.failed_codes.size());
         EXPECT_EQ(1, results[0].vertex_schema[tagId].columns.size());
         auto tagProvider = std::make_shared<ResultSchemaProvider>(results[0].vertex_schema[tagId]);

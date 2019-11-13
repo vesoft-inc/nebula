@@ -178,7 +178,7 @@ TEST_F(FetchEdgesTest, base) {
         auto &player = players_["Boris Diaw"];
         auto &serve = player.serves()[0];
         auto &team = teams_[std::get<0>(serve)];
-        auto *fmt = "FETCH PROP ON serve uuid(\"%s\")->hash(\"%s\") "
+        auto *fmt = "FETCH PROP ON serve uuid(\"%s\")->uuid(\"%s\") "
                     "YIELD serve.start_year, serve.end_year";
         auto query = folly::stringPrintf(fmt, player.name().c_str(), team.name().c_str());
         auto code = client_->execute(query, resp);
@@ -256,7 +256,7 @@ TEST_F(FetchEdgesTest, noYield) {
         auto &player = players_["Boris Diaw"];
         auto &serve = player.serves()[0];
         auto &team = teams_[std::get<0>(serve)];
-        auto *fmt = "FETCH PROP ON serve uuid(\"%s\")->hash(\"%s\")";
+        auto *fmt = "FETCH PROP ON serve uuid(\"%s\")->uuid(\"%s\")";
         auto query = folly::stringPrintf(fmt, player.name().c_str(), team.name().c_str());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -408,7 +408,7 @@ TEST_F(FetchEdgesTest, nonExistEdge) {
     }
     {
         cpp2::ExecutionResponse resp;
-        auto query = "FETCH PROP ON serve uuid(\"Zion Williamson\")->hash(\"Spurs\") "
+        auto query = "FETCH PROP ON serve uuid(\"Zion Williamson\")->uuid(\"Spurs\") "
                      "YIELD serve.start_year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);

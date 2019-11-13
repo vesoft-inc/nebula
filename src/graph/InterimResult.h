@@ -43,6 +43,9 @@ public:
     static Status castToBool(cpp2::ColumnValue *col);
     static Status castToStr(cpp2::ColumnValue *col);
 
+    static Status getResultWriter(const std::vector<cpp2::RowValue> &rows,
+                                  RowSetWriter *rsWriter);
+
     void setColNames(std::vector<std::string> &&colNames) {
         colNames_ = std::move(colNames);
     }
@@ -74,6 +77,9 @@ public:
     class InterimResultIndex;
     StatusOr<std::unique_ptr<InterimResultIndex>>
     buildIndex(const std::string &vidColumn) const;
+
+    Status applyTo(std::function<Status(const RowReader *reader)> visitor,
+                   int64_t limit = INT64_MAX) const;
 
     class InterimResultIndex final {
     public:

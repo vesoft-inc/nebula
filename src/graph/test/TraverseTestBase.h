@@ -44,6 +44,59 @@ protected:
         client_.reset();
     }
 
+    AssertionResult verifyPath(const cpp2::ExecutionResponse &resp,
+                               std::vector<std::string> &expected) {
+        if (resp.get_error_code() != cpp2::ErrorCode::SUCCEEDED) {
+            auto *errmsg = resp.get_error_msg();
+            return TestError() << "Query failed with `"
+                               << static_cast<int32_t>(resp.get_error_code())
+                               << (errmsg == nullptr ? "'" : "': " + *errmsg);
+        }
+
+        if (resp.get_rows() == nullptr && expected.empty()) {
+            return TestOK();
+        }
+
+        auto rows = buildPathString(*resp.get_rows());
+
+        if (expected.size() != rows.size()) {
+            return TestError() << "Rows' count not match: "
+                               << rows.size() << " vs. " << expected.size();
+        }
+
+        std::sort(rows.begin(), rows.end());
+        std::sort(expected.begin(), expected.end());
+
+        for (decltype(rows.size()) i = 0; i < rows.size(); ++i) {
+            if (rows[i] != expected[i]) {
+                return TestError() << rows[i] << " vs. " << expected[i];
+            }
+        }
+        return TestOK();
+    }
+
+    static std::vector<std::string> buildPathString(std::vector<cpp2::RowValue> rows) {
+        std::vector<std::string> paths;
+        for (auto &row : rows) {
+            auto &pathValue = row.get_columns().back().get_path();
+            auto &cols = pathValue.get_entry_list();
+            std::string pathStr;
+            auto iter = cols.begin();
+            while (iter < (cols.end() - 1)) {
+                pathStr += folly::stringPrintf("%ld<%s,%ld>",
+                                iter->get_vertex().get_id(),
+                                (iter + 1)->get_edge().get_type().c_str(),
+                                (iter + 1)->get_edge().get_ranking());
+                iter = iter + 2;
+            }
+            pathStr += folly::to<std::string>(iter->get_vertex().get_id());
+            paths.emplace_back(std::move(pathStr));
+        }
+
+        return paths;
+    }
+
+
     static AssertionResult prepareSchema();
 
     static AssertionResult prepareData();
@@ -723,6 +776,29 @@ AssertionResult TraverseTestBase::prepareData() {
         }
     }
     {
+        // Insert vertices `team' with uuid
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query += "INSERT VERTEX team(name) VALUES ";
+        for (auto &team : teams_) {
+            query += "uuid(\"";
+            query += team.name();
+            query += "\"): ";
+            query += "(";
+            query += "\"";
+            query += team.name();
+            query += "\"";
+            query += "),\n\t";
+        }
+        query.resize(query.size() - 3);
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert `teams' failed: "
+                               << static_cast<int32_t>(code);
+        }
+    }
+    {
         // Insert edges `serve'
         cpp2::ExecutionResponse resp;
         std::string query;
@@ -764,9 +840,9 @@ AssertionResult TraverseTestBase::prepareData() {
                 auto endYear = std::get<2>(serve);
                 query += "uuid(\"";
                 query += player.name();
-                query += "\") -> ";
-                query += std::to_string(teams_[team].vid());
-                query += ": ";
+                query += "\") -> uuid(\"";
+                query += teams_[team].name();
+                query += "\"): ";
                 query += "(";
                 query += std::to_string(startYear);
                 query += ", ";
