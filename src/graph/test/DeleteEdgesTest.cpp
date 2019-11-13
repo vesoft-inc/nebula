@@ -52,19 +52,10 @@ std::unique_ptr<GraphClient>         DeleteEdgesTest::client_{nullptr};
 AssertionResult DeleteEdgesTest::prepareSchema() {
     {
         cpp2::ExecutionResponse resp;
-        std::string host = folly::stringPrintf("127.0.0.1:%u", gEnv->storageServerPort());
-        std::string cmd = "ADD HOSTS " + host;
-        auto code = client_->execute(cmd, resp);
-        if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
-        }
-    }
-    {
-        cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE SPACE mySpace(partition_num=1, replica_factor=1)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
+            return TestError() << "Do cmd:" << cmd << " failed, code:" << static_cast<int>(code);
         }
     }
     sleep(FLAGS_load_data_interval_secs + 1);
@@ -73,7 +64,7 @@ AssertionResult DeleteEdgesTest::prepareSchema() {
         std::string cmd = "USE mySpace";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
+            return TestError() << "Do cmd:" << cmd << " failed, code:" << static_cast<int>(code);
         }
     }
     {
@@ -81,7 +72,7 @@ AssertionResult DeleteEdgesTest::prepareSchema() {
         std::string cmd = "CREATE TAG person(name string, age int)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
+            return TestError() << "Do cmd:" << cmd << " failed, code:" << static_cast<int>(code);
         }
     }
     {
@@ -89,7 +80,7 @@ AssertionResult DeleteEdgesTest::prepareSchema() {
         std::string cmd = "CREATE EDGE friend(intimacy int)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
+            return TestError() << "Do cmd:" << cmd << " failed, code:" << static_cast<int>(code);
         }
     }
     {
@@ -97,7 +88,7 @@ AssertionResult DeleteEdgesTest::prepareSchema() {
         std::string cmd = "CREATE EDGE schoolmate(likeness int)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
+            return TestError() << "Do cmd:" << cmd << " failed, code:" << static_cast<int>(code);
         }
     }
     {
@@ -105,7 +96,7 @@ AssertionResult DeleteEdgesTest::prepareSchema() {
         std::string cmd = "CREATE EDGE transfer(money int)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
+            return TestError() << "Do cmd:" << cmd << " failed, code:" << static_cast<int>(code);
         }
     }
     sleep(FLAGS_load_data_interval_secs + 1);
@@ -118,16 +109,7 @@ AssertionResult DeleteEdgesTest::removeData() {
         std::string cmd = "DROP SPACE mySpace";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
-        }
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = folly::stringPrintf("REMOVE HOSTS 127.0.0.1:%u",
-                                              gEnv->storageServerPort());
-        auto code = client_->execute(cmd, resp);
-        if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
+            return TestError() << "Do cmd:" << cmd << " failed, code:" << static_cast<int>(code);
         }
     }
 

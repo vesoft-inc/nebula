@@ -162,9 +162,6 @@ class GraphScanner;
 %type <edge_row_item> edge_row_item
 %type <update_list> update_list
 %type <update_item> update_item
-%type <edge_list> edge_list
-%type <host_list> host_list
-%type <host_item> host_item
 %type <space_opt_list> space_opt_list
 %type <space_opt_item> space_opt_item
 %type <alter_schema_opt_list> alter_schema_opt_list

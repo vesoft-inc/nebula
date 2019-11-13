@@ -519,19 +519,13 @@ private:
 class DeleteEdgesSentence final : public Sentence {
 public:
     explicit DeleteEdgesSentence(std::string *edge,
-                                 EdgeKeys    *keys) {
-        edge_.reset(edge);
-        edgeKeys_.reset(keys);
-        kind_ = Kind::kDeleteEdges;
-    }
+                                 EdgeKeys    *keys);
 
     const std::string* edge() const {
         return edge_.get();
     }
 
-    EdgeKeys* keys() const {
-        return edgeKeys_.get();
-    }
+    EdgeKeys* keys() const;
 
     std::string toString() const override;
 

@@ -284,6 +284,17 @@ std::string DeleteEdgesSentence::toString() const {
     return buf;
 }
 
+DeleteEdgesSentence::DeleteEdgesSentence(std::string *edge,
+                                         EdgeKeys    *keys) {
+        edge_.reset(edge);
+        edgeKeys_.reset(keys);
+        kind_ = Kind::kDeleteEdges;
+}
+
+EdgeKeys* DeleteEdgesSentence::keys() const {
+    return edgeKeys_.get();
+}
+
 std::string DownloadSentence::toString() const {
     return folly::stringPrintf("DOWNLOAD HDFS \"%s:%d/%s\"", host_.get()->c_str(),
                                port_, path_.get()->c_str());
