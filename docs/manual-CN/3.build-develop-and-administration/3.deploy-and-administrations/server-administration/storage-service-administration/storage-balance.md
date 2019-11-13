@@ -164,6 +164,18 @@ Got 8 rows (Time spent: 5074/6488 us)
 
 可以看到 partition 和对应的数据已均衡的分布至各个机器。
 
+## Balance stop
+
+`BALANCE STOP` 命令用于停止已经开始执行的 balance data 计划。如果没有正在运行的 balance 计划，则会返回错误信息。如果有正在运行的 balance 计划，则会返回计划对应的 ID。
+
+> 由于每个 balance 计划对应若干个 balance task，balance stop 不会停止已经开始执行的 balance task，只会取消后续的 task，已经开始的 task 将继续执行直至完成。
+
+用户可以在 `BALANCE STOP` 之后输入 `BALANCE DATA $id` 来查看已经停止的 balance 计划状态。
+
+所有已经开始执行的 task 完成后，可以再次执行 `BALANCE DATA`，重新开始 balance。
+
+如果之前停止的计划中有失败的 task，则会继续执行之前的计划，如果之前停止的计划中所有 task 都成功了，则会新建一个 balance 计划并开始执行。
+
 ## Balance leader
 
 `BALANCE DATA` 仅能 balance partition，但是 leader 分布仍然不均衡，这意味着旧服务过载，而新服务未得到充分使用。运行 `BALANCE LEADER` 重新分布 Raft leader：
