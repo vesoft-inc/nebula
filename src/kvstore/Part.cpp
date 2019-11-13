@@ -277,6 +277,24 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             }
             break;
         }
+        case OP_BATCH_WRITE: {
+            auto data = decodeBatchValuee(log);
+            for (auto& op : data) {
+                ResultCode code = ResultCode::SUCCEEDED;
+                if (op.first == LogType::OP_PUT) {
+                    code = batch->put(op.second.first, op.second.second);
+                } else if (op.first == LogType::OP_REMOVE) {
+                    code = batch->remove(op.second.first);
+                } else if (op.first == LogType::OP_REMOVE_RANGE) {
+                    code = batch->removeRange(op.second.first, op.second.second);
+                }
+                if (code != ResultCode::SUCCEEDED) {
+                    LOG(ERROR) << idStr_ << "Failed to call WriteBatch";
+                    return false;
+                }
+            }
+            break;
+        }
         case OP_ADD_PEER:
         case OP_ADD_LEARNER: {
             break;

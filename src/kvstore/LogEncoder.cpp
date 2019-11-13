@@ -164,6 +164,64 @@ std::vector<folly::StringPiece> decodeMultiValues(folly::StringPiece encoded) {
     return values;
 }
 
+std::string encodeBatchValue(LogType type,
+                             const std::vector<std::pair<LogType,
+                             std::pair<std::string, std::string>>>& batch) {
+    std::string data, encoded;
+    for (auto& op : batch) {
+        auto bType = op.first;
+        auto bPair = op.second;
+        data.append(reinterpret_cast<char*>(&bType), 1);
+        auto v1 = bPair.first;
+        auto v2 = bPair.second;
+        auto len = v1.size();
+        data.append(reinterpret_cast<char*>(&len), sizeof(uint32_t));
+        data.append(v1.c_str(), len);
+        len = v2.size();
+        data.append(reinterpret_cast<char*>(&len), sizeof(uint32_t));
+        data.append(v2.c_str(), len);
+    }
+
+    encoded.reserve(sizeof(int64_t) + 1 + sizeof(uint32_t) + data.size());
+
+    // Timestamp (8 bytes)
+    int64_t ts = time::WallClock::fastNowInMilliSec();
+    encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t));
+    // Log type
+    encoded.append(reinterpret_cast<char*>(&type), 1);
+    // Number of values
+    auto num = static_cast<uint32_t>(batch.size());
+    encoded.append(reinterpret_cast<char*>(&num), sizeof(uint32_t));
+    // Values
+    encoded.append(data.c_str(), data.size());
+
+    return encoded;
+}
+
+std::vector<std::pair<LogType, std::pair<std::string, std::string>>>
+decodeBatchValuee(folly::StringPiece encoded) {
+    // Skip the timestamp and the first type byte
+    auto* p = encoded.begin() + sizeof(int64_t) + 1;
+    uint32_t numValues = *(reinterpret_cast<const uint32_t*>(p));
+    p += sizeof(uint32_t);
+    std::vector<std::pair<LogType, std::pair<std::string, std::string>>> batch;
+    for (auto i = 0U; i < numValues; i++) {
+        LogType type = *(reinterpret_cast<const LogType *>(p));
+        p += sizeof(LogType);
+        uint32_t len1 = *(reinterpret_cast<const uint32_t*>(p));
+        p += sizeof(uint32_t);
+        auto v1 = folly::StringPiece(p, len1);
+        p += len1;
+        uint32_t len2 = *(reinterpret_cast<const uint32_t*>(p));
+        p += sizeof(uint32_t);
+        auto v2 = folly::StringPiece(p, len2);
+        p += len2;
+        std::pair<std::string, std::string> kv(v1.str(), v2.str());
+        batch.emplace_back(type, kv);
+    }
+    return batch;
+}
+
 std::string encodeHost(LogType type, const HostAddr& host) {
     std::string encoded;
     encoded.reserve(sizeof(int64_t) + 1 + sizeof(HostAddr));
