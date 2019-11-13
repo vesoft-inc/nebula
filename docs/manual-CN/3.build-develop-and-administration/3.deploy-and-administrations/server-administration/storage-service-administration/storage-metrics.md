@@ -40,7 +40,10 @@ _error_qps
 
 ### 统计类型
 
-目前支持的类型有 SUM，COUNT，AVG，RATE，以及 P99，P999 等，最高支持到 P999999。只有 latency 支持 P99 等指标。
+目前支持的统计类型有 SUM，COUNT，AVG，RATE，和 P 分位数 (P99，P999， ... ，P999999)。其中：
+
+- `_latency` 和 `_error_qps` 这两类后缀的指标，支持 SUM，COUNT，AVG，RATE，但不支持 P 分位；
+- `_qps` 后缀的指标，支持 SUM，COUNT，AVG，RATE，也支持 P 分位。
 
 ### 时间范围
 
