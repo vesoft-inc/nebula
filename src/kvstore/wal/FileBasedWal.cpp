@@ -379,7 +379,8 @@ void FileBasedWal::rollbackInFile(WalFileInfoPtr info, LogID logId) {
     lastLogTerm_ = term;
     LOG(INFO) << idStr_ << "Rollback to log " << logId;
 
-    if (0 < pos && pos < FileUtils::fileSize(path)) {
+    CHECK_GT(pos, 0) << "This wal should have been deleted";
+    if (pos < FileUtils::fileSize(path)) {
         LOG(INFO) << idStr_ << "Need to truncate from offset " << pos;
         if (ftruncate(fd, pos) < 0) {
             LOG(FATAL) << "Failed to truncate file \"" << path
@@ -388,6 +389,8 @@ void FileBasedWal::rollbackInFile(WalFileInfoPtr info, LogID logId) {
         }
         info->setSize(pos);
     }
+    info->setLastId(id);
+    info->setLastTerm(term);
     close(fd);
 }
 
@@ -591,6 +594,23 @@ std::unique_ptr<LogIterator> FileBasedWal::iterator(LogID firstLogId,
     return std::make_unique<FileBasedWalIterator>(shared_from_this(), firstLogId, lastLogId);
 }
 
+bool FileBasedWal::linkCurrentWAL(const char* newPath) {
+    closeCurrFile();
+    std::lock_guard<std::mutex> g(walFilesMutex_);
+    if (walFiles_.empty()) {
+        LOG(INFO) << idStr_ << "Create link failed, there is no wal files!";
+        return false;
+    }
+    auto it = walFiles_.rbegin();
+    if (link(it->second->path(), newPath) != 0) {
+        LOG(INFO) << idStr_ << "Create link failed for " << it->second->path()
+                  << " on " << newPath << ", error:" << strerror(errno);
+        return false;
+    }
+    LOG(INFO) << idStr_ << "Create link success for " << it->second->path()
+              << " on " << newPath;
+    return true;
+}
 
 bool FileBasedWal::rollbackToLog(LogID id) {
     if (id < firstLogId_ - 1 || id > lastLogId_) {
@@ -635,9 +655,6 @@ bool FileBasedWal::rollbackToLog(LogID id) {
                     << walFiles_.rbegin()->second->path() << "\"";
             rollbackInFile(walFiles_.rbegin()->second, id);
         }
-
-        // Create the next WAL file
-        prepareNewFile(lastLogId_ + 1);
     }
 
     //------------------------------

@@ -60,6 +60,7 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
     * [Drop Space Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-space-syntax.md)
     * [Drop Tag Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-tag-syntax.md)
   * Data Query And Manipulation Statements
+    * [Delete Edge Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-edge-syntax.md)
     * [Delete Vertex Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-vertex-syntax.md)
     * [Fetch Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/fetch-syntax.md)
     * [Go Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/go-syntax.md)
@@ -91,6 +92,7 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
       * [Drop User Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/drop-user-syntax.md)
     * Configuration Statements
       * [Configs Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/configs-syntax.md)
+      * [RocksDB Compaction & Flush](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/rocksdb-compaction-flush.md)
     * Storage Service Administration
       * Data Import
         * [Download And Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)

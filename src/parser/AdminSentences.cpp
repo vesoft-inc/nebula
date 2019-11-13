@@ -40,30 +40,6 @@ std::string ShowSentence::toString() const {
 }
 
 
-std::string HostList::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    for (auto &host : hosts_) {
-        buf += network::NetworkUtils::intToIPv4(host->first);
-        buf += ":";
-        buf += std::to_string(host->second);
-        buf += ",";
-    }
-    if (!buf.empty()) {
-        buf.resize(buf.size() - 1);
-    }
-    return buf;
-}
-
-
-std::string AddHostsSentence::toString() const {
-    return folly::stringPrintf("ADD HOSTS (%s) ", hosts_->toString().c_str());
-}
-
-std::string RemoveHostsSentence::toString() const {
-    return folly::stringPrintf("REMOVE HOSTS (%s) ", hosts_->toString().c_str());
-}
-
 std::string SpaceOptItem::toString() const {
     switch (optType_) {
         case PARTITION_NUM:

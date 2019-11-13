@@ -54,9 +54,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                                                       localHost,
                                                       kClusterId,
                                                       true);
-    LOG(INFO) << "Add hosts and create space....";
-    auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
-    ASSERT_TRUE(r.ok());
+    LOG(INFO) << "Add hosts automatically and create space....";
     mClient->waitForMetadReady();
     VLOG(1) << "The storage server has been added to the meta service";
 
