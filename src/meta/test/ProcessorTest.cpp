@@ -16,7 +16,6 @@
 #include "meta/processors/partsMan/ListPartsProcessor.h"
 #include "meta/processors/partsMan/DropSpaceProcessor.h"
 #include "meta/processors/partsMan/GetSpaceProcessor.h"
-#include "meta/processors/partsMan/RemoveHostsProcessor.h"
 #include "meta/processors/partsMan/GetPartsAllocProcessor.h"
 #include "meta/processors/schemaMan/CreateTagProcessor.h"
 #include "meta/processors/schemaMan/CreateEdgeProcessor.h"
@@ -42,90 +41,6 @@ namespace meta {
 
 using nebula::cpp2::SupportedType;
 using apache::thrift::FragileConstructor::FRAGILE;
-
-
-TEST(ProcessorTest, AddHostsTest) {
-    fs::TempDir rootPath("/tmp/AddHostsTest.XXXXXX");
-    FLAGS_expired_threshold_sec = 2;
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    {
-        std::vector<nebula::cpp2::HostAddr> thriftHosts;
-        for (auto i = 0; i < 10; i++) {
-            thriftHosts.emplace_back();
-            thriftHosts.back().set_ip(i);
-        thriftHosts.back().set_port(i);
-        }
-        cpp2::AddHostsReq req;
-        req.set_hosts(std::move(thriftHosts));
-        auto* processor = AddHostsProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-    }
-    {
-        cpp2::ListHostsReq req;
-        auto* processor = ListHostsProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(10, resp.hosts.size());
-        for (auto i = 0; i < 10; i++) {
-            ASSERT_EQ(i, resp.hosts[i].hostAddr.ip);
-            ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
-        }
-    }
-    {
-        std::vector<nebula::cpp2::HostAddr> thriftHosts;
-        for (auto i = 10; i < 20; i++) {
-            thriftHosts.emplace_back();
-            thriftHosts.back().set_ip(i);
-        thriftHosts.back().set_port(i);
-        }
-        cpp2::AddHostsReq req;
-        req.set_hosts(std::move(thriftHosts));
-        auto* processor = AddHostsProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-    }
-    {
-        cpp2::ListHostsReq req;
-        auto* processor = ListHostsProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(20, resp.hosts.size());
-        for (auto i = 0; i < 20; i++) {
-            ASSERT_EQ(i, resp.hosts[i].hostAddr.ip);
-            ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
-        }
-    }
-    {
-        std::vector<nebula::cpp2::HostAddr> thriftHosts;
-        for (auto i = 0; i < 20; i++) {
-            thriftHosts.emplace_back();
-            thriftHosts.back().set_ip(i);
-        thriftHosts.back().set_port(i);
-        }
-        cpp2::RemoveHostsReq req;
-        req.set_hosts(std::move(thriftHosts));
-        auto* processor = RemoveHostsProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-    }
-    {
-        cpp2::ListHostsReq req;
-        auto* processor = ListHostsProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(0, resp.hosts.size());
-    }
-}
 
 TEST(ProcessorTest, ListHostsTest) {
     fs::TempDir rootPath("/tmp/ListHostsTest.XXXXXX");

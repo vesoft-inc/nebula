@@ -482,7 +482,7 @@ std::string PrimaryExpression::toString() const {
             snprintf(buf, sizeof(buf), "%s", boost::get<bool>(operand_) ? "true" : "false");
             break;
         case VAR_STR:
-            return "\"" + boost::get<std::string>(operand_) + "\"";
+            return boost::get<std::string>(operand_);
     }
     return buf;
 }

@@ -35,7 +35,7 @@ public:
                               std::vector<nebula::meta::cpp2::AlterSchemaItem>& options,
                               nebula::cpp2::SchemaProp& schemaProp);
 
-    static nebula::cpp2::SupportedType columnTypeToSupportedType(ColumnType type);
+    static nebula::cpp2::SupportedType columnTypeToSupportedType(nebula::ColumnType type);
 };
 
 }   // namespace graph
