@@ -577,6 +577,7 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
     ASSERT_TRUE(ret.ok());
     auto spaceId = ret.value();
     sleep(FLAGS_load_data_interval_secs + 1);
+    storage::TestUtils::waitUntilAllElected(sc->kvStore_.get(), spaceId, 9);
     {
         std::string name = "rocksdb_db_options";
         std::string updateValue = "max_background_compactions=10";
@@ -611,6 +612,8 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
         ASSERT_EQ(FLAGS_rocksdb_column_family_options, value);
     }
     {
+        // need to sleep a bit to take effect on rocksdb
+        sleep(3);
         rocksdb::DBOptions loadedDbOpt;
         std::vector<rocksdb::ColumnFamilyDescriptor> loadedCfDescs;
         std::string rocksPath = folly::stringPrintf("%s/disk1/nebula/%d/data",

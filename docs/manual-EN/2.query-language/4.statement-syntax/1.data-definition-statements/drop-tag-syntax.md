@@ -1,6 +1,7 @@
 # Drop Tag Syntax
-```
-DROP TAG tag_name
+
+```ngql
+DROP TAG <tag_name>
 ```
 
 You must have the DROP privilege for the tag.
@@ -9,8 +10,8 @@ You must have the DROP privilege for the tag.
 
 A vertex can have either only one tag (types) or multiple tags (types).
 
-In the former case, such a vertex can NOT be accessible after the statement -- which may result in DANGLING edges those are connecting with such vertex.
+In the former case, such a vertex can NOT be accessible after the statement, and edges connected with such vertex may result in DANGLING.
 
-In the latter case, such a vertex is still accessible. But all the properties defined by this dropped tag are not accessible.
+In the latter case, the dropped a vertex is still accessible. But all the properties defined by this dropped tag are not accessible.
 
-All the files and directories in the disk are NOT deleted directly. They can only be released by future operations (see TODO).
+This operation only deletes the Schema data, all the files and directories in the disk are NOT deleted directly, data is deleted in the next compaction.

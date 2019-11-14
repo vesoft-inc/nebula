@@ -54,9 +54,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                                                       localHost,
                                                       kClusterId,
                                                       true);
-    LOG(INFO) << "Add hosts and create space....";
-    auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
-    ASSERT_TRUE(r.ok());
+    LOG(INFO) << "Add hosts automatically and create space....";
     mClient->waitForMetadReady();
     VLOG(1) << "The storage server has been added to the meta service";
 
@@ -78,24 +76,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     spaceId = ret.value();
     LOG(INFO) << "Created space \"default\", its id is " << spaceId;
     sleep(FLAGS_load_data_interval_secs + 1);
-    auto* nKV = static_cast<kvstore::NebulaStore*>(sc->kvStore_.get());
-    while (true) {
-        int readyNum = 0;
-        for (auto partId = 1; partId <= 10; partId++) {
-            auto retLeader = nKV->partLeader(spaceId, partId);
-            if (ok(retLeader)) {
-                auto leader = value(std::move(retLeader));
-                if (leader != HostAddr(0, 0)) {
-                    readyNum++;
-                }
-            }
-        }
-        if (readyNum == 10) {
-            LOG(INFO) << "All leaders have been elected!";
-            break;
-        }
-        usleep(100000);
-    }
+    TestUtils::waitUntilAllElected(sc->kvStore_.get(), spaceId, 10);
     auto client = std::make_unique<StorageClient>(threadPool, mClient.get());
 
     // VerticesInterfacesTest(addVertices and getVertexProps)
@@ -425,12 +406,12 @@ TEST(StorageClientTest, LeaderChangeTest) {
     tsc.parts_.emplace(1, std::move(pm));
 
     folly::Baton<true, std::atomic> baton;
-    tsc.getNeighbors(0, {1, 2, 3}, {0}, "", {}).via(threadPool.get()).then([&] {
+    tsc.getNeighbors(1, {1, 2, 3}, {0}, "", {}).via(threadPool.get()).thenValue([&] (auto&&) {
         baton.post();
     });
     baton.wait();
     ASSERT_EQ(1, tsc.leaders_.size());
-    ASSERT_EQ(HostAddr(localIp, 10010), tsc.leaders_[std::make_pair(0, 1)]);
+    ASSERT_EQ(HostAddr(localIp, 10010), tsc.leaders_[std::make_pair(1, 1)]);
 }
 
 }  // namespace storage

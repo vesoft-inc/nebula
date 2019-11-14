@@ -17,7 +17,6 @@ If the `type` is a file, the `path` is use to point out the `HDFS` path, otherwi
 In the tag section, use `vertex` to describe the vertex key, and in the edge section, `source` is the starting point, `target` is the ending point and `ranking` is the weight which is optional.
 
 ***
-
 ### Build
 
 Build command:
@@ -26,7 +25,6 @@ Build command:
 mvn compile package
 ```
 
-***
 
 ### Setup
 
@@ -53,9 +51,6 @@ The `--class` describe the main class for you application. The `--master` is the
 |D             | dry                | dry run        | No             | false          |
 
 
-***
-
-
 ### Data example
 
 Inserted data sample for `Get Start` is under `src/main/resources/data/json`.
@@ -68,6 +63,14 @@ The **student** tag's JSON data example:
 {"id":202,"name":"Jane","age":17,"gender":"female"}
 ```
 
+The like edge's JSON date example:
+
+```JSON
+{"source":200,"target":201,"likeness":92.5}
+{"source":201,"target":200,"likeness":85.6}
+{"source":201,"target":202,"likeness":93.2}
+```
+
 The Geo JSON data example, `latitude` and `longitude` use to  describe coordinate.
 
 ```JSON
@@ -76,6 +79,7 @@ The Geo JSON data example, `latitude` and `longitude` use to  describe coordina
 {"latitude":30.2807347,"longitude":120.0181162,"target":2,"dp_poi_name":"2"}
 {"latitude":30.2812694,"longitude":120.0164896,"target":3,"dp_poi_name":"3"}
 ```
+
 
 ### Configuration
 

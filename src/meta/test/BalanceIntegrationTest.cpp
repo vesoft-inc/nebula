@@ -90,12 +90,12 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     ASSERT_TRUE(ret.ok());
     auto spaceId = ret.value();
     std::vector<nebula::cpp2::ColumnDef> columns;
-    columns.emplace_back(FRAGILE,
-                         "c",
-                         nebula::cpp2::ValueType(FRAGILE,
-                                                 SupportedType::STRING,
-                                                 nullptr,
-                                                 nullptr));
+    nebula::cpp2::ValueType vt;
+    vt.set_type(SupportedType::STRING);
+    columns.emplace_back();
+    columns.back().set_name("c");
+    columns.back().set_type(vt);
+
     nebula::cpp2::Schema schema;
     schema.set_columns(std::move(columns));
     auto tagRet = mClient->createTagSchema(spaceId, "tag", std::move(schema)).get();

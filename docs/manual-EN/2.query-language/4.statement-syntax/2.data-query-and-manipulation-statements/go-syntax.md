@@ -27,7 +27,7 @@ It indicates to travel in a graph with specific filters (the `WHERE` clause), to
 
 * <node_list> is either a list of node's vid separated by comma(,), or a special place holder `$-.id` (refer `PIPE` syntax).
 * <edge_type_list> is a list of edge types which graph traversal can go through.
-* WHERE <filter_list> extracts only those results that fulfill the specified conditions. WHERE-syntax can be conditions for src-vertex, the edges, and dst-vertex. The logical AND, OR, NOT are also supported. see WHERE-syntax for more information.
+* WHERE <filter_list> extracts only those results that fulfill the specified conditions. WHERE syntax can be conditions for src-vertex, the edges, and dst-vertex. The logical AND, OR, NOT are also supported. see WHERE-syntax for more information.
 * YIELD [DISTINCT] <return_list> statement returns the result in column format and rename as an alias name. See `YIELD`-syntax for more information. The `DISTINCT` syntax works the same as SQL.
 
 ## Examples
@@ -89,7 +89,7 @@ GO OVER edge1, edge2....  // traverse alone edge1 and edge2 or
 GO OVER *   // * means traverse along all edge types
 ```
 
->Please note that when traversing along multiple edges, there are some special restrictions on the use of filters(namely the `WHERE` statement), for example filters like `WHERE edge1.prop1 > edge2.prop2` is not supported.
+> Please note that when traversing along multiple edges, there are some special restrictions on the use of filters(namely the `WHERE` statement), for example filters like `WHERE edge1.prop1 > edge2.prop2` is not supported.
 
 As for return results, if multiple edge properties are to be returned, nebula will place them in different rows. For example:
 

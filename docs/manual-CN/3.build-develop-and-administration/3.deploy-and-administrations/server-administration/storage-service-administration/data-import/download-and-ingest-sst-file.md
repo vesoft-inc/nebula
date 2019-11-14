@@ -10,7 +10,7 @@ Nebula 提供了 `Spark-SSTFile-Generator` 工具。
 
 执行后会在 `HDFS` 上生成 SST 文件，目录结构如下：
 
-```
+```plain
 |---1 (this is partition number)
 |        | ---- vertex-${FIRST_KEY_IN_THIS_FILE}.sst
 |        | ---- edge-${FIRST_KEY_IN_THIS_FILE}.sst
@@ -24,7 +24,7 @@ Nebula 提供了 `Spark-SSTFile-Generator` 工具。
 
 SST 文件名格式为 `{TYPE}-${FIRST_KEY_IN_THIS_FILE}.sst`，其中 `TYPE` 表示数据类型，`FIRST_KEY_IN_THIS_FILE` 为文件中的起始 key。（如果你想自己写工具生成 SST 文件，需要保证每个 `SST`  文件中的 key 是有序的。)
 
-请确认所有 server 已安装 `Hadoop`，并且 `HADOOP_HOME ` 已设置。
+请确认所有 server 已安装 `Hadoop`，并且 `HADOOP_HOME` 已设置。
 
 运行 nebula console，执行 Download 命令：
 
@@ -38,7 +38,7 @@ nebula > DOWNLOAD HDFS "hdfs://${HADOOP_HOST}:${HADOOP_PORT}/${HADOOP_PATH}"
 - HADOOP_PORT 指定 Hadoop NameNode 端口号
 - HADOOP_PATH 指定 Hadoop 数据存放目录
 
-如果 `download` 过程出现错误，请删除 `data/download` 目录下相应的数据文件，并尝试重新下载。如果遇到多次失败，请在 [GitHub](https://github.com/vesoft-inc/nebula/issues) 给提 issue。
+如果 `download` 过程出现错误，请删除 `data/download` 目录下相应的数据文件，并尝试重新下载。如果遇到多次失败，请在 [GitHub](https://github.com/vesoft-inc/nebula/issues) 提 issue。
 
 数据下载完毕后，重新执行该命令不会发生任何操作。
 
@@ -52,4 +52,4 @@ nebula > INGEST
 
 该命令将加载 `download` 目录中的 `SST` 文件。
 
-**注意：**数据量较大时 `ingest` 会阻塞 `RocksDB`，请避免在请求高峰执行该命令。
+**注意：** 数据量较大时 `ingest` 会阻塞 `RocksDB`，请避免在请求高峰执行该命令。

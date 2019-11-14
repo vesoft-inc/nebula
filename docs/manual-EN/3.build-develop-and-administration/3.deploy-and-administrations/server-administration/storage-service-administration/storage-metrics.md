@@ -25,7 +25,7 @@ get_bound // internal use only
 
 Each interface has three metrics, namely latency (in the units of us), QPS and QPS with errors. The suffixes are as follows:
 
-```
+```text
 _latency
 _qps
 _error_qps
@@ -35,7 +35,10 @@ The complete metric concatenates the interface name with the corresponding metri
 
 ### Statistics Type
 
-Currently supported types are SUM, COUNT, AVG, RATE, and P99, P999, the maximum supported range is P999999.
+Currently supported types are SUM, COUNT, AVG, RATE, and P quantiles (P99, P999, ..., P999999). Among which:
+
+- metrics have suffixes `_latency` and `_error_qps` support SUM, COUNT, AVG, RATE but don't support P quantiles.
+- metrics have suffixes `_qps` support SUM, COUNT, AVG, RATE, and P quantiles.
 
 ### Time Range
 
@@ -53,7 +56,7 @@ update_edge_error_qps.count.3600  // errors occurred in updating an edge in the 
 
 Assume that a nebula storage service is started locally, and the `ws_http_port` port number is set to 50005 when starting. It is sent through the GET interface of HTTP. The method name is get_stats, and the parameter is stats plus the corresponding metrics name. Here's an example of getting metrics via the HTTP interface:
 
-```shell
+```bash
 # obtain a metrics
 curl -G "http://127.0.0.1:50005/get_stats?stats=vertex_props_qps.rate.60"
 # vertex_props_qps.rate.60=2674

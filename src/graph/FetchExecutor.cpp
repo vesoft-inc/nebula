@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "FetchExecutor.h"
+#include "SchemaHelper.h"
 
 namespace nebula {
 namespace graph {
@@ -34,20 +35,27 @@ Status FetchExecutor::prepareYield() {
         // such as YIELD 1+1, it has not type in schema, the type from the eval()
         colTypes_.emplace_back(nebula::cpp2::SupportedType::UNKNOWN);
         if (col->expr()->isAliasExpression()) {
-            colNames_.emplace_back(*dynamic_cast<AliasPropertyExpression*>(col->expr())->prop());
-            continue;
+            auto prop = *static_cast<AliasPropertyExpression*>(col->expr())->prop();
+            auto type = labelSchema_->getFieldType(prop);
+            if (type != CommonConstants::kInvalidValueType()) {
+                colTypes_.back() = type.get_type();
+            }
         } else if (col->expr()->isTypeCastingExpression()) {
             // type cast
             auto exprPtr = dynamic_cast<TypeCastingExpression*>(col->expr());
-            colTypes_.back() = ColumnTypeToSupportedType(exprPtr->getType());
+            colTypes_.back() = SchemaHelper::columnTypeToSupportedType(exprPtr->getType());
         }
-
-        colNames_.emplace_back(col->expr()->toString());
     }
 
     if (expCtx_->hasSrcTagProp() || expCtx_->hasDstTagProp()) {
         return Status::SyntaxError(
                     "tag.prop and edgetype.prop are supported in fetch sentence.");
+    }
+
+    if (expCtx_->hasInputProp() || expCtx_->hasVariableProp()) {
+        // TODO: support yield input and variable props
+        return Status::SyntaxError(
+                    "`$-' and `$variable' not supported in fetch yet.");
     }
 
     auto aliasProps = expCtx_->aliasProps();
@@ -105,10 +113,9 @@ Status FetchExecutor::getOutputSchema(
     if (expCtx_ == nullptr || resultColNames_.empty()) {
         return Status::Error("Input is empty.");
     }
-    auto collector = std::make_unique<Collector>(schema);
     auto &getters = expCtx_->getters();
-    getters.getAliasProp = [&] (const std::string&, const std::string &prop) {
-        return collector->getProp(prop, reader);
+    getters.getAliasProp = [schema, reader] (const std::string&, const std::string &prop) {
+        return Collector::getProp(schema, prop, reader);
     };
     std::vector<VariantType> record;
     for (auto *column : yields_) {
@@ -120,42 +127,7 @@ Status FetchExecutor::getOutputSchema(
         record.emplace_back(std::move(value.value()));
     }
 
-    if (colTypes_.size() != record.size()) {
-        return Status::Error("Input size is not equal to output");
-    }
-    using nebula::cpp2::SupportedType;
-    auto index = 0u;
-    for (auto &it : colTypes_) {
-        SupportedType type;
-        if (it == SupportedType::UNKNOWN) {
-            switch (record[index].which()) {
-                case VAR_INT64:
-                    // all integers in InterimResult are regarded as type of INT
-                    type = SupportedType::INT;
-                    break;
-                case VAR_DOUBLE:
-                    type = SupportedType::DOUBLE;
-                    break;
-                case VAR_BOOL:
-                    type = SupportedType::BOOL;
-                    break;
-                case VAR_STR:
-                    type = SupportedType::STRING;
-                    break;
-                default:
-                    std::string msg = folly::stringPrintf(
-                            "Unknown VariantType: %d", record[index].which());
-                    LOG(ERROR) << msg;
-                    return Status::Error(msg);
-            }
-        } else {
-            type = it;
-        }
-
-        outputSchema->appendCol(resultColNames_[index], type);
-        index++;
-    }
-    return Status::OK();
+    return Collector::getSchema(record, resultColNames_, colTypes_, outputSchema);
 }
 
 void FetchExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {

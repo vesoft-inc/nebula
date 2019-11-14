@@ -101,13 +101,13 @@ object SparkClientGenerator {
     val pswd         = nebulaConfig.getString("pswd")
     val space        = nebulaConfig.getString("space")
 
-    val connectionConfig  = nebulaConfig.getConfig("connection")
-    val connectionTimeout = getOrElse(connectionConfig, "timeout", DEFAULT_CONNECTION_TIMEOUT)
-    val connectionRetry   = getOrElse(connectionConfig, "retry", DEFAULT_CONNECTION_RETRY)
+    val connectionTimeout =
+      getOrElse(nebulaConfig, "connection.timeout", DEFAULT_CONNECTION_TIMEOUT)
+    val connectionRetry = getOrElse(nebulaConfig, "connection.retry", DEFAULT_CONNECTION_RETRY)
 
-    val executionConfig   = nebulaConfig.getConfig("execution")
-    val executionRetry    = getOrElse(executionConfig, "retry", DEFAULT_EXECUTION_RETRY)
-    val executionInterval = getOrElse(executionConfig, "interval", DEFAULT_EXECUTION_INTERVAL)
+    val executionRetry = getOrElse(nebulaConfig, "execution.retry", DEFAULT_EXECUTION_RETRY)
+    val executionInterval =
+      getOrElse(nebulaConfig, "execution.interval", DEFAULT_EXECUTION_INTERVAL)
 
     LOG.info(s"Nebula Addresses ${addresses} for ${user}:${pswd}")
     LOG.info(s"Connection Timeout ${connectionTimeout} Retry ${connectionRetry}")
@@ -473,6 +473,7 @@ object SparkClientGenerator {
 
   /**
     * Extra value from the row by field name.
+    * When the field is null, we will fill it with default value.
     *
     * @param row      The row value.
     * @param field    The field name.
@@ -481,13 +482,78 @@ object SparkClientGenerator {
   private[this] def extraValue(row: Row, field: String) = {
     val index = row.schema.fieldIndex(field)
     row.schema.fields(index).dataType match {
-      case StringType  => row.getString(index).mkString("\"", "", "\"")
-      case IntegerType => row.getInt(index).toString
-      case ShortType   => row.getShort(index).toString
-      case FloatType   => row.getFloat(index).toString
-      case DoubleType  => row.getDouble(index).toString
-      case LongType    => row.getLong(index).toString
-      case BooleanType => row.getBoolean(index).toString
+      case StringType =>
+        if (!row.isNullAt(index)) {
+          row.getString(index).mkString("\"", "", "\"")
+        } else {
+          "\"\""
+        }
+      case ShortType =>
+        if (!row.isNullAt(index)) {
+          row.getShort(index).toString
+        } else {
+          "0"
+        }
+      case IntegerType =>
+        if (!row.isNullAt(index)) {
+          row.getInt(index).toString
+        } else {
+          "0"
+        }
+      case LongType =>
+        if (!row.isNullAt(index)) {
+          row.getLong(index).toString
+        } else {
+          "0"
+        }
+      case FloatType =>
+        if (!row.isNullAt(index)) {
+          row.getFloat(index).toString
+        } else {
+          "0.0"
+        }
+      case DoubleType =>
+        if (!row.isNullAt(index)) {
+          row.getDouble(index).toString
+        } else {
+          "0.0"
+        }
+      case _: DecimalType =>
+        if (!row.isNullAt(index)) {
+          row.getDecimal(index).toString
+        } else {
+          "0.0"
+        }
+      case BooleanType =>
+        if (!row.isNullAt(index)) {
+          row.getBoolean(index).toString
+        } else {
+          "false"
+        }
+      case TimestampType =>
+        if (!row.isNullAt(index)) {
+          row.getTimestamp(index).getTime
+        } else {
+          "0"
+        }
+      case _: DateType =>
+        if (!row.isNullAt(index)) {
+          row.getDate(index).toString
+        } else {
+          "\"\""
+        }
+      case _: ArrayType =>
+        if (!row.isNullAt(index)) {
+          row.getSeq(index).mkString("\"[", ",", "]\"")
+        } else {
+          "\"[]\""
+        }
+      case _: MapType =>
+        if (!row.isNullAt(index)) {
+          row.getMap(index).mkString("\"{", ",", "}\"")
+        } else {
+          "\"{}\""
+        }
     }
   }
 
