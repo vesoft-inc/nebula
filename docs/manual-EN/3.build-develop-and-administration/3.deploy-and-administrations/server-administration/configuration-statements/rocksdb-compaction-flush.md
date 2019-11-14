@@ -1,10 +1,10 @@
-# RocksDB Compaction & Flush
+# RocksDB Compaction and Flush
 
 Nebula supports auto and manual (through HTTP request) RocksDB compaction or flush in storage service.
 
 ## Auto RocksDB Compaction
 
-### Turn off auto Compaction
+### Turn off Auto Compaction
 
 Input the following commands in console to **turn off** the auto compaction and check if the change works.
 
@@ -23,7 +23,7 @@ nebula> GET CONFIGS storage:rocksdb_column_family_options
 
 **Note:** You can turn off auto compaction before bulk writing data, but remember to turn it on again since long-term shutdown auto compaction affects the subsequent read performance.
 
-### Turn on auto Compaction
+### Turn on Auto Compaction
 
 Input the following commands in console to **turn on** the auto compaction and check if the change works. The default value of auto compaction is false in Nebula.
 
@@ -40,7 +40,7 @@ nebula> GET CONFIGS storage:rocksdb_column_family_options
 ----------------------------------------------------------------------------------------------------------
 ```
 
-## Manually Trigger compaction and flush
+## Manually Trigger Compaction and Flush
 
 Use the following command to trigger compaction and flush manually through HTTP request.
 

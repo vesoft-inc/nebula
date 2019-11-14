@@ -1,4 +1,4 @@
-# RocksDB Compaction & Flush
+# RocksDB Compaction 和 Flush
 
 Nebula 支持对 storage 中的 RocksDB 设置是否自动 compaction，支持通过 HTTP 请求，手动触发 storage 的 RocksDB compaction 或 flush。
 
