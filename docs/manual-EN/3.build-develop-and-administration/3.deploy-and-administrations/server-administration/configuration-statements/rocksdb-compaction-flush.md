@@ -21,9 +21,11 @@ nebula> GET CONFIGS storage:rocksdb_column_family_options
 ---------------------------------------------------------------------------------------------------------
 ```
 
+**Note:** You can turn off auto compaction before bulk writing data, but remember to turn it on again since long-term shutdown auto compaction affects the subsequent read performance.
+
 ### Turn on auto Compaction
 
-Input the following commands in console to **turn on** the auto compaction and check if the change works. The default value of auto compaction is false in nebula.
+Input the following commands in console to **turn on** the auto compaction and check if the change works. The default value of auto compaction is false in Nebula.
 
 ```ngql
 nebula> UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = false }

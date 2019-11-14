@@ -21,9 +21,11 @@ nebula> GET CONFIGS storage:rocksdb_column_family_options
 ---------------------------------------------------------------------------------------------------------
 ```
 
+**注意：** 可以在大批量数据写入前关闭 auto compaction，但请记得批量写入后再将其打开，长期关闭 auto compaction 会影响后续的读性能。
+
 ### 打开自动 Compaction
 
-在 console 输入如下命令**打开**自动 compaction 并查看更改是否生效。nebula 默认 compaction 为打开。
+在 console 输入如下命令**打开**自动 compaction 并查看更改是否生效。Nebula 默认 compaction 为打开。
 
 ```ngql
 nebula> UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = false }
