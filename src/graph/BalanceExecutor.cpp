@@ -27,6 +27,9 @@ void BalanceExecutor::execute() {
         case BalanceSentence::SubType::kData:
             balanceData();
             break;
+        case BalanceSentence::SubType::kDataStop:
+            balanceData(true);
+            break;
         case BalanceSentence::SubType::kShowBalancePlan:
             showBalancePlan();
             break;
@@ -66,8 +69,8 @@ void BalanceExecutor::balanceLeader() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-void BalanceExecutor::balanceData() {
-    auto future = ectx()->getMetaClient()->balance();
+void BalanceExecutor::balanceData(bool isStop) {
+    auto future = ectx()->getMetaClient()->balance(isStop);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {

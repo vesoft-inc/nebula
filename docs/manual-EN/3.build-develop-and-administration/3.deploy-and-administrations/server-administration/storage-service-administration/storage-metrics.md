@@ -35,7 +35,10 @@ The complete metric concatenates the interface name with the corresponding metri
 
 ### Statistics Type
 
-Currently supported types are SUM, COUNT, AVG, RATE, and P99, P999, the maximum supported range is P999999. Only latency supports P99.
+Currently supported types are SUM, COUNT, AVG, RATE, and P quantiles (P99, P999, ..., P999999). Among which:
+
+- metrics have suffixes `_latency` and `_error_qps` support SUM, COUNT, AVG, RATE but don't support P quantiles.
+- metrics have suffixes `_qps` support SUM, COUNT, AVG, RATE, and P quantiles.
 
 ### Time Range
 
