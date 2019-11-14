@@ -1,0 +1,68 @@
+version: v1rc1
+description: example
+clientSettings:
+  concurrency: 4 # number of graph clients
+  channelBufferSize: 128
+  connection:
+    user: user
+    password: password
+    address: 127.0.0.1:32780
+logPath: ./err/test.log
+files:
+  - path: /home/test/edge.csv
+    failDataPath: ./err/edge.csv
+    batchSize: 100
+    type: csv
+    csv:
+      withHeader: false
+      withLabel: false
+    schema:
+      space: importdata
+      type: edge
+      edge:
+        name: chose
+        withRanking: false
+        props:
+          - name: rating
+            type: string
+  - path: /home/test/directors.csv
+    failDataPath: ./err/vertex.csv
+    batchSize: 100
+    type: csv
+    csv:
+      withHeader: false
+      withLabel: false
+    schema:
+      space: importdata
+      type: vertex
+      vertex:
+        tags:
+          - name: directors
+            props:
+              - name: name
+                type: string
+              - name: gender
+                type: string
+              - name: age
+                type: int  
+  - path: /home/test/stars.csv
+    failDataPath: ./err/vertex.csv
+    batchSize: 100
+    type: csv
+    csv:
+      withHeader: false
+      withLabel: false
+    schema:
+      space: importdata
+      type: vertex
+      vertex:
+        tags:
+          - name: stars
+            props:
+              - name: name
+                type: string
+              - name: gender
+                type: string
+              - name: age
+                type: int               
+          
