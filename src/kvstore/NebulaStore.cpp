@@ -441,7 +441,6 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
         auto parts = engine->allParts();
-        std::vector<std::string> extras;
         for (auto part : parts) {
             auto ret = this->engine(spaceId, part);
             if (!ok(ret)) {
@@ -450,20 +449,17 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
 
             auto path = folly::stringPrintf("%s/download/%d", value(ret)->getDataRoot(), part);
             if (!fs::FileUtils::exist(path)) {
-                LOG(ERROR) << path << " not existed";
-                return ResultCode::ERR_IO_ERROR;
+                LOG(INFO) << path << " not existed";
+                continue;
             }
 
             auto files = nebula::fs::FileUtils::listAllFilesInDir(path.c_str(), true, "*.sst");
             for (auto file : files) {
-                VLOG(3) << "Ingesting extra file: " << file;
-                extras.emplace_back(file);
-            }
-        }
-        if (extras.size() != 0) {
-            auto code = engine->ingest(std::move(extras));
-            if (code != ResultCode::SUCCEEDED) {
-                return code;
+                LOG(INFO) << "Ingesting extra file: " << file;
+                auto code = engine->ingest(std::vector<std::string>({file}));
+                if (code != ResultCode::SUCCEEDED) {
+                    return code;
+                }
             }
         }
     }
