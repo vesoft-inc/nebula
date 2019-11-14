@@ -31,6 +31,20 @@ TEST(ConcurrentLRUCacheTest, SimpleTest) {
     EXPECT_EQ(std::hash<int>()(100) % 16, cache.bucketIndex(100, -1));
 }
 
+TEST(ConcurrentLRUCacheTest, PutIfAbsentTest) {
+    ConcurrentLRUCache<int32_t, std::string> cache(1024);
+    {
+        auto v = cache.putIfAbsent(10, "ten");
+        EXPECT_EQ(Status::Inserted(), v.status());
+    }
+
+    {
+        auto v = cache.putIfAbsent(10, "ele");
+        EXPECT_TRUE(v.ok());
+        EXPECT_EQ("ten", v.value());
+    }
+}
+
 TEST(ConcurrentLRUCacheTest, MultiThreadsTest) {
     ConcurrentLRUCache<int32_t, std::string> cache(1024 * 1024);
     std::vector<std::thread> threads;

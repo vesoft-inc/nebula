@@ -44,6 +44,14 @@ public:
         return buckets_[bucketIndex(key, hint)].get(key);
     }
 
+    /**
+     * Insert the {key, val} if key not existed, and return Status::Inserted.
+     * Otherwise, just return the value for the existed key.
+     * */
+    StatusOr<V> putIfAbsent(const K& key, const V& val, int32_t hint = -1) {
+        return buckets_[bucketIndex(key, hint)].putIfAbsent(key, val);
+    }
+
     void clear() {
         for (auto i = 0; i < bucketsNum_; i++) {
             buckets_[i].clear();
@@ -74,6 +82,16 @@ private:
             auto v = lru_->get(key);
             if (v == boost::none) {
                 return Status::Error();
+            }
+            return std::move(v).value();
+        }
+
+        StatusOr<V> putIfAbsent(const K& key, const V& val) {
+            std::lock_guard<std::mutex> guard(lock_);
+            auto v = lru_->get(key);
+            if (v == boost::none) {
+                lru_->insert(key, val);
+                return Status::Inserted();
             }
             return std::move(v).value();
         }
