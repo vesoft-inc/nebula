@@ -19,12 +19,13 @@ class ConcurrentLRUCache final {
     FRIEND_TEST(ConcurrentLRUCacheTest, SimpleTest);
 
 public:
-    explicit ConcurrentLRUCache(size_t capacity, uint32_t buckets = 16)
-        : bucketsNum_(buckets) {
-        CHECK(capacity > buckets && buckets > 0);
-        auto capPerBucket = capacity / buckets;
+    explicit ConcurrentLRUCache(size_t capacity, uint32_t bucketsExp = 4)
+        : bucketsNum_(1 << bucketsExp)
+        , bucketsExp_(bucketsExp) {
+        CHECK(capacity > bucketsNum_ && bucketsNum_ > 0);
+        auto capPerBucket = capacity >> bucketsExp;
         auto left = capacity;
-        for (uint32_t i = 0; i < buckets - 1; i++) {
+        for (uint32_t i = 0; i < bucketsNum_ - 1; i++) {
             buckets_.emplace_back(capPerBucket);
             left -= capPerBucket;
         }
@@ -112,13 +113,15 @@ private:
      * If hint is specified, we could use it to cal the bucket index directly without hash key.
      * */
     uint32_t bucketIndex(const K& key, int32_t hint = -1) {
-        return hint >= 0 ? hint % bucketsNum_ : std::hash<K>()(key) % bucketsNum_;
+        return hint >= 0 ? (hint & ((1 << bucketsExp_) - 1))
+                         : (std::hash<K>()(key) & ((1 << bucketsExp_) - 1));
     }
 
 
 private:
     std::vector<Bucket> buckets_;
     uint32_t bucketsNum_ = 1;
+    uint32_t bucketsExp_ = 0;
 };
 
 }  // namespace nebula
