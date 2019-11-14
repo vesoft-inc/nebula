@@ -1,6 +1,6 @@
 # Return Syntax
 
-The `RETURN` statement is used to return the results when  the filer conditions are true.
+The `RETURN` statement is used to return the results when the filer conditions are true.
 
 ```ngql
     RETURN <var_ref> IF <var_ref> IS NOT NULL
