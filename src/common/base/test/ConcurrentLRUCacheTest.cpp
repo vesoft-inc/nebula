@@ -1,0 +1,65 @@
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
+ *
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ */
+
+#include "base/Base.h"
+#include "base/ConcurrentLRUCache.h"
+#include <gtest/gtest.h>
+
+namespace nebula {
+
+TEST(ConcurrentLRUCacheTest, SimpleTest) {
+    ConcurrentLRUCache<int32_t, std::string> cache(1024);
+    cache.insert(10, "ten");
+    {
+        auto v = cache.get(10);
+        EXPECT_TRUE(v.ok());
+        EXPECT_EQ("ten", v.value());
+    }
+
+    {
+        auto v = cache.get(5);
+        EXPECT_FALSE(v.ok());
+    }
+
+    EXPECT_EQ(5, cache.bucketIndex(100, 5));
+    EXPECT_EQ(11, cache.bucketIndex(100, 11));
+    EXPECT_EQ(0, cache.bucketIndex(100, 0));
+    EXPECT_EQ(1024 % 16, cache.bucketIndex(100, 1024));
+    EXPECT_EQ(std::hash<int>()(100) % 16, cache.bucketIndex(100, -1));
+}
+
+TEST(ConcurrentLRUCacheTest, MultiThreadsTest) {
+    ConcurrentLRUCache<int32_t, std::string> cache(1024 * 1024);
+    std::vector<std::thread> threads;
+    for (auto i = 0; i < 10; i++) {
+        threads.emplace_back([&cache, i] () {
+            for (auto j = i * 1000; j < (i + 1) *1000; j++) {
+                cache.insert(j, folly::stringPrintf("%d_str", j));
+            }
+        });
+    }
+    for (auto i = 0; i < 10; i++) {
+        threads[i].join();
+    }
+    for (auto i = 0; i < 10000; i++) {
+        auto v = cache.get(i);
+        EXPECT_TRUE(v.ok());
+        EXPECT_EQ(folly::stringPrintf("%d_str", i), v.value());
+    }
+}
+
+
+}  // namespace nebula
+
+
+int main(int argc, char** argv) {
+    testing::InitGoogleTest(&argc, argv);
+    folly::init(&argc, &argv, true);
+    google::SetStderrLogging(google::INFO);
+
+    return RUN_ALL_TESTS();
+}
+
