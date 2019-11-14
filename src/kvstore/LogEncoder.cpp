@@ -199,7 +199,7 @@ std::string encodeBatchValue(LogType type,
 }
 
 std::vector<std::pair<LogType, std::pair<std::string, std::string>>>
-decodeBatchValuee(folly::StringPiece encoded) {
+decodeBatchValue(folly::StringPiece encoded) {
     // Skip the timestamp and the first type byte
     auto* p = encoded.begin() + sizeof(int64_t) + 1;
     uint32_t numValues = *(reinterpret_cast<const uint32_t*>(p));

@@ -46,7 +46,7 @@ std::string encodeBatchValue(LogType type,
                              std::pair<std::string, std::string>>>& batch);
 
 std::vector<std::pair<LogType, std::pair<std::string, std::string>>>
-decodeBatchValuee(folly::StringPiece encoded);
+decodeBatchValue(folly::StringPiece encoded);
 
 std::string encodeHost(LogType type, const HostAddr& learner);
 HostAddr decodeHost(LogType type, const folly::StringPiece& encoded);

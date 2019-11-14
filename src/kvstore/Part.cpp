@@ -278,7 +278,7 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             break;
         }
         case OP_BATCH_WRITE: {
-            auto data = decodeBatchValuee(log);
+            auto data = decodeBatchValue(log);
             for (auto& op : data) {
                 ResultCode code = ResultCode::SUCCEEDED;
                 if (op.first == LogType::OP_PUT) {

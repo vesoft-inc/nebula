@@ -135,7 +135,7 @@ TEST(LogEncoderTest, BatchTest) {
     helper->put("put_key_again", "put_value_again");
 
     auto encoded = encodeBatchValue(OP_BATCH_WRITE, helper->getBatch());
-    auto decoded = decodeBatchValuee(encoded.c_str());
+    auto decoded = decodeBatchValue(encoded.c_str());
 
     std::vector<std::pair<LogType,
                 std::pair<std::string, std::string>>> expectd;
