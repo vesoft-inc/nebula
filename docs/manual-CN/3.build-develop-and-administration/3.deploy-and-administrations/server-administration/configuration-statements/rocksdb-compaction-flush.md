@@ -4,23 +4,41 @@ Nebula 支持对 storage 中的 RocksDB 设置是否自动 compaction，支持�
 
 ## 自动 RocksDB Compaction
 
-### 关闭自动 compaction
+### 关闭自动 Compaction
 
-在 console 输入如下命令**关闭**自动 compaction。
+在 console 输入如下命令**关闭**自动 compaction 并查看更改是否生效。
 
-```bash
-UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = true }
+```ngql
+nebula> UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = true }
+
+nebula> GET CONFIGS storage:rocksdb_column_family_options
+=========================================================================================================
+| module  | name                          | type   | mode    | value                                    |
+=========================================================================================================
+| STORAGE | rocksdb_column_family_options | NESTED | MUTABLE | {
+  "disable_auto_compactions": "true"
+} |
+---------------------------------------------------------------------------------------------------------
 ```
 
 ### 打开自动 Compaction
 
-在 console 输入如下命令**打开**自动 compaction。
+在 console 输入如下命令**打开**自动 compaction 并查看更改是否生效。nebula 默认 compaction 为打开。
 
-```bash
-UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = false }
+```ngql
+nebula> UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = false }
+
+nebula> GET CONFIGS storage:rocksdb_column_family_options
+==========================================================================================================
+| module  | name                          | type   | mode    | value                                     |
+==========================================================================================================
+| STORAGE | rocksdb_column_family_options | NESTED | MUTABLE | {
+  "disable_auto_compactions": "false"
+} |
+----------------------------------------------------------------------------------------------------------
 ```
 
-## 手动触发 compaction 和 flush
+## 手动触发 Compaction 和 Flush
 
 手动触发 compaction 和 flush 需要通过 HTTP 请求，命令如下。
 

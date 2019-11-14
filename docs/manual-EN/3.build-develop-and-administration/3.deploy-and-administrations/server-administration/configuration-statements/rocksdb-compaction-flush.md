@@ -6,18 +6,36 @@ Nebula supports auto and manual (through HTTP request) RocksDB compaction or flu
 
 ### Turn off auto Compaction
 
-Input the following command in console to **turn off** the auto compaction.
+Input the following commands in console to **turn off** the auto compaction and check if the change works.
 
-```bash
-UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = true }
+```ngql
+nebula> UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = true }
+
+nebula> GET CONFIGS storage:rocksdb_column_family_options
+=========================================================================================================
+| module  | name                          | type   | mode    | value                                    |
+=========================================================================================================
+| STORAGE | rocksdb_column_family_options | NESTED | MUTABLE | {
+  "disable_auto_compactions": "true"
+} |
+---------------------------------------------------------------------------------------------------------
 ```
 
 ### Turn on auto Compaction
 
-Input the following command in console to **turn on** the auto compaction.
+Input the following commands in console to **turn on** the auto compaction and check if the change works. The default value of auto compaction is false in nebula.
 
-```bash
-UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = false }
+```ngql
+nebula> UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = false }
+
+nebula> GET CONFIGS storage:rocksdb_column_family_options
+==========================================================================================================
+| module  | name                          | type   | mode    | value                                     |
+==========================================================================================================
+| STORAGE | rocksdb_column_family_options | NESTED | MUTABLE | {
+  "disable_auto_compactions": "false"
+} |
+----------------------------------------------------------------------------------------------------------
 ```
 
 ## Manually Trigger compaction and flush
