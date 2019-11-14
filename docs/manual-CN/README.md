@@ -15,14 +15,13 @@
 * 基本概念
   * [数据模型](1.overview/1.concepts/1.data-model.md)
   * [查询语言概览](1.overview/1.concepts/2.nGQL-overview.md)
-* 快速开始
+* 快速开始和常用链接
   * [开始试用](1.overview/2.quick-start/1.get-started.md)
   * [编译源代码](3.build-develop-and-administration/1.build/1.build-source-code.md)
   * [部署集群](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
   * [导入 .csv 文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
   * [加载 .sst 文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
-  * [Go 客户端](https://github.com/vesoft-inc/nebula-go)
-  * [Python 客户端](https://github.com/vesoft-inc/nebula-python)
+  * [Nebula 客户端](1.overview/2.quick-start/3.supported-clients.md)
 * 系统设计与架构
   * [设计总览](1.overview/3.design-and-architecture/1.design-and-architecture.md)
   * [存储层架构](1.overview/3.design-and-architecture/2.storage-design.md)
@@ -85,6 +84,8 @@
   * [使用 Docker 编译](3.build-develop-and-administration/1.build/2.build-by-docker.md)
 * 源码开发和 API
   * [Key Value 接口](3.build-develop-and-administration/2.develop-and-interface/kv-interfaces.md)
+  * [Nebula 客户端](1.overview/2.quick-start/3.supported-clients.md)
+
 * 部署与运维
   * 部署
     * [用 Docker 部署](3.build-develop-and-administration/2.develop-and-interface/kv-interfaces.md)
