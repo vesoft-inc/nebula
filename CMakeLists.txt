@@ -31,6 +31,7 @@ option(ENABLE_CCACHE "Whether to use ccache to speed up compiling" ON)
 option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
 option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
 option(ENABLE_UBSAN "Whether to turn Undefined Behavior Sanitizer ON or OFF" OFF)
+option(ENABLE_PROMETHEUS "Whether integrate Prometheus" ON)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
@@ -189,6 +190,9 @@ find_package(LibLZMA MODULE)
 if(NOT ENABLE_ASAN AND NOT ENABLE_NATIVE)
     find_package(PCHSupport)
     add_compile_options(-Winvalid-pch)
+endif()
+if(ENABLE_PROMETHEUS)
+    find_package(Prometheus REQUIRED)
 endif()
 
 add_compile_options(-Wall)
@@ -387,6 +391,8 @@ macro(nebula_link_libraries target)
         dl
         ${GETTIME_LIB}
         -pthread
+        prometheus-cpp-core
+        prometheus-cpp-pull
     )
 endmacro(nebula_link_libraries)
 

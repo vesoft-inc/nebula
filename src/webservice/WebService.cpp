@@ -11,6 +11,7 @@
 #include "webservice/GetFlagsHandler.h"
 #include "webservice/SetFlagsHandler.h"
 #include "webservice/GetStatsHandler.h"
+#include <prometheus/exposer.h>
 
 DEFINE_int32(ws_http_port, 11000, "Port to listen on with HTTP protocol");
 DEFINE_int32(ws_h2_port, 11002, "Port to listen on with HTTP/2 protocol");
@@ -98,6 +99,13 @@ Status WebService::start() {
 
     CHECK_GT(FLAGS_ws_threads, 0)
         << "The number of webservice threads must be greater than zero";
+
+
+    prometheus::ProxygenServer s(&handlerGenMap_);
+
+    // create an http server running on port 8080
+    //  Exposer exposer{"127.0.0.1:8080", "/metrics", 1};
+    prometheus::Exposer exposer{&s};
 
     HTTPServerOptions options;
     options.threads = static_cast<size_t>(FLAGS_ws_threads);
