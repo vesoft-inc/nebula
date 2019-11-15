@@ -281,11 +281,11 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             auto data = decodeBatchValue(log);
             for (auto& op : data) {
                 ResultCode code = ResultCode::SUCCEEDED;
-                if (op.first == LogType::OP_PUT) {
+                if (op.first == BatchLogType::OP_BATCH_PUT) {
                     code = batch->put(op.second.first, op.second.second);
-                } else if (op.first == LogType::OP_REMOVE) {
+                } else if (op.first == BatchLogType::OP_BATCH_REMOVE) {
                     code = batch->remove(op.second.first);
-                } else if (op.first == LogType::OP_REMOVE_RANGE) {
+                } else if (op.first == BatchLogType::OP_BATCH_REMOVE_RANGE) {
                     code = batch->removeRange(op.second.first, op.second.second);
                 }
                 if (code != ResultCode::SUCCEEDED) {

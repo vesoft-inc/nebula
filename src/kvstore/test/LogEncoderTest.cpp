@@ -134,18 +134,18 @@ TEST(LogEncoderTest, BatchTest) {
     helper->rangeRemove("begin", "end");
     helper->put("put_key_again", "put_value_again");
 
-    auto encoded = encodeBatchValue(OP_BATCH_WRITE, helper->getBatch());
+    auto encoded = encodeBatchValue(helper->getBatch());
     auto decoded = decodeBatchValue(encoded.c_str());
 
-    std::vector<std::pair<LogType,
+    std::vector<std::pair<BatchLogType,
                 std::pair<std::string, std::string>>> expectd;
-    expectd.emplace_back(OP_REMOVE,
+    expectd.emplace_back(OP_BATCH_REMOVE,
                          std::pair<std::string, std::string>("remove", ""));
-    expectd.emplace_back(OP_PUT,
+    expectd.emplace_back(OP_BATCH_PUT,
                          std::pair<std::string, std::string>("put_key", "put_value"));
-    expectd.emplace_back(OP_REMOVE_RANGE,
+    expectd.emplace_back(OP_BATCH_REMOVE_RANGE,
                          std::pair<std::string, std::string>("begin", "end"));
-    expectd.emplace_back(OP_PUT,
+    expectd.emplace_back(OP_BATCH_PUT,
                          std::pair<std::string, std::string>("put_key_again", "put_value_again"));
 
     ASSERT_EQ(expectd, decoded);

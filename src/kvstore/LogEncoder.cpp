@@ -164,9 +164,9 @@ std::vector<folly::StringPiece> decodeMultiValues(folly::StringPiece encoded) {
     return values;
 }
 
-std::string encodeBatchValue(LogType type,
-                             const std::vector<std::pair<LogType,
+std::string encodeBatchValue(const std::vector<std::pair<BatchLogType,
                              std::pair<std::string, std::string>>>& batch) {
+    auto type = LogType::OP_BATCH_WRITE;
     std::string data, encoded;
     for (auto& op : batch) {
         auto bType = op.first;
@@ -198,15 +198,15 @@ std::string encodeBatchValue(LogType type,
     return encoded;
 }
 
-std::vector<std::pair<LogType, std::pair<std::string, std::string>>>
+std::vector<std::pair<BatchLogType, std::pair<std::string, std::string>>>
 decodeBatchValue(folly::StringPiece encoded) {
     // Skip the timestamp and the first type byte
     auto* p = encoded.begin() + sizeof(int64_t) + 1;
     uint32_t numValues = *(reinterpret_cast<const uint32_t*>(p));
     p += sizeof(uint32_t);
-    std::vector<std::pair<LogType, std::pair<std::string, std::string>>> batch;
+    std::vector<std::pair<BatchLogType, std::pair<std::string, std::string>>> batch;
     for (auto i = 0U; i < numValues; i++) {
-        LogType type = *(reinterpret_cast<const LogType *>(p));
+        BatchLogType type = *(reinterpret_cast<const BatchLogType *>(p));
         p += sizeof(LogType);
         uint32_t len1 = *(reinterpret_cast<const uint32_t*>(p));
         p += sizeof(uint32_t);

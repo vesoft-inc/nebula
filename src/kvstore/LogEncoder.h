@@ -22,8 +22,14 @@ enum LogType : char {
     OP_BATCH_WRITE    = 0x7,
     OP_ADD_LEARNER    = 0x8,
     OP_TRANS_LEADER   = 0x9,
-    OP_ADD_PEER       = 0x10,
-    OP_REMOVE_PEER    = 0x11,
+    OP_ADD_PEER       = 0xA,
+    OP_REMOVE_PEER    = 0xB,
+};
+
+enum BatchLogType : char {
+    OP_BATCH_PUT            = 0x1,
+    OP_BATCH_REMOVE         = 0x2,
+    OP_BATCH_REMOVE_RANGE   = 0x3,
 };
 
 std::string encodeKV(const folly::StringPiece& key,
@@ -41,11 +47,10 @@ std::string encodeMultiValues(LogType type,
                               folly::StringPiece v2);
 std::vector<folly::StringPiece> decodeMultiValues(folly::StringPiece encoded);
 
-std::string encodeBatchValue(LogType type,
-                             const std::vector<std::pair<LogType,
+std::string encodeBatchValue(const std::vector<std::pair<BatchLogType,
                              std::pair<std::string, std::string>>>& batch);
 
-std::vector<std::pair<LogType, std::pair<std::string, std::string>>>
+std::vector<std::pair<BatchLogType, std::pair<std::string, std::string>>>
 decodeBatchValue(folly::StringPiece encoded);
 
 std::string encodeHost(LogType type, const HostAddr& learner);
@@ -61,29 +66,29 @@ public:
 
     void put(const std::string& key, const std::string& val) {
         std::pair<std::string, std::string> pair(key, val);
-        batch_.emplace_back(LogType::OP_PUT, pair);
+        batch_.emplace_back(BatchLogType::OP_BATCH_PUT, pair);
     }
 
     void remove(const std::string& key) {
         std::pair<std::string, std::string> pair(key, "");
-        batch_.emplace_back(LogType::OP_REMOVE, pair);
+        batch_.emplace_back(BatchLogType::OP_BATCH_REMOVE, pair);
     }
 
     void rangeRemove(const std::string& begin, const std::string& end) {
         std::pair<std::string, std::string> pair(begin, end);
-        batch_.emplace_back(LogType::OP_REMOVE_RANGE, pair);
+        batch_.emplace_back(BatchLogType::OP_BATCH_REMOVE_RANGE, pair);
     }
 
     void clear() {
         batch_.clear();
     }
 
-    std::vector<std::pair<LogType, std::pair<std::string, std::string>>> getBatch() {
+    std::vector<std::pair<BatchLogType, std::pair<std::string, std::string>>> getBatch() {
         return batch_;
     }
 
 private:
-    std::vector<std::pair<LogType, std::pair<std::string, std::string>>> batch_;
+    std::vector<std::pair<BatchLogType, std::pair<std::string, std::string>>> batch_;
 };
 }  // namespace kvstore
 }  // namespace nebula
