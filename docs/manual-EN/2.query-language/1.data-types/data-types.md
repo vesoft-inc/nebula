@@ -1,6 +1,6 @@
 # Data Types
 
-The built-in data types supported by Nebula Graph are as follows:
+This document gives details about data types supported by **Nebula Graph**.
 
 ## Numeric Types
 
@@ -43,7 +43,7 @@ The string type is used to store a sequence of characters (text). The literal co
 
 - The underlying storage data type is: **int64**
 
-**Examples**
+## Examples
 
 Create a tag named school
 
