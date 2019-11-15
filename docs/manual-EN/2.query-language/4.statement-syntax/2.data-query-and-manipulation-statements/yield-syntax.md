@@ -11,7 +11,7 @@ YIELD
     [, <col_name> [AS <col_alias>] ...]
 ```
 
-`YIELD` is commonly used to return results generated with `GO` (Refer [GO](go-syntax.md)).
+`YIELD` is commonly used to return results generated with `GO` (Refer to [GO](go-syntax.md)).
 
 ```ngql
 nebula> GO FROM 201 OVER relations_edge YIELD $$.student.name AS Friend,\

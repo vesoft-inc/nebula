@@ -10,9 +10,9 @@ FIND SHORTEST | ALL PATH FROM <vertex_id_list> TO <vertex_id_list> OVER <edge_ty
 
 `ALL` is the keyword to find all path.
 
-`<vertex_id_list>::=[vertex_id [, vertex_id]]` is the vertex id list, multiple ids should be separated with a comma, input ```$-```and ```$var``` are supported.
+`<vertex_id_list>::=[vertex_id [, vertex_id]]` is the vertex id list, multiple ids must be separated by commas, input ```$-```and ```$var``` are supported.
 
-`<edge_type_list>` is the edge type list, multiple edge types should be separated with a comma, ```*``` can be referred as all edge types.
+`<edge_type_list>` is the edge type list, multiple edge types must be separated by commas, ```*``` can be referred as all edge types.
 
 `<N>` is hop number, the default value is 5.
 

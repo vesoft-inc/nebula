@@ -19,6 +19,6 @@ nebula> GO FROM 1 OVER edge1
 nebula> USE space1;
 ```
 
-Different from SQL, making a space as the working space prevents you to access other spaces. The only way to traverse in a new graph space is to switch by the `USE` statement.
+Different from SQL, making a space as the working space prevents you from accessing other spaces. The only way to traverse in a new graph space is to switch by the `USE` statement.
 
 > SPACES are `FULLY ISOLATED` from each other. Unlike SQL, which allows you to select two tables from different databases in one statement, in Nebula, you can only touch one space at a time.
