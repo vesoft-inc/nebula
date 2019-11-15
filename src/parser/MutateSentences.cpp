@@ -171,6 +171,10 @@ StatusOr<std::string> UpdateItem::toEvaledString() const {
     if (!ret.ok()) {
         return ret.status();
     }
+    if (Expression::isString(ret.value())) {
+        return Status::Error("Invalid string config value");
+    }
+
     buf += Expression::toString(ret.value());
     return buf;
 }
