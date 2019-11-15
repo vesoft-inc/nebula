@@ -591,7 +591,7 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
         auto item = getRet.value().front();
         auto value = boost::get<std::string>(item.get_value());
 
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_load_data_interval_secs + 3);
         ASSERT_EQ(FLAGS_rocksdb_db_options, value);
     }
     {
@@ -608,7 +608,7 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
         auto item = getRet.value().front();
         auto value = boost::get<std::string>(item.get_value());
 
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_load_data_interval_secs + 3);
         ASSERT_EQ(FLAGS_rocksdb_column_family_options, value);
     }
     {

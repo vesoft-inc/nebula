@@ -1173,7 +1173,7 @@ folly::Future<StatusOr<int64_t>> MetaClient::balance(std::vector<HostAddr> hostD
             th.set_port(h.second);
             return th;
         });
-        req.set_host_del(tHostDel);
+        req.set_host_del(std::move(tHostDel));
     }
     if (isStop) {
         req.set_stop(isStop);
