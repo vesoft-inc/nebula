@@ -5,16 +5,16 @@
 Nebula-importer is a tool developed by [Nebula Graph](https://github.com/vesoft-inc/nebula-docker-compose) to import csv files. This tool reads local csv files and writes the data into Nebula Graph. Nebula-importer supports importing CSV files with `go` or with `docker`.
 
 ## Prerequisites
+
 Before importing CSV files into **Nebula Graph**, you must ensure the following prerequisites are met:
 
 1. Nebula Graph is installed by [`docker-compose`](https://github.com/vesoft-inc/nebula-docker-compose "nebula-docker-compose") or [rpm installation](https://github.com/vesoft-inc/nebula/tree/master/docs/manual-EN/3.build-develop-and-administration/3.deploy-and-administrations/deployment).
-2. At least one space is created and used in Nebula Graph. 
+2. At least one space is created and used in Nebula Graph.
 3. Tags are created in **Nebula Graph**.
 4. Edge types are created in **Nebula Graph**.
 5. All services in **Nebula Graph** are up and running.
 
 **Note**: The space selected in Nebula Graph is the place where your CSV files are imported. Tags are used to categorize your vertexes or nodes. Edge types are used to categorize your edges. If you do not know how to create spaces, tags or edges, you can refer to the **Build Your Own Graph** section in [`Quick Start`](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/1.overview/2.quick-start/1.get-started.md).
-
 
 ## Preparing the Configuration File
 
@@ -23,7 +23,6 @@ Nebula-importer reads a configuration file in `yaml` format to get all the requi
 For details about the `.yaml` file, you can refer to [`Example yaml`](example/example.yaml).
 
 The following code block shows all the parameters that you might modify for your `.yaml` configuration file.
-
 
 ```yaml
 version: v1rc1
@@ -82,6 +81,7 @@ files:
 **Note**: In the above example, Nebula-importer imports two **csv** data files, `edge.csv` and `vertex.csv` in turn.
 
 ### Configuration Properties
+
 The following table describes all the parameters in the `.yaml` configuration file.
 
 | Parameters                                      | Description                                                               | Default        |
@@ -124,32 +124,33 @@ The following table describes all the parameters in the `.yaml` configuration fi
 After you configure the `.yaml` configuration file, you have to prepare all the data required in the `.yaml` configuration file.
 
 ## Importing CSV Data
+
 After your `.yaml` configuration file and all the required CSV data files are ready, you can import your data by [Importing CSV Data with Go](#importing-csv-data-with-go), or [Importing CSV Data with Docker](#importing-csv-data-with-docker).
-
-
 
 ### Importing CSV Data with Go
 
 Nebula-importer depends on *golang 1.13*, so make sure you have installed `go` first. Before import data with `go` you have to set the environment variable for `go` as follows:
-```
+
+```bash
 export PATH=$PATH:/usr/local/go/bin
 export GOROOT=/usr/local/go
 export GOPATH=/home/nebula/go:$HOME/nebula-importer
 export GOPROXY=https://goproxy.cn
 ```
+
 **Note**: You must set your environment for `go` according to your specific installation circumstances.
 
 Now, you can import CSV files according to the following steps:
 
 1. Clone the nebula-importer project to your local directory.
 
-```
+```bash
 git clone https://github.com/vesoft-inc/nebula-importer.git
 ```
 
 2. Change the directory to the nebula-importer file directory.
 
-```
+```bash
 cd nebula-importer/cmd
 ```
 
@@ -165,7 +166,7 @@ go run importer.go --config /path/to/yaml/config/file
 
 With `docker`, You can import your local data to **Nebula Graph** with the following command:
 
-```
+```bash
     docker run --rm -ti \
     --network=host \
     -v {your-config-file}:/root/{your-config-file} \
@@ -173,8 +174,8 @@ With `docker`, You can import your local data to **Nebula Graph** with the follo
     vesoft/nebula-importer
     --config /root/{your-config-file}
 ```
-**Note**: You have to change your direcotry to the directory where your `.yaml`configuration is stored. For example, if your `config.yaml` file is in the /home/nebula/ directory, it means {your-config-file} = /home/nebula/config.yaml; if your `csv` file is in the /home/nebula/ directory, it means {your-csv-data-dir} = /home/nebula/.
 
+**Note**: You have to change your direcotry to the directory where your `.yaml`configuration is stored. For example, if your `config.yaml` file is in the /home/nebula/ directory, it means {your-config-file} = /home/nebula/config.yaml; if your `csv` file is in the /home/nebula/ directory, it means {your-csv-data-dir} = /home/nebula/.
 
 ## CSV Data Example
 
@@ -234,7 +235,7 @@ With label:
 
 This feature has not been supported now. Please remove the header from your csv data file at present.
 
-#### Edge
+#### Edges
 
 ```csv
 _src,_dst,_ranking,prop1,prop2
@@ -243,7 +244,7 @@ _src,_dst,_ranking,prop1,prop2
 
 `_src` and `_dst` represent edge source and destination vertex id. `_ranking` column is value of edge ranking.
 
-#### Vertex
+#### Vertexes
 
 ```csv
 _vid,tag1.prop1,tag2.prop2,tag1.prop3,tag2.prop4
@@ -251,7 +252,6 @@ _vid,tag1.prop1,tag2.prop2,tag1.prop3,tag2.prop4
 ```
 
 `_vid` column represent the global unique vertex id.
-
 
 ### Log
 
@@ -263,7 +263,7 @@ The following example shows you how to import CSV data to **Nebula Graph** with 
 
 1. [Start your Nebula Graph services](#starting-nebula-graph-services).
 2. [Create the schema for tags and edges](#creating-the-schema-for-tags-and-edges).
-3. [Prepare the configuration file](#preparing-the-configuration-file).
+3. [Prepare the configuration file](#preparing-your-configuration-file).
 4. [Prepare the CSV data](#preparing-the-csv-data).
 5. [Import the CSV data](#importing-the-csv-data).
 
@@ -274,35 +274,36 @@ You can start your Nebula Graph services by the following steps:
 1. On a command line interface, go to the nebula-docker-compose directory.
 2. Execute the following command to start nebula services:
 
-```
+```bash
 sudo docker-compose up -d
 ```
 
 3. Execute the following command to get the port for graphd of **Nebula Graph**:
 
-```
+```bash
 sudo docker-compose ps
 ```
 
 4. Execute the following command to pull the Nebula Graph image:
 
-```
+```bash
 sudo docker pull vesoft/nebula-console:nightly
 ```
 
 5. Execute the following command to connect to your Nebula Graph server:
 
-```
+```bash
 sudo docker run --rm -ti --network=host vesoft/nebula-console:nightly --addr=127.0.0.1 --port=32868
 ```
 
 **Note**: You must make sure the ip and port are correct.
 
 ### Creating the Schema for Tags and Edges
+
 Before you can input your schema, you must create a space and use it.
 In this example, we create two tags and one edge type with the following commands:
 
-```
+```bash
 CREATE TAG directors (name string, gender string, age int)
 
 CREATE TAG stars (name string, gender string, age int)
@@ -310,11 +311,13 @@ CREATE TAG stars (name string, gender string, age int)
 CREATE EDGE chose (rating int)
 ```
 
-### Preparing the Configuration File
+### Preparing Your Configuration File
+
 You must configure the `.yaml` configuration file, which regulates how data is organized in the CSV files.
 
 In this example, we configure the `.yaml` configuration file as follows:
-```
+
+```bash
 version: v1rc1
 description: example
 clientSettings:
@@ -381,17 +384,19 @@ files:
               - name: gender
                 type: string
               - name: age
-                type: int      
+                type: int
 
 ```
+
 **Note**: In the above configuration file, you must change the ip and port to yours.
 
-
 ### Preparing the CSV Data
+
 In this example we prepare three CSV data files, one for the edge and two for vertexes.
 
 The data in the directors CSV file is as follows:
-``` 
+
+```csv
 100,Hanks,male,55
 101,Tom,male,81
 102,Jim,male,42
@@ -401,9 +406,12 @@ The data in the directors CSV file is as follows:
 106,Joe,female,60
 107,Juli,female,43
 108,Eve,female,29
-``` 
-The data in the stars CSV file is as follows:
 ```
+
+The data in the stars CSV file is as follows:
+
+```csv
+
 200,Jack,male,17
 201,Mike,male,18
 202,Michael,male,16
@@ -414,8 +422,10 @@ The data in the stars CSV file is as follows:
 207,Tina,female,19
 208,Lily,female,20
 ```
+
 The data in the edge CSV file is as follows:
-```
+
+```csv
 100,200,good
 100,201,good
 100,202,wonderful
@@ -427,14 +437,17 @@ The data in the edge CSV file is as follows:
 104,202,wonderful
 
 ```
+
 **Note**: In the above files, the first column is the vertex id and the other fields are in consistent with the `.yaml` configuration file.
 
 ### Importing the CSV Data
+
 After all the previous four steps are complete, you can import the CSV data by the following command:
 
-```
+```bash
 sudo docker run --rm -ti --network=host -v /home/nebula/config.yaml:/home/nebula/config.yaml -v /home/nebula/:/home/nebula/ vesoft/nebula-importer --config /home/nebula/config.yaml
 ```
+
 **Note**: You must change the directory for the `.yaml` file to yours, otherwise this command cannot be executed successfully.
 
 ## TODO
