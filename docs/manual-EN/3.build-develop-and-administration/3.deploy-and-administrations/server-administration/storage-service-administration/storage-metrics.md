@@ -4,7 +4,7 @@
 
 Currently, Nebula supports obtaining some basic performance metrics for the storage service via HTTP.
 
-Each performance metrics consists of three parts, namely `<counter_name>.<statistic_type>.<time_range>`, details are introduced as the follows.
+Each performance metrics consists of three parts, namely `<counter_name>.<statistic_type>.<time_range>`, and details are introduced as follows.
 
 ### Counter Names
 
@@ -37,7 +37,7 @@ The complete metric concatenates the interface name with the corresponding metri
 
 Currently supported types are SUM, COUNT, AVG, RATE, and P quantiles (P99, P999, ..., P999999). Among which:
 
-- metrics have suffixes `_latency` and `_error_qps` support SUM, COUNT, AVG, RATE but don't support P quantiles.
+- metrics have suffixes `_latency` and `_error_qps` support SUM, COUNT, AVG, RATE but do not support P quantiles.
 - metrics have suffixes `_qps` support SUM, COUNT, AVG, RATE, and P quantiles.
 
 ### Time Range

@@ -4,9 +4,9 @@ Nebula's services are composed of three parts: graphd, storaged and metad. The *
 
 Currently, storage can be scaled horizontally by the command `balance`. There are two kinds of balance command, one is to move data, which is `BALANCE DATA`; the other one only changes the distribution of leader partition to balance load without moving data, which is `BALANCE LEADER`.
 
-## Balance data
+## Balance Data
 
-Let's use an example to expand the cluster from 3 instances to 8 to show how to BALANCE DATA.
+Let us use an example to expand the cluster from 3 instances to 8 to show how to BALANCE DATA.
 
 ### Step 1 Prerequisites
 

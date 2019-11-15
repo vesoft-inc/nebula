@@ -4,7 +4,7 @@ Nebula uses `RocksDB` as the default `key-value` storage engine. Therefore, when
 
 Nebula provides `Spark-SSTFile-Generator` tool.
 
-`Spark-SSTFile-Generator` generates SST files from the hive table via the mapping files. For details on how to use it, please refer [Spark application command line reference](https://github.com/vesoft-inc/nebula/blob/master/src/tools/spark-sstfile-generator/README.md).
+`Spark-SSTFile-Generator` generates SST files from the hive table via the mapping files. For details on how to use it, please refer to [Spark application command line reference](https://github.com/vesoft-inc/nebula/blob/master/src/tools/spark-sstfile-generator/README.md).
 
 The execution will generate SST files on `HDFS`. The directory structure is as follows:
 

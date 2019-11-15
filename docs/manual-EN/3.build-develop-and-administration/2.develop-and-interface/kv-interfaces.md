@@ -1,8 +1,8 @@
-# KV interfaces
+# KV Interfaces
 
 ## Interface Demo
 
-Nebula storage provides key-value interfaces. Users can perform kv operations through the StorageClient. Please note that users still need to create space through console. Currently supported interfaces are Get and Put. The interfaces are as follows.
+Nebula storage provides key-value interfaces. Users can perform kv operations through the StorageClient. Please note that users still need to create spaces through console. Currently supported interfaces are Get and Put. The interfaces are as follows.
 
 ```cpp
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> put(
@@ -49,9 +49,9 @@ auto future = storageClient->get(spaceId, std::move(keys));
 auto resp = std::move(future).get()
 ```
 
-### Processing returned results
+### Processing Returned Results
 
-Check the returned results of the rpc to examine if the corresponding operation runs successfully. In addition, since nebula storage shards data, if one partition fails, the error code is also returned. If any of the partition fails, the entire requirement fails (resp.succeeded() is false). But those succeed are still read/written.
+Check the returned results of the rpc to examine if the corresponding operation runs successfully. In addition, since nebula storage shards data, if one partition fails, the error code is also returned. If any of the partition fails, the entire requirement fails (resp.succeeded() is false). But those success are still read/written.
 
 Users can retry until all the requirements run successfully. Currently, auto retry is not supported by StorageClient. Users can decide whether to retry based on the error code.
 

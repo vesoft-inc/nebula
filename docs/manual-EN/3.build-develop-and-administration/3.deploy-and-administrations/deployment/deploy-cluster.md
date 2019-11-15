@@ -1,8 +1,8 @@
 # Deploy Cluster
 
-This section provides an introduction to deploy `Nebula` cluster.
+This section introduces how to deploy `Nebula` cluster.
 
-## Download and install package
+## Download and Install Package
 
 Currently, we have offered packages for `CentOS 7.5`, `CentOS 6.5`, `Ubuntu 1604` and `Ubuntu 1804`. You can download rpm or deb packages by clicking the [**Assets**](https://github.com/vesoft-inc/nebula/releases).
 
@@ -20,13 +20,13 @@ For `Ubuntu` :
 dpkg -i nebula-{VERSION}.{SYSTEM_VERSION}.amd64.deb
 ```
 
-By default, the config files are under `/usr/local/nebula/etc`, you should modify the `meta_server_addrs` to set the Meta Server's address.
+By default, the config files are under `/usr/local/nebula/etc`, you must modify the `meta_server_addrs` to set the Meta Server's address.
 
-In order to enable multi copy Meta services, you should set the meta addresses split by comma into `meta_server_addrs`.
+In order to enable multi copy Meta services, you must set the meta addresses seperated by comma into `meta_server_addrs`.
 
 Use `data_path` to set `Meta` and `Storage`'s underlying storage directory.
 
-## Start Up Nebula Cluster
+## Start up Nebula Cluster
 
 Currently, we use `scripts/services.sh` to manage the nebula cluster.
 
@@ -51,9 +51,9 @@ The metas, storages and graphs contain the host of themselves.
 * --addr is the graphd IP address
 * --port is the the graphd server port and the default value is `3699`
 
-Then you’re now ready to start using Nebula Graph.
+Then you are now ready to start using Nebula Graph.
 
-## Config reference
+## Config Reference
 
 **Meta Service** supports the following config properties.
 
@@ -62,12 +62,12 @@ Property Name               | Default Value            | Description
 `port`                      | 45500                    | Meta daemon listening port.
 `reuse_port`                | true                     | Whether to turn on the SO_REUSEPORT option.
 `data_path`                 | ""                       | Root data path. Multi-path is not supported
-`meta_server_addrs`                     | ""                       | It is a list of IPs split by comma, the ips number equals replica number. If empty, it means replica is 1.
+`meta_server_addrs`                     | ""                       | It is a list of IPs seperated by comma, the ips number equals replica number. If empty, it means replica is 1.
 `local_ip`                  | ""                       | Local ip speicified for NetworkUtils::getLocalIP.
 `num_io_threads`            | 16                       | Number of IO threads.
 `meta_http_thread_num`      | 3                        | Number of meta daemon's http thread.
 `num_worker_threads`        | 32                       | Number of workers.
-`part_man_type`             | memory                   | memory, meta.
+`part_man_type`             | memory                   | Memory, meta.
 `pid_file`                  | "pids/nebula-metad.pid"  | File to hold the process id.
 `daemonize`                 | true                     | Whether run as a daemon process.
 `cluster_id`                | 0                        | A unique id for each cluster.
@@ -79,8 +79,8 @@ Property Name                       | Default Value              | Description
 ----------------------------------- | -------------------------- | -----------
 `port`                              | 44500                      | Storage daemon listening port.
 `reuse_port`                        | true                       | Whether to turn on the SO_REUSEPORT option.
-`data_path`                         | ""                         | Root data path, multi paths should be split by comma. For rocksdb engine, one path one instance.
-`local_ip`                          | ""                         | IP address is used to identify this server, combined with the listen port.
+`data_path`                         | ""                         | Root data path, multi paths must be seperated by comma. For rocksdb engine, one path is for one instance.
+`local_ip`                          | ""                         | IP address is used to identify this server, combined with the listening port.
 `daemonize`                         | true                       | Whether to run the process as a daemon.
 `pid_file`                          | "pids/nebula-storaged.pid" | File to hold the process id.
 `meta_server_addrs`                 | ""                         | List of meta server addresses, the format looks like ip1:port1, ip2:port2, ip3:port3.
@@ -110,7 +110,7 @@ Property Name                       | Default Value              | Description
 
 Property Name                   | Default Value            | Description
 ------------------------------- | ------------------------ | -----------
-`port`                          | 3699                     | Nebula Graph daemon's listen port.
+`port`                          | 3699                     | Nebula Graph daemon's listening port.
 `client_idle_timeout_secs`      | 0                        | Seconds before we close the idle connections, 0 for infinite.
 `session_idle_timeout_secs`     | 600                      | Seconds before we expire the idle sessions, 0 for infinite.
 `session_reclaim_interval_secs` | 10                       | Period we try to reclaim expired sessions.
