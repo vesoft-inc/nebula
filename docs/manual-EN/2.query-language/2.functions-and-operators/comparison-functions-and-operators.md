@@ -1,4 +1,6 @@
-# Comparison Functions And Operators
+# Comparison Functions and Operators
+
+This document introduces the comparison functions and operators in **Nebula Graph**.
 
 | Name  | Description |
 |:----|:----:|
@@ -19,7 +21,7 @@ Comparison operations result in a value of _true_ and _false_.
 
 * ==
 
-Equal. String comparisons are case-sensitive. Values of different type are not equal.
+Equal. String comparisons are case-sensitive. Values of different types are not equal.
 
 ```ngql
 nebula> YIELD 'A' == 'a';

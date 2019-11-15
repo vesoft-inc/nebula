@@ -1,15 +1,15 @@
 # Built-in Functions
 
-Nebula Graph supports calling built-in functions of the following types:
+This document gives details about built-in functions supported in Nebula Graph.
 
 ## Math
 
 Function| Description |
 ----  |  ----|
-double abs(double x) | Return absolute value of the argument |
+double abs(double x) | Return an absolute value of the argument |
 double floor(double x) | Return the largest integer value smaller than or equal to the argument. (Rounds down)|
 double ceil(double x) | Return the smallest integer greater than or equal to the argument. (Rounds up) |
-double round(double x) | Return integral value nearest to the argument, returns a number farther away from 0 if the parameter is in the middle|
+double round(double x) | Return an integral value nearest to the argument; return a number farther away from 0 if the parameter is in the middle|
 double sqrt(double x) | Return the square root of the argument |
 double cbrt(double x) | Return the cubic root of the argument |
 double hypot(double x, double x) | Return the hypotenuse of a right-angled triangle |

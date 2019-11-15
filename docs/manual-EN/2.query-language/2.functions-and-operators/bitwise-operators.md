@@ -1,6 +1,6 @@
 # Bitwise Operators
 
-|  ***Name***    |  ***Description***    |
+|  **Name**    |  **Description**    |
 |:----|:----:|
 |   &     |   Bitwise AND     |
 |   \|   |   Bitwise OR   |
