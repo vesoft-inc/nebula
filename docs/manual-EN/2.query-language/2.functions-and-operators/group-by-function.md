@@ -1,6 +1,6 @@
-# Aggregate (Group by) function
+# Aggregate (Group by) Function
 
-The `GROUP BY` functions are similar with SQL. It can only be applied in the `YIELD` syntax.
+The `GROUP BY` function is similar with SQL. It can only be applied in the `YIELD` syntax.
 
 |Name | Description |
 |:----|:----:|

@@ -1,13 +1,13 @@
 # Logical Operators
 
-|  ***Name***    |  ***Description***    |
+|  **Name**   |  **Description**    |
 |:----|:----:|
 |   &&     |   Logical AND     |
 |   !      |   Logical NOT     |
 |   \|\|   |   Logical OR   |
 |   XOR      |   Logical XOR  |
 
-In nGQL, nonzero numbers are evaluated to _true_. The precedence of the operators refer to [Operator Precedence](./operator-precedence.md).
+In nGQL, nonzero numbers are evaluated to _true_. For the precedence of the operators, refer to [Operator Precedence](./operator-precedence.md).
 
 * &&
 

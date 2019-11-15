@@ -26,7 +26,7 @@ The features of this syntax are described in the following sections:
 
 * **tag_name and edge_name**
 
-    The name of tags and edgeTypes should be **unique** within the space. Once the name is defined, it can not be altered. The rules of tag and edgeType names are the same as those for names of spaces. See [Schema Object Name](../../3.language-structure/schema-object-names.md)
+    The name of tags and edgeTypes must be **unique** within the space. Once the name is defined, it can not be altered. The rules of tag and edgeType names are the same as those for names of spaces. See [Schema Object Name](../../3.language-structure/schema-object-names.md).
 
 ### Property Name and Data Type
 

@@ -16,7 +16,7 @@ ttl_definition:
 
 `ALTER` statement changes the structure of a tag or edge. For example, you can add or delete properties, change the data type of an existing property. You can also set a property as TTL (Time-To-Live), or change the TTL duration.
 
-Multiple `ADD`, `DROP`, `CHANGE` clauses are permitted in a single `ALTER` statements, separated by commas. But do NOT add, drop, change the same property in one statement. If you have to do so, make each operation as a clause of the `ALTER` statement.
+Multiple `ADD`, `DROP`, `CHANGE` clauses are permitted in a single `ALTER` statement, separated by commas. But do NOT add, drop, change the same property in one statement. If you have to do so, make each operation as a clause of the `ALTER` statement.
 
 ```ngql
 ALTER TAG t1 ADD (id int, name string)

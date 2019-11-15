@@ -10,11 +10,11 @@ Use `FETCH PROP ON` to return a (list of) vertex's properties. Currently, you ca
 FETCH PROP ON <tag_name> <vertex_id_list> [YIELD [DISTINCT] <return_list>]
 ```
 
-`<tag_name>` is the tag name. It should be the same tag within return_list
+`<tag_name>` is the tag name. It must be the same tag within return_list
 
 `<vertex_id_list>::=[vertex_id [, vertex_id]]` is a list of vertex IDs separated by comma(,)
 
-`[YIELD [DISTINCT] <return_list>]` is the property list returned. Please refer here [YIELD Syntax](yield-syntax.md).
+`[YIELD [DISTINCT] <return_list>]` is the property list returned. Please refer to [YIELD Syntax](yield-syntax.md).
 
 ### Examples
 
@@ -55,7 +55,7 @@ FETCH PROP ON <edge_type> <vid> -> <vid> [, <vid> -> <vid> ...] [YIELD [DISTINCT
 nebula> FETCH PROP ON e1 100 -> 200
 -- only return property p1
 nebula> FETCH PROP ON e1 100 -> 200 YIELD e1.p1
--- for all the out going edges of vertex 1, get edge property prop1.
+-- for all the outgoing edges of vertex 1, get edge property prop1.
 nebula> GO FROM 1 OVER e1 YIELD e1.prop1
 -- the same as above sentence
 nebula> GO FROM 1 OVER e1 YIELD e1._src AS s, serve._dst AS d \

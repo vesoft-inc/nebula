@@ -1,6 +1,6 @@
 # Delete Syntax
 
-Given a vertex Id, Nebula supports `DELETE` the vertex and its associated in and out edges, syntax as the follows:
+Given a vertex Id, Nebula supports `DELETE` the vertex and its associated in and out edges. The syntax is as follows:
 
 ```ngql
 DELETE VERTEX $vid

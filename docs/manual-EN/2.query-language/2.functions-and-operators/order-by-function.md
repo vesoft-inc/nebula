@@ -22,4 +22,4 @@ nebula> FETCH PROP ON player 1,2,3,4 YIELD player.age AS age, player.weight AS w
 nebula> GO FROM 1 OVER edge2 YIELD $^.t1.prop1 AS s1_p1, edge2.prop2 AS e2_p2, $$.t3.prop3 AS d3_p3 | ORDER BY s1_p1 ASC, e2_p2 DESC, d3_p3 ASC
 ```
 
-For a group of returned tuples <s1_p1, e2_p2, d3_p3>, first sort in ascending order of s1_p1, then in descending order of e2_p2, finally ascending order of d3_p3.
+For a group of returned tuples <s1_p1, e2_p2, d3_p3>, first sort in ascending order of s1_p1, then in descending order of e2_p2, and finally in ascending order of d3_p3.

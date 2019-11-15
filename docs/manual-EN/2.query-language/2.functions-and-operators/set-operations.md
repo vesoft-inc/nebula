@@ -2,7 +2,7 @@
 
 ## `UNION`, `UNION DISTINCT`, and `UNION ALL`
 
-Operator `UNION DISTINCT` (or by short `UNION`) returns the union of two sets A and B (denoted by `A ⋃ B` in mathematics), with the distinct element belongs to set A or set B, or both.
+Operator `UNION DISTINCT` (or by short `UNION`) returns the union of two sets A and B (denoted by `A ⋃ B` in mathematics), with the distinct element belonging to set A or set B, or both.
 
 Meanwhile, operation `UNION ALL` returns the union set with duplicated elements. The `UNION`-syntax is
 
@@ -14,7 +14,7 @@ where `<left>` and `<right>` must have the same number of columns and pair-wise 
 
 ### Example
 
-The following statement
+The following statements
 
 ```ngql
 GO FROM 1 OVER e1 \
@@ -32,9 +32,9 @@ UNION ALL\
 GO FROM 2 OVER e1
 ```
 
-returns all the neighbors of vertex `1` and `2`, with all possible duplications.
+return all the neighbors of vertex `1` and `2`, with all possible duplications.
 
-`UNION` can also work with the `YIELD` statement. For example, let's suppose the results of the following two queries.
+`UNION` can also work with the `YIELD` statement. For example, let us suppose the results of the following two queries.
 
 ```ngql
 nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2 -- query 1
@@ -64,7 +64,7 @@ UNION /* DISTINCT */
 GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 ```
 
-will return as follows:
+return as follows:
 
 ```ngql
 =========================

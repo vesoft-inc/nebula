@@ -120,4 +120,4 @@ Of course you can query without specifying `YIELD`, this will return the vids of
 | 0 | 202 |
 
 For query `GO FROM 100 OVER *`, the result is similar to the above example: the non-existing property or vid is populated with default values.
-Please note that we can't tell which row belongs to which edge in the results, the future version will show the edge type in the result.
+Please note that we cannot tell which row belongs to which edge in the results, and the future version will show the edge type in the result.

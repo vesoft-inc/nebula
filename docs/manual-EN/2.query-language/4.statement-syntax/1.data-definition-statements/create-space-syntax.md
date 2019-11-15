@@ -26,9 +26,9 @@ When creating a space, options can be given. An _option_name_ can be any of the 
 
 * _replica_factor_
 
-    _replica_factor_ specifies the number of replicas in the cluster. The default replica factor is 1. The suggested number is 3 in cluster.
+    _replica_factor_ specifies the number of replicas in the cluster. The default replica factor is 1. The suggested number is 3 in a cluster.
 
-However, if no option is given, Nebula Graph will create the space with the default partition number and replica factor.
+However, if no option is given, Nebula Graph creates the space with the default partition number and replica factor.
 
 ### Example
 
