@@ -391,8 +391,8 @@ macro(nebula_link_libraries target)
         dl
         ${GETTIME_LIB}
         -pthread
-        prometheus-cpp-core
         prometheus-cpp-pull
+        prometheus-cpp-core
     )
 endmacro(nebula_link_libraries)
 
