@@ -403,7 +403,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
         case cpp2::ErrorCode::E_NO_HOSTS:
             return Status::Error("no hosts!");
         case cpp2::ErrorCode::E_CONFIG_IMMUTABLE:
-            return Status::CfgImmutable();
+            return Status::Error("Config immutable");
         case cpp2::ErrorCode::E_CONFLICT:
             return Status::Error("conflict!");
         case cpp2::ErrorCode::E_WRONGCLUSTER:

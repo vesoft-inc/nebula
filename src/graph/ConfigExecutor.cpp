@@ -129,7 +129,13 @@ void ConfigExecutor::setVariables() {
                     return;
             }
         } else if (configItem_->getUpdateItems() != nullptr) {
-            value = configItem_->getUpdateItems()->toString();
+            auto status = configItem_->getUpdateItems()->toEvaledString();
+            if (!status.ok()) {
+                DCHECK(onError_);
+                onError_(status.status());
+                return;
+            }
+            value = status.value();
             // all nested options are regarded as string
             type = meta::cpp2::ConfigType::NESTED;
         }
