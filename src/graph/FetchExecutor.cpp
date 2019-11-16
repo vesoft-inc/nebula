@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "FetchExecutor.h"
+#include "SchemaHelper.h"
 
 namespace nebula {
 namespace graph {
@@ -42,7 +43,7 @@ Status FetchExecutor::prepareYield() {
         } else if (col->expr()->isTypeCastingExpression()) {
             // type cast
             auto exprPtr = dynamic_cast<TypeCastingExpression*>(col->expr());
-            colTypes_.back() = ColumnTypeToSupportedType(exprPtr->getType());
+            colTypes_.back() = SchemaHelper::columnTypeToSupportedType(exprPtr->getType());
         }
     }
 

@@ -63,6 +63,7 @@ public:
     // (Peers str format example: 192.168.1.1:10001, 192.168.1.2:10001)
     // Return Status::Error if peersStr is invalid.
     static StatusOr<std::vector<HostAddr>> toHosts(const std::string& peersStr);
+    static std::string toHosts(const std::vector<HostAddr>& hosts);
 
 private:
 };

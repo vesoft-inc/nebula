@@ -1,10 +1,10 @@
 # CONFIG Syntax
 
-Nebula use `gflags` for run-time configurations.
+Nebula uses `gflags` for run-time configurations.
 
 The related three gflags parameters are: `rocksdb_db_options`, `rocksdb_column_family_options` and `rocksdb_block_based_table_options`.
 
-The three parameters are all in json formet, and the key and value of them are in string format. For example, you can set as follows in the conf file of storage:
+The three parameters are all in json format, and the key and value of them are in string format. For example, you can set as follows in the conf file of storage:
 
 ```text
     rocksdb_db_options = {"stats_dump_period_sec":"200", "enable_write_thread_adaptive_yield":"false", "write_thread_max_yield_usec":"600"}
@@ -40,7 +40,10 @@ Nebula supports changing some rocksdb parameters in storage service as follows:
 ```
 
 For example
-`UPDATE VARIABLE storage:rocksdb_column_family_options = { disable_auto_compactions = false , level0_file_num_compaction_trigger = 10 }`
+
+```ngql
+UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = false , level0_file_num_compaction_trigger = 10 }
+```
 
 ## SHOW CONFIGS
 

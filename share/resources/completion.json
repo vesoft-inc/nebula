@@ -12,7 +12,7 @@
         },
         "SHOW" : {
             "sub_keywords": [
-                "HOSTS", "TAGS", "EDGES", "SPACES", "USERS", "ROLES", "USER", "CONFIGS"
+                "HOSTS", "PARTS", "TAGS", "EDGES", "SPACES", "USERS", "ROLES", "USER", "CONFIGS"
             ]
         },
         "DESCRIBE" : {
@@ -95,6 +95,18 @@
         "GET": {
             "sub_keywords": [
                 "CONFIGS"
+            ]
+        },
+        "ORDER BY": {
+        },
+        "LIMIT": {
+            "sub_keywords": [
+                "OFFSET"
+            ]
+        },
+        "GROUP BY": {
+            "sub_keywords": [
+                "YIELD", "COUNT", "COUNT_DISTINCT", "SUM", "AVG", "MAX", "MIN", "STD", "BIT_AND", "BIT_OR", "BIT_XOR"
             ]
         }
     },
