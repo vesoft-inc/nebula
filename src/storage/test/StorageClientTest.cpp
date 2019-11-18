@@ -411,7 +411,7 @@ TEST(StorageClientTest, LeaderChangeTest) {
     });
     baton.wait();
     ASSERT_EQ(1u, tsc.leaders_.size());
-    ASSERT_EQ(HostAddr(localIp, 10010), tsc.leaders_[std::make_pair(0, 1)]);
+    ASSERT_EQ(HostAddr(localIp, 10010), tsc.leaders_[std::make_pair(1, 1)]);
 }
 
 }  // namespace storage
