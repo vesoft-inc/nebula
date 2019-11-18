@@ -146,7 +146,7 @@ age                  int
 ```text
 {
   # Spark 相关信息配置
-  # See also: http://spark.apache.org/docs/latest/configuration.html
+  # 参见： http://spark.apache.org/docs/latest/configuration.html
   spark: {
     app: {
       name: Spark Writer
@@ -182,7 +182,7 @@ age                  int
     }
 
   # nGQL 执行重试次数
-  # 如未设置，则默认值分别为 3
+  # 如未设置，则默认值为 3
     execution {
       retry: 3
     }
@@ -208,7 +208,7 @@ age                  int
     }
 
     # 与上述类似
-    # 从Hive加载将执行命令 $ {exec} 作为数据集
+    # 从 Hive 加载将执行命令 $ {exec} 作为数据集
     tag name 1: {
       type: hive
       exec: "select hive field 0, hive field 1, hive field 2 from database.table"
@@ -225,7 +225,7 @@ age                  int
   edges: {
     # 从 HDFS 加载数据，数据类型为 JSON
     # 边名称为 edge name 0
-    # HDFS JSON 文件中的field 0，field 1，field 2 将被写入 edge name 0
+    # HDFS JSON 文件中的 field 0，field 1，field 2 将被写入 edge name 0
     # 起始列为 source field
     edge name 0: {
       type: json
@@ -241,7 +241,7 @@ age                  int
     }
 
 
-   # 从Hive加载将执行命令 $ {exec} 作为数据集
+   # 从 Hive 加载将执行命令 $ {exec} 作为数据集
    # 边权重为可选
    edge name 1: {
     type: hive
@@ -260,14 +260,14 @@ age                  int
 
 #### 3.3.1 Spark 配置信息
 
-下表给出了一些示例，所有可配置项请见 [Spark Available Properties](http://spark.apache.org/docs/latest/configuration.html#available properties)。
+下表给出了一些示例，所有可配置项请见 [Spark Available Properties](http://spark.apache.org/docs/latest/configuration.html#available-properties)。
 
 | 字段 | 默认值 | 是否必须 | 说明 |
 |  --- | ---  |  --- | ---  |
 | spark.app.name | Spark Writer | 否 | app 名称 |
-| spark.driver.cores | 1 | 否 | 用于驱动程序进程的核数，仅适用于群集模式|
+| spark.driver.cores | 1 | 否 | 驱动程序进程的核数，仅适用于群集模式|
 | spark.driver.maxResultSize | 1G | 否 | 每个 Spark 操作（例如收集）中所有分区的序列化结果的上限（以字节为单位）。至少应为 1M，否则应为 0（无限制）|
-| spark.cores.max | (not set) | 否 | 当以“粗粒度”共享模式在独立部署群集或Mesos 群集上运行时，跨群集（而非从每台计算机）请求应用程序的最大 CPU 核数。如果未设置，则默认值为 Spark 的独立集群管理器上的 `spark.deploy.defaultCores` 或 Mesos 上的 infinite（所有可用的内核）|
+| spark.cores.max | (not set) | 否 | 当以“粗粒度”共享模式在独立部署群集或 Mesos 群集上运行时，跨群集（而非从每台计算机）请求应用程序的最大 CPU 核数。如果未设置，则默认值为 Spark 的独立集群管理器上的 `spark.deploy.defaultCores` 或 Mesos 上的 infinite（所有可用的内核）|
 
 #### 3.3.2 Nebula 配置信息
 
@@ -275,7 +275,7 @@ age                  int
 |  --- | ---  |  --- | ---  |
 | nebula.addresses | 无 | 是 | 计算引擎的地址列表，逗号分隔 |
 | nebula.user | 无 | 是 | 数据库用户名 |
-| nebula.pswd | 无 | 是 | 数据库用户对应密码 |
+| nebula.pswd | 无 | 是 | 数据库用户名对应密码 |
 | nebula.space | 无 | 是 | 导入数据对应的 space |
 | nebula.connection.timeout | 3000 | 否 | Thrift 连接超时时间 |
 | nebula.connection.retry | 3 | 否 | Thrift 连接重试次数 |
@@ -340,3 +340,5 @@ bin/spark-submit \
 | -D / --dry | no | false | 检查配置文件是否正确 |  |
 
 ## 4. 性能测试结果
+
+三个节点，写 1 亿条数据，每条数据三个字段，每个批 64 条记录，用时四分钟左右。

@@ -35,9 +35,9 @@ User guide includes the following steps:
 
 ### 3.1 Create Graph Space
 
-Please refer to the demo graph in [Quick Start](../../../../../1.overview/2.quick-start/1.get-started.md)。
+Please refer to the example graph in [Quick Start](../../../../../1.overview/2.quick-start/1.get-started.md)。
 
-### 3.2 Demo Data
+### 3.2 Example Data
 
 #### 3.2.1 Vertices
 
@@ -260,7 +260,7 @@ Example of a mapping file for the input source:
 
 #### 3.3.1 Spark Properties
 
-The following table gives some example properties, all the which can be found in [Spark Available Properties](http://spark.apache.org/docs/latest/configuration.html#available-properties).
+The following table gives some example properties, all of which can be found in [Spark Available Properties](http://spark.apache.org/docs/latest/configuration.html#available-properties).
 
 | Field | Default | Required | Description |
 | --- | --- | --- | --- |
@@ -302,7 +302,7 @@ The options for tag and edge mapping are very similar. The following describes t
 
 * **HDFS Parquet Files**
   * `type` specifies the input source type. When it is parquet, it's a case insensitive required field
-  * `path` specifies the HDFS file directory, it's a required field that must be absolute directory
+  * `path` specifies the HDFS file directory, it's a required field that must be the absolute directory
 * **HDFS JSON Files**
   * `type` specifies the type of the input source. When it is JSON, it's a case insensitive required field
   * `path` specifies the HDFS file directory, it's a required field that must be absolute directory
@@ -311,7 +311,7 @@ The options for tag and edge mapping are very similar. The following describes t
   * `path` specifies the HDFS file directory, it's a required field that must be absolute directory
 * **HIVE CSV Files**
   * `type` specifies the input source type. When it is CSV, it's a case insensitive required field
-  * `path` specifies the HDFS file directory, it's a required field that must be absolute directory
+  * `path` specifies the HDFS file directory, it's a required field that must be the absolute directory
 * **HIVE**
   * `type` specifies the input source type. When it is HIVE, it's a case insensitive required field
   * `exec` is a required field that specifies the HIVE executed query
