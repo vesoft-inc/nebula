@@ -32,7 +32,6 @@
 # Root data path, here should be only single path for metad
 --data_path=data/meta
 
-
 ########## Misc #########
 # The default number of parts when a space is created
 --default_parts_num=1024
