@@ -24,13 +24,13 @@ namespace kvstore {
 NebulaStore::~NebulaStore() {
     LOG(INFO) << "Cut off the relationship with meta client";
     options_.partMan_.reset();
-    bgWorkers_->stop();
-    bgWorkers_->wait();
     LOG(INFO) << "Stop the raft service...";
     raftService_->stop();
     LOG(INFO) << "Waiting for the raft service stop...";
     raftService_->waitUntilStop();
     spaces_.clear();
+    bgWorkers_->stop();
+    bgWorkers_->wait();
     LOG(INFO) << "~NebulaStore()";
 }
 
