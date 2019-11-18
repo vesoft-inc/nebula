@@ -109,6 +109,7 @@ int main(int argc, char *argv[]) {
                                                                       paths);
     if (!gStorageServer->start()) {
         LOG(ERROR) << "Storage server start failed";
+        gStorageServer->stop();
         return EXIT_FAILURE;
     }
 
