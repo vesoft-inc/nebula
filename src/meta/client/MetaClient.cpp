@@ -416,6 +416,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("The balancer is running!");
         case cpp2::ErrorCode::E_BAD_BALANCE_PLAN:
             return Status::Error("Bad balance plan!");
+        case cpp2::ErrorCode::E_NO_RUNNING_BALANCE_PLAN:
+            return Status::Error("No running balance plan!");
         }
         default:
             return Status::Error("Unknown code %d", static_cast<int32_t>(resp.get_code()));
@@ -1154,8 +1156,11 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     return future;
 }
 
-folly::Future<StatusOr<int64_t>> MetaClient::balance() {
+folly::Future<StatusOr<int64_t>> MetaClient::balance(bool isStop) {
     cpp2::BalanceReq req;
+    if (isStop) {
+        req.set_stop(isStop);
+    }
     folly::Promise<StatusOr<int64_t>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {

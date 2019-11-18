@@ -36,6 +36,7 @@ enum ErrorCode {
     E_STORE_SEGMENT_ILLEGAL  = -32,
     E_BAD_BALANCE_PLAN     = -33,
     E_BALANCED             = -34,
+    E_NO_RUNNING_BALANCE_PLAN = -35,
 
     E_INVALID_PASSWORD       = -41,
     E_INPROPER_ROLE          = -42,
@@ -433,6 +434,7 @@ struct BalanceReq {
     1: optional common.GraphSpaceID space_id,
     // Specify the balance id to check the status of the related balance plan
     2: optional i64 id,
+    3: optional bool stop,
 }
 
 enum TaskResult {

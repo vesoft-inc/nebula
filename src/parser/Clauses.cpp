@@ -169,12 +169,26 @@ std::string WhereClause::toString() const {
     return buf;
 }
 
+std::string YieldColumn::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    if (funName_ != nullptr) {
+        buf += *funName_;
+        buf += "(";
+        buf += expr_->toString();
+        buf += ")";
+    } else {
+        buf += expr_->toString();
+    }
+
+    return buf;
+}
+
 std::string YieldColumns::toString() const {
     std::string buf;
     buf.reserve(256);
     for (auto &col : columns_) {
-        auto *expr = col->expr();
-        buf += expr->toString();
+        buf += col->toString();
         if (col->alias() != nullptr) {
             buf += " AS ";
             buf += *col->alias();
@@ -197,4 +211,9 @@ std::string YieldClause::toString() const {
     buf += yieldColumns_->toString();
     return buf;
 }
+
+std::string GroupClause::toString() const {
+    return groupColumns_->toString();
+}
+
 }   // namespace nebula
