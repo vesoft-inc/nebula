@@ -62,9 +62,11 @@ Status InsertEdgeExecutor::check() {
         // Check field name
         auto checkStatus = checkFieldName(schema_, props);
         if (!checkStatus.ok()) {
-            status = checkStatus;
+            status = checkStatus.status();
             break;
         }
+
+        schemaIndexes_ = std::move(checkStatus).value();
     } while (false);
 
     if (!status.ok()) {
@@ -148,16 +150,18 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         }
 
         RowWriter writer(schema_);
-        auto fieldIndex = 0u;
-        for (auto &value : values) {
+        auto iter = schema_->begin();
+        while (iter) {
             // Check value type
-            auto schemaType = schema_->getFieldType(fieldIndex);
+            auto schemaType = iter->getType();
+            auto &value = values[schemaIndexes_[iter->getName()]];
             if (!checkValueType(schemaType, value)) {
-                DCHECK(onError_);
-                LOG(ERROR) << "ValueType is wrong, schema type "
-                           << static_cast<int32_t>(schemaType.type)
-                           << ", input type " <<  value.which();
-                return Status::Error("ValueType is wrong");
+                auto *output = "ValueType is wrong, schema type [%d], "
+                                "input type [%d], near `%s'";
+                auto error = folly::stringPrintf(output, static_cast<int32_t>(schemaType.type),
+                        value.which(), iter->getName());
+                LOG(ERROR) << error;
+                return Status::Error(std::move(error));
             }
 
             if (schemaType.type == nebula::cpp2::SupportedType::TIMESTAMP) {
@@ -169,7 +173,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             } else {
                 writeVariantType(writer, value);
             }
-            fieldIndex++;
+            ++iter;
         }
         {
             auto &out = edges[index++];
