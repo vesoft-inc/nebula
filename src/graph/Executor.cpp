@@ -47,6 +47,7 @@
 #include "graph/LimitExecutor.h"
 #include "graph/GroupByExecutor.h"
 #include "graph/ReturnExecutor.h"
+#include "graph/AdminExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -162,6 +163,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kReturn:
             executor = std::make_unique<ReturnExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kAdmin:
+            executor = std::make_unique<AdminExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(ERROR) << "Sentence kind unknown";

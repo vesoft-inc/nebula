@@ -61,6 +61,7 @@ public:
         kLimit,
         KGroupBy,
         kReturn,
+        kAdmin,
     };
 
     Kind kind() const {

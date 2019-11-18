@@ -109,6 +109,7 @@ HDFS                        ([Hh][Dd][Ff][Ss])
 ORDER                       ([Oo][Rr][Dd][Ee][Rr])
 INGEST                      ([Ii][Nn][Gg][Ee][Ss][Tt])
 COMPACT                     ([Cc][Oo][Mm][Pp][Aa][Cc][Tt])
+FLUSH                       ([Ff][Ll][Uu][Ss][Hh])
 ASC                         ([Aa][Ss][Cc])
 DISTINCT                    ([Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
 CONFIGS                     ([Cc][Oo][Nn][Ff][Ii][Gg][Ss])
@@ -243,6 +244,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {ORDER}                     { return TokenType::KW_ORDER; }
 {INGEST}                    { return TokenType::KW_INGEST; }
 {COMPACT}                   { return TokenType::KW_COMPACT; }
+{FLUSH}                     { return TokenType::KW_FLUSH; }
 {ASC}                       { return TokenType::KW_ASC; }
 {DISTINCT}                  { return TokenType::KW_DISTINCT; }
 {FETCH}                     { return TokenType::KW_FETCH; }

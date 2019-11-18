@@ -50,6 +50,7 @@ nebula_add_library(
     LimitExecutor.cpp
     GroupByExecutor.cpp
     ReturnExecutor.cpp
+    AdminExecutor.cpp
 )
 
 nebula_add_library(

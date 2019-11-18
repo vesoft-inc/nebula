@@ -104,7 +104,7 @@ class GraphScanner;
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_UUID KW_COMPACT
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
-%token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
+%token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS KW_FLUSH
 %token KW_CONFIGS KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL_DURATION KW_TTL_COL
 %token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET KW_GROUP
@@ -114,6 +114,7 @@ class GraphScanner;
 %token KW_BALANCE KW_LEADER KW_DATA KW_STOP
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL
+
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -128,6 +129,7 @@ class GraphScanner;
 %token <strval> STRING VARIABLE LABEL
 
 %type <strval> name_label unreserved_keyword agg_function
+%type <strval> admin_operation admin_para
 %type <expr> expression logic_xor_expression logic_or_expression logic_and_expression
 %type <expr> relational_expression multiplicative_expression additive_expression arithmetic_xor_expression
 %type <expr> unary_expression primary_expression equality_expression
@@ -207,16 +209,8 @@ class GraphScanner;
 %type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
 %type <sentence> ingest_sentence
-<<<<<<< HEAD
-<<<<<<< HEAD
+%type <sentence> compact_sentence admin_sentence
 %type <sentence> show_sentence create_space_sentence describe_space_sentence
-=======
-%type <sentence> compaction_sentence
-=======
-%type <sentence> compact_sentence
->>>>>>> update then/thenValue interface & add some log
-%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence describe_space_sentence
->>>>>>> init upload compaction suppot in console
 %type <sentence> drop_space_sentence
 %type <sentence> yield_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
@@ -1435,6 +1429,29 @@ compact_sentence
     }
     ;
 
+admin_sentence
+    : KW_ADMIN admin_operation {
+        auto sentence = new AdminSentence(*$2);
+        $$ = sentence;
+    }
+    ;
+
+admin_operation
+    : KW_COMPACT { $$ = new std::string("compact"); }
+    | KW_FLUSH   { $$ = new std::string("flush"); }
+    | admin_operation admin_para {
+        $$ = new std::string(*$1 + " " + *$2);
+    }
+    ;
+
+admin_para
+    : name_label ASSIGN name_label {
+        auto left = *$1;
+        auto right = *$3;
+        $$ = new std::string(*$1 + "=" + *$3);
+    }
+    ;
+
 show_sentence
     : KW_SHOW KW_HOSTS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowHosts);
@@ -1743,6 +1760,7 @@ mutate_sentence
     | download_sentence { $$ = $1; }
     | ingest_sentence { $$ = $1; }
     | compact_sentence { $$ = $1; }
+    | admin_sentence { $$ = $1; }
     ;
 
 maintain_sentence

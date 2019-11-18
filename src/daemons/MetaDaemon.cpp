@@ -10,6 +10,7 @@
 #include "meta/MetaServiceHandler.h"
 #include "meta/MetaHttpIngestHandler.h"
 #include "meta/MetaHttpCompactHandler.h"
+#include "meta/MetaHttpAdminHandler.h"
 #include "meta/MetaHttpStatusHandler.h"
 #include "meta/MetaHttpDownloadHandler.h"
 #include "webservice/WebService.h"
@@ -146,6 +147,11 @@ bool initWebService(nebula::kvstore::KVStore* kvstore,
     });
     nebula::WebService::registerHandler("/compact-dispatch", [kvstore, pool] {
         auto handler = new nebula::meta::MetaHttpCompactHandler();
+        handler->init(kvstore, pool);
+        return handler;
+    });
+    nebula::WebService::registerHandler("/admin-dispatch", [kvstore, pool] {
+        auto handler = new nebula::meta::MetaHttpAdminHandler();
         handler->init(kvstore, pool);
         return handler;
     });

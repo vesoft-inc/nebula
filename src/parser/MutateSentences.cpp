@@ -279,4 +279,18 @@ std::string IngestSentence::toString() const {
 std::string CompactionSentence::toString() const {
     return "COMPACTION";
 }
+
+std::string AdminSentence::toString() const {
+    return op_;
+}
+
+std::string AdminSentence::getType() const {
+    auto stop = op_.find_first_of(' ');
+    return op_.substr(0, stop);
+}
+
+std::vector<std::string> AdminSentence::getParas() const {
+    return paras_;
+}
+
 }   // namespace nebula

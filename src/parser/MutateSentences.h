@@ -641,5 +641,24 @@ public:
 
     std::string toString() const override;
 };
+
+class AdminSentence final : public Sentence {
+public:
+    explicit AdminSentence(const std::string& op) : op_(op) {
+        kind_ = Kind::kAdmin;
+        auto start = op_.find_first_of(' ');
+        if (start != std::string::npos) {
+            folly::split(" ", op_.substr(start+1), paras_);
+        }
+    }
+
+    std::string toString() const override;
+    std::string getType() const;
+    std::vector<std::string> getParas() const;
+private:
+    std::string             op_;
+    std::vector<std::string> paras_;
+};
+
 }  // namespace nebula
 #endif  // PARSER_MUTATESENTENCES_H_
