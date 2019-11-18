@@ -35,7 +35,7 @@ wget xxx
 
 ### 3.1 构图
 
-构图请参考[快速入门](../../../../../1.overview/2.quick-start/1.get-started.md)中的示例构图。
+构图请参考[快速试用](../../../../../1.overview/2.quick-start/1.get-started.md)中的示例构图。
 
 ### 3.2 数据示例
 
@@ -55,7 +55,7 @@ wget xxx
 
 边数据文件由一行一行的数据组成，一般一行表示一条边，其中一列为起点 ID，另外一列为终点 ID，起点 ID 列及终点 ID 列会在映射文件中指定。其他列为边属性。下面以 JSON 格式为例进行说明。
 
-* 无 rank 的边，以边 _**follow**_ 的数据为例
+* 无权重的边，以边 _**follow**_ 的数据为例
 
 ```text
 {"source":100,"target":101,"likeness":95}
@@ -63,7 +63,7 @@ wget xxx
 {"source":101,"target":102,"likeness":90}
 ```
 
-* 有 rank 的边，以边 follow 的数据为例
+* 有权重的边，以边 _**follow**_ 的数据为例
 
 ```text
 {"source":100,"target":101,"likeness":95,"ranking":2}
@@ -73,7 +73,7 @@ wget xxx
 
 #### 3.2.3 Geo 数据支持
 
-Spark Writer 支持 Geo 数据导入, Geo 数据用 latitude 与 longitude 字段描述经纬度，数据类型为 double。
+Spark Writer 支持 Geo 数据导入，Geo 数据用 latitude 与 longitude 字段描述经纬度，数据类型为 double。
 
 ```text
 {"latitude":30.2822095,"longitude":120.0298785,"target":0,"dp_poi_name":"0"}
@@ -86,22 +86,27 @@ Spark Writer 支持 Geo 数据导入, Geo 数据用 latitude 与 longitude 字�
 
 目前 Spark Writer 支持的数据源有：
 
-* HDFS 文件，支持的文件格式包括：
-  * Parquet
-  * JSON
-  * CSV
-  * ORC
+* HDFS
 * HIVE
+
+##### HDFS 文件
+
+支持的文件格式包括：
+
+* Parquet
+* JSON
+* CSV
+* ORC
 
 Player 的 Parquet 示例如下：
 
 ```text
-+-------+---+---------+
++ + + +
 |age| id|        name|
-+-------+---+---------+
++ + + +
 | 42|100| Tim Duncan |
 | 36|101| Tony Parker|
-+-------+---+---------+
++ + + +
 ```
 
 JSON 示例如下：
@@ -117,6 +122,19 @@ CSV 示例如下：
 age,id,name
 42,100,Tim Duncan
 36,101,Tony Parker
+```
+
+##### 数据库
+
+Spark Writer 支持以数据库作为数据源，目前支持 HIVE。
+
+Player 表结构如下：
+
+```text
+col_name             data_type           comment
+id                   int
+name                 string
+age                  int
 ```
 
 ### 3.3 编写配置文件
@@ -174,67 +192,67 @@ age,id,name
   tags: {
 
     # 从 HDFS 文件加载数据， 此处数据类型为 Parquet
-    # tag 名称为 tag-name-0
-    #  HDFS Parquet 文件的中的 field-0，field-1，field-2 将写入 tag-name-0
-    # 节点列为 vertex-key-field
-    tag-name-0: {
+    # tag 名称为 tag name 0
+    #  HDFS Parquet 文件的中的 field 0，field 1，field 2 将写入 tag name 0
+    # 节点列为 vertex key field
+    tag name 0: {
       type: parquet
       path: hdfs path
       fields: {
-        field-0: nebula-field-0,
-        field-1: nebula-field-1,
-        field-2: nebula-field-2
+        field 0: nebula field 0,
+        field 1: nebula field 1,
+        field 2: nebula field 2
       }
-      vertex: vertex-key-field
+      vertex: vertex key field
       batch : 16
     }
 
     # 与上述类似
     # 从Hive加载将执行命令 $ {exec} 作为数据集
-    tag-name-1: {
+    tag name 1: {
       type: hive
-      exec: "select hive-field-0, hive-field-1, hive-field-2 from database.table"
+      exec: "select hive field 0, hive field 1, hive field 2 from database.table"
       fields: {
-        hive-field-0: nebula-field-0,
-        hive-field-1: nebula-field-1,
-        hive-field-2: nebula-field-2
+        hive field 0: nebula field 0,
+        hive field 1: nebula field 1,
+        hive field 2: nebula field 2
       }
-      vertex: vertex-id-field
+      vertex: vertex id field
     }
   }
 
   # 边处理
   edges: {
     # 从 HDFS 加载数据，数据类型为 JSON
-    # 边名称为 edge-name-0
-    # HDFS JSON 文件中的field-0，field-1，field-2 将被写入 edge-name-0
-    # 起始列为 source-field
-    edge-name-0: {
+    # 边名称为 edge name 0
+    # HDFS JSON 文件中的field 0，field 1，field 2 将被写入 edge name 0
+    # 起始列为 source field
+    edge name 0: {
       type: json
       path: hdfs path
       fields: {
-        field-0: nebula-field-0,
-        field-1: nebula-field-1,
-        field-2: nebula-field-2
+        field 0: nebula field 0,
+        field 1: nebula field 1,
+        field 2: nebula field 2
       }
-      source:  source-field
-      target:  target-field
-      ranking: ranking-field
+      source:  source field
+      target:  target field
+      ranking: ranking field
     }
 
 
    # 从Hive加载将执行命令 $ {exec} 作为数据集
    # 边权重为可选
-   edge-name-1: {
+   edge name 1: {
     type: hive
-    exec: "select hive-field-0, hive-field-1, hive-field-2 from database.table"
+    exec: "select hive field 0, hive field 1, hive field 2 from database.table"
     fields: {
-      hive-field-0: nebula-field-0,
-      hive-field-1: nebula-field-1,
-      hive-field-2: nebula-field-2
+      hive field 0: nebula field 0,
+      hive field 1: nebula field 1,
+      hive field 2: nebula field 2
      }
-    source:  source-id-field
-    target:  target-id-field
+    source:  source id field
+    target:  target id field
    }
   }
 }
@@ -242,10 +260,10 @@ age,id,name
 
 #### 3.3.1 Spark 配置信息
 
-下表给出了一些示例，所有可配置项请见 [Spark Available Properties](http://spark.apache.org/docs/latest/configuration.html#available-properties)。
+下表给出了一些示例，所有可配置项请见 [Spark Available Properties](http://spark.apache.org/docs/latest/configuration.html#available properties)。
 
 | 字段 | 默认值 | 是否必须 | 说明 |
-| --- | --- | --- | --- |
+|  --- | ---  |  --- | ---  |
 | spark.app.name | Spark Writer | 否 | app 名称 |
 | spark.driver.cores | 1 | 否 | 用于驱动程序进程的核数，仅适用于群集模式|
 | spark.driver.maxResultSize | 1G | 否 | 每个 Spark 操作（例如收集）中所有分区的序列化结果的上限（以字节为单位）。至少应为 1M，否则应为 0（无限制）|
@@ -254,7 +272,7 @@ age,id,name
 #### 3.3.2 Nebula 配置信息
 
 | 字段 | 默认值 | 是否必须 | 说明 |
-| --- | --- | --- | --- |
+|  --- | ---  |  --- | ---  |
 | nebula.addresses | 无 | 是 | 计算引擎的地址列表，逗号分隔 |
 | nebula.user | 无 | 是 | 数据库用户名 |
 | nebula.pswd | 无 | 是 | 数据库用户对应密码 |
@@ -267,23 +285,58 @@ age,id,name
 
 tag 和 edge 映射的选项比较类似。下面先介绍相同的选项，再分别介绍 `tag 映射`和 `edge 映射`的特有选项。
 
-* 相同的选项
-  * `type` 指定上文中提到的数据类型，目前支持 “Parquet”, "JSON", "ORC" 和 “CSV” ，大小写不敏感，必填；
-  * `path` 适用于数据源来自 HDFS 的情况，HDFS 文件或目录的绝对路径，type 为 HDFS 时，必填；
-  * `exec` 适用于数据源来自 Hive 的情况, 执行查询的语句，type 为 HIVE 时，必填；
-  * `fields` 将输入源列的列名映射为 tag / edge 的属性名，必填；
+* **相同的选项**
+  * `type` 指定上文中提到的数据类型，目前支持 “Parquet”, "JSON", "ORC" 和 “CSV” ，大小写不敏感，必填
+  * `path` 适用于 HDFS 数据源，指定HDFS 文件或目录的绝对路径，type 为 HDFS 时，必填
+  * `exec` 适用于 Hive 数据源， 当执行查询语句 type 为 HIVE 时，必填
+  * `fields` 将输入源列的列名映射为 tag / edge 的属性名，必填
 
-**tag 映射的特有选项**
+* **tag 映射的特有选项**
+  * `vertex` 指定某一列作为点的 ID 列，必填
 
-- `vertex` 指定某一列作为点的 id 列，必填
+* **edge 映射的特有选项**
+  * `source` 指定输入源某一列作为**源点**的 ID 列，必填
+  * `target` 指定某一列作为**目标点**的 ID 列，必填
+  * 当插入边有 ranking 值， `ranking` 指定某一列作为边 ranking 列，选填
 
-**edge 映射的特有选项**
-
--  `source` 指定输入源某一列作为源**点**的 id 列，必填；
-- `target`  指定某一列作为**目标点**的 id 列，必填；
-- 当插入边有 ranking值， `ranking` 指定某一列作为边 ranking 列，选填；
 #### 3.3.4 数据源映射
 
+* **HDFS Parquet 文件**
+  * `type` 指定输入源类型，当为 parquet 时大小写不敏感，必填
+  * `path` 指定 HDFS 文件或目录的路径，必须是 HDFS 的绝对路径，必填
+* **HDFS JSON 文件**
+  * `type` 指定输入源类型，当为 JSON 时大小写不敏感，必填
+  * `path` 指定 HDFS 文件或目录的路径，必须是 HDFS 的绝对路径，必填
+* **HIVE ORC 文件**
+  * `type` 指定输入源类型，当为 ORC时大小写不敏感，必填
+  * `path` 指定 HDFS 文件或目录的路径，必须是 HDFS 的绝对路径，必填
+* **HIVE CSV 文件**
+  * `type` 指定输入源类型，当为 CSV 时大小写不敏感，必填
+  * `path` 指定 HDFS 文件或目录的路径，必须是 HDFS 的绝对路径，必填
+* **HIVE**
+  * `type` 指定输入源类型，当为 HIVE 时大小写不敏感，必填
+  * `exec` 指定 HIVE 执行查询的语句，必填
+
 ### 3.4 执行命令导入数据
+
+导入数据命令：
+
+```bash
+bin/spark-submit \
+ --class com.vesoft.nebula.tools.generator.v2.SparkClientGenerator \
+ --master ${MASTER-URL} \
+ ${SPARK_WRITER_JAR_PACKAGE} -c conf/test.conf -h -d
+```
+
+参数说明：
+
+| Abbreviation | Required | Default | Description | 示例 |
+| --- | --- | --- | --- | --- |
+| --class | yes |  | 指定程序主类 |  |
+| --master | yes |  | 指定spark cluster master url，请参见 [master-urls](https://spark.apache.org/docs/latest/submitting-applications.html#master-urls) | e.g. `spark://23.195.26.187:7077` |
+| -c / --config  | yes |  | 上文所编写的配置文件路径 |  |
+| -h / --hive | no | false | 用于指定是否支持 Hive |  |
+| -d / --directly | no | false | true 为客户端方式插入；<br>false 为 sst 方式导入 (TODO) |  |
+| -D / --dry | no | false | 检查配置文件是否正确 |  |
 
 ## 4. 性能测试结果
