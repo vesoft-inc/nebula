@@ -1,5 +1,8 @@
 # 使用 Docker 部署集群
 
+参考另外一个仓库: [vesoft-inc/nebula-docker-compose](https://github.com/vesoft-inc/nebula-docker-compose)
+
+<!--
 本文介绍如何使用 Docker 部署一个多节点的 Nebula 集群。
 
 **_注意_：** 由于 Nebula 的服务之间通信需要开放一些端口，所以可以临时关掉防火墙。对于生产环境，不要使用该方式进行部署。
@@ -70,16 +73,15 @@ $ docker inspect 591e2f6f48e2 | grep IPAddress
                     "IPAddress": "172.17.0.2",
 ```
 
+因此本文将在 3 台主机上按如下的方式部署 Nebula 的集群
 
-因此本文将在3台主机上按如下的方式部署 Nebula 的集群
-
-```
+```plain
 172.17.0.2 # cluster-2: metad/storaged/graphd
 172.17.0.3 # cluster-3: metad/storaged/graphd
 172.17.0.4 # cluster-4: metad/storaged/graphd
 ```
 
-**_注意_：** 由于 Nebula 的服务之间通信需要开放一些端口，所以可以临时关掉所有机器上的防火墙，具体使用端口见 `/usr/local/nebula/etc/ `下面的配置文件。也可根据实际情况灵活选取部署方式，此处仅做测试用。
+**_注意_：** 由于 Nebula 的服务之间通信需要开放一些端口，所以可以临时关掉所有机器上的防火墙，具体使用端口见 `/usr/local/nebula/etc/` 下面的配置文件。也可根据实际情况灵活选取部署方式，此处仅做测试用。
 
 ## 配置
 
@@ -89,7 +91,7 @@ Nebula 的所有配置文件都位于 `/usr/local/nebula/etc` 目录下，并�
 
 metad 通过 raft 协议保证高可用，需要为每个 metad 的 service 都配置该服务部署的机器 ip 和端口。主要涉及 meta_server_addrs 和 local_ip 两个字段，其他使用默认配置。cluster-2 上的两项配置示例如下所示
 
-```
+```plain
 # Peers
 --meta_server_addrs=172.17.0.2:45500,172.17.0.3:45500,172.17.0.4:45500
 # Local ip
@@ -104,7 +106,7 @@ metad 通过 raft 协议保证高可用，需要为每个 metad 的 service 都�
 
 graphd 运行时需要从 metad 中获取 Schema 数据，所以在配置中必须显示指定集群中 metad 的 ip 地址和端口选项 meta_server_addrs ，其他使用默认配置。cluster-2 上的 graphd 配置如下
 
-```
+```plain
 # Meta Server Address
 --meta_server_addrs=172.17.0.2:45500,172.17.0.3:45500,172.17.0.4:45500
 ```
@@ -115,7 +117,7 @@ graphd 运行时需要从 metad 中获取 Schema 数据，所以在配置中必�
 
 storaged 也使用 raft 协议保证高可用，在数据迁移时会与 metad 通信，所以需要配置 metad 的地址和端口 `meta_server_addrs` 和本机地址 `local_ip` ，其 peers 可以通过 metad 获得。cluster-2 上的部分配置选项如下
 
-```
+```plain
 # Meta server address
 --meta_server_addrs=172.17.0.2:45500,172.17.0.3:45500,172.17.0.4:45500
 # Local ip
@@ -178,7 +180,7 @@ Welcome to Nebula Graph (Version 5f656b5)
 
 表明三台集群已部署成功，插入[数据](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-CN/get-started.md#%E5%88%9B%E5%BB%BA%E5%9B%BE%E6%95%B0%E6%8D%AE)进行测试。
 
-```
+```ngql
 $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade
 
 =============================
@@ -207,7 +209,7 @@ $ /usr/local/nebula/scripts/nebula.service status storaged
 
 登录 cluster-2，使用 `SHOW HOSTS` 查看
 
-```
+```ngql
 > SHOW HOSTS
 
 =============================================================================================
@@ -227,7 +229,7 @@ $ /usr/local/nebula/scripts/nebula.service status storaged
 
 测试数据是否可读
 
-```
+```ngql
 $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade
 
 =============================
@@ -246,3 +248,5 @@ $a=GO FROM 201 OVER like yield like._dst as id; GO FROM $a.id OVER select YIELD 
 ## 自定义配置文件
 
 Nebula 支持通过指定配置文件的方式来加载更加丰富的启动参数，用于性能调优。详情请参考[配置属性](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-CN/deploy-cluster.md#%E9%85%8D%E7%BD%AE%E5%BC%95%E7%94%A8)。
+
+-->

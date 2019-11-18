@@ -1,6 +1,6 @@
 # Storage Balance Usage
 
-Nebula's services are composed of  three parts: graphd, storaged and metad. The **balance** in this document focuses on the operation of storage.
+Nebula's services are composed of three parts: graphd, storaged and metad. The **balance** in this document focuses on the operation of storage.
 
 Currently, storage can be scaled horizontally by the command `balance`. There are two kinds of balance command, one is to move data, which is `BALANCE DATA`; the other one only changes the distribution of leader partition to balance load without moving data, which is `BALANCE LEADER`.
 
@@ -30,7 +30,7 @@ nebula> SHOW HOSTS
 
 **_Explanations on the returned results:_**
 
-- **IP** and **Port** is the present storage instance, the cluster starts with three storaged instances (192.168.8.210:34600, 192.168.8.210:34700, 192.168.8.210:34500) without any data. 
+- **IP** and **Port** are the present storage instance, the cluster starts with three storaged instances (192.168.8.210:34600, 192.168.8.210:34700, 192.168.8.210:34500) without any data.
 - **Status** shows the state of the present instance, currently there are two kind of states, i.e. online/offline. When a machine is out of service, metad will turn it to offline if no heart beat received for certain time threshold. The default threshold is 10 minutes and can be changed in parameter `expired_threshold_sec` when starting metad service.
 - **Leader count** shows RAFT leader number of the present process.
 - **Leader distribution** shows how the present leader is distributed in each graph space. No space is created for now.
@@ -144,7 +144,7 @@ The last row is the summary of the tasks. Some partitions are yet to be migrated
 
 ### Step 4 Migration confirmation
 
-In most cases, data migration will take hours or even days. During the migration, Nebula service are not affected. Once migration is done, the progress will show 100%. You can retry `BALANCE DATA` to fix a failed task. If it can't be fixed after several attempts, please contact us at [GitHub](https://github.com/vesoft-inc/nebula/issues).
+In most cases, data migration will take hours or even days. During the migration, Nebula services are not affected. Once migration is done, the progress will show 100%. You can retry `BALANCE DATA` to fix a failed task. If it can't be fixed after several attempts, please contact us at [GitHub](https://github.com/vesoft-inc/nebula/issues).
 
 Now, you can check partition distribution using command `SHOW HOSTS` when balance completed.
 
@@ -172,6 +172,18 @@ nebula> SHOW HOSTS
 ```
 
 Now partitions and data are evenly distributed on the machines.
+
+## Balance stop
+
+`BALANCE DATA STOP` command stops the running balance data plan. If there is no running balance plan, an error is thrown. If there is a running plan, the related plan ID is returned.
+
+> Since each balance plan includes several balance tasks, `BALANCE DATA STOP` doesn't stop the started tasks , but rather cancel the subsequent tasks. The started tasks will continue until the executions are completed.
+
+Input `BALANCE DATA $id` after `BALANCE DATA STOP` to check the status of the stopped balance plan.
+
+After all the tasks being executed are completed, rerun the `BALANCE DATA` command to restart balance.
+
+If there are failed tasks in the stopped plan, the plan will continue. Otherwise, if all the tasks are succeed, a new balance plan is created and executed.
 
 ## Balance leader
 

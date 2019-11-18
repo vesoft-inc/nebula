@@ -254,7 +254,17 @@ std::string FetchEdgesSentence::toString() const {
     } else {
         buf += edgeKeys_->toString();
     }
+    return buf;
+}
 
+std::string GroupBySentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "GROUP BY";
+    if (groupClause_ != nullptr) {
+        buf += " ";
+        buf += groupClause_->toString();
+    }
     if (yieldClause_ != nullptr) {
         buf += " ";
         buf += yieldClause_->toString();

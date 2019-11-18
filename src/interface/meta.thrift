@@ -36,6 +36,7 @@ enum ErrorCode {
     E_STORE_SEGMENT_ILLEGAL  = -32,
     E_BAD_BALANCE_PLAN     = -33,
     E_BALANCED             = -34,
+    E_NO_RUNNING_BALANCE_PLAN = -35,
 
     E_INVALID_PASSWORD       = -41,
     E_INPROPER_ROLE          = -42,
@@ -262,11 +263,6 @@ struct ListEdgesResp {
     3: list<EdgeItem> edges,
 }
 
-// Host related operations.
-struct AddHostsReq {
-    1: list<common.HostAddr> hosts;
-}
-
 struct ListHostsReq {
 }
 
@@ -294,11 +290,6 @@ struct ListPartsResp {
     3: list<PartItem> parts,
 }
 
-struct RemoveHostsReq {
-    1: list<common.HostAddr> hosts;
-}
-
-// Parts related operations.
 struct GetPartsAllocReq {
     1: common.GraphSpaceID space_id,
 }
@@ -443,6 +434,7 @@ struct BalanceReq {
     1: optional common.GraphSpaceID space_id,
     // Specify the balance id to check the status of the related balance plan
     2: optional i64 id,
+    3: optional bool stop,
 }
 
 enum TaskResult {
@@ -547,8 +539,6 @@ service MetaService {
     GetEdgeResp getEdge(1: GetEdgeReq req);
     ListEdgesResp listEdges(1: ListEdgesReq req);
 
-    ExecResp addHosts(1: AddHostsReq req);
-    ExecResp removeHosts(1: RemoveHostsReq req);
     ListHostsResp listHosts(1: ListHostsReq req);
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
