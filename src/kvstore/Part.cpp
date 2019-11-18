@@ -192,12 +192,8 @@ void Part::asyncRemovePeer(const HostAddr& peer, KVCallback cb) {
 }
 
 
-void Part::asyncBlockingLeader(bool sign, KVCallback cb) {
+void Part::setBlocking(bool sign) {
     blocking_ = sign;
-    sendCommandAsync("")
-            .then([callback = std::move(cb)] (AppendLogResult res) mutable {
-                callback(toResultCode(res));
-            });
 }
 
 void Part::onLostLeadership(TermID term) {

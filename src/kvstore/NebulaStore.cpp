@@ -640,23 +640,19 @@ ResultCode NebulaStore::dropCheckpoint(GraphSpaceID spaceId, const std::string& 
 
 ResultCode NebulaStore::setPartBlocking(GraphSpaceID spaceId, PartitionID partId, bool sign) {
     folly::RWSpinLock::ReadHolder rh(&lock_);
-    ResultCode ret = ResultCode::SUCCEEDED;
-    auto it = spaces_.find(spaceId);
-    if (UNLIKELY(it == spaces_.end())) {
-        return ResultCode::ERR_SPACE_NOT_FOUND;
-    }
-    auto& parts = it->second->parts_;
-    auto partIt = parts.find(partId);
-    if (UNLIKELY(partIt == parts.end())) {
-        return ResultCode::ERR_PART_NOT_FOUND;
+    auto ret = ResultCode::SUCCEEDED;
+    auto partRet = part(spaceId, partId);
+    if (!ok(partRet)) {
+        return error(partRet);
     }
 
-    partIt->second->asyncBlockingLeader(sign, [&ret] (kvstore::ResultCode code) {
-        if (code != kvstore::ResultCode::SUCCEEDED) {
-            ret = ResultCode::ERR_WRITE_BLOCK_ERROR;
-        }
-    });
-
+    auto part = nebula::value(partRet);
+    part->setBlocking(sign);
+    if (sign) {
+        part->sync([&ret] (kvstore::ResultCode code) {
+            ret = code;
+        });
+    }
     return ret;
 }
 

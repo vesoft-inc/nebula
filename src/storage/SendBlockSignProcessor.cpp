@@ -16,25 +16,11 @@ void SendBlockSignProcessor::process(const cpp2::BlockingSignRequest& req) {
               << req.get_space_id() << ", part " << req.get_part_id();
     auto spaceId = req.get_space_id();
     auto partId = req.get_part_id();
-    auto sign = req.get_sign() == cpp2::EngineSignType::BLOCK_ON ? true : false;
+    auto sign = req.get_sign() == cpp2::EngineSignType::BLOCK_ON;
 
-    auto ret = kvstore_->part(spaceId, partId);
-    if (!ok(ret)) {
-        this->pushResultCode(to(error(ret)), partId);
-        onFinished();
-        return;
-    }
-    auto part = nebula::value(ret);
-    part->asyncBlockingLeader(sign,
-                              [this, spaceId, partId] (kvstore::ResultCode code) {
-                                  auto leaderRet = kvstore_->partLeader(spaceId, partId);
-                                  CHECK(ok(leaderRet));
-                                  if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-                                      auto leader = value(std::move(leaderRet));
-                                      this->pushResultCode(to(code), partId, leader);
-                                  }
-                                  onFinished();
-                              });
+    auto code = kvstore_->setPartBlocking(spaceId, partId, sign);
+    this->pushResultCode(to(code), partId);
+    onFinished();
 }
 
 }  // namespace storage

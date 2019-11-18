@@ -106,7 +106,7 @@ cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
 
     std::vector<folly::SemiFuture<Status>> futures;
     for (const auto& space : spaces) {
-        const auto& hostParts = buildLeaderPlan(hostLeaderMap.get(), space);
+        const auto& hostParts = getLeaderParts(hostLeaderMap.get(), space);
         if (hostParts.empty()) {
             LOG(ERROR) << "Partition collection failed, spaceId is " << space;
             return cpp2::ErrorCode::E_RPC_FAILURE;
@@ -136,7 +136,7 @@ cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
 }
 
 std::unordered_map<HostAddr, std::vector<PartitionID>>
-Snapshot::buildLeaderPlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId) {
+Snapshot::getLeaderParts(HostLeaderMap *hostLeaderMap, GraphSpaceID spaceId) {
     std::unordered_map<PartitionID, std::vector<HostAddr>> peersMap;
     std::unordered_map<HostAddr, std::vector<PartitionID>> leaderHostParts;
 
