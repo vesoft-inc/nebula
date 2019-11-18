@@ -85,7 +85,7 @@
   * [Key Value 接口](3.build-develop-and-administration/2.develop-and-interface/kv-interfaces.md)
 * 部署与运维
   * 部署
-    * [用 Docker 部署](3.build-develop-and-administration/2.develop-and-interface/kv-interfaces.md)
+    * [用 Docker 部署](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster-on-docker.md)
     * [部署集群](3.build-develop-and-administration/1.build/2.build-by-docker.md)
   * 服务器管理操作
     * 账号管理
