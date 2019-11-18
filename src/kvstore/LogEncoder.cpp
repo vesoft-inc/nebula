@@ -206,18 +206,17 @@ decodeBatchValue(folly::StringPiece encoded) {
     p += sizeof(uint32_t);
     std::vector<std::pair<BatchLogType, std::pair<std::string, std::string>>> batch;
     for (auto i = 0U; i < numValues; i++) {
+        auto offset = 0;
         BatchLogType type = *(reinterpret_cast<const BatchLogType *>(p));
         p += sizeof(LogType);
         uint32_t len1 = *(reinterpret_cast<const uint32_t*>(p));
-        p += sizeof(uint32_t);
-        auto v1 = folly::StringPiece(p, len1);
-        p += len1;
-        uint32_t len2 = *(reinterpret_cast<const uint32_t*>(p));
-        p += sizeof(uint32_t);
-        auto v2 = folly::StringPiece(p, len2);
-        p += len2;
-        std::pair<std::string, std::string> kv(v1.str(), v2.str());
-        batch.emplace_back(type, kv);
+        offset += sizeof(uint32_t) + len1;
+        uint32_t len2 = *(reinterpret_cast<const uint32_t*>(p + offset));
+        offset += sizeof(uint32_t);
+        batch.emplace_back(type,
+                std::make_pair(folly::StringPiece(p + sizeof(uint32_t), len1).str(),
+                               folly::StringPiece(p + offset, len2).str()));
+        p += offset + len2;
     }
     return batch;
 }
