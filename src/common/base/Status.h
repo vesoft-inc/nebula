@@ -92,6 +92,8 @@ public:
     bool is##ERROR() const {                            \
         return code() == k##ERROR;                      \
     }
+    // Some succeeded codes
+    STATUS_GENERATOR(Inserted);
 
     // General errors
     STATUS_GENERATOR(Error);
@@ -128,6 +130,7 @@ public:
     enum Code : uint16_t {
         // OK
         kOk                     = 0,
+        kInserted               = 1,
         // 1xx, for general errors
         kError                  = 101,
         kNoSuchFile             = 102,
