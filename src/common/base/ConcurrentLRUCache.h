@@ -9,7 +9,6 @@
 
 #include "base/Base.h"
 #include "base/StatusOr.h"
-#include "time/WallClock.h"
 #include <list>
 #include <utility>
 #include <boost/optional.hpp>
