@@ -63,6 +63,12 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
             delete p;
         });
     });
+
+    if (shared_) {
+        evb->runOnDestruction(new folly::EventBase::FunctionLoopCallback(
+            [this, host, evb] { clientMap_->erase(std::make_pair(host, evb)); }));
+    }
+
     clientMap_->emplace(std::make_pair(host, evb), client);
     return client;
 }
