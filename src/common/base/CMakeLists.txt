@@ -7,6 +7,7 @@ add_library(
     SanitizerOptions.cpp
     SignalHandler.cpp
     NebulaKeyUtils.cpp
+    SlowOpTracker.cpp
 )
 
 IF(${PCHSupport_FOUND})

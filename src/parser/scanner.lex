@@ -74,6 +74,7 @@ FALSE                       ([Ff][Aa][Ll][Ss][Ee])
 SHOW                        ([Ss][Hh][Oo][Ww])
 ADD                         ([Aa][Dd][Dd])
 HOSTS                       ([Hh][Oo][Ss][Tt][Ss])
+PARTS                       ([Pp][Aa][Rr][Tt][Ss])
 TIMESTAMP                   ([Tt][Ii][Mm][Ee][Ss][Tt][Aa][Mm][Pp])
 PARTITION_NUM               ([Pp][Aa][Rr][Tt][Ii][Tt][Ii][[Oo][Nn][_][Nn][Uu][Mm])
 REPLICA_FACTOR              ([Rr][Ee][Pp][Ll][Ii][Cc][Aa][_][Ff][Aa][Cc][Tt][Oo][Rr])
@@ -109,7 +110,7 @@ ORDER                       ([Oo][Rr][Dd][Ee][Rr])
 INGEST                      ([Ii][Nn][Gg][Ee][Ss][Tt])
 ASC                         ([Aa][Ss][Cc])
 DISTINCT                    ([Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
-VARIABLES                   ([Vv][Aa][Rr][Ii][Aa][Bb][Ll][Ee][Ss])
+CONFIGS                     ([Cc][Oo][Nn][Ff][Ii][Gg][Ss])
 GET                         ([Gg][Ee][Tt])
 GRAPH                       ([Gg][Rr][Aa][Pp][Hh])
 META                        ([Mm][Ee][Tt][Aa])
@@ -122,8 +123,22 @@ LEADER                      ([Ll][Ee][Aa][Dd][Ee][Rr])
 UUID                        ([Uu][Uu][Ii][Dd])
 OF                          ([Oo][Ff])
 DATA                        ([Dd][Aa][Tt][Aa])
+STOP                        ([Ss][Tt][Oo][Pp])
 SHORTEST                    ([Ss][Hh][Oo][Rr][Tt][Ee][Ss][Tt])
 PATH                        ([Pp][Aa][Tt][Hh])
+LIMIT                       ([Ll][Ii][Mm][Ii][Tt])
+OFFSET                      ([Oo][Ff][Ff][Ss][Ee][Tt])
+GROUP                       ([Gg][Rr][Oo][Uu][Pp])
+COUNT                       ([Cc][Oo][Uu][Nn][Tt])
+COUNT_DISTINCT              ([Cc][Oo][Uu][Nn][Tt][_][Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
+SUM                         ([Ss][Uu][Mm])
+AVG                         ([Aa][Vv][Gg])
+MIN                         ([Mm][Ii][Nn])
+MAX                         ([Mm][Aa][Xx])
+STD                         ([Ss][Tt][Dd])
+BIT_AND                     ([Bb][It][Tt][_][Aa][Nn][Dd])
+BIT_OR                      ([Bb][It][Tt][_][Oo][Rr])
+BIT_XOR                     ([Bb][It][Tt][_][Xx][Oo][Rr])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -184,6 +199,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {SHOW}                      { return TokenType::KW_SHOW; }
 {ADD}                       { return TokenType::KW_ADD; }
 {HOSTS}                     { return TokenType::KW_HOSTS; }
+{PARTS}                     { return TokenType::KW_PARTS; }
 {TIMESTAMP}                 { return TokenType::KW_TIMESTAMP; }
 {CREATE}                    { return TokenType::KW_CREATE;}
 {PARTITION_NUM}             { return TokenType::KW_PARTITION_NUM; }
@@ -216,7 +232,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {TTL_COL}                   { return TokenType::KW_TTL_COL; }
 {DOWNLOAD}                  { return TokenType::KW_DOWNLOAD; }
 {HDFS}                      { return TokenType::KW_HDFS; }
-{VARIABLES}                 { return TokenType::KW_VARIABLES; }
+{CONFIGS}                   { return TokenType::KW_CONFIGS; }
 {GET}                       { return TokenType::KW_GET; }
 {GRAPH}                     { return TokenType::KW_GRAPH; }
 {META}                      { return TokenType::KW_META; }
@@ -235,8 +251,22 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {LEADER}                    { return TokenType::KW_LEADER; }
 {UUID}                      { return TokenType::KW_UUID; }
 {DATA}                      { return TokenType::KW_DATA; }
+{STOP}                      { return TokenType::KW_STOP; }
 {SHORTEST}                  { return TokenType::KW_SHORTEST; }
 {PATH}                      { return TokenType::KW_PATH; }
+{LIMIT}                     { return TokenType::KW_LIMIT; }
+{OFFSET}                    { return TokenType::KW_OFFSET; }
+{GROUP}                     { return TokenType::KW_GROUP; }
+{COUNT}                     { return TokenType::KW_COUNT; }
+{COUNT_DISTINCT}            { return TokenType::KW_COUNT_DISTINCT; }
+{SUM}                       { return TokenType::KW_SUM; }
+{AVG}                       { return TokenType::KW_AVG; }
+{MAX}                       { return TokenType::KW_MAX; }
+{MIN}                       { return TokenType::KW_MIN; }
+{STD}                       { return TokenType::KW_STD; }
+{BIT_AND}                   { return TokenType::KW_BIT_AND; }
+{BIT_OR}                    { return TokenType::KW_BIT_OR; }
+{BIT_XOR}                   { return TokenType::KW_BIT_XOR; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

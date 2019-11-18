@@ -27,9 +27,9 @@ std::string GflagsManager::gflagsValueToThriftValue<std::string>(
     return flag.current_value;
 }
 
-std::unordered_map<std::string, cpp2::ConfigMode>
+std::unordered_map<std::string, std::pair<cpp2::ConfigMode, bool>>
 GflagsManager::parseConfigJson(const std::string& path) {
-    std::unordered_map<std::string, cpp2::ConfigMode> configModeMap;
+    std::unordered_map<std::string, std::pair<cpp2::ConfigMode, bool>> configModeMap;
     Configuration conf;
     if (!conf.parseFromFile(path).ok()) {
         LOG(ERROR) << "Load gflags json failed";
@@ -47,9 +47,18 @@ GflagsManager::parseConfigJson(const std::string& path) {
         }
         cpp2::ConfigMode mode = modes[i];
         for (const auto& name : values) {
-            configModeMap[name] = mode;
+            configModeMap[name] = {mode, false};
         }
     }
+    static std::string nested = "NESTED";
+    std::vector<std::string> values;
+    if (conf.fetchAsStringArray(nested.c_str(), values).ok()) {
+        for (const auto& name : values) {
+            // all nested gflags regard as mutable ones
+            configModeMap[name] = {cpp2::ConfigMode::MUTABLE, true};
+        }
+    }
+
     return configModeMap;
 }
 
@@ -70,9 +79,11 @@ std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigMod
 
         // default config type would be immutable
         cpp2::ConfigMode mode = cpp2::ConfigMode::IMMUTABLE;
+        bool isNested = false;
         auto iter = configModeMap.find(name);
         if (iter != configModeMap.end()) {
-            mode = iter->second;
+            mode = iter->second.first;
+            isNested = iter->second.second;
         }
         // ignore some useless gflags
         if (mode == cpp2::ConfigMode::IGNORED) {
@@ -99,6 +110,10 @@ std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigMod
             cType = cpp2::ConfigType::STRING;
             value = flag.current_value;
             valueStr = gflagsValueToThriftValue<std::string>(flag);
+            // only string gflags can be nested
+            if (isNested) {
+                cType = cpp2::ConfigType::NESTED;
+            }
         } else {
             LOG(INFO) << "Not able to declare " << name << " of " << type;
             continue;
@@ -147,7 +162,8 @@ std::string toThriftValueStr(const cpp2::ConfigType& type, const VariantType& va
             valueStr.append(reinterpret_cast<const char*>(&val), sizeof(val));
             break;
         }
-        case cpp2::ConfigType::STRING: {
+        case cpp2::ConfigType::STRING:
+        case cpp2::ConfigType::NESTED: {
             valueStr = boost::get<std::string>(value);
             break;
         }

@@ -47,19 +47,21 @@ Status InsertVertexExecutor::check() {
         auto *tagName = item->tagName();
         auto tagStatus = ectx()->schemaManager()->toTagID(spaceId_, *tagName);
         if (!tagStatus.ok()) {
+            LOG(ERROR) << "No schema found for " << *tagName;
             return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
         auto tagId = tagStatus.value();
         auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
         if (schema == nullptr) {
+            LOG(ERROR) << "No schema found for " << *tagName;
             return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
         auto props = item->properties();
         // Now default value is unsupported, props should equal to schema's fields
         if (schema->getNumFields() != props.size()) {
-            LOG(ERROR) << "props number " << props.size()
+            LOG(ERROR) << "Props number " << props.size()
                         << ", schema field number " << schema->getNumFields();
             return Status::Error("Wrong number of props");
         }
@@ -71,8 +73,10 @@ Status InsertVertexExecutor::check() {
         // Check field name
         auto checkStatus = checkFieldName(schema, props);
         if (!checkStatus.ok()) {
-            return checkStatus;
+            LOG(ERROR) << checkStatus.status();
+            return checkStatus.status();
         }
+        schemaIndexes_.emplace_back(std::move(checkStatus).value());
     }
     return Status::OK();
 }
@@ -135,17 +139,23 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
             }
 
             RowWriter writer(schema);
-            auto valueIndex = valuePos;
-            for (auto fieldIndex = 0u; fieldIndex < schema->getNumFields(); fieldIndex++) {
-                auto& value = values[valueIndex];
-
+            auto iter = schema->begin();
+            while (iter) {
                 // Check value type
-                auto schemaType = schema->getFieldType(fieldIndex);
+                auto schemaType = iter->getType();
+                uint32_t fieldIndex = schemaIndexes_[index][iter->getName()] + valuePos;
+                if (fieldIndex >= values.size()) {
+                    return Status::Error("Wrong index of `%s'", iter->getName());
+                }
+                auto &value = values[fieldIndex];
+                // Check value type
                 if (!checkValueType(schemaType, value)) {
-                    LOG(ERROR) << "ValueType is wrong, schema type "
-                               << static_cast<int32_t>(schemaType.type)
-                               << ", input type " <<  value.which();
-                    return Status::Error("ValueType is wrong");
+                    auto *output = "ValueType is wrong, schema type [%d], "
+                                   "input type [%d], near `%s'";
+                    auto error = folly::stringPrintf(output, static_cast<int32_t>(schemaType.type),
+                            value.which(), iter->getName());
+                    LOG(ERROR) << error;
+                    return Status::Error(std::move(error));
                 }
                 if (schemaType.type == nebula::cpp2::SupportedType::TIMESTAMP) {
                     auto timestamp = toTimestamp(value);
@@ -157,7 +167,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
                     writeVariantType(writer, value);
                 }
 
-                valueIndex++;
+                ++iter;
             }
 
             tag.set_tag_id(tagId);

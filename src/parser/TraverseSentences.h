@@ -545,5 +545,89 @@ private:
     std::unique_ptr<StepClause>     step_;
     std::unique_ptr<WhereClause>    where_;
 };
+
+class LimitSentence final : public Sentence {
+public:
+    explicit LimitSentence(int64_t offset, int64_t count) : offset_(offset), count_(count) {
+        kind_ = Kind::kLimit;
+    }
+
+    std::string toString() const override;
+
+    int64_t offset() {
+        return offset_;
+    }
+
+    int64_t count() {
+        return count_;
+    }
+
+ private:
+    int64_t    offset_{-1};
+    int64_t    count_{-1};
+};
+
+class YieldSentence final : public Sentence {
+public:
+    explicit YieldSentence(YieldColumns *fields) {
+        DCHECK(fields != nullptr);
+        yieldClause_ = std::make_unique<YieldClause>(fields);
+        kind_ = Kind::kYield;
+    }
+
+    std::vector<YieldColumn*> columns() const {
+        return yieldClause_->columns();
+    }
+
+    void setWhereClause(WhereClause *clause) {
+        whereClause_.reset(clause);
+    }
+
+    WhereClause* where() {
+        return whereClause_.get();
+    }
+
+    YieldClause* yield() {
+	return yieldClause_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<YieldClause>               yieldClause_;
+    std::unique_ptr<WhereClause>               whereClause_;
+};
+
+class GroupBySentence final : public Sentence {
+public:
+    GroupBySentence() {
+        kind_ = Kind::KGroupBy;
+    }
+
+    void setGroupClause(GroupClause *clause) {
+        groupClause_.reset(clause);
+    }
+
+    void setYieldClause(YieldClause *clause) {
+        yieldClause_.reset(clause);
+    }
+
+    const GroupClause* groupClause() const {
+        return groupClause_.get();
+    }
+
+    const YieldClause* yieldClause() const {
+        return yieldClause_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<GroupClause>   groupClause_;
+    std::unique_ptr<YieldClause>   yieldClause_;
+};
+
 }   // namespace nebula
 #endif  // PARSER_TRAVERSESENTENCES_H_
+
+

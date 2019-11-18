@@ -208,6 +208,7 @@ private:
     std::string                                *colname_{nullptr};
     Expression                                 *filter_{nullptr};
     std::vector<YieldColumn*>                   yields_;
+    std::unique_ptr<YieldClauseWrapper>         yieldClauseWrapper_;
     bool                                        distinct_{false};
     bool                                        distinctPushDown_{false};
     std::unique_ptr<InterimResult>              inputs_;

@@ -59,14 +59,14 @@ public class GraphClientImpl implements GraphClient {
                            int executionRetry) {
         checkArgument(timeout > 0);
         checkArgument(connectionRetry > 0);
-        addresses.forEach(address -> {
+        for (HostAndPort address : addresses) {
             String host = address.getHost();
             int port = address.getPort();
             if (!InetAddresses.isInetAddress(host) || (port <= 0 || port >= 65535)) {
                 throw new IllegalArgumentException(String.format("%s:%d is not a valid address",
                                                                  host, port));
             }
-        });
+        }
 
         this.addresses = addresses;
         this.timeout = timeout;

@@ -171,6 +171,12 @@ void FindPathExecutor::execute() {
 }
 
 void FindPathExecutor::getNeighborsAndFindPath() {
+    // We meet the dead end.
+    if (fromVids_.empty() || toVids_.empty()) {
+        onFinish_();
+        return;
+    }
+
     fPro_ = std::make_unique<folly::Promise<folly::Unit>>();
     tPro_ = std::make_unique<folly::Promise<folly::Unit>>();
     std::vector<folly::Future<folly::Unit>> futures;
@@ -213,6 +219,8 @@ void FindPathExecutor::findPath() {
     VLOG(2) << "Find Path.";
     visitedFrom_.clear();
     std::multimap<VertexID, Path> pathF;
+    VLOG(2) << "Get froms: " << fromFrontiers_.second.size();
+    VLOG(2) << "Get tos: " << toFrontiers_.second.size();
     for (auto &frontier : fromFrontiers_.second) {
         // Notice: we treat edges with different ranking
         // between two vertices as different path
@@ -275,7 +283,7 @@ void FindPathExecutor::findPath() {
         onFinish_();
         return;
     } else {
-        LOG(INFO) << "Current step:" << currentStep_;
+        VLOG(2) << "Current step:" << currentStep_;
         ++currentStep_;
     }
     getNeighborsAndFindPath();

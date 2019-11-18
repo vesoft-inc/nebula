@@ -12,3 +12,17 @@ nebula_add_test(
     LIBRARIES
         gtest
 )
+
+nebula_add_test(
+    NAME
+        inmemory_log_buffer_test
+    SOURCES
+        InMemoryLogBufferTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:wal_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:time_obj>
+    LIBRARIES
+        gtest
+)

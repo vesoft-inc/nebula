@@ -1,5 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
+ *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
@@ -20,6 +21,13 @@
     } while (false)
 
 namespace nebula {
+
+namespace {
+constexpr char INPUT_REF[] = "$-";
+constexpr char VAR_REF[] = "$";
+constexpr char SRC_REF[] = "$^";
+constexpr char DST_REF[] = "$$";
+}   // namespace
 
 void Expression::print(const VariantType &value) {
     switch (value.which()) {
@@ -111,6 +119,9 @@ std::string AliasPropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
     buf += *ref_;
+    if (*ref_ != "" && *ref_ != VAR_REF) {
+        buf += ".";
+    }
     buf += *alias_;
     if (*alias_ != "") {
         buf += ".";
@@ -159,6 +170,12 @@ const char* AliasPropertyExpression::decode(const char *pos, const char *end) {
     return pos;
 }
 
+InputPropertyExpression::InputPropertyExpression(std::string *prop) {
+    kind_ = kInputProp;
+    ref_.reset(new std::string(INPUT_REF));
+    alias_.reset(new std::string(""));
+    prop_.reset(prop);
+}
 
 Status InputPropertyExpression::prepare() {
     context_->addInputProp(*prop_);
@@ -190,6 +207,12 @@ const char* InputPropertyExpression::decode(const char *pos, const char *end) {
     return pos;
 }
 
+DestPropertyExpression::DestPropertyExpression(std::string *tag, std::string *prop) {
+    kind_ = kDestProp;
+    ref_.reset(new std::string(DST_REF));
+    alias_.reset(tag);
+    prop_.reset(prop);
+}
 
 OptVariantType DestPropertyExpression::eval() const {
     return context_->getters().getDstTagProp(*alias_, *prop_);
@@ -234,6 +257,12 @@ const char* DestPropertyExpression::decode(const char *pos, const char *end) {
     return pos;
 }
 
+VariablePropertyExpression::VariablePropertyExpression(std::string *var, std::string *prop) {
+    kind_ = kVariableProp;
+    ref_.reset(new std::string(VAR_REF));
+    alias_.reset(var);
+    prop_.reset(prop);
+}
 
 OptVariantType VariablePropertyExpression::eval() const {
     return context_->getters().getVariableProp(*prop_);
@@ -390,6 +419,12 @@ const char* EdgeRankExpression::decode(const char *pos, const char *end) {
     return pos;
 }
 
+SourcePropertyExpression::SourcePropertyExpression(std::string *tag, std::string *prop) {
+    kind_ = kSourceProp;
+    ref_.reset(new std::string(SRC_REF));
+    alias_.reset(tag);
+    prop_.reset(prop);
+}
 
 OptVariantType SourcePropertyExpression::eval() const {
     return context_->getters().getSrcTagProp(*alias_, *prop_);
@@ -447,7 +482,7 @@ std::string PrimaryExpression::toString() const {
             snprintf(buf, sizeof(buf), "%s", boost::get<bool>(operand_) ? "true" : "false");
             break;
         case VAR_STR:
-            return "\"" + boost::get<std::string>(operand_) + "\"";
+            return boost::get<std::string>(operand_);
     }
     return buf;
 }

@@ -5,7 +5,7 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 #
-# step 1: ./build_dep.sh <C|U|N>
+# step 1: ./build_dep.sh [N] # N: no need packages
 # step 2: source ~/.bashrc
 #
 
@@ -13,14 +13,8 @@ DIR=/tmp/download
 mkdir $DIR
 trap "rm -fr $DIR" EXIT
 
-url_addr=https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/third-party
+url_addr=https://nebula-graph.oss-accelerate.aliyuncs.com/third-party
 no_deps=0
-if [[ $1 != C ]] && [[ $1 != U ]] && [[ $1 != N ]]; then
-    echo "Usage: ${0} <C|U|N>  # C: the user in China, U: the user in US, N: no need packages"
-    exit -1
-fi
-
-[[ $1 == U ]] && url_addr=https://nebula-graph-us.oss-us-west-1.aliyuncs.com/third-party
 
 [[ $1 == N ]] && no_deps=1
 
@@ -115,22 +109,30 @@ function addAlias {
 # fedora29:1, centos7.5:2, centos6.5:3, ubuntu18:4, ubuntu16:5
 function getSystemVer {
     if [[ -e /etc/redhat-release ]]; then
-        [[ -n `cat /etc/redhat-release|grep Fedora` ]] && return 1
-        [[ -n `cat /etc/redhat-release|grep "release 7."` ]] && return 2
-        [[ -n `cat /etc/redhat-release|grep "release 6."` ]] && return 3
-        return 0
-    fi
-    if [[ -e /etc/issue ]]; then
+        if [[ -n `cat /etc/redhat-release|grep Fedora` ]]; then
+            echo 1
+        elif [[ -n `cat /etc/redhat-release|grep "release 7."` ]]; then
+            echo 2
+        elif [[ -n `cat /etc/redhat-release|grep "release 6."` ]]; then
+            echo 3
+        else
+            echo 0
+        fi
+    elif [[ -e /etc/issue ]]; then
         result=`cat /etc/issue|cut -d " " -f 2 |cut -d "." -f 1`
-        [[ result -eq 18 ]] && return 4
-        [[ result -eq 16 ]] && return 5
+        if [[ result -eq 18 ]]; then
+            echo 4
+        elif [[ result -eq 16 ]]; then
+            echo 5
+        else
+            echo 0
+        fi
+    else
+        echo 0
     fi
-    return 0
 }
 
-getSystemVer
-
-version=$?
+version=$(getSystemVer)
 
 set -e
 
@@ -149,4 +151,3 @@ esac
 
 echo "###### install succeed ######"
 exit 0
-

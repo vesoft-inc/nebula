@@ -58,7 +58,6 @@ nebula_add_test(
     NAME
         query_engine_test
     SOURCES
-        YieldTest.cpp
         SchemaTest.cpp
         ConfigTest.cpp
     OBJECTS
@@ -239,6 +238,40 @@ nebula_add_test(
         find_path_test
     SOURCES
         FindPathTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        group_by_limit_test
+    SOURCES
+        GroupByLimitTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        yield_test
+    SOURCES
+        YieldTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
