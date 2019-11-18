@@ -85,7 +85,7 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
   * [Key Value API](3.build-develop-and-administration/2.develop-and-interface/kv-interfaces.md)
 * Deploy And Administrations
   * Deployment
-    * [Deploy Cluster On Docker](3.build-develop-and-administration/2.develop-and-interface/kv-interfaces.md)
+    * [Deploy Cluster On Docker](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster-on-docker.md)
     * [Deploy Cluster](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
   * Server Administration
     * Account Management Statements
