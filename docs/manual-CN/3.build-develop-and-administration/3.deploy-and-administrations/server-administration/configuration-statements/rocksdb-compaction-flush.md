@@ -48,13 +48,16 @@ nebula> GET CONFIGS storage:rocksdb_column_family_options
 curl "${ws_ip}:${ws_http_port}/admin?space=${spaceName}&${op}"
 ```
 
-- `ws_ip` 为 HTTP 服务的 IP，可以在 `storage.conf` 配置文件中找到。
+- `ws_ip` 为 HTTP 服务的 IP，可以在 `etc/storage.conf` 配置文件中找到。
 - `ws_http_port` 为 storage 的 HTTP 服务端口。
 - `op` 为相关的 admin 操作，当前只支持 `compact` 和 `flush`。
 
 例如：
 
 ```bash
-curl "http://127.0.0.1:50005/admin?space=test&op=compact"
-curl "http://127.0.0.1:50005/admin?space=test&op=flush"
+curl "http://127.0.0.1:12000/admin?space=test&op=compact"
+curl "http://127.0.0.1:12000/admin?space=test&op=flush"
 ```
+
+> 注意：请先建立图空间test，再运行上面的curl命令。
+
