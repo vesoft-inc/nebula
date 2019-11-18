@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -42,6 +42,52 @@ TEST(ConcurrentLRUCacheTest, PutIfAbsentTest) {
         auto v = cache.putIfAbsent(10, "ele");
         EXPECT_TRUE(v.ok());
         EXPECT_EQ("ten", v.value());
+    }
+}
+TEST(ConcurrentLRUCacheTest, EvictTest) {
+    ConcurrentLRUCache<int32_t, std::string> cache(1000, 0);
+    for (auto j = 0; j < 1000; j++) {
+        cache.insert(j, folly::stringPrintf("%d_str", j));
+    }
+    for (auto i = 0; i < 1000; i++) {
+        auto v = cache.get(i);
+        EXPECT_TRUE(v.ok());
+        EXPECT_EQ(folly::stringPrintf("%d_str", i), v.value());
+    }
+    for (auto j = 1000; j < 2000; j++) {
+        cache.insert(j, folly::stringPrintf("%d_str", j));
+    }
+    for (auto i = 1000; i < 2000; i++) {
+        auto v = cache.get(i);
+        EXPECT_TRUE(v.ok());
+        EXPECT_EQ(folly::stringPrintf("%d_str", i), v.value());
+    }
+    for (auto i = 0; i < 1000; i++) {
+        auto v = cache.get(i);
+        EXPECT_FALSE(v.ok());
+    }
+}
+
+TEST(ConcurrentLRUCacheTest, EvictKeyTest) {
+    ConcurrentLRUCache<int32_t, std::string> cache(1024, 4);
+    for (auto j = 0; j < 1000; j++) {
+        cache.insert(j, folly::stringPrintf("%d_str", j));
+    }
+    for (auto i = 0; i < 1000; i++) {
+        auto v = cache.get(i);
+        EXPECT_TRUE(v.ok());
+        EXPECT_EQ(folly::stringPrintf("%d_str", i), v.value());
+    }
+    for (auto i = 1; i < 1000; i+=2) {
+        cache.evict(i);
+    }
+    for (auto i = 0; i < 1000; i++) {
+        auto v = cache.get(i);
+        if (i % 2 != 0) {
+            EXPECT_FALSE(v.ok());
+        } else {
+            EXPECT_TRUE(v.ok());
+        }
     }
 }
 
