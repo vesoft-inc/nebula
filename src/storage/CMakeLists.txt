@@ -6,7 +6,7 @@ nebula_add_library(
     AddVerticesProcessor.cpp
     AddEdgesProcessor.cpp
     DeleteEdgesProcessor.cpp
-    DeleteVertexProcessor.cpp
+    DeleteVerticesProcessor.cpp
     QueryBoundProcessor.cpp
     QueryVertexPropsProcessor.cpp
     QueryEdgePropsProcessor.cpp

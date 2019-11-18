@@ -135,9 +135,16 @@ public:
         std::vector<storage::cpp2::PropDef> returnCols,
         folly::EventBase* evb = nullptr);
 
+    /*
     folly::Future<StatusOr<storage::cpp2::EdgeKeyResponse>> getEdgeKeys(
         GraphSpaceID space,
         VertexID vid,
+        folly::EventBase* evb = nullptr);
+        */
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::EdgeKeysResponse>> getEdgeKeys(
+        GraphSpaceID space,
+        std::vector<VertexID> vids,
         folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> deleteEdges(
@@ -145,9 +152,9 @@ public:
         std::vector<storage::cpp2::EdgeKey> edges,
         folly::EventBase* evb = nullptr);
 
-    folly::Future<StatusOr<storage::cpp2::ExecResponse>> deleteVertex(
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> deleteVertices(
         GraphSpaceID space,
-        VertexID vid,
+        std::vector<VertexID> vids,
         folly::EventBase* evb = nullptr);
 
     folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateVertex(

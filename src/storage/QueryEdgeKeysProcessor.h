@@ -13,18 +13,18 @@
 namespace nebula {
 namespace storage {
 
-class QueryEdgeKeysProcessor : public BaseProcessor<cpp2::EdgeKeyResponse> {
+class QueryEdgeKeysProcessor : public BaseProcessor<cpp2::EdgeKeysResponse> {
 public:
     static QueryEdgeKeysProcessor* instance(kvstore::KVStore* kvstore,
                                             meta::SchemaManager* schemaMan) {
         return new QueryEdgeKeysProcessor(kvstore, schemaMan);
     }
 
-     void process(const cpp2::EdgeKeyRequest& req);
+     void process(const cpp2::EdgeKeysRequest& req);
 
 private:
     explicit QueryEdgeKeysProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
-            : BaseProcessor<cpp2::EdgeKeyResponse>(kvstore, schemaMan) {}
+            : BaseProcessor<cpp2::EdgeKeysResponse>(kvstore, schemaMan) {}
 };
 
 }  // namespace storage

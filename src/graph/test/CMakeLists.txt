@@ -201,9 +201,9 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        delete_vertex_sentence_test
+        delete_vertices_sentence_test
     SOURCES
-        DeleteVertexTest.cpp
+        DeleteVerticesTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>

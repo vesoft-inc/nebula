@@ -9,7 +9,7 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/DeleteVertexProcessor.h"
+#include "storage/DeleteVerticesProcessor.h"
 #include "storage/AddVerticesProcessor.h"
 #include "base/NebulaKeyUtils.h"
 
@@ -17,7 +17,7 @@
 namespace nebula {
 namespace storage {
 
-TEST(DeleteVertexTest, SimpleTest) {
+TEST(DeleteVerticesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/DeleteVertexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     // Add vertices
@@ -33,8 +33,8 @@ TEST(DeleteVertexTest, SimpleTest) {
                 std::vector<cpp2::Tag> tags;
                 for (auto tagId = 0; tagId < 10; tagId++) {
                     tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                     tagId,
-                                     folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId));
+                                      tagId,
+                                      folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId));
                 }
                 vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                       vertexId,
@@ -56,7 +56,7 @@ TEST(DeleteVertexTest, SimpleTest) {
                 TagID tagId = 0;
                 while (iter->valid()) {
                     EXPECT_EQ(folly::stringPrintf("%d_%d_%d",
-                                                   partId, vertexId, tagId), iter->val());
+                                                  partId, vertexId, tagId), iter->val());
                     tagId++;
                     iter->next();
                 }
@@ -67,20 +67,23 @@ TEST(DeleteVertexTest, SimpleTest) {
 
     // Delete vertices
     {
+        std::unordered_map<PartitionID, std::vector<VertexID>> parts;
         for (auto partId = 0; partId < 3; partId++) {
+            std::vector<VertexID> vertexs;
             for (auto vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
-                auto* processor = DeleteVertexProcessor::instance(kv.get(), nullptr, nullptr);
-                cpp2::DeleteVertexRequest req;
-                req.set_space_id(0);
-                req.set_part_id(partId);
-                req.set_vid(vertexId);
-
-                auto fut = processor->getFuture();
-                processor->process(req);
-                auto resp = std::move(fut).get();
-                EXPECT_EQ(0, resp.result.failed_codes.size());
+                vertexs.emplace_back(vertexId);
             }
+            parts.emplace(partId, std::move(vertexs));
         }
+
+        cpp2::DeleteVerticesRequest req;
+        req.set_space_id(0);
+        req.set_parts(std::move(parts));
+        auto* processor = DeleteVerticesProcessor::instance(kv.get(), nullptr, nullptr);
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
     }
 
     for (auto partId = 0; partId < 3; partId++) {

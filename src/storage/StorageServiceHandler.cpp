@@ -13,7 +13,7 @@
 #include "storage/QueryEdgePropsProcessor.h"
 #include "storage/QueryStatsProcessor.h"
 #include "storage/AdminProcessor.h"
-#include "storage/DeleteVertexProcessor.h"
+#include "storage/DeleteVerticesProcessor.h"
 #include "storage/DeleteEdgesProcessor.h"
 #include "storage/QueryEdgeKeysProcessor.h"
 #include "storage/UpdateVertexProcessor.h"
@@ -75,15 +75,15 @@ StorageServiceHandler::future_addEdges(const cpp2::AddEdgesRequest& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::EdgeKeyResponse>
-StorageServiceHandler::future_getEdgeKeys(const cpp2::EdgeKeyRequest& req) {
+folly::Future<cpp2::EdgeKeysResponse>
+StorageServiceHandler::future_getEdgeKeys(const cpp2::EdgeKeysRequest& req) {
     auto* processor = QueryEdgeKeysProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::ExecResponse>
-StorageServiceHandler::future_deleteVertex(const cpp2::DeleteVertexRequest& req) {
-    auto* processor = DeleteVertexProcessor::instance(kvstore_, schemaMan_, &delVertexQpsStat_);
+StorageServiceHandler::future_deleteVertices(const cpp2::DeleteVerticesRequest& req) {
+    auto* processor = DeleteVerticesProcessor::instance(kvstore_, schemaMan_, &delVertexQpsStat_);
     RETURN_FUTURE(processor);
 }
 

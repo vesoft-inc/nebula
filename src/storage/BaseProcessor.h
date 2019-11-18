@@ -68,6 +68,8 @@ protected:
     void doRemoveRange(GraphSpaceID spaceId, PartitionID partId, std::string start,
                        std::string end);
 
+    void doRemovePrefix(GraphSpaceID spaceId, PartitionID partId, std::string prefix);
+
     nebula::cpp2::ColumnDef columnDef(std::string name, nebula::cpp2::SupportedType type) {
         nebula::cpp2::ColumnDef column;
         column.set_name(std::move(name));

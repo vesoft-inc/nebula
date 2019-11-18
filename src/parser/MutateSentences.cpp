@@ -232,11 +232,11 @@ std::string UpdateEdgeSentence::toString() const {
     return buf;
 }
 
-std::string DeleteVertexSentence::toString() const {
+std::string DeleteVerticesSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "DELETE VERTEX ";
-    buf += vid_->toString();
+    buf += vidList_->toString();
     return buf;
 }
 

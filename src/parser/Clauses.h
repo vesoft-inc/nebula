@@ -115,6 +115,21 @@ public:
         return result;
     }
 
+    void setContext(ExpressionContext *context) {
+        for (auto &expr : vidList_) {
+            expr->setContext(context);
+        }
+    }
+
+    std::vector<nebula::OptVariantType> eval() const {
+        std::vector<nebula::OptVariantType> vertices;
+        for (auto& vertex : vidList_) {
+            auto vid = vertex->eval();
+            vertices.emplace_back(vid);
+        }
+        return vertices;
+    }
+
     std::string toString() const;
 
 private:

@@ -24,7 +24,7 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
 }
 
 StatusOr<std::vector<std::string>> DropEdgeProcessor::getEdgeKeys(GraphSpaceID id,
-                                                                    const std::string& edgeName) {
+                                                                  const std::string& edgeName) {
     auto indexKey = MetaServiceUtils::indexEdgeKey(id, edgeName);
     std::vector<std::string> keys;
     std::string edgeVal;

@@ -13,12 +13,12 @@
 namespace nebula {
 namespace graph {
 
-class DeleteVertexExecutor final : public Executor {
+class DeleteVerticesExecutor final : public Executor {
 public:
-    DeleteVertexExecutor(Sentence *sentence, ExecutionContext *ectx);
+    DeleteVerticesExecutor(Sentence *sentence, ExecutionContext *ectx);
 
     const char* name() const override {
-        return "DeleteVertexExecutor";
+        return "DeleteVerticesExecutor";
     }
 
     Status MUST_USE_RESULT prepare() override;
@@ -27,12 +27,12 @@ public:
 
 private:
     void deleteEdges(std::vector<storage::cpp2::EdgeKey>* edges);
-    void deleteVertex();
+    void deleteVertices();
 
 private:
-    DeleteVertexSentence                       *sentence_{nullptr};
+    DeleteVerticesSentence                     *sentence_{nullptr};
     std::unique_ptr<ExpressionContext>          expCtx_;
-    VertexID                                    vid_;
+    std::vector<VertexID>                       vids_;
     GraphSpaceID                                spaceId_{-1};
 };
 

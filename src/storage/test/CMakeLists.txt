@@ -38,7 +38,7 @@ nebula_add_test(
 
 nebula_add_test(
     NAME delete_vertex_test
-    SOURCES DeleteVertexTest.cpp
+    SOURCES DeleteVerticesTest.cpp
     OBJECTS ${storage_test_deps}
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )

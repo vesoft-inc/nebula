@@ -66,20 +66,29 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
 
     // Query edgekeys
     {
+        std::unordered_map<PartitionID, std::vector<VertexID>> parts;
+        for (auto partId = 0; partId < 3; partId++) {
+            std::vector<VertexID> vertices;
+            for (auto srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
+                vertices.emplace_back(srcId);
+            }
+            parts.emplace(partId, std::move(vertices));
+        }
+
+        auto* processor = QueryEdgeKeysProcessor::instance(kv.get(), nullptr);
+        cpp2::EdgeKeysRequest req;
+        req.set_space_id(0);
+        req.set_parts(std::move(parts));
+
+        auto fut = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(fut).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+        CHECK_EQ(30, resp.edge_keys.size());
+
         for (auto partId = 0; partId < 3; partId++) {
             for (auto srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
-                auto* processor = QueryEdgeKeysProcessor::instance(kv.get(), nullptr);
-                cpp2::EdgeKeyRequest req;
-                req.space_id = 0;
-                req.part_id = partId;
-                req.vid = srcId;
-
-                auto fut = processor->getFuture();
-                processor->process(req);
-                auto resp = std::move(fut).get();
-                EXPECT_EQ(0, resp.result.failed_codes.size());
-                CHECK_EQ(1, resp.edge_keys.size());
-                auto edge = resp.edge_keys[0];
+                auto edge = resp.edge_keys[srcId][0];
                 CHECK_EQ(srcId, edge.get_src());
                 CHECK_EQ(srcId * 100 + 1, edge.get_edge_type());
                 CHECK_EQ(srcId * 100 + 2, edge.get_ranking());
