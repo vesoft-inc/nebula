@@ -133,7 +133,7 @@ TEST(QueryEdgePropsTest, SimpleTest) {
     buildRequest(req);
 
     LOG(INFO) << "Test QueryEdgePropsRequest...";
-    auto* processor = QueryEdgePropsProcessor::instance(kv.get(), schemaMan.get());
+    auto* processor = QueryEdgePropsProcessor::instance(kv.get(), schemaMan.get(), nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

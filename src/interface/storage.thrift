@@ -210,9 +210,7 @@ struct DeleteEdgesRequest {
 }
 
 struct AdminExecResp {
-    1: ErrorCode code,
-    // Only valid when code is E_LEADER_CHANAGED.
-    2: common.HostAddr  leader,
+    1: required ResponseCommon result,
 }
 
 struct AddPartReq {
@@ -256,7 +254,7 @@ struct GetLeaderReq {
 }
 
 struct GetLeaderResp {
-    1: ErrorCode                 code,
+    1: required ResponseCommon result,
     2: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts;
 }
 

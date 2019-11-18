@@ -28,8 +28,6 @@ nebula_add_library(
     AssignmentExecutor.cpp
     InterimResult.cpp
     VariableHolder.cpp
-    AddHostsExecutor.cpp
-    RemoveHostsExecutor.cpp
     CreateSpaceExecutor.cpp
     DropSpaceExecutor.cpp
     DescribeSpaceExecutor.cpp
@@ -48,6 +46,9 @@ nebula_add_library(
     FindExecutor.cpp
     MatchExecutor.cpp
     DeleteVertexExecutor.cpp
+    FindPathExecutor.cpp
+    LimitExecutor.cpp
+    GroupByExecutor.cpp
 )
 
 nebula_add_library(

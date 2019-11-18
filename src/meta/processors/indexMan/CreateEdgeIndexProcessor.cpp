@@ -10,8 +10,8 @@ namespace nebula {
 namespace meta {
 
 void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
-    auto spaceID = req.get_space_id();
-    CHECK_SPACE_ID_AND_RETURN(spaceID);
+    auto space = req.get_space_id();
+    CHECK_SPACE_ID_AND_RETURN(space);
     const auto &indexName = req.get_index_name();
     const auto &properties = req.get_properties();
     if (properties.get_fields().empty()) {
@@ -22,7 +22,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     }
 
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeIndexLock());
-    auto ret = getEdgeIndexID(spaceID, indexName);
+    auto ret = getEdgeIndexID(space, indexName);
     if (ret.ok()) {
         LOG(ERROR) << "Create Edge Index Failed: " << indexName << " have existed";
         resp_.set_code(cpp2::ErrorCode::E_EXISTED);
@@ -30,9 +30,10 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
         return;
     }
 
+    nebula::meta::cpp2::IndexFields indexFields;
     for (auto const &element : properties.get_fields()) {
         auto edgeName = element.first;
-        auto edgeType = getEdgeType(spaceID, edgeName);
+        auto edgeType = getEdgeType(space, edgeName);
         if (!edgeType.ok()) {
             LOG(ERROR) << "Create Edge Index Failed: " << edgeName << " not exist";
             resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
@@ -40,7 +41,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
             return;
         }
 
-        auto fieldsResult = getLatestEdgeFields(spaceID, edgeName);
+        auto fieldsResult = getLatestEdgeFields(space, edgeName);
         if (!fieldsResult.ok()) {
             LOG(ERROR) << "Get Latest Edge Property Name Failed";
             resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
@@ -49,7 +50,11 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
         }
         auto fields = fieldsResult.value();
         for (auto &field : element.second) {
-            if (std::find(fields.begin(), fields.end(), field) == fields.end()) {
+            auto iter = std::find_if(std::begin(fields), std::end(fields),
+                                     [field](FieldType pair) {
+                                         return field == pair.first;
+                                     });
+            if (iter == fields.end()) {
                 LOG(ERROR) << "Field " << field << " not found in Edge " << edgeName;
                 resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
                 onFinished();
@@ -68,10 +73,10 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     }
 
     auto edgeIndex = nebula::value(edgeIndexRet);
-    data.emplace_back(MetaServiceUtils::indexEdgeIndexKey(spaceID, indexName),
+    data.emplace_back(MetaServiceUtils::indexEdgeIndexKey(space, indexName),
                       std::string(reinterpret_cast<const char*>(&edgeIndex), sizeof(EdgeIndexID)));
-    data.emplace_back(MetaServiceUtils::edgeIndexKey(spaceID, edgeIndex),
-                      MetaServiceUtils::edgeIndexVal(properties));
+    data.emplace_back(MetaServiceUtils::edgeIndexKey(space, edgeIndex),
+                      MetaServiceUtils::edgeIndexVal(indexName, indexFields));
     LOG(INFO) << "Create Edge Index " << indexName << ", edgeIndex " << edgeIndex;
     resp_.set_id(to(edgeIndex, EntryType::EDGE_INDEX));
     doPut(std::move(data));

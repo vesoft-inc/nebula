@@ -44,8 +44,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.0</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>1.6</source>
+                    <target>1.6</target>
                     <encoding>UTF-8</encoding>
                     <showWarnings>true</showWarnings>
                     <meminitial>256m</meminitial>
@@ -63,6 +63,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>native-maven-plugin</artifactId>
+                <version>1.0-alpha-9</version>
                 <executions>
                     <execution>
                         <id>javah</id>
@@ -101,7 +102,7 @@
                             </outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>_build</directory>
+                                    <directory>${basedir}/_build</directory>
                                     <includes>
                                         <include>libnebula_native_client.so
                                         </include>

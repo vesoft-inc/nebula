@@ -11,8 +11,8 @@ namespace meta {
 
 void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
     auto spaceID = req.get_space_id();
-    auto indexName = req.get_index_name();
     CHECK_SPACE_ID_AND_RETURN(spaceID);
+    auto indexName = req.get_index_name();
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeIndexLock());
     auto edgeIndexIDResult = getEdgeIndexID(spaceID, indexName);
     if (!edgeIndexIDResult.ok()) {
@@ -34,7 +34,7 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
 
     cpp2::EdgeIndexItem item;
     item.set_index_id(edgeIndexIDResult.value());
-    item.set_properties(MetaServiceUtils::parseEdgeIndex(edgeResult.value()));
+    item.set_fields(MetaServiceUtils::parseEdgeIndex(edgeResult.value()));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_item(std::move(item));
     onFinished();

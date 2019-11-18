@@ -305,12 +305,12 @@ cpp2::ErrorCode UpdateEdgeProcessor::checkAndBuildContexts(
     }
     // build context of the update items
     for (auto& item : req.get_update_items()) {
-        std::string edgeName = item.get_name();
-        std::string prop = item.get_prop();
-        auto* edgePropExp = new AliasPropertyExpression(new std::string(""), &edgeName, &prop);
-        edgePropExp->setContext(this->expCtx_.get());
-        auto status = edgePropExp->prepare();
-        if (!status.ok() || !this->checkExp(edgePropExp)) {
+        AliasPropertyExpression edgePropExp(new std::string(""),
+                                            new std::string(item.get_name()),
+                                            new std::string(item.get_prop()));
+        edgePropExp.setContext(this->expCtx_.get());
+        auto status = edgePropExp.prepare();
+        if (!status.ok() || !this->checkExp(&edgePropExp)) {
             return cpp2::ErrorCode::E_INVALID_UPDATER;
         }
         auto exp = Expression::decode(item.get_value());
@@ -363,7 +363,7 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
             }
             return std::string("");
         },
-        [&] (kvstore::ResultCode code) {
+        [this, partId, edgeKey, req] (kvstore::ResultCode code) {
             this->pushResultCode(this->to(code), partId);
             if (code == kvstore::ResultCode::SUCCEEDED) {
                 onProcessFinished(req.get_return_columns().size());

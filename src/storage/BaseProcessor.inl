@@ -59,7 +59,6 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
             }
             this->callingNum_--;
             if (this->callingNum_ == 0) {
-                result_.set_failed_codes(std::move(this->codes_));
                 finished = true;
             }
         }
@@ -99,7 +98,6 @@ void BaseProcessor<RESP>::doRemove(GraphSpaceID spaceId,
             }
             this->callingNum_--;
             if (this->callingNum_ == 0) {
-                result_.set_failed_codes(std::move(this->codes_));
                 finished = true;
             }
         }
@@ -138,7 +136,6 @@ void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
             }
             this->callingNum_--;
             if (this->callingNum_ == 0) {
-                result_.set_failed_codes(std::move(this->codes_));
                 finished = true;
             }
         }

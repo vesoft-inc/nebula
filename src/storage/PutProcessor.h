@@ -16,15 +16,18 @@ namespace storage {
 class PutProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static PutProcessor* instance(kvstore::KVStore* kvstore,
-                                  meta::SchemaManager* schemaMan) {
-        return new PutProcessor(kvstore, schemaMan);
+                                  meta::SchemaManager* schemaMan,
+                                  StorageStats* stats) {
+        return new PutProcessor(kvstore, schemaMan, stats);
     }
 
     void process(const cpp2::PutRequest& req);
 
 private:
-    explicit PutProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
-            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan) {}
+    explicit PutProcessor(kvstore::KVStore* kvstore,
+                          meta::SchemaManager* schemaMan,
+                          StorageStats* stats)
+            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats) {}
 };
 
 }  // namespace storage

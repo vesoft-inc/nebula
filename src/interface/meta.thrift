@@ -33,10 +33,11 @@ enum ErrorCode {
     E_INVALID_PARM     = -30,
     E_WRONGCLUSTER     = -31,
 
-    E_STORE_FAILURE          = -32,
-    E_STORE_SEGMENT_ILLEGAL  = -33,
-    E_BAD_BALANCE_PLAN       = -34,
-    E_BALANCED               = -35,
+    E_STORE_FAILURE           = -32,
+    E_STORE_SEGMENT_ILLEGAL   = -33,
+    E_BAD_BALANCE_PLAN        = -34,
+    E_BALANCED                = -35,
+    E_NO_RUNNING_BALANCE_PLAN = -36,
 
     E_INVALID_PASSWORD       = -41,
     E_INPROPER_ROLE          = -42,
@@ -115,16 +116,20 @@ struct IndexProperties {
     1: map<string, list<string>>(cpp.template = "std::map")  fields,
 }
 
+struct IndexFields {
+    1: map<string, list<common.ColumnDef>>(cpp.template = "std::map")  fields,
+}
+
 struct TagIndexItem {
     1: common.TagIndexID    index_id,
     2: string               index_name,
-    3: IndexProperties      properties,
+    3: IndexFields          fields,
 }
 
 struct EdgeIndexItem {
     1: common.EdgeIndexID   index_id,
     2: string               index_name,
-    3: IndexProperties      properties,
+    3: IndexFields          fields ,
 }
 
 enum HostStatus {
@@ -281,11 +286,6 @@ struct ListEdgesResp {
     3: list<EdgeItem> edges,
 }
 
-// Host related operations.
-struct AddHostsReq {
-    1: list<common.HostAddr> hosts;
-}
-
 struct ListHostsReq {
 }
 
@@ -296,11 +296,23 @@ struct ListHostsResp {
     3: list<HostItem> hosts,
 }
 
-struct RemoveHostsReq {
-    1: list<common.HostAddr> hosts;
+struct PartItem {
+    1: required common.PartitionID       part_id,
+    2: optional common.HostAddr          leader,
+    3: required list<common.HostAddr>    peers,
+    4: required list<common.HostAddr>    losts,
 }
 
-// Parts related operations.
+struct ListPartsReq {
+    1: common.GraphSpaceID space_id,
+}
+
+struct ListPartsResp {
+    1: ErrorCode code,
+    2: common.HostAddr leader,
+    3: list<PartItem> parts,
+}
+
 struct GetPartsAllocReq {
     1: common.GraphSpaceID space_id,
 }
@@ -509,6 +521,7 @@ struct BalanceReq {
     1: optional common.GraphSpaceID space_id,
     // Specify the balance id to check the status of the related balance plan
     2: optional i64 id,
+    3: optional bool stop,
 }
 
 enum TaskResult {
@@ -548,6 +561,7 @@ enum ConfigType {
     DOUBLE  = 0x01,
     BOOL    = 0x02,
     STRING  = 0x03,
+    NESTED  = 0x04,
 } (cpp.enum_strict)
 
 enum ConfigMode {
@@ -612,11 +626,10 @@ service MetaService {
     GetEdgeResp getEdge(1: GetEdgeReq req);
     ListEdgesResp listEdges(1: ListEdgesReq req);
 
-    ExecResp addHosts(1: AddHostsReq req);
-    ExecResp removeHosts(1: RemoveHostsReq req);
     ListHostsResp listHosts(1: ListHostsReq req);
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
+    ListPartsResp listParts(1: ListPartsReq req);
 
     ExecResp multiPut(1: MultiPutReq req);
     GetResp get(1: GetReq req);

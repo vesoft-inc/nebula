@@ -167,7 +167,7 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
         return peersStr.str();
     };
     LOG(INFO) << "[space:" << spaceId << ", part:" << partId << "] Update original peers "
-              << strHosts(peers) << ", remove " << src << ", add " << dst;
+              << strHosts(peers) << " remove " << src << ", add " << dst;
     auto it = std::find(peers.begin(), peers.end(), src);
     if (it == peers.end()) {
         LOG(INFO) << "src " << src << " has been removed in [" << spaceId << ", " << partId << "]";
@@ -248,12 +248,13 @@ folly::Future<Status> AdminClient::getResponse(
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
     auto* evb = ioThreadPool_->getEventBase();
-    folly::via(evb, [evb, pro = std::move(pro), host, req = std::move(req),
+    auto partId = req.get_part_id();
+    folly::via(evb, [evb, pro = std::move(pro), host, req = std::move(req), partId,
                      remoteFunc = std::move(remoteFunc), respGen = std::move(respGen),
                      this] () mutable {
         auto client = clientsMan_->client(host, evb);
-        remoteFunc(client, std::move(req))
-            .then(evb, [p = std::move(pro), respGen = std::move(respGen)](
+        remoteFunc(client, std::move(req)).via(evb)
+            .then([p = std::move(pro), partId, respGen = std::move(respGen)](
                            folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
                 // exception occurred during RPC
                 if (t.hasException()) {
@@ -261,8 +262,16 @@ folly::Future<Status> AdminClient::getResponse(
                                                                  t.exception().what().c_str())));
                     return;
                 }
-                auto&& resp = std::move(t).value();
-                p.setValue(respGen(std::move(resp)));
+                auto&& result = std::move(t).value().get_result();
+                if (result.get_failed_codes().empty()) {
+                    storage::cpp2::ResultCode resultCode;
+                    resultCode.set_code(storage::cpp2::ErrorCode::SUCCEEDED);
+                    resultCode.set_part_id(partId);
+                    p.setValue(respGen(resultCode));
+                } else {
+                    auto resp = result.get_failed_codes().front();
+                    p.setValue(respGen(std::move(resp)));
+                }
             });
     });
     return f;
@@ -284,17 +293,17 @@ void AdminClient::getResponse(
                      remoteFunc = std::move(remoteFunc), retry, pro = std::move(pro),
                      retryLimit, this] () mutable {
         auto client = clientsMan_->client(hosts[index], evb);
-        remoteFunc(client, req)
-            .then(evb, [p = std::move(pro), hosts = std::move(hosts), index, req = std::move(req),
-                        remoteFunc = std::move(remoteFunc), retry, retryLimit,
-                        this] (folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
+        remoteFunc(client, req).via(evb)
+            .then([p = std::move(pro), hosts = std::move(hosts), index, req = std::move(req),
+                   remoteFunc = std::move(remoteFunc), retry, retryLimit,
+                   this] (folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
                 if (retry < retryLimit) {
                     LOG(INFO) << "Rpc failure to " << hosts[index]
                               << ", retry " << retry
                               << ", limit " << retryLimit;
-                    index = ++index % hosts.size();
+                    index = (index + 1) % hosts.size();
                     getResponse(std::move(hosts),
                                 index,
                                 std::move(req),
@@ -308,21 +317,26 @@ void AdminClient::getResponse(
                                                              t.exception().what().c_str())));
                 return;
             }
-            auto resp = std::move(t).value();
+            auto&& result = std::move(t).value().get_result();
+            if (result.get_failed_codes().empty()) {
+                p.setValue(Status::OK());
+                return;
+            }
+            auto resp = result.get_failed_codes().front();
             switch (resp.get_code()) {
-                case storage::cpp2::ErrorCode::SUCCEEDED: {
-                    p.setValue(Status::OK());
-                    return;
-                }
                 case storage::cpp2::ErrorCode::E_LEADER_CHANGED: {
                     if (retry < retryLimit) {
-                        HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
+                        HostAddr leader(0, 0);
+                        if (resp.get_leader() != nullptr) {
+                            leader = HostAddr(resp.get_leader()->get_ip(),
+                                              resp.get_leader()->get_port());
+                        }
                         if (leader == HostAddr(0, 0)) {
                             usleep(1000 * 50);
                             LOG(INFO) << "The leader is in election"
                                       << ", retry " << retry
                                       << ", limit " << retryLimit;
-                            index = ++index % hosts.size();
+                            index = (index + 1) % hosts.size();
                             getResponse(std::move(hosts),
                                     index,
                                     std::move(req),
@@ -340,11 +354,12 @@ void AdminClient::getResponse(
                             leaderIndex++;
                         }
                         if (leaderIndex == (int32_t)hosts.size()) {
-                            LOG(ERROR) << "The new leader is " << leader;
-                            for (auto& h : hosts) {
-                                LOG(ERROR) << "The peer is " << h;
-                            }
-                            p.setValue(Status::Error("Can't find leader in current peers"));
+                            // In some cases (e.g. balance task is failed in member change remove
+                            // phase, and the new host is elected as leader somehow), the peers of
+                            // this partition in meta doesn't include new host, which will make
+                            // this task failed forever.
+                            index = leaderIndex;
+                            hosts.emplace_back(leader);
                             return;
                         }
                         LOG(INFO) << "Return leader change from " << hosts[index]
@@ -370,7 +385,7 @@ void AdminClient::getResponse(
                                   << " from " << hosts[index]
                                   << ", retry " << retry
                                   << ", limit " << retryLimit;
-                        index = ++index % hosts.size();
+                        index = (index + 1) % hosts.size();
                         getResponse(std::move(hosts),
                                     index,
                                     std::move(req),
@@ -420,6 +435,35 @@ StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, Part
     return Status::Error("Get Failed");
 }
 
+void AdminClient::getLeaderDist(const HostAddr& host,
+                                folly::Promise<StatusOr<storage::cpp2::GetLeaderResp>>&& pro,
+                                int32_t retry,
+                                int32_t retryLimit) {
+    auto* evb = ioThreadPool_->getEventBase();
+    folly::via(evb, [evb, host, pro = std::move(pro), retry, retryLimit, this] () mutable {
+        storage::cpp2::GetLeaderReq req;
+        auto client = clientsMan_->client(host, evb);
+        client->future_getLeaderPart(std::move(req)).via(evb)
+            .then([pro = std::move(pro), host, retry, retryLimit, this]
+                       (folly::Try<storage::cpp2::GetLeaderResp>&& t) mutable {
+            if (t.hasException()) {
+                LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
+                                                  t.exception().what().c_str());
+                if (retry < retryLimit) {
+                    usleep(1000 * 50);
+                    getLeaderDist(host, std::move(pro), retry + 1, retryLimit);
+                } else {
+                    pro.setValue(Status::Error("RPC failure in AdminClient"));
+                }
+                return;
+            }
+            auto&& resp = std::move(t).value();
+            LOG(INFO) << "Get leader for host " << host;
+            pro.setValue(std::move(resp));
+        });
+    });
+}
+
 folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
     if (injector_) {
         return injector_->getLeaderDist(result);
@@ -428,40 +472,32 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
     auto future = promise.getFuture();
     auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
 
-    auto getLeader = [result, this] (const HostAddr& host) {
-        folly::Promise<Status> pro;
-        auto f = pro.getFuture();
-        auto* evb = ioThreadPool_->getEventBase();
-        folly::via(evb, [pro = std::move(pro), host, evb, result, this] () mutable {
-            storage::cpp2::GetLeaderReq req;
-            auto client = clientsMan_->client(host, evb);
-            client->future_getLeaderPart(std::move(req))
-                .then(evb, [p = std::move(pro), host,
-                            result] (folly::Try<storage::cpp2::GetLeaderResp>&& t) mutable {
-                if (t.hasException()) {
-                    LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
-                                                      t.exception().what().c_str());
-                    p.setValue(Status::Error("RPC failure in AdminClient"));
-                    return;
-                }
-                auto&& resp = std::move(t).value();
-                LOG(INFO) << "Get leader for host " << host;
-                result->emplace(host, std::move(resp).get_leader_parts());
-                p.setValue(Status::OK());
-            });
-        });
-        return f;
-    };
-
-    std::vector<folly::SemiFuture<Status>> hostFutures;
+    std::vector<folly::Future<StatusOr<storage::cpp2::GetLeaderResp>>> hostFutures;
     for (const auto& h : allHosts) {
-        auto fut = getLeader(h);
+        folly::Promise<StatusOr<storage::cpp2::GetLeaderResp>> pro;
+        auto fut = pro.getFuture();
+        getLeaderDist(h, std::move(pro), 0, 3);
         hostFutures.emplace_back(std::move(fut));
     }
 
-    folly::collectAll(hostFutures)
-        .then([p = std::move(promise)] (std::vector<folly::Try<Status>>&& tries) mutable {
-        UNUSED(tries);
+    folly::collectAll(std::move(hostFutures)).thenValue([p = std::move(promise), result, allHosts]
+            (std::vector<folly::Try<StatusOr<storage::cpp2::GetLeaderResp>>>&& tries) mutable {
+        size_t idx = 0;
+        for (auto& t : tries) {
+            if (t.hasException()) {
+                ++idx;
+                continue;
+            }
+            auto&& status = std::move(t.value());
+            if (!status.ok()) {
+                ++idx;
+                continue;
+            }
+            auto resp = status.value();
+            result->emplace(allHosts[idx], std::move(resp.leader_parts));
+            ++idx;
+        }
+
         p.setValue(Status::OK());
     });
 

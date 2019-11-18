@@ -41,6 +41,8 @@ namespace kvstore {
 
 rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts);
 
+bool loadOptionsMap(std::unordered_map<std::string, std::string> &map, const std::string& gflags);
+
 }  // namespace kvstore
 }  // namespace nebula
 #endif  // KVSTORE_ROCKSENGINECONFIG_H_

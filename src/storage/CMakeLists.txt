@@ -18,6 +18,12 @@ nebula_add_library(
     GetProcessor.cpp
 )
 
+add_dependencies(
+    storage_service_handler
+    stats_obj
+    base_obj
+)
+
 nebula_add_library(
     storage_http_handler OBJECT
     StorageHttpIngestHandler.cpp

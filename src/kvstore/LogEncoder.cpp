@@ -187,6 +187,10 @@ HostAddr decodeHost(LogType type, const folly::StringPiece& encoded) {
     return addr;
 }
 
+int64_t getTimestamp(const folly::StringPiece& command) {
+    return *reinterpret_cast<const int64_t*>(command.begin());
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 

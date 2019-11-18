@@ -29,9 +29,11 @@ void ListTagIndexesProcessor::process(const cpp2::ListTagIndexesReq& req) {
         auto key = iter->key();
         auto val = iter->val();
         auto tagIndex = *reinterpret_cast<const TagIndexID *>(key.data() + prefix.size());
+        auto nameSize = *reinterpret_cast<const int32_t *>(val.data());
+        auto name = val.subpiece(sizeof(int32_t), nameSize).str();
         auto properties = MetaServiceUtils::parseTagIndex(val);
         items.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                           tagIndex, properties);
+                           tagIndex, name, properties);
         iter->next();
     }
     resp_.set_items(std::move(items));

@@ -23,6 +23,7 @@ namespace nebula {
 namespace meta {
 
 using nebula::network::NetworkUtils;
+using FieldType = std::pair<std::string, nebula::cpp2::ValueType>;
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID) \
     if (spaceExist(spaceID) == Status::SpaceNotFound()) { \
@@ -205,16 +206,22 @@ protected:
      */
     StatusOr<TagID> getTagId(GraphSpaceID spaceId, const std::string& name);
 
-    StatusOr<std::vector<std::string>> getLatestTagFields(GraphSpaceID spaceId,
-                                                          const std::string& name);
+    /**
+     * Fetch the latest version tag's fields.
+     */
+    StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
+    getLatestTagFields(GraphSpaceID spaceId, const std::string& name);
 
     /**
      * Return the edgeType for name.
      */
     StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
 
-    StatusOr<std::vector<std::string>> getLatestEdgeFields(GraphSpaceID spaceId,
-                                                           const std::string& name);
+    /**
+     * Fetch the latest version edge's fields.
+     */
+    StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
+    getLatestEdgeFields(GraphSpaceID spaceId, const std::string& name);
 
     StatusOr<TagIndexID> getTagIndexID(GraphSpaceID spaceId, const std::string& indexName);
 

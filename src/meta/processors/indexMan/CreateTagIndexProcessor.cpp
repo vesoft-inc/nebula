@@ -10,10 +10,10 @@ namespace nebula {
 namespace meta {
 
 void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
-    auto spaceID = req.get_space_id();
-    CHECK_SPACE_ID_AND_RETURN(spaceID);
+    auto space = req.get_space_id();
+    CHECK_SPACE_ID_AND_RETURN(space);
     const auto &indexName = req.get_index_name();
-    const auto &properties = req.get_properties();
+    auto &properties = req.get_properties();
     if (properties.get_fields().empty()) {
         LOG(ERROR) << "Tag's Field should not empty";
         resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
@@ -22,7 +22,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     }
 
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagIndexLock());
-    auto ret = getTagIndexID(spaceID, indexName);
+    auto ret = getTagIndexID(space, indexName);
     if (ret.ok()) {
         LOG(ERROR) << "Create Tag Index Failed: " << indexName << " have existed";
         resp_.set_code(cpp2::ErrorCode::E_EXISTED);
@@ -30,9 +30,10 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
         return;
     }
 
-    for (auto const &element : properties.get_fields()) {
+    nebula::meta::cpp2::IndexFields indexFields;
+    for (auto& element : properties.get_fields()) {
         auto tagName = element.first;
-        auto tagID = getTagId(spaceID, tagName);
+        auto tagID = getTagId(space, tagName);
         if (!tagID.ok()) {
             LOG(ERROR) << "Create Tag Index Failed: Tag " << tagName << " not exist";
             resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
@@ -40,16 +41,21 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
             return;
         }
 
-        auto fieldsResult = getLatestTagFields(spaceID, tagName);
+        auto fieldsResult = getLatestTagFields(space, tagName);
         if (!fieldsResult.ok()) {
             LOG(ERROR) << "Get Latest Tag Fields Failed";
             resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
         }
+
         auto fields = fieldsResult.value();
         for (auto &field : element.second) {
-            if (std::find(fields.begin(), fields.end(), field) == fields.end()) {
+            auto iter = std::find_if(std::begin(fields), std::end(fields),
+                                     [field](FieldType pair) {
+                                         return field == pair.first;
+                                     });
+            if (iter == fields.end()) {
                 LOG(ERROR) << "Field " << field << " not found in Tag " << tagName;
                 resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
                 onFinished();
@@ -68,10 +74,10 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     }
 
     auto tagIndex = nebula::value(tagIndexRet);
-    data.emplace_back(MetaServiceUtils::indexTagIndexKey(spaceID, indexName),
+    data.emplace_back(MetaServiceUtils::indexTagIndexKey(space, indexName),
                       std::string(reinterpret_cast<const char*>(&tagIndex), sizeof(TagIndexID)));
-    data.emplace_back(MetaServiceUtils::tagIndexKey(spaceID, tagIndex),
-                      MetaServiceUtils::tagIndexVal(properties));
+    data.emplace_back(MetaServiceUtils::tagIndexKey(space, tagIndex),
+                      MetaServiceUtils::tagIndexVal(indexName, std::move(indexFields)));
     LOG(INFO) << "Create Tag Index " << indexName << ", tagIndex " << tagIndex;
     resp_.set_id(to(tagIndex, EntryType::TAG_INDEX));
     doPut(std::move(data));

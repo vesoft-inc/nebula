@@ -79,6 +79,16 @@ std::string NebulaKeyUtils::uuidKey(PartitionID partId, const folly::StringPiece
 }
 
 // static
+std::string NebulaKeyUtils::kvKey(PartitionID partId, const folly::StringPiece& name) {
+    std::string key;
+    key.reserve(sizeof(PartitionID) + name.size());
+    int32_t item = (partId << 8) | static_cast<uint32_t>(NebulaKeyType::kData);
+    key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
+       .append(name.data(), name.size());
+    return key;
+}
+
+// static
 std::string NebulaKeyUtils::vertexPrefix(PartitionID partId, VertexID vId, TagID tagId) {
     constexpr uint32_t tagMask = 0xBFFFFFFF;
     tagId &= tagMask;

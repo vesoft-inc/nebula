@@ -28,10 +28,12 @@ void ListEdgeIndexesProcessor::process(const cpp2::ListEdgeIndexesReq& req) {
     while (iter->valid()) {
         auto key = iter->key();
         auto val = iter->val();
+        auto nameSize = *reinterpret_cast<const int32_t *>(val.data());
+        auto name = val.subpiece(sizeof(int32_t), nameSize).str();
         auto edgeIndex = *reinterpret_cast<const EdgeIndexID *>(key.data() + prefix.size());
         auto properties = MetaServiceUtils::parseEdgeIndex(val);
         items.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                           edgeIndex, properties);
+                           edgeIndex, name, properties);
         iter->next();
     }
     resp_.set_items(std::move(items));

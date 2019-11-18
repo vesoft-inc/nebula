@@ -1,9 +1,9 @@
-FROM vesoft/nebula-dev:centos as builder
+FROM vesoft/nebula-dev:centos7 as builder
 
 COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \
-  && . /etc/profile.d/devtoolset-8-enable.sh \
+  && . ~/.bashrc \
   && ./make_srpm.sh -v $(git rev-parse --short HEAD) -p /home/nebula metad
 
 FROM centos:7
@@ -19,4 +19,8 @@ RUN rpm -ivh *.rpm \
 
 EXPOSE 45500 45501 11000 11002
 
-ENTRYPOINT ["./bin/nebula-metad", "--flagfile=./etc/nebula-metad.conf", "--daemonize=false"]
+ENTRYPOINT ["./bin/nebula-metad", \
+  "--flagfile=./etc/nebula-metad.conf", \
+  "--daemonize=false", \
+  "--v=0", \
+  "--minloglevel=2"]

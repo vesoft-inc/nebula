@@ -8,6 +8,10 @@
 #include <folly/synchronization/Baton.h>
 #include "meta/processors/Common.h"
 
+DEFINE_int32(wait_time_after_open_part_ms, 3000,
+             "The wait time after open part, zero means no wait");
+DECLARE_uint32(raft_heartbeat_interval_secs);
+
 namespace nebula {
 namespace meta {
 
@@ -69,6 +73,10 @@ void BalanceTask::invoke() {
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::ADD_LEARNER;
+                    if (FLAGS_wait_time_after_open_part_ms > 0) {
+                        usleep(FLAGS_wait_time_after_open_part_ms * 1000);
+                        sleep(FLAGS_raft_heartbeat_interval_secs);
+                    }
                 }
                 invoke();
             });

@@ -132,13 +132,15 @@ bool NebulaStore::init() {
 std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
                                                  const std::string& path) {
     if (FLAGS_engine_type == "rocksdb") {
-        if (options_.cfFactory_ != nullptr) {
-            options_.cfFactory_->construct(spaceId, FLAGS_custom_filter_interval_secs);
+        std::shared_ptr<KVCompactionFilterFactory> cfFactory = nullptr;
+        if (options_.cffBuilder_ != nullptr) {
+            cfFactory = options_.cffBuilder_->buildCfFactory(spaceId,
+                                                             FLAGS_custom_filter_interval_secs);
         }
         return std::make_unique<RocksEngine>(spaceId,
                                              path,
                                              options_.mergeOp_,
-                                             options_.cfFactory_);
+                                             cfFactory);
     } else {
         LOG(FATAL) << "Unknown engine type " << FLAGS_engine_type;
         return nullptr;
@@ -267,6 +269,19 @@ void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId) {
     LOG(INFO) << "Space " << spaceId << ", part " << partId << " has been removed!";
 }
 
+void NebulaStore::updateSpaceOption(GraphSpaceID spaceId,
+                                    const std::unordered_map<std::string, std::string>& options,
+                                    bool isDbOption) {
+    if (isDbOption) {
+        for (const auto& kv : options) {
+            setDBOption(spaceId, kv.first, kv.second);
+        }
+    } else {
+        for (const auto& kv : options) {
+            setOption(spaceId, kv.first, kv.second);
+        }
+    }
+}
 
 ResultCode NebulaStore::get(GraphSpaceID spaceId,
                             PartitionID partId,
@@ -426,7 +441,6 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
         auto parts = engine->allParts();
-        std::vector<std::string> extras;
         for (auto part : parts) {
             auto ret = this->engine(spaceId, part);
             if (!ok(ret)) {
@@ -435,20 +449,17 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
 
             auto path = folly::stringPrintf("%s/download/%d", value(ret)->getDataRoot(), part);
             if (!fs::FileUtils::exist(path)) {
-                LOG(ERROR) << path << " not existed";
-                return ResultCode::ERR_IO_ERROR;
+                LOG(INFO) << path << " not existed";
+                continue;
             }
 
             auto files = nebula::fs::FileUtils::listAllFilesInDir(path.c_str(), true, "*.sst");
             for (auto file : files) {
-                VLOG(3) << "Ingesting extra file: " << file;
-                extras.emplace_back(file);
-            }
-        }
-        if (extras.size() != 0) {
-            auto code = engine->ingest(std::move(extras));
-            if (code != ResultCode::SUCCEEDED) {
-                return code;
+                LOG(INFO) << "Ingesting extra file: " << file;
+                auto code = engine->ingest(std::vector<std::string>({file}));
+                if (code != ResultCode::SUCCEEDED) {
+                    return code;
+                }
             }
         }
     }

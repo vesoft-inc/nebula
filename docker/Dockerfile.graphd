@@ -1,9 +1,9 @@
-FROM vesoft/nebula-dev:centos as builder
+FROM vesoft/nebula-dev:centos7 as builder
 
 COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \
-  && . /etc/profile.d/devtoolset-8-enable.sh \
+  && . ~/.bashrc \
   && ./make_srpm.sh -v $(git rev-parse --short HEAD) -p /home/nebula graphd
 
 FROM centos:7
@@ -19,4 +19,8 @@ RUN rpm -ivh *.rpm \
 
 EXPOSE 3369 13000 13002
 
-ENTRYPOINT ["./bin/nebula-graphd", "--flagfile=./etc/nebula-graphd.conf", "--daemonize=false"]
+ENTRYPOINT ["./bin/nebula-graphd", \
+  "--flagfile=./etc/nebula-graphd.conf", \
+  "--daemonize=false", \
+  "--v=0", \
+  "--minloglevel=2"]

@@ -95,7 +95,7 @@ AssertionResult DataTest::prepareSchema() {
                                << " failed, error code "<< static_cast<int32_t>(code);
         }
     }
-    // Test same propName diff tyep in diff tags
+    // Test same propName diff type in diff tags
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE TAG employee(name int)";

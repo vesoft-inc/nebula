@@ -15,17 +15,18 @@ License:  Apache 2.0 + Common Clause 1.0
 BuildRoot:%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 # TODO: we should check dependence's version after adapt to different system versions
-BuildRequires:   make
-BuildRequires:   autoconf
-BuildRequires:   automake
-BuildRequires:   libtool
-BuildRequires:   unzip
-BuildRequires:   readline
-BuildRequires:   ncurses
-BuildRequires:   ncurses-devel
-BuildRequires:   python
-BuildRequires:   java-1.8.0-openjdk
-BuildRequires:   java-1.8.0-openjdk-devel
+# BuildRequires only find dynamic libraries but all of nebula dependencies have been compiled to static libraries, so comment out them temporarily
+# BuildRequires:   make
+# BuildRequires:   autoconf
+# BuildRequires:   automake
+# BuildRequires:   libtool
+# BuildRequires:   unzip
+# BuildRequires:   readline
+# BuildRequires:   ncurses
+# BuildRequires:   ncurses-devel
+# BuildRequires:   python
+# BuildRequires:   java-1.8.0-openjdk
+# BuildRequires:   java-1.8.0-openjdk-devel
 
 %description
 A high performance distributed graph database
@@ -33,8 +34,8 @@ A high performance distributed graph database
 %prep
 
 %build
-cmake -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=%{_version} -DCMAKE_INSTALL_PREFIX=%{_install_dir} -DENABLE_TESTING=OFF./
-make -j2
+cmake -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=%{_version} -DCMAKE_INSTALL_PREFIX=%{_install_dir} -DENABLE_TESTING=OFF ./
+make -j$(nproc)
 
 %install
 rm -rf %{buildroot}
@@ -69,10 +70,19 @@ Group: Applications/Databases
 %description console
 
 %package storage_perf
-Summary: tool for storage
+Summary: perf tool for storage
 Group: Applications/Databases
 %description storage_perf
 
+%package storage_integrity
+Summary: integrity tool for storage
+Group: Applications/Databases
+%description storage_integrity
+
+%package simple_kv_verify
+Summary: kv verify tool
+Group: Applications/Databases
+%description simple_kv_verify
 
 # the files include exe, config file, scripts
 # base rpm include files
@@ -80,6 +90,9 @@ Group: Applications/Databases
 %attr(0755,root,root) %{_datadir}/nebula.service
 %attr(0755,root,root) %{_datadir}/utils.sh
 %attr(0755,root,root) %{_datadir}/services.sh
+%attr(0644,root,root) %{_datadir}/graph.hosts
+%attr(0644,root,root) %{_datadir}/meta.hosts
+%attr(0644,root,root) %{_datadir}/storage.hosts
 
 # metad rpm include files
 %files metad
@@ -129,6 +142,14 @@ fi
 # storage_perf rpm
 %files storage_perf
 %attr(0755,root,root) %{_bindir}/storage_perf
+
+# storage_integrity rpm
+%files storage_integrity
+%attr(0755,root,root) %{_bindir}/storage_integrity
+
+# simple_kv_verify rpm
+%files simple_kv_verify
+%attr(0755,root,root) %{_bindir}/simple_kv_verify
 
 %debug_package
 

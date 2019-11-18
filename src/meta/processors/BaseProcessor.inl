@@ -241,7 +241,7 @@ StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId,
 }
 
 template<typename RESP>
-StatusOr<std::vector<std::string>>
+StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
 BaseProcessor<RESP>::getLatestTagFields(GraphSpaceID spaceId,
                                         const std::string& name) {
     auto result = getTagId(spaceId, name);
@@ -259,15 +259,16 @@ BaseProcessor<RESP>::getLatestTagFields(GraphSpaceID spaceId,
 
     auto iter = ret.value().get();
     auto latestSchema = MetaServiceUtils::parseSchema(iter->val());
-    std::vector<std::string> propertyNames;
+    std::unordered_map<std::string, nebula::cpp2::ValueType> propertyNames;
     for (auto &column : latestSchema.get_columns()) {
-        propertyNames.emplace_back(std::move(column.get_name()));
+        propertyNames.emplace(std::move(column.get_name()),
+                              std::move(column.get_type()));
     }
     return propertyNames;
 }
 
 template<typename RESP>
-StatusOr<std::vector<std::string>>
+StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
 BaseProcessor<RESP>::getLatestEdgeFields(GraphSpaceID spaceId,
                                          const std::string& name) {
     auto result = getEdgeType(spaceId, name);
@@ -286,16 +287,17 @@ BaseProcessor<RESP>::getLatestEdgeFields(GraphSpaceID spaceId,
 
     auto iter = ret.value().get();
     auto latestSchema = MetaServiceUtils::parseSchema(iter->val());
-    std::vector<std::string> propertyNames;
+    std::unordered_map<std::string, nebula::cpp2::ValueType> propertyNames;
     for (auto &column : latestSchema.get_columns()) {
-        propertyNames.emplace_back(std::move(column.get_name()));
+        propertyNames.emplace(std::move(column.get_name()),
+                              std::move(column.get_type()));
     }
     return propertyNames;
 }
 
 template<typename RESP>
-StatusOr<TagIndexID> BaseProcessor<RESP>::getTagIndexID(GraphSpaceID spaceId,
-                                                        const std::string& indexName) {
+StatusOr<TagIndexID>
+BaseProcessor<RESP>::getTagIndexID(GraphSpaceID spaceId, const std::string& indexName) {
     auto indexKey = MetaServiceUtils::indexTagIndexKey(spaceId, indexName);
     auto ret = doGet(indexKey);
     if (ret.ok()) {
@@ -306,8 +308,8 @@ StatusOr<TagIndexID> BaseProcessor<RESP>::getTagIndexID(GraphSpaceID spaceId,
 }
 
 template<typename RESP>
-StatusOr<EdgeIndexID> BaseProcessor<RESP>::getEdgeIndexID(GraphSpaceID spaceId,
-                                                          const std::string& indexName) {
+StatusOr<EdgeIndexID>
+BaseProcessor<RESP>::getEdgeIndexID(GraphSpaceID spaceId, const std::string& indexName) {
     auto indexKey = MetaServiceUtils::indexEdgeIndexKey(spaceId, indexName);
     auto ret = doGet(indexKey);
     if (ret.ok()) {
@@ -318,7 +320,8 @@ StatusOr<EdgeIndexID> BaseProcessor<RESP>::getEdgeIndexID(GraphSpaceID spaceId,
 }
 
 template<typename RESP>
-StatusOr<UserID> BaseProcessor<RESP>::getUserId(const std::string& account) {
+StatusOr<UserID>
+BaseProcessor<RESP>::getUserId(const std::string& account) {
     auto indexKey = MetaServiceUtils::indexUserKey(account);
     auto ret = doGet(indexKey);
     if (ret.ok()) {
@@ -338,7 +341,8 @@ bool BaseProcessor<RESP>::checkPassword(UserID userId, const std::string& passwo
 }
 
 template<typename RESP>
-StatusOr<std::string> BaseProcessor<RESP>::getUserAccount(UserID userId) {
+StatusOr<std::string>
+BaseProcessor<RESP>::getUserAccount(UserID userId) {
     auto key = MetaServiceUtils::userKey(userId);
     auto ret = doGet(key);
     if (!ret.ok()) {

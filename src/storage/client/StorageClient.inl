@@ -96,7 +96,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
             // Future process code will be executed on the IO thread
             // Since all requests are sent using the same eventbase, all then-callback
             // will be executed on the same IO thread
-            .then(evb, [this, context, host, spaceId] (folly::Try<Response>&& val) {
+            .via(evb).then([this, context, host, spaceId] (folly::Try<Response>&& val) {
                 auto& r = context->findRequest(host);
                 if (val.hasException()) {
                     LOG(ERROR) << "Request to " << host << " failed: " << val.exception().what();
@@ -125,6 +125,8 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                                              code.get_part_id(),
                                              HostAddr(leader->get_ip(), leader->get_port()));
                             }
+                        } else if (code.get_code() == storage::cpp2::ErrorCode::E_PART_NOT_FOUND) {
+                            invalidLeader(spaceId, code.get_part_id());
                         } else {
                             // Simply keep the result
                             context->resp.failedParts().emplace(code.get_part_id(),
@@ -174,13 +176,15 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
         auto host = request.first;
         auto client = clientsMan_->client(host, evb);
         auto spaceId = request.second.get_space_id();
+        auto partId = request.second.get_part_id();
         LOG(INFO) << "Send request to storage " << host;
-        remoteFunc(client.get(), std::move(request.second))
-             .then(evb, [spaceId, p = std::move(pro), this] (folly::Try<Response>&& t) mutable {
+        remoteFunc(client.get(), std::move(request.second)).via(evb)
+             .then([spaceId, partId, p = std::move(pro), this] (folly::Try<Response>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
                 p.setValue(Status::Error(folly::stringPrintf("RPC failure in StorageClient: %s",
                                                              t.exception().what().c_str())));
+                invalidLeader(spaceId, partId);
                 return;
             }
             auto&& resp = std::move(t.value());
@@ -195,6 +199,8 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
                         updateLeader(spaceId, code.get_part_id(),
                                      HostAddr(leader->get_ip(), leader->get_port()));
                     }
+                } else if (code.get_code() == storage::cpp2::ErrorCode::E_PART_NOT_FOUND) {
+                    invalidLeader(spaceId, code.get_part_id());
                 }
             }
             p.setValue(std::move(resp));

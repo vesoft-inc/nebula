@@ -90,6 +90,9 @@ class MetaChangedListener {
 public:
     virtual void onSpaceAdded(GraphSpaceID spaceId) = 0;
     virtual void onSpaceRemoved(GraphSpaceID spaceId) = 0;
+    virtual void onSpaceOptionUpdated(GraphSpaceID spaceId,
+                                      const std::unordered_map<std::string, std::string>& options)
+                                      = 0;
     virtual void onPartAdded(const PartMeta& partMeta) = 0;
     virtual void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) = 0;
     virtual void onPartUpdated(const PartMeta& partMeta) = 0;
@@ -98,6 +101,12 @@ public:
 class MetaClient {
     FRIEND_TEST(ConfigManTest, MetaConfigManTest);
     FRIEND_TEST(ConfigManTest, MockConfigTest);
+    FRIEND_TEST(ConfigManTest, RocksdbOptionsTest);
+    FRIEND_TEST(MetaClientTest, SimpleTest);
+    FRIEND_TEST(MetaClientTest, RetryWithExceptionTest);
+    FRIEND_TEST(MetaClientTest, RetryOnceTest);
+    FRIEND_TEST(MetaClientTest, RetryUntilLimitTest);
+    FRIEND_TEST(MetaClientTest, RocksdbOptionsTest);
 
 public:
     explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
@@ -141,14 +150,11 @@ public:
     folly::Future<StatusOr<bool>>
     dropSpace(std::string name);
 
-    folly::Future<StatusOr<bool>>
-    addHosts(const std::vector<HostAddr>& hosts);
-
     folly::Future<StatusOr<std::vector<cpp2::HostItem>>>
     listHosts();
 
-    folly::Future<StatusOr<bool>>
-    removeHosts(const std::vector<HostAddr>& hosts);
+    folly::Future<StatusOr<std::vector<cpp2::PartItem>>>
+    listParts(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<PartsAlloc>>
     getPartsAlloc(GraphSpaceID spaceId);
@@ -194,7 +200,8 @@ public:
 
     // Operations for index
     folly::Future<StatusOr<TagIndexID>>
-    createTagIndex(GraphSpaceID spaceID, std::string name,
+    createTagIndex(GraphSpaceID spaceID,
+                   std::string name,
                    std::map<std::string, std::vector<std::string>>&& fields);
 
     // Remove the define of tag index
@@ -208,7 +215,8 @@ public:
     listTagIndexes(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<EdgeIndexID>>
-    createEdgeIndex(GraphSpaceID spaceID, std::string name,
+    createEdgeIndex(GraphSpaceID spaceID,
+                    std::string name,
                     std::map<std::string, std::vector<std::string>>&& fields);
 
     // Remove the define of edge index
@@ -243,7 +251,7 @@ public:
 
     // Operations for admin
     folly::Future<StatusOr<int64_t>>
-    balance();
+    balance(bool isStop = false);
 
     folly::Future<StatusOr<std::vector<cpp2::BalanceTask>>>
     showBalance(int64_t balanceId);
@@ -330,6 +338,7 @@ protected:
     bool registerCfg();
     void addLoadCfgTask();
     void updateGflagsValue(const ConfigItem& item);
+    void updateNestedGflags(const std::string& name);
 
     bool loadSchemas(GraphSpaceID spaceId,
                      std::shared_ptr<SpaceInfoCache> spaceInfoCache,

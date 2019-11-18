@@ -35,7 +35,7 @@ void GetTagIndexProcessor::process(const cpp2::GetTagIndexReq& req) {
 
     cpp2::TagIndexItem item;
     item.set_index_id(tagIndexIDResult.value());
-    item.set_properties(MetaServiceUtils::parseTagIndex(tagResult.value()));
+    item.set_fields(MetaServiceUtils::parseTagIndex(tagResult.value()));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_item(std::move(item));
     onFinished();

@@ -41,11 +41,11 @@ enum SupportedType {
     STRING = 6,
 
     // Date time
-    TIMESTAMP = 21,
-    YEAR = 22,
-    YEARMONTH = 23,
-    DATE = 24,
-    DATETIME = 25,
+    TIMESTAMP = 7,
+    YEAR = 8,
+    YEARMONTH = 9,
+    DATE = 10,
+    DATETIME = 11,
 
     // Graph specific
     PATH = 41,
@@ -68,7 +68,7 @@ struct ValueType {
 
 struct ColumnDef {
     1: required string name,
-    2: required ValueType type,
+    2: ValueType type,
 }
 
 struct SchemaProp {
