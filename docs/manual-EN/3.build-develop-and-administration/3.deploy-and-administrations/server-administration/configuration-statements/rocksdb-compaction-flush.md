@@ -28,13 +28,15 @@ Use the following command to trigger compaction and flush manually through HTTP 
 curl "${ws_ip}:${ws_http_port}/admin?space=${spaceName}&${op}"
 ```
 
-- `ws_ip` is the HTTP service IP, which can be found in config file `storage.conf`
+- `ws_ip` is the HTTP service IP, which can be found in config file `etc/storage.conf`
 - `ws_port` is the storage HTTP port
 - `op` is the associated admin operations, only `compact` and `flush` are supported currently
 
 For example:
 
 ```bash
-curl "http://127.0.0.1:50005/admin?space=test&op=compact"
-curl "http://127.0.0.1:50005/admin?space=test&op=flush"
+curl "http://127.0.0.1:12000/admin?space=test&op=compact"
+curl "http://127.0.0.1:12000/admin?space=test&op=flush"
 ```
+
+> Notice that you should create space test before the above curl command.
