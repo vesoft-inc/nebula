@@ -46,10 +46,9 @@
 
 ############## rocksdb Options ##############
 --rocksdb_disable_wal=true
-
 # rocksdb DBOptions in json, each name and value of option is a string, given as "option_name":"option_value" separated by comma
---rocksdb_db_options={"create_if_missing":"true"}
+--rocksdb_db_options={}
 # rocksdb ColumnFamilyOptions in json, each name and value of option is string, given as "option_name":"option_value" separated by comma
---rocksdb_column_family_options={"max_write_buffer_number":"4"}
+--rocksdb_column_family_options={}
 # rocksdb BlockBasedTableOptions in json, each name and value of option is string, given as "option_name":"option_value" separated by comma
 --rocksdb_block_based_table_options={}
