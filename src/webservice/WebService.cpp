@@ -11,7 +11,6 @@
 #include "webservice/GetFlagsHandler.h"
 #include "webservice/SetFlagsHandler.h"
 #include "webservice/GetStatsHandler.h"
-#include <prometheus/exposer.h>
 
 DEFINE_int32(ws_http_port, 11000, "Port to listen on with HTTP protocol");
 DEFINE_int32(ws_h2_port, 11002, "Port to listen on with HTTP/2 protocol");
@@ -62,6 +61,13 @@ std::unique_ptr<HTTPServer> WebService::server_;
 std::unique_ptr<thread::NamedThread> WebService::wsThread_;
 HandlerGen WebService::handlerGenMap_;
 
+#if ENABLE_MONITOR
+std::unique_ptr<prometheus::detail::ProxygenRefServerImpl> WebService::monitor_server_;
+// Handle /metrics
+std::unique_ptr<prometheus::Exposer> WebService::exposer_;
+std::shared_ptr<prometheus::Registry> WebService::registry_ =
+    std::make_shared<prometheus::Registry>();
+#endif
 
 // static
 void WebService::registerHandler(const std::string& path,
@@ -100,12 +106,12 @@ Status WebService::start() {
     CHECK_GT(FLAGS_ws_threads, 0)
         << "The number of webservice threads must be greater than zero";
 
-
-    prometheus::ProxygenServer s(&handlerGenMap_);
-
-    // create an http server running on port 8080
-    //  Exposer exposer{"127.0.0.1:8080", "/metrics", 1};
-    prometheus::Exposer exposer{&s};
+#if ENABLE_MONITOR
+    // Register monitor
+    monitor_server_.reset(new prometheus::detail::ProxygenRefServerImpl(handlerGenMap_));
+    exposer_.reset(new prometheus::Exposer(monitor_server_.get()));
+    exposer_->RegisterCollectable(registry_);
+#endif
 
     HTTPServerOptions options;
     options.threads = static_cast<size_t>(FLAGS_ws_threads);

@@ -15,7 +15,18 @@ DECLARE_string(meta_server_addrs);
 namespace nebula {
 namespace graph {
 
-ExecutionEngine::ExecutionEngine() {
+ExecutionEngine::ExecutionEngine()
+#if ENABLE_MONITOR
+    : counter_fm_(
+        prometheus::BuildCounter()
+            .Name("execute_count")
+            .Help("How many queries the execution engine execute?")
+            .Labels({{"label", "value"}})
+            .Register(*WebService::moniter_registry())),
+    counter_(counter_fm_.Add(
+        {{"execute_count", "value"}}))
+#endif
+        {
 }
 
 
@@ -51,6 +62,10 @@ void ExecutionEngine::execute(RequestContextPtr rctx) {
                                                    gflagsManager_.get(),
                                                    storage_.get(),
                                                    metaClient_.get());
+#if ENABLE_MONITOR
+    // record once
+    counter_.Increment();
+#endif
     // TODO(dutor) add support to plan cache
     auto plan = new ExecutionPlan(std::move(ectx));
 

@@ -13,8 +13,8 @@
 #  Prometheus_INCLUDE_DIR      The prometheus includes directories.
 #  Prometheus_LIBRARY          The prometheus library.
 
-find_path(Prometheus_INCLUDE_DIR NAMES exposer.h)
-find_library(Prometheus_LIBRARY NAMES prometheus-cpp-core.a prometheus-cpp-pull.a)
+find_path(Prometheus_INCLUDE_DIR NAMES prometheus)
+find_library(Prometheus_LIBRARY NAMES libprometheus-cpp-core.a libprometheus-cpp-pull.a)
 
 if(Prometheus_INCLUDE_DIR AND Prometheus_LIBRARY)
     set(Prometheus_FOUND TRUE)

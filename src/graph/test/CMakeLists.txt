@@ -30,6 +30,7 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:gflags_man_obj>
     $<TARGET_OBJECTS:ws_common_obj>
     $<TARGET_OBJECTS:stats_obj>
+    $<$<BOOL:${ENABLE_MONITOR}>:$<TARGET_OBJECTS:ws_obj>>
 )
 
 nebula_add_library(
@@ -49,6 +50,10 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-pull>
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-core>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenhttpserver>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenlib>
         wangle
         gtest
         gtest_main
@@ -68,6 +73,10 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-pull>
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-core>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenhttpserver>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenlib>
         wangle
         gtest
 )
@@ -85,6 +94,10 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-pull>
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-core>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenhttpserver>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenlib>
         wangle
         gtest
 )
@@ -104,6 +117,8 @@ nebula_add_test(
         $<TARGET_OBJECTS:adHocSchema_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-pull>
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-core>
         proxygenhttpserver
         proxygenlib
         ${THRIFT_LIBRARIES}
@@ -126,6 +141,10 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-pull>
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-core>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenhttpserver>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenlib>
         wangle
         gtest
 )
@@ -144,6 +163,10 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-pull>
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-core>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenhttpserver>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenlib>
         wangle
         gtest
 )
@@ -161,6 +184,10 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-pull>
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-core>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenhttpserver>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenlib>
         wangle
         gtest
 )
@@ -178,6 +205,10 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-pull>
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-core>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenhttpserver>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenlib>
         wangle
         gtest
 )
@@ -195,6 +226,10 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-pull>
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-core>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenhttpserver>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenlib>
         wangle
         gtest
 )
@@ -212,6 +247,10 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-pull>
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-core>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenhttpserver>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenlib>
         wangle
         gtest
 )
@@ -229,6 +268,10 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-pull>
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-core>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenhttpserver>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenlib>
         wangle
         gtest
 )
@@ -246,6 +289,10 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-pull>
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-core>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenhttpserver>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenlib>
         wangle
         gtest
 )
@@ -263,6 +310,10 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-pull>
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-core>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenhttpserver>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenlib>
         wangle
         gtest
 )
@@ -280,6 +331,10 @@ nebula_add_test(
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-pull>
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-core>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenhttpserver>
+        $<$<BOOL:${ENABLE_MONITOR}>:proxygenlib>
         wangle
         gtest
 )

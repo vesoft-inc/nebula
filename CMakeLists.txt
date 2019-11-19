@@ -31,7 +31,7 @@ option(ENABLE_CCACHE "Whether to use ccache to speed up compiling" ON)
 option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
 option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
 option(ENABLE_UBSAN "Whether to turn Undefined Behavior Sanitizer ON or OFF" OFF)
-option(ENABLE_PROMETHEUS "Whether integrate Prometheus" ON)
+option(ENABLE_MONITOR "Whether integrate monitor Prometheus in fact" ON)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
@@ -191,7 +191,7 @@ if(NOT ENABLE_ASAN AND NOT ENABLE_NATIVE)
     find_package(PCHSupport)
     add_compile_options(-Winvalid-pch)
 endif()
-if(ENABLE_PROMETHEUS)
+if(ENABLE_MONITOR)
     find_package(Prometheus REQUIRED)
 endif()
 
@@ -238,6 +238,10 @@ if(ENABLE_UBSAN)
         add_compile_options(-fno-omit-frame-pointer)
     endif()
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined")
+endif()
+
+if(ENABLE_MONITOR)
+    add_definitions(-DENABLE_MONITOR=1)
 endif()
 
 macro(nebula_add_executable)
@@ -391,8 +395,8 @@ macro(nebula_link_libraries target)
         dl
         ${GETTIME_LIB}
         -pthread
-        prometheus-cpp-pull
-        prometheus-cpp-core
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-pull>
+        $<$<BOOL:${ENABLE_MONITOR}>:prometheus-cpp-core>
     )
 endmacro(nebula_link_libraries)
 

@@ -12,6 +12,11 @@
 #include <proxygen/httpserver/HTTPServer.h>
 #include "thread/NamedThread.h"
 
+#if ENABLE_MONITOR
+#include <prometheus/exposer.h>
+#include <prometheus/counter.h>
+#endif
+
 DECLARE_int32(ws_http_port);
 DECLARE_int32(ws_h2_port);
 DECLARE_string(ws_ip);
@@ -43,6 +48,12 @@ public:
     static void registerHandler(const std::string& path,
                                 std::function<proxygen::RequestHandler*()>&& gen);
 
+#if ENABLE_MONITOR
+    static prometheus::Registry* moniter_registry() {
+        return registry_.get();
+    }
+#endif
+
 private:
     WebService() = delete;
 
@@ -50,6 +61,17 @@ private:
     static std::unique_ptr<thread::NamedThread> wsThread_;
 
     static HandlerGen handlerGenMap_;
+
+#if ENABLE_MONITOR
+    // Prometheus expose
+    static std::unique_ptr<prometheus::detail::ProxygenRefServerImpl> monitor_server_;
+    // Handle /metrics
+    static std::unique_ptr<prometheus::Exposer> exposer_;
+    static std::shared_ptr<prometheus::Registry> registry_;
+    // TODO(shylock) define the metrics in anywhere need it
+    // This need lifetime require of Registry created before metrics
+    // but the static symbol lifetime among in objects is U.B.
+#endif
 };
 
 }  // namespace nebula

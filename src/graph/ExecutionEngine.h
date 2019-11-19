@@ -17,6 +17,10 @@
 #include "network/NetworkUtils.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
 
+#if ENABLE_MONITOR
+#include "webservice/WebService.h"
+#endif
+
 /**
  * ExecutionEngine is responsible to create and manage ExecutionPlan.
  * For the time being, we don't have the execution plan cache support,
@@ -45,6 +49,10 @@ private:
     std::unique_ptr<meta::ClientBasedGflagsManager>   gflagsManager_;
     std::unique_ptr<storage::StorageClient>           storage_;
     std::unique_ptr<meta::MetaClient>                 metaClient_;
+#if ENABLE_MONITOR
+    prometheus::Family<prometheus::Counter>& counter_fm_;
+    prometheus::Counter& counter_;
+#endif
 };
 
 }   // namespace graph
