@@ -83,9 +83,6 @@ protected:
 
     bool checkValueType(const nebula::cpp2::ValueType &type, const VariantType &value);
 
-    Status checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> schema,
-                          std::vector<std::string*> props);
-
     StatusOr<int64_t> toTimestamp(const VariantType &value);
 
     StatusOr<cpp2::ColumnValue> toColumnValue(const VariantType& value,
@@ -99,6 +96,9 @@ protected:
         }
         return Status::OK();
     }
+
+    StatusOr<VariantType> transformDefaultValue(nebula::cpp2::SupportedType type,
+                                                std::string& originalValue);
 
 protected:
     ExecutionContext                            *ectx_;

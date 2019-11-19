@@ -7,7 +7,6 @@
 #include "base/Base.h"
 #include "graph/InsertEdgeExecutor.h"
 #include "storage/client/StorageClient.h"
-#include <folly/synchronization/Baton.h>
 
 namespace nebula {
 namespace graph {
@@ -56,46 +55,30 @@ Status InsertEdgeExecutor::check() {
         return Status::Error("Wrong number of props");
     }
 
-    if (props_.size() != schema_->getNumFields()) {
-        auto *mc = ectx()->getMetaClient();
+    auto *mc = ectx()->getMetaClient();
 
-        for (size_t i = 0; i < schema_->getNumFields(); i++) {
-            std::string name = schema_->getFieldName(i);
-            auto it = std::find_if(props_.begin(), props_.end(),
-                                   [name](std::string *prop) { return *prop == name;});
+    for (size_t i = 0; i < schema_->getNumFields(); i++) {
+        std::string name = schema_->getFieldName(i);
+        auto it = std::find_if(props_.begin(), props_.end(),
+                               [name](std::string *prop) { return *prop == name;});
 
-            if (it == props_.end() && defaultValues_.find(name) == defaultValues_.end()) {
-                folly::Baton<true, std::atomic> baton;
-                mc->getEdgeDefaultValue(spaceId_, edgeType_, name)
-                    .thenValue([name, &status, &baton, this] (auto &&result) {
-                        if (!result.ok()) {
-                            LOG(ERROR) << "Not exist default value: " << name;
-                            status = Status::Error("Not exist default value");
-                        } else {
-                            VLOG(3) << "Default Value: " << name
-                                    << " : " << result.value();
-                            defaultValues_.emplace(name, result.value());
-                        }
-                        baton.post();
-                    });
-                baton.wait();
+        if (it == props_.end()) {
+            auto valueResult = mc->getEdgeDefaultValue(spaceId_, edgeType_, name).get();
+
+            if (!valueResult.ok()) {
+                LOG(ERROR) << "Not exist default value: " << name;
+                return Status::Error("Not exist default value");
+            } else {
+                VLOG(3) << "Default Value: " << name << " : " << valueResult.value();
+                defaultValues_.emplace(name, valueResult.value());
             }
-        }
-    } else {
-        // Check field name
-        auto checkStatus = checkFieldName(schema_, props_);
-        if (!checkStatus.ok()) {
-            LOG(ERROR) << "Check Status Failed: " << checkStatus;
-            return checkStatus;
+        } else {
+            int index = std::distance(props_.begin(), it);
+            propsPosition_.emplace(name, index);
         }
     }
 
-    if (!status.ok()) {
-        LOG(ERROR) << status;
-        return status;
-    }
-
-    return status;
+    return Status::OK();
 }
 
 
@@ -108,7 +91,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
 
     std::vector<storage::cpp2::Edge> edges(rows_.size() * 2);   // inbound and outbound
     auto index = 0;
-    for (size_t i = 0u; i < rows_.size(); i++) {
+    for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto sid = row->srcid();
         sid->setContext(expCtx_.get());
@@ -163,89 +146,32 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             values.emplace_back(ovalue.value());
         }
 
-        if (expressions.size() != schema_->getNumFields()) {
-            size_t propsIndex = 0;
-            int32_t insertPosition = 0;
-            for (size_t schemaIndex = 0; schemaIndex < schema_->getNumFields(); schemaIndex++) {
-                auto fieldName = schema_->getFieldName(schemaIndex);
-
-                // fetch default value from cache
-                if ((propsIndex < props_.size() && *props_[propsIndex] != fieldName) ||
-                    (propsIndex >= props_.size())) {
-                    auto type = schema_->getFieldType(schemaIndex).type;
-                    VariantType variantType;
-                    switch (type) {
-                        case nebula::cpp2::SupportedType::BOOL:
-                            try {
-                                variantType = folly::to<bool>(defaultValues_[fieldName]);
-                            } catch (const std::exception& ex) {
-                                LOG(ERROR) << "Conversion to bool failed: "
-                                           << defaultValues_[fieldName];
-                                return Status::Error("Type Conversion Failed");
-                            }
-
-                            VLOG(3) << "Insert " << fieldName << ":" << variantType
-                                    << " at " << insertPosition;
-                            values.insert(values.begin() + insertPosition, std::move(variantType));
-                            break;
-                        case nebula::cpp2::SupportedType::INT:
-                            try {
-                                variantType = folly::to<int64_t>(defaultValues_[fieldName]);
-                            } catch (const std::exception& ex) {
-                                LOG(ERROR) << "Conversion to int64_t failed: "
-                                           << defaultValues_[fieldName];
-                                return Status::Error("Type Conversion Failed");
-                            }
-
-                            VLOG(3) << "Insert " << fieldName << ":" << variantType
-                                    << " at " << insertPosition;
-                            values.insert(values.begin() + insertPosition, std::move(variantType));
-                            break;
-                        case nebula::cpp2::SupportedType::DOUBLE:
-                            try {
-                                variantType = folly::to<double>(defaultValues_[fieldName]);
-                            } catch (const std::exception& ex) {
-                                LOG(ERROR) << "Conversion to double failed: "
-                                           << defaultValues_[fieldName];
-                                return Status::Error("Type Conversion Failed");
-                            }
-
-                            VLOG(3) << "Insert " << fieldName << ":" << variantType
-                                    << " at " << insertPosition;
-                            values.insert(values.begin() + insertPosition, std::move(variantType));
-                            break;
-                        case nebula::cpp2::SupportedType::STRING:
-                            variantType = defaultValues_[fieldName];
-
-                            VLOG(3) << "Insert " << fieldName << ":" << variantType
-                                    << " at " << insertPosition;
-                            values.insert(values.begin() + insertPosition, std::move(variantType));
-                            break;
-                        default:
-                            LOG(ERROR) << "Unknow type";
-                            return Status::Error("Unknow type");
-                    }
-                    insertPosition++;
-                } else if (*props_[propsIndex] == fieldName) {
-                    propsIndex++;
-                    insertPosition++;
-                } else {
-                    insertPosition++;
-                }
-            }
-        }
-
         RowWriter writer(schema_);
-        auto fieldIndex = 0u;
-        for (auto &value : values) {
-            // Check value type
-            auto schemaType = schema_->getFieldType(fieldIndex);
-            if (!checkValueType(schemaType, value)) {
-                DCHECK(onError_);
-                LOG(ERROR) << "ValueType is wrong, schema type "
-                           << static_cast<int32_t>(schemaType.type)
-                           << ", input type " <<  value.which();
-                return Status::Error("ValueType is wrong");
+        for (size_t schemaIndex = 0; schemaIndex < schema_->getNumFields(); schemaIndex++) {
+            auto fieldName = schema_->getFieldName(schemaIndex);
+            auto positionIter = propsPosition_.find(fieldName);
+
+            VariantType value;
+            auto schemaType = schema_->getFieldType(schemaIndex);
+            if (positionIter != propsPosition_.end()) {
+                auto position = propsPosition_[fieldName];
+                value = values[position];
+                if (!checkValueType(schemaType, value)) {
+                   DCHECK(onError_);
+                    LOG(ERROR) << "ValueType is wrong, schema type "
+                               << static_cast<int32_t>(schemaType.type)
+                                << ", input type " <<  value.which();
+                    return Status::Error("ValueType is wrong");
+                }
+            } else {
+                // fetch default value from cache
+                auto result = transformDefaultValue(schemaType.type, defaultValues_[fieldName]);
+                if (!result.ok()) {
+                    return result.status();
+                }
+
+                value = result.value();
+                VLOG(3) << "Supplement default value : " << fieldName << " : " << value;
             }
 
             if (schemaType.type == nebula::cpp2::SupportedType::TIMESTAMP) {
@@ -257,7 +183,6 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             } else {
                 writeVariantType(writer, value);
             }
-            fieldIndex++;
         }
 
         {
@@ -330,3 +255,5 @@ void InsertEdgeExecutor::execute() {
 
 }   // namespace graph
 }   // namespace nebula
+
+

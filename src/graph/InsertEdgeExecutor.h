@@ -31,6 +31,7 @@ private:
 
 private:
     using EdgeSchema = std::shared_ptr<const meta::SchemaProviderIf>;
+
     InsertEdgeSentence                               *sentence_{nullptr};
     std::unique_ptr<ExpressionContext>                expCtx_;
     bool                                              overwritable_{true};
@@ -40,6 +41,7 @@ private:
     std::vector<EdgeRowItem*>                         rows_;
     GraphSpaceID                                      spaceId_{-1};
     std::unordered_map<std::string, std::string>      defaultValues_;
+    std::unordered_map<std::string, int32_t>          propsPosition_;
 };
 
 }   // namespace graph
