@@ -178,15 +178,21 @@ protected:
     PartitionID partId(GraphSpaceID spaceId, int64_t id) const;
 
     const HostAddr& leader(const PartMeta& partMeta) const {
+        auto part = std::make_pair(partMeta.spaceId_, partMeta.partId_);
         {
             folly::RWSpinLock::ReadHolder rh(leadersLock_);
-            auto it = leaders_.find(std::make_pair(partMeta.spaceId_, partMeta.partId_));
+            auto it = leaders_.find(part);
             if (it != leaders_.end()) {
                 return it->second;
             }
         }
-        VLOG(1) << "No leader exists. Choose one random.";
-        return partMeta.peers_[folly::Random::rand32(partMeta.peers_.size())];
+        {
+            folly::RWSpinLock::WriteHolder wh(leadersLock_);
+            VLOG(1) << "No leader exists. Choose one random.";
+            const auto& random = partMeta.peers_[folly::Random::rand32(partMeta.peers_.size())];
+            leaders_[part] = random;
+            return random;
+        }
     }
 
     void updateLeader(GraphSpaceID spaceId, PartitionID partId, const HostAddr& leader) {
@@ -269,7 +275,7 @@ private:
     std::unique_ptr<thrift::ThriftClientManager<
                         storage::cpp2::StorageServiceAsyncClient>> clientsMan_;
     mutable folly::RWSpinLock leadersLock_;
-    std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> leaders_;
+    mutable std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> leaders_;
 };
 
 }   // namespace storage
