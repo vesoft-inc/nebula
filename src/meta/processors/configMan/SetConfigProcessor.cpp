@@ -16,7 +16,6 @@ std::unordered_set<std::string> SetConfigProcessor::mutableFields_ = {
     // TODO: write_buffer_size will cause rocksdb crash
     // "write_buffer_size",
     "max_write_buffer_number",
-    "compression",
     "level0_file_num_compaction_trigger",
     "level0_slowdown_writes_trigger",
     "level0_stop_writes_trigger",
@@ -25,10 +24,6 @@ std::unordered_set<std::string> SetConfigProcessor::mutableFields_ = {
     "max_bytes_for_level_base",
     "max_bytes_for_level_multiplier",
     "ttl",
-
-    // rocksdb_block_based_table_options
-    "block_size",
-    "block_restart_interval",
 
     // rocksdb_db_options
     "max_total_wal_size",
