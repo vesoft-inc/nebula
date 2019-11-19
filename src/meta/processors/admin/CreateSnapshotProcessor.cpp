@@ -15,6 +15,14 @@ using SignType = storage::cpp2::EngineSignType;
 
 void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
     UNUSED(req);
+
+    if (clusterCheck_->isUnblockingRunning()) {
+        LOG(ERROR) << "Write unblocking task is running";
+        resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+        onFinished();
+        return;
+    }
+
     auto snapshot = genSnapshotName();
     folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
 
@@ -37,7 +45,6 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
         LOG(ERROR) << "Write snapshot meta error";
         resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
         onFinished();
-        clusterCheck_->addUnblockingTask();
         return;
     }
 
@@ -46,8 +53,8 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
     if (signRet != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Send blocking sign to storage engine error";
         resp_.set_code(signRet);
-        onFinished();
         clusterCheck_->addUnblockingTask();
+        onFinished();
         return;
     }
 
@@ -56,9 +63,9 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
     if (csRet != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Checkpoint create error on storage engine";
         resp_.set_code(csRet);
-        onFinished();
         clusterCheck_->addUnblockingTask();
         clusterCheck_->addDropCheckpointTask(snapshot);
+        onFinished();
         return;
     }
 
@@ -69,8 +76,8 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
                       "so the status of the snapshot cannot be change to valid. "
                       "snapshot : " << snapshot;
         resp_.set_code(signRet);
-        onFinished();
         clusterCheck_->addUnblockingTask();
+        onFinished();
         return;
     }
 

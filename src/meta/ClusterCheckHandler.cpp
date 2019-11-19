@@ -114,16 +114,14 @@ bool ClusterCheckHandler::unBlocking() {
 }
 
 
-void ClusterCheckHandler::unblockingThreadFunc() {
-    if (!unBlocking()) {
-        addUnblockingTask();
-    }
-}
-
-
 void ClusterCheckHandler::addUnblockingTask() {
-    size_t delayMS = FLAGS_meta_cluster_check_interval_secs * 1000;
-    bgThread_->addDelayTask(delayMS, &ClusterCheckHandler::unblockingThreadFunc, this);
+    folly::SharedMutex::WriteHolder wHolder(LockUtils::writeBlockingLock());
+    unblockingRunning_ = true;
+    while (!bgThread_->addTask(&ClusterCheckHandler::unBlocking, this).get()) {
+        LOG(ERROR) << TASK_HANDLER << "Unblocking failed";
+        sleep(FLAGS_meta_cluster_check_interval_secs);
+    }
+    unblockingRunning_ = false;
 }
 
 
@@ -203,7 +201,7 @@ bool ClusterCheckHandler::doSyncRemove(const std::string& key) {
     bool ret = false;
     kvstore_->asyncRemove(kDefaultSpaceId,
                           kDefaultPartId,
-                          std::move(key),
+                          key,
                           [&ret, &baton] (kvstore::ResultCode code) {
                               if (kvstore::ResultCode::SUCCEEDED == code) {
                                     ret = true;
@@ -214,6 +212,11 @@ bool ClusterCheckHandler::doSyncRemove(const std::string& key) {
                             });
     baton.wait();
     return ret;
+}
+
+
+bool ClusterCheckHandler::isUnblockingRunning() {
+    return unblockingRunning_;
 }
 }  // namespace meta
 }  // namespace nebula

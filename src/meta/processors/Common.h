@@ -33,6 +33,7 @@ GENERATE_LOCK(edge);
 GENERATE_LOCK(user);
 GENERATE_LOCK(config);
 GENERATE_LOCK(snapshot);
+GENERATE_LOCK(writeBlocking);
 
 #undef GENERATE_LOCK
 };

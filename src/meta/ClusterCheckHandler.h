@@ -35,9 +35,10 @@ public:
 
     void addDropCheckpointTask(const std::string& name);
 
+    bool isUnblockingRunning();
+
 protected:
     bool unBlocking();
-    void unblockingThreadFunc();
     bool dropCheckpoint(const std::string& name);
     void dropCheckpointThreadFunc(const std::string& name);
     bool getAllSpaces(std::vector<GraphSpaceID>& spaces);
@@ -48,6 +49,7 @@ private:
     kvstore::KVStore* kvstore_ = nullptr;
     ClusterID clusterId_{0};
     AdminClient* adminClient_;
+    bool unblockingRunning_{false};
 };
 }  // namespace meta
 }  // namespace nebula

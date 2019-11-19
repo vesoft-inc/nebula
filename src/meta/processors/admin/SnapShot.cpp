@@ -90,6 +90,7 @@ cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
      * And need copy the checkpoint files to the meta slave
      * after the meta master checkpoint is create done.
      */
+    folly::SharedMutex::WriteHolder wHolder(LockUtils::writeBlockingLock());
     std::vector<GraphSpaceID> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
