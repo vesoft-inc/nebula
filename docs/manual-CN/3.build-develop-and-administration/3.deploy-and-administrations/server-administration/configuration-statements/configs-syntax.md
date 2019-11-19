@@ -17,13 +17,10 @@ Nebula 使用 `gflags` 进行运行时配置。
 另外目前支持动态修改 storage service 的部分 rocksdb 参数, 如下
 
 ```text
-    snap_refresh_nanos
     disable_auto_compactions
-    write_buffer_size
     compression
     level0_file_num_compaction_trigger
     max_bytes_for_level_base
-    snap_refresh_nanos
     block_size
     block_restart_interval
     max_total_wal_size
@@ -108,6 +105,7 @@ UPDATE CONFIGS [graph|meta|storage :] var = value
 
 > 更新的变量将永久存储于 meta-service 中。
 > 如果变量模式为 `MUTABLE`，更改会即时生效。如果模式为 `REBOOT`，更改在服务器重启后生效。
+> 支持在 UPDATE CONFIGS 中使用算式。
 
 例如
 

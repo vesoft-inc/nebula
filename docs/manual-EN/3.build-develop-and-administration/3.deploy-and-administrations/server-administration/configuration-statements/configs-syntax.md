@@ -17,13 +17,10 @@ There are four gflags related parameters, among which, `max_edge_returned_per_ve
 Nebula supports changing some rocksdb parameters in storage service as follows:
 
 ```text
-    snap_refresh_nanos
     disable_auto_compactions
-    write_buffer_size
     compression
     level0_file_num_compaction_trigger
     max_bytes_for_level_base
-    snap_refresh_nanos
     block_size
     block_restart_interval
     max_total_wal_size
@@ -107,7 +104,7 @@ UPDATE CONFIGS [graph|meta|storage :] var = value
 
 > The updated CONFIGS will be stored into meta-service permanently.
 > If the configuration's mode is `MUTABLE`, the change will take effects immediately. Otherwise, if the mode is `REBOOT`, the change will not work until server restart.
-
+> Expression is supported in UPDATE CONFIGS.
 For example
 
 ```ngql
