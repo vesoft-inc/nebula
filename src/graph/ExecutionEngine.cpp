@@ -19,12 +19,12 @@ ExecutionEngine::ExecutionEngine()
 #if ENABLE_MONITOR
     : counter_fm_(
         prometheus::BuildCounter()
-            .Name("execute_count")
+            .Name("graphd_execute_count_total")
             .Help("How many queries the execution engine execute?")
-            .Labels({{"label", "value"}})
+            .Labels({{"component", "query"}})
             .Register(*WebService::moniter_registry())),
     counter_(counter_fm_.Add(
-        {{"execute_count", "value"}}))
+        {{"category", "execution"}}))
 #endif
         {
 }
