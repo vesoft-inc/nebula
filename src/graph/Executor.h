@@ -83,8 +83,9 @@ protected:
 
     bool checkValueType(const nebula::cpp2::ValueType &type, const VariantType &value);
 
-    Status checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> schema,
-                          std::vector<std::string*> props);
+    StatusOr<std::unordered_map<std::string, int64_t>> checkFieldName(
+            std::shared_ptr<const meta::SchemaProviderIf> schema,
+            std::vector<std::string*> props);
 
     StatusOr<int64_t> toTimestamp(const VariantType &value);
 

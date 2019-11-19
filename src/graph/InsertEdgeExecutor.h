@@ -37,6 +37,7 @@ private:
     EdgeType                                    edgeType_{0};
     EdgeSchema                                  schema_;
     std::vector<EdgeRowItem*>                   rows_;
+    std::unordered_map<std::string, int64_t>    schemaIndexes_;
 };
 
 }   // namespace graph
