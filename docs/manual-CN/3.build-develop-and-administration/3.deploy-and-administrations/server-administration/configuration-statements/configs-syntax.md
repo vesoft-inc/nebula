@@ -1,12 +1,15 @@
 # CONFIG 语法
 
-Nebula使用 `gflags` 进行运行时配置。
+Nebula 使用 `gflags` 进行运行时配置。
 
-相关的 `gflags` 参数有三个，分别为 rocksdb_db_options，rocksdb_column_family_options，rocksdb_block_based_table_options。
-三个参数均为 json 格式，其中每个参数 key 和 value 均为 string 格式。例如可以在 storage 的 conf 文件中做如下设置
+## gflags 参数
+
+相关的 `gflags` 参数有四个，其中，`max_edge_returned_per_vertex` 用来控制一个点最多可以搜索返回的边数，`rocksdb_db_options`，`rocksdb_column_family_options`，`rocksdb_block_based_table_options`
+三个参数均为 json 格式，其中每个参数 key 和 value 均为 string 格式。例如可以在 storage 的 conf 文件中做如下设置：
 
 ```text
-    rocksdb_db_options = {"stats_dump_period_sec":"200", "enable_write_thread_adaptive_yield":"false", "write_thread_max_yield_usec":"600"}
+    rocksdb_db_options = {"stats_dump_period_sec":"200", "enable_write_thread_adaptive_yield":"false", "write_thread_max_yield_usec":"600",
+    "max_edge_returned_per_vertex":"INT_MAX"}
     rocksdb_column_family_options = {"max_write_buffer_number":"4", "min_write_buffer_number_to_merge":"2", "max_write_buffer_number_to_maintain":"1"}
     rocksdb_block_based_table_options = {"block_restart_interval":"2"}
 ```
@@ -45,7 +48,7 @@ UPDATE CONFIGS storage:rocksdb_column_family_options =
 { disable_auto_compactions = false , level0_file_num_compaction_trigger = 10 }
 ```
 
-## 显示变量
+### 显示变量
 
 ```ngql
 SHOW CONFIGS graph|meta|storage
