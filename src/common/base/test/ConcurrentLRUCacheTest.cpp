@@ -33,6 +33,15 @@ TEST(ConcurrentLRUCacheTest, SimpleTest) {
     EXPECT_EQ(0, cache.evicts());
     EXPECT_EQ(1, cache.hits());
     EXPECT_EQ(2, cache.total());
+
+    for (auto i = 0; i < 100; i++) {
+        auto v = cache.get(10);
+        EXPECT_TRUE(v.ok());
+        EXPECT_EQ("ten", v.value());
+    }
+    EXPECT_EQ(0, cache.evicts());
+    EXPECT_EQ(101, cache.hits());
+    EXPECT_EQ(102, cache.total());
 }
 
 TEST(ConcurrentLRUCacheTest, PutIfAbsentTest) {

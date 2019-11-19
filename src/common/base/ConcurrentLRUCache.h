@@ -235,6 +235,7 @@ public:
         // recently used list
         const value_type& value = std::get<0>(i->second);
         typename list_type::iterator j = std::get<1>(i->second);
+        CHECK(key == *j);
         if (j != list_.begin()) {
             // move item to the front of the most recently used list
             list_.erase(j);
