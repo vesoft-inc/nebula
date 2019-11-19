@@ -84,12 +84,12 @@ bool Snapshot::getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCo
 }
 
 cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
-    auto blk = (storage::cpp2::EngineSignType::BLOCK_OFF == sign) ? false : true;
-    auto code = kv_->setPartBlocking(kDefaultSpaceId, kDefaultPartId, blk);
-    if (code != kvstore::ResultCode::SUCCEEDED) {
-        return cpp2::ErrorCode::E_STORE_FAILURE;
-    }
-
+    /**
+     * There is no need to block meta writes here,
+     * because the heartbeat writes in real time.
+     * And need copy the checkpoint files to the meta slave
+     * after the meta master checkpoint is create done.
+     */
     std::vector<GraphSpaceID> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
