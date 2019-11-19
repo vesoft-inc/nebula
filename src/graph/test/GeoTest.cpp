@@ -232,7 +232,7 @@ TEST_F(GeoTest, near) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "USE geo;"
-                    "GO FROM near(\"\", %s, 5000) OVER locate";
+                    "GO FROM near(%s, 5000) OVER locate";
         std::string vesoftLoc = "\"(30.28243 120.01198)\"";
         std::string query = folly::stringPrintf(fmt, vesoftLoc.c_str());
         auto code = client_->execute(query, resp);
@@ -252,7 +252,7 @@ TEST_F(GeoTest, near) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "USE geo;"
-                    "$locate = GO FROM near(\"\", %s, 5000) OVER locate YIELD locate._dst as id;"
+                    "$locate = GO FROM near(%s, 5000) OVER locate YIELD locate._dst as id;"
                     "USE myspace;"
                     "FETCH PROP on merchant $locate.id;";
         std::string vesoftLoc = "\"(30.28243 120.01198)\"";
@@ -274,7 +274,7 @@ TEST_F(GeoTest, near) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "USE geo;"
-                    "$locate = GO FROM near(\"\", %s, 5000) OVER locate YIELD locate._dst as id;"
+                    "$locate = GO FROM near(%s, 5000) OVER locate YIELD locate._dst as id;"
                     "USE myspace;"
                     "FETCH PROP on merchant $locate.id"
                     " YIELD merchant.name AS name, merchant.rate AS rate"

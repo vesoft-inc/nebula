@@ -20,6 +20,10 @@ public:
         CONTAIN,
     };
 
+    /**
+     * Function near is now used as a normal function that generates the
+     * geo code coressponding to the given [lat, lng].
+     */
     static StatusOr<std::string> near(const std::vector<VariantType> &args);
 };
 }  // namespace geo

@@ -488,8 +488,8 @@ FunctionManager::FunctionManager() {
     }
     {
         auto &attr = functions_["near"];
-        attr.minArity_ = 3;
-        attr.maxArity_ = 3;
+        attr.minArity_ = 2;
+        attr.maxArity_ = 2;
         attr.body_ = [] (const auto &args) {
             auto result = geo::GeoFilter::near(args);
             if (!result.ok()) {
