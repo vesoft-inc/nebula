@@ -1724,10 +1724,7 @@ maintain_sentence
     ;
 
 return_sentence
-    : KW_RETURN VARIABLE {
-        $$ = new ReturnSentence($2, nullptr);
-    }
-    | KW_RETURN VARIABLE KW_IF VARIABLE KW_IS KW_NOT KW_NULL {
+    : KW_RETURN VARIABLE KW_IF VARIABLE KW_IS KW_NOT KW_NULL {
         $$ = new ReturnSentence($2, $4);
     }
 
