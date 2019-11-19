@@ -15,6 +15,9 @@ DEFINE_int32(snapshot_send_timeout_ms, 60000, "Rpc timeout for sending snapshot"
 namespace nebula {
 namespace raftex {
 
+static thread_local thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>
+    raftServiceClients;
+
 SnapshotManager::SnapshotManager() {
     executor_.reset(new folly::IOThreadPoolExecutor(FLAGS_snapshot_worker_threads));
     ioThreadPool_.reset(new folly::IOThreadPoolExecutor(FLAGS_snapshot_io_threads));
@@ -108,8 +111,8 @@ folly::Future<raftex::cpp2::SendSnapshotResponse> SnapshotManager::send(
     req.set_total_count(totalCount);
     req.set_done(finished);
     auto* evb = ioThreadPool_->getEventBase();
-    return folly::via(evb, [this, addr, evb, req = std::move(req)] () mutable {
-        auto client = connManager_.client(addr, evb, false, FLAGS_snapshot_send_timeout_ms);
+    return folly::via(evb, [addr, evb, req = std::move(req)] () mutable {
+        auto client = raftServiceClients.client(addr, evb, false, FLAGS_snapshot_send_timeout_ms);
         return client->future_sendSnapshot(req);
     });
 }

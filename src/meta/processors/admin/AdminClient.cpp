@@ -15,6 +15,9 @@ DEFINE_int32(max_retry_times_admin_op, 30, "max retry times for admin request!")
 namespace nebula {
 namespace meta {
 
+static thread_local thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>
+    storageClients;
+
 folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
                                                PartitionID partId,
                                                const HostAddr& leader,
@@ -250,9 +253,8 @@ folly::Future<Status> AdminClient::getResponse(
     auto* evb = ioThreadPool_->getEventBase();
     auto partId = req.get_part_id();
     folly::via(evb, [evb, pro = std::move(pro), host, req = std::move(req), partId,
-                     remoteFunc = std::move(remoteFunc), respGen = std::move(respGen),
-                     this] () mutable {
-        auto client = clientsMan_->client(host, evb);
+                     remoteFunc = std::move(remoteFunc), respGen = std::move(respGen)] () mutable {
+        auto client = storageClients.client(host, evb);
         remoteFunc(client, std::move(req)).via(evb)
             .then([p = std::move(pro), partId, respGen = std::move(respGen)](
                            folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
@@ -292,7 +294,7 @@ void AdminClient::getResponse(
     folly::via(evb, [evb, hosts = std::move(hosts), index, req = std::move(req),
                      remoteFunc = std::move(remoteFunc), retry, pro = std::move(pro),
                      retryLimit, this] () mutable {
-        auto client = clientsMan_->client(hosts[index], evb);
+        auto client = storageClients.client(hosts[index], evb);
         remoteFunc(client, req).via(evb)
             .then([p = std::move(pro), hosts = std::move(hosts), index, req = std::move(req),
                    remoteFunc = std::move(remoteFunc), retry, retryLimit,
@@ -442,7 +444,7 @@ void AdminClient::getLeaderDist(const HostAddr& host,
     auto* evb = ioThreadPool_->getEventBase();
     folly::via(evb, [evb, host, pro = std::move(pro), retry, retryLimit, this] () mutable {
         storage::cpp2::GetLeaderReq req;
-        auto client = clientsMan_->client(host, evb);
+        auto client = storageClients.client(host, evb);
         client->future_getLeaderPart(std::move(req)).via(evb)
             .then([pro = std::move(pro), host, retry, retryLimit, this]
                        (folly::Try<storage::cpp2::GetLeaderResp>&& t) mutable {

@@ -22,6 +22,8 @@ DECLARE_string(gflags_mode_json);
 namespace nebula {
 namespace meta {
 
+static thread_local thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient> metaClients;
+
 MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                        std::vector<HostAddr> addrs,
                        HostAddr localHost,
@@ -35,9 +37,6 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
     CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
     CHECK(!addrs_.empty())
         << "No meta server address is specified. Meta server is required";
-    clientsMan_ = std::make_shared<
-        thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>
-    >();
     updateActive();
     updateLeader();
     bgThread_ = std::make_unique<thread::GenericWorker>();
@@ -308,7 +307,7 @@ void MetaClient::getResponse(Request req,
     folly::via(evb, [host, evb, req = std::move(req), remoteFunc = std::move(remoteFunc),
                      respGen = std::move(respGen), pro = std::move(pro),
                      toLeader, retry, retryLimit, this] () mutable {
-        auto client = clientsMan_->client(host, evb);
+        auto client = metaClients.client(host, evb);
         LOG(INFO) << "Send request to meta " << host;
         remoteFunc(client, req).via(evb)
             .then([req = std::move(req), remoteFunc = std::move(remoteFunc),

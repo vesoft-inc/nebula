@@ -45,8 +45,6 @@ public:
     explicit AdminClient(kvstore::KVStore* kv)
         : kv_(kv) {
         ioThreadPool_ = std::make_unique<folly::IOThreadPoolExecutor>(10);
-        clientsMan_ = std::make_unique<
-            thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>();
     }
 
     explicit AdminClient(std::unique_ptr<FaultInjector> injector)
@@ -129,8 +127,6 @@ private:
     std::unique_ptr<FaultInjector> injector_{nullptr};
     kvstore::KVStore* kv_ = nullptr;
     std::unique_ptr<folly::IOThreadPoolExecutor> ioThreadPool_{nullptr};
-    std::unique_ptr<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>
-    clientsMan_;
 };
 }  // namespace meta
 }  // namespace nebula

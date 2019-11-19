@@ -26,8 +26,8 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
         evb = folly::EventBaseManager::get()->getEventBase();
     }
 
-    auto it = clientMap_->find(std::make_pair(host, evb));
-    if (it != clientMap_->end()) {
+    auto it = clientMap_.find(std::make_pair(host, evb));
+    if (it != clientMap_.end()) {
         return it->second;
     }
 
@@ -64,12 +64,10 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
         });
     });
 
-    if (shared_) {
-        evb->runOnDestruction(new folly::EventBase::FunctionLoopCallback(
-            [this, host, evb] { clientMap_->erase(std::make_pair(host, evb)); }));
-    }
+    evb->runOnDestruction(new folly::EventBase::FunctionLoopCallback(
+        [this, host, evb] { clientMap_.erase(std::make_pair(host, evb)); }));
 
-    clientMap_->emplace(std::make_pair(host, evb), client);
+    clientMap_.emplace(std::make_pair(host, evb), client);
     return client;
 }
 

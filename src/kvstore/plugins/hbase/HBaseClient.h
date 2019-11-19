@@ -52,8 +52,6 @@ public:
                            std::vector<std::string>& rowKeys);
 
 private:
-    std::shared_ptr<thrift::ThriftClientManager<THBaseServiceAsyncClient>> clientsMan_;
-
     std::shared_ptr<THBaseServiceAsyncClient> client_;
 
     const int32_t kScanRowNum = {1024};

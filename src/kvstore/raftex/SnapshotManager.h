@@ -55,7 +55,6 @@ private:
 private:
     std::unique_ptr<folly::IOThreadPoolExecutor> executor_;
     std::unique_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
-    thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient> connManager_;
 };
 
 }  // namespace raftex

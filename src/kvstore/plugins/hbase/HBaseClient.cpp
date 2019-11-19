@@ -19,12 +19,11 @@ namespace nebula {
 namespace kvstore {
 
 const char* kColumnFamilyName = "cf";
+static thread_local thrift::ThriftClientManager<THBaseServiceAsyncClient> hbaseClients;
 
 HBaseClient::HBaseClient(const HostAddr& host) {
-    clientsMan_ = std::make_shared<thrift::ThriftClientManager<
-                                   THBaseServiceAsyncClient>>();
     auto evb = folly::EventBaseManager::get()->getEventBase();
-    client_ = clientsMan_->client(host, evb, true);
+    client_ = hbaseClients.client(host, evb, true);
 }
 
 

@@ -349,7 +349,6 @@ protected:
 
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
-    std::shared_ptr<thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>> clientsMan_;
 
     LocalCache localCache_;
     std::vector<HostAddr> addrs_;
