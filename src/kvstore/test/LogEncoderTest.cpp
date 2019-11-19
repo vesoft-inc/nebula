@@ -128,7 +128,7 @@ TEST(LogEncoderTest, HostTest) {
 }
 
 TEST(LogEncoderTest, BatchTest) {
-    auto helper = std::make_unique<BatchLogHelper>();
+    auto helper = std::make_unique<BatchHolder>();
     helper->remove("remove");
     helper->put("put_key", "put_value");
     helper->rangeRemove("begin", "end");

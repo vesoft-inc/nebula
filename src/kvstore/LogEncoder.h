@@ -59,10 +59,10 @@ HostAddr decodeHost(LogType type, const folly::StringPiece& encoded);
 int64_t getTimestamp(const folly::StringPiece& command);
 
 
-class BatchLogHelper {
+class BatchHolder {
 public:
-    BatchLogHelper() = default;
-    ~BatchLogHelper() = default;
+    BatchHolder() = default;
+    ~BatchHolder() = default;
 
     void put(const std::string& key, const std::string& val) {
         std::pair<std::string, std::string> pair(key, val);
