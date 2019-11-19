@@ -133,7 +133,7 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus(
         kvstore_->asyncMultiRemove(kDefaultSpaceId,
                                    kDefaultPartId,
                                    std::move(removeHostsKey),
-                                   [this] (kvstore::ResultCode code) {
+                                   [] (kvstore::ResultCode code) {
                 if (code != kvstore::ResultCode::SUCCEEDED) {
                     LOG(ERROR) << "Async remove long time offline hosts failed: " << code;
                 }

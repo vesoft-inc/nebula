@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include "graph/TraverseExecutor.h"
 #include "meta/SchemaProviderIf.h"
+#include "graph/AggregateFunction.h"
 
 namespace nebula {
 namespace graph {
@@ -47,6 +48,12 @@ private:
 
     void finishExecution(std::unique_ptr<RowSetWriter> rsWriter);
 
+    Status checkAggFun();
+
+    Status getAggResultWriter(cpp2::RowValue row, RowSetWriter* rsWriter);
+
+    Status AggregateConstant();
+
 private:
     YieldSentence                              *sentence_;
     std::vector<YieldColumn*>                   yields_;
@@ -58,6 +65,7 @@ private:
     std::vector<std::string>                    resultColNames_;
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
     std::vector<nebula::cpp2::SupportedType>    colTypes_;
+    std::vector<std::shared_ptr<AggFun>>        aggFuns_;
 };
 }   // namespace graph
 }   // namespace nebula

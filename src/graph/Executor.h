@@ -83,12 +83,16 @@ protected:
 
     bool checkValueType(const nebula::cpp2::ValueType &type, const VariantType &value);
 
-    Status checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> schema,
-                          std::vector<std::string*> props);
+    StatusOr<std::unordered_map<std::string, int64_t>> checkFieldName(
+            std::shared_ptr<const meta::SchemaProviderIf> schema,
+            std::vector<std::string*> props);
 
     StatusOr<int64_t> toTimestamp(const VariantType &value);
 
-    nebula::cpp2::SupportedType ColumnTypeToSupportedType(ColumnType type) const;
+    StatusOr<cpp2::ColumnValue> toColumnValue(const VariantType& value,
+                                              cpp2::ColumnValue::Type type) const;
+
+    OptVariantType toVariantType(const cpp2::ColumnValue& value) const;
 
     Status checkIfGraphSpaceChosen() const {
         if (ectx()->rctx()->session()->space() == -1) {
