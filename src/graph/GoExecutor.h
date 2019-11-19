@@ -11,6 +11,10 @@
 #include "graph/TraverseExecutor.h"
 #include "storage/client/StorageClient.h"
 
+DECLARE_bool(split_edge_opt);
+DECLARE_uint32(split_edge_threshhold);
+DECLARE_uint32(split_edge_goal_size);
+
 namespace nebula {
 
 namespace storage {
@@ -129,7 +133,8 @@ private:
      * To setup an intermediate representation of the execution result,
      * which is about to be piped to the next executor.
      */
-    bool setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<InterimResult> &result);
+    // bool setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<InterimResult> &result);
+    void processRecord();
 
     /**
      * To setup the header of the execution result, i.e. the column names.
@@ -145,9 +150,25 @@ private:
      * To iterate on the final data collection, and evaluate the filter and yield columns.
      * For each row that matches the filter, `cb' would be invoked.
      */
-    using Callback = std::function<void(std::vector<VariantType>,
-                                   std::vector<nebula::cpp2::SupportedType>)>;
-    bool processFinalResult(RpcResponse &rpcResp, Callback cb) const;
+    bool processFinalResult(RpcResponse &rpcResp);
+    void processWithMultiJobs(std::vector<storage::cpp2::VertexData> &vertices,
+        std::unordered_map<TagID, std::shared_ptr<ResultSchemaProvider>> &tagSchema,
+        std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> &edgeSchema);
+    inline Status processVdata(
+        GraphSpaceID spaceId,
+        std::unordered_map<TagID, std::shared_ptr<ResultSchemaProvider>> &tagSchema,
+        std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> &edgeSchema,
+        storage::cpp2::VertexData &vdata, size_t start, size_t end,
+        std::unordered_set<std::string> &uniqResult,
+        std::shared_ptr<SchemaWriter> schema,
+        RowSetWriter &rsWriter);
+    void writeToRowSet(std::vector<VariantType> &record,
+                       std::vector<nebula::cpp2::SupportedType> &colTypes,
+                       std::unordered_set<std::string> &uniqResult,
+                       std::shared_ptr<SchemaWriter> schema,
+                       RowSetWriter &rsWriter);
+    void processRecords(
+            std::vector<folly::Try<StatusOr<RowSetWriter>>> rsWriters);
 
     /**
      * A container to hold the mapping from vertex id to its properties, used for lookups
