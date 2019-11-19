@@ -1,7 +1,8 @@
 # Deploy Clusters on Docker
 
-> **TODO(yee)** docker-compose
+Reference another repository: [vesoft-inc/nebula-docker-compose](https://github.com/vesoft-inc/nebula-docker-compose)
 
+<!--
 This article describes how to deploy a multi-node Nebula cluster on Docker.
 
 **_Note_:** This is for testing only. DO NOT USE in production.
@@ -241,3 +242,4 @@ The returned data is the same as above, indicating that the deployment is succes
 ## Custom Configuration File
 
 Nebula supports loading advanced parameters by specifying configuration files for performance tuning.
+-->
