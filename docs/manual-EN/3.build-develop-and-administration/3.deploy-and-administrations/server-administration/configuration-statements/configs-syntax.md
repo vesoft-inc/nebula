@@ -17,12 +17,19 @@ There are four gflags related parameters, among which, `max_edge_returned_per_ve
 Nebula supports changing some rocksdb parameters in storage service as follows:
 
 ```text
-    disable_auto_compactions
-    compression
+    // rocksdb_column_family_options
+    max_write_buffer_number
     level0_file_num_compaction_trigger
+    level0_slowdown_writes_trigger
+    level0_stop_writes_trigger
+    target_file_size_base
+    target_file_size_multiplier
     max_bytes_for_level_base
-    block_size
-    block_restart_interval
+    max_bytes_for_level_multiplier
+    ttl
+    disable_auto_compactions
+
+    // rocksdb_db_options
     max_total_wal_size
     delete_obsolete_files_period_micros
     max_background_jobs
