@@ -76,6 +76,10 @@ public:
                    const VariableHolder *varHolder,
                    std::vector<YieldColumn*> &yields);
 
+    Status prepareOverAllYields(std::vector<std::string> &&edgeNames,
+                                ExpressionContext *expCtx,
+                                std::vector<YieldColumn*> &yields);
+
 private:
     bool needAllPropsFromInput(const YieldColumn *col,
                                const InterimResult *inputs,

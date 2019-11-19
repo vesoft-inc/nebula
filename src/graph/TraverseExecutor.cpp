@@ -280,5 +280,30 @@ StatusOr<bool> YieldClauseWrapper::needAllPropsFromVar(
     }
     return false;
 }
+
+Status YieldClauseWrapper::prepareOverAllYields(std::vector<std::string> &&edgeNames,
+                                                ExpressionContext *expCtx,
+                                                std::vector<YieldColumn*> &yields) {
+    if (expCtx == nullptr) {
+        return Status::Error("Expression Context should not be nullptr.");
+    }
+    // When this function is called, that means there is no yield clause in go
+    // over multi-edges sentence.
+    // So we'd make sure that yields and yieldColsHolder is empty.
+    if (!yields.empty() || !yieldColsHolder_->columns().empty()) {
+        return Status::Error("Yields must be empty.");
+    }
+
+    for (const auto &name : edgeNames) {
+        auto dummy = new std::string(name);
+        auto dummy_exp = new EdgeDstIdExpression(dummy);
+        dummy_exp->setContext(expCtx);
+        YieldColumn *column = new YieldColumn(dummy_exp);
+        yieldColsHolder_->addColumn(column);
+        yields.emplace_back(column);
+    }
+
+    return Status::OK();
+}
 }   // namespace graph
 }   // namespace nebula

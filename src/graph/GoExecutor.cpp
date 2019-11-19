@@ -553,13 +553,15 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
             onError_(Status::Error("get edge name failed"));
             return;
         }
-        for (const auto &name : edgeNames) {
-            auto dummy = new std::string(name);
-            auto dummy_exp = new EdgeDstIdExpression(dummy);
-            auto ptr = std::make_unique<YieldColumn>(dummy_exp);
-            dummy_exp->setContext(expCtx_.get());
-            yields_.emplace_back(ptr.get());
-            yc.emplace_back(std::move(ptr));
+
+        auto status = yieldClauseWrapper_->prepareOverAllYields(std::move(edgeNames),
+                                                               expCtx_.get(),
+                                                               yields_);
+
+        if (!status.ok()) {
+            DCHECK(onError_);
+            onError_(std::move(status));
+            return;
         }
     }
 
