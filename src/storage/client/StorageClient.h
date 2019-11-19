@@ -82,7 +82,10 @@ class StorageClient {
 
 public:
     StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
-                  meta::MetaClient *client);
+                  meta::MetaClient *client,
+                  int32_t latencyStatId = 0,
+                  int32_t qpsStatId = 0,
+                  int32_t errorQpsStatId = 0);
     virtual ~StorageClient();
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> put(
@@ -276,6 +279,9 @@ private:
                         storage::cpp2::StorageServiceAsyncClient>> clientsMan_;
     mutable folly::RWSpinLock leadersLock_;
     mutable std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> leaders_;
+    int32_t           latencyStatId_{0};
+    int32_t           qpsStatId_{0};
+    int32_t           errorQpsStatId_{0};
 };
 
 }   // namespace storage

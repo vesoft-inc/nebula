@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "stats/StatsManager.h"
 #include <folly/Try.h>
 
 namespace nebula {
@@ -138,7 +139,8 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                     }
 
                     // Adjust the latency
-                    context->resp.setLatency(result.get_latency_in_us());
+                    auto latency = result.get_latency_in_us();
+                    context->resp.setLatency(latency);
 
                     // Keep the response
                     context->resp.responses().emplace_back(std::move(resp));
@@ -146,14 +148,27 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
 
                 if (context->removeRequest(host)) {
                     // Received all responses
+                    if (context->resp.succeeded() && latencyStatId_ != 0 && qpsStatId_ !=0) {
+                        stats::StatsManager::addValue(latencyStatId_, context->resp.maxLatency());
+                        stats::StatsManager::addValue(qpsStatId_, 1);
+                    } else if (errorQpsStatId_ != 0) {
+                        stats::StatsManager::addValue(errorQpsStatId_, 1);
+                    }
                     context->promise.setValue(std::move(context->resp));
                 }
             });
         });  // via
     }  // for
+
     if (context->finishSending()) {
         // Received all responses, most likely, all rpc failed
         context->promise.setValue(std::move(context->resp));
+        if (context->resp.succeeded() && latencyStatId_ != 0 && qpsStatId_ !=0) {
+            stats::StatsManager::addValue(latencyStatId_, context->resp.maxLatency());
+            stats::StatsManager::addValue(qpsStatId_, 1);
+        } else if (errorQpsStatId_ != 0) {
+            stats::StatsManager::addValue(errorQpsStatId_, 1);
+        }
     }
 
     return context->promise.getSemiFuture();

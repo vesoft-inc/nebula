@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "graph/ExecutionPlan.h"
+#include "stats/StatsManager.h"
 
 namespace nebula {
 namespace graph {
@@ -56,6 +57,8 @@ void ExecutionPlan::onFinish() {
     auto *rctx = ectx()->rctx();
     executor_->setupResponse(rctx->resp());
     auto latency = rctx->duration().elapsedInUSec();
+    stats::StatsManager::addValue(ectx()->getGraphStats()->getWLatencyId(), latency);
+    stats::StatsManager::addValue(ectx()->getGraphStats()->getQpsId(), latency);
     rctx->resp().set_latency_in_us(latency);
     auto &spaceName = rctx->session()->spaceName();
     rctx->resp().set_space_name(spaceName);
@@ -80,6 +83,8 @@ void ExecutionPlan::onError(Status status) {
     }
     rctx->resp().set_error_msg(status.toString());
     auto latency = rctx->duration().elapsedInUSec();
+    stats::StatsManager::addValue(ectx()->getGraphStats()->getWLatencyId(), latency);
+    stats::StatsManager::addValue(ectx()->getGraphStats()->getErrorGQpsId(), 1);
     rctx->resp().set_latency_in_us(latency);
     rctx->finish();
     delete this;

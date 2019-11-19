@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "time/Duration.h"
 #include "meta/common/MetaCommon.h"
 #include "meta/client/MetaClient.h"
 #include "network/NetworkUtils.h"
@@ -11,6 +12,8 @@
 #include "meta/ClusterIdMan.h"
 #include "meta/GflagsManager.h"
 #include "base/Configuration.h"
+#include "stats/StatsManager.h"
+
 
 DEFINE_int32(load_data_interval_secs, 1, "Load data interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
@@ -26,12 +29,18 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
                        std::vector<HostAddr> addrs,
                        HostAddr localHost,
                        ClusterID clusterId,
-                       bool sendHeartBeat)
+                       bool sendHeartBeat,
+                       int32_t latencyStatId,
+                       int32_t qpsStatId,
+                       int32_t errorQpsStatId)
     : ioThreadPool_(ioThreadPool)
     , addrs_(std::move(addrs))
     , localHost_(localHost)
     , clusterId_(clusterId)
-    , sendHeartBeat_(sendHeartBeat) {
+    , sendHeartBeat_(sendHeartBeat)
+    , latencyStatId_(latencyStatId)
+    , qpsStatId_(qpsStatId)
+    , errorQpsStatId_(errorQpsStatId) {
     CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
     CHECK(!addrs_.empty())
         << "No meta server address is specified. Meta server is required";
@@ -299,6 +308,7 @@ void MetaClient::getResponse(Request req,
                              bool toLeader,
                              int32_t retry,
                              int32_t retryLimit) {
+    time::Duration duration;
     auto* evb = ioThreadPool_->getEventBase();
     HostAddr host;
     {
@@ -307,13 +317,13 @@ void MetaClient::getResponse(Request req,
     }
     folly::via(evb, [host, evb, req = std::move(req), remoteFunc = std::move(remoteFunc),
                      respGen = std::move(respGen), pro = std::move(pro),
-                     toLeader, retry, retryLimit, this] () mutable {
+                     toLeader, retry, retryLimit, duration, this] () mutable {
         auto client = clientsMan_->client(host, evb);
         LOG(INFO) << "Send request to meta " << host;
         remoteFunc(client, req).via(evb)
             .then([req = std::move(req), remoteFunc = std::move(remoteFunc),
                    respGen = std::move(respGen), pro = std::move(pro), toLeader, retry,
-                   retryLimit, evb, this] (folly::Try<RpcResponse>&& t) mutable {
+                   retryLimit, evb, duration, this] (folly::Try<RpcResponse>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
                 if (toLeader) {
@@ -338,6 +348,9 @@ void MetaClient::getResponse(Request req,
                     LOG(INFO) << "Exceed retry limit";
                     pro.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
                                                                    t.exception().what().c_str())));
+                    if (errorQpsStatId_ != 0) {
+                        stats::StatsManager::addValue(errorQpsStatId_, 1);
+                    }
                 }
                 return;
             }
@@ -345,6 +358,11 @@ void MetaClient::getResponse(Request req,
             if (resp.code == cpp2::ErrorCode::SUCCEEDED) {
                 // succeeded
                 pro.setValue(respGen(std::move(resp)));
+                if (latencyStatId_ != 0 && qpsStatId_ !=0) {
+                    stats::StatsManager::addValue(this->latencyStatId_, duration.elapsedInUSec());
+                    stats::StatsManager::addValue(this->qpsStatId_, 1);
+                }
+
                 return;
             } else if (resp.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
                 HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
@@ -368,6 +386,15 @@ void MetaClient::getResponse(Request req,
                 }
             }
             pro.setValue(this->handleResponse(resp));
+            if (latencyStatId_ != 0 && qpsStatId_ !=0 && resp.code == cpp2::ErrorCode::SUCCEEDED) {
+                stats::StatsManager::addValue(this->latencyStatId_, duration.elapsedInUSec());
+                stats::StatsManager::addValue(this->qpsStatId_, 1);
+                return;
+            }
+
+            if (errorQpsStatId_ != 0) {
+                stats::StatsManager::addValue(errorQpsStatId_, 1);
+            }
         });  // then
     });  // via
 }
