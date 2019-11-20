@@ -181,6 +181,8 @@ public:
      * */
     AppendLogResult isCatchedUp(const HostAddr& peer);
 
+    bool linkCurrentWAL(const char* newPath);
+
     /*****************************************************
      *
      * Methods to process incoming raft requests
@@ -321,6 +323,8 @@ private:
     bool needToCleanupSnapshot();
 
     void cleanupSnapshot();
+
+    bool needToCleanWal();
 
     // The method sends out AskForVote request
     // It return true if a leader is elected, otherwise returns false
@@ -520,6 +524,8 @@ protected:
 
     // Used to bypass the stale command
     int64_t startTimeMs_ = 0;
+
+    std::atomic<uint64_t> weight_;
 };
 
 }  // namespace raftex

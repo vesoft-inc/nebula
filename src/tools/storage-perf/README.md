@@ -26,3 +26,6 @@ Property Name            | Default Value   | Description
 `edge_name`              | "test_edge"     | Specify the edge name.
 `random_message`         | false           | Whether to write random message to storage service.
 
+### Storage Integrity Tool
+
+Integration test based on `IntegrationTestBigLinkedList` of HBase

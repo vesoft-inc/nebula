@@ -13,13 +13,13 @@ namespace storage {
 void RemoveProcessor::process(const cpp2::RemoveRequest& req) {
     CHECK_NOTNULL(kvstore_);
     space_ = req.get_space_id();
-    std::vector<folly::Future<PartCode>> results;
+    std::vector<folly::Future<PartitionCode>> results;
     for (auto& part : req.get_parts()) {
         results.emplace_back(asyncProcess(part.first, part.second));
     }
 
     folly::collectAll(results).via(executor_)
-                              .then([&] (const std::vector<folly::Try<PartCode>>& tries) mutable {
+                              .then([&] (const TryPartitionCodes& tries) mutable {
         for (const auto& t : tries) {
             auto ret = t.value();
             auto part = std::get<0>(ret);
@@ -30,13 +30,18 @@ void RemoveProcessor::process(const cpp2::RemoveRequest& req) {
     });
 }
 
-folly::Future<PartCode>
-RemoveProcessor::asyncProcess(PartitionID part, const std::vector<std::string>& keys) {
-    folly::Promise<PartCode> promise;
+folly::Future<PartitionCode>
+RemoveProcessor::asyncProcess(PartitionID part, std::vector<std::string> keys) {
+    folly::Promise<PartitionCode> promise;
     auto future = promise.getFuture();
 
-    executor_->add([this, pro = std::move(promise), part, keys] () mutable {
-        this->kvstore_->asyncMultiRemove(space_, part, keys, [part, p = std::move(pro)]
+    std::vector<std::string> encodedKeys;
+    encodedKeys.reserve(keys.size());
+    std::transform(keys.begin(), keys.end(), std::back_inserter(encodedKeys),
+                   [part](const auto& key) { return NebulaKeyUtils::kvKey(part, key); });
+
+    executor_->add([this, pro = std::move(promise), part, encodedKeys] () mutable {
+        this->kvstore_->asyncMultiRemove(space_, part, encodedKeys, [part, p = std::move(pro)]
                                          (kvstore::ResultCode code) mutable {
             p.setValue(std::make_pair(part, code));
         });

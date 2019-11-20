@@ -24,13 +24,13 @@ namespace kvstore {
 NebulaStore::~NebulaStore() {
     LOG(INFO) << "Cut off the relationship with meta client";
     options_.partMan_.reset();
-    bgWorkers_->stop();
-    bgWorkers_->wait();
     LOG(INFO) << "Stop the raft service...";
     raftService_->stop();
     LOG(INFO) << "Waiting for the raft service stop...";
     raftService_->waitUntilStop();
     spaces_.clear();
+    bgWorkers_->stop();
+    bgWorkers_->wait();
     LOG(INFO) << "~NebulaStore()";
 }
 
@@ -269,6 +269,19 @@ void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId) {
     LOG(INFO) << "Space " << spaceId << ", part " << partId << " has been removed!";
 }
 
+void NebulaStore::updateSpaceOption(GraphSpaceID spaceId,
+                                    const std::unordered_map<std::string, std::string>& options,
+                                    bool isDbOption) {
+    if (isDbOption) {
+        for (const auto& kv : options) {
+            setDBOption(spaceId, kv.first, kv.second);
+        }
+    } else {
+        for (const auto& kv : options) {
+            setOption(spaceId, kv.first, kv.second);
+        }
+    }
+}
 
 ResultCode NebulaStore::get(GraphSpaceID spaceId,
                             PartitionID partId,
@@ -428,7 +441,6 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
         auto parts = engine->allParts();
-        std::vector<std::string> extras;
         for (auto part : parts) {
             auto ret = this->engine(spaceId, part);
             if (!ok(ret)) {
@@ -437,20 +449,17 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
 
             auto path = folly::stringPrintf("%s/download/%d", value(ret)->getDataRoot(), part);
             if (!fs::FileUtils::exist(path)) {
-                LOG(ERROR) << path << " not existed";
-                return ResultCode::ERR_IO_ERROR;
+                LOG(INFO) << path << " not existed";
+                continue;
             }
 
             auto files = nebula::fs::FileUtils::listAllFilesInDir(path.c_str(), true, "*.sst");
             for (auto file : files) {
-                VLOG(3) << "Ingesting extra file: " << file;
-                extras.emplace_back(file);
-            }
-        }
-        if (extras.size() != 0) {
-            auto code = engine->ingest(std::move(extras));
-            if (code != ResultCode::SUCCEEDED) {
-                return code;
+                LOG(INFO) << "Ingesting extra file: " << file;
+                auto code = engine->ingest(std::vector<std::string>({file}));
+                if (code != ResultCode::SUCCEEDED) {
+                    return code;
+                }
             }
         }
     }

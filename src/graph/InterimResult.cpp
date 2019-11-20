@@ -96,7 +96,7 @@ StatusOr<std::vector<cpp2::RowValue>> InterimResult::getRows() const {
                     if (rc != ResultType::SUCCEEDED) {
                         return Status::Error("Get vid from interim failed.");
                     }
-                    row.back().set_integer(v);
+                    row.back().set_id(v);
                     break;
                 }
                 case SupportedType::DOUBLE: {
@@ -171,7 +171,8 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
         auto name = schema->getFieldName(i);
         if (vidColumn == name) {
             if (schema->getFieldType(i).type != SupportedType::VID) {
-                return Status::Error("The specific vid column is not type of VID.");
+                return Status::Error("The specific vid column `%s' is not type of VID.",
+                                      vidColumn.c_str());
             }
             vidIndex = i;
         }
@@ -581,6 +582,61 @@ InterimResult::getInterim(
     auto result = std::make_unique<InterimResult>(std::move(colNames));
     result->setInterim(std::move(rsWriter));
     return std::move(result);
+}
+
+Status InterimResult::applyTo(std::function<Status(const RowReader *reader)> visitor,
+                              int64_t limit) const {
+    auto status = Status::OK();
+    auto iter = rsReader_->begin();
+    while (iter && (limit > 0)) {
+        status = visitor(&*iter);
+        if (!status.ok()) {
+            break;
+        }
+        --limit;
+        ++iter;
+    }
+    return status;
+}
+
+Status InterimResult::getResultWriter(const std::vector<cpp2::RowValue> &rows,
+                                      RowSetWriter *rsWriter) {
+    if (rsWriter == nullptr) {
+        return Status::Error("rsWriter is nullptr");
+    }
+    using Type = cpp2::ColumnValue::Type;
+    for (auto &row : rows) {
+        RowWriter writer(rsWriter->schema());
+        auto columns = row.get_columns();
+        for (auto &column : columns) {
+            switch (column.getType()) {
+                case Type::id:
+                    writer << column.get_id();
+                    break;
+                case Type::integer:
+                    writer << column.get_integer();
+                    break;
+                case Type::double_precision:
+                    writer << column.get_double_precision();
+                    break;
+                case Type::bool_val:
+                    writer << column.get_bool_val();
+                    break;
+                case Type::str:
+                    writer << column.get_str();
+                    break;
+                case Type::timestamp:
+                    writer << column.get_timestamp();
+                    break;
+                default:
+                    LOG(ERROR) << "Not Support: " << column.getType();
+                    return Status::Error("Not Support: %d", column.getType());
+            }
+        }
+        rsWriter->addRow(writer);
+    }
+
+    return Status::OK();
 }
 }   // namespace graph
 }   // namespace nebula

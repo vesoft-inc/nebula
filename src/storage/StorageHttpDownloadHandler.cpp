@@ -185,7 +185,7 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& hdfsHost,
     }
 
     bool successfully{true};
-    folly::collectAll(futures).then([&](const std::vector<folly::Try<bool>>& tries) {
+    folly::collectAll(futures).thenValue([&](const std::vector<folly::Try<bool>>& tries) {
         for (const auto& t : tries) {
             if (t.hasException()) {
                 LOG(ERROR) << "Download Failed: " << t.exception();

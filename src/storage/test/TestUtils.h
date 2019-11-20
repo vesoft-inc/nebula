@@ -163,7 +163,7 @@ public:
         return std::make_shared<ResultSchemaProvider>(std::move(schema));
     }
 
-    static cpp2::PropDef vetexPropDef(std::string name, TagID tagId) {
+    static cpp2::PropDef vertexPropDef(std::string name, TagID tagId) {
         cpp2::PropDef prop;
         prop.set_name(std::move(name));
         prop.set_owner(cpp2::PropOwner::SOURCE);
@@ -179,8 +179,8 @@ public:
         return prop;
     }
 
-    static cpp2::PropDef vetexPropDef(std::string name, cpp2::StatType type, TagID tagId) {
-        auto prop = TestUtils::vetexPropDef(std::move(name), tagId);
+    static cpp2::PropDef vertexPropDef(std::string name, cpp2::StatType type, TagID tagId) {
+        auto prop = TestUtils::vertexPropDef(std::move(name), tagId);
         prop.set_stat(type);
         return prop;
     }
@@ -226,6 +226,28 @@ public:
         LOG(INFO) << "The storage daemon started on port " << sc->port_
                   << ", data path is at \"" << dataPath << "\"";
         return sc;
+    }
+
+    static void waitUntilAllElected(kvstore::KVStore* kvstore, GraphSpaceID spaceId, int partNum) {
+        auto* nKV = static_cast<kvstore::NebulaStore*>(kvstore);
+        // wait until all part leader exists
+        while (true) {
+            int readyNum = 0;
+            for (auto partId = 1; partId <= partNum; partId++) {
+                auto retLeader = nKV->partLeader(spaceId, partId);
+                if (ok(retLeader)) {
+                    auto leader = value(std::move(retLeader));
+                    if (leader != HostAddr(0, 0)) {
+                        readyNum++;
+                    }
+                }
+            }
+            if (readyNum == partNum) {
+                LOG(INFO) << "All leaders have been elected!";
+                break;
+            }
+            usleep(100000);
+        }
     }
 };
 

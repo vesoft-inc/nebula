@@ -36,6 +36,7 @@ enum ErrorCode {
     E_STORE_SEGMENT_ILLEGAL  = -32,
     E_BAD_BALANCE_PLAN     = -33,
     E_BALANCED             = -34,
+    E_NO_RUNNING_BALANCE_PLAN = -35,
 
     E_INVALID_PASSWORD       = -41,
     E_INPROPER_ROLE          = -42,
@@ -262,11 +263,6 @@ struct ListEdgesResp {
     3: list<EdgeItem> edges,
 }
 
-// Host related operations.
-struct AddHostsReq {
-    1: list<common.HostAddr> hosts;
-}
-
 struct ListHostsReq {
 }
 
@@ -277,11 +273,23 @@ struct ListHostsResp {
     3: list<HostItem> hosts,
 }
 
-struct RemoveHostsReq {
-    1: list<common.HostAddr> hosts;
+struct PartItem {
+    1: required common.PartitionID       part_id,
+    2: optional common.HostAddr          leader,
+    3: required list<common.HostAddr>    peers,
+    4: required list<common.HostAddr>    losts,
 }
 
-// Parts related operations.
+struct ListPartsReq {
+    1: common.GraphSpaceID space_id,
+}
+
+struct ListPartsResp {
+    1: ErrorCode code,
+    2: common.HostAddr leader,
+    3: list<PartItem> parts,
+}
+
 struct GetPartsAllocReq {
     1: common.GraphSpaceID space_id,
 }
@@ -426,6 +434,7 @@ struct BalanceReq {
     1: optional common.GraphSpaceID space_id,
     // Specify the balance id to check the status of the related balance plan
     2: optional i64 id,
+    3: optional bool stop,
 }
 
 enum TaskResult {
@@ -465,6 +474,7 @@ enum ConfigType {
     DOUBLE  = 0x01,
     BOOL    = 0x02,
     STRING  = 0x03,
+    NESTED  = 0x04,
 } (cpp.enum_strict)
 
 enum ConfigMode {
@@ -529,11 +539,10 @@ service MetaService {
     GetEdgeResp getEdge(1: GetEdgeReq req);
     ListEdgesResp listEdges(1: ListEdgesReq req);
 
-    ExecResp addHosts(1: AddHostsReq req);
-    ExecResp removeHosts(1: RemoveHostsReq req);
     ListHostsResp listHosts(1: ListHostsReq req);
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
+    ListPartsResp listParts(1: ListPartsReq req);
 
     ExecResp multiPut(1: MultiPutReq req);
     GetResp get(1: GetReq req);

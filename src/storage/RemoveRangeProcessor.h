@@ -32,8 +32,8 @@ private:
             : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats),
             executor_(executor) {}
 
-    folly::Future<PartCode>
-    asyncProcess(PartitionID partId, const std::string& start, const std::string& end);
+    folly::Future<PartitionCode>
+    asyncProcess(PartitionID partId, std::string start, std::string end);
 
 private:
     folly::Executor *executor_ = nullptr;

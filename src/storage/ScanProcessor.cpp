@@ -12,13 +12,13 @@ namespace storage {
 void ScanProcessor::process(const cpp2::ScanRequest& req) {
     CHECK_NOTNULL(kvstore_);
     space_ = req.get_space_id();
-    std::vector<folly::Future<PartCode>> results;
+    std::vector<folly::Future<PartitionCode>> results;
     for (auto& part : req.get_parts()) {
         results.emplace_back(asyncProcess(part.first, part.second.start, part.second.end));
     }
 
     folly::collectAll(results).via(executor_)
-                              .then([&] (const std::vector<folly::Try<PartCode>>& tries) mutable {
+                              .then([&] (const TryPartitionCodes& tries) mutable {
         for (const auto& t : tries) {
             auto ret = t.value();
             auto part = std::get<0>(ret);
@@ -30,13 +30,16 @@ void ScanProcessor::process(const cpp2::ScanRequest& req) {
     });
 }
 
-folly::Future<PartCode>
-ScanProcessor::asyncProcess(PartitionID part, const std::string& start, const std::string& end) {
-    folly::Promise<PartCode> promise;
+folly::Future<PartitionCode>
+ScanProcessor::asyncProcess(PartitionID part, std::string start, std::string end) {
+    folly::Promise<PartitionCode> promise;
     auto future = promise.getFuture();
-    executor_->add([this, p = std::move(promise), part, start, end] () mutable {
+
+    auto encodedStart = NebulaKeyUtils::kvKey(part, start);
+    auto encodedEnd   = NebulaKeyUtils::kvKey(part, end);
+    executor_->add([this, p = std::move(promise), part, encodedStart, encodedEnd] () mutable {
         std::unique_ptr<kvstore::KVIterator> iter;
-        auto ret = this->kvstore_->range(space_, part, start, end, &iter);
+        auto ret = this->kvstore_->range(space_, part, encodedStart, encodedEnd, &iter);
         if (ret == kvstore::ResultCode::SUCCEEDED) {
             std::lock_guard<std::mutex> lg(this->lock_);
             while (iter->valid()) {

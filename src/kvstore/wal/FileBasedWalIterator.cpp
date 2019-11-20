@@ -215,6 +215,16 @@ LogIterator& FileBasedWalIterator::operator++() {
         // Read from buffer
         if (currId_ >= nextFirstId_) {
             // Roll over to next buffer
+            if (buffers_.size() == 1) {
+                LOG(FATAL) << wal_->idStr_
+                           << ", currId_ " << currId_
+                           << ", nextFirstId_ " << nextFirstId_
+                           << ", firstIdInBuffer_ " << firstIdInBuffer_
+                           << ", lastId_ " << lastId_
+                           << ", firstLogId in buffer " << buffers_.front()->firstLogId()
+                           << ", lastLogId in buffer " << buffers_.front()->lastLogId()
+                           << ", numLogs in buffer " <<  buffers_.front()->size();
+            }
             buffers_.pop_front();
             CHECK(!buffers_.empty());
             CHECK_EQ(currId_, buffers_.front()->firstLogId());

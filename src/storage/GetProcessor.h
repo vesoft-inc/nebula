@@ -33,8 +33,8 @@ protected:
         executor_(executor) {}
 
 private:
-    folly::Future<PartCode>
-    asyncProcess(PartitionID part, const std::vector<std::string>& keys);
+    folly::Future<PartitionCode>
+    asyncProcess(PartitionID part, std::vector<std::string> keys);
 
     GraphSpaceID  space_;
     folly::Executor  *executor_{nullptr};

@@ -13,7 +13,7 @@ namespace storage {
 void RemoveRangeProcessor::process(const cpp2::RemoveRangeRequest& req) {
     CHECK_NOTNULL(kvstore_);
     space_ = req.get_space_id();
-    std::vector<folly::Future<PartCode>> results;
+    std::vector<folly::Future<PartitionCode>> results;
     for (auto& part : req.get_parts()) {
         auto start = part.second.start;
         auto end   = part.second.end;
@@ -21,7 +21,7 @@ void RemoveRangeProcessor::process(const cpp2::RemoveRangeRequest& req) {
     }
 
     folly::collectAll(results).via(executor_)
-                              .then([&] (const std::vector<folly::Try<PartCode>>& tries) mutable {
+                              .then([&] (const TryPartitionCodes& tries) mutable {
         for (const auto& t : tries) {
             auto ret = t.value();
             auto part = std::get<0>(ret);
@@ -32,15 +32,16 @@ void RemoveRangeProcessor::process(const cpp2::RemoveRangeRequest& req) {
    });
 }
 
-folly::Future<PartCode>
-RemoveRangeProcessor::asyncProcess(PartitionID part,
-                                   const std::string& start,
-                                   const std::string& end) {
-    folly::Promise<PartCode> promise;
+folly::Future<PartitionCode>
+RemoveRangeProcessor::asyncProcess(PartitionID part, std::string start, std::string end) {
+    folly::Promise<PartitionCode> promise;
     auto future = promise.getFuture();
 
-    executor_->add([this, pro = std::move(promise), part, start, end] () mutable {
-        this->kvstore_->asyncRemoveRange(space_, part, start, end, [part, p = std::move(pro)]
+    auto encodedStart = NebulaKeyUtils::kvKey(part, start);
+    auto encodedEnd   = NebulaKeyUtils::kvKey(part, end);
+    executor_->add([this, pro = std::move(promise), part, encodedStart, encodedEnd] () mutable {
+        this->kvstore_->asyncRemoveRange(space_, part, encodedStart, encodedEnd,
+                                         [part, p = std::move(pro)]
                                          (kvstore::ResultCode code) mutable {
             p.setValue(std::make_pair(part, code));
         });

@@ -90,12 +90,12 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     ASSERT_TRUE(ret.ok());
     auto spaceId = ret.value();
     std::vector<nebula::cpp2::ColumnDef> columns;
-    columns.emplace_back(FRAGILE,
-                         "c",
-                         nebula::cpp2::ValueType(FRAGILE,
-                                                 SupportedType::STRING,
-                                                 nullptr,
-                                                 nullptr));
+    nebula::cpp2::ValueType vt;
+    vt.set_type(SupportedType::STRING);
+    columns.emplace_back();
+    columns.back().set_name("c");
+    columns.back().set_type(vt);
+
     nebula::cpp2::Schema schema;
     schema.set_columns(std::move(columns));
     auto tagRet = mClient->createTagSchema(spaceId, "tag", std::move(schema)).get();
@@ -146,7 +146,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         for (int32_t vId = 0; vId < 10000; vId++) {
             vIds.emplace_back(vId);
         }
-        retCols.emplace_back(storage::TestUtils::vetexPropDef("c", tagId));
+        retCols.emplace_back(storage::TestUtils::vertexPropDef("c", tagId));
         auto f = sClient->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
         auto resp = std::move(f).get();
         if (!resp.succeeded()) {

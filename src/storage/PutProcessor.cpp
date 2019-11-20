@@ -15,17 +15,18 @@ void PutProcessor::process(const cpp2::PutRequest& req) {
     const auto& parts = req.get_parts();
     callingNum_ = parts.size();
 
-    std::vector<folly::Future<PartCode>> results;
+    std::vector<folly::Future<PartitionCode>> results;
     for (auto& part : parts) {
         std::vector<kvstore::KV> data;
         for (auto& pair : part.second) {
-            data.emplace_back(std::move(pair.key), std::move(pair.value));
+            data.emplace_back(std::move(NebulaKeyUtils::kvKey(part.first, pair.key)),
+                              std::move(pair.value));
         }
         results.push_back(asyncProcess(part.first, std::move(data)));
     }
 
     folly::collectAll(results).via(executor_)
-                              .then([&] (const std::vector<folly::Try<PartCode>>& tries) mutable {
+                              .then([&] (const TryPartitionCodes& tries) mutable {
         for (const auto& t : tries) {
             auto ret = t.value();
             auto part = std::get<0>(ret);
@@ -36,9 +37,9 @@ void PutProcessor::process(const cpp2::PutRequest& req) {
     });
 }
 
-folly::Future<PartCode>
-PutProcessor::asyncProcess(PartitionID part, const std::vector<kvstore::KV>& keyValues) {
-    folly::Promise<PartCode> promise;
+folly::Future<PartitionCode>
+PutProcessor::asyncProcess(PartitionID part, std::vector<kvstore::KV> keyValues) {
+    folly::Promise<PartitionCode> promise;
     auto future = promise.getFuture();
     executor_->add([this, pro = std::move(promise), part, keyValues] () mutable {
         this->kvstore_->asyncMultiPut(space_, part, keyValues, [part, p = std::move(pro)]

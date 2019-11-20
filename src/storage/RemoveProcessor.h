@@ -32,8 +32,8 @@ private:
             : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats),
             executor_(executor) {}
 
-    folly::Future<PartCode>
-    asyncProcess(PartitionID partId, const std::vector<std::string>& keys);
+    folly::Future<PartitionCode>
+    asyncProcess(PartitionID partId, std::vector<std::string> keys);
 
 private:
     GraphSpaceID  space_;

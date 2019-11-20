@@ -26,7 +26,8 @@
 namespace nebula {
 namespace storage {
 
-using PartCode = std::pair<PartitionID, kvstore::ResultCode>;
+using PartitionCode = std::pair<PartitionID, kvstore::ResultCode>;
+using TryPartitionCodes = std::vector<folly::Try<PartitionCode>>;
 
 template<typename RESP>
 class BaseProcessor {
@@ -104,6 +105,9 @@ protected:
         tHost.set_port(host.second);
         return tHost;
     }
+
+private:
+    void handleAsync(GraphSpaceID spaceId, PartitionID partId, kvstore::ResultCode code);
 
 protected:
     kvstore::KVStore*                               kvstore_ = nullptr;

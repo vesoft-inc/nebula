@@ -39,8 +39,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
     }
 
     LOG(INFO) << "Receive heartbeat from " << host;
-    HostInfo info;
-    info.lastHBTimeInSec_ = time::WallClock::fastNowInSec();
+    HostInfo info(time::WallClock::fastNowInMilliSec());
     auto ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info);
     resp_.set_code(to(ret));
     if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {

@@ -40,8 +40,6 @@ public:
         kDeleteVertex,
         kDeleteEdge,
         kFind,
-        kAddHosts,
-        kRemoveHosts,
         kCreateSpace,
         kDropSpace,
         kDescribeSpace,
@@ -60,6 +58,8 @@ public:
         kFetchEdges,
         kBalance,
         kFindPath,
+        kLimit,
+        KGroupBy,
     };
 
     Kind kind() const {

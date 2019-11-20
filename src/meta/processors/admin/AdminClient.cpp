@@ -253,8 +253,8 @@ folly::Future<Status> AdminClient::getResponse(
                      remoteFunc = std::move(remoteFunc), respGen = std::move(respGen),
                      this] () mutable {
         auto client = clientsMan_->client(host, evb);
-        remoteFunc(client, std::move(req))
-            .then(evb, [p = std::move(pro), partId, respGen = std::move(respGen)](
+        remoteFunc(client, std::move(req)).via(evb)
+            .then([p = std::move(pro), partId, respGen = std::move(respGen)](
                            folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
                 // exception occurred during RPC
                 if (t.hasException()) {
@@ -289,15 +289,14 @@ void AdminClient::getResponse(
     auto* evb = ioThreadPool_->getEventBase();
     CHECK_GE(index, 0);
     CHECK_LT(index, hosts.size());
-    auto partId = req.get_part_id();
-    folly::via(evb, [evb, hosts = std::move(hosts), index, req = std::move(req), partId,
+    folly::via(evb, [evb, hosts = std::move(hosts), index, req = std::move(req),
                      remoteFunc = std::move(remoteFunc), retry, pro = std::move(pro),
                      retryLimit, this] () mutable {
         auto client = clientsMan_->client(hosts[index], evb);
-        remoteFunc(client, req)
-            .then(evb, [p = std::move(pro), hosts = std::move(hosts), index, req = std::move(req),
-                        partId, remoteFunc = std::move(remoteFunc), retry, retryLimit,
-                        this] (folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
+        remoteFunc(client, req).via(evb)
+            .then([p = std::move(pro), hosts = std::move(hosts), index, req = std::move(req),
+                   remoteFunc = std::move(remoteFunc), retry, retryLimit,
+                   this] (folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
                 if (retry < retryLimit) {
@@ -355,11 +354,12 @@ void AdminClient::getResponse(
                             leaderIndex++;
                         }
                         if (leaderIndex == (int32_t)hosts.size()) {
-                            LOG(ERROR) << "The new leader is " << leader;
-                            for (auto& h : hosts) {
-                                LOG(ERROR) << "The peer is " << h;
-                            }
-                            p.setValue(Status::Error("Can't find leader in current peers"));
+                            // In some cases (e.g. balance task is failed in member change remove
+                            // phase, and the new host is elected as leader somehow), the peers of
+                            // this partition in meta doesn't include new host, which will make
+                            // this task failed forever.
+                            index = leaderIndex;
+                            hosts.emplace_back(leader);
                             return;
                         }
                         LOG(INFO) << "Return leader change from " << hosts[index]
@@ -443,8 +443,8 @@ void AdminClient::getLeaderDist(const HostAddr& host,
     folly::via(evb, [evb, host, pro = std::move(pro), retry, retryLimit, this] () mutable {
         storage::cpp2::GetLeaderReq req;
         auto client = clientsMan_->client(host, evb);
-        client->future_getLeaderPart(std::move(req))
-            .then(evb, [pro = std::move(pro), host, retry, retryLimit, this]
+        client->future_getLeaderPart(std::move(req)).via(evb)
+            .then([pro = std::move(pro), host, retry, retryLimit, this]
                        (folly::Try<storage::cpp2::GetLeaderResp>&& t) mutable {
             if (t.hasException()) {
                 LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
@@ -480,7 +480,7 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
         hostFutures.emplace_back(std::move(fut));
     }
 
-    folly::collectAll(std::move(hostFutures)).then([p = std::move(promise), result, allHosts]
+    folly::collectAll(std::move(hostFutures)).thenValue([p = std::move(promise), result, allHosts]
             (std::vector<folly::Try<StatusOr<storage::cpp2::GetLeaderResp>>>&& tries) mutable {
         size_t idx = 0;
         for (auto& t : tries) {
