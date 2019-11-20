@@ -18,7 +18,7 @@
 #   ENABLE_NATIVE                  -- Build native client
 #   ENABLE_TESTING                 -- Build unit test
 #
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.8.0)
 
 project("Nebula Graph" C CXX)
 
@@ -52,6 +52,7 @@ endif()
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++ -no-pie")
 
@@ -125,7 +126,11 @@ set(CMAKE_MODULE_PATH "${NEBULA_HOME}/cmake" ${CMAKE_MODULE_PATH})
 
 # When NEBULA_THIRDPARTY_ROOT is null, set default value as /opt/nebula/third-party
 if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
-    SET(NEBULA_THIRDPARTY_ROOT "/opt/nebula/third-party")
+    if (EXISTS ${CMAKE_BINARY_DIR}/third-party/install)
+        SET(NEBULA_THIRDPARTY_ROOT ${CMAKE_BINARY_DIR}/third-party/install)
+    else()
+        SET(NEBULA_THIRDPARTY_ROOT "/opt/nebula/third-party")
+    endif()
 endif()
 
 # third-party
@@ -380,7 +385,6 @@ macro(nebula_link_libraries target)
         boost_system
         event
         double-conversion
-        resolv
         s2
         ${OPENSSL_SSL_LIBRARY}
         ${OPENSSL_CRYPTO_LIBRARY}
@@ -388,6 +392,8 @@ macro(nebula_link_libraries target)
         ${COMPRESSION_LIBRARIES}
         ${JEMALLOC_LIB}
         ${LIBUNWIND_LIBRARIES}
+        keyutils
+        resolv
         dl
         ${GETTIME_LIB}
         -pthread
