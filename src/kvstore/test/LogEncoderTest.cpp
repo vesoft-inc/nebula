@@ -138,15 +138,15 @@ TEST(LogEncoderTest, BatchTest) {
     auto decoded = decodeBatchValue(encoded.c_str());
 
     std::vector<std::pair<BatchLogType,
-                std::pair<std::string, std::string>>> expectd;
+                std::pair<folly::StringPiece, folly::StringPiece>>> expectd;
     expectd.emplace_back(OP_BATCH_REMOVE,
-                         std::pair<std::string, std::string>("remove", ""));
+            std::pair<folly::StringPiece, folly::StringPiece>("remove", ""));
     expectd.emplace_back(OP_BATCH_PUT,
-                         std::pair<std::string, std::string>("put_key", "put_value"));
+            std::pair<folly::StringPiece, folly::StringPiece>("put_key", "put_value"));
     expectd.emplace_back(OP_BATCH_REMOVE_RANGE,
-                         std::pair<std::string, std::string>("begin", "end"));
+            std::pair<folly::StringPiece, folly::StringPiece>("begin", "end"));
     expectd.emplace_back(OP_BATCH_PUT,
-                         std::pair<std::string, std::string>("put_key_again", "put_value_again"));
+            std::pair<folly::StringPiece, folly::StringPiece>("put_key_again", "put_value_again"));
 
     ASSERT_EQ(expectd, decoded);
 }

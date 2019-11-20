@@ -165,7 +165,7 @@ std::vector<folly::StringPiece> decodeMultiValues(folly::StringPiece encoded) {
 }
 
 std::string encodeBatchValue(const std::vector<std::pair<BatchLogType,
-                             std::pair<std::string, std::string>>>& batch) {
+                             std::pair<folly::StringPiece, folly::StringPiece>>>& batch) {
     auto type = LogType::OP_BATCH_WRITE;
     std::string encoded;
     encoded.reserve(1024);
@@ -187,22 +187,22 @@ std::string encodeBatchValue(const std::vector<std::pair<BatchLogType,
         auto v2 = bPair.second;
         auto len = v1.size();
         encoded.append(reinterpret_cast<char*>(&len), sizeof(uint32_t));
-        encoded.append(v1.c_str(), len);
+        encoded.append(v1.data(), len);
         len = v2.size();
         encoded.append(reinterpret_cast<char*>(&len), sizeof(uint32_t));
-        encoded.append(v2.c_str(), len);
+        encoded.append(v2.data(), len);
     }
 
     return encoded;
 }
 
-std::vector<std::pair<BatchLogType, std::pair<std::string, std::string>>>
+std::vector<std::pair<BatchLogType, std::pair<folly::StringPiece, folly::StringPiece>>>
 decodeBatchValue(folly::StringPiece encoded) {
     // Skip the timestamp and the first type byte
     auto* p = encoded.begin() + sizeof(int64_t) + 1;
     uint32_t numValues = *(reinterpret_cast<const uint32_t*>(p));
     p += sizeof(uint32_t);
-    std::vector<std::pair<BatchLogType, std::pair<std::string, std::string>>> batch;
+    std::vector<std::pair<BatchLogType, std::pair<folly::StringPiece, folly::StringPiece>>> batch;
     for (auto i = 0U; i < numValues; i++) {
         auto offset = 0;
         BatchLogType type = *(reinterpret_cast<const BatchLogType *>(p));
@@ -211,9 +211,9 @@ decodeBatchValue(folly::StringPiece encoded) {
         offset += sizeof(uint32_t) + len1;
         uint32_t len2 = *(reinterpret_cast<const uint32_t*>(p + offset));
         offset += sizeof(uint32_t);
-        batch.emplace_back(type,
-                std::make_pair(folly::StringPiece(p + sizeof(uint32_t), len1).str(),
-                               folly::StringPiece(p + offset, len2).str()));
+        batch.emplace_back(type, std::pair<folly::StringPiece, folly::StringPiece>
+                (folly::StringPiece(p + sizeof(uint32_t), len1),
+                 folly::StringPiece(p + offset, len2)));
         p += offset + len2;
     }
     return batch;
