@@ -42,14 +42,14 @@ public:
 
 
 private:
-    int32_t qpsStatId_{0};             // all qps
-    int32_t sQpsStatId_{0};            // storage qps
-    int32_t mQpsStatId_{0};            // meta qps
+    int32_t qpsStatId_{0};             // successful graph qps
+    int32_t sQpsStatId_{0};            // successful storage qps
+    int32_t mQpsStatId_{0};            // successful meta qps
     int32_t errorGQpsStatId_{0};       // the error qps, error handle in graphd
     int32_t errorMQpsStatId_{0};       // the error qps, error handle in metad
     int32_t errorSQpsStatId_{0};       // the error qps, error handle in storaged
-    int32_t sLatencyStatId_{0};        // the latency in storaged
-    int32_t mLatencyStatId_{0};        // the latency in metad
+    int32_t sLatencyStatId_{0};        // the latency from storageClient
+    int32_t mLatencyStatId_{0};        // the latency from metaClient
     int32_t wLatencyStatId_{0};        // the whole latency of nGQL `graphd -> storaged -> graphd`
 };
 

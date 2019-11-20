@@ -5,6 +5,7 @@
  */
 
 #include "stats/StatsManager.h"
+#include "time/Duration.h"
 #include <folly/Try.h>
 
 namespace nebula {
@@ -84,20 +85,21 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
         evb = ioThreadPool_->getEventBase();
     }
 
+    time::Duration duration;
     for (auto& req : requests) {
         auto& host = req.first;
         auto spaceId = req.second.get_space_id();
         auto res = context->insertRequest(host, std::move(req.second));
         DCHECK(res.second);
         // Invoke the remote method
-        folly::via(evb, [this, evb, context, host, spaceId, res] () mutable {
+        folly::via(evb, [this, evb, context, host, spaceId, res, duration] () mutable {
             auto client = clientsMan_->client(host, evb);
             // Result is a pair of <Request&, bool>
             context->serverMethod(client.get(), *res.first)
             // Future process code will be executed on the IO thread
             // Since all requests are sent using the same eventbase, all then-callback
             // will be executed on the same IO thread
-            .via(evb).then([this, context, host, spaceId] (folly::Try<Response>&& val) {
+            .via(evb).then([this, context, host, spaceId, duration] (folly::Try<Response>&& val) {
                 auto& r = context->findRequest(host);
                 if (val.hasException()) {
                     LOG(ERROR) << "Request to " << host << " failed: " << val.exception().what();
@@ -149,7 +151,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                 if (context->removeRequest(host)) {
                     // Received all responses
                     if (context->resp.succeeded() && latencyStatId_ != 0 && qpsStatId_ !=0) {
-                        stats::StatsManager::addValue(latencyStatId_, context->resp.maxLatency());
+                        stats::StatsManager::addValue(latencyStatId_, duration.elapsedInUSec());
                         stats::StatsManager::addValue(qpsStatId_, 1);
                     } else if (errorQpsStatId_ != 0) {
                         stats::StatsManager::addValue(errorQpsStatId_, 1);
@@ -164,7 +166,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
         // Received all responses, most likely, all rpc failed
         context->promise.setValue(std::move(context->resp));
         if (context->resp.succeeded() && latencyStatId_ != 0 && qpsStatId_ !=0) {
-            stats::StatsManager::addValue(latencyStatId_, context->resp.maxLatency());
+            stats::StatsManager::addValue(latencyStatId_, duration.elapsedInUSec());
             stats::StatsManager::addValue(qpsStatId_, 1);
         } else if (errorQpsStatId_ != 0) {
             stats::StatsManager::addValue(errorQpsStatId_, 1);
