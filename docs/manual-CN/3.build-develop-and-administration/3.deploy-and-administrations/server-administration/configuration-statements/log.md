@@ -6,7 +6,7 @@ Nebula 使用 [glog](https://github.com/google/glog) 来打印日志，使用 gf
 
 ### glog 中的两个主要参数
 
-- minloglevel 0-4： 对应的日志级别分别为 INFO(DEBUG)，WARING，ERROR，FATAL。通常在调试环境设置为 0，生产环境设置为 1。
+- minloglevel 0-3： 对应的日志级别分别为 INFO(DEBUG)，WARNING，ERROR，FATAL。通常在调试环境设置为 0，生产环境设置为 1，设置 4 会完全不打印日志。
 - v 0-4: 当 minloglevel 设置为 0 时，可以进一步设置调试日志的详细程度，值越大越详细。
 
 ### 配置文件
