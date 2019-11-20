@@ -19,11 +19,11 @@ enum LogType : char {
     OP_MULTI_REMOVE   = 0x4,
     OP_REMOVE_PREFIX  = 0x5,
     OP_REMOVE_RANGE   = 0x6,
-    OP_BATCH_WRITE    = 0x7,
-    OP_ADD_LEARNER    = 0x8,
-    OP_TRANS_LEADER   = 0x9,
-    OP_ADD_PEER       = 0xA,
-    OP_REMOVE_PEER    = 0xB,
+    OP_ADD_LEARNER    = 0x07,
+    OP_TRANS_LEADER   = 0x08,
+    OP_ADD_PEER       = 0x09,
+    OP_REMOVE_PEER    = 0x10,
+    OP_BATCH_WRITE    = 0x11,
 };
 
 enum BatchLogType : char {
@@ -64,19 +64,19 @@ public:
     BatchHolder() = default;
     ~BatchHolder() = default;
 
-    void put(const std::string& key, const std::string& val) {
-        std::pair<std::string, std::string> pair(key, val);
-        batch_.emplace_back(BatchLogType::OP_BATCH_PUT, pair);
+    void put(std::string key, std::string val) {
+        batch_.emplace_back(BatchLogType::OP_BATCH_PUT,
+                            std::make_pair(std::move(key), std::move(val)));
     }
 
-    void remove(const std::string& key) {
-        std::pair<std::string, std::string> pair(key, "");
-        batch_.emplace_back(BatchLogType::OP_BATCH_REMOVE, pair);
+    void remove(std::string key) {
+        batch_.emplace_back(BatchLogType::OP_BATCH_REMOVE,
+                            std::make_pair(std::move(key), ""));
     }
 
-    void rangeRemove(const std::string& begin, const std::string& end) {
-        std::pair<std::string, std::string> pair(begin, end);
-        batch_.emplace_back(BatchLogType::OP_BATCH_REMOVE_RANGE, pair);
+    void rangeRemove(std::string begin, std::string end) {
+        batch_.emplace_back(BatchLogType::OP_BATCH_REMOVE_RANGE,
+                            std::make_pair(std::move(begin), std::move(end)));
     }
 
     void clear() {

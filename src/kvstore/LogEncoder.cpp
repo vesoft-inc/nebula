@@ -167,22 +167,8 @@ std::vector<folly::StringPiece> decodeMultiValues(folly::StringPiece encoded) {
 std::string encodeBatchValue(const std::vector<std::pair<BatchLogType,
                              std::pair<std::string, std::string>>>& batch) {
     auto type = LogType::OP_BATCH_WRITE;
-    std::string data, encoded;
-    for (auto& op : batch) {
-        auto bType = op.first;
-        auto bPair = op.second;
-        data.append(reinterpret_cast<char*>(&bType), 1);
-        auto v1 = bPair.first;
-        auto v2 = bPair.second;
-        auto len = v1.size();
-        data.append(reinterpret_cast<char*>(&len), sizeof(uint32_t));
-        data.append(v1.c_str(), len);
-        len = v2.size();
-        data.append(reinterpret_cast<char*>(&len), sizeof(uint32_t));
-        data.append(v2.c_str(), len);
-    }
-
-    encoded.reserve(sizeof(int64_t) + 1 + sizeof(uint32_t) + data.size());
+    std::string encoded;
+    encoded.reserve(1024);
 
     // Timestamp (8 bytes)
     int64_t ts = time::WallClock::fastNowInMilliSec();
@@ -193,7 +179,19 @@ std::string encodeBatchValue(const std::vector<std::pair<BatchLogType,
     auto num = static_cast<uint32_t>(batch.size());
     encoded.append(reinterpret_cast<char*>(&num), sizeof(uint32_t));
     // Values
-    encoded.append(data.c_str(), data.size());
+    for (auto& op : batch) {
+        auto bType = op.first;
+        auto bPair = op.second;
+        encoded.append(reinterpret_cast<char*>(&bType), 1);
+        auto v1 = bPair.first;
+        auto v2 = bPair.second;
+        auto len = v1.size();
+        encoded.append(reinterpret_cast<char*>(&len), sizeof(uint32_t));
+        encoded.append(v1.c_str(), len);
+        len = v2.size();
+        encoded.append(reinterpret_cast<char*>(&len), sizeof(uint32_t));
+        encoded.append(v2.c_str(), len);
+    }
 
     return encoded;
 }
