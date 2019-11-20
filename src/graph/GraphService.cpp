@@ -122,6 +122,7 @@ void GraphService::signout(int64_t sessionId) {
 
 folly::Future<cpp2::ExecutionResponse>
 GraphService::future_execute(int64_t sessionId, const std::string& query) {
+    LOG(INFO) << "Receive sessionId: " << sessionId << ", query: " << query;
     auto ctx = std::make_unique<RequestContext<cpp2::ExecutionResponse>>();
     ctx->setQuery(query);
     ctx->setRunner(getThreadManager());

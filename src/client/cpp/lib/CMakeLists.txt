@@ -2,6 +2,8 @@ nebula_add_library(
     client_cpp_obj OBJECT
     NebulaClientImpl.cpp
     ExecuteResponse.cpp
+    ConnectionPool.cpp
+    ConnectionThread.cpp
 )
 
 if (NOT ENABLE_CPPCLIENT_LIB)
@@ -25,6 +27,8 @@ nebula_add_library(
     ExecuteResponse.cpp
     NebulaClientImpl.cpp
     NebulaClient.cpp
+    ConnectionPool.cpp
+    ConnectionThread.cpp
 )
 
 

@@ -8,6 +8,8 @@ nebula_add_test(
         ../lib/ExecuteResponse.cpp
         ../lib/NebulaClientImpl.cpp
         ../lib/NebulaClient.cpp
+        ../lib/ConnectionThread.cpp
+        ../lib/ConnectionPool.cpp
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:ws_obj>

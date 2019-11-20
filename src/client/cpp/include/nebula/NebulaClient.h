@@ -14,15 +14,15 @@ namespace nebula {
 
 class NebulaClient final {
 public:
-    NebulaClient(const std::string& addr,
-                 uint16_t port,
-                 int32_t timeout = 1000 /* ms */,
-                 int16_t threadNum = 2);
+    NebulaClient();
     ~NebulaClient();
 
     // must be call on the front of the main()
     static void init(int argc, char *argv[]);
-
+    static void initSocketPool(const std::string& addr,
+                               uint16_t port,
+                               int32_t timeout = 1000 /* ms */,
+                               int32_t socketNum = 1);
     // Authenticate the user
     ErrorCode connect(const std::string& username,
                       const std::string& password);

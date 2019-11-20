@@ -19,7 +19,7 @@ if (NEBULA_CLIENT_LIB_INCLUDE_DIR)
     include_directories(${NEBULA_CLIENT_LIB_INCLUDE_DIR})
 endif()
 
-if (NEBULA_CLIENT_LIB_INCLUDE_DIR)
+if (NEBULA_CLIENT_LIB_LIB_DIR)
     link_directories(${NEBULA_CLIENT_LIB_LIB_DIR})
 endif()
 

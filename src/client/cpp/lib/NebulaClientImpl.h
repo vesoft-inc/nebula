@@ -8,23 +8,24 @@
 #define CLIENT_CPP_LIB_NEBULACLIENTIMPL_H_
 
 #include "client/cpp/include/nebula/ExecuteResponse.h"
+#include "ConnectionThread.h"
 #include "gen-cpp2/GraphServiceAsyncClient.h"
 #include <string>
-#include <folly/executors/IOThreadPoolExecutor.h>
 
 namespace nebula {
 namespace graph {
 
 class NebulaClientImpl final {
 public:
-    NebulaClientImpl(const std::string& addr,
-                     uint16_t port,
-                     int32_t timeout = 1000,
-                     int16_t threadNum = 2);
+    NebulaClientImpl() = default;
     ~NebulaClientImpl();
 
     // must be call on the front of the main()
     static void initEnv(int argc, char *argv[]);
+    static void initSocketPool(const std::string& addr,
+                               uint16_t port,
+                               int32_t timeout = 1000,
+                               int32_t socketNum = 1);
 
     // Authenticate the user
     ErrorCode doConnect(const std::string& username,
@@ -48,14 +49,8 @@ private:
                   ExecuteResponse& outResp);
 
 private:
-    using GraphClient = std::unique_ptr<cpp2::GraphServiceAsyncClient>;
-    GraphClient                                      client_;
-    std::shared_ptr<folly::IOThreadPoolExecutor>     ioThreadPool_;
-    const std::string                                addr_;
-    const uint16_t                                   port_;
-    int64_t                                          sessionId_;
-    int32_t                                          timeout_;  //  In milliseconds
-    int16_t                                          threadNum_;
+    ConnectionThread*                   connection_{nullptr};
+    int32_t                             connectionId_;
 };
 
 }  // namespace graph

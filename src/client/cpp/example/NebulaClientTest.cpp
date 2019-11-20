@@ -13,7 +13,8 @@
 
 int main(int argc, char *argv[]) {
     nebula::NebulaClient::init(argc, argv);
-    nebula::NebulaClient client("127.0.0.1", 3699);
+    nebula::NebulaClient::initSocketPool("192.168.8.5", 3777, 1000, 1);
+    nebula::NebulaClient client;
     auto code = client.connect("user", "password");
     if (code != nebula::kSucceed) {
         std::cout << "Connect 127.0.0.1:3699 failed, code: " << code << std::endl;

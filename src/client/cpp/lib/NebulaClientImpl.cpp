@@ -6,9 +6,7 @@
 
 #include "base/Base.h"
 #include "NebulaClientImpl.h"
-
-#include <thrift/lib/cpp/async/TAsyncSocket.h>
-#include <thrift/lib/cpp2/async/HeaderClientChannel.h>
+#include "ConnectionPool.h"
 
 namespace nebula {
 namespace graph {
@@ -17,56 +15,33 @@ void NebulaClientImpl::initEnv(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
 }
 
-NebulaClientImpl::NebulaClientImpl(const std::string& addr,
-        uint16_t port, int32_t timeout, int16_t threadNum)
-        : addr_(addr)
-        , port_(port)
-        , sessionId_(0)
-        , timeout_(timeout)
-        , threadNum_(threadNum) {
-    if (threadNum_ < 1) {
-        fprintf(stderr, "Input threadNum[%d] is illegal, update it to 2", threadNum_);
-        threadNum_ = 3;
+void NebulaClientImpl::initSocketPool(const std::string& addr,
+                                      uint16_t port,
+                                      int32_t timeout,
+                                      int32_t socketNum) {
+    if (!ConnectionPool::instance().init(addr, port, socketNum, timeout)) {
+        LOG(ERROR) << "Init pool failed";
+        return;
     }
-
-    auto threadFactory = std::make_shared<folly::NamedThreadFactory>("client-netio");
-    ioThreadPool_ = std::make_shared<folly::IOThreadPoolExecutor>(
-                        threadNum_, std::move(threadFactory));
 }
 
-
 NebulaClientImpl::~NebulaClientImpl() {
+    disconnect();
 }
 
 cpp2::ErrorCode NebulaClientImpl::connect(const std::string& username,
                                           const std::string& password) {
-    using apache::thrift::async::TAsyncSocket;
-    using apache::thrift::HeaderClientChannel;
-
-    auto socket = TAsyncSocket::newSocket(
-        folly::EventBaseManager::get()->getEventBase(),
-        addr_,
-        port_,
-        timeout_);
-
-    client_ = std::make_unique<cpp2::GraphServiceAsyncClient>(
-        HeaderClientChannel::newChannel(socket));
-
-    cpp2::AuthResponse resp;
-    try {
-        client_->sync_authenticate(resp, username, password);
-        if (resp.get_error_code() != cpp2::ErrorCode::SUCCEEDED) {
-            LOG(ERROR) << "Failed to authenticate \"" << username << "\": "
-                       << resp.get_error_msg();
-            return resp.get_error_code();
-        }
-    } catch (const std::exception& ex) {
-        LOG(ERROR) << "Thrift rpc call failed: " << ex.what();
-        return cpp2::ErrorCode::E_RPC_FAILURE;
+    connection_ = ConnectionPool::instance().getConnection(connectionId_);
+    if (connection_ == nullptr) {
+        LOG(ERROR) << "Get connection failed";
+        return cpp2::ErrorCode::E_FAIL_TO_CONNECT;
     }
-
-    sessionId_ = *(resp.get_session_id());
-    return cpp2::ErrorCode::SUCCEEDED;
+    auto status = connection_->authenticate(username, password).get();
+    if (!status.ok()) {
+        return cpp2::ErrorCode::E_FAIL_TO_CONNECT;
+    }
+    auto resp = status.value();
+    return resp.get_error_code();
 }
 
 ErrorCode NebulaClientImpl::doConnect(const std::string& username,
@@ -76,13 +51,13 @@ ErrorCode NebulaClientImpl::doConnect(const std::string& username,
 }
 
 void NebulaClientImpl::disconnect() {
-    if (!client_) {
+    if (connection_ == nullptr) {
         return;
     }
 
     // Log out
-    client_->sync_signout(sessionId_);
-    client_.reset();
+    connection_->signout().get();
+    ConnectionPool::instance().returnConnection(connectionId_);
 }
 
 void NebulaClientImpl::feedPath(const cpp2::Path &inPath, Path& outPath) {
@@ -184,18 +159,16 @@ void NebulaClientImpl::feedRows(const cpp2::ExecutionResponse& inResp,
 
 cpp2::ErrorCode NebulaClientImpl::execute(folly::StringPiece stmt,
                                           cpp2::ExecutionResponse& resp) {
-    if (!client_) {
+    if (!connection_) {
         LOG(ERROR) << "Disconnected from the server";
         return cpp2::ErrorCode::E_DISCONNECTED;
     }
 
-    try {
-        client_->sync_execute(resp, sessionId_, stmt.toString());
-    } catch (const std::exception& ex) {
-        LOG(ERROR) << "Thrift rpc call failed: " << ex.what();
+    auto status = connection_->execute(stmt.toString()).get();
+    if (!status.ok()) {
         return cpp2::ErrorCode::E_RPC_FAILURE;
     }
-
+    resp = std::move(status.value());
     return resp.get_error_code();
 }
 
@@ -226,14 +199,14 @@ ErrorCode NebulaClientImpl::doExecute(std::string stmt,
 }
 
 void NebulaClientImpl::doAsyncExecute(std::string stmt, CallbackFun cb) {
-    auto *evb = ioThreadPool_->getEventBase();
-    auto handler = [cb = std::move(cb), this] (folly::Try<cpp2::ExecutionResponse> &&t) {
-        if (t.hasException()) {
-            cb(nullptr, kDisconnected);
+    auto *evb = folly::EventBaseManager::get()->getEventBase();
+    auto handler = [cb = std::move(cb), this] (auto &&response) {
+        if (!response.ok()) {
+            cb(nullptr, kFailToConnect);
             return;
         }
-        auto&& resp = std::move(t.value());
 
+        auto resp = response.value();
         if (resp.get_error_code() != cpp2::ErrorCode::SUCCEEDED) {
             cb(nullptr, static_cast<ErrorCode>(resp.get_error_code()));
             return;
@@ -259,7 +232,7 @@ void NebulaClientImpl::doAsyncExecute(std::string stmt, CallbackFun cb) {
 
     folly::via(evb, [evb, request = std::move(stmt),
             handler = std::move(handler), this] () mutable {
-        client_->future_execute(sessionId_, request).then(evb, handler);
+        connection_->execute(request).thenValue(handler);
     });
 }
 }  // namespace graph
