@@ -99,11 +99,9 @@ public:
 
     folly::Future<Status> dropSnapshot(GraphSpaceID spaceId,
                                        const std::string& name,
-                                       const std::vector<HostAddr> hosts);
+                                       const std::vector<HostAddr>& hosts);
 
     folly::Future<Status> blockingWrites(GraphSpaceID spaceId,
-                                         PartitionID partId,
-                                         const HostAddr& host,
                                          storage::cpp2::EngineSignType sign);
 
     FaultInjector* faultInjector() {
@@ -138,8 +136,6 @@ private:
     nebula::cpp2::HostAddr toThriftHost(const HostAddr& addr);
 
     StatusOr<std::vector<HostAddr>> getPeers(GraphSpaceID spaceId, PartitionID partId);
-
-    StatusOr<std::vector<HostAddr>> getSpacePeers(GraphSpaceID spaceId);
 
 private:
     std::unique_ptr<FaultInjector> injector_{nullptr};

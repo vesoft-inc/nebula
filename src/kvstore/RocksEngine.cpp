@@ -459,11 +459,11 @@ ResultCode RocksEngine::createCheckpoint(const std::string& name) {
 
     rocksdb::Checkpoint* checkpoint;
     rocksdb::Status status = rocksdb::Checkpoint::Create(db_.get(), &checkpoint);
+    std::unique_ptr<rocksdb::Checkpoint> cp(checkpoint);
     if (!status.ok()) {
         LOG(ERROR) << "Init checkpoint Failed: " << status.ToString();
         return ResultCode::ERR_CHECKPOINT_ERROR;
     }
-    std::unique_ptr<rocksdb::Checkpoint> cp(checkpoint);
     status = cp->CreateCheckpoint(checkpointPath, 0);
     if (!status.ok()) {
         LOG(ERROR) << "Create checkpoint Failed: " << status.ToString();

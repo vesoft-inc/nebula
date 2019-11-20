@@ -12,14 +12,15 @@ namespace storage {
 
 void SendBlockSignProcessor::process(const cpp2::BlockingSignRequest& req) {
     CHECK_NOTNULL(kvstore_);
-    LOG(INFO) << "Receive block sign for space "
-              << req.get_space_id() << ", part " << req.get_part_id();
+    LOG(INFO) << "Receive block sign for space " << req.get_space_id();
     auto spaceId = req.get_space_id();
-    auto partId = req.get_part_id();
     auto sign = req.get_sign() == cpp2::EngineSignType::BLOCK_ON;
-
-    auto code = kvstore_->setPartBlocking(spaceId, partId, sign);
-    this->pushResultCode(to(code), partId);
+    auto code = kvstore_->setWriteBlocking(spaceId, sign);
+    if (code != kvstore::ResultCode::SUCCEEDED) {
+        cpp2::ResultCode thriftRet;
+        thriftRet.set_code(to(code));
+        codes_.emplace_back(std::move(thriftRet));
+    }
     onFinished();
 }
 

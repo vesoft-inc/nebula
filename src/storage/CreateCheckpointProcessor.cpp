@@ -27,7 +27,6 @@ void CreateCheckpointProcessor::process(const cpp2::CreateCPRequest& req) {
         thriftRet.set_code(to(retCode));
         codes_.emplace_back(std::move(thriftRet));
     }
-
     onFinished();
 }
 

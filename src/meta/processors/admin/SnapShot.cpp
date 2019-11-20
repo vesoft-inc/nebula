@@ -27,13 +27,6 @@ cpp2::ErrorCode Snapshot::createSnapshot(const std::string& name) {
             return cpp2::ErrorCode::E_RPC_FAILURE;
         }
     }
-
-    auto code = kv_->createCheckpoint(kDefaultSpaceId, name);
-    if (code != nebula::kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Checkpoint create error on meta engine";
-        return cpp2::ErrorCode::E_STORE_FAILURE;
-    }
-
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -84,13 +77,6 @@ bool Snapshot::getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCo
 }
 
 cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
-    /**
-     * There is no need to block meta writes here,
-     * because the heartbeat writes in real time.
-     * And need copy the checkpoint files to the meta slave
-     * after the meta master checkpoint is create done.
-     */
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::writeBlockingLock());
     std::vector<GraphSpaceID> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
@@ -98,40 +84,12 @@ cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
                    << static_cast<int32_t>(ret);
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
-    std::unique_ptr<HostLeaderMap> hostLeaderMap = std::make_unique<HostLeaderMap>();
-    auto status = client_->getLeaderDist(hostLeaderMap.get()).get();
+    for (auto& space : spaces) {
+        auto status = client_->blockingWrites(space, sign).get();
 
-    if (!status.ok() || hostLeaderMap->empty()) {
-        return cpp2::ErrorCode::E_RPC_FAILURE;
-    }
-
-    std::vector<folly::SemiFuture<Status>> futures;
-    for (const auto& space : spaces) {
-        const auto& hostParts = getLeaderParts(hostLeaderMap.get(), space);
-        if (hostParts.empty()) {
-            LOG(ERROR) << "Partition collection failed, spaceId is " << space;
+        if (!status.ok()) {
             return cpp2::ErrorCode::E_RPC_FAILURE;
         }
-        for (const auto& hostPart : hostParts) {
-            auto host = hostPart.first;
-            auto parts = hostPart.second;
-            for (auto& part : parts) {
-                futures.emplace_back(client_->blockingWrites(space, part, host, sign));
-            }
-        }
-    }
-
-    int32_t failed = 0;
-    folly::collectAll(futures).then([&](const std::vector<folly::Try<Status>>& tries) {
-        for (const auto& t : tries) {
-            if (!t.value().ok()) {
-                ++failed;
-            }
-        }
-    }).wait();
-    LOG(INFO) << failed << " partiton failed to block leader";
-    if (failed > 0) {
-        return cpp2::ErrorCode::E_RPC_FAILURE;
     }
     return cpp2::ErrorCode::SUCCEEDED;
 }

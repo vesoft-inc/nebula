@@ -167,7 +167,7 @@ public:
 
     ResultCode dropCheckpoint(GraphSpaceID spaceId, const std::string& name) override;
 
-    ResultCode setPartBlocking(GraphSpaceID spaceId, PartitionID partId, bool sign) override;
+    ResultCode setWriteBlocking(GraphSpaceID spaceId, bool sign) override;
 
     int32_t allLeader(std::unordered_map<GraphSpaceID,
                                          std::vector<PartitionID>>& leaderIds) override;

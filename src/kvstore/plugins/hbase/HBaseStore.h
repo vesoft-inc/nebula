@@ -159,7 +159,7 @@ public:
         return ResultCode::ERR_UNSUPPORTED;
     }
 
-    ResultCode setPartBlocking(GraphSpaceID, PartitionID, bool) override {
+    ResultCode setWriteBlocking(GraphSpaceID, bool) override {
         return ResultCode::ERR_UNSUPPORTED;
     }
 

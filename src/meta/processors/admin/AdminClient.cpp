@@ -435,30 +435,6 @@ StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, Part
     return Status::Error("Get Failed");
 }
 
-StatusOr<std::vector<HostAddr>> AdminClient::getSpacePeers(GraphSpaceID spaceId) {
-    CHECK_NOTNULL(kv_);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto prefix = MetaServiceUtils::partPrefix(spaceId);
-
-    auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Fetch Spaces Failed";
-        return Status::Error("Fetch Spaces Faile");;
-    }
-
-    std::vector<HostAddr> hosts;
-    while (iter->valid()) {
-        for (auto &host : MetaServiceUtils::parsePartVal(iter->val())) {
-            HostAddr h(host.get_ip(), host.get_port());
-            if (std::find(hosts.begin(), hosts.end(), h) == hosts.end()) {
-                hosts.emplace_back(std::move(h));
-            }
-        }
-        iter->next();
-    }
-    return hosts;
-}
-
 void AdminClient::getLeaderDist(const HostAddr& host,
                                 folly::Promise<StatusOr<storage::cpp2::GetLeaderResp>>&& pro,
                                 int32_t retry,
@@ -529,22 +505,14 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
 }
 
 folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId, const std::string& name) {
-    if (injector_) {
-        return injector_->createSnapshot();
-    }
-
-    auto ret = getSpacePeers(spaceId);
-    if (!ret.ok()) {
-        return ret.status();
-    }
-
+    auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
     storage::cpp2::CreateCPRequest req;
     req.set_space_id(spaceId);
     req.set_name(name);
 
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(ret.value(), 0, std::move(req), [] (auto client, auto request) {
+    getResponse(allHosts, 0, std::move(req), [] (auto client, auto request) {
         return client->future_createCheckpoint(request);
     }, 0, std::move(pro), 1 /*The snapshot operation only needs to be retried twice*/);
     return f;
@@ -552,10 +520,7 @@ folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId, const st
 
 folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
                                                 const std::string& name,
-                                                const std::vector<HostAddr> hosts) {
-    if (injector_) {
-        return injector_->dropSnapshot();
-    }
+                                                const std::vector<HostAddr>& hosts) {
     storage::cpp2::DropCPRequest req;
     req.set_space_id(spaceId);
     req.set_name(name);
@@ -569,27 +534,17 @@ folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
 }
 
 folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
-                                                  PartitionID partId,
-                                                  const HostAddr& host,
                                                   storage::cpp2::EngineSignType sign) {
-    if (injector_) {
-        return injector_->transLeader();
-    }
+    auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
     storage::cpp2::BlockingSignRequest req;
     req.set_space_id(spaceId);
-    req.set_part_id(partId);
     req.set_sign(sign);
-    return getResponse(host, std::move(req), [] (auto client, auto request) {
+    folly::Promise<Status> pro;
+    auto f = pro.getFuture();
+    getResponse(allHosts, 0, std::move(req), [] (auto client, auto request) {
         return client->future_blockingWrites(request);
-    }, [] (auto&& resp) -> Status {
-        switch (resp.get_code()) {
-            case storage::cpp2::ErrorCode::SUCCEEDED:
-                return Status::OK();
-            default:
-                return Status::Error("Unknown code %d",
-                                     static_cast<int32_t>(resp.get_code()));
-        }
-    });
+    }, 0, std::move(pro), 1 /*The blocking needs to be retried twice*/);
+    return f;
 }
 
 }  // namespace meta

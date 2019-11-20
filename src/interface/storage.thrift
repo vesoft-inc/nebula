@@ -349,18 +349,17 @@ struct GetUUIDResp {
 
 struct BlockingSignRequest {
     1: common.GraphSpaceID          space_id,
-    2: common.PartitionID           part_id,
-    3: required EngineSignType      sign,
+    2: required EngineSignType      sign,
 }
 
 struct CreateCPRequest {
     1: common.GraphSpaceID          space_id,
-    4: string                       name,
+    2: string                       name,
 }
 
 struct DropCPRequest {
     1: common.GraphSpaceID          space_id,
-    4: string                       name,
+    2: string                       name,
 }
 
 service StorageService {

@@ -9,27 +9,23 @@
 
 #include <gtest/gtest_prod.h>
 #include "meta/processors/BaseProcessor.h"
-#include "meta/ClusterCheckHandler.h"
 
 namespace nebula {
 namespace meta {
 
 class CreateSnapshotProcessor : public BaseProcessor<cpp2::ExecResp> {
 public:
-    static CreateSnapshotProcessor* instance(kvstore::KVStore* kvstore,
-                                             ClusterCheckHandler* clusterCheck = nullptr) {
-        return new CreateSnapshotProcessor(kvstore, clusterCheck);
+    static CreateSnapshotProcessor* instance(kvstore::KVStore* kvstore) {
+        return new CreateSnapshotProcessor(kvstore);
     }
     void process(const cpp2::CreateSnapshotReq& req);
 
     std::string genSnapshotName();
+    cpp2::ErrorCode cancelWriteBlocking();
 
 private:
-    explicit CreateSnapshotProcessor(kvstore::KVStore* kvstore, ClusterCheckHandler* clusterCheck)
-            : BaseProcessor<cpp2::ExecResp>(kvstore)
-            , clusterCheck_(clusterCheck) {}
-
-    ClusterCheckHandler* clusterCheck_;
+    explicit CreateSnapshotProcessor(kvstore::KVStore* kvstore)
+            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 }  // namespace meta
 }  // namespace nebula

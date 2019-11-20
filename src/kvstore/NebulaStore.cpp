@@ -638,22 +638,42 @@ ResultCode NebulaStore::dropCheckpoint(GraphSpaceID spaceId, const std::string& 
     return ResultCode::SUCCEEDED;
 }
 
-ResultCode NebulaStore::setPartBlocking(GraphSpaceID spaceId, PartitionID partId, bool sign) {
-    folly::RWSpinLock::ReadHolder rh(&lock_);
-    auto ret = ResultCode::SUCCEEDED;
-    auto partRet = part(spaceId, partId);
-    if (!ok(partRet)) {
-        return error(partRet);
+ResultCode NebulaStore::setWriteBlocking(GraphSpaceID spaceId, bool sign) {
+    auto spaceRet = space(spaceId);
+    if (!ok(spaceRet)) {
+        return error(spaceRet);
     }
-
-    auto part = nebula::value(partRet);
-    part->setBlocking(sign);
-    if (sign) {
-        part->sync([&ret] (kvstore::ResultCode code) {
-            ret = code;
-        });
+    auto space = nebula::value(spaceRet);
+    for (auto& engine : space->engines_) {
+        auto parts = engine->allParts();
+        for (auto& part : parts) {
+            auto partRet = this->part(spaceId, part);
+            if (!ok(partRet)) {
+                LOG(ERROR) << "Part not found. space : " << spaceId << " Part : " << part;
+                return error(partRet);
+            }
+            auto p = nebula::value(partRet);
+            if (p->isLeader()) {
+                auto ret = ResultCode::SUCCEEDED;
+                p->setBlocking(sign);
+                if (sign) {
+                    folly::Baton<true, std::atomic> baton;
+                    p->sync([&ret, &baton] (kvstore::ResultCode code) {
+                        if (kvstore::ResultCode::SUCCEEDED != code) {
+                            ret = code;
+                        }
+                        baton.post();
+                    });
+                    baton.wait();
+                }
+                if (ret != ResultCode::SUCCEEDED) {
+                    LOG(ERROR) << "Part sync failed. space : " << spaceId << " Part : " << part;
+                    return ret;
+                }
+            }
+        }
     }
-    return ret;
+    return ResultCode::SUCCEEDED;
 }
 
 bool NebulaStore::isLeader(GraphSpaceID spaceId, PartitionID partId) {

@@ -10,7 +10,6 @@ nebula_add_library(
     MetaServiceHandler.cpp
     MetaServiceUtils.cpp
     ActiveHostsMan.cpp
-    ClusterCheckHandler.cpp
     processors/partsMan/ListHostsProcessor.cpp
     processors/partsMan/ListPartsProcessor.cpp
     processors/partsMan/CreateSpaceProcessor.cpp

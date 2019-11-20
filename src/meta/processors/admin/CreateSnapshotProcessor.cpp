@@ -16,13 +16,6 @@ using SignType = storage::cpp2::EngineSignType;
 void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
     UNUSED(req);
 
-    if (clusterCheck_->isUnblockingRunning()) {
-        LOG(ERROR) << "Write unblocking task is running";
-        resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
-        onFinished();
-        return;
-    }
-
     auto snapshot = genSnapshotName();
     folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
 
@@ -53,35 +46,40 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
     if (signRet != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Send blocking sign to storage engine error";
         resp_.set_code(signRet);
-        clusterCheck_->addUnblockingTask();
+        cancelWriteBlocking();
         onFinished();
         return;
     }
 
-    // step 4 : Create checkpoint for all storage engines and meta engine.
+    // step 3 : Create checkpoint for all storage engines and meta engine.
     auto csRet = Snapshot::instance(kvstore_)->createSnapshot(snapshot);
     if (csRet != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Checkpoint create error on storage engine";
         resp_.set_code(csRet);
-        clusterCheck_->addUnblockingTask();
-        clusterCheck_->addDropCheckpointTask(snapshot);
+        cancelWriteBlocking();
         onFinished();
         return;
     }
 
-    // Execute unblocking immediately
-    signRet = Snapshot::instance(kvstore_)->blockingWrites(SignType::BLOCK_OFF);
-    if (signRet != cpp2::ErrorCode::SUCCEEDED) {
-        LOG(ERROR) << "All checkpoint create done, but unblocking error. "
-                      "so the status of the snapshot cannot be change to valid. "
-                      "snapshot : " << snapshot;
-        resp_.set_code(signRet);
-        clusterCheck_->addUnblockingTask();
+    // step 4 : checkpoint created done, so release the write blocking.
+    auto unbRet = cancelWriteBlocking();
+    if (unbRet != cpp2::ErrorCode::SUCCEEDED) {
+        LOG(ERROR) << "Create snapshot failed on meta server" << snapshot;
+        resp_.set_code(unbRet);
         onFinished();
         return;
     }
 
-    // step 7 : update snapshot status from INVALID to VALID.
+    // step 5 : create checkpoint for meta server.
+    auto meteRet = kvstore_->createCheckpoint(kDefaultSpaceId, snapshot);
+    if (meteRet != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Create snapshot failed on meta server" << snapshot;
+        resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
+        onFinished();
+        return;
+    }
+
+    // step 6 : update snapshot status from INVALID to VALID.
     data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
                       MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::VALID,
                                                     NetworkUtils::toHosts(hosts)));
@@ -100,6 +98,15 @@ std::string CreateSnapshotProcessor::genSnapshotName() {
     std::time_t t = std::time(nullptr);
     std::strftime(ch, sizeof(ch), "%Y_%m_%d_%H_%M_%S", localtime(&t));
     return folly::stringPrintf("SNAPSHOT_%s", ch);
+}
+
+cpp2::ErrorCode CreateSnapshotProcessor::cancelWriteBlocking() {
+    auto signRet = Snapshot::instance(kvstore_)->blockingWrites(SignType::BLOCK_OFF);
+    if (signRet != cpp2::ErrorCode::SUCCEEDED) {
+        LOG(ERROR) << "Cancel write blocking error";
+        return signRet;
+    }
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace meta
