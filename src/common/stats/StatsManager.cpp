@@ -39,32 +39,24 @@ int32_t StatsManager::registerStats(folly::StringPiece counterName) {
 
     auto& sm = get();
 
-    std::string name;
-    int32_t index = 0;
-    {
-        folly::RWSpinLock::WriteHolder nameHolder(sm.nameMapLock_);
-        name = counterName.toString();
-        auto it = sm.nameMap_.find(name);
-        if (it != sm.nameMap_.end()) {
-            LOG(INFO) << "The counter \"" << name << "\" already exists";
-            return it->second;
-        }
-
-        // Insert the Stats
-        {
-            folly::RWSpinLock::WriteHolder statsHolder(sm.statsLock_);
-            sm.stats_.emplace_back(
-                std::make_pair(
-                    std::make_unique<std::mutex>(),
-                    std::make_unique<StatsType>(
-                        60,
-                        std::initializer_list<StatsType::Duration>({seconds(60),
-                                                                    seconds(600),
-                                                                    seconds(3600)}))));
-            index = sm.stats_.size();
-        }
-        sm.nameMap_[name] = index;
+    std::string name = counterName.toString();
+    auto it = sm.nameMap_.find(name);
+    if (it != sm.nameMap_.end()) {
+        LOG(INFO) << "The counter \"" << name << "\" already exists";
+        return it->second;
     }
+
+    // Insert the Stats
+    sm.stats_.emplace_back(
+        std::make_pair(
+            std::make_unique<std::mutex>(),
+            std::make_unique<StatsType>(
+                60,
+                std::initializer_list<StatsType::Duration>({seconds(60),
+                                                            seconds(600),
+                                                            seconds(3600)}))));
+    int32_t index = sm.stats_.size();
+    sm.nameMap_[name] = index;
     return index;
 }
 
@@ -77,33 +69,24 @@ int32_t StatsManager::registerHisto(folly::StringPiece counterName,
     using std::chrono::seconds;
 
     auto& sm = get();
-
-    std::string name;
-    int32_t index = 0;
-    {
-        folly::RWSpinLock::WriteHolder nameHolder(sm.nameMapLock_);
-        name = counterName.toString();
-        auto it = sm.nameMap_.find(name);
-        if (it != sm.nameMap_.end()) {
-            LOG(ERROR) << "The counter \"" << name << "\" already exists";
-            return it->second;
-        }
-
-        // Insert the Histogram
-        {
-            folly::RWSpinLock::WriteHolder histoHolder(sm.histogramsLock_);
-            sm.histograms_.emplace_back(
-                std::make_pair(
-                    std::make_unique<std::mutex>(),
-                    std::make_unique<HistogramType>(
-                        bucketSize,
-                        min,
-                        max,
-                        StatsType(60, {seconds(60), seconds(600), seconds(3600)}))));
-            index = - sm.histograms_.size();
-        }
-        sm.nameMap_[name] = index;
+    std::string name = counterName.toString();
+    auto it = sm.nameMap_.find(name);
+    if (it != sm.nameMap_.end()) {
+        LOG(ERROR) << "The counter \"" << name << "\" already exists";
+        return it->second;
     }
+
+    // Insert the Histogram
+    sm.histograms_.emplace_back(
+        std::make_pair(
+            std::make_unique<std::mutex>(),
+            std::make_unique<HistogramType>(
+                bucketSize,
+                min,
+                max,
+                StatsType(60, {seconds(60), seconds(600), seconds(3600)}))));
+    int32_t index = - sm.histograms_.size();
+    sm.nameMap_[name] = index;
     return index;
 }
 
@@ -117,14 +100,12 @@ void StatsManager::addValue(int32_t index, VT value) {
     if (index > 0) {
         // Stats
         --index;
-        folly::RWSpinLock::ReadHolder rh(sm.statsLock_);
         DCHECK_LT(index, sm.stats_.size());
         std::lock_guard<std::mutex> g(*(sm.stats_[index].first));
         sm.stats_[index].second->addValue(seconds(time::WallClock::fastNowInSec()), value);
     } else {
         // Histogram
         index = - (index + 1);
-        folly::RWSpinLock::ReadHolder rh(sm.histogramsLock_);
         DCHECK_LT(index, sm.histograms_.size());
         std::lock_guard<std::mutex> g(*(sm.histograms_[index].first));
         sm.histograms_[index].second->addValue(seconds(time::WallClock::fastNowInSec()), value);
@@ -193,8 +174,6 @@ StatusOr<StatsManager::VT> StatsManager::readValue(folly::StringPiece metricName
 // static
 void StatsManager::readAllValue(folly::dynamic& vals) {
     auto& sm = get();
-
-    folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
 
     for (auto &statsName : sm.nameMap_) {
         for (auto method = StatsMethod::SUM; method <= StatsMethod::RATE;
@@ -284,7 +263,6 @@ StatusOr<StatsManager::VT> StatsManager::readStats(const std::string& counterNam
     int32_t index = 0;
 
     {
-        folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
         auto it = sm.nameMap_.find(counterName);
         if (it == sm.nameMap_.end()) {
             // Not found
@@ -308,7 +286,6 @@ StatusOr<StatsManager::VT> StatsManager::readHisto(const std::string& counterNam
     // Look up the counter name
     int32_t index = 0;
     {
-        folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
         auto it = sm.nameMap_.find(counterName);
         if (it == sm.nameMap_.end()) {
             // Not found
