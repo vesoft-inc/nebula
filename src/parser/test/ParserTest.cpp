@@ -1490,4 +1490,13 @@ TEST(Parser, GroupBy) {
         ASSERT_FALSE(result.ok());
     }
 }
+
+TEST(Parser, Return) {
+    {
+        GQLParser parser;
+        std::string query = "RETURN $A IF $A IS NOT NULL";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
 }   // namespace nebula
