@@ -7,7 +7,7 @@ on:
 
 jobs:
   package:
-    name: build and upload
+    name: package and upload release assets
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -24,17 +24,21 @@ jobs:
         run: ./package/package.sh
       - name: vars
         id: vars
+        env:
+          CPACK_OUTPUT_DIR: build/cpack_output
+          SHA_FILE: sha256sum.txt
         run: |
           tag=$(echo ${{ github.ref }} | rev | cut -d/ -f1 | rev)
-          filepath=$(find build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm \) -exec ls {} \;)
-          md5sum $filepath | cut -d' ' -f1 > $filepath.md5
+          cd $CPACK_OUTPUT_DIR
+          filename=$(find . -type f \( -iname \*.deb -o -iname \*.rpm \) -exec ls {} \;)
+          sha256sum $filename > $filename.$SHA_FILE
           echo ::set-output name=tag::$tag
-          echo ::set-output name=filepath::$filepath
-          echo ::set-output name=md5filepath::$filepath.md5
+          echo ::set-output name=filepath::$(echo $CPACK_OUTPUT_DIR/$filename)
+          echo ::set-output name=shafilepath::$(echo $CPACK_OUTPUT_DIR/$filename.$SHA_FILE)
       - name: upload release asset
         run: |
           ./ci/scripts/upload-github-release-asset.sh github_token=${{ secrets.GITHUB_TOKEN }} repo=${{ github.repository }} tag=${{ steps.vars.outputs.tag }} filepath=${{ steps.vars.outputs.filepath }}
-          ./ci/scripts/upload-github-release-asset.sh github_token=${{ secrets.GITHUB_TOKEN }} repo=${{ github.repository }} tag=${{ steps.vars.outputs.tag }} filepath=${{ steps.vars.outputs.md5filepath }}
+          ./ci/scripts/upload-github-release-asset.sh github_token=${{ secrets.GITHUB_TOKEN }} repo=${{ github.repository }} tag=${{ steps.vars.outputs.tag }} filepath=${{ steps.vars.outputs.shafilepath }}
       - name: upload release artifacts
         uses: actions/upload-artifact@v1
         with:
@@ -42,7 +46,7 @@ jobs:
           path: build/cpack_output
 
   docker:
-    name: docker
+    name: build docker images
     runs-on: ubuntu-latest
     strategy:
       matrix:
