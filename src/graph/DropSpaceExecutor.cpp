@@ -42,7 +42,7 @@ void DropSpaceExecutor::execute() {
             ectx()->rctx()->session()->setSpace("", -1);
         }
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {

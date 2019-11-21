@@ -581,7 +581,7 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
         }
     }
     DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
@@ -796,7 +796,7 @@ void GoExecutor::onEmptyInputs() {
     } else if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
     }
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 

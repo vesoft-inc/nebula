@@ -188,7 +188,7 @@ void UpdateEdgeExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcResp
     }
     resp_->set_rows(std::move(rows));
     DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 
