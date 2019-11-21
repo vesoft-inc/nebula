@@ -17,6 +17,39 @@
 namespace nebula {
 namespace stats {
 
+class MetricsSerializer {
+public:
+    virtual ~MetricsSerializer() = default;
+    std::string Serialize() /*const*/ {
+        std::ostringstream ss;
+        Serialize(ss);
+        return ss.str();
+    }
+    virtual void Serialize(std::ostream& out) /*const*/ = 0;
+};
+
+class PrometheusSerializer : public MetricsSerializer {
+public:
+    virtual ~PrometheusSerializer() = default;
+    void Serialize(std::ostream& out) /*const*/ override {
+        PrometheusSerialize(out);
+    }
+    virtual void PrometheusSerialize(std::ostream& out) /*const*/ = 0;
+    struct Label {
+        std::string name;
+        std::string value;
+    };
+    void WriteValue(std::ostream& out, double value) const;
+    void WriteValue(std::ostream& out, const int64_t value) const;
+    void WriteValue(std::ostream& out, const std::string& value) const;
+    template <typename T = std::string>
+    void WriteHead(std::ostream& out, const std::string& family,
+                const std::vector<Label>& labels, const std::string& suffix = "",
+                const std::string& extraLabelName = "",
+                const T extraLabelValue = T()) const;
+    void WriteTail(std::ostream& out, const std::int64_t timestamp_ms = 0) const;
+};
+
 /**
  * This is a utility class to keep track the service's statistic information.
  *
@@ -39,7 +72,7 @@ namespace stats {
  *                           in the last one minute
  *   error.count.600    -- Total number of errors in the last ten minutes
  */
-class StatsManager final {
+class StatsManager final : public PrometheusSerializer {
     using VT = int64_t;
     using StatsType = folly::MultiLevelTimeSeries<VT>;
     using HistogramType = folly::TimeseriesHistogram<VT>;
@@ -56,6 +89,12 @@ public:
         ONE_MINUTE = 0,
         TEN_MINUTES = 1,
         ONE_HOUR = 2
+    };
+
+    struct ParsedName {
+        std::string name;
+        StatsMethod method;
+        TimeRange range;
     };
 
     static void setDomain(folly::StringPiece domain);
@@ -86,8 +125,18 @@ public:
                                   double pct);
     static void readAllValue(folly::dynamic& vals);
 
-private:
+
+    void PrometheusSerialize(std::ostream& out) /*const*/ override;
+
     static StatsManager& get();
+
+private:
+    static constexpr bool isStatIndex(int32_t i);
+    static constexpr bool isHistoIndex(int32_t i);
+    static constexpr std::size_t physicalStatIndex(int32_t i);
+    static constexpr std::size_t physicalHistoIndex(int32_t i);
+    static StatusOr<StatsManager::ParsedName>
+    parseMetricName(folly::StringPiece metricName);
 
     StatsManager() = default;
     StatsManager(const StatsManager&) = delete;

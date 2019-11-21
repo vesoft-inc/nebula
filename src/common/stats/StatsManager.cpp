@@ -350,6 +350,236 @@ StatusOr<StatsManager::VT> StatsManager::readHisto(const std::string& counterNam
     return sm.histograms_[index].second->getPercentileEstimate(pct, level);
 }
 
+
+// static
+constexpr bool StatsManager::isStatIndex(int32_t i) {
+    return i > 0;
+}
+
+// static
+constexpr bool StatsManager::isHistoIndex(int32_t i) {
+    return i < 0;
+}
+
+// static
+constexpr std::size_t StatsManager::physicalStatIndex(int32_t i) {
+    DCHECK(isStatIndex(i));
+    return i - 1;
+}
+
+// static
+constexpr std::size_t StatsManager::physicalHistoIndex(int32_t i) {
+    DCHECK(isHistoIndex(i));
+    return -(i + 1);
+}
+
+// static
+StatusOr<StatsManager::ParsedName>
+StatsManager::parseMetricName(folly::StringPiece metricName) {
+    std::string name;
+    StatsMethod method;
+    TimeRange range;
+    std::vector<std::string> parts;
+    folly::split(".", metricName, parts, true);
+    if (parts.size() != 3) {
+        LOG(ERROR) << "\"" << metricName << "\" is not a valid metric name";
+        return Status::Error("\"%s\" is not a valid metric name", metricName.data());
+    }
+
+    name = parts[0];
+
+    if (parts[2] == "60") {
+        range = TimeRange::ONE_MINUTE;
+    } else if (parts[2] == "600") {
+        range = TimeRange::TEN_MINUTES;
+    } else if (parts[2] == "3600") {
+        range = TimeRange::ONE_HOUR;
+    } else {
+        // Unsupported time range
+        LOG(ERROR) << "Unsupported time range \"" << parts[2] << "\"";
+        return Status::Error(folly::stringPrintf("Unsupported time range \"%s\"",
+                                                 parts[2].c_str()));
+    }
+
+    folly::toLowerAscii(parts[1]);
+    if (parts[1] == "sum") {
+        method = StatsMethod::SUM;
+    } else if (parts[1] == "count") {
+        method = StatsMethod::COUNT;
+    } else if (parts[1] == "avg") {
+        method = StatsMethod::COUNT;
+    } else if (parts[1] == "rate") {
+        method = StatsMethod::RATE;
+//    } else if (parts[1][0] == 'p') {   // TODO(shylock)
+    } else {
+        LOG(ERROR) << "Unsupported statistic method \"" << parts[1] << "\"";
+        return Status::Error(folly::stringPrintf("Unsupported statistic method \"%s\"",
+                                                 parts[1].c_str()));
+    }
+
+    return StatusOr<StatsManager::ParsedName> (StatsManager::ParsedName{
+        name,
+        method,
+        range,
+    });
+}
+
+// Write a double as a string, with proper formatting for infinity and NaN
+void PrometheusSerializer::WriteValue(std::ostream& out, double value) const {
+    if (std::isnan(value)) {
+        out << "Nan";
+    } else if (std::isinf(value)) {
+        out << (value < 0 ? "-Inf" : "+Inf");
+    } else {
+        auto saved_flags = out.setf(std::ios::fixed, std::ios::floatfield);
+        out << value;
+        out.setf(saved_flags, std::ios::floatfield);
+    }
+}
+
+void PrometheusSerializer::WriteValue(std::ostream& out, const int64_t value) const {
+    out << value;
+}
+
+void PrometheusSerializer::WriteValue(std::ostream& out, const std::string& value) const {
+    for (auto c : value) {
+        switch (c) {
+        case '\n':
+            out << '\\' << 'n';
+            break;
+
+        case '\\':
+            out << '\\' << c;
+            break;
+
+        case '"':
+            out << '\\' << c;
+            break;
+
+        default:
+            out << c;
+            break;
+        }
+    }
+}
+
+template<typename T>
+void PrometheusSerializer::WriteHead(std::ostream& out, const std::string& family,
+                const std::vector<Label>& labels, const std::string& suffix,
+                const std::string& extraLabelName,
+                const T extraLabelValue) const {
+    out << family << suffix;
+    if (!labels.empty() || !extraLabelName.empty()) {
+        out << "{";
+        const char* prefix = "";
+
+        for (auto& lp : labels) {
+        out << prefix << lp.name << "=\"";
+        WriteValue(out, lp.value);
+        out << "\"";
+        prefix = ",";
+        }
+        if (!extraLabelName.empty()) {
+        out << prefix << extraLabelName << "=\"";
+        WriteValue(out, extraLabelValue);
+        out << "\"";
+        }
+        out << "}";
+    }
+    out << " ";
+}
+
+// Write a line trailer: timestamp
+void PrometheusSerializer::WriteTail(std::ostream& out, const std::int64_t timestamp_ms) const {
+    if (timestamp_ms != 0) {
+        out << " " << timestamp_ms;
+    }
+    out << "\n";
+}
+
+// TODO(shylock) transform nebula stats to Prometheus::ClientMetric/MetricFamily
+// using the serrializing from 3rd-SDK
+void StatsManager::PrometheusSerialize(std::ostream& out) /*const*/ {
+    std::locale saved_locale = out.getloc();
+    out.imbue(std::locale::classic());
+    folly::RWSpinLock::ReadHolder name_rh(nameMapLock_);
+    for (auto& index : nameMap_) {
+        auto parsedName = parseMetricName(index.first);
+        std::string name = parsedName.ok() ? parsedName.value().name : index.first;
+        if (isStatIndex(index.second)) {
+            out << "# HELP " << name << " " << "Record all Gauge about nebula" << "\n";
+            out << "# TYPE " << name << " gauge\n";
+
+            WriteHead(out, name, {});
+            if (parsedName.ok()) {
+                // make sure contains value
+                WriteValue(out,
+                    readStats(index.second, parsedName.value().range, StatsMethod::SUM).value());
+            } else {
+                // make sure contains value
+                WriteValue(out,
+                    readStats(index.second, TimeRange::ONE_HOUR, StatsMethod::SUM).value());
+            }
+            WriteTail(out);
+        } else if (isHistoIndex(index.second)) {
+            out << "# HELP " << name << " " << "Record all Histogram about nebula" << "\n";
+            out << "# TYPE " << name << " histogram\n";
+
+            WriteHead(out, name, {}, "_count");
+            if (parsedName.ok()) {
+                out <<
+                    readStats(index.second, parsedName.value().range, StatsMethod::COUNT).value();
+            } else {
+                out << readStats(index.second, TimeRange::ONE_HOUR, StatsMethod::COUNT).value();
+            }
+            WriteTail(out);
+
+            WriteHead(out, name, {}, "_sum");
+            if (parsedName.ok()) {
+                WriteValue(out,
+                    readStats(index.second, parsedName.value().range, StatsMethod::SUM).value());
+            } else {
+                WriteValue(out,
+                    readStats(index.second, TimeRange::ONE_HOUR, StatsMethod::SUM).value());
+            }
+            WriteTail(out);
+
+            folly::RWSpinLock::ReadHolder hists_rh(histogramsLock_);
+            auto& p = histograms_[physicalHistoIndex(index.second)];
+            std::lock_guard<std::mutex> lk(*p.first);
+            auto& hist = p.second;
+            VT last = hist->getMax();
+            VT cumulative_count = 0;
+            auto diff = (hist->getMax() - hist->getMin()) /
+                static_cast<double>(hist->getNumBuckets());
+            double bound = hist->getMin() + diff;
+            for (std::size_t i = 0; i < hist->getNumBuckets(); ++i) {
+                WriteHead(out, name, {}, "_bucket", "le", bound);
+                if (parsedName.ok()) {
+                    cumulative_count +=hist->getBucket(i)
+                        .count(static_cast<std::size_t>(parsedName.value().range));
+                } else {
+                    cumulative_count += hist->getBucket(i)
+                        .count(static_cast<std::size_t>(TimeRange::ONE_HOUR));
+                }
+                out << cumulative_count;
+                WriteTail(out);
+                bound += diff;
+            }
+
+            if (last != std::numeric_limits<VT>::infinity()) {
+                WriteHead(out, name, {}, "_bucket", "le", "+Inf");
+                out << cumulative_count;
+                WriteTail(out);
+            }
+        } else {
+            DCHECK(false) << "Impossible neither stat nor histogram!";
+        }
+    }
+
+    out.imbue(saved_locale);
+}
+
 }  // namespace stats
 }  // namespace nebula
 

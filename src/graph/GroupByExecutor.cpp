@@ -348,7 +348,7 @@ void GroupByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
         return;
     }
     rows_ = std::move(ret).value();
-    schema_ = std::move(result->schema());
+    schema_ = result->schema();
 }
 
 

@@ -21,6 +21,7 @@ enum class HttpCode {
     E_UNSUPPORTED_METHOD = -1,
     E_UNPROCESSABLE      = -2,
     E_ILLEGAL_ARGUMENT   = -3,
+    E_NULL_POINTER       = -4,
 };
 
 enum class HttpStatusCode {
@@ -29,6 +30,7 @@ enum class HttpStatusCode {
     FORBIDDEN            = 403,
     NOT_FOUND            = 404,
     METHOD_NOT_ALLOWED   = 405,
+    INTERNAL_ERROR       = 500,
 };
 
 static std::map<HttpStatusCode, std::string> statusStringMap {
@@ -36,7 +38,8 @@ static std::map<HttpStatusCode, std::string> statusStringMap {
     {HttpStatusCode::BAD_REQUEST,            "Bad Request"},
     {HttpStatusCode::FORBIDDEN,              "Forbidden"},
     {HttpStatusCode::NOT_FOUND,              "Not Found"},
-    {HttpStatusCode::METHOD_NOT_ALLOWED,     "Method Not Allowed"}
+    {HttpStatusCode::METHOD_NOT_ALLOWED,     "Method Not Allowed"},
+    {HttpStatusCode::INTERNAL_ERROR,         "Internal Error"}
 };
 
 class WebServiceUtils final {
