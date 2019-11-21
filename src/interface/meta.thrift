@@ -79,6 +79,7 @@ union ID {
     5: common.EdgeIndexID   edge_index_id,
     6: common.UserID        user_id,
     7: common.ClusterID     cluster_id,
+    8: common.IndexID       index_id,
 }
 
 struct IdName {

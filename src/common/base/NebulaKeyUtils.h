@@ -8,8 +8,12 @@
 #define COMMON_BASE_NEBULAKEYUTILS_H_
 
 #include "base/Base.h"
+#include "interface/gen-cpp2/common_types.h"
 
 namespace nebula {
+
+
+using IndexValues = std::vector<std::pair<nebula::cpp2::SupportedType, std::string>>;
 
 /**
  * VertexKeyUtils:
@@ -60,6 +64,21 @@ public:
     static std::string kvKey(PartitionID partId, const folly::StringPiece& name);
 
     /**
+     * Generate vertex|edge index key for kv store
+     **/
+    static std::string indexRaw(const IndexValues &values);
+
+    static std::string vertexIndexKey(PartitionID partId, IndexID indexId, VertexID vId,
+                                      const IndexValues& values);
+
+    static std::string edgeIndexKey(PartitionID partId, IndexID indexId,
+                                    VertexID srcId, EdgeType type,
+                                    EdgeRanking rank, VertexID dstId,
+                                    const IndexValues& values);
+
+    static std::string indexPrefix(PartitionID partId, IndexID indexId);
+
+    /**
      * Prefix for
      * */
     static std::string vertexPrefix(PartitionID partId, VertexID vId, TagID tagId);
@@ -72,6 +91,12 @@ public:
     static std::string vertexPrefix(PartitionID partId, VertexID vId);
 
     static std::string edgePrefix(PartitionID partId, VertexID vId);
+
+    static std::string edgePrefix(PartitionID partId,
+                                  VertexID srcId,
+                                  EdgeType type,
+                                  EdgeRanking rank,
+                                  VertexID dstId);
 
     static std::string systemPrefix();
 
@@ -222,6 +247,13 @@ private:
     static constexpr uint32_t kEdgeMaskSet      = kTagEdgeMask;
     // Write Tag by |=
     static constexpr uint32_t kTagMaskSet       = ~kTagEdgeMask;
+
+    static constexpr int32_t kEdgeIndexLen = sizeof(PartitionID) + sizeof(IndexID)
+                                           + sizeof(VertexID) + sizeof(EdgeType)
+                                           + sizeof(EdgeRanking) + sizeof(VertexID);
+
+    static constexpr int32_t kVertexIndexLen = sizeof(PartitionID) + sizeof(IndexID)
+                                             + sizeof(VertexID);
 };
 
 }  // namespace nebula

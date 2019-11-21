@@ -28,6 +28,8 @@ typedef i64 (cpp.type = "nebula::SchemaVer") SchemaVer
 typedef i32 (cpp.type = "nebula::UserID") UserID
 typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
 
+typedef i32 (cpp.type = "nebula::IndexID") IndexID
+
 // These are all data types supported in the graph properties
 enum SupportedType {
     UNKNOWN = 0,

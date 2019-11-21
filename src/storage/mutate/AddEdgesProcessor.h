@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "storage/BaseProcessor.h"
+#include "kvstore/LogEncoder.h"
 
 namespace nebula {
 namespace storage {
@@ -28,6 +29,19 @@ private:
                                meta::SchemaManager* schemaMan,
                                stats::Stats* stats)
             : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats) {}
+
+    std::string addEdges(int64_t version, PartitionID partId,
+                         const std::vector<cpp2::Edge>& edges);
+
+    std::string obsoleteIndex(PartitionID partId,
+                              const std::pair<cpp2::EdgeKey, cpp2::IndexItem>& pair);
+
+    std::string newIndex(PartitionID partId,
+            const std::pair<std::string, std::pair<cpp2::EdgeKey, cpp2::IndexItem>>& index);
+
+private:
+    GraphSpaceID  spaceId_;
+    const std::vector<cpp2::IndexItem>* indexes_{nullptr};
 };
 
 }  // namespace storage

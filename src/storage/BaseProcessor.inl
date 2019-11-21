@@ -83,5 +83,54 @@ void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
         });
 }
 
+template <typename RESP>
+std::string BaseProcessor<RESP>::indexStr(RowReader* reader,
+                                          const nebula::cpp2::ColumnDef& col) {
+    auto res = RowReader::getPropByName(reader, col.get_name());
+    if (!ok(res)) {
+        LOG(ERROR) << "Skip bad column prop " << col.get_name();
+        return "";
+    }
+    auto&& v = value(std::move(res));
+    switch (col.get_type().get_type()) {
+        case nebula::cpp2::SupportedType::BOOL: {
+            return folly::to<std::string>(boost::get<bool >(v));
+        }
+        case nebula::cpp2::SupportedType::INT:
+        case nebula::cpp2::SupportedType::TIMESTAMP: {
+            std::string raw;
+            raw.reserve(sizeof(int64_t));
+            auto val = folly::Endian::big(boost::get<int64_t>(v));
+            raw.append(reinterpret_cast<const char*>(&val), sizeof(int64_t));
+            return raw;
+        }
+        case nebula::cpp2::SupportedType::FLOAT:
+        case nebula::cpp2::SupportedType::DOUBLE: {
+            return folly::to<std::string>(boost::get<double>(v));
+        }
+        case nebula::cpp2::SupportedType::STRING: {
+            return boost::get<std::string>(v);
+        }
+        default:
+            LOG(ERROR) << "Unknown type: "
+                       << static_cast<int32_t>(col.get_type().get_type());
+    }
+    return "";
+}
+
+template <typename RESP>
+IndexValues BaseProcessor<RESP>::collectIndexValues(RowReader* reader,
+        const std::vector<nebula::cpp2::ColumnDef>& cols) {
+    IndexValues values;
+    if (reader == nullptr) {
+        return values;
+    }
+    for (auto& col : cols) {
+        auto val = indexStr(reader, col);
+        values.emplace_back(col.get_type().get_type(), std::move(val));
+    }
+    return values;
+}
+
 }  // namespace storage
 }  // namespace nebula
