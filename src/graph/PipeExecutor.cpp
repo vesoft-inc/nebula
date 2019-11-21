@@ -39,7 +39,8 @@ Status PipeExecutor::prepare() {
 
     // Setup dependencies
     {
-        auto onFinish = [this] () {
+        auto onFinish = [this] (Executor::ProcessControl ctr) {
+            UNUSED(ctr);
             // Start executing `right_' when `left_' is finished.
             right_->execute();
         };
@@ -56,10 +57,10 @@ Status PipeExecutor::prepare() {
         left_->setOnError(onError);
     }
     {
-        auto onFinish = [this] () {
+        auto onFinish = [this] (Executor::ProcessControl ctr) {
             // This executor is done when `right_' finishes.
             DCHECK(onFinish_);
-            onFinish_();
+            onFinish_(ctr);
         };
         right_->setOnFinish(onFinish);
 

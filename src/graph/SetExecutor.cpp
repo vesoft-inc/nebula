@@ -48,7 +48,8 @@ Status SetExecutor::prepare() {
 }
 
 void SetExecutor::setLeft() {
-    auto onFinish = [] () {
+    auto onFinish = [] (Executor::ProcessControl ctr) {
+        UNUSED(ctr);
         return;
     };
 
@@ -72,7 +73,8 @@ void SetExecutor::setLeft() {
 }
 
 void SetExecutor::setRight() {
-    auto onFinish = [] () {
+    auto onFinish = [] (Executor::ProcessControl ctr) {
+        UNUSED(ctr);
         return;
     };
 
@@ -390,7 +392,7 @@ void SetExecutor::onEmptyInputs() {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
     }
     DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 void SetExecutor::finishExecution(std::unique_ptr<InterimResult> result) {
@@ -415,7 +417,7 @@ void SetExecutor::finishExecution(std::unique_ptr<InterimResult> result) {
     }
 
     DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 void SetExecutor::finishExecution(std::vector<cpp2::RowValue> rows) {
@@ -432,7 +434,7 @@ void SetExecutor::finishExecution(std::vector<cpp2::RowValue> rows) {
         resp_->set_rows(std::move(rows));
     }
     DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 void SetExecutor::feedResult(std::unique_ptr<InterimResult> result) {
