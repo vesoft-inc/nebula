@@ -82,6 +82,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
 
     auto space = ectx()->rctx()->session()->space();
     expCtx_->setSpace(space);
+    Getters getters;
 
     std::vector<storage::cpp2::Edge> edges(rows_.size() * 2);   // inbound and outbound
     auto index = 0;
@@ -93,7 +94,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         if (!status.ok()) {
             return status;
         }
-        auto ovalue = sid->eval();
+        auto ovalue = sid->eval(getters);
         if (!ovalue.ok()) {
             return ovalue.status();
         }
@@ -110,7 +111,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         if (!status.ok()) {
             return status;
         }
-        ovalue = did->eval();
+        ovalue = did->eval(getters);
         if (!ovalue.ok()) {
             return ovalue.status();
         }
@@ -140,7 +141,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
                 return status;
             }
 
-            ovalue = expr->eval();
+            ovalue = expr->eval(getters);
             if (!ovalue.ok()) {
                 return ovalue.status();
             }

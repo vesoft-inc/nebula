@@ -72,7 +72,8 @@ Status VerticesClause::prepare(Clause::Vertices &vertices) const {
             if (!status.ok()) {
                 break;
             }
-            auto value = expr->eval();
+            Getters getters;
+            auto value = expr->eval(getters);
             if (!value.ok()) {
                 status = value.status();
                 break;

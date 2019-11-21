@@ -154,16 +154,6 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
         }
         expCtx_ = std::make_unique<ExpressionContext>();
         exp_->setContext(expCtx_.get());
-        auto& getters = expCtx_->getters();
-        getters.getDstTagProp = [] (const std::string& alias,
-                                    const std::string& prop) -> VariantType {
-            LOG(FATAL) << "Unsupport get dst tag " << alias << " prop " << prop;
-            return false;
-        };
-        getters.getInputProp = [] (const std::string& prop) -> VariantType {
-            LOG(FATAL) << "Unsupport get input prop " << prop;
-            return false;
-        };
     }
     return cpp2::ErrorCode::SUCCEEDED;
 }
@@ -412,7 +402,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
             if (exp_ != nullptr) {
                 // TODO(heng): We could remove the lock with one filter one bucket.
                 std::lock_guard<std::mutex> lg(this->lock_);
-                auto& getters = expCtx_->getters();
+                Getters getters;
                 getters.getAliasProp = [this, edgeType, &reader](const std::string& edgeName,
                                            const std::string& prop) -> OptVariantType {
                     auto edgeStatus = this->schemaMan_->toEdgeType(spaceId_, edgeName);
@@ -440,7 +430,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                             << prop << ", value " << it->second;
                     return it->second;
                 };
-                auto value = exp_->eval();
+                auto value = exp_->eval(getters);
                 if (value.ok() && !Expression::asBool(value.value())) {
                     VLOG(1) << "Filter the edge "
                             << vId << "-> " << dstId << "@" << rank << ":" << edgeType;

@@ -109,7 +109,6 @@ void GoExecutor::execute() {
         }
         starts_ = std::vector<VertexID>(uniqID.begin(), uniqID.end());
     }
-    LOG(INFO) << starts_.size();
     stepOut();
 }
 
@@ -179,7 +178,8 @@ Status GoExecutor::prepareFrom() {
             if (!status.ok()) {
                 break;
             }
-            auto value = expr->eval();
+            Getters getters;
+            auto value = expr->eval(getters);
             if (!value.ok()) {
                 status = Status::Error();
                 break;
@@ -822,7 +822,7 @@ Status GoExecutor::processVdatas(
             while (iter) {
                 std::vector<SupportedType> colTypes;
                 bool saveTypeFlag = false;
-                auto &getters = expCtx_->getters();
+                Getters getters;
 
                 getters.getAliasProp =
                     [&iter, &spaceId, &edgeType, &saveTypeFlag, &colTypes, &edgeSchema, this](
@@ -922,7 +922,7 @@ Status GoExecutor::processVdatas(
 
                 // Evaluate filter
                 if (filter_ != nullptr) {
-                    auto value = filter_->eval();
+                    auto value = filter_->eval(getters);
                     if (!value.ok()) {
                         return std::move(value).status();
                     }
@@ -937,7 +937,7 @@ Status GoExecutor::processVdatas(
                 for (auto *column : yields_) {
                     colTypes.emplace_back(SupportedType::UNKNOWN);
                     auto *expr = column->expr();
-                    auto value = expr->eval();
+                    auto value = expr->eval(getters);
                     if (!value.ok()) {
                         return std::move(value).status();
                     }

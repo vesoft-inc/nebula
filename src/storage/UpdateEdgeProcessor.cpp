@@ -17,8 +17,9 @@ void UpdateEdgeProcessor::onProcessFinished(int32_t retNum) {
         nebula::cpp2::Schema respScheam;
         respScheam.columns.reserve(retNum);
         RowWriter writer(nullptr);
+        Getters getters;
         for (auto& exp : returnColumnsExp_) {
-            auto value = exp->eval();
+            auto value = exp->eval(getters);
             if (!value.ok()) {
                 LOG(ERROR) << value.status();
                 return;
@@ -166,6 +167,7 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
 
 
 std::string UpdateEdgeProcessor::updateAndWriteBack() {
+    Getters getters;
     for (auto& item : updateItems_) {
         auto prop = item.get_prop();
         auto exp = Expression::decode(item.get_value());
@@ -174,7 +176,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack() {
         }
         auto vexp = std::move(exp).value();
         vexp->setContext(this->expCtx_.get());
-        auto value = vexp->eval();
+        auto value = vexp->eval(getters);
         if (!value.ok()) {
             return std::string("");
         }
@@ -231,7 +233,7 @@ bool UpdateEdgeProcessor::checkFilter(const PartitionID partId,
         }
     }
 
-    auto& getters = this->expCtx_->getters();
+    Getters getters;
     getters.getSrcTagProp = [&, this] (const std::string& tagName,
                                        const std::string& prop) -> OptVariantType {
         auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
@@ -259,7 +261,7 @@ bool UpdateEdgeProcessor::checkFilter(const PartitionID partId,
     };
 
     if (this->exp_ != nullptr) {
-        auto filterResult = this->exp_->eval();
+        auto filterResult = this->exp_->eval(getters);
         if (!filterResult.ok() || !Expression::asBool(filterResult.value())) {
             VLOG(1) << "Filter skips the update";
             return false;

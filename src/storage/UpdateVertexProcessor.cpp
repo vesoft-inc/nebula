@@ -18,8 +18,9 @@ void UpdateVertexProcessor::onProcessFinished(int32_t retNum) {
         nebula::cpp2::Schema respScheam;
         respScheam.columns.reserve(retNum);
         RowWriter writer(nullptr);
+        Getters getters;
         for (auto& exp : returnColumnsExp_) {
-            auto value = exp->eval();
+            auto value = exp->eval(getters);
             if (!value.ok()) {
                 LOG(ERROR) << value.status();
                 return;
@@ -144,7 +145,7 @@ bool UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID
         }
     }
 
-    auto& getters = this->expCtx_->getters();
+    Getters getters;
     getters.getSrcTagProp = [&, this] (const std::string& tagName,
                                        const std::string& prop) -> OptVariantType {
         auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
@@ -163,7 +164,7 @@ bool UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID
     };
 
     if (this->exp_ != nullptr) {
-        auto filterResult = this->exp_->eval();
+        auto filterResult = this->exp_->eval(getters);
         if (!filterResult.ok() || !Expression::asBool(filterResult.value())) {
             VLOG(1) << "Filter skips the update";
             return false;
@@ -174,6 +175,7 @@ bool UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID
 
 
 std::string UpdateVertexProcessor::updateAndWriteBack() {
+    Getters getters;
     for (auto& item : updateItems_) {
         auto tagName = item.get_name();
         auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
@@ -189,7 +191,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack() {
         }
         auto vexp = std::move(exp).value();
         vexp->setContext(this->expCtx_.get());
-        auto value = vexp->eval();
+        auto value = vexp->eval(getters);
         if (!value.ok()) {
             return std::string("");
         }

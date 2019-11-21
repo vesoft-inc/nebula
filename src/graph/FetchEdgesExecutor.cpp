@@ -207,6 +207,7 @@ Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
 
     auto edgeKeyExprs = sentence_->keys()->keys();
     expCtx_->setSpace(spaceId_);
+    Getters getters;
 
     for (auto *keyExpr : edgeKeyExprs) {
         auto *srcExpr = keyExpr->srcid();
@@ -224,12 +225,12 @@ Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
         if (!status.ok()) {
             break;
         }
-        auto value = srcExpr->eval();
+        auto value = srcExpr->eval(getters);
         if (!value.ok()) {
             return value.status();
         }
         auto srcid = value.value();
-        value = dstExpr->eval();
+        value = dstExpr->eval(getters);
         if (!value.ok()) {
             return value.status();
         }
@@ -343,7 +344,7 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
         while (iter) {
             auto writer = std::make_unique<RowWriter>(outputSchema);
 
-            auto &getters = expCtx_->getters();
+            Getters getters;
             getters.getAliasProp =
                 [&iter, &eschema] (const std::string&,
                                    const std::string &prop) -> OptVariantType {
@@ -351,7 +352,7 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             };
             for (auto *column : yields_) {
                 auto *expr = column->expr();
-                auto value = expr->eval();
+                auto value = expr->eval(getters);
                 if (!value.ok()) {
                     onError_(value.status());
                     return;

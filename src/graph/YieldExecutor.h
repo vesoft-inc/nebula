@@ -52,7 +52,7 @@ private:
 
     Status getAggResultWriter(cpp2::RowValue row, RowSetWriter* rsWriter);
 
-    Status AggregateConstant();
+    Status AggregateConstant(Getters &getters);
 
 private:
     YieldSentence                              *sentence_;

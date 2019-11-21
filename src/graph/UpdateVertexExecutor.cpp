@@ -29,6 +29,7 @@ Status UpdateVertexExecutor::prepare() {
     expCtx_ = std::make_unique<ExpressionContext>();
     expCtx_->setSpace(spaceId_);
     expCtx_->setStorageClient(ectx()->getStorageClient());
+    Getters getters;
 
     Status status = Status::OK();
     do {
@@ -43,7 +44,7 @@ Status UpdateVertexExecutor::prepare() {
         if (!status.ok()) {
             break;
         }
-        auto vid = id->eval();
+        auto vid = id->eval(getters);
         if (!vid.ok() || !Expression::isInt(vid.value())) {
             status = Status::Error("Get Vertex ID failure!");
             break;

@@ -235,8 +235,8 @@ Status GroupByExecutor::groupingData() {
 
         // Firstly: group the cols
         for (auto &col : groupCols_) {
-            auto &getters = expCtx_->getters();
             cpp2::ColumnValue::Type valType = cpp2::ColumnValue::Type::__EMPTY__;
+            Getters getters;
             getters.getInputProp = [&] (const std::string & prop) -> OptVariantType {
                 auto indexIt = schemaMap_.find(prop);
                 if (indexIt == schemaMap_.end()) {
@@ -248,7 +248,7 @@ Status GroupByExecutor::groupingData() {
                 return toVariantType(val);
             };
 
-            auto eval = col->expr()->eval();
+            auto eval = col->expr()->eval(getters);
             if (!eval.ok()) {
                 return eval.status();
             }
@@ -277,8 +277,8 @@ Status GroupByExecutor::groupingData() {
         // Apply value
         auto i = 0u;
         for (auto &col : calVals) {
-            auto &getters = expCtx_->getters();
             cpp2::ColumnValue::Type valType = cpp2::ColumnValue::Type::__EMPTY__;
+            Getters getters;
             getters.getInputProp = [&] (const std::string &prop) -> OptVariantType{
                 auto indexIt = schemaMap_.find(prop);
                 if (indexIt == schemaMap_.end()) {
@@ -289,7 +289,7 @@ Status GroupByExecutor::groupingData() {
                 valType = val.getType();
                 return toVariantType(val);
             };
-            auto eval = yieldCols_[i]->expr()->eval();
+            auto eval = yieldCols_[i]->expr()->eval(getters);
             if (!eval.ok()) {
                 return eval.status();
             }

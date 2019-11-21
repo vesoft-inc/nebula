@@ -195,7 +195,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             }
 
             auto writer = std::make_unique<RowWriter>(outputSchema);
-            auto &getters = expCtx_->getters();
+            Getters getters;
             getters.getAliasProp =
                 [&vreader, &vschema] (const std::string&,
                                       const std::string &prop) -> OptVariantType {
@@ -203,7 +203,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             };
             for (auto *column : yields_) {
                 auto *expr = column->expr();
-                auto value = expr->eval();
+                auto value = expr->eval(getters);
                 if (!value.ok()) {
                     onError_(value.status());
                     return;
@@ -251,6 +251,7 @@ Status FetchVerticesExecutor::setupVidsFromExpr() {
     }
 
     expCtx_->setSpace(spaceId_);
+    Getters getters;
     auto vidList = sentence_->vidList();
     for (auto *expr : vidList) {
         expr->setContext(expCtx_.get());
@@ -258,7 +259,7 @@ Status FetchVerticesExecutor::setupVidsFromExpr() {
         if (!status.ok()) {
             break;
         }
-        auto value = expr->eval();
+        auto value = expr->eval(getters);
         if (!value.ok()) {
             return value.status();
         }

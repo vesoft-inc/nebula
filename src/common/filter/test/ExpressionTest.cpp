@@ -45,7 +45,8 @@ TEST_F(ExpressionTest, LiteralConstants) {
         ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
         auto *expr = getFilterExpr(parsed.value().get());               \
         ASSERT_NE(nullptr, expr);                                       \
-        auto value = expr->eval();                                      \
+        Getters getters;                                                \
+        auto value = expr->eval(getters);                               \
         ASSERT_TRUE(value.ok());                                        \
         auto v = value.value();                                         \
         ASSERT_TRUE(Expression::is##type(v));                           \
@@ -56,7 +57,7 @@ TEST_F(ExpressionTest, LiteralConstants) {
         }                                                               \
         auto decoded = Expression::decode(Expression::encode(expr));    \
         ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
-        value = decoded.value()->eval();                                \
+        value = decoded.value()->eval(getters);                         \
         ASSERT_TRUE(value.ok());                                        \
         v = value.value();                                              \
         ASSERT_TRUE(Expression::is##type(v));                           \
@@ -88,7 +89,8 @@ TEST_F(ExpressionTest, LiteralConstants) {
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
-        auto value = expr->eval();
+        Getters getters;
+        auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
         ASSERT_TRUE(Expression::isString(v));
@@ -99,7 +101,7 @@ TEST_F(ExpressionTest, LiteralConstants) {
         auto decoded = Expression::decode(buffer);
         ASSERT_TRUE(decoded.ok()) << decoded.status();
         ASSERT_NE(nullptr, decoded.value());
-        value = decoded.value()->eval();
+        value = decoded.value()->eval(getters);
         ASSERT_TRUE(value.ok());
         v = value.value();
         ASSERT_TRUE(Expression::isString(v));
@@ -117,7 +119,8 @@ TEST_F(ExpressionTest, LiteralContantsArithmetic) {
         ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
         auto *expr = getFilterExpr(parsed.value().get());               \
         ASSERT_NE(nullptr, expr);                                       \
-        auto value = expr->eval();                                      \
+        Getters getters;                                                \
+        auto value = expr->eval(getters);                               \
         ASSERT_TRUE(value.ok());                                        \
         auto v = value.value();                                         \
         ASSERT_TRUE(Expression::is##type(v));                           \
@@ -130,7 +133,7 @@ TEST_F(ExpressionTest, LiteralContantsArithmetic) {
         }                                                               \
         auto decoded = Expression::decode(Expression::encode(expr));    \
         ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
-        value = decoded.value()->eval();                                \
+        value = decoded.value()->eval(getters);                         \
         ASSERT_TRUE(value.ok());                                        \
         v = value.value();                                              \
         ASSERT_TRUE(Expression::is##type(v));                           \
@@ -206,7 +209,8 @@ TEST_F(ExpressionTest, LiteralContantsArithmetic) {
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
-        auto value = expr->eval();
+        Getters getters;
+        auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
         ASSERT_TRUE(Expression::isInt(v));
@@ -217,7 +221,7 @@ TEST_F(ExpressionTest, LiteralContantsArithmetic) {
         auto decoded = Expression::decode(buffer);
         ASSERT_TRUE(decoded.ok()) << decoded.status();
         ASSERT_NE(nullptr, decoded.value());
-        value = decoded.value()->eval();
+        value = decoded.value()->eval(getters);
         ASSERT_TRUE(value.ok());
         v = value.value();
         ASSERT_TRUE(Expression::isInt(v));
@@ -235,7 +239,8 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
         auto *expr = getFilterExpr(parsed.value().get());               \
         ASSERT_NE(nullptr, expr);                                       \
-        auto value = expr->eval();                                      \
+        Getters getters;                                                \
+        auto value = expr->eval(getters);                               \
         ASSERT_TRUE(value.ok());                                        \
         auto v = value.value();                                         \
         ASSERT_TRUE(Expression::isBool(v));                             \
@@ -243,7 +248,7 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         ASSERT_EQ((expected), Expression::asBool(v));                   \
         auto decoded = Expression::decode(Expression::encode(expr));    \
         ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
-        value = decoded.value()->eval();                                \
+        value = decoded.value()->eval(getters);                         \
         ASSERT_TRUE(value.ok());                                        \
         v = value.value();                                              \
         ASSERT_TRUE(Expression::isBool(v));                             \
@@ -354,14 +359,15 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
-        auto value = expr->eval();
+        Getters getters;
+        auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
         ASSERT_TRUE(Expression::isBool(v));
         ASSERT_TRUE(Expression::asBool(v));
         auto decoded = Expression::decode(Expression::encode(expr));
         ASSERT_TRUE(decoded.ok()) << decoded.status();
-        value = decoded.value()->eval();
+        value = decoded.value()->eval(getters);
         ASSERT_TRUE(value.ok());
         v = value.value();
         ASSERT_TRUE(Expression::isBool(v));
@@ -373,14 +379,15 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
-        auto value = expr->eval();
+        Getters getters;
+        auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
         ASSERT_TRUE(Expression::isBool(v));
         ASSERT_TRUE(Expression::asBool(v));
         auto decoded = Expression::decode(Expression::encode(expr));
         ASSERT_TRUE(decoded.ok()) << decoded.status();
-        value = decoded.value()->eval();
+        value = decoded.value()->eval(getters);
         ASSERT_TRUE(value.ok());
         v = value.value();
         ASSERT_TRUE(Expression::isBool(v));
@@ -400,7 +407,8 @@ TEST_F(ExpressionTest, LiteralConstantsLogical) {
         ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
         auto *expr = getFilterExpr(parsed.value().get());               \
         ASSERT_NE(nullptr, expr);                                       \
-        auto value = expr->eval();                                      \
+        Getters getters;                                                \
+        auto value = expr->eval(getters);                               \
         ASSERT_TRUE(value.ok());                                        \
         auto v = value.value();                                         \
         ASSERT_TRUE(Expression::isBool(v));                             \
@@ -408,7 +416,7 @@ TEST_F(ExpressionTest, LiteralConstantsLogical) {
         ASSERT_EQ((expected), Expression::asBool(v));                   \
         auto decoded = Expression::decode(Expression::encode(expr));    \
         ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
-        value = decoded.value()->eval();                                \
+        value = decoded.value()->eval(getters);                         \
         ASSERT_TRUE(value.ok());                                        \
         v = value.value();                                              \
         ASSERT_TRUE(Expression::isBool(v));                             \
@@ -486,7 +494,8 @@ TEST_F(ExpressionTest, InputReference) {
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
         auto ctx = std::make_unique<ExpressionContext>();
-        ctx->getters().getInputProp = [] (auto &prop) -> VariantType {
+        Getters getters;
+        getters.getInputProp = [] (auto &prop) -> VariantType {
             if (prop == "name") {
                 return std::string("Freddie");
             } else {
@@ -494,7 +503,7 @@ TEST_F(ExpressionTest, InputReference) {
             }
         };
         expr->setContext(ctx.get());
-        auto value = expr->eval();
+        auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
         ASSERT_TRUE(Expression::isString(v));
@@ -507,7 +516,8 @@ TEST_F(ExpressionTest, InputReference) {
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
         auto ctx = std::make_unique<ExpressionContext>();
-        ctx->getters().getInputProp = [] (auto &prop) -> VariantType {
+        Getters getters;
+        getters.getInputProp = [] (auto &prop) -> VariantType {
             if (prop == "age") {
                 return 18L;
             } else {
@@ -515,7 +525,7 @@ TEST_F(ExpressionTest, InputReference) {
             }
         };
         expr->setContext(ctx.get());
-        auto value = expr->eval();
+        auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
         ASSERT_TRUE(Expression::isBool(v));
@@ -533,14 +543,15 @@ TEST_F(ExpressionTest, SourceTagReference) {
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
         auto ctx = std::make_unique<ExpressionContext>();
-        ctx->getters().getSrcTagProp = [] (auto &tag, auto &prop) -> VariantType {
+        Getters getters;
+        getters.getSrcTagProp = [] (auto &tag, auto &prop) -> VariantType {
             if (tag == "person" && prop == "name") {
                 return std::string("dutor");
             }
             return std::string("nobody");
         };
         expr->setContext(ctx.get());
-        auto value = expr->eval();
+        auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
         ASSERT_TRUE(Expression::isBool(v));
@@ -560,7 +571,8 @@ TEST_F(ExpressionTest, EdgeReference) {
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
         auto ctx = std::make_unique<ExpressionContext>();
-        ctx->getters().getAliasProp = [] (auto &, auto &prop) -> VariantType {
+        Getters getters;
+        getters.getAliasProp = [] (auto &, auto &prop) -> VariantType {
             if (prop == "cur_time") {
                 return static_cast<int64_t>(::time(NULL));
             }
@@ -573,7 +585,7 @@ TEST_F(ExpressionTest, EdgeReference) {
             return 1545798790L;
         };
         expr->setContext(ctx.get());
-        auto value = expr->eval();
+        auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
         ASSERT_TRUE(Expression::isBool(v));
@@ -597,7 +609,8 @@ TEST_F(ExpressionTest, FunctionCall) {
         decoded.value()->setContext(ctx.get());                         \
         auto status = decoded.value()->prepare();                       \
         ASSERT_TRUE(status.ok()) << status;                             \
-        auto value = decoded.value()->eval();                           \
+        Getters getters;                                                \
+        auto value = decoded.value()->eval(getters);                    \
         ASSERT_TRUE(value.ok());                                        \
         auto v = value.value();                                         \
         ASSERT_TRUE(Expression::is##type(v));                           \
@@ -679,7 +692,8 @@ TEST_F(ExpressionTest, StringFunctionCall) {
         decoded.value()->setContext(ctx.get());                         \
         auto status = decoded.value()->prepare();                       \
         ASSERT_TRUE(status.ok()) << status;                             \
-        auto value = decoded.value()->eval();                           \
+        Getters getters;                                                \
+        auto value = decoded.value()->eval(getters);                    \
         ASSERT_TRUE(value.ok());                                        \
         auto v = value.value();                                         \
         ASSERT_TRUE(Expression::is##type(v));                           \
@@ -760,7 +774,8 @@ TEST_F(ExpressionTest, InvalidExpressionTest) {
         decoded.value()->setContext(ctx.get());                       \
         auto status = decoded.value()->prepare();                     \
         ASSERT_TRUE(status.ok()) << status;                           \
-        auto value = decoded.value()->eval();                         \
+        Getters getters;                                              \
+        auto value = decoded.value()->eval(getters);                  \
         ASSERT_TRUE(!value.ok());                                     \
     } while (false)
 
