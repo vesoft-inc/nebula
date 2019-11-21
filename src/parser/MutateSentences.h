@@ -633,15 +633,6 @@ public:
     std::string toString() const override;
 };
 
-class CompactionSentence final : public Sentence {
-public:
-    CompactionSentence() {
-        kind_ = Kind::kCompaction;
-    }
-
-    std::string toString() const override;
-};
-
 class AdminSentence final : public Sentence {
 public:
     explicit AdminSentence(const std::string& op) : op_(op) {

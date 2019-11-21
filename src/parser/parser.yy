@@ -209,7 +209,7 @@ class GraphScanner;
 %type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
 %type <sentence> ingest_sentence
-%type <sentence> compact_sentence admin_sentence
+%type <sentence> admin_sentence
 %type <sentence> show_sentence create_space_sentence describe_space_sentence
 %type <sentence> drop_space_sentence
 %type <sentence> yield_sentence
@@ -1422,13 +1422,6 @@ ingest_sentence
     }
     ;
 
-compact_sentence
-    : KW_COMPACT {
-        auto sentence = new CompactionSentence();
-        $$ = sentence;
-    }
-    ;
-
 admin_sentence
     : KW_ADMIN admin_operation {
         auto sentence = new AdminSentence(*$2);
@@ -1759,7 +1752,6 @@ mutate_sentence
     | delete_edge_sentence { $$ = $1; }
     | download_sentence { $$ = $1; }
     | ingest_sentence { $$ = $1; }
-    | compact_sentence { $$ = $1; }
     | admin_sentence { $$ = $1; }
     ;
 

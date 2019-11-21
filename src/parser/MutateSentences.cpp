@@ -276,10 +276,6 @@ std::string IngestSentence::toString() const {
     return "INGEST";
 }
 
-std::string CompactionSentence::toString() const {
-    return "COMPACTION";
-}
-
 std::string AdminSentence::toString() const {
     return op_;
 }
