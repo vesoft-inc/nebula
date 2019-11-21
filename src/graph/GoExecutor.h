@@ -159,13 +159,11 @@ private:
         size_t respIndex,
         std::vector<size_t> &bucket,
         std::unordered_set<std::string> &uniqResult,
-        std::shared_ptr<SchemaWriter> schema,
         RowSetWriter &rsWriter);
 
     void writeToRowSet(std::vector<VariantType> &record,
                        std::vector<nebula::cpp2::SupportedType> &colTypes,
                        std::unordered_set<std::string> &uniqResult,
-                       std::shared_ptr<SchemaWriter> schema,
                        RowSetWriter &rsWriter);
 
     void processRecords(

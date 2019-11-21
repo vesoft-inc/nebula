@@ -546,7 +546,6 @@ std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const 
 }
 
 void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
-    finalResp_ = std::move(rpcResp);
     if (expCtx_->isOverAllEdge() && yields_.empty()) {
         auto edgeNames = getEdgeNamesFromResp(rpcResp);
         if (edgeNames.empty()) {
@@ -566,6 +565,7 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
         }
     }
 
+    finalResp_ = std::move(rpcResp);
     auto result = processFinalResult();
     auto cb = [this] (auto &&r) {
         processRecords(std::move(r));
@@ -776,10 +776,9 @@ std::vector<folly::Future<StatusOr<RowSetWriter>>>
         runner->add([this, p = std::move(pro), spaceId = spaceId,
                 respIndex = respIndex, bucket] () mutable {
             Status status = Status::OK();
-            std::shared_ptr<SchemaWriter> outputSchema;
             RowSetWriter rsWriter;
             std::unordered_set<std::string> uniqResult;
-            status = processVdatas(spaceId, respIndex, bucket, uniqResult, outputSchema, rsWriter);
+            status = processVdatas(spaceId, respIndex, bucket, uniqResult, rsWriter);
             if (!status.ok()) {
                 p.setValue(std::move(status));
                 return;
@@ -796,7 +795,6 @@ Status GoExecutor::processVdatas(
         size_t respIndex,
         std::vector<size_t> &bucket,
         std::unordered_set<std::string> &uniqResult,
-        std::shared_ptr<SchemaWriter> schema,
         RowSetWriter &rsWriter) {
     auto &resp = finalResp_.responses()[respIndex];
     auto tagSchemaIter = tagSchemaMap_.find(respIndex);
@@ -948,7 +946,7 @@ Status GoExecutor::processVdatas(
                     }
                     record.emplace_back(std::move(value.value()));
                 }
-                writeToRowSet(record, colTypes, uniqResult, schema, rsWriter);
+                writeToRowSet(record, colTypes, uniqResult, rsWriter);
                 ++iter;
             }  // while `iter'
         }
@@ -959,10 +957,9 @@ Status GoExecutor::processVdatas(
 void GoExecutor::writeToRowSet(std::vector<VariantType> &record,
                                std::vector<nebula::cpp2::SupportedType> &colTypes,
                                std::unordered_set<std::string> &uniqResult,
-                               std::shared_ptr<SchemaWriter> schema,
                                RowSetWriter &rsWriter) {
-        if (schema == nullptr) {
-            schema = std::make_shared<SchemaWriter>();
+        if (rsWriter.schema() == nullptr) {
+            auto schema = std::make_shared<SchemaWriter>();
             auto colnames = getResultColumnNames();
             if (record.size() != colTypes.size()) {
                 LOG(FATAL) << "data nums: " << record.size()
@@ -996,7 +993,7 @@ void GoExecutor::writeToRowSet(std::vector<VariantType> &record,
             rsWriter.setSchema(schema);
         }  // if
 
-        RowWriter writer(schema);
+        RowWriter writer(rsWriter.schema());
         for (auto &column : record) {
             switch (column.which()) {
                 case VAR_INT64:
@@ -1029,7 +1026,7 @@ void GoExecutor::writeToRowSet(std::vector<VariantType> &record,
 
 void GoExecutor::processRecords(
         std::vector<folly::Try<StatusOr<RowSetWriter>>> rsWriters) {
-    std::unique_ptr<RowSetWriter> rsWriter;
+    auto rsWriter = std::make_unique<RowSetWriter>();
     for (auto &t : rsWriters) {
         auto &statusOr = t.value();
         if (!statusOr.ok()) {
@@ -1040,10 +1037,14 @@ void GoExecutor::processRecords(
         auto &v = statusOr.value();
         // TODO: need distinct
 
-        if (rsWriter == nullptr) {
+        if (v.schema() == nullptr) {
+            // Skip the invalid rswriter
+            // The result may all be filtered.
+            continue;
+        } else if (rsWriter->schema() == nullptr) {
             // Assume that we always get the same schema,
             // although the schema was generated in diffrent context.
-            rsWriter = std::make_unique<RowSetWriter>(v.schema());
+            rsWriter->setSchema(v.schema());
         }
 
         std::string rows = v.data();
