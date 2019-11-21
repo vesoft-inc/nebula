@@ -103,7 +103,7 @@ void DeleteVertexExecutor::deleteVertex() {
             return;
         }
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
         return;
     };
 
