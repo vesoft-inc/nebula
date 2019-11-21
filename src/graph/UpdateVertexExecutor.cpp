@@ -63,6 +63,10 @@ Status UpdateVertexExecutor::prepare() {
         }
     } while (false);
 
+    if (status.ok()) {
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getUpdateVertexStats(),
+                false, duration().elapsedInUSec());
+    }
     return status;
 }
 
@@ -165,6 +169,8 @@ void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcRe
                 }
             } else {
                 DCHECK(onError_);
+                stats::Stats::addStatsValue(ectx()->getGraphStats()->getUpdateVertexStats(),
+                        false, duration().elapsedInUSec());
                 onError_(Status::Error("get property failed"));
                 return;
             }
@@ -173,6 +179,8 @@ void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcRe
         rows.back().set_columns(std::move(row));
     }
     resp_->set_rows(std::move(rows));
+    stats::Stats::addStatsValue(ectx()->getGraphStats()->getUpdateVertexStats(),
+            true, duration().elapsedInUSec());
     DCHECK(onFinish_);
     onFinish_(Executor::ProcessControl::kNext);
 }
@@ -191,6 +199,8 @@ void UpdateVertexExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
+            stats::Stats::addStatsValue(ectx()->getGraphStats()->getUpdateVertexStats(),
+                    false, duration().elapsedInUSec());
             DCHECK(onError_);
             onError_(std::move(resp).status());
             return;
@@ -220,6 +230,8 @@ void UpdateVertexExecutor::execute() {
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getUpdateVertexStats(),
+                false, duration().elapsedInUSec());
         DCHECK(onError_);
         onError_(Status::Error("Internal error"));
     };

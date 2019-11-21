@@ -207,6 +207,8 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
 void InsertVertexExecutor::execute() {
     auto status = check();
     if (!status.ok()) {
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertVertexStats(),
+                false, duration().elapsedInUSec());
         DCHECK(onError_);
         onError_(std::move(status));
         return;
@@ -214,6 +216,8 @@ void InsertVertexExecutor::execute() {
 
     auto result = prepareVertices();
     if (!result.ok()) {
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertVertexStats(),
+                false, duration().elapsedInUSec());
         DCHECK(onError_);
         onError_(std::move(result).status());
         return;
@@ -231,14 +235,16 @@ void InsertVertexExecutor::execute() {
             onError_(Status::Error("Internal Error"));
             return;
         }
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertVertexStats(), true);
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertVertexStats(),
+                true, duration().elapsedInUSec(), rows_.size());
         DCHECK(onFinish_);
         onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertVertexStats(), false);
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertVertexStats(),
+                false, duration().elapsedInUSec(), rows_.size());
         DCHECK(onError_);
         onError_(Status::Error("Internal error"));
         return;

@@ -214,6 +214,8 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
 void InsertEdgeExecutor::execute() {
     auto status = check();
     if (!status.ok()) {
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertEdgeStats(),
+                false, duration().elapsedInUSec());
         DCHECK(onError_);
         onError_(std::move(status));
         return;
@@ -221,6 +223,8 @@ void InsertEdgeExecutor::execute() {
 
     auto result = prepareEdges();
     if (!result.ok()) {
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertEdgeStats(),
+                false, duration().elapsedInUSec());
         DCHECK(onError_);
         onError_(std::move(result).status());
         return;
@@ -239,7 +243,8 @@ void InsertEdgeExecutor::execute() {
             onError_(Status::Error("Internal Error"));
             return;
         }
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertEdgeStats(), true);
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertEdgeStats(),
+                true, duration().elapsedInUSec(), rows_.size());
         DCHECK(onFinish_);
         onFinish_(Executor::ProcessControl::kNext);
     };
@@ -247,7 +252,8 @@ void InsertEdgeExecutor::execute() {
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
         DCHECK(onError_);
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertEdgeStats(), false);
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertEdgeStats(),
+                false, duration().elapsedInUSec(), rows_.size());
         onError_(Status::Error("Internal error"));
         return;
     };

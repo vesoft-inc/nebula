@@ -17,15 +17,15 @@ Stats::Stats(const std::string& name) {
 }
 
 // static
-void Stats::addStatsValue(Stats *stats, bool ok, int64_t latency) {
+void Stats::addStatsValue(Stats *stats, bool ok, int64_t latency, uint32_t count) {
     if (stats == nullptr) {
         return;
     }
     if (ok && stats->getQpsStatId() != 0) {
-        StatsManager::addValue(stats->getQpsStatId(), 1);
+        StatsManager::addValue(stats->getQpsStatId(), count);
     }
     if (!ok && stats->getErrorQpsStatId() != 0) {
-        StatsManager::addValue(stats->getErrorQpsStatId(), 1);
+        StatsManager::addValue(stats->getErrorQpsStatId(), count);
     }
     if (stats->getLatencyStatId() != 0) {
         StatsManager::addValue(stats->getLatencyStatId(), latency);

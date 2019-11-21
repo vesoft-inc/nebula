@@ -147,6 +147,7 @@ void FetchExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
         if (outputs->hasData()) {
             auto ret = outputs->getRows();
             if (!ret.ok()) {
+                setStats(false);
                 LOG(ERROR) << "Get rows failed: " << ret.status();
                 onError_(std::move(ret).status());
                 return;
@@ -154,8 +155,29 @@ void FetchExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
             resp_->set_rows(std::move(ret).value());
         }
     }
+    setStats(true);
     DCHECK(onFinish_);
     onFinish_(Executor::ProcessControl::kNext);
+}
+
+void FetchExecutor::setStats(bool ok) {
+    if (0 == strcmp(name(), "FetchVerticesExecutor")) {
+        if (ok) {
+            stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchVerticesStats(),
+                    true, duration().elapsedInUSec());
+        } else {
+            stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchVerticesStats(),
+                    false, duration().elapsedInUSec());
+        }
+    } else {
+        if (ok) {
+            stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchEdgesStats(),
+                    true, duration().elapsedInUSec());
+        } else {
+            stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchEdgesStats(),
+                    false, duration().elapsedInUSec());
+        }
+    }
 }
 }  // namespace graph
 }  // namespace nebula

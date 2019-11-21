@@ -37,6 +37,8 @@ protected:
 
     void finishExecution(std::unique_ptr<RowSetWriter> rsWriter);
 
+    void setStats(bool ok);
+
 protected:
     GraphSpaceID                                    spaceId_{INT_MIN};
     std::unique_ptr<ExpressionContext>              expCtx_;

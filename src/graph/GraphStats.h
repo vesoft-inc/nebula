@@ -19,9 +19,17 @@ public:
         storageClientStats_ = std::make_unique<stats::Stats>("storageCliet");
         metaClientStats_ = std::make_unique<stats::Stats>("metaClient");
         graphStats_ = std::make_unique<stats::Stats>("graph");
+        parseErrorStats_ = std::make_unique<stats::Stats>("parseError");
         insertVStats_ = std::make_unique<stats::Stats>("insertVertex");
         insertEStats_ = std::make_unique<stats::Stats>("insertEdge");
-        goStats_ = std::make_unique<stats::Stats>("query");
+        deleteVStats_ = std::make_unique<stats::Stats>("deleteVertex");
+        deleteEStats_ = std::make_unique<stats::Stats>("deleteEdge");
+        updateVStats_ = std::make_unique<stats::Stats>("updateVertex");
+        updateEStats_ = std::make_unique<stats::Stats>("updateEdge");
+        goStats_ = std::make_unique<stats::Stats>("go");
+        findPathStats_ = std::make_unique<stats::Stats>("findPath");
+        fetchVStats_ = std::make_unique<stats::Stats>("fetchVertex");
+        fetchEStats_ = std::make_unique<stats::Stats>("fetchEdge");
     }
 
     ~GraphStats() = default;
@@ -30,17 +38,33 @@ public:
     stats::Stats* getStorageClientStats() { return storageClientStats_.get(); }
     stats::Stats* getMetaClientStats() { return metaClientStats_.get(); }
     stats::Stats* getGraphStats() { return graphStats_.get(); }
+    stats::Stats* getParseErrorStats() { return parseErrorStats_.get(); }
     stats::Stats* getInsertVertexStats() { return insertVStats_.get(); }
     stats::Stats* getInsertEdgeStats() { return insertEStats_.get(); }
+    stats::Stats* getDeleteVertexStats() { return deleteVStats_.get(); }
+    stats::Stats* getDeleteEdgeStats() { return deleteEStats_.get(); }
+    stats::Stats* getUpdateVertexStats() { return updateVStats_.get(); }
+    stats::Stats* getUpdateEdgeStats() { return updateEStats_.get(); }
     stats::Stats* getGoStats() { return goStats_.get(); }
+    stats::Stats* getFindPathStats() { return findPathStats_.get(); }
+    stats::Stats* getFetchVerticesStats() { return fetchVStats_.get(); }
+    stats::Stats* getFetchEdgesStats() { return fetchEStats_.get(); }
 
 private:
     std::unique_ptr<stats::Stats> storageClientStats_;         // storageClient stats
     std::unique_ptr<stats::Stats> metaClientStats_;            // metaClient stats
-    std::unique_ptr<stats::Stats> graphStats_;                 // graphClient stats
+    std::unique_ptr<stats::Stats> graphStats_;                 // graph stats
+    std::unique_ptr<stats::Stats> parseErrorStats_;            // graph parse error stats
     std::unique_ptr<stats::Stats> insertVStats_;               // insert vertexes stats
     std::unique_ptr<stats::Stats> insertEStats_;               // insert edges stats
+    std::unique_ptr<stats::Stats> deleteVStats_;               // delete vertexes stats
+    std::unique_ptr<stats::Stats> deleteEStats_;               // delete edges stats
+    std::unique_ptr<stats::Stats> updateVStats_;               // update vertex stats
+    std::unique_ptr<stats::Stats> updateEStats_;               // update edge stats
     std::unique_ptr<stats::Stats> goStats_;                    // go stats
+    std::unique_ptr<stats::Stats> findPathStats_;              // findPath stats
+    std::unique_ptr<stats::Stats> fetchVStats_;                // fetch vertex stats
+    std::unique_ptr<stats::Stats> fetchEStats_;                // fetch edge stats
 };
 
 }  // namespace graph

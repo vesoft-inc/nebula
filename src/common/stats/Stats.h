@@ -20,7 +20,7 @@ public:
     explicit Stats(const std::string& name);
 
 public:
-    static void addStatsValue(Stats *stats, bool ok, int64_t latency = 0);
+    static void addStatsValue(Stats *stats, bool ok, int64_t latency = 0, uint32_t count = 1);
 
     int32_t getQpsStatId();
 

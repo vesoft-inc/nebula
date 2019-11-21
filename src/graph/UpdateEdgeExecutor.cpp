@@ -88,6 +88,10 @@ Status UpdateEdgeExecutor::prepare() {
         }
     } while (false);
 
+    if (!status.ok()) {
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getUpdateEdgeStats(),
+                false, duration().elapsedInUSec());
+    }
     return status;
 }
 
@@ -175,6 +179,8 @@ void UpdateEdgeExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcResp
                         LOG(FATAL) << "Unknown VariantType: " << column.which();
                 }
             } else {
+                stats::Stats::addStatsValue(ectx()->getGraphStats()->getUpdateEdgeStats(),
+                        false, duration().elapsedInUSec());
                 DCHECK(onError_);
                 onError_(Status::Error("get property failed"));
                 return;
@@ -184,6 +190,8 @@ void UpdateEdgeExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcResp
         rows.back().set_columns(std::move(row));
     }
     resp_->set_rows(std::move(rows));
+    stats::Stats::addStatsValue(ectx()->getGraphStats()->getUpdateEdgeStats(),
+            true, duration().elapsedInUSec());
     DCHECK(onFinish_);
     onFinish_(Executor::ProcessControl::kNext);
 }
@@ -211,6 +219,8 @@ void UpdateEdgeExecutor::insertReverselyEdge(storage::cpp2::UpdateResponse &&rpc
     auto cb = [this, updateResp = std::move(rpcResp)] (auto &&resp) mutable {
         auto completeness = resp.completeness();
         if (completeness != 100) {
+            stats::Stats::addStatsValue(ectx()->getGraphStats()->getUpdateEdgeStats(),
+                    false, duration().elapsedInUSec());
             // Very bad, it should delete the upsert positive edge!!!
             DCHECK(onError_);
             onError_(Status::Error("Insert the reversely edge failed."));
@@ -219,6 +229,8 @@ void UpdateEdgeExecutor::insertReverselyEdge(storage::cpp2::UpdateResponse &&rpc
         this->finishExecution(std::move(updateResp));
     };
     auto error = [this] (auto &&e) {
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getUpdateEdgeStats(),
+                false, duration().elapsedInUSec());
         LOG(ERROR) << "Exception caught: " << e.what();
         // Very bad, it should delete the upsert positive edge!!!
         DCHECK(onError_);
@@ -241,6 +253,8 @@ void UpdateEdgeExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
+            stats::Stats::addStatsValue(ectx()->getGraphStats()->getUpdateEdgeStats(),
+                    false, duration().elapsedInUSec());
             DCHECK(onError_);
             onError_(std::move(resp).status());
             return;
@@ -274,6 +288,8 @@ void UpdateEdgeExecutor::execute() {
         }
     };
     auto error = [this] (auto &&e) {
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getUpdateEdgeStats(),
+                false, duration().elapsedInUSec());
         LOG(ERROR) << "Exception caught: " << e.what();
         DCHECK(onError_);
         onError_(Status::Error("Internal error about updateEdge"));

@@ -15,6 +15,7 @@
 #include "gen-cpp2/storage_types.h"
 #include "dataman/RowWriter.h"
 #include "meta/SchemaManager.h"
+#include "time/Duration.h"
 
 
 /**
@@ -79,6 +80,10 @@ public:
         return ectx_;
     }
 
+    const time::Duration& duration() const {
+        return duration_;
+    }
+
 protected:
     std::unique_ptr<Executor> makeExecutor(Sentence *sentence);
 
@@ -109,6 +114,7 @@ protected:
     ExecutionContext                           *ectx_;
     std::function<void(ProcessControl)>         onFinish_;
     std::function<void(Status)>                 onError_;
+    time::Duration                              duration_;
 };
 
 }   // namespace graph

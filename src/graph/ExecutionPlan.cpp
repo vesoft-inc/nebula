@@ -21,6 +21,7 @@ void ExecutionPlan::execute() {
         if (!result.ok()) {
             status = std::move(result).status();
             LOG(ERROR) << status;
+            stats::Stats::addStatsValue(ectx()->getGraphStats()->getParseErrorStats(), false);
             break;
         }
 
