@@ -70,7 +70,13 @@ void BalanceExecutor::balanceLeader() {
 }
 
 void BalanceExecutor::balanceData(bool isStop) {
-    auto future = ectx()->getMetaClient()->balance(isStop);
+    std::vector<HostAddr> hostDelList;
+    auto hostDel = sentence_->hostDel();
+    if (hostDel != nullptr) {
+        hostDelList = hostDel->hosts();
+    }
+    auto future = ectx()->getMetaClient()->balance(std::move(hostDelList),
+                                                   isStop);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {

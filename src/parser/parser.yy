@@ -86,6 +86,8 @@ class GraphScanner;
     nebula::EdgeKeys                       *edge_keys;
     nebula::EdgeKeyRef                     *edge_key_ref;
     nebula::GroupClause                    *group_clause;
+    nebula::HostList                       *host_list;
+    nebula::HostAddr                       *host_item;
 }
 
 /* destructors */
@@ -180,8 +182,10 @@ class GraphScanner;
 %type <to_clause> to_clause
 %type <find_path_upto_clause> find_path_upto_clause
 %type <group_clause> group_clause
+%type <host_list> host_list
+%type <host_item> host_item
 
-%type <intval> unary_integer rank
+%type <intval> unary_integer rank port
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
@@ -1672,6 +1676,29 @@ set_config_sentence
     }
     ;
 
+host_list
+    : host_item {
+        $$ = new HostList();
+        $$->addHost($1);
+    }
+    | host_list COMMA host_item {
+        $$ = $1;
+        $$->addHost($3);
+    }
+    | host_list COMMA {
+        $$ = $1;
+    }
+    ;
+
+host_item
+    : IPV4 COLON port {
+        $$ = new nebula::HostAddr();
+        $$->first = $1;
+        $$->second = $3;
+    }
+
+port : INTEGER { $$ = $1; }
+
 balance_sentence
     : KW_BALANCE KW_LEADER {
         $$ = new BalanceSentence(BalanceSentence::SubType::kLeader);
@@ -1684,6 +1711,9 @@ balance_sentence
     }
     | KW_BALANCE KW_DATA KW_STOP {
         $$ = new BalanceSentence(BalanceSentence::SubType::kDataStop);
+    }
+    | KW_BALANCE KW_DATA KW_REMOVE host_list {
+        $$ = new BalanceSentence(BalanceSentence::SubType::kData, $4);
     }
     ;
 

@@ -193,7 +193,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
 
     LOG(INFO) << "Let's balance";
     auto bIdRet = balancer.balance();
-    CHECK(bIdRet.ok()) << bIdRet.status();
+    CHECK(ok(bIdRet));
     while (balancer.isRunning()) {
         sleep(1);
     }
