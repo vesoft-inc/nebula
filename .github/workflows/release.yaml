@@ -26,15 +26,15 @@ jobs:
         id: vars
         env:
           CPACK_OUTPUT_DIR: build/cpack_output
-          SHA_FILE: sha256sum.txt
+          SHA_EXT: sha256sum.txt
         run: |
           tag=$(echo ${{ github.ref }} | rev | cut -d/ -f1 | rev)
           cd $CPACK_OUTPUT_DIR
           filename=$(find . -type f \( -iname \*.deb -o -iname \*.rpm \) -exec ls {} \;)
-          sha256sum $filename > $filename.$SHA_FILE
+          sha256sum $filename > $filename.$SHA_EXT
           echo ::set-output name=tag::$tag
           echo ::set-output name=filepath::$(echo $CPACK_OUTPUT_DIR/$filename)
-          echo ::set-output name=shafilepath::$(echo $CPACK_OUTPUT_DIR/$filename.$SHA_FILE)
+          echo ::set-output name=shafilepath::$(echo $CPACK_OUTPUT_DIR/$filename.$SHA_EXT)
       - name: upload release asset
         run: |
           ./ci/scripts/upload-github-release-asset.sh github_token=${{ secrets.GITHUB_TOKEN }} repo=${{ github.repository }} tag=${{ steps.vars.outputs.tag }} filepath=${{ steps.vars.outputs.filepath }}
