@@ -43,6 +43,8 @@ Some notes:
 class Balancer {
     FRIEND_TEST(BalanceTest, BalancePartsTest);
     FRIEND_TEST(BalanceTest, NormalTest);
+    FRIEND_TEST(BalanceTest, SpecifyHostTest);
+    FRIEND_TEST(BalanceTest, SpecifyMultiHostTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
     FRIEND_TEST(BalanceTest, StopBalanceDataTest);
     FRIEND_TEST(BalanceTest, LeaderBalancePlanTest);
@@ -65,7 +67,7 @@ public:
     /*
      * Return Error if reject the balance request, otherwise return balance id.
      * */
-    StatusOr<BalanceID> balance();
+    ErrorOr<cpp2::ErrorCode, BalanceID> balance(std::vector<HostAddr> hostDel = {});
 
     /**
      * Show balance plan id status.
@@ -127,9 +129,10 @@ private:
     /**
      * Build balance plan and save it in kvstore.
      * */
-    Status buildBalancePlan();
+    cpp2::ErrorCode buildBalancePlan(std::vector<HostAddr> hostDel);
 
-    std::vector<BalanceTask> genTasks(GraphSpaceID spaceId);
+    ErrorOr<cpp2::ErrorCode, std::vector<BalanceTask>> genTasks(GraphSpaceID spaceId,
+                                                                std::vector<HostAddr>& hostDel);
 
     void getHostParts(GraphSpaceID spaceId,
                       std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,

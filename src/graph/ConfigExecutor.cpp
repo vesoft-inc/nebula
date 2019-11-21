@@ -78,7 +78,7 @@ void ConfigExecutor::showVariables() {
         resp_->set_rows(std::move(rows));
 
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -160,7 +160,7 @@ void ConfigExecutor::setVariables() {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
 
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -215,7 +215,7 @@ void ConfigExecutor::getVariables() {
         resp_->set_rows(std::move(rows));
 
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {

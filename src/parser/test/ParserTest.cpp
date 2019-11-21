@@ -1395,6 +1395,12 @@ TEST(Parser, BalanceOperation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "BALANCE DATA REMOVE 192.168.0.1:50000,192.168.0.1:50001";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, CrashByFuzzer) {
@@ -1489,6 +1495,15 @@ TEST(Parser, GroupBy) {
                             "COUNT($^.person.name )";
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());
+    }
+}
+
+TEST(Parser, Return) {
+    {
+        GQLParser parser;
+        std::string query = "RETURN $A IF $A IS NOT NULL";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
     }
 }
 }   // namespace nebula

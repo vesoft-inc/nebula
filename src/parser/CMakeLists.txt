@@ -21,6 +21,7 @@ nebula_add_library(
     TraverseSentences.cpp
     AdminSentences.cpp
     UserSentences.cpp
+    ProcessControlSentences.cpp
 )
 
 nebula_add_subdirectory(test)
