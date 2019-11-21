@@ -14,7 +14,7 @@ prop_value_list:
 INSERT VERTEX 可向 Nebula 插入节点。
 
 - `tag_name` 表示标签（节点类型），在进行 `INSERT VERTEX` 操作前需创建好
-- `prop_name_list` 为指定标签的属性列表。
+- `prop_name_list` 指定标签的属性列表。
 - `prop_value_list` 须根据 <prop_name_list> 列出属性性，如无匹配类型，则返回错误。
 
 > 目前版本尚不支持默认属性值。
@@ -22,8 +22,8 @@ INSERT VERTEX 可向 Nebula 插入节点。
 ## 示例
 
 ```ngql
-# CREATE TAG t1()                   -- 创建空属性标签 t1
-INSERT VERTEX t1 () VALUES 10:()    -- 插入空属性点 100
+nebula> CREATE TAG t1()                   -- 创建空属性标签 t1
+nebula> INSERT VERTEX t1 () VALUES 10:()    -- 插入空属性点 10
 ```
 
 ```ngql

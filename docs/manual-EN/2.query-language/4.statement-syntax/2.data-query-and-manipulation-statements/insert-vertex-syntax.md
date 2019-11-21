@@ -22,8 +22,8 @@ INSERT VERTEX statement inserts one vertex into Nebula.
 ## Examples
 
 ```ngql
-# CREATE TAG t1()                   -- create tag t1 with empty property
-INSERT VERTEX t1 () VALUES 10:()    -- insert a vertex with vid 100 and empty property
+nebula> CREATE TAG t1()                   -- create tag t1 with empty property
+nebula> INSERT VERTEX t1 () VALUES 10:()    -- insert vertex 10 with no property
 ```
 
 ```ngql
