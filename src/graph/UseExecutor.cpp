@@ -37,7 +37,7 @@ void UseExecutor::execute() {
                    sentence_->space()->c_str(), spaceId);
 
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
