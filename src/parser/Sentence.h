@@ -60,6 +60,7 @@ public:
         kFindPath,
         kLimit,
         KGroupBy,
+        kReturn,
     };
 
     Kind kind() const {

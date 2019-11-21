@@ -183,7 +183,7 @@ void GroupByExecutor::execute() {
 
     if (rows_.empty()) {
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
         return;
     }
 
@@ -219,7 +219,7 @@ void GroupByExecutor::execute() {
     }
 
     DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 
