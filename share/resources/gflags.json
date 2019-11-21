@@ -9,8 +9,8 @@
         "minloglevel",
         "v",
         "heartbeat_interval_secs",
-        "meta_client_retry_times"
-        "slow_op_threshhold_ms",
+        "meta_client_retry_times",
+        "slow_op_threshhold_ms"
     ],
     "IGNORED": [
         "logging",
