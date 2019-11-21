@@ -15,14 +15,10 @@ namespace storage {
 
 StorageClient::StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> threadPool,
                              meta::MetaClient *client,
-                             int32_t latencyStatId,
-                             int32_t qpsStatId,
-                             int32_t errorQpsStatId)
+                             stats::Stats* stats)
         : ioThreadPool_(threadPool)
         , client_(client)
-        , latencyStatId_(latencyStatId)
-        , qpsStatId_(qpsStatId)
-        , errorQpsStatId_(errorQpsStatId) {
+        , stats_(stats) {
     clientsMan_
         = std::make_unique<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>();
 }

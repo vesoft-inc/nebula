@@ -30,17 +30,13 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
                        HostAddr localHost,
                        ClusterID clusterId,
                        bool sendHeartBeat,
-                       int32_t latencyStatId,
-                       int32_t qpsStatId,
-                       int32_t errorQpsStatId)
+                       stats::Stats *stats)
     : ioThreadPool_(ioThreadPool)
     , addrs_(std::move(addrs))
     , localHost_(localHost)
     , clusterId_(clusterId)
     , sendHeartBeat_(sendHeartBeat)
-    , latencyStatId_(latencyStatId)
-    , qpsStatId_(qpsStatId)
-    , errorQpsStatId_(errorQpsStatId) {
+    , stats_(stats) {
     CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
     CHECK(!addrs_.empty())
         << "No meta server address is specified. Meta server is required";
@@ -348,9 +344,7 @@ void MetaClient::getResponse(Request req,
                     LOG(INFO) << "Exceed retry limit";
                     pro.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
                                                                    t.exception().what().c_str())));
-                    if (errorQpsStatId_ != 0) {
-                        stats::StatsManager::addValue(errorQpsStatId_, 1);
-                    }
+                    stats::Stats::addStatsValue(stats_, false, duration.elapsedInUSec());
                 }
                 return;
             }
@@ -358,10 +352,7 @@ void MetaClient::getResponse(Request req,
             if (resp.code == cpp2::ErrorCode::SUCCEEDED) {
                 // succeeded
                 pro.setValue(respGen(std::move(resp)));
-                if (latencyStatId_ != 0 && qpsStatId_ !=0) {
-                    stats::StatsManager::addValue(this->latencyStatId_, duration.elapsedInUSec());
-                    stats::StatsManager::addValue(this->qpsStatId_, 1);
-                }
+                stats::Stats::addStatsValue(stats_, true, duration.elapsedInUSec());
 
                 return;
             } else if (resp.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
@@ -386,15 +377,9 @@ void MetaClient::getResponse(Request req,
                 }
             }
             pro.setValue(this->handleResponse(resp));
-            if (latencyStatId_ != 0 && qpsStatId_ !=0 && resp.code == cpp2::ErrorCode::SUCCEEDED) {
-                stats::StatsManager::addValue(this->latencyStatId_, duration.elapsedInUSec());
-                stats::StatsManager::addValue(this->qpsStatId_, 1);
-                return;
-            }
-
-            if (errorQpsStatId_ != 0) {
-                stats::StatsManager::addValue(errorQpsStatId_, 1);
-            }
+            stats::Stats::addStatsValue(stats_,
+                                        resp.code == cpp2::ErrorCode::SUCCEEDED,
+                                        duration.elapsedInUSec());
         });  // then
     });  // via
 }

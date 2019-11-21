@@ -150,12 +150,9 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
 
                 if (context->removeRequest(host)) {
                     // Received all responses
-                    if (context->resp.succeeded() && latencyStatId_ != 0 && qpsStatId_ !=0) {
-                        stats::StatsManager::addValue(latencyStatId_, duration.elapsedInUSec());
-                        stats::StatsManager::addValue(qpsStatId_, 1);
-                    } else if (errorQpsStatId_ != 0) {
-                        stats::StatsManager::addValue(errorQpsStatId_, 1);
-                    }
+                    stats::Stats::addStatsValue(stats_,
+                                                context->resp.succeeded(),
+                                                duration.elapsedInUSec());
                     context->promise.setValue(std::move(context->resp));
                 }
             });
@@ -165,12 +162,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
     if (context->finishSending()) {
         // Received all responses, most likely, all rpc failed
         context->promise.setValue(std::move(context->resp));
-        if (context->resp.succeeded() && latencyStatId_ != 0 && qpsStatId_ !=0) {
-            stats::StatsManager::addValue(latencyStatId_, duration.elapsedInUSec());
-            stats::StatsManager::addValue(qpsStatId_, 1);
-        } else if (errorQpsStatId_ != 0) {
-            stats::StatsManager::addValue(errorQpsStatId_, 1);
-        }
+        stats::Stats::addStatsValue(stats_, context->resp.succeeded(), duration.elapsedInUSec());
     }
 
     return context->promise.getSemiFuture();
@@ -182,6 +174,7 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
         folly::EventBase* evb,
         std::pair<HostAddr, Request> request,
         RemoteFunc remoteFunc) {
+    time::Duration duration;
     if (evb == nullptr) {
         DCHECK(!!ioThreadPool_);
         evb = ioThreadPool_->getEventBase();
@@ -189,16 +182,18 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
     folly::Promise<StatusOr<Response>> pro;
     auto f = pro.getFuture();
     folly::via(evb, [evb, request = std::move(request), remoteFunc = std::move(remoteFunc),
-                     pro = std::move(pro), this] () mutable {
+                     pro = std::move(pro), duration, this] () mutable {
         auto host = request.first;
         auto client = clientsMan_->client(host, evb);
         auto spaceId = request.second.get_space_id();
         auto partId = request.second.get_part_id();
         LOG(INFO) << "Send request to storage " << host;
         remoteFunc(client.get(), std::move(request.second)).via(evb)
-             .then([spaceId, partId, p = std::move(pro), this] (folly::Try<Response>&& t) mutable {
+             .then([spaceId, partId, p = std::move(pro),
+                    duration, this] (folly::Try<Response>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
+                stats::Stats::addStatsValue(stats_, false, duration.elapsedInUSec());
                 p.setValue(Status::Error(folly::stringPrintf("RPC failure in StorageClient: %s",
                                                              t.exception().what().c_str())));
                 invalidLeader(spaceId, partId);
@@ -220,6 +215,9 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
                     invalidLeader(spaceId, code.get_part_id());
                 }
             }
+            stats::Stats::addStatsValue(stats_,
+                                        result.get_failed_codes().empty(),
+                                        duration.elapsedInUSec());
             p.setValue(std::move(resp));
         });
     });  // via

@@ -231,12 +231,14 @@ void InsertVertexExecutor::execute() {
             onError_(Status::Error("Internal Error"));
             return;
         }
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertVertexStats(), true);
         DCHECK(onFinish_);
         onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertVertexStats(), false);
         DCHECK(onError_);
         onError_(Status::Error("Internal error"));
         return;

@@ -36,9 +36,7 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
                                                      HostAddr(0, 0),
                                                      0,
                                                      false,
-                                                     stats_->getMLatencyId(),
-                                                     stats_->getMQpsId(),
-                                                     stats_->getErrorMQpsId());
+                                                     stats_->getMetaClientStats());
     // load data try 3 time
     bool loadDataOk = metaClient_->waitForMetadReady(3);
     if (!loadDataOk) {
@@ -53,9 +51,7 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
 
     storage_ = std::make_unique<storage::StorageClient>(ioExecutor,
                                                         metaClient_.get(),
-                                                        stats_->getSLatencyId(),
-                                                        stats_->getSQpsId(),
-                                                        stats_->getErrorSQpsId());
+                                                        stats_->getStorageClientStats());
     return Status::OK();
 }
 

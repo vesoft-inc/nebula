@@ -239,6 +239,7 @@ void InsertEdgeExecutor::execute() {
             onError_(Status::Error("Internal Error"));
             return;
         }
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertEdgeStats(), true);
         DCHECK(onFinish_);
         onFinish_(Executor::ProcessControl::kNext);
     };
@@ -246,6 +247,7 @@ void InsertEdgeExecutor::execute() {
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
         DCHECK(onError_);
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertEdgeStats(), false);
         onError_(Status::Error("Internal error"));
         return;
     };

@@ -699,6 +699,7 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
     if (expCtx_->isOverAllEdge() && yields_.empty()) {
         auto edgeNames = getEdgeNamesFromResp(rpcResp);
         if (edgeNames.empty()) {
+            stats::Stats::addStatsValue(ectx()->getGraphStats()->getGoStats(), false);
             DCHECK(onError_);
             onError_(Status::Error("get edge name failed"));
             return;
@@ -726,6 +727,7 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
         if (outputs != nullptr && outputs->hasData()) {
             auto ret = outputs->getRows();
             if (!ret.ok()) {
+                stats::Stats::addStatsValue(ectx()->getGraphStats()->getGoStats(), false);
                 LOG(ERROR) << "Get rows failed: " << ret.status();
                 onError_(std::move(ret).status());
                 return;
@@ -733,6 +735,7 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
             resp_->set_rows(std::move(ret).value());
         }
     }
+    stats::Stats::addStatsValue(ectx()->getGraphStats()->getGoStats(), true);
     DCHECK(onFinish_);
     onFinish_(Executor::ProcessControl::kNext);
 }

@@ -8,6 +8,7 @@
 #define GRAPH_GRAPHSTATS_H
 
 #include "stats/StatsManager.h"
+#include "stats/Stats.h"
 
 namespace nebula {
 namespace graph {
@@ -15,42 +16,31 @@ namespace graph {
 class GraphStats final {
 public:
     GraphStats() {
-        qpsStatId_ = stats::StatsManager::registerStats("graph_qps");
-        sQpsStatId_ = stats::StatsManager::registerStats("storage_qps");
-        mQpsStatId_ = stats::StatsManager::registerStats("meta_qps");
-        errorGQpsStatId_ = stats::StatsManager::registerStats("graph_error_qps");
-        errorMQpsStatId_ = stats::StatsManager::registerStats("meta_error_qps");
-        errorSQpsStatId_ = stats::StatsManager::registerStats("storage_error_qps");
-        sLatencyStatId_ = stats::StatsManager::registerHisto("storage_latency", 1, 1, 100);
-        mLatencyStatId_ = stats::StatsManager::registerHisto("meta_latency", 1, 1, 100);
-        wLatencyStatId_ = stats::StatsManager::registerHisto("whole_latency", 1, 1, 100);
+        storageClientStats_ = std::make_unique<stats::Stats>("storageCliet");
+        metaClientStats_ = std::make_unique<stats::Stats>("metaClient");
+        graphStats_ = std::make_unique<stats::Stats>("graph");
+        insertVStats_ = std::make_unique<stats::Stats>("insertVertex");
+        insertEStats_ = std::make_unique<stats::Stats>("insertEdge");
+        goStats_ = std::make_unique<stats::Stats>("query");
     }
 
     ~GraphStats() = default;
 
-
 public:
-    int32_t getQpsId() { return qpsStatId_; }
-    int32_t getSQpsId() { return sQpsStatId_; }
-    int32_t getMQpsId() { return mQpsStatId_; }
-    int32_t getErrorGQpsId() { return errorGQpsStatId_; }
-    int32_t getErrorMQpsId() { return errorMQpsStatId_; }
-    int32_t getErrorSQpsId() { return errorSQpsStatId_; }
-    int32_t getWLatencyId() { return wLatencyStatId_; }
-    int32_t getMLatencyId() { return mLatencyStatId_; }
-    int32_t getSLatencyId() { return sLatencyStatId_; }
-
+    stats::Stats* getStorageClientStats() { return storageClientStats_.get(); }
+    stats::Stats* getMetaClientStats() { return metaClientStats_.get(); }
+    stats::Stats* getGraphStats() { return graphStats_.get(); }
+    stats::Stats* getInsertVertexStats() { return insertVStats_.get(); }
+    stats::Stats* getInsertEdgeStats() { return insertEStats_.get(); }
+    stats::Stats* getGoStats() { return goStats_.get(); }
 
 private:
-    int32_t qpsStatId_{0};             // successful graph qps
-    int32_t sQpsStatId_{0};            // successful storage qps
-    int32_t mQpsStatId_{0};            // successful meta qps
-    int32_t errorGQpsStatId_{0};       // the error qps, error handle in graphd
-    int32_t errorMQpsStatId_{0};       // the error qps, error handle in metad
-    int32_t errorSQpsStatId_{0};       // the error qps, error handle in storaged
-    int32_t sLatencyStatId_{0};        // the latency from storageClient
-    int32_t mLatencyStatId_{0};        // the latency from metaClient
-    int32_t wLatencyStatId_{0};        // the whole latency of nGQL `graphd -> storaged -> graphd`
+    std::unique_ptr<stats::Stats> storageClientStats_;         // storageClient stats
+    std::unique_ptr<stats::Stats> metaClientStats_;            // metaClient stats
+    std::unique_ptr<stats::Stats> graphStats_;                 // graphClient stats
+    std::unique_ptr<stats::Stats> insertVStats_;               // insert vertexes stats
+    std::unique_ptr<stats::Stats> insertEStats_;               // insert edges stats
+    std::unique_ptr<stats::Stats> goStats_;                    // go stats
 };
 
 }  // namespace graph
