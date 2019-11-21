@@ -27,6 +27,8 @@ public:
         PARTIAL_SUCCEEDED = 1,
     };
 
+    StorageRpcResponse() = default;
+
     explicit StorageRpcResponse(size_t reqsSent) : totalReqsSent_(reqsSent) {}
 
     bool succeeded() const {
@@ -62,7 +64,7 @@ public:
     }
 
 private:
-    const size_t totalReqsSent_;
+    size_t totalReqsSent_;
     size_t failedReqs_{0};
 
     Result result_{Result::ALL_SUCCEEDED};

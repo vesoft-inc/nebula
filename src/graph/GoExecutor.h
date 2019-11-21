@@ -150,23 +150,24 @@ private:
      * To iterate on the final data collection, and evaluate the filter and yield columns.
      * For each row that matches the filter, `cb' would be invoked.
      */
-    bool processFinalResult(RpcResponse &rpcResp);
-    void processWithMultiJobs(std::vector<storage::cpp2::VertexData> &vertices,
-        std::unordered_map<TagID, std::shared_ptr<ResultSchemaProvider>> &tagSchema,
-        std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> &edgeSchema);
-    inline Status processVdata(
+    std::vector<folly::Future<StatusOr<RowSetWriter>>> processFinalResult();
+
+    std::vector<folly::Future<StatusOr<RowSetWriter>>> processWithMultiJobs(size_t respIndex);
+
+    Status processVdatas(
         GraphSpaceID spaceId,
-        std::unordered_map<TagID, std::shared_ptr<ResultSchemaProvider>> &tagSchema,
-        std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> &edgeSchema,
-        storage::cpp2::VertexData &vdata, size_t start, size_t end,
+        size_t respIndex,
+        std::vector<size_t> &bucket,
         std::unordered_set<std::string> &uniqResult,
         std::shared_ptr<SchemaWriter> schema,
         RowSetWriter &rsWriter);
+
     void writeToRowSet(std::vector<VariantType> &record,
                        std::vector<nebula::cpp2::SupportedType> &colTypes,
                        std::unordered_set<std::string> &uniqResult,
                        std::shared_ptr<SchemaWriter> schema,
                        RowSetWriter &rsWriter);
+
     void processRecords(
             std::vector<folly::Try<StatusOr<RowSetWriter>>> rsWriters);
 
@@ -242,6 +243,12 @@ private:
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
     // The name of Tag or Edge, index of prop in data
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
+    // Hold the final result.
+    RpcResponse                                 finalResp_;
+    using TagSchemaMap = std::unordered_map<TagID, std::shared_ptr<ResultSchemaProvider>>;
+    using EdgeSchemaMap = std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>>;
+    std::unordered_map<uint8_t, TagSchemaMap>   tagSchemaMap_;
+    std::unordered_map<uint8_t, EdgeSchemaMap>  edgeSchemaMap_;
 };
 
 }   // namespace graph

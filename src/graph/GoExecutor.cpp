@@ -14,6 +14,7 @@
 DEFINE_bool(split_edge_opt, true, "Split the edges and deal with multi jobs.");
 DEFINE_uint32(split_edge_threshhold, 30000, "");
 DEFINE_uint32(split_edge_goal_size, 10000, "");
+DEFINE_uint32(job_num, 3, "");
 
 namespace nebula {
 namespace graph {
@@ -108,6 +109,7 @@ void GoExecutor::execute() {
         }
         starts_ = std::vector<VertexID>(uniqID.begin(), uniqID.end());
     }
+    LOG(INFO) << starts_.size();
     stepOut();
 }
 
@@ -544,8 +546,7 @@ std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const 
 }
 
 void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
-    // MayBe we can do better.
-    std::vector<std::unique_ptr<YieldColumn>> yc;
+    finalResp_ = std::move(rpcResp);
     if (expCtx_->isOverAllEdge() && yields_.empty()) {
         auto edgeNames = getEdgeNamesFromResp(rpcResp);
         if (edgeNames.empty()) {
@@ -565,27 +566,15 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
         }
     }
 
-    processFinalResult(rpcResp);
-
-    /*
-    if (onResult_) {
-        onResult_(std::move(outputs));
-    } else {
-        resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        resp_->set_column_names(getResultColumnNames());
-        if (outputs != nullptr && outputs->hasData()) {
-            auto ret = outputs->getRows();
-            if (!ret.ok()) {
-                LOG(ERROR) << "Get rows failed: " << ret.status();
-                onError_(std::move(ret).status());
-                return;
-            }
-            resp_->set_rows(std::move(ret).value());
-        }
-    }
-    DCHECK(onFinish_);
-    onFinish_();
-    */
+    auto result = processFinalResult();
+    auto cb = [this] (auto &&r) {
+        processRecords(std::move(r));
+    };
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        onError_(Status::Error(e.what()));
+    };
+    folly::collectAll(result).thenValue(cb).thenError(error);
 }
 
 StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
@@ -707,90 +696,6 @@ std::vector<std::string> GoExecutor::getResultColumnNames() const {
     return result;
 }
 
-/*
-bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp) {
-    // Generic results
-    auto result = std::make_unique<InterimResult>(getResultColumnNames());
-    std::shared_ptr<SchemaWriter> schema;
-    std::unique_ptr<RowSetWriter> rsWriter;
-    auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
-    auto cb = [&] (std::vector<VariantType> record,
-                       std::vector<nebula::cpp2::SupportedType> colTypes) {
-        if (schema == nullptr) {
-            schema = std::make_shared<SchemaWriter>();
-            auto colnames = getResultColumnNames();
-            if (record.size() != colTypes.size()) {
-                LOG(FATAL) << "data nums: " << record.size()
-                           << " != type nums: " << colTypes.size();
-            }
-            for (auto i = 0u; i < record.size(); i++) {
-                SupportedType type;
-                if (colTypes[i] == SupportedType::UNKNOWN) {
-                    switch (record[i].which()) {
-                        case VAR_INT64:
-                            // all integers in InterimResult are regarded as type of INT
-                            type = SupportedType::INT;
-                            break;
-                        case VAR_DOUBLE:
-                            type = SupportedType::DOUBLE;
-                            break;
-                        case VAR_BOOL:
-                            type = SupportedType::BOOL;
-                            break;
-                        case VAR_STR:
-                            type = SupportedType::STRING;
-                            break;
-                        default:
-                            LOG(FATAL) << "Unknown VariantType: " << record[i].which();
-                    }
-                } else {
-                    type = colTypes[i];
-                }
-                schema->appendCol(colnames[i], type);
-            }  // for
-            rsWriter = std::make_unique<RowSetWriter>(schema);
-        }  // if
-
-        RowWriter writer(schema);
-        for (auto &column : record) {
-            switch (column.which()) {
-                case VAR_INT64:
-                    writer << boost::get<int64_t>(column);
-                    break;
-                case VAR_DOUBLE:
-                    writer << boost::get<double>(column);
-                    break;
-                case VAR_BOOL:
-                    writer << boost::get<bool>(column);
-                    break;
-                case VAR_STR:
-                    writer << boost::get<std::string>(column);
-                    break;
-                default:
-                    LOG(FATAL) << "Unknown VariantType: " << column.which();
-            }
-        }
-        // TODO Consider float/double, and need to reduce mem copy.
-        std::string encode = writer.encode();
-        if (distinct_) {
-            auto ret = uniqResult->emplace(encode);
-            if (ret.second) {
-                rsWriter->addRow(std::move(encode));
-            }
-        } else {
-            rsWriter->addRow(std::move(encode));
-        }
-    };  // cb
-    if (!processFinalResult(rpcResp, cb)) {
-        return false;
-    }
-
-    if (rsWriter != nullptr) {
-        result->setInterim(std::move(rsWriter));
-    }
-    return true;
-}
-*/
 
 void GoExecutor::onEmptyInputs() {
     auto resultColNames = getResultColumnNames();
@@ -804,9 +709,11 @@ void GoExecutor::onEmptyInputs() {
 }
 
 
-bool GoExecutor::processFinalResult(RpcResponse &rpcResp) {
-    auto all = rpcResp.responses();
-    for (auto &resp : all) {
+std::vector<folly::Future<StatusOr<RowSetWriter>>> GoExecutor::processFinalResult() {
+    auto &all = finalResp_.responses();
+    std::vector<folly::Future<StatusOr<RowSetWriter>>> results;
+    for (size_t i = 0; i < all.size(); ++i) {
+        auto &resp = all[i];
         if (resp.get_vertices() == nullptr) {
             continue;
         }
@@ -837,246 +744,214 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp) {
             continue;
         }
 
-        processWithMultiJobs(resp.vertices, tagSchema, edgeSchema);
+
+        tagSchemaMap_.emplace(i, std::move(tagSchema));
+        edgeSchemaMap_.emplace(i, std::move(edgeSchema));
+        auto futures = processWithMultiJobs(i);
+        results.insert(results.end(), std::make_move_iterator(futures.begin()),
+                                    std::make_move_iterator(futures.end()));
     }   // for `resp'
-    return true;
+    return results;
 }
 
-void GoExecutor::processWithMultiJobs(std::vector<storage::cpp2::VertexData> &vertices,
-        std::unordered_map<TagID, std::shared_ptr<ResultSchemaProvider>> &tagSchema,
-        std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> &edgeSchema) {
-    size_t goalCnt = 0, expectedGoalCnt = 0, currentJobGoalCnt = 0;
-    size_t startV = 0, endV = 0, startE = 0, endE = 0;
+std::vector<folly::Future<StatusOr<RowSetWriter>>>
+    GoExecutor::processWithMultiJobs(size_t respIndex) {
     auto *runner = ectx()->rctx()->runner();
     auto spaceId = ectx()->rctx()->session()->space();
     std::vector<folly::Future<StatusOr<RowSetWriter>>> futures;
-    for (size_t index = 0; index < vertices.size(); ++index) {
-        expectedGoalCnt += vertices[index].edge_data.size();
-        // If the goal count meet the configured size or we reach the end of vertices,
-        // we create a new job.
-        if (expectedGoalCnt > FLAGS_split_edge_goal_size || index == (vertices.size() - 1)) {
-            folly::Promise<StatusOr<RowSetWriter>> pro;
-            futures.emplace_back(pro.getFuture());
-            endV = index;
-            if (expectedGoalCnt > FLAGS_split_edge_goal_size) {
-                endE = FLAGS_split_edge_goal_size - goalCnt - 1;
-                currentJobGoalCnt = FLAGS_split_edge_goal_size;
-            } else {
-                endE = vertices[index].edge_data.size();
-                currentJobGoalCnt = expectedGoalCnt;
-            }
-            runner->add([this, p = std::move(pro), spaceId, tagSchema, edgeSchema,
-                         vertices, startV, endV, startE, endE, currentJobGoalCnt] () mutable {
-                Status status = Status::OK();
-                std::vector<std::vector<VariantType>> records;
-                records.reserve(currentJobGoalCnt);
-                std::shared_ptr<SchemaWriter> outputSchema;
-                RowSetWriter rsWriter;
-                std::unordered_set<std::string> uniqResult;
-                {
-                    auto &vdata = vertices[startV];
-                    status = processVdata(
-                            spaceId, tagSchema, edgeSchema, vdata, startE, vdata.edge_data.size(),
-                            uniqResult, outputSchema, rsWriter);
-                    if (!status.ok()) {
-                        p.setValue(std::move(status));
-                        return;
-                    }
-                }
-
-                if (startV == (vertices.size() - 1)) {
-                    p.setValue(std::move(rsWriter));
-                    return;
-                }
-
-                {
-                    for (size_t i = startV + 1; i < endV; ++i) {
-                        auto &vdata = vertices[i];
-                        status = processVdata(
-                                spaceId, tagSchema, edgeSchema, vdata, 0, vdata.edge_data.size(),
-                                uniqResult, outputSchema, rsWriter);
-                        if (!status.ok()) {
-                            p.setValue(std::move(status));
-                            return;
-                        }
-                    }
-                }
-
-                {
-                    status = processVdata(spaceId, tagSchema, edgeSchema, vertices[endV], 0, endE,
-                                          uniqResult, outputSchema, rsWriter);
-                    if (!status.ok()) {
-                        p.setValue((status));
-                        return;
-                    }
-                }
-                p.setValue(std::move(rsWriter));
-            });
-            startV = endV;
-            startE = endE;
-        }
-        goalCnt = expectedGoalCnt;
+    auto &all = finalResp_.responses();
+    std::vector<std::vector<size_t>> buckets(FLAGS_job_num);
+    for (size_t i = 0; i < all[respIndex].vertices.size(); ++i) {
+        auto &bucket = buckets[i % FLAGS_job_num];
+        bucket.emplace_back(i);
     }
 
-    auto cb = [this] (auto &&result) {
-        processRecords(std::move(result));
-    };
-    auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        onError_(Status::Error(e.what()));
-    };
-    folly::collectAll(futures).thenValue(cb).thenError(error);
+    for (auto &bucket : buckets) {
+        if (bucket.empty()) {
+            continue;
+        }
+
+        folly::Promise<StatusOr<RowSetWriter>> pro;
+        futures.emplace_back(pro.getFuture());
+        runner->add([this, p = std::move(pro), spaceId = spaceId,
+                respIndex = respIndex, bucket] () mutable {
+            Status status = Status::OK();
+            std::shared_ptr<SchemaWriter> outputSchema;
+            RowSetWriter rsWriter;
+            std::unordered_set<std::string> uniqResult;
+            status = processVdatas(spaceId, respIndex, bucket, uniqResult, outputSchema, rsWriter);
+            if (!status.ok()) {
+                p.setValue(std::move(status));
+                return;
+            }
+            p.setValue(std::move(rsWriter));
+        });
+    }
+
+    return futures;
 }
 
-inline Status GoExecutor::processVdata(
+Status GoExecutor::processVdatas(
         GraphSpaceID spaceId,
-        std::unordered_map<TagID, std::shared_ptr<ResultSchemaProvider>> &tagSchema,
-        std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> &edgeSchema,
-        storage::cpp2::VertexData &vdata, size_t start, size_t end,
+        size_t respIndex,
+        std::vector<size_t> &bucket,
         std::unordered_set<std::string> &uniqResult,
         std::shared_ptr<SchemaWriter> schema,
-        RowSetWriter &rsWriter
-        ) {
-    auto &tagData = vdata.get_tag_data();
-    for (size_t i = start; i < end; ++i) {
-        auto &edata = vdata.edge_data[i];
-        auto it = edgeSchema.find(edata.type);
-        DCHECK(it != edgeSchema.end());
-        RowSetReader rsReader(it->second, edata.data);
-        auto iter = rsReader.begin();
-        auto edgeType = edata.type;
-        while (iter) {
-            std::vector<SupportedType> colTypes;
-            bool saveTypeFlag = false;
-            auto &getters = expCtx_->getters();
+        RowSetWriter &rsWriter) {
+    auto &resp = finalResp_.responses()[respIndex];
+    auto tagSchemaIter = tagSchemaMap_.find(respIndex);
+    if (tagSchemaIter == tagSchemaMap_.end()) {
+        return Status::Error("Didn't find the associate tag schema with index(%d)", respIndex);
+    }
+    auto &tagSchema = tagSchemaIter->second;
+    auto edgeSchemaIter = edgeSchemaMap_.find(respIndex);
+    if (edgeSchemaIter == edgeSchemaMap_.end()) {
+        return Status::Error("Didn't find the associate edge schema with index(%d)", respIndex);
+    }
+    auto &edgeSchema = edgeSchemaIter->second;
 
-            getters.getAliasProp =
-                [&iter, &spaceId, &edgeType, &saveTypeFlag, &colTypes, &edgeSchema, this](
-                    const std::string &edgeName,
-                    const std::string &prop) -> OptVariantType {
-                auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, edgeName);
-                if (!edgeStatus.ok()) {
-                    return edgeStatus.status();
-                }
+    for (auto v : bucket) {
+        auto &vdata = resp.vertices[v];
+        auto &tagData = vdata.get_tag_data();
+        for (auto &edata : vdata.edge_data) {
+            auto it = edgeSchema.find(edata.type);
+            DCHECK(it != edgeSchema.end());
+            RowSetReader rsReader(it->second, edata.data);
+            auto iter = rsReader.begin();
+            auto edgeType = edata.type;
+            while (iter) {
+                std::vector<SupportedType> colTypes;
+                bool saveTypeFlag = false;
+                auto &getters = expCtx_->getters();
 
-                if (saveTypeFlag) {
-                    colTypes.back() = iter->getSchema()->getFieldType(prop).type;
-                }
-                if (edgeType != edgeStatus.value()) {
-                    auto sit = edgeSchema.find(edgeStatus.value());
-                    if (sit == edgeSchema.end()) {
-                        return Status::Error("get schema failed");
+                getters.getAliasProp =
+                    [&iter, &spaceId, &edgeType, &saveTypeFlag, &colTypes, &edgeSchema, this](
+                        const std::string &edgeName,
+                        const std::string &prop) -> OptVariantType {
+                    auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, edgeName);
+                    if (!edgeStatus.ok()) {
+                        return edgeStatus.status();
                     }
-                    return RowReader::getDefaultProp(sit->second.get(), prop);
-                }
 
-                auto res = RowReader::getPropByName(&*iter, prop);
-                if (!ok(res)) {
-                    return Status::Error(
-                        folly::sformat("get prop({}.{}) failed", edgeName, prop));
-                }
-
-                return value(std::move(res));
-            };
-            getters.getSrcTagProp =
-                [&iter, &spaceId, &tagData, &tagSchema, &saveTypeFlag, &colTypes, this](
-                    const std::string &tag, const std::string &prop) -> OptVariantType {
-                auto status = ectx()->schemaManager()->toTagID(spaceId, tag);
-                if (!status.ok()) {
-                    return status.status();
-                }
-                auto tagId = status.value();
-                auto it2 =
-                    std::find_if(tagData.cbegin(), tagData.cend(), [&tagId](auto &td) {
-                        if (td.tag_id == tagId) {
-                            return true;
+                    if (saveTypeFlag) {
+                        colTypes.back() = iter->getSchema()->getFieldType(prop).type;
+                    }
+                    if (edgeType != edgeStatus.value()) {
+                        auto sit = edgeSchema.find(edgeStatus.value());
+                        if (sit == edgeSchema.end()) {
+                            return Status::Error("get schema failed");
                         }
+                        return RowReader::getDefaultProp(sit->second.get(), prop);
+                    }
 
-                        return false;
-                    });
+                    auto res = RowReader::getPropByName(&*iter, prop);
+                    if (!ok(res)) {
+                        return Status::Error(
+                            folly::sformat("get prop({}.{}) failed", edgeName, prop));
+                    }
 
-                if (it2 == tagData.cend()) {
-                    return RowReader::getDefaultProp(iter->getSchema().get(), prop);
-                }
+                    return value(std::move(res));
+                };
+                getters.getSrcTagProp =
+                    [&iter, &spaceId, &tagData, &tagSchema, &saveTypeFlag, &colTypes, this](
+                        const std::string &tag, const std::string &prop) -> OptVariantType {
+                    auto status = ectx()->schemaManager()->toTagID(spaceId, tag);
+                    if (!status.ok()) {
+                        return status.status();
+                    }
+                    auto tagId = status.value();
+                    auto it2 =
+                        std::find_if(tagData.cbegin(), tagData.cend(), [&tagId](auto &td) {
+                            if (td.tag_id == tagId) {
+                                return true;
+                            }
 
-                if (saveTypeFlag) {
-                    colTypes.back() = tagSchema[tagId]->getFieldType(prop).type;
-                }
-                DCHECK(it2->__isset.data);
-                auto vreader = RowReader::getRowReader(it2->data, tagSchema[tagId]);
-                auto res = RowReader::getPropByName(vreader.get(), prop);
-                if (!ok(res)) {
-                    return Status::Error(
-                        folly::sformat("get prop({}.{}) failed", tag, prop));
-                }
-                return value(res);
-            };
-            getters.getDstTagProp = [&iter, &spaceId, &saveTypeFlag, &colTypes, this](
-                                        const std::string &tag,
-                                        const std::string &prop) -> OptVariantType {
-                auto dst = RowReader::getPropByName(&*iter, "_dst");
-                if (!ok(dst)) {
-                    return Status::Error(
-                        folly::sformat("get prop({}.{}) failed", tag, prop));
-                }
-                auto vid = boost::get<int64_t>(value(std::move(dst)));
-                auto status = ectx()->schemaManager()->toTagID(spaceId, tag);
-                if (!status.ok()) {
-                    return status.status();
-                }
-                auto tagId = status.value();
-                if (saveTypeFlag) {
-                    SupportedType type = vertexHolder_->getType(vid, tagId, prop);
-                    colTypes.back() = type;
-                }
-                return vertexHolder_->get(vid, tagId, prop);
-            };
-            getters.getVariableProp = [&saveTypeFlag, &colTypes, &vdata,
+                            return false;
+                        });
+
+                    if (it2 == tagData.cend()) {
+                        return RowReader::getDefaultProp(iter->getSchema().get(), prop);
+                    }
+
+                    if (saveTypeFlag) {
+                        colTypes.back() = tagSchema[tagId]->getFieldType(prop).type;
+                    }
+                    DCHECK(it2->__isset.data);
+                    auto vreader = RowReader::getRowReader(it2->data, tagSchema[tagId]);
+                    auto res = RowReader::getPropByName(vreader.get(), prop);
+                    if (!ok(res)) {
+                        return Status::Error(
+                            folly::sformat("get prop({}.{}) failed", tag, prop));
+                    }
+                    return value(res);
+                };
+                getters.getDstTagProp = [&iter, &spaceId, &saveTypeFlag, &colTypes, this](
+                                            const std::string &tag,
+                                            const std::string &prop) -> OptVariantType {
+                    auto dst = RowReader::getPropByName(&*iter, "_dst");
+                    if (!ok(dst)) {
+                        return Status::Error(
+                            folly::sformat("get prop({}.{}) failed", tag, prop));
+                    }
+                    auto vid = boost::get<int64_t>(value(std::move(dst)));
+                    auto status = ectx()->schemaManager()->toTagID(spaceId, tag);
+                    if (!status.ok()) {
+                        return status.status();
+                    }
+                    auto tagId = status.value();
+                    if (saveTypeFlag) {
+                        SupportedType type = vertexHolder_->getType(vid, tagId, prop);
+                        colTypes.back() = type;
+                    }
+                    return vertexHolder_->get(vid, tagId, prop);
+                };
+                getters.getVariableProp = [&saveTypeFlag, &colTypes, &vdata,
+                                            this](const std::string &prop) {
+                    if (saveTypeFlag) {
+                        colTypes.back() = getPropTypeFromInterim(prop);
+                    }
+                    return getPropFromInterim(vdata.get_vertex_id(), prop);
+                };
+                getters.getInputProp = [&saveTypeFlag, &colTypes, &vdata,
                                         this](const std::string &prop) {
-                if (saveTypeFlag) {
-                    colTypes.back() = getPropTypeFromInterim(prop);
-                }
-                return getPropFromInterim(vdata.get_vertex_id(), prop);
-            };
-            getters.getInputProp = [&saveTypeFlag, &colTypes, &vdata,
-                                    this](const std::string &prop) {
-                if (saveTypeFlag) {
-                    colTypes.back() = getPropTypeFromInterim(prop);
-                }
-                return getPropFromInterim(vdata.get_vertex_id(), prop);
-            };
+                    if (saveTypeFlag) {
+                        colTypes.back() = getPropTypeFromInterim(prop);
+                    }
+                    return getPropFromInterim(vdata.get_vertex_id(), prop);
+                };
 
-            // Evaluate filter
-            if (filter_ != nullptr) {
-                auto value = filter_->eval();
-                if (!value.ok()) {
-                    return std::move(value).status();
+                // Evaluate filter
+                if (filter_ != nullptr) {
+                    auto value = filter_->eval();
+                    if (!value.ok()) {
+                        return std::move(value).status();
+                    }
+                    if (!Expression::asBool(value.value())) {
+                        ++iter;
+                        continue;
+                    }
                 }
-                if (!Expression::asBool(value.value())) {
-                    ++iter;
-                    continue;
+                std::vector<VariantType> record;
+                record.reserve(yields_.size());
+                saveTypeFlag = true;
+                for (auto *column : yields_) {
+                    colTypes.emplace_back(SupportedType::UNKNOWN);
+                    auto *expr = column->expr();
+                    auto value = expr->eval();
+                    if (!value.ok()) {
+                        return std::move(value).status();
+                    }
+                    if (column->expr()->isTypeCastingExpression()) {
+                        auto exprPtr = static_cast<TypeCastingExpression *>(column->expr());
+                        colTypes.back() = SchemaHelper::columnTypeToSupportedType(
+                                                exprPtr->getType());
+                    }
+                    record.emplace_back(std::move(value.value()));
                 }
-            }
-            std::vector<VariantType> record;
-            record.reserve(yields_.size());
-            saveTypeFlag = true;
-            for (auto *column : yields_) {
-                colTypes.emplace_back(SupportedType::UNKNOWN);
-                auto *expr = column->expr();
-                auto value = expr->eval();
-                if (!value.ok()) {
-                    return std::move(value).status();
-                }
-                if (column->expr()->isTypeCastingExpression()) {
-                    auto exprPtr = static_cast<TypeCastingExpression *>(column->expr());
-                    colTypes.back() = SchemaHelper::columnTypeToSupportedType(
-                                            exprPtr->getType());
-                }
-                record.emplace_back(std::move(value.value()));
-            }
-            writeToRowSet(record, colTypes, uniqResult, schema, rsWriter);
-            ++iter;
-        }  // while `iter'
+                writeToRowSet(record, colTypes, uniqResult, schema, rsWriter);
+                ++iter;
+            }  // while `iter'
+        }
     }
     return Status::OK();
 }
