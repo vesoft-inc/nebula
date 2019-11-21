@@ -23,8 +23,7 @@ upload_url=$(curl -s --request GET --url $GH_RELEASE | grep -oP '(?<="upload_url
 
 content_type=$(file -b --mime-type $filepath)
 
-# basename
-filename=$(echo "$filepath" | rev | cut -d'/' -f1 | rev)
+filename=$(basename "$filepath")
 
 echo "Uploading asset... "
 
