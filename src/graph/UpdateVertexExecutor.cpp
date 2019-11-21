@@ -178,7 +178,7 @@ void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcRe
     }
     resp_->set_rows(std::move(rows));
     DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 

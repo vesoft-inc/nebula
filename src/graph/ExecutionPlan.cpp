@@ -38,7 +38,8 @@ void ExecutionPlan::execute() {
     }
 
     // Prepared
-    auto onFinish = [this] () {
+    auto onFinish = [this] (Executor::ProcessControl ctr) {
+        UNUSED(ctr);
         this->onFinish();
     };
     auto onError = [this] (Status s) {

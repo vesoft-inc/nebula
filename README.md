@@ -33,6 +33,8 @@ As a graph database, **Nebula** has these features
 * Fault tolerant
 * Strong data consistency
 * SQL-like query language
+* Role-based access control
+* Support multiple storage engines
 
 ## How can I get Nebula
 

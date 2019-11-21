@@ -133,4 +133,19 @@ std::string BalanceSentence::toString() const {
     return "Unknown";
 }
 
+std::string HostList::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &host : hosts_) {
+        buf += network::NetworkUtils::intToIPv4(host->first);
+        buf += ":";
+        buf += std::to_string(host->second);
+        buf += ",";
+    }
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
+}
+
 }   // namespace nebula
