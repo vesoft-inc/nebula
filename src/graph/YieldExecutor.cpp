@@ -437,7 +437,7 @@ void YieldExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
         }
     }
     DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 void YieldExecutor::feedResult(std::unique_ptr<InterimResult> result) {

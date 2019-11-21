@@ -221,37 +221,6 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
         });
 }
 
-/*
-folly::Future<StatusOr<cpp2::EdgeKeyResponse>> StorageClient::getEdgeKeys(
-    GraphSpaceID space,
-    VertexID vid,
-    folly::EventBase* evb) {
-    std::pair<HostAddr, cpp2::EdgeKeyRequest> request;
-    PartitionID part = partId(space, vid);
-    auto partMeta = getPartMeta(space, part);
-    CHECK_GT(partMeta.peers_.size(), 0U);
-    const auto& leader = this->leader(partMeta);
-    request.first = leader;
-
-    cpp2::EdgeKeyRequest req;
-    req.set_space_id(space);
-    std::unordered_map<PartitionID, std::vector<VertexID>> parts;
-    std::vector<VertexID> vids;
-    vids.emplace_back(vid);
-    parts.emplace(part, std::move(vids));
-    req.set_parts(std::move(parts));
-    request.second = std::move(req);
-
-    return getResponse(
-        evb,
-        std::move(request),
-        [] (cpp2::StorageServiceAsyncClient* client,
-            const cpp2::EdgeKeyRequest& r) {
-            return client->future_getEdgeKeys(r);
-    });
-}
-*/
-
 folly::SemiFuture<StorageRpcResponse<storage::cpp2::EdgeKeysResponse>> StorageClient::getEdgeKeys(
     GraphSpaceID space,
     std::vector<VertexID> vids,

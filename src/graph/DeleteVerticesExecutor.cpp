@@ -43,15 +43,11 @@ void DeleteVerticesExecutor::execute() {
 
     auto cb = [this] (auto &&result) {
         auto completeness = result.completeness();
-        if (completeness == 0) {
-            DCHECK(onError_);
-            onError_(Status::Error("Internal Error"));
-            return;
-        } else if (completeness != 100) {
+        if (completeness != 100) {
             LOG(INFO) << "Get vertices partially failed: "  << completeness << "%";
             for (auto &error : result.failedParts()) {
                 LOG(ERROR) << "part: " << error.first
-                           << "error code: " << static_cast<int>(error.second);
+                           << " error code: " << static_cast<int>(error.second);
             }
         }
 
@@ -124,7 +120,7 @@ void DeleteVerticesExecutor::deleteVertices() {
             return;
         }
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
         return;
     };
 

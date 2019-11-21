@@ -111,6 +111,27 @@ TEST_F(DeleteVertexTest, base) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Delete Vertices
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "DELETE VERTEX %ld, %ld";
+        auto query = folly::stringPrintf(fmt, players_["Paul Gasol"].vid(),
+                                         players_["Marc Gasol"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &paul = players_["Paul Gasol"];
+        auto &marc = players_["Marc Gasol"];
+        auto *fmt = "FETCH PROP ON player %ld, %ld YIELD player.name, player.age";
+        auto query = folly::stringPrintf(fmt, paul.vid(), marc.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Tony Parker"];
@@ -146,6 +167,22 @@ TEST_F(DeleteVertexTest, base) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "FETCH PROP ON player uuid(\"Tony Parker\") "
+                     "YIELD player.name, player.age";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "DELETE VERTEX uuid(\"Paul Gasol\"), uuid(\"Marc Gasol\")";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP ON player uuid(\"Paul Gasol\"), uuid(\"Marc Gasol\")"
                      "YIELD player.name, player.age";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);

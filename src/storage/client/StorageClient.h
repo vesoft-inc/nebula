@@ -135,13 +135,6 @@ public:
         std::vector<storage::cpp2::PropDef> returnCols,
         folly::EventBase* evb = nullptr);
 
-    /*
-    folly::Future<StatusOr<storage::cpp2::EdgeKeyResponse>> getEdgeKeys(
-        GraphSpaceID space,
-        VertexID vid,
-        folly::EventBase* evb = nullptr);
-        */
-
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::EdgeKeysResponse>> getEdgeKeys(
         GraphSpaceID space,
         std::vector<VertexID> vids,
