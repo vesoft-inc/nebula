@@ -43,7 +43,10 @@ Some notes:
 class Balancer {
     FRIEND_TEST(BalanceTest, BalancePartsTest);
     FRIEND_TEST(BalanceTest, NormalTest);
+    FRIEND_TEST(BalanceTest, SpecifyHostTest);
+    FRIEND_TEST(BalanceTest, SpecifyMultiHostTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
+    FRIEND_TEST(BalanceTest, StopBalanceDataTest);
     FRIEND_TEST(BalanceTest, LeaderBalancePlanTest);
     FRIEND_TEST(BalanceTest, SimpleLeaderBalancePlanTest);
     FRIEND_TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest);
@@ -64,12 +67,17 @@ public:
     /*
      * Return Error if reject the balance request, otherwise return balance id.
      * */
-    StatusOr<BalanceID> balance();
+    ErrorOr<cpp2::ErrorCode, BalanceID> balance(std::vector<HostAddr> hostDel = {});
 
     /**
      * Show balance plan id status.
      * */
     StatusOr<BalancePlan> show(BalanceID id) const;
+
+    /**
+     * Stop balance plan by canceling all waiting balance task.
+     * */
+    StatusOr<BalanceID> stop();
 
     /**
      * TODO(heng): rollback some balance plan.
@@ -96,7 +104,14 @@ public:
 
     cpp2::ErrorCode leaderBalance();
 
+    void finish() {
+        CHECK(!lock_.try_lock());
+        plan_.reset();
+        running_ = false;
+    }
+
     bool isRunning() {
+        std::lock_guard<std::mutex> lg(lock_);
         return running_;
     }
 
@@ -114,9 +129,10 @@ private:
     /**
      * Build balance plan and save it in kvstore.
      * */
-    Status buildBalancePlan();
+    cpp2::ErrorCode buildBalancePlan(std::vector<HostAddr> hostDel);
 
-    std::vector<BalanceTask> genTasks(GraphSpaceID spaceId);
+    ErrorOr<cpp2::ErrorCode, std::vector<BalanceTask>> genTasks(GraphSpaceID spaceId,
+                                                                std::vector<HostAddr>& hostDel);
 
     void getHostParts(GraphSpaceID spaceId,
                       std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
@@ -171,14 +187,15 @@ private:
                           GraphSpaceID spaceId);
 
 private:
-    std::atomic_bool  running_{false};
+    std::atomic_bool running_{false};
     kvstore::KVStore* kv_ = nullptr;
     std::unique_ptr<AdminClient> client_{nullptr};
     // Current running plan.
-    std::unique_ptr<BalancePlan> plan_{nullptr};
+    std::shared_ptr<BalancePlan> plan_{nullptr};
     std::unique_ptr<folly::Executor> executor_;
-    std::atomic_bool  inLeaderBalance_{false};
+    std::atomic_bool inLeaderBalance_{false};
     std::unique_ptr<HostLeaderMap> hostLeaderMap_;
+    std::mutex lock_;
 };
 
 }  // namespace meta

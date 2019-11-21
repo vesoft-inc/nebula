@@ -22,8 +22,11 @@ class BalanceTask {
     friend class BalancePlan;
     FRIEND_TEST(BalanceTaskTest, SimpleTest);
     FRIEND_TEST(BalanceTest, BalancePlanTest);
+    FRIEND_TEST(BalanceTest, SpecifyHostTest);
+    FRIEND_TEST(BalanceTest, SpecifyMultiHostTest);
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
+    FRIEND_TEST(BalanceTest, StopBalanceDataTest);
 
 public:
     enum class Status : uint8_t {

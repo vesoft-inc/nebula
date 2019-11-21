@@ -48,6 +48,8 @@ nebula_add_library(
     DeleteVertexExecutor.cpp
     FindPathExecutor.cpp
     LimitExecutor.cpp
+    GroupByExecutor.cpp
+    ReturnExecutor.cpp
 )
 
 nebula_add_library(

@@ -18,8 +18,11 @@ class BalancePlan {
     friend class Balancer;
     FRIEND_TEST(BalanceTest, BalancePlanTest);
     FRIEND_TEST(BalanceTest, NormalTest);
+    FRIEND_TEST(BalanceTest, SpecifyHostTest);
+    FRIEND_TEST(BalanceTest, SpecifyMultiHostTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
     FRIEND_TEST(BalanceTest, DispatchTasksTest);
+    FRIEND_TEST(BalanceTest, StopBalanceDataTest);
 
 public:
     enum class Status : uint8_t {
@@ -75,6 +78,11 @@ public:
         return tasks_;
     }
 
+    void stop() {
+        std::lock_guard<std::mutex> lg(lock_);
+        stopped_ = true;
+    }
+
 private:
     bool recovery(bool resume = true);
 
@@ -99,6 +107,7 @@ private:
     size_t finishedTaskNum_ = 0;
     std::function<void()> onFinished_;
     Status status_ = Status::NOT_START;
+    bool stopped_ = false;
 
     // List of task index in tasks_;
     using Bucket = std::vector<int32_t>;

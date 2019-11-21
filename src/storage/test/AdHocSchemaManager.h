@@ -36,52 +36,33 @@ public:
                  TagID tag,
                  SchemaVer version = -1) override;
 
-    // This interface is disabled
-    std::shared_ptr<const nebula::meta::SchemaProviderIf>
-    getTagSchema(folly::StringPiece spaceName,
-                 folly::StringPiece tagName,
-                 SchemaVer version = -1) override;
 
     // Returns a negative number when the schema does not exist
     StatusOr<SchemaVer> getNewestTagSchemaVer(GraphSpaceID space, TagID tag) override;
-
-    // This interface is disabled
-    SchemaVer getNewestTagSchemaVer(folly::StringPiece spaceName,
-                                    folly::StringPiece tagName) override;
 
     std::shared_ptr<const nebula::meta::SchemaProviderIf>
     getEdgeSchema(GraphSpaceID space,
                   EdgeType edge,
                   SchemaVer version = -1) override;
 
-    // This interface is disabled
-    std::shared_ptr<const nebula::meta::SchemaProviderIf>
-    getEdgeSchema(folly::StringPiece spaceName,
-                  folly::StringPiece typeName,
-                  SchemaVer version = -1) override;
-
     // Returns a negative number when the schema does not exist
     StatusOr<SchemaVer> getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
-
-    // This interface is disabled
-    SchemaVer getNewestEdgeSchemaVer(folly::StringPiece spaceName,
-                                     folly::StringPiece typeName) override;
 
     StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece spaceName) override;
 
     StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
-    // This interface is disabled
     StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
-    // This interface is disabled
-    StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) override;
+    StatusOr<std::string> toEdgeName(GraphSpaceID, EdgeType) override {
+        LOG(FATAL) << "Unimplemented";
+    }
 
-    // This interface is disabled
-    StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) override;
+    StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID) override {
+        LOG(FATAL) << "Unimplemented";
+    }
 
-    void init(nebula::meta::MetaClient *client = nullptr) override {
-        UNUSED(client);
+    void init(nebula::meta::MetaClient *) override {
     }
 
 protected:

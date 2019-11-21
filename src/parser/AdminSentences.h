@@ -303,12 +303,34 @@ private:
     std::unique_ptr<ConfigRowItem>  configItem_;
 };
 
+class HostList final {
+public:
+    void addHost(HostAddr *addr) {
+        hosts_.emplace_back(addr);
+    }
+
+     std::string toString() const;
+
+     std::vector<HostAddr> hosts() const {
+        std::vector<HostAddr> result;
+        result.reserve(hosts_.size());
+        for (auto &host : hosts_) {
+            result.emplace_back(*host);
+        }
+        return result;
+    }
+
+private:
+    std::vector<std::unique_ptr<HostAddr>>      hosts_;
+};
+
 class BalanceSentence final : public Sentence {
 public:
     enum class SubType : uint32_t {
         kUnknown,
         kLeader,
         kData,
+        kDataStop,
         kShowBalancePlan,
     };
 
@@ -324,6 +346,12 @@ public:
         balanceId_ = id;
     }
 
+    BalanceSentence(SubType subType, HostList *hostDel) {
+        kind_ = Kind::kBalance;
+        subType_ = std::move(subType);
+        hostDel_.reset(hostDel);
+    }
+
     std::string toString() const override;
 
     SubType subType() const {
@@ -334,9 +362,14 @@ public:
         return balanceId_;
     }
 
+    HostList* hostDel() const {
+        return hostDel_.get();
+    }
+
 private:
     SubType                         subType_{SubType::kUnknown};
     int64_t                         balanceId_{0};
+    std::unique_ptr<HostList>       hostDel_;
 };
 
 }   // namespace nebula
