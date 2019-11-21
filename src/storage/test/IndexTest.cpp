@@ -10,12 +10,21 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
+<<<<<<< HEAD
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/mutate/AddEdgesProcessor.h"
 #include "storage/mutate/DeleteVertexProcessor.h"
 #include "storage/mutate/DeleteEdgesProcessor.h"
 #include "storage/mutate/UpdateEdgeProcessor.h"
 #include "storage/mutate/UpdateVertexProcessor.h"
+=======
+#include "storage/AddVerticesProcessor.h"
+#include "storage/AddEdgesProcessor.h"
+#include "storage/DeleteVertexProcessor.h"
+#include "storage/DeleteEdgesProcessor.h"
+#include "storage/UpdateEdgeProcessor.h"
+#include "storage/UpdateVertexProcessor.h"
+>>>>>>> online index
 
 namespace nebula {
 namespace storage {
@@ -59,10 +68,14 @@ static std::shared_ptr<meta::SchemaProviderIf> genEdgeSchema(
     return std::make_shared<ResultSchemaProvider>(std::move(schema));
 }
 
+<<<<<<< HEAD
 static std::unique_ptr<meta::SchemaManager> mockSchemaMan(
         GraphSpaceID spaceId,
         const std::vector<nebula::cpp2::IndexItem>& tagIndexes,
         const std::vector<nebula::cpp2::IndexItem>& edgeIndexes) {
+=======
+static std::unique_ptr<meta::SchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0) {
+>>>>>>> online index
     auto* schemaMan = new AdHocSchemaManager();
     for (auto edgeType = 101; edgeType < 110; edgeType++) {
         schemaMan->addEdgeSchema(spaceId /*space id*/, edgeType /*edge type*/,
@@ -72,20 +85,30 @@ static std::unique_ptr<meta::SchemaManager> mockSchemaMan(
         schemaMan->addTagSchema(
                 spaceId /*space id*/, tagId, genTagSchema(tagId, 3, 3));
     }
+<<<<<<< HEAD
     for (auto& index : tagIndexes) {
         schemaMan->addTagIndex(spaceId, index);
     }
     for (auto& index : edgeIndexes) {
         schemaMan->addEdgeIndex(spaceId, index);
     }
+=======
+>>>>>>> online index
     std::unique_ptr<meta::SchemaManager> sm(schemaMan);
     return sm;
 }
 
+<<<<<<< HEAD
 static std::vector<nebula::cpp2::IndexItem> mockIndexes(bool isEdge,
                                                         int32_t intFieldsNum,
                                                         int32_t stringFieldsNum) {
     std::vector<nebula::cpp2::IndexItem> indexes;
+=======
+static std::vector<cpp2::IndexItem> mockIndexes(bool isEdge,
+                                                int32_t intFieldsNum,
+                                                int32_t stringFieldsNum) {
+    std::vector<cpp2::IndexItem> indexes;
+>>>>>>> online index
     if (isEdge) {
         for (auto edgeType = 101; edgeType < 110; edgeType++) {
             std::vector<nebula::cpp2::ColumnDef> cols;
@@ -102,11 +125,16 @@ static std::vector<nebula::cpp2::IndexItem> mockIndexes(bool isEdge,
                 cols.emplace_back(std::move(column));
             }
             // indexId can be same with edgeType
+<<<<<<< HEAD
             nebula::cpp2::IndexItem index;
             index.set_index_id(edgeType);
             index.set_tagOrEdge(edgeType);
             index.set_cols(std::move(cols));
             indexes.emplace_back(std::move(index));
+=======
+            indexes.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                                 edgeType, edgeType, std::move(cols));
+>>>>>>> online index
         }
     } else {
         for (auto tagId = 3001; tagId < 3010; tagId++) {
@@ -124,11 +152,16 @@ static std::vector<nebula::cpp2::IndexItem> mockIndexes(bool isEdge,
                 cols.emplace_back(std::move(column));
             }
             // indexId can be same with tagId
+<<<<<<< HEAD
             nebula::cpp2::IndexItem index;
             index.set_index_id(tagId);
             index.set_tagOrEdge(tagId);
             index.set_cols(std::move(cols));
             indexes.emplace_back(std::move(index));
+=======
+            indexes.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                                 tagId, tagId, std::move(cols));
+>>>>>>> online index
         }
     }
     return indexes;
@@ -138,8 +171,12 @@ TEST(IndexTest, InsertVerticesTest) {
     fs::TempDir rootPath("/tmp/InsertVerticesTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     LOG(INFO) << "Prepare meta...";
+<<<<<<< HEAD
     auto indexes = mockIndexes(false, 3, 3);
     auto schemaMan = mockSchemaMan(0, indexes, std::vector<nebula::cpp2::IndexItem>());
+=======
+    auto schemaMan = mockSchemaMan();
+>>>>>>> online index
     cpp2::AddVerticesRequest req;
     req.space_id = 0;
     req.overwritable = true;
@@ -156,6 +193,7 @@ TEST(IndexTest, InsertVerticesTest) {
                     writer << folly::stringPrintf("tag_string_col_%d", numString);
                 }
                 auto val = writer.encode();
+<<<<<<< HEAD
                 cpp2::Tag tag;
                 tag.set_tag_id(tagId);
                 tag.set_props(std::move(val));
@@ -168,6 +206,21 @@ TEST(IndexTest, InsertVerticesTest) {
         }
         req.parts.emplace(partId, std::move(vertices));
     }
+=======
+
+                tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                                  tagId,
+                                  std::move(val));
+            }
+            vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                                  vertexId,
+                                  std::move(tags));
+        }
+        req.parts.emplace(partId, std::move(vertices));
+    }
+    auto indexes = mockIndexes(false, 3, 3);
+    req.set_indexes(std::move(indexes));
+>>>>>>> online index
     auto* processor = AddVerticesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
     auto fut = processor->getFuture();
     processor->process(req);
@@ -207,8 +260,12 @@ TEST(IndexTest, InsertEdgeTest) {
     fs::TempDir rootPath("/tmp/InsertEdgesTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     LOG(INFO) << "Prepare meta...";
+<<<<<<< HEAD
     auto indexes = mockIndexes(true, 10, 10);
     auto schemaMan = mockSchemaMan(0, std::vector<nebula::cpp2::IndexItem>(), indexes);
+=======
+    auto schemaMan = mockSchemaMan();
+>>>>>>> online index
     LOG(INFO) << "Build AddEdgesRequest...";
     auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
     cpp2::AddEdgesRequest req;
@@ -247,6 +304,11 @@ TEST(IndexTest, InsertEdgeTest) {
         }
         req.parts.emplace(partId, std::move(edges));
     }
+<<<<<<< HEAD
+=======
+    auto indexes = mockIndexes(true, 10, 10);
+    req.set_indexes(std::move(indexes));
+>>>>>>> online index
     LOG(INFO) << "Test AddEdgesProcessor...";
     auto fut = processor->getFuture();
     processor->process(req);
@@ -287,8 +349,13 @@ TEST(IndexTest, DeleteVertexTest) {
     fs::TempDir rootPath("/tmp/DeleteVertexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     LOG(INFO) << "Prepare meta...";
+<<<<<<< HEAD
     auto indexes = mockIndexes(false, 3, 3);
     auto schemaMan = mockSchemaMan(0, indexes, std::vector<nebula::cpp2::IndexItem>());
+=======
+    auto schemaMan = mockSchemaMan();
+    auto indexes = mockIndexes(false, 3, 3);
+>>>>>>> online index
     {
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
@@ -305,6 +372,7 @@ TEST(IndexTest, DeleteVertexTest) {
                     writer << folly::stringPrintf("tag_string_col_%d", numString);
                 }
                 auto val = writer.encode();
+<<<<<<< HEAD
                 cpp2::Tag tag;
                 tag.set_tag_id(tagId);
                 tag.set_props(std::move(val));
@@ -316,6 +384,19 @@ TEST(IndexTest, DeleteVertexTest) {
             vertices.emplace_back(std::move(vertex));
             req.parts.emplace(1, std::move(vertices));
         }
+=======
+                tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                                  tagId,
+                                  std::move(val));
+            }
+            vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                                  10,
+                                  std::move(tags));
+            req.parts.emplace(1, std::move(vertices));
+        }
+
+        req.set_indexes(indexes);
+>>>>>>> online index
         auto* processor = AddVerticesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
@@ -328,6 +409,10 @@ TEST(IndexTest, DeleteVertexTest) {
         req.set_space_id(0);
         req.set_part_id(1);
         req.set_vid(10);
+<<<<<<< HEAD
+=======
+        req.set_indexes(indexes);
+>>>>>>> online index
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -350,8 +435,13 @@ TEST(IndexTest, DeleteEdgeTest) {
     fs::TempDir rootPath("/tmp/DeleteEdgeTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     LOG(INFO) << "Prepare meta...";
+<<<<<<< HEAD
     auto indexes = mockIndexes(true, 10, 10);
     auto schemaMan = mockSchemaMan(0, std::vector<nebula::cpp2::IndexItem>(), indexes);
+=======
+    auto schemaMan = mockSchemaMan();
+    auto indexes = mockIndexes(true, 10, 10);
+>>>>>>> online index
     LOG(INFO) << "Build AddEdgesRequest...";
     {
         auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
@@ -380,6 +470,10 @@ TEST(IndexTest, DeleteEdgeTest) {
             }
             req.parts.emplace(1, std::move(edges));
         }
+<<<<<<< HEAD
+=======
+        req.set_indexes(indexes);
+>>>>>>> online index
         LOG(INFO) << "Test AddEdgesProcessor...";
         auto fut = processor->getFuture();
         processor->process(req);
@@ -409,6 +503,10 @@ TEST(IndexTest, DeleteEdgeTest) {
             keys.emplace_back(key);
         }
         req.parts.emplace(1, std::move(keys));
+<<<<<<< HEAD
+=======
+        req.set_indexes(indexes);
+>>>>>>> online index
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -431,8 +529,13 @@ TEST(IndexTest, UpdateVertexTest) {
     fs::TempDir rootPath("/tmp/DeleteVertexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     LOG(INFO) << "Prepare meta...";
+<<<<<<< HEAD
     auto indexes = mockIndexes(false, 3, 3);
     auto schemaMan = mockSchemaMan(0, indexes, std::vector<nebula::cpp2::IndexItem>());
+=======
+    auto schemaMan = mockSchemaMan();
+    auto indexes = mockIndexes(false, 3, 3);
+>>>>>>> online index
     {
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
@@ -449,6 +552,7 @@ TEST(IndexTest, UpdateVertexTest) {
                     writer << folly::stringPrintf("tag_string_col_%d", numString);
                 }
                 auto val = writer.encode();
+<<<<<<< HEAD
                 cpp2::Tag tag;
                 tag.set_tag_id(tagId);
                 tag.set_props(std::move(val));
@@ -461,6 +565,19 @@ TEST(IndexTest, UpdateVertexTest) {
             req.parts.emplace(1, std::move(vertices));
         }
 
+=======
+                tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                                  tagId,
+                                  std::move(val));
+            }
+            vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                                  10,
+                                  std::move(tags));
+            req.parts.emplace(1, std::move(vertices));
+        }
+
+        req.set_indexes(indexes);
+>>>>>>> online index
         auto* processor = AddVerticesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
@@ -511,6 +628,11 @@ TEST(IndexTest, UpdateVertexTest) {
         item2.set_value(Expression::encode(&val2));
         items.emplace_back(item2);
         req.set_update_items(std::move(items));
+<<<<<<< HEAD
+=======
+        req.__isset.indexes = true;
+        req.set_indexes(indexes);
+>>>>>>> online index
         LOG(INFO) << "Build yield...";
         // Return tag props: 3001.tag_3001_col_0, 3003.tag_3003_col_2, 3005.tag_3005_col_4
         decltype(req.return_columns) tmpColumns;
@@ -562,8 +684,13 @@ TEST(IndexTest, UpdateEdgeTest) {
     fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     LOG(INFO) << "Prepare meta...";
+<<<<<<< HEAD
     auto indexes = mockIndexes(true, 10, 10);
     auto schemaMan = mockSchemaMan(0, std::vector<nebula::cpp2::IndexItem>(), indexes);
+=======
+    auto schemaMan = mockSchemaMan();
+    auto indexes = mockIndexes(true, 10, 10);
+>>>>>>> online index
     LOG(INFO) << "Build AddEdgesRequest...";
     {
         auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
@@ -592,6 +719,10 @@ TEST(IndexTest, UpdateEdgeTest) {
             }
             req.parts.emplace(1, std::move(edges));
         }
+<<<<<<< HEAD
+=======
+        req.set_indexes(indexes);
+>>>>>>> online index
         LOG(INFO) << "Test AddEdgesProcessor...";
         auto fut = processor->getFuture();
         processor->process(req);
@@ -634,6 +765,11 @@ TEST(IndexTest, UpdateEdgeTest) {
         tmpColumns.emplace_back(Expression::encode(&edgePropExp));
         req.set_return_columns(std::move(tmpColumns));
         req.set_insertable(false);
+<<<<<<< HEAD
+=======
+        req.__isset.indexes = true;
+        req.set_indexes(indexes);
+>>>>>>> online index
         auto* processor = UpdateEdgeProcessor::instance(kv.get(), schemaMan.get(), nullptr);
         auto f = processor->getFuture();
         processor->process(req);
