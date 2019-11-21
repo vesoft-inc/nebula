@@ -1287,7 +1287,6 @@ void RaftPart::processAskForVoteRequest(
     }
     // Ok, no reason to refuse, we will vote for the candidate
     LOG(INFO) << idStr_ << "The partition will vote for the candidate";
-    resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
 
     Role oldRole = role_;
     TermID oldTerm = term_;
@@ -1300,14 +1299,20 @@ void RaftPart::processAskForVoteRequest(
     lastMsgRecvDur_.reset();
     weight_ = 1;
 
+    if (req.get_last_log_term() < wal_->lastLogTerm()) {
+        resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
+        return;
+    }
+
+    if (req.get_last_log_id() < wal_->lastLogId()) {
+        resp.set_error_code(cpp2::ErrorCode::E_LOG_STALE);
+        return;
+    }
+    resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+
     // If the partition used to be a leader, need to fire the callback
     if (oldRole == Role::LEADER) {
         LOG(INFO) << idStr_ << "Was a leader, need to do some clean-up";
-        if (wal_->lastLogId() > lastLogId_) {
-            LOG(INFO) << idStr_ << "There is one log " << wal_->lastLogId()
-                      << " i did not commit when i was leader, rollback to " << lastLogId_;
-            wal_->rollbackToLog(lastLogId_);
-        }
         // Need to invoke the onLostLeadership callback
         bgWorkers_->addTask(
             [self = shared_from_this(), oldTerm] {
