@@ -11,6 +11,12 @@
   <a href="https://github.com/vesoft-inc/nebula/actions?workflow=package">
     <img src="https://github.com/vesoft-inc/nebula/workflows/package/badge.svg" alt="make nebula packages workflow"/>
   </a>
+  <a href="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default">
+    <img src="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula star"/>
+  </a>
+  <a href="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default">
+    <img src="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula fork"/>
+  </a>
   <br>
 </p>
 

@@ -9,6 +9,12 @@
   <a href="https://www.zhihu.com/org/nebulagraph/activities"><img src="https://img.shields.io/badge/Zhihu-%E7%9F%A5%E4%B9%8E-blue" alt="Zhihu"></a>
   <a href="https://segmentfault.com/t/nebula"><img src="https://img.shields.io/badge/SegmentFault-%E6%80%9D%E5%90%A6-green" alt="SegmentFault"></a>
   <a href="https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place"><img src="https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red" alt="Sina Weibo"></a>
+  <a href="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default">
+    <img src="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula star"/>
+  </a>
+  <a href="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default">
+    <img src="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula fork"/>
+  </a>
 </p>
 
 **Nebula Graph** 的目标是为超大规模图数据提供高并发，低延时的读、写及计算。Nebula是一个开源项目，我们期待与社区合作共同推广图数据库。
