@@ -217,7 +217,8 @@ public:
             VLOG(3) << "Insert key " << key << ", val " << value;
             // insert the new item
             list_.push_front(key);
-            map_.emplace(std::move(key), std::make_tuple(std::move(value), list_.begin()));
+            map_.emplace(std::forward<key_type>(key),
+                         std::make_tuple(std::forward<value_type>(value), list_.begin()));
         }
     }
 
