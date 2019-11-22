@@ -27,7 +27,7 @@ wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/sst.generato
 
 ## 3. User Guide
 
-User guide includes the following steps:
+This section includes the following steps:
 
 * Create a graph space and its schema in Nebula
 * Write data files
