@@ -591,7 +591,7 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
         auto item = getRet.value().front();
         auto value = boost::get<std::string>(item.get_value());
 
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_load_data_interval_secs + 3);
         ASSERT_EQ(FLAGS_rocksdb_db_options, value);
     }
     {
@@ -608,12 +608,12 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
         auto item = getRet.value().front();
         auto value = boost::get<std::string>(item.get_value());
 
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_load_data_interval_secs + 3);
         ASSERT_EQ(FLAGS_rocksdb_column_family_options, value);
     }
     {
         // need to sleep a bit to take effect on rocksdb
-        sleep(1);
+        sleep(3);
         rocksdb::DBOptions loadedDbOpt;
         std::vector<rocksdb::ColumnFamilyDescriptor> loadedCfDescs;
         std::string rocksPath = folly::stringPrintf("%s/disk1/nebula/%d/data",

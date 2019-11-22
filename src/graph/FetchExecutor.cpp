@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "FetchExecutor.h"
+#include "SchemaHelper.h"
 
 namespace nebula {
 namespace graph {
@@ -42,7 +43,7 @@ Status FetchExecutor::prepareYield() {
         } else if (col->expr()->isTypeCastingExpression()) {
             // type cast
             auto exprPtr = dynamic_cast<TypeCastingExpression*>(col->expr());
-            colTypes_.back() = ColumnTypeToSupportedType(exprPtr->getType());
+            colTypes_.back() = SchemaHelper::columnTypeToSupportedType(exprPtr->getType());
         }
     }
 
@@ -102,7 +103,7 @@ void FetchExecutor::onEmptyInputs() {
     } else if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
     }
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 Status FetchExecutor::getOutputSchema(
@@ -152,7 +153,7 @@ void FetchExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
         }
     }
     DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 }  // namespace graph
 }  // namespace nebula

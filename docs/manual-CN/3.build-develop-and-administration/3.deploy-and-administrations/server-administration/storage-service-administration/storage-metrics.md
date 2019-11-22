@@ -40,7 +40,10 @@ _error_qps
 
 ### 统计类型
 
-目前支持的类型有 SUM，COUNT，AVG，RATE，以及 P99，P999 等，最高支持到 P999999。只有 latency 支持 P99 等指标。
+目前支持的统计类型有 SUM，COUNT，AVG，RATE，和 P 分位数 (P99，P999， ... ，P999999)。其中：
+
+- `_latency` 和 `_error_qps` 这两类后缀的指标，支持 SUM，COUNT，AVG，RATE，但不支持 P 分位；
+- `_qps` 后缀的指标，支持 SUM，COUNT，AVG，RATE，也支持 P 分位。
 
 ### 时间范围
 
@@ -60,20 +63,20 @@ update_edge_error_qps.count.3600   # 最近一小时更新一条边发生错误�
 
 ```bash
 # 获取一个指标
-curl -G "http://127.0.0.1:50005/get_stats?stats=vertex_props_qps.rate.60"
+curl -G "http://127.0.0.1:12000/get_stats?stats=vertex_props_qps.rate.60"
 # vertex_props_qps.rate.60=2674
 
 # 同时获取多个指标
-curl -G "http://127.0.0.1:50005/get_stats?stats=vertex_props_qps.rate.60,vertex_props_latency.avg.60"
+curl -G "http://127.0.0.1:12000/get_stats?stats=vertex_props_qps.rate.60,vertex_props_latency.avg.60"
 # vertex_props_qps.rate.60=2638
 # vertex_props_latency.avg.60=812
 
 # 同时获取多个指标并以 json 格式返回
-curl -G "http://127.0.0.1:50005/get_stats?stats=vertex_props_qps.rate.60,vertex_props_latency.avg.60&returnjson"
+curl -G "http://127.0.0.1:12000/get_stats?stats=vertex_props_qps.rate.60,vertex_props_latency.avg.60&returnjson"
 # [{"value":2723,"name":"vertex_props_qps.rate.60"},{"value":804,"name":"vertex_props_latency.avg.60"}]
 
 # 获取所有指标
-curl -G "http://127.0.0.1:50005/get_stats?stats"
+curl -G "http://127.0.0.1:12000/get_stats?stats"
 # 或
-curl -G "http://127.0.0.1:50005/get_stats"
+curl -G "http://127.0.0.1:12000/get_stats"
 ```
