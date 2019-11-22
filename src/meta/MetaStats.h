@@ -4,18 +4,18 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef STORAGE_STORAGESTATS_H_
-#define STORAGE_STORAGESTATS_H_
+#ifndef META_METASTATS_H_
+#define META_METASTATS_H_
 
 #include "stats/StatsManager.h"
 
 namespace nebula {
-namespace storage {
+namespace meta {
 
-struct StorageStats {
-    StorageStats() = default;
+struct MetaStats {
+    MetaStats() = default;
 
-    explicit StorageStats(const std::string& name) {
+    explicit MetaStats(const std::string& name) {
         qpsStatId_ = stats::StatsManager::registerStats(name + "_qps");
         errorQpsStatId_ = stats::StatsManager::registerStats(name + "_error_qps");
         latencyStatId_ = stats::StatsManager::registerHisto(name + "_latency", 100, 1, 1000 * 1000);
@@ -26,6 +26,6 @@ struct StorageStats {
     int32_t latencyStatId_;
 };
 
-}  // namespace storage
+}  // namespace meta
 }  // namespace nebula
-#endif  // STORAGE_STORAGESTATS_H_
+#endif  // META_METASTATS_H_

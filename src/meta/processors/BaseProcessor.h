@@ -18,6 +18,7 @@
 #include "meta/common/MetaCommon.h"
 #include "network/NetworkUtils.h"
 #include "meta/processors/Common.h"
+#include "meta/MetaStats.h"
 
 namespace nebula {
 namespace meta {
@@ -51,8 +52,8 @@ using nebula::network::NetworkUtils;
 template<typename RESP>
 class BaseProcessor {
 public:
-    explicit BaseProcessor(kvstore::KVStore* kvstore)
-            : kvstore_(kvstore) {}
+    explicit BaseProcessor(kvstore::KVStore* kvstore, MetaStats* stats = nullptr)
+            : kvstore_(kvstore), stats_(stats) {}
 
     virtual ~BaseProcessor() = default;
 
@@ -65,6 +66,15 @@ protected:
      * Destroy current instance when finished.
      * */
     void onFinished() {
+        if (this->stats_ != nullptr) {
+            stats::StatsManager::addValue(this->stats_->latencyStatId_,
+                                          this->duration_.elapsedInUSec());
+            if (resp_.get_code() == cpp2::ErrorCode::SUCCEEDED) {
+                stats::StatsManager::addValue(this->stats_->qpsStatId_, 1);
+            } else {
+                stats::StatsManager::addValue(this->stats_->errorQpsStatId_, 1);
+            }
+        }
         promise_.setValue(std::move(resp_));
         delete this;
     }
@@ -214,6 +224,8 @@ protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;
     folly::Promise<RESP> promise_;
+    MetaStats* stats_ = nullptr;
+    time::Duration duration_;
 };
 
 }  // namespace meta
