@@ -8,7 +8,7 @@
 #define CLIENT_CPP_INCLUDE_NEBULACLIENT_H_
 
 
-#include "ExecuteResponse.h"
+#include "ExecutionResponse.h"
 
 namespace nebula {
 
@@ -19,18 +19,18 @@ public:
 
     // must be call on the front of the main()
     static void init(int argc, char *argv[]);
-    static void initSocketPool(const std::string& addr,
-                               uint16_t port,
-                               int32_t timeout = 1000 /* ms */,
-                               int32_t socketNum = 1);
+    static void initConnectionPool(const std::string& addr,
+                                   uint16_t port,
+                                   uint16_t connectionNum = 10,
+                                   int32_t timeout = 1000 /* ms */);
     // Authenticate the user
-    ErrorCode connect(const std::string& username,
-                      const std::string& password);
+    ErrorCode authenticate(const std::string& username,
+                           const std::string& password);
 
-    void disconnect();
+    void signout();
 
     // sync interface
-    ErrorCode execute(std::string stmt, ExecuteResponse& resp);
+    ErrorCode execute(std::string stmt, ExecutionResponse& resp);
 
     // async interface
     void asyncExecute(std::string stmt, CallbackFun cb);

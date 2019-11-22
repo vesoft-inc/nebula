@@ -22,14 +22,14 @@ public:
 
     bool init(const std::string &addr,   /* the addr of graphd */
               uint16_t port,             /* the port of graphd */
-              int32_t connNum = 10,      /* the number of connections */
+              uint16_t connNum = 10,     /* the number of connections */
               int32_t timeout = 1000     /* ms */);
 
     // If there has not idle socket, it will return nullptr
     // TODO: support to block when there has no idle socket
-    ConnectionThread* getConnection(int32_t &connectionId);
+    ConnectionThread* getConnection(int32_t &indexId);
 
-    void returnConnection(int32_t connectionId);
+    void returnConnection(int32_t indexId);
 
 private:
     ConnectionPool() = default;

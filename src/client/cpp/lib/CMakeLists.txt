@@ -1,7 +1,7 @@
 nebula_add_library(
     client_cpp_obj OBJECT
     NebulaClientImpl.cpp
-    ExecuteResponse.cpp
+    ExecutionResponse.cpp
     ConnectionPool.cpp
     ConnectionThread.cpp
 )
@@ -24,13 +24,12 @@ nebula_add_library(
     $<TARGET_OBJECTS:graph_thrift_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
-    ExecuteResponse.cpp
+    ExecutionResponse.cpp
     NebulaClientImpl.cpp
     NebulaClient.cpp
     ConnectionPool.cpp
     ConnectionThread.cpp
 )
-
 
 target_link_libraries(
     nebulaClient
@@ -53,4 +52,14 @@ target_link_libraries(
     -static-libstdc++
     -lpthread
     -ldl
+)
+
+install(
+    TARGETS nebulaClient
+    PERMISSIONS
+        OWNER_WRITE OWNER_READ
+        GROUP_READ
+        WORLD_READ
+    DESTINATION
+        /usr/local/lib
 )

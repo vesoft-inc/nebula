@@ -13,11 +13,11 @@ void NebulaClient::init(int argc, char *argv[]) {
     graph::NebulaClientImpl::initEnv(argc, argv);
 }
 
-void NebulaClient::initSocketPool(const std::string& addr,
-                                  uint16_t port,
-                                  int32_t timeout,
-                                  int32_t socketNum) {
-    graph::NebulaClientImpl::initSocketPool(addr, port, timeout, socketNum);
+void NebulaClient::initConnectionPool(const std::string& addr,
+                                      uint16_t port,
+                                      uint16_t connectionNum,
+                                      int32_t timeout) {
+    graph::NebulaClientImpl::initConnectionPool(addr, port, connectionNum, timeout);
 }
 
 NebulaClient::NebulaClient() {
@@ -25,20 +25,20 @@ NebulaClient::NebulaClient() {
 }
 
 NebulaClient::~NebulaClient() {
-    client_->disconnect();
+    client_->signout();
     client_ = nullptr;
 }
 
-ErrorCode NebulaClient::connect(const std::string& username,
-                                const std::string& password) {
-    return client_->doConnect(username, password);
+ErrorCode NebulaClient::authenticate(const std::string& username,
+                                     const std::string& password) {
+    return client_->doAuthenticate(username, password);
 }
 
-void NebulaClient::disconnect() {
-    client_->disconnect();
+void NebulaClient::signout() {
+    client_->signout();
 }
 
-ErrorCode NebulaClient::execute(std::string stmt, ExecuteResponse& resp) {
+ErrorCode NebulaClient::execute(std::string stmt, ExecutionResponse& resp) {
     return client_->doExecute(stmt, resp);
 }
 

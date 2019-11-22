@@ -5,7 +5,7 @@ nebula_add_test(
         cpp_client_test
     SOURCES
         CppClientTest.cpp
-        ../lib/ExecuteResponse.cpp
+        ../lib/ExecutionResponse.cpp
         ../lib/NebulaClientImpl.cpp
         ../lib/NebulaClient.cpp
         ../lib/ConnectionThread.cpp

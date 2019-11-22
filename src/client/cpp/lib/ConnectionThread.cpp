@@ -63,13 +63,13 @@ ConnectionThread::authenticate(const std::string& username, const std::string& p
 }
 
 folly::Future<StatusOr<cpp2::ExecutionResponse>>
-ConnectionThread::execute(const std::string &stmt) {
+ConnectionThread::execute(std::string stmt) {
     using AuthPromise = folly::Promise<StatusOr<cpp2::ExecutionResponse>>;
     std::shared_ptr<AuthPromise> p = std::make_shared<AuthPromise>();
     auto future = p->getFuture();
 
-    auto execute = [p, &stmt, this] () mutable {
-        auto handler = [p, &stmt] (folly::Try<cpp2::ExecutionResponse> &&t) {
+    auto execute = [p, request = std::move(stmt), this] () mutable {
+        auto handler = [p] (folly::Try<cpp2::ExecutionResponse> &&t) {
             if (t.hasException()) {
                 std::string error = folly::stringPrintf("RPC failure: %s",
                         t.exception().what().c_str());
@@ -80,7 +80,8 @@ ConnectionThread::execute(const std::string &stmt) {
 
             p->setValue(std::move(t.value()));
         };
-        connection_->future_execute(sessionId_, stmt).then(getEventBase(), handler);
+        LOG(INFO) << "ConnectionThread::execute: " << request;
+        connection_->future_execute(sessionId_, request).then(getEventBase(), handler);
     };
     getEventBase()->runInEventBaseThread(execute);
     return future;

@@ -60,9 +60,9 @@ bool CliManager::connect() {
     port_ = port;
     username_ = user;
 
-    NebulaClientImpl::initSocketPool(addr_, port_);
+    NebulaClientImpl::initConnectionPool(addr_, port_, 1);
     auto client = std::make_unique<NebulaClientImpl>();
-    cpp2::ErrorCode res = client->connect(username_, passwd);
+    cpp2::ErrorCode res = client->authenticate(username_, pass);
     if (res == cpp2::ErrorCode::SUCCEEDED) {
 #if defined(NEBULA_BUILD_VERSION)
         std::cerr << "\nWelcome to Nebula Graph (Version "

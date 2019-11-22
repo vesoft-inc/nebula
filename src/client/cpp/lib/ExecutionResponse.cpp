@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "client/cpp/include/nebula/ExecuteResponse.h"
+#include "client/cpp/include/nebula/ExecutionResponse.h"
 #include <assert.h>
 
 namespace nebula {
@@ -295,51 +295,51 @@ void ColValue::clear() {
     type_ = kEmptyType;
 }
 
-void ExecuteResponse::setErrorCode(ErrorCode code) {
+void ExecutionResponse::setErrorCode(ErrorCode code) {
     errorCode_ = code;
 }
 
-void ExecuteResponse::setLatencyInUs(int32_t latency) {
+void ExecutionResponse::setLatencyInUs(int32_t latency) {
     latencyInUs_ = latency;
 }
 
-void ExecuteResponse::setErrorMsg(std::string errorMsg) {
+void ExecutionResponse::setErrorMsg(std::string errorMsg) {
     errorMsg_ = std::move(errorMsg);
 }
 
-void ExecuteResponse::setSpaceName(std::string spaceName) {
+void ExecutionResponse::setSpaceName(std::string spaceName) {
     spaceName_ = std::move(spaceName);
 }
 
-void ExecuteResponse::setColumnNames(std::vector<std::string> columnNames) {
+void ExecutionResponse::setColumnNames(std::vector<std::string> columnNames) {
     columnNames_ = std::move(columnNames);
 }
 
-void ExecuteResponse::setRows(std::vector<RowValue> rows) {
+void ExecutionResponse::setRows(std::vector<RowValue> rows) {
     rows_ = std::move(rows);
 }
 
-int32_t ExecuteResponse::getErrorCode() {
+int32_t ExecutionResponse::getErrorCode() {
     return errorCode_;
 }
 
-int32_t ExecuteResponse::getLatencyInUs() {
+int32_t ExecutionResponse::getLatencyInUs() {
     return latencyInUs_;
 }
 
-std::string const & ExecuteResponse::getErrorMsg() const & {
+std::string const & ExecutionResponse::getErrorMsg() const & {
     return errorMsg_;
 }
 
-std::string const & ExecuteResponse::getSpaceName() const & {
+std::string const & ExecutionResponse::getSpaceName() const & {
     return spaceName_;
 }
 
-std::vector<std::string> const & ExecuteResponse::getColumnNames() const & {
+std::vector<std::string> const & ExecutionResponse::getColumnNames() const & {
     return columnNames_;
 }
 
-std::vector<RowValue> const & ExecuteResponse::getRows() const & {
+std::vector<RowValue> const & ExecutionResponse::getRows() const & {
     return rows_;
 }
 }  // namespace nebula

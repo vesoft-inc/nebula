@@ -20,7 +20,7 @@ ConnectionPool::~ConnectionPool() {
 
 bool ConnectionPool::init(const std::string &addr,
                           uint16_t port,
-                          int32_t connNum,
+                          uint16_t connNum,
                           int32_t timeout) {
     std::lock_guard<std::mutex> g(lock_);
     if (hasInit_) {
@@ -30,7 +30,7 @@ bool ConnectionPool::init(const std::string &addr,
     if (connNum > 0) {
         threadNum_ = connNum;
     }
-    unusedIds_.resize(threadNum_);
+    unusedIds_.reserve(threadNum_);
 
     for (int32_t i = 0; i < threadNum_; ++i) {
         auto connection = std::make_unique<ConnectionThread>(addr, port, timeout);
@@ -47,24 +47,26 @@ bool ConnectionPool::init(const std::string &addr,
     return true;
 }
 
-ConnectionThread* ConnectionPool::getConnection(int32_t &connectionId) {
+ConnectionThread* ConnectionPool::getConnection(int32_t &indexId) {
     std::lock_guard<std::mutex> g(lock_);
     if (unusedIds_.empty()) {
         LOG(ERROR) << "No idle connections";
         return nullptr;
     }
-    auto id = *unusedIds_.crbegin();
-    connectionId = id;
+    auto id = *unusedIds_.rbegin();
+    indexId = id;
     unusedIds_.pop_back();
     return threads_[id].get();
 }
 
-void ConnectionPool::returnConnection(int32_t connectionId) {
+void ConnectionPool::returnConnection(int32_t indexId) {
     std::lock_guard<std::mutex> g(lock_);
-    if (threads_.find(connectionId) == threads_.end()) {
+    if (threads_.find(indexId) == threads_.end()) {
         return;
     }
-    unusedIds_.emplace_back(connectionId);
+    if (std::find(unusedIds_.begin(), unusedIds_.end(), indexId) == unusedIds_.end()) {
+        unusedIds_.emplace_back(indexId);
+    }
 }
 
 }  // namespace graph

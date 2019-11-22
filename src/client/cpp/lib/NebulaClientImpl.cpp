@@ -15,23 +15,23 @@ void NebulaClientImpl::initEnv(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
 }
 
-void NebulaClientImpl::initSocketPool(const std::string& addr,
-                                      uint16_t port,
-                                      int32_t timeout,
-                                      int32_t socketNum) {
-    if (!ConnectionPool::instance().init(addr, port, socketNum, timeout)) {
+void NebulaClientImpl::initConnectionPool(const std::string& addr,
+                                          uint16_t port,
+                                          uint16_t connectionNum,
+                                          int32_t timeout) {
+    if (!ConnectionPool::instance().init(addr, port, connectionNum, timeout)) {
         LOG(ERROR) << "Init pool failed";
         return;
     }
 }
 
 NebulaClientImpl::~NebulaClientImpl() {
-    disconnect();
+    signout();
 }
 
-cpp2::ErrorCode NebulaClientImpl::connect(const std::string& username,
-                                          const std::string& password) {
-    connection_ = ConnectionPool::instance().getConnection(connectionId_);
+cpp2::ErrorCode NebulaClientImpl::authenticate(const std::string& username,
+                                               const std::string& password) {
+    connection_ = ConnectionPool::instance().getConnection(indexId_);
     if (connection_ == nullptr) {
         LOG(ERROR) << "Get connection failed";
         return cpp2::ErrorCode::E_FAIL_TO_CONNECT;
@@ -44,20 +44,20 @@ cpp2::ErrorCode NebulaClientImpl::connect(const std::string& username,
     return resp.get_error_code();
 }
 
-ErrorCode NebulaClientImpl::doConnect(const std::string& username,
-                                      const std::string& password) {
-    cpp2::ErrorCode code = connect(username, password);
+ErrorCode NebulaClientImpl::doAuthenticate(const std::string& username,
+                                           const std::string& password) {
+    cpp2::ErrorCode code = authenticate(username, password);
     return static_cast<ErrorCode>(code);
 }
 
-void NebulaClientImpl::disconnect() {
+void NebulaClientImpl::signout() {
     if (connection_ == nullptr) {
         return;
     }
 
     // Log out
     connection_->signout().get();
-    ConnectionPool::instance().returnConnection(connectionId_);
+    ConnectionPool::instance().returnConnection(indexId_);
 }
 
 void NebulaClientImpl::feedPath(const cpp2::Path &inPath, Path& outPath) {
@@ -92,7 +92,7 @@ void NebulaClientImpl::feedPath(const cpp2::Path &inPath, Path& outPath) {
 }
 
 void NebulaClientImpl::feedRows(const cpp2::ExecutionResponse& inResp,
-                                ExecuteResponse& outResp) {
+                                ExecutionResponse& outResp) {
     using nebula::graph::cpp2::ColumnValue;
     std::vector<RowValue> rows;
     for (auto& row : (*inResp.get_rows())) {
@@ -173,7 +173,7 @@ cpp2::ErrorCode NebulaClientImpl::execute(folly::StringPiece stmt,
 }
 
 ErrorCode NebulaClientImpl::doExecute(std::string stmt,
-                                      ExecuteResponse& resp) {
+                                      ExecutionResponse& resp) {
     cpp2::ExecutionResponse response;
     cpp2::ErrorCode code = execute(stmt, response);
     if (code != cpp2::ErrorCode::SUCCEEDED) {
@@ -199,10 +199,9 @@ ErrorCode NebulaClientImpl::doExecute(std::string stmt,
 }
 
 void NebulaClientImpl::doAsyncExecute(std::string stmt, CallbackFun cb) {
-    auto *evb = folly::EventBaseManager::get()->getEventBase();
     auto handler = [cb = std::move(cb), this] (auto &&response) {
         if (!response.ok()) {
-            cb(nullptr, kFailToConnect);
+            cb(nullptr, kRpcFailure);
             return;
         }
 
@@ -212,7 +211,7 @@ void NebulaClientImpl::doAsyncExecute(std::string stmt, CallbackFun cb) {
             return;
         }
 
-        ExecuteResponse result;
+        ExecutionResponse result;
         result.setErrorCode(static_cast<ErrorCode>(resp.get_error_code()));
         result.setLatencyInUs(resp.get_latency_in_us());
         if (resp.get_error_msg() != nullptr) {
@@ -230,10 +229,15 @@ void NebulaClientImpl::doAsyncExecute(std::string stmt, CallbackFun cb) {
         cb(&result, static_cast<ErrorCode>(resp.get_error_code()));
     };
 
-    folly::via(evb, [evb, request = std::move(stmt),
-            handler = std::move(handler), this] () mutable {
-        connection_->execute(request).thenValue(handler);
-    });
+    auto error = [cb = std::move(cb)] (auto &&e) {
+        cb(nullptr, kRpcFailure);
+        LOG(ERROR) << "Exception caught: " << e.what();
+        return;
+    };
+
+    auto future = connection_->execute(stmt);
+    auto *evb = connection_->getEventBase();
+    std::move(future).via(evb).thenValue(handler).thenError(error);
 }
 }  // namespace graph
 }  // namespace nebula

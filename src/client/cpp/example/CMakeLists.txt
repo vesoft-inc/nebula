@@ -26,12 +26,12 @@ endif()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "_build")
 
 add_executable(
-    nebula_client_test
-    NebulaClientTest.cpp
+    nebula_client_example
+    NebulaClientExample.cpp
 )
 
 target_link_libraries(
-    nebula_client_test 
+    nebula_client_example
     nebulaClient
     ssl
     bz2

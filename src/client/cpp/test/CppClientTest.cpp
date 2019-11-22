@@ -10,7 +10,7 @@
 #include "graph/test/TestBase.h"
 #include "meta/test/TestUtils.h"
 #include "nebula/NebulaClient.h"
-#include "nebula/ExecuteResponse.h"
+#include "nebula/ExecutionResponse.h"
 #include "client/cpp/lib/ConnectionThread.h"
 #include "client/cpp/lib/ConnectionPool.h"
 #include "thread/NamedThread.h"
@@ -35,15 +35,14 @@ protected:
 
 TEST_F(CppClientTest, all) {
     auto cb = [] (const std::string &name) {
-        LOG(INFO) << "current pid = " << name;
         NebulaClient client;
-        auto code = client.connect("user", "password");
+        auto code = client.authenticate("user", "password");
         if (code != kSucceed) {
-            LOG(INFO) << "Connect graphd failed, code: " << code;
+            LOG(ERROR) << "Authenticate graphd failed, code: " << code;
             return;
         }
         // execute cmd: show spaces
-        ExecuteResponse resp;
+        ExecutionResponse resp;
         auto *format = "CREATE SPACE mySpace%s(partition_num=1, replica_factor=1)";
         auto cmd = folly::stringPrintf(format, name.c_str());
         code = client.execute(cmd, resp);
@@ -88,7 +87,7 @@ TEST_F(CppClientTest, all) {
             "YIELD schoolmate._dst, $$.person.name, $$.person.age, "
             "$$.person.birthday, schoolmate.likeness, $$.person.isBoy";
 
-        auto checkFun = [] (ExecuteResponse* response, ErrorCode resultCode) {
+        auto checkFun = [] (ExecutionResponse* response, ErrorCode resultCode) {
             LOG(INFO) << "Now into checkFun...";
             ASSERT_EQ(resultCode, kSucceed);
             using resultType = std::tuple<int64_t, std::string, int64_t, int64_t, double, bool>;
@@ -136,7 +135,7 @@ TEST_F(CppClientTest, all) {
         };
 
         // async
-        // client.asyncExecute(cmd, checkFun);
+        client.asyncExecute(cmd, checkFun);
 
         sleep(1);
 
@@ -151,7 +150,7 @@ TEST_F(CppClientTest, all) {
         code = client.execute(cmd, resp);
         ASSERT_EQ(code, kSucceed);
 
-        auto checkPath = [] (ExecuteResponse* response, ErrorCode resultCode) {
+        auto checkPath = [] (ExecutionResponse* response, ErrorCode resultCode) {
             LOG(INFO) << "To do checkPath.....";
             const std::string path1 = folly::stringPrintf("%ld<schoolmate,0>%ld",
                                     std::hash<std::string>()("Aero"),
@@ -192,7 +191,7 @@ TEST_F(CppClientTest, all) {
             }
         };
         cmd = "FIND ALL PATH FROM hash(\"Aero\") TO hash(\"Lily\") OVER schoolmate UPTO 2 STEPS";
-        // client.asyncExecute(cmd, checkPath);
+        client.asyncExecute(cmd, checkPath);
         code = client.execute(cmd, resp);
         checkPath(&resp, code);
     };
@@ -206,12 +205,12 @@ TEST_F(CppClientTest, all) {
 TEST_F(CppClientTest, testReuseConnection) {
     {
         NebulaClient client1;
-        auto code = client1.connect("user", "password");
+        auto code = client1.authenticate("user", "password");
         if (code != kSucceed) {
-            LOG(INFO) << "Connect graphd failed, code: " << code;
+            LOG(ERROR) << "Authenticate graphd failed, code: " << code;
             return;
         }
-        ExecuteResponse resp;
+        ExecutionResponse resp;
         auto cmd = folly::stringPrintf("USE mySpace1");
         code = client1.execute(cmd, resp);
         ASSERT_EQ(code, kSucceed);
@@ -220,9 +219,9 @@ TEST_F(CppClientTest, testReuseConnection) {
         ASSERT_EQ(code, kSucceed);
 
         NebulaClient client2;
-        code = client2.connect("user", "password");
+        code = client2.authenticate("user", "password");
         if (code != kSucceed) {
-            LOG(INFO) << "Connect graphd failed, code: " << code;
+            LOG(INFO) << "Authenticate graphd failed, code: " << code;
             return;
         }
         cmd = folly::stringPrintf("USE mySpace1");
@@ -231,12 +230,12 @@ TEST_F(CppClientTest, testReuseConnection) {
     }
     {
         NebulaClient client;
-        auto code = client.connect("user", "password");
+        auto code = client.authenticate("user", "password");
         if (code != kSucceed) {
-            LOG(INFO) << "Connect graphd failed, code: " << code;
+            LOG(ERROR) << "Authenticate graphd failed, code: " << code;
             return;
         }
-        ExecuteResponse resp;
+        ExecutionResponse resp;
         auto cmd = folly::stringPrintf("CREATE TAG test()");
         code = client.execute(cmd, resp);
         ASSERT_NE(code, kSucceed);

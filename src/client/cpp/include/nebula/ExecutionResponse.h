@@ -292,11 +292,11 @@ private:
     std::vector<ColValue>      columns_;
 };
 
-class ExecuteResponse final {
+class ExecutionResponse final {
     friend class nebula::graph::NebulaClientImpl;
 public:
-    ExecuteResponse() {}
-    ~ExecuteResponse() {}
+    ExecutionResponse() {}
+    ~ExecutionResponse() {}
 
 public:
     // get value
@@ -326,7 +326,7 @@ private:
     std::vector<RowValue>           rows_;
 };
 
-using CallbackFun = std::function<void(ExecuteResponse*, ErrorCode)>;
+using CallbackFun = std::function<void(ExecutionResponse*, ErrorCode)>;
 
 }  // namespace nebula
 #endif  // CLIENT_CPP_INCLUDE_NEBULA_EXECUTERESPONSE_H_

@@ -32,7 +32,7 @@ public:
     folly::Future<StatusOr<cpp2::AuthResponse>> authenticate(const std::string& username,
                                                              const std::string& password);
 
-    folly::Future<StatusOr<cpp2::ExecutionResponse>> execute(const std::string &stmt);
+    folly::Future<StatusOr<cpp2::ExecutionResponse>> execute(std::string stmt);
 
     folly::Future<Status> signout();
 
