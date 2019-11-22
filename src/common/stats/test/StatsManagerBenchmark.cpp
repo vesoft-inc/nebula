@@ -62,6 +62,39 @@ BENCHMARK(add_histogram_value_8t, iters) {
 
 BENCHMARK_DRAW_LINE();
 
+const int32_t counter = StatsManager::registerStats("Counter");
+BENCHMARK(add_counter_value, iters) {
+    FOR_EACH_RANGE(i, 0, iters) {
+        StatsManager::addValue(counter, i);
+    }
+}
+
+BENCHMARK_DRAW_LINE();
+
+// With buckets growing
+// The histogram is Evenly distribution, so the time-complexity is O(1)
+const int32_t hist_32b = StatsManager::registerHisto("histogram_32b", 32, 1, 1000);
+BENCHMARK(add_histogram_value_32b, iters) {
+    FOR_EACH_RANGE(i, 0, iters) {
+        StatsManager::addValue(hist_32b, i);
+    }
+}
+
+const int32_t hist_1kb = StatsManager::registerHisto("histogram_1kb", 1024, 1, 10000);
+BENCHMARK(add_histogram_value_1kb, iters) {
+    FOR_EACH_RANGE(i, 0, iters) {
+        StatsManager::addValue(hist_1kb, i);
+    }
+}
+
+const int32_t hist_4kb = StatsManager::registerHisto("histogram_4kb", 4096, 1, 10000);
+BENCHMARK(add_histogram_value_4kb, iters) {
+    FOR_EACH_RANGE(i, 0, iters) {
+        StatsManager::addValue(hist_4kb, i);
+    }
+}
+
+BENCHMARK_DRAW_LINE();
 
 int main(int argc, char** argv) {
     folly::init(&argc, &argv, true);
