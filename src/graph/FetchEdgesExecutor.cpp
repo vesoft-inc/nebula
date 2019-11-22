@@ -19,7 +19,6 @@ Status FetchEdgesExecutor::prepare() {
 }
 
 Status FetchEdgesExecutor::prepareClauses() {
-    DCHECK_NOTNULL(sentence_);
     Status status = Status::OK();
 
     do {
@@ -31,7 +30,7 @@ Status FetchEdgesExecutor::prepareClauses() {
         expCtx_ = std::make_unique<ExpressionContext>();
         expCtx_->setStorageClient(ectx()->getStorageClient());
         spaceId_ = ectx()->rctx()->session()->space();
-        yieldClause_ = sentence_->yieldClause();
+        yieldClause_ = DCHECK_NOTNULL(sentence_)->yieldClause();
         labelName_ = sentence_->edge();
         auto result = ectx()->schemaManager()->toEdgeType(spaceId_, *labelName_);
         if (!result.ok()) {

@@ -71,8 +71,7 @@ Status FetchExecutor::prepareYield() {
 }
 
 void FetchExecutor::setupColumns() {
-    DCHECK_NOTNULL(labelSchema_);
-    auto iter = labelSchema_->begin();
+    auto iter = DCHECK_NOTNULL(labelSchema_)->begin();
     if (yieldColsHolder_ == nullptr) {
         yieldColsHolder_ = std::make_unique<YieldColumns>();
     }
