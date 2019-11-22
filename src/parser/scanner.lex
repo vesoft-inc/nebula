@@ -123,6 +123,7 @@ LEADER                      ([Ll][Ee][Aa][Dd][Ee][Rr])
 UUID                        ([Uu][Uu][Ii][Dd])
 OF                          ([Oo][Ff])
 DATA                        ([Dd][Aa][Tt][Aa])
+STOP                        ([Ss][Tt][Oo][Pp])
 SHORTEST                    ([Ss][Hh][Oo][Rr][Tt][Ee][Ss][Tt])
 PATH                        ([Pp][Aa][Tt][Hh])
 LIMIT                       ([Ll][Ii][Mm][Ii][Tt])
@@ -138,6 +139,8 @@ STD                         ([Ss][Tt][Dd])
 BIT_AND                     ([Bb][It][Tt][_][Aa][Nn][Dd])
 BIT_OR                      ([Bb][It][Tt][_][Oo][Rr])
 BIT_XOR                     ([Bb][It][Tt][_][Xx][Oo][Rr])
+IS                          ([Ii][Ss])
+NULL                        ([Nn][Uu][Ll][Ll])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -147,9 +150,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
 
 %%
-
-                            thread_local static char sbuf[MAX_STRING];
-                            size_t pos = 0;
 
 {GO}                        { return TokenType::KW_GO; }
 {AS}                        { return TokenType::KW_AS; }
@@ -250,6 +250,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {LEADER}                    { return TokenType::KW_LEADER; }
 {UUID}                      { return TokenType::KW_UUID; }
 {DATA}                      { return TokenType::KW_DATA; }
+{STOP}                      { return TokenType::KW_STOP; }
 {SHORTEST}                  { return TokenType::KW_SHORTEST; }
 {PATH}                      { return TokenType::KW_PATH; }
 {LIMIT}                     { return TokenType::KW_LIMIT; }
@@ -265,6 +266,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {BIT_AND}                   { return TokenType::KW_BIT_AND; }
 {BIT_OR}                    { return TokenType::KW_BIT_OR; }
 {BIT_XOR}                   { return TokenType::KW_BIT_XOR; }
+{IS}                        { return TokenType::KW_IS; }
+{NULL}                      { return TokenType::KW_NULL; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
@@ -389,15 +392,15 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 \${LABEL}                   { yylval->strval = new std::string(yytext + 1, yyleng - 1); return TokenType::VARIABLE; }
 
 
-\"                          { BEGIN(DQ_STR); pos = 0; }
-\'                          { BEGIN(SQ_STR); pos = 0; }
+\"                          { BEGIN(DQ_STR); sbufPos_ = 0; }
+\'                          { BEGIN(SQ_STR); sbufPos_ = 0; }
 <DQ_STR>\"                  {
-                                yylval->strval = new std::string(sbuf, pos);
+                                yylval->strval = new std::string(sbuf(), sbufPos_);
                                 BEGIN(INITIAL);
                                 return TokenType::STRING;
                             }
 <SQ_STR>\'                  {
-                                yylval->strval = new std::string(sbuf, pos);
+                                yylval->strval = new std::string(sbuf(), sbufPos_);
                                 BEGIN(INITIAL);
                                 return TokenType::STRING;
                             }
@@ -407,66 +410,48 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                             }
 <DQ_STR,SQ_STR>\n           { yyterminate(); }
 <DQ_STR>[^\\\n\"]+          {
-                                if (pos + yyleng > MAX_STRING) {
-                                    throw GraphParser::syntax_error(*yylloc, "string too long");
-                                }
-                                ::strncpy(sbuf + pos, yytext, yyleng);
-                                pos += yyleng;
+                                makeSpaceForString(yyleng);
+                                ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
+                                sbufPos_ += yyleng;
                             }
 <SQ_STR>[^\\\n\']+          {
-                                if (pos + yyleng > MAX_STRING) {
-                                    throw GraphParser::syntax_error(*yylloc, "string too long");
-                                }
-                                ::strncpy(sbuf + pos, yytext, yyleng);
-                                pos += yyleng;
+                                makeSpaceForString(yyleng);
+                                ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
+                                sbufPos_ += yyleng;
                             }
 <DQ_STR,SQ_STR>\\{OCT}{1,3} {
-                                if (pos + 1 > MAX_STRING) {
-                                    throw GraphParser::syntax_error(*yylloc, "string too long");
-                                }
+                                makeSpaceForString(1);
                                 int val = 0;
                                 sscanf(yytext + 1, "%o", &val);
                                 if (val > 0xFF) {
                                     yyterminate();
                                 }
-                                sbuf[pos++] = val;
+                                sbuf()[sbufPos_++] = val;
                             }
 <DQ_STR,SQ_STR>\\{DEC}+     { yyterminate(); }
 <DQ_STR,SQ_STR>\\n          {
-                                if (pos + 1 > MAX_STRING) {
-                                    throw GraphParser::syntax_error(*yylloc, "string too long");
-                                }
-                                sbuf[pos++] = '\n';
+                                makeSpaceForString(1);
+                                sbuf()[sbufPos_++] = '\n';
                             }
 <DQ_STR,SQ_STR>\\t          {
-                                if (pos + 1 > MAX_STRING) {
-                                    throw GraphParser::syntax_error(*yylloc, "string too long");
-                                }
-                                sbuf[pos++] = '\t';
+                                makeSpaceForString(1);
+                                sbuf()[sbufPos_++] = '\t';
                             }
 <DQ_STR,SQ_STR>\\r          {
-                                if (pos + 1 > MAX_STRING) {
-                                    throw GraphParser::syntax_error(*yylloc, "string too long");
-                                }
-                                sbuf[pos++] = '\r';
+                                makeSpaceForString(1);
+                                sbuf()[sbufPos_++] = '\r';
                             }
 <DQ_STR,SQ_STR>\\b          {
-                                if (pos + 1 > MAX_STRING) {
-                                    throw GraphParser::syntax_error(*yylloc, "string too long");
-                                }
-                                sbuf[pos++] = '\b';
+                                makeSpaceForString(1);
+                                sbuf()[sbufPos_++] = '\b';
                             }
 <DQ_STR,SQ_STR>\\f          {
-                                if (pos + 1 > MAX_STRING) {
-                                    throw GraphParser::syntax_error(*yylloc, "string too long");
-                                }
-                                sbuf[pos++] = '\f';
+                                makeSpaceForString(1);
+                                sbuf()[sbufPos_++] = '\f';
                             }
 <DQ_STR,SQ_STR>\\(.|\n)     {
-                                if (pos + 1 > MAX_STRING) {
-                                    throw GraphParser::syntax_error(*yylloc, "string too long");
-                                }
-                                sbuf[pos++] = yytext[1];
+                                makeSpaceForString(1);
+                                sbuf()[sbufPos_++] = yytext[1];
                             }
 <DQ_STR,SQ_STR>\\           {
                                 // This rule should have never been matched,

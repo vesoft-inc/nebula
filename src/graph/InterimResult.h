@@ -63,7 +63,7 @@ public:
         return rsReader_->schema();
     }
 
-    std::vector<std::string> getColNames() {
+    std::vector<std::string> getColNames() const {
         // Once getColNames called, colNames_ would be invalid
         return std::move(colNames_);
     }

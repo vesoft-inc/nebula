@@ -46,6 +46,7 @@
 #include "graph/FindPathExecutor.h"
 #include "graph/LimitExecutor.h"
 #include "graph/GroupByExecutor.h"
+#include "graph/ReturnExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -159,6 +160,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kLimit:
             executor = std::make_unique<LimitExecutor>(sentence, ectx());
             break;
+        case Sentence::Kind::kReturn:
+            executor = std::make_unique<ReturnExecutor>(sentence, ectx());
+            break;
         case Sentence::Kind::kUnknown:
             LOG(ERROR) << "Sentence kind unknown";
             return nullptr;
@@ -223,21 +227,20 @@ bool Executor::checkValueType(const nebula::cpp2::ValueType &type, const Variant
     return false;
 }
 
-Status Executor::checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> schema,
-                                std::vector<std::string*> props) {
-    for (auto fieldIndex = 0u; fieldIndex < schema->getNumFields(); fieldIndex++) {
-        auto schemaFieldName = schema->getFieldName(fieldIndex);
-        if (UNLIKELY(nullptr == schemaFieldName)) {
-            return Status::Error("Invalid field index");
+StatusOr<std::unordered_map<std::string, int64_t>>
+Executor::checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> schema,
+                         std::vector<std::string*> props) {
+    std::unordered_map<std::string, int64_t> schemaIndexes;
+    auto pos = 0;
+    for (auto it : props) {
+        auto index = schema->getFieldIndex(*it);
+        if (index < 0) {
+            return Status::Error("Invalid field name `%s'", it->c_str());
         }
-        if (schemaFieldName != *props[fieldIndex]) {
-            LOG(ERROR) << "Field name is wrong, schema field " << schemaFieldName
-                       << ", input field " << *props[fieldIndex];
-            return Status::Error("Input field name `%s' is wrong",
-                                 props[fieldIndex]->c_str());
-        }
+        schemaIndexes.emplace(*it, pos);
+        pos++;
     }
-    return Status::OK();
+    return schemaIndexes;
 }
 
 StatusOr<int64_t> Executor::toTimestamp(const VariantType &value) {
