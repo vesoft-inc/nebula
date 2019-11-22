@@ -14,14 +14,15 @@ Spark Writer supports importing multiple tags and edges at one time, and configu
 ### 2.1 From Source Code
 
 ```bash
-git clone xxxxx
+git clone https://github.com/vesoft-inc/nebula.git
+cd nebula/src/tools/spark-sstfile-generator
 mvn compile package
 ```
 
 ### 2.2 oss Download
 
 ```bash
-wget xxx
+wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/sst.generator-1.0.0-beta.jar
 ```
 
 ## 3. User Guide

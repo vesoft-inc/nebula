@@ -14,14 +14,15 @@ Spark Writer 支持同时导入多个 tag、edge，支持不同 tag/edge 配置�
 ### 2.1 编译源码
 
 ```bash
-git clone xxxxx
+git clone https://github.com/vesoft-inc/nebula.git
+cd nebula/src/tools/spark-sstfile-generator
 mvn compile package
 ```
 
 ### 2.2 oss 下载
 
 ```bash
-wget xxx
+wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/sst.generator-1.0.0-beta.jar
 ```
 
 ## 3. 使用流程
