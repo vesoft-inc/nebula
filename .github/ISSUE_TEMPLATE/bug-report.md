@@ -22,4 +22,6 @@ Steps to reproduce the behavior:
 A clear and concise description of what you expected to happen.
 
 **Additional context**
-Add any other context about the problem here.
+Add any other context about the problem here, including logs and configs. 
+
+See [Trouble Shooting](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/1.overview/2.quick-start/2.trouble-shooting.md) for possible errors.
