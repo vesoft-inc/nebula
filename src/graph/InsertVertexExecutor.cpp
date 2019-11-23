@@ -207,19 +207,13 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
 void InsertVertexExecutor::execute() {
     auto status = check();
     if (!status.ok()) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertVertexStats(),
-                false, duration().elapsedInUSec());
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status), ectx()->getGraphStats()->getInsertVertexStats());
         return;
     }
 
     auto result = prepareVertices();
     if (!result.ok()) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertVertexStats(),
-                false, duration().elapsedInUSec());
-        DCHECK(onError_);
-        onError_(std::move(result).status());
+        doError(std::move(status), ectx()->getGraphStats()->getInsertVertexStats());
         return;
     }
     auto future = ectx()->getStorageClient()->addVertices(spaceId_,
@@ -231,22 +225,19 @@ void InsertVertexExecutor::execute() {
         // For insertion, we regard partial success as failure.
         auto completeness = resp.completeness();
         if (completeness != 100) {
-            DCHECK(onError_);
-            onError_(Status::Error("Internal Error"));
+            doError(Status::Error("Internal Error"),
+                    ectx()->getGraphStats()->getInsertVertexStats());
             return;
         }
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertVertexStats(),
-                true, duration().elapsedInUSec(), rows_.size());
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext,
+                 ectx()->getGraphStats()->getInsertVertexStats(),
+                 rows_.size());
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertVertexStats(),
-                false, duration().elapsedInUSec(), rows_.size());
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal Error"),
+                ectx()->getGraphStats()->getInsertVertexStats());
         return;
     };
 

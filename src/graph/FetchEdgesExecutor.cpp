@@ -100,20 +100,15 @@ Status FetchEdgesExecutor::prepareEdgeKeys() {
 }
 
 void FetchEdgesExecutor::execute() {
-    DCHECK(onError_);
     FLOG_INFO("Executing FetchEdges: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchEdgesStats(),
-                false, duration().elapsedInUSec());
-        onError_(std::move(status));
+        doError(std::move(status), ectx()->getGraphStats()->getFetchEdgesStats());
         return;
     }
     status = setupEdgeKeys();
     if (!status.ok()) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchEdgesStats(),
-                false, duration().elapsedInUSec());
-        onError_(std::move(status));
+        doError(std::move(status), ectx()->getGraphStats()->getFetchEdgesStats());
         return;
     }
 
@@ -266,18 +261,13 @@ void FetchEdgesExecutor::fetchEdges() {
     std::vector<storage::cpp2::PropDef> props;
     auto status = getPropNames(props);
     if (!status.ok()) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchEdgesStats(),
-                false, duration().elapsedInUSec());
-        DCHECK(onError_);
-        onError_(status);
+        doError(std::move(status), ectx()->getGraphStats()->getFetchEdgesStats());
         return;
     }
 
     if (props.empty()) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchEdgesStats(),
-                false, duration().elapsedInUSec());
-        DCHECK(onError_);
-        onError_(Status::Error("No props declared."));
+        doError(Status::Error("No props declared."),
+                 ectx()->getGraphStats()->getFetchEdgesStats());
         return;
     }
 
@@ -286,10 +276,8 @@ void FetchEdgesExecutor::fetchEdges() {
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchEdgesStats(),
-                    false, duration().elapsedInUSec());
-            DCHECK(onError_);
-            onError_(Status::Error("Get props failed"));
+            doError(Status::Error("Get props failed"),
+                    ectx()->getGraphStats()->getFetchEdgesStats());
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get edges partially failed: "  << completeness << "%";
@@ -303,9 +291,8 @@ void FetchEdgesExecutor::fetchEdges() {
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchEdgesStats(),
-                false, duration().elapsedInUSec());
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal error"),
+                ectx()->getGraphStats()->getFetchEdgesStats());
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -347,10 +334,8 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             auto status = getOutputSchema(eschema.get(), &*iter, outputSchema.get());
             if (!status.ok()) {
                 LOG(ERROR) << "Get getOutputSchema failed: " << status;
-                stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchEdgesStats(),
-                        false, duration().elapsedInUSec());
-                DCHECK(onError_);
-                onError_(Status::Error("Internal error."));
+                doError(Status::Error("Internal error."),
+                        ectx()->getGraphStats()->getFetchEdgesStats());
                 return;
             }
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
@@ -368,18 +353,14 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
                 auto *expr = column->expr();
                 auto value = expr->eval();
                 if (!value.ok()) {
-                    stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchEdgesStats(),
-                            false, duration().elapsedInUSec());
-                    onError_(value.status());
+                    doError(std::move(value).status(),
+                             ectx()->getGraphStats()->getFetchEdgesStats());
                     return;
                 }
                 auto status = Collector::collect(value.value(), writer.get());
                 if (!status.ok()) {
                     LOG(ERROR) << "Collect prop error: " << status;
-                    stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchEdgesStats(),
-                            false, duration().elapsedInUSec());
-                    DCHECK(onError_);
-                    onError_(std::move(status));
+                    doError(std::move(status), ectx()->getGraphStats()->getFetchEdgesStats());
                     return;
                 }
             }

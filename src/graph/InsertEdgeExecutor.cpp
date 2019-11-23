@@ -214,19 +214,13 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
 void InsertEdgeExecutor::execute() {
     auto status = check();
     if (!status.ok()) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertEdgeStats(),
-                false, duration().elapsedInUSec());
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status), ectx()->getGraphStats()->getInsertEdgeStats());
         return;
     }
 
     auto result = prepareEdges();
     if (!result.ok()) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertEdgeStats(),
-                false, duration().elapsedInUSec());
-        DCHECK(onError_);
-        onError_(std::move(result).status());
+        doError(std::move(status), ectx()->getGraphStats()->getInsertEdgeStats());
         return;
     }
 
@@ -239,22 +233,17 @@ void InsertEdgeExecutor::execute() {
         // For insertion, we regard partial success as failure.
         auto completeness = resp.completeness();
         if (completeness != 100) {
-            DCHECK(onError_);
-            onError_(Status::Error("Internal Error"));
+            doError(Status::Error("Internal Error"), ectx()->getGraphStats()->getInsertEdgeStats());
             return;
         }
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertEdgeStats(),
-                true, duration().elapsedInUSec(), rows_.size());
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext,
+                 ectx()->getGraphStats()->getInsertEdgeStats(),
+                 rows_.size());
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getInsertEdgeStats(),
-                false, duration().elapsedInUSec(), rows_.size());
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal error"), ectx()->getGraphStats()->getInsertEdgeStats());
         return;
     };
 

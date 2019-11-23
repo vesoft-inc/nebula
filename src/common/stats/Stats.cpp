@@ -13,11 +13,11 @@ namespace stats {
 Stats::Stats(const std::string& name) {
     qpsStatId_ = StatsManager::registerStats(name + "_qps");
     errorQpsStatId_ = StatsManager::registerStats(name + "_error_qps");
-    latencyStatId_ = StatsManager::registerHisto(name + "_latency", 1, 1, 100);
+    latencyStatId_ = StatsManager::registerHisto(name + "_latency", 100, 1, 1000 * 1000);
 }
 
 // static
-void Stats::addStatsValue(Stats *stats, bool ok, int64_t latency, uint32_t count) {
+void Stats::addStatsValue(const Stats *stats, bool ok, int64_t latency, uint32_t count) {
     if (stats == nullptr) {
         return;
     }
@@ -32,15 +32,15 @@ void Stats::addStatsValue(Stats *stats, bool ok, int64_t latency, uint32_t count
     }
 }
 
-int32_t Stats::getQpsStatId() {
+int32_t Stats::getQpsStatId() const {
    return qpsStatId_;
 }
 
-int32_t Stats::getErrorQpsStatId() {
+int32_t Stats::getErrorQpsStatId() const {
     return errorQpsStatId_;
 }
 
-int32_t Stats::getLatencyStatId() {
+int32_t Stats::getLatencyStatId() const {
     return latencyStatId_;
 }
 

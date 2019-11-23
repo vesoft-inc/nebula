@@ -16,6 +16,7 @@
 #include "dataman/RowWriter.h"
 #include "meta/SchemaManager.h"
 #include "time/Duration.h"
+#include "stats/Stats.h"
 
 
 /**
@@ -109,6 +110,10 @@ protected:
 
     StatusOr<VariantType> transformDefaultValue(nebula::cpp2::SupportedType type,
                                                 std::string& originalValue);
+    void doError(Status status, const stats::Stats* stats = nullptr, uint32_t count = 1) const;
+    void doFinish(ProcessControl pro,
+                  const stats::Stats* stats = nullptr,
+                  uint32_t count = 1) const;
 
 protected:
     ExecutionContext                           *ectx_;

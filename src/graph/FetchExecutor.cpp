@@ -105,7 +105,7 @@ void FetchExecutor::onEmptyInputs() {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(std::move(resultColNames_));
     }
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext, getStats());
 }
 
 Status FetchExecutor::getOutputSchema(
@@ -147,36 +147,21 @@ void FetchExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
         if (outputs->hasData()) {
             auto ret = outputs->getRows();
             if (!ret.ok()) {
-                setStats(false);
                 LOG(ERROR) << "Get rows failed: " << ret.status();
-                onError_(std::move(ret).status());
+                doError(std::move(ret).status(), getStats());
                 return;
             }
             resp_->set_rows(std::move(ret).value());
         }
     }
-    setStats(true);
-    DCHECK(onFinish_);
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext, getStats());
 }
 
-void FetchExecutor::setStats(bool ok) {
+stats::Stats* FetchExecutor::getStats() const {
     if (0 == strcmp(name(), "FetchVerticesExecutor")) {
-        if (ok) {
-            stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchVerticesStats(),
-                    true, duration().elapsedInUSec());
-        } else {
-            stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchVerticesStats(),
-                    false, duration().elapsedInUSec());
-        }
+        return ectx()->getGraphStats()->getFetchVerticesStats();
     } else {
-        if (ok) {
-            stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchEdgesStats(),
-                    true, duration().elapsedInUSec());
-        } else {
-            stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchEdgesStats(),
-                    false, duration().elapsedInUSec());
-        }
+        return ectx()->getGraphStats()->getFetchEdgesStats();
     }
 }
 }  // namespace graph

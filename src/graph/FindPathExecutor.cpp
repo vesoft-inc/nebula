@@ -143,14 +143,9 @@ Status FindPathExecutor::prepareOver() {
 }
 
 void FindPathExecutor::execute() {
-    DCHECK(onError_);
-    DCHECK(onFinish_);
-
     auto status = beforeExecute();
     if (!status.ok()) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getFindPathStats(),
-                false, duration().elapsedInUSec());
-        onError_(std::move(status));
+        doError(std::move(status), ectx()->getGraphStats()->getFindPathStats());
         return;
     }
 
@@ -187,18 +182,14 @@ void FindPathExecutor::getNeighborsAndFindPath() {
 
     auto props = getStepOutProps(false);
     if (!props.ok()) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getFindPathStats(),
-                false, duration().elapsedInUSec());
-        onError_(std::move(props).status());
+        doError(std::move(props).status(), ectx()->getGraphStats()->getFindPathStats());
         return;
     }
     getFromFrontiers(std::move(props).value());
 
     props = getStepOutProps(true);
     if (!props.ok()) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getFindPathStats(),
-                false, duration().elapsedInUSec());
-        onError_(std::move(props).status());
+        doError(std::move(props).status(), ectx()->getGraphStats()->getFindPathStats());
         return;
     }
     getToFrontiers(std::move(props).value());
@@ -207,10 +198,8 @@ void FindPathExecutor::getNeighborsAndFindPath() {
     auto cb = [this] (auto &&result) {
         UNUSED(result);
         if (!fStatus_.ok() || !tStatus_.ok()) {
-            stats::Stats::addStatsValue(ectx()->getGraphStats()->getFindPathStats(),
-                    false, duration().elapsedInUSec());
             std::string msg = fStatus_.toString() + " " + tStatus_.toString();
-            onError_(Status::Error(std::move(msg)));
+            doError(Status::Error(std::move(msg)), ectx()->getGraphStats()->getFindPathStats());
             return;
         }
 
@@ -218,9 +207,7 @@ void FindPathExecutor::getNeighborsAndFindPath() {
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getFindPathStats(),
-                false, duration().elapsedInUSec());
-        onError_(Status::Error("Internal error."));
+        doError(Status::Error("Internal error."), ectx()->getGraphStats()->getFindPathStats());
     };
     folly::collectAll(futures).via(runner).thenValue(cb).thenError(error);
 }
@@ -280,9 +267,7 @@ void FindPathExecutor::findPath() {
     // if frontiersF meets frontiersT, we found an even path
     if (!intersect.empty()) {
         if (shortest_ && targetNotFound_.empty()) {
-            stats::Stats::addStatsValue(ectx()->getGraphStats()->getFindPathStats(),
-                    true, duration().elapsedInUSec());
-            onFinish_(Executor::ProcessControl::kNext);
+            doFinish(Executor::ProcessControl::kNext, ectx()->getGraphStats()->getFindPathStats());
             return;
         }
         for (auto intersectId : intersect) {
@@ -292,8 +277,7 @@ void FindPathExecutor::findPath() {
 
     if (isFinalStep() ||
          (shortest_ && targetNotFound_.empty())) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getFindPathStats(),
-                true, duration().elapsedInUSec());
+        doFinish(Executor::ProcessControl::kNext, ectx()->getGraphStats()->getFindPathStats());
         return;
     } else {
         VLOG(2) << "Current step:" << currentStep_;

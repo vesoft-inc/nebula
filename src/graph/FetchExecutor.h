@@ -37,7 +37,7 @@ protected:
 
     void finishExecution(std::unique_ptr<RowSetWriter> rsWriter);
 
-    void setStats(bool ok);
+    stats::Stats* getStats() const;
 
 protected:
     GraphSpaceID                                    spaceId_{INT_MIN};

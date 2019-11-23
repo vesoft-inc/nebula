@@ -35,20 +35,20 @@ public:
     ~GraphStats() = default;
 
 public:
-    stats::Stats* getStorageClientStats() { return storageClientStats_.get(); }
-    stats::Stats* getMetaClientStats() { return metaClientStats_.get(); }
-    stats::Stats* getGraphStats() { return graphStats_.get(); }
-    stats::Stats* getParseErrorStats() { return parseErrorStats_.get(); }
-    stats::Stats* getInsertVertexStats() { return insertVStats_.get(); }
-    stats::Stats* getInsertEdgeStats() { return insertEStats_.get(); }
-    stats::Stats* getDeleteVertexStats() { return deleteVStats_.get(); }
-    stats::Stats* getDeleteEdgeStats() { return deleteEStats_.get(); }
-    stats::Stats* getUpdateVertexStats() { return updateVStats_.get(); }
-    stats::Stats* getUpdateEdgeStats() { return updateEStats_.get(); }
-    stats::Stats* getGoStats() { return goStats_.get(); }
-    stats::Stats* getFindPathStats() { return findPathStats_.get(); }
-    stats::Stats* getFetchVerticesStats() { return fetchVStats_.get(); }
-    stats::Stats* getFetchEdgesStats() { return fetchEStats_.get(); }
+    stats::Stats* getStorageClientStats() const { return storageClientStats_.get(); }
+    stats::Stats* getMetaClientStats() const { return metaClientStats_.get(); }
+    stats::Stats* getGraphStats() const { return graphStats_.get(); }
+    stats::Stats* getParseErrorStats() const { return parseErrorStats_.get(); }
+    stats::Stats* getInsertVertexStats() const { return insertVStats_.get(); }
+    stats::Stats* getInsertEdgeStats() const { return insertEStats_.get(); }
+    stats::Stats* getDeleteVertexStats() const { return deleteVStats_.get(); }
+    stats::Stats* getDeleteEdgeStats() const { return deleteEStats_.get(); }
+    stats::Stats* getUpdateVertexStats() const { return updateVStats_.get(); }
+    stats::Stats* getUpdateEdgeStats() const { return updateEStats_.get(); }
+    stats::Stats* getGoStats() const { return goStats_.get(); }
+    stats::Stats* getFindPathStats() const { return findPathStats_.get(); }
+    stats::Stats* getFetchVerticesStats() const { return fetchVStats_.get(); }
+    stats::Stats* getFetchEdgesStats() const { return fetchEStats_.get(); }
 
 private:
     std::unique_ptr<stats::Stats> storageClientStats_;         // storageClient stats

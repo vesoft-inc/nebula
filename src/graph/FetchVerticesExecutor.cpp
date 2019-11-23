@@ -84,22 +84,16 @@ Status FetchVerticesExecutor::prepareVids() {
 }
 
 void FetchVerticesExecutor::execute() {
-    DCHECK(onError_);
     FLOG_INFO("Executing FetchVertices: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchVerticesStats(),
-                false, duration().elapsedInUSec());
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status), ectx()->getGraphStats()->getFetchVerticesStats());
         return;
     }
 
     status = setupVids();
     if (!status.ok()) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchVerticesStats(),
-                false, duration().elapsedInUSec());
-        onError_(std::move(status));
+        doError(std::move(status), ectx()->getGraphStats()->getFetchVerticesStats());
         return;
     }
     if (vids_.empty()) {
@@ -113,10 +107,8 @@ void FetchVerticesExecutor::execute() {
 void FetchVerticesExecutor::fetchVertices() {
     auto props = getPropNames();
     if (props.empty()) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchVerticesStats(),
-                false, duration().elapsedInUSec());
-        DCHECK(onError_);
-        onError_(Status::Error("No props declared."));
+        doError(Status::Error("No props declared."),
+                ectx()->getGraphStats()->getFetchVerticesStats());
         return;
     }
 
@@ -125,10 +117,8 @@ void FetchVerticesExecutor::fetchVertices() {
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchVerticesStats(),
-                    false, duration().elapsedInUSec());
-            DCHECK(onError_);
-            onError_(Status::Error("Get props failed"));
+            doError(Status::Error("Get props failed"),
+                    ectx()->getGraphStats()->getFetchVerticesStats());
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get vertices partially failed: "  << completeness << "%";
@@ -142,9 +132,7 @@ void FetchVerticesExecutor::fetchVertices() {
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchVerticesStats(),
-                false, duration().elapsedInUSec());
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal error"), ectx()->getGraphStats()->getFetchVerticesStats());
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -197,10 +185,8 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                 auto status = getOutputSchema(vschema.get(), vreader.get(), outputSchema.get());
                 if (!status.ok()) {
                     LOG(ERROR) << "Get getOutputSchema failed: " << status;
-                    stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchVerticesStats(),
-                            false, duration().elapsedInUSec());
-                    DCHECK(onError_);
-                    onError_(Status::Error("Internal error."));
+                    doError(Status::Error("Internal error."),
+                            ectx()->getGraphStats()->getFetchVerticesStats());
                     return;
                 }
                 rsWriter = std::make_unique<RowSetWriter>(outputSchema);
@@ -217,18 +203,14 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                 auto *expr = column->expr();
                 auto value = expr->eval();
                 if (!value.ok()) {
-                    stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchVerticesStats(),
-                            false, duration().elapsedInUSec());
-                    onError_(value.status());
+                    doError(std::move(value).status(),
+                            ectx()->getGraphStats()->getFetchVerticesStats());
                     return;
                 }
                 auto status = Collector::collect(value.value(), writer.get());
                 if (!status.ok()) {
                     LOG(ERROR) << "Collect prop error: " << status;
-                    stats::Stats::addStatsValue(ectx()->getGraphStats()->getFetchVerticesStats(),
-                            false, duration().elapsedInUSec());
-                    DCHECK(onError_);
-                    onError_(std::move(status));
+                    doError(std::move(status), ectx()->getGraphStats()->getFetchVerticesStats());
                     return;
                 }
             }

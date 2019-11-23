@@ -12,7 +12,7 @@
 #include "interface/gen-cpp2/MetaService.h"
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/AdminClient.h"
-#include "meta/MetaStats.h"
+#include "stats/Stats.h"
 
 namespace nebula {
 namespace meta {
@@ -22,7 +22,7 @@ public:
     explicit MetaServiceHandler(kvstore::KVStore* kv, ClusterID clusterId = 0)
         : kvstore_(kv), clusterId_(clusterId) {
         adminClient_ = std::make_unique<AdminClient>(kvstore_);
-        heartBeatStat_ = MetaStats("heartbeat");
+        heartBeatStat_ = stats::Stats("heartbeat");
     }
 
     /**
@@ -164,7 +164,7 @@ private:
     kvstore::KVStore* kvstore_ = nullptr;
     ClusterID clusterId_{0};
     std::unique_ptr<AdminClient> adminClient_;
-    MetaStats heartBeatStat_;
+    stats::Stats heartBeatStat_;
 };
 
 }  // namespace meta

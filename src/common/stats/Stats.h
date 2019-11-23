@@ -20,13 +20,13 @@ public:
     explicit Stats(const std::string& name);
 
 public:
-    static void addStatsValue(Stats *stats, bool ok, int64_t latency = 0, uint32_t count = 1);
+    static void addStatsValue(const Stats *stats, bool ok, int64_t latency = 0, uint32_t count = 1);
 
-    int32_t getQpsStatId();
+    int32_t getQpsStatId() const;
 
-    int32_t getErrorQpsStatId();
+    int32_t getErrorQpsStatId() const;
 
-    int32_t getLatencyStatId();
+    int32_t getLatencyStatId() const;
 
 private:
     int32_t qpsStatId_{0};
