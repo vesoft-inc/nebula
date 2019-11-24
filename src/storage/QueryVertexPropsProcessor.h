@@ -18,8 +18,9 @@ public:
     static QueryVertexPropsProcessor* instance(kvstore::KVStore* kvstore,
                                                meta::SchemaManager* schemaMan,
                                                StorageStats* stats,
-                                               folly::Executor* executor) {
-        return new QueryVertexPropsProcessor(kvstore, schemaMan, stats, executor);
+                                               folly::Executor* executor,
+                                               VertexCache* cache = nullptr) {
+        return new QueryVertexPropsProcessor(kvstore, schemaMan, stats, executor, cache);
     }
 
     void process(const cpp2::VertexPropRequest& req);
@@ -28,8 +29,9 @@ private:
     explicit QueryVertexPropsProcessor(kvstore::KVStore* kvstore,
                                        meta::SchemaManager* schemaMan,
                                        StorageStats* stats,
-                                       folly::Executor* executor)
-        : QueryBoundProcessor(kvstore, schemaMan, stats, executor) {}
+                                       folly::Executor* executor,
+                                       VertexCache* cache)
+        : QueryBoundProcessor(kvstore, schemaMan, stats, executor, cache) {}
 };
 
 }  // namespace storage

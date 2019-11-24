@@ -29,6 +29,19 @@ TEST(ConcurrentLRUCacheTest, SimpleTest) {
     EXPECT_EQ(0, cache.bucketIndex(100, 0));
     EXPECT_EQ(1024 % 16, cache.bucketIndex(100, 1024));
     EXPECT_EQ(std::hash<int>()(100) % 16, cache.bucketIndex(100, -1));
+
+    EXPECT_EQ(0, cache.evicts());
+    EXPECT_EQ(1, cache.hits());
+    EXPECT_EQ(2, cache.total());
+
+    for (auto i = 0; i < 100; i++) {
+        auto v = cache.get(10);
+        EXPECT_TRUE(v.ok());
+        EXPECT_EQ("ten", v.value());
+    }
+    EXPECT_EQ(0, cache.evicts());
+    EXPECT_EQ(101, cache.hits());
+    EXPECT_EQ(102, cache.total());
 }
 
 TEST(ConcurrentLRUCacheTest, PutIfAbsentTest) {
@@ -43,6 +56,10 @@ TEST(ConcurrentLRUCacheTest, PutIfAbsentTest) {
         EXPECT_TRUE(v.ok());
         EXPECT_EQ("ten", v.value());
     }
+
+    EXPECT_EQ(0, cache.evicts());
+    EXPECT_EQ(1, cache.hits());
+    EXPECT_EQ(2, cache.total());
 }
 TEST(ConcurrentLRUCacheTest, EvictTest) {
     ConcurrentLRUCache<int32_t, std::string> cache(1000, 0);
@@ -66,6 +83,9 @@ TEST(ConcurrentLRUCacheTest, EvictTest) {
         auto v = cache.get(i);
         EXPECT_FALSE(v.ok());
     }
+    EXPECT_EQ(1000, cache.evicts());
+    EXPECT_EQ(2000, cache.hits());
+    EXPECT_EQ(3000, cache.total());
 }
 
 TEST(ConcurrentLRUCacheTest, EvictKeyTest) {
@@ -89,6 +109,10 @@ TEST(ConcurrentLRUCacheTest, EvictKeyTest) {
             EXPECT_TRUE(v.ok());
         }
     }
+
+    EXPECT_EQ(500, cache.evicts());
+    EXPECT_EQ(1500, cache.hits());
+    EXPECT_EQ(2000, cache.total());
 }
 
 TEST(ConcurrentLRUCacheTest, MultiThreadsTest) {
@@ -109,6 +133,10 @@ TEST(ConcurrentLRUCacheTest, MultiThreadsTest) {
         EXPECT_TRUE(v.ok());
         EXPECT_EQ(folly::stringPrintf("%d_str", i), v.value());
     }
+
+    EXPECT_EQ(0, cache.evicts());
+    EXPECT_EQ(10000, cache.hits());
+    EXPECT_EQ(10000, cache.total());
 }
 
 

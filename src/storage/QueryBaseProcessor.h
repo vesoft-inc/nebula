@@ -44,9 +44,11 @@ protected:
     explicit QueryBaseProcessor(kvstore::KVStore* kvstore,
                                 meta::SchemaManager* schemaMan,
                                 StorageStats* stats,
-                                folly::Executor* executor = nullptr)
+                                folly::Executor* executor = nullptr,
+                                VertexCache* cache = nullptr)
         : BaseProcessor<RESP>(kvstore, schemaMan, stats)
-        , executor_(executor) {}
+        , executor_(executor)
+        , vertexCache_(cache) {}
 
     /**
      * Check whether current operation on the data is valid or not.
@@ -113,6 +115,7 @@ protected:
     std::vector<TagContext> tagContexts_;
     std::unordered_map<EdgeType, std::vector<PropContext>> edgeContexts_;
     folly::Executor* executor_ = nullptr;
+    VertexCache* vertexCache_ = nullptr;
 };
 
 }  // namespace storage
