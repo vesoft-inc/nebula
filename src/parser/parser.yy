@@ -86,6 +86,8 @@ class GraphScanner;
     nebula::EdgeKeys                       *edge_keys;
     nebula::EdgeKeyRef                     *edge_key_ref;
     nebula::GroupClause                    *group_clause;
+    nebula::HostList                       *host_list;
+    nebula::HostAddr                       *host_item;
 }
 
 /* destructors */
@@ -111,6 +113,7 @@ class GraphScanner;
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER KW_DATA KW_STOP
 %token KW_SHORTEST KW_PATH
+%token KW_IS KW_NULL
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -179,8 +182,10 @@ class GraphScanner;
 %type <to_clause> to_clause
 %type <find_path_upto_clause> find_path_upto_clause
 %type <group_clause> group_clause
+%type <host_list> host_list
+%type <host_item> host_item
 
-%type <intval> unary_integer rank
+%type <intval> unary_integer rank port
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
@@ -209,6 +214,7 @@ class GraphScanner;
 %type <sentence> grant_sentence revoke_sentence
 %type <sentence> download_sentence
 %type <sentence> set_config_sentence get_config_sentence balance_sentence
+%type <sentence> process_control_sentence return_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -1670,6 +1676,29 @@ set_config_sentence
     }
     ;
 
+host_list
+    : host_item {
+        $$ = new HostList();
+        $$->addHost($1);
+    }
+    | host_list COMMA host_item {
+        $$ = $1;
+        $$->addHost($3);
+    }
+    | host_list COMMA {
+        $$ = $1;
+    }
+    ;
+
+host_item
+    : IPV4 COLON port {
+        $$ = new nebula::HostAddr();
+        $$->first = $1;
+        $$->second = $3;
+    }
+
+port : INTEGER { $$ = $1; }
+
 balance_sentence
     : KW_BALANCE KW_LEADER {
         $$ = new BalanceSentence(BalanceSentence::SubType::kLeader);
@@ -1682,6 +1711,9 @@ balance_sentence
     }
     | KW_BALANCE KW_DATA KW_STOP {
         $$ = new BalanceSentence(BalanceSentence::SubType::kDataStop);
+    }
+    | KW_BALANCE KW_DATA KW_REMOVE host_list {
+        $$ = new BalanceSentence(BalanceSentence::SubType::kData, $4);
     }
     ;
 
@@ -1721,6 +1753,15 @@ maintain_sentence
     | balance_sentence { $$ = $1; }
     ;
 
+return_sentence
+    : KW_RETURN VARIABLE KW_IF VARIABLE KW_IS KW_NOT KW_NULL {
+        $$ = new ReturnSentence($2, $4);
+    }
+
+process_control_sentence
+    : return_sentence { $$ = $1; }
+    ;
+
 sentence
     : maintain_sentence { $$ = $1; }
     | use_sentence { $$ = $1; }
@@ -1728,6 +1769,7 @@ sentence
     | piped_sentence { $$ = $1; }
     | assignment_sentence { $$ = $1; }
     | mutate_sentence { $$ = $1; }
+    | process_control_sentence { $$ = $1; }
     ;
 
 sentences

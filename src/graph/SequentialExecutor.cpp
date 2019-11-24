@@ -45,16 +45,29 @@ Status SequentialExecutor::prepare() {
         onError_(std::move(status));
     };
     for (auto i = 0U; i < executors_.size() - 1; i++) {
-        auto onFinish = [this, next = i + 1] () {
-            executors_[next]->execute();
+        auto onFinish = [this, current = i, next = i + 1] (Executor::ProcessControl ctr) {
+            switch (ctr) {
+                case Executor::ProcessControl::kReturn: {
+                    DCHECK(onFinish_);
+                    respExecutorIndex_ = current;
+                    onFinish_(ctr);
+                    break;
+                }
+                case Executor::ProcessControl::kNext:
+                default: {
+                    executors_[next]->execute();
+                    break;
+                }
+            }
         };
         executors_[i]->setOnFinish(onFinish);
         executors_[i]->setOnError(onError);
     }
     // The whole execution is done upon the last executor finishes.
-    auto onFinish = [this] () {
+    auto onFinish = [this] (Executor::ProcessControl ctr) {
         DCHECK(onFinish_);
-        onFinish_();
+        respExecutorIndex_ = executors_.size() - 1;
+        onFinish_(ctr);
     };
     executors_.back()->setOnFinish(onFinish);
     executors_.back()->setOnError(onError);
@@ -69,7 +82,7 @@ void SequentialExecutor::execute() {
 
 
 void SequentialExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
-    executors_.back()->setupResponse(resp);
+    executors_[respExecutorIndex_]->setupResponse(resp);
 }
 
 }   // namespace graph

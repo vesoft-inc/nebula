@@ -14,6 +14,10 @@
 #include "meta/SchemaManager.h"
 #include "stats/StatsManager.h"
 #include "storage/StorageStats.h"
+#include "storage/CommonUtils.h"
+
+DECLARE_int32(vertex_cache_num);
+DECLARE_int32(vertex_cache_bucket_exp);
 
 namespace nebula {
 namespace storage {
@@ -27,7 +31,8 @@ public:
                           meta::MetaClient* client)
         : kvstore_(kvstore)
         , schemaMan_(schemaMan)
-        , metaClient_(client) {
+        , metaClient_(client)
+        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp) {
         getBoundQpsStat_ = StorageStats("get_bound");
         boundStatsQpsStat_ = StorageStats("bound_stats");
         vertexPropsQpsStat_ = StorageStats("vertex_props");
@@ -109,6 +114,7 @@ private:
     kvstore::KVStore* kvstore_ = nullptr;
     meta::SchemaManager* schemaMan_ = nullptr;
     meta::MetaClient* metaClient_ = nullptr;
+    VertexCache vertexCache_;
 
     StorageStats getBoundQpsStat_;
     StorageStats boundStatsQpsStat_;
