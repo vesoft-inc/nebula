@@ -33,6 +33,7 @@ add_executable(
 target_link_libraries(
     nebula_client_example
     nebulaClient
+    glog
     ssl
     bz2
     crypto

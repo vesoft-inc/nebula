@@ -8,6 +8,7 @@
 #include <thread>
 #include <string.h>
 #include <iomanip>
+#include <glog/logging.h>
 #include "nebula/NebulaClient.h"
 #include "nebula/ExecutionResponse.h"
 
@@ -15,7 +16,8 @@ void doExecute(nebula::NebulaClient* client, std::string stmt) {
     nebula::ExecutionResponse resp;
     auto code = client->execute(stmt, resp);
     if (code != nebula::kSucceed) {
-        std::string error = "Execute cmd:\"" + stmt + "\" failed";
+        std::string error = "Execute cmd:\"" + stmt + "\" failed. errorCode: "
+                            + std::to_string(code) + ", errorMsg: " + resp.getErrorMsg();
         throw std::runtime_error(std::move(error));
     }
 }
@@ -68,6 +70,8 @@ void printResult(nebula::ExecutionResponse &resp) {
 int main(int argc, char *argv[]) {
     // must call: init arvs
     nebula::NebulaClient::init(argc, argv);
+
+    google::SetStderrLogging(google::ERROR);
 
     // must call: init connection pool
     nebula::NebulaClient::initConnectionPool("127.0.0.1", 3699, 2, 2000);

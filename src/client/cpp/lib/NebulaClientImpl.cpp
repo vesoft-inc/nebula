@@ -176,13 +176,12 @@ ErrorCode NebulaClientImpl::doExecute(std::string stmt,
                                       ExecutionResponse& resp) {
     cpp2::ExecutionResponse response;
     cpp2::ErrorCode code = execute(stmt, response);
-    if (code != cpp2::ErrorCode::SUCCEEDED) {
-        return static_cast<ErrorCode>(code);
-    }
 
-    resp.setErrorCode(static_cast<ErrorCode>(response.get_error_code()));
+    resp.setErrorCode(static_cast<ErrorCode>(code));
     resp.setLatencyInUs(response.get_latency_in_us());
     if (response.get_error_msg() != nullptr) {
+        LOG(ERROR) << "Execute \"" << stmt
+                   << "\" failed, error: " << *response.get_error_msg();
         resp.setErrorMsg(std::move(*response.get_error_msg()));
     }
     if (response.get_space_name() != nullptr) {
@@ -195,7 +194,7 @@ ErrorCode NebulaClientImpl::doExecute(std::string stmt,
         feedRows(response, resp);
     }
 
-    return static_cast<ErrorCode>(response.get_error_code());
+    return static_cast<ErrorCode>(code);
 }
 
 void NebulaClientImpl::doAsyncExecute(std::string stmt, CallbackFun cb) {
@@ -206,15 +205,12 @@ void NebulaClientImpl::doAsyncExecute(std::string stmt, CallbackFun cb) {
         }
 
         auto resp = response.value();
-        if (resp.get_error_code() != cpp2::ErrorCode::SUCCEEDED) {
-            cb(nullptr, static_cast<ErrorCode>(resp.get_error_code()));
-            return;
-        }
 
         ExecutionResponse result;
         result.setErrorCode(static_cast<ErrorCode>(resp.get_error_code()));
         result.setLatencyInUs(resp.get_latency_in_us());
         if (resp.get_error_msg() != nullptr) {
+            LOG(ERROR) << "AsyncExecute error: " << *resp.get_error_msg();
             result.setErrorMsg(std::move(*resp.get_error_msg()));
         }
         if (resp.get_space_name() != nullptr) {
