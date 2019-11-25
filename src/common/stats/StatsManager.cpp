@@ -407,7 +407,7 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
     } else if (parts[1] == "count") {
         method = StatsMethod::COUNT;
     } else if (parts[1] == "avg") {
-        method = StatsMethod::COUNT;
+        method = StatsMethod::AVG;
     } else if (parts[1] == "rate") {
         method = StatsMethod::RATE;
 //    } else if (parts[1][0] == 'p') {   // TODO(shylock)
