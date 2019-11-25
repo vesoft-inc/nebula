@@ -2,16 +2,16 @@
 
 ## 1. 概述
 
-Spark Writer 是 Nebula Graph 基于 Spark 的分布式数据导入工具，能够将多种数据源中的数据转化为图的点和边并批量导入到图数据库中。目前支持的数据源有：
+Spark Writer 是 Nebula Graph 基于 Spark 的分布式数据导入工具，能够将多种数据仓库中的数据转化为图的点和边，并批量导入到图数据库中。目前支持的数据仓库有：
 
 * HDFS，包括 Parquet、JSON、ORC 和 CSV 格式的文件
 * HIVE
 
-Spark Writer 支持同时导入多个 tag、edge，支持不同 tag/edge 配置不同的数据源。
+Spark Writer 支持并发导入多个 tag、edge，支持不同 tag/edge 配置不同的数据仓库。
 
 ## 2. 获取 Spark Writer
 
-### 2.1 编译源码
+### 2.1a 编译源码
 
 ```bash
 git clone https://github.com/vesoft-inc/nebula.git
@@ -19,30 +19,34 @@ cd nebula/src/tools/spark-sstfile-generator
 mvn compile package
 ```
 
-### 2.2 oss 下载
+或者直接下载
+
+### 2.1b 从云存储 OSS 下载
 
 ```bash
-wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/sst.generator-1.0.0-beta.jar
+wget https://nebula-graph.oss-accelerate.aliyuncs.com/jar-packages/sst.generator-1.0.0-beta.jar
 ```
 
 ## 3. 使用流程
 
 基本流程分为以下几步：
 
-* 在 Nebula 中创建图模型，构图
-* 编写数据文件
-* 编写输入源映射文件
-* 导入数据
+1. 在 Nebula 中创建图模型，构图
+1. 编写数据文件
+1. 编写输入源映射文件
+1. 导入数据
 
 ### 3.1 构图
 
 构图请参考[快速试用](../../../../../1.overview/2.quick-start/1.get-started.md)中的示例构图。
 
+注意：请先在 Nebula Graph 中完成构图（创建图空间和定义图数据 Schema），再通过本工具向 Nebula Graph 中写入数据。
+
 ### 3.2 数据示例
 
 #### 3.2.1 点
 
-顶点数据文件由一行一行的数据组成，一般一行表示一个点，其中一列为点的 ID，此列的名称将在后文的映射文件中指定。其他列为点属性。下面以 JSON 格式为例进行说明。
+顶点数据文件由一行一行的数据组成，文件中每一行表示一个点和它的属性。一般来说，第一列为点的 ID ——此列的名称将在后文的映射文件中指定，其他列为点的属性。
 
 * **player** 顶点数据
 
@@ -54,9 +58,11 @@ wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/sst.generato
 
 #### 3.2.2 边
 
-边数据文件由一行一行的数据组成，一般一行表示一条边，其中一列为起点 ID，另外一列为终点 ID，起点 ID 列及终点 ID 列会在映射文件中指定。其他列为边属性。下面以 JSON 格式为例进行说明。
+边数据文件由一行一行的数据组成，文件中每一行表示一条边和它的属性。一般来说，第一列为起点 ID，第二列为终点 ID，起点 ID 列及终点 ID 列会在映射文件中指定。其他列为边属性。下面以 JSON 格式为例进行说明。
 
-* 无权重的边，以边 _**follow**_ 的数据为例
+以边 边 _**follow**_ 的数据为例：
+
+* 无 rank 的边
 
 ```text
 {"source":100,"target":101,"likeness":95}
@@ -64,7 +70,7 @@ wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/sst.generato
 {"source":101,"target":102,"likeness":90}
 ```
 
-* 有权重的边，以边 _**follow**_ 的数据为例
+* 有 rank 的边
 
 ```text
 {"source":100,"target":101,"likeness":95,"ranking":2}
@@ -72,7 +78,7 @@ wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/sst.generato
 {"source":101,"target":102,"likeness":90,"ranking":3}
 ```
 
-#### 3.2.3 Geo 数据支持
+#### 3.2.3 含有地理位置 Geo 的数据
 
 Spark Writer 支持 Geo 数据导入，Geo 数据用 **latitude** 与 **longitude** 字段描述经纬度，数据类型为 double。
 
@@ -102,24 +108,24 @@ Spark Writer 支持 Geo 数据导入，Geo 数据用 **latitude** 与 **longitud
 Player 的 Parquet 示例如下：
 
 ```text
-+ + + +
++---+---+------------+
 |age| id|        name|
-+ + + +
++---+---+------------+
 | 42|100| Tim Duncan |
 | 36|101| Tony Parker|
-+ + + +
++---+---+------------+
 ```
 
 JSON 示例如下：
 
-```text
+```json
 {"id":100,"name":"Tim Duncan","age":42}
 {"id":101,"name":"Tony Parker","age":36}
 ```
 
 CSV 示例如下：
 
-```text
+```csv
 age,id,name
 42,100,Tim Duncan
 36,101,Tony Parker
@@ -131,12 +137,11 @@ Spark Writer 支持以数据库作为数据源，目前支持 HIVE。
 
 Player 表结构如下：
 
-```text
-col_name             data_type           comment
-id                   int
-name                 string
-age                  int
-```
+|col_name |  data_type  | comment |
+|---------|-------------|---------|
+| id      |     int     |         |
+| name    |     string  |         |
+| age     |     int     |         |
 
 ### 3.3 编写配置文件
 
@@ -165,7 +170,7 @@ age                  int
 
   # Nebula 相关信息配置
   nebula: {
-    # 计算引擎 IP 列表
+    # 查询引擎 IP 列表
     addresses: ["127.0.0.1:3699"]
 
     # 连接 Nebula 服务的用户名和密码
@@ -182,7 +187,7 @@ age                  int
       retry: 3
     }
 
-  # nGQL 执行重试次数
+  # nGQL 查询重试次数
   # 如未设置，则默认值为 3
     execution {
       retry: 3
@@ -274,10 +279,10 @@ age                  int
 
 | 字段 | 默认值 | 是否必须 | 说明 |
 |  --- | ---  |  --- | ---  |
-| nebula.addresses | 无 | 是 | 计算引擎的地址列表，逗号分隔 |
-| nebula.user | 无 | 是 | 数据库用户名 |
-| nebula.pswd | 无 | 是 | 数据库用户名对应密码 |
-| nebula.space | 无 | 是 | 导入数据对应的 space |
+| nebula.addresses | 无 | 是 | 查询引擎的地址列表，逗号分隔 |
+| nebula.user | 无 | 是 | 数据库用户名，默认为 user |
+| nebula.pswd | 无 | 是 | 数据库用户名对应密码，默认 user 密码为 password |
+| nebula.space | 无 | 是 | 导入数据对应的 space，本例中为 test |
 | nebula.connection.timeout | 3000 | 否 | Thrift 连接超时时间 |
 | nebula.connection.retry | 3 | 否 | Thrift 连接重试次数 |
 | nebula.execution.retry | 3 | 否 | nGQL 语句执行重试次数 |
@@ -342,4 +347,4 @@ bin/spark-submit \
 
 ## 4. 性能测试结果
 
-三个节点，写 1 亿条数据，每条数据三个字段，每个批 64 条记录，用时四分钟左右。
+三台物理机 (56 核，250G 内存，万兆网，SSD），写 1 亿条数据（每条数据三个字段，每个 batch 64 条记录），用时 4 分钟（40万条/秒）。

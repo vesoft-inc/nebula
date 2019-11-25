@@ -2,16 +2,16 @@
 
 ## 1. Overview
 
-Spark Writer is Nebula Graph's Spark-based distributed data import tool that converts data from multiple data sources into vertices and edges of graphs and batch imports data into the graph database. Currently supported data sources are:
+Spark Writer is Nebula Graph's Spark-based distributed data import tool that converts data from multiple data repositories into vertices and edges of graphs and batch imports data into the graph database. Currently supported data repositories are:
 
 * HDFS, including Parquet, JSON, ORC and CSV
 * HIVE
 
-Spark Writer supports importing multiple tags and edges at one time, and configuring different data sources on different tags and edges.
+Spark Writer supports concurrent importing multiple tags and edges, and configuring different data repositories on different tags and edges.
 
 ## 2. Get Spark Writer
 
-### 2.1 From Source Code
+### 2.1a From Source Code
 
 ```bash
 git clone https://github.com/vesoft-inc/nebula.git
@@ -19,30 +19,34 @@ cd nebula/src/tools/spark-sstfile-generator
 mvn compile package
 ```
 
-### 2.2 Download OSS
+Or you can download from OSS.
+
+### 2.1b Download From Cloud Storage OSS
 
 ```bash
-wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/sst.generator-1.0.0-beta.jar
+wget https://nebula-graph.oss-accelerate.aliyuncs.com/jar-packages/sst.generator-1.0.0-beta.jar
 ```
 
 ## 3. User Guide
 
 This section includes the following steps:
 
-* Create a graph space and its schema in Nebula
-* Write data files
-* Write input source mapping file
-* Import data
+1. Create a graph space and its schema in Nebula
+1. Write data files
+1. Write input source mapping file
+1. Import data
 
 ### 3.1 Create Graph Space
 
-Please refer to the example graph in [Quick Start](../../../../../1.overview/2.quick-start/1.get-started.md)。
+Please refer to the example graph in [Quick Start](../../../../../1.overview/2.quick-start/1.get-started.md).
+
+Note: Please create a space and define the schema in Nebula Graph first, then use this tool to import data to Nebula Graph.
 
 ### 3.2 Example Data
 
 #### 3.2.1 Vertices
 
-A vertex data file consists of multiple rows. Generally one row represents one vertex, and one of the columns is the ID of the vertex. This ID column is specified in the mapping file. Other columns are the properties of the vertex. Consider the following example in JSON format.
+A vertex data file consists of multiple rows, with each line in the file representing a point and its properties. In general, the first column is the ID of the vertex. This ID column is specified in the mapping file. Other columns are the properties of the vertex. Consider the following example in JSON format.
 
 * **Player** data
 
@@ -54,9 +58,11 @@ A vertex data file consists of multiple rows. Generally one row represents one v
 
 #### 3.2.2 Edges
 
-An edge data file consists of multiple rows. Generally one row represents one edge, and one of the columns is the ID of the source vertex, the other column is the ID of the dest vertex. These ID columns are specified in the mapping file. Other columns are the properties of the edge. Consider the following example in JSON format.
+An edge data file consists of multiple rows, with each line in the file representing a point and its properties. In general, the first column is the ID of the source vertex, the second column is the ID of the dest vertex. These ID columns are specified in the mapping file. Other columns are the properties of the edge. Consider the following example in JSON format.
 
-* Edge without rank, take edge _**follow**_ as example
+Take edge _**follow**_ as example:
+
+* Edge without rank
 
 ```text
 {"source":100,"target":101,"likeness":95}
@@ -64,7 +70,7 @@ An edge data file consists of multiple rows. Generally one row represents one ed
 {"source":101,"target":102,"likeness":90}
 ```
 
-* Edge with rank, take edge _**follow**_ as example
+* Edge with rank
 
 ```text
 {"source":100,"target":101,"likeness":95,"ranking":2}
@@ -72,7 +78,7 @@ An edge data file consists of multiple rows. Generally one row represents one ed
 {"source":101,"target":102,"likeness":90,"ranking":3}
 ```
 
-#### 3.2.3 Support for Geo Data
+#### 3.2.3 Spatial Data Geo
 
 Spark Writer supports importing Geo data. Geo data contains **latitude** and **longitude**, and the data type is double.
 
@@ -112,14 +118,14 @@ Player data in Parquet format:
 
 In JSON:
 
-```text
+```json
 {"id":100,"name":"Tim Duncan","age":42}
 {"id":101,"name":"Tony Parker","age":36}
 ```
 
 In CSV:
 
-```text
+```csv
 age,id,name
 42,100,Tim Duncan
 36,101,Tony Parker
@@ -131,12 +137,11 @@ Spark Writer supports database as the data source, and only HIVE is available no
 
 Player format as follows:
 
-```text
-col_name             data_type           comment
-id                   int
-name                 string
-age                  int
-```
+|col_name |  data_type  | comment |
+|---------|-------------|---------|
+| id      |     int     |         |
+| name    |     string  |         |
+| age     |     int     |         |
 
 ### 3.3 Write Configuration Files
 
@@ -275,9 +280,9 @@ The following table gives some example properties, all of which can be found in 
 | Field | Default Value | Required | Description |
 | --- | --- | --- | --- |
 | nebula.addresses | / | yes | query engine IP list, separated with comma |
-| nebula.user | / | yes | user name |
-| nebula.pswd | / | yes | password |
-| nebula.space | / | yes | space to import data |
+| nebula.user | / | yes | user name, the default value is user |
+| nebula.pswd | / | yes | password, the default `user` password is  `password` |
+| nebula.space | / | yes | space to import data, the space name is test in this document |
 | nebula.connection.timeout | 3000 | no | Thrift timeout |
 | nebula.connection.retry | 3 | no | Thrift retry times |
 | nebula.execution.retry | 3 | no | nGQL execution retry times |
@@ -341,4 +346,4 @@ Parameter descriptions:
 
 ## 4. Performance
 
-It takes about four minutes to input 100 million rows (each row contains three fields) into three nodes with 64 rows per batch.
+It takes about four minutes (i.e. 400 thousand rows per second) to input 100 million rows (each row contains three fields, each batch contains 64 rows) into three nodes (56 core, 250G memory, 10G network, SSD).
