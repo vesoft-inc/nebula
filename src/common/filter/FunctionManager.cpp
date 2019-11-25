@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "filter/FunctionManager.h"
 #include "time/WallClock.h"
+#include "filter/geo/GeoFilter.h"
 
 namespace nebula {
 
@@ -482,6 +483,47 @@ FunctionManager::FunctionManager() {
                 default:
                     LOG(ERROR) << "Unkown type: " << cmp.which();
                     return false;
+            }
+        };
+    }
+    {
+        auto &attr = functions_["near"];
+        attr.minArity_ = 2;
+        attr.maxArity_ = 2;
+        attr.body_ = [] (const auto &args) {
+            auto result = geo::GeoFilter::near(args);
+            if (!result.ok()) {
+                return std::string("");
+            } else {
+                return std::move(result).value();
+            }
+        };
+    }
+    {
+        auto &attr = functions_["cos_similarity"];
+        attr.minArity_ = 2;
+        attr.maxArity_ = INT64_MAX;
+        attr.body_ = [] (const auto &args) {
+            if (args.size() % 2 != 0) {
+                LOG(ERROR) << "The number of arguments must be even.";
+                // value range of cos is [-1, 1]
+                // it means error when we return -2
+                return static_cast<double>(-2);
+            }
+            // sum(xi * yi) / (sqrt(sum(pow(xi))) + sqrt(sum(pow(yi))))
+            auto mid = args.size() / 2;
+            double s1 = 0, s2 = 0, s3 = 0;
+            for (decltype(args.size()) i = 0; i < mid; ++i) {
+                auto xi = Expression::toDouble(args[i]);
+                auto yi = Expression::toDouble(args[i + mid]);
+                s1 += (xi * yi);
+                s2 += (xi * xi);
+                s3 += (yi * yi);
+            }
+            if (s2 == 0 || s3 == 0) {
+                return static_cast<double>(-2);
+            } else {
+                return s1 / (std::sqrt(s2) * std::sqrt(s3));
             }
         };
     }
