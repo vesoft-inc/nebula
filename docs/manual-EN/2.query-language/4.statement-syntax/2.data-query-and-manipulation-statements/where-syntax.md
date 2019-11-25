@@ -13,7 +13,7 @@ Usually, `WHERE` is a set of logical combination that filters vertex or edge pro
 ## Examples
 
 ```ngql
--- the edge e1's property prop1 is larger than 17
+-- the edge e1's property prop1 is greater than 17
 nebula> GO FROM 201 OVER e1 WHERE e1.prop1 >= 17
 -- the source vertex v1's property prop1 is equivalent with dest vertex v2's property prop2
 nebula> GO FROM 201 OVER e1 WHERE $^.v1.prop1 == $$.v2.prop2

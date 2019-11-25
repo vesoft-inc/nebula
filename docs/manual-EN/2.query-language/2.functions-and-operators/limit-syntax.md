@@ -19,7 +19,7 @@ LIMIT [<offset_value>,] <number_rows>
 
     Optional. It defines from which row to start including the rows in the output. The offset starts from zero.
 
-> When using `LIMIT`, it is important to use an `ORDER BY` clause that constrains the output into a unique order. Otherwise you will get an unpredictable subset of the output.
+> When using `LIMIT`, it is important to use an `ORDER BY` clause that constrains the output into a unique order. Otherwise, you will get an unpredictable subset of the output.
 
 For example:
 
