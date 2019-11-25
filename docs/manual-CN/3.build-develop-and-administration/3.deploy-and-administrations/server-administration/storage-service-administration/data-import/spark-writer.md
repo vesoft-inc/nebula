@@ -1,6 +1,6 @@
 # Spark Writer
 
-## 1. 概述
+## 概述
 
 Spark Writer 是 Nebula Graph 基于 Spark 的分布式数据导入工具，能够将多种数据仓库中的数据转化为图的点和边，并批量导入到图数据库中。目前支持的数据仓库有：
 
@@ -9,9 +9,9 @@ Spark Writer 是 Nebula Graph 基于 Spark 的分布式数据导入工具，能�
 
 Spark Writer 支持并发导入多个 tag、edge，支持不同 tag/edge 配置不同的数据仓库。
 
-## 2. 获取 Spark Writer
+## 获取 Spark Writer
 
-### 2.1a 编译源码
+### 编译源码
 
 ```bash
 git clone https://github.com/vesoft-inc/nebula.git
@@ -21,30 +21,30 @@ mvn compile package
 
 或者直接下载
 
-### 2.1b 从云存储 OSS 下载
+### 从云存储 OSS 下载
 
 ```bash
 wget https://nebula-graph.oss-accelerate.aliyuncs.com/jar-packages/sst.generator-1.0.0-beta.jar
 ```
 
-## 3. 使用流程
+## 使用流程
 
 基本流程分为以下几步：
 
-1. 在 Nebula 中创建图模型，构图
+1. 在 Nebula Graph 中创建图模型，构图
 1. 编写数据文件
 1. 编写输入源映射文件
 1. 导入数据
 
-### 3.1 构图
+### 构图
 
 构图请参考[快速试用](../../../../../1.overview/2.quick-start/1.get-started.md)中的示例构图。
 
 注意：请先在 Nebula Graph 中完成构图（创建图空间和定义图数据 Schema），再通过本工具向 Nebula Graph 中写入数据。
 
-### 3.2 数据示例
+### 数据示例
 
-#### 3.2.1 点
+#### 点
 
 顶点数据文件由一行一行的数据组成，文件中每一行表示一个点和它的属性。一般来说，第一列为点的 ID ——此列的名称将在后文的映射文件中指定，其他列为点的属性。
 
@@ -56,7 +56,7 @@ wget https://nebula-graph.oss-accelerate.aliyuncs.com/jar-packages/sst.generator
 {"id":102,"name":"LaMarcus Aldridge","age":33}
 ```
 
-#### 3.2.2 边
+#### 边
 
 边数据文件由一行一行的数据组成，文件中每一行表示一条边和它的属性。一般来说，第一列为起点 ID，第二列为终点 ID，起点 ID 列及终点 ID 列会在映射文件中指定。其他列为边属性。下面以 JSON 格式为例进行说明。
 
@@ -78,7 +78,7 @@ wget https://nebula-graph.oss-accelerate.aliyuncs.com/jar-packages/sst.generator
 {"source":101,"target":102,"likeness":90,"ranking":3}
 ```
 
-#### 3.2.3 含有地理位置 Geo 的数据
+#### 含有地理位置 Geo 的数据
 
 Spark Writer 支持 Geo 数据导入，Geo 数据用 **latitude** 与 **longitude** 字段描述经纬度，数据类型为 double。
 
@@ -89,7 +89,7 @@ Spark Writer 支持 Geo 数据导入，Geo 数据用 **latitude** 与 **longitud
 {"latitude":30.2812694,"longitude":120.0164896,"target":3,"dp_poi_name":"3"}
 ```
 
-#### 3.2.4 数据源文件
+#### 数据源文件
 
 目前 Spark Writer 支持的数据源有：
 
@@ -143,9 +143,9 @@ Player 表结构如下：
 | name    |     string  |         |
 | age     |     int     |         |
 
-### 3.3 编写配置文件
+### 编写配置文件
 
-配置文件由 Spark 相关信息，Nebula 相关信息，以及 tags 映射 和 edges 映射块组成。Spark 信息配置了 Spark 运行的相关参数，Nebula 相关信息配置了连接 Nebula 的用户名和密码等信息。 tags 映射和 edges 映射分别对应多个 tag/edge 的输入源映射，描述每个 tag/edge 的数据源等基本信息，不同 tag/edge 可以来自不同数据源。
+配置文件由 Spark 相关信息，Nebula 相关信息，以及 tags 映射 和 edges 映射块组成。Spark 信息配置了 Spark 运行的相关参数，Nebula 相关信息配置了连接 Nebula Graph 的用户名和密码等信息。 tags 映射和 edges 映射分别对应多个 tag/edge 的输入源映射，描述每个 tag/edge 的数据源等基本信息，不同 tag/edge 可以来自不同数据源。
 
 输入源的映射文件示例：
 
@@ -168,16 +168,16 @@ Player 表结构如下：
     }
   }
 
-  # Nebula 相关信息配置
+  # Nebula Graph 相关信息配置
   nebula: {
     # 查询引擎 IP 列表
     addresses: ["127.0.0.1:3699"]
 
-    # 连接 Nebula 服务的用户名和密码
+    # 连接 Nebula Graph 服务的用户名和密码
     user: user
     pswd: password
 
-    # Nebula 图空间名称
+    # Nebula Graph 图空间名称
     space: test
 
     # thrift 超时时长及重试次数
@@ -264,7 +264,7 @@ Player 表结构如下：
 }
 ```
 
-#### 3.3.1 Spark 配置信息
+#### Spark 配置信息
 
 下表给出了一些示例，所有可配置项请见 [Spark Available Properties](http://spark.apache.org/docs/latest/configuration.html#available-properties)。
 
@@ -275,7 +275,7 @@ Player 表结构如下：
 | spark.driver.maxResultSize | 1G | 否 | 每个 Spark 操作（例如收集）中所有分区的序列化结果的上限（以字节为单位）。至少应为 1M，否则应为 0（无限制）|
 | spark.cores.max | (not set) | 否 | 当以“粗粒度”共享模式在独立部署群集或 Mesos 群集上运行时，跨群集（而非从每台计算机）请求应用程序的最大 CPU 核数。如果未设置，则默认值为 Spark 的独立集群管理器上的 `spark.deploy.defaultCores` 或 Mesos 上的 infinite（所有可用的内核）|
 
-#### 3.3.2 Nebula 配置信息
+#### Nebula Graph 配置信息
 
 | 字段 | 默认值 | 是否必须 | 说明 |
 |  --- | ---  |  --- | ---  |
@@ -287,7 +287,7 @@ Player 表结构如下：
 | nebula.connection.retry | 3 | 否 | Thrift 连接重试次数 |
 | nebula.execution.retry | 3 | 否 | nGQL 语句执行重试次数 |
 
-#### 3.3.3 tags 和 edges 映射信息
+#### tags 和 edges 映射信息
 
 tag 和 edge 映射的选项比较类似。下面先介绍相同的选项，再分别介绍 `tag 映射`和 `edge 映射`的特有选项。
 
@@ -305,7 +305,7 @@ tag 和 edge 映射的选项比较类似。下面先介绍相同的选项，再�
   * `target` 指定某一列作为**目标点**的 ID 列，必填
   * 当插入边有 ranking 值， `ranking` 指定某一列作为边 ranking 列，选填
 
-#### 3.3.4 数据源映射
+#### 数据源映射
 
 * **HDFS Parquet 文件**
   * `type` 指定输入源类型，当为 parquet 时大小写不敏感，必填
@@ -323,7 +323,7 @@ tag 和 edge 映射的选项比较类似。下面先介绍相同的选项，再�
   * `type` 指定输入源类型，当为 HIVE 时大小写不敏感，必填
   * `exec` 指定 HIVE 执行查询的语句，必填
 
-### 3.4 执行命令导入数据
+### 执行命令导入数据
 
 导入数据命令：
 
@@ -345,6 +345,6 @@ bin/spark-submit \
 | -d / --directly | no | false | true 为客户端方式插入；<br>false 为 sst 方式导入 (TODO) |  |
 | -D / --dry | no | false | 检查配置文件是否正确 |  |
 
-## 4. 性能测试结果
+## 性能测试结果
 
 三台物理机 (56 核，250G 内存，万兆网，SSD），写 1 亿条数据（每条数据三个字段，每个 batch 64 条记录），用时 4 分钟（40万条/秒）。
