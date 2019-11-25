@@ -130,7 +130,7 @@ void OrderByExecutor::execute() {
     if (onResult_) {
         onResult_(setupInterimResult());
     }
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 Status OrderByExecutor::beforeExecute() {
