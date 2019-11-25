@@ -198,6 +198,19 @@ ResultCode RocksEngine::prefix(const std::string& prefix,
 }
 
 
+ResultCode RocksEngine::rangeWithPrefix(const std::string& start,
+                                        const std::string& prefix,
+                                        std::unique_ptr<KVIterator>* storageIter) {
+    rocksdb::ReadOptions options;
+    rocksdb::Iterator* iter = db_->NewIterator(options);
+    if (iter) {
+        iter->Seek(rocksdb::Slice(start));
+    }
+    storageIter->reset(new RocksRangeWithPrefixIter(iter, start, prefix));
+    return ResultCode::SUCCEEDED;
+}
+
+
 ResultCode RocksEngine::put(std::string key, std::string value) {
     rocksdb::WriteOptions options;
     options.disableWAL = FLAGS_rocksdb_disable_wal;

@@ -123,6 +123,12 @@ public:
         return readInt<VertexID>(rawKey.data() + offset, sizeof(VertexID));
     }
 
+    static TagID getVertexId(const folly::StringPiece& rawKey) {
+        CHECK_EQ(rawKey.size(), kVertexLen);
+        auto offset = sizeof(PartitionID);
+        return readInt<VertexID>(rawKey.data() + offset, sizeof(VertexID));
+    }
+
     static TagID getTagId(const folly::StringPiece& rawKey) {
         CHECK_EQ(rawKey.size(), kVertexLen);
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
@@ -183,6 +189,12 @@ public:
         CHECK_EQ(rawKey.size(), kEdgeLen);
         auto offset = sizeof(PartitionID) + sizeof(VertexID) + sizeof(EdgeType);
         return readInt<EdgeRanking>(rawKey.data() + offset, sizeof(EdgeRanking));
+    }
+
+    static int64_t getVersion(const folly::StringPiece& rawKey) {
+        CHECK(isVertex(rawKey) || isEdge(rawKey));
+        auto offset = rawKey.size() - sizeof(int64_t);
+        return readInt<int64_t>(rawKey.data() + offset, sizeof(int64_t));
     }
 
     template<typename T>

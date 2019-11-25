@@ -52,10 +52,14 @@ public:
     std::shared_ptr<const meta::SchemaProviderIf::Field> field(
         const folly::StringPiece name) const override;
 
+    nebula::cpp2::Schema toSchema() const override;
+
 protected:
     SchemaVer schemaVer_{0};
 
     ColumnDefs columns_;
+    nebula::cpp2::SchemaProp schemaProp_;
+
     // Map of Hash64(field_name) -> array index
     UnorderedMap<uint64_t, int64_t> nameIndex_;
 

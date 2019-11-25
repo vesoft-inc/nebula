@@ -310,6 +310,62 @@ struct UpdateEdgeRequest {
     7: bool                     insertable,
 }
 
+struct ScanEdgeRequest {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID part_id,
+    // start key of this block
+    3: optional binary cursor,
+    // vertex ids used as prefix
+    4: optional common.VertexID vertex_id,
+    // max row count of edge in this response
+    5: i32 row_limit,
+    6: i64 start_time,
+    7: i64 end_time,
+    8: i32 max_versions,                        // support later
+}
+
+struct ScanEdge {
+    1: common.EdgeType type,
+    2: binary          key,
+    3: binary          value,                   // decode according to edge_schema.
+}
+
+struct ScanEdgeResponse {
+    1: required ResponseCommon result,
+    2: optional map<common.EdgeType, common.Schema>(cpp.template = "std::unordered_map")    edge_schema,
+    3: optional list<ScanEdge> edge_data,
+    4: bool has_next,
+    5: binary next_cursor,                      // next start key of scan
+}
+
+struct ScanVertexRequest {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID part_id,
+    // start key of this block
+    3: optional binary cursor,
+    // vertex ids used as prefix
+    4: optional common.VertexID vertex_id,
+    // max row count of tag in this response
+    5: i32 row_limit,
+    6: i64 start_time,
+    7: i64 end_time,
+    8: i32 max_versions,                        // support later
+}
+
+struct ScanVertex {
+    1: common.TagID     tagId,
+    2: binary           key,
+    3: binary           value,                  // decode according to vertex_schema.
+}
+
+struct ScanVertexResponse {
+    1: required ResponseCommon result,
+    2: optional map<common.TagID, common.Schema>(cpp.template = "std::unordered_map")    vertex_schema,
+    3: optional list<ScanVertex> vertex_data,
+    4: bool has_next,
+    5: binary next_cursor,                      // next start key of scan
+}
+
 struct PutRequest {
     1: common.GraphSpaceID space_id,
     2: map<common.PartitionID, list<common.Pair>>(cpp.template = "std::unordered_map") parts,
@@ -389,6 +445,9 @@ service StorageService {
 
     UpdateResponse updateVertex(1: UpdateVertexRequest req)
     UpdateResponse updateEdge(1: UpdateEdgeRequest req)
+
+    ScanEdgeResponse scanEdge(1: ScanEdgeRequest req)
+    ScanVertexResponse scanVertex(1: ScanVertexRequest req)
 
     // Interfaces for admin operations
     AdminExecResp transLeader(1: TransLeaderReq req);

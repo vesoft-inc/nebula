@@ -83,6 +83,30 @@ void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
         });
 }
 
+template<typename RESP>
+kvstore::ResultCode BaseProcessor<RESP>::doRange(GraphSpaceID spaceId,
+                                                 PartitionID partId,
+                                                 std::string start,
+                                                 std::string end,
+                                                 std::unique_ptr<kvstore::KVIterator>* iter) {
+    return kvstore_->range(spaceId, partId, start, end, iter);
+}
+
+template<typename RESP>
+kvstore::ResultCode BaseProcessor<RESP>::doPrefix(GraphSpaceID spaceId,
+                                                  PartitionID partId,
+                                                  std::string prefix,
+                                                  std::unique_ptr<kvstore::KVIterator>* iter) {
+    return kvstore_->prefix(spaceId, partId, prefix, iter);
+}
+
+template<typename RESP>
+kvstore::ResultCode BaseProcessor<RESP>::doRangeWithPrefix(
+        GraphSpaceID spaceId, PartitionID partId, std::string start, std::string prefix,
+        std::unique_ptr<kvstore::KVIterator>* iter) {
+    return kvstore_->rangeWithPrefix(spaceId, partId, start, prefix, iter);
+}
+
 template <typename RESP>
 IndexValues
 BaseProcessor<RESP>::collectIndexValues(RowReader* reader,
@@ -101,6 +125,7 @@ BaseProcessor<RESP>::collectIndexValues(RowReader* reader,
     }
     return values;
 }
+    
 
 }  // namespace storage
 }  // namespace nebula
