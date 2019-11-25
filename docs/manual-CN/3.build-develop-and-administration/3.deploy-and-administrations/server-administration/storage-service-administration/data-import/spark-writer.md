@@ -4,7 +4,7 @@
 
 Spark Writer 是 Nebula Graph 基于 Spark 的分布式数据导入工具，能够将多种数据源中的数据转化为图的点和边并批量导入到图数据库中。目前支持的数据源有：
 
-* HDFS 文件，支持 Parquet、JSON、ORC 和 CSV 格式的文件
+* HDFS，包括 Parquet、JSON、ORC 和 CSV 格式的文件
 * HIVE
 
 Spark Writer 支持同时导入多个 tag、edge，支持不同 tag/edge 配置不同的数据源。
@@ -74,7 +74,7 @@ wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/sst.generato
 
 #### 3.2.3 Geo 数据支持
 
-Spark Writer 支持 Geo 数据导入，Geo 数据用 latitude 与 longitude 字段描述经纬度，数据类型为 double。
+Spark Writer 支持 Geo 数据导入，Geo 数据用 **latitude** 与 **longitude** 字段描述经纬度，数据类型为 double。
 
 ```text
 {"latitude":30.2822095,"longitude":120.0298785,"target":0,"dp_poi_name":"0"}
@@ -194,7 +194,7 @@ age                  int
 
     # 从 HDFS 文件加载数据， 此处数据类型为 Parquet
     # tag 名称为 tag name 0
-    #  HDFS Parquet 文件的中的 field 0，field 1，field 2 将写入 tag name 0
+    #  HDFS Parquet 文件的中的 field 0、field 1、field 2 将写入 tag name 0
     # 节点列为 vertex key field
     tag name 0: {
       type: parquet
@@ -226,7 +226,7 @@ age                  int
   edges: {
     # 从 HDFS 加载数据，数据类型为 JSON
     # 边名称为 edge name 0
-    # HDFS JSON 文件中的 field 0，field 1，field 2 将被写入 edge name 0
+    # HDFS JSON 文件中的 field 0、field 1、field 2 将被写入 edge name 0
     # 起始列为 source field
     edge name 0: {
       type: json
@@ -287,7 +287,7 @@ age                  int
 tag 和 edge 映射的选项比较类似。下面先介绍相同的选项，再分别介绍 `tag 映射`和 `edge 映射`的特有选项。
 
 * **相同的选项**
-  * `type` 指定上文中提到的数据类型，目前支持 “Parquet”, "JSON", "ORC" 和 “CSV” ，大小写不敏感，必填
+  * `type` 指定上文中提到的数据类型，目前支持 “Parquet”、"JSON"、"ORC" 和 “CSV”，大小写不敏感，必填
   * `path` 适用于 HDFS 数据源，指定HDFS 文件或目录的绝对路径，type 为 HDFS 时，必填
   * `exec` 适用于 Hive 数据源， 当执行查询语句 type 为 HIVE 时，必填
   * `fields` 将输入源列的列名映射为 tag / edge 的属性名，必填

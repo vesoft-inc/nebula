@@ -4,7 +4,7 @@
 
 Spark Writer is Nebula Graph's Spark-based distributed data import tool that converts data from multiple data sources into vertices and edges of graphs and batch imports data into the graph database. Currently supported data sources are:
 
-* HDFS files, including Parquet, JSON, ORC and CSV
+* HDFS, including Parquet, JSON, ORC and CSV
 * HIVE
 
 Spark Writer supports importing multiple tags and edges at one time, and configuring different data sources on different tags and edges.
@@ -19,7 +19,7 @@ cd nebula/src/tools/spark-sstfile-generator
 mvn compile package
 ```
 
-### 2.2 oss Download
+### 2.2 Download OSS
 
 ```bash
 wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/jar-packages/sst.generator-1.0.0-beta.jar
@@ -72,9 +72,9 @@ An edge data file consists of multiple rows. Generally one row represents one ed
 {"source":101,"target":102,"likeness":90,"ranking":3}
 ```
 
-#### 3.2.3 Supporting for Geo Data
+#### 3.2.3 Support for Geo Data
 
-Spark Writer supports importing Geo data. Geo data contains latitude and longitude, and the data type is double.
+Spark Writer supports importing Geo data. Geo data contains **latitude** and **longitude**, and the data type is double.
 
 ```text
 {"latitude":30.2822095,"longitude":120.0298785,"target":0,"dp_poi_name":"0"}
@@ -127,7 +127,7 @@ age,id,name
 
 ##### Database
 
-Spark Writer supports database as the data source, only HIVE is available for now.
+Spark Writer supports database as the data source, and only HIVE is available now.
 
 Player format as follows:
 
@@ -140,7 +140,7 @@ age                  int
 
 ### 3.3 Write Configuration Files
 
-The configuration files consists of Spark related information, Nebula related information, and tags mapping and edges mapping blocks. Spark information is configured with the associated parameters running Spark. Nebula information is configured with information such as user name and password to connect Nebula. Tags mapping and edges mapping correspond to the input source mapping of multiple tag/edges respectively, describing the basic information like each tag/edge's data source. It's possible that different tag/edge come from different daa sources.
+The configuration files consist of Spark related information, Nebula related information, and tags mapping and edges mapping blocks. Spark information is configured with the associated parameters running Spark. Nebula information is configured with information such as user name and password to connect Nebula. Tags mapping and edges mapping correspond to the input source mapping of multiple tag/edges respectively, describing the basic information like each tag/edge's data source. It's possible that different tag/edge come from different data sources.
 
 Example of a mapping file for the input source:
 
@@ -267,7 +267,7 @@ The following table gives some example properties, all of which can be found in 
 | --- | --- | --- | --- |
 | spark.app.name | Spark Writer | No | The name of your application |
 | spark.driver.cores | 1 | No | Number of cores to use for the driver process, only in cluster mode. |
-| spark.driver.maxResultSize | 1G | No | Limit of total size of serialized results of all partitions for each Spark action (e.g. collect) in bytes. Should be at least 1M, or 0 for unlimited. |
+| spark.driver.maxResultSize | 1G | No | Limit of total size of serialized results of all partitions for each Spark action (e.g. collect) in bytes. It must be at least 1M, or 0 for unlimited. |
 | spark.cores.max | (not set) | No | When running on a standalone deploy cluster or a Mesos cluster in "coarse-grained" sharing mode, the maximum amount of CPU cores to request for the application from across the cluster (not from each machine). If not set, the default will be `spark.deploy.defaultCores` on Spark's standalone cluster manager, or infinite (all available cores) on Mesos. |
 
 #### 3.3.2 Nebula Configuration
@@ -287,9 +287,9 @@ The following table gives some example properties, all of which can be found in 
 The options for tag and edge mapping are very similar. The following describes the same options first, and then introduces the unique options of `tag mapping` and `edge mapping`.
 
 * **Same Options**
-  * `type` is a case insensitive required field that specifies data type in the context, currently supports Parquet, JSON, ORC and CSV
-  * `path` is applied to HDFS data source and specifies the absolute path of HDFS file or directory, it's a required field when the type is HDFS
-  * `exec` is applied to Hive data source, it's a required filed when the query type is HIVE
+  * `type` is a case insensitive required field that specifies data type in the context, and currently supports Parquet, JSON, ORC and CSV
+  * `path` is applied to HDFS data source and specifies the absolute path of HDFS file or directory. It is a required field when the type is HDFS
+  * `exec` is applied to Hive data source. It is a required filed when the query type is HIVE
   * `fields` is a required filed that maps the columns of the data source to properties of tag / edge
 
 * **unique options for tag mapping**
@@ -302,24 +302,24 @@ The options for tag and edge mapping are very similar. The following describes t
 #### 3.3.4 Data Source Mapping
 
 * **HDFS Parquet Files**
-  * `type` specifies the input source type. When it is parquet, it's a case insensitive required field
-  * `path` specifies the HDFS file directory, it's a required field that must be the absolute directory
+  * `type` specifies the input source type. When it is parquet, it is a case insensitive required field
+  * `path` specifies the HDFS file directory. It is a required field that must be the absolute directory
 * **HDFS JSON Files**
-  * `type` specifies the type of the input source. When it is JSON, it's a case insensitive required field
-  * `path` specifies the HDFS file directory, it's a required field that must be absolute directory
+  * `type` specifies the type of the input source. When it is JSON, it is a case insensitive required field
+  * `path` specifies the HDFS file directory. It is a required field that must be absolute directory
 * **HIVE ORC Files**
-  * `type` specifies the input source type. When it is ORC, it's a case insensitive required field
-  * `path` specifies the HDFS file directory, it's a required field that must be absolute directory
+  * `type` specifies the input source type. When it is ORC, it is a case insensitive required field
+  * `path` specifies the HDFS file directory. It is a required field that must be the absolute directory
 * **HIVE CSV Files**
-  * `type` specifies the input source type. When it is CSV, it's a case insensitive required field
-  * `path` specifies the HDFS file directory, it's a required field that must be the absolute directory
+  * `type` specifies the input source type. When it is CSV, it is a case insensitive required field
+  * `path` specifies the HDFS file directory. It is a required field that must be the absolute directory
 * **HIVE**
-  * `type` specifies the input source type. When it is HIVE, it's a case insensitive required field
+  * `type` specifies the input source type. When it is HIVE, it is a case insensitive required field
   * `exec` is a required field that specifies the HIVE executed query
 
 ### 3.4 Import Data
 
-Input data use the following command:
+Input data with the following command:
 
 ```bash
 bin/spark-submit \
@@ -333,10 +333,10 @@ Parameter descriptions:
 | Abbreviation | Required | Default | Description | Example |
 | --- | --- | --- | --- | --- |
 | --class | yes | / | Specify the program's main class |  |
-| --master | yes | / | Specify spark cluster master url, refer to [master urls](https://spark.apache.org/docs/latest/submitting-applications.html#master-urls) for detail | e.g. `spark://23.195.26.187:7077` |
+| --master | yes | / | Specify spark cluster master url. Refer to [master urls](https://spark.apache.org/docs/latest/submitting-applications.html#master-urls) for detail | e.g. `spark://23.195.26.187:7077` |
 | -c / --config  | yes | / | The configuration file path in the context |  |
 | -h / --hive | no | false | Used to specify whether to support Hive |  |
-| -d / --directly | no | false | true for console insertion; <br>false for sst import (TODO) |  |
+| -d / --directly | no | false | True for console insertion; <br>false for sst import (TODO) |  |
 | -D / --dry | no | false | Check if the configuration file is correct |  |
 
 ## 4. Performance
