@@ -39,11 +39,11 @@ enum SupportedType {
     STRING = 6,
 
     // Date time
-    TIMESTAMP = 7,
-    YEAR = 8,
-    YEARMONTH = 9,
-    DATE = 10,
-    DATETIME = 11,
+    TIMESTAMP = 21,
+    YEAR = 22,
+    YEARMONTH = 23,
+    DATE = 24,
+    DATETIME = 25,
 
     // Graph specific
     PATH = 41,
