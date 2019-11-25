@@ -33,18 +33,6 @@ std::string Status::toString() const {
         case kSyntaxError:
             str = "SyntaxError: ";
             break;
-        case kCfgNotFound:
-            str = "Config not found";
-            break;
-        case kCfgRegistered:
-            str = "Config has been reigstered before";
-            break;
-        case kCfgErrorType:
-            str = "Config has been registered of another type";
-            break;
-        case kCfgImmutable:
-            str = "Can not update immutable config";
-            break;
         default:
             snprintf(tmp, sizeof(tmp), "Unknown error(%hu): ", static_cast<uint16_t>(code()));
             str = tmp;

@@ -321,6 +321,8 @@ public:
 
     std::string toString() const;
 
+    StatusOr<std::string> toEvaledString() const;
+
 private:
     std::unique_ptr<std::string>                field_;
     std::unique_ptr<Expression>                 value_;
@@ -343,6 +345,8 @@ public:
     }
 
     std::string toString() const;
+
+    StatusOr<std::string> toEvaledString() const;
 
 private:
     std::vector<std::unique_ptr<UpdateItem>>    items_;
