@@ -520,11 +520,11 @@ void StatsManager::PrometheusSerialize(std::ostream& out) /*const*/ {
             if (parsedName.ok()) {
                 // make sure contains value
                 WriteValue(out,
-                    readStats(index.second, parsedName.value().range, StatsMethod::SUM).value());
+                    readStats(index.second, TimeRange::ONE_MINUTE, StatsMethod::AVG).value());
             } else {
                 // make sure contains value
                 WriteValue(out,
-                    readStats(index.second, TimeRange::ONE_HOUR, StatsMethod::SUM).value());
+                    readStats(index.second, TimeRange::ONE_MINUTE, StatsMethod::SUM).value());
             }
             WriteTail(out);
         } else if (isHistoIndex(index.second)) {
