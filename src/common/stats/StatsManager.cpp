@@ -438,7 +438,13 @@ void PrometheusSerializer::WriteValue(std::ostream& out, double value) const {
 }
 
 void PrometheusSerializer::WriteValue(std::ostream& out, const int64_t value) const {
-    out << value;
+    if (std::isnan(value)) {
+        out << "Nan";
+    } else if (std::isinf(value)) {
+        out << (value < 0 ? "-Inf" : "+Inf");
+    } else {
+        out << value;
+    }
 }
 
 void PrometheusSerializer::WriteValue(std::ostream& out, const std::string& value) const {
@@ -567,7 +573,7 @@ void StatsManager::PrometheusSerialize(std::ostream& out) /*const*/ {
                 bound += diff;
             }
 
-            if (last != std::numeric_limits<VT>::infinity()) {
+            if (!std::isinf(last)) {
                 WriteHead(out, name, {}, "_bucket", "le", "+Inf");
                 out << cumulative_count;
                 WriteTail(out);
