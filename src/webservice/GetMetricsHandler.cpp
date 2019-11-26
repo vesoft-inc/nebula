@@ -58,7 +58,7 @@ void GetMetricsHandler::onEOM() noexcept {
     }
 
     // read metrics
-    std::string vals = DCHECK_NOTNULL(serializer_)->Serialize();
+    std::string vals = DCHECK_NOTNULL(serializer_)->serialize();
     ResponseBuilder(downstream_)
         .status(WebServiceUtils::to(HttpStatusCode::OK),
                 WebServiceUtils::toString(HttpStatusCode::OK))

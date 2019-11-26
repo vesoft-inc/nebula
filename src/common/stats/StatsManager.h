@@ -20,35 +20,35 @@ namespace stats {
 class MetricsSerializer {
 public:
     virtual ~MetricsSerializer() = default;
-    std::string Serialize() /*const*/ {
+    std::string serialize() /*const*/ {
         std::ostringstream ss;
-        Serialize(ss);
+        serialize(ss);
         return ss.str();
     }
-    virtual void Serialize(std::ostream& out) /*const*/ = 0;
+    virtual void serialize(std::ostream& out) /*const*/ = 0;
 };
 
 class PrometheusSerializer : public MetricsSerializer {
 public:
     virtual ~PrometheusSerializer() = default;
-    void Serialize(std::ostream& out) /*const*/ override {
-        PrometheusSerialize(out);
+    void serialize(std::ostream& out) /*const*/ override {
+        prometheusSerialize(out);
     }
-    virtual void PrometheusSerialize(std::ostream& out) /*const*/ = 0;
+    virtual void prometheusSerialize(std::ostream& out) /*const*/ = 0;
     struct Label {
         std::string name;
         std::string value;
     };
-    void Annotate(std::ostream& out, std::string& metric_name, std::string&& metric_type) const;
-    void WriteValue(std::ostream& out, double value) const;
-    void WriteValue(std::ostream& out, const int64_t value) const;
-    void WriteValue(std::ostream& out, const std::string& value) const;
+    void annotate(std::ostream& out, std::string& metric_name, std::string&& metric_type) const;
+    void writeValue(std::ostream& out, double value) const;
+    void writeValue(std::ostream& out, const int64_t value) const;
+    void writeValue(std::ostream& out, const std::string& value) const;
     template <typename T = std::string>
-    void WriteHead(std::ostream& out, const std::string& family,
+    void writeHead(std::ostream& out, const std::string& family,
                 const std::vector<Label>& labels, const std::string& suffix = "",
                 const std::string& extraLabelName = "",
                 const T extraLabelValue = T()) const;
-    void WriteTail(std::ostream& out, const std::int64_t timestamp_ms = 0) const;
+    void writeTail(std::ostream& out, const std::int64_t timestamp_ms = 0) const;
 };
 
 /**
@@ -129,7 +129,7 @@ public:
     static void readAllValue(folly::dynamic& vals);
 
 
-    void PrometheusSerialize(std::ostream& out) /*const*/ override;
+    void prometheusSerialize(std::ostream& out) /*const*/ override;
 
     static StatsManager& get();
 

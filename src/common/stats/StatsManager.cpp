@@ -384,14 +384,14 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
 }
 
 
-void PrometheusSerializer::Annotate(
+void PrometheusSerializer::annotate(
         std::ostream& out, std::string& metric_name, std::string&& metric_type) const {
     out << "# HELP " << metric_name << " Record all " << metric_type << " about nebula" << "\n";
     out << "# TYPE " << metric_name << " " << metric_type << "\n";
 }
 
 // Write a double as a string, with proper formatting for infinity and NaN
-void PrometheusSerializer::WriteValue(std::ostream& out, double value) const {
+void PrometheusSerializer::writeValue(std::ostream& out, double value) const {
     if (std::isnan(value)) {
         out << "Nan";
     } else if (std::isinf(value)) {
@@ -403,7 +403,7 @@ void PrometheusSerializer::WriteValue(std::ostream& out, double value) const {
     }
 }
 
-void PrometheusSerializer::WriteValue(std::ostream& out, const int64_t value) const {
+void PrometheusSerializer::writeValue(std::ostream& out, const int64_t value) const {
     if (std::isnan(value)) {
         out << "Nan";
     } else if (std::isinf(value)) {
@@ -413,7 +413,7 @@ void PrometheusSerializer::WriteValue(std::ostream& out, const int64_t value) co
     }
 }
 
-void PrometheusSerializer::WriteValue(std::ostream& out, const std::string& value) const {
+void PrometheusSerializer::writeValue(std::ostream& out, const std::string& value) const {
     for (auto c : value) {
         switch (c) {
         case '\n':
@@ -436,7 +436,7 @@ void PrometheusSerializer::WriteValue(std::ostream& out, const std::string& valu
 }
 
 template<typename T>
-void PrometheusSerializer::WriteHead(std::ostream& out, const std::string& family,
+void PrometheusSerializer::writeHead(std::ostream& out, const std::string& family,
                 const std::vector<Label>& labels, const std::string& suffix,
                 const std::string& extraLabelName,
                 const T extraLabelValue) const {
@@ -447,13 +447,13 @@ void PrometheusSerializer::WriteHead(std::ostream& out, const std::string& famil
 
         for (auto& lp : labels) {
             out << prefix << lp.name << "=\"";
-            WriteValue(out, lp.value);
+            writeValue(out, lp.value);
             out << "\"";
             prefix = ",";
         }
         if (!extraLabelName.empty()) {
             out << prefix << extraLabelName << "=\"";
-            WriteValue(out, extraLabelValue);
+            writeValue(out, extraLabelValue);
             out << "\"";
         }
         out << "}";
@@ -462,7 +462,7 @@ void PrometheusSerializer::WriteHead(std::ostream& out, const std::string& famil
 }
 
 // Write a line trailer: timestamp
-void PrometheusSerializer::WriteTail(std::ostream& out, const std::int64_t timestamp_ms) const {
+void PrometheusSerializer::writeTail(std::ostream& out, const std::int64_t timestamp_ms) const {
     if (timestamp_ms != 0) {
         out << " " << timestamp_ms;
     }
@@ -471,47 +471,47 @@ void PrometheusSerializer::WriteTail(std::ostream& out, const std::int64_t times
 
 // TODO(shylock) transform nebula stats to Prometheus::ClientMetric/MetricFamily
 // using the serrializing from 3rd-SDK
-void StatsManager::PrometheusSerialize(std::ostream& out) /*const*/ {
+void StatsManager::prometheusSerialize(std::ostream& out) /*const*/ {
     std::locale saved_locale = out.getloc();
     out.imbue(std::locale::classic());
     for (auto& index : nameMap_) {
         auto parsedName = parseMetricName(index.first);
         std::string name = parsedName.ok() ? parsedName.value().name : index.first;
         if (isStatIndex(index.second)) {
-            Annotate(out, name, "gauge");
+            annotate(out, name, "gauge");
 
-            WriteHead(out, name, {});
+            writeHead(out, name, {});
             if (parsedName.ok()) {
                 // make sure contains value
-                WriteValue(out,
+                writeValue(out,
                     readStats(index.second, TimeRange::ONE_MINUTE, StatsMethod::AVG).value());
             } else {
                 // make sure contains value
-                WriteValue(out,
+                writeValue(out,
                     readStats(index.second, TimeRange::ONE_MINUTE, StatsMethod::AVG).value());
             }
-            WriteTail(out);
+            writeTail(out);
         } else if (isHistoIndex(index.second)) {
-            Annotate(out, name, "histogram");
+            annotate(out, name, "histogram");
 
-            WriteHead(out, name, {}, "_count");
+            writeHead(out, name, {}, "_count");
             if (parsedName.ok()) {
                 out <<
                     readStats(index.second, parsedName.value().range, StatsMethod::COUNT).value();
             } else {
                 out << readStats(index.second, TimeRange::ONE_HOUR, StatsMethod::COUNT).value();
             }
-            WriteTail(out);
+            writeTail(out);
 
-            WriteHead(out, name, {}, "_sum");
+            writeHead(out, name, {}, "_sum");
             if (parsedName.ok()) {
-                WriteValue(out,
+                writeValue(out,
                     readStats(index.second, parsedName.value().range, StatsMethod::SUM).value());
             } else {
-                WriteValue(out,
+                writeValue(out,
                     readStats(index.second, TimeRange::ONE_HOUR, StatsMethod::SUM).value());
             }
-            WriteTail(out);
+            writeTail(out);
 
             auto& p = histograms_[physicalHistoIndex(index.second)];
             std::lock_guard<std::mutex> lk(*p.first);
@@ -522,7 +522,7 @@ void StatsManager::PrometheusSerialize(std::ostream& out) /*const*/ {
                 static_cast<double>(hist->getNumBuckets());
             double bound = hist->getMin() + diff;
             for (std::size_t i = 0; i < hist->getNumBuckets(); ++i) {
-                WriteHead(out, name, {}, "_bucket", "le", bound);
+                writeHead(out, name, {}, "_bucket", "le", bound);
                 if (parsedName.ok()) {
                     cumulativeCount +=hist->getBucket(i)
                         .count(static_cast<std::size_t>(parsedName.value().range));
@@ -531,14 +531,14 @@ void StatsManager::PrometheusSerialize(std::ostream& out) /*const*/ {
                         .count(static_cast<std::size_t>(TimeRange::ONE_HOUR));
                 }
                 out << cumulativeCount;
-                WriteTail(out);
+                writeTail(out);
                 bound += diff;
             }
 
             if (!std::isinf(last)) {
-                WriteHead(out, name, {}, "_bucket", "le", "+Inf");
+                writeHead(out, name, {}, "_bucket", "le", "+Inf");
                 out << cumulativeCount;
-                WriteTail(out);
+                writeTail(out);
             }
         } else {
             DCHECK(false) << "Impossible neither stat nor histogram!";
