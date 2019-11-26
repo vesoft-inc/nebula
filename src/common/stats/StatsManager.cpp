@@ -474,7 +474,6 @@ void PrometheusSerializer::WriteTail(std::ostream& out, const std::int64_t times
 void StatsManager::PrometheusSerialize(std::ostream& out) /*const*/ {
     std::locale saved_locale = out.getloc();
     out.imbue(std::locale::classic());
-    folly::RWSpinLock::ReadHolder name_rh(nameMapLock_);
     for (auto& index : nameMap_) {
         auto parsedName = parseMetricName(index.first);
         std::string name = parsedName.ok() ? parsedName.value().name : index.first;
@@ -514,7 +513,6 @@ void StatsManager::PrometheusSerialize(std::ostream& out) /*const*/ {
             }
             WriteTail(out);
 
-            folly::RWSpinLock::ReadHolder hists_rh(histogramsLock_);
             auto& p = histograms_[physicalHistoIndex(index.second)];
             std::lock_guard<std::mutex> lk(*p.first);
             auto& hist = p.second;
