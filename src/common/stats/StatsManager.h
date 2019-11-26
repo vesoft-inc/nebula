@@ -39,6 +39,7 @@ public:
         std::string name;
         std::string value;
     };
+    void Annotate(std::ostream& out, std::string& metric_name, std::string&& metric_type) const;
     void WriteValue(std::ostream& out, double value) const;
     void WriteValue(std::ostream& out, const int64_t value) const;
     void WriteValue(std::ostream& out, const std::string& value) const;

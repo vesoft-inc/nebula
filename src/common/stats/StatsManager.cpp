@@ -424,6 +424,13 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
     });
 }
 
+
+void PrometheusSerializer::Annotate(
+        std::ostream& out, std::string& metric_name, std::string&& metric_type) const {
+    out << "# HELP " << metric_name << " Record all " << metric_type << " about nebula" << "\n";
+    out << "# TYPE " << metric_name << " " << metric_type << "\n";
+}
+
 // Write a double as a string, with proper formatting for infinity and NaN
 void PrometheusSerializer::WriteValue(std::ostream& out, double value) const {
     if (std::isnan(value)) {
@@ -513,8 +520,7 @@ void StatsManager::PrometheusSerialize(std::ostream& out) /*const*/ {
         auto parsedName = parseMetricName(index.first);
         std::string name = parsedName.ok() ? parsedName.value().name : index.first;
         if (isStatIndex(index.second)) {
-            out << "# HELP " << name << " " << "Record all Gauge about nebula" << "\n";
-            out << "# TYPE " << name << " gauge\n";
+            Annotate(out, name, "gauge");
 
             WriteHead(out, name, {});
             if (parsedName.ok()) {
@@ -528,8 +534,7 @@ void StatsManager::PrometheusSerialize(std::ostream& out) /*const*/ {
             }
             WriteTail(out);
         } else if (isHistoIndex(index.second)) {
-            out << "# HELP " << name << " " << "Record all Histogram about nebula" << "\n";
-            out << "# TYPE " << name << " histogram\n";
+            Annotate(out, name, "histogram");
 
             WriteHead(out, name, {}, "_count");
             if (parsedName.ok()) {
