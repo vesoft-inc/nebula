@@ -30,6 +30,8 @@ public:
     static bool getDynamicPortRange(uint16_t& low, uint16_t& high);
     // Get all ports that are currently in use
     static std::unordered_set<uint16_t> getPortsInUse();
+    // Get number of local tcp connections listening on the port
+    static uint16_t numTcpConnectionsOf(int32_t port);
     // To get a port number which is available to bind on.
     // The availability is not guaranteed, e.g. in the parallel case.
     //

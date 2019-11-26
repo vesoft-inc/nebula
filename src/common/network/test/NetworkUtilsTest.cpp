@@ -87,6 +87,10 @@ TEST(NetworkUtils, getAvailablePort) {
     ASSERT_GT(port, 0);
 }
 
+TEST(NetworkUtils, numTcpConnectionsOf) {
+    auto numConns = NetworkUtils::numTcpConnectionsOf(3699);
+    ASSERT_EQ(numConns, 0);
+}
 
 TEST(NetworkUtils, toHosts) {
     std::string hostsString = "192.168.1.1:10001, 192.168.1.2:10002, 192.168.1.3:10003";

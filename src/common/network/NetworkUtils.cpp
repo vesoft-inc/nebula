@@ -5,12 +5,14 @@
  */
 
 #include "base/Base.h"
-#include "network/NetworkUtils.h"
-#include <netdb.h>
-#include <ifaddrs.h>
-#include <arpa/inet.h>
-#include "fs/FileUtils.h"
 
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <netdb.h>
+#include <netinet/tcp.h>
+
+#include "fs/FileUtils.h"
+#include "network/NetworkUtils.h"
 
 namespace nebula {
 namespace network {
@@ -167,6 +169,23 @@ std::unordered_set<uint16_t> NetworkUtils::getPortsInUse() {
     return inUse;
 }
 
+uint16_t NetworkUtils::numTcpConnectionsOf(int32_t port) {
+    static const std::regex regex("[^:]+:[^:]+:([0-9A-F]+)[^:]+:([0-9A-F]+)\\s([0-9A]{2}).+");
+    auto countConns = [port](const std::string& tcp) -> uint16_t {
+        uint16_t numConns = 0;
+        for (fs::FileUtils::FileLineIterator iter(tcp, &regex); iter.valid(); ++iter) {
+            auto& sm = iter.matched();
+            auto localPort = static_cast<int32_t>(std::stoul(sm[1].str(), NULL, 16));
+            auto remPort = static_cast<int32_t>(std::stoul(sm[2].str(), NULL, 16));
+            auto st = std::stoul(sm[3].str(), NULL, 16);
+            if (localPort == port && remPort != 0 && st == TCP_ESTABLISHED) {
+                numConns++;
+            }
+        }
+        return numConns;
+    };
+    return countConns("/proc/net/tcp") + countConns("/proc/net/tcp6");
+}
 
 uint16_t NetworkUtils::getAvailablePort() {
     uint16_t low = 0;
@@ -346,4 +365,3 @@ StatusOr<std::string> NetworkUtils::getLocalIP(std::string defaultIP) {
 
 }  // namespace network
 }  // namespace nebula
-

@@ -4,8 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include <gtest/gtest.h>
 #include "base/Base.h"
+
+#include <gtest/gtest.h>
 #include "parser/GQLParser.h"
 
 // TODO(dutor) Inspect the internal structures to check on the syntax and semantics
