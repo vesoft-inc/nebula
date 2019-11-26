@@ -376,11 +376,11 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
                                                  parts[1].c_str()));
     }
 
-    return StatusOr<StatsManager::ParsedName> (StatsManager::ParsedName{
+    return StatsManager::ParsedName {
         name,
         method,
         range,
-    });
+    };
 }
 
 
@@ -488,7 +488,7 @@ void StatsManager::PrometheusSerialize(std::ostream& out) /*const*/ {
             } else {
                 // make sure contains value
                 WriteValue(out,
-                    readStats(index.second, TimeRange::ONE_MINUTE, StatsMethod::SUM).value());
+                    readStats(index.second, TimeRange::ONE_MINUTE, StatsMethod::AVG).value());
             }
             WriteTail(out);
         } else if (isHistoIndex(index.second)) {
@@ -517,27 +517,27 @@ void StatsManager::PrometheusSerialize(std::ostream& out) /*const*/ {
             std::lock_guard<std::mutex> lk(*p.first);
             auto& hist = p.second;
             VT last = hist->getMax();
-            VT cumulative_count = 0;
+            VT cumulativeCount = 0;
             auto diff = (hist->getMax() - hist->getMin()) /
                 static_cast<double>(hist->getNumBuckets());
             double bound = hist->getMin() + diff;
             for (std::size_t i = 0; i < hist->getNumBuckets(); ++i) {
                 WriteHead(out, name, {}, "_bucket", "le", bound);
                 if (parsedName.ok()) {
-                    cumulative_count +=hist->getBucket(i)
+                    cumulativeCount +=hist->getBucket(i)
                         .count(static_cast<std::size_t>(parsedName.value().range));
                 } else {
-                    cumulative_count += hist->getBucket(i)
+                    cumulativeCount += hist->getBucket(i)
                         .count(static_cast<std::size_t>(TimeRange::ONE_HOUR));
                 }
-                out << cumulative_count;
+                out << cumulativeCount;
                 WriteTail(out);
                 bound += diff;
             }
 
             if (!std::isinf(last)) {
                 WriteHead(out, name, {}, "_bucket", "le", "+Inf");
-                out << cumulative_count;
+                out << cumulativeCount;
                 WriteTail(out);
             }
         } else {
