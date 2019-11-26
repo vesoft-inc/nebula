@@ -1215,6 +1215,50 @@ folly::Future<StatusOr<bool>> MetaClient::balanceLeader() {
     return future;
 }
 
+folly::Future<StatusOr<std::string>> MetaClient::getTagDefaultValue(GraphSpaceID spaceId,
+                                                                    TagID tagId,
+                                                                    const std::string& field) {
+    cpp2::GetReq req;
+    static std::string defaultKey = "__default__";
+    req.set_segment(defaultKey);
+    std::string key;
+    key.reserve(64);
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&tagId), sizeof(TagID));
+    key.append(field);
+    req.set_key(std::move(key));
+    folly::Promise<StatusOr<std::string>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_get(request);
+    }, [] (cpp2::GetResp&& resp) -> std::string {
+        return resp.get_value();
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<std::string>> MetaClient::getEdgeDefaultValue(GraphSpaceID spaceId,
+                                                                     EdgeType edgeType,
+                                                                     const std::string& field) {
+    cpp2::GetReq req;
+    static std::string defaultKey = "__default__";
+    req.set_segment(defaultKey);
+    std::string key;
+    key.reserve(64);
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&edgeType), sizeof(EdgeType));
+    key.append(field);
+    req.set_key(std::move(key));
+    folly::Promise<StatusOr<std::string>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_get(request);
+    }, [] (cpp2::GetResp&& resp) -> std::string {
+        return resp.get_value();
+    },  std::move(promise));
+    return future;
+}
+
 folly::Future<StatusOr<bool>>
 MetaClient::regConfig(const std::vector<cpp2::ConfigItem>& items) {
     cpp2::RegConfigReq req;
