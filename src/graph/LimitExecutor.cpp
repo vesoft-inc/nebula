@@ -33,14 +33,15 @@ void LimitExecutor::execute() {
     FLOG_INFO("Executing Limit: %s", sentence_->toString().c_str());
     if (inputs_ == nullptr || count_ == 0) {
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
         return;
     }
 
     auto ret = inputs_->getRows();
     if (!ret.ok()) {
-        DCHECK(onFinish_);
-        onFinish_();
+        LOG(ERROR) << "Get rows failed: " << ret.status();
+        DCHECK(onError_);
+        onError_(std::move(ret).status());
         return;
     }
     auto inRows = std::move(ret).value();
@@ -61,7 +62,7 @@ void LimitExecutor::execute() {
     }
 
     DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 

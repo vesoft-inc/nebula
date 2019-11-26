@@ -179,6 +179,18 @@ Status GoExecutor::prepareFrom() {
                 status = Status::Error();
                 break;
             }
+            if (expr->isFunCallExpression()) {
+                auto *funcExpr = static_cast<FunctionCallExpression*>(expr);
+                if (*(funcExpr->name()) == "near") {
+                    auto v = Expression::asString(value.value());
+                    std::vector<VertexID> result;
+                    folly::split(",", v, result, true);
+                    starts_.insert(starts_.end(),
+                                   std::make_move_iterator(result.begin()),
+                                   std::make_move_iterator(result.end()));
+                    continue;
+                }
+            }
             auto v = value.value();
             if (!Expression::isInt(v)) {
                 status = Status::Error("Vertex ID should be of type integer");
@@ -581,7 +593,7 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
         }
     }
     DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
@@ -796,7 +808,7 @@ void GoExecutor::onEmptyInputs() {
     } else if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
     }
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 

@@ -54,24 +54,24 @@ get_bound_qps.rate.600  // obtain neighbor's QPS in the last ten minutes
 update_edge_error_qps.count.3600  // errors occurred in updating an edge in the last hour
 ```
 
-Assume that a nebula storage service is started locally, and the `ws_http_port` port number is set to 50005 when starting. It is sent through the GET interface of HTTP. The method name is get_stats, and the parameter is stats plus the corresponding metrics name. Here's an example of getting metrics via the HTTP interface:
+Assume that a nebula storage service is started locally, and the `ws_http_port` port number is set to 12000 when starting. It is sent through the GET interface of HTTP. The method name is get_stats, and the parameter is stats plus the corresponding metrics name. Here's an example of getting metrics via the HTTP interface:
 
 ```bash
 # obtain a metrics
-curl -G "http://127.0.0.1:50005/get_stats?stats=vertex_props_qps.rate.60"
+curl -G "http://127.0.0.1:12000/get_stats?stats=vertex_props_qps.rate.60"
 # vertex_props_qps.rate.60=2674
 
 # obtain multiple metrics at the same time
-curl -G "http://127.0.0.1:50005/get_stats?stats=vertex_props_qps.rate.60,vertex_props_latency.avg.60"
+curl -G "http://127.0.0.1:12000/get_stats?stats=vertex_props_qps.rate.60,vertex_props_latency.avg.60"
 # vertex_props_qps.rate.60=2638
 # vertex_props_latency.avg.60=812
 
 # obtain multiple metrics at the same time and return in json format
-curl -G "http://127.0.0.1:50005/get_stats?stats=vertex_props_qps.rate.60,vertex_props_latency.avg.60&returnjson"
+curl -G "http://127.0.0.1:12000/get_stats?stats=vertex_props_qps.rate.60,vertex_props_latency.avg.60&returnjson"
 # [{"value":2723,"name":"vertex_props_qps.rate.60"},{"value":804,"name":"vertex_props_latency.avg.60"}]
 
 # obtain all the metrics
-curl -G "http://127.0.0.1:50005/get_stats?stats"
+curl -G "http://127.0.0.1:12000/get_stats?stats"
 # or
-curl -G "http://127.0.0.1:50005/get_stats"
+curl -G "http://127.0.0.1:12000/get_stats"
 ```

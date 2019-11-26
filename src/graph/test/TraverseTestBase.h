@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef GRAPH_TEST_TRAVERSETESTBASE_H
-#define GRAPH_TEST_TRAVERSETESTBASE_H
+#ifndef GRAPH_TEST_TRAVERSETESTBASE_H_
+#define GRAPH_TEST_TRAVERSETESTBASE_H_
 
 #include "base/Base.h"
 #include "graph/test/TestEnv.h"

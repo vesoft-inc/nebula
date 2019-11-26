@@ -185,6 +185,12 @@ After all the tasks being executed are completed, rerun the `BALANCE DATA` comma
 
 If there are failed tasks in the stopped plan, the plan will continue. Otherwise, if all the tasks are succeed, a new balance plan is created and executed.
 
+## Batch Scale in
+
+Nebula supports specifying hosts that need to go offline to conduct batch scale in. The syntax is `BALANCE DATA REMOVE $host_list`. For example, statement `BALANCE DATA REMOVE 192.168.0.1:50000,192.168.0.2:50000` removes two hosts, i.e. 192.168.0.1:50000，192.168.0.2:50000, during the balance process.
+
+> If replica number cannot meet the requirement after removing (for example, the number of remaining hosts is less than the number of replicas or when one of the three replica is offline, one of the remaining two replicas is required to be removed), Nebula will reject the balance request and return an error code.
+
 ## Balance leader
 
 Command `BALANCE DATA` only migrates partitions. But the leader distribution remains unbalanced, which means old hosts are overloaded, while the new ones are not fully used. Redistribute RAFT leader using the command `BALANCE LEADER`.

@@ -173,7 +173,7 @@ void FindPathExecutor::execute() {
 void FindPathExecutor::getNeighborsAndFindPath() {
     // We meet the dead end.
     if (fromVids_.empty() || toVids_.empty()) {
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
         return;
     }
 
@@ -270,7 +270,7 @@ void FindPathExecutor::findPath() {
     // if frontiersF meets frontiersT, we found an even path
     if (!intersect.empty()) {
         if (shortest_ && targetNotFound_.empty()) {
-            onFinish_();
+            onFinish_(Executor::ProcessControl::kNext);
             return;
         }
         for (auto intersectId : intersect) {
@@ -280,7 +280,7 @@ void FindPathExecutor::findPath() {
 
     if (isFinalStep() ||
          (shortest_ && targetNotFound_.empty())) {
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
         return;
     } else {
         VLOG(2) << "Current step:" << currentStep_;

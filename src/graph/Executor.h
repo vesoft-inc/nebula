@@ -45,10 +45,15 @@ public:
 
     virtual const char* name() const = 0;
 
+    enum ProcessControl : uint8_t {
+        kNext = 0,
+        kReturn,
+    };
+
     /**
      * Set callback to be invoked when this executor is finished(normally).
      */
-    void setOnFinish(std::function<void()> onFinish) {
+    void setOnFinish(std::function<void(ProcessControl)> onFinish) {
         onFinish_ = onFinish;
     }
     /**
@@ -101,8 +106,8 @@ protected:
                                                 std::string& originalValue);
 
 protected:
-    ExecutionContext                            *ectx_;
-    std::function<void()>                       onFinish_;
+    ExecutionContext                           *ectx_;
+    std::function<void(ProcessControl)>         onFinish_;
     std::function<void(Status)>                 onError_;
 };
 

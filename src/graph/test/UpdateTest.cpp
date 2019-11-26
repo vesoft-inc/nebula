@@ -250,5 +250,90 @@ TEST_F(UpdateTest, UpdateEdge) {
     }
 }
 
+
+TEST_F(UpdateTest, InvalidTest) {
+    {   // update vertex: the item is TagName.PropName = Expression in SET clause
+        cpp2::ExecutionResponse resp;
+        auto query = "UPDATE VERTEX 101 "
+                     "SET credits = $^.course.credits + 1, name = \"No9\"";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+    {   // update edge: the item is PropName = Expression in SET clause
+        cpp2::ExecutionResponse resp;
+        auto query = "UPDATE EDGE 200 -> 101@0 OF select "
+                     "SET select.grade = select.grade + 1, select.year = 2019";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {   // the $$.TagName.PropName expressions are not allowed in any update sentence
+        cpp2::ExecutionResponse resp;
+        auto query = "UPDATE VERTEX 101 "
+                     "SET course.credits = $$.course.credits + 1 "
+                     "WHEN $$.course.name == \"Math\" && $^.course.credits > $$.course.credits + 1 "
+                     "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $$.building.name";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {   // make sure the vertex must exist
+        cpp2::ExecutionResponse resp;
+        auto query = "UPDATE VERTEX 101000000000000 "
+                     "SET course.credits = $^.course.credits + 1, building.name = \"No9\" "
+                     "WHEN $^.course.name == \"Math\" && $^.course.credits > 2 "
+                     "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
+    }
+    {   // make sure TagName and PropertyName must exist in all clauses
+        cpp2::ExecutionResponse resp;
+        auto query = "UPDATE VERTEX 101 "
+                     "SET nonexistentTag.credits = $^.course.credits + 1, building.name = \"No9\" "
+                     "WHEN $^.course.name == \"Math\" && $^.course.nonexistentProperty > 2 "
+                     "YIELD $^.course.name AS Name, $^.nonexistentTag.nonexistentProperty";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
+    }
+    {   // make sure the edge(src, dst) must exist
+        cpp2::ExecutionResponse resp;
+        auto query = "UPDATE EDGE 200 -> 101000000000000@0 OF select "
+                     "SET grade = select.grade + 1, year = 2019 "
+                     "WHEN select.grade > 4 && $^.student.age > 15 "
+                     "YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
+    }
+    {   // make sure the edge(src, edge_tyep, dst) must exist
+        cpp2::ExecutionResponse resp;
+        auto query = "UPDATE EDGE 200 -> 101@0 OF nonexistentEdgeTypeName "
+                     "SET grade = select.grade + 1, year = 2019";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
+    }
+    {   // make sure the edge(src, edge_tyep, ranking<default is 0>, dst) must exist
+        cpp2::ExecutionResponse resp;
+        auto query = "UPDATE EDGE 200 -> 101 OF select "
+                     "SET grade = select.grade + 1, year = 2019";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+    }
+    {   // make sure the edge(src, edge_tyep, ranking, dst) must exist
+        cpp2::ExecutionResponse resp;
+        auto query = "UPDATE EDGE 200 -> 101@1000000000000 OF select "
+                     "SET grade = select.grade + 1, year = 2019";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
+    }
+    {   // make sure EdgeName and PropertyName must exist in all clauses
+        cpp2::ExecutionResponse resp;
+        auto query = "UPDATE EDGE 200 -> 101@0 OF select "
+                     "SET nonexistentProperty = select.grade + 1, year = 2019 "
+                     "WHEN nonexistentEdgeName.grade > 4 && $^.student.nonexistentProperty > 15 "
+                     "YIELD $^.nonexistentTag.name AS Name, select.nonexistentProperty AS Grade";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code) << resp.get_error_msg();
+    }
+}
+
+
 }   // namespace graph
 }   // namespace nebula

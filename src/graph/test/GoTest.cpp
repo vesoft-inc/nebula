@@ -761,5 +761,139 @@ TEST_F(GoTest, is_inCall) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
+
+TEST_F(GoTest, returnTest) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$A = GO FROM %ld OVER like YIELD like._dst AS dst;" /* 1st hop */
+                    "$rA = YIELD $A.* WHERE $A.dst == 123;"
+                    "RETURN $rA IF $rA IS NOT NULL;" /* will not return */
+                    "GO FROM $A.dst OVER serve"; /* 2nd hop */
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Hornets"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$A = GO FROM %ld OVER like YIELD like._dst AS dst;" /* 1st hop */
+                    "$rA = YIELD $A.* WHERE 1 == 1;"
+                    "RETURN $rA IF $rA IS NOT NULL;" /* will return */
+                    "GO FROM $A.dst OVER serve"; /* 2nd hop */
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$A.dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Tony Parker"].vid()},
+            {players_["Manu Ginobili"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$A = GO FROM %ld OVER like YIELD like._dst AS dstA;" /* 1st hop */
+                    "$rA = YIELD $A.* WHERE $A.dstA == 123;"
+                    "RETURN $rA IF $rA IS NOT NULL;" /* will not return */
+                    "$B = GO FROM $A.dstA OVER like YIELD like._dst AS dstB;" /* 2nd hop */
+                    "$rB = YIELD $B.* WHERE $B.dstB == 456;"
+                    "RETURN $rB IF $rB IS NOT NULL;" /* will not return */
+                    "GO FROM $B.dstB OVER serve"; /* 3rd hop */
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Trail Blazers"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$A = GO FROM %ld OVER like YIELD like._dst AS dst;" /* 1st hop */
+                    "$rA = YIELD $A.* WHERE $A.dst == 123;"
+                    "RETURN $rA IF $rA IS NOT NULL;"; /* will return nothing */
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$A.dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected;
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$A = GO FROM %ld OVER like YIELD like._dst AS dst;" /* 1st hop */
+                    "$rA = YIELD $A.* WHERE 1 == 1;"
+                    "RETURN $rA IF $rA IS NOT NULL;"; /* will return */
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$A.dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Tony Parker"].vid()},
+            {players_["Manu Ginobili"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$A = GO FROM %ld OVER like YIELD like._dst AS dst;" /* 1st hop */
+                    "$rA = YIELD $A.* WHERE 1 == 1;"
+                    "RETURN $B IF $B IS NOT NULL;"; /* will return error */
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "$A = GO FROM %ld OVER like YIELD like._dst AS dst;" /* 1st hop */
+                    "$rA = YIELD $A.* WHERE 1 == 1;"
+                    "RETURN $B IF $A IS NOT NULL;"; /* will return error */
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "RETURN $rA IF $rA IS NOT NULL;"; /* will return error */
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
 }   // namespace graph
 }   // namespace nebula

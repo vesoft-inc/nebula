@@ -104,9 +104,6 @@ Status UpdateEdgeExecutor::prepareSet() {
         updateItem.value = Expression::encode(item->value());
         updateItems_.emplace_back(std::move(updateItem));
     }
-    if (updateItems_.empty()) {
-        status = Status::Error("There must be some correct update items.");
-    }
     return status;
 }
 
@@ -188,7 +185,7 @@ void UpdateEdgeExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcResp
     }
     resp_->set_rows(std::move(rows));
     DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 
@@ -249,6 +246,26 @@ void UpdateEdgeExecutor::execute() {
             return;
         }
         auto rpcResp = std::move(resp).value();
+        for (auto& code : rpcResp.get_result().get_failed_codes()) {
+            DCHECK(onError_);
+            switch (code.get_code()) {
+                case nebula::storage::cpp2::ErrorCode::E_INVALID_FILTER:
+                      onError_(Status::Error("Maybe invalid edge or property in WHEN clause!"));
+                      return;
+                case nebula::storage::cpp2::ErrorCode::E_INVALID_UPDATER:
+                      onError_(Status::Error("Maybe invalid property in SET/YIELD clasue!"));
+                      return;
+                default:
+                      std::string errMsg =
+                            folly::stringPrintf("Maybe edge does not exist or filter failed, "
+                                                "part: %d, error code: %d!",
+                                                code.get_part_id(),
+                                                static_cast<int32_t>(code.get_code()));
+                      LOG(ERROR) << errMsg;
+                      onError_(Status::Error(errMsg));
+                      return;
+            }
+        }
         if (insertable_ && rpcResp.get_upsert()) {
             // TODO(zhangguoqing) Making the reverse edge of insertion is transactional
             this->insertReverselyEdge(std::move(rpcResp));
