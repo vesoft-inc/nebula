@@ -480,15 +480,15 @@ void PrometheusSerializer::WriteHead(std::ostream& out, const std::string& famil
         const char* prefix = "";
 
         for (auto& lp : labels) {
-        out << prefix << lp.name << "=\"";
-        WriteValue(out, lp.value);
-        out << "\"";
-        prefix = ",";
+            out << prefix << lp.name << "=\"";
+            WriteValue(out, lp.value);
+            out << "\"";
+            prefix = ",";
         }
         if (!extraLabelName.empty()) {
-        out << prefix << extraLabelName << "=\"";
-        WriteValue(out, extraLabelValue);
-        out << "\"";
+            out << prefix << extraLabelName << "=\"";
+            WriteValue(out, extraLabelValue);
+            out << "\"";
         }
         out << "}";
     }
