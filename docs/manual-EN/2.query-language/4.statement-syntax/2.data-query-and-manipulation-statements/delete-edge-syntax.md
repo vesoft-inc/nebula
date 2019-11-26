@@ -1,6 +1,6 @@
 # Delete Edge Syntax
 
-The `DELETE EDGE` statement is used to delete edges. Given an edge type, the source vertex and the dest vertex, Nebula supports `DELETE` the edge, its associated properties and the edge ranking. You can also delete an edge with a certain rank. The syntax as the follows:
+The `DELETE EDGE` statement is used to delete edges. Given an edge type, the source vertex and the dest vertex, Nebula Graph supports `DELETE` the edge, its associated properties and the edge ranking. You can also delete an edge with a certain rank. The syntax is as the follows:
 
 ```ngql
 DELETE EDGE <edge_type> <vid> -> <vid>@ranking [, <vid> -> <vid> ...]
