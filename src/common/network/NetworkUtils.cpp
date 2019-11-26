@@ -170,7 +170,7 @@ std::unordered_set<uint16_t> NetworkUtils::getPortsInUse() {
 }
 
 uint32_t NetworkUtils::numTcpConnectionsOn(int32_t port) {
-    static const std::regex regex("[^:]+:[^:]+:([0-9A-F]+)[^:]+:([0-9A-F]+)\\s([0-9A]{2}).+");
+    static const std::regex regex("[^:]+:[^:]+:([0-9A-F]+)[^:]+:([0-9A-F]+)\\s([0-9A-F]{2}).+");
     auto countConns = [port](const std::string& tcp) {
         uint32_t numConns = 0;
         for (fs::FileUtils::FileLineIterator iter(tcp, &regex); iter.valid(); ++iter) {
