@@ -5,7 +5,7 @@
   <a href="https://github.com/vesoft-inc/nebula/actions?workflow=build">
     <img src="https://github.com/vesoft-inc/nebula/workflows/build/badge.svg" alt="build and test workflow"/>
   </a>
-  <a href="https://github.com/vesoft-inc/nebula/actions?workflow=docker">
+  <a href="https://hub.docker.com/u/vesoft">
     <img src="https://github.com/vesoft-inc/nebula/workflows/docker/badge.svg" alt="build docker image workflow"/>
   </a>
   <a href="https://github.com/vesoft-inc/nebula/actions?workflow=package">

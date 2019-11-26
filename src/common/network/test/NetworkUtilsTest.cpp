@@ -87,8 +87,8 @@ TEST(NetworkUtils, getAvailablePort) {
     ASSERT_GT(port, 0);
 }
 
-TEST(NetworkUtils, numTcpConnectionsOf) {
-    auto numConns = NetworkUtils::numTcpConnectionsOf(3699);
+TEST(NetworkUtils, numTcpConnectionsOn) {
+    auto numConns = NetworkUtils::numTcpConnectionsOn(3699);
     ASSERT_EQ(numConns, 0);
 }
 
@@ -120,4 +120,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-
