@@ -872,14 +872,15 @@ bool MetaClient::checkSpaceExistInCache(const HostAddr& host,
     return false;
 }
 
-
 int32_t MetaClient::partsNum(GraphSpaceID spaceId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(spaceId);
-    CHECK(it != localCache_.end());
+    if (it == localCache_.end()) {
+        // This means that the space has been deleted
+        return 0;
+    }
     return it->second->partsAlloc_.size();
 }
-
 
 folly::Future<StatusOr<TagID>>
 MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {

@@ -175,7 +175,7 @@ public:
 
 protected:
     // Calculate the partition id for the given vertex id
-    PartitionID partId(GraphSpaceID spaceId, int64_t id) const;
+    StatusOr<PartitionID> partId(GraphSpaceID spaceId, int64_t id) const;
 
     const HostAddr& leader(const PartMeta& partMeta) const {
         auto part = std::make_pair(partMeta.spaceId_, partMeta.partId_);
@@ -238,11 +238,11 @@ protected:
     //  host_addr (A host, but in most case, the leader will be chosen)
     //      => (partition -> [ids that belong to the shard])
     template<class Container, class GetIdFunc>
-    std::unordered_map<HostAddr,
+    StatusOr<std::unordered_map<HostAddr,
                        std::unordered_map<PartitionID,
                                           std::vector<typename Container::value_type>
                                          >
-                      >
+                      >>
     clusterIdsToHosts(GraphSpaceID spaceId, Container ids, GetIdFunc f) const {
         std::unordered_map<HostAddr,
                            std::unordered_map<PartitionID,
@@ -250,7 +250,12 @@ protected:
                                              >
                           > clusters;
         for (auto& id : ids) {
-            PartitionID part = partId(spaceId, f(id));
+            auto status = partId(spaceId, f(id));
+            if (!status.ok()) {
+                return status;
+            }
+
+            auto part = status.value();
             auto partMeta = getPartMeta(spaceId, part);
             CHECK_GT(partMeta.peers_.size(), 0U);
             const auto& leader = this->leader(partMeta);
