@@ -1,6 +1,6 @@
 # CONFIG 语法
 
-Nebula 使用 `gflags` 进行运行时配置。
+Nebula Graph 使用 `gflags` 进行运行时配置。
 
 ## gflags 参数
 

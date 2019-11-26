@@ -1,6 +1,6 @@
 # UPDATE 语法
 
-Nebula 支持 `UPDATE` 一个点或者一条边的属性，支持 CAS 操作，支持返回相关的属性。
+Nebula Graph 支持 `UPDATE` 一个点或者一条边的属性，支持 CAS 操作，支持返回相关的属性。
 
 ## 更新点
 

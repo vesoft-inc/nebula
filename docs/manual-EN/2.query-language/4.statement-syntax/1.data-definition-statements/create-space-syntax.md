@@ -8,7 +8,7 @@ space_option:
     option_name = value
 ```
 
-This statement creates a new space with the given name. SPACE is a region that provides physically isolated graphs in Nebula. An error occurs if the database exists.
+This statement creates a new space with the given name. SPACE is a region that provides physically isolated graphs in Nebula Graph. An error occurs if the database exists.
 
 ## Space Name
 
@@ -22,7 +22,7 @@ When creating a space, options can be given. An _option_name_ can be any of the 
 
 * _partition_num_
 
-    _partition_num_ specifies the number of partitions in one replica. The default value is 1024.
+    _partition_num_ specifies the number of partitions in one replica. The default value is 100.
 
 * _replica_factor_
 

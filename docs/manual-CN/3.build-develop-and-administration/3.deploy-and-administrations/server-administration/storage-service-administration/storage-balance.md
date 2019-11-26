@@ -1,6 +1,6 @@
 # 存储服务的负载均衡和数据迁移
 
-Nebula 的服务可分为 graphd，storaged，metad。此文档中的 balance 仅针对 storaged 进行操作。目前，storaged 的扩缩容是通过 balance 命令来实现的。balance 命令有两种，一种需要迁移数据，命令为 **BALANCE DATA**；另一种不需要迁移数据，只改变 partition 的 leader 分布，来达到负载均衡的目的，命令为 **BALANCE LEADER**。
+Nebula Graph 的服务可分为 graphd，storaged，metad。此文档中的 balance 仅针对 storaged 进行操作。目前，storaged 的扩缩容是通过 balance 命令来实现的。balance 命令有两种，一种需要迁移数据，命令为 **BALANCE DATA**；另一种不需要迁移数据，只改变 partition 的 leader 分布，来达到负载均衡的目的，命令为 **BALANCE LEADER**。
 
 ## Balance data
 
@@ -178,9 +178,9 @@ Got 8 rows (Time spent: 5074/6488 us)
 
 ## 批量缩容
 
-Nebula 支持指定需要下线的机器进行批量缩容。语法为 `BALANCE DATA REMOVE $host_list`，例如 `BALANCE DATA REMOVE 192.168.0.1:50000,192.168.0.2:50000`，将在本次 balance 过程中移除 192.168.0.1:50000，192.168.0.2:50000 两台机器。
+Nebula Graph 支持指定需要下线的机器进行批量缩容。语法为 `BALANCE DATA REMOVE $host_list`，例如 `BALANCE DATA REMOVE 192.168.0.1:50000,192.168.0.2:50000`，将在本次 balance 过程中移除 192.168.0.1:50000，192.168.0.2:50000 两台机器。
 
-> 如果移除指定机器后，不满足副本数要求（例如剩余机器数小于副本数，或者三副本中有一台已经离线，此时要求移除剩余两副本中的一个），Nebula 将拒绝本次 balance 请求，并返回相关错误码。
+> 如果移除指定机器后，不满足副本数要求（例如剩余机器数小于副本数，或者三副本中有一台已经离线，此时要求移除剩余两副本中的一个），Nebula Graph 将拒绝本次 balance 请求，并返回相关错误码。
 
 ## Balance leader
 

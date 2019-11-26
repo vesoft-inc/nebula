@@ -1,6 +1,6 @@
 # Logs
 
-Nebula uses [glog](https://github.com/google/glog) to print logs, gflag to control the severity level of the log, and provides an HTTP interface to dynamically change the log level at runtime to facilitate tracking.
+Nebula Graph uses [glog](https://github.com/google/glog) to print logs, gflag to control the severity level of the log, and provides an HTTP interface to dynamically change the log level at runtime to facilitate tracking.
 
 ## Parameter Description
 
@@ -39,14 +39,14 @@ Change the logs severity level to **most detailed** with the following command.
 > curl "http://127.0.0.1:12000/set_flags?flag=minloglevel&value=0"
 ```
 
-In Nebula console, check the severity minloglevel of graphd and set it to **most detailed** with the following commands.
+In Nebula Graph console, check the severity minloglevel of graphd and set it to **most detailed** with the following commands.
 
 ```ngql
 nebula> GET CONFIGS graph:minloglevel
 nebula> UPDATE CONFIGS graph:minloglevel=0
 ```
 
-To change the severity of the storage log, replace `graph` in the above command with `storage`. Note that nebula only supports modifying the graph and storage log severity via console, meta log cannot be changed.
+To change the severity of the storage log, replace `graph` in the above command with `storage`. Note that Nebula Graph only supports modifying the graph and storage log severity via console, meta log cannot be changed.
 
 Or **close** all logs print (FATAL only).
 

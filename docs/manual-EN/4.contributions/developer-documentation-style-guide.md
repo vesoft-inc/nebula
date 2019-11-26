@@ -19,7 +19,7 @@ This guide is a living document; it changes over time, and when it changes, we g
 
 ## Breaking the "rules"
 
-In most contexts, Nebula has no ability nor desire to enforce these guidelines if they're not appropriate to the context. But we hope that you'll join us in striving for high-quality documentation.
+In most contexts, Nebula Graph has no ability nor desire to enforce these guidelines if they're not appropriate to the context. But we hope that you'll join us in striving for high-quality documentation.
 
 Like most style guides, our style guide aims to improve our documentation, especially by improving consistency; therefore, there may be contexts where it makes sense to diverge from our guidelines in order to make your documentation better.
 
