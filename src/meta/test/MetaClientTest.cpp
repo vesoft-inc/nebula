@@ -717,8 +717,7 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
     }
     {
         std::string name = "rocksdb_db_options";
-        std::string updateValue = "write_buffer_size=2097152,"
-                                  "disable_auto_compactions=true,"
+        std::string updateValue = "disable_auto_compactions=true,"
                                   "level0_file_num_compaction_trigger=4";
         // update config
         auto setRet = cfgMan.setConfig(module, name, type, updateValue).get();
@@ -732,7 +731,6 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
 
         sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(FLAGS_rocksdb_db_options, value);
-        ASSERT_EQ(listener->options["write_buffer_size"], "2097152");
         ASSERT_EQ(listener->options["disable_auto_compactions"], "true");
         ASSERT_EQ(listener->options["level0_file_num_compaction_trigger"], "4");
     }
