@@ -85,8 +85,8 @@ GO FROM <node_list> OVER <edge_type_list | *> YIELD | YIELDS [DISTINCT] <return_
 For example:
 
 ```ngql
-GO OVER edge1, edge2....  // traverse alone edge1 and edge2 or
-GO OVER *   // * means traverse along all edge types
+nebula> GO OVER edge1, edge2....  // traverse alone edge1 and edge2 or
+nebula> GO OVER *   // * means traverse along all edge types
 ```
 
 > Please note that when traversing along multiple edges, there are some special restrictions on the use of filters(namely the `WHERE` statement), for example filters like `WHERE edge1.prop1 > edge2.prop2` is not supported.
@@ -94,7 +94,7 @@ GO OVER *   // * means traverse along all edge types
 As for return results, if multiple edge properties are to be returned, **Nebula Graph** will place them in different rows. For example:
 
 ```ngql
-GO FROM 100 OVER edge1, edge2 YIELD edge1.prop1, edge2.prop2
+nebula> GO FROM 100 OVER edge1, edge2 YIELD edge1.prop1, edge2.prop2
 ```
 
  If vertex 100 has three edges in edge 1, two edges in edge 2, the final results is five rows as follows:

@@ -30,6 +30,7 @@ nebula> INSERT VERTEX t1 () VALUES 10:()    -- 插入空属性点 10
 nebula> CREATE TAG t2 (name string, age int)                -- 创建有两种属性的标签 t2
 nebula> INSERT VERTEX t2 (name, age) VALUES 11:("n1", 12)     -- 插入有两种属性的点 11
 nebula> INSERT VERTEX t2 (name, age) VALUES 12:("n1", "a13")  -- 错误操作，"a13" 不是 int 类型
+nebula> INSERT VERTEX t2 (name, age) VALUES 13:("n3", 12), 14:("n4", 8)    -- 插入两个点
 ```
 
 ```ngql
