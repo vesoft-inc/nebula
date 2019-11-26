@@ -186,7 +186,7 @@ Status YieldExecutor::executeInputs() {
         }
     }
     // No error happened, but we are having empty inputs
-    if (inputs == nullptr) {
+    if (inputs == nullptr || !inputs->hasData()) {
         finishExecution(nullptr);
         return Status::OK();
     }
