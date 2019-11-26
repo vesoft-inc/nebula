@@ -8,7 +8,7 @@ space_option:
     option_name = value
 ```
 
-This statement creates a new space with the given name. SPACE is a region that provides physically isolated graphs in Nebula Graph. An error occurs if the database exists.
+This statement creates a new space with the given name. SPACE is a region that provides physically isolated graphs in **Nebula Graph**. An error occurs if the database exists.
 
 ## Space Name
 
@@ -28,7 +28,7 @@ When creating a space, options can be given. An _option_name_ can be any of the 
 
     _replica_factor_ specifies the number of replicas in the cluster. The default replica factor is 1. The suggested number is 3 in cluster.
 
-However, if no option is given, Nebula Graph will create the space with the default partition number and replica factor.
+However, if no option is given, **Nebula Graph** will create the space with the default partition number and replica factor.
 
 ### Example
 

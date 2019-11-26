@@ -1,6 +1,6 @@
 # GO 语法
 
-`GO` 是 Nebula Graph 中最常用的关键字，可以指定过滤条件（如`WHERE`）遍历图数据并获取点和边的属性，还能以指定顺序（`ORDER BY ASC | DESC`）返回指定数目（`LIMIT`）的结果。
+`GO` 是 **Nebula Graph** 中最常用的关键字，可以指定过滤条件（如`WHERE`）遍历图数据并获取点和边的属性，还能以指定顺序（`ORDER BY ASC | DESC`）返回指定数目（`LIMIT`）的结果。
 
 >`GO` 的用法与 SQL 中的 `SELECT` 类似，重要区别是 `GO` 必须从遍历一系列的节点开始。
 <!-- >请参考`FIND`的用法，它对应于SQL中的`SELECT`。 -->
@@ -75,7 +75,7 @@ nebula> GO FROM 100,102 OVER serve           \
 
 ## 沿着多种类型的边进行遍历
 
-目前 Nebula Graph 还支持 `GO` 沿着多条边遍历，语法为：
+目前 **Nebula Graph** 还支持 `GO` 沿着多条边遍历，语法为：
 
 ```ngql
 GO FROM <node_list> OVER <edge_type_list | *> YIELD | YIELDS [DISTINCT] <return_list>

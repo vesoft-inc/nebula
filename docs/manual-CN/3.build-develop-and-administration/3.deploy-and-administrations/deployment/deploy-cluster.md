@@ -1,10 +1,10 @@
 # 集群部署
 
-本节介绍 Nebula Graph 的部署
+本节介绍 **Nebula Graph** 的部署
 
 ## 下载并安装包
 
-目前，Nebula Graph 官方提供 `CentOS 7.5`， `CentOS 6.5`，`Ubuntu 1604` 和 `Ubuntu 1804`包，rpm 或 deb 包下载点击[此处](https://github.com/vesoft-inc/nebula/releases)。
+目前，**Nebula Graph** 官方提供 `CentOS 7.5`， `CentOS 6.5`，`Ubuntu 1604` 和 `Ubuntu 1804`包，rpm 或 deb 包下载点击[此处](https://github.com/vesoft-inc/nebula/releases)。
 
 ![image](https://user-images.githubusercontent.com/42762957/67747062-e0fe1e00-fa62-11e9-9640-008d2c82bae3.png)
 
@@ -28,7 +28,7 @@ dpkg -i nebula-{VERSION}.{SYSTEM_VERSION}.amd64.deb
 
 ### 启动 Nebula Graph 集群
 
-目前，Nebula Graph 集群由 `scripts/services.sh` 运维，可使用此脚本 `start`，`stop` 或 `restart` 重启集群。
+目前，**Nebula Graph** 集群由 `scripts/services.sh` 运维，可使用此脚本 `start`，`stop` 或 `restart` 重启集群。
 
 示例命令如下：
 

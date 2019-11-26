@@ -28,7 +28,7 @@ space_option:
 
     _replica_factor_ 表示副本数量。默认值是 1，集群建议为 3
 
-如果没有自定义选项，Nebula Graph 会使用默认的值（partition_number 和 replica_factor）来创建图空间。
+如果没有自定义选项，**Nebula Graph** 会使用默认的值（partition_number 和 replica_factor）来创建图空间。
 
 ### 示例
 

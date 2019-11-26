@@ -8,7 +8,7 @@ Use the provided script `merge-all.py` to merge all the markdown doc files into 
 
 ## Step Two: Generate TOC
 
-Use pandoc to generated TOC (table of content) for the file you just merged. First off, you should make sure pandoc has installed on your machine. Open your terminal and run the command:
+Use pandoc to generated TOC (table of content) for the file you just merged. Firstly, you should make sure that pandoc has been installed on your machine. Open your terminal and run the command:
 
 ```bash
 pandoc -v
@@ -48,4 +48,4 @@ pandoc merged.md  -o merged.pdf
 
 **Note:** Make sure [MiKTeX](https://miktex.org/howto/install-miktex) is installed.
 
-Now you've got your PDF documentation and have fun with Nebula Graph.
+Now you've got your PDF documentation and have fun with **Nebula Graph**.

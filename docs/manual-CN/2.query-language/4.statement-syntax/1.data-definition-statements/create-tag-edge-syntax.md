@@ -16,7 +16,7 @@ option:
     | TTL_COL [=] prop_name
 ```
 
-Nebula Graph 的图结构由带有属性的 tags 和 edges 组成。`CREATE TAG` 使用一个给定的名称创建一个新的 tag。`CREATE EDGE` 则创建一个新的 edge type。
+**Nebula Graph** 的图结构由带有属性的 tags 和 edges 组成。`CREATE TAG` 使用一个给定的名称创建一个新的 tag。`CREATE EDGE` 则创建一个新的 edge type。
 
 `CREATE TAG/EDGE` 语法有一些特点，在如下分块中将对这些特点进行讨论：
 

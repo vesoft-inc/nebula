@@ -1,6 +1,6 @@
 # RocksDB Compaction and Flush
 
-Nebula Graph supports auto and manual (through HTTP request) RocksDB compaction or flush in storage service.
+**Nebula Graph** supports auto and manual (through HTTP request) RocksDB compaction or flush in storage service.
 
 ## Auto RocksDB Compaction
 
@@ -25,7 +25,7 @@ nebula> GET CONFIGS storage:rocksdb_column_family_options
 
 ### Turn on Auto Compaction
 
-Input the following commands in console to **turn on** the auto compaction and check if the change works. The default value of auto compaction is false in Nebula Graph.
+Input the following commands in console to **turn on** the auto compaction and check if the change works. The default value of auto compaction is false in **Nebula Graph**.
 
 ```ngql
 nebula> UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = false }

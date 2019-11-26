@@ -2,7 +2,7 @@
 
 ## 接口示例
 
-Nebula Graph storage 提供 key-value 接口，用户可以通过 StorageClient 进行 kv 的相关操作，请注意用户仍然需要通过 console 来创建 space。目前支持的接口有 Get 和 Put，接口如下。
+**Nebula Graph** storage 提供 key-value 接口，用户可以通过 StorageClient 进行 kv 的相关操作，请注意用户仍然需要通过 console 来创建 space。目前支持的接口有 Get 和 Put，接口如下。
 
 ```cpp
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> put(

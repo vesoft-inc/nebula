@@ -28,7 +28,7 @@ Use `data_path` to set `Meta` and `Storage`'s underlying storage directory.
 
 ## Start Up Nebula Graph Cluster
 
-Currently, we use `scripts/services.sh` to manage the Nebula Graph cluster.
+Currently, we use `scripts/services.sh` to manage the **Nebula Graph** cluster.
 
 You can `start`, `stop` and `restart` the cluster with this script.
 
@@ -46,12 +46,12 @@ The metas, storages and graphs contain the host of themselves.
 > bin/nebula -u=user -p=password --addr={graphd IP address} --port={graphd listening port}
 ```
 
-* -u is to set the user name, `user` is the default Nebula Graph user account
+* -u is to set the user name, `user` is the default **Nebula Graph** user account
 * -p is to set password, `password` is the default password for account `user`
 * --addr is the graphd IP address
 * --port is the the graphd server port and the default value is `3699`
 
-Then you’re now ready to start using Nebula Graph.
+Then you’re now ready to start using **Nebula Graph**.
 
 ## Config reference
 

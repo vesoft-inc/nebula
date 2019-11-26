@@ -2,7 +2,7 @@
 
 ## 介绍
 
-目前，Nebula Graph 支持通过 HTTP 方式来获取 Storage Service 层操作的一些基本性能指标。
+目前，**Nebula Graph** 支持通过 HTTP 方式来获取 Storage Service 层操作的一些基本性能指标。
 
 每一个性能指标都由三部分组成，分别为指标名，统计类型，时间范围。
 

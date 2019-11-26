@@ -1,6 +1,6 @@
 # Comment Syntax
 
-Nebula Graph supports four comment styles:
+**Nebula Graph** supports four comment styles:
 
 * From a # character to the end of the line.
 * From a --  sequence to the end of the line.
