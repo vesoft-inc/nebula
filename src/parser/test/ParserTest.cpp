@@ -1357,6 +1357,13 @@ TEST(Parser, ConfigOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "UPDATE CONFIGS rocksdb_column_family_options={"
+                            "write_buffer_size = 1 * 1024 * 1024}";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "UPDATE CONFIGS storage:rocksdb_db_options = {}";
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());
