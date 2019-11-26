@@ -51,5 +51,5 @@ nebula> UPDATE CONFIGS graph:minloglevel=0
 或者**关闭**所有的日志打印(仅保留 FATAL)。
 
 ```bash
-> curl "http://127.0.0.1:12000/set_flags?flag=minloglevel&value=4"
+> curl "http://127.0.0.1:12000/set_flags?flag=minloglevel&value=3"
 ```
