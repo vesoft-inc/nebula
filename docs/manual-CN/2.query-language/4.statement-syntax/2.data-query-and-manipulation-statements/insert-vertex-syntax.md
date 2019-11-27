@@ -11,7 +11,7 @@ prop_value_list:
   [prop_value [, prop_value] ...]
 ```
 
-`INSERT VERTEX` 可向 Nebula 插入节点。
+INSERT VERTEX 可向 **Nebula Graph** 插入节点。
 
 - `tag_name` 表示标签（节点类型），在进行 `INSERT VERTEX` 操作前需创建好。
 - `prop_name_list` 指定标签的属性列表。

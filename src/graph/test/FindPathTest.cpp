@@ -24,7 +24,7 @@ protected:
     }
 };
 
-TEST_F(FindPathTest, singleEdgeShortest) {
+TEST_F(FindPathTest, SingleEdgeShortest) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like UPTO 5 STEPS";
@@ -163,7 +163,7 @@ TEST_F(FindPathTest, singleEdgeShortest) {
     }
 }
 
-TEST_F(FindPathTest, singleEdgeAll) {
+TEST_F(FindPathTest, SingleEdgeAll) {
     /*
      * TODO: There might exist loops when find all path,
      * we should provide users with an option on whether or not a loop is required.
@@ -242,7 +242,7 @@ TEST_F(FindPathTest, singleEdgeAll) {
     }
 }
 
-TEST_F(FindPathTest, multiEdgesShortest) {
+TEST_F(FindPathTest, MultiEdgesShortest) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like,serve UPTO 5 STEPS";
@@ -371,7 +371,7 @@ TEST_F(FindPathTest, multiEdgesShortest) {
     }
 }
 
-TEST_F(FindPathTest, multiEdgesAll) {
+TEST_F(FindPathTest, MultiEdgesAll) {
     /*
      * TODO: There might exist loops when find all path,
      * we should provide users with an option on whether or not a loop is required.
@@ -438,7 +438,7 @@ TEST_F(FindPathTest, multiEdgesAll) {
     }
 }
 
-TEST_F(FindPathTest, vertexNotExist) {
+TEST_F(FindPathTest, VertexNotExist) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like UPTO 5 STEPS";
