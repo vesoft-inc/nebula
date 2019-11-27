@@ -16,16 +16,16 @@
 
 ```ngql
 nebula> GO FROM 1 OVER e1 \
-UNION \
-nebula> GO FROM 2 OVER e1
+        UNION \
+        GO FROM 2 OVER e1
 ```
 
 以上语句返回点 `1` 和 `2` (沿边 `e1`) 关联的唯一的点。
 
 ```ngql
 nebula> GO FROM 1 OVER e1 \
-UNION ALL\
-nebula> GO FROM 2 OVER e1
+        UNION ALL\
+        GO FROM 2 OVER e1
 ```
 
 以上语句返回点 `1` 和 `2` 关联的点，其中存在重复点。
@@ -55,7 +55,7 @@ nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.pro
 ```ngql
 nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 UNION /* DISTINCT */
-nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
+GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 ```
 
 以上语句返回
@@ -76,9 +76,9 @@ nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.pro
 `UNION ALL` 返回结果为
 
 ```ngql
-nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
-UNION ALL
-nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
+nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2   \
+        UNION ALL   \
+        GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 
 =========================
 | id  | left_1 | left_2 |    -- UNION ALL
@@ -107,7 +107,7 @@ nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.pro
 ```ngql
 nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 INTERSECT
-nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
+GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 ```
 
 返回
@@ -127,7 +127,7 @@ nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.pro
 ```ngql
 nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 MINUS
-nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
+GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 ```
 
 返回
@@ -145,7 +145,7 @@ nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.pro
 ```ngql
 nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 MINUS
-nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
+GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
 ```
 
 则返回
