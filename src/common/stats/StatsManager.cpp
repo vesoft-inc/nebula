@@ -369,7 +369,7 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
         method = StatsMethod::AVG;
     } else if (parts[1] == "rate") {
         method = StatsMethod::RATE;
-//    } else if (parts[1][0] == 'p') {   // TODO(shylock)
+    // } else if (parts[1][0] == 'p') {   // TODO(shylock)
     } else {
         LOG(ERROR) << "Unsupported statistic method \"" << parts[1] << "\"";
         return Status::Error(folly::stringPrintf("Unsupported statistic method \"%s\"",
@@ -385,9 +385,9 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
 
 
 void PrometheusSerializer::annotate(
-        std::ostream& out, std::string& metric_name, std::string&& metric_type) const {
-    out << "# HELP " << metric_name << " Record all " << metric_type << " about nebula" << "\n";
-    out << "# TYPE " << metric_name << " " << metric_type << "\n";
+        std::ostream& out, const std::string metricName, const std::string metricType) const {
+    out << "# HELP " << metricName << " Record all " << metricType << " about nebula" << "\n";
+    out << "# TYPE " << metricName << " " << metricType << "\n";
 }
 
 // Write a double as a string, with proper formatting for infinity and NaN
@@ -437,9 +437,9 @@ void PrometheusSerializer::writeValue(std::ostream& out, const std::string& valu
 
 template<typename T>
 void PrometheusSerializer::writeHead(std::ostream& out, const std::string& family,
-                const std::vector<Label>& labels, const std::string& suffix,
-                const std::string& extraLabelName,
-                const T extraLabelValue) const {
+        const std::vector<Label>& labels, const std::string& suffix,
+        const std::string& extraLabelName,
+        const T extraLabelValue) const {
     out << family << suffix;
     if (!labels.empty() || !extraLabelName.empty()) {
         out << "{";
@@ -462,9 +462,9 @@ void PrometheusSerializer::writeHead(std::ostream& out, const std::string& famil
 }
 
 // Write a line trailer: timestamp
-void PrometheusSerializer::writeTail(std::ostream& out, const std::int64_t timestamp_ms) const {
-    if (timestamp_ms != 0) {
-        out << " " << timestamp_ms;
+void PrometheusSerializer::writeTail(std::ostream& out, const std::int64_t timestampMs) const {
+    if (timestampMs != 0) {
+        out << " " << timestampMs;
     }
     out << "\n";
 }

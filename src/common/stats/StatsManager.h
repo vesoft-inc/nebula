@@ -39,16 +39,17 @@ public:
         std::string name;
         std::string value;
     };
-    void annotate(std::ostream& out, std::string& metric_name, std::string&& metric_type) const;
+    void annotate(std::ostream& out, const std::string metricName,
+        const std::string metricType) const;
     void writeValue(std::ostream& out, double value) const;
     void writeValue(std::ostream& out, const int64_t value) const;
     void writeValue(std::ostream& out, const std::string& value) const;
     template <typename T = std::string>
     void writeHead(std::ostream& out, const std::string& family,
-                const std::vector<Label>& labels, const std::string& suffix = "",
-                const std::string& extraLabelName = "",
-                const T extraLabelValue = T()) const;
-    void writeTail(std::ostream& out, const std::int64_t timestamp_ms = 0) const;
+        const std::vector<Label>& labels, const std::string& suffix = "",
+        const std::string& extraLabelName = "",
+        const T extraLabelValue = T()) const;
+    void writeTail(std::ostream& out, const std::int64_t timestampMs = 0) const;
 };
 
 /**
