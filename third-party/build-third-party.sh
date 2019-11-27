@@ -8,6 +8,8 @@
 
 # Use CC and CXX environment variables to use custom compilers.
 
+start_time=$(date +%s)
+
 # Always use bash
 shell=$(basename $(readlink /proc/$$/exe))
 if [ ! x$shell = x"bash" ]
@@ -16,7 +18,7 @@ then
     exit $?
 fi
 
-# cmake checking
+# CMake and GCC version checking
 function version_cmp {
     mapfile -t left < <( echo $1 | tr . '\n' )
     mapfile -t right < <( echo $2 | tr . '\n')
@@ -36,7 +38,7 @@ function version_cmp {
 function check_cmake {
     hash cmake &> /dev/null || { echo "No cmake found." 1>&2; exit 1; }
     local cmake_version=$(cmake --version | head -1 | cut -d ' ' -f 3)
-    least_cmake_version=3.8.0
+    local least_cmake_version=3.8.0
     if [[ $(version_cmp $cmake_version $least_cmake_version) -lt 0 ]]
     then
         echo "cmake $least_cmake_version or later required" 1>&2
@@ -44,8 +46,23 @@ function check_cmake {
     fi
 }
 
-check_cmake
+function check_cxx {
+    # TODO To consider clang++
+    local cxx_cmd
+    hash g++ &> /dev/null && cxx_cmd=g++
+    [[ -n $CXX ]] && cxx_cmd=$CXX
+    [[ -z $cxx_cmd ]] && { echo "No C++ compiler found" 1>&2; exit 1; }
+    cxx_version=$($cxx_cmd -dumpfullversion)
+    local least_cxx_version=9.1.1
+    if [[ $(version_cmp $cxx_version $least_cxx_version) -lt 0 ]]
+    then
+        echo "g++ $least_cxx_version or higher required, but you have $cxx_version" 1>&2
+        exit 1
+    fi
+}
 
+check_cmake
+check_cxx
 
 # Exit on any failure here after
 set -e
@@ -86,7 +103,10 @@ then
         # Resort to the builtin download method of cmake on failure
         echo "Download from $source_url failed." 1>&2
     else
+        echo "Source of third party was downdloaded to $build_root"
+        echo -n "Extracting into $download_dir..."
         tar --skip-old-files -xzf $source_tar_name
+        echo  "done"
     fi
 else
     tar --skip-old-files -xzf $source_tar_name
@@ -102,3 +122,8 @@ cmake -DDOWNLOAD_DIR=$download_dir \
       $source_dir
 
 make
+end_time=$(date +%s)
+
+echo
+echo "Third parties have been successfully installed to $install_dir"
+echo "$((end_time - start_time)) seconds been taken."

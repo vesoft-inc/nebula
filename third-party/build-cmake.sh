@@ -16,7 +16,7 @@ then
 fi
 
 archive=cmake-3.15.5-Linux-x86_64.sh
-url=https://github.com/Kitware/CMake/releases/download/v3.15.5/cmake-3.15.5-Linux-x86_64.sh
+url=https://cmake.org/files/v3.15/$archive
 prefix=`pwd`/cmake-3.15.5
 
 if [[ -n $1 ]]
@@ -29,7 +29,7 @@ then
     checksum=$(md5sum $archive | cut -d ' ' -f 1)
 fi
 
-if [[ ! $checksum = f73d4daf34cb5e5119ee95c53696f322 ]]
+if [[ ! $checksum = 35d56e9c27b4fd2819a11c29320c655a ]]
 then
     hash wget &> /dev/null && download_cmd="wget -c"
     hash axel &> /dev/null && download_cmd="axel -a -n 16"
@@ -39,7 +39,7 @@ then
         exit 1;
     fi
 
-    echo "Downloading...please install 'axel' and retry if too slow."
+    echo "Downloading with $download_cmd..."
     if ! bash -c "$download_cmd $url"
     then
         echo "Download failed."
@@ -53,5 +53,4 @@ yes
 no
 EOF
 
-echo "cmake has been installed to prefix=$prefix"
-echo "You could invoke via \`PATH=\$prefix/bin:\$PATH cmake'"
+echo "CMake has been installed to prefix=$prefix"

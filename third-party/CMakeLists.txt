@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8.0)
+cmake_minimum_required(VERSION 3.5.0)
 
 project("Nebula Third Party" C CXX)
 
@@ -190,7 +190,7 @@ maybe_add_dependencies(glog gflags)
 
 maybe_add_dependencies(s2geometry googletest glog openssl)
 
-maybe_add_dependencies(krb5 keyutils openssl gettext)
+maybe_add_dependencies(krb5 keyutils openssl gettext bison)
 maybe_add_dependencies(folly glog boost double-conversion openssl libevent lzma zstd snappy libunwind libaio)
 maybe_add_dependencies(wangle folly)
 maybe_add_dependencies(fbthrift folly krb5 bison flex mstch zlib zstd wangle fatal)
