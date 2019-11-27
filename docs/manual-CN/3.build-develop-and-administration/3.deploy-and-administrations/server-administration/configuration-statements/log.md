@@ -1,6 +1,6 @@
 # 日志
 
-Nebula 使用 [glog](https://github.com/google/glog) 打印日志，使用 gflag 控制日志级别，并提供 HTTP 接口在运行时动态改变日志级别，以方便追踪问题。
+**Nebula Graph** 使用 [glog](https://github.com/google/glog) 打印日志，使用 gflag 控制日志级别，并提供 HTTP 接口在运行时动态改变日志级别，以方便追踪问题。
 
 ## 参数说明
 
@@ -46,7 +46,7 @@ nebula> GET CONFIGS graph:minloglevel
 nebula> UPDATE CONFIGS graph:minloglevel=0
 ```
 
-如需更改 storage 日志级别，将上述命令中的 `graph` 更换为 `storage` 即可，注意，nebula 仅支持通过 console 修改 graph 和 storage 日志级别，meta 日志不能更改。
+如需更改 storage 日志级别，将上述命令中的 `graph` 更换为 `storage` 即可，注意，**Nebula Graph** 仅支持通过 console 修改 graph 和 storage 日志级别，meta 日志不能更改。
 
 或者**关闭**所有的日志打印(仅保留 FATAL)。
 
