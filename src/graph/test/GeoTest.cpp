@@ -228,7 +228,7 @@ AssertionResult GeoTest::removeData() {
     return TestOK();
 }
 
-TEST_F(GeoTest, near) {
+TEST_F(GeoTest, Near) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "USE geo;"

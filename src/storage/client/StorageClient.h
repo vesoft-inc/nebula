@@ -177,7 +177,7 @@ protected:
     // Calculate the partition id for the given vertex id
     StatusOr<PartitionID> partId(GraphSpaceID spaceId, int64_t id) const;
 
-    const HostAddr& leader(const PartMeta& partMeta) const {
+    const HostAddr leader(const PartMeta& partMeta) const {
         auto part = std::make_pair(partMeta.spaceId_, partMeta.partId_);
         {
             folly::RWSpinLock::ReadHolder rh(leadersLock_);
@@ -263,7 +263,7 @@ protected:
 
             auto partMeta = metaStatus.value();
             CHECK_GT(partMeta.peers_.size(), 0U);
-            const auto& leader = this->leader(partMeta);
+            const auto leader = this->leader(partMeta);
             clusters[leader][part].emplace_back(std::move(id));
         }
         return clusters;

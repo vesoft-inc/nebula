@@ -24,6 +24,8 @@ public:
         const char* getName() const override;
         const cpp2::ValueType& getType() const override;
         bool isValid() const override;
+        bool hasDefault() const override;
+        std::string getDefaultValue() const override;
 
     private:
         const cpp2::ColumnDef* column_;
