@@ -31,9 +31,8 @@ Status LimitExecutor::prepare() {
 
 void LimitExecutor::execute() {
     FLOG_INFO("Executing Limit: %s", sentence_->toString().c_str());
-    if (inputs_ == nullptr || count_ == 0) {
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+    if (inputs_ == nullptr || !inputs->hasData() || count_ == 0) {
+        onEmptyInputs();
         return;
     }
 
@@ -68,9 +67,11 @@ void LimitExecutor::execute() {
 
 void LimitExecutor::feedResult(std::unique_ptr<InterimResult> result) {
     if (result == nullptr) {
+        LOG(ERROR) << "Get null input.";
         return;
     }
     inputs_ = std::move(result);
+    colNames_ = inputs_->getColNames();
 }
 
 
@@ -111,7 +112,7 @@ std::unique_ptr<InterimResult> LimitExecutor::setupInterimResult() {
         rsWriter->addRow(writer);
     }
 
-    auto result = std::make_unique<InterimResult>(getResultColumnNames());
+    auto result = std::make_unique<InterimResult>(std::move(colNames_));
     if (rsWriter != nullptr) {
         result->setInterim(std::move(rsWriter));
     }
@@ -119,20 +120,18 @@ std::unique_ptr<InterimResult> LimitExecutor::setupInterimResult() {
 }
 
 
-std::vector<std::string> LimitExecutor::getResultColumnNames() const {
-    std::vector<std::string> columnNames;
-    columnNames.reserve(inputs_->schema()->getNumFields());
-    auto field = inputs_->schema()->begin();
-    while (field) {
-        columnNames.emplace_back(field->getName());
-        ++field;
+void LimitExecutor::onEmptyInputs() {
+    if (onResult_) {
+        auto result = std::make_unique<InterimResult>(std::move(colNames_));
+        onResult_(std::move(result));
     }
-    return columnNames;
+    DCHECK(onFinish_);
+    onFinish_();
 }
 
 
 void LimitExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
-    resp.set_column_names(getResultColumnNames());
+    resp.set_column_names(std::move(colNames_));
     if (rows_.empty()) {
         return;
     }

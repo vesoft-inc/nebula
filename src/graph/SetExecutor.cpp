@@ -122,9 +122,8 @@ void SetExecutor::execute() {
 
         if (leftResult_ == nullptr || rightResult_ == nullptr) {
             // Should not reach here.
-            LOG(ERROR) << "Get null input: " << leftResult_.get()
-                        << " " << rightResult_.get();
-            onError_(Status::Error("Internal error."));
+            LOG(ERROR) << "Get null input.";
+            onError_(Status::Error("Get null input."));
             return;
         }
 
