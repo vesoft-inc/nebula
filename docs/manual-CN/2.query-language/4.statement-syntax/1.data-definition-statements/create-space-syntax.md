@@ -22,13 +22,13 @@ space_option:
 
 * _partition_num_
 
-    _partition_num_ 表示数据分片数量。默认值为 1024。
+    _partition_num_ 表示数据分片数量。默认值为 100。
 
 * _replica_factor_
 
     _replica_factor_ 表示副本数量。默认值是 1，集群建议为 3
 
-如果没有自定义选项，Nebula 会使用默认的值（partition_number 和 replica_factor）来创建图空间。
+如果没有自定义选项，**Nebula Graph** 会使用默认的值（partition_number 和 replica_factor）来创建图空间。
 
 ### 示例
 
