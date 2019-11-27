@@ -20,10 +20,10 @@ const std::string kIndexTable  = "__index__";   // NOLINT
 const std::string kUsersTable  = "__users__";    // NOLINT
 const std::string kRolesTable  = "__roles__";    // NOLINT
 const std::string kConfigsTable = "__configs__"; // NOLINT
+const std::string kDefaultTable = "__default__"; // NOLINT
 
-
-const std::string kHostOnline = "Online";       // NOLINT
-const std::string kHostOffline = "Offline";     // NOLINT
+const std::string kHostOnline  = "Online";       // NOLINT
+const std::string kHostOffline = "Offline";      // NOLINT
 
 std::string MetaServiceUtils::spaceKey(GraphSpaceID spaceId) {
     std::string key;
@@ -482,6 +482,34 @@ UserID MetaServiceUtils::parseRoleUserId(folly::StringPiece val) {
 UserID MetaServiceUtils::parseUserId(folly::StringPiece val) {
     return *reinterpret_cast<const UserID *>(val.begin() +
                                              kUsersTable.size());
+}
+
+std::string MetaServiceUtils::tagDefaultKey(GraphSpaceID spaceId,
+                                            TagID tag,
+                                            const std::string& field) {
+    std::string key;
+    key.reserve(128);
+    key.append(kDefaultTable.data(), kDefaultTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&tag), sizeof(TagID));
+    key.append(field);
+    return key;
+}
+
+std::string MetaServiceUtils::edgeDefaultKey(GraphSpaceID spaceId,
+                                             EdgeType edge,
+                                             const std::string& field) {
+    std::string key;
+    key.reserve(128);
+    key.append(kDefaultTable.data(), kDefaultTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&edge), sizeof(EdgeType));
+    key.append(field);
+    return key;
+}
+
+const std::string& MetaServiceUtils::defaultPrefix() {
+    return kDefaultTable;
 }
 
 std::string MetaServiceUtils::configKey(const cpp2::ConfigModule& module,
