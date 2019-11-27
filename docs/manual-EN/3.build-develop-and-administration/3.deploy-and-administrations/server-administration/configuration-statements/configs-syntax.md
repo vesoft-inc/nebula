@@ -1,6 +1,6 @@
 # CONFIG Syntax
 
-Nebula uses `gflags` for run-time configurations.
+**Nebula Graph** uses `gflags` for run-time configurations.
 
 ## gflag Parameters
 
@@ -14,7 +14,7 @@ There are four gflags related parameters, among which, `max_edge_returned_per_ve
     "max_edge_returned_per_vertex":"INT_MAX"
 ```
 
-Nebula supports changing some rocksdb parameters in storage service as follows:
+**Nebula Graph** supports changing some rocksdb parameters in storage service as follows:
 
 ```text
     // rocksdb_column_family_options

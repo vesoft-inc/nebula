@@ -21,7 +21,7 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
   * [Deploy Cluster](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
   * [Import .csv File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
   * [Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
-  * [Nebula Clients](1.overview/2.quick-start/3.supported-clients.md)
+  * [Nebula Graph Clients](1.overview/2.quick-start/3.supported-clients.md)
 
 * Design And Architecture
   * [Design Overview](1.overview/3.design-and-architecture/1.design-and-architecture.md)
@@ -86,7 +86,7 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
   * [Build By Docker](3.build-develop-and-administration/1.build/2.build-by-docker.md)
 * Develop And Interface
   * [Key Value API](3.build-develop-and-administration/2.develop-and-interface/kv-interfaces.md)
-  * [Nebula Clients](1.overview/2.quick-start/3.supported-clients.md)
+  * [Nebula Graph Clients](1.overview/2.quick-start/3.supported-clients.md)
 
 * Deploy And Administrations
   * Deployment
