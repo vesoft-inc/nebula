@@ -24,7 +24,7 @@ protected:
     }
 };
 
-TEST_F(FetchEdgesTest, base) {
+TEST_F(FetchEdgesTest, Base) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
@@ -190,7 +190,7 @@ TEST_F(FetchEdgesTest, base) {
     }
 }
 
-TEST_F(FetchEdgesTest, noYield) {
+TEST_F(FetchEdgesTest, NoYield) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
@@ -267,7 +267,7 @@ TEST_F(FetchEdgesTest, noYield) {
     }
 }
 
-TEST_F(FetchEdgesTest, distinct) {
+TEST_F(FetchEdgesTest, Distinct) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
@@ -359,7 +359,7 @@ TEST_F(FetchEdgesTest, distinct) {
     }
 }
 
-TEST_F(FetchEdgesTest, noInput) {
+TEST_F(FetchEdgesTest, EmptyInput) {
     {
         cpp2::ExecutionResponse resp;
         auto &nobody = players_["Nobody"];
@@ -369,11 +369,17 @@ TEST_F(FetchEdgesTest, noInput) {
         auto query = folly::stringPrintf(fmt, nobody.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve.start_year"}, {"serve.end_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         ASSERT_EQ(nullptr, resp.get_rows());
     }
 }
 
-TEST_F(FetchEdgesTest, syntaxError) {
+TEST_F(FetchEdgesTest, SyntaxError) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "FETCH PROP ON serve hash(\"Boris Diaw\")->hash(\"Spurs\") "
@@ -397,13 +403,19 @@ TEST_F(FetchEdgesTest, syntaxError) {
     }
 }
 
-TEST_F(FetchEdgesTest, nonExistEdge) {
+TEST_F(FetchEdgesTest, NonExistEdge) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "FETCH PROP ON serve hash(\"Zion Williamson\")->hash(\"Spurs\") "
                      "YIELD serve.start_year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve.start_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         ASSERT_EQ(nullptr, resp.get_rows());
     }
     {
@@ -412,6 +424,12 @@ TEST_F(FetchEdgesTest, nonExistEdge) {
                      "YIELD serve.start_year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve.start_year"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         ASSERT_EQ(nullptr, resp.get_rows());
     }
 }
