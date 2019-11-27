@@ -481,15 +481,8 @@ void StatsManager::prometheusSerialize(std::ostream& out) /*const*/ {
             annotate(out, name, "gauge");
 
             writeHead(out, name, {});
-            if (parsedName.ok()) {
-                // make sure contains value
-                writeValue(out,
-                    readStats(index.second, TimeRange::ONE_MINUTE, StatsMethod::AVG).value());
-            } else {
-                // make sure contains value
-                writeValue(out,
-                    readStats(index.second, TimeRange::ONE_MINUTE, StatsMethod::AVG).value());
-            }
+            writeValue(out,
+                readStats(index.second, TimeRange::ONE_MINUTE, StatsMethod::AVG).value());
             writeTail(out);
         } else if (isHistoIndex(index.second)) {
             annotate(out, name, "histogram");
