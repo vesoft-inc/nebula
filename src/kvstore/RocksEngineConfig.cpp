@@ -15,7 +15,7 @@
 
 // [WAL]
 DEFINE_bool(rocksdb_disable_wal,
-            false,
+            true,
             "Whether to disable the WAL in rocksdb");
 
 // [DBOptions]
@@ -101,6 +101,7 @@ bool loadOptionsMap(std::unordered_map<std::string, std::string> &map, const std
         return false;
     }
     conf.forEachItem([&map] (const std::string& key, const folly::dynamic& val) {
+        LOG(INFO) << "Emplace rocksdb option " << key << "=" << val.asString();
         map.emplace(key, val.asString());
     });
     return true;

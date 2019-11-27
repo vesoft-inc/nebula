@@ -403,7 +403,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
         case cpp2::ErrorCode::E_NO_HOSTS:
             return Status::Error("no hosts!");
         case cpp2::ErrorCode::E_CONFIG_IMMUTABLE:
-            return Status::CfgImmutable();
+            return Status::Error("Config immutable");
         case cpp2::ErrorCode::E_CONFLICT:
             return Status::Error("conflict!");
         case cpp2::ErrorCode::E_WRONGCLUSTER:
@@ -1212,6 +1212,50 @@ folly::Future<StatusOr<bool>> MetaClient::balanceLeader() {
                 }, [] (cpp2::ExecResp&& resp) -> bool {
                     return resp.code == cpp2::ErrorCode::SUCCEEDED;
                 }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<std::string>> MetaClient::getTagDefaultValue(GraphSpaceID spaceId,
+                                                                    TagID tagId,
+                                                                    const std::string& field) {
+    cpp2::GetReq req;
+    static std::string defaultKey = "__default__";
+    req.set_segment(defaultKey);
+    std::string key;
+    key.reserve(64);
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&tagId), sizeof(TagID));
+    key.append(field);
+    req.set_key(std::move(key));
+    folly::Promise<StatusOr<std::string>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_get(request);
+    }, [] (cpp2::GetResp&& resp) -> std::string {
+        return resp.get_value();
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<std::string>> MetaClient::getEdgeDefaultValue(GraphSpaceID spaceId,
+                                                                     EdgeType edgeType,
+                                                                     const std::string& field) {
+    cpp2::GetReq req;
+    static std::string defaultKey = "__default__";
+    req.set_segment(defaultKey);
+    std::string key;
+    key.reserve(64);
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&edgeType), sizeof(EdgeType));
+    key.append(field);
+    req.set_key(std::move(key));
+    folly::Promise<StatusOr<std::string>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_get(request);
+    }, [] (cpp2::GetResp&& resp) -> std::string {
+        return resp.get_value();
+    },  std::move(promise));
     return future;
 }
 

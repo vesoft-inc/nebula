@@ -1,12 +1,12 @@
 # Numeric Literals
 
-Numeric literals include interges literals and floating-point literals (doubles).
+Numeric literals include integers literals and floating-point literals (doubles).
 
-## Interges Literals
+## Integers Literals
 
 Integers are 64 bit digitals, and can be preceded by + or - to indicate a positive or negative value, respectively. They're the same as `int64_t` in the C language.
 
-Notice that the maximum value for the positive integers is `9223372036854775807`. It's syntax-error if you try to input any value larger than the maximum. So as the minimum value `-9223372036854775808` for the negative interges.
+Notice that the maximum value for the positive integers is `9223372036854775807`. It's syntax-error if you try to input any value greater than the maximum. So as the minimum value `-9223372036854775808` for the negative integers.
 
 ## Floating-point Literals (doubles)
 

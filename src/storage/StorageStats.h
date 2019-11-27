@@ -18,7 +18,7 @@ struct StorageStats {
     explicit StorageStats(const std::string& name) {
         qpsStatId_ = stats::StatsManager::registerStats(name + "_qps");
         errorQpsStatId_ = stats::StatsManager::registerStats(name + "_error_qps");
-        latencyStatId_ = stats::StatsManager::registerHisto(name + "_latency", 1, 1, 100);
+        latencyStatId_ = stats::StatsManager::registerHisto(name + "_latency", 100, 1, 1000 * 1000);
     }
 
     int32_t qpsStatId_;

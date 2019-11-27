@@ -59,5 +59,4 @@ curl "http://127.0.0.1:12000/admin?space=test&op=compact"
 curl "http://127.0.0.1:12000/admin?space=test&op=flush"
 ```
 
-> 注意：请先建立图空间test，再运行上面的curl命令。
-
+> 注意：请先建立图空间 test，再运行上面的 curl 命令。
