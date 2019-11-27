@@ -952,7 +952,7 @@ bool RaftPart::needToStartElection() {
     std::lock_guard<std::mutex> g(raftLock_);
     if (status_ == Status::RUNNING &&
         role_ == Role::FOLLOWER &&
-        (lastMsgRecvDur_.elapsedInSec() >= weight_ * FLAGS_raft_heartbeat_interval_secs ||
+        (lastMsgRecvDur_.elapsedInMSec() >= weight_ * FLAGS_raft_heartbeat_interval_secs * 1000 ||
          term_ == 0)) {
         LOG(INFO) << idStr_ << "Start leader election, reason: lastMsgDur "
                   << lastMsgRecvDur_.elapsedInSec()
@@ -1083,10 +1083,9 @@ bool RaftPart::leaderElection() {
             // Result evaluator
             [hosts, this](size_t idx, cpp2::AskForVoteResponse& resp) {
                 if (resp.get_error_code() == cpp2::ErrorCode::E_LOG_STALE) {
-                    LOG(INFO) << idStr_ << "My last log id is less than " << hosts[idx]
+                    LOG(INFO) << idStr_ << "My last log id is less than " << hosts[idx]->address()
                               << ", double my election interval.";
-                    uint64_t curWeight = weight_.load();
-                    weight_.store(curWeight * 2);
+                    weight_.fetch_add(1);
                 }
                 return resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED;
             });
