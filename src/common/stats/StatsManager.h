@@ -13,6 +13,7 @@
 #include <folly/RWSpinLock.h>
 #include <folly/stats/MultiLevelTimeSeries.h>
 #include <folly/stats/TimeseriesHistogram.h>
+#include <gtest/gtest_prod.h>
 
 namespace nebula {
 namespace stats {
@@ -160,6 +161,7 @@ private:
     template<class StatsHolder>
     static VT readValue(StatsHolder& stats, TimeRange range, StatsMethod method);
 
+    FRIEND_TEST(StatsManager, SimpleTest);
 
 private:
     std::string domain_;

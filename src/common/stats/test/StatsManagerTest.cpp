@@ -12,6 +12,36 @@
 namespace nebula {
 namespace stats {
 
+TEST(StatsManager, SimpleTest) {
+    int32_t stat_id = StatsManager::registerStats("test_stat");
+    int32_t histo_id = StatsManager::registerHisto("test_hist", 10, 0, 100);
+    EXPECT_TRUE(StatsManager::isStatIndex(stat_id));
+    EXPECT_FALSE(StatsManager::isStatIndex(histo_id));
+    EXPECT_TRUE(StatsManager::isHistoIndex(histo_id));
+    EXPECT_FALSE(StatsManager::isHistoIndex(stat_id));
+    EXPECT_EQ(StatsManager::physicalStatIndex(stat_id), 0);
+    EXPECT_EQ(StatsManager::physicalHistoIndex(histo_id), 0);
+
+    // Ok
+    auto parsedName = StatsManager::parseMetricName("name.sum.60");
+    ASSERT_TRUE(parsedName.ok());
+    EXPECT_EQ(parsedName.value().method, StatsManager::StatsMethod::SUM);
+    EXPECT_EQ(parsedName.value().name, "name");
+    EXPECT_EQ(parsedName.value().range, StatsManager::TimeRange::ONE_MINUTE);
+
+    // Failed
+    auto parsedFailed = StatsManager::parseMetricName("");
+    EXPECT_FALSE(parsedFailed.ok());
+    auto parsedFailedWithoutName = StatsManager::parseMetricName("sum.3600");
+    EXPECT_FALSE(parsedFailedWithoutName.ok());
+    auto parsedFailedExtra = StatsManager::parseMetricName("sum.rate.1200.xxxx");
+    EXPECT_FALSE(parsedFailedExtra);
+    auto parsedFailedMistakeMethod = StatsManager::parseMetricName("name.xxx.60");
+    EXPECT_FALSE(parsedFailedMistakeMethod.ok());
+    auto parsedFailedMistakeRange = StatsManager::parseMetricName("name.avg.233");
+    EXPECT_FALSE(parsedFailedMistakeRange.ok());
+}
+
 TEST(StatsManager, StatsTest) {
     auto statId = StatsManager::registerStats("stat01");
     std::vector<std::thread> threads;
