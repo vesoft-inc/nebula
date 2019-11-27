@@ -19,7 +19,9 @@ StatusOr<PartMeta> MemPartManager::partMeta(GraphSpaceID spaceId, PartitionID pa
         return Status::Error("Space not found");
     }
     auto partIt = it->second.find(partId);
-    CHECK(partIt != it->second.end());
+    if (partIt == it->second.end()) {
+        return Status::Error("Part not found in MemPartManager, id was %d", partId);
+    }
     return partIt->second;
 }
 

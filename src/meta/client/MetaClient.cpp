@@ -833,7 +833,9 @@ StatusOr<PartMeta> MetaClient::getPartMetaFromCache(GraphSpaceID spaceId, Partit
     }
     auto& cache = it->second;
     auto partAllocIter = cache->partsAlloc_.find(partId);
-    CHECK(partAllocIter != cache->partsAlloc_.end());
+    if (partAllocIter == cache->partsAlloc_.end()) {
+        return Status::Error("Part not found, id was %d", partId);
+    }
     PartMeta pm;
     pm.spaceId_ = spaceId;
     pm.partId_  = partId;
