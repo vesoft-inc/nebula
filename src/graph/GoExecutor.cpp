@@ -487,6 +487,7 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
 
     // Non-reversely traversal, no properties required on destination nodes
     // Or, Reversely traversal but no properties on edge and destination nodes required.
+    // Note that the `dest` which used in reversely traversal means the `src` in foword edge.
     if ((!requireDstProps && !isReversely()) ||
             (isReversely() && !requireDstProps && !requireEdgeProps)) {
         finishExecution(std::move(rpcResp));
@@ -513,6 +514,8 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
     std::unordered_map<EdgeType, std::vector<storage::cpp2::EdgeKey>> edgeKeysMapping;
     std::unordered_map<EdgeType, std::vector<storage::cpp2::PropDef>> edgePropsMapping;
 
+    // TODO: There would be no need to fetch edges' props here,
+    // if we implemnet the feature that keep all the props in the reverse edge.
     for (auto &resp : rpcResp.responses()) {
         auto *vertices = resp.get_vertices();
         if (vertices == nullptr) {
@@ -534,14 +537,23 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
                 auto iter = rsReader.begin();
                 while (iter) {
                     VertexID dst;
-                    auto rc = iter->getVid("_dst", dst);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    EdgeRanking rank;
+                    auto rc = iter->getVid(_DST, dst);
+                    if (rc != ResultType::SUCCEEDED) {
+                        onError_(Status::Error("Get dst error when go reversely."));
+                        return;
+                    }
+                    rc = iter->getVid(_RANK, rank);
+                    if (rc != ResultType::SUCCEEDED) {
+                        onError_(Status::Error("Get rank error when go reversely."));
+                        return;
+                    }
                     auto type = edge.type > 0 ? edge.type : -edge.type;
                     auto &edgeKeys = edgeKeysMapping[type];
                     edgeKeys.emplace_back();
                     edgeKeys.back().set_src(dst);
                     edgeKeys.back().set_dst(vdata.get_vertex_id());
-                    edgeKeys.back().set_ranking(0);
+                    edgeKeys.back().set_ranking(rank);
                     edgeKeys.back().set_edge_type(type);
                     ++iter;
                 }
@@ -662,7 +674,7 @@ std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const 
                 auto iter = rsReader.begin();
                 while (iter) {
                     VertexID dst;
-                    auto rc = iter->getVid("_dst", dst);
+                    auto rc = iter->getVid(_DST, dst);
                     CHECK(rc == ResultType::SUCCEEDED);
                     if (!isFinalStep() && backTracker_ != nullptr) {
                         backTracker_->add(vdata.get_vertex_id(), dst);
@@ -725,9 +737,18 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
     for (auto &e : edgeTypes_) {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::EDGE;
-        pd.name = "_dst";
+        pd.name = _DST;
         pd.id.set_edge_type(e);
         props.emplace_back(std::move(pd));
+        // We need ranking when go reverly in final step,
+        // because we have to fetch the coresponding edges.
+        if (isReversely() && isFinalStep()) {
+            storage::cpp2::PropDef rankPd;
+            rankPd.owner = storage::cpp2::PropOwner::EDGE;
+            rankPd.name = _RANK;
+            rankPd.id.set_edge_type(e);
+            props.emplace_back(std::move(rankPd));
+        }
     }
 
     if (!isFinalStep()) {
