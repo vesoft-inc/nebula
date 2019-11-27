@@ -173,6 +173,8 @@ private:
     // when index < 0, [- (index + 1)] is the index of histograms_ list
     std::unordered_map<std::string, int32_t> nameMap_;
 
+    std::unordered_map<int32_t, std::unique_ptr<ParsedName>> idParsedName_;
+
     // All time series stats
     std::vector<
         std::pair<std::unique_ptr<std::mutex>,

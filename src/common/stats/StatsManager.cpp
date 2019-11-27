@@ -57,6 +57,12 @@ int32_t StatsManager::registerStats(folly::StringPiece counterName) {
                                                             seconds(3600)}))));
     int32_t index = sm.stats_.size();
     sm.nameMap_[name] = index;
+    auto parsedName = parseMetricName(counterName);
+    if (parsedName.ok()) {
+        sm.idParsedName_[index] = std::make_unique<ParsedName>(parsedName.value());
+    } else {
+        sm.idParsedName_[index] = nullptr;
+    }
     return index;
 }
 
@@ -87,6 +93,12 @@ int32_t StatsManager::registerHisto(folly::StringPiece counterName,
                 StatsType(60, {seconds(60), seconds(600), seconds(3600)}))));
     int32_t index = - sm.histograms_.size();
     sm.nameMap_[name] = index;
+    auto parsedName = parseMetricName(counterName);
+    if (parsedName.ok()) {
+        sm.idParsedName_[index] = std::make_unique<ParsedName>(parsedName.value());
+    } else {
+        sm.idParsedName_[index] = nullptr;
+    }
     return index;
 }
 
@@ -451,8 +463,8 @@ void StatsManager::prometheusSerialize(std::ostream& out) /*const*/ {
     std::locale saved_locale = out.getloc();
     out.imbue(std::locale::classic());
     for (auto& index : nameMap_) {
-        auto parsedName = parseMetricName(index.first);
-        std::string name = parsedName.ok() ? parsedName.value().name : index.first;
+        auto parsedName = idParsedName_[index.second].get();
+        std::string name = parsedName != nullptr ? parsedName->name : index.first;
         if (isStatIndex(index.second)) {
             annotate(out, name, "gauge");
 
@@ -464,18 +476,18 @@ void StatsManager::prometheusSerialize(std::ostream& out) /*const*/ {
             annotate(out, name, "histogram");
 
             writeHead(out, name, {}, "_count");
-            if (parsedName.ok()) {
+            if (parsedName != nullptr) {
                 out <<
-                    readStats(index.second, parsedName.value().range, StatsMethod::COUNT).value();
+                    readStats(index.second, parsedName->range, StatsMethod::COUNT).value();
             } else {
                 out << readStats(index.second, TimeRange::ONE_HOUR, StatsMethod::COUNT).value();
             }
             writeTail(out);
 
             writeHead(out, name, {}, "_sum");
-            if (parsedName.ok()) {
+            if (parsedName != nullptr) {
                 writeValue(out,
-                    readStats(index.second, parsedName.value().range, StatsMethod::SUM).value());
+                    readStats(index.second, parsedName->range, StatsMethod::SUM).value());
             } else {
                 writeValue(out,
                     readStats(index.second, TimeRange::ONE_HOUR, StatsMethod::SUM).value());
@@ -492,9 +504,9 @@ void StatsManager::prometheusSerialize(std::ostream& out) /*const*/ {
             double bound = hist->getMin() + diff;
             for (std::size_t i = 0; i < hist->getNumBuckets(); ++i) {
                 writeHead(out, name, {}, "_bucket", "le", bound);
-                if (parsedName.ok()) {
+                if (parsedName != nullptr) {
                     cumulativeCount +=hist->getBucket(i)
-                        .count(static_cast<std::size_t>(parsedName.value().range));
+                        .count(static_cast<std::size_t>(parsedName->range));
                 } else {
                     cumulativeCount += hist->getBucket(i)
                         .count(static_cast<std::size_t>(TimeRange::ONE_HOUR));
