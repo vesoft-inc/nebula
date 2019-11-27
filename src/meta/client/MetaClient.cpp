@@ -829,12 +829,12 @@ StatusOr<PartMeta> MetaClient::getPartMetaFromCache(GraphSpaceID spaceId, Partit
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(spaceId);
     if (it == localCache_.end()) {
-        return Status::Error("Space not found");
+        return Status::Error("Space not found, spaceid: %d", spaceId);
     }
     auto& cache = it->second;
     auto partAllocIter = cache->partsAlloc_.find(partId);
     if (partAllocIter == cache->partsAlloc_.end()) {
-        return Status::Error("Part not found, id was %d", partId);
+        return Status::Error("Part not found in cache, spaceid: %d, partid: %d", spaceId, partId);
     }
     PartMeta pm;
     pm.spaceId_ = spaceId;
@@ -880,7 +880,7 @@ StatusOr<int32_t> MetaClient::partsNum(GraphSpaceID spaceId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(spaceId);
     if (it == localCache_.end()) {
-        return Status::Error("Space not found");
+        return Status::Error("Space not found, spaceid: %d", spaceId);
     }
     return it->second->partsAlloc_.size();
 }

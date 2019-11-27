@@ -16,11 +16,12 @@ PartsMap MemPartManager::parts(const HostAddr& hostAddr) {
 StatusOr<PartMeta> MemPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
     auto it = partsMap_.find(spaceId);
     if (it == partsMap_.end()) {
-        return Status::Error("Space not found");
+        return Status::Error("Space not found, spaceid: %d", spaceId);
     }
     auto partIt = it->second.find(partId);
     if (partIt == it->second.end()) {
-        return Status::Error("Part not found in MemPartManager, id was %d", partId);
+        return Status::Error(
+            "Part not found in MemPartManager, spaceid: %d, partId: ", spaceId, partId);
     }
     return partIt->second;
 }

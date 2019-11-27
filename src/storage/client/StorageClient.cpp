@@ -459,7 +459,7 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(
 StatusOr<PartitionID> StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
     auto status = partsNum(spaceId);
     if (!status.ok()) {
-        return Status::Error("Space not found");
+        return Status::Error("Space not found, spaceid: %d", spaceId);
     }
 
     auto parts = status.value();
