@@ -487,7 +487,19 @@ TEST_F(SetTest, Mix) {
     }
 }
 
-TEST_F(SetTest, NoInput) {
+TEST_F(SetTest, EmptyInput) {
+    std::string name = "NON EXIST VERTEX ID";
+    int64_t nonExistPlayerID = std::hash<std::string>()(name);
+    auto iter = players_.begin();
+    while (iter != players_.end()) {
+        if (iter->vid() == nonExistPlayerID) {
+            ++nonExistPlayerID;
+            iter = players_.begin();
+            continue;
+        }
+        ++iter;
+    }
+
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve YIELD serve.start_year, $$.team.name"
@@ -497,11 +509,16 @@ TEST_F(SetTest, NoInput) {
                     "GO FROM %ld OVER serve YIELD serve.start_year, $$.team.name"
                     " INTERSECT "
                     "GO FROM %ld OVER serve YIELD serve.start_year, $$.team.name";
-        auto &nobody = players_["Nobody"];
         auto query = folly::stringPrintf(
-                fmt, nobody.vid(), nobody.vid(), nobody.vid(), nobody.vid());
+                fmt, nonExistPlayerID, nonExistPlayerID, nonExistPlayerID, nonExistPlayerID);
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve.start_year"}, {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         ASSERT_EQ(nullptr, resp.get_rows());
     }
 }

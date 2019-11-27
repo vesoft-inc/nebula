@@ -31,7 +31,7 @@ Status LimitExecutor::prepare() {
 
 void LimitExecutor::execute() {
     FLOG_INFO("Executing Limit: %s", sentence_->toString().c_str());
-    if (inputs_ == nullptr || !inputs->hasData() || count_ == 0) {
+    if (inputs_ == nullptr || !inputs_->hasData() || count_ == 0) {
         onEmptyInputs();
         return;
     }
@@ -76,8 +76,9 @@ void LimitExecutor::feedResult(std::unique_ptr<InterimResult> result) {
 
 
 std::unique_ptr<InterimResult> LimitExecutor::setupInterimResult() {
+    auto result = std::make_unique<InterimResult>(std::move(colNames_));
     if (rows_.empty()) {
-        return nullptr;
+        return result;
     }
 
     auto rsWriter = std::make_unique<RowSetWriter>(inputs_->schema());
@@ -112,7 +113,6 @@ std::unique_ptr<InterimResult> LimitExecutor::setupInterimResult() {
         rsWriter->addRow(writer);
     }
 
-    auto result = std::make_unique<InterimResult>(std::move(colNames_));
     if (rsWriter != nullptr) {
         result->setInterim(std::move(rsWriter));
     }
@@ -125,17 +125,16 @@ void LimitExecutor::onEmptyInputs() {
         auto result = std::make_unique<InterimResult>(std::move(colNames_));
         onResult_(std::move(result));
     }
-    DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 
 void LimitExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     resp.set_column_names(std::move(colNames_));
+
     if (rows_.empty()) {
         return;
     }
-
     resp.set_rows(std::move(rows_));
 }
 }   // namespace graph

@@ -408,8 +408,8 @@ StatusOr<std::unique_ptr<InterimResult>> GroupByExecutor::setupInterimResult() {
 
 
 void GroupByExecutor::onEmptyInputs() {
-    auto result = std::make_unique<InterimResult>(getResultColumnNames());
     if (onResult_) {
+        auto result = std::make_unique<InterimResult>(getResultColumnNames());
         onResult_(std::move(result));
     }
     onFinish_(Executor::ProcessControl::kNext);
@@ -418,6 +418,10 @@ void GroupByExecutor::onEmptyInputs() {
 
 void GroupByExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     resp.set_column_names(getResultColumnNames());
+
+    if (rows_.empty()) {
+        return;
+    }
     resp.set_rows(std::move(rows_));
 }
 }  // namespace graph
