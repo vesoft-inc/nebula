@@ -21,7 +21,7 @@
   * [部署集群](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
   * [导入 .csv 文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
   * [加载 .sst 文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
-  * [Nebula 客户端](1.overview/2.quick-start/3.supported-clients.md)
+  * [Nebula Graph 客户端](1.overview/2.quick-start/3.supported-clients.md)
 * 系统设计与架构
   * [设计总览](1.overview/3.design-and-architecture/1.design-and-architecture.md)
   * [存储层架构](1.overview/3.design-and-architecture/2.storage-design.md)
@@ -85,7 +85,7 @@
   * [使用 Docker 编译](3.build-develop-and-administration/1.build/2.build-by-docker.md)
 * 源码开发和 API
   * [Key Value 接口](3.build-develop-and-administration/2.develop-and-interface/kv-interfaces.md)
-  * [Nebula 客户端](1.overview/2.quick-start/3.supported-clients.md)
+  * [Nebula Graph 客户端](1.overview/2.quick-start/3.supported-clients.md)
 
 * 部署与运维
   * 部署
