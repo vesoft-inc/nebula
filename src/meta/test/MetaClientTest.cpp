@@ -198,7 +198,9 @@ TEST(MetaClientTest, InterfacesTest) {
         ASSERT_EQ(6, partsMap[spaceId].size());
     }
     {
-        auto partMeta = client->getPartMetaFromCache(spaceId, 1);
+        auto metaStatus = client->getPartMetaFromCache(spaceId, 1);
+        ASSERT_TRUE(metaStatus.ok());
+        auto partMeta = metaStatus.value();
         ASSERT_EQ(3, partMeta.peers_.size());
         for (auto& h : partMeta.peers_) {
             ASSERT_EQ(h.first, h.second);

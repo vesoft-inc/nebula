@@ -825,10 +825,12 @@ PartsMap MetaClient::getPartsMapFromCache(const HostAddr& host) {
 }
 
 
-PartMeta MetaClient::getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId) {
+StatusOr<PartMeta> MetaClient::getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(spaceId);
-    CHECK(it != localCache_.end());
+    if (it == localCache_.end()) {
+        return Status::Error("Space not found");
+    }
     auto& cache = it->second;
     auto partAllocIter = cache->partsAlloc_.find(partId);
     CHECK(partAllocIter != cache->partsAlloc_.end());
@@ -872,12 +874,11 @@ bool MetaClient::checkSpaceExistInCache(const HostAddr& host,
     return false;
 }
 
-int32_t MetaClient::partsNum(GraphSpaceID spaceId) {
+StatusOr<int32_t> MetaClient::partsNum(GraphSpaceID spaceId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(spaceId);
     if (it == localCache_.end()) {
-        // This means that the space has been deleted
-        return 0;
+        return Status::Error("Space not found");
     }
     return it->second->partsAlloc_.size();
 }

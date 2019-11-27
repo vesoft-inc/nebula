@@ -375,11 +375,11 @@ public:
     explicit TestStorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool)
         : StorageClient(ioThreadPool, nullptr) {}
 
-    int32_t partsNum(GraphSpaceID) const override {
+    StatusOr<int32_t> partsNum(GraphSpaceID) const override {
         return parts_.size();
     }
 
-    PartMeta getPartMeta(GraphSpaceID, PartitionID partId) const override {
+    StatusOr<PartMeta> getPartMeta(GraphSpaceID, PartitionID partId) const override {
         auto it = parts_.find(partId);
         CHECK(it != parts_.end());
         return it->second;

@@ -256,7 +256,12 @@ protected:
             }
 
             auto part = status.value();
-            auto partMeta = getPartMeta(spaceId, part);
+            auto metaStatus = getPartMeta(spaceId, part);
+            if (!metaStatus.ok()) {
+                return status;
+            }
+
+            auto partMeta = metaStatus.value();
             CHECK_GT(partMeta.peers_.size(), 0U);
             const auto& leader = this->leader(partMeta);
             clusters[leader][part].emplace_back(std::move(id));
@@ -264,12 +269,12 @@ protected:
         return clusters;
     }
 
-    virtual int32_t partsNum(GraphSpaceID spaceId) const {
+    virtual StatusOr<int32_t> partsNum(GraphSpaceID spaceId) const {
         CHECK(client_ != nullptr);
         return client_->partsNum(spaceId);
     }
 
-    virtual PartMeta getPartMeta(GraphSpaceID spaceId, PartitionID partId) const {
+    virtual StatusOr<PartMeta> getPartMeta(GraphSpaceID spaceId, PartitionID partId) const {
         CHECK(client_ != nullptr);
         return client_->getPartMetaFromCache(spaceId, partId);
     }

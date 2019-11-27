@@ -13,9 +13,11 @@ PartsMap MemPartManager::parts(const HostAddr& hostAddr) {
     return partsMap_;
 }
 
-PartMeta MemPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
+StatusOr<PartMeta> MemPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
     auto it = partsMap_.find(spaceId);
-    CHECK(it != partsMap_.end());
+    if (it == partsMap_.end()) {
+        return Status::Error("Space not found");
+    }
     auto partIt = it->second.find(partId);
     CHECK(partIt != it->second.end());
     return partIt->second;
@@ -52,7 +54,7 @@ PartsMap MetaServerBasedPartManager::parts(const HostAddr& hostAddr) {
     return client_->getPartsMapFromCache(hostAddr);
 }
 
-PartMeta MetaServerBasedPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
+StatusOr<PartMeta> MetaServerBasedPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
     return client_->getPartMetaFromCache(spaceId, partId);
 }
 

@@ -243,7 +243,11 @@ folly::Future<StatusOr<cpp2::EdgeKeyResponse>> StorageClient::getEdgeKeys(
     }
 
     auto part = status.value();
-    auto partMeta = getPartMeta(space, part);
+    auto metaStatus = getPartMeta(space, part);
+    if (!metaStatus.ok()) {
+        return folly::makeFuture<StatusOr<cpp2::EdgeKeyResponse>>(metaStatus.status());
+    }
+    auto partMeta = metaStatus.value();
     CHECK_GT(partMeta.peers_.size(), 0U);
     const auto& leader = this->leader(partMeta);
     request.first = leader;
@@ -305,7 +309,11 @@ folly::Future<StatusOr<cpp2::ExecResponse>> StorageClient::deleteVertex(
     }
 
     auto part = status.value();
-    auto partMeta = getPartMeta(space, part);
+    auto metaStatus = getPartMeta(space, part);
+    if (!metaStatus.ok()) {
+        return folly::makeFuture<StatusOr<cpp2::ExecResponse>>(metaStatus.status());
+    }
+    auto partMeta = metaStatus.value();
     CHECK_GT(partMeta.peers_.size(), 0U);
     const auto& leader = this->leader(partMeta);
     request.first = leader;
@@ -342,7 +350,11 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateVert
     }
 
     auto part = status.value();
-    auto partMeta = this->getPartMeta(space, part);
+    auto metaStatus = getPartMeta(space, part);
+    if (!metaStatus.ok()) {
+        return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(metaStatus.status());
+    }
+    auto partMeta = metaStatus.value();
     CHECK_GT(partMeta.peers_.size(), 0U);
     const auto& host = this->leader(partMeta);
     request.first = std::move(host);
@@ -380,7 +392,11 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateEdge
     }
 
     auto part = status.value();
-    auto partMeta = this->getPartMeta(space, part);
+    auto metaStatus = getPartMeta(space, part);
+    if (!metaStatus.ok()) {
+        return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(metaStatus.status());
+    }
+    auto partMeta = metaStatus.value();
     CHECK_GT(partMeta.peers_.size(), 0U);
     const auto& host = this->leader(partMeta);
     request.first = std::move(host);
@@ -416,7 +432,11 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(
     }
 
     auto part = status.value();
-    auto partMeta = getPartMeta(space, part);
+    auto metaStatus = getPartMeta(space, part);
+    if (!metaStatus.ok()) {
+        return folly::makeFuture<StatusOr<cpp2::GetUUIDResp>>(metaStatus.status());
+    }
+    auto partMeta = metaStatus.value();
     CHECK_GT(partMeta.peers_.size(), 0U);
     const auto& leader = this->leader(partMeta);
     request.first = leader;
@@ -437,10 +457,12 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(
 }
 
 StatusOr<PartitionID> StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
-    auto parts = partsNum(spaceId);
-    if (parts == 0) {
+    auto status = partsNum(spaceId);
+    if (!status.ok()) {
         return Status::Error("Space not found");
     }
+
+    auto parts = status.value();
     auto s = ID_HASH(id, parts);
     CHECK_GE(s, 0U);
     return s;
