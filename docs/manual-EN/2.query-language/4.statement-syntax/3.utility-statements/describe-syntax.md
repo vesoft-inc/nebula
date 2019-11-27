@@ -15,11 +15,11 @@ Also notice that DESCRIBE is different from SHOW. Refer [SHOW](show-syntax.md).
 Obtain information about space.
 
 ```ngql
-nebula> DESCRIBE SPACE laura_space;
+nebula> DESCRIBE SPACE nba;
 ========================================================
 | ID |        Name | Partition number | Replica Factor |
 ========================================================
-|  1 | laura_space |             1024 |              1 |
+|  1 | nba |             1024 |              1 |
 --------------------------------------------------------  
 ```
 

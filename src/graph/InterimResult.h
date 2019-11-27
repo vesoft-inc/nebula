@@ -64,8 +64,7 @@ public:
     }
 
     std::vector<std::string> getColNames() const {
-        // Once getColNames called, colNames_ would be invalid
-        return std::move(colNames_);
+        return colNames_;
     }
 
     StatusOr<std::vector<VertexID>> getVIDs(const std::string &col) const;

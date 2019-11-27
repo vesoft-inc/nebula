@@ -23,17 +23,19 @@ public:
     static QueryBoundProcessor* instance(kvstore::KVStore* kvstore,
                                          meta::SchemaManager* schemaMan,
                                          StorageStats* stats,
-                                         folly::Executor* executor) {
-        return new QueryBoundProcessor(kvstore, schemaMan, stats, executor);
+                                         folly::Executor* executor,
+                                         VertexCache* cache = nullptr) {
+        return new QueryBoundProcessor(kvstore, schemaMan, stats, executor, cache);
     }
 
 protected:
     explicit QueryBoundProcessor(kvstore::KVStore* kvstore,
                                  meta::SchemaManager* schemaMan,
                                  StorageStats* stats,
-                                 folly::Executor* executor)
+                                 folly::Executor* executor,
+                                 VertexCache* cache)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
-                             cpp2::QueryResponse>(kvstore, schemaMan, stats, executor) {}
+                             cpp2::QueryResponse>(kvstore, schemaMan, stats, executor, cache) {}
 
     kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) override;
 

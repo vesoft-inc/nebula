@@ -153,6 +153,34 @@ public:
         return column;
     }
 
+    static nebula::cpp2::ColumnDef columnDefWithDefault(int32_t index,
+                                                        nebula::cpp2::SupportedType st) {
+        nebula::cpp2::ColumnDef column;
+        column.set_name(folly::stringPrintf("col_%d", index));
+        nebula::cpp2::ValueType vType;
+        vType.set_type(std::move(st));
+        column.set_type(std::move(vType));
+        nebula::cpp2::Value defaultValue;
+        switch (st) {
+            case nebula::cpp2::SupportedType::BOOL:
+                defaultValue.set_bool_value(true);
+                break;
+            case nebula::cpp2::SupportedType::INT:
+                defaultValue.set_int_value(1);
+                break;
+            case nebula::cpp2::SupportedType::DOUBLE:
+                defaultValue.set_double_value(3.14);
+                break;
+            case nebula::cpp2::SupportedType::STRING:
+                defaultValue.set_string_value("default value");
+                break;
+            default:
+                LOG(ERROR) << "Unsupoort type";
+        }
+        column.set_default_value(std::move(defaultValue));
+        return column;
+    }
+
     static void registerHB(kvstore::KVStore* kv, const std::vector<HostAddr>& hosts) {
         auto now = time::WallClock::fastNowInMilliSec();
         for (auto& h : hosts) {
