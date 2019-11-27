@@ -27,7 +27,7 @@ void GetMetricsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
         err_ = HttpCode::E_UNSUPPORTED_METHOD;
         return;
     }
-    serializer_ = DCHECK_NOTNULL(dynamic_cast<stats::MetricsSerializer*>(&StatsManager::get()));
+    serializer_ = DCHECK_NOTNULL(static_cast<stats::MetricsSerializer*>(&StatsManager::get()));
     if (serializer_ == nullptr) {
         err_ = HttpCode::E_NULL_POINTER;
     }

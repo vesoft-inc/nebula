@@ -311,33 +311,8 @@ StatusOr<StatsManager::VT> StatsManager::readHisto(const std::string& counterNam
 
 
 // static
-constexpr bool StatsManager::isStatIndex(int32_t i) {
-    return i > 0;
-}
-
-// static
-constexpr bool StatsManager::isHistoIndex(int32_t i) {
-    return i < 0;
-}
-
-// static
-constexpr std::size_t StatsManager::physicalStatIndex(int32_t i) {
-    DCHECK(isStatIndex(i));
-    return i - 1;
-}
-
-// static
-constexpr std::size_t StatsManager::physicalHistoIndex(int32_t i) {
-    DCHECK(isHistoIndex(i));
-    return -(i + 1);
-}
-
-// static
 StatusOr<StatsManager::ParsedName>
 StatsManager::parseMetricName(folly::StringPiece metricName) {
-    std::string name;
-    StatsMethod method;
-    TimeRange range;
     std::vector<std::string> parts;
     folly::split(".", metricName, parts, true);
     if (parts.size() != 3) {
@@ -345,8 +320,8 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
         return Status::Error("\"%s\" is not a valid metric name", metricName.data());
     }
 
-    name = parts[0];
-
+    std::string name = parts[0];
+    TimeRange range;
     if (parts[2] == "60") {
         range = TimeRange::ONE_MINUTE;
     } else if (parts[2] == "600") {
@@ -360,6 +335,7 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
                                                  parts[2].c_str()));
     }
 
+    StatsMethod method;
     folly::toLowerAscii(parts[1]);
     if (parts[1] == "sum") {
         method = StatsMethod::SUM;
@@ -385,7 +361,7 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
 
 
 void PrometheusSerializer::annotate(
-        std::ostream& out, const std::string metricName, const std::string metricType) const {
+        std::ostream& out, const std::string& metricName, const std::string& metricType) const {
     out << "# HELP " << metricName << " Record all " << metricType << " about nebula" << "\n";
     out << "# TYPE " << metricName << " " << metricType << "\n";
 }

@@ -39,8 +39,8 @@ public:
         std::string name;
         std::string value;
     };
-    void annotate(std::ostream& out, const std::string metricName,
-        const std::string metricType) const;
+    void annotate(std::ostream& out, const std::string& metricName,
+        const std::string& metricType) const;
     void writeValue(std::ostream& out, double value) const;
     void writeValue(std::ostream& out, const int64_t value) const;
     void writeValue(std::ostream& out, const std::string& value) const;
@@ -135,10 +135,21 @@ public:
     static StatsManager& get();
 
 private:
-    static constexpr bool isStatIndex(int32_t i);
-    static constexpr bool isHistoIndex(int32_t i);
-    static constexpr std::size_t physicalStatIndex(int32_t i);
-    static constexpr std::size_t physicalHistoIndex(int32_t i);
+    static constexpr bool isStatIndex(int32_t i) {
+        return i > 0;
+    }
+    static constexpr bool isHistoIndex(int32_t i) {
+        return i < 0;
+    }
+    static constexpr std::size_t physicalStatIndex(int32_t i) {
+        DCHECK(isStatIndex(i));
+        return i - 1;
+    }
+    static constexpr std::size_t physicalHistoIndex(int32_t i) {
+        DCHECK(isHistoIndex(i));
+        return -(i + 1);
+    }
+
     static StatusOr<StatsManager::ParsedName>
     parseMetricName(folly::StringPiece metricName);
 
