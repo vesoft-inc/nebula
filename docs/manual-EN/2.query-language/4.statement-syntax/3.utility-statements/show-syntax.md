@@ -5,7 +5,7 @@ SHOW {SPACES | TAGS | EDGES | HOSTS | PARTS}
 SHOW CONFIGS [graph|meta|storage]
 ```
 
-`SHOW SPACES` lists the SPACES on the Nebula Graph cluster.
+`SHOW SPACES` lists the SPACES on the **Nebula Graph** cluster.
 
 `SHOW TAGS` and `SHOW EDGES` return the defined tags and edge types in a given space, respectively.
 

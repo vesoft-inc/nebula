@@ -40,6 +40,8 @@ private:
     std::vector<std::string> getResultColumnNames() const;
     StatusOr<std::unique_ptr<InterimResult>> setupInterimResult();
 
+    void onEmptyInputs();
+
 private:
     GroupBySentence                                           *sentence_{nullptr};
     std::vector<cpp2::RowValue>                                rows_;
