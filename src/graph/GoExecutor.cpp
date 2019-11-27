@@ -1001,22 +1001,31 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                             return edgeStatus.status();
                         }
 
-                        if (saveTypeFlag) {
-                            colTypes.back() = iter->getSchema()->getFieldType(prop).type;
-                        }
-                        if (edgeType != edgeStatus.value() && edgeType != -edgeStatus.value()) {
-                            auto sit = edgeSchema.find(edgeStatus.value());
-                            if (sit == edgeSchema.end()) {
-                                return Status::Error("get schema failed");
-                            }
-                            return RowReader::getDefaultProp(sit->second.get(), prop);
-                        }
                         if (isReversely()) {
                             auto dst = RowReader::getPropByName(&*iter, "_dst");
+                            if (saveTypeFlag) {
+                                colTypes.back() = edgeHolder_->getType(
+                                                    boost::get<VertexID>(value(dst)),
+                                                    srcid,
+                                                    edgeType > 0 ? edgeType : -edgeType, prop);
+                            }
+                            if (edgeType != edgeStatus.value() && edgeType != -edgeStatus.value()) {
+                                return edgeHolder_->getDefaultProp(-edgeStatus.value(), prop);
+                            }
                             return edgeHolder_->get(boost::get<VertexID>(value(dst)),
                                                     srcid,
                                                     edgeType > 0 ? edgeType : -edgeType, prop);
                         } else {
+                            if (saveTypeFlag) {
+                                colTypes.back() = iter->getSchema()->getFieldType(prop).type;
+                            }
+                            if (edgeType != edgeStatus.value() && edgeType != -edgeStatus.value()) {
+                                auto sit = edgeSchema.find(edgeStatus.value());
+                                if (sit == edgeSchema.end()) {
+                                    return Status::Error("get schema failed");
+                                }
+                                return RowReader::getDefaultProp(sit->second.get(), prop);
+                            }
                             auto res = RowReader::getPropByName(&*iter, prop);
                             if (!ok(res)) {
                                 return Status::Error(
@@ -1245,6 +1254,7 @@ void GoExecutor::EdgeHolder::add(const storage::cpp2::EdgePropResponse &resp) {
             collector->collect(value(result), &rWriter);
         }
         edges_.emplace(key, std::make_pair(eschema, rWriter.encode()));
+        schemas_.emplace(boost::get<int64_t>(type.value()), eschema);
         ++iter;
     }
 }
@@ -1262,6 +1272,27 @@ OptVariantType GoExecutor::EdgeHolder::get(VertexID src,
         return Status::Error("Prop not found: `%s'", prop.c_str());
     }
     return value(result);
+}
+
+
+SupportedType GoExecutor::EdgeHolder::getType(VertexID src,
+                                           VertexID dst,
+                                           EdgeType type,
+                                           const std::string &prop) const {
+    auto iter = edges_.find(std::make_tuple(src, dst, type));
+    CHECK(iter != edges_.end());
+    return iter->second.first->getFieldType(prop).type;
+}
+
+
+OptVariantType GoExecutor::EdgeHolder::getDefaultProp(EdgeType type,
+                                                      const std::string &prop) {
+    auto sit = schemas_.find(type);
+    if (sit == schemas_.end()) {
+        return Status::Error("Get default prop failed when go reversely.");
+    }
+
+    return RowReader::getDefaultProp(sit->second.get(), prop);
 }
 
 

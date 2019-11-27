@@ -1029,7 +1029,24 @@ TEST_F(GoTest, ReverselyWithPipe) {
 
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO FROM hash('Manu Ginobili') OVER like REVERSELY "
+                    "YIELD like._src AS id |"
+                    "GO FROM $-.id OVER serve";
+        client_->execute(query, resp);
+        std::vector<std::tuple<int64_t>> expected = {
+            { teams_["Spurs"].vid() },
+            { teams_["Spurs"].vid() },
+            { teams_["Hornets"].vid() },
+            { teams_["Spurs"].vid() },
+            { teams_["Hawks"].vid() },
+            { teams_["76ers"].vid() },
+            { teams_["Spurs"].vid() },
+        };
 
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     /**
      * TODO(dutor)
      * For the time being, reference to the pipe inputs is faulty.

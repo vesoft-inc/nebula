@@ -200,11 +200,18 @@ private:
                            VertexID dst,
                            EdgeType type,
                            const std::string &prop) const;
+        nebula::cpp2::SupportedType getType(VertexID src,
+                           VertexID dst,
+                           EdgeType type,
+                           const std::string &prop) const;
+        OptVariantType getDefaultProp(EdgeType type,
+                                      const std::string &prop);
 
     private:
         using EdgeKey = std::tuple<VertexID, VertexID, EdgeType>;
         using EdgeValue = std::pair<std::shared_ptr<ResultSchemaProvider>, std::string>;
         std::unordered_map<EdgeKey, EdgeValue> edges_;
+        std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> schemas_;
     };
 
     OptVariantType getPropFromInterim(VertexID id, const std::string &prop) const;
