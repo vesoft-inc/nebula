@@ -85,8 +85,8 @@ GO FROM <node_list> OVER <edge_type_list | *> YIELD | YIELDS [DISTINCT] <return_
 For example:
 
 ```ngql
-nebula> GO OVER edge1, edge2....  // traverse alone edge1 and edge2 or
-nebula> GO OVER *   // * means traverse along all edge types
+nebula> GO OVER FROM <node_list> edge1, edge2....  // traverse alone edge1 and edge2 or
+nebula> GO OVER FROM <node_list> *   // * means traverse along all edge types
 ```
 
 > Please note that when traversing along multiple edges, there are some special restrictions on the use of filters(namely the `WHERE` statement), for example filters like `WHERE edge1.prop1 > edge2.prop2` is not supported.

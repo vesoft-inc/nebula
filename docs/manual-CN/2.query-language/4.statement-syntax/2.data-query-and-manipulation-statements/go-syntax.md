@@ -84,8 +84,8 @@ GO FROM <node_list> OVER <edge_type_list | *> YIELD | YIELDS [DISTINCT] <return_
 例如：
 
 ```ngql
-nebula> GO OVER edge1, edge2....  //沿着 edge1 和 edge2 遍历，或者
-nebula> GO OVER *    //这里 * 意味着沿着任意类型的边遍历
+nebula> GO FROM <node_list> OVER edge1, edge2....  //沿着 edge1 和 edge2 遍历，或者
+nebula> GO FROM <node_list> OVER *    //这里 * 意味着沿着任意类型的边遍历
 ```
 
 > 请注意，当沿着多种类型边遍历时，对于使用过滤条件有特别限制(也即 WHERE 语句），比如 `WHERE edge1.prop1 > edge2.prop2` 这种过滤条件是不支持的。
