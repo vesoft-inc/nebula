@@ -48,7 +48,8 @@ There are four gflags related parameters, among which, `max_edge_returned_per_ve
 For example
 
 ```ngql
-nebula> UPDATE CONFIGS storage:rocksdb_column_family_options = { disable_auto_compactions = false , level0_file_num_compaction_trigger = 10 }
+nebula> UPDATE CONFIGS storage:rocksdb_column_family_options = \
+        { disable_auto_compactions = false ,         level0_file_num_compaction_trigger = 10 }
 ```
 
 ## SHOW CONFIGS
