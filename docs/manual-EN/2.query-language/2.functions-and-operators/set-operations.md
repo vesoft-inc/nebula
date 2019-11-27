@@ -1,6 +1,6 @@
 # Set Operations (`UNION`, `INTERSECT`, and `MINUS`)
 
-## `UNION`, `UNION DISTINCT`, and `UNION ALL`
+## UNION, UNION DISTINCT, and UNION ALL
 
 Operator `UNION DISTINCT` (or by short `UNION`) returns the union of two sets A and B (denoted by `A ⋃ B` in mathematics), with the distinct element belongs to set A or set B, or both.
 

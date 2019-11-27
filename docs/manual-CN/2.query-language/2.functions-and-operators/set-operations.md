@@ -1,6 +1,6 @@
 # 集合操作 (`UNION`，`INTERSECT`， `MINUS`)
 
-## `UNION`，`UNION DISTINCT`， `UNION ALL`
+## UNION，UNION DISTINCT，UNION ALL
 
 `UNION DISTINCT` (简称 `UNION`)返回数据集 A 和 B 的并集（不包含重复元素）。
 
