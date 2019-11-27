@@ -242,7 +242,6 @@ TEST(ProcessorTest, CreateSpaceTest) {
     }
 }
 
-
 TEST(ProcessorTest, CreateTagTest) {
     fs::TempDir rootPath("/tmp/CreateTagTest.XXXXXX");
     auto kv = TestUtils::initKV(rootPath.path());
@@ -345,13 +344,13 @@ TEST(ProcessorTest, CreateTagTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.code);
     }
-
-    // Set schema ttl property
-    nebula::cpp2::SchemaProp schemaProp;
-    schemaProp.set_ttl_duration(100);
-    schemaProp.set_ttl_col("col_0");
-    schema.set_schema_prop(std::move(schemaProp));
     {
+        // Set schema ttl property
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_duration(100);
+        schemaProp.set_ttl_col("col_0");
+        schema.set_schema_prop(std::move(schemaProp));
+
         // Tag with TTL
         cpp2::CreateTagReq req;
         req.set_space_id(1);
@@ -363,6 +362,52 @@ TEST(ProcessorTest, CreateTagTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(5, resp.get_id().get_tag_id());
+    }
+    {
+        nebula::cpp2::Schema schemaWithDefault;
+        decltype(schema.columns) colsWithDefault;
+        colsWithDefault.emplace_back(TestUtils::columnDefWithDefault(0, SupportedType::BOOL));
+        colsWithDefault.emplace_back(TestUtils::columnDefWithDefault(1, SupportedType::INT));
+        colsWithDefault.emplace_back(TestUtils::columnDefWithDefault(2, SupportedType::DOUBLE));
+        colsWithDefault.emplace_back(TestUtils::columnDefWithDefault(3, SupportedType::STRING));
+        schemaWithDefault.set_columns(std::move(colsWithDefault));
+
+        cpp2::CreateTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_with_default");
+        req.set_schema(std::move(schemaWithDefault));
+        auto* processor = CreateTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(6, resp.get_id().get_tag_id());
+    }
+    {
+        nebula::cpp2::Schema schemaWithDefault;
+        decltype(schema.columns) colsWithDefault;
+
+        nebula::cpp2::ColumnDef columnWithDefault;
+        columnWithDefault.set_name(folly::stringPrintf("col_type_mismatch"));
+        nebula::cpp2::ValueType vType;
+        vType.set_type(SupportedType::BOOL);
+        columnWithDefault.set_type(std::move(vType));
+        nebula::cpp2::Value defaultValue;
+        defaultValue.set_string_value("default value");
+        columnWithDefault.set_default_value(std::move(defaultValue));
+
+        colsWithDefault.push_back(std::move(columnWithDefault));
+        schemaWithDefault.set_columns(std::move(colsWithDefault));
+
+        cpp2::CreateTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_type_mismatche");
+        req.set_schema(std::move(schemaWithDefault));
+        auto* processor = CreateTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.code);
     }
 }
 
@@ -490,8 +535,53 @@ TEST(ProcessorTest, CreateEdgeTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(5, resp.get_id().get_edge_type());
     }
-}
+    {
+        nebula::cpp2::Schema schemaWithDefault;
+        decltype(schema.columns) colsWithDefault;
+        colsWithDefault.emplace_back(TestUtils::columnDefWithDefault(0, SupportedType::BOOL));
+        colsWithDefault.emplace_back(TestUtils::columnDefWithDefault(1, SupportedType::INT));
+        colsWithDefault.emplace_back(TestUtils::columnDefWithDefault(2, SupportedType::DOUBLE));
+        colsWithDefault.emplace_back(TestUtils::columnDefWithDefault(3, SupportedType::STRING));
+        schemaWithDefault.set_columns(std::move(colsWithDefault));
 
+        cpp2::CreateEdgeReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_with_defaule");
+        req.set_schema(std::move(schemaWithDefault));
+        auto* processor = CreateEdgeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(6, resp.get_id().get_edge_type());
+    }
+    {
+        nebula::cpp2::Schema schemaWithDefault;
+        decltype(schema.columns) colsWithDefault;
+
+        nebula::cpp2::ColumnDef columnWithDefault;
+        columnWithDefault.set_name(folly::stringPrintf("col_type_mismatch"));
+        nebula::cpp2::ValueType vType;
+        vType.set_type(SupportedType::BOOL);
+        columnWithDefault.set_type(std::move(vType));
+        nebula::cpp2::Value defaultValue;
+        defaultValue.set_string_value("default value");
+        columnWithDefault.set_default_value(std::move(defaultValue));
+
+        colsWithDefault.push_back(std::move(columnWithDefault));
+        schemaWithDefault.set_columns(std::move(colsWithDefault));
+
+        cpp2::CreateEdgeReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_type_mismatche");
+        req.set_schema(std::move(schemaWithDefault));
+        auto* processor = CreateEdgeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.code);
+    }
+}
 
 TEST(ProcessorTest, KVOperationTest) {
     fs::TempDir rootPath("/tmp/KVOperationTest.XXXXXX");
@@ -616,18 +706,6 @@ TEST(ProcessorTest, KVOperationTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-    }
-    {
-        // Illegal Segment Test
-        cpp2::GetReq req;
-        req.set_segment("_test0_");
-        req.set_key("key_8");
-
-        auto* processor = GetProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL, resp.code);
     }
 }
 
@@ -1469,7 +1547,6 @@ TEST(ProcessorTest, AlterEdgeTest) {
         ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
 }
-
 }  // namespace meta
 }  // namespace nebula
 

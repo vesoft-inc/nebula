@@ -181,6 +181,22 @@ TEST(Parser, TagOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "CREATE TAG woman(name string, age int default 22, "
+                            "married bool default false, salary double default 1000.0, "
+                            "create_time timestamp)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG woman(name string default \"\", age int default 22, "
+                            "married bool default false, salary double default 1000.0, "
+                            "create_time timestamp default 1566541858)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "ALTER TAG person ADD (col1 int, col2 string), "
                             "CHANGE (married int, salary int), "
                             "DROP (age, create_time)";
@@ -251,6 +267,13 @@ TEST(Parser, EdgeOperation) {
         std::string query = "CREATE EDGE man(name string, age int, "
                             "married bool, salary double, create_time timestamp)"
                             "ttl_duration = 100";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE EDGE man(name string default \"\", age int default 18, "
+                            "married bool default false, salary double default 1000.0)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -1352,6 +1375,13 @@ TEST(Parser, ConfigOperation) {
         GQLParser parser;
         std::string query = "UPDATE CONFIGS storage:rocksdb_db_options = "
                             "{stats_dump_period_sec = 200, disable_auto_compaction = false}";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE CONFIGS rocksdb_column_family_options={"
+                            "write_buffer_size = 1 * 1024 * 1024}";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

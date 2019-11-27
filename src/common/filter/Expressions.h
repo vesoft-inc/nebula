@@ -689,6 +689,10 @@ public:
         }
     }
 
+    const std::string* name() const {
+        return name_.get();
+    }
+
     std::string toString() const override;
 
     OptVariantType eval() const override;

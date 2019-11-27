@@ -2,7 +2,7 @@
 
 ```ngql
 INSERT EDGE edge_name ( <prop_name_list> ) {VALUES | VALUE}
-<src_vid> -> <dst_vid> : ( <prop_value_list> )
+<src_vid> -> <dst_vid>@ranking : ( <prop_value_list> )
 [, <src_vid> -> <dst_vid> : ( <prop_value_list> )]
 
 <prop_name_list> ::=
@@ -17,6 +17,7 @@ INSERT EDGE edge_name ( <prop_name_list> ) {VALUES | VALUE}
 * `<edge_name>` denotes the edge type, which must be created before `INSERT EDGE`.
 * `<prop_name_list>` is the property name list as the given `<edge_name>`.
 * `<prop_value_list>` must provide the value list according to `<prop_name_list>`. If no value matches the type, an error will be returned.
+* `ranking` is optional, it specifies the edge ranking of the same edge type, if not specified, the default value is 0.
 
 > No default value is given in this release.
 
@@ -25,6 +26,7 @@ INSERT EDGE edge_name ( <prop_name_list> ) {VALUES | VALUE}
 ```ngql
 # CREATE EDGE e1()                    -- create edge t1 with empty property or default values
 INSERT EDGE e1 () VALUES 10->11:()    -- insert an edge from vertex 10 to vertex 11 with empty property
+INSERT EDGE e1 () VALUES 10->11@1:()  -- insert an edge from vertex 10 to vertex 11 with empty property, the edge ranking is 1
 ```
 
 ```ngql

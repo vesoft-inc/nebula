@@ -176,6 +176,12 @@ Got 8 rows (Time spent: 5074/6488 us)
 
 如果之前停止的计划中有失败的 task，则会继续执行之前的计划，如果之前停止的计划中所有 task 都成功了，则会新建一个 balance 计划并开始执行。
 
+## 批量缩容
+
+Nebula 支持指定需要下线的机器进行批量缩容。语法为 `BALANCE DATA REMOVE $host_list`，例如 `BALANCE DATA REMOVE 192.168.0.1:50000,192.168.0.2:50000`，将在本次 balance 过程中移除 192.168.0.1:50000，192.168.0.2:50000 两台机器。
+
+> 如果移除指定机器后，不满足副本数要求（例如剩余机器数小于副本数，或者三副本中有一台已经离线，此时要求移除剩余两副本中的一个），Nebula 将拒绝本次 balance 请求，并返回相关错误码。
+
 ## Balance leader
 
 `BALANCE DATA` 仅能 balance partition，但是 leader 分布仍然不均衡，这意味着旧服务过载，而新服务未得到充分使用。运行 `BALANCE LEADER` 重新分布 Raft leader：
