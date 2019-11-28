@@ -459,7 +459,7 @@ void GoExecutor::stepOut() {
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        onError_(Status::Error("Internal error"));
+        onError_(Status::Error("Exeception when handle out-bounds/in-bounds."));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -596,12 +596,17 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
         for (auto &t : result) {
             if (t.hasException()) {
                 LOG(ERROR) << "Exception caught: " << t.exception().what();
-                onError_(Status::Error("Internal error"));
+                onError_(Status::Error("Exeception when get edge props in reversely traversal."));
                 return;
             }
             auto resp = std::move(t).value();
             for (auto &edgePropResp : resp.responses()) {
-                edgeHolder_->add(edgePropResp);
+                auto status = edgeHolder_->add(edgePropResp);
+                if (!status.ok()) {
+                    LOG(ERROR) << "Error when handle edges: " << status;
+                    onError_(std::move(status));
+                    return;
+                }
             }
         }
 
@@ -615,7 +620,7 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        onError_(Status::Error("Internal error"));
+        onError_(Status::Error("Exception when handle edges."));
     };
 
     folly::collectAll(std::move(futures)).via(runner).thenValue(cb).thenError(error);
@@ -845,7 +850,7 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcRe
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        onError_(Status::Error("Internal error"));
+        onError_(Status::Error("Exception when handle vertex props."));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -1023,7 +1028,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         }
 
                         if (isReversely()) {
-                            auto dst = RowReader::getPropByName(&*iter, "_dst");
+                            auto dst = RowReader::getPropByName(&*iter, _DST);
                             if (saveTypeFlag) {
                                 colTypes.back() = edgeHolder_->getType(
                                                     boost::get<VertexID>(value(dst)),
@@ -1244,11 +1249,11 @@ void GoExecutor::VertexHolder::add(const storage::cpp2::QueryResponse &resp) {
 }
 
 
-void GoExecutor::EdgeHolder::add(const storage::cpp2::EdgePropResponse &resp) {
+Status GoExecutor::EdgeHolder::add(const storage::cpp2::EdgePropResponse &resp) {
     if (resp.get_schema() == nullptr ||
             resp.get_data() == nullptr ||
             resp.get_data()->empty()) {
-        return;
+        return Status::OK();
     }
 
     auto eschema = std::make_shared<ResultSchemaProvider>(*resp.get_schema());
@@ -1256,9 +1261,9 @@ void GoExecutor::EdgeHolder::add(const storage::cpp2::EdgePropResponse &resp) {
     auto collector = std::make_unique<Collector>();
     auto iter = rsReader.begin();
     while (iter) {
-        auto src = collector->getProp(eschema.get(), "_src", &*iter);
-        auto dst = collector->getProp(eschema.get(), "_dst", &*iter);
-        auto type = collector->getProp(eschema.get(), "_type", &*iter);
+        auto src = collector->getProp(eschema.get(), _SRC, &*iter);
+        auto dst = collector->getProp(eschema.get(), _DST, &*iter);
+        auto type = collector->getProp(eschema.get(), _TYPE, &*iter);
         if (!src.ok() || !dst.ok() || !type.ok()) {
             ++iter;
             continue;
@@ -1271,13 +1276,17 @@ void GoExecutor::EdgeHolder::add(const storage::cpp2::EdgePropResponse &resp) {
         auto fields = iter->numFields();
         for (auto i = 0; i < fields; i++) {
             auto result = RowReader::getPropByIndex(&*iter, i);
-            CHECK(ok(result));
+            if (!ok(result)) {
+                return Status::Error("Get prop failed when add edge.");
+            }
             collector->collect(value(result), &rWriter);
         }
         edges_.emplace(key, std::make_pair(eschema, rWriter.encode()));
         schemas_.emplace(boost::get<int64_t>(type.value()), eschema);
         ++iter;
     }
+
+    return Status::OK();
 }
 
 
@@ -1297,9 +1306,9 @@ OptVariantType GoExecutor::EdgeHolder::get(VertexID src,
 
 
 SupportedType GoExecutor::EdgeHolder::getType(VertexID src,
-                                           VertexID dst,
-                                           EdgeType type,
-                                           const std::string &prop) const {
+                                              VertexID dst,
+                                              EdgeType type,
+                                              const std::string &prop) const {
     auto iter = edges_.find(std::make_tuple(src, dst, type));
     CHECK(iter != edges_.end());
     return iter->second.first->getFieldType(prop).type;
@@ -1310,7 +1319,7 @@ OptVariantType GoExecutor::EdgeHolder::getDefaultProp(EdgeType type,
                                                       const std::string &prop) {
     auto sit = schemas_.find(type);
     if (sit == schemas_.end()) {
-        return Status::Error("Get default prop failed when go reversely.");
+        return Status::Error("Get default prop failed in reversely traversal.");
     }
 
     return RowReader::getDefaultProp(sit->second.get(), prop);

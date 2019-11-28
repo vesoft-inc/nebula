@@ -195,7 +195,7 @@ private:
 
     class EdgeHolder final {
     public:
-        void add(const storage::cpp2::EdgePropResponse &resp);
+        Status add(const storage::cpp2::EdgePropResponse &resp);
         OptVariantType get(VertexID src,
                            VertexID dst,
                            EdgeType type,
