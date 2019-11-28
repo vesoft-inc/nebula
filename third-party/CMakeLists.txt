@@ -185,6 +185,7 @@ maybe_add_dependencies(libevent libtool)
 maybe_add_dependencies(gperf libtool)
 
 maybe_add_dependencies(boost zlib bzip2 lzma)
+maybe_add_dependencies(mstch boost)
 
 maybe_add_dependencies(glog gflags)
 
