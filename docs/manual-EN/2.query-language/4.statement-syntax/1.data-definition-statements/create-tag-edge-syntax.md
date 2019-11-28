@@ -65,28 +65,28 @@ The features of this syntax are described in the following sections:
 ### Examples
 
 ```ngql
-CREATE TAG course(name string, credits int)
-CREATE TAG notag()  -- empty properties
+nebula> CREATE TAG course(name string, credits int)
+nebula> CREATE TAG notag()  -- empty properties
 
-CREATE EDGE follow(start_time timestamp, likeness double)
-CREATE EDGE noedge()  -- empty properties
+nebula> CREATE EDGE follow(start_time timestamp, likeness double)
+nebula> CREATE EDGE noedge()  -- empty properties
 
-CREATE TAG course_with_default(name string, credits int DEFAULT 0)  -- credits is set 0 by default
-CREATE EDGE follow_with_default(start_time timestamp DEFAULT 0, likeness double 0.0)
+nebula> CREATE TAG course_with_default(name string, credits int DEFAULT 0)  -- credits is set 0 by default
+nebula> CREATE EDGE follow_with_default(start_time timestamp DEFAULT 0, likeness double 0.0)
 
-CREATE TAG woman(name string, age int,
+nebula> CREATE TAG woman(name string, age int,
    married bool, salary double, create_time timestamp)
    TTL_DURATION = 100, TTL_COL = create_time -- expired when now is later than create_time + 100
 
-CREATE EDGE marriage(location string, since timestamp)
+nebula> CREATE EDGE marriage(location string, since timestamp)
     TTL_DURATION = 0, TTL_COL = since -- negative or zero, not expire
 
-CREATE TAG icecream(made timestamp, temprature int)
+nebula> CREATE TAG icecream(made timestamp, temprature int)
    TTL_DURATION = 100, TTL_COL = made,
    TTL_DURATION = 10, TTL_COL = temperature
    --  no matter which comes first: made + 100 or temprature + 10
 
-CREATE EDGE garbge (thrown timestamp, temprature int)
+nebula> CREATE EDGE garbge (thrown timestamp, temprature int)
    TTL_DURATION = -2, TTL_COL = thrown,
    TTL_DURATION = 10, TTL_COL = thrown
    --  legal, but not recommended. expired at thrown + 10

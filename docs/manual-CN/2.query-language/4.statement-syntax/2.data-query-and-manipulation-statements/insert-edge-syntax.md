@@ -24,17 +24,17 @@ INSERT EDGE 用于插入从起点（ src_vid ）到终点（ dst_vid ）的一�
 ## 示例
 
 ```ngql
-# CREATE EDGE e1()                    -- 创建空属性边 t1
-INSERT EDGE e1 () VALUES 10->11:()    -- 插入一条从点 10 到点 11 的空属性边
-INSERT EDGE e1 () VALUES 10->11@1:()  -- 插入一条从点 10 到点 11 的空属性边，ranking 值为 1
+nebula> CREATE EDGE e1()                    -- 创建空属性边 t1
+nebula> INSERT EDGE e1 () VALUES 10->11:()    -- 插入一条从点 10 到点 11 的空属性边
+nebula> INSERT EDGE e1 () VALUES 10->11@1:()  -- 插入一条从点 10 到点 11 的空属性边，ranking 值为 1
 ```
 
 ```ngql
-# CREATE EDGE e2 (name string, age int)                     -- 创建有两种属性的边 e2
-INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 1)          -- 插入一条从点 11 到点 13 的有两条属性的边
-INSERT EDGE e2 (name, age) VALUES \
+nebula> CREATE EDGE e2 (name string, age int)                     -- 创建有两种属性的边 e2
+nebula> INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 1)          -- 插入一条从点 11 到点 13 的有两条属性的边
+nebula> INSERT EDGE e2 (name, age) VALUES \
 12->13:("n1", 1), 13->14("n2", 2)                           -- 插入两条边
-INSERT EDGE e2 (name, age) VALUES 11->13:("n1", "a13")      -- 错误操作，"a13" 不是 int 类型
+nebula> INSERT EDGE e2 (name, age) VALUES 11->13:("n1", "a13")      -- 错误操作，"a13" 不是 int 类型
 ```
 
 同一条边可被多次插入或写入，读取时以最后一次插入为准。
@@ -42,7 +42,7 @@ INSERT EDGE e2 (name, age) VALUES 11->13:("n1", "a13")      -- 错误操作，"a
 ```ngql
 -- 为插入边赋新值
 insert edge with new version of values.
-INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 12)
-INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 13)
-INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 14) -- 读取最后插入的值
+nebula> INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 12)
+nebula> INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 13)
+nebula> INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 14) -- 读取最后插入的值
 ```
