@@ -18,7 +18,7 @@ public:
     GraphStats() {
         storageClientStats_ = std::make_unique<stats::Stats>("storageCliet");
         metaClientStats_ = std::make_unique<stats::Stats>("metaClient");
-        graphStats_ = std::make_unique<stats::Stats>("graph");
+        graphAllStats_ = std::make_unique<stats::Stats>("graphAll");
         parseErrorStats_ = std::make_unique<stats::Stats>("parseError");
         insertVStats_ = std::make_unique<stats::Stats>("insertVertex");
         insertEStats_ = std::make_unique<stats::Stats>("insertEdge");
@@ -37,7 +37,7 @@ public:
 public:
     stats::Stats* getStorageClientStats() const { return storageClientStats_.get(); }
     stats::Stats* getMetaClientStats() const { return metaClientStats_.get(); }
-    stats::Stats* getGraphStats() const { return graphStats_.get(); }
+    stats::Stats* getGraphAllStats() const { return graphAllStats_.get(); }
     stats::Stats* getParseErrorStats() const { return parseErrorStats_.get(); }
     stats::Stats* getInsertVertexStats() const { return insertVStats_.get(); }
     stats::Stats* getInsertEdgeStats() const { return insertEStats_.get(); }
@@ -53,7 +53,7 @@ public:
 private:
     std::unique_ptr<stats::Stats> storageClientStats_;         // storageClient stats
     std::unique_ptr<stats::Stats> metaClientStats_;            // metaClient stats
-    std::unique_ptr<stats::Stats> graphStats_;                 // graph stats
+    std::unique_ptr<stats::Stats> graphAllStats_;              // graph stats
     std::unique_ptr<stats::Stats> parseErrorStats_;            // graph parse error stats
     std::unique_ptr<stats::Stats> insertVStats_;               // insert vertexes stats
     std::unique_ptr<stats::Stats> insertEStats_;               // insert edges stats
