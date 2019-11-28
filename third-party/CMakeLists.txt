@@ -141,7 +141,7 @@ if (NOT BISON_FOUND)
     list(APPEND ALL_TARGETS bison)
 endif()
 
-find_package(FLEX QUIET)
+find_package(FLEX 2.6.0 QUIET)
 if (NOT FLEX_FOUND)
     list(APPEND ALL_TARGETS flex)
 endif()

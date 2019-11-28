@@ -18,13 +18,11 @@ ExternalProject_Add(
     SOURCE_DIR ${source_dir}
     CONFIGURE_COMMAND ""
     CONFIGURE_COMMAND
-        env PATH=${compiler_path}:${BUILDING_PATH}
         ./bootstrap.sh
             --without-icu
             --without-libraries=python,test,stacktrace,mpi,log,graph,graph_parallel
             --prefix=${CMAKE_INSTALL_PREFIX}
     BUILD_COMMAND
-        env PATH=${compiler_path}:${BUILDING_PATH}
         ./b2 install
             -d0
             -j${BUILDING_JOBS_NUM}
@@ -40,6 +38,15 @@ ExternalProject_Add(
     INSTALL_COMMAND ""
     LOG_BUILD 0
     LOG_INSTALL 0
+)
+
+ExternalProject_Add_Step(${name} setup-compiler
+    DEPENDEES configure
+    DEPENDERS build
+    COMMAND
+        echo "using gcc : : ${CMAKE_CXX_COMPILER} $<SEMICOLON>"
+            > ${source_dir}/tools/build/src/user-config.jam
+    WORKING_DIRECTORY ${source_dir}
 )
 
 ExternalProject_Add_Step(${name} clean

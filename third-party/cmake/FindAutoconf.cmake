@@ -1,4 +1,4 @@
-find_program(Autoconf_EXECUTABLE NAMES libtool DOC "Path to the autconf executable")
+find_program(Autoconf_EXECUTABLE NAMES autoconf DOC "Path to the autconf executable")
 if (Autoconf_EXECUTABLE)
     execute_process(
         OUTPUT_VARIABLE Autoconf_VERSION

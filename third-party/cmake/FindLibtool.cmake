@@ -1,9 +1,9 @@
-find_program(Libtool_EXECUTABLE NAMES libtool DOC "Path to the libtool executable")
+find_program(Libtool_EXECUTABLE NAMES libtool libtoolize DOC "Path to the libtool executable")
 if (Libtool_EXECUTABLE)
     execute_process(
         OUTPUT_VARIABLE Libtool_VERSION
         OUTPUT_STRIP_TRAILING_WHITESPACE
-        COMMAND "libtool" "--version"
+        COMMAND ${Libtool_EXECUTABLE} "--version"
         COMMAND "head" "-1"
         COMMAND "cut" "-d" " " "-f4"
     )

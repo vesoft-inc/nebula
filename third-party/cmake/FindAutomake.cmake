@@ -1,4 +1,4 @@
-find_program(Automake_EXECUTABLE NAMES libtool DOC "Path to the automake executable")
+find_program(Automake_EXECUTABLE NAMES automake DOC "Path to the automake executable")
 if (Automake_EXECUTABLE)
     execute_process(
         OUTPUT_VARIABLE Automake_VERSION
