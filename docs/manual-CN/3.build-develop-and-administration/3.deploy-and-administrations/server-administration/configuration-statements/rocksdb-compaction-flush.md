@@ -1,6 +1,6 @@
 # RocksDB Compaction 和 Flush
 
-Nebula 支持对 storage 中的 RocksDB 设置是否自动 compaction，支持通过 HTTP 请求，手动触发 storage 的 RocksDB compaction 或 flush。
+**Nebula Graph** 支持对 storage 中的 RocksDB 设置是否自动 compaction，支持通过 HTTP 请求，手动触发 storage 的 RocksDB compaction 或 flush。
 
 ## 自动 RocksDB Compaction
 
@@ -59,5 +59,4 @@ curl "http://127.0.0.1:12000/admin?space=test&op=compact"
 curl "http://127.0.0.1:12000/admin?space=test&op=flush"
 ```
 
-> 注意：请先建立图空间test，再运行上面的curl命令。
-
+> 注意：请先建立图空间 test，再运行上面的 curl 命令。

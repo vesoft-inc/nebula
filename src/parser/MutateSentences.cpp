@@ -162,12 +162,45 @@ std::string UpdateItem::toString() const {
     return buf;
 }
 
+StatusOr<std::string> UpdateItem::toEvaledString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += *field_;
+    buf += "=";
+    auto ret = value_->eval();
+    if (!ret.ok()) {
+        return ret.status();
+    }
+    if (Expression::isString(ret.value())) {
+        return Status::Error("Invalid string config value");
+    }
+
+    buf += Expression::toString(ret.value());
+    return buf;
+}
 
 std::string UpdateList::toString() const {
     std::string buf;
     buf.reserve(256);
     for (auto &item : items_) {
         buf += item->toString();
+        buf += ",";
+    }
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
+}
+
+StatusOr<std::string> UpdateList::toEvaledString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &item : items_) {
+        auto ret = item->toEvaledString();
+        if (!ret.ok()) {
+            return ret.status();
+        }
+        buf += ret.value();
         buf += ",";
     }
     if (!buf.empty()) {

@@ -15,11 +15,11 @@ DESCRIBE 关键词的作用是获取关于 space, tag, edge 结构的信息。
 获取指定 space 的信息，对应 `DESCRIBE SPACE`。
 
 ```ngql
-nebula> DESCRIBE SPACE laura_space;
+nebula> DESCRIBE SPACE nba;
 ========================================================
 | ID |        Name | Partition number | Replica Factor |
 ========================================================
-|  1 | laura_space |             1024 |              1 |
+|  1 | nba |             100 |              1 |
 --------------------------------------------------------  
 ```
 

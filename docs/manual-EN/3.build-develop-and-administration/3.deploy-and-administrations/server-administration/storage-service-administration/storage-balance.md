@@ -1,6 +1,6 @@
 # Storage Balance Usage
 
-Nebula's services are composed of three parts: graphd, storaged and metad. The **balance** in this document focuses on the operation of storage.
+**Nebula Graph**'s services are composed of three parts: graphd, storaged and metad. The **balance** in this document focuses on the operation of storage.
 
 Currently, storage can be scaled horizontally by the command `balance`. There are two kinds of balance command, one is to move data, which is `BALANCE DATA`; the other one only changes the distribution of leader partition to balance load without moving data, which is `BALANCE LEADER`.
 
@@ -144,7 +144,7 @@ The last row is the summary of the tasks. Some partitions are yet to be migrated
 
 ### Step 4 Migration confirmation
 
-In most cases, data migration will take hours or even days. During the migration, Nebula services are not affected. Once migration is done, the progress will show 100%. You can retry `BALANCE DATA` to fix a failed task. If it can't be fixed after several attempts, please contact us at [GitHub](https://github.com/vesoft-inc/nebula/issues).
+In most cases, data migration will take hours or even days. During the migration, **Nebula Graph** services are not affected. Once migration is done, the progress will show 100%. You can retry `BALANCE DATA` to fix a failed task. If it can't be fixed after several attempts, please contact us at [GitHub](https://github.com/vesoft-inc/nebula/issues).
 
 Now, you can check partition distribution using command `SHOW HOSTS` when balance completed.
 
@@ -184,6 +184,12 @@ Input `BALANCE DATA $id` after `BALANCE DATA STOP` to check the status of the st
 After all the tasks being executed are completed, rerun the `BALANCE DATA` command to restart balance.
 
 If there are failed tasks in the stopped plan, the plan will continue. Otherwise, if all the tasks are succeed, a new balance plan is created and executed.
+
+## Batch Scale in
+
+Nebula supports specifying hosts that need to go offline to conduct batch scale in. The syntax is `BALANCE DATA REMOVE $host_list`. For example, statement `BALANCE DATA REMOVE 192.168.0.1:50000,192.168.0.2:50000` removes two hosts, i.e. 192.168.0.1:50000，192.168.0.2:50000, during the balance process.
+
+> If replica number cannot meet the requirement after removing (for example, the number of remaining hosts is less than the number of replicas or when one of the three replica is offline, one of the remaining two replicas is required to be removed), **Nebula Graph** will reject the balance request and return an error code.
 
 ## Balance leader
 

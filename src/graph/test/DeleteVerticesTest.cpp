@@ -25,7 +25,7 @@ class DeleteVertexTest : public TraverseTestBase {
   }
 };
 
-TEST_F(DeleteVertexTest, base) {
+TEST_F(DeleteVertexTest, Base) {
     // Check
     {
         cpp2::ExecutionResponse resp;

@@ -26,7 +26,7 @@ public:
     void execute() override;
 
 private:
-    void deleteEdges(std::vector<storage::cpp2::EdgeKey>* edges);
+    void deleteEdges(std::vector<storage::cpp2::EdgeKey> edges);
     void deleteVertices();
 
 private:

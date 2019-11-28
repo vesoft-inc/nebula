@@ -25,7 +25,7 @@ protected:
     }
 };
 
-TEST_F(FetchVerticesTest, base) {
+TEST_F(FetchVerticesTest, Base) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
@@ -158,7 +158,7 @@ TEST_F(FetchVerticesTest, base) {
     }
 }
 
-TEST_F(FetchVerticesTest, noYield) {
+TEST_F(FetchVerticesTest, NoYield) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
@@ -209,7 +209,7 @@ TEST_F(FetchVerticesTest, noYield) {
     }
 }
 
-TEST_F(FetchVerticesTest, distinct) {
+TEST_F(FetchVerticesTest, Distinct) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
@@ -251,7 +251,7 @@ TEST_F(FetchVerticesTest, distinct) {
     }
 }
 
-TEST_F(FetchVerticesTest, syntaxError) {
+TEST_F(FetchVerticesTest, SyntaxError) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
@@ -278,7 +278,7 @@ TEST_F(FetchVerticesTest, syntaxError) {
     }
 }
 
-TEST_F(FetchVerticesTest, executionError) {
+TEST_F(FetchVerticesTest, ExecutionError) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
@@ -289,7 +289,7 @@ TEST_F(FetchVerticesTest, executionError) {
     }
 }
 
-TEST_F(FetchVerticesTest, nonExistVertex) {
+TEST_F(FetchVerticesTest, NonExistVertex) {
     std::string name = "NON EXIST VERTEX ID";
     int64_t nonExistPlayerID = std::hash<std::string>()(name);
     auto iter = players_.begin();

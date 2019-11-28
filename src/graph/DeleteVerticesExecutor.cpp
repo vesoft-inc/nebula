@@ -70,7 +70,7 @@ void DeleteVerticesExecutor::execute() {
         }
 
         if (allEdges.size() > 0) {
-            deleteEdges(&allEdges);
+            deleteEdges(allEdges);
         } else {
             deleteVertices();
         }
@@ -86,8 +86,8 @@ void DeleteVerticesExecutor::execute() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-void DeleteVerticesExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>* edges) {
-    auto future = ectx()->getStorageClient()->deleteEdges(spaceId_, *edges);
+void DeleteVerticesExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey> edges) {
+    auto future = ectx()->getStorageClient()->deleteEdges(spaceId_, std::move(edges));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         auto completeness = resp.completeness();
@@ -110,7 +110,7 @@ void DeleteVerticesExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>* ed
 }
 
 void DeleteVerticesExecutor::deleteVertices() {
-    auto future = ectx()->getStorageClient()->deleteVertices(spaceId_, vids_);
+    auto future = ectx()->getStorageClient()->deleteVertices(spaceId_, std::move(vids_));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         auto completeness = resp.completeness();

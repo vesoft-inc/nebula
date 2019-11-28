@@ -1,29 +1,35 @@
 # CONFIG Syntax
 
-Nebula uses `gflags` for run-time configurations.
+**Nebula Graph** uses `gflags` for run-time configurations.
 
-The related three gflags parameters are: `rocksdb_db_options`, `rocksdb_column_family_options` and `rocksdb_block_based_table_options`.
+## gflag Parameters
 
-The three parameters are all in json format, and the key and value of them are in string format. For example, you can set as follows in the conf file of storage:
+There are four gflags related parameters, among which, `max_edge_returned_per_vertex` is used to control the max edges returned by a certain vertex, `rocksdb_db_options`, `rocksdb_column_family_options` and `rocksdb_block_based_table_options`
+ are all in json format, and the key and value of them are in string format. For example, you can set as follows in the conf file of storage:
 
 ```text
     rocksdb_db_options = {"stats_dump_period_sec":"200", "enable_write_thread_adaptive_yield":"false", "write_thread_max_yield_usec":"600"}
     rocksdb_column_family_options = {"max_write_buffer_number":"4", "min_write_buffer_number_to_merge":"2", "max_write_buffer_number_to_maintain":"1"}
     rocksdb_block_based_table_options = {"block_restart_interval":"2"}
+    "max_edge_returned_per_vertex":"INT_MAX"
 ```
 
-Nebula supports changing some rocksdb parameters in storage service as follows:
+**Nebula Graph** supports changing some rocksdb parameters in storage service as follows:
 
 ```text
-    snap_refresh_nanos
-    disable_auto_compactions
-    write_buffer_size
-    compression
+    // rocksdb_column_family_options
+    max_write_buffer_number
     level0_file_num_compaction_trigger
+    level0_slowdown_writes_trigger
+    level0_stop_writes_trigger
+    target_file_size_base
+    target_file_size_multiplier
     max_bytes_for_level_base
-    snap_refresh_nanos
-    block_size
-    block_restart_interval
+    max_bytes_for_level_multiplier
+    ttl
+    disable_auto_compactions
+
+    // rocksdb_db_options
     max_total_wal_size
     delete_obsolete_files_period_micros
     max_background_jobs
@@ -104,8 +110,8 @@ UPDATE CONFIGS [graph|meta|storage :] var = value
 ```
 
 > The updated CONFIGS will be stored into meta-service permanently.
-> If the CONFIG's mode is `MUTABLE`, the change will take effects immediately. Otherwise, if the mode is `REBOOT`, the change will not work until server restart.
-
+> If the configuration's mode is `MUTABLE`, the change will take effects immediately. Otherwise, if the mode is `REBOOT`, the change will not work until server restart.
+> Expression is supported in UPDATE CONFIGS.
 For example
 
 ```ngql
