@@ -28,7 +28,7 @@ SST 文件名格式为 `{TYPE}-${FIRST_KEY_IN_THIS_FILE}.sst`，其中 `TYPE` �
 
 运行 **Nebula Graph** console，执行 Download 命令：
 
-```bash
+```ngql
 nebula > DOWNLOAD HDFS "hdfs://${HADOOP_HOST}:${HADOOP_PORT}/${HADOOP_PATH}"
 ```
 
@@ -46,7 +46,7 @@ SST 数据离线下载完成后，通过 `INGEST` 命令在线**加载**到存�
 
 Ingest 命令如下：
 
-```bash
+```ngql
 nebula > INGEST
 ```
 
