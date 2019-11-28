@@ -26,7 +26,7 @@ Please confirm that all servers have `Hadoop` installed and `HADOOP_HOME` set.
 
 Run **Nebula Graph** console and execute the download command:
 
-```bash
+```ngql
 nebula > DOWNLOAD HDFS "hdfs://${HADOOP_HOST}:${HADOOP_PORT}/${HADOOP_PATH}"
 ```
 
@@ -41,7 +41,7 @@ If error occurs when downloading, delete the corresponding data files in `data/d
 When the offline SST data download is done, it can be ingested into the storage service via `INGEST` command.
 `INGEST` command is as follows:
 
-```bash
+```ngql
 nebula > INGEST
 ```
 
