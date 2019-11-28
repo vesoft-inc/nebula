@@ -11,6 +11,7 @@
 #include "webservice/Common.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include "stats/StatsManager.h"
+#include "stats/MetricsSerializer.h"
 
 
 namespace nebula {
