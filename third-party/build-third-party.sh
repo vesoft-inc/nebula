@@ -38,7 +38,7 @@ function version_cmp {
 function check_cmake {
     hash cmake &> /dev/null || { echo "No cmake found." 1>&2; exit 1; }
     local cmake_version=$(cmake --version | head -1 | cut -d ' ' -f 3)
-    local least_cmake_version=3.8.0
+    local least_cmake_version=3.5.0
     if [[ $(version_cmp $cmake_version $least_cmake_version) -lt 0 ]]
     then
         echo "cmake $least_cmake_version or later required" 1>&2
