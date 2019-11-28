@@ -164,7 +164,7 @@ ErrorOr<ResultCode, HostAddr> NebulaStore::partLeader(GraphSpaceID spaceId, Part
 void NebulaStore::addSpace(GraphSpaceID spaceId) {
     folly::RWSpinLock::WriteHolder wh(&lock_);
     if (this->spaces_.find(spaceId) != this->spaces_.end()) {
-        LOG(INFO) << "Space " << spaceId << " has existed!";
+        VLOG(1) << "Space " << spaceId << " has existed!";
         return;
     }
     LOG(INFO) << "Create space " << spaceId;
@@ -180,7 +180,7 @@ void NebulaStore::addPart(GraphSpaceID spaceId, PartitionID partId, bool asLearn
     auto spaceIt = this->spaces_.find(spaceId);
     CHECK(spaceIt != this->spaces_.end()) << "Space should exist!";
     if (spaceIt->second->parts_.find(partId) != spaceIt->second->parts_.end()) {
-        LOG(INFO) << "[" << spaceId << "," << partId << "] has existed!";
+        VLOG(1) << "[" << spaceId << "," << partId << "] has existed!";
         return;
     }
 
