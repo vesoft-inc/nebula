@@ -96,6 +96,7 @@ set(ALL_TARGETS
     zlib
     snappy
     lzma
+    lz4
     libaio
     mstch
     fatal
@@ -192,7 +193,7 @@ maybe_add_dependencies(glog gflags)
 maybe_add_dependencies(s2geometry googletest glog openssl)
 
 maybe_add_dependencies(krb5 keyutils openssl gettext bison)
-maybe_add_dependencies(folly glog boost double-conversion openssl libevent lzma zstd snappy libunwind libaio)
+maybe_add_dependencies(folly glog boost double-conversion openssl libevent lzma zstd snappy lz4 libunwind libaio)
 maybe_add_dependencies(wangle folly)
 maybe_add_dependencies(fbthrift folly krb5 bison flex mstch zlib zstd wangle fatal)
 maybe_add_dependencies(proxygen wangle libunwind gperf)
@@ -213,4 +214,13 @@ add_custom_command(
 add_custom_target(
     clean-all
     DEPENDS ${CLEAN_TARGETS}
+)
+
+add_custom_target(
+    pack-downloads
+    COMMAND
+        tar czvf nebula-third-party-src-1.0.tgz downloads
+    COMMAND
+        md5sum nebula-third-party-src-1.0.tgz
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/..
 )

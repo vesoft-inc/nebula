@@ -345,7 +345,7 @@ set(THRIFT_LIBRARIES
 set(ROCKSDB_LIBRARIES ${Rocksdb_LIBRARY})
 
 # All compression libraries
-set(COMPRESSION_LIBRARIES bz2 snappy zstd z)
+set(COMPRESSION_LIBRARIES bz2 snappy zstd z lz4)
 if (LIBLZMA_FOUND)
     include_directories(SYSTEM ${LIBLZMA_INCLUDE_DIRS})
     list(APPEND COMPRESSION_LIBRARIES ${LIBLZMA_LIBRARIES})
