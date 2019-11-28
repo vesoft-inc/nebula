@@ -530,6 +530,13 @@ void FileUtils::Iterator::openFileOrDirectory() {
     status_ = Status::OK();
 }
 
+int FileUtils::sync(int fd) {
+#ifdef HAVE_FDATASYNC
+    return fdatasync(fd);
+#else
+    return fsync(fd);
+#endif
+}
 
 CHECK_TYPE(Reg, REGULAR, REG)
 CHECK_TYPE(Dir, DIRECTORY, DIR)

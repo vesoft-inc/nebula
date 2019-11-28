@@ -32,6 +32,7 @@ DEFINE_int32(wal_ttl, 86400, "Default wal ttl");
 DEFINE_int64(wal_file_size, 16 * 1024 * 1024, "Default wal file size");
 DEFINE_int32(wal_buffer_size, 8 * 1024 * 1024, "Default wal buffer size");
 DEFINE_int32(wal_buffer_num, 2, "Default wal buffer number");
+DEFINE_bool(wal_sync, false, "Whether fsync/fdatasync needs to be called every write");
 
 
 namespace nebula {
@@ -222,6 +223,7 @@ RaftPart::RaftPart(ClusterID clusterId,
     policy.fileSize = FLAGS_wal_file_size;
     policy.bufferSize = FLAGS_wal_buffer_size;
     policy.numBuffers = FLAGS_wal_buffer_num;
+    policy.sync = FLAGS_wal_sync;
     wal_ = FileBasedWal::getWal(walRoot,
                                 idStr_,
                                 policy,
