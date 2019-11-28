@@ -27,12 +27,9 @@ void GetMetricsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
         err_ = HttpCode::E_UNSUPPORTED_METHOD;
         return;
     }
-    try {
-        serializer_.reset(new stats::PrometheusSerializer());
-    }
-    catch(const std::exception& e) {
-        LOG(ERROR) << "Create MetricsSerializer failed: " << e.what();
-        serializer_.reset(nullptr);
+    serializer_.reset(new(std::nothrow) stats::PrometheusSerializer());
+    if (serializer_ == nullptr) {
+        LOG(ERROR) << "Create MetricsSerializer failed!";
         err_ = HttpCode::E_NULL_POINTER;
     }
 }
