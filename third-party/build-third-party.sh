@@ -53,7 +53,7 @@ function check_cxx {
     [[ -n $CXX ]] && cxx_cmd=$CXX
     [[ -z $cxx_cmd ]] && { echo "No C++ compiler found" 1>&2; exit 1; }
     cxx_version=$($cxx_cmd -dumpfullversion)
-    local least_cxx_version=9.1.1
+    local least_cxx_version=7.0.0
     if [[ $(version_cmp $cxx_version $least_cxx_version) -lt 0 ]]
     then
         echo "g++ $least_cxx_version or higher required, but you have $cxx_version" 1>&2

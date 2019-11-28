@@ -146,7 +146,7 @@ if (NOT FLEX_FOUND)
     list(APPEND ALL_TARGETS flex)
 endif()
 
-find_package(GPERF 2.8 QUIET REQUIRED)
+find_package(GPERF 2.8 QUIET)
 if (NOT GPERF_FOUND)
     list(APPEND ALL_TARGETS gperf)
 endif()
