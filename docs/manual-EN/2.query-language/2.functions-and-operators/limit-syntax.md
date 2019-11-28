@@ -1,6 +1,6 @@
 # Limit Syntax
 
-`limit` works the same as in `SQL`, and must be used with pipe `|`.
+`LIMIT` works the same as in `SQL`, and must be used with pipe `|`. The `LIMIT` clause accepts one or two arguments. The values of both arguments must be zero or positive integers.
 
 ```ngql
 ORDER BY <expressions> [ASC | DESC]
@@ -13,20 +13,20 @@ LIMIT [<offset_value>,] <number_rows>
 
 * **number_rows**
 
-    It specifies a limited number of rows in the result set to be returned based on _number_rows_. For example, LIMIT 10 would return the first 10 rows. This is where sort order matters so be sure to use an `ORDER BY` clause appropriately.
+    It constrains the number of rows to return. For example, LIMIT 10 would return the first 10 rows. This is where sorting order matters so be sure to use an `ORDER BY` clause appropriately.
 
 * **offset_value**
 
-    Optional. It says to skip that many rows before the first row returned. The offset starts from zero.
+    Optional. It defines from which row to start including the rows in the output. The offset starts from zero.
 
-> When using `LIMIT`, it is important to use an `ORDER BY` clause that constrains the result rows into a unique order. Otherwise you will get an unpredictable subset of the query's rows.
+> When using `LIMIT`, it is important to use an `ORDER BY` clause that constrains the output into a unique order. Otherwise, you will get an unpredictable subset of the output.
 
 For example:
 
 ```ngql
-nebula> GO FROM 105 OVER like YIELD $$.player.name AS Friend, $$.player.age AS Age, like._dst AS Like | LIMIT 2
+nebula> GO FROM 105 OVER follow YIELD $$.player.name AS Friend, $$.player.age AS Age, follow._dst AS Follow | LIMIT 2
 ================================
-| Friend          | Age | Like |
+| Friend          | Age | Follow |
 ================================
 | Tim Duncan      | 42  | 100  |
 --------------------------------

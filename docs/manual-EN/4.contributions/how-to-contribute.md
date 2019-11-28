@@ -47,7 +47,7 @@ git remote -v
 
 ### Define a pre-commit hook
 
-Please link the Nebula Graph pre-commit hook into your `.git` directory.
+Please link the **Nebula Graph** pre-commit hook into your `.git` directory.
 
 This hook checks your commits for formatting, building, doc generation, etc.
 
@@ -112,7 +112,7 @@ to run Nebula Graph in stand-alone mode.
 > nebula-graphd
 ```
 
-Then you can connect the Nebula Graph console to your local server
+Then you can connect the **Nebula Graph** console to your local server
 
 ```bash
 > nebula

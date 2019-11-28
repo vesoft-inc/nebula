@@ -1,6 +1,6 @@
 # Go Syntax
 
-`GO` statement is the MOST commonly used clause in Nebula.
+`GO` statement is the MOST commonly used clause in **Nebula Graph**.
 
 It indicates to travel in a graph with specific filters (the `WHERE` clause), to fetch nodes and edges properties, and return results (the `YIELD` clause) with given order (the `ORDER BY ASC | DESC` clause) and numbers (the `LIMIT` clause).
 
@@ -76,7 +76,7 @@ nebula> GO FROM 100,102 OVER serve           \
 
 ### Traverse Along Multiple Edges Types
 
-Currently, nebula also supports traversing via multiple edge types with `GO`, the syntax is:
+Currently, **Nebula Graph** also supports traversing via multiple edge types with `GO`, the syntax is:
 
 ```ngql
 GO FROM <node_list> OVER <edge_type_list | *> YIELD | YIELDS [DISTINCT] <return_list>
@@ -85,16 +85,16 @@ GO FROM <node_list> OVER <edge_type_list | *> YIELD | YIELDS [DISTINCT] <return_
 For example:
 
 ```ngql
-GO OVER edge1, edge2....  // traverse alone edge1 and edge2 or
-GO OVER *   // * means traverse along all edge types
+nebula> GO OVER FROM <node_list> edge1, edge2....  // traverse alone edge1 and edge2 or
+nebula> GO OVER FROM <node_list> *   // * means traverse along all edge types
 ```
 
 > Please note that when traversing along multiple edges, there are some special restrictions on the use of filters(namely the `WHERE` statement), for example filters like `WHERE edge1.prop1 > edge2.prop2` is not supported.
 
-As for return results, if multiple edge properties are to be returned, nebula will place them in different rows. For example:
+As for return results, if multiple edge properties are to be returned, **Nebula Graph** will place them in different rows. For example:
 
 ```ngql
-GO FROM 100 OVER edge1, edge2 YIELD edge1.prop1, edge2.prop2
+nebula> GO FROM 100 OVER edge1, edge2 YIELD edge1.prop1, edge2.prop2
 ```
 
  If vertex 100 has three edges in edge 1, two edges in edge 2, the final results is five rows as follows:

@@ -24,24 +24,24 @@ INSERT EDGE edge_name ( <prop_name_list> ) {VALUES | VALUE}
 ## Examples
 
 ```ngql
-# CREATE EDGE e1()                    -- create edge t1 with empty property or default values
-INSERT EDGE e1 () VALUES 10->11:()    -- insert an edge from vertex 10 to vertex 11 with empty property
-INSERT EDGE e1 () VALUES 10->11@1:()  -- insert an edge from vertex 10 to vertex 11 with empty property, the edge ranking is 1
+nebula> CREATE EDGE e1()                    -- create edge t1 with empty property or default values
+nebula> INSERT EDGE e1 () VALUES 10->11:()    -- insert an edge from vertex 10 to vertex 11 with empty property
+nebula> INSERT EDGE e1 () VALUES 10->11@1:()  -- insert an edge from vertex 10 to vertex 11 with empty property, the edge ranking is 1
 ```
 
 ```ngql
-# CREATE EDGE e2 (name string, age int)                     -- create edge e2 with two properties
-INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 1)          -- insert edge from 11 to 13 with two properties
-INSERT EDGE e2 (name, age) VALUES \
+nebula> CREATE EDGE e2 (name string, age int)                     -- create edge e2 with two properties
+nebula> INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 1)          -- insert edge from 11 to 13 with two properties
+nebula> INSERT EDGE e2 (name, age) VALUES \
 12->13:("n1", 1), 13->14("n2", 2)                           -- insert two edges
-INSERT EDGE e2 (name, age) VALUES 11->13:("n1", "a13")      -- ERROR. "a13" is not int
+nebula> INSERT EDGE e2 (name, age) VALUES 11->13:("n1", "a13")      -- ERROR. "a13" is not int
 ```
 
 An edge can be inserted/wrote multiple times. Only the last written values can be read.
 
 ```ngql
 -- insert edge with the new values.
-INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 12)
-INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 13)
-INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 14) -- the last version can be read
+nebula> INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 12)
+nebula> INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 13)
+nebula> INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 14) -- the last version can be read
 ```

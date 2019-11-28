@@ -47,7 +47,7 @@ git remote -v
 
 ### 定义预提交 hook
 
-请将 Nebula Graph 预提交挂钩链接到 `.git` 目录。
+请将 **Nebula Graph** 预提交挂钩链接到 `.git` 目录。
 
 此挂钩检查提交格式，构建，文档生成等。
 
@@ -108,7 +108,7 @@ git push --force origin master
 > nebula-graphd
 ```
 
-将 Nebula Graph 与本地服务器相连
+将 **Nebula Graph** 与本地服务器相连
 
 ```bash
 > nebula
