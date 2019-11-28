@@ -457,48 +457,48 @@ void PrometheusSerializer::writeTail(std::ostream& out, const std::int64_t times
     out << "\n";
 }
 
-// TODO(shylock) transform nebula stats to Prometheus::ClientMetric/MetricFamily
-// using the serrializing from 3rd-SDK
-void StatsManager::prometheusSerialize(std::ostream& out) /*const*/ {
+
+void PrometheusSerializer::prometheusSerialize(std::ostream& out, StatsManager& sm) const {
     std::locale saved_locale = out.getloc();
     out.imbue(std::locale::classic());
-    for (auto& index : nameMap_) {
-        auto parsedName = idParsedName_[index.second].get();
+    for (auto& index : sm.nameMap_) {
+        auto parsedName = sm.idParsedName_[index.second].get();
         std::string name = parsedName != nullptr ? parsedName->name : index.first;
-        if (isStatIndex(index.second)) {
+        if (StatsManager::isStatIndex(index.second)) {
             annotate(out, name, "gauge");
 
             writeHead(out, name, {});
-            writeValue(out,
-                readStats(index.second, TimeRange::ONE_MINUTE, StatsMethod::AVG).value());
+            writeValue(out, StatsManager::readStats(index.second,
+                StatsManager::TimeRange::ONE_MINUTE, StatsManager::StatsMethod::AVG).value());
             writeTail(out);
-        } else if (isHistoIndex(index.second)) {
+        } else if (StatsManager::isHistoIndex(index.second)) {
             annotate(out, name, "histogram");
 
             writeHead(out, name, {}, "_count");
             if (parsedName != nullptr) {
-                out <<
-                    readStats(index.second, parsedName->range, StatsMethod::COUNT).value();
+                out << StatsManager::readStats(index.second,
+                    parsedName->range, StatsManager::StatsMethod::COUNT).value();
             } else {
-                out << readStats(index.second, TimeRange::ONE_HOUR, StatsMethod::COUNT).value();
+                out << StatsManager::readStats(index.second,
+                    StatsManager::TimeRange::ONE_HOUR, StatsManager::StatsMethod::COUNT).value();
             }
             writeTail(out);
 
             writeHead(out, name, {}, "_sum");
             if (parsedName != nullptr) {
-                writeValue(out,
-                    readStats(index.second, parsedName->range, StatsMethod::SUM).value());
+                writeValue(out, StatsManager::readStats(index.second,
+                    parsedName->range, StatsManager::StatsMethod::SUM).value());
             } else {
-                writeValue(out,
-                    readStats(index.second, TimeRange::ONE_HOUR, StatsMethod::SUM).value());
+                writeValue(out, StatsManager::readStats(index.second,
+                    StatsManager::TimeRange::ONE_HOUR, StatsManager::StatsMethod::SUM).value());
             }
             writeTail(out);
 
-            auto& p = histograms_[physicalHistoIndex(index.second)];
+            auto& p = sm.histograms_[StatsManager::physicalHistoIndex(index.second)];
             std::lock_guard<std::mutex> lk(*p.first);
             auto& hist = p.second;
-            VT last = hist->getMax();
-            VT cumulativeCount = 0;
+            auto last = hist->getMax();
+            auto cumulativeCount = 0;
             auto diff = (hist->getMax() - hist->getMin()) /
                 static_cast<double>(hist->getNumBuckets());
             double bound = hist->getMin() + diff;
@@ -509,7 +509,7 @@ void StatsManager::prometheusSerialize(std::ostream& out) /*const*/ {
                         .count(static_cast<std::size_t>(parsedName->range));
                 } else {
                     cumulativeCount += hist->getBucket(i)
-                        .count(static_cast<std::size_t>(TimeRange::ONE_HOUR));
+                        .count(static_cast<std::size_t>(StatsManager::TimeRange::ONE_HOUR));
                 }
                 out << cumulativeCount;
                 writeTail(out);

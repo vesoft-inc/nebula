@@ -27,8 +27,12 @@ void GetMetricsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
         err_ = HttpCode::E_UNSUPPORTED_METHOD;
         return;
     }
-    serializer_ = DCHECK_NOTNULL(static_cast<stats::MetricsSerializer*>(&StatsManager::get()));
-    if (serializer_ == nullptr) {
+    try {
+        serializer_.reset(new stats::PrometheusSerializer());
+    }
+    catch(const std::exception& e) {
+        LOG(ERROR) << "Create MetricsSerializer failed: " << e.what();
+        serializer_.reset(nullptr);
         err_ = HttpCode::E_NULL_POINTER;
     }
 }
@@ -58,7 +62,7 @@ void GetMetricsHandler::onEOM() noexcept {
     }
 
     // read metrics
-    std::string vals = DCHECK_NOTNULL(serializer_)->serialize();
+    std::string vals = DCHECK_NOTNULL(serializer_)->serialize(stats::StatsManager::get());
     ResponseBuilder(downstream_)
         .status(WebServiceUtils::to(HttpStatusCode::OK),
                 WebServiceUtils::toString(HttpStatusCode::OK))

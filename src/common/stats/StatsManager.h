@@ -18,24 +18,26 @@
 namespace nebula {
 namespace stats {
 
+class StatsManager;
+
 class MetricsSerializer {
 public:
     virtual ~MetricsSerializer() = default;
-    std::string serialize() /*const*/ {
+    std::string serialize(StatsManager& sm) const {
         std::ostringstream ss;
-        serialize(ss);
+        serialize(ss, sm);
         return ss.str();
     }
-    virtual void serialize(std::ostream& out) /*const*/ = 0;
+    virtual void serialize(std::ostream& out, StatsManager& sm) const = 0;
 };
 
 class PrometheusSerializer : public MetricsSerializer {
 public:
     virtual ~PrometheusSerializer() = default;
-    void serialize(std::ostream& out) /*const*/ override {
-        prometheusSerialize(out);
+    void serialize(std::ostream& out, StatsManager& sm) const override {
+        prometheusSerialize(out, sm);
     }
-    virtual void prometheusSerialize(std::ostream& out) /*const*/ = 0;
+    void prometheusSerialize(std::ostream& out, StatsManager& sm) const;
     struct Label {
         std::string name;
         std::string value;
@@ -75,7 +77,7 @@ public:
  *                           in the last one minute
  *   error.count.600    -- Total number of errors in the last ten minutes
  */
-class StatsManager final : public PrometheusSerializer {
+class StatsManager final {
     using VT = int64_t;
     using StatsType = folly::MultiLevelTimeSeries<VT>;
     using HistogramType = folly::TimeseriesHistogram<VT>;
@@ -130,9 +132,6 @@ public:
                                   double pct);
     static void readAllValue(folly::dynamic& vals);
 
-
-    void prometheusSerialize(std::ostream& out) /*const*/ override;
-
     static StatsManager& get();
 
 private:
@@ -162,6 +161,7 @@ private:
     static VT readValue(StatsHolder& stats, TimeRange range, StatsMethod method);
 
     FRIEND_TEST(StatsManager, SimpleTest);
+    friend class PrometheusSerializer;
 
 private:
     std::string domain_;
