@@ -1,11 +1,11 @@
 # How to Contribute
 
-## Step 1: Fork in the cloud
+## Step 1: Fork in the Cloud
 
 1. Visit https://github.com/vesoft-inc/nebula
 1. Click `Fork` button (top right) to establish a cloud-based fork.
 
-## Step 2: Clone fork to local storage
+## Step 2: Clone Fork to Local Storage
 
 Define a local working directory:
 
@@ -45,7 +45,7 @@ git remote set-url --push upstream no_push
 git remote -v
 ```
 
-### Define a pre-commit hook
+### Define a Pre-Commit Hook
 
 Please link the **Nebula Graph** pre-commit hook into your `.git` directory.
 
@@ -95,11 +95,11 @@ git push --force origin master
 
 ### Step 4: Develop
 
-#### Edit the code
+#### Edit the Code
 
 You can now edit the code on the `myfeature` branch. We are following [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html).
 
-#### Run stand-alone mode
+#### Run Stand-Alone Mode
 
 If you want to reproduce and investigate an issue, you may need
 to run Nebula Graph in stand-alone mode.
@@ -124,7 +124,7 @@ Then you can connect the **Nebula Graph** console to your local server
 # Run unit test to make sure all tests passed.
 ```
 
-### Step 5: Keep your branch in sync
+### Step 5: Keep Your Branch in Sync
 
 ```bash
 # While on your myfeature branch.
@@ -151,12 +151,12 @@ push your branch to your fork on `github.com`:
 git push -f origin myfeature
 ```
 
-### Step 8: Create a pull request
+### Step 8: Create a Pull Request
 
 1. Visit your fork at https://github.com/$user/nebula (replace `$user` obviously).
 2. Click the `Compare & pull request` button next to your `myfeature` branch.
 
-### Step 9: Get a code review
+### Step 9: Get a Code Review
 
 Once your pull request has been opened, it will be assigned to at least two
 reviewers. Those reviewers will do a thorough code review to ensure the changes meet the repository's contributing guidelines and other quality standards.

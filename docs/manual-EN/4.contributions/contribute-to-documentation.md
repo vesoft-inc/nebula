@@ -1,8 +1,8 @@
-# Contribute to documentation
+# Contribute to Documentation
 
 Contributing to the **Nebula Graph** documentation can be a rewarding experience. We welcome your participation to help make the documentation better!
 
-## How to contribute to the docs
+## How to Contribute to the Docs
 
 There are many ways to contribute:
 

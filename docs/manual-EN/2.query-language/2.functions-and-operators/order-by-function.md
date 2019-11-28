@@ -1,4 +1,4 @@
-# Order By Function
+# Order by Function
 
 Similar with SQL, `ORDER BY` can be used to sort in ascending (`ASC`) or descending (`DESC`) order for returned results.
 And it can only be used in the `PIPE`-syntax (`|`).
