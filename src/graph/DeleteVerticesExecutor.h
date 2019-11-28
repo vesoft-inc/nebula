@@ -26,14 +26,14 @@ public:
     void execute() override;
 
 private:
-    void deleteEdges(std::vector<storage::cpp2::EdgeKey> edges);
+    void deleteEdges(std::vector<storage::cpp2::EdgeKey>& edges);
     void deleteVertices();
 
 private:
     DeleteVerticesSentence                     *sentence_{nullptr};
     std::unique_ptr<ExpressionContext>          expCtx_;
     std::vector<VertexID>                       vids_;
-    GraphSpaceID                                spaceId_{-1};
+    GraphSpaceID                                space_{-1};
 };
 
 }   // namespace graph

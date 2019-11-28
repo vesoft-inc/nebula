@@ -16,9 +16,9 @@ DeleteVerticesExecutor::DeleteVerticesExecutor(Sentence *sentence,
 }
 
 Status DeleteVerticesExecutor::prepare() {
-    spaceId_ = ectx()->rctx()->session()->space();
+    space_ = ectx()->rctx()->session()->space();
     expCtx_ = std::make_unique<ExpressionContext>();
-    expCtx_->setSpace(spaceId_);
+    expCtx_->setSpace(space_);
     expCtx_->setStorageClient(ectx()->getStorageClient());
 
     auto vidList = sentence_->vidList();
@@ -38,7 +38,7 @@ Status DeleteVerticesExecutor::prepare() {
 
 void DeleteVerticesExecutor::execute() {
     // TODO(zlcook) Get edgeKeys of a vertex by Go
-    auto future = ectx()->getStorageClient()->getEdgeKeys(spaceId_, vids_);
+    auto future = ectx()->getStorageClient()->getEdgeKeys(space_, vids_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&result) {
@@ -86,8 +86,8 @@ void DeleteVerticesExecutor::execute() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-void DeleteVerticesExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey> edges) {
-    auto future = ectx()->getStorageClient()->deleteEdges(spaceId_, std::move(edges));
+void DeleteVerticesExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>& edges) {
+    auto future = ectx()->getStorageClient()->deleteEdges(space_, edges);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         auto completeness = resp.completeness();
@@ -110,7 +110,7 @@ void DeleteVerticesExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey> edg
 }
 
 void DeleteVerticesExecutor::deleteVertices() {
-    auto future = ectx()->getStorageClient()->deleteVertices(spaceId_, std::move(vids_));
+    auto future = ectx()->getStorageClient()->deleteVertices(space_, vids_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         auto completeness = resp.completeness();

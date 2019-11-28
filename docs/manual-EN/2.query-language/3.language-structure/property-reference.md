@@ -20,49 +20,49 @@ and `prop_name` specifies the property name.
 $$.tag_name.prop_name
 ```
 
-where symbol `$$` indicates the ending vertex, `tag_name` and `prop_name` are the vertex's tag and property respectively.
+Symbol `$$` indicates the ending vertex, `tag_name` and `prop_name` are the vertex's tag and property respectively.
 
 ### Example
 
 ```ngql
-GO FROM 1 OVER e1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
+nebula> GO FROM 1 OVER e1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
 ```
 
-to get the starting vertex's property name and ending vertex's property age.
+Use the above query to get the source vertex's property name and ending vertex's property age.
 
 ## Reference from edge
 
 ### For property
 
-You can use the following to get an edge's property.
+You can use the following syntax to get an edge's property.
 
 ```ngql
 edge_type.edge_prop
 ```
 
-where `edge_type` is the edge's type, meanwhile `edge_prop` is the property.
+`edge_type` is the edge's type, meanwhile `edge_prop` is the property.
 
 For example,
 
 ```ngql
-GO FROM 1 OVER e1 YIELD e1.prop1
+nebula> GO FROM 1 OVER e1 YIELD e1.prop1
 ```
 
 ### For build-in properties
 
 There are four build-in properties in the edge:
 
-* _src: source vertex id of the edge
-* _dst: destination id of the edge
+* _src: source vertex ID of the edge
+* _dst: destination ID of the edge
 * _type: edge type
 * _rank: the edge's ranking
 
-You can use `_src` and `_dst` to get the starting and ending vertices' id, and they are very commonly used to show a graph path.
+You can use `_src` and `_dst` to get the starting and ending vertices' ID, and they are very commonly used to show a graph path.
 
 For example,
 
 ```ngql
-GO FROM 1 OVER e1 YIELD e1._src as startVID /* which is, 1 */, e1._dst as endVID
+nebula> GO FROM 1 OVER e1 YIELD e1._src as startVID /* which is, 1 */, e1._dst as endVID
 ```
 
-This statement returns all the neighbors of vertex `1` over edge type `e1`, by referencing `e1._src` as the starting vertex id (which, of course, is `1`) and `e1._dst` as the ending vertex id.
+This statement returns all the neighbors of vertex `1` over edge type `e1`, by referencing `e1._src` as the starting vertex ID (which, of course, is `1`) and `e1._dst` as the ending vertex ID.

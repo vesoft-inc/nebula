@@ -51,5 +51,5 @@ To change the severity of the storage log, replace `graph` in the above command 
 Or **close** all logs print (FATAL only).
 
 ```bash
-> curl "http://127.0.0.1:12000/set_flags?flag=minloglevel&value=4"
+> curl "http://127.0.0.1:12000/set_flags?flag=minloglevel&value=3"
 ```
