@@ -119,6 +119,7 @@ std::string ToClause::toString() const {
 
 Status OverClause::prepare(Over &over) const {
     over.edges_ = edges();
+    over.isReversely_ = isReversely_;
     return Status::OK();
 }
 
@@ -130,9 +131,7 @@ std::string OverEdge::toString() const {
         buf += " AS ";
         buf += *alias_;
     }
-    if (isReversely_) {
-        buf += " REVERSELY";
-    }
+
     return buf;
 }
 
@@ -145,6 +144,10 @@ std::string OverEdges::toString() const {
     }
     buf.pop_back();
 
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+
     return buf;
 }
 
@@ -153,6 +156,10 @@ std::string OverClause::toString() const {
     buf.reserve(256);
     buf += "OVER ";
     buf += overEdges_->toString();
+
+    if (isReversely()) {
+        buf += " REVERSELY";
+    }
 
     return buf;
 }
