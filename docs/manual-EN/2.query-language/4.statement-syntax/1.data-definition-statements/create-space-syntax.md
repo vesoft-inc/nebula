@@ -33,8 +33,8 @@ However, if no option is given, **Nebula Graph** will create the space with the 
 ### Example
 
 ```ngql
-CREATE SPACE my_space_1; -- create space with default partition number and replica factor
-CREATE SPACE my_space_2(partition_num=10); -- create space with default replica factor
-CREATE SPACE my_space_3(replica_factor=1); -- create space with default partition number
-CREATE SPACE my_space_4(partition_num=10, replica_factor=1);
+nebula> CREATE SPACE my_space_1; -- create space with default partition number and replica factor
+nebula> CREATE SPACE my_space_2(partition_num=10); -- create space with default replica factor
+nebula> CREATE SPACE my_space_3(replica_factor=1); -- create space with default partition number
+nebula> CREATE SPACE my_space_4(partition_num=10, replica_factor=1);
 ```

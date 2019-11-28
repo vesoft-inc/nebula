@@ -30,6 +30,7 @@ nebula> INSERT VERTEX t1 () VALUES 10:()    -- insert vertex 10 with no property
 nebula> CREATE TAG t2 (name string, age int)                -- create tag t2 with two properties
 nebula> INSERT VERTEX t2 (name, age) VALUES 11:("n1", 12)     -- insert vertex 11 with two properties
 nebula> INSERT VERTEX t2 (name, age) VALUES 12:("n1", "a13")  -- ERROR. "a13" is not int
+nebula> INSERT VERTEX t2 (name, age) VALUES 13:("n3", 12), 14:("n4", 8)    -- insert two vertices
 ```
 
 ```ngql
