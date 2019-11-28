@@ -22,7 +22,7 @@ public:
     virtual void serialize(std::ostream& out, StatsManager& sm) const = 0;
 };
 
-class PrometheusSerializer : public MetricsSerializer {
+class PrometheusSerializer final : public MetricsSerializer {
 public:
     virtual ~PrometheusSerializer() = default;
     void serialize(std::ostream& out, StatsManager& sm) const override {
@@ -33,6 +33,8 @@ public:
         std::string name;
         std::string value;
     };
+
+private:
     void annotate(std::ostream& out, const std::string& metricName,
         const std::string& metricType) const;
     void writeValue(std::ostream& out, double value) const;
