@@ -118,13 +118,8 @@ Status FindPathExecutor::prepareOver() {
         }
 
         auto v = edgeStatus.value();
-        if (e->isReversely()) {
-            over_.edgeTypes_.emplace_back(-v);
-            over_.oppositeTypes_.emplace_back(v);
-        } else {
-            over_.edgeTypes_.emplace_back(v);
-            over_.oppositeTypes_.emplace_back(-v);
-        }
+        over_.edgeTypes_.emplace_back(v);
+        over_.oppositeTypes_.emplace_back(-v);
 
         if (e->alias() != nullptr) {
             if (!expCtx_->addEdge(*e->alias(), v)) {
