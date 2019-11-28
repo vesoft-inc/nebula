@@ -48,7 +48,8 @@ Status SetExecutor::prepare() {
 }
 
 void SetExecutor::setLeft() {
-    auto onFinish = [] () {
+    auto onFinish = [] (Executor::ProcessControl ctr) {
+        UNUSED(ctr);
         return;
     };
 
@@ -72,7 +73,8 @@ void SetExecutor::setLeft() {
 }
 
 void SetExecutor::setRight() {
-    auto onFinish = [] () {
+    auto onFinish = [] (Executor::ProcessControl ctr) {
+        UNUSED(ctr);
         return;
     };
 
@@ -120,9 +122,8 @@ void SetExecutor::execute() {
 
         if (leftResult_ == nullptr || rightResult_ == nullptr) {
             // Should not reach here.
-            LOG(ERROR) << "Get null input: " << leftResult_.get()
-                        << " " << rightResult_.get();
-            onError_(Status::Error("Internal error."));
+            LOG(ERROR) << "Get null input.";
+            onError_(Status::Error("Get null input."));
             return;
         }
 
@@ -383,14 +384,15 @@ void SetExecutor::doMinus() {
 }
 
 void SetExecutor::onEmptyInputs() {
-    auto result = std::make_unique<InterimResult>(std::move(colNames_));
     if (onResult_) {
+        auto result = std::make_unique<InterimResult>(std::move(colNames_));
         onResult_(std::move(result));
     } else if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(colNames_));
     }
     DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 void SetExecutor::finishExecution(std::unique_ptr<InterimResult> result) {
@@ -415,7 +417,7 @@ void SetExecutor::finishExecution(std::unique_ptr<InterimResult> result) {
     }
 
     DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 void SetExecutor::finishExecution(std::vector<cpp2::RowValue> rows) {
@@ -432,7 +434,7 @@ void SetExecutor::finishExecution(std::vector<cpp2::RowValue> rows) {
         resp_->set_rows(std::move(rows));
     }
     DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 void SetExecutor::feedResult(std::unique_ptr<InterimResult> result) {
@@ -443,6 +445,8 @@ void SetExecutor::feedResult(std::unique_ptr<InterimResult> result) {
 
 void SetExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     if (resp_ == nullptr) {
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(colNames_));
         return;
     }
 

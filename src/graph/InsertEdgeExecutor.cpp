@@ -25,56 +25,60 @@ Status InsertEdgeExecutor::prepare() {
 
 
 Status InsertEdgeExecutor::check() {
-    Status status;
-    do {
-        status = checkIfGraphSpaceChosen();
-        if (!status.ok()) {
-            break;
-        }
-
-        auto spaceId = ectx()->rctx()->session()->space();
-        overwritable_ = sentence_->overwritable();
-        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *sentence_->edge());
-        if (!edgeStatus.ok()) {
-            status = edgeStatus.status();
-            break;
-        }
-        edgeType_ = edgeStatus.value();
-        auto props = sentence_->properties();
-        rows_ = sentence_->rows();
-
-        expCtx_->setStorageClient(ectx()->getStorageClient());
-
-        schema_ = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType_);
-        if (schema_ == nullptr) {
-            status = Status::Error("No schema found for `%s'", sentence_->edge()->c_str());
-            break;
-        }
-
-        // Now default value is unsupported
-        if (props.size() != schema_->getNumFields()) {
-            LOG(ERROR) << "Input props number " << props.size()
-                       << ", schema fields number " << schema_->getNumFields();
-            status = Status::Error("Wrong number of props");
-            break;
-        }
-
-        // Check field name
-        auto checkStatus = checkFieldName(schema_, props);
-        if (!checkStatus.ok()) {
-            status = checkStatus.status();
-            break;
-        }
-
-        schemaIndexes_ = std::move(checkStatus).value();
-    } while (false);
-
+    Status status = checkIfGraphSpaceChosen();
     if (!status.ok()) {
-        LOG(ERROR) << status;
+        LOG(ERROR) << "Please choose the space before insert edge";
         return status;
     }
 
-    return status;
+    spaceId_ = ectx()->rctx()->session()->space();
+    overwritable_ = sentence_->overwritable();
+    auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId_, *sentence_->edge());
+    if (!edgeStatus.ok()) {
+        status = edgeStatus.status();
+        return status;
+    }
+    edgeType_ = edgeStatus.value();
+    props_ = sentence_->properties();
+    rows_ = sentence_->rows();
+
+    expCtx_->setStorageClient(ectx()->getStorageClient());
+    schema_ = ectx()->schemaManager()->getEdgeSchema(spaceId_, edgeType_);
+    if (schema_ == nullptr) {
+        LOG(ERROR) << "No schema found for " << sentence_->edge();
+        return Status::Error("No schema found for `%s'", sentence_->edge()->c_str());
+    }
+
+    if (props_.size() > schema_->getNumFields()) {
+        LOG(ERROR) << "Input props number " << props_.size()
+                   << ", schema fields number " << schema_->getNumFields();
+        return Status::Error("Wrong number of props");
+    }
+
+    auto *mc = ectx()->getMetaClient();
+
+    for (size_t i = 0; i < schema_->getNumFields(); i++) {
+        std::string name = schema_->getFieldName(i);
+        auto it = std::find_if(props_.begin(), props_.end(),
+                               [name](std::string *prop) { return *prop == name;});
+
+        if (it == props_.end()) {
+            auto valueResult = mc->getEdgeDefaultValue(spaceId_, edgeType_, name).get();
+
+            if (!valueResult.ok()) {
+                LOG(ERROR) << "Not exist default value: " << name;
+                return Status::Error("Not exist default value");
+            } else {
+                VLOG(3) << "Default Value: " << name << " : " << valueResult.value();
+                defaultValues_.emplace(name, valueResult.value());
+            }
+        } else {
+            int index = std::distance(props_.begin(), it);
+            propsPosition_.emplace(name, index);
+        }
+    }
+
+    return Status::OK();
 }
 
 
@@ -127,13 +131,6 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
 
         auto expressions = row->values();
 
-        // Now default value is unsupported
-        if (expressions.size() != schema_->getNumFields()) {
-            LOG(ERROR) << "Input values number " << expressions.size()
-                       << ", schema field number " << schema_->getNumFields();
-            return Status::Error("Wrong number of values");
-        }
-
         std::vector<VariantType> values;
         values.reserve(expressions.size());
         for (auto *expr : expressions) {
@@ -150,18 +147,31 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         }
 
         RowWriter writer(schema_);
-        auto iter = schema_->begin();
-        while (iter) {
-            // Check value type
-            auto schemaType = iter->getType();
-            auto &value = values[schemaIndexes_[iter->getName()]];
-            if (!checkValueType(schemaType, value)) {
-                auto *output = "ValueType is wrong, schema type [%d], "
-                                "input type [%d], near `%s'";
-                auto error = folly::stringPrintf(output, static_cast<int32_t>(schemaType.type),
-                        value.which(), iter->getName());
-                LOG(ERROR) << error;
-                return Status::Error(std::move(error));
+        for (size_t schemaIndex = 0; schemaIndex < schema_->getNumFields(); schemaIndex++) {
+            auto fieldName = schema_->getFieldName(schemaIndex);
+            auto positionIter = propsPosition_.find(fieldName);
+
+            VariantType value;
+            auto schemaType = schema_->getFieldType(schemaIndex);
+            if (positionIter != propsPosition_.end()) {
+                auto position = propsPosition_[fieldName];
+                value = values[position];
+                if (!checkValueType(schemaType, value)) {
+                   DCHECK(onError_);
+                    LOG(ERROR) << "ValueType is wrong, schema type "
+                               << static_cast<int32_t>(schemaType.type)
+                                << ", input type " <<  value.which();
+                    return Status::Error("ValueType is wrong");
+                }
+            } else {
+                // fetch default value from cache
+                auto result = transformDefaultValue(schemaType.type, defaultValues_[fieldName]);
+                if (!result.ok()) {
+                    return result.status();
+                }
+
+                value = result.value();
+                VLOG(3) << "Supplement default value : " << fieldName << " : " << value;
             }
 
             if (schemaType.type == nebula::cpp2::SupportedType::TIMESTAMP) {
@@ -173,8 +183,8 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             } else {
                 writeVariantType(writer, value);
             }
-            ++iter;
         }
+
         {
             auto &out = edges[index++];
             out.key.set_src(src);
@@ -215,8 +225,8 @@ void InsertEdgeExecutor::execute() {
         onError_(std::move(result).status());
         return;
     }
-    auto space = ectx()->rctx()->session()->space();
-    auto future = ectx()->getStorageClient()->addEdges(space,
+
+    auto future = ectx()->getStorageClient()->addEdges(spaceId_,
                                                        std::move(result).value(),
                                                        overwritable_);
     auto *runner = ectx()->rctx()->runner();
@@ -230,7 +240,7 @@ void InsertEdgeExecutor::execute() {
             return;
         }
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -245,3 +255,5 @@ void InsertEdgeExecutor::execute() {
 
 }   // namespace graph
 }   // namespace nebula
+
+

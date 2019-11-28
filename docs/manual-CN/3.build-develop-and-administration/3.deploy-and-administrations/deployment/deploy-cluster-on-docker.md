@@ -3,9 +3,9 @@
 参考另外一个仓库: [vesoft-inc/nebula-docker-compose](https://github.com/vesoft-inc/nebula-docker-compose)
 
 <!--
-本文介绍如何使用 Docker 部署一个多节点的 Nebula 集群。
+本文介绍如何使用 Docker 部署一个多节点的 Nebula Graph 集群。
 
-**_注意_：** 由于 Nebula 的服务之间通信需要开放一些端口，所以可以临时关掉防火墙。对于生产环境，不要使用该方式进行部署。
+**_注意_：** 由于 Nebula Graph 的服务之间通信需要开放一些端口，所以可以临时关掉防火墙。对于生产环境，不要使用该方式进行部署。
 
 ## 环境准备
 
@@ -73,7 +73,7 @@ $ docker inspect 591e2f6f48e2 | grep IPAddress
                     "IPAddress": "172.17.0.2",
 ```
 
-因此本文将在 3 台主机上按如下的方式部署 Nebula 的集群
+因此本文将在 3 台主机上按如下的方式部署 Nebula Graph 的集群
 
 ```plain
 172.17.0.2 # cluster-2: metad/storaged/graphd
@@ -81,11 +81,11 @@ $ docker inspect 591e2f6f48e2 | grep IPAddress
 172.17.0.4 # cluster-4: metad/storaged/graphd
 ```
 
-**_注意_：** 由于 Nebula 的服务之间通信需要开放一些端口，所以可以临时关掉所有机器上的防火墙，具体使用端口见 `/usr/local/nebula/etc/` 下面的配置文件。也可根据实际情况灵活选取部署方式，此处仅做测试用。
+**_注意_：** 由于 Nebula Graph 的服务之间通信需要开放一些端口，所以可以临时关掉所有机器上的防火墙，具体使用端口见 `/usr/local/nebula/etc/` 下面的配置文件。也可根据实际情况灵活选取部署方式，此处仅做测试用。
 
 ## 配置
 
-Nebula 的所有配置文件都位于 `/usr/local/nebula/etc` 目录下，并且提供了三份默认配置。分别编辑这些配置文件:
+Nebula Graph 的所有配置文件都位于 `/usr/local/nebula/etc` 目录下，并且提供了三份默认配置。分别编辑这些配置文件:
 
 第一份配置文件 **nebula-metad.conf**
 

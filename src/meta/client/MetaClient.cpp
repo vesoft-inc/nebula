@@ -403,7 +403,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
         case cpp2::ErrorCode::E_NO_HOSTS:
             return Status::Error("no hosts!");
         case cpp2::ErrorCode::E_CONFIG_IMMUTABLE:
-            return Status::CfgImmutable();
+            return Status::Error("Config immutable");
         case cpp2::ErrorCode::E_CONFLICT:
             return Status::Error("conflict!");
         case cpp2::ErrorCode::E_WRONGCLUSTER:
@@ -418,6 +418,10 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("Bad balance plan!");
         case cpp2::ErrorCode::E_NO_RUNNING_BALANCE_PLAN:
             return Status::Error("No running balance plan!");
+        case cpp2::ErrorCode::E_NO_VALID_HOST:
+            return Status::Error("No valid host hold the partition");
+        case cpp2::ErrorCode::E_CORRUPTTED_BALANCE_PLAN:
+            return Status::Error("No corrupted blance plan");
         }
         default:
             return Status::Error("Unknown code %d", static_cast<int32_t>(resp.get_code()));
@@ -1156,11 +1160,25 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     return future;
 }
 
-folly::Future<StatusOr<int64_t>> MetaClient::balance(bool isStop) {
+folly::Future<StatusOr<int64_t>> MetaClient::balance(std::vector<HostAddr> hostDel,
+                                                     bool isStop) {
     cpp2::BalanceReq req;
+    if (!hostDel.empty()) {
+        std::vector<nebula::cpp2::HostAddr> tHostDel;
+        tHostDel.reserve(hostDel.size());
+        std::transform(hostDel.begin(), hostDel.end(),
+                       std::back_inserter(tHostDel), [](const auto& h) {
+            nebula::cpp2::HostAddr th;
+            th.set_ip(h.first);
+            th.set_port(h.second);
+            return th;
+        });
+        req.set_host_del(std::move(tHostDel));
+    }
     if (isStop) {
         req.set_stop(isStop);
     }
+
     folly::Promise<StatusOr<int64_t>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
@@ -1194,6 +1212,50 @@ folly::Future<StatusOr<bool>> MetaClient::balanceLeader() {
                 }, [] (cpp2::ExecResp&& resp) -> bool {
                     return resp.code == cpp2::ErrorCode::SUCCEEDED;
                 }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<std::string>> MetaClient::getTagDefaultValue(GraphSpaceID spaceId,
+                                                                    TagID tagId,
+                                                                    const std::string& field) {
+    cpp2::GetReq req;
+    static std::string defaultKey = "__default__";
+    req.set_segment(defaultKey);
+    std::string key;
+    key.reserve(64);
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&tagId), sizeof(TagID));
+    key.append(field);
+    req.set_key(std::move(key));
+    folly::Promise<StatusOr<std::string>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_get(request);
+    }, [] (cpp2::GetResp&& resp) -> std::string {
+        return resp.get_value();
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<std::string>> MetaClient::getEdgeDefaultValue(GraphSpaceID spaceId,
+                                                                     EdgeType edgeType,
+                                                                     const std::string& field) {
+    cpp2::GetReq req;
+    static std::string defaultKey = "__default__";
+    req.set_segment(defaultKey);
+    std::string key;
+    key.reserve(64);
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&edgeType), sizeof(EdgeType));
+    key.append(field);
+    req.set_key(std::move(key));
+    folly::Promise<StatusOr<std::string>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_get(request);
+    }, [] (cpp2::GetResp&& resp) -> std::string {
+        return resp.get_value();
+    },  std::move(promise));
     return future;
 }
 

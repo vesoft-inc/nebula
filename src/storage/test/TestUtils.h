@@ -92,26 +92,27 @@ public:
     }
 
     static std::vector<cpp2::Vertex> setupVertices(
-            const PartitionID partitionID,
-            const int64_t verticesNum,
-            const int32_t tagsNum) {
+            PartitionID partitionID,
+            int64_t verticesNum,
+            int32_t tagsNum,
+            int32_t tagsFrom = 0,
+            int32_t vIdFrom = 0) {
         // partId => List<Vertex>
         // Vertex => {Id, List<VertexProp>}
         // VertexProp => {tagId, tags}
         std::vector<cpp2::Vertex> vertices;
-        VertexID vertexID = 0;
-        while (vertexID < verticesNum) {
-              TagID tagID = 0;
+        for (VertexID vId = vIdFrom, vNum = 0;  vNum< verticesNum; vId++, vNum++) {
               std::vector<cpp2::Tag> tags;
-              while (tagID < tagsNum) {
-                    tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                      tagID,
-                                      folly::stringPrintf("%d_%ld_%d",
-                                                          partitionID, vertexID, tagID++));
-               }
-               vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                     vertexID++,
-                                     std::move(tags));
+              for (TagID tId = tagsFrom, tNum = 0; tNum < tagsNum; tId++, tNum++) {
+                  cpp2::Tag t;
+                  t.set_tag_id(tId);
+                  t.set_props(folly::stringPrintf("%d_%ld_%d", partitionID, vId, tId));
+                  tags.emplace_back(std::move(t));
+              }
+              cpp2::Vertex v;
+              v.set_id(vId);
+              v.set_tags(std::move(tags));
+              vertices.emplace_back(std::move(v));
         }
         return vertices;
     }

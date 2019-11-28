@@ -92,6 +92,7 @@ void FetchExecutor::setupColumns() {
 void FetchExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(resultColNames_));
     }
     resp = std::move(*resp_);
 }
@@ -102,8 +103,9 @@ void FetchExecutor::onEmptyInputs() {
         onResult_(std::move(outputs));
     } else if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(resultColNames_));
     }
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 Status FetchExecutor::getOutputSchema(
@@ -153,7 +155,7 @@ void FetchExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
         }
     }
     DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 }  // namespace graph
 }  // namespace nebula

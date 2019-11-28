@@ -45,10 +45,15 @@ public:
 
     virtual const char* name() const = 0;
 
+    enum ProcessControl : uint8_t {
+        kNext = 0,
+        kReturn,
+    };
+
     /**
      * Set callback to be invoked when this executor is finished(normally).
      */
-    void setOnFinish(std::function<void()> onFinish) {
+    void setOnFinish(std::function<void(ProcessControl)> onFinish) {
         onFinish_ = onFinish;
     }
     /**
@@ -83,10 +88,6 @@ protected:
 
     bool checkValueType(const nebula::cpp2::ValueType &type, const VariantType &value);
 
-    StatusOr<std::unordered_map<std::string, int64_t>> checkFieldName(
-            std::shared_ptr<const meta::SchemaProviderIf> schema,
-            std::vector<std::string*> props);
-
     StatusOr<int64_t> toTimestamp(const VariantType &value);
 
     StatusOr<cpp2::ColumnValue> toColumnValue(const VariantType& value,
@@ -101,9 +102,12 @@ protected:
         return Status::OK();
     }
 
+    StatusOr<VariantType> transformDefaultValue(nebula::cpp2::SupportedType type,
+                                                std::string& originalValue);
+
 protected:
-    ExecutionContext                            *ectx_;
-    std::function<void()>                       onFinish_;
+    ExecutionContext                           *ectx_;
+    std::function<void(ProcessControl)>         onFinish_;
     std::function<void(Status)>                 onError_;
 };
 

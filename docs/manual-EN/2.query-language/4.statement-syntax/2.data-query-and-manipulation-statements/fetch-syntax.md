@@ -4,7 +4,7 @@ The `FETCH` syntax is used to get vertex/edge's properties.
 
 ## Fetch Vertex property
 
-Use `FETCH PROP ON` to return a (list of) vertex's properties. Currently, you can get multiple vertices' properties with the same tag in one sentence.  
+Use `FETCH PROP ON` to return a (list of) vertex's properties. Currently, you can get multiple vertices' properties with the same tag in one sentence.
 
 ```ngql
 FETCH PROP ON <tag_name> <vertex_id_list> [YIELD [DISTINCT] <return_list>]
@@ -39,12 +39,14 @@ The `FETCH` usage of an edge is almost the same with vertex.
 You can get properties from multiple edges with the same type.
 
 ```ngql
-FETCH PROP ON <edge_type> <vid> -> <vid> [, <vid> -> <vid> ...] [YIELD [DISTINCT] <return_list>]
+FETCH PROP ON <edge_type> <vid> -> <vid>@ranking [, <vid> -> <vid> ...] [YIELD [DISTINCT] <return_list>]
 ```
 
 `<edge_type>` specifies the edge's type. It must be the same as those in `<return_list>`
 
 `<vid> -> <vid>` denotes a starting vertex to (->) an ending vertex. Multiple edges are separated by comma(,).
+
+`ranking` specifies the edge weight of the same edge type, it's optional.
 
 `[YIELD [DISTINCT] <return_list>]` is the property list returned.
 

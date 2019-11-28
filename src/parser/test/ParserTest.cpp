@@ -181,6 +181,22 @@ TEST(Parser, TagOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "CREATE TAG woman(name string, age int default 22, "
+                            "married bool default false, salary double default 1000.0, "
+                            "create_time timestamp)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG woman(name string default \"\", age int default 22, "
+                            "married bool default false, salary double default 1000.0, "
+                            "create_time timestamp default 1566541858)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "ALTER TAG person ADD (col1 int, col2 string), "
                             "CHANGE (married int, salary int), "
                             "DROP (age, create_time)";
@@ -251,6 +267,13 @@ TEST(Parser, EdgeOperation) {
         std::string query = "CREATE EDGE man(name string, age int, "
                             "married bool, salary double, create_time timestamp)"
                             "ttl_duration = 100";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE EDGE man(name string default \"\", age int default 18, "
+                            "married bool default false, salary double default 1000.0)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -1357,6 +1380,13 @@ TEST(Parser, ConfigOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "UPDATE CONFIGS rocksdb_column_family_options={"
+                            "write_buffer_size = 1 * 1024 * 1024}";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "UPDATE CONFIGS storage:rocksdb_db_options = {}";
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());
@@ -1385,6 +1415,12 @@ TEST(Parser, BalanceOperation) {
     {
         GQLParser parser;
         std::string query = "BALANCE DATA STOP";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "BALANCE DATA REMOVE 192.168.0.1:50000,192.168.0.1:50001";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -1482,6 +1518,15 @@ TEST(Parser, GroupBy) {
                             "COUNT($^.person.name )";
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok());
+    }
+}
+
+TEST(Parser, Return) {
+    {
+        GQLParser parser;
+        std::string query = "RETURN $A IF $A IS NOT NULL";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
     }
 }
 }   // namespace nebula

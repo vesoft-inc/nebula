@@ -46,6 +46,7 @@
 #include "graph/FindPathExecutor.h"
 #include "graph/LimitExecutor.h"
 #include "graph/GroupByExecutor.h"
+#include "graph/ReturnExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -159,6 +160,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kLimit:
             executor = std::make_unique<LimitExecutor>(sentence, ectx());
             break;
+        case Sentence::Kind::kReturn:
+            executor = std::make_unique<ReturnExecutor>(sentence, ectx());
+            break;
         case Sentence::Kind::kUnknown:
             LOG(ERROR) << "Sentence kind unknown";
             return nullptr;
@@ -221,22 +225,6 @@ bool Executor::checkValueType(const nebula::cpp2::ValueType &type, const Variant
     }
 
     return false;
-}
-
-StatusOr<std::unordered_map<std::string, int64_t>>
-Executor::checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> schema,
-                         std::vector<std::string*> props) {
-    std::unordered_map<std::string, int64_t> schemaIndexes;
-    auto pos = 0;
-    for (auto it : props) {
-        auto index = schema->getFieldIndex(*it);
-        if (index < 0) {
-            return Status::Error("Invalid field name `%s'", it->c_str());
-        }
-        schemaIndexes.emplace(*it, pos);
-        pos++;
-    }
-    return schemaIndexes;
 }
 
 StatusOr<int64_t> Executor::toTimestamp(const VariantType &value) {
@@ -351,6 +339,43 @@ OptVariantType Executor::toVariantType(const cpp2::ColumnValue& value) const {
 
     LOG(ERROR) << "Unknown ColumnType: " << static_cast<int32_t>(value.getType());
     return Status::Error("Unknown ColumnType: %d", static_cast<int32_t>(value.getType()));
+}
+
+StatusOr<VariantType> Executor::transformDefaultValue(nebula::cpp2::SupportedType type,
+                                                      std::string& originalValue) {
+    switch (type) {
+        case nebula::cpp2::SupportedType::BOOL:
+            try {
+                return folly::to<bool>(originalValue);
+            } catch (const std::exception& ex) {
+                LOG(ERROR) << "Conversion to bool failed: " << originalValue;
+                return Status::Error("Type Conversion Failed");
+            }
+            break;
+        case nebula::cpp2::SupportedType::INT:
+            try {
+                return folly::to<int64_t>(originalValue);
+            } catch (const std::exception& ex) {
+                LOG(ERROR) << "Conversion to int64_t failed: " << originalValue;
+                return Status::Error("Type Conversion Failed");
+            }
+            break;
+        case nebula::cpp2::SupportedType::DOUBLE:
+            try {
+                return folly::to<double>(originalValue);
+            } catch (const std::exception& ex) {
+                LOG(ERROR) << "Conversion to double failed: " << originalValue;
+                return Status::Error("Type Conversion Failed");
+            }
+            break;
+        case nebula::cpp2::SupportedType::STRING:
+            return originalValue;
+            break;
+        default:
+            LOG(ERROR) << "Unknow type";
+            return Status::Error("Unknow type");
+    }
+    return Status::OK();
 }
 
 }   // namespace graph

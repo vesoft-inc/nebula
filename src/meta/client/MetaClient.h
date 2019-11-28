@@ -215,7 +215,7 @@ public:
 
     // Operations for admin
     folly::Future<StatusOr<int64_t>>
-    balance(bool isStop = false);
+    balance(std::vector<HostAddr> hostDel, bool isStop = false);
 
     folly::Future<StatusOr<std::vector<cpp2::BalanceTask>>>
     showBalance(int64_t balanceId);
@@ -273,6 +273,14 @@ public:
     getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver = -1);
 
     const std::vector<HostAddr>& getAddresses();
+
+    folly::Future<StatusOr<std::string>> getTagDefaultValue(GraphSpaceID spaceId,
+                                                            TagID tagId,
+                                                            const std::string& field);
+
+    folly::Future<StatusOr<std::string>> getEdgeDefaultValue(GraphSpaceID spaceId,
+                                                             EdgeType edgeType,
+                                                             const std::string& field);
 
     Status refreshCache();
 
