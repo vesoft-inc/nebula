@@ -469,11 +469,6 @@ public:
     OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
 };
 
 
@@ -489,11 +484,6 @@ public:
     OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
 };
 
 
@@ -509,11 +499,6 @@ public:
     OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
 };
 
 
@@ -534,11 +519,6 @@ public:
     OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
 };
 
 
@@ -559,11 +539,6 @@ public:
     OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
 };
 
 
@@ -584,11 +559,6 @@ public:
     OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
 };
 
 
@@ -609,11 +579,6 @@ public:
     OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
 };
 
 
@@ -629,11 +594,6 @@ public:
     OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
 };
 
 

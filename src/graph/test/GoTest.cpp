@@ -1662,6 +1662,29 @@ TEST_F(GoTest, filterPushdown) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    /*
+    {
+        // Function call is not supported in storage now.
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "WHERE udf_is_in(serve._dst, 1, 2, 3)";
+        auto query = folly::stringPrintf(fmt, players_["Rajon Rondo"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Mavericks"].vid()},
+            {teams_["Kings"].vid()},
+            {teams_["Bulls"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    */
 }
 }   // namespace graph
 }   // namespace nebula

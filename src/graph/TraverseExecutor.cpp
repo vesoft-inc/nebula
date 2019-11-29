@@ -401,6 +401,9 @@ bool WhereWrapper::rewriteAnd(LogicalExpression *filter) const {
 }
 
 bool WhereWrapper::canPushdown(Expression *expr) const {
+    if (expr->isFunCallExpression()) {
+        return false;
+    }
     auto ectx = std::make_unique<ExpressionContext>();
     expr->setContext(ectx.get());
     auto status = expr->prepare();
