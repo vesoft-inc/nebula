@@ -546,6 +546,45 @@ TEST_F(YieldTest, AggCall) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Yield field has not input
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Carmelo Anthony"];
+        auto *fmt = "GO FROM %ld OVER like "
+                    "| YIELD COUNT(*)";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+                {3},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Yield field has not input
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Carmelo Anthony"];
+        auto *fmt = "GO FROM %ld OVER like "
+                    "| YIELD 1";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+                {1}, {1}, {1}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // input is empty
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Nobody"];
+        auto *fmt = "GO FROM %ld OVER like "
+                    "| YIELD 1";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(resp.get_rows() == nullptr);
+    }
     // Test var
     {
         cpp2::ExecutionResponse resp;
