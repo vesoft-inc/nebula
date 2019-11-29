@@ -2,9 +2,9 @@
 
 You can refer a vertex or edge's property in `WHERE` or `YIELD` syntax.
 
-## Reference from vertex
+## Reference From Vertex
 
-### For source vertex
+### For Source Vertex
 
 ```ngql
 $^.tag_name.prop_name
@@ -14,7 +14,7 @@ where symbol `$^` is used to get a source vertex's property,
 `tag_name` indicates the source vertex's `tag`,
 and `prop_name` specifies the property name.
 
-### For destination vertex
+### For Destination Vertex
 
 ```ngql
 $$.tag_name.prop_name
@@ -30,9 +30,9 @@ nebula> GO FROM 1 OVER e1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
 
 Use the above query to get the source vertex's property name and ending vertex's property age.
 
-## Reference from edge
+## Reference From Edge
 
-### For property
+### For Property
 
 You can use the following syntax to get an edge's property.
 
@@ -48,7 +48,7 @@ For example,
 nebula> GO FROM 1 OVER e1 YIELD e1.prop1
 ```
 
-### For build-in properties
+### For Build-in Properties
 
 There are four build-in properties in the edge:
 

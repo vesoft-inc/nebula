@@ -2,7 +2,7 @@
 
  Keyword `YIELD` can be used as a clause in a `FETCH` or `GO` statement, or as a separate statement in `PIPE`, or as a single sentence for calculation.
 
-## As Clause (with GO-syntax)
+## As Clause (With GO-Syntax)
 
 ```ngql
 YIELD
