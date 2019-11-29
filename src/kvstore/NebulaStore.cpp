@@ -124,7 +124,12 @@ bool NebulaStore::init() {
                                                                bgWorkers_,
                                                                workers_,
                                                                snapshot_);
-                            auto partMeta = options_.partMan_->partMeta(spaceId, partId);
+                            auto status = options_.partMan_->partMeta(spaceId, partId);
+                            if (!status.ok()) {
+                                LOG(WARNING) << status.status().toString();
+                                return;
+                            }
+                            auto partMeta = status.value();
                             std::vector<HostAddr> peers;
                             for (auto& h : partMeta.peers_) {
                                 if (h != storeSvcAddr_) {
@@ -271,7 +276,12 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                        bgWorkers_,
                                        workers_,
                                        snapshot_);
-    auto partMeta = options_.partMan_->partMeta(spaceId, partId);
+    auto metaStatus = options_.partMan_->partMeta(spaceId, partId);
+    if (!metaStatus.ok()) {
+        return nullptr;
+    }
+
+    auto partMeta = metaStatus.value();
     std::vector<HostAddr> peers;
     for (auto& h : partMeta.peers_) {
         if (h != storeSvcAddr_) {
