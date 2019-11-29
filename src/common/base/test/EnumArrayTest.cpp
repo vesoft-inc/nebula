@@ -76,6 +76,21 @@ TEST(EnumArrayTest, ReadWriteTest) {
     }
 }
 
+TEST(EnumArrayTest, OverwriteTest) {
+    enum Type : uint8_t {
+        one,
+        two,
+        three,
+        _ITEMS_NUM = 3,
+    };
+    using TypeArray = EnumArray<Type, 10>;
+    TypeArray arr;
+    arr.put(0, Type::two);
+    arr.put(0, Type::one);
+
+    EXPECT_EQ(Type::one, arr[0]);
+}
+
 TEST(EnumArrayTest, IteratorTest) {
     enum Type : uint8_t {
         one,

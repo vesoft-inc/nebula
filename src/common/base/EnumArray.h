@@ -172,7 +172,9 @@ public:
         DCHECK(idx < kTotalBits) << "idx " << idx << ", total " << kTotalBits;
         auto bIdx = blockIndex(idx);
         auto offset = bitOffset(idx);
-        uint64_t mask = v << offset;
+        uint64_t mask =  ((1ul << kLogBitsOfEnum) - 1) << offset;
+        blocks_[bIdx] &= (~mask);
+        mask = v << offset;
         blocks_[bIdx] |= mask;
         VLOG(3) << "idx " << idx
                 << ", v " << static_cast<int32_t>(v)
