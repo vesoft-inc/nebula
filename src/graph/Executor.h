@@ -15,6 +15,8 @@
 #include "gen-cpp2/storage_types.h"
 #include "dataman/RowWriter.h"
 #include "meta/SchemaManager.h"
+#include "time/Duration.h"
+#include "stats/Stats.h"
 
 
 /**
@@ -79,6 +81,10 @@ public:
         return ectx_;
     }
 
+    const time::Duration& duration() const {
+        return duration_;
+    }
+
 protected:
     std::unique_ptr<Executor> makeExecutor(Sentence *sentence);
 
@@ -104,11 +110,16 @@ protected:
 
     StatusOr<VariantType> transformDefaultValue(nebula::cpp2::SupportedType type,
                                                 std::string& originalValue);
+    void doError(Status status, const stats::Stats* stats = nullptr, uint32_t count = 1) const;
+    void doFinish(ProcessControl pro,
+                  const stats::Stats* stats = nullptr,
+                  uint32_t count = 1) const;
 
 protected:
     ExecutionContext                           *ectx_;
     std::function<void(ProcessControl)>         onFinish_;
     std::function<void(Status)>                 onError_;
+    time::Duration                              duration_;
 };
 
 }   // namespace graph
