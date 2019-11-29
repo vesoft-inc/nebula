@@ -7,13 +7,18 @@
 #include "stats/StatsManager.h"
 #include "stats/Stats.h"
 
+DEFINE_int32(histogram_bucketSize, 1000, "The bucketSize of StatsManager");
+DEFINE_uint32(histogram_min, 1, "The min of StatsManager");
+DEFINE_uint32(histogram_max, 1000 * 1000, "The max of StatsManager");
+
 namespace nebula {
 namespace stats {
 
-Stats::Stats(const std::string& name) {
-    qpsStatId_ = StatsManager::registerStats(name + "_qps");
-    errorQpsStatId_ = StatsManager::registerStats(name + "_error_qps");
-    latencyStatId_ = StatsManager::registerHisto(name + "_latency", 100, 1, 1000 * 1000);
+Stats::Stats(const std::string& serverName, const std::string& moduleName) {
+    qpsStatId_ = StatsManager::registerStats(serverName + "_" + moduleName + "_qps");
+    errorQpsStatId_ = StatsManager::registerStats(serverName + "_" + moduleName + "_error_qps");
+    latencyStatId_ = StatsManager::registerHisto(serverName + "_" + moduleName + "_latency",
+            FLAGS_histogram_bucketSize, FLAGS_histogram_min, FLAGS_histogram_max);
 }
 
 // static

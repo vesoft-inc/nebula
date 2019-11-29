@@ -22,7 +22,7 @@ public:
     explicit MetaServiceHandler(kvstore::KVStore* kv, ClusterID clusterId = 0)
         : kvstore_(kv), clusterId_(clusterId) {
         adminClient_ = std::make_unique<AdminClient>(kvstore_);
-        heartBeatStat_ = stats::Stats("heartbeat");
+        heartBeatStat_ = stats::Stats("meta", "heartbeat");
     }
 
     /**

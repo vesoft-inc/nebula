@@ -16,20 +16,20 @@ namespace graph {
 class GraphStats final {
 public:
     GraphStats() {
-        storageClientStats_ = std::make_unique<stats::Stats>("storageCliet");
-        metaClientStats_ = std::make_unique<stats::Stats>("metaClient");
-        graphAllStats_ = std::make_unique<stats::Stats>("graphAll");
-        parseErrorStats_ = std::make_unique<stats::Stats>("parseError");
-        insertVStats_ = std::make_unique<stats::Stats>("insertVertex");
-        insertEStats_ = std::make_unique<stats::Stats>("insertEdge");
-        deleteVStats_ = std::make_unique<stats::Stats>("deleteVertex");
-        deleteEStats_ = std::make_unique<stats::Stats>("deleteEdge");
-        updateVStats_ = std::make_unique<stats::Stats>("updateVertex");
-        updateEStats_ = std::make_unique<stats::Stats>("updateEdge");
-        goStats_ = std::make_unique<stats::Stats>("go");
-        findPathStats_ = std::make_unique<stats::Stats>("findPath");
-        fetchVStats_ = std::make_unique<stats::Stats>("fetchVertex");
-        fetchEStats_ = std::make_unique<stats::Stats>("fetchEdge");
+        storageClientStats_ = std::make_unique<stats::Stats>("graph", "storageCliet");
+        metaClientStats_ = std::make_unique<stats::Stats>("graph", "metaClient");
+        graphAllStats_ = std::make_unique<stats::Stats>("graph", "graph_all");
+        parseErrorStats_ = std::make_unique<stats::Stats>("graph", "parse_error");
+        insertVStats_ = std::make_unique<stats::Stats>("graph", "insert_vertex");
+        insertEStats_ = std::make_unique<stats::Stats>("graph", "insert_edge");
+        deleteVStats_ = std::make_unique<stats::Stats>("graph", "delete_vertex");
+        deleteEStats_ = std::make_unique<stats::Stats>("graph", "delete_edge");
+        updateVStats_ = std::make_unique<stats::Stats>("graph", "update_vertex");
+        updateEStats_ = std::make_unique<stats::Stats>("graph", "update_edge");
+        goStats_ = std::make_unique<stats::Stats>("graph", "go");
+        findPathStats_ = std::make_unique<stats::Stats>("graph", "find_path");
+        fetchVStats_ = std::make_unique<stats::Stats>("graph", "fetch_vertex");
+        fetchEStats_ = std::make_unique<stats::Stats>("graph", "fetch_edge");
     }
 
     ~GraphStats() = default;

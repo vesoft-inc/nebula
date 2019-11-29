@@ -33,17 +33,17 @@ public:
         , schemaMan_(schemaMan)
         , metaClient_(client)
         , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp) {
-        getBoundQpsStat_ = stats::Stats("get_bound");
-        boundStatsQpsStat_ = stats::Stats("bound_stats");
-        vertexPropsQpsStat_ = stats::Stats("vertex_props");
-        edgePropsQpsStat_ = stats::Stats("edge_props");
-        addVertexQpsStat_ = stats::Stats("add_vertex");
-        addEdgeQpsStat_ = stats::Stats("add_edge");
-        delVertexQpsStat_ = stats::Stats("del_vertex");
-        updateVertexQpsStat_ = stats::Stats("update_vertex");
-        updateEdgeQpsStat_ = stats::Stats("update_edge");
-        getKvQpsStat_ = stats::Stats("get_kv");
-        putKvQpsStat_ = stats::Stats("put_kv");
+        getBoundQpsStat_ = stats::Stats("storage", "get_bound");
+        boundStatsQpsStat_ = stats::Stats("storage", "bound_stats");
+        vertexPropsQpsStat_ = stats::Stats("storage", "vertex_props");
+        edgePropsQpsStat_ = stats::Stats("storage", "edge_props");
+        addVertexQpsStat_ = stats::Stats("storage", "add_vertex");
+        addEdgeQpsStat_ = stats::Stats("storage", "add_edge");
+        delVertexQpsStat_ = stats::Stats("storage", "del_vertex");
+        updateVertexQpsStat_ = stats::Stats("storage", "update_vertex");
+        updateEdgeQpsStat_ = stats::Stats("storage", "update_edge");
+        getKvQpsStat_ = stats::Stats("storage", "get_kv");
+        putKvQpsStat_ = stats::Stats("storage", "put_kv");
     }
 
     folly::Future<cpp2::QueryResponse>
