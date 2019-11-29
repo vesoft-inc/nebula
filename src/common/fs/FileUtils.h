@@ -152,8 +152,6 @@ public:
     static bool isFifo(struct dirent* dEnt, const char* path);
     static bool isSock(struct dirent* dEnt, const char* path);
 
-    static int sync(int fd);
-
     /**
      * class Iterator works like other iterators,
      * which iterates over lines in a file or entries in a directory.

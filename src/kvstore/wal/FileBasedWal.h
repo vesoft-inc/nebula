@@ -33,7 +33,7 @@ struct FileBasedWalPolicy {
     // Number of buffers allowed. When the number of buffers reach this
     // number, appendLogs() will be blocked until some buffers are flushed
     size_t numBuffers = 4;
-    // Whether fsync/fdatasync needs to be called every write
+    // Whether fsync needs to be called every write
     bool sync = false;
 };
 

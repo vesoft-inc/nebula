@@ -280,11 +280,17 @@ void FileBasedWal::closeCurrFile() {
         return;
     }
 
-    if (FileUtils::sync(currFd_) == -1) {
-        LOG(WARNING) << "sync wal failed, error: " << strerror(errno);
+    if (lastLogId_ > firstLogId_) {
+        if (::fsync(currFd_) == -1) {
+            LOG(WARNING) << "sync wal \"" << currInfo_->path()
+                         << "\" failed, error: " << strerror(errno);
+        }
     }
     // Close the file
-    ::close(currFd_);
+    if (::close(currFd_) == -1) {
+        LOG(WARNING) << "close wal \"" << currInfo_->path()
+                     << "\" failed, error: " << strerror(errno);
+    }
     currFd_ = -1;
 
     auto now = time::WallClock::fastNowInSec();
@@ -546,8 +552,9 @@ bool FileBasedWal::appendLogInternal(LogID id,
     }
 
     if (policy_.sync) {
-        if (FileUtils::sync(currFd_) == -1) {
-            LOG(WARNING) << "sync wal failed, errno: " << strerror(errno);
+        if (::fsync(currFd_) == -1) {
+            LOG(WARNING) << "sync wal \"" << currInfo_->path()
+                         << "\" failed, error: " << strerror(errno);
         }
     }
     currInfo_->setSize(currInfo_->size() + strBuf.size());

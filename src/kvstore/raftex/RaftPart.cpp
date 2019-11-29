@@ -32,7 +32,7 @@ DEFINE_int32(wal_ttl, 86400, "Default wal ttl");
 DEFINE_int64(wal_file_size, 16 * 1024 * 1024, "Default wal file size");
 DEFINE_int32(wal_buffer_size, 8 * 1024 * 1024, "Default wal buffer size");
 DEFINE_int32(wal_buffer_num, 2, "Default wal buffer number");
-DEFINE_bool(wal_sync, false, "Whether fsync/fdatasync needs to be called every write");
+DEFINE_bool(wal_sync, false, "Whether fsync needs to be called every write");
 
 
 namespace nebula {

@@ -481,7 +481,3 @@ set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE ${CMAKE_CURRENT_SOURCE_DIR}/package/posti
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/local)
 
 include(CPack)
-
-#Tests for functions
-INCLUDE (CheckFunctionExists)
-CHECK_FUNCTION_EXISTS (fdatasync HAVE_FDATASYNC)
