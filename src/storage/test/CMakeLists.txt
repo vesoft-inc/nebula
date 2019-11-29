@@ -5,6 +5,8 @@ set(storage_test_deps
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:raftex_obj>
@@ -235,6 +237,8 @@ nebula_add_test(
         $<TARGET_OBJECTS:filter_obj>
         $<TARGET_OBJECTS:storage_client>
         $<TARGET_OBJECTS:meta_client>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>

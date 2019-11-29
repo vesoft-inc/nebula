@@ -18,6 +18,7 @@
 #include "thrift/ThriftClientManager.h"
 #include "meta/SchemaProviderIf.h"
 #include "meta/GflagsManager.h"
+#include "stats/Stats.h"
 
 DECLARE_int32(meta_client_retry_times);
 
@@ -108,7 +109,9 @@ public:
                         std::vector<HostAddr> addrs,
                         HostAddr localHost = HostAddr(0, 0),
                         ClusterID clusterId = 0,
-                        bool sendHeartBeat = false);
+                        bool sendHeartBeat = false,
+                        stats::Stats *stats = nullptr);
+
 
     virtual ~MetaClient();
 
@@ -387,6 +390,7 @@ private:
     cpp2::ConfigModule    gflagsModule_{cpp2::ConfigModule::UNKNOWN};
     std::atomic_bool      configReady_{false};
     std::vector<cpp2::ConfigItem> gflagsDeclared_;
+    stats::Stats         *stats_{nullptr};
 };
 
 }  // namespace meta

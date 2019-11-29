@@ -1,6 +1,8 @@
 set(KVSTORE_TEST_LIBS
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:raftex_obj>
