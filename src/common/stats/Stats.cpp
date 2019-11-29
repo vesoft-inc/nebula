@@ -7,9 +7,9 @@
 #include "stats/StatsManager.h"
 #include "stats/Stats.h"
 
-DEFINE_int32(histogram_bucketSize, 1000, "The bucketSize of StatsManager");
-DEFINE_uint32(histogram_min, 1, "The min of StatsManager");
-DEFINE_uint32(histogram_max, 1000 * 1000, "The max of StatsManager");
+DEFINE_int32(histogram_bucketSize, 1000, "The width of each bucket");
+DEFINE_uint32(histogram_min, 1, "The smallest value for the bucket range");
+DEFINE_uint32(histogram_max, 1000 * 1000, "The largest value for the bucket range");
 
 namespace nebula {
 namespace stats {
