@@ -1,6 +1,6 @@
-# Dockerfiles for Nebula Graph Services
+# Docker Files for Nebula Graph Services
 
-> **NOTE**: The `Dockerfile.graph` is used to build docker image only for **testing** in local machine since all of nebula services are installed in same image. This is not recommended practice for docker usage.
+> **NOTE**: The `Dockerfile.graph` is used to build docker image only for **testing** in local machine since all of **Nebula Graph** services are installed in same image. This is not recommended practice for docker usage.
 
 Following docker images will be ready in production.
 

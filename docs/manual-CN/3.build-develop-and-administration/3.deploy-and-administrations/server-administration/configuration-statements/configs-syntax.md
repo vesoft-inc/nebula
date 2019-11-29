@@ -48,14 +48,14 @@
 示例
 
 ```ngql
-UPDATE CONFIGS storage:rocksdb_column_family_options =
-{ disable_auto_compactions = false , level0_file_num_compaction_trigger = 10 }
+nebula> UPDATE CONFIGS storage:rocksdb_column_family_options = \
+        { disable_auto_compactions = false ,         level0_file_num_compaction_trigger = 10 }
 ```
 
 ### 显示变量
 
 ```ngql
-SHOW CONFIGS graph|meta|storage
+SHOW CONFIGS [graph|meta|storage]
 ```
 
 例如

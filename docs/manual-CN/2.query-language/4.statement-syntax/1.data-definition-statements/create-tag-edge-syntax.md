@@ -57,25 +57,25 @@ option:
 ### 示例
 
 ```ngql
-CREATE TAG course(name string, credits int)
-CREATE TAG notag()  -- 属性为空
+nebula> CREATE TAG course(name string, credits int)
+nebula> CREATE TAG notag()  -- 属性为空
 
-CREATE EDGE follow(start_time timestamp, likeness double)
-CREATE EDGE noedge()  -- 属性为空
+nebula> CREATE EDGE follow(start_time timestamp, likeness double)
+nebula> CREATE EDGE noedge()  -- 属性为空
 
-CREATE TAG woman(name string, age int,
+nebula> CREATE TAG woman(name string, age int,
    married bool, salary double, create_time timestamp)
    TTL_DURATION = 100, TTL_COL = create_time -- 过期时间是 100， 从当前时间开始
 
-CREATE EDGE marriage(location string, since timestamp)
+nebula> CREATE EDGE marriage(location string, since timestamp)
     TTL_DURATION = 0, TTL_COL = since -- 负值或 0 数据不会失效
 
-CREATE TAG icecream(made timestamp, temperature int)
+nebula> CREATE TAG icecream(made timestamp, temperature int)
    TTL_DURATION = 100, TTL_COL = made,
    TTL_DURATION = 10, TTL_COL = temperature
    --  超过任一 TTL_DURATION 数据即失效
 
-CREATE EDGE garbage (thrown timestamp, temperature int)
+nebula> CREATE EDGE garbage (thrown timestamp, temperature int)
    TTL_DURATION = -2, TTL_COL = thrown,
    TTL_DURATION = 10, TTL_COL = thrown
    --  语法合法，但不推荐。数据将在 thrown + 10 后失效

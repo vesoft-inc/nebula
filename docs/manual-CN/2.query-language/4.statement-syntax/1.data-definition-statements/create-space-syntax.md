@@ -33,8 +33,8 @@ space_option:
 ### 示例
 
 ```ngql
-CREATE SPACE my_space_1; -- 使用默认选项创建图空间
-CREATE SPACE my_space_2(partition_num=100); -- 使用默认 replica_factor 创建图空间
-CREATE SPACE my_space_3(replica_factor=1);  -- 使用默认 partition_number 创建图空间
-CREATE SPACE my_space_4(partition_num=100, replica_factor=1);
+nebula> CREATE SPACE my_space_1; -- 使用默认选项创建图空间
+nebula> CREATE SPACE my_space_2(partition_num=10); -- 使用默认 replica_factor 创建图空间
+nebula> CREATE SPACE my_space_3(replica_factor=1);  -- 使用默认 partition_number 创建图空间
+nebula> CREATE SPACE my_space_4(partition_num=10, replica_factor=1);
 ```
