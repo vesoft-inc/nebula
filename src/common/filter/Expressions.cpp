@@ -118,11 +118,16 @@ Expression::decode(folly::StringPiece buffer) noexcept {
 std::string AliasPropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
-    if (ref_ != nullptr && *ref_ != "" && *ref_ != VAR_REF) {
+    if (ref_ != nullptr) {
         buf += *ref_;
     }
-    if (alias_ != nullptr && *alias_ != "") {
+    if (*ref_ != "" && *ref_ != VAR_REF) {
+        buf += ".";
+    }
+    if (alias_ != nullptr) {
         buf += *alias_;
+    }
+    if (*alias_ != "") {
         buf += ".";
     }
     if (prop_ != nullptr) {

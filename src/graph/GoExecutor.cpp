@@ -445,7 +445,7 @@ void GoExecutor::stepOut() {
         // TODO: not support filter pushdown in reversely traversal now.
         filterPushdown = whereWrapper_->filterPushdown_;
     }
-    auto future  = ectx()->storage()->getNeighbors(spaceId,
+    auto future  = ectx()->getStorageClient()->getNeighbors(spaceId,
                                                    starts_,
                                                    edgeTypes_,
                                                    filterPushdown,
