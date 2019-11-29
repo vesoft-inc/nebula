@@ -7,6 +7,7 @@
 #ifndef GRAPH_GRAPHSERVICE_H_
 #define GRAPH_GRAPHSERVICE_H_
 
+#include <boost/asio/thread_pool.hpp>
 #include "base/Base.h"
 #include "gen-cpp2/GraphService.h"
 #include "graph/Authenticator.h"
@@ -42,6 +43,7 @@ private:
     std::unique_ptr<SessionManager>             sessionManager_;
     std::unique_ptr<ExecutionEngine>            executionEngine_;
     std::unique_ptr<Authenticator>              authenticator_;
+    std::unique_ptr<boost::asio::thread_pool>   threadPool_;
 };
 
 }   // namespace graph

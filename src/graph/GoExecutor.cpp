@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <boost/asio.hpp>
 #include "base/Base.h"
 #include "graph/GoExecutor.h"
 #include "graph/SchemaHelper.h"
@@ -756,7 +757,7 @@ std::vector<folly::Future<StatusOr<RowSetWriter>>> GoExecutor::processFinalResul
 
 std::vector<folly::Future<StatusOr<RowSetWriter>>>
     GoExecutor::processWithMultiJobs(size_t respIndex) {
-    auto *runner = ectx()->rctx()->runner();
+    auto *pool = ectx()->rctx()->pool();
     auto spaceId = ectx()->rctx()->session()->space();
     std::vector<folly::Future<StatusOr<RowSetWriter>>> futures;
     auto &all = finalResp_.responses();
@@ -773,7 +774,7 @@ std::vector<folly::Future<StatusOr<RowSetWriter>>>
 
         folly::Promise<StatusOr<RowSetWriter>> pro;
         futures.emplace_back(pro.getFuture());
-        runner->add([this, p = std::move(pro), spaceId = spaceId,
+        boost::asio::post(*pool, [this, p = std::move(pro), spaceId = spaceId,
                 respIndex = respIndex, bucket] () mutable {
             Status status = Status::OK();
             RowSetWriter rsWriter;
@@ -1026,7 +1027,7 @@ void GoExecutor::writeToRowSet(std::vector<VariantType> &record,
 
 void GoExecutor::processRecords(
         std::vector<folly::Try<StatusOr<RowSetWriter>>> rsWriters) {
-    auto rsWriter = std::make_unique<RowSetWriter>();
+    std::unique_ptr<RowSetWriter> rsWriter;
     for (auto &t : rsWriters) {
         auto &statusOr = t.value();
         if (!statusOr.ok()) {
@@ -1041,10 +1042,10 @@ void GoExecutor::processRecords(
             // Skip the invalid rswriter
             // The result may all be filtered.
             continue;
-        } else if (rsWriter->schema() == nullptr) {
+        } else if (rsWriter == nullptr) {
             // Assume that we always get the same schema,
             // although the schema was generated in diffrent context.
-            rsWriter->setSchema(v.schema());
+            rsWriter = std::make_unique<RowSetWriter>(v.schema());
         }
 
         std::string rows = v.data();

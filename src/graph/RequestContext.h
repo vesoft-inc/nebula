@@ -7,6 +7,7 @@
 #ifndef GRAPH_REQUESTCONTEXT_H_
 #define GRAPH_REQUESTCONTEXT_H_
 
+#include <boost/asio/thread_pool.hpp>
 #include "base/Base.h"
 #include "gen-cpp2/GraphService.h"
 #include "cpp/helpers.h"
@@ -72,6 +73,14 @@ public:
         runner_ = runner;
     }
 
+    boost::asio::thread_pool* pool() const {
+        return pool_;
+    }
+
+    void setPool(boost::asio::thread_pool *pool) {
+        pool_ = pool;
+    }
+
     const time::Duration& duration() const {
         return duration_;
     }
@@ -87,6 +96,7 @@ private:
     folly::Promise<Response>                    promise_;
     std::shared_ptr<ClientSession>              session_;
     folly::Executor                            *runner_{nullptr};
+    boost::asio::thread_pool                   *pool_{nullptr};
 };
 
 }   // namespace graph

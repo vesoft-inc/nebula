@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <boost/asio/thread_pool.hpp>
 #include "base/Base.h"
 #include "graph/GraphService.h"
 #include "time/Duration.h"
@@ -18,6 +19,7 @@ Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecuto
     sessionManager_ = std::make_unique<SessionManager>();
     executionEngine_ = std::make_unique<ExecutionEngine>();
     authenticator_ = std::make_unique<SimpleAuthenticator>();
+    threadPool_ = std::make_unique<boost::asio::thread_pool>(8);
 
     return executionEngine_->init(std::move(ioExecutor));
 }
@@ -59,6 +61,7 @@ GraphService::future_execute(int64_t sessionId, const std::string& query) {
     auto ctx = std::make_unique<RequestContext<cpp2::ExecutionResponse>>();
     ctx->setQuery(query);
     ctx->setRunner(getThreadManager());
+    ctx->setPool(threadPool_.get());
     auto future = ctx->future();
     {
         auto result = sessionManager_->findSession(sessionId);
