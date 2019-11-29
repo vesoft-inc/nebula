@@ -121,3 +121,32 @@ Of course you can query without specifying `YIELD`, this will return the vids of
 
 For query `GO FROM 100 OVER *`, the result is similar to the above example: the non-existing property or vid is populated with default values.
 Please note that we can't tell which row belongs to which edge in the results, the future version will show the edge type in the result.
+
+## Traverse Reversely
+
+Currently, **Nebula Graph** supports traversing reversely using keyword `REVERSELY`, the syntax is:
+
+```ngql
+  GO FROM <node_list>
+  OVER <edge_type_list> REVERSELY
+  WHERE (expression [ AND | OR expression ...])  
+  YIELD | YIELDS  [DISTINCT] <return_list>
+```
+
+For example:
+
+```ngql
+nebula> GO FROM 125 OVER follow REVERSELY YIELD follow._src AS id | GO FROM $-.id OVER serve WHERE $^.player.age > 35 YIELD $^.player.name AS FriendOf, $$.team.name AS Team
+
+=========================
+| FriendOf    | Team    |
+=========================
+| Tim Duncan  | Spurs   |
+-------------------------
+| Tony Parker | Spurs   |
+-------------------------
+| Tony Parker | Hornets |
+-------------------------
+```
+
+The above query first traverses players that follow player 125 and finds the teams they serve, then filter players who are older than 35, finally it returns their names and teams. Of course you can query without specifying `YIELD`, this will return the vids of the dest vertices of each edge by default .
