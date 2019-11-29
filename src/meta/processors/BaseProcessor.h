@@ -65,7 +65,7 @@ protected:
     /**
      * Destroy current instance when finished.
      * */
-    void onFinished() {
+    virtual void onFinished() {
         if (this->stats_ != nullptr) {
             stats::StatsManager::addValue(this->stats_->latencyStatId_,
                                           this->duration_.elapsedInUSec());

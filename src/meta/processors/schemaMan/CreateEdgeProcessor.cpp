@@ -26,7 +26,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
         }
     }
 
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
+    edgeWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::edgeLock()));
     auto ret = getEdgeType(req.get_space_id(), req.get_edge_name());
     if (ret.ok()) {
         resp_.set_id(to(ret.value(), EntryType::EDGE));
@@ -111,6 +111,11 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(edgeType, EntryType::EDGE));
     doPut(std::move(data));
+}
+
+void CreateEdgeProcessor::onFinished() {
+    edgeWHolder_.reset();
+    BaseProcessor::onFinished();
 }
 
 }  // namespace meta

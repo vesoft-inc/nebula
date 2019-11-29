@@ -15,7 +15,6 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
     spaceId_ = req.get_space_id();
     std::unordered_map<PartitionID, std::vector<nebula::cpp2::HostAddr>> partHostsMap;
     {
-        folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
         auto status = getAllParts();
         if (!status.ok()) {
             onFinished();

@@ -10,7 +10,7 @@ namespace nebula {
 namespace meta {
 
 void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+    spaceWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::spaceLock()));
     auto spaceRet = getSpaceId(req.get_space_name());
 
     if (!spaceRet.ok()) {
@@ -46,6 +46,11 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     // TODO(YT) delete Tag/Edge under the space
     doMultiRemove(std::move(deleteKeys));
     // TODO(YT) delete part files of the space
+}
+
+void DropSpaceProcessor::onFinished() {
+    spaceWHolder_.reset();
+    BaseProcessor::onFinished();
 }
 
 }  // namespace meta

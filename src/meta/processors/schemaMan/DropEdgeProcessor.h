@@ -20,11 +20,16 @@ public:
 
     void process(const cpp2::DropEdgeReq& req);
 
+protected:
+    void onFinished() override;
+
 private:
     explicit DropEdgeProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
     StatusOr<std::vector<std::string>> getEdgeKeys(GraphSpaceID id, const std::string& edgeName);
+
+    std::unique_ptr<folly::SharedMutex::WriteHolder> edgeWHolder_ = nullptr;
 };
 
 }  // namespace meta

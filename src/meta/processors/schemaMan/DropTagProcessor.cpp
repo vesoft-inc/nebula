@@ -11,7 +11,7 @@ namespace meta {
 
 void DropTagProcessor::process(const cpp2::DropTagReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
+    tagWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::tagLock()));
     auto ret = getTagKeys(req.get_space_id(), req.get_tag_name());
     if (!ret.ok()) {
         LOG(ERROR) << "Drop Tag Failed : " << req.get_tag_name() << " not found";
@@ -51,6 +51,11 @@ StatusOr<std::vector<std::string>> DropTagProcessor::getTagKeys(GraphSpaceID id,
         iter->next();
     }
     return keys;
+}
+
+void DropTagProcessor::onFinished() {
+    tagWHolder_.reset();
+    BaseProcessor::onFinished();
 }
 
 }  // namespace meta

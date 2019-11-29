@@ -26,7 +26,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
         }
     }
 
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
+    tagWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::tagLock()));
     auto ret = getTagId(req.get_space_id(), req.get_tag_name());
     if (ret.ok()) {
         LOG(ERROR) << "Create Tag Failed :" << req.get_tag_name() << " has existed";
@@ -115,6 +115,11 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(tagId, EntryType::TAG));
     doPut(std::move(data));
+}
+
+void CreateTagProcessor::onFinished() {
+    tagWHolder_.reset();
+    BaseProcessor::onFinished();
 }
 
 }  // namespace meta

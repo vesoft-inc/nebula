@@ -10,7 +10,7 @@ namespace nebula {
 namespace meta {
 
 void CreateUserProcessor::process(const cpp2::CreateUserReq& req) {
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
+    userWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::userLock()));
     const auto& user = req.get_user();
     auto ret = getUserId(user.get_account());
     if (ret.ok()) {
@@ -44,9 +44,14 @@ void CreateUserProcessor::process(const cpp2::CreateUserReq& req) {
     doPut(std::move(data));
 }
 
+void CreateUserProcessor::onFinished() {
+    userWHolder_.reset();
+    BaseProcessor::onFinished();
+}
+
 
 void AlterUserProcessor::process(const cpp2::AlterUserReq& req) {
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
+    userWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::userLock()));
     const auto& user = req.get_user_item();
     auto ret = getUserId(user.get_account());
     if (!ret.ok()) {
@@ -71,9 +76,14 @@ void AlterUserProcessor::process(const cpp2::AlterUserReq& req) {
     doPut(std::move(data));
 }
 
+void AlterUserProcessor::onFinished() {
+    userWHolder_.reset();
+    BaseProcessor::onFinished();
+}
+
 
 void DropUserProcessor::process(const cpp2::DropUserReq& req) {
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
+    userWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::userLock()));
     auto ret = getUserId(req.get_account());
     if (!ret.ok()) {
         if (req.get_missing_ok()) {
@@ -110,12 +120,17 @@ void DropUserProcessor::process(const cpp2::DropUserReq& req) {
     doMultiRemove(std::move(keys));
 }
 
+void DropUserProcessor::onFinished() {
+    userWHolder_.reset();
+    BaseProcessor::onFinished();
+}
+
 
 void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
     const auto& roleItem = req.get_role_item();
     CHECK_SPACE_ID_AND_RETURN(roleItem.get_space_id());
     CHECK_USER_ID_AND_RETURN(roleItem.get_user_id());
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
+    userWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::userLock()));
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::roleKey(roleItem.get_space_id(), roleItem.get_user_id()),
                       MetaServiceUtils::roleVal(roleItem.get_role_type()));
@@ -123,21 +138,31 @@ void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
     doPut(std::move(data));
 }
 
+void GrantProcessor::onFinished() {
+    userWHolder_.reset();
+    BaseProcessor::onFinished();
+}
+
 
 void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
     const auto& roleItem = req.get_role_item();
     CHECK_SPACE_ID_AND_RETURN(roleItem.get_space_id());
     CHECK_USER_ID_AND_RETURN(roleItem.get_user_id());
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
+    userWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::userLock()));
     auto roleKey = MetaServiceUtils::roleKey(roleItem.get_space_id(), roleItem.get_user_id());
     resp_.set_id(to(roleItem.get_user_id(), EntryType::USER));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     doRemove(std::move(roleKey));
 }
 
+void RevokeProcessor::onFinished() {
+    userWHolder_.reset();
+    BaseProcessor::onFinished();
+}
+
 
 void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
+    userWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::userLock()));
     auto userRet = getUserId(req.get_account());
     if (!userRet.ok()) {
         resp_.set_code(to(userRet.status()));
@@ -167,6 +192,11 @@ void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
                       MetaServiceUtils::changePassword(val, req.get_new_encoded_pwd()));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     doPut(std::move(data));
+}
+
+void ChangePasswordProcessor::onFinished() {
+    userWHolder_.reset();
+    BaseProcessor::onFinished();
 }
 
 

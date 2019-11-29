@@ -14,7 +14,7 @@ namespace nebula {
 namespace meta {
 
 void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+    spaceWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::spaceLock()));
     auto properties = req.get_properties();
     auto spaceRet = getSpaceId(properties.get_space_name());
     if (spaceRet.ok()) {
@@ -93,6 +93,12 @@ CreateSpaceProcessor::pickHosts(PartitionID partId,
         pickedHosts.emplace_back(toThriftHost(hosts[startIndex++ % hosts.size()]));
     }
     return pickedHosts;
+}
+
+
+void CreateSpaceProcessor::onFinished() {
+    spaceWHolder_.reset();
+    BaseProcessor::onFinished();
 }
 
 }  // namespace meta

@@ -20,9 +20,14 @@ public:
 
     void process(const cpp2::CreateUserReq& req);
 
+protected:
+    void onFinished() override;
+
 private:
     explicit CreateUserProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+    std::unique_ptr<folly::SharedMutex::WriteHolder> userWHolder_ = nullptr;
 };
 
 
@@ -34,9 +39,14 @@ public:
 
     void process(const cpp2::AlterUserReq& req);
 
+protected:
+    void onFinished() override;
+
 private:
     explicit AlterUserProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+    std::unique_ptr<folly::SharedMutex::WriteHolder> userWHolder_ = nullptr;
 };
 
 
@@ -48,9 +58,14 @@ public:
 
     void process(const cpp2::DropUserReq& req);
 
+protected:
+    void onFinished() override;
+
 private:
     explicit DropUserProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+    std::unique_ptr<folly::SharedMutex::WriteHolder> userWHolder_ = nullptr;
 };
 
 
@@ -62,9 +77,14 @@ public:
 
     void process(const cpp2::GrantRoleReq& req);
 
+protected:
+    void onFinished() override;
+
 private:
     explicit GrantProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+    std::unique_ptr<folly::SharedMutex::WriteHolder> userWHolder_ = nullptr;
 };
 
 
@@ -76,9 +96,14 @@ public:
 
     void process(const cpp2::RevokeRoleReq& req);
 
+protected:
+    void onFinished() override;
+
 private:
     explicit RevokeProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+    std::unique_ptr<folly::SharedMutex::WriteHolder> userWHolder_ = nullptr;
 };
 
 
@@ -90,9 +115,14 @@ public:
 
     void process(const cpp2::ChangePasswordReq& req);
 
+protected:
+    void onFinished() override;
+
 private:
     explicit ChangePasswordProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+    std::unique_ptr<folly::SharedMutex::WriteHolder> userWHolder_ = nullptr;
 };
 
 

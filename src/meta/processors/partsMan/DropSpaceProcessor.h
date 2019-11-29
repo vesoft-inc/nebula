@@ -20,9 +20,14 @@ public:
 
     void process(const cpp2::DropSpaceReq& req);
 
+protected:
+    void onFinished() override;
+
 private:
     explicit DropSpaceProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+    std::unique_ptr<folly::SharedMutex::WriteHolder> spaceWHolder_ = nullptr;
 };
 
 }  // namespace meta

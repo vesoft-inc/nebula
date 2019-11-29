@@ -20,9 +20,14 @@ public:
 
     void process(const cpp2::AlterTagReq& req);
 
+protected:
+    void onFinished() override;
+
 private:
     explicit AlterTagProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+    std::unique_ptr<folly::SharedMutex::WriteHolder> tagWHolder_ = nullptr;
 };
 
 }  // namespace meta

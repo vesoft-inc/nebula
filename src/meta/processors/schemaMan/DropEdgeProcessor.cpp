@@ -11,7 +11,7 @@ namespace meta {
 
 void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
+    edgeWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::edgeLock()));
     auto ret = getEdgeKeys(req.get_space_id(), req.get_edge_name());
     if (!ret.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
@@ -50,6 +50,11 @@ StatusOr<std::vector<std::string>> DropEdgeProcessor::getEdgeKeys(GraphSpaceID i
         iter->next();
     }
     return keys;
+}
+
+void DropEdgeProcessor::onFinished() {
+    edgeWHolder_.reset();
+    BaseProcessor::onFinished();
 }
 
 }  // namespace meta

@@ -20,9 +20,14 @@ public:
 
     void process(const cpp2::AlterEdgeReq& req);
 
+protected:
+    void onFinished() override;
+
 private:
     explicit AlterEdgeProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+    std::unique_ptr<folly::SharedMutex::WriteHolder> edgeWHolder_ = nullptr;
 };
 
 }  // namespace meta

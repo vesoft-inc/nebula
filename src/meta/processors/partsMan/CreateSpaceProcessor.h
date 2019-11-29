@@ -26,9 +26,14 @@ protected:
                                             const std::vector<HostAddr>& hosts,
                                             int32_t replicaFactor);
 
+
+    void onFinished() override;
+
 private:
     explicit CreateSpaceProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+    std::unique_ptr<folly::SharedMutex::WriteHolder> spaceWHolder_ = nullptr;
 };
 
 }  // namespace meta

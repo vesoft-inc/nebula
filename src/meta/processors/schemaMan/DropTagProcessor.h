@@ -20,11 +20,16 @@ public:
 
     void process(const cpp2::DropTagReq& req);
 
+protected:
+    void onFinished() override;
+
 private:
     explicit DropTagProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
     StatusOr<std::vector<std::string>> getTagKeys(GraphSpaceID id, const std::string& tagName);
+
+    std::unique_ptr<folly::SharedMutex::WriteHolder> tagWHolder_ = nullptr;
 };
 
 }  // namespace meta

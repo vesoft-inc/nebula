@@ -11,7 +11,7 @@ namespace meta {
 
 void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
+    tagWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::tagLock()));
     auto ret = getTagId(req.get_space_id(), req.get_tag_name());
     if (!ret.ok()) {
         resp_.set_code(to(ret.status()));
@@ -75,6 +75,11 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(tagId, EntryType::TAG));
     doPut(std::move(data));
+}
+
+void AlterTagProcessor::onFinished() {
+    tagWHolder_.reset();
+    BaseProcessor::onFinished();
 }
 
 }  // namespace meta
