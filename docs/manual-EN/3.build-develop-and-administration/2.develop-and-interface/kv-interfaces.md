@@ -49,7 +49,7 @@ auto future = storageClient->get(spaceId, std::move(keys));
 auto resp = std::move(future).get()
 ```
 
-### Processing returned results
+### Processing Returned Results
 
 Check the returned results of the rpc to examine if the corresponding operation runs successfully. In addition, since **Nebula Graph** storage shards data, if one partition fails, the error code is also returned. If any of the partition fails, the entire requirement fails (resp.succeeded() is false). But those succeed are still read/written.
 
@@ -72,7 +72,7 @@ if (!resp.failedParts().empty()) {
 }
 ```
 
-#### Read values
+#### Read Values
 
 For the Get interface, we need some more operations to get the corresponding values. **Nebula Graph** storage is a multi-copy based on Raft, and all read/written operations can only be sent to the leader of the corresponding partition. When a get request contains multiple keys across partitions, the Storage Client requests the keys from the Partition leader. Each rpc return is stored separately in an unordered_map, and the user is currently required to traverse these unordered_maps to check if the key exists. An example is as follows:
 

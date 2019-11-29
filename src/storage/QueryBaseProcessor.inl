@@ -41,6 +41,7 @@ void QueryBaseProcessor<REQ, RESP>::addDefaultProps(std::vector<PropContext>& p,
     p.emplace_back("_src", eType, 0, PropContext::PropInKeyType::SRC);
     p.emplace_back("_rank", eType, 1, PropContext::PropInKeyType::RANK);
     p.emplace_back("_dst", eType, 2, PropContext::PropInKeyType::DST);
+    p.emplace_back("_type", eType, 3, PropContext::PropInKeyType::TYPE);
 }
 
 template <typename REQ, typename RESP>
