@@ -825,13 +825,17 @@ PartsMap MetaClient::getPartsMapFromCache(const HostAddr& host) {
 }
 
 
-PartMeta MetaClient::getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId) {
+StatusOr<PartMeta> MetaClient::getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(spaceId);
-    CHECK(it != localCache_.end());
+    if (it == localCache_.end()) {
+        return Status::Error("Space not found, spaceid: %d", spaceId);
+    }
     auto& cache = it->second;
     auto partAllocIter = cache->partsAlloc_.find(partId);
-    CHECK(partAllocIter != cache->partsAlloc_.end());
+    if (partAllocIter == cache->partsAlloc_.end()) {
+        return Status::Error("Part not found in cache, spaceid: %d, partid: %d", spaceId, partId);
+    }
     PartMeta pm;
     pm.spaceId_ = spaceId;
     pm.partId_  = partId;
@@ -872,14 +876,14 @@ bool MetaClient::checkSpaceExistInCache(const HostAddr& host,
     return false;
 }
 
-
-int32_t MetaClient::partsNum(GraphSpaceID spaceId) {
+StatusOr<int32_t> MetaClient::partsNum(GraphSpaceID spaceId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(spaceId);
-    CHECK(it != localCache_.end());
+    if (it == localCache_.end()) {
+        return Status::Error("Space not found, spaceid: %d", spaceId);
+    }
     return it->second->partsAlloc_.size();
 }
-
 
 folly::Future<StatusOr<TagID>>
 MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {
