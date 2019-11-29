@@ -171,9 +171,6 @@ public:
      ********************/
     ResultCode createCheckpoint(const std::string& path) override;
 
-    ResultCode dropCheckpoint(const std::string& path) override;
-
-
 private:
     std::string partKey(PartitionID partId);
 

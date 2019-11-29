@@ -472,19 +472,5 @@ ResultCode RocksEngine::createCheckpoint(const std::string& name) {
     return ResultCode::SUCCEEDED;
 }
 
-ResultCode RocksEngine::dropCheckpoint(const std::string& name) {
-    auto checkpointPath = folly::stringPrintf("%s/checkpoints/%s",
-                                              dataPath_.c_str(), name.c_str());
-    LOG(INFO) << "Drop checkpoint : " << checkpointPath;
-    if (!fs::FileUtils::exist(checkpointPath)) {
-        return ResultCode::SUCCEEDED;
-    }
-
-    if (!fs::FileUtils::remove(checkpointPath.data(), true)) {
-        return ResultCode::ERR_IO_ERROR;
-    }
-    return ResultCode::SUCCEEDED;
-}
-
 }  // namespace kvstore
 }  // namespace nebula

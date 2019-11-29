@@ -609,8 +609,8 @@ bool FileBasedWal::linkCurrentWAL(const char* newPath) {
     auto it = walFiles_.rbegin();
 
     // Using the original wal file name.
-    auto targetFile = folly::stringPrintf("%s/%s", newPath,
-            it->second->path() + std::string(it->second->path()).rfind('/') + 1);
+    auto targetFile = fs::FileUtils::joinPath(newPath,
+                                              folly::stringPrintf("%019ld.wal", it->first));
 
     if (link(it->second->path(), targetFile.data()) != 0) {
         LOG(INFO) << idStr_ << "Create link failed for " << it->second->path()

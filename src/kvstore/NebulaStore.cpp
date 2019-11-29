@@ -630,9 +630,19 @@ ResultCode NebulaStore::dropCheckpoint(GraphSpaceID spaceId, const std::string& 
     }
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
-        auto code = engine->dropCheckpoint(name);
-        if (code != ResultCode::SUCCEEDED) {
-            return code;
+        /**
+         * Drop checkpoint and wal together 
+         **/
+        auto checkpointPath = folly::stringPrintf("%s/checkpoints/%s",
+                                                  engine->getDataRoot(),
+                                                  name.c_str());
+        LOG(INFO) << "Drop checkpoint : " << checkpointPath;
+        if (!fs::FileUtils::exist(checkpointPath)) {
+            continue;
+        }
+        if (!fs::FileUtils::remove(checkpointPath.data(), true)) {
+            LOG(ERROR) << "Drop checkpoint dir failed : " << checkpointPath;
+            return ResultCode::ERR_IO_ERROR;
         }
     }
     return ResultCode::SUCCEEDED;

@@ -110,8 +110,6 @@ public:
 
     virtual ResultCode createCheckpoint(const std::string& name) = 0;
 
-    virtual ResultCode dropCheckpoint(const std::string& name) = 0;
-
 protected:
     GraphSpaceID spaceId_;
 };
