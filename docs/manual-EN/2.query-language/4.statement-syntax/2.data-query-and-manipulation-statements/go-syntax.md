@@ -149,4 +149,4 @@ nebula> GO FROM 125 OVER follow REVERSELY YIELD follow._src AS id | GO FROM $-.i
 -------------------------
 ```
 
-The above query first traverses players that follow player 125 and finds the teams they serve, then filter players who are older than 35, finally it returns their names and teams. Of course you can query without specifying `YIELD`, this will return the vids of the dest vertices of each edge by default .
+The above query first traverses players that follow player 125 and finds the teams they serve, then filter players who are older than 35, finally it returns their names and teams. Of course you can query without specifying `YIELD`, this will return the vids of the dest vertices of each edge by default.
