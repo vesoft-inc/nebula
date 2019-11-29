@@ -92,6 +92,18 @@ protected:
         }
     }
 
+    void handleLeaderChanged(GraphSpaceID spaceId, PartitionID partId) {
+        auto addrRet = kvstore_->partLeader(spaceId, partId);
+        if (ok(addrRet)) {
+            auto leader = value(std::move(addrRet));
+            this->pushResultCode(cpp2::ErrorCode::E_LEADER_CHANGED, partId, leader);
+        } else {
+            LOG(ERROR) << "Fail to get part leader, spaceId: " << spaceId
+                       << ", partId: " << partId << ", ResultCode: " << error(addrRet);
+            this->pushResultCode(to(error(addrRet)), partId);
+        }
+    }
+
     nebula::cpp2::HostAddr toThriftHost(const HostAddr& host) {
         nebula::cpp2::HostAddr tHost;
         tHost.set_ip(host.first);
