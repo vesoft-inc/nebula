@@ -25,7 +25,7 @@ nebula> UPDATE VERTEX 101 SET course.credits = $^.course.credits + 1, building.n
 
 There are two tags in vertex 101, namely course and building.
 
-## Update edge
+## Update Edge
 
 ```ngql
 UPDATE EDGE $edge SET $update_columns WHEN $condition YIELD $columns

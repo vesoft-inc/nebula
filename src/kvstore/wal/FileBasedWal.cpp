@@ -636,6 +636,7 @@ bool FileBasedWal::rollbackToLog(LogID id) {
         return false;
     }
 
+    folly::RWSpinLock::WriteHolder holder(rollbackLock_);
     //-----------------------
     // 1. Roll back WAL files
     //-----------------------
