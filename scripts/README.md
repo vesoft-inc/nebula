@@ -1,6 +1,8 @@
-This document is for a standard installation of *Nebula Graph*, and they all operate on single hosts.
+# Overview
 
-Firstly, you need to create the config files for the three daemons, resided in the `etc` directory, based on their `*.default` counterparts.
+This document handles **Nebula Graph** installation, and all the operations are done on single hosts.
+
+Firstly, you need to create the config files for the three daemons in the `etc` directory based on their `*.default` counterparts.
 
 You could operate on all of the three daemons with `scripts/nebula.service`:
 
