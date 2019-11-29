@@ -2,7 +2,7 @@
 
 This section provides an introduction to deploy `Nebula Graph` cluster.
 
-## Download and install package
+## Download and Install Package
 
 Currently, we have offered packages for `CentOS 7.5`, `CentOS 6.5`, `Ubuntu 1604` and `Ubuntu 1804`. You can download rpm or deb packages by clicking the [**Assets**](https://github.com/vesoft-inc/nebula/releases).
 
@@ -53,7 +53,7 @@ The metas, storages and graphs contain the host of themselves.
 
 Then you’re now ready to start using **Nebula Graph**.
 
-## Config reference
+## Configuration Reference
 
 **Meta Service** supports the following config properties.
 
