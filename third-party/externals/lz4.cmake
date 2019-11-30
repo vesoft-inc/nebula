@@ -21,6 +21,7 @@ ExternalProject_Add(
     INSTALL_COMMAND
         make install -s
              MOREFLAGS=-fPIC
+             "LN_S=ln -sf"
              BUILD_SHARED=no
              -j${BUILDING_JOBS_NUM}
              PREFIX=${CMAKE_INSTALL_PREFIX}
