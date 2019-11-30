@@ -67,3 +67,5 @@ hash -r
 EOF
 
 echo "CMake has been installed to prefix=$prefix"
+echo "Run 'source $prefix/bin/setup-env.sh' to make it ready to use."
+echo "Run 'source $prefix/bin/restore-env.sh' to disable it."

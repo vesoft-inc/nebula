@@ -174,4 +174,6 @@ hash -r
 EOF
 
 echo "GCC-$gcc_version has been installed to prefix=$install_dir"
-echo "$((end_time - start_time)) seconds been taken"
+echo "$((end_time - start_time)) seconds been taken."
+echo "Run 'source $install_dir/bin/setup-env.sh' to make it ready to use."
+echo "Run 'source $install_dir/bin/restore-env.sh' to disable it."
