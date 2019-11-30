@@ -32,7 +32,7 @@ fi
 if [[ ! $checksum = 35d56e9c27b4fd2819a11c29320c655a ]]
 then
     hash wget &> /dev/null && download_cmd="wget -c"
-    hash axel &> /dev/null && download_cmd="axel -a -n 16"
+    hash axel &> /dev/null && download_cmd="axel -a -n 8"
     if [[ -z $download_cmd ]]
     then
         echo "Neither 'wget' nor 'axel' available for downloading" 1>&2;
@@ -47,10 +47,23 @@ then
     fi
 fi
 
+set -e
 mkdir -p $prefix
 bash $archive --prefix=$prefix &> /dev/null <<EOF
 yes
 no
+EOF
+
+cat > $prefix/bin/setup-env.sh <<EOF
+this_path=\$(dirname \$(realpath \$BASH_SOURCE))
+[[ ":\$PATH:" =~ ":\$this_path:" ]] || export PATH=\$this_path:\$PATH
+hash -r
+EOF
+
+cat > $prefix/bin/restore-env.sh <<EOF
+this_path=\$(dirname \$(realpath \$BASH_SOURCE))
+export PATH=\$(echo \$PATH | sed "s#\$this_path:##")
+hash -r
 EOF
 
 echo "CMake has been installed to prefix=$prefix"

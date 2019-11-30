@@ -118,6 +118,7 @@ function configure_gcc {
 	cd $source_dir/gcc-$gcc_version
 	./configure --prefix=$install_dir               \
 				--enable-shared                     \
+				--with-libc-version=2.18            \
 				--enable-threads=posix              \
 				--enable-__cxa_atexit               \
 				--enable-clocale=gnu                \
@@ -153,6 +154,24 @@ configure_gcc
 build_gcc
 install_gcc
 end_time=$(date +%s)
+
+cat > $install_dir/bin/setup-env.sh <<EOF
+this_path=\$(dirname \$(realpath \$BASH_SOURCE))
+[[ ":\$PATH:" =~ ":\$this_path:" ]] || export PATH=\$this_path:\$PATH
+export OLD_CC=\$CC
+export OLD_CXX=\$CXX
+export CC=\$this_path/gcc
+export CXX=\$this_path/g++
+hash -r
+EOF
+
+cat > $install_dir/bin/restore-env.sh <<EOF
+this_path=\$(dirname \$(realpath \$BASH_SOURCE))
+export PATH=\$(echo \$PATH | sed "s#\$this_path:##")
+export CC=\$OLD_CC
+export CXX=\$OLD_CXX
+hash -r
+EOF
 
 echo "GCC-$gcc_version has been installed to prefix=$install_dir"
 echo "$((end_time - start_time)) seconds been taken"
