@@ -54,18 +54,18 @@ yes
 no
 EOF
 
-cat > $prefix/bin/setup-env.sh <<EOF
+cat > $prefix/bin/enable-cmake.sh <<EOF
 this_path=\$(dirname \$(readlink -f \$BASH_SOURCE))
 [[ ":\$PATH:" =~ ":\$this_path:" ]] || export PATH=\$this_path:\$PATH
 hash -r
 EOF
 
-cat > $prefix/bin/restore-env.sh <<EOF
+cat > $prefix/bin/disable-cmake.sh <<EOF
 this_path=\$(dirname \$(readlink -f \$BASH_SOURCE))
 export PATH=\$(echo \$PATH | sed "s#\$this_path:##")
 hash -r
 EOF
 
 echo "CMake has been installed to prefix=$prefix"
-echo "Run 'source $prefix/bin/setup-env.sh' to make it ready to use."
-echo "Run 'source $prefix/bin/restore-env.sh' to disable it."
+echo "Run 'source $prefix/bin/enable-cmake.sh' to make it ready to use."
+echo "Run 'source $prefix/bin/disable-cmake.sh' to disable it."

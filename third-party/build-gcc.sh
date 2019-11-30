@@ -155,7 +155,7 @@ build_gcc
 install_gcc
 end_time=$(date +%s)
 
-cat > $install_dir/bin/setup-env.sh <<EOF
+cat > $install_dir/bin/enable-gcc.sh <<EOF
 this_path=\$(dirname \$(readlink -f \$BASH_SOURCE))
 [[ ":\$PATH:" =~ ":\$this_path:" ]] || export PATH=\$this_path:\$PATH
 export OLD_CC=\$CC
@@ -165,7 +165,7 @@ export CXX=\$this_path/g++
 hash -r
 EOF
 
-cat > $install_dir/bin/restore-env.sh <<EOF
+cat > $install_dir/bin/disable-gcc.sh <<EOF
 this_path=\$(dirname \$(readlink -f \$BASH_SOURCE))
 export PATH=\$(echo \$PATH | sed "s#\$this_path:##")
 export CC=\$OLD_CC
@@ -175,5 +175,5 @@ EOF
 
 echo "GCC-$gcc_version has been installed to prefix=$install_dir"
 echo "$((end_time - start_time)) seconds been taken."
-echo "Run 'source $install_dir/bin/setup-env.sh' to make it ready to use."
-echo "Run 'source $install_dir/bin/restore-env.sh' to disable it."
+echo "Run 'source $install_dir/bin/enable-gcc.sh' to make it ready to use."
+echo "Run 'source $install_dir/bin/disable-gcc.sh' to disable it."
