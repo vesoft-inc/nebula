@@ -156,7 +156,7 @@ install_gcc
 end_time=$(date +%s)
 
 cat > $install_dir/bin/setup-env.sh <<EOF
-this_path=\$(dirname \$(realpath \$BASH_SOURCE))
+this_path=\$(dirname \$(readlink -f \$BASH_SOURCE))
 [[ ":\$PATH:" =~ ":\$this_path:" ]] || export PATH=\$this_path:\$PATH
 export OLD_CC=\$CC
 export OLD_CXX=\$CXX
@@ -166,7 +166,7 @@ hash -r
 EOF
 
 cat > $install_dir/bin/restore-env.sh <<EOF
-this_path=\$(dirname \$(realpath \$BASH_SOURCE))
+this_path=\$(dirname \$(readlink -f \$BASH_SOURCE))
 export PATH=\$(echo \$PATH | sed "s#\$this_path:##")
 export CC=\$OLD_CC
 export CXX=\$OLD_CXX

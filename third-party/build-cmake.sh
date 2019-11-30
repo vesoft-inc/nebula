@@ -55,13 +55,13 @@ no
 EOF
 
 cat > $prefix/bin/setup-env.sh <<EOF
-this_path=\$(dirname \$(realpath \$BASH_SOURCE))
+this_path=\$(dirname \$(readlink -f \$BASH_SOURCE))
 [[ ":\$PATH:" =~ ":\$this_path:" ]] || export PATH=\$this_path:\$PATH
 hash -r
 EOF
 
 cat > $prefix/bin/restore-env.sh <<EOF
-this_path=\$(dirname \$(realpath \$BASH_SOURCE))
+this_path=\$(dirname \$(readlink -f \$BASH_SOURCE))
 export PATH=\$(echo \$PATH | sed "s#\$this_path:##")
 hash -r
 EOF
