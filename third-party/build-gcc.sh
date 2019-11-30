@@ -33,10 +33,15 @@ mpc_version=1.0.3
 mpc_tarball=mpc-$mpc_version.tar.gz
 mpc_url=$url_base/mpc/$mpc_tarball
 
+bu_version=2.28.1
+bu_tarball=binutils-$bu_version.tar.xz
+bu_url=$url_base/binutils/$bu_tarball
+
 gcc_checksum=79cb8a65d44dfc8a2402b46395535c9a
 gmp_checksum=e5fe367801ff067b923d1e6a126448aa
 mpfr_checksum=064b2c18185038e404a401b830d59be8
 mpc_checksum=d6a1d5f8ddea3abd2cc3e98f58352d26
+bu_checksum=a3bf359889e4b299fce1f4cb919dc7b6
 
 cur_dir=$PWD
 build_dir=$PWD/gcc-build
@@ -77,6 +82,7 @@ function fetch_tarballs {
     fetch_tarball "$download_cmd" $gmp_tarball $gmp_url $gmp_checksum
     fetch_tarball "$download_cmd" $mpfr_tarball $mpfr_url $mpfr_checksum
     fetch_tarball "$download_cmd" $mpc_tarball $mpc_url $mpc_checksum
+    fetch_tarball "$download_cmd" $bu_tarball $bu_url $bu_checksum
     cd $OLDPWD
 }
 
@@ -96,6 +102,9 @@ function unpack_tarballs {
 
     echo "Unpacking $mpc_tarball..."
     tar --skip-old-files -xf $mpc_tarball -C $source_dir
+
+    echo "Unpacking $bu_tarball..."
+    tar --skip-old-files -xf $bu_tarball -C $source_dir
 
     set +e
     cd $OLDPWD
@@ -146,6 +155,27 @@ function install_gcc {
     cd $OLDPWD
 }
 
+function build_binutils {
+    cd $source_dir/binutils-$bu_version
+    ./configure --prefix=$install_dir --enable-gold
+    [[ $? -eq 0 ]] || exit 1
+    make -j8
+    [[ $? -eq 0 ]] || exit 1
+    cd $OLDPWD
+}
+
+function install_binutils {
+    cd $source_dir/binutils-$bu_version
+    make -j8 install-gas
+    make -j8 install-ld
+    [[ $? -eq 0 ]] || exit 1
+    gcc_triple=$($source_dir/gcc-$gcc_version/config.guess)
+    cd $install_dir
+    cp -v bin/as libexec/gcc/$gcc_triple/$gcc_version/
+    cp -v bin/ld* libexec/gcc/$gcc_triple/$gcc_version/
+    cd $OLDPWD
+}
+
 start_time=$(date +%s)
 fetch_tarballs
 unpack_tarballs
@@ -153,6 +183,8 @@ setup_deps
 configure_gcc
 build_gcc
 install_gcc
+build_binutils
+install_binutils
 end_time=$(date +%s)
 
 cat > $install_dir/bin/enable-gcc.sh <<EOF
