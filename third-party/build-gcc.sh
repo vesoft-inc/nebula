@@ -166,14 +166,18 @@ function build_binutils {
 
 function install_binutils {
     cd $source_dir/binutils-$bu_version
-    make -j8 install-gas
-    make -j8 install-ld
+    make -j8 install-strip-gas
+    make -j8 install-strip-ld
     [[ $? -eq 0 ]] || exit 1
     gcc_triple=$($source_dir/gcc-$gcc_version/config.guess)
     cd $install_dir
     cp -v bin/as libexec/gcc/$gcc_triple/$gcc_version/
     cp -v bin/ld* libexec/gcc/$gcc_triple/$gcc_version/
     cd $OLDPWD
+}
+
+function finalize {
+    find $install_dir -name '*.la' | xargs rm -f
 }
 
 start_time=$(date +%s)
@@ -185,6 +189,7 @@ build_gcc
 install_gcc
 build_binutils
 install_binutils
+finalize
 end_time=$(date +%s)
 
 cat > $install_dir/bin/enable-gcc.sh <<EOF

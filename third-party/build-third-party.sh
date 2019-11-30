@@ -94,7 +94,7 @@ fi
 if [[ ! $checksum = 375f349b7b5ae1212bd4195bfc30f43a ]]
 then
     hash wget &> /dev/null && download_cmd="wget -c"
-    hash axel &> /dev/null && download_cmd="axel -a -n 16"
+    hash axel &> /dev/null && download_cmd="axel -a -n 8"
     if [[ -z $download_cmd ]]
     then
         echo "Neither 'wget' nor 'axel' available for downloading" 1>&2;
