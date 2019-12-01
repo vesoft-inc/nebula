@@ -186,7 +186,7 @@ echo "Creating self-extracting package $exec_file"
 cat > $exec_file <<EOF
 set -e
 
-[[ \$# -ne 0 ]] && prefix=\$(echo "$@" | sed 's;.*--prefix=(\S*).*;\1;' -r)
+[[ \$# -ne 0 ]] && prefix=\$(echo "\$@" | sed 's;.*--prefix=(\S*).*;\1;' -r)
 prefix=\${prefix:-/usr/local}
 
 hash xz &> /dev/null || { echo "xz: Command not found"; exit 1; }
