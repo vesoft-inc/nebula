@@ -184,6 +184,7 @@ function make_package {
     exec_file=$build_dir/gcc-$gcc_version-linux-x86_64-glibc-$glibc_version.sh
     echo "Creating self-extracting package $exec_file"
     cat > $exec_file <<EOF
+#! /usr/bin/env bash
 set -e
 
 [[ \$# -ne 0 ]] && prefix=\$(echo "\$@" | sed 's;.*--prefix=(\S*).*;\1;' -r)
@@ -217,8 +218,6 @@ install_gcc
 build_binutils
 install_binutils
 finalize
-make_package
-end_time=$(date +%s)
 
 cat > $install_dir/bin/enable-gcc.sh <<EOF
 this_path=\$(dirname \$(readlink -f \$BASH_SOURCE))
@@ -237,6 +236,9 @@ export CC=\$OLD_CC
 export CXX=\$OLD_CXX
 hash -r
 EOF
+
+make_package
+end_time=$(date +%s)
 
 echo "GCC-$gcc_version has been installed to prefix=$install_dir"
 echo "$((end_time - start_time)) seconds been taken."
