@@ -181,10 +181,13 @@ function finalize {
 
 function make_package {
 glibc_version=$(ldd --version | head -1 | cut -d ' ' -f4)
-exec_file=$build_dir/gcc-$gcc_version-linux-glibc-$glibc_version-x86_64.sh
+exec_file=$build_dir/gcc-$gcc_version-linux-x86_64-glibc-$glibc_version.sh
+echo "Creating self-extracting package $exec_file"
 cat > $exec_file <<EOF
 set -e
-prefix=/usr/local
+
+[[ \$# -ne 0 ]] && prefix=\$(echo "$@" | sed 's;.*--prefix=(\S*).*;\1;' -r)
+prefix=\${prefix:-/usr/local}
 
 hash xz &> /dev/null || { echo "xz: Command not found"; exit 1; }
 
@@ -200,6 +203,7 @@ __start_of_archive__
 EOF
 cd $install_dir/../..
 tar -cJvf - * >> $exec_file
+chmod 0755 $exec_file
 cd $OLDPWD
 }
 
