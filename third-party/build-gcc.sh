@@ -48,7 +48,7 @@ build_dir=$PWD/gcc-build
 tarballs_dir=$build_dir/downloads
 source_dir=$build_dir/source
 prefix=$1
-install_dir=${prefix:-$PWD/gcc-install}/gcc/$gcc_version
+install_dir=${prefix:-$PWD/$build_dir/install}/gcc/$gcc_version
 
 function get_checksum {
     md5sum $1 | cut -d ' ' -f 1
@@ -124,21 +124,21 @@ function setup_deps {
 }
 
 function configure_gcc {
-	cd $source_dir/gcc-$gcc_version
-	./configure --prefix=$install_dir               \
-				--enable-shared                     \
-				--with-libc-version=2.18            \
-				--enable-threads=posix              \
-				--enable-__cxa_atexit               \
-				--enable-clocale=gnu                \
-				--enable-languages=c,c++            \
-				--enable-lto                        \
-				--enable-bootstrap                  \
-				--disable-nls                       \
-				--disable-multilib                  \
-				--disable-install-libiberty         \
-				--disable-werror                    \
-				--with-system-zlib
+    cd $source_dir/gcc-$gcc_version
+    ./configure --prefix=$install_dir               \
+                --enable-shared                     \
+                --with-glibc-version=2.12            \
+                --enable-threads=posix              \
+                --enable-__cxa_atexit               \
+                --enable-clocale=gnu                \
+                --enable-languages=c,c++            \
+                --enable-lto                        \
+                --enable-bootstrap                  \
+                --disable-nls                       \
+                --disable-multilib                  \
+                --disable-install-libiberty         \
+                --disable-werror                    \
+                --with-system-zlib
     [[ $? -eq 0 ]] || exit 1
     cd $OLDPWD
 }
@@ -180,10 +180,10 @@ function finalize {
 }
 
 function make_package {
-glibc_version=$(ldd --version | head -1 | cut -d ' ' -f4)
-exec_file=$build_dir/gcc-$gcc_version-linux-x86_64-glibc-$glibc_version.sh
-echo "Creating self-extracting package $exec_file"
-cat > $exec_file <<EOF
+    glibc_version=$(ldd --version | head -1 | cut -d ' ' -f4)
+    exec_file=$build_dir/gcc-$gcc_version-linux-x86_64-glibc-$glibc_version.sh
+    echo "Creating self-extracting package $exec_file"
+    cat > $exec_file <<EOF
 set -e
 
 [[ \$# -ne 0 ]] && prefix=\$(echo "\$@" | sed 's;.*--prefix=(\S*).*;\1;' -r)
@@ -201,10 +201,10 @@ exit 0
 
 __start_of_archive__
 EOF
-cd $install_dir/../..
-tar -cJvf - * >> $exec_file
-chmod 0755 $exec_file
-cd $OLDPWD
+    cd $install_dir/../..
+    tar -cJf - * >> $exec_file
+    chmod 0755 $exec_file
+    cd $OLDPWD
 }
 
 start_time=$(date +%s)
