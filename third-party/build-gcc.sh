@@ -166,8 +166,7 @@ function build_binutils {
 
 function install_binutils {
     cd $source_dir/binutils-$bu_version
-    make -j8 install-strip-gas
-    make -j8 install-strip-ld
+    make -j8 install-strip
     [[ $? -eq 0 ]] || exit 1
     gcc_triple=$($source_dir/gcc-$gcc_version/config.guess)
     cd $install_dir
@@ -180,6 +179,30 @@ function finalize {
     find $install_dir -name '*.la' | xargs rm -f
 }
 
+function make_package {
+glibc_version=$(ldd --version | head -1 | cut -d ' ' -f4)
+exec_file=$build_dir/gcc-$gcc_version-linux-glibc-$glibc_version-x86_64.sh
+cat > $exec_file <<EOF
+set -e
+prefix=/usr/local
+
+hash xz &> /dev/null || { echo "xz: Command not found"; exit 1; }
+
+mkdir -p \$prefix
+[[ -w \$prefix ]] || { echo "\$prefix: No permission to write"; exit 1; }
+
+archive_offset=\$(awk '/^__start_of_archive__$/{print NR+1; exit 0;}' \$0)
+tail -n+\$archive_offset \$0 | tar --numeric-owner -xJf - -C \$prefix
+
+exit 0
+
+__start_of_archive__
+EOF
+cd $install_dir/../..
+tar -cJvf - * >> $exec_file
+cd $OLDPWD
+}
+
 start_time=$(date +%s)
 fetch_tarballs
 unpack_tarballs
@@ -190,6 +213,7 @@ install_gcc
 build_binutils
 install_binutils
 finalize
+make_package
 end_time=$(date +%s)
 
 cat > $install_dir/bin/enable-gcc.sh <<EOF
