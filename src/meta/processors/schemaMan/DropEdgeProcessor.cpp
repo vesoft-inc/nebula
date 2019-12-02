@@ -12,6 +12,7 @@ namespace meta {
 void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     edgeWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::edgeLock()));
+    CHECK_W_HOLDER(edgeWHolder_);
     auto ret = getEdgeKeys(req.get_space_id(), req.get_edge_name());
     if (!ret.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);

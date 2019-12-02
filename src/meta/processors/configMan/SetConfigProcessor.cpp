@@ -49,7 +49,9 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
     auto mode = req.get_item().get_mode();
     auto value = req.get_item().get_value();
 
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::configLock());
+    configWHolder_.reset(
+        new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::configLock()));
+    CHECK_W_HOLDER(configWHolder_);
     cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
 
     do {
@@ -177,6 +179,11 @@ cpp2::ErrorCode SetConfigProcessor::setNestedConfig(const cpp2::ConfigModule& mo
         data.emplace_back(std::move(configKey), std::move(configValue));
     }
     return cpp2::ErrorCode::SUCCEEDED;
+}
+
+void SetConfigProcessor::onFinished() {
+    configWHolder_.reset();
+    BaseProcessor::onFinished();
 }
 
 }  // namespace meta

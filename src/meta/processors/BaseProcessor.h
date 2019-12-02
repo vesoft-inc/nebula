@@ -49,6 +49,19 @@ using nebula::network::NetworkUtils;
         return; \
     }
 
+// check whether the lock acquired
+// This is used in the async process which can't hold the mutex in scoped
+//   for the process not complete when scope exit.
+// I.E. bad_alloc
+#define CHECK_W_HOLDER(holderPtr) \
+    do { \
+        if (holderPtr == nullptr) { \
+            resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE); \
+            onFinished(); \
+            return; \
+        } \
+    } while (false);
+
 template<typename RESP>
 class BaseProcessor {
 public:

@@ -13,6 +13,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     // TODO(shylock) handle acquire lock failed(I.E. bad_alloc)
     edgeWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::edgeLock()));
+    CHECK_W_HOLDER(edgeWHolder_);
     auto ret = getEdgeType(req.get_space_id(), req.get_edge_name());
     if (!ret.ok()) {
         resp_.set_code(to(ret.status()));

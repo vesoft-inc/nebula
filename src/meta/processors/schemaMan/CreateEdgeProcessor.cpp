@@ -27,6 +27,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     }
 
     edgeWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::edgeLock()));
+    CHECK_W_HOLDER(edgeWHolder_);
     auto ret = getEdgeType(req.get_space_id(), req.get_edge_name());
     if (ret.ok()) {
         resp_.set_id(to(ret.value(), EntryType::EDGE));

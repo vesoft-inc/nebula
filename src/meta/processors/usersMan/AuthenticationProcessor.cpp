@@ -11,6 +11,7 @@ namespace meta {
 
 void CreateUserProcessor::process(const cpp2::CreateUserReq& req) {
     userWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::userLock()));
+    CHECK_W_HOLDER(userWHolder_);
     const auto& user = req.get_user();
     auto ret = getUserId(user.get_account());
     if (ret.ok()) {
@@ -52,6 +53,7 @@ void CreateUserProcessor::onFinished() {
 
 void AlterUserProcessor::process(const cpp2::AlterUserReq& req) {
     userWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::userLock()));
+    CHECK_W_HOLDER(userWHolder_);
     const auto& user = req.get_user_item();
     auto ret = getUserId(user.get_account());
     if (!ret.ok()) {
@@ -84,6 +86,7 @@ void AlterUserProcessor::onFinished() {
 
 void DropUserProcessor::process(const cpp2::DropUserReq& req) {
     userWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::userLock()));
+    CHECK_W_HOLDER(userWHolder_);
     auto ret = getUserId(req.get_account());
     if (!ret.ok()) {
         if (req.get_missing_ok()) {
@@ -131,6 +134,7 @@ void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
     CHECK_SPACE_ID_AND_RETURN(roleItem.get_space_id());
     CHECK_USER_ID_AND_RETURN(roleItem.get_user_id());
     userWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::userLock()));
+    CHECK_W_HOLDER(userWHolder_);
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::roleKey(roleItem.get_space_id(), roleItem.get_user_id()),
                       MetaServiceUtils::roleVal(roleItem.get_role_type()));
@@ -149,6 +153,7 @@ void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
     CHECK_SPACE_ID_AND_RETURN(roleItem.get_space_id());
     CHECK_USER_ID_AND_RETURN(roleItem.get_user_id());
     userWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::userLock()));
+    CHECK_W_HOLDER(userWHolder_);
     auto roleKey = MetaServiceUtils::roleKey(roleItem.get_space_id(), roleItem.get_user_id());
     resp_.set_id(to(roleItem.get_user_id(), EntryType::USER));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
@@ -163,6 +168,7 @@ void RevokeProcessor::onFinished() {
 
 void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
     userWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::userLock()));
+    CHECK_W_HOLDER(userWHolder_);
     auto userRet = getUserId(req.get_account());
     if (!userRet.ok()) {
         resp_.set_code(to(userRet.status()));

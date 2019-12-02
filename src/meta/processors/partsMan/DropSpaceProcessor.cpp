@@ -11,6 +11,7 @@ namespace meta {
 
 void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     spaceWHolder_.reset(new(std::nothrow) folly::SharedMutex::WriteHolder(LockUtils::spaceLock()));
+    CHECK_W_HOLDER(spaceWHolder_);
     auto spaceRet = getSpaceId(req.get_space_name());
 
     if (!spaceRet.ok()) {
