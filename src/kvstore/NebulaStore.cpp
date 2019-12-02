@@ -17,6 +17,7 @@
 DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_int32(custom_filter_interval_secs, 24 * 3600, "interval to trigger custom compaction");
 DEFINE_int32(num_workers, 4, "Number of worker threads");
+DEFINE_bool(check_leader, true, "Check leader or not");
 
 namespace nebula {
 namespace kvstore {
@@ -351,7 +352,7 @@ ResultCode NebulaStore::get(GraphSpaceID spaceId,
         return error(ret);
     }
     auto part = nebula::value(ret);
-    if (!part->isLeader()) {
+    if (!checkLeader(part)) {
         return ResultCode::ERR_LEADER_CHANGED;
     }
     return part->engine()->get(key, value);
@@ -367,7 +368,7 @@ ResultCode NebulaStore::multiGet(GraphSpaceID spaceId,
         return error(ret);
     }
     auto part = nebula::value(ret);
-    if (!part->isLeader()) {
+    if (!checkLeader(part)) {
         return ResultCode::ERR_LEADER_CHANGED;
     }
     return part->engine()->multiGet(keys, values);
@@ -384,7 +385,7 @@ ResultCode NebulaStore::range(GraphSpaceID spaceId,
         return error(ret);
     }
     auto part = nebula::value(ret);
-    if (!part->isLeader()) {
+    if (!checkLeader(part)) {
         return ResultCode::ERR_LEADER_CHANGED;
     }
     return part->engine()->range(start, end, iter);
@@ -400,7 +401,7 @@ ResultCode NebulaStore::prefix(GraphSpaceID spaceId,
         return error(ret);
     }
     auto part = nebula::value(ret);
-    if (!part->isLeader()) {
+    if (!checkLeader(part)) {
         return ResultCode::ERR_LEADER_CHANGED;
     }
     return part->engine()->prefix(prefix, iter);
@@ -657,6 +658,11 @@ int32_t NebulaStore::allLeader(std::unordered_map<GraphSpaceID,
     }
     return count;
 }
+
+bool NebulaStore::checkLeader(std::shared_ptr<Part> part) const {
+    return !FLAGS_check_leader || part->isLeader();
+}
+
 
 }  // namespace kvstore
 }  // namespace nebula
