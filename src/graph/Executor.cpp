@@ -41,6 +41,7 @@
 #include "graph/MatchExecutor.h"
 #include "graph/BalanceExecutor.h"
 #include "graph/DeleteVertexExecutor.h"
+#include "graph/DeleteEdgesExecutor.h"
 #include "graph/UpdateVertexExecutor.h"
 #include "graph/UpdateEdgeExecutor.h"
 #include "graph/FindPathExecutor.h"
@@ -147,6 +148,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kDeleteVertex:
             executor = std::make_unique<DeleteVertexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDeleteEdges:
+            executor = std::make_unique<DeleteEdgesExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUpdateVertex:
             executor = std::make_unique<UpdateVertexExecutor>(sentence, ectx());
@@ -378,5 +382,16 @@ StatusOr<VariantType> Executor::transformDefaultValue(nebula::cpp2::SupportedTyp
     return Status::OK();
 }
 
+void Executor::doError(Status status, const stats::Stats* stats, uint32_t count) const {
+    stats::Stats::addStatsValue(stats, false, duration().elapsedInUSec(), count);
+    DCHECK(onError_);
+    onError_(std::move(status));
+}
+
+void Executor::doFinish(ProcessControl pro, const stats::Stats* stats, uint32_t count) const {
+    stats::Stats::addStatsValue(stats, true, duration().elapsedInUSec(), count);
+    DCHECK(onFinish_);
+    onFinish_(pro);
+}
 }   // namespace graph
 }   // namespace nebula

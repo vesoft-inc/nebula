@@ -66,6 +66,8 @@ int32_t StatsManager::registerHisto(folly::StringPiece counterName,
                                     StatsManager::VT bucketSize,
                                     StatsManager::VT min,
                                     StatsManager::VT max) {
+    LOG(INFO) << "registerHisto, bucketSize: " << bucketSize
+              << ", min: " << min << ", max: " << max;
     using std::chrono::seconds;
 
     auto& sm = get();
