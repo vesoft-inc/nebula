@@ -66,6 +66,7 @@ private:
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
     std::vector<nebula::cpp2::SupportedType>    colTypes_;
     std::vector<std::shared_ptr<AggFun>>        aggFuns_;
+    bool                                        hasSetResult_{false};
 };
 }   // namespace graph
 }   // namespace nebula
