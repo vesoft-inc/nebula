@@ -47,8 +47,9 @@ cur_dir=$PWD
 build_dir=$PWD/gcc-build
 tarballs_dir=$build_dir/downloads
 source_dir=$build_dir/source
+object_dir=$build_dir/build
 prefix=$1
-install_dir=${prefix:-$PWD/$build_dir/install}/gcc/$gcc_version
+install_dir=${prefix:-$build_dir/install}/gcc/$gcc_version
 
 function get_checksum {
     md5sum $1 | cut -d ' ' -f 1
@@ -91,20 +92,35 @@ function unpack_tarballs {
     cd $tarballs_dir
     set -e
 
-    echo "Unpacking $gcc_tarball..."
-    tar --skip-old-files -xf $gcc_tarball -C $source_dir
+    if [[ ! -d $source_dir/gcc-$gcc_version ]]
+    then
+        echo "Unpacking $gcc_tarball..."
+        tar --skip-old-files -xf $gcc_tarball -C $source_dir
+    fi
 
-    echo "Unpacking $gmp_tarball..."
-    tar --skip-old-files -xf $gmp_tarball -C $source_dir
+    if [[ ! -d $source_dir/gmp-$gmp_version ]]
+    then
+        echo "Unpacking $gmp_tarball..."
+        tar --skip-old-files -xf $gmp_tarball -C $source_dir
+    fi
 
-    echo "Unpacking $mpfr_tarball..."
-    tar --skip-old-files -xf $mpfr_tarball -C $source_dir
+    if [[ ! -d $source_dir/mpfr-$mpfr_version ]]
+    then
+        echo "Unpacking $mpfr_tarball..."
+        tar --skip-old-files -xf $mpfr_tarball -C $source_dir
+    fi
 
-    echo "Unpacking $mpc_tarball..."
-    tar --skip-old-files -xf $mpc_tarball -C $source_dir
+    if [[ ! -d $source_dir/mpc-$mpc_version ]]
+    then
+        echo "Unpacking $mpc_tarball..."
+        tar --skip-old-files -xf $mpc_tarball -C $source_dir
+    fi
 
-    echo "Unpacking $bu_tarball..."
-    tar --skip-old-files -xf $bu_tarball -C $source_dir
+    if [[ ! -d $source_dir/binutils-$bu_version ]]
+    then
+        echo "Unpacking $bu_tarball..."
+        tar --skip-old-files -xf $bu_tarball -C $source_dir
+    fi
 
     set +e
     cd $OLDPWD
@@ -116,6 +132,24 @@ function setup_deps {
     ln -sf ../mpfr-$mpfr_version mpfr
     ln -sf ../mpc-$mpc_version mpc
 
+    #[[ ! -e config.guess.orig ]] && cp -vp config.guess config.guess.orig
+    #cat > config.guess <<EOF
+##! /usr/bin/env bash
+#this_dir=\$(dirname \$0)
+#\$this_dir/config.guess.orig | sed -r 's/-unknown-|-pc-/-vesoft-/'
+#EOF
+    #chmod +x config.guess
+
+    ln -sf ../binutils-$bu_version/binutils binutils
+    ln -sf ../binutils-$bu_version/gas gas
+    ln -sf ../binutils-$bu_version/gold gold
+    ln -sf ../binutils-$bu_version/gprof gprof
+    ln -sf ../binutils-$bu_version/ld ld
+    ln -sf ../binutils-$bu_version/bfd bfd
+    ln -sf ../binutils-$bu_version/opcodes opcodes
+
+    cd $OLDPWD
+
     cd $source_dir/gmp-$gmp_version
     cp -f configfsf.guess config.guess
     cp -f configfsf.sub config.sub
@@ -124,40 +158,43 @@ function setup_deps {
 }
 
 function configure_gcc {
-    cd $source_dir/gcc-$gcc_version
-    ./configure --prefix=$install_dir               \
-                --enable-shared                     \
-                --with-glibc-version=2.12            \
-                --enable-threads=posix              \
-                --enable-__cxa_atexit               \
-                --enable-clocale=gnu                \
-                --enable-languages=c,c++            \
-                --enable-lto                        \
-                --enable-bootstrap                  \
-                --disable-nls                       \
-                --disable-multilib                  \
-                --disable-install-libiberty         \
-                --disable-werror                    \
+    mkdir -p $object_dir
+    cd $object_dir
+    $source_dir/gcc-$gcc_version/configure --prefix=$install_dir                           \
+                --with-pkgversion="Nebula Graph Build"          \
+                --enable-shared                                 \
+                --enable-threads=posix                          \
+                --enable-__cxa_atexit                           \
+                --enable-clocale=gnu                            \
+                --enable-languages=c,c++                        \
+                --enable-lto                                    \
+                --disable-bootstrap                              \
+                --disable-nls                                   \
+                --disable-multilib                              \
+                --disable-install-libiberty                     \
+                --disable-werror                                \
                 --with-system-zlib
+                #--host=x86_64-vesoft-linux                                \
+                #--build=x86_64-vesoft-linux                                \
     [[ $? -eq 0 ]] || exit 1
     cd $OLDPWD
 }
 
 function build_gcc {
-    cd $source_dir/gcc-$gcc_version
+    cd $object_dir
     make -j 20 || exit 1
     cd $OLDPWD
 }
 
 function install_gcc {
-    cd $source_dir/gcc-$gcc_version
+    cd $object_dir
     make -j install-strip || exit 1
     cd $OLDPWD
 }
 
 function build_binutils {
-    cd $source_dir/binutils-$bu_version
-    ./configure --prefix=$install_dir --enable-gold
+    cd $object_dir
+    $source_dir/binutils-$bu_version/configure --prefix=$install_dir --enable-gold
     [[ $? -eq 0 ]] || exit 1
     make -j8
     [[ $? -eq 0 ]] || exit 1
@@ -165,13 +202,14 @@ function build_binutils {
 }
 
 function install_binutils {
-    cd $source_dir/binutils-$bu_version
+    cd $object_dir
     make -j8 install-strip
     [[ $? -eq 0 ]] || exit 1
-    gcc_triple=$($source_dir/gcc-$gcc_version/config.guess)
+    cd $OLDPWD
+
     cd $install_dir
-    cp -v bin/as libexec/gcc/$gcc_triple/$gcc_version/
-    cp -v bin/ld* libexec/gcc/$gcc_triple/$gcc_version/
+    cp -v bin/as libexec/gcc/x86_64-vesoft-linux/$gcc_version/
+    cp -v bin/ld* libexec/gcc/x86_64-vesoft-linux/$gcc_version/
     cd $OLDPWD
 }
 
@@ -181,7 +219,7 @@ function finalize {
 
 function make_package {
     glibc_version=$(ldd --version | head -1 | cut -d ' ' -f4)
-    exec_file=$build_dir/gcc-$gcc_version-linux-x86_64-glibc-$glibc_version.sh
+    exec_file=$build_dir/vesoft-toolchain-linux-x86_64-glibc-$glibc_version.sh
     echo "Creating self-extracting package $exec_file"
     cat > $exec_file <<EOF
 #! /usr/bin/env bash
@@ -215,8 +253,8 @@ setup_deps
 configure_gcc
 build_gcc
 install_gcc
-build_binutils
-install_binutils
+#build_binutils
+#install_binutils
 finalize
 
 cat > $install_dir/bin/enable-gcc.sh <<EOF
