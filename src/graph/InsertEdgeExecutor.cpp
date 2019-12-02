@@ -214,15 +214,13 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
 void InsertEdgeExecutor::execute() {
     auto status = check();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status), ectx()->getGraphStats()->getInsertEdgeStats());
         return;
     }
 
     auto result = prepareEdges();
     if (!result.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(result).status());
+        doError(std::move(status), ectx()->getGraphStats()->getInsertEdgeStats());
         return;
     }
 
@@ -235,18 +233,17 @@ void InsertEdgeExecutor::execute() {
         // For insertion, we regard partial success as failure.
         auto completeness = resp.completeness();
         if (completeness != 100) {
-            DCHECK(onError_);
-            onError_(Status::Error("Internal Error"));
+            doError(Status::Error("Internal Error"), ectx()->getGraphStats()->getInsertEdgeStats());
             return;
         }
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext,
+                 ectx()->getGraphStats()->getInsertEdgeStats(),
+                 rows_.size());
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal error"), ectx()->getGraphStats()->getInsertEdgeStats());
         return;
     };
 

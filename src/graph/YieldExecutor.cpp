@@ -145,7 +145,7 @@ void YieldExecutor::execute() {
         if (!status.ok()) {
             break;
         }
-        if (expCtx_->hasVariableProp() || expCtx_->hasInputProp()) {
+        if (hasSetResult_ || expCtx_->hasVariableProp()) {
             status = executeInputs();
         } else {
             status = executeConstant();
@@ -441,6 +441,7 @@ void YieldExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
 }
 
 void YieldExecutor::feedResult(std::unique_ptr<InterimResult> result) {
+    hasSetResult_ = true;
     inputs_ = std::move(result);
 }
 

@@ -84,14 +84,13 @@ void GoExecutor::execute() {
     FLOG_INFO("Executing Go: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status), ectx()->getGraphStats()->getGoStats());
         return;
     }
 
     status = setupStarts();
     if (!status.ok()) {
-        onError_(std::move(status));
+        doError(std::move(status), ectx()->getGraphStats()->getGoStats());
         return;
     }
     if (starts_.empty()) {
@@ -427,8 +426,8 @@ void GoExecutor::stepOut() {
     auto spaceId = ectx()->rctx()->session()->space();
     auto status = getStepOutProps();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(Status::Error("Get step out props failed"));
+        doError(Status::Error("Get step out props failed"),
+                ectx()->getGraphStats()->getGoStats());
         return;
     }
     auto returns = status.value();
@@ -441,8 +440,7 @@ void GoExecutor::stepOut() {
     auto cb = [this] (auto &&result) {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            DCHECK(onError_);
-            onError_(Status::Error("Get neighbors failed"));
+            doError(Status::Error("Get neighbors failed"), ectx()->getGraphStats()->getGoStats());
             return;
         } else if (completeness != 100) {
             // TODO(dutor) We ought to let the user know that the execution was partially
@@ -459,7 +457,8 @@ void GoExecutor::stepOut() {
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        onError_(Status::Error("Exeception when handle out-bounds/in-bounds."));
+        doError(Status::Error("Exeception when handle out-bounds/in-bounds."),
+                ectx()->getGraphStats()->getGoStats());
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -540,12 +539,14 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
                     EdgeRanking rank;
                     auto rc = iter->getVid(_DST, dst);
                     if (rc != ResultType::SUCCEEDED) {
-                        onError_(Status::Error("Get dst error when go reversely."));
+                        doError(Status::Error("Get dst error when go reversely."),
+                                ectx()->getGraphStats()->getGoStats());
                         return;
                     }
                     rc = iter->getVid(_RANK, rank);
                     if (rc != ResultType::SUCCEEDED) {
-                        onError_(Status::Error("Get rank error when go reversely."));
+                        doError(Status::Error("Get rank error when go reversely."),
+                                ectx()->getGraphStats()->getGoStats());
                         return;
                     }
                     auto type = edge.type > 0 ? edge.type : -edge.type;
@@ -564,7 +565,8 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
     for (auto &prop : expCtx_->aliasProps()) {
         EdgeType edgeType;
         if (!expCtx_->getEdgeType(prop.first, edgeType)) {
-            onError_(Status::Error("No schema found for `%s'", prop.first.c_str()));
+            doError(Status::Error("No schema found for `%s'", prop.first.c_str()),
+                    ectx()->getGraphStats()->getGoStats());
             return;
         }
 
@@ -596,7 +598,8 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
         for (auto &t : result) {
             if (t.hasException()) {
                 LOG(ERROR) << "Exception caught: " << t.exception().what();
-                onError_(Status::Error("Exeception when get edge props in reversely traversal."));
+                doError(Status::Error("Exeception when get edge props in reversely traversal."),
+                        ectx()->getGraphStats()->getGoStats());
                 return;
             }
             auto resp = std::move(t).value();
@@ -604,7 +607,7 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
                 auto status = edgeHolder_->add(edgePropResp);
                 if (!status.ok()) {
                     LOG(ERROR) << "Error when handle edges: " << status;
-                    onError_(std::move(status));
+                    doError(std::move(status), ectx()->getGraphStats()->getGoStats());
                     return;
                 }
             }
@@ -620,7 +623,8 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        onError_(Status::Error("Exception when handle edges."));
+        doError(Status::Error("Exception when handle edges."),
+                ectx()->getGraphStats()->getGoStats());
     };
 
     folly::collectAll(std::move(futures)).via(runner).thenValue(cb).thenError(error);
@@ -699,8 +703,7 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
     if (expCtx_->isOverAllEdge() && yields_.empty()) {
         auto edgeNames = getEdgeNamesFromResp(rpcResp);
         if (edgeNames.empty()) {
-            DCHECK(onError_);
-            onError_(Status::Error("get edge name failed"));
+            doError(Status::Error("get edge name failed"), ectx()->getGraphStats()->getGoStats());
             return;
         }
         for (const auto &name : edgeNames) {
@@ -727,14 +730,13 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
             auto ret = outputs->getRows();
             if (!ret.ok()) {
                 LOG(ERROR) << "Get rows failed: " << ret.status();
-                onError_(std::move(ret).status());
+                doError(std::move(ret).status(), ectx()->getGraphStats()->getGoStats());
                 return;
             }
             resp_->set_rows(std::move(ret).value());
         }
     }
-    DCHECK(onFinish_);
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext, ectx()->getGraphStats()->getGoStats());
 }
 
 StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
@@ -819,8 +821,7 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcRe
     auto spaceId = ectx()->rctx()->session()->space();
     auto status = getDstProps();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(Status::Error("Get dest props failed"));
+        doError(Status::Error("Get dest props failed"), ectx()->getGraphStats()->getGoStats());
         return;
     }
     auto returns = status.value();
@@ -829,8 +830,7 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcRe
     auto cb = [this, stepOutResp = std::move(rpcResp)] (auto &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            DCHECK(onError_);
-            onError_(Status::Error("Get dest props failed"));
+            doError(Status::Error("Get dest props failed"), ectx()->getGraphStats()->getGoStats());
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get neighbors partially failed: "  << completeness << "%";
@@ -850,7 +850,8 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcRe
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        onError_(Status::Error("Exception when handle vertex props."));
+        doError(Status::Error("Exception when handle vertex props."),
+                ectx()->getGraphStats()->getGoStats());
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -962,7 +963,7 @@ void GoExecutor::onEmptyInputs() {
     } else if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
     }
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext, ectx()->getGraphStats()->getGoStats());
 }
 
 
@@ -1133,7 +1134,8 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     if (filter_ != nullptr) {
                         auto value = filter_->eval();
                         if (!value.ok()) {
-                            onError_(value.status());
+                            doError(std::move(value).status(),
+                                    ectx()->getGraphStats()->getGoStats());
                             return false;
                         }
                         if (!Expression::asBool(value.value())) {
@@ -1149,7 +1151,8 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         auto *expr = column->expr();
                         auto value = expr->eval();
                         if (!value.ok()) {
-                            onError_(value.status());
+                            doError(std::move(value).status(),
+                                    ectx()->getGraphStats()->getGoStats());
                             return false;
                         }
                         if (column->expr()->isTypeCastingExpression()) {
