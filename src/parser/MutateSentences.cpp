@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "base/Base.h"
+#include "parser/TraverseSentences.h"
 #include "parser/MutateSentences.h"
 
 namespace nebula {
@@ -273,31 +274,25 @@ std::string DeleteVertexSentence::toString() const {
     return buf;
 }
 
-std::string EdgeList::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    for (auto &edge : edges_) {
-        buf += edge.first->toString();
-        buf += "->";
-        buf += edge.second->toString();
-        buf += ",";
-    }
-    if (!buf.empty()) {
-        buf.resize(buf.size() - 1);
-    }
-    return buf;
-}
-
-std::string DeleteEdgeSentence::toString() const {
+std::string DeleteEdgesSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "DELETE EDGE ";
-    buf += edgeList_->toString();
-    if (whereClause_ != nullptr) {
-        buf += " ";
-        buf += whereClause_->toString();
-    }
+    buf += *edge_;
+    buf += " ";
+    buf += edgeKeys_->toString();
     return buf;
+}
+
+DeleteEdgesSentence::DeleteEdgesSentence(std::string *edge,
+                                         EdgeKeys    *keys) {
+        edge_.reset(edge);
+        edgeKeys_.reset(keys);
+        kind_ = Kind::kDeleteEdges;
+}
+
+EdgeKeys* DeleteEdgesSentence::keys() const {
+    return edgeKeys_.get();
 }
 
 std::string DownloadSentence::toString() const {
