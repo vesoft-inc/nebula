@@ -73,7 +73,7 @@ nebula> CREATE EDGE follow(start_time timestamp, grade double)
 nebula> CREATE EDGE noedge()  -- empty properties
 
 nebula> CREATE TAG player_with_default(name string, age int DEFAULT 20)  -- age is set to 20 by default
-nebula> CREATE EDGE follow_with_default(start_time timestamp DEFAULT 0, grade double 0.0)  -- start_time is set to 0 by default, grade is set to 0.0 by default
+nebula> CREATE EDGE follow_with_default(start_time timestamp DEFAULT 0, grade double DEFAULT 0.0)  -- start_time is set to 0 by default, grade is set to 0.0 by default
 ```
 
 <!-- ```ngql
