@@ -58,7 +58,7 @@ jobs:
           ${NEBULA_DEP_BIN}/ctest --output-on-failure
         shell: bash
       - name: coverage
-        if: succeed()
+        if: success()
         run: |
           cd _build
           bash <(curl -s https://codecov.io/bash)
