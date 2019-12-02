@@ -89,6 +89,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     auto ret = mClient->createSpace("storage", partition, replica).get();
     ASSERT_TRUE(ret.ok());
     auto spaceId = ret.value();
+
     std::vector<nebula::cpp2::ColumnDef> columns;
     nebula::cpp2::ValueType vt;
     vt.set_type(SupportedType::STRING);
@@ -193,7 +194,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
 
     LOG(INFO) << "Let's balance";
     auto bIdRet = balancer.balance();
-    CHECK(bIdRet.ok()) << bIdRet.status();
+    CHECK(ok(bIdRet));
     while (balancer.isRunning()) {
         sleep(1);
     }

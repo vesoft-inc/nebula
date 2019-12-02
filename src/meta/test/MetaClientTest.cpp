@@ -26,8 +26,8 @@ namespace nebula {
 namespace meta {
 
 using nebula::cpp2::SupportedType;
+using nebula::cpp2::Value;
 using nebula::cpp2::ValueType;
-using apache::thrift::FragileConstructor::FRAGILE;
 
 TEST(MetaClientTest, InterfacesTest) {
     FLAGS_load_data_interval_secs = 1;
@@ -86,7 +86,7 @@ TEST(MetaClientTest, InterfacesTest) {
             }
         }
         {
-            // createTagSchema
+            // Create tag schema
             nebula::cpp2::Schema schema;
             for (auto i = 0 ; i < 5; i++) {
                 nebula::cpp2::ColumnDef column;
@@ -98,7 +98,22 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_TRUE(ret.ok()) << ret.status();
         }
         {
-            // createEdgeSchema
+            // Create tag schema with default value
+            nebula::cpp2::Schema schema;
+            for (auto i = 0 ; i < 5; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = "tagItem" + std::to_string(i);
+                column.type.type = nebula::cpp2::SupportedType::STRING;
+                nebula::cpp2::Value defaultValue;
+                defaultValue.set_string_value(std::to_string(i));
+                column.default_value = defaultValue;
+                schema.columns.emplace_back(std::move(column));
+            }
+            auto ret = client->createTagSchema(spaceId, "tagWithDefault", schema).get();
+            ASSERT_TRUE(ret.ok()) << ret.status();
+        }
+        {
+            // Create edge schema
             nebula::cpp2::Schema schema;
             for (auto i = 0 ; i < 5; i++) {
                 nebula::cpp2::ColumnDef column;
@@ -109,6 +124,21 @@ TEST(MetaClientTest, InterfacesTest) {
             auto ret = client->createEdgeSchema(spaceId, "edgeName", schema).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
         }
+        {
+            // Create edge schema with default value
+            nebula::cpp2::Schema schema;
+            for (auto i = 0 ; i < 5; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = "edgeItem" + std::to_string(i);
+                column.type.type = nebula::cpp2::SupportedType::STRING;
+                nebula::cpp2::Value defaultValue;
+                defaultValue.set_string_value(std::to_string(i));
+                column.default_value = defaultValue;
+                schema.columns.emplace_back(std::move(column));
+            }
+            auto ret = client->createEdgeSchema(spaceId, "edgeWithDefault", schema).get();
+            ASSERT_TRUE(ret.ok()) << ret.status();
+        }
 
         auto schemaMan = std::make_unique<ServerBasedSchemaManager>();
         schemaMan->init(client.get());
@@ -116,7 +146,7 @@ TEST(MetaClientTest, InterfacesTest) {
             // listTagSchemas
             auto ret1 = client->listTagSchemas(spaceId).get();
             ASSERT_TRUE(ret1.ok()) << ret1.status();
-            ASSERT_EQ(ret1.value().size(), 1);
+            ASSERT_EQ(ret1.value().size(), 2);
             ASSERT_NE(ret1.value().begin()->tag_id, 0);
             ASSERT_EQ(ret1.value().begin()->schema.columns.size(), 5);
 
@@ -158,7 +188,7 @@ TEST(MetaClientTest, InterfacesTest) {
             // listEdgeSchemas
             auto ret1 = client->listEdgeSchemas(spaceId).get();
             ASSERT_TRUE(ret1.ok()) << ret1.status();
-            ASSERT_EQ(ret1.value().size(), 1);
+            ASSERT_EQ(ret1.value().size(), 2);
             ASSERT_NE(ret1.value().begin()->edge_type, 0);
 
             // getEdgeSchemaFromCache
@@ -202,7 +232,9 @@ TEST(MetaClientTest, InterfacesTest) {
         ASSERT_EQ(6, partsMap[spaceId].size());
     }
     {
-        auto partMeta = client->getPartMetaFromCache(spaceId, 1);
+        auto metaStatus = client->getPartMetaFromCache(spaceId, 1);
+        ASSERT_TRUE(metaStatus.ok());
+        auto partMeta = metaStatus.value();
         ASSERT_EQ(3, partMeta.peers_.size());
         for (auto& h : partMeta.peers_) {
             ASSERT_EQ(h.first, h.second);
@@ -315,25 +347,61 @@ TEST(MetaClientTest, TagTest) {
     {
         std::vector<nebula::cpp2::ColumnDef> columns;
         ValueType vt;
+        Value defaultValue;
         vt.set_type(SupportedType::INT);
+        defaultValue.set_int_value(0);
         columns.emplace_back();
         columns.back().set_name("column_i");
+        columns.back().set_default_value(defaultValue);
         columns.back().set_type(vt);
 
         vt.set_type(SupportedType::DOUBLE);
+        defaultValue.set_double_value(3.14);
         columns.emplace_back();
+        columns.back().set_default_value(defaultValue);
         columns.back().set_name("column_d");
         columns.back().set_type(vt);
 
         vt.set_type(SupportedType::STRING);
+        defaultValue.set_string_value("test");
         columns.emplace_back();
+        columns.back().set_default_value(defaultValue);
         columns.back().set_name("column_s");
         columns.back().set_type(vt);
+
         nebula::cpp2::Schema schema;
         schema.set_columns(std::move(columns));
         auto result = client->createTagSchema(spaceId, "test_tag", std::move(schema)).get();
         ASSERT_TRUE(result.ok());
         id = result.value();
+    }
+    {
+        std::vector<nebula::cpp2::ColumnDef> columns;
+        nebula::cpp2::ColumnDef intColumn;
+        intColumn.set_name("column_i");
+        nebula::cpp2::ValueType intType;
+        intType.set_type(SupportedType::INT);
+        intColumn.set_type(std::move(intType));
+        nebula::cpp2::Value intValue;
+        intValue.set_int_value(0);
+        intColumn.set_default_value(intValue);
+        columns.emplace_back(std::move(intColumn));
+
+        nebula::cpp2::ColumnDef doubleColumn;
+        doubleColumn.set_name("column_d");
+        nebula::cpp2::ValueType stringType;
+        stringType.set_type(SupportedType::STRING);
+        doubleColumn.set_type(std::move(stringType));
+        nebula::cpp2::Value doubleValue;
+        doubleValue.set_double_value(3.14);
+        doubleColumn.set_default_value(doubleValue);
+        columns.emplace_back(std::move(doubleColumn));
+
+        nebula::cpp2::Schema schema;
+        schema.set_columns(columns);
+
+        auto result = client->createTagSchema(spaceId, "test_tag_type_mismatch", schema).get();
+        ASSERT_FALSE(result.ok());
     }
     {
         auto result = client->listTagSchemas(spaceId).get();
@@ -382,56 +450,130 @@ TEST(MetaClientTest, EdgeTest) {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
-
-    client->waitForMetadReady();
+    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
+    auto client = std::make_shared<MetaClient>(threadPool, localhosts);
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+    client->waitForMetadReady();
     TestUtils::registerHB(sc->kvStore_.get(), hosts);
     auto ret = client->createSpace("default_space", 9, 3).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
-    GraphSpaceID spaceId = ret.value();
-    EdgeType id;
-    int64_t version;
+    GraphSpaceID space = ret.value();
+    SchemaVer version;
 
     {
         std::vector<nebula::cpp2::ColumnDef> columns;
-        columns.emplace_back(FRAGILE, "column_i",
-                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr));
-        columns.emplace_back(FRAGILE, "column_d",
-                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr));
-        columns.emplace_back(FRAGILE, "column_s",
-                             ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr));
+
+        nebula::cpp2::ColumnDef intColumn;
+        intColumn.set_name("column_i");
+        nebula::cpp2::ValueType intType;
+        intType.set_type(SupportedType::INT);
+        intColumn.set_type(std::move(intType));
+        nebula::cpp2::Value intValue;
+        intValue.set_int_value(0);
+        intColumn.set_default_value(intValue);
+        columns.emplace_back(std::move(intColumn));
+
+        nebula::cpp2::ColumnDef doubleColumn;
+        doubleColumn.set_name("column_d");
+        nebula::cpp2::ValueType doubleType;
+        doubleType.set_type(SupportedType::DOUBLE);
+        doubleColumn.set_type(std::move(doubleType));
+        nebula::cpp2::Value doubleValue;
+        doubleValue.set_double_value(3.14);
+        doubleColumn.set_default_value(doubleValue);
+        columns.emplace_back(std::move(doubleColumn));
+
+        nebula::cpp2::ColumnDef stringColumn;
+        stringColumn.set_name("column_s");
+        nebula::cpp2::ValueType stringType;
+        stringType.set_type(SupportedType::STRING);
+        stringColumn.set_type(stringType);
+        nebula::cpp2::Value stringValue;
+        stringValue.set_string_value("test");
+        stringColumn.set_default_value(stringValue);
+        columns.emplace_back(std::move(stringColumn));
+
         nebula::cpp2::Schema schema;
         schema.set_columns(std::move(columns));
-        auto result = client->createEdgeSchema(spaceId, "test_edge", schema).get();
+        auto result = client->createEdgeSchema(space, "test_edge", schema).get();
         ASSERT_TRUE(result.ok());
-        id = result.value();
     }
     {
-        auto result = client->listEdgeSchemas(spaceId).get();
+        std::vector<nebula::cpp2::ColumnDef> columns;
+        nebula::cpp2::ColumnDef intColumn;
+        intColumn.set_name("column_i");
+        nebula::cpp2::ValueType intType;
+        intType.set_type(SupportedType::INT);
+        intColumn.set_type(std::move(intType));
+        nebula::cpp2::Value intValue;
+        intValue.set_int_value(0);
+        intColumn.set_default_value(intValue);
+        columns.emplace_back(std::move(intColumn));
+
+        nebula::cpp2::ColumnDef doubleColumn;
+        doubleColumn.set_name("column_d");
+        nebula::cpp2::ValueType stringType;
+        stringType.set_type(SupportedType::STRING);
+        doubleColumn.set_type(std::move(stringType));
+        nebula::cpp2::Value doubleValue;
+        doubleValue.set_double_value(3.14);
+        doubleColumn.set_default_value(doubleValue);
+        columns.emplace_back(std::move(doubleColumn));
+        nebula::cpp2::Schema schema;
+        schema.set_columns(columns);
+
+        auto result = client->createEdgeSchema(space, "test_edge_type_mismatch", schema).get();
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        auto result = client->listEdgeSchemas(space).get();
         ASSERT_TRUE(result.ok());
         auto edges = result.value();
         ASSERT_EQ(1, edges.size());
-        ASSERT_EQ(id, edges[0].get_edge_type());
+        ASSERT_EQ(2, edges[0].get_edge_type());
         ASSERT_EQ("test_edge", edges[0].get_edge_name());
         version = edges[0].get_version();
+
         std::vector<nebula::cpp2::ColumnDef> columns;
-        columns.emplace_back(FRAGILE, "column_i",
-                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr));
-        columns.emplace_back(FRAGILE, "column_d",
-                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr));
-        columns.emplace_back(FRAGILE, "column_s",
-                             ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr));
+        nebula::cpp2::ColumnDef intColumn;
+        intColumn.set_name("column_i");
+        nebula::cpp2::ValueType intType;
+        intType.set_type(SupportedType::INT);
+        intColumn.set_type(std::move(intType));
+        nebula::cpp2::Value intValue;
+        intValue.set_int_value(0);
+        intColumn.set_default_value(intValue);
+        columns.emplace_back(std::move(intColumn));
+
+        nebula::cpp2::ColumnDef doubleColumn;
+        doubleColumn.set_name("column_d");
+        nebula::cpp2::ValueType doubleType;
+        doubleType.set_type(SupportedType::DOUBLE);
+        doubleColumn.set_type(std::move(doubleType));
+        nebula::cpp2::Value doubleValue;
+        doubleValue.set_double_value(3.14);
+        doubleColumn.set_default_value(doubleValue);
+        columns.emplace_back(std::move(doubleColumn));
+
+        nebula::cpp2::ColumnDef stringColumn;
+        stringColumn.set_name("column_s");
+        nebula::cpp2::ValueType stringType;
+        stringType.set_type(SupportedType::STRING);
+        stringColumn.set_type(std::move(stringType));
+        nebula::cpp2::Value stringValue;
+        stringValue.set_string_value("default_value");
+        stringColumn.set_default_value(stringValue);
+        columns.emplace_back(std::move(stringColumn));
+
         nebula::cpp2::Schema expected;
         expected.set_columns(std::move(columns));
         nebula::cpp2::Schema resultSchema = edges[0].get_schema();
         ASSERT_TRUE(TestUtils::verifySchema(resultSchema, expected));
     }
     {
-        auto result1 = client->getEdgeSchema(spaceId, "test_edge", version).get();
+        auto result1 = client->getEdgeSchema(space, "test_edge", version).get();
         ASSERT_TRUE(result1.ok());
-        auto result2 = client->getEdgeSchema(spaceId, "test_edge").get();
+        auto result2 = client->getEdgeSchema(space, "test_edge").get();
         ASSERT_TRUE(result2.ok());
         ASSERT_EQ(result1.value().columns.size(), result2.value().columns.size());
         for (auto i = 0u; i < result1.value().columns.size(); i++) {
@@ -440,11 +582,11 @@ TEST(MetaClientTest, EdgeTest) {
         }
     }
     {
-        auto result = client->dropEdgeSchema(spaceId, "test_edge").get();
+        auto result = client->dropEdgeSchema(space, "test_edge").get();
         ASSERT_TRUE(result.ok());
     }
     {
-        auto result = client->getEdgeSchema(spaceId, "test_edge", version).get();
+        auto result = client->getEdgeSchema(space, "test_edge", version).get();
         ASSERT_FALSE(result.ok());
     }
 }
@@ -460,24 +602,35 @@ TEST(MetaClientTest, TagIndexTest) {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
-    client->waitForMetadReady();
-
+    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+    auto client = std::make_shared<MetaClient>(threadPool, localhosts);
+    client->waitForMetadReady();
+    TestUtils::registerHB(sc->kvStore_.get(), hosts);
+
     auto ret = client->createSpace("default_space", 8, 3).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
-    auto spaceId = ret.value();
+    auto space = ret.value();
     {
         for (auto i = 0; i < 2; i++) {
             std::vector<nebula::cpp2::ColumnDef> columns;
-            columns.emplace_back(FRAGILE, folly::stringPrintf("tag_%d_col_0", i),
-                                 ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr));
-            columns.emplace_back(FRAGILE, folly::stringPrintf("tag_%d_col_1", i),
-                                 ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr));
+            nebula::cpp2::ColumnDef column0;
+            column0.set_name(folly::stringPrintf("tag_%d_col_0", i));
+            nebula::cpp2::ValueType intType;
+            intType.set_type(SupportedType::INT);
+            column0.set_type(std::move(intType));
+            columns.emplace_back(std::move(column0));
+
+            nebula::cpp2::ColumnDef column1;
+            column1.set_name(folly::stringPrintf("tag_%d_col_1", i));
+            nebula::cpp2::ValueType stringType;
+            stringType.set_type(SupportedType::STRING);
+            column1.set_type(std::move(stringType));
+            columns.emplace_back(std::move(column1));
+
             nebula::cpp2::Schema schema;
             schema.set_columns(std::move(columns));
-            auto result = client->createTagSchema(spaceId, folly::stringPrintf("tag_%d", i),
+            auto result = client->createTagSchema(space, folly::stringPrintf("tag_%d", i),
                                                   schema).get();
             ASSERT_TRUE(result.ok());
         }
@@ -486,7 +639,7 @@ TEST(MetaClientTest, TagIndexTest) {
         std::map<std::string, std::vector<std::string>>&& fields {
             {"tag_0", {"tag_0_col_0"}}
         };
-        auto result = client->createTagIndex(spaceId,
+        auto result = client->createTagIndex(space,
                                              "tag_single_field_index",
                                              std::move(fields)).get();
         ASSERT_TRUE(result.ok());
@@ -495,7 +648,7 @@ TEST(MetaClientTest, TagIndexTest) {
         std::map<std::string, std::vector<std::string>>&& fields {
             {"tag_0", {"tag_0_col_0",  "tag_0_col_1"}}
         };
-        auto result = client->createTagIndex(spaceId,
+        auto result = client->createTagIndex(space,
                                              "tag_multi_field_index",
                                              std::move(fields)).get();
         ASSERT_TRUE(result.ok());
@@ -505,7 +658,7 @@ TEST(MetaClientTest, TagIndexTest) {
             {"tag_0", {"tag_0_col_0",  "tag_0_col_1"}},
             {"tag_1", {"tag_1_col_0",  "tag_1_col_1"}}
         };
-        auto result = client->createTagIndex(spaceId,
+        auto result = client->createTagIndex(space,
                                              "tag_multi_tag_index",
                                              std::move(fields)).get();
         ASSERT_TRUE(result.ok());
@@ -514,7 +667,7 @@ TEST(MetaClientTest, TagIndexTest) {
         std::map<std::string, std::vector<std::string>>&& fields {
             {"tag_0", {"tag_0_col_0",  "not_exist_field"}}
         };
-        auto result = client->createTagIndex(spaceId,
+        auto result = client->createTagIndex(space,
                                              "tag_field_not_exist_index",
                                              std::move(fields)).get();
         ASSERT_FALSE(result.ok());
@@ -524,69 +677,113 @@ TEST(MetaClientTest, TagIndexTest) {
         std::map<std::string, std::vector<std::string>>&& fields {
             {"tag_not_exist", {"tag_0_col_0",  "tag_0_col_1"}}
         };
-        auto result = client->createTagIndex(spaceId,
+        auto result = client->createTagIndex(space,
                                              "tag_not_exist_index",
                                              std::move(fields)).get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
-        auto result = client->listTagIndexes(spaceId).get();
+        auto result = client->listTagIndexes(space).get();
         std::vector<cpp2::TagIndexItem> values = result.value();
         ASSERT_EQ(3, values.size());
 
-        nebula::cpp2::ColumnDef column;
-        column.set_name("tag_0_col_0");
-        nebula::cpp2::ValueType type;
-        type.set_type(SupportedType::INT);
-        column.set_type(std::move(type));
-        std::vector<nebula::cpp2::ColumnDef> columns;
-        columns.emplace_back(std::move(column));
+        {
+            nebula::cpp2::ColumnDef singleColumn;
+            singleColumn.set_name("tag_0_col_0");
+            nebula::cpp2::ValueType intType;
+            intType.set_type(SupportedType::INT);
+            singleColumn.set_type(std::move(intType));
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            columns.emplace_back(std::move(singleColumn));
 
-        std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> singleFieldProperties;
-        singleFieldProperties.emplace("tag_0", std::move(columns));
+            std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> singleFieldProperties;
+            singleFieldProperties.emplace("tag_0", std::move(columns));
 
-        auto singleFieldResult = values[0].get_fields().get_fields();
-        ASSERT_TRUE(TestUtils::verifyMap(singleFieldResult, singleFieldProperties));
+            auto singleFieldResult = values[0].get_fields().get_fields();
+            ASSERT_TRUE(TestUtils::verifyMap(singleFieldResult, singleFieldProperties));
+        }
 
-        std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> multiFieldProperties;
-        /*
-            {"tag_0", {"tag_0_col_0",  "tag_0_col_1"}}
-        };
-        */
-        auto multiFieldResult = values[1].get_fields().get_fields();
-        ASSERT_TRUE(TestUtils::verifyMap(multiFieldResult, multiFieldProperties));
+        {
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            nebula::cpp2::ColumnDef intColumn;
+            intColumn.set_name("tag_0_col_0");
+            nebula::cpp2::ValueType intType;
+            intType.set_type(SupportedType::INT);
+            intColumn.set_type(std::move(intType));
+            columns.emplace_back(std::move(intColumn));
 
-        std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> multiTagProperties;
-        /*
-            {"tag_0", {"tag_0_col_0",  "tag_0_col_1"}},
-            {"tag_1", {"tag_1_col_0",  "tag_1_col_1"}}
-        };
-        */
-        auto multiTagResult = values[2].get_fields().get_fields();
-        ASSERT_TRUE(TestUtils::verifyMap(multiTagResult, multiTagProperties));
+            nebula::cpp2::ColumnDef stringColumn;
+            stringColumn.set_name("tag_0_col_1");
+            nebula::cpp2::ValueType stringType;
+            stringType.set_type(SupportedType::STRING);
+            stringColumn.set_type(std::move(stringType));
+            columns.emplace_back(std::move(stringColumn));
+
+            std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> multiFieldProperties;
+            multiFieldProperties.emplace("tag_0", std::move(columns));
+            auto multiFieldResult = values[1].get_fields().get_fields();
+            ASSERT_TRUE(TestUtils::verifyMap(multiFieldResult, multiFieldProperties));
+        }
+
+        {
+            std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> multiTagProperties;
+            for (int32_t i = 0; i < 2; i++) {
+                std::vector<nebula::cpp2::ColumnDef> columns;
+                nebula::cpp2::ColumnDef intColumn;
+                intColumn.set_name(folly::stringPrintf("tag_%d_col_0", i));
+                nebula::cpp2::ValueType intType;
+                intType.set_type(SupportedType::INT);
+                intColumn.set_type(std::move(intType));
+                columns.emplace_back(std::move(intColumn));
+
+                nebula::cpp2::ColumnDef stringColumn;
+                stringColumn.set_name(folly::stringPrintf("tag_%d_col_1", i));
+                nebula::cpp2::ValueType stringType;
+                stringType.set_type(SupportedType::STRING);
+                stringColumn.set_type(std::move(stringType));
+                columns.emplace_back(std::move(stringColumn));
+                multiTagProperties.emplace(folly::stringPrintf("tag_%d", i), std::move(columns));
+            }
+            auto multiTagResult = values[2].get_fields().get_fields();
+            ASSERT_TRUE(TestUtils::verifyMap(multiTagResult, multiTagProperties));
+        }
     }
     {
-        auto result = client->getTagIndex(spaceId, "tag_multi_tag_index").get();
+        auto result = client->getTagIndex(space, "tag_multi_tag_index").get();
         ASSERT_TRUE(result.ok());
         auto fields = result.value().get_fields().get_fields();
         ASSERT_EQ(2, fields.size());
-        std::vector<nebula::cpp2::ColumnDef> field0;
-        std::vector<nebula::cpp2::ColumnDef> field1;
-        ASSERT_TRUE(TestUtils::verifyResult(field0, fields["tag_0"]));
-        ASSERT_TRUE(TestUtils::verifyResult(field1, fields["tag_1"]));
+
+        for (int32_t i = 0; i< 2; i++) {
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            nebula::cpp2::ColumnDef intColumn;
+            intColumn.set_name(folly::stringPrintf("tag_%d_col_0", i));
+            nebula::cpp2::ValueType intType;
+            intType.set_type(SupportedType::INT);
+            intColumn.set_type(std::move(intType));
+            columns.emplace_back(std::move(intColumn));
+
+            nebula::cpp2::ColumnDef stringColumn;
+            stringColumn.set_name(folly::stringPrintf("tag_%d_col_1", i));
+            nebula::cpp2::ValueType stringType;
+            stringType.set_type(SupportedType::STRING);
+            stringColumn.set_type(std::move(stringType));
+            columns.emplace_back(std::move(stringColumn));
+            ASSERT_TRUE(TestUtils::verifyResult(columns, fields[folly::stringPrintf("tag_%d", i)]));
+        }
     }
     {
-        auto result = client->dropTagIndex(spaceId, "tag_single_field_index").get();
+        auto result = client->dropTagIndex(space, "tag_single_field_index").get();
         ASSERT_TRUE(result.ok());
     }
     {
-        auto result = client->getTagIndex(spaceId, "tag_single_field_index").get();
+        auto result = client->getTagIndex(space, "tag_single_field_index").get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
-        auto result = client->dropTagIndex(spaceId, "tag_single_field_index").get();
+        auto result = client->dropTagIndex(space, "tag_single_field_index").get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
@@ -603,24 +800,35 @@ TEST(MetaClientTest, EdgeIndexTest) {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
+    auto client = std::make_shared<MetaClient>(threadPool, localhosts);
 
     client->waitForMetadReady();
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     TestUtils::registerHB(sc->kvStore_.get(), hosts);
     auto ret = client->createSpace("default_space", 8, 3).get();
-    GraphSpaceID spaceId = ret.value();
+    GraphSpaceID space = ret.value();
     {
         for (auto i = 0; i < 2; i++) {
             std::vector<nebula::cpp2::ColumnDef> columns;
-            columns.emplace_back(FRAGILE, folly::stringPrintf("edge_%d_col_0", i),
-                                 ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr));
-            columns.emplace_back(FRAGILE, folly::stringPrintf("edge_%d_col_1", i),
-                                 ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr));
+            nebula::cpp2::ColumnDef column0;
+            column0.set_name(folly::stringPrintf("edge_%d_col_0", i));
+            nebula::cpp2::ValueType intType;
+            intType.set_type(SupportedType::INT);
+            column0.set_type(std::move(intType));
+            columns.emplace_back(std::move(column0));
+
+            nebula::cpp2::ColumnDef column1;
+            column1.set_name(folly::stringPrintf("edge_%d_col_1", i));
+            nebula::cpp2::ValueType stringType;
+            stringType.set_type(SupportedType::STRING);
+            column1.set_type(std::move(stringType));
+            columns.emplace_back(std::move(column1));
+
             nebula::cpp2::Schema schema;
             schema.set_columns(std::move(columns));
-            auto result = client->createEdgeSchema(spaceId, folly::stringPrintf("edge_%d", i),
+            auto result = client->createEdgeSchema(space,
+                                                   folly::stringPrintf("edge_%d", i),
                                                    schema).get();
             ASSERT_TRUE(result.ok());
         }
@@ -629,7 +837,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
         std::map<std::string, std::vector<std::string>>&& fields {
             {"edge_0", {"edge_0_col_0"}}
         };
-        auto result = client->createEdgeIndex(spaceId,
+        auto result = client->createEdgeIndex(space,
                                               "edge_single_field_index",
                                               std::move(fields)).get();
         ASSERT_TRUE(result.ok());
@@ -638,7 +846,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
         std::map<std::string, std::vector<std::string>>&& fields {
             {"edge_0", {"edge_0_col_0",  "edge_0_col_1"}}
         };
-        auto result = client->createEdgeIndex(spaceId,
+        auto result = client->createEdgeIndex(space,
                                               "edge_multi_field_index",
                                               std::move(fields)).get();
         ASSERT_TRUE(result.ok());
@@ -648,7 +856,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
             {"edge_0", {"edge_0_col_0",  "edge_0_col_1"}},
             {"edge_1", {"edge_1_col_0",  "edge_1_col_1"}}
         };
-        auto result = client->createEdgeIndex(spaceId,
+        auto result = client->createEdgeIndex(space,
                                               "edge_multi_tag_index",
                                               std::move(fields)).get();
         ASSERT_TRUE(result.ok());
@@ -657,7 +865,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
         std::map<std::string, std::vector<std::string>>&& fields {
             {"edge_not_exist", {"edge_0_col_0",  "edge_0_col_1"}}
         };
-        auto result = client->createEdgeIndex(spaceId,
+        auto result = client->createEdgeIndex(space,
                                               "edge_not_exist_index",
                                               std::move(fields)).get();
         ASSERT_FALSE(result.ok());
@@ -667,65 +875,110 @@ TEST(MetaClientTest, EdgeIndexTest) {
         std::map<std::string, std::vector<std::string>>&& fields {
             {"edge_0", {"edge_0_col_0",  "not_exist_field"}}
         };
-        auto result = client->createEdgeIndex(spaceId,
+        auto result = client->createEdgeIndex(space,
                                               "edge_field_not_exist_index",
                                               std::move(fields)).get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
-        auto result = client->listEdgeIndexes(spaceId).get();
+        auto result = client->listEdgeIndexes(space).get();
         std::vector<cpp2::EdgeIndexItem> values = result.value();
         ASSERT_EQ(3, values.size());
 
-        std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> singleFieldProperties;
-        /*
-            {"edge_0", {"edge_0_col_0"}}
-        };
-        */
-        auto singleFieldResult = values[0].get_fields().get_fields();
-        ASSERT_TRUE(TestUtils::verifyMap(singleFieldResult, singleFieldProperties));
+        {
+            std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> singleFieldProperties;
+             nebula::cpp2::ColumnDef column;
+            column.set_name("edge_0_col_0");
+            nebula::cpp2::ValueType type;
+            type.set_type(SupportedType::INT);
+            column.set_type(std::move(type));
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            columns.emplace_back(std::move(column));
+            singleFieldProperties.emplace("edge_0", std::move(columns));
 
-        std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> multiFieldProperties;
-        /*
-            {"edge_0", {"edge_0_col_0",  "edge_0_col_1"}}
-        };
-        */
-        auto multiFieldResult = values[1].get_fields().get_fields();
-        ASSERT_TRUE(TestUtils::verifyMap(multiFieldResult, multiFieldProperties));
+            auto singleFieldResult = values[0].get_fields().get_fields();
+            ASSERT_TRUE(TestUtils::verifyMap(singleFieldResult, singleFieldProperties));
+        }
 
-        std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> multiEdgeProperties;
-        /*
-            {"edge_0", {"edge_0_col_0",  "edge_0_col_1"}},
-            {"edge_1", {"edge_1_col_0",  "edge_1_col_1"}}
-        };
-        */
-        auto multiEdgeResult = values[2].get_fields().get_fields();
-        ASSERT_TRUE(TestUtils::verifyMap(multiEdgeResult, multiEdgeProperties));
+        {
+            std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> multiFieldProperties;
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            nebula::cpp2::ColumnDef intColumn;
+            intColumn.set_name("edge_0_col_0");
+            nebula::cpp2::ValueType intType;
+            intType.set_type(SupportedType::INT);
+            intColumn.set_type(std::move(intType));
+            columns.emplace_back(std::move(intColumn));
+            nebula::cpp2::ColumnDef stringColumn;
+            stringColumn.set_name("edge_0_col_1");
+            nebula::cpp2::ValueType stringType;
+            stringType.set_type(SupportedType::STRING);
+            stringColumn.set_type(std::move(stringType));
+            columns.emplace_back(std::move(stringColumn));
+            multiFieldProperties.emplace("edge_0", std::move(columns));
+            auto multiFieldResult = values[1].get_fields().get_fields();
+            ASSERT_TRUE(TestUtils::verifyMap(multiFieldResult, multiFieldProperties));
+        }
+
+        {
+            std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> multiEdgeProperties;
+            for (int32_t i = 0; i < 2; i++) {
+                std::vector<nebula::cpp2::ColumnDef> columns;
+                nebula::cpp2::ColumnDef intColumn;
+                intColumn.set_name(folly::stringPrintf("edge_%d_col_0", i));
+                nebula::cpp2::ValueType intType;
+                intType.set_type(SupportedType::INT);
+                intColumn.set_type(std::move(intType));
+                columns.emplace_back(std::move(intColumn));
+                nebula::cpp2::ColumnDef stringColumn;
+                stringColumn.set_name(folly::stringPrintf("edge_%d_col_1", i));
+                nebula::cpp2::ValueType stringType;
+                stringType.set_type(SupportedType::STRING);
+                stringColumn.set_type(std::move(stringType));
+                columns.emplace_back(std::move(stringColumn));
+                multiEdgeProperties.emplace(folly::stringPrintf("edge_%d", i),
+                                            std::move(columns));
+            }
+            auto multiEdgeResult = values[2].get_fields().get_fields();
+            ASSERT_TRUE(TestUtils::verifyMap(multiEdgeResult, multiEdgeProperties));
+        }
     }
     {
-        auto result = client->getEdgeIndex(spaceId, "edge_multi_tag_index").get();
+        auto result = client->getEdgeIndex(space, "edge_multi_tag_index").get();
         ASSERT_TRUE(result.ok());
         auto fields = result.value().get_fields().get_fields();
         ASSERT_EQ(2, fields.size());
-        std::vector<nebula::cpp2::ColumnDef> field0;
-        std::vector<nebula::cpp2::ColumnDef> field1;
-        auto e0 = fields["edge_0"];
-        auto e1 = fields["edge_1"];
-        ASSERT_TRUE(TestUtils::verifyResult(field0, e0));
-        ASSERT_TRUE(TestUtils::verifyResult(field1, e1));
+        for (int32_t i = 0; i< 2; i++) {
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            nebula::cpp2::ColumnDef intColumn;
+            intColumn.set_name(folly::stringPrintf("edge_%d_col_0", i));
+            nebula::cpp2::ValueType intType;
+            intType.set_type(SupportedType::INT);
+            intColumn.set_type(std::move(intType));
+            columns.emplace_back(std::move(intColumn));
+
+            nebula::cpp2::ColumnDef stringColumn;
+            stringColumn.set_name(folly::stringPrintf("edge_%d_col_1", i));
+            nebula::cpp2::ValueType stringType;
+            stringType.set_type(SupportedType::STRING);
+            stringColumn.set_type(std::move(stringType));
+            columns.emplace_back(std::move(stringColumn));
+            ASSERT_TRUE(TestUtils::verifyResult(columns,
+                                                fields[folly::stringPrintf("edge_%d", i)]));
+        }
     }
     {
-        auto result = client->dropEdgeIndex(spaceId, "edge_single_field_index").get();
+        auto result = client->dropEdgeIndex(space, "edge_single_field_index").get();
         ASSERT_TRUE(result.ok());
     }
     {
-        auto result = client->getEdgeIndex(spaceId, "edge_single_field_index").get();
+        auto result = client->getEdgeIndex(space, "edge_single_field_index").get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
-        auto result = client->dropEdgeIndex(spaceId, "edge_single_field_index").get();
+        auto result = client->dropEdgeIndex(space, "edge_single_field_index").get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
@@ -1080,8 +1333,7 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
     }
     {
         std::string name = "rocksdb_db_options";
-        std::string updateValue = "write_buffer_size=2097152,"
-                                  "disable_auto_compactions=true,"
+        std::string updateValue = "disable_auto_compactions=true,"
                                   "level0_file_num_compaction_trigger=4";
         // update config
         auto setRet = cfgMan.setConfig(module, name, type, updateValue).get();
@@ -1095,7 +1347,6 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
 
         sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(FLAGS_rocksdb_db_options, value);
-        ASSERT_EQ(listener->options["write_buffer_size"], "2097152");
         ASSERT_EQ(listener->options["disable_auto_compactions"], "true");
         ASSERT_EQ(listener->options["level0_file_num_compaction_trigger"], "4");
     }

@@ -17,7 +17,7 @@ class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static AddEdgesProcessor* instance(kvstore::KVStore* kvstore,
                                        meta::SchemaManager* schemaMan,
-                                       StorageStats* stats) {
+                                       stats::Stats* stats) {
         return new AddEdgesProcessor(kvstore, schemaMan, stats);
     }
 
@@ -26,7 +26,7 @@ public:
 private:
     explicit AddEdgesProcessor(kvstore::KVStore* kvstore,
                                meta::SchemaManager* schemaMan,
-                               StorageStats* stats)
+                               stats::Stats* stats)
             : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats) {}
 };
 

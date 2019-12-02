@@ -15,6 +15,7 @@
 #include "meta/ClientBasedGflagsManager.h"
 #include "meta/client/MetaClient.h"
 #include "network/NetworkUtils.h"
+#include "graph/GraphStats.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
 
 /**
@@ -45,6 +46,7 @@ private:
     std::unique_ptr<meta::ClientBasedGflagsManager>   gflagsManager_;
     std::unique_ptr<storage::StorageClient>           storage_;
     std::unique_ptr<meta::MetaClient>                 metaClient_;
+    std::unique_ptr<GraphStats>                       stats_;
 };
 
 }   // namespace graph

@@ -30,7 +30,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
         return;
     }
 
-    nebula::meta::cpp2::IndexFields indexFields;
+    std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> edgeColumns;
     for (auto const &element : properties.get_fields()) {
         auto edgeName = element.first;
         auto edgeType = getEdgeType(space, edgeName);
@@ -49,19 +49,30 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
             return;
         }
         auto fields = fieldsResult.value();
+        std::vector<nebula::cpp2::ColumnDef> columns;
         for (auto &field : element.second) {
             auto iter = std::find_if(std::begin(fields), std::end(fields),
                                      [field](FieldType pair) {
                                          return field == pair.first;
                                      });
+
             if (iter == fields.end()) {
                 LOG(ERROR) << "Field " << field << " not found in Edge " << edgeName;
                 resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
                 onFinished();
                 return;
+            } else {
+                auto type = fields[field];
+                nebula::cpp2::ColumnDef column;
+                column.set_name(std::move(field));
+                column.set_type(std::move(type));
+                columns.emplace_back(std::move(column));
             }
         }
+        edgeColumns.emplace(edgeName, std::move(columns));
     }
+    nebula::meta::cpp2::IndexFields indexFields;
+    indexFields.set_fields(std::move(edgeColumns));
 
     std::vector<kvstore::KV> data;
     auto edgeIndexRet = autoIncrementId();

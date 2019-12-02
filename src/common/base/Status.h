@@ -92,6 +92,8 @@ public:
     bool is##ERROR() const {                            \
         return code() == k##ERROR;                      \
     }
+    // Some succeeded codes
+    STATUS_GENERATOR(Inserted);
 
     // General errors
     STATUS_GENERATOR(Error);
@@ -111,10 +113,6 @@ public:
     STATUS_GENERATOR(UserNotFound);
     STATUS_GENERATOR(TagIndexNotFound);
     STATUS_GENERATOR(EdgeIndexNotFound);
-    STATUS_GENERATOR(CfgNotFound);
-    STATUS_GENERATOR(CfgRegistered);
-    STATUS_GENERATOR(CfgErrorType);
-    STATUS_GENERATOR(CfgImmutable);
     STATUS_GENERATOR(LeaderChanged);
     STATUS_GENERATOR(Balanced);
 
@@ -130,6 +128,7 @@ public:
     enum Code : uint16_t {
         // OK
         kOk                     = 0,
+        kInserted               = 1,
         // 1xx, for general errors
         kError                  = 101,
         kNoSuchFile             = 102,
@@ -145,14 +144,10 @@ public:
         kTagNotFound            = 406,
         kEdgeNotFound           = 407,
         kUserNotFound           = 408,
-        kCfgNotFound            = 409,
-        kCfgRegistered          = 410,
-        kCfgErrorType           = 411,
-        kCfgImmutable           = 412,
-        kTagIndexNotFound       = 413,
-        kEdgeIndexNotFound      = 414,
-        kLeaderChanged          = 415,
-        kBalanced               = 416,
+        kLeaderChanged          = 409,
+        kBalanced               = 410,
+        kTagIndexNotFound       = 411,
+        kEdgeIndexNotFound      = 412,
     };
 
     Code code() const {

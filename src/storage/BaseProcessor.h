@@ -21,7 +21,7 @@
 #include "meta/SchemaManager.h"
 #include "time/Duration.h"
 #include "stats/StatsManager.h"
-#include "storage/StorageStats.h"
+#include "stats/Stats.h"
 
 namespace nebula {
 namespace storage {
@@ -32,7 +32,7 @@ template<typename RESP>
 class BaseProcessor {
 public:
     explicit BaseProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan,
-                           StorageStats* stats = nullptr)
+                           stats::Stats* stats = nullptr)
             : kvstore_(kvstore)
             , schemaMan_(schemaMan)
             , stats_(stats) {}
@@ -45,15 +45,9 @@ public:
 
 protected:
     virtual void onFinished() {
-        if (this->stats_ != nullptr) {
-            stats::StatsManager::addValue(this->stats_->latencyStatId_,
-                                          this->duration_.elapsedInUSec());
-            if (this->result_.get_failed_codes().empty()) {
-                stats::StatsManager::addValue(this->stats_->qpsStatId_, 1);
-            } else {
-                stats::StatsManager::addValue(this->stats_->errorQpsStatId_, 1);
-            }
-        }
+        stats::Stats::addStatsValue(stats_,
+                                    this->result_.get_failed_codes().empty(),
+                                    this->duration_.elapsedInUSec());
         this->result_.set_latency_in_us(this->duration_.elapsedInUSec());
         this->result_.set_failed_codes(this->codes_);
         this->resp_.set_result(std::move(this->result_));
@@ -98,6 +92,18 @@ protected:
         }
     }
 
+    void handleLeaderChanged(GraphSpaceID spaceId, PartitionID partId) {
+        auto addrRet = kvstore_->partLeader(spaceId, partId);
+        if (ok(addrRet)) {
+            auto leader = value(std::move(addrRet));
+            this->pushResultCode(cpp2::ErrorCode::E_LEADER_CHANGED, partId, leader);
+        } else {
+            LOG(ERROR) << "Fail to get part leader, spaceId: " << spaceId
+                       << ", partId: " << partId << ", ResultCode: " << error(addrRet);
+            this->pushResultCode(to(error(addrRet)), partId);
+        }
+    }
+
     nebula::cpp2::HostAddr toThriftHost(const HostAddr& host) {
         nebula::cpp2::HostAddr tHost;
         tHost.set_ip(host.first);
@@ -105,10 +111,13 @@ protected:
         return tHost;
     }
 
+private:
+    void handleAsync(GraphSpaceID spaceId, PartitionID partId, kvstore::ResultCode code);
+
 protected:
     kvstore::KVStore*                               kvstore_ = nullptr;
     meta::SchemaManager*                            schemaMan_ = nullptr;
-    StorageStats*                                   stats_ = nullptr;
+    stats::Stats*                                   stats_ = nullptr;
     RESP                                            resp_;
     folly::Promise<RESP>                            promise_;
     cpp2::ResponseCommon                            result_;

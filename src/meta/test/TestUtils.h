@@ -134,7 +134,7 @@ public:
             auto retLeader = store->partLeader(0, 0);
             if (ok(retLeader)) {
                 auto leader = value(std::move(retLeader));
-                LOG(INFO) << leader;
+                LOG(INFO) << "Leader: " << leader;
                 if (leader == localhost) {
                     break;
                 }
@@ -150,6 +150,34 @@ public:
         nebula::cpp2::ValueType vType;
         vType.set_type(st);
         column.set_type(std::move(vType));
+        return column;
+    }
+
+    static nebula::cpp2::ColumnDef columnDefWithDefault(int32_t index,
+                                                        nebula::cpp2::SupportedType st) {
+        nebula::cpp2::ColumnDef column;
+        column.set_name(folly::stringPrintf("col_%d", index));
+        nebula::cpp2::ValueType vType;
+        vType.set_type(std::move(st));
+        column.set_type(std::move(vType));
+        nebula::cpp2::Value defaultValue;
+        switch (st) {
+            case nebula::cpp2::SupportedType::BOOL:
+                defaultValue.set_bool_value(true);
+                break;
+            case nebula::cpp2::SupportedType::INT:
+                defaultValue.set_int_value(1);
+                break;
+            case nebula::cpp2::SupportedType::DOUBLE:
+                defaultValue.set_double_value(3.14);
+                break;
+            case nebula::cpp2::SupportedType::STRING:
+                defaultValue.set_string_value("default value");
+                break;
+            default:
+                LOG(ERROR) << "Unsupoort type";
+        }
+        column.set_default_value(std::move(defaultValue));
         return column;
     }
 
@@ -423,7 +451,8 @@ public:
                   });
         int32_t size = result.size();
         for (int32_t i = 0; i < size; i++) {
-            if (result[i].get_name() != expected[i].get_name()) {
+            if (result[i].get_name() != expected[i].get_name() ||
+                result[i].get_type() != expected[i].get_type()) {
                 return false;
             }
         }

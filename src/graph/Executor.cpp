@@ -46,6 +46,7 @@
 #include "graph/FindPathExecutor.h"
 #include "graph/LimitExecutor.h"
 #include "graph/GroupByExecutor.h"
+#include "graph/ReturnExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -159,6 +160,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kLimit:
             executor = std::make_unique<LimitExecutor>(sentence, ectx());
             break;
+        case Sentence::Kind::kReturn:
+            executor = std::make_unique<ReturnExecutor>(sentence, ectx());
+            break;
         case Sentence::Kind::kUnknown:
             LOG(ERROR) << "Sentence kind unknown";
             return nullptr;
@@ -221,23 +225,6 @@ bool Executor::checkValueType(const nebula::cpp2::ValueType &type, const Variant
     }
 
     return false;
-}
-
-Status Executor::checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> schema,
-                                std::vector<std::string*> props) {
-    for (auto fieldIndex = 0u; fieldIndex < schema->getNumFields(); fieldIndex++) {
-        auto schemaFieldName = schema->getFieldName(fieldIndex);
-        if (UNLIKELY(nullptr == schemaFieldName)) {
-            return Status::Error("Invalid field index");
-        }
-        if (schemaFieldName != *props[fieldIndex]) {
-            LOG(ERROR) << "Field name is wrong, schema field " << schemaFieldName
-                       << ", input field " << *props[fieldIndex];
-            return Status::Error("Input field name `%s' is wrong",
-                                 props[fieldIndex]->c_str());
-        }
-    }
-    return Status::OK();
 }
 
 StatusOr<int64_t> Executor::toTimestamp(const VariantType &value) {
@@ -354,5 +341,53 @@ OptVariantType Executor::toVariantType(const cpp2::ColumnValue& value) const {
     return Status::Error("Unknown ColumnType: %d", static_cast<int32_t>(value.getType()));
 }
 
+StatusOr<VariantType> Executor::transformDefaultValue(nebula::cpp2::SupportedType type,
+                                                      std::string& originalValue) {
+    switch (type) {
+        case nebula::cpp2::SupportedType::BOOL:
+            try {
+                return folly::to<bool>(originalValue);
+            } catch (const std::exception& ex) {
+                LOG(ERROR) << "Conversion to bool failed: " << originalValue;
+                return Status::Error("Type Conversion Failed");
+            }
+            break;
+        case nebula::cpp2::SupportedType::INT:
+            try {
+                return folly::to<int64_t>(originalValue);
+            } catch (const std::exception& ex) {
+                LOG(ERROR) << "Conversion to int64_t failed: " << originalValue;
+                return Status::Error("Type Conversion Failed");
+            }
+            break;
+        case nebula::cpp2::SupportedType::DOUBLE:
+            try {
+                return folly::to<double>(originalValue);
+            } catch (const std::exception& ex) {
+                LOG(ERROR) << "Conversion to double failed: " << originalValue;
+                return Status::Error("Type Conversion Failed");
+            }
+            break;
+        case nebula::cpp2::SupportedType::STRING:
+            return originalValue;
+            break;
+        default:
+            LOG(ERROR) << "Unknow type";
+            return Status::Error("Unknow type");
+    }
+    return Status::OK();
+}
+
+void Executor::doError(Status status, const stats::Stats* stats, uint32_t count) const {
+    stats::Stats::addStatsValue(stats, false, duration().elapsedInUSec(), count);
+    DCHECK(onError_);
+    onError_(std::move(status));
+}
+
+void Executor::doFinish(ProcessControl pro, const stats::Stats* stats, uint32_t count) const {
+    stats::Stats::addStatsValue(stats, true, duration().elapsedInUSec(), count);
+    DCHECK(onFinish_);
+    onFinish_(pro);
+}
 }   // namespace graph
 }   // namespace nebula

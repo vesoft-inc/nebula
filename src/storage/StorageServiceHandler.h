@@ -13,7 +13,11 @@
 #include "kvstore/KVStore.h"
 #include "meta/SchemaManager.h"
 #include "stats/StatsManager.h"
-#include "storage/StorageStats.h"
+#include "storage/CommonUtils.h"
+#include "stats/Stats.h"
+
+DECLARE_int32(vertex_cache_num);
+DECLARE_int32(vertex_cache_bucket_exp);
 
 namespace nebula {
 namespace storage {
@@ -27,18 +31,19 @@ public:
                           meta::MetaClient* client)
         : kvstore_(kvstore)
         , schemaMan_(schemaMan)
-        , metaClient_(client) {
-        getBoundQpsStat_ = StorageStats("get_bound");
-        boundStatsQpsStat_ = StorageStats("bound_stats");
-        vertexPropsQpsStat_ = StorageStats("vertex_props");
-        edgePropsQpsStat_ = StorageStats("edge_props");
-        addVertexQpsStat_ = StorageStats("add_vertex");
-        addEdgeQpsStat_ = StorageStats("add_edge");
-        delVertexQpsStat_ = StorageStats("del_vertex");
-        updateVertexQpsStat_ = StorageStats("update_vertex");
-        updateEdgeQpsStat_ = StorageStats("update_edge");
-        getKvQpsStat_ = StorageStats("get_kv");
-        putKvQpsStat_ = StorageStats("put_kv");
+        , metaClient_(client)
+        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp) {
+        getBoundQpsStat_ = stats::Stats("storage", "get_bound");
+        boundStatsQpsStat_ = stats::Stats("storage", "bound_stats");
+        vertexPropsQpsStat_ = stats::Stats("storage", "vertex_props");
+        edgePropsQpsStat_ = stats::Stats("storage", "edge_props");
+        addVertexQpsStat_ = stats::Stats("storage", "add_vertex");
+        addEdgeQpsStat_ = stats::Stats("storage", "add_edge");
+        delVertexQpsStat_ = stats::Stats("storage", "del_vertex");
+        updateVertexQpsStat_ = stats::Stats("storage", "update_vertex");
+        updateEdgeQpsStat_ = stats::Stats("storage", "update_edge");
+        getKvQpsStat_ = stats::Stats("storage", "get_kv");
+        putKvQpsStat_ = stats::Stats("storage", "put_kv");
     }
 
     folly::Future<cpp2::QueryResponse>
@@ -109,18 +114,19 @@ private:
     kvstore::KVStore* kvstore_ = nullptr;
     meta::SchemaManager* schemaMan_ = nullptr;
     meta::MetaClient* metaClient_ = nullptr;
+    VertexCache vertexCache_;
 
-    StorageStats getBoundQpsStat_;
-    StorageStats boundStatsQpsStat_;
-    StorageStats vertexPropsQpsStat_;
-    StorageStats edgePropsQpsStat_;
-    StorageStats addVertexQpsStat_;
-    StorageStats addEdgeQpsStat_;
-    StorageStats delVertexQpsStat_;
-    StorageStats updateVertexQpsStat_;
-    StorageStats updateEdgeQpsStat_;
-    StorageStats getKvQpsStat_;
-    StorageStats putKvQpsStat_;
+    stats::Stats getBoundQpsStat_;
+    stats::Stats boundStatsQpsStat_;
+    stats::Stats vertexPropsQpsStat_;
+    stats::Stats edgePropsQpsStat_;
+    stats::Stats addVertexQpsStat_;
+    stats::Stats addEdgeQpsStat_;
+    stats::Stats delVertexQpsStat_;
+    stats::Stats updateVertexQpsStat_;
+    stats::Stats updateEdgeQpsStat_;
+    stats::Stats getKvQpsStat_;
+    stats::Stats putKvQpsStat_;
 };
 
 }  // namespace storage

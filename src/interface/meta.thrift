@@ -33,11 +33,13 @@ enum ErrorCode {
     E_INVALID_PARM     = -30,
     E_WRONGCLUSTER     = -31,
 
-    E_STORE_FAILURE           = -32,
-    E_STORE_SEGMENT_ILLEGAL   = -33,
-    E_BAD_BALANCE_PLAN        = -34,
-    E_BALANCED                = -35,
-    E_NO_RUNNING_BALANCE_PLAN = -36,
+    E_STORE_FAILURE             = -32,
+    E_STORE_SEGMENT_ILLEGAL     = -33,
+    E_BAD_BALANCE_PLAN          = -34,
+    E_BALANCED                  = -35,
+    E_NO_RUNNING_BALANCE_PLAN   = -36,
+    E_NO_VALID_HOST             = -37,
+    E_CORRUPTTED_BALANCE_PLAN   = -38,
 
     E_INVALID_PASSWORD       = -41,
     E_INPROPER_ROLE          = -42,
@@ -521,7 +523,8 @@ struct BalanceReq {
     1: optional common.GraphSpaceID space_id,
     // Specify the balance id to check the status of the related balance plan
     2: optional i64 id,
-    3: optional bool stop,
+    3: optional list<common.HostAddr> host_del,
+    4: optional bool stop,
 }
 
 enum TaskResult {

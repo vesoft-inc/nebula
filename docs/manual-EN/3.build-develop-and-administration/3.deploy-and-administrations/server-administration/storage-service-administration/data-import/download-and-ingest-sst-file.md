@@ -1,8 +1,8 @@
 # Download and Ingest
 
-Nebula uses `RocksDB` as the default `key-value` storage engine. Therefore, when you are trying to load a large amount of data, the SST files of RocksDB can be generated offline by running a map-reduce job and distributed directly to the servers.
+**Nebula Graph** uses `RocksDB` as the default `key-value` storage engine. Therefore, when you are trying to load a large amount of data, the SST files of RocksDB can be generated offline by running a map-reduce job and distributed directly to the servers.
 
-Nebula provides `Spark-SSTFile-Generator` tool.
+**Nebula Graph** provides `Spark-SSTFile-Generator` tool.
 
 `Spark-SSTFile-Generator` generates SST files from the hive table via the mapping files. For details on how to use it, please refer [Spark application command line reference](https://github.com/vesoft-inc/nebula/blob/master/src/tools/spark-sstfile-generator/README.md).
 
@@ -24,9 +24,9 @@ SST file name format is `{TYPE}-${FIRST_KEY_IN_THIS_FILE}.sst`, where `TYPE` is 
 
 Please confirm that all servers have `Hadoop` installed and `HADOOP_HOME` set.
 
-Run nebula console and execute the download command:
+Run **Nebula Graph** console and execute the download command:
 
-```bash
+```ngql
 nebula > DOWNLOAD HDFS "hdfs://${HADOOP_HOST}:${HADOOP_PORT}/${HADOOP_PATH}"
 ```
 
@@ -41,7 +41,7 @@ If error occurs when downloading, delete the corresponding data files in `data/d
 When the offline SST data download is done, it can be ingested into the storage service via `INGEST` command.
 `INGEST` command is as follows:
 
-```bash
+```ngql
 nebula > INGEST
 ```
 

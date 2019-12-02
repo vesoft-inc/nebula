@@ -242,7 +242,7 @@ MetaServiceHandler::future_listEdgeIndexes(const cpp2::ListEdgeIndexesReq& req) 
 
 folly::Future<cpp2::HBResp>
 MetaServiceHandler::future_heartBeat(const cpp2::HBReq& req) {
-    auto* processor = HBProcessor::instance(kvstore_, clusterId_);
+    auto* processor = HBProcessor::instance(kvstore_, clusterId_, &heartBeatStat_);
     RETURN_FUTURE(processor);
 }
 

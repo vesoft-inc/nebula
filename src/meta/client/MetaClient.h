@@ -18,6 +18,7 @@
 #include "thrift/ThriftClientManager.h"
 #include "meta/SchemaProviderIf.h"
 #include "meta/GflagsManager.h"
+#include "stats/Stats.h"
 
 DECLARE_int32(meta_client_retry_times);
 
@@ -113,7 +114,9 @@ public:
                         std::vector<HostAddr> addrs,
                         HostAddr localHost = HostAddr(0, 0),
                         ClusterID clusterId = 0,
-                        bool sendHeartBeat = false);
+                        bool sendHeartBeat = false,
+                        stats::Stats *stats = nullptr);
+
 
     virtual ~MetaClient();
 
@@ -251,7 +254,7 @@ public:
 
     // Operations for admin
     folly::Future<StatusOr<int64_t>>
-    balance(bool isStop = false);
+    balance(std::vector<HostAddr> hostDel, bool isStop = false);
 
     folly::Future<StatusOr<std::vector<cpp2::BalanceTask>>>
     showBalance(int64_t balanceId);
@@ -291,7 +294,7 @@ public:
 
     PartsMap getPartsMapFromCache(const HostAddr& host);
 
-    PartMeta getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId);
+    StatusOr<PartMeta> getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId);
 
     bool checkPartExistInCache(const HostAddr& host,
                                GraphSpaceID spaceId,
@@ -300,7 +303,7 @@ public:
     bool checkSpaceExistInCache(const HostAddr& host,
                                 GraphSpaceID spaceId);
 
-    int32_t partsNum(GraphSpaceID spaceId);
+    StatusOr<int32_t> partsNum(GraphSpaceID spaceId);
 
     StatusOr<std::shared_ptr<const SchemaProviderIf>>
     getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer ver = -1);
@@ -321,6 +324,14 @@ public:
                                 const std::vector<std::string> &fields);
 
     const std::vector<HostAddr>& getAddresses();
+
+    folly::Future<StatusOr<std::string>> getTagDefaultValue(GraphSpaceID spaceId,
+                                                            TagID tagId,
+                                                            const std::string& field);
+
+    folly::Future<StatusOr<std::string>> getEdgeDefaultValue(GraphSpaceID spaceId,
+                                                             EdgeType edgeType,
+                                                             const std::string& field);
 
     Status refreshCache();
 
@@ -430,6 +441,7 @@ private:
     cpp2::ConfigModule    gflagsModule_{cpp2::ConfigModule::UNKNOWN};
     std::atomic_bool      configReady_{false};
     std::vector<cpp2::ConfigItem> gflagsDeclared_;
+    stats::Stats         *stats_{nullptr};
 };
 
 }  // namespace meta

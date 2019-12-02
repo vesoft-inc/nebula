@@ -30,7 +30,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
         return;
     }
 
-    nebula::meta::cpp2::IndexFields indexFields;
+    std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> tagColumns;
     for (auto& element : properties.get_fields()) {
         auto tagName = element.first;
         auto tagID = getTagId(space, tagName);
@@ -50,6 +50,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
         }
 
         auto fields = fieldsResult.value();
+        std::vector<nebula::cpp2::ColumnDef> columns;
         for (auto &field : element.second) {
             auto iter = std::find_if(std::begin(fields), std::end(fields),
                                      [field](FieldType pair) {
@@ -60,9 +61,19 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
                 resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
                 onFinished();
                 return;
+            } else {
+                auto type = fields[field];
+                nebula::cpp2::ColumnDef column;
+                column.set_name(std::move(field));
+                column.set_type(std::move(type));
+                columns.emplace_back(std::move(column));
             }
         }
+        tagColumns.emplace(tagName, std::move(columns));
     }
+
+    nebula::meta::cpp2::IndexFields indexFields;
+    indexFields.set_fields(std::move(tagColumns));
 
     std::vector<kvstore::KV> data;
     auto tagIndexRet = autoIncrementId();
