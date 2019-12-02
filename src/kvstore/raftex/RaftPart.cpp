@@ -1082,7 +1082,8 @@ bool RaftPart::leaderElection() {
                 if (resp.get_error_code() == cpp2::ErrorCode::E_LOG_STALE) {
                     LOG(INFO) << idStr_ << "My last log id is less than " << hosts[idx]->address()
                               << ", double my election interval.";
-                    weight_.fetch_add(1);
+                    uint64_t curWeight = weight_.load();
+                    weight_.store(curWeight * 2);
                 }
                 return resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED;
             });
