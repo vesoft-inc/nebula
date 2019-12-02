@@ -61,3 +61,5 @@ jobs:
           cd _build
           bash <(curl -s https://codecov.io/bash)
         shell: bash
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
