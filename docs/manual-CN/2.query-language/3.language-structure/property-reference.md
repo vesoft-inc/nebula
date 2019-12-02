@@ -6,7 +6,7 @@
 
 ### 引用起点的属性
 
-```plain
+```ngql
 $^.tag_name.prop_name
 ```
 
@@ -14,7 +14,7 @@ $^.tag_name.prop_name
 
 ### 引用终点的属性
 
-```
+```ngql
 $$.tag_name.prop_name
 ```
 
@@ -23,7 +23,7 @@ $$.tag_name.prop_name
 ### 示例
 
 ```ngql
-GO FROM 1 OVER e1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
+nebula> GO FROM 1 OVER e1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
 ```
 
 该语句用于获取起点的属性名称和终点的属性年龄。
@@ -41,7 +41,7 @@ edge_type.edge_prop
 此处，`edge_type`为边的类型，`edge_prop`为属性，例如：
 
 ```ngql
-GO FROM 1 OVER e1 YIELD e1.prop1
+nebula> GO FROM 1 OVER e1 YIELD e1.prop1
 ```
 
 ### 引用边的内置属性

@@ -106,7 +106,7 @@ class GraphScanner;
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
 %token KW_CONFIGS KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
-%token KW_TTL_DURATION KW_TTL_COL
+%token KW_TTL_DURATION KW_TTL_COL KW_DEFAULT
 %token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET KW_GROUP
 %token KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN KW_STD KW_BIT_AND KW_BIT_OR KW_BIT_XOR
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
@@ -600,14 +600,8 @@ over_edge
     : name_label {
         $$ = new OverEdge($1);
     }
-    | name_label KW_REVERSELY {
-        $$ = new OverEdge($1, nullptr, true);
-    }
     | name_label KW_AS name_label {
         $$ = new OverEdge($1, $3);
-    }
-    | name_label KW_AS name_label KW_REVERSELY {
-        $$ = new OverEdge($1, $3, true);
     }
     ;
 
@@ -627,19 +621,22 @@ over_clause
     : KW_OVER MUL {
         auto edges = new OverEdges();
         auto s = new std::string("*");
-        auto edge = new OverEdge(s, nullptr, false);
+        auto edge = new OverEdge(s, nullptr);
         edges->addEdge(edge);
         $$ = new OverClause(edges);
     }
     | KW_OVER MUL KW_REVERSELY {
         auto edges = new OverEdges();
         auto s = new std::string("*");
-        auto edge = new OverEdge(s, nullptr, false);
+        auto edge = new OverEdge(s, nullptr);
         edges->addEdge(edge);
-        $$ = new OverClause(edges);
+        $$ = new OverClause(edges, true);
     }
     | KW_OVER over_edges {
         $$ = new OverClause($2);
+    }
+    | KW_OVER over_edges KW_REVERSELY {
+        $$ = new OverClause($2, true);
     }
     ;
 
@@ -1062,6 +1059,22 @@ column_spec_list
 
 column_spec
     : name_label type_spec { $$ = new ColumnSpecification($2, $1); }
+    | name_label type_spec KW_DEFAULT INTEGER {
+        $$ = new ColumnSpecification($2, $1);
+        $$->setIntValue($4);
+    }
+    | name_label type_spec KW_DEFAULT BOOL {
+        $$ = new ColumnSpecification($2, $1);
+        $$->setBoolValue($4);
+    }
+    | name_label type_spec KW_DEFAULT DOUBLE {
+        $$ = new ColumnSpecification($2, $1);
+        $$->setDoubleValue($4);
+    }
+    |  name_label type_spec KW_DEFAULT STRING {
+        $$ = new ColumnSpecification($2, $1);
+        $$->setStringValue($4);
+    }
     ;
 
 describe_tag_sentence

@@ -180,16 +180,16 @@ Status GroupByExecutor::checkAll() {
 
 void GroupByExecutor::execute() {
     FLOG_INFO("Executing Group by: %s", sentence_->toString().c_str());
+    DCHECK(onError_);
+    DCHECK(onFinish_);
 
     if (rows_.empty()) {
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        onEmptyInputs();
         return;
     }
 
     auto status = checkAll();
     if (!status.ok()) {
-        DCHECK(onError_);
         onError_(std::move(status));
         return;
     }
@@ -338,7 +338,7 @@ std::vector<std::string> GroupByExecutor::getResultColumnNames() const {
 
 void GroupByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
     if (result == nullptr) {
-        LOG(INFO) << "result is nullptr";
+        LOG(ERROR) << "result is nullptr";
         return;
     }
 
@@ -392,14 +392,14 @@ Status GroupByExecutor::generateOutputSchema() {
 
 
 StatusOr<std::unique_ptr<InterimResult>> GroupByExecutor::setupInterimResult() {
+    auto result = std::make_unique<InterimResult>(getResultColumnNames());
     if (rows_.empty() || resultSchema_ == nullptr) {
-        return nullptr;
+        return result;
     }
     // Generate results
     std::unique_ptr<RowSetWriter> rsWriter = std::make_unique<RowSetWriter>(resultSchema_);
 
     InterimResult::getResultWriter(rows_, rsWriter.get());
-    auto result = std::make_unique<InterimResult>(getResultColumnNames());
     if (rsWriter != nullptr) {
         result->setInterim(std::move(rsWriter));
     }
@@ -407,12 +407,21 @@ StatusOr<std::unique_ptr<InterimResult>> GroupByExecutor::setupInterimResult() {
 }
 
 
+void GroupByExecutor::onEmptyInputs() {
+    if (onResult_) {
+        auto result = std::make_unique<InterimResult>(getResultColumnNames());
+        onResult_(std::move(result));
+    }
+    onFinish_(Executor::ProcessControl::kNext);
+}
+
+
 void GroupByExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
-    if (rows_.empty() || resultSchema_ == nullptr) {
+    resp.set_column_names(getResultColumnNames());
+
+    if (rows_.empty()) {
         return;
     }
-
-    resp.set_column_names(getResultColumnNames());
     resp.set_rows(std::move(rows_));
 }
 }  // namespace graph

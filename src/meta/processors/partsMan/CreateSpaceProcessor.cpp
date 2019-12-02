@@ -7,7 +7,7 @@
 #include "meta/processors/partsMan/CreateSpaceProcessor.h"
 #include "meta/ActiveHostsMan.h"
 
-DEFINE_int32(default_parts_num, 1024, "The default number of parts when a space is created");
+DEFINE_int32(default_parts_num, 100, "The default number of parts when a space is created");
 DEFINE_int32(default_replica_factor, 1, "The default replica factor when a space is created");
 
 namespace nebula {

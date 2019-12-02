@@ -3,6 +3,7 @@ nebula_add_library(
     OBJECT
     StatsManager.cpp
     MetricsSerializer.cpp
+    Stats.cpp
 )
 
 nebula_add_subdirectory(test)
