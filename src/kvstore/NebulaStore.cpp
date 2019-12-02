@@ -346,12 +346,15 @@ ResultCode NebulaStore::get(GraphSpaceID spaceId,
                             PartitionID partId,
                             const std::string& key,
                             std::string* value) {
-    auto ret = engine(spaceId, partId);
+    auto ret = part(spaceId, partId);
     if (!ok(ret)) {
         return error(ret);
     }
-    auto* e = nebula::value(ret);
-    return e->get(key, value);
+    auto part = nebula::value(ret);
+    if (!part->isLeader()) {
+        return ResultCode::ERR_LEADER_CHANGED;
+    }
+    return part->engine()->get(key, value);
 }
 
 
@@ -359,12 +362,15 @@ ResultCode NebulaStore::multiGet(GraphSpaceID spaceId,
                                  PartitionID partId,
                                  const std::vector<std::string>& keys,
                                  std::vector<std::string>* values) {
-    auto ret = engine(spaceId, partId);
+    auto ret = part(spaceId, partId);
     if (!ok(ret)) {
         return error(ret);
     }
-    auto* e = nebula::value(ret);
-    return e->multiGet(keys, values);
+    auto part = nebula::value(ret);
+    if (!part->isLeader()) {
+        return ResultCode::ERR_LEADER_CHANGED;
+    }
+    return part->engine()->multiGet(keys, values);
 }
 
 
@@ -373,12 +379,15 @@ ResultCode NebulaStore::range(GraphSpaceID spaceId,
                               const std::string& start,
                               const std::string& end,
                               std::unique_ptr<KVIterator>* iter) {
-    auto ret = engine(spaceId, partId);
+    auto ret = part(spaceId, partId);
     if (!ok(ret)) {
         return error(ret);
     }
-    auto* e = nebula::value(ret);
-    return e->range(start, end, iter);
+    auto part = nebula::value(ret);
+    if (!part->isLeader()) {
+        return ResultCode::ERR_LEADER_CHANGED;
+    }
+    return part->engine()->range(start, end, iter);
 }
 
 
@@ -386,12 +395,15 @@ ResultCode NebulaStore::prefix(GraphSpaceID spaceId,
                                PartitionID partId,
                                const std::string& prefix,
                                std::unique_ptr<KVIterator>* iter) {
-    auto ret = engine(spaceId, partId);
+    auto ret = part(spaceId, partId);
     if (!ok(ret)) {
         return error(ret);
     }
-    auto* e = nebula::value(ret);
-    return e->prefix(prefix, iter);
+    auto part = nebula::value(ret);
+    if (!part->isLeader()) {
+        return ResultCode::ERR_LEADER_CHANGED;
+    }
+    return part->engine()->prefix(prefix, iter);
 }
 
 void NebulaStore::asyncMultiPut(GraphSpaceID spaceId,
