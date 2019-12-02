@@ -15,25 +15,26 @@ then
     exit $?
 fi
 
-url_base=http://ftpmirror.gnu.org
+#url_base=http://ftpmirror.gnu.org
+url_base=http://mirrors.ustc.edu.cn/gnu
 
-gcc_version=7.5.0
+gcc_version=9.1.0
 gcc_tarball=gcc-$gcc_version.tar.xz
 gcc_url=$url_base/gcc/gcc-$gcc_version/$gcc_tarball
 
-gmp_version=5.1.3
+gmp_version=6.1.2
 gmp_tarball=gmp-$gmp_version.tar.xz
 gmp_url=$url_base/gmp/$gmp_tarball
 
-mpfr_version=3.1.4
+mpfr_version=4.0.2
 mpfr_tarball=mpfr-$mpfr_version.tar.xz
 mpfr_url=$url_base/mpfr/$mpfr_tarball
 
-mpc_version=1.0.3
+mpc_version=1.1.0
 mpc_tarball=mpc-$mpc_version.tar.gz
 mpc_url=$url_base/mpc/$mpc_tarball
 
-bu_version=2.28.1
+bu_version=2.32
 bu_tarball=binutils-$bu_version.tar.xz
 bu_url=$url_base/binutils/$bu_tarball
 
@@ -41,11 +42,11 @@ gdb_version=8.3
 gdb_tarball=gdb-$gdb_version.tar.xz
 gdb_url=$url_base/gdb/$gdb_tarball
 
-gcc_checksum=79cb8a65d44dfc8a2402b46395535c9a
-gmp_checksum=e5fe367801ff067b923d1e6a126448aa
-mpfr_checksum=064b2c18185038e404a401b830d59be8
-mpc_checksum=d6a1d5f8ddea3abd2cc3e98f58352d26
-bu_checksum=a3bf359889e4b299fce1f4cb919dc7b6
+gcc_checksum=6069ae3737cf02bf2cb44a391ef0e937
+gmp_checksum=f58fa8001d60c4c77595fbbb62b63c1d
+mpfr_checksum=320fbc4463d4c8cb1e566929d8adc4f8
+mpc_checksum=4125404e41e482ec68282a2e687f6c73
+bu_checksum=0d174cdaf85721c5723bf52355be41e6
 gdb_checksum=bbd95b2f9b34621ad7a19a3965476314
 
 cur_dir=$PWD
@@ -144,6 +145,7 @@ function setup_deps {
     ln -sf ../gmp-$gmp_version gmp
     ln -sf ../mpfr-$mpfr_version mpfr
     ln -sf ../mpc-$mpc_version mpc
+    ln -sf ../gdb-$gdb_version/gdb gdb
 
     #[[ ! -e config.guess.orig ]] && cp -vp config.guess config.guess.orig
     #cat > config.guess <<EOF
@@ -196,13 +198,16 @@ function configure_gcc {
 
 function build_gcc {
     cd $object_dir
-    make -j 20 || exit 1
+    make -j 20  |& tee build.log
+    [[ $? -ne 0 ]] && exit 1
     cd $OLDPWD
 }
 
 function install_gcc {
     cd $object_dir
-    make -j install-strip || exit 1
+    echo install after 30 secons
+    sleep 30
+    make MAKEINFO=true install-strip
     cd $OLDPWD
 }
 
@@ -256,7 +261,7 @@ setup_deps
 configure_gcc
 build_gcc
 install_gcc
-build_gdb
+#build_gdb
 finalize
 
 cat > $install_dir/bin/enable-gcc.sh <<EOF
