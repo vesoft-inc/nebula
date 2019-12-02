@@ -17,7 +17,7 @@ CREATE {TAG | EDGE} <tag_name> | <edge_name>
     | DEFAULT <default_value>
 ```
 
-**Nebula graph**'s schema is composed of tags and edges, either of which may have properties. `CREATE TAG` statement defines a tag with the given name. While `CREATE EDGE` statement is to define an edge type.
+**Nebula Graph**'s schema is composed of tags and edges, either of which may have properties. `CREATE TAG` statement defines a tag with the given name. While `CREATE EDGE` statement is to define an edge type.
 
 The features of this syntax are described in the following sections:
 
