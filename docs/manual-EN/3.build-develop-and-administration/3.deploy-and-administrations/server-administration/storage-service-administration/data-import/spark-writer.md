@@ -267,6 +267,7 @@ Example of a mapping file for the input source:
 #### Spark Properties
 
 The following table gives some example properties, all of which can be found in [Spark Available Properties](http://spark.apache.org/docs/latest/configuration.html#available-properties).
+Note: Only Spark > 2.0 version is supported.
 
 | Field | Default | Required | Description |
 | --- | --- | --- | --- |
@@ -346,4 +347,4 @@ Parameter descriptions:
 
 ## Performance
 
-It takes about four minutes (i.e. 400 thousand rows per second) to input 100 million rows (each row contains three fields, each batch contains 64 rows) into three nodes (56 core, 250G memory, 10G network, SSD).
+It takes about four minutes (i.e. 400k QPS) to input 100 million rows (each row contains three fields, each batch contains 64 rows) into three nodes (56 core, 250G memory, 10G network, SSD).

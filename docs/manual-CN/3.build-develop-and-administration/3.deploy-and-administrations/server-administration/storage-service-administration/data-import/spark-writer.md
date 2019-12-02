@@ -267,6 +267,7 @@ Player 表结构如下：
 #### Spark 配置信息
 
 下表给出了一些示例，所有可配置项请见 [Spark Available Properties](http://spark.apache.org/docs/latest/configuration.html#available-properties)。
+注意：仅支持 2.0 以上的 Spark 版本。
 
 | 字段 | 默认值 | 是否必须 | 说明 |
 |  --- | ---  |  --- | ---  |
