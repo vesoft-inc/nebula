@@ -23,8 +23,12 @@ Status DeleteVerticesExecutor::prepare() {
 
     auto vidList = sentence_->vidList();
     vidList->setContext(expCtx_.get());
-    auto values = vidList->eval();
+    auto status = vidList->prepare();
+    if (!status.ok()) {
+        return status;
+    }
 
+    auto values = vidList->eval();
     for (auto value : values) {
         auto v = value.value();
         if (!Expression::isInt(v)) {

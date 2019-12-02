@@ -21,6 +21,7 @@ public:
     };
 
     struct Over {
+        bool                    isReversely_{false};
         std::vector<OverEdge*>  edges_{nullptr};
         std::vector<EdgeType>   edgeTypes_;
         std::vector<EdgeType>   oppositeTypes_;
@@ -121,6 +122,17 @@ public:
         }
     }
 
+    Status prepare() const {
+        auto status = Status::OK();
+        for (auto& vertex : vidList_) {
+            status = vertex->prepare();
+            if (!status.ok()) {
+                break;
+            }
+        }
+        return status;
+    }
+
     std::vector<nebula::OptVariantType> eval() const {
         std::vector<nebula::OptVariantType> vertices;
         for (auto& vertex : vidList_) {
@@ -194,13 +206,10 @@ public:
 
 class OverEdge final {
 public:
-    explicit OverEdge(std::string *edge, std::string *alias = nullptr, bool isReversely = false) {
+    explicit OverEdge(std::string *edge, std::string *alias = nullptr) {
         edge_.reset(edge);
         alias_.reset(alias);
-        isReversely_ = isReversely;
     }
-
-    bool isReversely() const { return isReversely_; }
 
     bool isOverAll() const { return *edge_ == "*"; }
 
@@ -211,7 +220,6 @@ public:
     std::string toString() const;
 
 private:
-    bool isReversely_{false};
     std::unique_ptr<std::string> edge_;
     std::unique_ptr<std::string> alias_;
 };
@@ -237,9 +245,10 @@ private:
 
 class OverClause final : public Clause {
 public:
-    explicit OverClause(OverEdges *edges) {
+    explicit OverClause(OverEdges *edges, bool isReversely = false) {
         kind_ = kOverClause;
         overEdges_.reset(edges);
+        isReversely_ = isReversely;
     }
 
     std::vector<OverEdge *> edges() const { return overEdges_->edges(); }
@@ -248,7 +257,12 @@ public:
 
     std::string toString() const;
 
+    bool isReversely() const {
+        return isReversely_;
+    }
+
 private:
+    bool isReversely_{false};
     std::unique_ptr<OverEdges> overEdges_;
 };
 

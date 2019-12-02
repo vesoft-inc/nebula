@@ -46,7 +46,7 @@ The features of this syntax are described in the following sections:
 
     > Since it's so error-prone to modify the default value with new one, using `Alter` to change the default value is not supported. -->
 
-### Time-to-Live (TTL) syntax
+### Time-to-Live (TTL) Syntax
 
 * TTL_DURATION
 

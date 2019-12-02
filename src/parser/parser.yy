@@ -600,14 +600,8 @@ over_edge
     : name_label {
         $$ = new OverEdge($1);
     }
-    | name_label KW_REVERSELY {
-        $$ = new OverEdge($1, nullptr, true);
-    }
     | name_label KW_AS name_label {
         $$ = new OverEdge($1, $3);
-    }
-    | name_label KW_AS name_label KW_REVERSELY {
-        $$ = new OverEdge($1, $3, true);
     }
     ;
 
@@ -627,19 +621,22 @@ over_clause
     : KW_OVER MUL {
         auto edges = new OverEdges();
         auto s = new std::string("*");
-        auto edge = new OverEdge(s, nullptr, false);
+        auto edge = new OverEdge(s, nullptr);
         edges->addEdge(edge);
         $$ = new OverClause(edges);
     }
     | KW_OVER MUL KW_REVERSELY {
         auto edges = new OverEdges();
         auto s = new std::string("*");
-        auto edge = new OverEdge(s, nullptr, false);
+        auto edge = new OverEdge(s, nullptr);
         edges->addEdge(edge);
-        $$ = new OverClause(edges);
+        $$ = new OverClause(edges, true);
     }
     | KW_OVER over_edges {
         $$ = new OverClause($2);
+    }
+    | KW_OVER over_edges KW_REVERSELY {
+        $$ = new OverClause($2, true);
     }
     ;
 
