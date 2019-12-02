@@ -70,7 +70,7 @@ nebula> CREATE EDGE follow(start_time timestamp, grade double)
 nebula> CREATE EDGE noedge()  -- 属性为空
 
 nebula> CREATE TAG player_with_default(name string, age int DEFAULT 20)  -- 默认年龄设置为 20 岁
-nebula> CREATE EDGE follow_with_default(start_time timestamp DEFAULT 0, grade double 0.0)  -- 默认 grade 设置为 0.0
+nebula> CREATE EDGE follow_with_default(start_time timestamp DEFAULT 0, grade double 0.0)  -- 默认 start_time 设置为 0，默认 grade 设置为 0.0
 ```
 
 <!-- ```ngql
