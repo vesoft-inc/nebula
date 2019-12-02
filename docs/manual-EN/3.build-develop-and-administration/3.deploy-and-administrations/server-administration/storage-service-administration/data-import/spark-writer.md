@@ -267,7 +267,7 @@ Example of a mapping file for the input source:
 #### Spark Properties
 
 The following table gives some example properties, all of which can be found in [Spark Available Properties](http://spark.apache.org/docs/latest/configuration.html#available-properties).
-Note: Only Spark > 2.0 version is supported.
+Note: To use **Nebula Graph** Spark Writer, please make sure your Spark, Hive, Hadoop version are at least 2.0, 2.3, 2.0 respectively.
 
 | Field | Default | Required | Description |
 | --- | --- | --- | --- |
