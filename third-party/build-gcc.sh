@@ -37,11 +37,16 @@ bu_version=2.28.1
 bu_tarball=binutils-$bu_version.tar.xz
 bu_url=$url_base/binutils/$bu_tarball
 
+gdb_version=8.3
+gdb_tarball=gdb-$gdb_version.tar.xz
+gdb_url=$url_base/gdb/$gdb_tarball
+
 gcc_checksum=79cb8a65d44dfc8a2402b46395535c9a
 gmp_checksum=e5fe367801ff067b923d1e6a126448aa
 mpfr_checksum=064b2c18185038e404a401b830d59be8
 mpc_checksum=d6a1d5f8ddea3abd2cc3e98f58352d26
 bu_checksum=a3bf359889e4b299fce1f4cb919dc7b6
+gdb_checksum=bbd95b2f9b34621ad7a19a3965476314
 
 cur_dir=$PWD
 build_dir=$PWD/gcc-build
@@ -84,6 +89,8 @@ function fetch_tarballs {
     fetch_tarball "$download_cmd" $mpfr_tarball $mpfr_url $mpfr_checksum
     fetch_tarball "$download_cmd" $mpc_tarball $mpc_url $mpc_checksum
     fetch_tarball "$download_cmd" $bu_tarball $bu_url $bu_checksum
+    fetch_tarball "$download_cmd" $gdb_tarball $gdb_url $gdb_checksum
+
     cd $OLDPWD
 }
 
@@ -120,6 +127,12 @@ function unpack_tarballs {
     then
         echo "Unpacking $bu_tarball..."
         tar --skip-old-files -xf $bu_tarball -C $source_dir
+    fi
+
+    if [[ ! -d $source_dir/gdb-$gdb_version ]]
+    then
+        echo "Unpacking $gdb_tarball..."
+        tar --skip-old-files -xf $gdb_tarball -C $source_dir
     fi
 
     set +e
@@ -173,6 +186,7 @@ function configure_gcc {
                 --disable-multilib                              \
                 --disable-install-libiberty                     \
                 --disable-werror                                \
+                --with-system-readline                          \
                 --with-system-zlib
                 #--host=x86_64-vesoft-linux                                \
                 #--build=x86_64-vesoft-linux                                \
@@ -192,24 +206,13 @@ function install_gcc {
     cd $OLDPWD
 }
 
-function build_binutils {
-    cd $object_dir
-    $source_dir/binutils-$bu_version/configure --prefix=$install_dir --enable-gold
+function build_gdb {
+    cd $source_dir/gdb-$gdb_version
+    ./configure --prefix=$install_dir --with-system-readline
     [[ $? -eq 0 ]] || exit 1
     make -j8
     [[ $? -eq 0 ]] || exit 1
-    cd $OLDPWD
-}
-
-function install_binutils {
-    cd $object_dir
-    make -j8 install-strip
-    [[ $? -eq 0 ]] || exit 1
-    cd $OLDPWD
-
-    cd $install_dir
-    cp -v bin/as libexec/gcc/x86_64-vesoft-linux/$gcc_version/
-    cp -v bin/ld* libexec/gcc/x86_64-vesoft-linux/$gcc_version/
+    make install
     cd $OLDPWD
 }
 
@@ -253,8 +256,7 @@ setup_deps
 configure_gcc
 build_gcc
 install_gcc
-#build_binutils
-#install_binutils
+build_gdb
 finalize
 
 cat > $install_dir/bin/enable-gcc.sh <<EOF
