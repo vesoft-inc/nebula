@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-package com.vesoft.client;
+package com.vesoft.nebula.codec;
 
 import java.io.File;
 import java.io.IOException;

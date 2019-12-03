@@ -13,7 +13,7 @@ nebula_add_library(nebula_native_client SHARED
             $<TARGET_OBJECTS:thrift_obj>
             $<TARGET_OBJECTS:meta_client>
             $<TARGET_OBJECTS:meta_thrift_obj>
-            src/main/cpp/com_vesoft_client_NativeClient.cpp)
+            src/main/cpp/com_vesoft_nebula_codec_NativeClient.cpp)
 
 
 target_link_libraries(nebula_native_client
