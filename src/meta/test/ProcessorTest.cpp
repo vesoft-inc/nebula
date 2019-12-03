@@ -1548,29 +1548,22 @@ TEST(ProcessorTest, AlterEdgeTest) {
     }
 }
 
-class MetaProcessorTest : public ::testing::Test {
+class MetaProcessorTestWithHosts : public ::testing::Test {
 protected:
     void SetUp() override {
         root_.reset(new(std::nothrow) fs::TempDir("/tmp/MetaProcessorTest.XXXXXX"));
         ASSERT_NE(root_, nullptr);
         kv_ = TestUtils::initKV(root_->path());
         ASSERT_NE(kv_, nullptr);
-        ASSERT_TRUE(TestUtils::assembleSpace(kv_.get(), 1, 1));
-        TestUtils::mockTag(kv_.get(), 1);
-    }
-
-    void TearDown() override {
-
+        ASSERT_EQ(4, TestUtils::createSomeHosts(kv_.get()));
     }
 
     std::unique_ptr<fs::TempDir> root_ = nullptr;
     std::unique_ptr<kvstore::KVStore> kv_ = nullptr;
 };
 
-TEST_F(MetaProcessorTest, DuplicateTest) {
+TEST_F(MetaProcessorTestWithHosts, DuplicateCreateSpaceTest) {
     constexpr char spaceName[] = "default_space";
-
-    ASSERT_EQ(4, TestUtils::createSomeHosts(kv_.get()));
 
     cpp2::SpaceProperties properties;
     properties.set_space_name(spaceName);
@@ -1602,6 +1595,72 @@ TEST_F(MetaProcessorTest, DuplicateTest) {
     ASSERT_EQ(1, resp.spaces.size());
     ASSERT_EQ(1, resp.spaces[0].id.get_space_id());
     ASSERT_EQ(spaceName, resp.spaces[0].name);
+}
+
+
+class MetaProcessorTestWithSpace : public MetaProcessorTestWithHosts {
+protected:
+    void SetUp() override {
+        MetaProcessorTestWithHosts::SetUp();
+
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(8);
+        properties.set_replica_factor(3);
+        cpp2::CreateSpaceReq req;
+        req.set_properties(std::move(properties));
+
+        auto* processor = CreateSpaceProcessor::instance(kv_.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.get_id().get_space_id());
+        spaceId_ = resp.get_id().get_space_id();
+    }
+
+    GraphSpaceID spaceId_ = 0;
+};
+
+
+TEST_F(MetaProcessorTestWithSpace, DuplicateCreateTagTest) {
+    constexpr char tagName[] = "default_tag";
+
+    nebula::cpp2::Schema schema;
+    decltype(schema.columns) cols;
+    cols.emplace_back(TestUtils::columnDef(0, SupportedType::INT));
+    cols.emplace_back(TestUtils::columnDef(1, SupportedType::FLOAT));
+    cols.emplace_back(TestUtils::columnDef(2, SupportedType::STRING));
+    schema.set_columns(std::move(cols));
+    cpp2::CreateTagReq req;
+    req.set_space_id(spaceId_);
+    req.set_tag_name(tagName);
+    req.set_schema(schema);
+
+    std::vector<std::thread> threads(4);
+    for (auto& t : threads) {
+        t = std::thread([this, &req]() {
+            auto* processor = CreateTagProcessor::instance(kv_.get());
+            auto f = processor->getFuture();
+            processor->process(req);
+            // Don't check for not sure which succeeded
+            f.wait();
+        });
+    }
+    for (auto& t : threads) {
+        t.join();
+    }
+
+    // check tag count
+    cpp2::ListTagsReq reqListTags;
+    reqListTags.set_space_id(spaceId_);
+    auto* processor = ListTagsProcessor::instance(kv_.get());
+    auto f = processor->getFuture();
+    processor->process(reqListTags);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    decltype(resp.tags) tags = resp.get_tags();
+    ASSERT_EQ(1, tags.size());
 }
 
 }  // namespace meta
