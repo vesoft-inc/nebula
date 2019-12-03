@@ -15,6 +15,7 @@ then
     exit $?
 fi
 
+# GCC, binutils and support libraries
 #url_base=http://ftpmirror.gnu.org
 url_base=http://mirrors.ustc.edu.cn/gnu
 
@@ -44,16 +45,18 @@ mpfr_checksum=064b2c18185038e404a401b830d59be8
 mpc_checksum=d6a1d5f8ddea3abd2cc3e98f58352d26
 bu_checksum=a3bf359889e4b299fce1f4cb919dc7b6
 
+# Building directories setup
 cur_dir=$PWD
-build_dir=$PWD/gcc-build
-tarballs_dir=$build_dir/downloads
-source_dir=$build_dir/source
-gcc_object_dir=$build_dir/gcc-build
-bu_object_dir=$build_dir/binutils-build
+root_dir=$PWD/gcc-build
+tarballs_dir=$root_dir/downloads
+source_dir=$root_dir/source
+gcc_object_dir=$root_dir/gcc-build
+bu_object_dir=$root_dir/binutils-build
 prefix=$1
-install_dir=${prefix:-$build_dir/install}/gcc/$gcc_version
+install_dir=${prefix:-$root_dir/install}/gcc/$gcc_version
 triplet=x86_64-vesoft-linux
 
+# Download source tarballs
 function get_checksum {
     md5sum $1 | cut -d ' ' -f 1
 }
@@ -90,6 +93,7 @@ function fetch_tarballs {
     cd $OLDPWD
 }
 
+# Unpack source tarballs
 function unpack_tarballs {
     mkdir -p $source_dir
     cd $tarballs_dir
@@ -129,6 +133,7 @@ function unpack_tarballs {
     cd $OLDPWD
 }
 
+# Necessary dependency setup
 function setup_deps {
     cd $source_dir/gcc-$gcc_version
     ln -sf ../gmp-$gmp_version gmp
@@ -145,6 +150,7 @@ function setup_deps {
 
     cd $OLDPWD
 
+    # Tweak GMP to not build with native code
     cd $source_dir/gmp-$gmp_version
     cp -f configfsf.guess config.guess
     cp -f configfsf.sub config.sub
@@ -152,6 +158,7 @@ function setup_deps {
     cd $OLDPWD
 }
 
+# Configure GCC
 function configure_gcc {
     mkdir -p $gcc_object_dir
     cd $gcc_object_dir
@@ -171,12 +178,13 @@ function configure_gcc {
         --with-system-zlib                      \
         --build=$triplet                        \
         --host=$triplet                         \
-        --host=$triplet                         \
+        --target=$triplet                       \
         --disable-werror
     [[ $? -eq 0 ]] || exit 1
     cd $OLDPWD
 }
 
+# Start building GCC
 function build_gcc {
     cd $gcc_object_dir
     make -s -j 20  |& tee build.log
@@ -184,6 +192,7 @@ function build_gcc {
     cd $OLDPWD
 }
 
+# Install GCC
 function install_gcc {
     cd $gcc_object_dir
     make -s -j8 install-strip
@@ -191,6 +200,7 @@ function install_gcc {
     cd $OLDPWD
 }
 
+# Configure binutils
 function configure_binutils {
     mkdir -p $bu_object_dir
     cd $bu_object_dir
@@ -204,36 +214,43 @@ function configure_binutils {
         --with-system-zlib                      \
         --build=$triplet                        \
         --host=$triplet                         \
-        --host=$triplet                         \
+        --target=$triplet                       \
         --disable-werror
 
     cd $OLDPWD
 }
 
+# Build binutils
 function build_binutils {
     cd $bu_object_dir
     make -s -j 20 || exit 1
     cd $OLDPWD
 }
 
+# Install binutils
 function install_binutils {
     cd $bu_object_dir
     make -s install-strip || exit 1
     cd $OLDPWD
     cd $install_dir
+    # Place a copy of assembler and linker to libexec
     cp -vp bin/as libexec/gcc/$triplet/$gcc_version
     cp -vp bin/ld* libexec/gcc/$triplet/$gcc_version
     cd $OLDPWD
 }
 
+# Finalize the building
 function finalize {
+    # Remove all of the annoying libtool files,
+    # so that the installation would be copied around
     find $install_dir -name '*.la' | xargs rm -f
 }
 
+# Build a self-extractable package
 function make_package {
     glibc_version=$(ldd --version | head -1 | cut -d ' ' -f4 | cut -d '-' -f1)
-    exec_file=$build_dir/vesoft-gcc-$gcc_version-linux-x86_64-glibc-$glibc_version.sh
-    echo "Creating self-extracting package $exec_file"
+    exec_file=$root_dir/vesoft-gcc-$gcc_version-linux-x86_64-glibc-$glibc_version.sh
+    echo "Creating self-extractable package $exec_file"
     cat > $exec_file <<EOF
 #! /usr/bin/env bash
 set -e
@@ -282,6 +299,8 @@ export OLD_CXX=\$CXX
 export CC=\$this_path/gcc
 export CXX=\$this_path/g++
 hash -r
+echo "Only PATH was setup so as not to pollute your library path"
+echo "You could run 'export LD_LIBRARY_PATH=\$this_path/lib64:\\\$LD_LIBRARY_PATH'"
 EOF
 
 cat > $install_dir/bin/disable-gcc.sh <<EOF
