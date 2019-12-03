@@ -18,7 +18,7 @@ fi
 #url_base=http://ftpmirror.gnu.org
 url_base=http://mirrors.ustc.edu.cn/gnu
 
-lcc_version=7.5.0
+gcc_version=7.5.0
 gcc_tarball=gcc-$gcc_version.tar.xz
 gcc_url=$url_base/gcc/gcc-$gcc_version/$gcc_tarball
 
