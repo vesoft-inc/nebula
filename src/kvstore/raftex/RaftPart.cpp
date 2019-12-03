@@ -350,7 +350,7 @@ AppendLogResult RaftPart::canAppendLogs() {
         return AppendLogResult::E_STOPPED;
     }
     if (role_ != Role::LEADER) {
-        LOG(ERROR) << idStr_ << "The partition is not a leader";
+        PLOG_EVERY_N(ERROR, 100) << idStr_ << "The partition is not a leader";
         return AppendLogResult::E_NOT_A_LEADER;
     }
 
@@ -613,8 +613,8 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
     }
 
     if (!checkAppendLogResult(res)) {
-        LOG(ERROR) << idStr_
-                   << "Cannot append logs, clean the buffer";
+        // Mosy likely failed because the parttion is not leader
+        PLOG_EVERY_N(ERROR, 100) << idStr_ << "Cannot append logs, clean the buffer";
         return res;
     }
     // Replicate buffered logs to all followers
@@ -952,16 +952,13 @@ bool RaftPart::needToStartElection() {
     std::lock_guard<std::mutex> g(raftLock_);
     if (status_ == Status::RUNNING &&
         role_ == Role::FOLLOWER &&
-        (lastMsgRecvDur_.elapsedInSec() >= weight_ * FLAGS_raft_heartbeat_interval_secs ||
+        (lastMsgRecvDur_.elapsedInMSec() >= weight_ * FLAGS_raft_heartbeat_interval_secs * 1000 ||
          term_ == 0)) {
         LOG(INFO) << idStr_ << "Start leader election, reason: lastMsgDur "
-                  << lastMsgRecvDur_.elapsedInSec()
+                  << lastMsgRecvDur_.elapsedInMSec()
                   << ", term " << term_;
         role_ = Role::CANDIDATE;
         leader_ = HostAddr(0, 0);
-        LOG(INFO) << idStr_
-                  << "needToStartElection: lastMsgRecvDur " << lastMsgRecvDur_.elapsedInSec()
-                  << ", term_ " << term_;
     }
 
     return role_ == Role::CANDIDATE;
@@ -1083,7 +1080,7 @@ bool RaftPart::leaderElection() {
             // Result evaluator
             [hosts, this](size_t idx, cpp2::AskForVoteResponse& resp) {
                 if (resp.get_error_code() == cpp2::ErrorCode::E_LOG_STALE) {
-                    LOG(INFO) << idStr_ << "My last log id is less than " << hosts[idx]
+                    LOG(INFO) << idStr_ << "My last log id is less than " << hosts[idx]->address()
                               << ", double my election interval.";
                     uint64_t curWeight = weight_.load();
                     weight_.store(curWeight * 2);
@@ -1148,7 +1145,6 @@ bool RaftPart::leaderElection() {
 void RaftPart::statusPolling() {
     size_t delay = FLAGS_raft_heartbeat_interval_secs * 1000 / 3;
     if (needToStartElection()) {
-        LOG(INFO) << idStr_ << "Need to start leader election";
         if (leaderElection()) {
             VLOG(2) << idStr_ << "Stop the election";
         } else {

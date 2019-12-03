@@ -9,6 +9,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:kvstore_obj>
         $<TARGET_OBJECTS:meta_client>
+        $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:raftex_obj>
@@ -50,6 +51,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:kvstore_obj>
         $<TARGET_OBJECTS:meta_client>
+        $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:raftex_obj>
