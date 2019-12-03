@@ -9,6 +9,14 @@ Spark Writer 是 Nebula Graph 基于 Spark 的分布式数据导入工具，能�
 
 Spark Writer 支持并发导入多个 tag、edge，支持不同 tag/edge 配置不同的数据仓库。
 
+## 软件要求
+
+**注意：** 为确保 **Nebula Graph Spark Writer** 正常使用，请确保你的机器已安装：
+
+* Spark 2.0 及以上版本
+* Hive 2.3 及以上版本
+* Hadoop 2.0 及以上版本
+
 ## 获取 Spark Writer
 
 ### 编译源码
@@ -267,7 +275,6 @@ Player 表结构如下：
 #### Spark 配置信息
 
 下表给出了一些示例，所有可配置项请见 [Spark Available Properties](http://spark.apache.org/docs/latest/configuration.html#available-properties)。
-**注意：** 为确保 **Nebula Graph Spark Writer** 正常使用，请确保 Spark、Hive、Hadoop 版本至少分别为 2.0、2.3、2.0。
 
 | 字段 | 默认值 | 是否必须 | 说明 |
 |  --- | ---  |  --- | ---  |

@@ -9,6 +9,14 @@ Spark Writer is Nebula Graph's Spark-based distributed data import tool that con
 
 Spark Writer supports concurrent importing multiple tags and edges, and configuring different data repositories on different tags and edges.
 
+## Prerequisites
+
+**Note:** To use **Nebula Graph Spark Writer**, please make sure you have:
+
+* Spark 2.0 or above
+* Hive 2.3 or above
+* Hadoop 2.0 or above
+
 ## Get Spark Writer
 
 ### From Source Code
@@ -32,9 +40,9 @@ wget https://nebula-graph.oss-accelerate.aliyuncs.com/jar-packages/sst.generator
 This section includes the following steps:
 
 1. Create a graph space and its schema in Nebula Graph
-1. Write data files
-1. Write input source mapping file
-1. Import data
+2. Write data files
+3. Write input source mapping file
+4. Import data
 
 ### Create Graph Space
 
@@ -267,7 +275,6 @@ Example of a mapping file for the input source:
 #### Spark Properties
 
 The following table gives some example properties, all of which can be found in [Spark Available Properties](http://spark.apache.org/docs/latest/configuration.html#available-properties).
-**Note:** To use **Nebula Graph Spark Writer**, please make sure your Spark, Hive, Hadoop versions are at least 2.0, 2.3, 2.0 respectively.
 
 | Field | Default | Required | Description |
 | --- | --- | --- | --- |
