@@ -31,16 +31,16 @@ Status LimitExecutor::prepare() {
 
 void LimitExecutor::execute() {
     FLOG_INFO("Executing Limit: %s", sentence_->toString().c_str());
-    if (inputs_ == nullptr || count_ == 0) {
-        DCHECK(onFinish_);
-        onFinish_();
+    if (inputs_ == nullptr || !inputs_->hasData() || count_ == 0) {
+        onEmptyInputs();
         return;
     }
 
     auto ret = inputs_->getRows();
     if (!ret.ok()) {
-        DCHECK(onFinish_);
-        onFinish_();
+        LOG(ERROR) << "Get rows failed: " << ret.status();
+        DCHECK(onError_);
+        onError_(std::move(ret).status());
         return;
     }
     auto inRows = std::move(ret).value();
@@ -61,21 +61,24 @@ void LimitExecutor::execute() {
     }
 
     DCHECK(onFinish_);
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 
 void LimitExecutor::feedResult(std::unique_ptr<InterimResult> result) {
     if (result == nullptr) {
+        LOG(ERROR) << "Get null input.";
         return;
     }
     inputs_ = std::move(result);
+    colNames_ = inputs_->getColNames();
 }
 
 
 std::unique_ptr<InterimResult> LimitExecutor::setupInterimResult() {
+    auto result = std::make_unique<InterimResult>(std::move(colNames_));
     if (rows_.empty()) {
-        return nullptr;
+        return result;
     }
 
     auto rsWriter = std::make_unique<RowSetWriter>(inputs_->schema());
@@ -110,7 +113,6 @@ std::unique_ptr<InterimResult> LimitExecutor::setupInterimResult() {
         rsWriter->addRow(writer);
     }
 
-    auto result = std::make_unique<InterimResult>(getResultColumnNames());
     if (rsWriter != nullptr) {
         result->setInterim(std::move(rsWriter));
     }
@@ -118,24 +120,21 @@ std::unique_ptr<InterimResult> LimitExecutor::setupInterimResult() {
 }
 
 
-std::vector<std::string> LimitExecutor::getResultColumnNames() const {
-    std::vector<std::string> columnNames;
-    columnNames.reserve(inputs_->schema()->getNumFields());
-    auto field = inputs_->schema()->begin();
-    while (field) {
-        columnNames.emplace_back(field->getName());
-        ++field;
+void LimitExecutor::onEmptyInputs() {
+    if (onResult_) {
+        auto result = std::make_unique<InterimResult>(std::move(colNames_));
+        onResult_(std::move(result));
     }
-    return columnNames;
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 
 void LimitExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
-    resp.set_column_names(getResultColumnNames());
+    resp.set_column_names(std::move(colNames_));
+
     if (rows_.empty()) {
         return;
     }
-
     resp.set_rows(std::move(rows_));
 }
 }   // namespace graph

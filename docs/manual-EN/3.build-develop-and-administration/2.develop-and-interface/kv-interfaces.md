@@ -2,7 +2,7 @@
 
 ## Interface Demo
 
-Nebula storage provides key-value interfaces. Users can perform kv operations through the StorageClient. Please note that users still need to create space through console. Currently supported interfaces are Get and Put. The interfaces are as follows.
+**Nebula Graph** storage provides key-value interfaces. Users can perform kv operations through the StorageClient. Please note that users still need to create space through console. Currently supported interfaces are Get and Put. The interfaces are as follows.
 
 ```cpp
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> put(
@@ -49,9 +49,9 @@ auto future = storageClient->get(spaceId, std::move(keys));
 auto resp = std::move(future).get()
 ```
 
-### Processing returned results
+### Processing Returned Results
 
-Check the returned results of the rpc to examine if the corresponding operation runs successfully. In addition, since nebula storage shards data, if one partition fails, the error code is also returned. If any of the partition fails, the entire requirement fails (resp.succeeded() is false). But those succeed are still read/written.
+Check the returned results of the rpc to examine if the corresponding operation runs successfully. In addition, since **Nebula Graph** storage shards data, if one partition fails, the error code is also returned. If any of the partition fails, the entire requirement fails (resp.succeeded() is false). But those succeed are still read/written.
 
 Users can retry until all the requirements run successfully. Currently, auto retry is not supported by StorageClient. Users can decide whether to retry based on the error code.
 
@@ -72,9 +72,9 @@ if (!resp.failedParts().empty()) {
 }
 ```
 
-#### Read values
+#### Read Values
 
-For the Get interface, we need some more operations to get the corresponding values. Nebula storage is a multi-copy based on Raft, and all read/written operations can only be sent to the leader of the corresponding partition. When a get request contains multiple keys across partitions, the Storage Client requests the keys from the Partition leader. Each rpc return is stored separately in an unordered_map, and the user is currently required to traverse these unordered_maps to check if the key exists. An example is as follows:
+For the Get interface, we need some more operations to get the corresponding values. **Nebula Graph** storage is a multi-copy based on Raft, and all read/written operations can only be sent to the leader of the corresponding partition. When a get request contains multiple keys across partitions, the Storage Client requests the keys from the Partition leader. Each rpc return is stored separately in an unordered_map, and the user is currently required to traverse these unordered_maps to check if the key exists. An example is as follows:
 
 ```cpp
 // Examine whether the value corresponding to the key is in the returned result. If it exists, it is saved in the value.

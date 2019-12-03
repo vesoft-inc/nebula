@@ -111,10 +111,6 @@ public:
     STATUS_GENERATOR(TagNotFound);
     STATUS_GENERATOR(EdgeNotFound);
     STATUS_GENERATOR(UserNotFound);
-    STATUS_GENERATOR(CfgNotFound);
-    STATUS_GENERATOR(CfgRegistered);
-    STATUS_GENERATOR(CfgErrorType);
-    STATUS_GENERATOR(CfgImmutable);
     STATUS_GENERATOR(LeaderChanged);
     STATUS_GENERATOR(Balanced);
 
@@ -146,12 +142,8 @@ public:
         kTagNotFound            = 406,
         kEdgeNotFound           = 407,
         kUserNotFound           = 408,
-        kCfgNotFound            = 409,
-        kCfgRegistered          = 410,
-        kCfgErrorType           = 411,
-        kCfgImmutable           = 412,
-        kLeaderChanged          = 413,
-        kBalanced               = 414,
+        kLeaderChanged          = 409,
+        kBalanced               = 410,
     };
 
     Code code() const {

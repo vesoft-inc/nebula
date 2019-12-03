@@ -17,8 +17,9 @@ class DeleteVertexProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static DeleteVertexProcessor* instance(kvstore::KVStore* kvstore,
                                            meta::SchemaManager* schemaMan,
-                                           StorageStats* stats) {
-        return new DeleteVertexProcessor(kvstore, schemaMan, stats);
+                                           stats::Stats* stats,
+                                           VertexCache* cache = nullptr) {
+        return new DeleteVertexProcessor(kvstore, schemaMan, stats, cache);
     }
 
     void process(const cpp2::DeleteVertexRequest& req);
@@ -26,8 +27,13 @@ public:
 private:
     explicit DeleteVertexProcessor(kvstore::KVStore* kvstore,
                                    meta::SchemaManager* schemaMan,
-                                   StorageStats* stats)
-            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats) {}
+                                   stats::Stats* stats,
+                                   VertexCache* cache)
+            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats)
+            , vertexCache_(cache) {}
+
+private:
+    VertexCache* vertexCache_ = nullptr;
 };
 
 
