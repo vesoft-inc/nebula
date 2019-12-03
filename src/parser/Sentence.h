@@ -38,7 +38,7 @@ public:
         kUpdateEdge,
         kShow,
         kDeleteVertex,
-        kDeleteEdge,
+        kDeleteEdges,
         kFind,
         kCreateSpace,
         kDropSpace,
