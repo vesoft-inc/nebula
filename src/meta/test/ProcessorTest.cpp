@@ -1547,6 +1547,61 @@ TEST(ProcessorTest, AlterEdgeTest) {
         ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
 }
+
+class MetaProcessorTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        root_.reset(new fs::TempDir("/tmp/MetaProcessorTest.XXXXXX"));
+        kv_ = TestUtils::initKV(root_->path());
+        ASSERT_TRUE(TestUtils::assembleSpace(kv_.get(), 1, 1));
+        TestUtils::mockTag(kv_.get(), 1);
+    }
+
+    void TearDown() override {
+
+    }
+
+    std::unique_ptr<fs::TempDir> root_ = nullptr;
+    std::unique_ptr<kvstore::KVStore> kv_ = nullptr;
+};
+
+TEST_F(MetaProcessorTest, DuplicateTest) {
+    constexpr char spaceName[] = "default_space";
+
+    ASSERT_EQ(4, TestUtils::createSomeHosts(kv_.get()));
+
+    cpp2::SpaceProperties properties;
+    properties.set_space_name(spaceName);
+    properties.set_partition_num(8);
+    properties.set_replica_factor(3);
+    cpp2::CreateSpaceReq req;
+    req.set_properties(std::move(properties));
+    std::vector<std::thread> threads(8);
+    for (auto& t : threads) {
+        t = std::thread([this, &req]() {
+            auto* processor = CreateSpaceProcessor::instance(kv_.get());
+            auto f = processor->getFuture();
+            processor->process(req);
+            // Don't check for not sure which succeeded
+            f.wait();
+        });
+    }
+    for (auto& t : threads) {
+        t.join();
+    }
+
+    // check space count
+    cpp2::ListSpacesReq reqListSpaces;
+    auto* processor = ListSpacesProcessor::instance(kv_.get());
+    auto f = processor->getFuture();
+    processor->process(reqListSpaces);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+    ASSERT_EQ(1, resp.spaces.size());
+    ASSERT_EQ(1, resp.spaces[0].id.get_space_id());
+    ASSERT_EQ(spaceName, resp.spaces[0].name);
+}
+
 }  // namespace meta
 }  // namespace nebula
 
