@@ -188,13 +188,13 @@ bool MetaClient::loadData() {
     }
     diff(oldCache, localCache_);
     ready_ = true;
-    LOG(INFO) << "Load data completed!";
     return true;
 }
 
 void MetaClient::addLoadDataTask() {
     size_t delayMS = FLAGS_load_data_interval_secs * 1000 + folly::Random::rand32(900);
     bgThread_->addDelayTask(delayMS, &MetaClient::loadDataThreadFunc, this);
+    LOG(INFO) << "Load data completed, call after " << delayMS << " ms";
 }
 
 
@@ -315,9 +315,9 @@ void MetaClient::getResponse(Request req,
                      respGen = std::move(respGen), pro = std::move(pro),
                      toLeader, retry, retryLimit, duration, this] () mutable {
         auto client = clientsMan_->client(host, evb);
-        LOG(INFO) << "Send request to meta " << host;
+        VLOG(1) << "Send request to meta " << host;
         remoteFunc(client, req).via(evb)
-            .then([req = std::move(req), remoteFunc = std::move(remoteFunc),
+            .then([host, req = std::move(req), remoteFunc = std::move(remoteFunc),
                    respGen = std::move(respGen), pro = std::move(pro), toLeader, retry,
                    retryLimit, evb, duration, this] (folly::Try<RpcResponse>&& t) mutable {
             // exception occurred during RPC
@@ -341,7 +341,7 @@ void MetaClient::getResponse(Request req,
                     }, FLAGS_meta_client_retry_interval_secs * 1000);
                     return;
                 } else {
-                    LOG(INFO) << "Exceed retry limit";
+                    LOG(ERROR) << "Send request to " << host << ", exceed retry limit";
                     pro.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
                                                                    t.exception().what().c_str())));
                     stats::Stats::addStatsValue(stats_, false, duration.elapsedInUSec());
@@ -1157,7 +1157,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     req.set_cluster_id(clusterId_.load());
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
-    LOG(INFO) << "Send heartbeat to " << leader_ << ", clusterId " << req.get_cluster_id();
+    VLOG(1) << "Send heartbeat to " << leader_ << ", clusterId " << req.get_cluster_id();
     getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_heartBeat(request);
                 }, [this] (cpp2::HBResp&& resp) -> bool {
@@ -1396,7 +1396,7 @@ void MetaClient::loadCfg() {
             }
         }
     } else {
-        LOG(INFO) << "Load configs failed: " << ret.status();
+        LOG(ERROR) << "Load configs failed: " << ret.status();
         return;
     }
 }
