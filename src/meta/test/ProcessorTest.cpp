@@ -1576,7 +1576,7 @@ TEST_F(MetaProcessorTest, DuplicateTest) {
     properties.set_replica_factor(3);
     cpp2::CreateSpaceReq req;
     req.set_properties(std::move(properties));
-    std::vector<std::thread> threads(8);
+    std::vector<std::thread> threads(4);
     for (auto& t : threads) {
         t = std::thread([this, &req]() {
             auto* processor = CreateSpaceProcessor::instance(kv_.get());
