@@ -1548,6 +1548,8 @@ TEST(ProcessorTest, AlterEdgeTest) {
     }
 }
 
+/// Check the consensus of meta when parallel modify
+
 class MetaProcessorTestWithHosts : public ::testing::Test {
 protected:
     void SetUp() override {
@@ -1565,36 +1567,62 @@ protected:
 TEST_F(MetaProcessorTestWithHosts, DuplicateCreateSpaceTest) {
     constexpr char spaceName[] = "default_space";
 
-    cpp2::SpaceProperties properties;
-    properties.set_space_name(spaceName);
-    properties.set_partition_num(8);
-    properties.set_replica_factor(3);
-    cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
     std::vector<std::thread> threads(4);
-    for (auto& t : threads) {
-        t = std::thread([this, &req]() {
-            auto* processor = CreateSpaceProcessor::instance(kv_.get());
-            auto f = processor->getFuture();
-            processor->process(req);
-            // Don't check for not sure which succeeded
-            f.wait();
-        });
-    }
-    for (auto& t : threads) {
-        t.join();
+    {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name(spaceName);
+        properties.set_partition_num(8);
+        properties.set_replica_factor(3);
+        cpp2::CreateSpaceReq req;
+        req.set_properties(std::move(properties));
+        for (auto& t : threads) {
+            t = std::thread([this, &req]() {
+                auto* processor = CreateSpaceProcessor::instance(kv_.get());
+                auto f = processor->getFuture();
+                processor->process(req);
+                // Don't check for not sure which succeeded
+                f.wait();
+            });
+        }
+        for (auto& t : threads) {
+            t.join();
+        }
     }
 
     // check space count
-    cpp2::ListSpacesReq reqListSpaces;
-    auto* processor = ListSpacesProcessor::instance(kv_.get());
-    auto f = processor->getFuture();
-    processor->process(reqListSpaces);
-    auto resp = std::move(f).get();
-    ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-    ASSERT_EQ(1, resp.spaces.size());
-    ASSERT_EQ(1, resp.spaces[0].id.get_space_id());
-    ASSERT_EQ(spaceName, resp.spaces[0].name);
+    {
+        cpp2::ListSpacesReq req;
+        auto* processor = ListSpacesProcessor::instance(kv_.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.spaces.size());
+        ASSERT_EQ(1, resp.spaces[0].id.get_space_id());
+        ASSERT_EQ(spaceName, resp.spaces[0].name);
+    }
+
+    // duplicate drop
+    {
+        cpp2::DropSpaceReq req;
+        req.set_space_name("default_space");
+        std::atomic_uint8_t succeeded(0);
+        for (auto& t : threads) {
+            t = std::thread([this, &req, &succeeded]() {
+                auto* processor = DropSpaceProcessor::instance(kv_.get());
+                auto f = processor->getFuture();
+                processor->process(req);
+                auto resp = std::move(f).get();
+                if (resp.get_code() == cpp2::ErrorCode::SUCCEEDED) {
+                    ++succeeded;
+                }
+            });
+        }
+        for (auto& t : threads) {
+            t.join();
+        }
+        ASSERT_EQ(succeeded, 1);
+    }
 }
 
 
@@ -1626,81 +1654,89 @@ protected:
 TEST_F(MetaProcessorTestWithSpace, DuplicateCreateTagTest) {
     constexpr char tagName[] = "default_tag";
 
-    nebula::cpp2::Schema schema;
-    decltype(schema.columns) cols;
-    cols.emplace_back(TestUtils::columnDef(0, SupportedType::INT));
-    cols.emplace_back(TestUtils::columnDef(1, SupportedType::FLOAT));
-    cols.emplace_back(TestUtils::columnDef(2, SupportedType::STRING));
-    schema.set_columns(std::move(cols));
-    cpp2::CreateTagReq req;
-    req.set_space_id(spaceId_);
-    req.set_tag_name(tagName);
-    req.set_schema(schema);
+    {
+        nebula::cpp2::Schema schema;
+        decltype(schema.columns) cols;
+        cols.emplace_back(TestUtils::columnDef(0, SupportedType::INT));
+        cols.emplace_back(TestUtils::columnDef(1, SupportedType::FLOAT));
+        cols.emplace_back(TestUtils::columnDef(2, SupportedType::STRING));
+        schema.set_columns(std::move(cols));
+        cpp2::CreateTagReq req;
+        req.set_space_id(spaceId_);
+        req.set_tag_name(tagName);
+        req.set_schema(schema);
 
-    std::vector<std::thread> threads(4);
-    for (auto& t : threads) {
-        t = std::thread([this, &req]() {
-            auto* processor = CreateTagProcessor::instance(kv_.get());
-            auto f = processor->getFuture();
-            processor->process(req);
-            // Don't check for not sure which succeeded
-            f.wait();
-        });
-    }
-    for (auto& t : threads) {
-        t.join();
+        std::vector<std::thread> threads(4);
+        for (auto& t : threads) {
+            t = std::thread([this, &req]() {
+                auto* processor = CreateTagProcessor::instance(kv_.get());
+                auto f = processor->getFuture();
+                processor->process(req);
+                // Don't check for not sure which succeeded
+                f.wait();
+            });
+        }
+        for (auto& t : threads) {
+            t.join();
+        }
     }
 
     // check tag count
-    cpp2::ListTagsReq reqListTags;
-    reqListTags.set_space_id(spaceId_);
-    auto* processor = ListTagsProcessor::instance(kv_.get());
-    auto f = processor->getFuture();
-    processor->process(reqListTags);
-    auto resp = std::move(f).get();
-    ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    decltype(resp.tags) tags = resp.get_tags();
-    ASSERT_EQ(1, tags.size());
+    {
+        cpp2::ListTagsReq req;
+        req.set_space_id(spaceId_);
+        auto* processor = ListTagsProcessor::instance(kv_.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        decltype(resp.tags) tags = resp.get_tags();
+        ASSERT_EQ(1, tags.size());
+    }
 }
 
 TEST_F(MetaProcessorTestWithSpace, DuplicateCreateEdgeTest) {
     constexpr char edgeName[] = "default_edge";
 
-    nebula::cpp2::Schema schema;
-    decltype(schema.columns) cols;
-    cols.emplace_back(TestUtils::columnDef(0, SupportedType::INT));
-    cols.emplace_back(TestUtils::columnDef(1, SupportedType::FLOAT));
-    cols.emplace_back(TestUtils::columnDef(2, SupportedType::STRING));
-    schema.set_columns(std::move(cols));
-    cpp2::CreateEdgeReq req;
-    req.set_space_id(spaceId_);
-    req.set_edge_name(edgeName);
-    req.set_schema(schema);
+    {
+        nebula::cpp2::Schema schema;
+        decltype(schema.columns) cols;
+        cols.emplace_back(TestUtils::columnDef(0, SupportedType::INT));
+        cols.emplace_back(TestUtils::columnDef(1, SupportedType::FLOAT));
+        cols.emplace_back(TestUtils::columnDef(2, SupportedType::STRING));
+        schema.set_columns(std::move(cols));
+        cpp2::CreateEdgeReq req;
+        req.set_space_id(spaceId_);
+        req.set_edge_name(edgeName);
+        req.set_schema(schema);
 
-    std::vector<std::thread> threads(4);
-    for (auto& t : threads) {
-        t = std::thread([this, &req]() {
-            auto* processor = CreateEdgeProcessor::instance(kv_.get());
-            auto f = processor->getFuture();
-            processor->process(req);
-            // Don't check for not sure which succeeded
-            f.wait();
-        });
-    }
-    for (auto& t : threads) {
-        t.join();
+        std::vector<std::thread> threads(4);
+        for (auto& t : threads) {
+            t = std::thread([this, &req]() {
+                auto* processor = CreateEdgeProcessor::instance(kv_.get());
+                auto f = processor->getFuture();
+                processor->process(req);
+                // Don't check for not sure which succeeded
+                f.wait();
+            });
+        }
+        for (auto& t : threads) {
+            t.join();
+        }
     }
 
     // check edge count
-    cpp2::ListEdgesReq reqListEdges;
-    reqListEdges.set_space_id(spaceId_);
-    auto* processor = ListEdgesProcessor::instance(kv_.get());
-    auto f = processor->getFuture();
-    processor->process(reqListEdges);
-    auto resp = std::move(f).get();
-    ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    decltype(resp.edges) edges = resp.get_edges();
-    ASSERT_EQ(1, edges.size());
+    {
+        cpp2::ListEdgesReq req;
+        req.set_space_id(spaceId_);
+        auto* processor = ListEdgesProcessor::instance(kv_.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        decltype(resp.edges) edges = resp.get_edges();
+        ASSERT_EQ(1, edges.size());
+    }
 }
 
 
