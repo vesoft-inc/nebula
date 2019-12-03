@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-package com.vesoft.nebula.codec;
+package com.vesoft.nebula;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -15,11 +15,11 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class NativeClient {
-    private static final Logger LOGGER = LoggerFactory.getLogger(NativeClient.class.getName());
+public class NebulaCodec {
+    private static final Logger LOGGER = LoggerFactory.getLogger(NebulaCodec.class.getName());
 
     static {
-        System.loadLibrary("nebula_native_client");
+        System.loadLibrary("nebula_codec");
     }
 
     public static class Pair {

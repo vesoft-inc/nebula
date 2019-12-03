@@ -2,7 +2,7 @@
 include_directories($ENV{JAVA_HOME}/include
                     $ENV{JAVA_HOME}/include/linux)
 
-nebula_add_library(nebula_native_client SHARED
+nebula_add_library(nebula_codec SHARED
             $<TARGET_OBJECTS:dataman_obj>
             $<TARGET_OBJECTS:fs_obj>
             $<TARGET_OBJECTS:base_obj>
@@ -13,10 +13,10 @@ nebula_add_library(nebula_native_client SHARED
             $<TARGET_OBJECTS:thrift_obj>
             $<TARGET_OBJECTS:meta_client>
             $<TARGET_OBJECTS:meta_thrift_obj>
-            src/main/cpp/com_vesoft_nebula_codec_NativeClient.cpp)
+            src/main/cpp/com_vesoft_nebula_codec.cpp)
 
 
-target_link_libraries(nebula_native_client
+target_link_libraries(nebula_codec
                       ${OPENSSL_SSL_LIBRARY}
                       ${OPENSSL_CRYPTO_LIBRARY}
                       ${THRIFT_LIBRARIES}
@@ -35,7 +35,7 @@ target_link_libraries(nebula_native_client
                       -ldl)
 
 add_custom_target(
-    nebula_native_java_client ALL
+    nebula_java_codec ALL
     COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/build.sh" ${CMAKE_CURRENT_SOURCE_DIR} ">" "./_build.log" "2>&1"
-    DEPENDS nebula_native_client
+    DEPENDS nebula_codec
 )

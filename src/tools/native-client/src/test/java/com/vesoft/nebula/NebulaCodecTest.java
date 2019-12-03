@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-package com.vesoft.nebula.codec;
+package com.vesoft.nebula;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -18,7 +18,7 @@ import java.util.Map;
 
 import org.junit.Test;
 
-public class NativeClientTest {
+public class NebulaCodecTest {
 
     @Test
     public void testDecoded() {
@@ -29,17 +29,17 @@ public class NativeClientTest {
             0.618,
             "Hello".getBytes()
         };
-        byte[] result = NativeClient.encode(values);
+        byte[] result = NebulaCodec.encode(values);
 
-        NativeClient.Pair[] pairs = new NativeClient.Pair[]{
-            new NativeClient.Pair("b_field", Boolean.class.getName()),
-            new NativeClient.Pair("i_field", Integer.class.getName()),
-            new NativeClient.Pair("f_field", Float.class.getName()),
-            new NativeClient.Pair("d_field", Double.class.getName()),
-            new NativeClient.Pair("s_field", byte[].class.getName())
+        NebulaCodec.Pair[] pairs = new NebulaCodec.Pair[]{
+            new NebulaCodec.Pair("b_field", Boolean.class.getName()),
+            new NebulaCodec.Pair("i_field", Integer.class.getName()),
+            new NebulaCodec.Pair("f_field", Float.class.getName()),
+            new NebulaCodec.Pair("d_field", Double.class.getName()),
+            new NebulaCodec.Pair("s_field", byte[].class.getName())
         };
 
-        Map<String, byte[]> decodedResult = NativeClient.decode(result, pairs);
+        Map<String, byte[]> decodedResult = NebulaCodec.decode(result, pairs);
 
         byte byteValue = decodedResult.get("b_field")[0];
         boolean boolValue = (byteValue == 0x00) ? false : true;

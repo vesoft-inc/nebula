@@ -10,8 +10,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.vesoft</groupId>
-    <artifactId>native-client</artifactId>
+    <groupId>com.vesoft.nebula</groupId>
+    <artifactId>codec</artifactId>
     <version>1.0.0-beta</version>
 
     <properties>
@@ -74,10 +74,10 @@
                         <configuration>
                             <javahOutputDirectory>${basedir}/src/main/cpp</javahOutputDirectory>
                             <javahOutputFileName>
-                                com_vesoft_nebula_codec_NativeClient.h
+                                com_vesoft_nebula_codec.h
                             </javahOutputFileName>
                             <javahClassNames>
-                                <javahClassName>com.vesoft.nebula.codec.NativeClient</javahClassName>
+                                <javahClassName>com.vesoft.nebula.NebulaCodec</javahClassName>
                             </javahClassNames>
                         </configuration>
                     </execution>
@@ -101,7 +101,7 @@
                                 <resource>
                                     <directory>${basedir}/_build</directory>
                                     <includes>
-                                        <include>libnebula_native_client.so</include>
+                                        <include>libnebula_codec.so</include>
                                     </includes>
                                     <filtering>false</filtering>
                                 </resource>
@@ -147,7 +147,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.10</version>
                 <configuration>
-                    <!-- put nebula_native_client.so in java.library.path env before run test-->
+                    <!-- put nebula_codec.so in java.library.path env before run test-->
                     <argLine>-Djava.library.path=_build/</argLine>
                 </configuration>
             </plugin>
