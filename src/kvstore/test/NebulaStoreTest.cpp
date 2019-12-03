@@ -767,7 +767,7 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
         ASSERT_EQ(0, ret);
     }
 
-    LOG(INFO) << "Let's open the engine via checkpoint";
+    LOG(INFO) << "Let's start the engine via checkpoint";
     std::vector<HostAddr> cPeers;
     for (int32_t i = 0; i < replicas; i++) {
         cPeers.emplace_back(ip, network::NetworkUtils::getAvailablePort());

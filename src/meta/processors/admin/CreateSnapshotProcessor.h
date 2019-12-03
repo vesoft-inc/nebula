@@ -20,12 +20,13 @@ public:
     }
     void process(const cpp2::CreateSnapshotReq& req);
 
-    std::string genSnapshotName();
     cpp2::ErrorCode cancelWriteBlocking();
 
 private:
     explicit CreateSnapshotProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+    std::string genSnapshotName();
 };
 }  // namespace meta
 }  // namespace nebula

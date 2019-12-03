@@ -7,7 +7,6 @@
 #ifndef META_LISTSNAPSHOTSPROCESSOR_H_
 #define META_LISTSNAPSHOTSPROCESSOR_H_
 
-#include <gtest/gtest_prod.h>
 #include "meta/processors/BaseProcessor.h"
 
 namespace nebula {

@@ -85,7 +85,8 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
                                                     NetworkUtils::toHosts(hosts)));
 
     if (!doSyncPut(std::move(data))) {
-        LOG(ERROR) << "All checkpoint create done, but update checkpoint status error. "
+        LOG(ERROR) << "All checkpoint creations are done, "
+                      "but update checkpoint status error. "
                       "snapshot : " << snapshot;
         resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
     }

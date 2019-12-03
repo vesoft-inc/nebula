@@ -551,7 +551,7 @@ struct ListSnapshotsResp {
     1: ErrorCode            code,
     // Valid if code equals E_LEADER_CHANGED.
     2: common.HostAddr      leader,
-    3: list<Snapshot>         snapshots,
+    3: list<Snapshot>       snapshots,
 }
 
 service MetaService {
