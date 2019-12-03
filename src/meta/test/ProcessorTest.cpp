@@ -1551,8 +1551,10 @@ TEST(ProcessorTest, AlterEdgeTest) {
 class MetaProcessorTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        root_.reset(new fs::TempDir("/tmp/MetaProcessorTest.XXXXXX"));
+        root_.reset(new(std::nothrow) fs::TempDir("/tmp/MetaProcessorTest.XXXXXX"));
+        ASSERT_NE(root_, nullptr);
         kv_ = TestUtils::initKV(root_->path());
+        ASSERT_NE(kv_, nullptr);
         ASSERT_TRUE(TestUtils::assembleSpace(kv_.get(), 1, 1));
         TestUtils::mockTag(kv_.get(), 1);
     }
