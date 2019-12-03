@@ -41,6 +41,7 @@
 #include "graph/MatchExecutor.h"
 #include "graph/BalanceExecutor.h"
 #include "graph/DeleteVertexExecutor.h"
+#include "graph/DeleteEdgesExecutor.h"
 #include "graph/UpdateVertexExecutor.h"
 #include "graph/UpdateEdgeExecutor.h"
 #include "graph/FindPathExecutor.h"
@@ -147,6 +148,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kDeleteVertex:
             executor = std::make_unique<DeleteVertexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDeleteEdges:
+            executor = std::make_unique<DeleteEdgesExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUpdateVertex:
             executor = std::make_unique<UpdateVertexExecutor>(sentence, ectx());
