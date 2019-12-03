@@ -72,14 +72,12 @@
                             <goal>javah</goal>
                         </goals>
                         <configuration>
-                            <javahOutputDirectory>${basedir}/src/main/cpp
-                            </javahOutputDirectory>
+                            <javahOutputDirectory>${basedir}/src/main/cpp</javahOutputDirectory>
                             <javahOutputFileName>
-                                com_vesoft_client_NativeClient.h
+                                com_vesoft_nebula_NativeClient.h
                             </javahOutputFileName>
                             <javahClassNames>
-                                <javahClassName>com.vesoft.client.NativeClient
-                                </javahClassName>
+                                <javahClassName>com.vesoft.nebula.NativeClient</javahClassName>
                             </javahClassNames>
                         </configuration>
                     </execution>
@@ -98,14 +96,12 @@
                         </goals>
                         <configuration>
                             <encoding>UTF-8</encoding>
-                            <outputDirectory>${basedir}/src/main/resources/
-                            </outputDirectory>
+                            <outputDirectory>${basedir}/src/main/resources/</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${basedir}/_build</directory>
                                     <includes>
-                                        <include>libnebula_native_client.so
-                                        </include>
+                                        <include>libnebula_native_client.so</include>
                                     </includes>
                                     <filtering>false</filtering>
                                 </resource>
@@ -125,8 +121,7 @@
                     <encoding>UTF-8</encoding>
                     <failOnViolation>true</failOnViolation>
                     <linkXRef>false</linkXRef>
-                    <includeTestSourceDirectory>true
-                    </includeTestSourceDirectory>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
                     <maxAllowedViolations>0</maxAllowedViolations>
                     <violationSeverity>warning</violationSeverity>
                 </configuration>

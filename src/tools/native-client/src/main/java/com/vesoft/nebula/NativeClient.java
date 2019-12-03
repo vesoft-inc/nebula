@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-package com.vesoft.client;
+package com.vesoft.nebula;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
