@@ -1693,6 +1693,30 @@ TEST_F(MetaProcessorTestWithSpace, DuplicateCreateTagTest) {
         decltype(resp.tags) tags = resp.get_tags();
         ASSERT_EQ(1, tags.size());
     }
+
+    // Duplicate drop tag
+    {
+        std::vector<std::thread> threads(4);
+        std::atomic_uint8_t succeeded(0);
+        cpp2::DropTagReq req;
+        req.set_space_id(spaceId_);
+        req.set_tag_name(tagName);
+        for (auto& t : threads) {
+            t = std::thread([this, &req, &succeeded]() {
+                auto* processor = DropTagProcessor::instance(kv_.get());
+                auto f = processor->getFuture();
+                processor->process(req);
+                auto resp = std::move(f).get();
+                if (resp.get_code() == cpp2::ErrorCode::SUCCEEDED) {
+                    ++succeeded;
+                }
+            });
+        }
+        for (auto& t : threads) {
+            t.join();
+        }
+        ASSERT_EQ(succeeded, 1);
+    }
 }
 
 TEST_F(MetaProcessorTestWithSpace, DuplicateCreateEdgeTest) {
