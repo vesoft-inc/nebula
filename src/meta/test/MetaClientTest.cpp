@@ -460,6 +460,7 @@ TEST(MetaClientTest, EdgeTest) {
     GraphSpaceID space = ret.value();
     SchemaVer version;
 
+    std::vector<nebula::cpp2::ColumnDef> expectedColumns;
     {
         std::vector<nebula::cpp2::ColumnDef> columns;
 
@@ -492,6 +493,7 @@ TEST(MetaClientTest, EdgeTest) {
         stringValue.set_string_value("test");
         stringColumn.set_default_value(stringValue);
         columns.emplace_back(std::move(stringColumn));
+        expectedColumns = columns;
 
         nebula::cpp2::Schema schema;
         schema.set_columns(std::move(columns));
@@ -534,39 +536,8 @@ TEST(MetaClientTest, EdgeTest) {
         ASSERT_EQ("test_edge", edges[0].get_edge_name());
         version = edges[0].get_version();
 
-        std::vector<nebula::cpp2::ColumnDef> columns;
-        nebula::cpp2::ColumnDef intColumn;
-        intColumn.set_name("column_i");
-        nebula::cpp2::ValueType intType;
-        intType.set_type(SupportedType::INT);
-        intColumn.set_type(std::move(intType));
-        nebula::cpp2::Value intValue;
-        intValue.set_int_value(0);
-        intColumn.set_default_value(intValue);
-        columns.emplace_back(std::move(intColumn));
-
-        nebula::cpp2::ColumnDef doubleColumn;
-        doubleColumn.set_name("column_d");
-        nebula::cpp2::ValueType doubleType;
-        doubleType.set_type(SupportedType::DOUBLE);
-        doubleColumn.set_type(std::move(doubleType));
-        nebula::cpp2::Value doubleValue;
-        doubleValue.set_double_value(3.14);
-        doubleColumn.set_default_value(doubleValue);
-        columns.emplace_back(std::move(doubleColumn));
-
-        nebula::cpp2::ColumnDef stringColumn;
-        stringColumn.set_name("column_s");
-        nebula::cpp2::ValueType stringType;
-        stringType.set_type(SupportedType::STRING);
-        stringColumn.set_type(std::move(stringType));
-        nebula::cpp2::Value stringValue;
-        stringValue.set_string_value("default_value");
-        stringColumn.set_default_value(stringValue);
-        columns.emplace_back(std::move(stringColumn));
-
         nebula::cpp2::Schema expected;
-        expected.set_columns(std::move(columns));
+        expected.set_columns(std::move(expectedColumns));
         nebula::cpp2::Schema resultSchema = edges[0].get_schema();
         ASSERT_TRUE(TestUtils::verifySchema(resultSchema, expected));
     }

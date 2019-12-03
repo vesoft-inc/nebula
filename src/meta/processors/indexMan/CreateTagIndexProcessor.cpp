@@ -53,7 +53,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
         std::vector<nebula::cpp2::ColumnDef> columns;
         for (auto &field : element.second) {
             auto iter = std::find_if(std::begin(fields), std::end(fields),
-                                     [field](FieldType pair) {
+                                     [field](const auto& pair) {
                                          return field == pair.first;
                                      });
             if (iter == fields.end()) {

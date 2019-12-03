@@ -27,7 +27,8 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
     auto edgeKey = MetaServiceUtils::edgeIndexKey(spaceID, edgeIndexIDResult.value());
     auto edgeResult = doGet(edgeKey);
     if (!edgeResult.ok()) {
-        LOG(ERROR) << "Get Edge Index Failed: SpaceID " << spaceID << " Index Name: " << indexName;
+        LOG(ERROR) << "Get Edge Index Failed: SpaceID " << spaceID
+                   << " Index Name: " << indexName << " status: " << edgeResult.status();
         onFinished();
         return;
     }

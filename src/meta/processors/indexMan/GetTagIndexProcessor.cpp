@@ -28,7 +28,8 @@ void GetTagIndexProcessor::process(const cpp2::GetTagIndexReq& req) {
     auto tagKey = MetaServiceUtils::tagIndexKey(spaceID, tagIndexIDResult.value());
     auto tagResult = doGet(tagKey);
     if (!tagResult.ok()) {
-        LOG(ERROR) << "Get Tag Index Failed: SpaceID " << spaceID << " Index Name: " << indexName;
+        LOG(ERROR) << "Get Tag Index Failed: SpaceID " << spaceID
+                   << " Index Name: " << indexName << " status: " << tagResult.status();
         onFinished();
         return;
     }
