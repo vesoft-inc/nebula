@@ -1761,6 +1761,30 @@ TEST_F(MetaProcessorTestWithSpace, DuplicateCreateEdgeTest) {
         decltype(resp.edges) edges = resp.get_edges();
         ASSERT_EQ(1, edges.size());
     }
+
+    // Duplicate Drop edge
+    {
+        std::array<std::thread, 4> threads;
+        std::atomic_uint8_t succeeded(0);
+        cpp2::DropEdgeReq req;
+        req.set_space_id(spaceId_);
+        req.set_edge_name(edgeName);
+        for (auto& t : threads) {
+            t = std::thread([this, &req, &succeeded]() {
+                auto* processor = DropEdgeProcessor::instance(kv_.get());
+                auto f = processor->getFuture();
+                processor->process(req);
+                auto resp = std::move(f).get();
+                if (resp.get_code() == cpp2::ErrorCode::SUCCEEDED) {
+                    ++succeeded;
+                }
+            });
+        }
+        for (auto& t : threads) {
+            t.join();
+        }
+        ASSERT_EQ(succeeded, 1);
+    }
 }
 
 
