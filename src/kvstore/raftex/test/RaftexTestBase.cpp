@@ -98,7 +98,7 @@ void waitUntilLeaderElected(
             });
 
             // Sleep some time to wait until resp of heartbeat has come back when elected as leader
-            usleep(30000);
+            usleep(50000);
 
             bool sameLeader = true;
             int32_t index = 0;
