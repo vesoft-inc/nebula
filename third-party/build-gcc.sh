@@ -18,23 +18,23 @@ fi
 #url_base=http://ftpmirror.gnu.org
 url_base=http://mirrors.ustc.edu.cn/gnu
 
-gcc_version=9.1.0
+lcc_version=7.5.0
 gcc_tarball=gcc-$gcc_version.tar.xz
 gcc_url=$url_base/gcc/gcc-$gcc_version/$gcc_tarball
 
-gmp_version=6.1.2
+gmp_version=5.1.3
 gmp_tarball=gmp-$gmp_version.tar.xz
 gmp_url=$url_base/gmp/$gmp_tarball
 
-mpfr_version=4.0.2
+mpfr_version=3.1.4
 mpfr_tarball=mpfr-$mpfr_version.tar.xz
 mpfr_url=$url_base/mpfr/$mpfr_tarball
 
-mpc_version=1.1.0
+mpc_version=1.0.3
 mpc_tarball=mpc-$mpc_version.tar.gz
 mpc_url=$url_base/mpc/$mpc_tarball
 
-bu_version=2.32
+bu_version=2.28.1
 bu_tarball=binutils-$bu_version.tar.xz
 bu_url=$url_base/binutils/$bu_tarball
 
@@ -202,7 +202,7 @@ function finalize {
 
 function make_package {
     glibc_version=$(ldd --version | head -1 | cut -d ' ' -f4)
-    exec_file=$build_dir/vesoft-gcc-linux-x86_64-glibc-$glibc_version.sh
+    exec_file=$build_dir/vesoft-gcc-$gcc_version-linux-x86_64-glibc-$glibc_version.sh
     echo "Creating self-extracting package $exec_file"
     cat > $exec_file <<EOF
 #! /usr/bin/env bash
