@@ -38,11 +38,11 @@ bu_version=2.28.1
 bu_tarball=binutils-$bu_version.tar.xz
 bu_url=$url_base/binutils/$bu_tarball
 
-gcc_checksum=6069ae3737cf02bf2cb44a391ef0e937
-gmp_checksum=f58fa8001d60c4c77595fbbb62b63c1d
-mpfr_checksum=320fbc4463d4c8cb1e566929d8adc4f8
-mpc_checksum=4125404e41e482ec68282a2e687f6c73
-bu_checksum=0d174cdaf85721c5723bf52355be41e6
+gcc_checksum=79cb8a65d44dfc8a2402b46395535c9a
+gmp_checksum=e5fe367801ff067b923d1e6a126448aa
+mpfr_checksum=064b2c18185038e404a401b830d59be8
+mpc_checksum=d6a1d5f8ddea3abd2cc3e98f58352d26
+bu_checksum=a3bf359889e4b299fce1f4cb919dc7b6
 
 cur_dir=$PWD
 build_dir=$PWD/gcc-build
@@ -71,10 +71,9 @@ function fetch_tarball {
 
 function fetch_tarballs {
     hash wget &> /dev/null && download_cmd="wget -c"
-    hash axel &> /dev/null && download_cmd="axel -a -n 8"
     if [[ -z $download_cmd ]]
     then
-        echo "Neither 'wget' nor 'axel' available for downloading" 1>&2;
+        echo "'wget' not found for downloading" 1>&2;
         exit 1;
     fi
 
@@ -175,7 +174,6 @@ function configure_gcc {
                 --disable-multilib                              \
                 --disable-install-libiberty                     \
                 --disable-werror                                \
-                --with-system-readline                          \
                 --with-system-zlib
                 #--host=x86_64-vesoft-linux                                \
                 #--build=x86_64-vesoft-linux                                \
@@ -185,14 +183,14 @@ function configure_gcc {
 
 function build_gcc {
     cd $object_dir
-    make MAKEINFO=true -j 20  |& tee build.log
+    make -j 20  |& tee build.log
     [[ $? -ne 0 ]] && exit 1
     cd $OLDPWD
 }
 
 function install_gcc {
     cd $object_dir
-    make MAKEINFO=true install-strip
+    make install-strip
     cd $OLDPWD
 }
 
