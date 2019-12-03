@@ -1,7 +1,9 @@
 .. toctree::
    :maxdepth: 2
 
-   1.data-model.md
-   2.nGQL-overview.md
+   0.introduction.md
+   1.concepts
+   2.quick-start
+   3.3.design-and-architecture
 
   
