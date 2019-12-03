@@ -38,16 +38,11 @@ bu_version=2.32
 bu_tarball=binutils-$bu_version.tar.xz
 bu_url=$url_base/binutils/$bu_tarball
 
-gdb_version=8.3
-gdb_tarball=gdb-$gdb_version.tar.xz
-gdb_url=$url_base/gdb/$gdb_tarball
-
 gcc_checksum=6069ae3737cf02bf2cb44a391ef0e937
 gmp_checksum=f58fa8001d60c4c77595fbbb62b63c1d
 mpfr_checksum=320fbc4463d4c8cb1e566929d8adc4f8
 mpc_checksum=4125404e41e482ec68282a2e687f6c73
 bu_checksum=0d174cdaf85721c5723bf52355be41e6
-gdb_checksum=bbd95b2f9b34621ad7a19a3965476314
 
 cur_dir=$PWD
 build_dir=$PWD/gcc-build
@@ -90,7 +85,6 @@ function fetch_tarballs {
     fetch_tarball "$download_cmd" $mpfr_tarball $mpfr_url $mpfr_checksum
     fetch_tarball "$download_cmd" $mpc_tarball $mpc_url $mpc_checksum
     fetch_tarball "$download_cmd" $bu_tarball $bu_url $bu_checksum
-    fetch_tarball "$download_cmd" $gdb_tarball $gdb_url $gdb_checksum
 
     cd $OLDPWD
 }
@@ -130,12 +124,6 @@ function unpack_tarballs {
         tar --skip-old-files -xf $bu_tarball -C $source_dir
     fi
 
-    if [[ ! -d $source_dir/gdb-$gdb_version ]]
-    then
-        echo "Unpacking $gdb_tarball..."
-        tar --skip-old-files -xf $gdb_tarball -C $source_dir
-    fi
-
     set +e
     cd $OLDPWD
 }
@@ -145,7 +133,6 @@ function setup_deps {
     ln -sf ../gmp-$gmp_version gmp
     ln -sf ../mpfr-$mpfr_version mpfr
     ln -sf ../mpc-$mpc_version mpc
-    ln -sf ../gdb-$gdb_version/gdb gdb
 
     #[[ ! -e config.guess.orig ]] && cp -vp config.guess config.guess.orig
     #cat > config.guess <<EOF
@@ -198,26 +185,14 @@ function configure_gcc {
 
 function build_gcc {
     cd $object_dir
-    make -j 20  |& tee build.log
+    make MAKEINFO=true -j 20  |& tee build.log
     [[ $? -ne 0 ]] && exit 1
     cd $OLDPWD
 }
 
 function install_gcc {
     cd $object_dir
-    echo install after 30 secons
-    sleep 30
     make MAKEINFO=true install-strip
-    cd $OLDPWD
-}
-
-function build_gdb {
-    cd $source_dir/gdb-$gdb_version
-    ./configure --prefix=$install_dir --with-system-readline
-    [[ $? -eq 0 ]] || exit 1
-    make -j8
-    [[ $? -eq 0 ]] || exit 1
-    make install
     cd $OLDPWD
 }
 
@@ -227,7 +202,7 @@ function finalize {
 
 function make_package {
     glibc_version=$(ldd --version | head -1 | cut -d ' ' -f4)
-    exec_file=$build_dir/vesoft-toolchain-linux-x86_64-glibc-$glibc_version.sh
+    exec_file=$build_dir/vesoft-gcc-linux-x86_64-glibc-$glibc_version.sh
     echo "Creating self-extracting package $exec_file"
     cat > $exec_file <<EOF
 #! /usr/bin/env bash
@@ -261,7 +236,6 @@ setup_deps
 configure_gcc
 build_gcc
 install_gcc
-#build_gdb
 finalize
 
 cat > $install_dir/bin/enable-gcc.sh <<EOF
