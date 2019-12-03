@@ -52,7 +52,7 @@ function check_cxx {
     hash g++ &> /dev/null && cxx_cmd=g++
     [[ -n $CXX ]] && cxx_cmd=$CXX
     [[ -z $cxx_cmd ]] && { echo "No C++ compiler found" 1>&2; exit 1; }
-    cxx_version=$($cxx_cmd -dumpfullversion)
+    cxx_version=$($cxx_cmd -dumpfullversion -dumpversion 2>/dev/null)
     local least_cxx_version=7.0.0
     if [[ $(version_cmp $cxx_version $least_cxx_version) -lt 0 ]]
     then

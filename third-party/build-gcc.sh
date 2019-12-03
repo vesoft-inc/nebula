@@ -48,9 +48,11 @@ cur_dir=$PWD
 build_dir=$PWD/gcc-build
 tarballs_dir=$build_dir/downloads
 source_dir=$build_dir/source
-object_dir=$build_dir/build
+gcc_object_dir=$build_dir/gcc-build
+bu_object_dir=$build_dir/binutils-build
 prefix=$1
 install_dir=${prefix:-$build_dir/install}/gcc/$gcc_version
+triplet=x86_64-vesoft-linux
 
 function get_checksum {
     md5sum $1 | cut -d ' ' -f 1
@@ -141,14 +143,6 @@ function setup_deps {
 #EOF
     #chmod +x config.guess
 
-    ln -sf ../binutils-$bu_version/binutils binutils
-    ln -sf ../binutils-$bu_version/gas gas
-    ln -sf ../binutils-$bu_version/gold gold
-    ln -sf ../binutils-$bu_version/gprof gprof
-    ln -sf ../binutils-$bu_version/ld ld
-    ln -sf ../binutils-$bu_version/bfd bfd
-    ln -sf ../binutils-$bu_version/opcodes opcodes
-
     cd $OLDPWD
 
     cd $source_dir/gmp-$gmp_version
@@ -159,38 +153,76 @@ function setup_deps {
 }
 
 function configure_gcc {
-    mkdir -p $object_dir
-    cd $object_dir
-    $source_dir/gcc-$gcc_version/configure --prefix=$install_dir                           \
-                --with-pkgversion="Nebula Graph Build"          \
-                --enable-shared                                 \
-                --enable-threads=posix                          \
-                --enable-__cxa_atexit                           \
-                --enable-clocale=gnu                            \
-                --enable-languages=c,c++                        \
-                --enable-lto                                    \
-                --disable-bootstrap                              \
-                --disable-nls                                   \
-                --disable-multilib                              \
-                --disable-install-libiberty                     \
-                --disable-werror                                \
-                --with-system-zlib
-                #--host=x86_64-vesoft-linux                                \
-                #--build=x86_64-vesoft-linux                                \
+    mkdir -p $gcc_object_dir
+    cd $gcc_object_dir
+    $source_dir/gcc-$gcc_version/configure      \
+        --prefix=$install_dir                   \
+        --with-pkgversion="Nebula Graph Build"  \
+        --enable-shared                         \
+        --enable-threads=posix                  \
+        --enable-__cxa_atexit                   \
+        --enable-clocale=gnu                    \
+        --enable-languages=c,c++                \
+        --enable-lto                            \
+        --enable-bootstrap                      \
+        --disable-nls                           \
+        --disable-multilib                      \
+        --disable-install-libiberty             \
+        --with-system-zlib                      \
+        --build=$triplet                        \
+        --host=$triplet                         \
+        --host=$triplet                         \
+        --disable-werror
     [[ $? -eq 0 ]] || exit 1
     cd $OLDPWD
 }
 
 function build_gcc {
-    cd $object_dir
-    make -j 20  |& tee build.log
+    cd $gcc_object_dir
+    make -s -j 20  |& tee build.log
     [[ $? -ne 0 ]] && exit 1
     cd $OLDPWD
 }
 
 function install_gcc {
-    cd $object_dir
-    make install-strip
+    cd $gcc_object_dir
+    make -s -j8 install-strip
+    [[ $? -ne 0 ]] && exit 1
+    cd $OLDPWD
+}
+
+function configure_binutils {
+    mkdir -p $bu_object_dir
+    cd $bu_object_dir
+    $source_dir/binutils-$bu_version/configure  \
+        --prefix=$install_dir                   \
+        --with-pkgversion="Nebula Graph Build"  \
+        --disable-shared                        \
+        --disable-nls                           \
+        --enable-gold                           \
+        --enable-ld=default                     \
+        --with-system-zlib                      \
+        --build=$triplet                        \
+        --host=$triplet                         \
+        --host=$triplet                         \
+        --disable-werror
+
+    cd $OLDPWD
+}
+
+function build_binutils {
+    cd $bu_object_dir
+    make -s -j 20 || exit 1
+    cd $OLDPWD
+}
+
+function install_binutils {
+    cd $bu_object_dir
+    make -s install-strip || exit 1
+    cd $OLDPWD
+    cd $install_dir
+    cp -vp bin/as libexec/gcc/$triplet/$gcc_version
+    cp -vp bin/ld* libexec/gcc/$triplet/$gcc_version
     cd $OLDPWD
 }
 
@@ -199,7 +231,7 @@ function finalize {
 }
 
 function make_package {
-    glibc_version=$(ldd --version | head -1 | cut -d ' ' -f4)
+    glibc_version=$(ldd --version | head -1 | cut -d ' ' -f4 | cut -d '-' -f1)
     exec_file=$build_dir/vesoft-gcc-$gcc_version-linux-x86_64-glibc-$glibc_version.sh
     echo "Creating self-extracting package $exec_file"
     cat > $exec_file <<EOF
@@ -231,9 +263,15 @@ start_time=$(date +%s)
 fetch_tarballs
 unpack_tarballs
 setup_deps
+
 configure_gcc
 build_gcc
 install_gcc
+
+configure_binutils
+build_binutils
+install_binutils
+
 finalize
 
 cat > $install_dir/bin/enable-gcc.sh <<EOF
