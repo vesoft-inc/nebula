@@ -267,7 +267,7 @@ Player 表结构如下：
 #### Spark 配置信息
 
 下表给出了一些示例，所有可配置项请见 [Spark Available Properties](http://spark.apache.org/docs/latest/configuration.html#available-properties)。
-注意：为确保 **Nebula Graph** Spark Writer 正常使用，请确保 Spark、Hive、Hadoop 版本至少分别为 2.0、2.3、2.0。
+**注意：** 为确保 **Nebula Graph Spark Writer** 正常使用，请确保 Spark、Hive、Hadoop 版本至少分别为 2.0、2.3、2.0。
 
 | 字段 | 默认值 | 是否必须 | 说明 |
 |  --- | ---  |  --- | ---  |
