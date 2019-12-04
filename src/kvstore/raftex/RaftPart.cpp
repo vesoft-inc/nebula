@@ -542,6 +542,10 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
                                                         LogType logType,
                                                         std::string log,
                                                         AtomicOp op) {
+    if (blocking_ && (logType == LogType::NORMAL || logType == LogType::ATOMIC_OP)) {
+        return AppendLogResult::E_WRITE_BLOCKING;
+    }
+
     LogCache swappedOutLogs;
     auto retFuture = folly::Future<AppendLogResult>::makeEmpty();
 
