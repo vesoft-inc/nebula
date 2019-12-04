@@ -91,6 +91,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
 
     std::vector<storage::cpp2::Edge> edges(rows_.size() * 2);   // inbound and outbound
     auto index = 0;
+    Getters getters;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto sid = row->srcid();
@@ -99,7 +100,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         if (!status.ok()) {
             return status;
         }
-        auto ovalue = sid->eval();
+        auto ovalue = sid->eval(getters);
         if (!ovalue.ok()) {
             return ovalue.status();
         }
@@ -116,7 +117,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         if (!status.ok()) {
             return status;
         }
-        ovalue = did->eval();
+        ovalue = did->eval(getters);
         if (!ovalue.ok()) {
             return ovalue.status();
         }
@@ -139,7 +140,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
                 return status;
             }
 
-            ovalue = expr->eval();
+            ovalue = expr->eval(getters);
             if (!ovalue.ok()) {
                 return ovalue.status();
             }

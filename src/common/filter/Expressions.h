@@ -24,6 +24,16 @@ enum class ColumnType {
 
 std::string columnTypeToString(ColumnType type);
 
+
+struct Getters {
+    std::function<OptVariantType()>                                       getEdgeRank;
+    std::function<OptVariantType(const std::string&)>                     getInputProp;
+    std::function<OptVariantType(const std::string&)>                     getVariableProp;
+    std::function<OptVariantType(const std::string&, const std::string&)> getSrcTagProp;
+    std::function<OptVariantType(const std::string&, const std::string&)> getDstTagProp;
+    std::function<OptVariantType(const std::string&, const std::string&)> getAliasProp;
+};
+
 class ExpressionContext final {
 public:
     using EdgeInfo = boost::variant<std::string, EdgeType>;
@@ -148,19 +158,6 @@ public:
         return space_;
     }
 
-    struct Getters {
-        std::function<OptVariantType()>                                       getEdgeRank;
-        std::function<OptVariantType(const std::string&)>                     getInputProp;
-        std::function<OptVariantType(const std::string&)>                     getVariableProp;
-        std::function<OptVariantType(const std::string&, const std::string&)> getSrcTagProp;
-        std::function<OptVariantType(const std::string&, const std::string&)> getDstTagProp;
-        std::function<OptVariantType(const std::string&, const std::string&)> getAliasProp;
-    };
-
-    Getters& getters() {
-        return getters_;
-    }
-
     void print() const;
 
     bool isOverAllEdge() const { return overAll_; }
@@ -168,7 +165,6 @@ public:
     void setOverAllEdge() { overAll_ = true; }
 
 private:
-    Getters                                   getters_;
     std::unordered_set<PropPair>              srcTagProps_;
     std::unordered_set<PropPair>              dstTagProps_;
     std::unordered_set<PropPair>              aliasProps_;
@@ -196,7 +192,7 @@ public:
 
     virtual Status MUST_USE_RESULT prepare() = 0;
 
-    virtual OptVariantType eval() const = 0;
+    virtual OptVariantType eval(Getters &getters) const = 0;
 
     virtual bool isInputExpression() const {
         return kind_ == kInputProp;
@@ -435,7 +431,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -466,7 +462,7 @@ public:
 
     explicit InputPropertyExpression(std::string *prop);
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 };
@@ -481,7 +477,7 @@ public:
 
     DestPropertyExpression(std::string *tag, std::string *prop);
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 };
@@ -496,7 +492,7 @@ public:
 
     VariablePropertyExpression(std::string *var, std::string *prop);
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 };
@@ -516,7 +512,7 @@ public:
         prop_.reset(new std::string(_TYPE));
     }
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 };
@@ -536,7 +532,7 @@ public:
         prop_.reset(new std::string(_SRC));
     }
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 };
@@ -556,7 +552,7 @@ public:
         prop_.reset(new std::string(_DST));
     }
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 };
@@ -576,7 +572,7 @@ public:
         prop_.reset(new std::string(_RANK));
     }
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 };
@@ -591,7 +587,7 @@ public:
 
     SourcePropertyExpression(std::string *tag, std::string *prop);
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 };
@@ -626,7 +622,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -676,7 +672,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -712,7 +708,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -753,7 +749,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -792,7 +788,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -843,7 +839,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -894,7 +890,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -947,7 +943,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    OptVariantType eval(Getters &getters) const override;
 
     Status MUST_USE_RESULT prepare() override;
 

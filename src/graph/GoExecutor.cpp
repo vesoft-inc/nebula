@@ -166,6 +166,7 @@ Status GoExecutor::prepareFrom() {
         auto space = ectx()->rctx()->session()->space();
         expCtx_->setSpace(space);
         auto vidList = clause->vidList();
+        Getters getters;
         for (auto *expr : vidList) {
             expr->setContext(expCtx_.get());
 
@@ -173,7 +174,7 @@ Status GoExecutor::prepareFrom() {
             if (!status.ok()) {
                 break;
             }
-            auto value = expr->eval();
+            auto value = expr->eval(getters);
             if (!value.ok()) {
                 status = Status::Error();
                 break;
@@ -1026,7 +1027,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                 while (iter) {
                     std::vector<SupportedType> colTypes;
                     bool saveTypeFlag = false;
-                    auto &getters = expCtx_->getters();
+                    Getters getters;
                     getters.getAliasProp = [&iter,
                                             &spaceId,
                                             &edgeType,
@@ -1153,7 +1154,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
 
                     // Evaluate filter
                     if (whereWrapper_->filter_ != nullptr) {
-                        auto value = whereWrapper_->filter_->eval();
+                        auto value = whereWrapper_->filter_->eval(getters);
                         if (!value.ok()) {
                             doError(std::move(value).status(),
                                     ectx()->getGraphStats()->getGoStats());
@@ -1170,7 +1171,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     for (auto *column : yields_) {
                         colTypes.emplace_back(SupportedType::UNKNOWN);
                         auto *expr = column->expr();
-                        auto value = expr->eval();
+                        auto value = expr->eval(getters);
                         if (!value.ok()) {
                             doError(std::move(value).status(),
                                     ectx()->getGraphStats()->getGoStats());

@@ -154,6 +154,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
     std::shared_ptr<SchemaWriter> outputSchema;
     std::unique_ptr<RowSetWriter> rsWriter;
     auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
+    Getters getters;
     for (auto &resp : all) {
         if (!resp.__isset.vertices) {
             continue;
@@ -192,7 +193,6 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             }
 
             auto writer = std::make_unique<RowWriter>(outputSchema);
-            auto &getters = expCtx_->getters();
             getters.getAliasProp =
                 [&vreader, &vschema] (const std::string&,
                                       const std::string &prop) -> OptVariantType {
@@ -200,7 +200,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             };
             for (auto *column : yields_) {
                 auto *expr = column->expr();
-                auto value = expr->eval();
+                auto value = expr->eval(getters);
                 if (!value.ok()) {
                     doError(std::move(value).status(),
                             ectx()->getGraphStats()->getFetchVerticesStats());
@@ -249,13 +249,14 @@ Status FetchVerticesExecutor::setupVidsFromExpr() {
 
     expCtx_->setSpace(spaceId_);
     auto vidList = sentence_->vidList();
+    Getters getters;
     for (auto *expr : vidList) {
         expr->setContext(expCtx_.get());
         status = expr->prepare();
         if (!status.ok()) {
             break;
         }
-        auto value = expr->eval();
+        auto value = expr->eval(getters);
         if (!value.ok()) {
             return value.status();
         }

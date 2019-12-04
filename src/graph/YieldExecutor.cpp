@@ -200,7 +200,7 @@ Status YieldExecutor::executeInputs() {
     auto rsWriter = std::make_unique<RowSetWriter>(outputSchema);
     auto visitor =
         [inputs, &outputSchema, &rsWriter, &status, this] (const RowReader *reader) -> Status {
-        auto &getters = expCtx_->getters();
+        Getters getters;
         getters.getVariableProp = [inputs, reader] (const std::string &prop) {
             return Collector::getProp(inputs->schema().get(), prop, reader);
         };
@@ -208,7 +208,7 @@ Status YieldExecutor::executeInputs() {
             return Collector::getProp(inputs->schema().get(), prop, reader);
         };
         if (filter_ != nullptr) {
-            auto val = filter_->eval();
+            auto val = filter_->eval(getters);
             if (!val.ok()) {
                 return val.status();
             }
@@ -221,7 +221,7 @@ Status YieldExecutor::executeInputs() {
             auto writer = std::make_unique<RowWriter>(outputSchema);
             for (auto col : yields_) {
                 auto *expr = col->expr();
-                auto value = expr->eval();
+                auto value = expr->eval(getters);
                 if (!value.ok()) {
                     return value.status();
                 }
@@ -235,7 +235,7 @@ Status YieldExecutor::executeInputs() {
             auto i = 0u;
             for (auto col : yields_) {
                 auto *expr = col->expr();
-                auto value = expr->eval();
+                auto value = expr->eval(getters);
                 if (!value.ok()) {
                     return value.status();
                 }
@@ -318,7 +318,7 @@ Status YieldExecutor::getOutputSchema(const InterimResult *inputs,
     std::vector<VariantType> record;
     record.reserve(yields_.size());
     auto visitor = [inputSchema, &record, this] (const RowReader *reader) -> Status {
-        auto &getters = expCtx_->getters();
+        Getters getters;
         getters.getVariableProp = [inputSchema, reader] (const std::string &prop) {
             return Collector::getProp(inputSchema, prop, reader);
         };
@@ -327,7 +327,7 @@ Status YieldExecutor::getOutputSchema(const InterimResult *inputs,
         };
         for (auto *column : yields_) {
             auto *expr = column->expr();
-            auto value = expr->eval();
+            auto value = expr->eval(getters);
             if (!value.ok()) {
                 return value.status();
             }
@@ -344,11 +344,12 @@ Status YieldExecutor::executeConstant() {
     auto size = yields_.size();
     std::vector<VariantType> values;
     values.reserve(size);
+    Getters getters;
 
     if (aggFuns_.empty()) {
         for (auto *col : yields_) {
             auto expr = col->expr();
-            auto v = expr->eval();
+            auto v = expr->eval(getters);
             if (!v.ok()) {
                 return v.status();
             }
@@ -380,9 +381,10 @@ Status YieldExecutor::executeConstant() {
 
 Status YieldExecutor::AggregateConstant() {
     auto i = 0u;
+    Getters getters;
     for (auto col : yields_) {
         auto *expr = col->expr();
-        auto value = expr->eval();
+        auto value = expr->eval(getters);
         if (!value.ok()) {
             return value.status();
         }

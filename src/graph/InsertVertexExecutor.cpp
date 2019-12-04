@@ -104,6 +104,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
     expCtx_->setSpace(spaceId_);
 
     std::vector<storage::cpp2::Vertex> vertices(rows_.size());
+    Getters getters;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto rid = row->id();
@@ -113,7 +114,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
         if (!status.ok()) {
             return status;
         }
-        auto ovalue = rid->eval();
+        auto ovalue = rid->eval(getters);
         if (!ovalue.ok()) {
             return ovalue.status();
         }
@@ -132,7 +133,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
             if (!status.ok()) {
                 return status;
             }
-            ovalue = expr->eval();
+            ovalue = expr->eval(getters);
             if (!ovalue.ok()) {
                 return ovalue.status();
             }
