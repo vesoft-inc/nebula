@@ -41,7 +41,7 @@ function check_cmake {
     local least_cmake_version=3.5.0
     if [[ $(version_cmp $cmake_version $least_cmake_version) -lt 0 ]]
     then
-        echo "cmake $least_cmake_version or later required" 1>&2
+        echo "cmake $least_cmake_version or higher required" 1>&2
         exit 1
     fi
 }

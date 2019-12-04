@@ -35,7 +35,7 @@ then
     hash axel &> /dev/null && download_cmd="axel -a -n 8"
     if [[ -z $download_cmd ]]
     then
-        echo "Neither 'wget' nor 'axel' available for downloading" 1>&2;
+        echo "'wget' not found for downloading" 1>&2;
         exit 1;
     fi
 

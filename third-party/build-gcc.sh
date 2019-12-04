@@ -55,6 +55,7 @@ bu_object_dir=$root_dir/binutils-build
 prefix=$1
 install_dir=${prefix:-$root_dir/install}/gcc/$gcc_version
 triplet=x86_64-vesoft-linux
+distro=$(lsb_release -si)
 
 # Download source tarballs
 function get_checksum {
@@ -249,7 +250,7 @@ function finalize {
 # Build a self-extractable package
 function make_package {
     glibc_version=$(ldd --version | head -1 | cut -d ' ' -f4 | cut -d '-' -f1)
-    exec_file=$root_dir/vesoft-gcc-$gcc_version-linux-x86_64-glibc-$glibc_version.sh
+    exec_file=$root_dir/vesoft-gcc-$gcc_version-$distro-x86_64-glibc-$glibc_version.sh
     echo "Creating self-extractable package $exec_file"
     cat > $exec_file <<EOF
 #! /usr/bin/env bash
@@ -291,7 +292,7 @@ install_binutils
 
 finalize
 
-cat > $install_dir/bin/enable-gcc.sh <<EOF
+cat > $install_dir/enable-gcc.sh <<EOF
 this_path=\$(dirname \$(readlink -f \$BASH_SOURCE))
 [[ ":\$PATH:" =~ ":\$this_path:" ]] || export PATH=\$this_path:\$PATH
 export OLD_CC=\$CC
@@ -303,7 +304,7 @@ echo "Only PATH was setup so as not to pollute your library path"
 echo "You could run 'export LD_LIBRARY_PATH=\$this_path/lib64:\\\$LD_LIBRARY_PATH'"
 EOF
 
-cat > $install_dir/bin/disable-gcc.sh <<EOF
+cat > $install_dir/disable-gcc.sh <<EOF
 this_path=\$(dirname \$(readlink -f \$BASH_SOURCE))
 export PATH=\$(echo \$PATH | sed "s#\$this_path:##")
 export CC=\$OLD_CC
