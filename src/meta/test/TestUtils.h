@@ -7,6 +7,7 @@
 #ifndef META_TEST_TESTUTILS_H_
 #define META_TEST_TESTUTILS_H_
 
+#include "fs/TempDir.h"
 #include "base/Base.h"
 #include "test/ServerContext.h"
 #include "kvstore/KVStore.h"
@@ -354,6 +355,20 @@ public:
             return Status::Error("Create user fail");
         }
     }
+};
+
+// Basic Fixture for meta processor testing
+class MetaProcessorTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        root_.reset(new(std::nothrow) fs::TempDir("/tmp/MetaProcessorTest.XXXXXX"));
+        ASSERT_NE(root_, nullptr);
+        kv_ = TestUtils::initKV(root_->path());
+        ASSERT_NE(kv_, nullptr);
+    }
+
+    std::unique_ptr<fs::TempDir> root_ = nullptr;
+    std::unique_ptr<kvstore::KVStore> kv_ = nullptr;
 };
 
 }  // namespace meta

@@ -354,6 +354,72 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         ASSERT_EQ(users, resp.get_users());
     }
 }
+
+TEST_F(MetaProcessorTest, DuplicateUserTest) {
+    constexpr char userName[] = "Testing";
+    {
+        std::array<std::thread, 4> threads;
+        cpp2::CreateUserReq req;
+        req.set_missing_ok(false);
+        req.set_encoded_pwd("Testing");
+        decltype(req.user) user;
+        user.set_account(userName);
+        user.set_is_lock(false);
+        user.set_max_queries_per_hour(0);
+        user.set_max_updates_per_hour(0);
+        user.set_max_connections_per_hour(0);
+        user.set_max_user_connections(0);
+        req.set_user(std::move(user));
+        for (auto& t : threads) {
+            t = std::thread([this, &req]() {
+                auto *processor = CreateUserProcessor::instance(kv_.get());
+                auto f = processor->getFuture();
+                processor->process(req);
+                // not check for don't know which succeeded
+                f.wait();
+            });
+        }
+        for (auto& t : threads) {
+            t.join();
+        }
+    }
+
+    // Check
+    {
+        cpp2::ListUsersReq req;
+        auto* processor = ListUsersProcessor::instance(kv_.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(1, resp.get_users().size());
+    }
+
+    // Drop
+    {
+        std::array<std::thread, 4> threads;
+        std::atomic_uint8_t succeeded(0);
+        cpp2::DropUserReq req;
+        req.set_account(userName);
+        req.set_missing_ok(false);
+        for (auto& t : threads) {
+            t = std::thread([this, &req, &succeeded]() {
+                auto* processor = DropUserProcessor::instance(kv_.get());
+                auto f = processor->getFuture();
+                processor->process(req);
+                auto resp = std::move(f).get();
+                if (resp.get_code() == cpp2::ErrorCode::SUCCEEDED) {
+                    ++succeeded;
+                }
+            });
+        }
+        for (auto& t : threads) {
+            t.join();
+        }
+        ASSERT_EQ(1, succeeded);
+    }
+}
+
 }  // namespace meta
 }  // namespace nebula
 

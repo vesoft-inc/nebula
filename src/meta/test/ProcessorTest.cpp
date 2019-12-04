@@ -1550,13 +1550,10 @@ TEST(ProcessorTest, AlterEdgeTest) {
 
 /// Check the consensus of meta when parallel modify
 
-class MetaProcessorTestWithHosts : public ::testing::Test {
+class MetaProcessorTestWithHosts : public MetaProcessorTest {
 protected:
     void SetUp() override {
-        root_.reset(new(std::nothrow) fs::TempDir("/tmp/MetaProcessorTest.XXXXXX"));
-        ASSERT_NE(root_, nullptr);
-        kv_ = TestUtils::initKV(root_->path());
-        ASSERT_NE(kv_, nullptr);
+        MetaProcessorTest::SetUp();
         ASSERT_EQ(4, TestUtils::createSomeHosts(kv_.get()));
     }
 
