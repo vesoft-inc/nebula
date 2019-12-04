@@ -84,6 +84,7 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
 * Build
   * [Build Source Code](3.build-develop-and-administration/1.build/1.build-source-code.md)
   * [Build By Docker](3.build-develop-and-administration/1.build/2.build-by-docker.md)
+  * [Build With rpm Packages](3.build-develop-and-administration/1.build/3.build-rpm.md)
 * Develop and Interface
   * [Key Value API](3.build-develop-and-administration/2.develop-and-interface/kv-interfaces.md)
   * [Nebula Graph Clients](1.overview/2.quick-start/3.supported-clients.md)

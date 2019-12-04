@@ -83,6 +83,8 @@
 * 编译
   * [编译源代码](3.build-develop-and-administration/1.build/1.build-source-code.md)
   * [使用 Docker 编译](3.build-develop-and-administration/1.build/2.build-by-docker.md)
+  * [使用 rpm 包构建](3.build-develop-and-administration/1.build/3.build-rpm.md)
+
 * 源码开发和 API
   * [Key Value 接口](3.build-develop-and-administration/2.develop-and-interface/kv-interfaces.md)
   * [Nebula Graph 客户端](1.overview/2.quick-start/3.supported-clients.md)

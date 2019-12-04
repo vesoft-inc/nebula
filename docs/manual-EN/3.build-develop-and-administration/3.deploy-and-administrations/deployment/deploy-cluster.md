@@ -24,21 +24,17 @@ By default, the config files are under `/usr/local/nebula/etc`, you should modif
 
 In order to enable multi copy Meta services, you should set the meta addresses split by comma into `meta_server_addrs`.
 
-Use `data_path` to set `Meta` and `Storage`'s underlying storage directory.
-
 ## Start Up Nebula Graph Cluster
 
 Currently, we use `scripts/services.sh` to manage the **Nebula Graph** cluster.
 
 You can `start`, `stop` and `restart` the cluster with this script.
 
-It looks like the following command:
+Example command is as follows:
 
 ```bash
 scripts/services.sh <start|stop|restart|status|kill>
 ```
-
-The metas, storages and graphs contain the host of themselves.
 
 ## Connect to Nebula Graph
 

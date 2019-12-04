@@ -4,7 +4,7 @@
 
 ## 下载并安装包
 
-目前，**Nebula Graph** 官方提供 `CentOS 7.5`， `CentOS 6.5`，`Ubuntu 1604` 和 `Ubuntu 1804`包，rpm 或 deb 包下载点击[此处](https://github.com/vesoft-inc/nebula/releases)。
+目前，**Nebula Graph** 官方提供 `CentOS 7.5`， `CentOS 6.5`，`Ubuntu 1604` 和 `Ubuntu 1804` 包，rpm 或 deb 包下载点击[此处](https://github.com/vesoft-inc/nebula/releases)。
 
 ![image](https://user-images.githubusercontent.com/42762957/67747062-e0fe1e00-fa62-11e9-9640-008d2c82bae3.png)
 
@@ -23,8 +23,6 @@ dpkg -i nebula-{VERSION}.{SYSTEM_VERSION}.amd64.deb
 配置文件默认目录为 `/usr/local/nebula/etc`，请更改 `meta_server_addrs`，配置 Meta Server 的地址。
 
 启动多副本 Meta 服务需将多个地址配置到 `meta_server_addrs`，地址间需使用逗号分隔。
-
-使用 `data_path` 设置 `Meta` 的底层存储路径。
 
 ### 启动 Nebula Graph 集群
 
