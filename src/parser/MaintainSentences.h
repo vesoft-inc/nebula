@@ -62,6 +62,7 @@ public:
     void setStringValue(std::string *v) {
         defaultValue_ = *v;
         hasDefault_ = true;
+        delete v;
     }
 
     std::string getStringValue() {
