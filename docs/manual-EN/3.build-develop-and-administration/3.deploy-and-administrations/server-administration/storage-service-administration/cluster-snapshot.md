@@ -48,6 +48,6 @@ Now the deletes snapshot is not in the show snapshots list.
 
 ## Tips
 
-- When the system structure changes, it is better to create a snapshot immediately. For example, when you add host, drop host, create space, drop space or balance the data.
+- When the system structure changes, it is better to create a snapshot immediately. For example, when you add host, drop host, create space, drop space or balance.
 - The current version does not support customized snapshot directory. The snapshots are created in the `data_path/nebula` directory by default.
 - The current version does not support snapshot restore. Users need to write a shell script based on their actual productions to restore snapshots. The implementation logic is rather simple, you copy the snapshots of the engine servers to the specified folder, set this folder to `data_path/`, then start the cluster.

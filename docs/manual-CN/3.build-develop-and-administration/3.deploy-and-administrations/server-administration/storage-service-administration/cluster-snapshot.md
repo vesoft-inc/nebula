@@ -2,7 +2,7 @@
 
 ## 创建快照
 
-`CREATE SNAPSHOT` 命令可对整个集群创建当前时间点的快照，快照名称由 meta server 的时间戳组成。在创建过程中可能会创建失败，当前版本不支持对创建失败的快照进行自动垃圾回收，后续将在 meta Server 中开发 cluster checker 功能，通过异步线程检查集群状态，并自动回收创建失败的快照垃圾文件。当前版本如果快照创建失败，必须通过 `DROP SNAPSHOT` 命令清除无效的快照。
+`CREATE SNAPSHOT` 命令可对整个集群创建当前时间点的快照，快照名称由 meta server 的时间戳组成。在创建过程中可能会创建失败，当前版本不支持对创建失败的快照进行自动垃圾回收，后续将在 meta server 中开发 cluster checker 功能，通过异步线程检查集群状态，并自动回收创建失败的快照垃圾文件。当前版本如果快照创建失败，必须通过 `DROP SNAPSHOT` 命令清除无效的快照。
 
 当前版本不支持对指定的图空间创建快照，当执行 `CREATE SNAPSHOT` 后，将对集群中的所有图空间创建快照。例如：
 
@@ -13,7 +13,7 @@ Execution succeeded (Time spent: 22892/23923 us)
 
 ## 查看快照
 
-`SHOW SNAPSHOT` 命令可查看集群中所有快照状态（VALID 或 INVALID）、名称和创建快照时所有 storage Server 的 IP 地址。例如：
+`SHOW SNAPSHOT` 命令可查看集群中所有快照状态（VALID 或 INVALID）、名称和创建快照时所有 storage server 的 IP 地址。例如：
 
 ```ngql
 nebula> SHOW SNAPSHOTS;
@@ -48,6 +48,6 @@ nebula> SHOW SNAPSHOTS;
 
 ## 注意事项
 
-- 当系统结构发生变化后，最好立刻创建快照，例如在 add host、drop host、create space、drop space、balance等操作之后。
+- 当系统结构发生变化后，最好立刻创建快照，例如在 add host、drop host、create space、drop space、balance 等操作之后。
 - 当前版本暂未提供用户指定快照路径的功能，快照将默认创建在 `data_path/nebula` 目录下。
-- 当前版本暂未提供快照恢复功能，需要用户根据实际的生产环境编写 shell 脚本实现。实现逻辑也比较简单，拷贝各 engine Server 的快照到指定的文件夹下，并将此文件夹设置为 `data_path`，然后启动集群即可。
+- 当前版本暂未提供快照恢复功能，需要用户根据实际的生产环境编写 shell 脚本实现。实现逻辑也比较简单，拷贝各 engine server 的快照到指定的文件夹下，并将此文件夹设置为 `data_path`，然后启动集群即可。
