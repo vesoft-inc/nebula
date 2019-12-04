@@ -23,8 +23,6 @@ ExternalProject_Add(
     BUILD_IN_SOURCE 1
     BUILD_COMMAND make -s -j${BUILDING_JOBS_NUM}
     INSTALL_COMMAND make -s install -j${BUILDING_JOBS_NUM}
-    LOG_BUILD 1
-    LOG_INSTALL 1
 )
 
 ExternalProject_Add_Step(${name} clean

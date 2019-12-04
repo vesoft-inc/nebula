@@ -23,8 +23,6 @@ ExternalProject_Add(
     BUILD_COMMAND make -s -j${BUILDING_JOBS_NUM}
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND make -s -j${BUILDING_JOBS_NUM} install
-    LOG_BUILD 1
-    LOG_INSTALL 1
 )
 
 ExternalProject_Add_Step(glog pre-configure

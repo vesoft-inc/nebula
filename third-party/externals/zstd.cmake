@@ -23,8 +23,6 @@ ExternalProject_Add(
         make -e -s -j${BUILDING_JOBS_NUM}
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND make -s install -j${BUILDING_JOBS_NUM} PREFIX=${CMAKE_INSTALL_PREFIX}
-    LOG_BUILD 1
-    LOG_INSTALL 1
 )
 
 ExternalProject_Add_Step(${name} clean

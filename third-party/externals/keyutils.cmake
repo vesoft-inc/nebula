@@ -22,8 +22,6 @@ ExternalProject_Add(
                          INCLUDEDIR=/include LIBDIR=/lib
                          CFLAGS=-fPIC NO_SOLIB=1 DESTDIR=${CMAKE_INSTALL_PREFIX}
                          install
-    LOG_BUILD 1
-    LOG_INSTALL 1
 )
 
 ExternalProject_Add_Step(${name} clean

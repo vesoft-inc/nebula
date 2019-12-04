@@ -19,10 +19,6 @@ ExternalProject_Add(
     BUILD_COMMAND install -d ${CMAKE_INSTALL_PREFIX}/include
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND cp -r fatal ${CMAKE_INSTALL_PREFIX}/include
-    LOG_CONFIGURE TRUE
-    LOG_BUILD TRUE
-    LOG_INSTALL TRUE
-    LOG_MERGED_STDOUTERR TRUE
 )
 
 ExternalProject_Add_Step(${name} clean

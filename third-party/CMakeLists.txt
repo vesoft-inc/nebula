@@ -69,7 +69,6 @@ set(common_cmake_args
 
 set(common_configure_args
     --prefix=${CMAKE_INSTALL_PREFIX}
-    --quiet
 )
 
 set(common_configure_envs

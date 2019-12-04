@@ -24,10 +24,6 @@ ExternalProject_Add(
     BUILD_COMMAND make -s -j${BUILDING_JOBS_NUM}
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND make -s -j${BUILDING_JOBS_NUM} install
-    LOG_CONFIGURE TRUE
-    LOG_BUILD TRUE
-    LOG_INSTALL TRUE
-    LOG_MERGED_STDOUTERR TRUE
 )
 
 ExternalProject_Add_Step(${name} clean

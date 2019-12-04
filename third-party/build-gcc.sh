@@ -62,6 +62,7 @@ distro=$(lsb_release -si)
 
 # Guess number of building jobs
 source $this_dir/guess-building-jobs-num.sh
+echo "Building GCC-$gcc_version with $building_jobs_num jobs"
 
 # Download source tarballs
 function get_checksum {
@@ -343,7 +344,7 @@ EOF
 make_package
 end_time=$(date +%s)
 
-echo "GCC-$gcc_version has been installed to prefix=$install_dir"
+echo "GCC-$gcc_version has been installed to $install_dir"
 echo "$((end_time - start_time)) seconds been taken."
 echo "Run 'source $install_dir/enable' to start using."
 echo "Run 'source $install_dir/disable' to disable it."

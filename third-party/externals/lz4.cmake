@@ -25,8 +25,6 @@ ExternalProject_Add(
              BUILD_SHARED=no
              -j${BUILDING_JOBS_NUM}
              PREFIX=${CMAKE_INSTALL_PREFIX}
-    LOG_BUILD 1
-    LOG_INSTALL 1
 )
 
 ExternalProject_Add_Step(${name} clean

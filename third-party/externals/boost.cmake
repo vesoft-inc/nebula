@@ -36,8 +36,6 @@ ExternalProject_Add(
             variant=release
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND ""
-    LOG_BUILD 0
-    LOG_INSTALL 0
 )
 
 ExternalProject_Add_Step(${name} setup-compiler

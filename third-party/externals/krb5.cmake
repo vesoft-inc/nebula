@@ -24,8 +24,6 @@ ExternalProject_Add(
     INSTALL_COMMAND
         env PATH=${BUILDING_PATH}
         make -s install -j${BUILDING_JOBS_NUM} -C src
-    LOG_BUILD 1
-    LOG_INSTALL 1
 )
 
 ExternalProject_Add_Step(krb5 mannual-configure

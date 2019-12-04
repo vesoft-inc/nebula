@@ -18,8 +18,6 @@ ExternalProject_Add(
     BUILD_IN_SOURCE 1
     CMAKE_ARGS
         ${common_cmake_args}
-    LOG_BUILD 1
-    LOG_INSTALL 1
 )
 
 ExternalProject_Add_Step(${name} clean
