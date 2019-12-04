@@ -29,6 +29,12 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
     auto ret = getTagId(req.get_space_id(), req.get_tag_name());
     if (ret.ok()) {
+        if (req.get_if_not_exists()) {
+            resp_.set_id(to(ret.value(), EntryType::TAG));
+            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+            onFinished();
+            return;
+        }
         LOG(ERROR) << "Create Tag Failed :" << req.get_tag_name() << " has existed";
         resp_.set_id(to(ret.value(), EntryType::TAG));
         resp_.set_code(cpp2::ErrorCode::E_EXISTED);

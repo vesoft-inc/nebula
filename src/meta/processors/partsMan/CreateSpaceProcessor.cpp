@@ -18,6 +18,12 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto properties = req.get_properties();
     auto spaceRet = getSpaceId(properties.get_space_name());
     if (spaceRet.ok()) {
+        if (req.get_if_not_exists()) {
+            resp_.set_id(to(spaceRet.value(), EntryType::SPACE));
+            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+            onFinished();
+            return;
+        }
         LOG(ERROR) << "Create Space Failed : Space " << properties.get_space_name()
                    << " have existed!";
         resp_.set_id(to(spaceRet.value(), EntryType::SPACE));

@@ -137,6 +137,12 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    {
+        std::string query = "CREATE SPACE if not exists default_space";
+        cpp2::ExecutionResponse resp;
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
     // show parts of default_space
     {
         cpp2::ExecutionResponse resp;
@@ -169,6 +175,12 @@ TEST_F(SchemaTest, metaCommunication) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG tag1()";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG if not exists tag1()";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -373,6 +385,12 @@ TEST_F(SchemaTest, metaCommunication) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE edge1()";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE if not exists edge1()";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
