@@ -282,8 +282,7 @@ tail -n+\$archive_offset \$0 | tar --numeric-owner -xJf - -C \$prefix
 echo "GCC-$gcc_version has been installed to \$prefix/gcc/$gcc_version"
 echo "Performing usability tests"
 \$prefix/gcc/$gcc_version/cxx-compiler-usability-test.sh
-echo "All tests passed, now you are ready to go."
-echo "Run '\$prefix/gcc/$gcc_version/enable-gcc.sh' to enable it."
+echo "Run '\$prefix/gcc/$gcc_version/enable' to start using."
 
 exit 0
 
@@ -313,7 +312,7 @@ finalize
 
 usability_test
 
-cat > $install_dir/enable-gcc.sh <<EOF
+cat > $install_dir/enable <<EOF
 this_path=\$(dirname \$(readlink -f \$BASH_SOURCE))
 [[ ":\$PATH:" =~ ":\$this_path/bin:" ]] || export PATH=\$this_path/bin:\$PATH
 export OLD_CC=\$CC
@@ -325,7 +324,7 @@ echo "Only PATH was setup so as not to pollute your library path"
 echo "You could run 'export LD_LIBRARY_PATH=\$this_path/lib64:\\\$LD_LIBRARY_PATH'"
 EOF
 
-cat > $install_dir/disable-gcc.sh <<EOF
+cat > $install_dir/disable <<EOF
 this_path=\$(dirname \$(readlink -f \$BASH_SOURCE))
 export PATH=\$(echo \$PATH | sed "s#\$this_path/bin:##")
 export CC=\$OLD_CC
@@ -338,5 +337,5 @@ end_time=$(date +%s)
 
 echo "GCC-$gcc_version has been installed to prefix=$install_dir"
 echo "$((end_time - start_time)) seconds been taken."
-echo "Run 'source $install_dir/enable-gcc.sh' to enable it."
-echo "Run 'source $install_dir/disable-gcc.sh' to disable it."
+echo "Run 'source $install_dir/enable' to start using."
+echo "Run 'source $install_dir/disable' to disable it."
