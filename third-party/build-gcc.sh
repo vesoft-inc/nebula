@@ -103,31 +103,31 @@ function unpack_tarballs {
     if [[ ! -d $source_dir/gcc-$gcc_version ]]
     then
         echo "Unpacking $gcc_tarball..."
-        tar --skip-old-files -xf $gcc_tarball -C $source_dir
+        tar -xf $gcc_tarball -C $source_dir
     fi
 
     if [[ ! -d $source_dir/gmp-$gmp_version ]]
     then
         echo "Unpacking $gmp_tarball..."
-        tar --skip-old-files -xf $gmp_tarball -C $source_dir
+        tar -xf $gmp_tarball -C $source_dir
     fi
 
     if [[ ! -d $source_dir/mpfr-$mpfr_version ]]
     then
         echo "Unpacking $mpfr_tarball..."
-        tar --skip-old-files -xf $mpfr_tarball -C $source_dir
+        tar -xf $mpfr_tarball -C $source_dir
     fi
 
     if [[ ! -d $source_dir/mpc-$mpc_version ]]
     then
         echo "Unpacking $mpc_tarball..."
-        tar --skip-old-files -xf $mpc_tarball -C $source_dir
+        tar -xf $mpc_tarball -C $source_dir
     fi
 
     if [[ ! -d $source_dir/binutils-$bu_version ]]
     then
         echo "Unpacking $bu_tarball..."
-        tar --skip-old-files -xf $bu_tarball -C $source_dir
+        tar -xf $bu_tarball -C $source_dir
     fi
 
     set +e

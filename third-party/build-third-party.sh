@@ -105,11 +105,11 @@ then
     else
         echo "Source of third party was downdloaded to $build_root"
         echo -n "Extracting into $download_dir..."
-        tar --skip-old-files -xzf $source_tar_name
+        tar -xzf $source_tar_name
         echo  "done"
     fi
 else
-    tar --skip-old-files -xzf $source_tar_name
+    tar -xzf $source_tar_name
 fi
 
 # Build and install
