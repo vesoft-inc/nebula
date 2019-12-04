@@ -10,7 +10,7 @@
 #include <vector>
 #include <map>
 #include <cstdint>
-#include "com_vesoft_nebula_NebulaCodec.h"
+#include "com_vesoft_nebula_NebulaUtils.h"
 
 #include "base/Base.h"
 #include "dataman/SchemaWriter.h"
@@ -18,7 +18,7 @@
 #include "dataman/include/NebulaCodec.h"
 #include "dataman/NebulaCodecImpl.h"
 
-JNIEXPORT jbyteArray JNICALL Java_com_vesoft_nebula_NebulaCodec_encode(JNIEnv *env,
+JNIEXPORT jbyteArray JNICALL Java_com_vesoft_nebula_NebulaUtils_encode(JNIEnv *env,
                                                                        jclass clazz,
                                                                        jobjectArray values) {
     std::vector<boost::any> v;
@@ -79,11 +79,11 @@ JNIEXPORT jbyteArray JNICALL Java_com_vesoft_nebula_NebulaCodec_encode(JNIEnv *e
     return arrays;
 }
 
-JNIEXPORT jobject JNICALL Java_com_vesoft_nebula_NebulaCodec_decode(JNIEnv *env,
+JNIEXPORT jobject JNICALL Java_com_vesoft_nebula_NebulaUtils_decode(JNIEnv *env,
                                                                     jclass clz,
                                                                     jbyteArray encoded,
                                                                     jobjectArray pairs) {
-    clz = env->FindClass("com/vesoft/nebula/NebulaCodec$Pair");
+    clz = env->FindClass("com/vesoft/nebula/NebulaUtils$Pair");
     jmethodID getField = env->GetMethodID(clz, "getField", "()Ljava/lang/String;");
     jmethodID getClazz = env->GetMethodID(clz, "getClazz", "()Ljava/lang/String;");
 

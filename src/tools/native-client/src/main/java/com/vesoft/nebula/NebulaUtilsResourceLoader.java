@@ -15,9 +15,9 @@ import java.nio.file.StandardCopyOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class NebulaCodecResourceLoader {
-    private static final String NEBULA_LIB_NAME = "/libnebula_codec.so";
-    private static final Logger LOGGER = LoggerFactory.getLogger(NebulaCodec.class.getName());
+public class NebulaUtilsResourceLoader {
+    private static final String NEBULA_LIB_NAME = "/libnebula_utils.so";
+    private static final Logger LOGGER = LoggerFactory.getLogger(NebulaUtils.class.getName());
 
     public static void resourceLoader() {
         InputStream stream = ClassLoader.class.getResourceAsStream(NEBULA_LIB_NAME);

@@ -11,7 +11,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.vesoft.nebula</groupId>
-    <artifactId>codec</artifactId>
+    <artifactId>utils</artifactId>
     <version>1.0.0-beta</version>
 
     <properties>
@@ -74,10 +74,10 @@
                         <configuration>
                             <javahOutputDirectory>${basedir}/src/main/cpp</javahOutputDirectory>
                             <javahOutputFileName>
-                                com_vesoft_nebula_NebulaCodec.h
+                                com_vesoft_nebula_NebulaUtils.h
                             </javahOutputFileName>
                             <javahClassNames>
-                                <javahClassName>com.vesoft.nebula.NebulaCodec</javahClassName>
+                                <javahClassName>com.vesoft.nebula.NebulaUtils</javahClassName>
                             </javahClassNames>
                         </configuration>
                     </execution>
@@ -101,7 +101,7 @@
                                 <resource>
                                     <directory>${basedir}/_build</directory>
                                     <includes>
-                                        <include>libnebula_codec.so</include>
+                                        <include>libnebula_utils.so</include>
                                     </includes>
                                     <filtering>false</filtering>
                                 </resource>
@@ -147,7 +147,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.10</version>
                 <configuration>
-                    <!-- put nebula_codec.so in java.library.path env before run test-->
+                    <!-- put nebula_utils.so in java.library.path env before run test-->
                     <argLine>-Djava.library.path=_build/</argLine>
                 </configuration>
             </plugin>

@@ -15,11 +15,11 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class NebulaCodec {
-    private static final Logger LOGGER = LoggerFactory.getLogger(NebulaCodec.class.getName());
+public class NebulaUtils {
+    private static final Logger LOGGER = LoggerFactory.getLogger(NebulaUtils.class.getName());
 
     static {
-        System.loadLibrary("nebula_codec");
+        System.loadLibrary("nebula_utils");
     }
 
     public static class Pair {

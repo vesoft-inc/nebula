@@ -29,17 +29,17 @@ public class NebulaCodecTest {
             0.618,
             "Hello".getBytes()
         };
-        byte[] result = NebulaCodec.encode(values);
+        byte[] result = NebulaUtils.encode(values);
 
-        NebulaCodec.Pair[] pairs = new NebulaCodec.Pair[]{
-            new NebulaCodec.Pair("b_field", Boolean.class.getName()),
-            new NebulaCodec.Pair("i_field", Integer.class.getName()),
-            new NebulaCodec.Pair("f_field", Float.class.getName()),
-            new NebulaCodec.Pair("d_field", Double.class.getName()),
-            new NebulaCodec.Pair("s_field", byte[].class.getName())
+        NebulaUtils.Pair[] pairs = new NebulaUtils.Pair[]{
+            new NebulaUtils.Pair("b_field", Boolean.class.getName()),
+            new NebulaUtils.Pair("i_field", Integer.class.getName()),
+            new NebulaUtils.Pair("f_field", Float.class.getName()),
+            new NebulaUtils.Pair("d_field", Double.class.getName()),
+            new NebulaUtils.Pair("s_field", byte[].class.getName())
         };
 
-        Map<String, byte[]> decodedResult = NebulaCodec.decode(result, pairs);
+        Map<String, byte[]> decodedResult = NebulaUtils.decode(result, pairs);
 
         byte byteValue = decodedResult.get("b_field")[0];
         boolean boolValue = (byteValue == 0x00) ? false : true;
