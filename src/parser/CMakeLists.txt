@@ -17,8 +17,8 @@ nebula_add_library(
     Clauses.cpp
     SequentialSentences.cpp
     MaintainSentences.cpp
-    MutateSentences.cpp
     TraverseSentences.cpp
+    MutateSentences.cpp
     AdminSentences.cpp
     UserSentences.cpp
     ProcessControlSentences.cpp
