@@ -17,7 +17,7 @@ class RemoveProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static RemoveProcessor* instance(kvstore::KVStore* kvstore,
                                      meta::SchemaManager* schemaMan,
-                                     StorageStats* stats,
+                                     stats::Stats* stats,
                                      folly::Executor* executor) {
         return new RemoveProcessor(kvstore, schemaMan, stats, executor);
     }
@@ -27,7 +27,7 @@ public:
 private:
     explicit RemoveProcessor(kvstore::KVStore* kvstore,
                              meta::SchemaManager* schemaMan,
-                             StorageStats* stats,
+                             stats::Stats* stats,
                              folly::Executor* executor = nullptr)
             : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats),
             executor_(executor) {}

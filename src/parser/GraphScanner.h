@@ -61,8 +61,7 @@ protected:
             return;
         }
 
-        auto newSize = sbufSize_ * 2;
-        newSize = newSize > len ? newSize : len;
+        auto newSize = sbufSize_ * 2 + len;
         auto newBuffer = std::make_unique<char[]>(newSize);
         ::memcpy(newBuffer.get(), sbuf_.get(), sbufPos_);
         sbuf_ = std::move(newBuffer);

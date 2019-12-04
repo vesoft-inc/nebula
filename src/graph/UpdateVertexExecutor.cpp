@@ -63,6 +63,10 @@ Status UpdateVertexExecutor::prepare() {
         }
     } while (false);
 
+    if (status.ok()) {
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getUpdateVertexStats(),
+                false, duration().elapsedInUSec());
+    }
     return status;
 }
 
@@ -75,8 +79,7 @@ Status UpdateVertexExecutor::prepareSet() {
         storage::cpp2::UpdateItem updateItem;
         auto expRet = Expression::decode(*item->field());
         if (!expRet.ok()) {
-            status = Status::Error("Invalid vertex update item field: " + *item->field());
-            break;
+            return Status::SyntaxError("Invalid vertex update item field: " + *item->field());
         }
         auto expr = std::move(expRet).value();
         // alias_ref_expression(LABLE DOT LABLE): TagName.PropName
@@ -85,9 +88,6 @@ Status UpdateVertexExecutor::prepareSet() {
         updateItem.prop = *eexpr->prop();
         updateItem.value = Expression::encode(item->value());
         updateItems_.emplace_back(std::move(updateItem));
-    }
-    if (updateItems_.empty()) {
-        status = Status::Error("There must be some correct update items!");
     }
     return status;
 }
@@ -168,8 +168,8 @@ void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcRe
                         LOG(FATAL) << "Unknown VariantType: " << column.which();
                 }
             } else {
-                DCHECK(onError_);
-                onError_(Status::Error("get property failed"));
+                doError(Status::Error("get property failed"),
+                        ectx()->getGraphStats()->getUpdateVertexStats());
                 return;
             }
         }
@@ -177,8 +177,7 @@ void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcRe
         rows.back().set_columns(std::move(row));
     }
     resp_->set_rows(std::move(rows));
-    DCHECK(onFinish_);
-    onFinish_();
+    doFinish(Executor::ProcessControl::kNext, ectx()->getGraphStats()->getUpdateVertexStats());
 }
 
 
@@ -195,17 +194,37 @@ void UpdateVertexExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status(), ectx()->getGraphStats()->getUpdateVertexStats());
             return;
         }
         auto rpcResp = std::move(resp).value();
+        for (auto& code : rpcResp.get_result().get_failed_codes()) {
+            switch (code.get_code()) {
+                case nebula::storage::cpp2::ErrorCode::E_INVALID_FILTER:
+                      doError(Status::Error("Maybe invalid tag or property in WHEN clause!"),
+                              ectx()->getGraphStats()->getUpdateVertexStats());
+                      return;
+                case nebula::storage::cpp2::ErrorCode::E_INVALID_UPDATER:
+                      doError(Status::Error("Maybe invalid tag or property in SET/YIELD clasue!"),
+                              ectx()->getGraphStats()->getUpdateVertexStats());
+                      return;
+                default:
+                      std::string errMsg =
+                            folly::stringPrintf("Maybe vertex does not exist or filter failed, "
+                                                "part: %d, error code: %d!",
+                                                code.get_part_id(),
+                                                static_cast<int32_t>(code.get_code()));
+                      LOG(ERROR) << errMsg;
+                      doError(Status::Error(errMsg),
+                              ectx()->getGraphStats()->getUpdateVertexStats());
+                      return;
+            }
+        }
         this->finishExecution(std::move(rpcResp));
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal error"), ectx()->getGraphStats()->getUpdateVertexStats());
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }

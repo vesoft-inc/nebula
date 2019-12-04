@@ -17,7 +17,7 @@ class ScanProcessor : public BaseProcessor<cpp2::GeneralResponse> {
 public:
     static ScanProcessor* instance(kvstore::KVStore* kvstore,
                                    meta::SchemaManager* schemaMan,
-                                   StorageStats* stats,
+                                   stats::Stats* stats,
                                    folly::Executor* executor) {
         return new ScanProcessor(kvstore, schemaMan, stats, executor);
     }
@@ -27,7 +27,7 @@ public:
 private:
     explicit ScanProcessor(kvstore::KVStore* kvstore,
                            meta::SchemaManager* schemaMan,
-                           StorageStats* stats,
+                           stats::Stats* stats,
                            folly::Executor* executor = nullptr)
             : BaseProcessor<cpp2::GeneralResponse>(kvstore, schemaMan, stats),
             executor_(executor) {}

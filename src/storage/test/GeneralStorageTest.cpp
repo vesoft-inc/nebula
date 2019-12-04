@@ -29,15 +29,17 @@ TEST(GeneralStorageTest, SimpleTest) {
     GraphSpaceID space = 0;
 
     {
+        // Put Test
         cpp2::PutRequest req;
         req.set_space_id(space);
         auto* processor = PutProcessor::instance(kv.get(), nullptr, nullptr, executor.get());
         for (PartitionID part = 1; part <= 3; part++) {
             std::vector<nebula::cpp2::Pair> pairs;
             for (int32_t i = 0; i < 10; i++) {
-                pairs.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                   folly::stringPrintf("key_%d_%d", part, i),
-                                   folly::stringPrintf("value_%d_%d", part, i));
+                nebula::cpp2::Pair pair;
+                pair.set_key(folly::stringPrintf("key_1_%d", i));
+                pair.set_value(folly::stringPrintf("value_1_%d", i));
+                pairs.emplace_back(std::move(pair));
             }
             req.parts.emplace(part, std::move(pairs));
         }
@@ -54,7 +56,7 @@ TEST(GeneralStorageTest, SimpleTest) {
         PartitionID part = 1;
         std::vector<std::string> keys;
         for (int32_t i = 0; i < 10; i+=2) {
-            keys.emplace_back(folly::stringPrintf("key_%d_%d", part, i));
+            keys.emplace_back(folly::stringPrintf("key_1_%d", i));
         }
         req.parts.emplace(part, std::move(keys));
         auto future = processor->getFuture();
@@ -77,7 +79,7 @@ TEST(GeneralStorageTest, SimpleTest) {
         PartitionID part = 1;
         std::vector<std::string> keys;
         for (int32_t i = 0; i < 10; i+=2) {
-            keys.emplace_back(folly::stringPrintf("key_%d_%d", part, i));
+            keys.emplace_back(folly::stringPrintf("key_1_%d", i));
         }
         req.parts.emplace(part, std::move(keys));
         auto future = processor->getFuture();
@@ -93,7 +95,7 @@ TEST(GeneralStorageTest, SimpleTest) {
         PartitionID part = 1;
         std::vector<std::string> keys;
         for (int32_t i = 0; i < 10; i+=2) {
-            keys.emplace_back(folly::stringPrintf("key_%d_%d", part, i));
+            keys.emplace_back(folly::stringPrintf("key_1_%d", i));
         }
         req.parts.emplace(part, std::move(keys));
         auto future = processor->getFuture();
@@ -121,8 +123,9 @@ TEST(GeneralStorageTest, SimpleTest) {
         req.set_space_id(space);
         auto* processor = ScanProcessor::instance(kv.get(), nullptr, nullptr, executor.get());
         PartitionID part = 2;
-        auto range = nebula::cpp2::Range(apache::thrift::FragileConstructor::FRAGILE,
-                                         "key_2_0", "key_2_99");
+        nebula::cpp2::Range range;
+        range.set_start("key_2_0");
+        range.set_end("key_2_99");
         req.parts.emplace(part, std::move(range));
         auto future = processor->getFuture();
         processor->process(req);
@@ -137,9 +140,10 @@ TEST(GeneralStorageTest, SimpleTest) {
         auto* processor = RemoveRangeProcessor::instance(kv.get(), nullptr,
                                                          nullptr, executor.get());
         PartitionID part = 2;
-        auto range = nebula::cpp2::Range(apache::thrift::FragileConstructor::FRAGILE,
-                                         "key_2_3", "key_2_6");
-        req.parts.emplace(part, range);
+        nebula::cpp2::Range range;
+        range.set_start("key_2_3");
+        range.set_end("key_2_6");
+        req.parts.emplace(part, std::move(range));
         auto future = processor->getFuture();
         processor->process(req);
         auto resp = std::move(future).get();

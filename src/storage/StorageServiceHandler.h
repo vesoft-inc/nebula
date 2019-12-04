@@ -13,7 +13,11 @@
 #include "kvstore/KVStore.h"
 #include "meta/SchemaManager.h"
 #include "stats/StatsManager.h"
-#include "storage/StorageStats.h"
+#include "storage/CommonUtils.h"
+#include "stats/Stats.h"
+
+DECLARE_int32(vertex_cache_num);
+DECLARE_int32(vertex_cache_bucket_exp);
 
 namespace nebula {
 namespace storage {
@@ -27,23 +31,24 @@ public:
                           meta::MetaClient* client)
         : kvstore_(kvstore)
         , schemaMan_(schemaMan)
-        , metaClient_(client) {
-        getBoundQpsStat_      = StorageStats("get_bound");
-        boundStatsQpsStat_    = StorageStats("bound_stats");
-        vertexPropsQpsStat_   = StorageStats("vertex_props");
-        edgePropsQpsStat_     = StorageStats("edge_props");
-        addVertexQpsStat_     = StorageStats("add_vertex");
-        addEdgeQpsStat_       = StorageStats("add_edge");
-        delVertexQpsStat_     = StorageStats("del_vertex");
-        updateVertexQpsStat_  = StorageStats("update_vertex");
-        updateEdgeQpsStat_    = StorageStats("update_edge");
+        , metaClient_(client)
+        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp) {
+        getBoundQpsStat_      = stats::Stats("storage", "get_bound");
+        boundStatsQpsStat_    = stats::Stats("storage", "bound_stats");
+        vertexPropsQpsStat_   = stats::Stats("storage", "vertex_props");
+        edgePropsQpsStat_     = stats::Stats("storage", "edge_props");
+        addVertexQpsStat_     = stats::Stats("storage", "add_vertex");
+        addEdgeQpsStat_       = stats::Stats("storage", "add_edge");
+        delVertexQpsStat_     = stats::Stats("storage", "del_vertex");
+        updateVertexQpsStat_  = stats::Stats("storage", "update_vertex");
+        updateEdgeQpsStat_    = stats::Stats("storage", "update_edge");
 
-        getQpsStat_           = StorageStats("get");
-        putQpsStat_           = StorageStats("put");
-        removeQpsStat_        = StorageStats("remove");
-        removeRangeQpsStat_   = StorageStats("remove_range");
-        prefixQpsStat_        = StorageStats("prefix");
-        scanQpsStat_          = StorageStats("scan");
+        getKVQpsStat_           = stats::Stats("storage", "get_kv");
+        putKVQpsStat_           = stats::Stats("storage", "put_kv");
+        removeKVQpsStat_        = stats::Stats("storage", "remove_kv");
+        removeRangeKVQpsStat_   = stats::Stats("storage", "remove_range_kv");
+        prefixKVQpsStat_        = stats::Stats("storage", "prefix_kv");
+        scanKVQpsStat_          = stats::Stats("storage", "scan_kv");
     }
 
     folly::Future<cpp2::QueryResponse>
@@ -127,21 +132,24 @@ private:
     meta::SchemaManager* schemaMan_ = nullptr;
     meta::MetaClient* metaClient_ = nullptr;
 
-    StorageStats getBoundQpsStat_;
-    StorageStats boundStatsQpsStat_;
-    StorageStats vertexPropsQpsStat_;
-    StorageStats edgePropsQpsStat_;
-    StorageStats addVertexQpsStat_;
-    StorageStats addEdgeQpsStat_;
-    StorageStats delVertexQpsStat_;
-    StorageStats updateVertexQpsStat_;
-    StorageStats updateEdgeQpsStat_;
-    StorageStats getQpsStat_;
-    StorageStats putQpsStat_;
-    StorageStats removeQpsStat_;
-    StorageStats removeRangeQpsStat_;
-    StorageStats prefixQpsStat_;
-    StorageStats scanQpsStat_;
+    VertexCache vertexCache_;
+
+    stats::Stats getBoundQpsStat_;
+    stats::Stats boundStatsQpsStat_;
+    stats::Stats vertexPropsQpsStat_;
+    stats::Stats edgePropsQpsStat_;
+    stats::Stats addVertexQpsStat_;
+    stats::Stats addEdgeQpsStat_;
+    stats::Stats delVertexQpsStat_;
+    stats::Stats updateVertexQpsStat_;
+    stats::Stats updateEdgeQpsStat_;
+
+    stats::Stats getKVQpsStat_;
+    stats::Stats putKVQpsStat_;
+    stats::Stats removeKVQpsStat_;
+    stats::Stats removeRangeKVQpsStat_;
+    stats::Stats prefixKVQpsStat_;
+    stats::Stats scanKVQpsStat_;
 };
 
 }  // namespace storage

@@ -130,7 +130,7 @@ void OrderByExecutor::execute() {
     if (onResult_) {
         onResult_(setupInterimResult());
     }
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 Status OrderByExecutor::beforeExecute() {
@@ -198,11 +198,11 @@ std::unique_ptr<InterimResult> OrderByExecutor::setupInterimResult() {
 }
 
 void OrderByExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
+    resp.set_column_names(std::move(colNames_));
+
     if (rows_.empty()) {
         return;
     }
-
-    resp.set_column_names(std::move(colNames_));
     resp.set_rows(std::move(rows_));
 }
 

@@ -17,7 +17,7 @@ class PrefixProcessor : public BaseProcessor<cpp2::GeneralResponse> {
 public:
     static PrefixProcessor* instance(kvstore::KVStore* kvstore,
                                      meta::SchemaManager* schemaMan,
-                                     StorageStats* stats,
+                                     stats::Stats* stats,
                                      folly::Executor* executor) {
         return new PrefixProcessor(kvstore, schemaMan, stats, executor);
     }
@@ -27,7 +27,7 @@ public:
 private:
     explicit PrefixProcessor(kvstore::KVStore* kvstore,
                              meta::SchemaManager* schemaMan,
-                             StorageStats* stats,
+                             stats::Stats* stats,
                              folly::Executor* executor = nullptr)
             : BaseProcessor<cpp2::GeneralResponse>(kvstore, schemaMan, stats),
             executor_(executor) {}

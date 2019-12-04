@@ -89,6 +89,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     auto ret = mClient->createSpace("storage", partition, replica).get();
     ASSERT_TRUE(ret.ok());
     auto spaceId = ret.value();
+
     std::vector<nebula::cpp2::ColumnDef> columns;
     nebula::cpp2::ValueType vt;
     vt.set_type(SupportedType::STRING);
@@ -193,7 +194,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
 
     LOG(INFO) << "Let's balance";
     auto bIdRet = balancer.balance();
-    CHECK(bIdRet.ok()) << bIdRet.status();
+    CHECK(ok(bIdRet));
     while (balancer.isRunning()) {
         sleep(1);
     }
@@ -204,10 +205,11 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         LOG(INFO) << "Balance Finished, check the newly added server";
         std::unique_ptr<kvstore::KVIterator> iter;
         auto prefix = NebulaKeyUtils::prefix(1);
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, newServer->kvStore_->prefix(spaceId,
-                                                                              1,
-                                                                              prefix,
-                                                                              &iter));
+        auto partRet = newServer->kvStore_->part(spaceId, 1);
+        CHECK(ok(partRet));
+        auto part = value(partRet);
+        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, part->engine()->prefix(prefix,
+                                                                         &iter));
         int num = 0;
         std::string lastKey = "";
         while (iter->valid()) {

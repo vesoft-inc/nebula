@@ -35,4 +35,5 @@ pids/
 .settings/
 .classpath
 cmake-build-debug/
+cmake-build-release/
 .vscode/

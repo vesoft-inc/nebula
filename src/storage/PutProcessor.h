@@ -17,7 +17,7 @@ class PutProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static PutProcessor* instance(kvstore::KVStore* kvstore,
                                   meta::SchemaManager* schemaMan,
-                                  StorageStats* stats,
+                                  stats::Stats* stats,
                                   folly::Executor* executor) {
         return new PutProcessor(kvstore, schemaMan, stats, executor);
     }
@@ -27,7 +27,7 @@ public:
 private:
     explicit PutProcessor(kvstore::KVStore* kvstore,
                           meta::SchemaManager* schemaMan,
-                          StorageStats* stats,
+                          stats::Stats* stats,
                           folly::Executor* executor = nullptr)
             : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats),
             executor_(executor) {}

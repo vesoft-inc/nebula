@@ -12,6 +12,7 @@
 #include "storage/Collector.h"
 #include "filter/Expressions.h"
 #include "storage/CommonUtils.h"
+#include "stats/Stats.h"
 
 namespace nebula {
 namespace storage {
@@ -43,10 +44,12 @@ public:
 protected:
     explicit QueryBaseProcessor(kvstore::KVStore* kvstore,
                                 meta::SchemaManager* schemaMan,
-                                StorageStats* stats,
-                                folly::Executor* executor = nullptr)
+                                stats::Stats* stats,
+                                folly::Executor* executor = nullptr,
+                                VertexCache* cache = nullptr)
         : BaseProcessor<RESP>(kvstore, schemaMan, stats)
-        , executor_(executor) {}
+        , executor_(executor)
+        , vertexCache_(cache) {}
 
     /**
      * Check whether current operation on the data is valid or not.
@@ -113,6 +116,7 @@ protected:
     std::vector<TagContext> tagContexts_;
     std::unordered_map<EdgeType, std::vector<PropContext>> edgeContexts_;
     folly::Executor* executor_ = nullptr;
+    VertexCache* vertexCache_ = nullptr;
 };
 
 }  // namespace storage

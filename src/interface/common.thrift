@@ -39,11 +39,11 @@ enum SupportedType {
     STRING = 6,
 
     // Date time
-    TIMESTAMP = 7,
-    YEAR = 8,
-    YEARMONTH = 9,
-    DATE = 10,
-    DATETIME = 11,
+    TIMESTAMP = 21,
+    YEAR = 22,
+    YEARMONTH = 23,
+    DATE = 24,
+    DATETIME = 25,
 
     // Graph specific
     PATH = 41,
@@ -64,9 +64,17 @@ struct ValueType {
     3: optional Schema schema (cpp.ref = true);
 } (cpp.virtual)
 
+union Value {
+    1: i64     int_value;
+    2: bool    bool_value;
+    3: double  double_value;
+    4: string  string_value;
+}
+
 struct ColumnDef {
     1: required string name,
     2: required ValueType type,
+    3: optional Value default_value,
 }
 
 struct SchemaProp {

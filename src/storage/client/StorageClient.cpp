@@ -16,9 +16,11 @@ namespace storage {
 using apache::thrift::FragileConstructor::FRAGILE;
 
 StorageClient::StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> threadPool,
-                             meta::MetaClient *client)
+                             meta::MetaClient *client,
+                             stats::Stats* stats)
         : ioThreadPool_(threadPool)
-        , client_(client) {
+        , client_(client)
+        , stats_(stats) {
     clientsMan_
         = std::make_unique<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>();
 }
@@ -37,13 +39,15 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addVert
         std::vector<cpp2::Vertex> vertices,
         bool overwritable,
         folly::EventBase* evb) {
-    auto clusters = clusterIdsToHosts(
-        space,
-        vertices,
-        [] (const cpp2::Vertex& v) {
-            return v.get_id();
-        });
+    auto status =
+        clusterIdsToHosts(space, vertices, [](const cpp2::Vertex& v) { return v.get_id(); });
 
+    if (!status.ok()) {
+        return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
+            std::runtime_error(status.status().toString()));
+    }
+
+    auto& clusters = status.value();
     std::unordered_map<HostAddr, cpp2::AddVerticesRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
@@ -68,12 +72,14 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addEdge
         std::vector<storage::cpp2::Edge> edges,
         bool overwritable,
         folly::EventBase* evb) {
-    auto clusters = clusterIdsToHosts(
-        space,
-        edges,
-        [] (const cpp2::Edge& e) {
-            return e.get_key().get_src();
-        });
+    auto status =
+        clusterIdsToHosts(space, edges, [](const cpp2::Edge& e) { return e.get_key().get_src(); });
+    if (!status.ok()) {
+        return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
+            std::runtime_error(status.status().toString()));
+    }
+
+    auto& clusters = status.value();
 
     std::unordered_map<HostAddr, cpp2::AddEdgesRequest> requests;
     for (auto& c : clusters) {
@@ -100,12 +106,14 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getNei
         std::string filter,
         std::vector<cpp2::PropDef> returnCols,
         folly::EventBase* evb) {
-    auto clusters = clusterIdsToHosts(
-        space,
-        vertices,
-        [] (const VertexID& v) {
-            return v;
-        });
+    auto status = clusterIdsToHosts(space, vertices, [](const VertexID& v) { return v; });
+
+    if (!status.ok()) {
+        return folly::makeFuture<StorageRpcResponse<cpp2::QueryResponse>>(
+            std::runtime_error(status.status().toString()));
+    }
+
+    auto& clusters = status.value();
 
     std::unordered_map<HostAddr, cpp2::GetNeighborsRequest> requests;
     for (auto& c : clusters) {
@@ -133,12 +141,13 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryStatsResponse>> StorageClient::n
         std::string filter,
         std::vector<cpp2::PropDef> returnCols,
         folly::EventBase* evb) {
-    auto clusters = clusterIdsToHosts(
-        space,
-        vertices,
-        [] (const VertexID& v) {
-            return v;
-        });
+    auto status = clusterIdsToHosts(space, vertices, [](const VertexID& v) { return v; });
+
+    if (!status.ok()) {
+        return folly::makeFuture<StorageRpcResponse<cpp2::QueryStatsResponse>>(
+            std::runtime_error(status.status().toString()));
+    }
+    auto& clusters = status.value();
 
     std::unordered_map<HostAddr, cpp2::GetNeighborsRequest> requests;
     for (auto& c : clusters) {
@@ -165,12 +174,13 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getVer
         std::vector<VertexID> vertices,
         std::vector<cpp2::PropDef> returnCols,
         folly::EventBase* evb) {
-    auto clusters = clusterIdsToHosts(
-        space,
-        vertices,
-        [] (const VertexID& v) {
-            return v;
-        });
+    auto status = clusterIdsToHosts(space, vertices, [](const VertexID& v) { return v; });
+
+    if (!status.ok()) {
+        return folly::makeFuture<StorageRpcResponse<cpp2::QueryResponse>>(
+            std::runtime_error(status.status().toString()));
+    }
+    auto& clusters = status.value();
 
     std::unordered_map<HostAddr, cpp2::VertexPropRequest> requests;
     for (auto& c : clusters) {
@@ -195,12 +205,14 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
         std::vector<cpp2::EdgeKey> edges,
         std::vector<cpp2::PropDef> returnCols,
         folly::EventBase* evb) {
-    auto clusters = clusterIdsToHosts(
-        space,
-        edges,
-        [] (const cpp2::EdgeKey& v) {
-            return v.get_src();
-        });
+    auto status =
+        clusterIdsToHosts(space, edges, [](const cpp2::EdgeKey& v) { return v.get_src(); });
+
+    if (!status.ok()) {
+        return folly::makeFuture<StorageRpcResponse<cpp2::EdgePropResponse>>(
+            std::runtime_error(status.status().toString()));
+    }
+    auto& clusters = status.value();
 
     std::unordered_map<HostAddr, cpp2::EdgePropRequest> requests;
     for (auto& c : clusters) {
@@ -229,8 +241,17 @@ folly::Future<StatusOr<cpp2::EdgeKeyResponse>> StorageClient::getEdgeKeys(
     VertexID vid,
     folly::EventBase* evb) {
     std::pair<HostAddr, cpp2::EdgeKeyRequest> request;
-    PartitionID part = partId(space, vid);
-    auto partMeta = getPartMeta(space, part);
+    auto status = partId(space, vid);
+    if (!status.ok()) {
+        return folly::makeFuture<StatusOr<cpp2::EdgeKeyResponse>>(status.status());
+    }
+
+    auto part = status.value();
+    auto metaStatus = getPartMeta(space, part);
+    if (!metaStatus.ok()) {
+        return folly::makeFuture<StatusOr<cpp2::EdgeKeyResponse>>(metaStatus.status());
+    }
+    auto partMeta = metaStatus.value();
     CHECK_GT(partMeta.peers_.size(), 0U);
     const auto& leader = this->leader(partMeta);
     request.first = leader;
@@ -255,12 +276,14 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::deleteE
     GraphSpaceID space,
     std::vector<storage::cpp2::EdgeKey> edges,
     folly::EventBase* evb) {
-    auto clusters = clusterIdsToHosts(
-        space,
-        edges,
-        [] (const cpp2::EdgeKey& v) {
-            return v.get_src();
-        });
+    auto status =
+        clusterIdsToHosts(space, edges, [](const cpp2::EdgeKey& v) { return v.get_src(); });
+
+    if (!status.ok()) {
+        return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
+            std::runtime_error(status.status().toString()));
+    }
+    auto& clusters = status.value();
 
     std::unordered_map<HostAddr, cpp2::DeleteEdgesRequest> requests;
     for (auto& c : clusters) {
@@ -284,8 +307,17 @@ folly::Future<StatusOr<cpp2::ExecResponse>> StorageClient::deleteVertex(
     VertexID vid,
     folly::EventBase* evb) {
     std::pair<HostAddr, cpp2::DeleteVertexRequest> request;
-    PartitionID part = partId(space, vid);
-    auto partMeta = getPartMeta(space, part);
+    auto status = partId(space, vid);
+    if (!status.ok()) {
+        return folly::makeFuture<StatusOr<cpp2::ExecResponse>>(status.status());
+    }
+
+    auto part = status.value();
+    auto metaStatus = getPartMeta(space, part);
+    if (!metaStatus.ok()) {
+        return folly::makeFuture<StatusOr<cpp2::ExecResponse>>(metaStatus.status());
+    }
+    auto partMeta = metaStatus.value();
     CHECK_GT(partMeta.peers_.size(), 0U);
     const auto& leader = this->leader(partMeta);
     request.first = leader;
@@ -315,8 +347,18 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateVert
         bool insertable,
         folly::EventBase* evb) {
     std::pair<HostAddr, cpp2::UpdateVertexRequest> request;
-    PartitionID part = this->partId(space, vertexId);
-    auto partMeta = this->getPartMeta(space, part);
+
+    auto status = partId(space, vertexId);
+    if (!status.ok()) {
+        return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(status.status());
+    }
+
+    auto part = status.value();
+    auto metaStatus = getPartMeta(space, part);
+    if (!metaStatus.ok()) {
+        return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(metaStatus.status());
+    }
+    auto partMeta = metaStatus.value();
     CHECK_GT(partMeta.peers_.size(), 0U);
     const auto& host = this->leader(partMeta);
     request.first = std::move(host);
@@ -348,8 +390,17 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateEdge
         bool insertable,
         folly::EventBase* evb) {
     std::pair<HostAddr, cpp2::UpdateEdgeRequest> request;
-    PartitionID part = this->partId(space, edgeKey.get_src());
-    auto partMeta = this->getPartMeta(space, part);
+    auto status = partId(space, edgeKey.get_src());
+    if (!status.ok()) {
+        return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(status.status());
+    }
+
+    auto part = status.value();
+    auto metaStatus = getPartMeta(space, part);
+    if (!metaStatus.ok()) {
+        return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(metaStatus.status());
+    }
+    auto partMeta = metaStatus.value();
     CHECK_GT(partMeta.peers_.size(), 0U);
     const auto& host = this->leader(partMeta);
     request.first = std::move(host);
@@ -379,8 +430,17 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(
     std::pair<HostAddr, cpp2::GetUUIDReq> request;
     std::hash<std::string> hashFunc;
     auto hashValue = hashFunc(name);
-    PartitionID part = partId(space, hashValue);
-    auto partMeta = getPartMeta(space, part);
+    auto status = partId(space, hashValue);
+    if (!status.ok()) {
+        return folly::makeFuture<StatusOr<cpp2::GetUUIDResp>>(status.status());
+    }
+
+    auto part = status.value();
+    auto metaStatus = getPartMeta(space, part);
+    if (!metaStatus.ok()) {
+        return folly::makeFuture<StatusOr<cpp2::GetUUIDResp>>(metaStatus.status());
+    }
+    auto partMeta = metaStatus.value();
     CHECK_GT(partMeta.peers_.size(), 0U);
     const auto& leader = this->leader(partMeta);
     request.first = leader;
@@ -400,9 +460,13 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(
     });
 }
 
+StatusOr<PartitionID> StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
+    auto status = partsNum(spaceId);
+    if (!status.ok()) {
+        return Status::Error("Space not found, spaceid: %d", spaceId);
+    }
 
-PartitionID StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
-    auto parts = partsNum(spaceId);
+    auto parts = status.value();
     auto s = ID_HASH(id, parts);
     CHECK_GE(s, 0U);
     return s;
@@ -412,11 +476,17 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>>
 StorageClient::put(GraphSpaceID space,
                    std::vector<nebula::cpp2::Pair> pairs,
                    folly::EventBase* evb) {
-    auto clusters = clusterIdsToHosts(space, pairs,
-                                      [] (const nebula::cpp2::Pair& pair) {
-                                          return std::hash<std::string>{}(pair.get_key());
-                                      });
+    auto status = clusterIdsToHosts(space, pairs,
+                                    [](const nebula::cpp2::Pair& pair) {
+                                        return std::hash<std::string>{}(pair.get_key());
+                                    });
 
+    if (!status.ok()) {
+        return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
+            std::runtime_error(status.status().toString()));
+    }
+
+    auto& clusters = status.value();
     std::unordered_map<HostAddr, cpp2::PutRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
@@ -436,11 +506,17 @@ folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>>
 StorageClient::get(GraphSpaceID space,
                    std::vector<std::string> keys,
                    folly::EventBase* evb) {
-    auto clusters = clusterIdsToHosts(space, keys,
-                                      [] (const std::string& v) {
-                                          return std::hash<std::string>{}(v);
-                                      });
+    auto status = clusterIdsToHosts(space, keys,
+                                    [](const std::string& v) {
+                                        return std::hash<std::string>{}(v);
+                                    });
 
+    if (!status.ok()) {
+        return folly::makeFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>>(
+            std::runtime_error(status.status().toString()));
+    }
+
+    auto& clusters = status.value();
     std::unordered_map<HostAddr, cpp2::GetRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
@@ -460,10 +536,16 @@ folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>>
 StorageClient::remove(GraphSpaceID space,
                       std::vector<std::string> keys,
                       folly::EventBase* evb) {
-    auto clusters = clusterIdsToHosts(space, keys,
-                                      [] (const std::string& v) {
-                                          return std::hash<std::string>{}(v);
-                                      });
+    auto status = clusterIdsToHosts(space, keys,
+                                    [] (const std::string& v) {
+                                        return std::hash<std::string>{}(v);
+                                    });
+    if (!status.ok()) {
+        return folly::makeFuture<StorageRpcResponse<storage::cpp2::ExecResponse>>(
+            std::runtime_error(status.status().toString()));
+    }
+
+    auto& clusters = status.value();
     std::unordered_map<HostAddr, cpp2::RemoveRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
@@ -484,9 +566,14 @@ StorageClient::removeRange(GraphSpaceID space,
                            std::string start,
                            std::string end,
                            folly::EventBase* evb) {
-    auto clusters = leaderHosts(space);
+    auto status = leaderHosts(space);
+    if (!status.ok()) {
+        return folly::makeFuture<StorageRpcResponse<storage::cpp2::ExecResponse>>(
+            std::runtime_error(status.status().toString()));
+    }
+
+    auto& clusters = status.value();
     std::unordered_map<HostAddr, cpp2::RemoveRangeRequest> requests;
-    UNUSED(start); UNUSED(end);
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];
@@ -509,7 +596,13 @@ folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>>
 StorageClient::prefix(GraphSpaceID space,
                       std::string key,
                       folly::EventBase* evb) {
-    auto clusters = leaderHosts(space);
+    auto status = leaderHosts(space);
+    if (!status.ok()) {
+        return folly::makeFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>>(
+            std::runtime_error(status.status().toString()));
+    }
+
+    auto& clusters = status.value();
     std::unordered_map<HostAddr, cpp2::PrefixRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
@@ -534,9 +627,14 @@ StorageClient::scan(GraphSpaceID space,
                     std::string start,
                     std::string end,
                     folly::EventBase* evb) {
-    auto clusters = leaderHosts(space);
+    auto status = leaderHosts(space);
+    if (!status.ok()) {
+        return folly::makeFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>>(
+            std::runtime_error(status.status().toString()));
+    }
+
+    auto& clusters = status.value();
     std::unordered_map<HostAddr, cpp2::ScanRequest> requests;
-    UNUSED(start); UNUSED(end);
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];

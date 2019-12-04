@@ -65,7 +65,9 @@ public:
     static void setReportInfo(HostAddr addr, int32_t interval);
 
     // Both register methods return the index to the internal data structure.
-    // This index will be used by addValue() methods
+    // This index will be used by addValue() methods.
+    // Both register methods is not thread safe, and user need to register stats one
+    // by onebefore calling addValue, readStats, readHisto and so on.
     static int32_t registerStats(folly::StringPiece counterName);
     static int32_t registerHisto(folly::StringPiece counterName,
                                  VT bucketSize,
@@ -105,11 +107,9 @@ private:
     // <counter_name> => index
     // when index > 0, (index - 1) is the index of stats_ list
     // when index < 0, [- (index + 1)] is the index of histograms_ list
-    folly::RWSpinLock nameMapLock_;
     std::unordered_map<std::string, int32_t> nameMap_;
 
     // All time series stats
-    folly::RWSpinLock statsLock_;
     std::vector<
         std::pair<std::unique_ptr<std::mutex>,
                   std::unique_ptr<StatsType>
@@ -117,7 +117,6 @@ private:
     > stats_;
 
     // All histogram stats
-    folly::RWSpinLock histogramsLock_;
     std::vector<
         std::pair<std::unique_ptr<std::mutex>,
                   std::unique_ptr<HistogramType>

@@ -54,7 +54,8 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
         lastLogId_ = info->lastId();
         lastLogTerm_ = info->lastTerm();
         LOG(INFO) << idStr_ << "lastLogId in wal is " << lastLogId_
-                  << ", lastLogTerm is " << lastLogTerm_;
+                  << ", lastLogTerm is " << lastLogTerm_
+                  << ", path is " << info->path();
         currFd_ = open(info->path(), O_WRONLY | O_APPEND);
         currInfo_ = info;
         CHECK_GE(currFd_, 0);
@@ -456,7 +457,6 @@ void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId) {
 
         ++curLogId;
     }
-    LOG(INFO) << idStr_ << "Scan last wal " << path << ", last wal id is " << id;
 
     if (0 < pos && pos < FileUtils::fileSize(path)) {
         LOG(WARNING) << "Invalid wal " << path << ", truncate from offset " << pos;
@@ -621,6 +621,7 @@ bool FileBasedWal::rollbackToLog(LogID id) {
         return false;
     }
 
+    folly::RWSpinLock::WriteHolder holder(rollbackLock_);
     //-----------------------
     // 1. Roll back WAL files
     //-----------------------

@@ -19,7 +19,7 @@ class UpdateEdgeProcessor
 public:
     static UpdateEdgeProcessor* instance(kvstore::KVStore* kvstore,
                                          meta::SchemaManager* schemaMan,
-                                         StorageStats* stats) {
+                                         stats::Stats* stats) {
         return new UpdateEdgeProcessor(kvstore, schemaMan, stats);
     }
 
@@ -28,7 +28,7 @@ public:
 private:
     explicit UpdateEdgeProcessor(kvstore::KVStore* kvstore,
                                  meta::SchemaManager* schemaMan,
-                                 StorageStats* stats)
+                                 stats::Stats* stats)
         : QueryBaseProcessor<cpp2::UpdateEdgeRequest,
                              cpp2::UpdateResponse>(kvstore, schemaMan, stats) {}
 

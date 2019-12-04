@@ -216,27 +216,27 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         auto& results = resp.responses();
         ASSERT_EQ(1, results.size());
         EXPECT_EQ(0, results[0].result.failed_codes.size());
-        EXPECT_EQ(3 + 20, results[0].schema.columns.size());
+        EXPECT_EQ(4 + 20, results[0].schema.columns.size());
 
         auto edgeProvider = std::make_shared<ResultSchemaProvider>(results[0].schema);
         RowSetReader rsReader(edgeProvider, results[0].data);
         auto it = rsReader.begin();
         while (it) {
-            EXPECT_EQ(3 + 20, it->numFields());
+            EXPECT_EQ(4 + 20, it->numFields());
             auto fieldIt = it->begin();
             int index = 0;
             while (fieldIt) {
-                if (index < 3) {  // _src | _rank | _dst
+                if (index < 4) {  // _src | _rank | _dst
                     int64_t vid;
                     EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getVid(vid));
-                } else if (index >= 13) {  // the last 10 STRING fields
+                } else if (index >= 14) {  // the last 10 STRING fields
                     folly::StringPiece stringCol;
                     EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getString(stringCol));
-                    EXPECT_EQ(folly::stringPrintf("string_col_%d", index - 3), stringCol);
+                    EXPECT_EQ(folly::stringPrintf("string_col_%d", index - 4), stringCol);
                 } else {  // the middle 10 INT fields
                     int32_t intCol;
                     EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getInt(intCol));
-                    EXPECT_EQ(index - 3, intCol);
+                    EXPECT_EQ(index - 4, intCol);
                 }
                 ++index;
                 ++fieldIt;
@@ -375,11 +375,11 @@ public:
     explicit TestStorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool)
         : StorageClient(ioThreadPool, nullptr) {}
 
-    int32_t partsNum(GraphSpaceID) const override {
+    StatusOr<int32_t> partsNum(GraphSpaceID) const override {
         return parts_.size();
     }
 
-    PartMeta getPartMeta(GraphSpaceID, PartitionID partId) const override {
+    StatusOr<PartMeta> getPartMeta(GraphSpaceID, PartitionID partId) const override {
         auto it = parts_.find(partId);
         CHECK(it != parts_.end());
         return it->second;

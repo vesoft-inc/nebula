@@ -44,7 +44,7 @@ public:
     /**
      * return PartMeta for <spaceId, partId>
      * */
-    virtual PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) = 0;
+    virtual StatusOr<PartMeta> partMeta(GraphSpaceID spaceId, PartitionID partId) = 0;
 
     /**
      * Check current part exist or not on host.
@@ -84,7 +84,7 @@ public:
 
     PartsMap parts(const HostAddr& host) override;
 
-    PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) override;
+    StatusOr<PartMeta> partMeta(GraphSpaceID spaceId, PartitionID partId) override;
 
     void addPart(GraphSpaceID spaceId, PartitionID partId, std::vector<HostAddr> peers = {}) {
         bool noSpace = partsMap_.find(spaceId) == partsMap_.end();
@@ -141,7 +141,7 @@ public:
 
      PartsMap parts(const HostAddr& host) override;
 
-     PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) override;
+     StatusOr<PartMeta> partMeta(GraphSpaceID spaceId, PartitionID partId) override;
 
      bool partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
 
