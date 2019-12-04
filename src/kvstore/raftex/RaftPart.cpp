@@ -522,11 +522,11 @@ void RaftPart::commitRemovePeer(const HostAddr& peer) {
 }
 
 folly::Future<AppendLogResult> RaftPart::appendAsync(ClusterID source,
-                                                     std::string log) {
+                                                     std::string&& log) {
     if (source < 0) {
         source = clusterId_;
     }
-    return appendLogAsync(source, LogType::NORMAL, std::move(log));
+    return appendLogAsync(source, LogType::NORMAL, std::forward<std::string>(log));
 }
 
 
@@ -534,13 +534,13 @@ folly::Future<AppendLogResult> RaftPart::atomicOpAsync(AtomicOp op) {
     return appendLogAsync(clusterId_, LogType::ATOMIC_OP, "", std::move(op));
 }
 
-folly::Future<AppendLogResult> RaftPart::sendCommandAsync(std::string log) {
-    return appendLogAsync(clusterId_, LogType::COMMAND, std::move(log));
+folly::Future<AppendLogResult> RaftPart::sendCommandAsync(std::string&& log) {
+    return appendLogAsync(clusterId_, LogType::COMMAND, std::forward<std::string>(log));
 }
 
 folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
                                                         LogType logType,
-                                                        std::string log,
+                                                        std::string&& log,
                                                         AtomicOp op) {
     LogCache swappedOutLogs;
     auto retFuture = folly::Future<AppendLogResult>::makeEmpty();
@@ -571,7 +571,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
 
         // Append new logs to the buffer
         DCHECK_GE(source, 0);
-        logs_.emplace_back(source, logType, std::move(log), std::move(op));
+        logs_.emplace_back(source, logType, log, std::move(op));
         switch (logType) {
             case LogType::ATOMIC_OP:
                 retFuture = cachingPromise_.getSingleFuture();
@@ -807,7 +807,8 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
                                             committedId,
                                             prevLogTerm,
                                             prevLogId,
-                                            std::move(pHosts));
+                                            std::forward<std::vector<
+                                                std::shared_ptr<Host>>&&>(pHosts));
 
             return *result;
         });
@@ -823,7 +824,7 @@ void RaftPart::processAppendLogResponses(
         LogID committedId,
         TermID prevLogTerm,
         LogID prevLogId,
-        std::vector<std::shared_ptr<Host>> hosts) {
+        std::vector<std::shared_ptr<Host>>&& hosts) {
     // Make sure majority have succeeded
     size_t numSucceeded = 0;
     for (auto& res : resps) {

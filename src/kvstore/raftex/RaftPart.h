@@ -163,7 +163,7 @@ public:
      *
      * If the source == -1, the current clusterId will be used
      ****************************************************************/
-    folly::Future<AppendLogResult> appendAsync(ClusterID source, std::string log);
+    folly::Future<AppendLogResult> appendAsync(ClusterID source, std::string&& log);
 
     /****************************************************************
      * Run the op atomically.
@@ -173,7 +173,7 @@ public:
     /**
      * Asynchronously send one command.
      * */
-    folly::Future<AppendLogResult> sendCommandAsync(std::string log);
+    folly::Future<AppendLogResult> sendCommandAsync(std::string&& log);
 
     /**
      * Check if the peer has catched up data from leader. If leader is sending the snapshot,
@@ -346,7 +346,7 @@ private:
 
     folly::Future<AppendLogResult> appendLogAsync(ClusterID source,
                                                   LogType logType,
-                                                  std::string log,
+                                                  std::string&& log,
                                                   AtomicOp cb = nullptr);
 
     void appendLogsInternal(AppendLogsIterator iter, TermID termId);
@@ -369,7 +369,7 @@ private:
         LogID committedId,
         TermID prevLogTerm,
         LogID prevLogId,
-        std::vector<std::shared_ptr<Host>> hosts);
+        std::vector<std::shared_ptr<Host>>&& hosts);
 
     std::vector<std::shared_ptr<Host>> followers() const;
 

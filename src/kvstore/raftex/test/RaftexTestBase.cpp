@@ -282,9 +282,9 @@ void appendLogs(int start,
     // Append 100 logs
     LOG(INFO) << "=====> Start appending logs from index " << start << " to " << end;
     for (int i = start; i <= end; ++i) {
-        msgs.emplace_back(
-            folly::stringPrintf("Test Log Message %03d", i));
-        auto fut = leader->appendAsync(0, msgs.back());
+        auto msg = folly::stringPrintf("Test Log Message %03d", i);
+        msgs.emplace_back(msg);
+        auto fut = leader->appendAsync(0, std::move(msg));
         if (i == end && waitLastLog) {
             fut.wait();
         }
