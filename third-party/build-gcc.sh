@@ -252,6 +252,13 @@ function finalize {
     find $install_dir -name '*.la' | xargs rm -f
 }
 
+# Test usability of GCC
+function usability_test {
+    CXX=$install_dir/bin/g++ $this_dir/cxx-compiler-usability-test.sh
+    [[ $? -eq 0 ]] || exit 1
+    cp -p $this_dir/cxx-compiler-usability-test.sh $install_dir
+}
+
 # Build a self-extractable package
 function make_package {
     glibc_version=$(ldd --version | head -1 | cut -d ' ' -f4 | cut -d '-' -f1)
@@ -262,7 +269,7 @@ function make_package {
 set -e
 
 [[ \$# -ne 0 ]] && prefix=\$(echo "\$@" | sed 's;.*--prefix=(\S*).*;\1;' -r)
-prefix=\${prefix:-/usr/local}
+prefix=\${prefix:-/opt/nebula/toolchain}
 
 hash xz &> /dev/null || { echo "xz: Command not found"; exit 1; }
 
@@ -271,6 +278,12 @@ mkdir -p \$prefix
 
 archive_offset=\$(awk '/^__start_of_archive__$/{print NR+1; exit 0;}' \$0)
 tail -n+\$archive_offset \$0 | tar --numeric-owner -xJf - -C \$prefix
+
+echo "GCC-$gcc_version has been installed to \$prefix/gcc/$gcc_version"
+echo "Performing usability tests"
+\$prefix/gcc/$gcc_version/cxx-compiler-usability-test.sh
+echo "All tests passed, now you are ready to go."
+echo "Run '\$prefix/gcc/$gcc_version/enable-gcc.sh' to enable it."
 
 exit 0
 
@@ -283,6 +296,7 @@ EOF
 }
 
 start_time=$(date +%s)
+
 fetch_tarballs
 unpack_tarballs
 setup_deps
@@ -297,13 +311,15 @@ install_binutils
 
 finalize
 
+usability_test
+
 cat > $install_dir/enable-gcc.sh <<EOF
 this_path=\$(dirname \$(readlink -f \$BASH_SOURCE))
-[[ ":\$PATH:" =~ ":\$this_path:" ]] || export PATH=\$this_path:\$PATH
+[[ ":\$PATH:" =~ ":\$this_path/bin:" ]] || export PATH=\$this_path/bin:\$PATH
 export OLD_CC=\$CC
 export OLD_CXX=\$CXX
-export CC=\$this_path/gcc
-export CXX=\$this_path/g++
+export CC=\$this_path/bin/gcc
+export CXX=\$this_path/bin/g++
 hash -r
 echo "Only PATH was setup so as not to pollute your library path"
 echo "You could run 'export LD_LIBRARY_PATH=\$this_path/lib64:\\\$LD_LIBRARY_PATH'"
@@ -311,7 +327,7 @@ EOF
 
 cat > $install_dir/disable-gcc.sh <<EOF
 this_path=\$(dirname \$(readlink -f \$BASH_SOURCE))
-export PATH=\$(echo \$PATH | sed "s#\$this_path:##")
+export PATH=\$(echo \$PATH | sed "s#\$this_path/bin:##")
 export CC=\$OLD_CC
 export CXX=\$OLD_CXX
 hash -r
@@ -322,5 +338,5 @@ end_time=$(date +%s)
 
 echo "GCC-$gcc_version has been installed to prefix=$install_dir"
 echo "$((end_time - start_time)) seconds been taken."
-echo "Run 'source $install_dir/bin/enable-gcc.sh' to make it ready to use."
-echo "Run 'source $install_dir/bin/disable-gcc.sh' to disable it."
+echo "Run 'source $install_dir/enable-gcc.sh' to enable it."
+echo "Run 'source $install_dir/disable-gcc.sh' to disable it."
