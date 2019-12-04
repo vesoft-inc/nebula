@@ -66,7 +66,7 @@ if(ENABLE_TESTING AND ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Cla
   else()
     target_link_libraries(coverage_config INTERFACE --coverage)
   endif()
-endif(CODE_COVERAGE)
+endif()
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
