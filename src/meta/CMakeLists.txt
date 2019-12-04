@@ -36,11 +36,15 @@ nebula_add_library(
     processors/admin/HBProcessor.cpp
     processors/usersMan/AuthenticationProcessor.cpp
     processors/admin/BalanceProcessor.cpp
+    processors/admin/CreateSnapshotProcessor.cpp
+    processors/admin/DropSnapshotProcessor.cpp
+    processors/admin/ListSnapshotsProcessor.cpp
     processors/admin/Balancer.cpp
     processors/admin/BalancePlan.cpp
     processors/admin/BalanceTask.cpp
     processors/admin/AdminClient.cpp
     processors/admin/LeaderBalanceProcessor.cpp
+    processors/admin/SnapShot.cpp
     processors/configMan/RegConfigProcessor.cpp
     processors/configMan/GetConfigProcessor.cpp
     processors/configMan/ListConfigsProcessor.cpp

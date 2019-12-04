@@ -400,6 +400,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("limit", TokenType::KW_LIMIT),
         CHECK_SEMANTIC_TYPE("OFFSET", TokenType::KW_OFFSET),
         CHECK_SEMANTIC_TYPE("offset", TokenType::KW_OFFSET),
+        CHECK_SEMANTIC_TYPE("SNAPSHOT", TokenType::KW_SNAPSHOT),
+        CHECK_SEMANTIC_TYPE("Snapshot", TokenType::KW_SNAPSHOT),
+        CHECK_SEMANTIC_TYPE("snapshot", TokenType::KW_SNAPSHOT),
+        CHECK_SEMANTIC_TYPE("SNAPSHOTS", TokenType::KW_SNAPSHOTS),
+        CHECK_SEMANTIC_TYPE("Snapshots", TokenType::KW_SNAPSHOTS),
+        CHECK_SEMANTIC_TYPE("snapshots", TokenType::KW_SNAPSHOTS),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),

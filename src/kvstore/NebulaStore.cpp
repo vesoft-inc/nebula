@@ -605,6 +605,100 @@ ResultCode NebulaStore::flush(GraphSpaceID spaceId) {
     return ResultCode::SUCCEEDED;
 }
 
+ResultCode NebulaStore::createCheckpoint(GraphSpaceID spaceId, const std::string& name) {
+    auto spaceRet = space(spaceId);
+    if (!ok(spaceRet)) {
+        return error(spaceRet);
+    }
+
+    auto space = nebula::value(spaceRet);
+    for (auto& engine : space->engines_) {
+        auto code = engine->createCheckpoint(name);
+        if (code != ResultCode::SUCCEEDED) {
+            return code;
+        }
+        // create wal hard link for all parts
+        auto parts = engine->allParts();
+        for (auto& part : parts) {
+            auto ret = this->part(spaceId, part);
+            if (!ok(ret)) {
+                LOG(ERROR) << "Part not found. space : " << spaceId << " Part : " << part;
+                return error(ret);
+            }
+            auto walPath = folly::stringPrintf("%s/checkpoints/%s/wal/%d",
+                                                      engine->getDataRoot(), name.c_str(), part);
+            auto p = nebula::value(ret);
+            if (!p->linkCurrentWAL(walPath.data())) {
+                return ResultCode::ERR_CHECKPOINT_ERROR;
+            }
+        }
+    }
+    return ResultCode::SUCCEEDED;
+}
+
+ResultCode NebulaStore::dropCheckpoint(GraphSpaceID spaceId, const std::string& name) {
+    auto spaceRet = space(spaceId);
+    if (!ok(spaceRet)) {
+        return error(spaceRet);
+    }
+    auto space = nebula::value(spaceRet);
+    for (auto& engine : space->engines_) {
+        /**
+         * Drop checkpoint and wal together 
+         **/
+        auto checkpointPath = folly::stringPrintf("%s/checkpoints/%s",
+                                                  engine->getDataRoot(),
+                                                  name.c_str());
+        LOG(INFO) << "Drop checkpoint : " << checkpointPath;
+        if (!fs::FileUtils::exist(checkpointPath)) {
+            continue;
+        }
+        if (!fs::FileUtils::remove(checkpointPath.data(), true)) {
+            LOG(ERROR) << "Drop checkpoint dir failed : " << checkpointPath;
+            return ResultCode::ERR_IO_ERROR;
+        }
+    }
+    return ResultCode::SUCCEEDED;
+}
+
+ResultCode NebulaStore::setWriteBlocking(GraphSpaceID spaceId, bool sign) {
+    auto spaceRet = space(spaceId);
+    if (!ok(spaceRet)) {
+        return error(spaceRet);
+    }
+    auto space = nebula::value(spaceRet);
+    for (auto& engine : space->engines_) {
+        auto parts = engine->allParts();
+        for (auto& part : parts) {
+            auto partRet = this->part(spaceId, part);
+            if (!ok(partRet)) {
+                LOG(ERROR) << "Part not found. space : " << spaceId << " Part : " << part;
+                return error(partRet);
+            }
+            auto p = nebula::value(partRet);
+            if (p->isLeader()) {
+                auto ret = ResultCode::SUCCEEDED;
+                p->setBlocking(sign);
+                if (sign) {
+                    folly::Baton<true, std::atomic> baton;
+                    p->sync([&ret, &baton] (kvstore::ResultCode code) {
+                        if (kvstore::ResultCode::SUCCEEDED != code) {
+                            ret = code;
+                        }
+                        baton.post();
+                    });
+                    baton.wait();
+                }
+                if (ret != ResultCode::SUCCEEDED) {
+                    LOG(ERROR) << "Part sync failed. space : " << spaceId << " Part : " << part;
+                    return ret;
+                }
+            }
+        }
+    }
+    return ResultCode::SUCCEEDED;
+}
+
 bool NebulaStore::isLeader(GraphSpaceID spaceId, PartitionID partId) {
     folly::RWSpinLock::ReadHolder rh(&lock_);
     auto spaceIt = spaces_.find(spaceId);
