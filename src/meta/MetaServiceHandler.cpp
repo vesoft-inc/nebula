@@ -33,6 +33,9 @@
 #include "meta/processors/usersMan/AuthenticationProcessor.h"
 #include "meta/processors/admin/BalanceProcessor.h"
 #include "meta/processors/admin/LeaderBalanceProcessor.h"
+#include "meta/processors/admin/CreateSnapshotProcessor.h"
+#include "meta/processors/admin/DropSnapshotProcessor.h"
+#include "meta/processors/admin/ListSnapshotsProcessor.h"
 #include "meta/processors/configMan/RegConfigProcessor.h"
 #include "meta/processors/configMan/GetConfigProcessor.h"
 #include "meta/processors/configMan/SetConfigProcessor.h"
@@ -283,6 +286,24 @@ MetaServiceHandler::future_setConfig(const cpp2::SetConfigReq &req) {
 folly::Future<cpp2::ListConfigsResp>
 MetaServiceHandler::future_listConfigs(const cpp2::ListConfigsReq &req) {
     auto* processor = ListConfigsProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_createSnapshot(const cpp2::CreateSnapshotReq& req) {
+    auto* processor = CreateSnapshotProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_dropSnapshot(const cpp2::DropSnapshotReq& req) {
+    auto* processor = DropSnapshotProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListSnapshotsResp>
+MetaServiceHandler::future_listSnapshots(const cpp2::ListSnapshotsReq& req) {
+    auto* processor = ListSnapshotsProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

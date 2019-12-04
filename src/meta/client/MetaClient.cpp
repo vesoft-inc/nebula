@@ -1351,6 +1351,43 @@ MetaClient::listConfigs(const cpp2::ConfigModule& module) {
     return future;
 }
 
+folly::Future<StatusOr<bool>> MetaClient::createSnapshot() {
+    cpp2::CreateSnapshotReq req;
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_createSnapshot(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>> MetaClient::dropSnapshot(const std::string& name) {
+    cpp2::DropSnapshotReq req;
+    req.set_name(name);
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_dropSnapshot(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> MetaClient::listSnapshots() {
+    cpp2::ListSnapshotsReq req;
+    folly::Promise<StatusOr<std::vector<cpp2::Snapshot>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listSnapshots(request);
+    }, [] (cpp2::ListSnapshotsResp&& resp) -> decltype(auto){
+        return std::move(resp).get_snapshots();
+    }, std::move(promise));
+    return future;
+}
+
 void MetaClient::loadCfgThreadFunc() {
     loadCfg();
     addLoadCfgTask();

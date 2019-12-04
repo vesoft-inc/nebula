@@ -113,6 +113,7 @@ class GraphScanner;
 %token KW_BALANCE KW_LEADER KW_DATA KW_STOP
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL
+%token KW_SNAPSHOT KW_SNAPSHOTS
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -213,6 +214,7 @@ class GraphScanner;
 %type <sentence> download_sentence
 %type <sentence> set_config_sentence get_config_sentence balance_sentence
 %type <sentence> process_control_sentence return_sentence
+%type <sentence> create_snapshot_sentence drop_snapshot_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -1455,6 +1457,9 @@ show_sentence
     | KW_SHOW KW_CREATE KW_EDGE name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateEdge, $4);
     }
+    | KW_SHOW KW_SNAPSHOTS {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowSnapshots);
+    }
     ;
 
 config_module_enum
@@ -1716,6 +1721,18 @@ balance_sentence
     }
     ;
 
+create_snapshot_sentence
+    : KW_CREATE KW_SNAPSHOT {
+        $$ = new CreateSnapshotSentence();
+    }
+    ;
+
+drop_snapshot_sentence
+    : KW_DROP KW_SNAPSHOT name_label {
+        $$ = new DropSnapshotSentence($3);
+    }
+    ;
+
 mutate_sentence
     : insert_vertex_sentence { $$ = $1; }
     | insert_edge_sentence { $$ = $1; }
@@ -1750,6 +1767,8 @@ maintain_sentence
     | get_config_sentence { $$ = $1; }
     | set_config_sentence { $$ = $1; }
     | balance_sentence { $$ = $1; }
+    | create_snapshot_sentence { $$ = $1; };
+    | drop_snapshot_sentence { $$ = $1; };
     ;
 
 return_sentence

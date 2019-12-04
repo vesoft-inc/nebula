@@ -300,3 +300,11 @@ nebula_add_test(
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 
+
+nebula_add_test(
+    NAME checkpoint_test
+    SOURCES CheckpointTest.cpp
+    OBJECTS ${storage_test_deps}
+    LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
+)
+
