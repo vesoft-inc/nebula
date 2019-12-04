@@ -10,7 +10,7 @@
 #include <vector>
 #include <map>
 #include <cstdint>
-#include "com_vesoft_nebula_codec.h"
+#include "com_vesoft_nebula_NebulaCodec.h"
 
 #include "base/Base.h"
 #include "dataman/SchemaWriter.h"
