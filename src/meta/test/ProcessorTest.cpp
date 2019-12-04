@@ -1556,9 +1556,6 @@ protected:
         MetaProcessorTest::SetUp();
         ASSERT_EQ(4, TestUtils::createSomeHosts(kv_.get()));
     }
-
-    std::unique_ptr<fs::TempDir> root_ = nullptr;
-    std::unique_ptr<kvstore::KVStore> kv_ = nullptr;
 };
 
 TEST_F(MetaProcessorTestWithHosts, DuplicateCreateSpaceTest) {
