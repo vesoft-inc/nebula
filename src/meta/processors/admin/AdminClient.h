@@ -32,6 +32,9 @@ public:
     virtual folly::Future<Status> updateMeta() = 0;
     virtual folly::Future<Status> removePart() = 0;
     virtual folly::Future<Status> getLeaderDist(HostLeaderMap* hostLeaderMap) = 0;
+    virtual folly::Future<Status> createSnapshot() = 0;
+    virtual folly::Future<Status> dropSnapshot() = 0;
+    virtual folly::Future<Status> blockingWrites() = 0;
 };
 
 static const HostAddr kRandomPeer(0, 0);
@@ -91,6 +94,15 @@ public:
                                      const HostAddr& host);
 
     folly::Future<Status> getLeaderDist(HostLeaderMap* result);
+
+    folly::Future<Status> createSnapshot(GraphSpaceID spaceId, const std::string& name);
+
+    folly::Future<Status> dropSnapshot(GraphSpaceID spaceId,
+                                       const std::string& name,
+                                       const std::vector<HostAddr>& hosts);
+
+    folly::Future<Status> blockingWrites(GraphSpaceID spaceId,
+                                         storage::cpp2::EngineSignType sign);
 
     FaultInjector* faultInjector() {
         return injector_.get();
