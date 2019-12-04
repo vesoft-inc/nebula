@@ -66,7 +66,6 @@ check_cxx
 
 # Exit on any failure here after
 set -e
-set -o pipefail
 
 # Directories setup
 cur_dir=`pwd`
@@ -77,6 +76,7 @@ install_dir=$build_root/install
 download_dir=$build_root/downloads
 source_tar_name=nebula-third-party-src-1.0.tgz
 source_url=https://nebula-graph.oss-accelerate.aliyuncs.com/third-party/${source_tar_name}
+logfile=$build_root/build.log
 
 # Allow to customize compilers
 [[ -n ${CC} ]] && C_COMPILER_ARG="-DCMAKE_C_COMPILER=${CC}"
@@ -116,12 +116,19 @@ fi
 mkdir -p $build_dir $install_dir
 cd $build_dir
 
+echo "Starting build, on any failure, please see $logfile"
+
 cmake -DDOWNLOAD_DIR=$download_dir \
       -DCMAKE_INSTALL_PREFIX=$install_dir \
       ${C_COMPILER_ARG} ${CXX_COMPILER_ARG} \
-      $source_dir
+      $source_dir |& tee $logfile
 
-make
+make |& \
+         tee $logfile | \
+         grep --line-buffered '^Scanning\|^\[.*Built' | \
+         awk '/Scanning dependencies of target/ {printf "...... Build target %s\n", $NF; } \
+              /Built/ {print $0;}'
+#make |& tee -a $logfile | grep '^Scanning\|^\[.*Built' | awk '{print $0;}'
 end_time=$(date +%s)
 
 echo

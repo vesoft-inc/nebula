@@ -56,6 +56,7 @@ gcc_object_dir=$root_dir/gcc-build
 bu_object_dir=$root_dir/binutils-build
 prefix=$1
 install_dir=${prefix:-$root_dir/install}/gcc/$gcc_version
+logfile=$root_dir/build.log
 triplet=x86_64-vesoft-linux
 distro=$(lsb_release -si)
 
@@ -269,7 +270,7 @@ function make_package {
 set -e
 
 [[ \$# -ne 0 ]] && prefix=\$(echo "\$@" | sed 's;.*--prefix=(\S*).*;\1;' -r)
-prefix=\${prefix:-/opt/nebula/toolchain}
+prefix=\${prefix:-/opt/nebula/toolset}
 
 hash xz &> /dev/null || { echo "xz: Command not found"; exit 1; }
 
@@ -281,8 +282,8 @@ tail -n+\$archive_offset \$0 | tar --numeric-owner -xJf - -C \$prefix
 
 echo "GCC-$gcc_version has been installed to \$prefix/gcc/$gcc_version"
 echo "Performing usability tests"
-\$prefix/gcc/$gcc_version/cxx-compiler-usability-test.sh
-echo "Run '\$prefix/gcc/$gcc_version/enable' to start using."
+CXX=\$prefix/gcc/$gcc_version/bin/g++ \$prefix/gcc/$gcc_version/cxx-compiler-usability-test.sh
+echo "Run 'source \$prefix/gcc/$gcc_version/enable' to start using."
 
 exit 0
 
@@ -296,19 +297,26 @@ EOF
 
 start_time=$(date +%s)
 
-fetch_tarballs
-unpack_tarballs
-setup_deps
+echo "Starting build, on any failure, see $logfile"
 
-configure_gcc
-build_gcc
-install_gcc
+{
+    fetch_tarballs
+    unpack_tarballs
+    setup_deps
+}   |& tee $logfile
 
-configure_binutils
-build_binutils
-install_binutils
+{
+    configure_gcc
+    build_gcc
+    install_gcc
 
-finalize
+    configure_binutils
+    build_binutils
+    install_binutils
+
+    finalize
+}   |& tee $logfile \
+    | grep --line-buffered '^Making\|^Configuring\|^Comaparing\|^Comparison'
 
 usability_test
 
