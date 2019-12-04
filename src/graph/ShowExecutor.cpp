@@ -457,11 +457,34 @@ void ShowExecutor::showCreateTag() {
         buf += folly::stringPrintf("CREATE TAG %s (\n", tagName->c_str());
 
         auto schema = resp.value();
-        for (auto& item : schema.columns) {
+        for (auto& column : schema.columns) {
             buf += "  ";
-            buf += item.name;
+            buf += column.name;
             buf += " ";
-            buf += valueTypeToString(item.type);
+            buf += valueTypeToString(column.type);
+            if (column.__isset.default_value) {
+                auto value = column.get_default_value();
+                std::string defaultValue;
+                switch (column.get_type().get_type()) {
+                    case nebula::cpp2::SupportedType::BOOL:
+                        defaultValue = folly::to<std::string>(value->get_bool_value());
+                        break;
+                    case nebula::cpp2::SupportedType::INT:
+                        defaultValue = folly::to<std::string>(value->get_int_value());
+                        break;
+                    case nebula::cpp2::SupportedType::DOUBLE:
+                        defaultValue = folly::to<std::string>(value->get_double_value());
+                        break;
+                    case nebula::cpp2::SupportedType::STRING:
+                        defaultValue = folly::to<std::string>(value->get_string_value());
+                        break;
+                    default:
+                        LOG(ERROR) << "Unsupported type";
+                        return;
+                }
+                buf += " default ";
+                buf += defaultValue;
+            }
             buf += ",\n";
         }
 
@@ -534,11 +557,34 @@ void ShowExecutor::showCreateEdge() {
         buf += folly::stringPrintf("CREATE EDGE %s (\n",  edgeName->c_str());
 
         auto schema = resp.value();
-        for (auto& item : schema.columns) {
+        for (auto& column : schema.columns) {
             buf += "  ";
-            buf += item.name;
+            buf += column.name;
             buf += " ";
-            buf += valueTypeToString(item.type);
+            buf += valueTypeToString(column.type);
+            if (column.__isset.default_value) {
+                auto value = column.get_default_value();
+                std::string defaultValue;
+                switch (column.get_type().get_type()) {
+                    case nebula::cpp2::SupportedType::BOOL:
+                        defaultValue = folly::to<std::string>(value->get_bool_value());
+                        break;
+                    case nebula::cpp2::SupportedType::INT:
+                        defaultValue = folly::to<std::string>(value->get_int_value());
+                        break;
+                    case nebula::cpp2::SupportedType::DOUBLE:
+                        defaultValue = folly::to<std::string>(value->get_double_value());
+                        break;
+                    case nebula::cpp2::SupportedType::STRING:
+                        defaultValue = folly::to<std::string>(value->get_string_value());
+                        break;
+                    default:
+                        LOG(ERROR) << "Unsupported type";
+                        return;
+                }
+                buf += " default ";
+                buf += defaultValue;
+            }
             buf += ",\n";
         }
 
