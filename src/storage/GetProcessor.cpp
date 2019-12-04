@@ -23,7 +23,11 @@ void GetProcessor::process(const cpp2::GetRequest& req) {
             auto ret = t.value();
             auto part = std::get<0>(ret);
             auto resultCode = std::get<1>(ret);
-            this->pushResultCode(this->to(resultCode), part);
+            if (resultCode == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+                this->handleLeaderChanged(space_, part);
+            } else {
+                this->pushResultCode(this->to(resultCode), part);
+            }
         }
 
         resp_.set_values(std::move(pairs_));

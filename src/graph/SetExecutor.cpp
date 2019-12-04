@@ -48,17 +48,16 @@ Status SetExecutor::prepare() {
 }
 
 void SetExecutor::setLeft() {
-    auto onFinish = [] (Executor::ProcessControl ctr) {
+    futures_.emplace_back(leftP_.getFuture());
+    auto onFinish = [this] (Executor::ProcessControl ctr) {
         UNUSED(ctr);
-        return;
+        leftP_.setValue();
     };
 
-    futures_.emplace_back(leftP_.getFuture());
     auto onResult = [this] (std::unique_ptr<InterimResult> result) {
         DCHECK(result != nullptr);
         this->leftResult_ = std::move(result);
         VLOG(3) << "Left result set.";
-        leftP_.setValue();
     };
 
     auto onError = [this] (Status s) {
@@ -73,17 +72,16 @@ void SetExecutor::setLeft() {
 }
 
 void SetExecutor::setRight() {
-    auto onFinish = [] (Executor::ProcessControl ctr) {
+    futures_.emplace_back(rightP_.getFuture());
+    auto onFinish = [this] (Executor::ProcessControl ctr) {
         UNUSED(ctr);
-        return;
+        rightP_.setValue();
     };
 
-    futures_.emplace_back(rightP_.getFuture());
     auto onResult = [this] (std::unique_ptr<InterimResult> result) {
         DCHECK(result != nullptr);
         this->rightResult_ = std::move(result);
         VLOG(3) << "Right result set.";
-        rightP_.setValue();
     };
 
     auto onError = [this] (Status s) {
@@ -426,6 +424,7 @@ void SetExecutor::finishExecution(std::vector<cpp2::RowValue> rows) {
         if (!ret.ok()) {
             LOG(ERROR) << "Get Interim result failed.";
             onError_(std::move(ret).status());
+            return;
         }
         onResult_(std::move(ret).value());
     } else {

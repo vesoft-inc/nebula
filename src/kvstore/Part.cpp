@@ -62,7 +62,7 @@ std::pair<LogID, TermID> Part::lastCommittedLogId() {
     std::string val;
     ResultCode res = engine_->get(NebulaKeyUtils::systemCommitKey(partId_), &val);
     if (res != ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Cannot fetch the last committed log id from the storage engine";
+        LOG(INFO) << idStr_ << "Cannot fetch the last committed log id from the storage engine";
         return std::make_pair(0, 0);
     }
     CHECK_EQ(val.size(), sizeof(LogID) + sizeof(TermID));

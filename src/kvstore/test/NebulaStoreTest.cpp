@@ -381,6 +381,12 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
             });
             baton.wait();
         }
+        // Let's try to read data on follower
+        {
+            std::string value;
+            auto ret = stores[followerIndex]->get(0, part, "key", &value);
+            EXPECT_EQ(ResultCode::ERR_LEADER_CHANGED, ret);
+        }
     }
 }
 

@@ -201,6 +201,8 @@ private:
 
     ErrorOr<ResultCode, KVEngine*> engine(GraphSpaceID spaceId, PartitionID partId);
 
+    bool checkLeader(std::shared_ptr<Part> part) const;
+
 private:
     // The lock used to protect spaces_
     folly::RWSpinLock lock_;
