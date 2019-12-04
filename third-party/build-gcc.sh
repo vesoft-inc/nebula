@@ -15,6 +15,8 @@ then
     exit $?
 fi
 
+this_dir=$(dirname $(readlink -f $0))
+
 # GCC, binutils and support libraries
 #url_base=http://ftpmirror.gnu.org
 url_base=http://mirrors.ustc.edu.cn/gnu
@@ -56,6 +58,9 @@ prefix=$1
 install_dir=${prefix:-$root_dir/install}/gcc/$gcc_version
 triplet=x86_64-vesoft-linux
 distro=$(lsb_release -si)
+
+# Guess number of building jobs
+source $this_dir/guess-building-jobs-num.sh
 
 # Download source tarballs
 function get_checksum {
@@ -188,7 +193,7 @@ function configure_gcc {
 # Start building GCC
 function build_gcc {
     cd $gcc_object_dir
-    make -s -j 20  |& tee build.log
+    make -s -j $building_jobs_num  |& tee build.log
     [[ $? -ne 0 ]] && exit 1
     cd $OLDPWD
 }
@@ -196,7 +201,7 @@ function build_gcc {
 # Install GCC
 function install_gcc {
     cd $gcc_object_dir
-    make -s -j8 install-strip
+    make -s -j $building_jobs_num install-strip
     [[ $? -ne 0 ]] && exit 1
     cd $OLDPWD
 }
@@ -224,7 +229,7 @@ function configure_binutils {
 # Build binutils
 function build_binutils {
     cd $bu_object_dir
-    make -s -j 20 || exit 1
+    make -s -j $building_jobs_num || exit 1
     cd $OLDPWD
 }
 
