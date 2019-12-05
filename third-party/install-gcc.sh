@@ -26,8 +26,8 @@ this_dir=$(dirname $(readlink -f $0))
 
 # We consider two derivatives: Red Hat and Debian
 # Place preset libc versions of each from newer to older
-CentOS_libc_preset=( 2.12 )
-Debian_libc_preset=( 2.13 )
+CentOS_libc_preset=( 2.17 2.12 )
+Debian_libc_preset=( 2.19 2.13 )
 
 selected_distro=
 selected_libc=
@@ -39,6 +39,11 @@ hash wget &>/dev/null || {
     echo "'wget' not fould, please install it first" 1>&2
     exit 1
 }
+
+download_cmd="wget -c"
+wget --help | grep -q '\--show-progress' && \
+         download_cmd="$download_cmd -q --show-progress" || \
+         download_cmd="$download_cmd --progress=bar:force:noscroll"
 
 # Guess the root distro
 [[ "$this_distro" = CentOS ]] && selected_distro=CentOS
@@ -100,7 +105,7 @@ esac
 selected_archive=vesoft-gcc-$version-$selected_distro-x86_64-glibc-$selected_libc.sh
 
 url=$url_base/$selected_archive
-wget -c $url
+$download_cmd $url
 [[ $? -ne 0 ]] && {
     echo "Downloading $selected_archive failed" 1>&2
     exit 1

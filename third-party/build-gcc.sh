@@ -300,6 +300,7 @@ start_time=$(date +%s)
 set -e
 set -o pipefail
 echo "Starting build, on any failure, see $logfile"
+mkdir -p $root_dir
 
 {
     fetch_tarballs
