@@ -34,6 +34,7 @@ GENERATE_LOCK(tagIndex);
 GENERATE_LOCK(edgeIndex);
 GENERATE_LOCK(user);
 GENERATE_LOCK(config);
+GENERATE_LOCK(snapshot);
 
 #undef GENERATE_LOCK
 };

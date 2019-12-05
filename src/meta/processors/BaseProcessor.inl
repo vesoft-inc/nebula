@@ -352,5 +352,24 @@ BaseProcessor<RESP>::getUserAccount(UserID userId) {
     return MetaServiceUtils::parseUserItem(ret.value()).get_account();
 }
 
+template<typename RESP>
+bool BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
+    folly::Baton<true, std::atomic> baton;
+    bool ret = false;
+    kvstore_->asyncMultiPut(kDefaultSpaceId,
+                            kDefaultPartId,
+                            std::move(data),
+                            [this, &ret, &baton] (kvstore::ResultCode code) {
+                                if (kvstore::ResultCode::SUCCEEDED == code) {
+                                    ret = true;
+                                } else {
+                                    LOG(INFO) << "Put data error on meta server";
+                                }
+                                baton.post();
+                            });
+    baton.wait();
+    return ret;
+}
+
 }  // namespace meta
 }  // namespace nebula

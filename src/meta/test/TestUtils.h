@@ -87,6 +87,19 @@ public:
         return response(7);
     }
 
+
+    folly::Future<Status> createSnapshot() override {
+        return response(8);
+    }
+
+    folly::Future<Status> dropSnapshot() override {
+        return response(9);
+    }
+
+    folly::Future<Status> blockingWrites() override {
+        return response(10);
+    }
+
     void reset(std::vector<Status> sts) {
         statusArray_ = std::move(sts);
     }

@@ -174,6 +174,19 @@ public:
     static ConfigName parseConfigKey(folly::StringPiece rawData);
 
     static cpp2::ConfigItem parseConfigValue(folly::StringPiece rawData);
+
+    static std::string snapshotKey(const std::string& name);
+
+    static std::string snapshotVal(const cpp2::SnapshotStatus& status ,
+                                   const std::string& hosts);
+
+    static cpp2::SnapshotStatus parseSnapshotStatus(folly::StringPiece rawData);
+
+    static std::string parseSnapshotHosts(folly::StringPiece rawData);
+
+    static std::string parseSnapshotName(folly::StringPiece rawData);
+
+    static const std::string& snapshotPrefix();
 };
 
 }  // namespace meta
