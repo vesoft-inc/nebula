@@ -48,7 +48,7 @@ std::string encodeMultiValues(LogType type,
 std::vector<folly::StringPiece> decodeMultiValues(folly::StringPiece encoded);
 
 std::string encodeBatchValue(const std::vector<std::pair<BatchLogType,
-                             std::pair<folly::StringPiece, folly::StringPiece>>>& batch);
+                             std::pair<std::string, std::string>>>& batch);
 
 std::vector<std::pair<BatchLogType, std::pair<folly::StringPiece, folly::StringPiece>>>
 decodeBatchValue(folly::StringPiece encoded);
@@ -66,17 +66,17 @@ public:
 
     void put(folly::StringPiece key, folly::StringPiece val) {
         batch_.emplace_back(BatchLogType::OP_BATCH_PUT,
-                            std::pair<folly::StringPiece, folly::StringPiece>(key, val));
+                            std::make_pair(key, val));
     }
 
     void remove(folly::StringPiece key) {
         batch_.emplace_back(BatchLogType::OP_BATCH_REMOVE,
-                            std::pair<folly::StringPiece, folly::StringPiece>(key, ""));
+                            std::make_pair(key, ""));
     }
 
     void rangeRemove(folly::StringPiece begin, folly::StringPiece end) {
         batch_.emplace_back(BatchLogType::OP_BATCH_REMOVE_RANGE,
-                            std::pair<folly::StringPiece, folly::StringPiece>(begin, end));
+                            std::make_pair(begin, end));
     }
 
     void clear() {
@@ -84,13 +84,12 @@ public:
     }
 
     std::vector<std::pair<BatchLogType,
-                     std::pair<folly::StringPiece, folly::StringPiece>>> getBatch() {
+                          std::pair<std::string, std::string>>> getBatch() {
         return batch_;
     }
 
 private:
-    std::vector<std::pair<BatchLogType,
-                          std::pair<folly::StringPiece, folly::StringPiece>>> batch_;
+    std::vector<std::pair<BatchLogType, std::pair<std::string, std::string>>> batch_;
 };
 }  // namespace kvstore
 }  // namespace nebula
