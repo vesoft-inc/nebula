@@ -1662,7 +1662,28 @@ TEST_F(GoTest, filterPushdown) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    /*
+    {
+        // Filter pushdown: ((player.name=="Tony Parker")&&(serve.start_year>2013))
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "WHERE serve._src == %ld && serve._rank == 0 && serve._dst == %ld"
+                    "YIELD serve._dst AS id";
+        auto query = folly::stringPrintf(fmt,
+                players_["Tim Duncan"].vid(), players_["Tim Duncan"].vid(), teams_["Spurs"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"id"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Spurs"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+   /*
     {
         // Function call is not supported in storage now.
         cpp2::ExecutionResponse resp;

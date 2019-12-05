@@ -429,7 +429,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
         if (edgeType > 0 && !val.empty()) {
             reader = RowReader::getEdgePropReader(this->schemaMan_, val, spaceId_, edgeType);
             if (exp_ != nullptr) {
-                getters.getAliasProp = [this, edgeType, &reader](const std::string& edgeName,
+                getters.getAliasProp = [this, edgeType, &reader, &key](const std::string& edgeName,
                                            const std::string& prop) -> OptVariantType {
                     auto edgeFound = this->edgeMap_.find(edgeName);
                     if (edgeFound == edgeMap_.end()) {
@@ -438,6 +438,16 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                     }
                     if (edgeType != edgeFound->second) {
                         return Status::Error("Ignore this edge");
+                    }
+
+                    if (prop == _SRC) {
+                        return NebulaKeyUtils::getSrcId(key);
+                    } else if (prop == _DST) {
+                        return NebulaKeyUtils::getDstId(key);
+                    } else if (prop == _RANK) {
+                        return NebulaKeyUtils::getRank(key);
+                    } else if (prop == _TYPE) {
+                        return static_cast<int64_t>(NebulaKeyUtils::getEdgeType(key));
                     }
 
                     auto res = RowReader::getPropByName(reader.get(), prop);
