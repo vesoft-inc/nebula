@@ -16,6 +16,9 @@ nebula_add_library(
     UpdateEdgeProcessor.cpp
     PutProcessor.cpp
     GetProcessor.cpp
+    CreateCheckpointProcessor.cpp
+    DropCheckpointProcessor.cpp
+    SendBlockSignProcessor.cpp
 )
 
 nebula_add_library(

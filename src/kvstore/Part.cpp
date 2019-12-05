@@ -23,6 +23,8 @@ ResultCode toResultCode(AppendLogResult res) {
             return ResultCode::SUCCEEDED;
         case AppendLogResult::E_NOT_A_LEADER:
             return ResultCode::ERR_LEADER_CHANGED;
+        case AppendLogResult::E_WRITE_BLOCKING:
+            return ResultCode::ERR_WRITE_BLOCK_ERROR;
         default:
             return ResultCode::ERR_CONSENSUS_ERROR;
     }
@@ -187,6 +189,11 @@ void Part::asyncRemovePeer(const HostAddr& peer, KVCallback cb) {
                   << ", result: " << static_cast<int32_t>(toResultCode(res));
         callback(toResultCode(res));
     });
+}
+
+
+void Part::setBlocking(bool sign) {
+    blocking_ = sign;
 }
 
 void Part::onLostLeadership(TermID term) {
