@@ -79,6 +79,13 @@ nebula_add_test(
     LIBRARIES ${THRIFT_LIBRARIES} ${ROCKSDB_LIBRARIES} wangle gtest
 )
 
+nebula_add_test(
+        NAME snapshot_link_test
+        SOURCES SnapshotLinkTest.cpp
+        OBJECTS ${KVSTORE_TEST_LIBS}
+        LIBRARIES ${THRIFT_LIBRARIES} ${ROCKSDB_LIBRARIES} wangle gtest
+)
+
 nebula_add_executable(
     NAME multi_versions_perf_test_bm
     SOURCES MultiVersionBenchmark.cpp

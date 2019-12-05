@@ -154,6 +154,12 @@ public:
 
     virtual ResultCode flush(GraphSpaceID spaceId) = 0;
 
+    virtual ResultCode createCheckpoint(GraphSpaceID spaceId, const std::string& name) = 0;
+
+    virtual ResultCode dropCheckpoint(GraphSpaceID spaceId, const std::string& name) = 0;
+
+    virtual ResultCode setWriteBlocking(GraphSpaceID spaceId, bool sign) = 0;
+
 protected:
     KVStore() = default;
 };
