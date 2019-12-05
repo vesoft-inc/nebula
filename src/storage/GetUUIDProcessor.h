@@ -52,10 +52,7 @@ public:
             });
             baton.wait();
             if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-                auto leaderRet = kvstore_->partLeader(spaceId, partId);
-                CHECK(ok(leaderRet));
-                auto leader = value(std::move(leaderRet));
-                this->pushResultCode(cpp2::ErrorCode::E_LEADER_CHANGED, partId, leader);
+                this->handleLeaderChanged(spaceId, partId);
                 this->onFinished();
                 return;
             } else if (ret != kvstore::ResultCode::SUCCEEDED) {

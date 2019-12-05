@@ -14,12 +14,6 @@
   <br>
 </p>
 
-<!-- <p align="center">
-  <a href="https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzU2NDkxNjI0NQ==&scene=124#wechat_redirect"><img src="https://img.shields.io/badge/%E5%85%AC%E4%BC%97%E5%8F%B7-wechat-brightgreen" alt="WeiXin"></a>
-  <a href="https://www.zhihu.com/org/nebulagraph/activities"><img src="https://img.shields.io/badge/%E7%9F%A5%E4%B9%8E-zhihu-blue" alt="Zhihu"></a>
-    <a href="https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place"><img src="https://img.shields.io/badge/%E5%BE%AE%E5%8D%9A-weibo-red" alt="Sina Weibo"></a>
-</p> -->
-
 # Nebula Graph
 
 **Nebula Graph** is the only solution in the world capable of hosting graphs with dozens of billions of vertices (nodes) and trillions of edges, while still only having milliseconds of latency.
@@ -42,7 +36,7 @@ Apart from [installing from source code](docs/manual-EN/3.build-develop-and-admi
 
 ## How to Use Nebula Graph
 
-See [manual](docs/README.md) or download the [pdf](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/doc/nebulagraph.pdf).
+See [manual](docs/README.md) or download the [pdf](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/doc/manual-en-1204.pdf).
 
 ## How Can I Contribute
 

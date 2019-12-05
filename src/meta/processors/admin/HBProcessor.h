@@ -20,7 +20,7 @@ class HBProcessor : public BaseProcessor<cpp2::HBResp> {
 
 public:
     static HBProcessor* instance(kvstore::KVStore* kvstore, ClusterID clusterId = 0,
-                                 MetaStats* stats = nullptr) {
+                                 stats::Stats* stats = nullptr) {
         return new HBProcessor(kvstore, clusterId, stats);
     }
 
@@ -28,7 +28,7 @@ public:
 
 private:
     explicit HBProcessor(kvstore::KVStore* kvstore, ClusterID clusterId = 0,
-                         MetaStats* stats = nullptr)
+                         stats::Stats* stats = nullptr)
             : BaseProcessor<cpp2::HBResp>(kvstore, stats), clusterId_(clusterId) {}
 
     ClusterID clusterId_{0};

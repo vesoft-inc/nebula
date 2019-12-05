@@ -32,6 +32,8 @@ std::string ShowSentence::toString() const {
             return folly::stringPrintf("SHOW CREATE TAG %s", name_.get()->c_str());
         case ShowType::kShowCreateEdge:
             return folly::stringPrintf("SHOW CREATE EDGE %s", name_.get()->c_str());
+        case ShowType::kShowSnapshots:
+            return folly::stringPrintf("SHOW SNAPSHOTS");
         case ShowType::kUnknown:
         default:
             FLOG_FATAL("Type illegal");
@@ -146,6 +148,14 @@ std::string HostList::toString() const {
         buf.resize(buf.size() - 1);
     }
     return buf;
+}
+
+std::string CreateSnapshotSentence::toString() const {
+    return "CREATE SNAPSHOT";
+}
+
+std::string DropSnapshotSentence::toString() const {
+    return folly::stringPrintf("DROP SNAPSHOT %s", name_.get()->c_str());
 }
 
 }   // namespace nebula
