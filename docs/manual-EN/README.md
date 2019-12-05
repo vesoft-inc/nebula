@@ -108,6 +108,7 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
         * [Spark Writer](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/spark-writer.md)
       * [Storage Balance](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-balance.md)
       * [Storage Metrics](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-metrics.md)
+      * [Cluster Snapshot](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/cluster-snapshot.md)
 
 ## Contributions (for Contributors)
 
