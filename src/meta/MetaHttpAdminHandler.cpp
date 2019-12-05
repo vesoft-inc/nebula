@@ -81,7 +81,7 @@ void MetaHttpAdminHandler::onEOM() noexcept {
             break;
     }
 
-    if (RunJob(op_, spaceName_, spaceId_)) {
+    if (runJob(op_, spaceName_, spaceId_)) {
         LOG(INFO) << "admin successfully ";
         ResponseBuilder(downstream_)
             .status(WebServiceUtils::to(HttpStatusCode::OK),
@@ -111,7 +111,7 @@ void MetaHttpAdminHandler::onError(ProxygenError error) noexcept {
                << proxygen::getErrorString(error);
 }
 
-bool MetaHttpAdminHandler::RunJob(const std::string& op,
+bool MetaHttpAdminHandler::runJob(const std::string& op,
             const std::string& spaceName, GraphSpaceID spaceId) {
     LOG(INFO) << "admin run job = " << op;
     std::unique_ptr<kvstore::KVIterator> iter;
