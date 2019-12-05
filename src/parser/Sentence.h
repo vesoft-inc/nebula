@@ -61,6 +61,8 @@ public:
         kLimit,
         KGroupBy,
         kReturn,
+        kCreateSnapshot,
+        kDropSnapshot,
     };
 
     Kind kind() const {

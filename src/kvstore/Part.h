@@ -59,6 +59,8 @@ public:
 
     void asyncRemovePeer(const HostAddr& peer, KVCallback cb);
 
+    void setBlocking(bool sign);
+
     // Sync the information committed on follower.
     void sync(KVCallback cb);
 

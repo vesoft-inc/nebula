@@ -31,7 +31,8 @@ public:
         kShowRoles,
         kShowCreateSpace,
         kShowCreateTag,
-        kShowCreateEdge
+        kShowCreateEdge,
+        kShowSnapshots
     };
 
     explicit ShowSentence(ShowType sType) {
@@ -371,6 +372,32 @@ private:
     SubType                         subType_{SubType::kUnknown};
     int64_t                         balanceId_{0};
     std::unique_ptr<HostList>       hostDel_;
+};
+
+class CreateSnapshotSentence final : public Sentence {
+public:
+    CreateSnapshotSentence() {
+        kind_ = Kind::kCreateSnapshot;
+    }
+
+    std::string toString() const override;
+};
+
+class DropSnapshotSentence final : public Sentence {
+public:
+    explicit DropSnapshotSentence(std::string *name) {
+        kind_ = Kind::kDropSnapshot;
+        name_.reset(name);
+    }
+
+    const std::string* getName() {
+        return name_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>    name_;
 };
 
 }   // namespace nebula
