@@ -22,7 +22,7 @@ class QueryBoundProcessor
 public:
     static QueryBoundProcessor* instance(kvstore::KVStore* kvstore,
                                          meta::SchemaManager* schemaMan,
-                                         StorageStats* stats,
+                                         stats::Stats* stats,
                                          folly::Executor* executor,
                                          VertexCache* cache = nullptr) {
         return new QueryBoundProcessor(kvstore, schemaMan, stats, executor, cache);
@@ -31,7 +31,7 @@ public:
 protected:
     explicit QueryBoundProcessor(kvstore::KVStore* kvstore,
                                  meta::SchemaManager* schemaMan,
-                                 StorageStats* stats,
+                                 stats::Stats* stats,
                                  folly::Executor* executor,
                                  VertexCache* cache)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,

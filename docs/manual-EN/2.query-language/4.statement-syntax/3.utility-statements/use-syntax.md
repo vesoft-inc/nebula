@@ -4,7 +4,7 @@
 USE <graph_space_name>
 ```
 
-The `USE` statement tells Nebula to use the named (graph) space as the current working space for subsequent statements. This statement requires some privileges.
+The `USE` statement tells **Nebula Graph** to use the named (graph) space as the current working space for subsequent statements. This statement requires some privileges.
 
 The named space remains the default until the end of the session or another `USE` statement is issued:
 
@@ -21,4 +21,4 @@ nebula> USE space1;
 
 Different from SQL, making a space as the working space prevents you to access other spaces. The only way to traverse in a new graph space is to switch by the `USE` statement.
 
-> SPACES are `FULLY ISOLATED` from each other. Unlike SQL, which allows you to select two tables from different databases in one statement, in Nebula, you can only touch one space at a time.
+> SPACES are `FULLY ISOLATED` from each other. Unlike SQL, which allows you to select two tables from different databases in one statement, in **Nebula Graph**, you can only touch one space at a time.

@@ -26,7 +26,7 @@ protected:
 };
 
 
-TEST_F(YieldTest, basic) {
+TEST_F(YieldTest, Base) {
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
     {
@@ -75,7 +75,7 @@ TEST_F(YieldTest, basic) {
     }
 }
 
-TEST_F(YieldTest, hashCall) {
+TEST_F(YieldTest, HashCall) {
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
     {
@@ -205,7 +205,7 @@ TEST_F(YieldTest, Logic) {
     }
 }
 
-TEST_F(YieldTest, inCall) {
+TEST_F(YieldTest, InCall) {
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
     {
@@ -224,7 +224,7 @@ TEST_F(YieldTest, inCall) {
     }
 }
 
-TEST_F(YieldTest, yieldPipe) {
+TEST_F(YieldTest, YieldPipe) {
     std::string go = "GO FROM %ld OVER serve YIELD "
                      "$^.player.name as name, serve.start_year as start, $$.team.name as team";
     {
@@ -326,7 +326,7 @@ TEST_F(YieldTest, yieldPipe) {
     }
 }
 
-TEST_F(YieldTest, yieldVar) {
+TEST_F(YieldTest, YieldVar) {
     std::string var = " $var = GO FROM %ld OVER serve YIELD "
                      "$^.player.name as name, serve.start_year as start, $$.team.name as team;";
     {
@@ -428,7 +428,7 @@ TEST_F(YieldTest, yieldVar) {
     }
 }
 
-TEST_F(YieldTest, error) {
+TEST_F(YieldTest, Error) {
     {
         cpp2::ExecutionResponse resp;
         // Reference input in a single yield sentence is meaningless.
@@ -546,6 +546,45 @@ TEST_F(YieldTest, AggCall) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Yield field has not input
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Carmelo Anthony"];
+        auto *fmt = "GO FROM %ld OVER like "
+                    "| YIELD COUNT(*)";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+                {3},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Yield field has not input
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Carmelo Anthony"];
+        auto *fmt = "GO FROM %ld OVER like "
+                    "| YIELD 1";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+                {1}, {1}, {1}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // input is empty
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Nobody"];
+        auto *fmt = "GO FROM %ld OVER like "
+                    "| YIELD 1";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(resp.get_rows() == nullptr);
+    }
     // Test var
     {
         cpp2::ExecutionResponse resp;
@@ -585,6 +624,12 @@ TEST_F(YieldTest, EmptyInput) {
         auto query = folly::stringPrintf(fmt.c_str(), nonExistPlayerID);
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::string> expectedColNames{
+            {"$-.team"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string>> expected;
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -596,6 +641,12 @@ TEST_F(YieldTest, EmptyInput) {
         auto query = folly::stringPrintf(fmt.c_str(), nonExistPlayerID);
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+
+        std::vector<std::string> expectedColNames{
+            {"$var.team"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string>> expected;
         ASSERT_TRUE(verifyResult(resp, expected));
     }
