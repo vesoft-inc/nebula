@@ -17,16 +17,15 @@ CREATE {TAG | EDGE} <tag_name> | <edge_name>
     | DEFAULT <default_value>
 ```
 
-**Nebula graph**'s schema is composed of tags and edges, either of which may have properties. `CREATE TAG` statement defines a tag with the given name. While `CREATE EDGE` statement is to define an edge type.
+**Nebula Graph**'s schema is composed of tags and edges, either of which may have properties. `CREATE TAG` statement defines a tag with the given name. While `CREATE EDGE` statement is to define an edge type.
 
-There are several aspects to this syntax, described under the following topics in this section:
 The features of this syntax are described in the following sections:
 
 ## Tag Name and Edge Type Name
 
 * **tag_name and edge_name**
 
-    The name of tags and edgeTypes should be **unique** within the space. Once the name is defined, it can not be altered. The rules of tag and edgeType names are the same as those for names of spaces. See [Schema Object Name](../../3.language-structure/schema-object-names.md)
+    The name of tags and edgeTypes must be **unique** within the space. Once the name is defined, it can not be altered. The rules of tag and edgeType names are the same as those for names of spaces. See [Schema Object Name](../../3.language-structure/schema-object-names.md) for detail.
 
 ### Property Name and Data Type
 
@@ -40,13 +39,15 @@ The features of this syntax are described in the following sections:
 
     > NULL and NOT NULL constrain are not supported yet when creating tags/edges (comparing with relational databases).
 
-<!-- * **default values**
+* **Default Constraint**
 
-    You can set the default value of a property when creating a tag/edge. When inserting a new vertex or edge, you don't have to provide the value for that property. Also you can write a user-specified value if you don't want to use the default one.
+    You can set the default value of a property when creating a tag/edge with the `DEFAULT` constraint. The default value will be added to all new vertices and edges IF no other value is specified. Also you can write a user-specified value if you don't want to use the default one.
 
-    > Since it's so error-prone to modify the default value with new one, using `Alter` to change the default value is not supported. -->
+    > Using `Alter` to change the default value is not supported.
 
-### Time-to-Live (TTL) Syntax
+    <!-- > Since it's so error-prone to modify the default value with new one, using `Alter` to change the default value is not supported. -->
+
+<!-- ### Time-to-Live (TTL) Syntax
 
 * TTL_DURATION
 
@@ -60,7 +61,7 @@ The features of this syntax are described in the following sections:
 
 * multiple TTL definition
 
-    If TTL_COL is a list of prop_name, and there are multiple ttl_duration, **Nebula Graph** uses the lowest(i.e. earliest) expiration threshold to expire data.
+    If TTL_COL is a list of prop_name, and there are multiple ttl_duration, **Nebula Graph** uses the lowest(i.e. earliest) expiration threshold to expire data. -->
 
 ### Examples
 
@@ -68,12 +69,14 @@ The features of this syntax are described in the following sections:
 nebula> CREATE TAG course(name string, credits int)
 nebula> CREATE TAG notag()  -- empty properties
 
-nebula> CREATE EDGE follow(start_time timestamp, likeness double)
+nebula> CREATE EDGE follow(start_time timestamp, grade double)
 nebula> CREATE EDGE noedge()  -- empty properties
 
-nebula> CREATE TAG course_with_default(name string, credits int DEFAULT 0)  -- credits is set 0 by default
-nebula> CREATE EDGE follow_with_default(start_time timestamp DEFAULT 0, likeness double 0.0)
+nebula> CREATE TAG player_with_default(name string, age int DEFAULT 20)  -- age is set to 20 by default
+nebula> CREATE EDGE follow_with_default(start_time timestamp DEFAULT 0, grade double DEFAULT 0.0)  -- start_time is set to 0 by default, grade is set to 0.0 by default
+```
 
+<!-- ```ngql
 nebula> CREATE TAG woman(name string, age int,
    married bool, salary double, create_time timestamp)
    TTL_DURATION = 100, TTL_COL = create_time -- expired when now is later than create_time + 100
@@ -90,4 +93,4 @@ nebula> CREATE EDGE garbge (thrown timestamp, temprature int)
    TTL_DURATION = -2, TTL_COL = thrown,
    TTL_DURATION = 10, TTL_COL = thrown
    --  legal, but not recommended. expired at thrown + 10
-```
+``` -->
