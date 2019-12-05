@@ -37,7 +37,7 @@ public:
 
     void onError(proxygen::ProxygenError error) noexcept override;
 
-    bool RunJob(const std::string& op, const std::string& spaceName, GraphSpaceID spaceId);
+    bool runJob(const std::string& op, const std::string& spaceName, GraphSpaceID spaceId);
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
