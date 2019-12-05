@@ -149,6 +149,8 @@ NULL                        ([Nn][Uu][Ll][Ll])
 SNAPSHOT                    ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt])
 SNAPSHOTS                   ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt][Ss])
 FORCE                       ([Ff][Oo][Rr][Cc][Ee])
+TIME_ZONE                   ([Tt][Ii][Mm][Ee][_][Zz][Oo][Nn][Ee])
+
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -284,6 +286,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {SNAPSHOT}                  { return TokenType::KW_SNAPSHOT; }
 {SNAPSHOTS}                 { return TokenType::KW_SNAPSHOTS; }
 {FORCE}                     { return TokenType::KW_FORCE; }
+{TIME_ZONE}                 { return TokenType::KW_TIME_ZONE; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

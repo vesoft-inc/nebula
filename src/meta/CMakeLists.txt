@@ -57,6 +57,8 @@ nebula_add_library(
     processors/admin/BalancePlan.cpp
     processors/admin/BalanceTask.cpp
     processors/admin/AdminClient.cpp
+    processors/admin/SetTimezoneProcessor.cpp
+    processors/admin/GetTimezoneProcessor.cpp
     processors/admin/LeaderBalanceProcessor.cpp
     processors/admin/SnapShot.cpp
     processors/configMan/RegConfigProcessor.cpp

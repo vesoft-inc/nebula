@@ -637,6 +637,25 @@ struct ListSnapshotsResp {
     3: list<Snapshot>       snapshots,
 }
 
+struct Timezone {
+    1: byte              eastern;
+    2: byte              hour,
+    3: byte              minute,
+}
+
+struct SetTimezoneReq {
+    1: Timezone        timezone;
+}
+
+struct GetTimezoneReq {
+}
+
+struct GetTimezoneResp {
+    1: ErrorCode       code,
+    2: common.HostAddr leader,
+    3: Timezone        timezone;
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -699,5 +718,8 @@ service MetaService {
     ExecResp createSnapshot(1: CreateSnapshotReq req);
     ExecResp dropSnapshot(1: DropSnapshotReq req);
     ListSnapshotsResp listSnapshots(1: ListSnapshotsReq req);
+
+    ExecResp setTimezone(1: SetTimezoneReq req);
+    GetTimezoneResp getTimezone(1: GetTimezoneReq req);
 }
 

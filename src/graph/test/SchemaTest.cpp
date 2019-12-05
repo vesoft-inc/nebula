@@ -1376,5 +1376,41 @@ TEST_F(SchemaTest, TTLtest) {
     }
 }
 
+TEST_F(SchemaTest, TestTimezone) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "GET TIME_ZONE";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 1>> expected{
+                {"+00:00"},
+        };
+
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "SET TIME_ZONE \"+08:00\"";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        cmd = "GET TIME_ZONE";
+        code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 1>> expected{
+                {"+08:00"},
+        };
+
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Set timezone syntax error
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "SET TIME_ZONE \"+08:60\"";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+}
 }   // namespace graph
 }   // namespace nebula

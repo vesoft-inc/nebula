@@ -193,6 +193,8 @@ bool MetaClient::loadData() {
         cache.emplace(spaceId, spaceCache);
         spaceIndexByName.emplace(space.second, spaceId);
     }
+    auto tzResult = getTimezone().get();
+
     decltype(localCache_) oldCache;
     {
         folly::RWSpinLock::WriteHolder holder(localCacheLock_);
@@ -204,8 +206,9 @@ bool MetaClient::loadData() {
         spaceNewestTagVerMap_  = std::move(spaceNewestTagVerMap);
         spaceNewestEdgeVerMap_ = std::move(spaceNewestEdgeVerMap);
         spaceEdgeIndexByType_  = std::move(spaceEdgeIndexByType);
-        spaceTagIndexById_     = std::move(spaceTagIndexById);
-        spaceAllEdgeMap_       = std::move(spaceAllEdgeMap);
+        if (tzResult.ok()) {
+            timezone_ = std::move(tzResult).value();
+        }
     }
     diff(oldCache, localCache_);
     ready_ = true;
@@ -1567,6 +1570,14 @@ StatusOr<SchemaVer> MetaClient::getNewestEdgeVerFromCache(const GraphSpaceID& sp
     return it->second;
 }
 
+StatusOr<cpp2::Timezone> MetaClient::getTimezoneFromCache() {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    return timezone_;
+}
+
 folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     cpp2::HBReq req;
     req.set_in_storaged(options_.inStoraged_);
@@ -1816,6 +1827,24 @@ folly::Future<StatusOr<bool>> MetaClient::dropSnapshot(const std::string& name) 
     return future;
 }
 
+folly::Future<StatusOr<bool>>
+MetaClient::setTimezone(const cpp2::Timezone& timezone) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    cpp2::SetTimezoneReq req;
+    req.set_timezone(timezone);
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_setTimezone(request);
+    }, [] (cpp2::ExecResp&& resp) -> decltype(auto) {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
 folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> MetaClient::listSnapshots() {
     cpp2::ListSnapshotsReq req;
     folly::Promise<StatusOr<std::vector<cpp2::Snapshot>>> promise;
@@ -1824,6 +1853,22 @@ folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> MetaClient::listSnapshots()
         return client->future_listSnapshots(request);
     }, [] (cpp2::ListSnapshotsResp&& resp) -> decltype(auto){
         return std::move(resp).get_snapshots();
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<cpp2::Timezone>> MetaClient::getTimezone() {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    cpp2::GetTimezoneReq req;
+    folly::Promise<StatusOr<cpp2::Timezone>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_getTimezone(request);
+    }, [] (cpp2::GetTimezoneResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_timezone();
     }, std::move(promise));
     return future;
 }

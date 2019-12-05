@@ -48,6 +48,8 @@
 #include "meta/processors/configMan/GetConfigProcessor.h"
 #include "meta/processors/configMan/SetConfigProcessor.h"
 #include "meta/processors/configMan/ListConfigsProcessor.h"
+#include "meta/processors/admin/SetTimezoneProcessor.h"
+#include "meta/processors/admin/GetTimezoneProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -360,6 +362,18 @@ MetaServiceHandler::future_dropSnapshot(const cpp2::DropSnapshotReq& req) {
 folly::Future<cpp2::ListSnapshotsResp>
 MetaServiceHandler::future_listSnapshots(const cpp2::ListSnapshotsReq& req) {
     auto* processor = ListSnapshotsProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_setTimezone(const cpp2::SetTimezoneReq &req) {
+    auto* processor = SetTimezoneProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GetTimezoneResp>
+MetaServiceHandler::future_getTimezone(const cpp2::GetTimezoneReq &req) {
+    auto* processor = GetTimezoneProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

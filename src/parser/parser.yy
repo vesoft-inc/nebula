@@ -118,6 +118,7 @@ class GraphScanner;
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS
+%token KW_TIME_ZONE
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -224,7 +225,7 @@ class GraphScanner;
 %type <sentence> grant_sentence revoke_sentence
 %type <sentence> download_sentence ingest_sentence
 %type <sentence> set_config_sentence get_config_sentence balance_sentence
-%type <sentence> process_control_sentence return_sentence
+%type <sentence> process_control_sentence return_sentence timezone_sentence
 %type <sentence> create_snapshot_sentence drop_snapshot_sentence
 %type <sentence> sentence
 %type <sentences> sentences
@@ -1929,6 +1930,17 @@ process_control_sentence
     : return_sentence { $$ = $1; }
     ;
 
+timezone_sentence
+    : KW_SET KW_TIME_ZONE STRING {
+        auto timezoneSentence = new TimezoneSentence(TimezoneSentence::TimezoneType::kSetTimezone);
+        timezoneSentence->setTimezone($3);
+        $$ = timezoneSentence;
+    }
+    |   KW_GET KW_TIME_ZONE {
+        $$ = new TimezoneSentence(TimezoneSentence::TimezoneType::kGetTimezone);
+    }
+    ;
+
 sentence
     : maintain_sentence { $$ = $1; }
     | use_sentence { $$ = $1; }
@@ -1936,6 +1948,7 @@ sentence
     | assignment_sentence { $$ = $1; }
     | mutate_sentence { $$ = $1; }
     | process_control_sentence { $$ = $1; }
+    | timezone_sentence { $$ = $1; }
     ;
 
 sentences

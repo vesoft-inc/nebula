@@ -71,6 +71,7 @@ public:
         kReturn,
         kCreateSnapshot,
         kDropSnapshot,
+        kTimezone,
     };
 
     Kind kind() const {

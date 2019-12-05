@@ -24,7 +24,8 @@ const std::string kConfigsTable        = "__configs__";        // NOLINT
 const std::string kDefaultTable        = "__default__";        // NOLINT
 const std::string kSnapshotsTable      = "__snapshots__";      // NOLINT
 const std::string kLastUpdateTimeTable = "__last_update_time__"; // NOLINT
-const std::string kLeadersTable = "__leaders__"; // NOLINT
+const std::string kLeadersTable        = "__leaders__";        // NOLINT
+const std::string kTimezone            = "__timezone__";        // NOLINT
 
 const std::string kHostOnline  = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";      // NOLINT
@@ -725,5 +726,23 @@ const std::string& MetaServiceUtils::snapshotPrefix() {
     return kSnapshotsTable;
 }
 
+std::string MetaServiceUtils::timezoneKey() {
+    std::string key;
+    key.reserve(128);
+    key.append(kTimezone.data(), kTimezone.size());
+    return key;
+}
+
+std::string MetaServiceUtils::timezoneValue(const cpp2::Timezone& timezone) {
+    std::string val;
+    apache::thrift::CompactSerializer::serialize(timezone, &val);
+    return val;
+}
+
+cpp2::Timezone MetaServiceUtils::parseTimezone(folly::StringPiece rawData) {
+    cpp2::Timezone timezone;
+    apache::thrift::CompactSerializer::deserialize(rawData, timezone);
+    return timezone;
+}
 }  // namespace meta
 }  // namespace nebula

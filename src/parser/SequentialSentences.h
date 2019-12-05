@@ -13,6 +13,7 @@
 #include "parser/AdminSentences.h"
 #include "parser/UserSentences.h"
 #include "parser/ProcessControlSentences.h"
+#include "parser/TimezoneSentence.h"
 
 namespace nebula {
 

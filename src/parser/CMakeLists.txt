@@ -22,6 +22,7 @@ nebula_add_library(
     AdminSentences.cpp
     UserSentences.cpp
     ProcessControlSentences.cpp
+    TimezoneSentence.cpp
 )
 
 nebula_add_subdirectory(test)

@@ -333,6 +333,10 @@ public:
 
     folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> listSnapshots();
 
+    folly::Future<StatusOr<bool>> setTimezone(const cpp2::Timezone& Timezone);
+
+    folly::Future<StatusOr<cpp2::Timezone>> getTimezone();
+
     // Opeartions for cache.
     StatusOr<GraphSpaceID>
     getSpaceIdByNameFromCache(const std::string& name);
@@ -405,6 +409,8 @@ public:
     Status checkTagIndexed(GraphSpaceID space, TagID tagID);
 
     Status checkEdgeIndexed(GraphSpaceID space, EdgeType edgeType);
+
+    StatusOr<cpp2::Timezone> getTimezoneFromCache();
 
     const std::vector<HostAddr>& getAddresses();
 
@@ -537,6 +543,7 @@ private:
     std::unique_ptr<stats::Stats> stats_;
     bool                  skipConfig_ = false;
     MetaClientOptions     options_;
+    cpp2::Timezone        timezone_;
 };
 
 }  // namespace meta

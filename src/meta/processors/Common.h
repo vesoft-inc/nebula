@@ -36,6 +36,7 @@ GENERATE_LOCK(edgeIndex);
 GENERATE_LOCK(user);
 GENERATE_LOCK(config);
 GENERATE_LOCK(snapshot);
+GENERATE_LOCK(timezone);
 
 #undef GENERATE_LOCK
 };

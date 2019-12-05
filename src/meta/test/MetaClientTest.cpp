@@ -1045,6 +1045,54 @@ TEST(MetaClientTest, HeartbeatTest) {
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(sc->kvStore_.get()).size());
 }
 
+TEST(MetaClientTest, TimezoneTest) {
+    FLAGS_load_data_interval_secs = 1;
+    fs::TempDir rootPath("/tmp/TimezoneTest.XXXXXX");
+
+    // Let the system choose an available port for us
+    int32_t localMetaPort = 0;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    IPv4 localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
+    auto client = std::make_shared<MetaClient>(threadPool, localhosts);
+    client->waitForMetadReady();
+
+    // Get timezone
+    auto result = client->getTimezone().get();
+    ASSERT_TRUE(result.ok());
+    auto value = result.value();
+    ASSERT_EQ(0, value.get_eastern());
+    ASSERT_EQ(0, value.get_hour());
+    ASSERT_EQ(0, value.get_minute());
+
+    // Set timezone
+    cpp2::Timezone timezone;
+    timezone.set_eastern('-');
+    timezone.set_hour(8);
+    timezone.set_minute(20);
+    auto ret = client->setTimezone(timezone).get();
+    ASSERT_TRUE(result.ok());
+
+    // Check result
+    result = client->getTimezone().get();
+    ASSERT_TRUE(result.ok());
+    value = result.value();
+    ASSERT_EQ('-', value.get_eastern());
+    ASSERT_EQ(8, value.get_hour());
+    ASSERT_EQ(20, value.get_minute());
+
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    // Get from cache
+    result = client->getTimezoneFromCache();
+    ASSERT_TRUE(result.ok());
+    value = result.value();
+    ASSERT_EQ('-', value.get_eastern());
+    ASSERT_EQ(8, value.get_hour());
+    ASSERT_EQ(20, value.get_minute());
+}
 
 class TestMetaService : public cpp2::MetaServiceSvIf {
 public:

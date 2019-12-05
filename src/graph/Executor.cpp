@@ -58,6 +58,7 @@
 #include "graph/ReturnExecutor.h"
 #include "graph/CreateSnapshotExecutor.h"
 #include "graph/DropSnapshotExecutor.h"
+#include "graph/TimezoneExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -206,6 +207,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kDropSnapshot:
             executor = std::make_unique<DropSnapshotExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kTimezone:
+            executor = std::make_unique<TimezoneExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(ERROR) << "Sentence kind unknown";

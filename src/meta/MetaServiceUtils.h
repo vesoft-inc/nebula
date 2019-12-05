@@ -191,6 +191,12 @@ public:
     static std::string parseSnapshotName(folly::StringPiece rawData);
 
     static const std::string& snapshotPrefix();
+
+    static std::string timezoneKey();
+
+    static std::string timezoneValue(const cpp2::Timezone& timezone);
+
+    static cpp2::Timezone parseTimezone(folly::StringPiece rawData);
 };
 
 }  // namespace meta
