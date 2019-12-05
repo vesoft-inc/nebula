@@ -66,6 +66,9 @@ TEST(MetaClientTest, InterfacesTest) {
             auto ret = client->createSpace("default_space", 8, 3).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
             spaceId = ret.value();
+
+            ret = client->createSpace("default_space", 8, 3, true).get();
+            ASSERT_TRUE(ret.ok()) << ret.status();
         }
         {
             auto ret = client->listSpaces().get();
@@ -93,6 +96,9 @@ TEST(MetaClientTest, InterfacesTest) {
             }
             auto ret = client->createTagSchema(spaceId, "tagName", schema).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
+
+            ret = client->createTagSchema(spaceId, "tagName", schema, true).get();
+            ASSERT_TRUE(ret.ok()) << ret.status();
         }
         {
             // Create tag schema with default value
@@ -119,6 +125,8 @@ TEST(MetaClientTest, InterfacesTest) {
                 schema.columns.emplace_back(std::move(column));
             }
             auto ret = client->createEdgeSchema(spaceId, "edgeName", schema).get();
+            ASSERT_TRUE(ret.ok()) << ret.status();
+            ret = client->createEdgeSchema(spaceId, "edgeName", schema, true).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
         }
         {

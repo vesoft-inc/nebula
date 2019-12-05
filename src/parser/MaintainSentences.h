@@ -62,6 +62,7 @@ public:
     void setStringValue(std::string *v) {
         defaultValue_ = *v;
         hasDefault_ = true;
+        delete v;
     }
 
     std::string getStringValue() {
@@ -230,11 +231,13 @@ private:
 };
 
 
-class CreateTagSentence final : public Sentence {
+class CreateTagSentence final : public CreateSentence {
 public:
     CreateTagSentence(std::string *name,
                       ColumnSpecificationList *columns,
-                      SchemaPropList *schemaProps) {
+                      SchemaPropList *schemaProps,
+                      bool ifNotExists)
+        : CreateSentence(ifNotExists) {
         name_.reset(name);
         columns_.reset(columns);
         schemaProps_.reset(schemaProps);
@@ -262,11 +265,13 @@ private:
 };
 
 
-class CreateEdgeSentence final : public Sentence {
+class CreateEdgeSentence final : public CreateSentence {
 public:
     CreateEdgeSentence(std::string *name,
                        ColumnSpecificationList *columns,
-                       SchemaPropList *schemaProps) {
+                       SchemaPropList *schemaProps,
+                       bool ifNotExists)
+        : CreateSentence(ifNotExists) {
         name_.reset(name);
         columns_.reset(columns);
         schemaProps_.reset(schemaProps);
