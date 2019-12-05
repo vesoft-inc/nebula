@@ -12,6 +12,8 @@
 #include "dataman/ResultSchemaProvider.h"
 
 
+DEFINE_bool(filter_pushdown, true, "If pushdown the filter to storage.");
+
 namespace nebula {
 namespace graph {
 
@@ -442,7 +444,7 @@ void GoExecutor::stepOut() {
     }
     auto returns = status.value();
     std::string filterPushdown = "";
-    if (isFinalStep() && !isReversely()) {
+    if (FLAGS_filter_pushdown && isFinalStep() && !isReversely()) {
         // TODO: not support filter pushdown in reversely traversal now.
         filterPushdown = whereWrapper_->filterPushdown_;
     }

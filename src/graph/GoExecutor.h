@@ -11,6 +11,8 @@
 #include "graph/TraverseExecutor.h"
 #include "storage/client/StorageClient.h"
 
+DECLARE_bool(filter_pushdown);
+
 namespace nebula {
 
 namespace storage {
