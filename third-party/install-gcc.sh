@@ -5,7 +5,7 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-# Usage: install-gcc.sh --prefix=/opt/nebula/toolchain
+# Usage: install-gcc.sh --prefix=/opt/nebula/toolset
 
 # Always use bash
 shell=$(basename $(readlink /proc/$$/exe))
@@ -67,7 +67,7 @@ function version_cmp {
     [[ ${#right[@]} -gt ${#left[@]} ]] && { echo $((0-rv)); return; }
 }
 
-# Find the maximum version not greater than candidates
+# Find the maximum version not greater than the system one
 function select_libc {
     local this_version=$1
     shift 1

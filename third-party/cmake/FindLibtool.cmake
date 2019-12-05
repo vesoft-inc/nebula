@@ -11,4 +11,4 @@ endif()
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Libtool REQUIRED_VARS  Libtool_EXECUTABLE
-                                        VERSION_VAR Libtool_VERSION)
+                                  VERSION_VAR Libtool_VERSION)
