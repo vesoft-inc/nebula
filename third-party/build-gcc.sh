@@ -261,7 +261,9 @@ function usability_test {
 
 # Build a self-extractable package
 function make_package {
+    set +e
     glibc_version=$(ldd --version | head -1 | cut -d ' ' -f4 | cut -d '-' -f1)
+    set -e
     exec_file=$root_dir/vesoft-gcc-$gcc_version-$distro-x86_64-glibc-$glibc_version.sh
     echo "Creating self-extractable package $exec_file"
     cat > $exec_file <<EOF
