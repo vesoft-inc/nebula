@@ -66,6 +66,7 @@ check_cxx
 
 # Exit on any failure here after
 set -e
+set -o pipefail
 
 # Directories setup
 cur_dir=`pwd`
@@ -124,11 +125,8 @@ cmake -DDOWNLOAD_DIR=$download_dir \
       $source_dir |& tee $logfile
 
 make |& \
-         tee $logfile | \
-         grep --line-buffered '^Scanning\|^\[.*Built' | \
-         awk '/Scanning dependencies of target/ {printf "...... Build target %s\n", $NF; } \
-              /Built/ {print $0;}'
-#make |& tee -a $logfile | grep '^Scanning\|^\[.*Built' | awk '{print $0;}'
+         tee -a $logfile | \
+         grep --line-buffered 'Creating\|^Scanning\|Performing\|Completed\|CMakeFiles.*Error'
 end_time=$(date +%s)
 
 echo

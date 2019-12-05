@@ -30,12 +30,15 @@ ExternalProject_Add(
             --disable-icu
             include=${CMAKE_INSTALL_PREFIX}/include
             linkflags=-L${CMAKE_INSTALL_PREFIX}/lib
-            cxxflags="-fPIC"
+            "cxxflags=-fPIC"
             runtime-link=static
             link=static
             variant=release
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND ""
+    LOG_CONFIGURE TRUE
+    LOG_BUILD TRUE
+    LOG_INSTALL TRUE
 )
 
 ExternalProject_Add_Step(${name} setup-compiler

@@ -27,6 +27,9 @@ ExternalProject_Add(
     BUILD_COMMAND env PATH=${BUILDING_PATH} make -s -j${BUILDING_JOBS_NUM} -C proxygen
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND env PATH=${BUILDING_PATH} make -s -j${BUILDING_JOBS_NUM} install -C proxygen
+    LOG_CONFIGURE TRUE
+    LOG_BUILD TRUE
+    LOG_INSTALL TRUE
 )
 
 ExternalProject_Add_Step(proxygen mannual-configure

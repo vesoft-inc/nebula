@@ -21,6 +21,9 @@ ExternalProject_Add(
     BUILD_COMMAND make -s
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND make -s install
+    LOG_CONFIGURE TRUE
+    LOG_BUILD TRUE
+    LOG_INSTALL TRUE
 )
 
 ExternalProject_Add_Step(${name} clean

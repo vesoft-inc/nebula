@@ -105,39 +105,37 @@ function fetch_tarballs {
 function unpack_tarballs {
     mkdir -p $source_dir
     cd $tarballs_dir
-    set -e
 
     if [[ ! -d $source_dir/gcc-$gcc_version ]]
     then
         echo "Unpacking $gcc_tarball..."
-        tar -xf $gcc_tarball -C $source_dir
+        tar -xf $gcc_tarball -C $source_dir || exit 1
     fi
 
     if [[ ! -d $source_dir/gmp-$gmp_version ]]
     then
         echo "Unpacking $gmp_tarball..."
-        tar -xf $gmp_tarball -C $source_dir
+        tar -xf $gmp_tarball -C $source_dir || exit 1
     fi
 
     if [[ ! -d $source_dir/mpfr-$mpfr_version ]]
     then
         echo "Unpacking $mpfr_tarball..."
-        tar -xf $mpfr_tarball -C $source_dir
+        tar -xf $mpfr_tarball -C $source_dir || exit 1
     fi
 
     if [[ ! -d $source_dir/mpc-$mpc_version ]]
     then
         echo "Unpacking $mpc_tarball..."
-        tar -xf $mpc_tarball -C $source_dir
+        tar -xf $mpc_tarball -C $source_dir || exit 1
     fi
 
     if [[ ! -d $source_dir/binutils-$bu_version ]]
     then
         echo "Unpacking $bu_tarball..."
-        tar -xf $bu_tarball -C $source_dir
+        tar -xf $bu_tarball -C $source_dir || exit 1
     fi
 
-    set +e
     cd $OLDPWD
 }
 
@@ -188,15 +186,15 @@ function configure_gcc {
         --host=$triplet                         \
         --target=$triplet                       \
         --disable-werror
-    [[ $? -eq 0 ]] || exit 1
+    [[ $? -ne 0 ]] && { echo "Failed to configure GCC" 1>&2;  exit 1; }
     cd $OLDPWD
 }
 
 # Start building GCC
 function build_gcc {
     cd $gcc_object_dir
-    make -s -j $building_jobs_num  |& tee build.log
-    [[ $? -ne 0 ]] && exit 1
+    make -s -j $building_jobs_num
+    [[ $? -ne 0 ]] && { echo "Failed to build GCC" 1>&2; exit 1; }
     cd $OLDPWD
 }
 
@@ -204,7 +202,7 @@ function build_gcc {
 function install_gcc {
     cd $gcc_object_dir
     make -s -j $building_jobs_num install-strip
-    [[ $? -ne 0 ]] && exit 1
+    [[ $? -ne 0 ]] && { echo "Failed to install GCC" 1>&2; exit 1; }
     cd $OLDPWD
 }
 
@@ -224,21 +222,21 @@ function configure_binutils {
         --host=$triplet                         \
         --target=$triplet                       \
         --disable-werror
-
+    [[ $? -ne 0 ]] && { echo "Failed to configure binutils" 1>&2; exit 1; }
     cd $OLDPWD
 }
 
 # Build binutils
 function build_binutils {
     cd $bu_object_dir
-    make -s -j $building_jobs_num || exit 1
+    make -s -j $building_jobs_num || { echo "Failed to build binutils" 1>&2; exit 1; }
     cd $OLDPWD
 }
 
 # Install binutils
 function install_binutils {
     cd $bu_object_dir
-    make -s install-strip || exit 1
+    make -s install-strip || { echo "Failed to install binutils" 1>&2; exit 1; }
     cd $OLDPWD
     cd $install_dir
     # Place a copy of assembler and linker to libexec
@@ -297,7 +295,8 @@ EOF
 }
 
 start_time=$(date +%s)
-
+set -e
+set -o pipefail
 echo "Starting build, on any failure, see $logfile"
 
 {
@@ -316,8 +315,8 @@ echo "Starting build, on any failure, see $logfile"
     install_binutils
 
     finalize
-}   |& tee $logfile \
-    | grep --line-buffered '^Making\|^Configuring\|^Comaparing\|^Comparison'
+}   |& tee -a $logfile \
+    | grep --line-buffered '^Making\|^Configuring\|^Comaparing\|^Comparison\|^Failed to'
 
 usability_test
 
