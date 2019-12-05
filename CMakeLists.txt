@@ -94,6 +94,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "_build")
 set(NEBULA_HOME ${CMAKE_CURRENT_SOURCE_DIR})
 add_definitions(-DNEBULA_HOME=${NEBULA_HOME})
 
+# Let s2 use glog
+add_definitions(-DS2_USE_GLOG)
+
 if (NEBULA_BUILD_VERSION)
     add_definitions(-DNEBULA_BUILD_VERSION=${NEBULA_BUILD_VERSION})
 endif()
@@ -378,6 +381,7 @@ macro(nebula_link_libraries target)
         event
         double-conversion
         resolv
+        s2
         ${OPENSSL_SSL_LIBRARY}
         ${OPENSSL_CRYPTO_LIBRARY}
         ${KRB5_LIBRARIES}

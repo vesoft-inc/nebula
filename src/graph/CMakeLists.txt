@@ -46,11 +46,14 @@ nebula_add_library(
     FindExecutor.cpp
     MatchExecutor.cpp
     DeleteVertexExecutor.cpp
+    DeleteEdgesExecutor.cpp
     FindPathExecutor.cpp
     LimitExecutor.cpp
     GroupByExecutor.cpp
     ReturnExecutor.cpp
     AdminExecutor.cpp
+    CreateSnapshotExecutor.cpp
+    DropSnapshotExecutor.cpp
 )
 
 nebula_add_library(

@@ -13,11 +13,16 @@ PartsMap MemPartManager::parts(const HostAddr& hostAddr) {
     return partsMap_;
 }
 
-PartMeta MemPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
+StatusOr<PartMeta> MemPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
     auto it = partsMap_.find(spaceId);
-    CHECK(it != partsMap_.end());
+    if (it == partsMap_.end()) {
+        return Status::Error("Space not found, spaceid: %d", spaceId);
+    }
     auto partIt = it->second.find(partId);
-    CHECK(partIt != it->second.end());
+    if (partIt == it->second.end()) {
+        return Status::Error(
+            "Part not found in MemPartManager, spaceid: %d, partId: %d ", spaceId, partId);
+    }
     return partIt->second;
 }
 
@@ -52,7 +57,7 @@ PartsMap MetaServerBasedPartManager::parts(const HostAddr& hostAddr) {
     return client_->getPartsMapFromCache(hostAddr);
 }
 
-PartMeta MetaServerBasedPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
+StatusOr<PartMeta> MetaServerBasedPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
     return client_->getPartMetaFromCache(spaceId, partId);
 }
 
@@ -87,13 +92,19 @@ void MetaServerBasedPartManager::onSpaceOptionUpdated(
         GraphSpaceID spaceId,
         const std::unordered_map<std::string, std::string>& options) {
     static std::unordered_set<std::string> supportedOpt = {
-        "snap_refresh_nanos",
         "disable_auto_compactions",
-        "write_buffer_size",
+        "max_write_buffer_number",
+        // TODO: write_buffer_size will cause rocksdb crash
+        // "write_buffer_size",
         "compression",
         "level0_file_num_compaction_trigger",
+        "level0_slowdown_writes_trigger",
+        "level0_stop_writes_trigger",
+        "target_file_size_base",
+        "target_file_size_multiplier",
         "max_bytes_for_level_base",
-        "snap_refresh_nanos",
+        "max_bytes_for_level_multiplier",
+        "ttl",
         "block_size",
         "block_restart_interval"
     };

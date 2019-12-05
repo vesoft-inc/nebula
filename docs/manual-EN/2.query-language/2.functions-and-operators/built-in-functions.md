@@ -1,6 +1,6 @@
 # Built-in Functions
 
-Nebula Graph supports calling built-in functions of the following types:
+**Nebula Graph** supports calling built-in functions of the following types:
 
 ## Math
 

@@ -16,6 +16,8 @@ namespace nebula {
 
 class ColumnSpecification final {
 public:
+    using Value = boost::variant<int64_t, bool, double, std::string>;
+
     ColumnSpecification(ColumnType type, std::string *name) {
         type_ = type;
         name_.reset(name);
@@ -29,9 +31,53 @@ public:
         return name_.get();
     }
 
+    void setIntValue(int64_t v) {
+        defaultValue_ = v;
+        hasDefault_ = true;
+    }
+
+    int64_t getIntValue() {
+        int64_t v = boost::get<int64_t>(defaultValue_);
+        return v;
+    }
+
+    void setBoolValue(bool v) {
+        defaultValue_ = v;
+        hasDefault_ = true;
+    }
+
+    bool getBoolValue() {
+        return boost::get<bool>(defaultValue_);
+    }
+
+    void setDoubleValue(double v) {
+        defaultValue_ = v;
+        hasDefault_ = true;
+    }
+
+    double getDoubleValue() {
+        return boost::get<double>(defaultValue_);
+    }
+
+    void setStringValue(std::string *v) {
+        defaultValue_ = *v;
+        hasDefault_ = true;
+        delete v;
+    }
+
+    std::string getStringValue() {
+        return boost::get<std::string>(defaultValue_);
+    }
+
+    bool hasDefault() {
+        return hasDefault_;
+    }
+
 private:
     ColumnType                                  type_;
     std::unique_ptr<std::string>                name_;
+    bool                                        hasDefault_{false};
+    Value                                       defaultValue_;
 };
 
 

@@ -158,32 +158,35 @@ TEST(FileBasedWal, Rollback) {
     wal->rollbackToLog(9900);
     ASSERT_EQ(9900, wal->lastLogId());
 
-    // Try to read the last 10 logs
-    auto it = wal->iterator(9891, 9900);
-    LogID id = 9891;
-    while (it->valid()) {
-        ASSERT_EQ(id, it->logId());
-        ASSERT_EQ(folly::stringPrintf(kLongMsg, id), it->logMsg());
-        ++(*it);
-        ++id;
+    {
+        // Try to read the last 10 logs
+        auto it = wal->iterator(9891, 9900);
+        LogID id = 9891;
+        while (it->valid()) {
+            ASSERT_EQ(id, it->logId());
+            ASSERT_EQ(folly::stringPrintf(kLongMsg, id), it->logMsg());
+            ++(*it);
+            ++id;
+        }
+        EXPECT_EQ(9901, id);
     }
-    EXPECT_EQ(9901, id);
 
     // Now let's rollback even more
     wal->rollbackToLog(5000);
     ASSERT_EQ(5000, wal->lastLogId());
 
-    // Let's verify the last 10 logs
-    it = wal->iterator(4991, 5000);
-    id = 4991;
-    while (it->valid()) {
-        ASSERT_EQ(id, it->logId());
-        ASSERT_EQ(folly::stringPrintf(kLongMsg, id), it->logMsg());
-        ++(*it);
-        ++id;
+    {
+        // Let's verify the last 10 logs
+        auto it = wal->iterator(4991, 5000);
+        LogID id = 4991;
+        while (it->valid()) {
+            ASSERT_EQ(id, it->logId());
+            ASSERT_EQ(folly::stringPrintf(kLongMsg, id), it->logMsg());
+            ++(*it);
+            ++id;
+        }
+        EXPECT_EQ(5001, id);
     }
-    EXPECT_EQ(5001, id);
-
     // Now let's append 1000 more logs
     for (int i = 5001; i <= 6000; i++) {
         ASSERT_TRUE(
@@ -193,8 +196,8 @@ TEST(FileBasedWal, Rollback) {
     ASSERT_EQ(6000, wal->lastLogId());
 
     // Let's verify the last 10 logs
-    it = wal->iterator(5991, 6000);
-    id = 5991;
+    auto it = wal->iterator(5991, 6000);
+    LogID id = 5991;
     while (it->valid()) {
         ASSERT_EQ(id, it->logId());
         ASSERT_EQ(folly::stringPrintf(kLongMsg, id + 1000), it->logMsg());
@@ -565,7 +568,9 @@ TEST(FileBasedWal, LinkTest) {
     auto snapshotFile = folly::stringPrintf("%s/snapshot", walDir.path());
     CHECK(wal->linkCurrentWAL(snapshotFile.c_str()));
     auto it = wal->walFiles_.rbegin();
-    EXPECT_EQ(FileUtils::fileSize(it->second->path()), FileUtils::fileSize(snapshotFile.c_str()));
+    auto files = fs::FileUtils::listAllFilesInDir(snapshotFile.data(), true);
+    ASSERT_EQ(1, files.size());
+    EXPECT_EQ(FileUtils::fileSize(it->second->path()), FileUtils::fileSize(files[0].c_str()));
     auto num = wal->walFiles_.size();
     EXPECT_TRUE(
             wal->appendLog(1001 /*id*/, 1 /*term*/, 0 /*cluster*/,

@@ -67,6 +67,9 @@ void ShowExecutor::execute() {
         case ShowSentence::ShowType::kShowCreateEdge:
             showCreateEdge();
             break;
+        case ShowSentence::ShowType::kShowSnapshots:
+            showSnapshots();
+            break;
         case ShowSentence::ShowType::kUnknown:
             onError_(Status::Error("Type unknown"));
             break;
@@ -577,6 +580,60 @@ void ShowExecutor::showCreateEdge() {
                                                    e.what().c_str())));
     };
 
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+void ShowExecutor::showSnapshots() {
+    auto future = ectx()->getMetaClient()->listSnapshots();
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(std::move(resp).status());
+            return;
+        }
+
+        auto getStatus = [](meta::cpp2::SnapshotStatus status) -> std::string {
+            std::string str;
+            switch (status) {
+                case meta::cpp2::SnapshotStatus::INVALID :
+                    str = "INVALID";
+                    break;
+                case meta::cpp2::SnapshotStatus::VALID :
+                    str = "VALID";
+                    break;
+            }
+            return str;
+        };
+
+        auto retShowSnapshots = std::move(resp).value();
+        std::vector<cpp2::RowValue> rows;
+        std::vector<std::string> header{"Name", "Status", "Hosts"};
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(header));
+        for (auto &snapshot : retShowSnapshots) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(3);
+            row[0].set_str(snapshot.name);
+            row[1].set_str(getStatus(snapshot.status));
+            row[2].set_str(snapshot.hosts);
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+        resp_->set_rows(std::move(rows));
+
+        DCHECK(onFinish_);
+        onFinish_(Executor::ProcessControl::kNext);
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+                                                   e.what().c_str())));
+        return;
+    };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 

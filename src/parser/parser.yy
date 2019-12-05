@@ -64,7 +64,6 @@ class GraphScanner;
     nebula::EdgeRowItem                    *edge_row_item;
     nebula::UpdateList                     *update_list;
     nebula::UpdateItem                     *update_item;
-    nebula::EdgeList                       *edge_list;
     nebula::ArgumentList                   *argument_list;
     nebula::SpaceOptList                   *space_opt_list;
     nebula::SpaceOptItem                   *space_opt_item;
@@ -106,7 +105,7 @@ class GraphScanner;
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS KW_FLUSH
 %token KW_CONFIGS KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
-%token KW_TTL_DURATION KW_TTL_COL
+%token KW_TTL_DURATION KW_TTL_COL KW_DEFAULT
 %token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET KW_GROUP
 %token KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN KW_STD KW_BIT_AND KW_BIT_OR KW_BIT_XOR
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
@@ -114,6 +113,7 @@ class GraphScanner;
 %token KW_BALANCE KW_LEADER KW_DATA KW_STOP
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL
+%token KW_SNAPSHOT KW_SNAPSHOTS
 
 
 /* symbols */
@@ -165,7 +165,6 @@ class GraphScanner;
 %type <edge_row_item> edge_row_item
 %type <update_list> update_list
 %type <update_item> update_item
-%type <edge_list> edge_list
 %type <space_opt_list> space_opt_list
 %type <space_opt_item> space_opt_item
 %type <alter_schema_opt_list> alter_schema_opt_list
@@ -218,6 +217,7 @@ class GraphScanner;
 %type <sentence> download_sentence
 %type <sentence> set_config_sentence get_config_sentence balance_sentence
 %type <sentence> process_control_sentence return_sentence
+%type <sentence> create_snapshot_sentence drop_snapshot_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -603,14 +603,8 @@ over_edge
     : name_label {
         $$ = new OverEdge($1);
     }
-    | name_label KW_REVERSELY {
-        $$ = new OverEdge($1, nullptr, true);
-    }
     | name_label KW_AS name_label {
         $$ = new OverEdge($1, $3);
-    }
-    | name_label KW_AS name_label KW_REVERSELY {
-        $$ = new OverEdge($1, $3, true);
     }
     ;
 
@@ -630,19 +624,22 @@ over_clause
     : KW_OVER MUL {
         auto edges = new OverEdges();
         auto s = new std::string("*");
-        auto edge = new OverEdge(s, nullptr, false);
+        auto edge = new OverEdge(s, nullptr);
         edges->addEdge(edge);
         $$ = new OverClause(edges);
     }
     | KW_OVER MUL KW_REVERSELY {
         auto edges = new OverEdges();
         auto s = new std::string("*");
-        auto edge = new OverEdge(s, nullptr, false);
+        auto edge = new OverEdge(s, nullptr);
         edges->addEdge(edge);
-        $$ = new OverClause(edges);
+        $$ = new OverClause(edges, true);
     }
     | KW_OVER over_edges {
         $$ = new OverClause($2);
+    }
+    | KW_OVER over_edges KW_REVERSELY {
+        $$ = new OverClause($2, true);
     }
     ;
 
@@ -1065,6 +1062,22 @@ column_spec_list
 
 column_spec
     : name_label type_spec { $$ = new ColumnSpecification($2, $1); }
+    | name_label type_spec KW_DEFAULT INTEGER {
+        $$ = new ColumnSpecification($2, $1);
+        $$->setIntValue($4);
+    }
+    | name_label type_spec KW_DEFAULT BOOL {
+        $$ = new ColumnSpecification($2, $1);
+        $$->setBoolValue($4);
+    }
+    | name_label type_spec KW_DEFAULT DOUBLE {
+        $$ = new ColumnSpecification($2, $1);
+        $$->setDoubleValue($4);
+    }
+    |  name_label type_spec KW_DEFAULT STRING {
+        $$ = new ColumnSpecification($2, $1);
+        $$->setStringValue($4);
+    }
     ;
 
 describe_tag_sentence
@@ -1396,21 +1409,9 @@ download_sentence
     }
     ;
 
-edge_list
-    : vid R_ARROW vid {
-        $$ = new EdgeList();
-        $$->addEdge($1, $3);
-    }
-    | edge_list COMMA vid R_ARROW vid {
-        $$ = $1;
-        $$->addEdge($3, $5);
-    }
-    ;
-
 delete_edge_sentence
-    : KW_DELETE KW_EDGE edge_list where_clause {
-        auto sentence = new DeleteEdgeSentence($3);
-        sentence->setWhereClause($4);
+    : KW_DELETE KW_EDGE name_label edge_keys {
+        auto sentence = new DeleteEdgesSentence($3, $4);
         $$ = sentence;
     }
     ;
@@ -1481,6 +1482,9 @@ show_sentence
     }
     | KW_SHOW KW_CREATE KW_EDGE name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateEdge, $4);
+    }
+    | KW_SHOW KW_SNAPSHOTS {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowSnapshots);
     }
     ;
 
@@ -1743,6 +1747,18 @@ balance_sentence
     }
     ;
 
+create_snapshot_sentence
+    : KW_CREATE KW_SNAPSHOT {
+        $$ = new CreateSnapshotSentence();
+    }
+    ;
+
+drop_snapshot_sentence
+    : KW_DROP KW_SNAPSHOT name_label {
+        $$ = new DropSnapshotSentence($3);
+    }
+    ;
+
 mutate_sentence
     : insert_vertex_sentence { $$ = $1; }
     | insert_edge_sentence { $$ = $1; }
@@ -1778,6 +1794,8 @@ maintain_sentence
     | get_config_sentence { $$ = $1; }
     | set_config_sentence { $$ = $1; }
     | balance_sentence { $$ = $1; }
+    | create_snapshot_sentence { $$ = $1; };
+    | drop_snapshot_sentence { $$ = $1; };
     ;
 
 return_sentence

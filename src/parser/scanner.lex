@@ -112,6 +112,7 @@ COMPACT                     ([Cc][Oo][Mm][Pp][Aa][Cc][Tt])
 FLUSH                       ([Ff][Ll][Uu][Ss][Hh])
 ASC                         ([Aa][Ss][Cc])
 DISTINCT                    ([Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
+DEFAULT                     ([Dd][Ee][Ff][Aa][Uu][Ll][Tt])
 CONFIGS                     ([Cc][Oo][Nn][Ff][Ii][Gg][Ss])
 GET                         ([Gg][Ee][Tt])
 GRAPH                       ([Gg][Rr][Aa][Pp][Hh])
@@ -143,6 +144,8 @@ BIT_OR                      ([Bb][It][Tt][_][Oo][Rr])
 BIT_XOR                     ([Bb][It][Tt][_][Xx][Oo][Rr])
 IS                          ([Ii][Ss])
 NULL                        ([Nn][Uu][Ll][Ll])
+SNAPSHOT                    ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt])
+SNAPSHOTS                   ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt][Ss])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -247,6 +250,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {FLUSH}                     { return TokenType::KW_FLUSH; }
 {ASC}                       { return TokenType::KW_ASC; }
 {DISTINCT}                  { return TokenType::KW_DISTINCT; }
+{DEFAULT}                   { return TokenType::KW_DEFAULT; }
 {FETCH}                     { return TokenType::KW_FETCH; }
 {PROP}                      { return TokenType::KW_PROP; }
 {ALL}                       { return TokenType::KW_ALL; }
@@ -272,6 +276,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {BIT_XOR}                   { return TokenType::KW_BIT_XOR; }
 {IS}                        { return TokenType::KW_IS; }
 {NULL}                      { return TokenType::KW_NULL; }
+{SNAPSHOT}                  { return TokenType::KW_SNAPSHOT; }
+{SNAPSHOTS}                 { return TokenType::KW_SNAPSHOTS; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

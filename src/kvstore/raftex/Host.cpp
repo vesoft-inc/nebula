@@ -417,7 +417,8 @@ Host::prepareAppendLogRequest() {
                 self->sendingSnapshot_ = false;
             });
         } else {
-            LOG(INFO) << idStr_ << "The snapshot req is in queue, please wait for a moment";
+            PLOG_EVERY_N(INFO, 30) << idStr_
+                                   << "The snapshot req is in queue, please wait for a moment";
         }
     }
 
