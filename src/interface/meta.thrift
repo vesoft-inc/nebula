@@ -43,6 +43,8 @@ enum ErrorCode {
     E_INVALID_PASSWORD       = -41,
     E_INPROPER_ROLE          = -42,
 
+    E_SNAPSHOT_FAILURE   = -51;
+
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
 
@@ -117,6 +119,11 @@ enum HostStatus {
     UNKNOWN = 0x02,
 } (cpp.enum_strict)
 
+enum SnapshotStatus {
+    VALID    = 0x00,
+    INVALID  = 0x01,
+} (cpp.enum_strict)
+
 struct HostItem {
     1: common.HostAddr      hostAddr,
     2: HostStatus           status,
@@ -155,6 +162,7 @@ struct ExecResp {
 // Graph space related operations.
 struct CreateSpaceReq {
     1: SpaceProperties  properties,
+    2: bool             if_not_exists,
 }
 
 struct DropSpaceReq {
@@ -186,6 +194,7 @@ struct CreateTagReq {
     1: common.GraphSpaceID space_id,
     2: string              tag_name,
     3: common.Schema       schema,
+    4: bool                if_not_exists,
 }
 
 struct AlterTagReq {
@@ -228,6 +237,7 @@ struct CreateEdgeReq {
     1: common.GraphSpaceID space_id,
     2: string              edge_name,
     3: common.Schema       schema,
+    4: bool                if_not_exists,
 }
 
 struct AlterEdgeReq {
@@ -524,6 +534,29 @@ struct ListConfigsResp {
     3: list<ConfigItem>     items,
 }
 
+struct CreateSnapshotReq {
+}
+
+struct DropSnapshotReq {
+    1: string       name,
+}
+
+struct ListSnapshotsReq {
+}
+
+struct Snapshot {
+    1: string         name,
+    2: SnapshotStatus status,
+    3: string         hosts,
+}
+
+struct ListSnapshotsResp {
+    1: ErrorCode            code,
+    // Valid if code equals E_LEADER_CHANGED.
+    2: common.HostAddr      leader,
+    3: list<Snapshot>       snapshots,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -573,5 +606,9 @@ service MetaService {
     GetConfigResp getConfig(1: GetConfigReq req);
     ExecResp setConfig(1: SetConfigReq req);
     ListConfigsResp listConfigs(1: ListConfigsReq req);
+
+    ExecResp createSnapshot(1: CreateSnapshotReq req);
+    ExecResp dropSnapshot(1: DropSnapshotReq req);
+    ListSnapshotsResp listSnapshots(1: ListSnapshotsReq req);
 }
 

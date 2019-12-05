@@ -38,7 +38,8 @@ Status CreateSpaceExecutor::prepare() {
 
 
 void CreateSpaceExecutor::execute() {
-    auto future = ectx()->getMetaClient()->createSpace(*spaceName_, partNum_, replicaFactor_);
+    auto future = ectx()->getMetaClient()->createSpace(
+        *spaceName_, partNum_, replicaFactor_, sentence_->isIfNotExist());
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
