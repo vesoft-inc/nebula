@@ -32,6 +32,7 @@ public:
     void showCreateSpace();
     void showCreateTag();
     void showCreateEdge();
+    void showSnapshots();
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 

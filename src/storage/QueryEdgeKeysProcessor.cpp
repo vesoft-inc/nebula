@@ -24,7 +24,11 @@ void QueryEdgeKeysProcessor::process(const cpp2::EdgeKeyRequest& req) {
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId = " << spaceId
                 << ", partId =  " << partId << ", vertexId = " << vId;
-        this->pushResultCode(this->to(ret), partId);
+        if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+            this->handleLeaderChanged(spaceId, partId);
+        } else {
+            this->pushResultCode(this->to(ret), partId);
+        }
         this->onFinished();
         return;
     }

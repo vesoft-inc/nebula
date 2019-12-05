@@ -81,6 +81,8 @@ protected:
             return cpp2::ErrorCode::E_NOT_FOUND;
         case kvstore::ResultCode::ERR_LEADER_CHANGED:
             return cpp2::ErrorCode::E_LEADER_CHANGED;
+        case kvstore::ResultCode::ERR_CHECKPOINT_ERROR:
+            return cpp2::ErrorCode::E_SNAPSHOT_FAILURE;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
         }
@@ -212,6 +214,8 @@ protected:
     bool checkPassword(UserID userId, const std::string& password);
 
     StatusOr<std::string> getUserAccount(UserID userId);
+
+    bool doSyncPut(std::vector<kvstore::KV> data);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
