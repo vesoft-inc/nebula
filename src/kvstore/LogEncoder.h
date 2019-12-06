@@ -66,25 +66,27 @@ public:
 
     void put(std::string&& key, std::string&& val) {
         batch_.emplace_back(BatchLogType::OP_BATCH_PUT,
-                            std::make_pair(key, val));
+                            std::make_pair(std::forward<std::string>(key),
+                                           std::forward<std::string>(val)));
     }
 
     void remove(std::string&& key) {
         batch_.emplace_back(BatchLogType::OP_BATCH_REMOVE,
-                            std::make_pair(key, ""));
+                            std::make_pair(std::forward<std::string>(key), ""));
     }
 
     void rangeRemove(std::string&& begin, std::string&& end) {
         batch_.emplace_back(BatchLogType::OP_BATCH_REMOVE_RANGE,
-                            std::make_pair(begin, end));
+                            std::make_pair(std::forward<std::string>(begin),
+                                           std::forward<std::string>(end)));
     }
 
     void clear() {
         batch_.clear();
     }
 
-    std::vector<std::pair<BatchLogType,
-                          std::pair<std::string, std::string>>> getBatch() {
+    const std::vector<std::pair<BatchLogType,
+                                std::pair<std::string, std::string>>>& getBatch() {
         return batch_;
     }
 
