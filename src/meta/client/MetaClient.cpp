@@ -530,14 +530,17 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
 
 /// ================================== public methods =================================
 
-folly::Future<StatusOr<GraphSpaceID>>
-MetaClient::createSpace(std::string name, int32_t partsNum, int32_t replicaFactor) {
+folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpace(std::string name,
+                                                              int32_t partsNum,
+                                                              int32_t replicaFactor,
+                                                              bool ifNotExists) {
     cpp2::SpaceProperties properties;
     properties.set_space_name(std::move(name));
     properties.set_partition_num(partsNum);
     properties.set_replica_factor(replicaFactor);
     cpp2::CreateSpaceReq req;
     req.set_properties(std::move(properties));
+    req.set_if_not_exists(ifNotExists);
     folly::Promise<StatusOr<GraphSpaceID>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
@@ -547,7 +550,6 @@ MetaClient::createSpace(std::string name, int32_t partsNum, int32_t replicaFacto
                 }, std::move(promise), true);
     return future;
 }
-
 
 folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
     cpp2::ListSpacesReq req;
@@ -897,12 +899,15 @@ StatusOr<int32_t> MetaClient::partsNum(GraphSpaceID spaceId) {
     return it->second->partsAlloc_.size();
 }
 
-folly::Future<StatusOr<TagID>>
-MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {
+folly::Future<StatusOr<TagID>> MetaClient::createTagSchema(GraphSpaceID spaceId,
+                                                           std::string name,
+                                                           nebula::cpp2::Schema schema,
+                                                           bool ifNotExists) {
     cpp2::CreateTagReq req;
     req.set_space_id(std::move(spaceId));
     req.set_tag_name(std::move(name));
     req.set_schema(std::move(schema));
+    req.set_if_not_exists(ifNotExists);
     folly::Promise<StatusOr<TagID>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
@@ -912,7 +917,6 @@ MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2
                 }, std::move(promise), true);
     return future;
 }
-
 
 folly::Future<StatusOr<TagID>>
 MetaClient::alterTagSchema(GraphSpaceID spaceId,
@@ -982,23 +986,26 @@ MetaClient::getTagSchema(int32_t spaceId, std::string name, int64_t version) {
     return future;
 }
 
-
-folly::Future<StatusOr<EdgeType>>
-MetaClient::createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {
+folly::Future<StatusOr<EdgeType>> MetaClient::createEdgeSchema(GraphSpaceID spaceId,
+                                                               std::string name,
+                                                               nebula::cpp2::Schema schema,
+                                                               bool ifNotExists) {
     cpp2::CreateEdgeReq req;
     req.set_space_id(std::move(spaceId));
     req.set_edge_name(std::move(name));
     req.set_schema(schema);
+    req.set_if_not_exists(ifNotExists);
+
     folly::Promise<StatusOr<EdgeType>> promise;
     auto future = promise.getFuture();
-    getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_createEdge(request);
-                }, [] (cpp2::ExecResp&& resp) -> EdgeType {
-                    return resp.get_id().get_edge_type();
-                }, std::move(promise), true);
+    getResponse(
+        std::move(req),
+        [](auto client, auto request) { return client->future_createEdge(request); },
+        [](cpp2::ExecResp&& resp) -> EdgeType { return resp.get_id().get_edge_type(); },
+        std::move(promise),
+        true);
     return future;
 }
-
 
 folly::Future<StatusOr<bool>>
 MetaClient::alterEdgeSchema(GraphSpaceID spaceId,
