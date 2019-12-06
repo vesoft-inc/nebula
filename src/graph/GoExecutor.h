@@ -74,6 +74,10 @@ private:
         return upto_;
     }
 
+    bool isReversely() const {
+        return isReversely_;
+    }
+
     /**
      * To obtain the source ids from various places,
      * such as the literal id list, inputs from the pipeline or results of variable.
@@ -105,6 +109,8 @@ private:
     StatusOr<std::vector<storage::cpp2::PropDef>> getDstProps();
 
     void fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcResp);
+
+    void maybeFinishExecution(RpcResponse &&rpcResp);
 
     /**
      * To retrieve or generate the column names for the execution result.
@@ -187,6 +193,27 @@ private:
          std::unordered_map<VertexID, VertexID>     mapping_;
     };
 
+    class EdgeHolder final {
+    public:
+        Status add(const storage::cpp2::EdgePropResponse &resp);
+        OptVariantType get(VertexID src,
+                           VertexID dst,
+                           EdgeType type,
+                           const std::string &prop) const;
+        nebula::cpp2::SupportedType getType(VertexID src,
+                           VertexID dst,
+                           EdgeType type,
+                           const std::string &prop) const;
+        OptVariantType getDefaultProp(EdgeType type,
+                                      const std::string &prop);
+
+    private:
+        using EdgeKey = std::tuple<VertexID, VertexID, EdgeType>;
+        using EdgeValue = std::pair<std::shared_ptr<ResultSchemaProvider>, std::string>;
+        std::unordered_map<EdgeKey, EdgeValue> edges_;
+        std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> schemas_;
+    };
+
     OptVariantType getPropFromInterim(VertexID id, const std::string &prop) const;
 
     nebula::cpp2::SupportedType getPropTypeFromInterim(const std::string &prop) const;
@@ -203,11 +230,13 @@ private:
     uint32_t                                    steps_{1};
     uint32_t                                    curStep_{1};
     bool                                        upto_{false};
+    bool                                        isReversely_{false};
     std::vector<EdgeType>                       edgeTypes_;
     std::string                                *varname_{nullptr};
     std::string                                *colname_{nullptr};
     Expression                                 *filter_{nullptr};
     std::vector<YieldColumn*>                   yields_;
+    std::unique_ptr<YieldClauseWrapper>         yieldClauseWrapper_;
     bool                                        distinct_{false};
     bool                                        distinctPushDown_{false};
     std::unique_ptr<InterimResult>              inputs_;
@@ -216,6 +245,7 @@ private:
     std::unique_ptr<ExpressionContext>          expCtx_;
     std::vector<VertexID>                       starts_;
     std::unique_ptr<VertexHolder>               vertexHolder_;
+    std::unique_ptr<EdgeHolder>                 edgeHolder_;
     std::unique_ptr<VertexBackTracker>          backTracker_;
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
     // The name of Tag or Edge, index of prop in data

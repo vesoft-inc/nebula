@@ -18,17 +18,19 @@ class UpdateEdgeProcessor
     : public QueryBaseProcessor<cpp2::UpdateEdgeRequest, cpp2::UpdateResponse> {
 public:
     static UpdateEdgeProcessor* instance(kvstore::KVStore* kvstore,
-                                         meta::SchemaManager* schemaMan) {
-        return new UpdateEdgeProcessor(kvstore, schemaMan);
+                                         meta::SchemaManager* schemaMan,
+                                         stats::Stats* stats) {
+        return new UpdateEdgeProcessor(kvstore, schemaMan, stats);
     }
 
     void process(const cpp2::UpdateEdgeRequest& req);
 
 private:
     explicit UpdateEdgeProcessor(kvstore::KVStore* kvstore,
-                                 meta::SchemaManager* schemaMan)
+                                 meta::SchemaManager* schemaMan,
+                                 stats::Stats* stats)
         : QueryBaseProcessor<cpp2::UpdateEdgeRequest,
-                             cpp2::UpdateResponse>(kvstore, schemaMan) {}
+                             cpp2::UpdateResponse>(kvstore, schemaMan, stats) {}
 
     kvstore::ResultCode processVertex(PartitionID, VertexID) override {
         LOG(FATAL) << "Unimplement!";

@@ -15,15 +15,18 @@
 #include "meta/ServerBasedSchemaManager.h"
 #include "dataman/ResultSchemaProvider.h"
 #include "meta/test/TestUtils.h"
+#include "meta/ClientBasedGflagsManager.h"
 
 DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(heartbeat_interval_secs);
+DECLARE_string(rocksdb_db_options);
 
 
 namespace nebula {
 namespace meta {
 
 using nebula::cpp2::SupportedType;
+using nebula::cpp2::Value;
 using nebula::cpp2::ValueType;
 using apache::thrift::FragileConstructor::FRAGILE;
 
@@ -46,7 +49,7 @@ TEST(MetaClientTest, InterfacesTest) {
                                                localHost);
     client->waitForMetadReady();
     {
-        // Test addHost, listHosts interface.
+        // Add hosts automatically, then testing listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
         TestUtils::registerHB(sc->kvStore_.get(), hosts);
         auto ret = client->listHosts().get();
@@ -80,7 +83,7 @@ TEST(MetaClientTest, InterfacesTest) {
             }
         }
         {
-            // createTagSchema
+            // Create tag schema
             nebula::cpp2::Schema schema;
             for (auto i = 0 ; i < 5; i++) {
                 nebula::cpp2::ColumnDef column;
@@ -92,7 +95,22 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_TRUE(ret.ok()) << ret.status();
         }
         {
-            // createEdgeSchema
+            // Create tag schema with default value
+            nebula::cpp2::Schema schema;
+            for (auto i = 0 ; i < 5; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = "tagItem" + std::to_string(i);
+                column.type.type = nebula::cpp2::SupportedType::STRING;
+                nebula::cpp2::Value defaultValue;
+                defaultValue.set_string_value(std::to_string(i));
+                column.default_value = defaultValue;
+                schema.columns.emplace_back(std::move(column));
+            }
+            auto ret = client->createTagSchema(spaceId, "tagWithDefault", schema).get();
+            ASSERT_TRUE(ret.ok()) << ret.status();
+        }
+        {
+            // Create edge schema
             nebula::cpp2::Schema schema;
             for (auto i = 0 ; i < 5; i++) {
                 nebula::cpp2::ColumnDef column;
@@ -103,6 +121,21 @@ TEST(MetaClientTest, InterfacesTest) {
             auto ret = client->createEdgeSchema(spaceId, "edgeName", schema).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
         }
+        {
+            // Create edge schema with default value
+            nebula::cpp2::Schema schema;
+            for (auto i = 0 ; i < 5; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = "edgeItem" + std::to_string(i);
+                column.type.type = nebula::cpp2::SupportedType::STRING;
+                nebula::cpp2::Value defaultValue;
+                defaultValue.set_string_value(std::to_string(i));
+                column.default_value = defaultValue;
+                schema.columns.emplace_back(std::move(column));
+            }
+            auto ret = client->createEdgeSchema(spaceId, "edgeWithDefault", schema).get();
+            ASSERT_TRUE(ret.ok()) << ret.status();
+        }
 
         auto schemaMan = std::make_unique<ServerBasedSchemaManager>();
         schemaMan->init(client.get());
@@ -110,7 +143,7 @@ TEST(MetaClientTest, InterfacesTest) {
             // listTagSchemas
             auto ret1 = client->listTagSchemas(spaceId).get();
             ASSERT_TRUE(ret1.ok()) << ret1.status();
-            ASSERT_EQ(ret1.value().size(), 1);
+            ASSERT_EQ(ret1.value().size(), 2);
             ASSERT_NE(ret1.value().begin()->tag_id, 0);
             ASSERT_EQ(ret1.value().begin()->schema.columns.size(), 5);
 
@@ -152,7 +185,7 @@ TEST(MetaClientTest, InterfacesTest) {
             // listEdgeSchemas
             auto ret1 = client->listEdgeSchemas(spaceId).get();
             ASSERT_TRUE(ret1.ok()) << ret1.status();
-            ASSERT_EQ(ret1.value().size(), 1);
+            ASSERT_EQ(ret1.value().size(), 2);
             ASSERT_NE(ret1.value().begin()->edge_type, 0);
 
             // getEdgeSchemaFromCache
@@ -196,7 +229,9 @@ TEST(MetaClientTest, InterfacesTest) {
         ASSERT_EQ(6, partsMap[spaceId].size());
     }
     {
-        auto partMeta = client->getPartMetaFromCache(spaceId, 1);
+        auto metaStatus = client->getPartMetaFromCache(spaceId, 1);
+        ASSERT_TRUE(metaStatus.ok());
+        auto partMeta = metaStatus.value();
         ASSERT_EQ(3, partMeta.peers_.size());
         for (auto& h : partMeta.peers_) {
             ASSERT_EQ(h.first, h.second);
@@ -280,14 +315,6 @@ TEST(MetaClientTest, InterfacesTest) {
         ASSERT_TRUE(ret1.ok()) << ret1.status();
         ASSERT_EQ(0, ret1.value().size());
     }
-    {
-        std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
-        auto ret = client->removeHosts(hosts).get();
-        ASSERT_TRUE(ret.ok());
-        auto ret1 = client->listHosts().get();
-        ASSERT_TRUE(ret1.ok());
-        ASSERT_EQ(0, ret1.value().size());
-    }
 
     client.reset();
 }
@@ -317,16 +344,54 @@ TEST(MetaClientTest, TagTest) {
 
     {
         std::vector<nebula::cpp2::ColumnDef> columns;
-        columns.emplace_back(FRAGILE, "column_i",
-                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr));
-        columns.emplace_back(FRAGILE, "column_d",
-                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr));
-        columns.emplace_back(FRAGILE, "column_s",
-                             ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr));
+        ValueType vt;
+        Value defaultValue;
+        vt.set_type(SupportedType::INT);
+        defaultValue.set_int_value(0);
+        columns.emplace_back();
+        columns.back().set_name("column_i");
+        columns.back().set_default_value(defaultValue);
+        columns.back().set_type(vt);
+
+        vt.set_type(SupportedType::DOUBLE);
+        defaultValue.set_double_value(3.14);
+        columns.emplace_back();
+        columns.back().set_default_value(defaultValue);
+        columns.back().set_name("column_d");
+        columns.back().set_type(vt);
+
+        vt.set_type(SupportedType::STRING);
+        defaultValue.set_string_value("test");
+        columns.emplace_back();
+        columns.back().set_default_value(defaultValue);
+        columns.back().set_name("column_s");
+        columns.back().set_type(vt);
+
         nebula::cpp2::Schema schema;
-        auto result = client->createTagSchema(spaceId, "test_tag", schema).get();
+        schema.set_columns(std::move(columns));
+        auto result = client->createTagSchema(spaceId, "test_tag", std::move(schema)).get();
         ASSERT_TRUE(result.ok());
         id = result.value();
+    }
+    {
+        std::vector<nebula::cpp2::ColumnDef> columns;
+        nebula::cpp2::Value intValue;
+        intValue.set_int_value(0);
+        columns.emplace_back(FRAGILE, "column_i",
+                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr),
+                             std::move(intValue));
+
+        nebula::cpp2::Value stringValue;
+        stringValue.set_string_value("default value");
+        columns.emplace_back(FRAGILE, "column_d",
+                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr),
+                             std::move(stringValue));
+
+        nebula::cpp2::Schema schema;
+        schema.set_columns(columns);
+
+        auto result = client->createTagSchema(spaceId, "test_tag_type_mismatch", schema).get();
+        ASSERT_FALSE(result.ok());
     }
     {
         auto result = client->listTagSchemas(spaceId).get();
@@ -342,6 +407,7 @@ TEST(MetaClientTest, TagTest) {
         ASSERT_TRUE(result1.ok());
         auto result2 = client->getTagSchema(spaceId, "test_tag").get();
         ASSERT_TRUE(result2.ok());
+        ASSERT_EQ(3, result2.value().columns.size());
         ASSERT_EQ(result1.value().columns.size(), result2.value().columns.size());
         for (auto i = 0u; i < result1.value().columns.size(); i++) {
             ASSERT_EQ(result1.value().columns[i].name, result2.value().columns[i].name);
@@ -359,6 +425,87 @@ TEST(MetaClientTest, TagTest) {
     }
     {
         auto result = client->getTagSchema(spaceId, "test_tag", version).get();
+        ASSERT_FALSE(result.ok());
+    }
+}
+
+TEST(MetaClientTest, EdgeTest) {
+    FLAGS_load_data_interval_secs = 1;
+    fs::TempDir rootPath("/tmp/MetaClientEdgeTest.XXXXXX");
+
+    // Let the system choose an available port for us
+    int32_t localMetaPort = 0;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+
+    GraphSpaceID spaceId = 0;
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    IPv4 localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
+    auto client = std::make_shared<MetaClient>(threadPool, localhosts);
+    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+    client->waitForMetadReady();
+    TestUtils::registerHB(sc->kvStore_.get(), hosts);
+    auto ret = client->createSpace("default_space", 9, 3).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    spaceId = ret.value();
+
+    {
+        std::vector<nebula::cpp2::ColumnDef> columns;
+        nebula::cpp2::Value intValue;
+        intValue.set_int_value(0);
+        nebula::cpp2::ColumnDef intColumn;
+        intColumn.set_name("column_i");
+        ValueType intType;
+        intType.set_type(SupportedType::INT);
+        columns.emplace_back(FRAGILE, "column_i",
+                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr),
+                             std::move(intValue));
+
+        nebula::cpp2::Value doubleValue;
+        doubleValue.set_double_value(3.14);
+        nebula::cpp2::ColumnDef doubleColumn;
+        doubleColumn.set_name("column_d");
+        ValueType doubleType;
+        doubleType.set_type(SupportedType::DOUBLE);
+        columns.emplace_back(FRAGILE, "column_d",
+                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr),
+                             std::move(doubleValue));
+
+        nebula::cpp2::Value stringValue;
+        stringValue.set_string_value("test");
+        nebula::cpp2::ColumnDef stringColumn;
+        stringColumn.set_name("column_s");
+        ValueType stringType;
+        stringType.set_type(SupportedType::STRING);
+        stringColumn.set_type(stringType);
+        columns.emplace_back(FRAGILE, "column_s",
+                             ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr),
+                             std::move(stringValue));
+
+        nebula::cpp2::Schema schema;
+        schema.set_columns(std::move(columns));
+        auto result = client->createEdgeSchema(spaceId, "test_edge", schema).get();
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        std::vector<nebula::cpp2::ColumnDef> columns;
+        nebula::cpp2::Value intValue;
+        intValue.set_int_value(0);
+        columns.emplace_back(FRAGILE, "column_i",
+                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr),
+                             std::move(intValue));
+
+        nebula::cpp2::Value stringValue;
+        stringValue.set_string_value("default value");
+        columns.emplace_back(FRAGILE, "column_d",
+                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr),
+                             std::move(stringValue));
+
+        nebula::cpp2::Schema schema;
+        schema.set_columns(columns);
+
+        auto result = client->createEdgeSchema(spaceId, "test_edge_type_mismatch", schema).get();
         ASSERT_FALSE(result.ok());
     }
 }
@@ -381,6 +528,15 @@ public:
         partNum++;
     }
 
+    void onSpaceOptionUpdated(GraphSpaceID spaceId,
+                              const std::unordered_map<std::string, std::string>& update)
+                              override {
+        UNUSED(spaceId);
+        for (const auto& kv : update) {
+            options[kv.first] = kv.second;
+        }
+    }
+
     void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) override {
         LOG(INFO) << "[" << spaceId << ", " << partId << "] removed!";
         partNum--;
@@ -398,6 +554,7 @@ public:
     int32_t spaceNum = 0;
     int32_t partNum = 0;
     int32_t partChanged = 0;
+    std::unordered_map<std::string, std::string> options;
 };
 
 TEST(MetaClientTest, DiffTest) {
@@ -417,7 +574,7 @@ TEST(MetaClientTest, DiffTest) {
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {
-        // Test addHost, listHosts interface.
+        // Add hosts automatically, then testing listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}};
         TestUtils::registerHB(sc->kvStore_.get(), hosts);
         auto ret = client->listHosts().get();
@@ -475,7 +632,7 @@ TEST(MetaClientTest, HeartbeatTest) {
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {
-        // Test addHost, listHosts interface.
+        // Add hosts automatically, then testing listHosts interface.
         std::vector<HostAddr> hosts = {localHost};
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
@@ -489,14 +646,15 @@ TEST(MetaClientTest, HeartbeatTest) {
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(sc->kvStore_.get()).size());
 }
 
+
 class TestMetaService : public cpp2::MetaServiceSvIf {
 public:
-    folly::Future<cpp2::ExecResp>
-    future_addHosts(const cpp2::AddHostsReq& req) override {
+    folly::Future<cpp2::HBResp>
+    future_heartBeat(const cpp2::HBReq& req) override {
         UNUSED(req);
-        folly::Promise<cpp2::ExecResp> pro;
+        folly::Promise<cpp2::HBResp> pro;
         auto f = pro.getFuture();
-        cpp2::ExecResp resp;
+        cpp2::HBResp resp;
         resp.set_code(cpp2::ErrorCode::SUCCEEDED);
         pro.setValue(std::move(resp));
         return f;
@@ -515,12 +673,12 @@ public:
         addr_.set_port(addr.second);
     }
 
-    folly::Future<cpp2::ExecResp>
-    future_addHosts(const cpp2::AddHostsReq& req) override {
+    folly::Future<cpp2::HBResp>
+    future_heartBeat(const cpp2::HBReq& req) override {
         UNUSED(req);
-        folly::Promise<cpp2::ExecResp> pro;
+        folly::Promise<cpp2::HBResp> pro;
         auto f = pro.getFuture();
-        cpp2::ExecResp resp;
+        cpp2::HBResp resp;
         if (addr_ == leader_) {
             resp.set_code(cpp2::ErrorCode::SUCCEEDED);
         } else {
@@ -551,9 +709,9 @@ TEST(MetaClientTest, SimpleTest) {
                                                std::vector<HostAddr>{HostAddr(localIp, sc->port_)},
                                                localHost);
     {
-        LOG(INFO) << "Test add hosts...";
+        LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
-        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+        client->heartbeat().thenValue([&baton] (auto&& status) {
             ASSERT_TRUE(status.ok());
             baton.post();
         });
@@ -561,7 +719,7 @@ TEST(MetaClientTest, SimpleTest) {
     }
 }
 
-TEST(MetaClientTest, RetryWithExceptioniTest) {
+TEST(MetaClientTest, RetryWithExceptionTest) {
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
@@ -571,18 +729,17 @@ TEST(MetaClientTest, RetryWithExceptioniTest) {
     auto client = std::make_shared<MetaClient>(threadPool,
                                                std::vector<HostAddr>{HostAddr(0, 0)},
                                                localHost);
-    // Retry with exception, thenfailed
+    // Retry with exception, then failed
     {
-        LOG(INFO) << "Test add hosts...";
+        LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
-        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+        client->heartbeat().thenValue([&baton] (auto&& status) {
             ASSERT_TRUE(!status.ok());
             baton.post();
         });
         baton.wait();
     }
 }
-
 
 TEST(MetaClientTest, RetryOnceTest) {
     IPv4 localIp;
@@ -613,9 +770,9 @@ TEST(MetaClientTest, RetryOnceTest) {
                                                localHost);
     // First get leader changed and then succeeded
     {
-        LOG(INFO) << "Test add hosts...";
+        LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
-        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+        client->heartbeat().thenValue([&baton] (auto&& status) {
             ASSERT_TRUE(status.ok());
             baton.post();
         });
@@ -651,13 +808,73 @@ TEST(MetaClientTest, RetryUntilLimitTest) {
                                                localHost);
     // always get response of leader changed, then failed
     {
-        LOG(INFO) << "Test add hosts...";
+        LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
-        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+        client->heartbeat().thenValue([&baton] (auto&& status) {
             ASSERT_TRUE(!status.ok());
             baton.post();
         });
         baton.wait();
+    }
+}
+
+TEST(MetaClientTest, RocksdbOptionsTest) {
+    FLAGS_load_data_interval_secs = 1;
+    fs::TempDir rootPath("/tmp/RocksdbOptionsTest.XXXXXX");
+    uint32_t localMetaPort = 0;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    IPv4 localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+
+    auto listener = std::make_unique<TestListener>();
+    auto module = cpp2::ConfigModule::STORAGE;
+    auto type = cpp2::ConfigType::NESTED;
+    auto mode = meta::cpp2::ConfigMode::MUTABLE;
+
+    auto client = std::make_shared<MetaClient>(threadPool,
+        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    client->waitForMetadReady();
+    client->registerListener(listener.get());
+    client->gflagsModule_ = module;
+
+    ClientBasedGflagsManager cfgMan(client.get());
+    // mock some rocksdb gflags to meta
+    {
+        std::vector<cpp2::ConfigItem> configItems;
+        FLAGS_rocksdb_db_options = R"({
+            "disable_auto_compactions":"false",
+            "write_buffer_size":"1048576"
+        })";
+        configItems.emplace_back(toThriftConfigItem(
+            module, "rocksdb_db_options", type,
+            mode, toThriftValueStr(type, FLAGS_rocksdb_db_options)));
+        cfgMan.registerGflags(configItems);
+    }
+    {
+        std::vector<HostAddr> hosts = {{0, 0}};
+        TestUtils::registerHB(sc->kvStore_.get(), hosts);
+        client->createSpace("default_space", 9, 1).get();
+        sleep(FLAGS_load_data_interval_secs + 1);
+    }
+    {
+        std::string name = "rocksdb_db_options";
+        std::string updateValue = "disable_auto_compactions=true,"
+                                  "level0_file_num_compaction_trigger=4";
+        // update config
+        auto setRet = cfgMan.setConfig(module, name, type, updateValue).get();
+        ASSERT_TRUE(setRet.ok());
+
+        // get from meta server
+        auto getRet = cfgMan.getConfig(module, name).get();
+        ASSERT_TRUE(getRet.ok());
+        auto item = getRet.value().front();
+        auto value = boost::get<std::string>(item.get_value());
+
+        sleep(FLAGS_load_data_interval_secs + 1);
+        ASSERT_EQ(FLAGS_rocksdb_db_options, value);
+        ASSERT_EQ(listener->options["disable_auto_compactions"], "true");
+        ASSERT_EQ(listener->options["level0_file_num_compaction_trigger"], "4");
     }
 }
 
@@ -671,5 +888,3 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
-

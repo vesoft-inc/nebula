@@ -66,9 +66,17 @@ struct ValueType {
     3: optional Schema schema (cpp.ref = true);
 } (cpp.virtual)
 
+union Value {
+    1: i64     int_value;
+    2: bool    bool_value;
+    3: double  double_value;
+    4: string  string_value;
+}
+
 struct ColumnDef {
     1: required string name,
     2: required ValueType type,
+    3: optional Value default_value,
 }
 
 struct SchemaProp {
@@ -84,6 +92,11 @@ struct Schema {
 struct HostAddr {
     1: IPv4  ip,
     2: Port  port,
+}
+
+struct Pair {
+    1: string key,
+    2: string value,
 }
 
 const ValueType kInvalidValueType = {"type" : UNKNOWN}

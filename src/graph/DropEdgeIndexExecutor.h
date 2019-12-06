@@ -25,7 +25,7 @@ public:
     void execute() override;
 
 private:
-    DropEdgeIndexSentence                   *sentence_{nullptr};
+    DropEdgeIndexSentence                      *sentence_{nullptr};
 };
 
 }   // namespace graph

@@ -293,6 +293,49 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
     TEST_EXPR(-1 <= -2, false);
     TEST_EXPR(-2 <= -1, true);
 
+    TEST_EXPR(0.5 == 1, false);
+    TEST_EXPR(1.0 == 1, true);
+    TEST_EXPR(0.5 != 1, true);
+    TEST_EXPR(1.0 != 1, false);
+    TEST_EXPR(0.5 > 1, false);
+    TEST_EXPR(0.5 >= 1, false);
+    TEST_EXPR(0.5 < 1, true);
+    TEST_EXPR(0.5 <= 1, true);
+
+    TEST_EXPR(true == 1, true);
+    TEST_EXPR(true == 2, false);
+    TEST_EXPR(true != 1, false);
+    TEST_EXPR(true != 2, true);
+    TEST_EXPR(true > 1, false);
+    TEST_EXPR(true >= 1, true);
+    TEST_EXPR(true < 1, false);
+    TEST_EXPR(true <= 1, true);
+    TEST_EXPR(false == 0, true);
+    TEST_EXPR(false == 1, false);
+    TEST_EXPR(false != 0, false);
+    TEST_EXPR(false != 1, true);
+    TEST_EXPR(false > 0, false);
+    TEST_EXPR(false >= 0, true);
+    TEST_EXPR(false < 0, false);
+    TEST_EXPR(false <= 0, true);
+
+    TEST_EXPR(true == 1.0, true);
+    TEST_EXPR(true == 2.0, false);
+    TEST_EXPR(true != 1.0, false);
+    TEST_EXPR(true != 2.0, true);
+    TEST_EXPR(true > 1.0, false);
+    TEST_EXPR(true >= 1.0, true);
+    TEST_EXPR(true < 1.0, false);
+    TEST_EXPR(true <= 1.0, true);
+    TEST_EXPR(false == 0.0, true);
+    TEST_EXPR(false == 1.0, false);
+    TEST_EXPR(false != 0.0, false);
+    TEST_EXPR(false != 1.0, true);
+    TEST_EXPR(false > 0.0, false);
+    TEST_EXPR(false >= 0.0, true);
+    TEST_EXPR(false < 0.0, false);
+    TEST_EXPR(false <= 0.0, true);
+
     TEST_EXPR(8 % 2 + 1 == 1, true);
     TEST_EXPR(8 % 2 + 1 != 1, false);
     TEST_EXPR(8 % 3 + 1 == 3, true);
@@ -732,7 +775,40 @@ TEST_F(ExpressionTest, InvalidExpressionTest) {
     TEST_EXPR(1.0 % "a");
     TEST_EXPR(-"A");
     TEST_EXPR(TRUE + FALSE);
+    TEST_EXPR("123" > 123);
+    TEST_EXPR("123" < 123);
+    TEST_EXPR("123" >= 123);
+    TEST_EXPR("123" <= 123);
+    TEST_EXPR("123" == 123);
+    TEST_EXPR("123" != 123);
 #undef TEST_EXPR
+}
+
+
+TEST_F(ExpressionTest, StringLengthLimitTest) {
+    constexpr auto MAX = (1UL<<20);
+    std::string str(MAX, 'X');
+
+    // double quote
+    {
+        GQLParser parser;
+        auto *fmt = "GO FROM 1 OVER follow WHERE \"%s\"";
+        {
+            auto query = folly::stringPrintf(fmt, str.c_str());
+            auto parsed = parser.parse(query);
+            ASSERT_TRUE(parsed.ok()) << parsed.status();
+        }
+    }
+    // single quote
+    {
+        GQLParser parser;
+        auto *fmt = "GO FROM 1 OVER follow WHERE '%s'";
+        {
+            auto query = folly::stringPrintf(fmt, str.c_str());
+            auto parsed = parser.parse(query);
+            ASSERT_TRUE(parsed.ok()) << parsed.status();
+        }
+    }
 }
 
 }   // namespace nebula

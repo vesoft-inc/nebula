@@ -12,17 +12,17 @@ namespace nebula {
 namespace graph {
 
 // static
-nebula::cpp2::SupportedType SchemaHelper::columnTypeToSupportedType(ColumnType type) {
+nebula::cpp2::SupportedType SchemaHelper::columnTypeToSupportedType(nebula::ColumnType type) {
     switch (type) {
-        case BOOL:
+        case nebula::ColumnType::BOOL:
             return nebula::cpp2::SupportedType::BOOL;
-        case INT:
+        case nebula::ColumnType::INT:
             return nebula::cpp2::SupportedType::INT;
-        case DOUBLE:
+        case nebula::ColumnType::DOUBLE:
             return nebula::cpp2::SupportedType::DOUBLE;
-        case STRING:
+        case nebula::ColumnType::STRING:
             return nebula::cpp2::SupportedType::STRING;
-        case TIMESTAMP:
+        case nebula::ColumnType::TIMESTAMP:
             return nebula::cpp2::SupportedType::TIMESTAMP;
         default:
             return nebula::cpp2::SupportedType::UNKNOWN;
@@ -44,6 +44,27 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
         nebula::cpp2::ColumnDef column;
         column.name = *spec->name();
         column.type.type = columnTypeToSupportedType(spec->type());
+        nebula::cpp2::Value v;
+        if (spec->hasDefault()) {
+            switch (spec->type()) {
+                case nebula::ColumnType::BOOL:
+                    v.set_bool_value(spec->getBoolValue());
+                    break;
+                case nebula::ColumnType::INT:
+                    v.set_int_value(spec->getIntValue());
+                    break;
+                case nebula::ColumnType::DOUBLE:
+                    v.set_double_value(spec->getDoubleValue());
+                    break;
+                case nebula::ColumnType::STRING:
+                    v.set_string_value(spec->getStringValue());
+                    break;
+                default:
+                    LOG(ERROR) << "Unsupport Type";
+                    return Status::Error("Unsupport Type");
+            }
+            column.set_default_value(std::move(v));
+        }
         schema.columns.emplace_back(std::move(column));
     }
 

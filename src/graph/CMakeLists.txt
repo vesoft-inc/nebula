@@ -1,4 +1,4 @@
-add_library(
+nebula_add_library(
     graph_obj OBJECT
     GraphFlags.cpp
     GraphService.cpp
@@ -27,15 +27,15 @@ add_library(
     CreateEdgeIndexExecutor.cpp
     DropEdgeIndexExecutor.cpp
     DescribeEdgeIndexExecutor.cpp
+    RebuildEdgeIndexExecutor.cpp
     CreateTagIndexExecutor.cpp
     DropTagIndexExecutor.cpp
     DescribeTagIndexExecutor.cpp
+    RebuildTagIndexExecutor.cpp
     UpdateEdgeExecutor.cpp
     AssignmentExecutor.cpp
     InterimResult.cpp
     VariableHolder.cpp
-    AddHostsExecutor.cpp
-    RemoveHostsExecutor.cpp
     CreateSpaceExecutor.cpp
     DropSpaceExecutor.cpp
     DescribeSpaceExecutor.cpp
@@ -54,27 +54,18 @@ add_library(
     FindExecutor.cpp
     MatchExecutor.cpp
     DeleteVertexExecutor.cpp
-)
-add_dependencies(
-    graph_obj
-    parser_obj
-    graph_thrift_obj
-    meta_thrift_obj
-    meta_client
-    gflags_man_obj
-    schema_obj
-    stats_obj
-    process_obj
-    base_obj
+    DeleteEdgesExecutor.cpp
+    FindPathExecutor.cpp
+    LimitExecutor.cpp
+    GroupByExecutor.cpp
+    ReturnExecutor.cpp
+    CreateSnapshotExecutor.cpp
+    DropSnapshotExecutor.cpp
 )
 
-add_library(
+nebula_add_library(
     graph_http_handler OBJECT
     GraphHttpHandler.cpp
-)
-add_dependencies(
-    graph_http_handler
-    base_obj
 )
 
 nebula_add_subdirectory(test)

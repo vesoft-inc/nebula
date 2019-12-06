@@ -15,10 +15,41 @@ CreateTagIndexExecutor::CreateTagIndexExecutor(Sentence *sentence,
 }
 
 Status CreateTagIndexExecutor::prepare() {
-    return checkIfGraphSpaceChosen();
+    return Status::OK();
 }
 
 void CreateTagIndexExecutor::execute() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+
+    auto *mc = ectx()->getMetaClient();
+    auto *name = sentence_->indexName();
+    auto spaceId = ectx()->rctx()->session()->space();
+
+    std::map<std::string, std::vector<std::string>> indexProperties;
+    auto future = mc->createTagIndex(spaceId, *name, std::move(indexProperties));
+    auto *runner = ectx()->rctx()->runner();
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(resp.status());
+            return;
+        }
+
+        DCHECK(onFinish_);
+        onFinish_(Executor::ProcessControl::kNext);
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        onError_(Status::Error("Internal error"));
+    };
+
+    std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
 }   // namespace graph

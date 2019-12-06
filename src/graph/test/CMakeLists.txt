@@ -2,6 +2,7 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:graph_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
     $<TARGET_OBJECTS:storage_service_handler>
+    $<TARGET_OBJECTS:storage_client>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:parser_obj>
@@ -12,6 +13,7 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:ws_common_obj>
     $<TARGET_OBJECTS:storage_client>
     $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:stats_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
@@ -28,6 +30,7 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:meta_gflags_man_obj>
     $<TARGET_OBJECTS:gflags_man_obj>
     $<TARGET_OBJECTS:ws_common_obj>
+    $<TARGET_OBJECTS:stats_obj>
 )
 
 nebula_add_library(
@@ -56,9 +59,25 @@ nebula_add_test(
     NAME
         query_engine_test
     SOURCES
-        YieldTest.cpp
         SchemaTest.cpp
         ConfigTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        index_test
+    SOURCES
+        IndexTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
@@ -116,7 +135,7 @@ nebula_add_test(
         data_test
     SOURCES
         DataTest.cpp
-        OBJECTS
+    OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
@@ -200,9 +219,26 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        deleteVertex_test
+        delete_vertex_sentence_test
     SOURCES
         DeleteVertexTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        delete_edges_sentence_test
+    SOURCES
+        DeleteEdgesTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
@@ -232,3 +268,87 @@ nebula_add_test(
         gtest
 )
 
+nebula_add_test(
+    NAME
+        find_path_test
+    SOURCES
+        FindPathTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        group_by_limit_test
+    SOURCES
+        GroupByLimitTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        yield_test
+    SOURCES
+        YieldTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        geo_test
+    SOURCES
+        GeoTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        snapshot_command_test
+    SOURCES
+        SnapshotCommandTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)

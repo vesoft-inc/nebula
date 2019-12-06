@@ -10,9 +10,8 @@ nebula_add_library(
     MetaServiceHandler.cpp
     MetaServiceUtils.cpp
     ActiveHostsMan.cpp
-    processors/partsMan/AddHostsProcessor.cpp
     processors/partsMan/ListHostsProcessor.cpp
-    processors/partsMan/RemoveHostsProcessor.cpp
+    processors/partsMan/ListPartsProcessor.cpp
     processors/partsMan/CreateSpaceProcessor.cpp
     processors/partsMan/GetSpaceProcessor.cpp
     processors/partsMan/ListSpacesProcessor.cpp
@@ -37,11 +36,15 @@ nebula_add_library(
     processors/admin/HBProcessor.cpp
     processors/usersMan/AuthenticationProcessor.cpp
     processors/admin/BalanceProcessor.cpp
+    processors/admin/CreateSnapshotProcessor.cpp
+    processors/admin/DropSnapshotProcessor.cpp
+    processors/admin/ListSnapshotsProcessor.cpp
     processors/admin/Balancer.cpp
     processors/admin/BalancePlan.cpp
     processors/admin/BalanceTask.cpp
     processors/admin/AdminClient.cpp
     processors/admin/LeaderBalanceProcessor.cpp
+    processors/admin/SnapShot.cpp
     processors/configMan/RegConfigProcessor.cpp
     processors/configMan/GetConfigProcessor.cpp
     processors/configMan/ListConfigsProcessor.cpp
@@ -59,43 +62,20 @@ nebula_add_library(
     meta_client OBJECT
     client/MetaClient.cpp
 )
-add_dependencies(
-    meta_client
-    gflags_man_obj
-)
 
-add_library(
+nebula_add_library(
     gflags_man_obj OBJECT
     GflagsManager.cpp
 )
-add_dependencies(
-    gflags_man_obj
-    base_obj
-)
 
-add_library(
+nebula_add_library(
     meta_gflags_man_obj OBJECT
     ClientBasedGflagsManager.cpp
 )
-add_dependencies(
-    meta_gflags_man_obj
-    gflags_man_obj
-    meta_service_handler
-    base_obj
-    meta_client
-    meta_thrift_obj
-)
 
-add_library(
+nebula_add_library(
     kv_gflags_man_obj OBJECT
     KVBasedGflagsManager.cpp
-)
-add_dependencies(
-    kv_gflags_man_obj
-    gflags_man_obj
-    meta_service_handler
-    base_obj
-    kvstore_obj
 )
 
 nebula_add_subdirectory(test)

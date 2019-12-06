@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include <folly/futures/SharedPromise.h>
 #include <folly/Function.h>
+#include <gtest/gtest_prod.h>
 #include "gen-cpp2/raftex_types.h"
 #include "time/Duration.h"
 #include "thread/GenericThreadPool.h"
@@ -39,6 +40,10 @@ enum class AppendLogResult {
     E_BUFFER_OVERFLOW = -5,
     E_WAL_FAILURE = -6,
     E_TERM_OUT_OF_DATE = -7,
+    E_SENDING_SNAPSHOT = -8,
+    E_INVALID_PEER = -9,
+    E_NOT_ENOUGH_ACKS = -10,
+    E_WRITE_BLOCKING = -11,
 };
 
 enum class LogType {
@@ -69,6 +74,9 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
     friend class AppendLogsIterator;
     friend class Host;
     friend class SnapshotManager;
+    FRIEND_TEST(MemberChangeTest, AddRemovePeerTest);
+    FRIEND_TEST(MemberChangeTest, RemoveLeaderTest);
+
 public:
     virtual ~RaftPart();
 
@@ -128,6 +136,11 @@ public:
 
     void preProcessTransLeader(const HostAddr& target);
 
+
+    void preProcessRemovePeer(const HostAddr& peer);
+
+    void commitRemovePeer(const HostAddr& peer);
+
     // Change the partition status to RUNNING. This is called
     // by the inherited class, when it's ready to serve
     virtual void start(std::vector<HostAddr>&& peers, bool asLearner = false);
@@ -163,7 +176,13 @@ public:
      * */
     folly::Future<AppendLogResult> sendCommandAsync(std::string log);
 
+    /**
+     * Check if the peer has catched up data from leader. If leader is sending the snapshot,
+     * the method will return false.
+     * */
+    AppendLogResult isCatchedUp(const HostAddr& peer);
 
+    bool linkCurrentWAL(const char* newPath);
 
     /*****************************************************
      *
@@ -239,6 +258,10 @@ protected:
     // Reset the part, clean up all data and WALs.
     void reset();
 
+    void addPeer(const HostAddr& peer);
+
+    void removePeer(const HostAddr& peer);
+
 private:
     enum class Status {
         STARTING = 0,   // The part is starting, not ready for service
@@ -279,8 +302,7 @@ private:
      ***************************************************/
     const char* roleStr(Role role) const;
 
-    cpp2::ErrorCode verifyLeader(const cpp2::AppendLogRequest& req,
-                                 std::lock_guard<std::mutex>& lck);
+    cpp2::ErrorCode verifyLeader(const cpp2::AppendLogRequest& req);
 
     /*****************************************************************
      * Asynchronously send a heartbeat (An empty log entry)
@@ -302,6 +324,8 @@ private:
     bool needToCleanupSnapshot();
 
     void cleanupSnapshot();
+
+    bool needToCleanWal();
 
     // The method sends out AskForVote request
     // It return true if a leader is elected, otherwise returns false
@@ -351,6 +375,8 @@ private:
     std::vector<std::shared_ptr<Host>> followers() const;
 
     bool checkAppendLogResult(AppendLogResult res);
+
+    void updateQuorum();
 
 protected:
     template<class ValueType>
@@ -496,6 +522,13 @@ protected:
     int64_t lastTotalCount_ = 0;
     int64_t lastTotalSize_ = 0;
     time::Duration lastSnapshotRecvDur_;
+
+    // Used to bypass the stale command
+    int64_t startTimeMs_ = 0;
+
+    std::atomic<uint64_t> weight_;
+
+    bool blocking_{false};
 };
 
 }  // namespace raftex

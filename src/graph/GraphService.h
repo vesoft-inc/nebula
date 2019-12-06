@@ -9,9 +9,9 @@
 
 #include "base/Base.h"
 #include "gen-cpp2/GraphService.h"
-#include "graph/SessionManager.h"
-#include "graph/ExecutionEngine.h"
 #include "graph/Authenticator.h"
+#include "graph/ExecutionEngine.h"
+#include "graph/SessionManager.h"
 
 namespace folly {
 class IOThreadPoolExecutor;
@@ -22,8 +22,8 @@ namespace graph {
 
 class GraphService final : public cpp2::GraphServiceSvIf {
 public:
-    GraphService();
-    ~GraphService();
+    GraphService() = default;
+    ~GraphService() = default;
 
     Status MUST_USE_RESULT init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor);
 
@@ -44,6 +44,6 @@ private:
     std::unique_ptr<Authenticator>              authenticator_;
 };
 
-}  // namespace graph
-}  // namespace nebula
-#endif  // GRAPH_GRAPHSERVICE_H_
+}   // namespace graph
+}   // namespace nebula
+#endif   // GRAPH_GRAPHSERVICE_H_

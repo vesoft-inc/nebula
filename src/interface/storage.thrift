@@ -23,6 +23,8 @@ enum ErrorCode {
     E_KEY_HAS_EXISTS = -12,
     E_SPACE_NOT_FOUND = -13,
     E_PART_NOT_FOUND = -14,
+    E_KEY_NOT_FOUND = -15,
+    E_CONSENSUS_ERROR = -16,
 
     // meta failures
     E_EDGE_PROP_NOT_FOUND = -21,
@@ -32,6 +34,17 @@ enum ErrorCode {
     // Invalid request
     E_INVALID_FILTER = -31,
     E_INVALID_UPDATER = -32,
+    E_INVALID_STORE = -33,
+    E_INVALID_PEER  = -34,
+    E_RETRY_EXHAUSTED = -35,
+
+    // meta client failed
+    E_LOAD_META_FAILED = -41,
+
+    // checkpoint failed
+    E_FAILED_TO_CHECKPOINT = -50,
+    E_CHECKPOINT_BLOCKED = -51,
+
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 
@@ -41,6 +54,11 @@ enum PropOwner {
     DEST = 2,
     EDGE = 3,
 } (cpp.enum_strict)
+
+enum EngineSignType {
+    BLOCK_ON = 1,
+    BLOCK_OFF = 2,
+}
 
 union EntryId {
     1: common.TagID tag_id,
@@ -202,9 +220,7 @@ struct DeleteEdgesRequest {
 }
 
 struct AdminExecResp {
-    1: ErrorCode code,
-    // Only valid when code is E_LEADER_CHANAGED.
-    2: common.HostAddr  leader,
+    1: required ResponseCommon result,
 }
 
 struct AddPartReq {
@@ -221,6 +237,9 @@ struct RemovePartReq {
 struct MemberChangeReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
+    3: common.HostAddr     peer,
+    // true means add a peer, false means remove a peer.
+    4: bool                add,
 }
 
 struct TransLeaderReq {
@@ -245,7 +264,7 @@ struct GetLeaderReq {
 }
 
 struct GetLeaderResp {
-    1: ErrorCode                 code,
+    1: required ResponseCommon result,
     2: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts;
 }
 
@@ -282,6 +301,67 @@ struct UpdateEdgeRequest {
     7: bool insertable,
 }
 
+struct PutRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<common.Pair>>(cpp.template = "std::unordered_map") parts,
+}
+
+struct RemoveRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") parts,
+}
+
+struct RemoveRangeRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<common.Pair>>(cpp.template = "std::unordered_map") parts,
+}
+
+struct GetRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") parts,
+}
+
+struct PrefixRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, string>(cpp.template = "std::unordered_map") parts,
+}
+
+struct ScanRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, common.Pair>(cpp.template = "std::unordered_map") parts,
+}
+
+struct GeneralResponse {
+    1: required ResponseCommon result,
+    2: map<string, string>(cpp.template = "std::unordered_map") values,
+}
+
+struct GetUUIDReq {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID  part_id,
+    3: string name,
+}
+
+struct GetUUIDResp {
+    1: required ResponseCommon result,
+    2: common.VertexID id,
+}
+
+struct BlockingSignRequest {
+    1: common.GraphSpaceID          space_id,
+    2: required EngineSignType      sign,
+}
+
+struct CreateCPRequest {
+    1: common.GraphSpaceID          space_id,
+    2: string                       name,
+}
+
+struct DropCPRequest {
+    1: common.GraphSpaceID          space_id,
+    2: string                       name,
+}
+
 service StorageService {
     QueryResponse getBound(1: GetNeighborsRequest req)
 
@@ -308,5 +388,18 @@ service StorageService {
     AdminExecResp waitingForCatchUpData(1: CatchUpDataReq req);
     AdminExecResp removePart(1: RemovePartReq req);
     AdminExecResp memberChange(1: MemberChangeReq req);
+    // Interfaces for nebula cluster checkpoint
+    AdminExecResp createCheckpoint(1: CreateCPRequest req);
+    AdminExecResp dropCheckpoint(1: DropCPRequest req);
+    AdminExecResp blockingWrites(1: BlockingSignRequest req);
+
     GetLeaderResp getLeaderPart(1: GetLeaderReq req);
+
+    // Interfaces for key-value storage
+    ExecResponse      put(1: PutRequest req);
+    GeneralResponse   get(1: GetRequest req);
+    ExecResponse      remove(1: RemoveRequest req);
+    ExecResponse      removeRange(1: RemoveRangeRequest req);
+
+    GetUUIDResp getUUID(1: GetUUIDReq req);
 }

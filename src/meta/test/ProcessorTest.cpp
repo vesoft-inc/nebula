@@ -13,9 +13,9 @@
 #include "meta/processors/partsMan/CreateSpaceProcessor.h"
 #include "meta/processors/partsMan/ListSpacesProcessor.h"
 #include "meta/processors/partsMan/ListSpacesProcessor.h"
+#include "meta/processors/partsMan/ListPartsProcessor.h"
 #include "meta/processors/partsMan/DropSpaceProcessor.h"
 #include "meta/processors/partsMan/GetSpaceProcessor.h"
-#include "meta/processors/partsMan/RemoveHostsProcessor.h"
 #include "meta/processors/partsMan/GetPartsAllocProcessor.h"
 #include "meta/processors/schemaMan/CreateTagProcessor.h"
 #include "meta/processors/schemaMan/CreateEdgeProcessor.h"
@@ -41,84 +41,6 @@ namespace meta {
 
 using nebula::cpp2::SupportedType;
 using apache::thrift::FragileConstructor::FRAGILE;
-
-
-TEST(ProcessorTest, AddHostsTest) {
-    fs::TempDir rootPath("/tmp/AddHostsTest.XXXXXX");
-    FLAGS_expired_threshold_sec = 2;
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    {
-        std::vector<nebula::cpp2::HostAddr> thriftHosts;
-        for (auto i = 0; i < 10; i++) {
-            thriftHosts.emplace_back(FRAGILE, i, i);
-        }
-        cpp2::AddHostsReq req;
-        req.set_hosts(std::move(thriftHosts));
-        auto* processor = AddHostsProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-    }
-    {
-        cpp2::ListHostsReq req;
-        auto* processor = ListHostsProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(10, resp.hosts.size());
-        for (auto i = 0; i < 10; i++) {
-            ASSERT_EQ(i, resp.hosts[i].hostAddr.ip);
-            ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
-        }
-    }
-    {
-        std::vector<nebula::cpp2::HostAddr> thriftHosts;
-        for (auto i = 10; i < 20; i++) {
-            thriftHosts.emplace_back(FRAGILE, i, i);
-        }
-        cpp2::AddHostsReq req;
-        req.set_hosts(std::move(thriftHosts));
-        auto* processor = AddHostsProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-    }
-    {
-        cpp2::ListHostsReq req;
-        auto* processor = ListHostsProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(20, resp.hosts.size());
-        for (auto i = 0; i < 20; i++) {
-            ASSERT_EQ(i, resp.hosts[i].hostAddr.ip);
-            ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
-        }
-    }
-    {
-        std::vector<nebula::cpp2::HostAddr> thriftHosts;
-        for (auto i = 0; i < 20; i++) {
-            thriftHosts.emplace_back(apache::thrift::FragileConstructor::FRAGILE, i, i);
-        }
-        cpp2::RemoveHostsReq req;
-        req.set_hosts(std::move(thriftHosts));
-        auto* processor = RemoveHostsProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-    }
-    {
-        cpp2::ListHostsReq req;
-        auto* processor = ListHostsProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(0, resp.hosts.size());
-    }
-}
 
 TEST(ProcessorTest, ListHostsTest) {
     fs::TempDir rootPath("/tmp/ListHostsTest.XXXXXX");
@@ -156,6 +78,82 @@ TEST(ProcessorTest, ListHostsTest) {
             ASSERT_EQ(i, resp.hosts[i].hostAddr.ip);
             ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
             ASSERT_EQ(cpp2::HostStatus::OFFLINE, resp.hosts[i].status);
+        }
+    }
+}
+
+TEST(ProcessorTest, ListPartsTest) {
+    fs::TempDir rootPath("/tmp/ListPartsTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}};
+    TestUtils::createSomeHosts(kv.get(), hosts);
+    // 9 partition in space 1, 3 replica, 3 hosts
+    TestUtils::assembleSpace(kv.get(), 1, 9, 3, 3);
+    {
+        cpp2::ListPartsReq req;
+        req.set_space_id(1);
+        auto* processor = ListPartsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(9, resp.parts.size());
+
+        auto parts = std::move(resp.parts);
+        std::sort(parts.begin(), parts.end(), [] (const auto& a, const auto& b) {
+            return a.get_part_id() < b.get_part_id();
+        });
+        PartitionID partId = 0;
+        for (auto& part : parts) {
+            partId++;
+            EXPECT_EQ(partId, part.get_part_id());
+            EXPECT_FALSE(part.__isset.leader);
+            EXPECT_EQ(3, part.peers.size());
+            EXPECT_EQ(0, part.losts.size());
+        }
+    }
+
+    std::vector<Status> sts(8, Status::OK());
+    std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
+    auto client = std::make_unique<AdminClient>(std::move(injector));
+    {
+        cpp2::ListPartsReq req;
+        req.set_space_id(1);
+        auto* processor = ListPartsProcessor::instance(kv.get(), client.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(9, resp.parts.size());
+
+        auto parts = std::move(resp.parts);
+        std::sort(parts.begin(), parts.end(), [] (const auto& a, const auto& b) {
+            return a.get_part_id() < b.get_part_id();
+        });
+        PartitionID partId = 0;
+        for (auto& part : parts) {
+            partId++;
+            EXPECT_EQ(partId, part.get_part_id());
+
+            EXPECT_TRUE(part.__isset.leader);
+            if (partId <= 5) {
+                EXPECT_EQ(0, part.leader.ip);
+                EXPECT_EQ(0, part.leader.port);
+            } else if (partId > 5 && partId <= 8) {
+                EXPECT_EQ(1, part.leader.ip);
+                EXPECT_EQ(1, part.leader.port);
+            } else {
+                EXPECT_EQ(2, part.leader.ip);
+                EXPECT_EQ(2, part.leader.port);
+            }
+
+            EXPECT_EQ(3, part.peers.size());
+            for (auto& peer : part.peers) {
+                auto it = std::find_if(hosts.begin(), hosts.end(),
+                        [&] (const auto& host) {
+                            return host.first == peer.ip && host.second == peer.port;
+                    });
+                EXPECT_TRUE(it != hosts.end());
+            }
+            EXPECT_EQ(0, part.losts.size());
         }
     }
 }
@@ -243,7 +241,6 @@ TEST(ProcessorTest, CreateSpaceTest) {
         ASSERT_EQ(0, resp.spaces.size());
     }
 }
-
 
 TEST(ProcessorTest, CreateTagTest) {
     fs::TempDir rootPath("/tmp/CreateTagTest.XXXXXX");
@@ -347,13 +344,13 @@ TEST(ProcessorTest, CreateTagTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.code);
     }
-
-    // Set schema ttl property
-    nebula::cpp2::SchemaProp schemaProp;
-    schemaProp.set_ttl_duration(100);
-    schemaProp.set_ttl_col("col_0");
-    schema.set_schema_prop(std::move(schemaProp));
     {
+        // Set schema ttl property
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_duration(100);
+        schemaProp.set_ttl_col("col_0");
+        schema.set_schema_prop(std::move(schemaProp));
+
         // Tag with TTL
         cpp2::CreateTagReq req;
         req.set_space_id(1);
@@ -365,6 +362,52 @@ TEST(ProcessorTest, CreateTagTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(5, resp.get_id().get_tag_id());
+    }
+    {
+        nebula::cpp2::Schema schemaWithDefault;
+        decltype(schema.columns) colsWithDefault;
+        colsWithDefault.emplace_back(TestUtils::columnDefWithDefault(0, SupportedType::BOOL));
+        colsWithDefault.emplace_back(TestUtils::columnDefWithDefault(1, SupportedType::INT));
+        colsWithDefault.emplace_back(TestUtils::columnDefWithDefault(2, SupportedType::DOUBLE));
+        colsWithDefault.emplace_back(TestUtils::columnDefWithDefault(3, SupportedType::STRING));
+        schemaWithDefault.set_columns(std::move(colsWithDefault));
+
+        cpp2::CreateTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_with_default");
+        req.set_schema(std::move(schemaWithDefault));
+        auto* processor = CreateTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(6, resp.get_id().get_tag_id());
+    }
+    {
+        nebula::cpp2::Schema schemaWithDefault;
+        decltype(schema.columns) colsWithDefault;
+
+        nebula::cpp2::ColumnDef columnWithDefault;
+        columnWithDefault.set_name(folly::stringPrintf("col_type_mismatch"));
+        nebula::cpp2::ValueType vType;
+        vType.set_type(SupportedType::BOOL);
+        columnWithDefault.set_type(std::move(vType));
+        nebula::cpp2::Value defaultValue;
+        defaultValue.set_string_value("default value");
+        columnWithDefault.set_default_value(std::move(defaultValue));
+
+        colsWithDefault.push_back(std::move(columnWithDefault));
+        schemaWithDefault.set_columns(std::move(colsWithDefault));
+
+        cpp2::CreateTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_type_mismatche");
+        req.set_schema(std::move(schemaWithDefault));
+        auto* processor = CreateTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.code);
     }
 }
 
@@ -492,8 +535,53 @@ TEST(ProcessorTest, CreateEdgeTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(5, resp.get_id().get_edge_type());
     }
-}
+    {
+        nebula::cpp2::Schema schemaWithDefault;
+        decltype(schema.columns) colsWithDefault;
+        colsWithDefault.emplace_back(TestUtils::columnDefWithDefault(0, SupportedType::BOOL));
+        colsWithDefault.emplace_back(TestUtils::columnDefWithDefault(1, SupportedType::INT));
+        colsWithDefault.emplace_back(TestUtils::columnDefWithDefault(2, SupportedType::DOUBLE));
+        colsWithDefault.emplace_back(TestUtils::columnDefWithDefault(3, SupportedType::STRING));
+        schemaWithDefault.set_columns(std::move(colsWithDefault));
 
+        cpp2::CreateEdgeReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_with_defaule");
+        req.set_schema(std::move(schemaWithDefault));
+        auto* processor = CreateEdgeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(6, resp.get_id().get_edge_type());
+    }
+    {
+        nebula::cpp2::Schema schemaWithDefault;
+        decltype(schema.columns) colsWithDefault;
+
+        nebula::cpp2::ColumnDef columnWithDefault;
+        columnWithDefault.set_name(folly::stringPrintf("col_type_mismatch"));
+        nebula::cpp2::ValueType vType;
+        vType.set_type(SupportedType::BOOL);
+        columnWithDefault.set_type(std::move(vType));
+        nebula::cpp2::Value defaultValue;
+        defaultValue.set_string_value("default value");
+        columnWithDefault.set_default_value(std::move(defaultValue));
+
+        colsWithDefault.push_back(std::move(columnWithDefault));
+        schemaWithDefault.set_columns(std::move(colsWithDefault));
+
+        cpp2::CreateEdgeReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_type_mismatche");
+        req.set_schema(std::move(schemaWithDefault));
+        auto* processor = CreateEdgeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.code);
+    }
+}
 
 TEST(ProcessorTest, KVOperationTest) {
     fs::TempDir rootPath("/tmp/KVOperationTest.XXXXXX");
@@ -517,7 +605,7 @@ TEST(ProcessorTest, KVOperationTest) {
     }
     {
         // Multi Put Test
-        std::vector<cpp2::Pair> pairs;
+        std::vector<nebula::cpp2::Pair> pairs;
         for (auto i = 0; i < 10; i++) {
             pairs.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                folly::stringPrintf("key_%d", i),
@@ -618,18 +706,6 @@ TEST(ProcessorTest, KVOperationTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-    }
-    {
-        // Illegal Segment Test
-        cpp2::GetReq req;
-        req.set_segment("_test0_");
-        req.set_key("key_8");
-
-        auto* processor = GetProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL, resp.code);
     }
 }
 
@@ -922,10 +998,17 @@ TEST(ProcessorTest, AlterTagTest) {
         nebula::cpp2::ColumnDef column;
         column.name = folly::stringPrintf("tag_%d_col_%d", 0, 0);
         dropSch.columns.emplace_back(std::move(column));
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::ADD);
+        items.back().set_schema(std::move(addSch));
 
-        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::ADD, std::move(addSch));
-        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::CHANGE, std::move(changeSch));
-        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::DROP, std::move(dropSch));
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
+        items.back().set_schema(std::move(changeSch));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::DROP);
+        items.back().set_schema(std::move(dropSch));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
         req.set_tag_items(items);
@@ -1060,7 +1143,9 @@ TEST(ProcessorTest, AlterTagTest) {
         column.name = folly::stringPrintf("tag_%d_col_%d", 0, 10);
         dropSch.columns.emplace_back(std::move(column));
 
-        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::DROP, std::move(dropSch));
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::DROP);
+        items.back().set_schema(std::move(dropSch));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
         req.set_tag_items(items);
@@ -1079,10 +1164,10 @@ TEST(ProcessorTest, AlterTagTest) {
         column.name = "tag_0_col_1";
         column.type.type = SupportedType::INT;
         addSch.columns.emplace_back(std::move(column));
-        auto addItem = cpp2::AlterSchemaItem(FRAGILE,
-                                             cpp2::AlterSchemaOp::ADD,
-                                             std::move(addSch));
-        items.emplace_back(std::move(addItem));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::ADD);
+        items.back().set_schema(std::move(addSch));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
         req.set_tag_items(items);
@@ -1101,10 +1186,10 @@ TEST(ProcessorTest, AlterTagTest) {
         column.name = "tag_0_col_2";
         column.type.type = SupportedType::INT;
         changeSch.columns.emplace_back(std::move(column));
-        auto changeItem = cpp2::AlterSchemaItem(FRAGILE,
-                                                cpp2::AlterSchemaOp::CHANGE,
-                                                std::move(changeSch));
-        items.emplace_back(std::move(changeItem));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
+        items.back().set_schema(std::move(changeSch));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
         req.set_tag_items(items);
@@ -1122,8 +1207,11 @@ TEST(ProcessorTest, AlterTagTest) {
         nebula::cpp2::ColumnDef column;
         column.name = "tag_0_col_0";
         column.type.type = SupportedType::INT;
-        dropSch.columns.emplace_back(std::move(column));
-        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::DROP, std::move(dropSch));
+    dropSch.columns.emplace_back(std::move(column));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::DROP);
+        items.back().set_schema(std::move(dropSch));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
         req.set_tag_items(items);
@@ -1153,10 +1241,9 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.name = folly::stringPrintf("edge_%d_col_%d", 0, 1);
         dropSch.columns.emplace_back(std::move(column));
 
-        auto dropItem = cpp2::AlterSchemaItem(FRAGILE,
-                                              cpp2::AlterSchemaOp::DROP,
-                                              std::move(dropSch));
-        items.emplace_back(std::move(dropItem));
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::DROP);
+        items.back().set_schema(std::move(dropSch));
         req.set_space_id(1);
         req.set_edge_name("edge_0");
         req.set_edge_items(items);
@@ -1192,10 +1279,9 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.name = folly::stringPrintf("edge_%d_col_%d", 0, 1);
         addSch.columns.emplace_back(std::move(column));
 
-        auto addItem = cpp2::AlterSchemaItem(FRAGILE,
-                                             cpp2::AlterSchemaOp::ADD,
-                                             std::move(addSch));
-        items.emplace_back(std::move(addItem));
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::ADD);
+        items.back().set_schema(std::move(addSch));
         req.set_space_id(1);
         req.set_edge_name("edge_0");
         req.set_edge_items(items);
@@ -1227,18 +1313,18 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.name = folly::stringPrintf("edge_%d_col_%d", 0, 0);
         dropSch.columns.emplace_back(std::move(column));
 
-        auto addItem = cpp2::AlterSchemaItem(FRAGILE,
-                                             cpp2::AlterSchemaOp::ADD,
-                                             std::move(addSch));
-        auto changeItem = cpp2::AlterSchemaItem(FRAGILE,
-                                                cpp2::AlterSchemaOp::CHANGE,
-                                                std::move(changeSch));
-        auto dropItem = cpp2::AlterSchemaItem(FRAGILE,
-                                              cpp2::AlterSchemaOp::DROP,
-                                              std::move(dropSch));
-        items.emplace_back(std::move(addItem));
-        items.emplace_back(std::move(changeItem));
-        items.emplace_back(std::move(dropItem));
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::ADD);
+        items.back().set_schema(std::move(addSch));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
+        items.back().set_schema(std::move(changeSch));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::DROP);
+        items.back().set_schema(std::move(dropSch));
+
         req.set_space_id(1);
         req.set_edge_name("edge_0");
         req.set_edge_items(items);
@@ -1379,10 +1465,9 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.name = folly::stringPrintf("edge_%d_col_%d", 0, 10);
         dropSch.columns.emplace_back(std::move(column));
 
-        auto dropItem = cpp2::AlterSchemaItem(FRAGILE,
-                                              cpp2::AlterSchemaOp::DROP,
-                                              std::move(dropSch));
-        items.emplace_back(std::move(dropItem));
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::DROP);
+        items.back().set_schema(std::move(dropSch));
         req.set_space_id(1);
         req.set_edge_name("edge_0");
         req.set_edge_items(items);
@@ -1401,10 +1486,10 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.name = "edge_0_col_1";
         column.type.type = SupportedType::INT;
         addSch.columns.emplace_back(std::move(column));
-        auto addItem = cpp2::AlterSchemaItem(FRAGILE,
-                                             cpp2::AlterSchemaOp::ADD,
-                                             std::move(addSch));
-        items.emplace_back(std::move(addItem));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::ADD);
+        items.back().set_schema(std::move(addSch));
 
         req.set_space_id(1);
         req.set_edge_name("edge_0");
@@ -1424,10 +1509,11 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.name = "edge_0_col_2";
         column.type.type = SupportedType::INT;
         changeSch.columns.emplace_back(std::move(column));
-        auto changeItem = cpp2::AlterSchemaItem(FRAGILE,
-                                                cpp2::AlterSchemaOp::CHANGE,
-                                                std::move(changeSch));
-        items.emplace_back(std::move(changeItem));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
+        items.back().set_schema(std::move(changeSch));
+
         req.set_space_id(1);
         req.set_edge_name("edge_0");
         req.set_edge_items(items);
@@ -1446,10 +1532,11 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.name = "edge_0_col_2";
         column.type.type = SupportedType::INT;
         dropSch.columns.emplace_back(std::move(column));
-        auto dropItem = cpp2::AlterSchemaItem(FRAGILE,
-                                              cpp2::AlterSchemaOp::DROP,
-                                              std::move(dropSch));
-        items.emplace_back(dropItem);
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::DROP);
+        items.back().set_schema(std::move(dropSch));
+
         req.set_space_id(1);
         req.set_edge_name("edge_0");
         req.set_edge_items(items);
@@ -1460,7 +1547,6 @@ TEST(ProcessorTest, AlterEdgeTest) {
         ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
 }
-
 }  // namespace meta
 }  // namespace nebula
 

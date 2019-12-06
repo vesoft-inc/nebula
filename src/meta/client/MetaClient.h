@@ -18,6 +18,7 @@
 #include "thrift/ThriftClientManager.h"
 #include "meta/SchemaProviderIf.h"
 #include "meta/GflagsManager.h"
+#include "stats/Stats.h"
 
 DECLARE_int32(meta_client_retry_times);
 
@@ -85,6 +86,9 @@ class MetaChangedListener {
 public:
     virtual void onSpaceAdded(GraphSpaceID spaceId) = 0;
     virtual void onSpaceRemoved(GraphSpaceID spaceId) = 0;
+    virtual void onSpaceOptionUpdated(GraphSpaceID spaceId,
+                                      const std::unordered_map<std::string, std::string>& options)
+                                      = 0;
     virtual void onPartAdded(const PartMeta& partMeta) = 0;
     virtual void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) = 0;
     virtual void onPartUpdated(const PartMeta& partMeta) = 0;
@@ -93,13 +97,21 @@ public:
 class MetaClient {
     FRIEND_TEST(ConfigManTest, MetaConfigManTest);
     FRIEND_TEST(ConfigManTest, MockConfigTest);
+    FRIEND_TEST(ConfigManTest, RocksdbOptionsTest);
+    FRIEND_TEST(MetaClientTest, SimpleTest);
+    FRIEND_TEST(MetaClientTest, RetryWithExceptionTest);
+    FRIEND_TEST(MetaClientTest, RetryOnceTest);
+    FRIEND_TEST(MetaClientTest, RetryUntilLimitTest);
+    FRIEND_TEST(MetaClientTest, RocksdbOptionsTest);
 
 public:
     explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                         std::vector<HostAddr> addrs,
                         HostAddr localHost = HostAddr(0, 0),
                         ClusterID clusterId = 0,
-                        bool sendHeartBeat = false);
+                        bool sendHeartBeat = false,
+                        stats::Stats *stats = nullptr);
+
 
     virtual ~MetaClient();
 
@@ -136,14 +148,11 @@ public:
     folly::Future<StatusOr<bool>>
     dropSpace(std::string name);
 
-    folly::Future<StatusOr<bool>>
-    addHosts(const std::vector<HostAddr>& hosts);
-
     folly::Future<StatusOr<std::vector<cpp2::HostItem>>>
     listHosts();
 
-    folly::Future<StatusOr<bool>>
-    removeHosts(const std::vector<HostAddr>& hosts);
+    folly::Future<StatusOr<std::vector<cpp2::PartItem>>>
+    listParts(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<PartsAlloc>>
     getPartsAlloc(GraphSpaceID spaceId);
@@ -189,60 +198,40 @@ public:
 
     // Operations for index
     folly::Future<StatusOr<TagIndexID>>
-    createTagIndex(GraphSpaceID,
-                   std::string,
-                   std::map<std::string, std::vector<std::string>>&&) {
-        LOG(FATAL) << "unsupport";
-    }
+    createTagIndex(GraphSpaceID spaceID,
+                   std::string name,
+                   std::map<std::string, std::vector<std::string>>&& fields);
 
     // Remove the define of tag index
     folly::Future<StatusOr<bool>>
-    dropTagIndex(GraphSpaceID, std::string) {
-        LOG(FATAL) << "unsupport";
-    }
+    dropTagIndex(GraphSpaceID spaceId, std::string name);
 
     folly::Future<StatusOr<cpp2::TagIndexItem>>
-    getTagIndex(GraphSpaceID, std::string) {
-        LOG(FATAL) << "unsupport";
-    }
+    getTagIndex(GraphSpaceID spaceId, std::string name);
 
     folly::Future<StatusOr<std::vector<cpp2::TagIndexItem>>>
-    listTagIndexes(GraphSpaceID) {
-        LOG(FATAL) << "unsupport";
-    }
+    listTagIndexes(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    rebuildTagIndex(GraphSpaceID, std::string) {
-        LOG(FATAL) << "unsupport";
-    }
+    rebuildTagIndex(GraphSpaceID spaceID, std::string name);
 
     folly::Future<StatusOr<EdgeIndexID>>
-    createEdgeIndex(GraphSpaceID,
-                    std::string,
-                    std::map<std::string, std::vector<std::string>>&&) {
-        LOG(FATAL) << "unsupport";
-    }
+    createEdgeIndex(GraphSpaceID spaceID,
+                    std::string name,
+                    std::map<std::string, std::vector<std::string>>&& fields);
 
     // Remove the define of edge index
     folly::Future<StatusOr<bool>>
-    dropEdgeIndex(GraphSpaceID, std::string) {
-        LOG(FATAL) << "unsupport";
-    }
+    dropEdgeIndex(GraphSpaceID spaceId, std::string name);
 
     folly::Future<StatusOr<cpp2::EdgeIndexItem>>
-    getEdgeIndex(GraphSpaceID , std::string) {
-        LOG(FATAL) << "unsupport";
-    }
+    getEdgeIndex(GraphSpaceID spaceId, std::string name);
 
     folly::Future<StatusOr<std::vector<cpp2::EdgeIndexItem>>>
-    listEdgeIndexes(GraphSpaceID) {
-        LOG(FATAL) << "unsupport";
-    }
+    listEdgeIndexes(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    rebuildEdgeIndex(GraphSpaceID, std::string) {
-        LOG(FATAL) << "unsupport";
-    }
+    rebuildEdgeIndex(GraphSpaceID spaceId, std::string name);
 
     // Operations for custom kv
     folly::Future<StatusOr<bool>>
@@ -266,7 +255,10 @@ public:
 
     // Operations for admin
     folly::Future<StatusOr<int64_t>>
-    balance();
+    balance(std::vector<HostAddr> hostDel, bool isStop = false);
+
+    folly::Future<StatusOr<std::vector<cpp2::BalanceTask>>>
+    showBalance(int64_t balanceId);
 
     folly::Future<StatusOr<bool>> balanceLeader();
 
@@ -283,6 +275,12 @@ public:
 
     folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module);
+
+    folly::Future<StatusOr<bool>> createSnapshot();
+
+    folly::Future<StatusOr<bool>> dropSnapshot(const std::string& name);
+
+    folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> listSnapshots();
 
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
@@ -303,7 +301,7 @@ public:
 
     PartsMap getPartsMapFromCache(const HostAddr& host);
 
-    PartMeta getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId);
+    StatusOr<PartMeta> getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId);
 
     bool checkPartExistInCache(const HostAddr& host,
                                GraphSpaceID spaceId,
@@ -312,7 +310,7 @@ public:
     bool checkSpaceExistInCache(const HostAddr& host,
                                 GraphSpaceID spaceId);
 
-    int32_t partsNum(GraphSpaceID spaceId);
+    StatusOr<int32_t> partsNum(GraphSpaceID spaceId);
 
     StatusOr<std::shared_ptr<const SchemaProviderIf>>
     getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer ver = -1);
@@ -322,9 +320,21 @@ public:
 
     const std::vector<HostAddr>& getAddresses();
 
+    folly::Future<StatusOr<std::string>> getTagDefaultValue(GraphSpaceID spaceId,
+                                                            TagID tagId,
+                                                            const std::string& field);
+
+    folly::Future<StatusOr<std::string>> getEdgeDefaultValue(GraphSpaceID spaceId,
+                                                             EdgeType edgeType,
+                                                             const std::string& field);
+
+    Status refreshCache();
+
 protected:
     void loadDataThreadFunc();
-    void loadData();
+    // Return true if load succeeded.
+    bool loadData();
+
     void addLoadDataTask();
 
     void heartBeatThreadFunc();
@@ -334,6 +344,7 @@ protected:
     bool registerCfg();
     void addLoadCfgTask();
     void updateGflagsValue(const ConfigItem& item);
+    void updateNestedGflags(const std::string& name);
 
     bool loadSchemas(GraphSpaceID spaceId,
                      std::shared_ptr<SpaceInfoCache> spaceInfoCache,
@@ -422,6 +433,7 @@ private:
     cpp2::ConfigModule    gflagsModule_{cpp2::ConfigModule::UNKNOWN};
     std::atomic_bool      configReady_{false};
     std::vector<cpp2::ConfigItem> gflagsDeclared_;
+    stats::Stats         *stats_{nullptr};
 };
 
 }  // namespace meta

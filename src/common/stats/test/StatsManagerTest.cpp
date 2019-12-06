@@ -28,42 +28,18 @@ TEST(StatsManager, StatsTest) {
     }
 
     // Let's check
-    EXPECT_EQ(5050, StatsManager::readValue("stat01.sum.60"));
-    EXPECT_EQ(5050, StatsManager::readValue("stat01.SUM.600"));
-    EXPECT_EQ(5050, StatsManager::readValue("stat01.Sum.3600"));
-    EXPECT_EQ(0, StatsManager::readValue("stat01.Sum.300"));
-    EXPECT_EQ(100, StatsManager::readValue("stat01.count.60"));
-    EXPECT_EQ(100, StatsManager::readValue("stat01.COUNT.600"));
-    EXPECT_EQ(100, StatsManager::readValue("stat01.Count.3600"));
-    EXPECT_EQ(0, StatsManager::readValue("stat01.Count.4600"));
-    EXPECT_EQ(50, StatsManager::readValue("stat01.avg.60"));
-    EXPECT_EQ(50, StatsManager::readValue("stat01.AVG.600"));
-    EXPECT_EQ(50, StatsManager::readValue("stat01.Avg.3600"));
-    EXPECT_EQ(0, StatsManager::readValue("stat01.Avg1.3600"));
-}
-
-
-TEST(StatsManager, RateTest) {
-    auto statId = StatsManager::registerStats("ratetest");
-    auto thread = std::make_unique<thread::GenericWorker>();
-    ASSERT_TRUE(thread->start());
-
-    auto task = [=] () {
-        StatsManager::addValue(statId);
-    };
-    constexpr auto qps = 100L;
-    thread->addRepeatTask(1 * 1000 / qps, task);
-
-    ::usleep(60 * 1000 * 1000);
-
-    auto actual = StatsManager::readValue("ratetest.rate.60");
-
-    ASSERT_LT(std::max(qps, actual) - std::min(qps, actual), 10L) << "expected: " << qps
-                                                                  << ", actual: " << actual;
-
-    thread->stop();
-    thread->wait();
-    thread.reset();
+    EXPECT_EQ(5050, StatsManager::readValue("stat01.sum.60").value());
+    EXPECT_EQ(5050, StatsManager::readValue("stat01.SUM.600").value());
+    EXPECT_EQ(5050, StatsManager::readValue("stat01.Sum.3600").value());
+    EXPECT_FALSE(StatsManager::readValue("stat01.Sum.300").ok());
+    EXPECT_EQ(100, StatsManager::readValue("stat01.count.60").value());
+    EXPECT_EQ(100, StatsManager::readValue("stat01.COUNT.600").value());
+    EXPECT_EQ(100, StatsManager::readValue("stat01.Count.3600").value());
+    EXPECT_FALSE(StatsManager::readValue("stat01.Count.4600").ok());
+    EXPECT_EQ(50, StatsManager::readValue("stat01.avg.60").value());
+    EXPECT_EQ(50, StatsManager::readValue("stat01.AVG.600").value());
+    EXPECT_EQ(50, StatsManager::readValue("stat01.Avg.3600").value());
+    EXPECT_FALSE(StatsManager::readValue("stat01.Avg1.3600").ok());
 }
 
 
@@ -83,56 +59,29 @@ TEST(StatsManager, HistogramTest) {
     }
 
     // Let's check
-    EXPECT_EQ(5050, StatsManager::readValue("stat02.sum.60"));
-    EXPECT_EQ(5050, StatsManager::readValue("stat02.SUM.600"));
-    EXPECT_EQ(5050, StatsManager::readValue("stat02.Sum.3600"));
-    EXPECT_EQ(0, StatsManager::readValue("stat02.Sum.300"));
-    EXPECT_EQ(100, StatsManager::readValue("stat02.count.60"));
-    EXPECT_EQ(100, StatsManager::readValue("stat02.COUNT.600"));
-    EXPECT_EQ(100, StatsManager::readValue("stat02.Count.3600"));
-    EXPECT_EQ(0, StatsManager::readValue("stat02.Count.4600"));
-    EXPECT_EQ(50, StatsManager::readValue("stat02.avg.60"));
-    EXPECT_EQ(50, StatsManager::readValue("stat02.AVG.600"));
-    EXPECT_EQ(50, StatsManager::readValue("stat02.Avg.3600"));
-    EXPECT_EQ(0, StatsManager::readValue("stat02.Avg1.3600"));
+    EXPECT_EQ(5050, StatsManager::readValue("stat02.sum.60").value());
+    EXPECT_EQ(5050, StatsManager::readValue("stat02.SUM.600").value());
+    EXPECT_EQ(5050, StatsManager::readValue("stat02.Sum.3600").value());
+    EXPECT_FALSE(StatsManager::readValue("stat02.Sum.300").ok());
+    EXPECT_EQ(100, StatsManager::readValue("stat02.count.60").value());
+    EXPECT_EQ(100, StatsManager::readValue("stat02.COUNT.600").value());
+    EXPECT_EQ(100, StatsManager::readValue("stat02.Count.3600").value());
+    EXPECT_FALSE(StatsManager::readValue("stat02.Count.4600").ok());
+    EXPECT_EQ(50, StatsManager::readValue("stat02.avg.60").value());
+    EXPECT_EQ(50, StatsManager::readValue("stat02.AVG.600").value());
+    EXPECT_EQ(50, StatsManager::readValue("stat02.Avg.3600").value());
+    EXPECT_FALSE(StatsManager::readValue("stat02.Avg1.3600").ok());
 
-    EXPECT_EQ(100, StatsManager::readValue("stat02.p99.60"));
-    EXPECT_EQ(100, StatsManager::readValue("stat02.P99.600"));
-    EXPECT_EQ(100, StatsManager::readValue("stat02.p99.3600"));
-    EXPECT_EQ(0, StatsManager::readValue("stat02.t99.60"));
-    EXPECT_EQ(96, StatsManager::readValue("stat02.p9599.60"));
-    EXPECT_EQ(96, StatsManager::readValue("stat02.P9599.600"));
-    EXPECT_EQ(96, StatsManager::readValue("stat02.p9599.3600"));
-    EXPECT_EQ(0, StatsManager::readValue("stat02.t9599.60"));
+    EXPECT_EQ(100, StatsManager::readValue("stat02.p99.60").value());
+    EXPECT_EQ(100, StatsManager::readValue("stat02.P99.600").value());
+    EXPECT_EQ(100, StatsManager::readValue("stat02.p99.3600").value());
+    EXPECT_FALSE(StatsManager::readValue("stat02.t99.60").ok());
+    EXPECT_EQ(96, StatsManager::readValue("stat02.p9599.60").value());
+    EXPECT_EQ(96, StatsManager::readValue("stat02.P9599.600").value());
+    EXPECT_EQ(96, StatsManager::readValue("stat02.p9599.3600").value());
+    EXPECT_FALSE(StatsManager::readValue("stat02.t9599.60").ok());
 }
 
-
-TEST(StatsManager, CrossLevelTest) {
-    auto statId = StatsManager::registerHisto("stat03", 1, 1, 100);
-    std::vector<std::thread> threads;
-    for (int i = 0; i < 10; i++) {
-        threads.emplace_back([statId, i] () {
-            for (int k = i * 10 + 10; k >= i * 10 + 1; k--) {
-                StatsManager::addValue(statId, k);
-                if (k > i * 10 + 1) {
-                    sleep(7);
-                }
-            }
-        });
-    }
-
-    for (auto& t : threads) {
-        t.join();
-    }
-
-    // The first number of each thread should be moved to the next level
-    EXPECT_EQ(4500, StatsManager::readValue("stat03.sum.60"));
-    EXPECT_EQ(5050, StatsManager::readValue("stat03.SUM.600"));
-    EXPECT_EQ(90, StatsManager::readValue("stat03.count.60"));
-    EXPECT_EQ(100, StatsManager::readValue("stat03.COUNT.600"));
-    EXPECT_EQ(99, StatsManager::readValue("stat03.p99.60"));
-    EXPECT_EQ(100, StatsManager::readValue("stat03.P99.600"));
-}
 
 }   // namespace stats
 }   // namespace nebula

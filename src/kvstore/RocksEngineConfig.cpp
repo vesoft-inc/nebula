@@ -11,29 +11,27 @@
 #include "rocksdb/convenience.h"
 #include "rocksdb/utilities/options_util.h"
 #include "rocksdb/slice_transform.h"
+#include "base/Configuration.h"
 
 // [WAL]
 DEFINE_bool(rocksdb_disable_wal,
-            false,
+            true,
             "Whether to disable the WAL in rocksdb");
 
 // [DBOptions]
 DEFINE_string(rocksdb_db_options,
-              "",
-              "DBOptions, each option will be given "
-              "as <option_name>:<option_value> separated by ;");
+              "{}",
+              "json string of DBOptions, all keys and values are string");
 
 // [CFOptions "default"]
 DEFINE_string(rocksdb_column_family_options,
-              "",
-              "ColumnFamilyOptions, each option will be given "
-              "as <option_name>:<option_value> separated by ;");
+              "{}",
+              "json string of ColumnFamilyOptions, all keys and values are string");
 
 //  [TableOptions/BlockBasedTable "default"]
 DEFINE_string(rocksdb_block_based_table_options,
-              "",
-              "BlockBasedTableOptions, each option will be given "
-              "as <option_name>:<option_value> separated by ;");
+              "{}",
+              "json string of BlockBasedTableOptions, all keys and values are string");
 
 DEFINE_int32(rocksdb_batch_size,
              4 * 1024,
@@ -47,7 +45,7 @@ DEFINE_string(part_man_type,
  */
 
 // BlockBasedTable block_cache
-DEFINE_int64(rocksdb_block_cache, 4,
+DEFINE_int64(rocksdb_block_cache, 1024,
              "The default block cache size used in BlockBasedTable. The unit is MB");
 
 
@@ -59,24 +57,33 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts) {
     rocksdb::DBOptions dbOpts;
     rocksdb::ColumnFamilyOptions cfOpts;
     rocksdb::BlockBasedTableOptions bbtOpts;
-    s = GetDBOptionsFromString(rocksdb::DBOptions(),
-            FLAGS_rocksdb_db_options, &dbOpts);
+
+    std::unordered_map<std::string, std::string> dbOptsMap;
+    if (!loadOptionsMap(dbOptsMap, FLAGS_rocksdb_db_options)) {
+        return rocksdb::Status::InvalidArgument();
+    }
+    s = GetDBOptionsFromMap(rocksdb::DBOptions(), dbOptsMap, &dbOpts, true);
     if (!s.ok()) {
         return s;
     }
 
-    s = GetColumnFamilyOptionsFromString(rocksdb::ColumnFamilyOptions(),
-            FLAGS_rocksdb_column_family_options, &cfOpts);
-
+    std::unordered_map<std::string, std::string> cfOptsMap;
+    if (!loadOptionsMap(cfOptsMap, FLAGS_rocksdb_column_family_options)) {
+        return rocksdb::Status::InvalidArgument();
+    }
+    s = GetColumnFamilyOptionsFromMap(rocksdb::ColumnFamilyOptions(), cfOptsMap, &cfOpts, true);
     if (!s.ok()) {
         return s;
     }
 
     baseOpts = rocksdb::Options(dbOpts, cfOpts);
 
-    s = GetBlockBasedTableOptionsFromString(rocksdb::BlockBasedTableOptions(),
-            FLAGS_rocksdb_block_based_table_options, &bbtOpts);
-
+    std::unordered_map<std::string, std::string> bbtOptsMap;
+    if (!loadOptionsMap(bbtOptsMap, FLAGS_rocksdb_block_based_table_options)) {
+        return rocksdb::Status::InvalidArgument();
+    }
+    s = GetBlockBasedTableOptionsFromMap(rocksdb::BlockBasedTableOptions(), bbtOptsMap,
+                                         &bbtOpts, true);
     if (!s.ok()) {
         return s;
     }
@@ -85,6 +92,19 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts) {
     baseOpts.table_factory.reset(NewBlockBasedTableFactory(bbtOpts));
     baseOpts.create_if_missing = true;
     return s;
+}
+
+bool loadOptionsMap(std::unordered_map<std::string, std::string> &map, const std::string& gflags) {
+    Configuration conf;
+    auto status = conf.parseFromString(gflags);
+    if (!status.ok()) {
+        return false;
+    }
+    conf.forEachItem([&map] (const std::string& key, const folly::dynamic& val) {
+        LOG(INFO) << "Emplace rocksdb option " << key << "=" << val.asString();
+        map.emplace(key, val.asString());
+    });
+    return true;
 }
 
 }  // namespace kvstore

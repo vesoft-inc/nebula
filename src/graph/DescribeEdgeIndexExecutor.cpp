@@ -15,11 +15,54 @@ DescribeEdgeIndexExecutor::DescribeEdgeIndexExecutor(Sentence *sentence,
 }
 
 Status DescribeEdgeIndexExecutor::prepare() {
-    return checkIfGraphSpaceChosen();
+    return Status::OK();
 }
 
 
 void DescribeEdgeIndexExecutor::execute() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+
+    auto *name = sentence_->indexName();
+    auto spaceId = ectx()->rctx()->session()->space();
+    auto future = ectx()->getMetaClient()->getEdgeIndex(spaceId, *name);
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(Status::Error("Index not found for tag '%s'",
+                                   sentence_->indexName()->c_str()));
+            return;
+        }
+
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        std::vector<std::string> header{"Field", "Type"};
+        resp_->set_column_names(std::move(header));
+        std::vector<cpp2::RowValue> rows;
+        auto& item = resp.value();
+        std::vector<cpp2::ColumnValue> row;
+        row.resize(1);
+        row[0].set_str(item.index_name);
+        rows.emplace_back();
+        rows.back().set_columns(std::move(row));
+
+        resp_->set_rows(std::move(rows));
+        DCHECK(onFinish_);
+        onFinish_(Executor::ProcessControl::kNext);
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error("Internal error"));
+    };
+
+    std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
 

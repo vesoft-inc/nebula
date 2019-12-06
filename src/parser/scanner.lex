@@ -58,7 +58,7 @@ REVERSELY                   ([Rr][Ee][Vv][Ee][Rr][Ss][Ee][Ll][Yy])
 SPACE                       ([Ss][Pp][Aa][Cc][Ee])
 SPACES                      ([Ss][Pp][Aa][Cc][Ee][Ss])
 INDEX                       ([Ii][Nn][Dd][Ee][Xx])
-INDEXS                      ([Ii][Nn][Dd][Ee][Xx][Ss])
+INDEXES                     ([Ii][Nn][Dd][Ee][Xx][Ee][Ss])
 TTL                         ([Tt][Tt][Ll])
 INT                         ([Ii][Nn][Tt])
 BIGINT                      ([Bb][Ii][Gg][Ii][Nn][Tt])
@@ -77,6 +77,7 @@ FALSE                       ([Ff][Aa][Ll][Ss][Ee])
 SHOW                        ([Ss][Hh][Oo][Ww])
 ADD                         ([Aa][Dd][Dd])
 HOSTS                       ([Hh][Oo][Ss][Tt][Ss])
+PARTS                       ([Pp][Aa][Rr][Tt][Ss])
 TIMESTAMP                   ([Tt][Ii][Mm][Ee][Ss][Tt][Aa][Mm][Pp])
 PARTITION_NUM               ([Pp][Aa][Rr][Tt][Ii][Tt][Ii][[Oo][Nn][_][Nn][Uu][Mm])
 REPLICA_FACTOR              ([Rr][Ee][Pp][Ll][Ii][Cc][Aa][_][Ff][Aa][Cc][Tt][Oo][Rr])
@@ -112,7 +113,8 @@ ORDER                       ([Oo][Rr][Dd][Ee][Rr])
 INGEST                      ([Ii][Nn][Gg][Ee][Ss][Tt])
 ASC                         ([Aa][Ss][Cc])
 DISTINCT                    ([Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
-VARIABLES                   ([Vv][Aa][Rr][Ii][Aa][Bb][Ll][Ee][Ss])
+DEFAULT                     ([Dd][Ee][Ff][Aa][Uu][Ll][Tt])
+CONFIGS                     ([Cc][Oo][Nn][Ff][Ii][Gg][Ss])
 GET                         ([Gg][Ee][Tt])
 GRAPH                       ([Gg][Rr][Aa][Pp][Hh])
 META                        ([Mm][Ee][Tt][Aa])
@@ -122,7 +124,29 @@ PROP                        ([Pp][Rr][Oo][Pp])
 ALL                         ([Aa][Ll][Ll])
 BALANCE                     ([Bb][Aa][Ll][Aa][Nn][Cc][Ee])
 LEADER                      ([Ll][Ee][Aa][Dd][Ee][Rr])
+UUID                        ([Uu][Uu][Ii][Dd])
 OF                          ([Oo][Ff])
+DATA                        ([Dd][Aa][Tt][Aa])
+STOP                        ([Ss][Tt][Oo][Pp])
+SHORTEST                    ([Ss][Hh][Oo][Rr][Tt][Ee][Ss][Tt])
+PATH                        ([Pp][Aa][Tt][Hh])
+LIMIT                       ([Ll][Ii][Mm][Ii][Tt])
+OFFSET                      ([Oo][Ff][Ff][Ss][Ee][Tt])
+GROUP                       ([Gg][Rr][Oo][Uu][Pp])
+COUNT                       ([Cc][Oo][Uu][Nn][Tt])
+COUNT_DISTINCT              ([Cc][Oo][Uu][Nn][Tt][_][Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
+SUM                         ([Ss][Uu][Mm])
+AVG                         ([Aa][Vv][Gg])
+MIN                         ([Mm][Ii][Nn])
+MAX                         ([Mm][Aa][Xx])
+STD                         ([Ss][Tt][Dd])
+BIT_AND                     ([Bb][It][Tt][_][Aa][Nn][Dd])
+BIT_OR                      ([Bb][It][Tt][_][Oo][Rr])
+BIT_XOR                     ([Bb][It][Tt][_][Xx][Oo][Rr])
+IS                          ([Ii][Ss])
+NULL                        ([Nn][Uu][Ll][Ll])
+SNAPSHOT                    ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt])
+SNAPSHOTS                   ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt][Ss])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -132,9 +156,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
 
 %%
-
-                            thread_local static char sbuf[MAX_STRING];
-                            size_t pos = 0;
 
 {GO}                        { return TokenType::KW_GO; }
 {AS}                        { return TokenType::KW_AS; }
@@ -169,7 +190,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {SPACE}                     { return TokenType::KW_SPACE; }
 {SPACES}                    { return TokenType::KW_SPACES; }
 {INDEX}                     { return TokenType::KW_INDEX; }
-{INDEXS}                    { return TokenType::KW_INDEXS; }
+{INDEXES}                   { return TokenType::KW_INDEXES; }
 {TTL}                       { return TokenType::KW_TTL; }
 {INT}                       { return TokenType::KW_INT; }
 {BIGINT}                    { return TokenType::KW_BIGINT; }
@@ -186,6 +207,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {SHOW}                      { return TokenType::KW_SHOW; }
 {ADD}                       { return TokenType::KW_ADD; }
 {HOSTS}                     { return TokenType::KW_HOSTS; }
+{PARTS}                     { return TokenType::KW_PARTS; }
 {TIMESTAMP}                 { return TokenType::KW_TIMESTAMP; }
 {CREATE}                    { return TokenType::KW_CREATE;}
 {PARTITION_NUM}             { return TokenType::KW_PARTITION_NUM; }
@@ -218,7 +240,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {TTL_COL}                   { return TokenType::KW_TTL_COL; }
 {DOWNLOAD}                  { return TokenType::KW_DOWNLOAD; }
 {HDFS}                      { return TokenType::KW_HDFS; }
-{VARIABLES}                 { return TokenType::KW_VARIABLES; }
+{CONFIGS}                   { return TokenType::KW_CONFIGS; }
 {GET}                       { return TokenType::KW_GET; }
 {GRAPH}                     { return TokenType::KW_GRAPH; }
 {META}                      { return TokenType::KW_META; }
@@ -230,11 +252,34 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {INGEST}                    { return TokenType::KW_INGEST; }
 {ASC}                       { return TokenType::KW_ASC; }
 {DISTINCT}                  { return TokenType::KW_DISTINCT; }
+{DEFAULT}                   { return TokenType::KW_DEFAULT; }
 {FETCH}                     { return TokenType::KW_FETCH; }
 {PROP}                      { return TokenType::KW_PROP; }
 {ALL}                       { return TokenType::KW_ALL; }
 {BALANCE}                   { return TokenType::KW_BALANCE; }
 {LEADER}                    { return TokenType::KW_LEADER; }
+{UUID}                      { return TokenType::KW_UUID; }
+{DATA}                      { return TokenType::KW_DATA; }
+{STOP}                      { return TokenType::KW_STOP; }
+{SHORTEST}                  { return TokenType::KW_SHORTEST; }
+{PATH}                      { return TokenType::KW_PATH; }
+{LIMIT}                     { return TokenType::KW_LIMIT; }
+{OFFSET}                    { return TokenType::KW_OFFSET; }
+{GROUP}                     { return TokenType::KW_GROUP; }
+{COUNT}                     { return TokenType::KW_COUNT; }
+{COUNT_DISTINCT}            { return TokenType::KW_COUNT_DISTINCT; }
+{SUM}                       { return TokenType::KW_SUM; }
+{AVG}                       { return TokenType::KW_AVG; }
+{MAX}                       { return TokenType::KW_MAX; }
+{MIN}                       { return TokenType::KW_MIN; }
+{STD}                       { return TokenType::KW_STD; }
+{BIT_AND}                   { return TokenType::KW_BIT_AND; }
+{BIT_OR}                    { return TokenType::KW_BIT_OR; }
+{BIT_XOR}                   { return TokenType::KW_BIT_XOR; }
+{IS}                        { return TokenType::KW_IS; }
+{NULL}                      { return TokenType::KW_NULL; }
+{SNAPSHOT}                  { return TokenType::KW_SNAPSHOT; }
+{SNAPSHOTS}                 { return TokenType::KW_SNAPSHOTS; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
@@ -359,22 +404,16 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 \${LABEL}                   { yylval->strval = new std::string(yytext + 1, yyleng - 1); return TokenType::VARIABLE; }
 
 
-\"                          { BEGIN(DQ_STR); pos = 0; }
-\'                          { BEGIN(SQ_STR); pos = 0; }
+\"                          { BEGIN(DQ_STR); sbufPos_ = 0; }
+\'                          { BEGIN(SQ_STR); sbufPos_ = 0; }
 <DQ_STR>\"                  {
-                                yylval->strval = new std::string(sbuf, pos);
+                                yylval->strval = new std::string(sbuf(), sbufPos_);
                                 BEGIN(INITIAL);
-                                if (yylval->strval->size() > MAX_STRING) {
-                                    yyterminate();
-                                }
                                 return TokenType::STRING;
                             }
 <SQ_STR>\'                  {
-                                yylval->strval = new std::string(sbuf, pos);
+                                yylval->strval = new std::string(sbuf(), sbufPos_);
                                 BEGIN(INITIAL);
-                                if (yylval->strval->size() > MAX_STRING) {
-                                    yyterminate();
-                                }
                                 return TokenType::STRING;
                             }
 <DQ_STR,SQ_STR><<EOF>>      {
@@ -383,29 +422,49 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                             }
 <DQ_STR,SQ_STR>\n           { yyterminate(); }
 <DQ_STR>[^\\\n\"]+          {
-                                ::strncpy(sbuf + pos, yytext, yyleng);
-                                pos += yyleng;
+                                makeSpaceForString(yyleng);
+                                ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
+                                sbufPos_ += yyleng;
                             }
 <SQ_STR>[^\\\n\']+          {
-                                ::strncpy(sbuf + pos, yytext, yyleng);
-                                pos += yyleng;
+                                makeSpaceForString(yyleng);
+                                ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
+                                sbufPos_ += yyleng;
                             }
 <DQ_STR,SQ_STR>\\{OCT}{1,3} {
+                                makeSpaceForString(1);
                                 int val = 0;
                                 sscanf(yytext + 1, "%o", &val);
                                 if (val > 0xFF) {
                                     yyterminate();
                                 }
-                                sbuf[pos] = val;
-                                pos++;
+                                sbuf()[sbufPos_++] = val;
                             }
 <DQ_STR,SQ_STR>\\{DEC}+     { yyterminate(); }
-<DQ_STR,SQ_STR>\\n          { sbuf[pos] = '\n'; pos++; }
-<DQ_STR,SQ_STR>\\t          { sbuf[pos] = '\t'; pos++; }
-<DQ_STR,SQ_STR>\\r          { sbuf[pos] = '\r'; pos++; }
-<DQ_STR,SQ_STR>\\b          { sbuf[pos] = '\b'; pos++; }
-<DQ_STR,SQ_STR>\\f          { sbuf[pos] = '\f'; pos++; }
-<DQ_STR,SQ_STR>\\(.|\n)     { sbuf[pos] = yytext[1]; pos++; }
+<DQ_STR,SQ_STR>\\n          {
+                                makeSpaceForString(1);
+                                sbuf()[sbufPos_++] = '\n';
+                            }
+<DQ_STR,SQ_STR>\\t          {
+                                makeSpaceForString(1);
+                                sbuf()[sbufPos_++] = '\t';
+                            }
+<DQ_STR,SQ_STR>\\r          {
+                                makeSpaceForString(1);
+                                sbuf()[sbufPos_++] = '\r';
+                            }
+<DQ_STR,SQ_STR>\\b          {
+                                makeSpaceForString(1);
+                                sbuf()[sbufPos_++] = '\b';
+                            }
+<DQ_STR,SQ_STR>\\f          {
+                                makeSpaceForString(1);
+                                sbuf()[sbufPos_++] = '\f';
+                            }
+<DQ_STR,SQ_STR>\\(.|\n)     {
+                                makeSpaceForString(1);
+                                sbuf()[sbufPos_++] = yytext[1];
+                            }
 <DQ_STR,SQ_STR>\\           {
                                 // This rule should have never been matched,
                                 // but without this, it somehow triggers the `nodefault' warning of flex.

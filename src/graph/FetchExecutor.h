@@ -37,6 +37,8 @@ protected:
 
     void finishExecution(std::unique_ptr<RowSetWriter> rsWriter);
 
+    stats::Stats* getStats() const;
+
 protected:
     GraphSpaceID                                    spaceId_{INT_MIN};
     std::unique_ptr<ExpressionContext>              expCtx_;
@@ -49,8 +51,6 @@ protected:
     std::unique_ptr<InterimResult>                  inputs_;
     std::vector<std::string>                        resultColNames_;
     std::unique_ptr<cpp2::ExecutionResponse>        resp_;
-    using ColNameType = std::unordered_map<std::string, nebula::cpp2::SupportedType>;
-    std::vector<std::string>                        colNames_;
     std::vector<nebula::cpp2::SupportedType>        colTypes_;
 };
 }  // namespace graph

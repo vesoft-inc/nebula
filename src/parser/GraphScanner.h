@@ -49,14 +49,40 @@ protected:
         return readBuffer_(buf, maxSize);
     }
 
+    void makeSpaceForString(size_t len) {
+        constexpr auto defaultSize = 256UL;
+        if (sbuf_ == nullptr) {
+            sbufSize_ = defaultSize > len ? defaultSize : len;
+            sbuf_ = std::make_unique<char[]>(sbufSize_);
+            return;
+        }
+
+        if (sbufSize_ - sbufPos_ >= len) {
+            return;
+        }
+
+        auto newSize = sbufSize_ * 2 + len;
+        auto newBuffer = std::make_unique<char[]>(newSize);
+        ::memcpy(newBuffer.get(), sbuf_.get(), sbufPos_);
+        sbuf_ = std::move(newBuffer);
+        sbufSize_ = newSize;
+    }
+
+    char* sbuf() {
+        return sbuf_.get();
+    }
+
 
 private:
     friend class Scanner_Basic_Test;
     int yylex() override;
 
-    nebula::GraphParser::semantic_type * yylval{nullptr};
-    nebula::GraphParser::location_type * yylloc{nullptr};
-    std::function<int(char*, int)>       readBuffer_;
+    nebula::GraphParser::semantic_type *yylval{nullptr};
+    nebula::GraphParser::location_type *yylloc{nullptr};
+    std::unique_ptr<char[]>             sbuf_{nullptr};
+    size_t                              sbufSize_{0};
+    size_t                              sbufPos_{0};
+    std::function<int(char*, int)>      readBuffer_;
 };
 
 }   // namespace nebula

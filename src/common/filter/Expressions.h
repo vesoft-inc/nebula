@@ -9,15 +9,16 @@
 #include "base/Base.h"
 #include "base/StatusOr.h"
 #include "base/Status.h"
+#include "storage/client/StorageClient.h"
 #include <boost/variant.hpp>
-#include  <boost/unordered_set.hpp>
+#include <folly/futures/Future.h>
 
 namespace nebula {
 
 class Cord;
 using OptVariantType = StatusOr<VariantType>;
 
-enum ColumnType {
+enum class ColumnType {
     INT, STRING, DOUBLE, BIGINT, BOOL, TIMESTAMP,
 };
 
@@ -90,6 +91,10 @@ public:
         return variables_;
     }
 
+    std::vector<std::string> inputProps() const {
+        return std::vector<std::string>(inputProps_.begin(), inputProps_.end());
+    }
+
     bool hasSrcTagProp() const {
         return !srcTagProps_.empty();
     }
@@ -110,10 +115,27 @@ public:
         return !inputProps_.empty();
     }
 
+    void setStorageClient(nebula::storage::StorageClient *storageClient) {
+        storageClient_ = storageClient;
+    }
+
+    nebula::storage::StorageClient* storageClient() {
+        return storageClient_;
+    }
+
+
+    void setSpace(GraphSpaceID space) {
+        space_ = space;
+    }
+
+    GraphSpaceID space() {
+        return space_;
+    }
+
     struct Getters {
-        std::function<OptVariantType()> getEdgeRank;
-        std::function<OptVariantType(const std::string&)> getInputProp;
-        std::function<OptVariantType(const std::string&)> getVariableProp;
+        std::function<OptVariantType()>                                       getEdgeRank;
+        std::function<OptVariantType(const std::string&)>                     getInputProp;
+        std::function<OptVariantType(const std::string&)>                     getVariableProp;
         std::function<OptVariantType(const std::string&, const std::string&)> getSrcTagProp;
         std::function<OptVariantType(const std::string&, const std::string&)> getDstTagProp;
         std::function<OptVariantType(const std::string&, const std::string&)> getAliasProp;
@@ -140,6 +162,8 @@ private:
     // alias => edgeType
     std::unordered_map<std::string, EdgeType> edgeMaps_;
     bool                                      overAll_{false};
+    GraphSpaceID                              space_;
+    nebula::storage::StorageClient            *storageClient_{nullptr};
 };
 
 
@@ -171,6 +195,10 @@ public:
 
     virtual bool isTypeCastingExpression() const {
         return kind_ == kTypeCasting;
+    }
+
+    virtual bool isFunCallExpression() const {
+        return kind_ == kFunctionCall;
     }
 
     /**
@@ -314,7 +342,7 @@ public:
         kVariableProp,
         kDestProp,
         kInputProp,
-
+        kUUID,
         kMax,
     };
 
@@ -341,6 +369,7 @@ private:
     friend class PrimaryExpression;
     friend class UnaryExpression;
     friend class FunctionCallExpression;
+    friend class UUIDExpression;
     friend class TypeCastingExpression;
     friend class ArithmeticExpression;
     friend class RelationalExpression;
@@ -414,12 +443,7 @@ public:
         kind_ = kInputProp;
     }
 
-    explicit InputPropertyExpression(std::string *prop) {
-        kind_ = kInputProp;
-        ref_.reset(new std::string("$-."));
-        alias_.reset(new std::string(""));
-        prop_.reset(prop);
-    }
+    explicit InputPropertyExpression(std::string *prop);
 
     OptVariantType eval() const override;
 
@@ -432,19 +456,14 @@ private:
 };
 
 
-// $$[TagName].any_prop_name
+// $$.TagName.any_prop_name
 class DestPropertyExpression final : public AliasPropertyExpression {
 public:
     DestPropertyExpression() {
         kind_ = kDestProp;
     }
 
-    DestPropertyExpression(std::string *tag, std::string *prop) {
-        kind_ = kDestProp;
-        ref_.reset(new std::string("$$."));
-        alias_.reset(tag);
-        prop_.reset(prop);
-    }
+    DestPropertyExpression(std::string *tag, std::string *prop);
 
     OptVariantType eval() const override;
 
@@ -464,12 +483,7 @@ public:
         kind_ = kVariableProp;
     }
 
-    VariablePropertyExpression(std::string *var, std::string *prop) {
-        kind_ = kVariableProp;
-        ref_.reset(new std::string("$"));
-        alias_.reset(var);
-        prop_.reset(prop);
-    }
+    VariablePropertyExpression(std::string *var, std::string *prop);
 
     OptVariantType eval() const override;
 
@@ -493,7 +507,7 @@ public:
         kind_ = kEdgeType;
         ref_.reset(new std::string(""));
         alias_.reset(alias);
-        prop_.reset(new std::string("_type"));
+        prop_.reset(new std::string(_TYPE));
     }
 
     OptVariantType eval() const override;
@@ -518,7 +532,7 @@ public:
         kind_ = kEdgeSrcId;
         ref_.reset(new std::string(""));
         alias_.reset(alias);
-        prop_.reset(new std::string("_src"));
+        prop_.reset(new std::string(_SRC));
     }
 
     OptVariantType eval() const override;
@@ -543,7 +557,7 @@ public:
         kind_ = kEdgeDstId;
         ref_.reset(new std::string(""));
         alias_.reset(alias);
-        prop_.reset(new std::string("_dst"));
+        prop_.reset(new std::string(_DST));
     }
 
     OptVariantType eval() const override;
@@ -568,7 +582,7 @@ public:
         kind_ = kEdgeRank;
         ref_.reset(new std::string(""));
         alias_.reset(alias);
-        prop_.reset(new std::string("_rank"));
+        prop_.reset(new std::string(_RANK));
     }
 
     OptVariantType eval() const override;
@@ -582,19 +596,14 @@ private:
 };
 
 
-// $^[TagName].any_prop_name
+// $^.TagName.any_prop_name
 class SourcePropertyExpression final : public AliasPropertyExpression {
 public:
     SourcePropertyExpression() {
         kind_ = kSourceProp;
     }
 
-    SourcePropertyExpression(std::string *tag, std::string *prop) {
-        kind_ = kSourceProp;
-        ref_.reset(new std::string("$^."));
-        alias_.reset(tag);
-        prop_.reset(prop);
-    }
+    SourcePropertyExpression(std::string *tag, std::string *prop);
 
     OptVariantType eval() const override;
 
@@ -680,6 +689,10 @@ public:
         }
     }
 
+    const std::string* name() const {
+        return name_.get();
+    }
+
     std::string toString() const override;
 
     OptVariantType eval() const override;
@@ -704,6 +717,40 @@ private:
     std::function<VariantType(const std::vector<VariantType>&)> function_;
 };
 
+// (uuid)expr
+class UUIDExpression final : public Expression {
+public:
+    UUIDExpression() {
+        kind_ = kUUID;
+    }
+
+    explicit UUIDExpression(std::string *field) {
+        kind_ = kUUID;
+        field_.reset(field);
+    }
+
+    std::string toString() const override;
+
+    OptVariantType eval() const override;
+
+    Status MUST_USE_RESULT prepare() override;
+
+    void setContext(ExpressionContext *ctx) override {
+        context_ = ctx;
+    }
+
+private:
+    void encode(Cord &) const override {
+        throw Status::Error("Not supported yet");
+    }
+
+    const char* decode(const char *, const char *) override {
+        throw Status::Error("Not supported yet");
+    }
+
+private:
+    std::unique_ptr<std::string>                field_;
+};
 
 // +expr, -expr, !expr
 class UnaryExpression final : public Expression {
@@ -784,9 +831,7 @@ public:
 private:
     void encode(Cord &cord) const override;
 
-    const char* decode(const char *buf, const char *end) override {
-        UNUSED(buf);
-        UNUSED(end);
+    const char* decode(const char *, const char *) override {
         throw Status::Error("Not supported yet");
     }
 
@@ -891,6 +936,7 @@ private:
 
     const char* decode(const char *pos, const char *end) override;
 
+    Status implicitCasting(VariantType &lhs, VariantType &rhs) const;
 
 private:
     Operator                                    op_;

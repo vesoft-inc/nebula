@@ -32,12 +32,18 @@ enum ErrorCode {
     E_CONFLICT         = -29,
     E_WRONGCLUSTER     = -30,
 
-    // KV Failure
-    E_STORE_FAILURE          = -31,
-    E_STORE_SEGMENT_ILLEGAL  = -32,
+    E_STORE_FAILURE             = -31,
+    E_STORE_SEGMENT_ILLEGAL     = -32,
+    E_BAD_BALANCE_PLAN          = -33,
+    E_BALANCED                  = -34,
+    E_NO_RUNNING_BALANCE_PLAN   = -35,
+    E_NO_VALID_HOST             = -36,
+    E_CORRUPTTED_BALANCE_PLAN   = -37,
 
     E_INVALID_PASSWORD       = -41,
     E_INPROPER_ROLE          = -42,
+
+    E_SNAPSHOT_FAILURE   = -51;
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
@@ -77,11 +83,6 @@ union ID {
 struct IdName {
     1: ID     id,
     2: string name,
-}
-
-struct Pair {
-    1: string key,
-    2: string value,
 }
 
 struct SpaceProperties {
@@ -140,11 +141,16 @@ enum HostStatus {
     UNKNOWN = 0x02,
 } (cpp.enum_strict)
 
+enum SnapshotStatus {
+    VALID    = 0x00,
+    INVALID  = 0x01,
+} (cpp.enum_strict)
+
 struct HostItem {
     1: common.HostAddr      hostAddr,
     2: HostStatus           status,
-    3: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts,
-    4: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") all_parts,
+    3: map<string, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts,
+    4: map<string, list<common.PartitionID>> (cpp.template = "std::unordered_map") all_parts,
 }
 
 struct UserItem {
@@ -288,11 +294,6 @@ struct ListEdgesResp {
     3: list<EdgeItem> edges,
 }
 
-// Host related operations.
-struct AddHostsReq {
-    1: list<common.HostAddr> hosts;
-}
-
 struct ListHostsReq {
 }
 
@@ -303,11 +304,23 @@ struct ListHostsResp {
     3: list<HostItem> hosts,
 }
 
-struct RemoveHostsReq {
-    1: list<common.HostAddr> hosts;
+struct PartItem {
+    1: required common.PartitionID       part_id,
+    2: optional common.HostAddr          leader,
+    3: required list<common.HostAddr>    peers,
+    4: required list<common.HostAddr>    losts,
 }
 
-// Parts related operations.
+struct ListPartsReq {
+    1: common.GraphSpaceID space_id,
+}
+
+struct ListPartsResp {
+    1: ErrorCode code,
+    2: common.HostAddr leader,
+    3: list<PartItem> parts,
+}
+
 struct GetPartsAllocReq {
     1: common.GraphSpaceID space_id,
 }
@@ -323,7 +336,7 @@ struct MultiPutReq {
     // segment is used to avoid conflict with system data.
     // it should be comprised of numbers and letters.
     1: string     segment,
-    2: list<Pair> pairs,
+    2: list<common.Pair> pairs,
 }
 
 struct GetReq {
@@ -452,6 +465,21 @@ struct BalanceReq {
     1: optional common.GraphSpaceID space_id,
     // Specify the balance id to check the status of the related balance plan
     2: optional i64 id,
+    3: optional list<common.HostAddr> host_del,
+    4: optional bool stop,
+}
+
+enum TaskResult {
+    SUCCEEDED  = 0x00,
+    FAILED = 0x01,
+    IN_PROGRESS = 0x02,
+    INVALID = 0x03,
+} (cpp.enum_strict)
+
+
+struct BalanceTask {
+    1: string id,
+    2: TaskResult result,
 }
 
 struct BalanceResp {
@@ -459,6 +487,7 @@ struct BalanceResp {
     2: i64              id,
     // Valid if code equals E_LEADER_CHANGED.
     3: common.HostAddr  leader,
+    4: list<BalanceTask> tasks,
 }
 
 struct LeaderBalanceReq {
@@ -477,6 +506,7 @@ enum ConfigType {
     DOUBLE  = 0x01,
     BOOL    = 0x02,
     STRING  = 0x03,
+    NESTED  = 0x04,
 } (cpp.enum_strict)
 
 enum ConfigMode {
@@ -523,6 +553,29 @@ struct ListConfigsResp {
     3: list<ConfigItem>     items,
 }
 
+struct CreateSnapshotReq {
+}
+
+struct DropSnapshotReq {
+    1: string       name,
+}
+
+struct ListSnapshotsReq {
+}
+
+struct Snapshot {
+    1: string         name,
+    2: SnapshotStatus status,
+    3: string         hosts,
+}
+
+struct ListSnapshotsResp {
+    1: ErrorCode            code,
+    // Valid if code equals E_LEADER_CHANGED.
+    2: common.HostAddr      leader,
+    3: list<Snapshot>       snapshots,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -541,11 +594,10 @@ service MetaService {
     GetEdgeResp getEdge(1: GetEdgeReq req);
     ListEdgesResp listEdges(1: ListEdgesReq req);
 
-    ExecResp addHosts(1: AddHostsReq req);
-    ExecResp removeHosts(1: RemoveHostsReq req);
     ListHostsResp listHosts(1: ListHostsReq req);
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
+    ListPartsResp listParts(1: ListPartsReq req);
 
     ExecResp multiPut(1: MultiPutReq req);
     GetResp get(1: GetReq req);
@@ -573,5 +625,9 @@ service MetaService {
     GetConfigResp getConfig(1: GetConfigReq req);
     ExecResp setConfig(1: SetConfigReq req);
     ListConfigsResp listConfigs(1: ListConfigsReq req);
+
+    ExecResp createSnapshot(1: CreateSnapshotReq req);
+    ExecResp dropSnapshot(1: DropSnapshotReq req);
+    ListSnapshotsResp listSnapshots(1: ListSnapshotsReq req);
 }
 

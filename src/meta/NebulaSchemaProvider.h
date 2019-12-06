@@ -26,16 +26,28 @@ public:
         const char* getName() const override {
             return name_.c_str();
         }
+
         const nebula::cpp2::ValueType& getType() const override {
             return type_;
         }
+
         bool isValid() const override {
             return true;
+        }
+
+        bool hasDefault() const override {
+            return hasDefault_;
+        }
+
+        std::string getDefaultValue() const override {
+            return defaultValue_;
         }
 
     private:
         std::string name_;
         nebula::cpp2::ValueType type_;
+        bool hasDefault_;
+        std::string defaultValue_;
     };
 
 public:

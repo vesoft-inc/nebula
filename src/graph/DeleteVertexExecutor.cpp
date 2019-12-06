@@ -16,7 +16,19 @@ DeleteVertexExecutor::DeleteVertexExecutor(Sentence *sentence,
 }
 
 Status DeleteVertexExecutor::prepare() {
-    auto ovalue = sentence_->vid()->eval();
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        return status;
+    }
+
+    spaceId_ = ectx()->rctx()->session()->space();
+    expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setSpace(spaceId_);
+    expCtx_->setStorageClient(ectx()->getStorageClient());
+
+    auto vid = sentence_->vid();
+    vid->setContext(expCtx_.get());
+    auto ovalue = vid->eval();
     auto v = ovalue.value();
     if (!Expression::isInt(v)) {
         return Status::Error("Vertex ID should be of type integer");
@@ -26,49 +38,51 @@ Status DeleteVertexExecutor::prepare() {
 }
 
 void DeleteVertexExecutor::execute() {
-    GraphSpaceID space = ectx()->rctx()->session()->space();
-    // TODO(zlcook) Get edgeKes of a vertex by Go
-    auto future = ectx()->storage()->getEdgeKeys(space, vid_);
+    // TODO(zlcook) Get edgeKeys of a vertex by Go
+    auto future = ectx()->getStorageClient()->getEdgeKeys(spaceId_, vid_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(Status::Error("Internal Error"));
+            doError(Status::Error("Internal Error"),
+                    ectx()->getGraphStats()->getDeleteVertexStats());
             return;
         }
         auto rpcResp = std::move(resp).value();
         std::vector<storage::cpp2::EdgeKey> allEdges;
         for (auto& edge : *rpcResp.get_edge_keys()) {
-            auto reverseEdge = storage::cpp2::EdgeKey(apache::thrift::FragileConstructor::FRAGILE,
-                                                      edge.get_dst(),
-                                                      -(edge.get_edge_type()),
-                                                      edge.get_ranking(),
-                                                      edge.get_src());
+            storage::cpp2::EdgeKey reverseEdge;
+            reverseEdge.set_src(edge.get_dst());
+            reverseEdge.set_edge_type(-(edge.get_edge_type()));
+            reverseEdge.set_ranking(edge.get_ranking());
+            reverseEdge.set_dst(edge.get_src());
             allEdges.emplace_back(std::move(edge));
             allEdges.emplace_back(std::move(reverseEdge));
         }
-        deleteEdges(&allEdges);
+        if (allEdges.size() > 0) {
+            deleteEdges(&allEdges);
+        } else {
+            deleteVertex();
+        }
         return;
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal Error"),
+                ectx()->getGraphStats()->getDeleteVertexStats());
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
 void DeleteVertexExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>* edges) {
-    GraphSpaceID space = ectx()->rctx()->session()->space();
-    auto future = ectx()->storage()->deleteEdges(space, *edges);
+    auto future = ectx()->getStorageClient()->deleteEdges(spaceId_, *edges);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         auto completeness = resp.completeness();
         if (completeness != 100) {
-            DCHECK(onError_);
-            onError_(Status::Error("Internal Error"));
+            doError(Status::Error("Internal Error"),
+                    ectx()->getGraphStats()->getDeleteVertexStats());
             return;
         }
         deleteVertex();
@@ -77,32 +91,30 @@ void DeleteVertexExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>* edge
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal Error"),
+                ectx()->getGraphStats()->getDeleteVertexStats());
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
 void DeleteVertexExecutor::deleteVertex() {
-    GraphSpaceID space = ectx()->rctx()->session()->space();
-    auto future = ectx()->storage()->deleteVertex(space, vid_);
+    auto future = ectx()->getStorageClient()->deleteVertex(spaceId_, vid_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(Status::Error("Internal Error"));
+            doError(Status::Error("Internal Error"),
+                    ectx()->getGraphStats()->getDeleteVertexStats());
             return;
         }
-        DCHECK(onFinish_);
-        onFinish_();
+        doFinish(Executor::ProcessControl::kNext, ectx()->getGraphStats()->getDeleteVertexStats());
         return;
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal Error"),
+                ectx()->getGraphStats()->getDeleteVertexStats());
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);

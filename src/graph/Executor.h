@@ -15,6 +15,8 @@
 #include "gen-cpp2/storage_types.h"
 #include "dataman/RowWriter.h"
 #include "meta/SchemaManager.h"
+#include "time/Duration.h"
+#include "stats/Stats.h"
 
 
 /**
@@ -45,10 +47,15 @@ public:
 
     virtual const char* name() const = 0;
 
+    enum ProcessControl : uint8_t {
+        kNext = 0,
+        kReturn,
+    };
+
     /**
      * Set callback to be invoked when this executor is finished(normally).
      */
-    void setOnFinish(std::function<void()> onFinish) {
+    void setOnFinish(std::function<void(ProcessControl)> onFinish) {
         onFinish_ = onFinish;
     }
     /**
@@ -74,6 +81,10 @@ public:
         return ectx_;
     }
 
+    const time::Duration& duration() const {
+        return duration_;
+    }
+
 protected:
     std::unique_ptr<Executor> makeExecutor(Sentence *sentence);
 
@@ -83,12 +94,12 @@ protected:
 
     bool checkValueType(const nebula::cpp2::ValueType &type, const VariantType &value);
 
-    Status checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> schema,
-                          std::vector<std::string*> props);
-
     StatusOr<int64_t> toTimestamp(const VariantType &value);
 
-    nebula::cpp2::SupportedType ColumnTypeToSupportedType(ColumnType type) const;
+    StatusOr<cpp2::ColumnValue> toColumnValue(const VariantType& value,
+                                              cpp2::ColumnValue::Type type) const;
+
+    OptVariantType toVariantType(const cpp2::ColumnValue& value) const;
 
     Status checkIfGraphSpaceChosen() const {
         if (ectx()->rctx()->session()->space() == -1) {
@@ -97,10 +108,18 @@ protected:
         return Status::OK();
     }
 
+    StatusOr<VariantType> transformDefaultValue(nebula::cpp2::SupportedType type,
+                                                std::string& originalValue);
+    void doError(Status status, const stats::Stats* stats = nullptr, uint32_t count = 1) const;
+    void doFinish(ProcessControl pro,
+                  const stats::Stats* stats = nullptr,
+                  uint32_t count = 1) const;
+
 protected:
-    ExecutionContext                            *ectx_;
-    std::function<void()>                       onFinish_;
+    ExecutionContext                           *ectx_;
+    std::function<void(ProcessControl)>         onFinish_;
     std::function<void(Status)>                 onError_;
+    time::Duration                              duration_;
 };
 
 }   // namespace graph

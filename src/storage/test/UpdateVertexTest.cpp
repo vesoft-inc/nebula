@@ -95,32 +95,32 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
     cpp2::UpdateItem item1;
     item1.set_name("3001");
     item1.set_prop("tag_3001_col_0");
-    auto* val1 = new PrimaryExpression(1L);
-    item1.set_value(Expression::encode(val1));
+    PrimaryExpression val1(1L);
+    item1.set_value(Expression::encode(&val1));
     items.emplace_back(item1);
     // string: 3005.tag_3005_col_4 = tag_string_col_4_2_new
     cpp2::UpdateItem item2;
     item2.set_name("3005");
     item2.set_prop("tag_3005_col_4");
     std::string col4new("tag_string_col_4_2_new");
-    auto* val2 = new PrimaryExpression(col4new);
-    item2.set_value(Expression::encode(val2));
+    PrimaryExpression val2(col4new);
+    item2.set_value(Expression::encode(&val2));
     items.emplace_back(item2);
     req.set_update_items(std::move(items));
     LOG(INFO) << "Build yield...";
     // Return tag props: 3001.tag_3001_col_0, 3003.tag_3003_col_2, 3005.tag_3005_col_4
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 3; i++) {
-        std::string name = folly::to<std::string>(3001 + i*2);
-        std::string prop = folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2);
-        auto* sourcePropExp = new SourcePropertyExpression(&name, &prop);
-        tmpColumns.emplace_back(Expression::encode(sourcePropExp));
+        SourcePropertyExpression sourcePropExp(
+            new std::string(folly::to<std::string>(3001 + i * 2)),
+            new std::string(folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2)));
+        tmpColumns.emplace_back(Expression::encode(&sourcePropExp));
     }
     req.set_return_columns(std::move(tmpColumns));
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get());
+    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -220,33 +220,33 @@ TEST(UpdateVertexTest, Insertable_Test) {
     cpp2::UpdateItem item1;
     item1.set_name("3001");
     item1.set_prop("tag_3001_col_0");
-    auto* val1 = new PrimaryExpression(1L);
-    item1.set_value(Expression::encode(val1));
+    PrimaryExpression val1(1L);
+    item1.set_value(Expression::encode(&val1));
     items.emplace_back(item1);
     // string: 3009.tag_3009_col_4 = tag_string_col_4_2_new
     cpp2::UpdateItem item2;
     item2.set_name("3009");
     item2.set_prop("tag_3009_col_4");
     std::string col4new("tag_string_col_4_2_new");
-    auto* val2 = new PrimaryExpression(col4new);
-    item2.set_value(Expression::encode(val2));
+    PrimaryExpression val2(col4new);
+    item2.set_value(Expression::encode(&val2));
     items.emplace_back(item2);
     req.set_update_items(std::move(items));
     LOG(INFO) << "Build yield...";
     // Return tag props: tag_3001_col_0, tag_3003_col_2, tag_3005_col_4
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 3; i++) {
-        std::string name = folly::to<std::string>(3001 + i*2);
-        std::string prop = folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2);
-        auto* sourcePropExp = new SourcePropertyExpression(&name, &prop);
-        tmpColumns.emplace_back(Expression::encode(sourcePropExp));
+        SourcePropertyExpression sourcePropExp(
+            new std::string(folly::to<std::string>(3001 + i * 2)),
+            new std::string(folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2)));
+        tmpColumns.emplace_back(Expression::encode(&sourcePropExp));
     }
     // tag_3009_col_0 ~ tag_3009_col_5
     for (int i = 0; i < 6; i++) {
-        std::string name = folly::to<std::string>(3009);
-        std::string prop = folly::stringPrintf("tag_3009_col_%d", i);
-        auto* sourcePropExp = new SourcePropertyExpression(&name, &prop);
-        tmpColumns.emplace_back(Expression::encode(sourcePropExp));
+        SourcePropertyExpression sourcePropExp(
+            new std::string(folly::to<std::string>(3009)),
+            new std::string(folly::stringPrintf("tag_3009_col_%d", i)));
+        tmpColumns.emplace_back(Expression::encode(&sourcePropExp));
     }
     req.set_return_columns(std::move(tmpColumns));
     LOG(INFO) << "Make it insertable...";
@@ -254,7 +254,7 @@ TEST(UpdateVertexTest, Insertable_Test) {
     req.set_insertable(true);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get());
+    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -285,7 +285,7 @@ TEST(UpdateVertexTest, Insertable_Test) {
         EXPECT_STREQ("tag_string_col_4_2_new", boost::get<std::string>(v).c_str());
     }
     // get tag3009 from kvstore directly
-    auto prefix = NebulaKeyUtils::prefix(partId, vertexId, 3009);
+    auto prefix = NebulaKeyUtils::vertexPrefix(partId, vertexId, 3009);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv->prefix(spaceId, partId, prefix, &iter);
     EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
@@ -323,14 +323,14 @@ TEST(UpdateVertexTest, Invalid_Set_Test) {
     item.set_prop("tag_3001_col_0");
     auto* alias = new std::string("e101");
     auto* edgeProp = new std::string("col_0");
-    auto* edgeExp = new AliasPropertyExpression(new std::string(""), alias, edgeProp);
-    item.set_value(Expression::encode(edgeExp));
+    AliasPropertyExpression edgeExp(new std::string(""), alias, edgeProp);
+    item.set_value(Expression::encode(&edgeExp));
     items.emplace_back(item);
     req.set_update_items(std::move(items));
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get());
+    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -371,14 +371,14 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
     cpp2::UpdateItem item;
     item.set_name("3001");
     item.set_prop("tag_3001_col_0");
-    auto* val = new PrimaryExpression(1L);
-    item.set_value(Expression::encode(val));
+    PrimaryExpression val(1L);
+    item.set_value(Expression::encode(&val));
     items.emplace_back(item);
     req.set_update_items(std::move(items));
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get());
+    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
