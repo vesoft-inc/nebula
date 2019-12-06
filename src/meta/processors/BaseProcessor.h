@@ -18,6 +18,7 @@
 #include "meta/common/MetaCommon.h"
 #include "network/NetworkUtils.h"
 #include "meta/processors/Common.h"
+#include "stats/Stats.h"
 
 namespace nebula {
 namespace meta {
@@ -51,8 +52,8 @@ using nebula::network::NetworkUtils;
 template<typename RESP>
 class BaseProcessor {
 public:
-    explicit BaseProcessor(kvstore::KVStore* kvstore)
-            : kvstore_(kvstore) {}
+    explicit BaseProcessor(kvstore::KVStore* kvstore, stats::Stats* stats = nullptr)
+            : kvstore_(kvstore), stats_(stats) {}
 
     virtual ~BaseProcessor() = default;
 
@@ -65,6 +66,9 @@ protected:
      * Destroy current instance when finished.
      * */
     void onFinished() {
+        stats::Stats::addStatsValue(stats_,
+                                    resp_.get_code() == cpp2::ErrorCode::SUCCEEDED,
+                                    this->duration_.elapsedInUSec());
         promise_.setValue(std::move(resp_));
         delete this;
     }
@@ -77,6 +81,8 @@ protected:
             return cpp2::ErrorCode::E_NOT_FOUND;
         case kvstore::ResultCode::ERR_LEADER_CHANGED:
             return cpp2::ErrorCode::E_LEADER_CHANGED;
+        case kvstore::ResultCode::ERR_CHECKPOINT_ERROR:
+            return cpp2::ErrorCode::E_SNAPSHOT_FAILURE;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
         }
@@ -90,7 +96,6 @@ protected:
         case Status::kHostNotFound:
         case Status::kTagNotFound:
         case Status::kUserNotFound:
-        case Status::kCfgNotFound:
             return cpp2::ErrorCode::E_NOT_FOUND;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
@@ -210,10 +215,14 @@ protected:
 
     StatusOr<std::string> getUserAccount(UserID userId);
 
+    bool doSyncPut(std::vector<kvstore::KV> data);
+
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;
     folly::Promise<RESP> promise_;
+    stats::Stats* stats_ = nullptr;
+    time::Duration duration_;
 };
 
 }  // namespace meta

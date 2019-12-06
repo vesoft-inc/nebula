@@ -16,12 +16,9 @@ nebula_add_library(
     UpdateEdgeProcessor.cpp
     PutProcessor.cpp
     GetProcessor.cpp
-)
-
-add_dependencies(
-    storage_service_handler
-    stats_obj
-    base_obj
+    CreateCheckpointProcessor.cpp
+    DropCheckpointProcessor.cpp
+    SendBlockSignProcessor.cpp
 )
 
 nebula_add_library(

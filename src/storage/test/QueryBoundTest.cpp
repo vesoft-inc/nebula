@@ -322,7 +322,7 @@ TEST(QueryBoundTest, GenBucketsTest) {
         cpp2::GetNeighborsRequest req;
         std::vector<EdgeType> et = {-101};
         buildRequest(req, et);
-        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(10, buckets.size());
         for (auto& bucket : buckets) {
@@ -335,7 +335,7 @@ TEST(QueryBoundTest, GenBucketsTest) {
         cpp2::GetNeighborsRequest req;
         std::vector<EdgeType> et = {-101};
         buildRequest(req, et);
-        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(9, buckets.size());
         for (auto i = 0; i < 3; i++) {
@@ -351,7 +351,7 @@ TEST(QueryBoundTest, GenBucketsTest) {
         cpp2::GetNeighborsRequest req;
         std::vector<EdgeType> et = {-101};
         buildRequest(req, et);
-        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(7, buckets.size());
         for (auto i = 0; i < 2; i++) {
@@ -366,7 +366,7 @@ TEST(QueryBoundTest, GenBucketsTest) {
         cpp2::GetNeighborsRequest req;
         std::vector<EdgeType> et = {-101};
         buildRequest(req, et);
-        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(1, buckets.size());
         ASSERT_EQ(30, buckets[0].vertices_.size());

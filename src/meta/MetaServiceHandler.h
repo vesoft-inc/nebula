@@ -12,6 +12,7 @@
 #include "interface/gen-cpp2/MetaService.h"
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/AdminClient.h"
+#include "stats/Stats.h"
 
 namespace nebula {
 namespace meta {
@@ -21,6 +22,7 @@ public:
     explicit MetaServiceHandler(kvstore::KVStore* kv, ClusterID clusterId = 0)
         : kvstore_(kv), clusterId_(clusterId) {
         adminClient_ = std::make_unique<AdminClient>(kvstore_);
+        heartBeatStat_ = stats::Stats("meta", "heartbeat");
     }
 
     /**
@@ -158,10 +160,20 @@ public:
     folly::Future<cpp2::ListConfigsResp>
     future_listConfigs(const cpp2::ListConfigsReq &req) override;
 
+    folly::Future<cpp2::ExecResp>
+    future_createSnapshot(const cpp2::CreateSnapshotReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_dropSnapshot(const cpp2::DropSnapshotReq& req) override;
+
+    folly::Future<cpp2::ListSnapshotsResp>
+    future_listSnapshots(const cpp2::ListSnapshotsReq& req) override;
+
 private:
     kvstore::KVStore* kvstore_ = nullptr;
     ClusterID clusterId_{0};
     std::unique_ptr<AdminClient> adminClient_;
+    stats::Stats heartBeatStat_;
 };
 
 }  // namespace meta

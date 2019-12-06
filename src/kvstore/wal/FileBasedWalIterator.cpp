@@ -16,9 +16,10 @@ FileBasedWalIterator::FileBasedWalIterator(
     std::shared_ptr<FileBasedWal> wal,
     LogID startId,
     LogID lastId)
-        : wal_(std::move(wal))
+        : wal_(wal)
         , currId_(startId) {
-    if (lastId >= 0) {
+    holder_ = std::make_unique<folly::RWSpinLock::ReadHolder>(wal_->rollbackLock_);
+    if (lastId >= 0 && lastId <= wal_->lastLogId()) {
         lastId_ = lastId;
     } else {
         lastId_ = wal_->lastLogId();
@@ -93,7 +94,14 @@ FileBasedWalIterator::FileBasedWalIterator(
         }
 
         nextFirstId_ = getFirstIdInNextFile();
-        CHECK_LE(currId_, idRanges_.front().second);
+        if (currId_ > idRanges_.front().second) {
+            LOG(FATAL) << wal_->idStr_ << "currId_ " << currId_
+                       << ", idRanges.front firstLogId " << idRanges_.front().first
+                       << ", idRanges.front lastLogId " << idRanges_.front().second
+                       << ", idRanges size " << idRanges_.size()
+                       << ", lastId_ " << lastId_
+                       << ", nextFirstId_ " << nextFirstId_;
+        }
     }
 
     if (!idRanges_.empty()) {

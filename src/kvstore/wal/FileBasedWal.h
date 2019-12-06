@@ -32,7 +32,7 @@ struct FileBasedWalPolicy {
 
     // Number of buffers allowed. When the number of buffers reach this
     // number, appendLogs() will be blocked until some buffers are flushed
-    size_t numBuffers = 4;
+    size_t numBuffers = 2;
 };
 
 
@@ -203,7 +203,8 @@ private:
     mutable std::mutex buffersMutex_;
 
     PreProcessor preProcessor_;
-    std::atomic_int onGoingBuffersNum_{0};
+
+    folly::RWSpinLock rollbackLock_;
 };
 
 }  // namespace wal

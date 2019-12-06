@@ -1,8 +1,8 @@
 # Order By 函数
 
-类似于 SQL, `ORDER BY` 可以进行升序 (`ASC`) 或降序 (`DESC`) 的排序来返回结果，并且它只能在 `PIPE` 语句 ("|") 中使用
+类似于 SQL，`ORDER BY` 可以进行升序 (`ASC`) 或降序 (`DESC`) 的排序来返回结果，并且它只能在 `PIPE` 语句 (`|`) 中使用。
 
-```plain
+```ngql
 ORDER BY <prop> ASC | DESC [, <prop> ASC | DESC ...]
 ```
 
@@ -16,7 +16,7 @@ nebula> FETCH PROP ON player 1,2,3,4 YIELD player.age AS age, player.weight AS w
 -- 取 4 个顶点并将他们以 age 从小到大的顺序排列，如 age 一致，则按 weight 从大到小的顺序排列。
 ```
 
-(参见 `FETCH` 文档来了解使用方法)
+(使用方法参见 [FETCH](../4.statement-syntax/2.data-query-and-manipulation-statements/fetch-syntax.md) 文档)
 
 ```ngql
 nebula> GO FROM 1 OVER edge2 YIELD $^.t1.prop1 AS s1_p1, edge2.prop2 AS e2_p2, $$.t3.prop3 AS d3_p3 | ORDER BY s1_p1 ASC, e2_p2 DESC, d3_p3 ASC

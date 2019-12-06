@@ -456,7 +456,7 @@ private:
 };
 
 
-// $$[TagName].any_prop_name
+// $$.TagName.any_prop_name
 class DestPropertyExpression final : public AliasPropertyExpression {
 public:
     DestPropertyExpression() {
@@ -596,7 +596,7 @@ private:
 };
 
 
-// $^[TagName].any_prop_name
+// $^.TagName.any_prop_name
 class SourcePropertyExpression final : public AliasPropertyExpression {
 public:
     SourcePropertyExpression() {
@@ -687,6 +687,10 @@ public:
             args_ = args->args();
             delete args;
         }
+    }
+
+    const std::string* name() const {
+        return name_.get();
     }
 
     std::string toString() const override;

@@ -7,7 +7,7 @@
 #include "meta/processors/partsMan/CreateSpaceProcessor.h"
 #include "meta/ActiveHostsMan.h"
 
-DEFINE_int32(default_parts_num, 1024, "The default number of parts when a space is created");
+DEFINE_int32(default_parts_num, 100, "The default number of parts when a space is created");
 DEFINE_int32(default_replica_factor, 1, "The default replica factor when a space is created");
 
 namespace nebula {
@@ -18,10 +18,17 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto properties = req.get_properties();
     auto spaceRet = getSpaceId(properties.get_space_name());
     if (spaceRet.ok()) {
-        LOG(ERROR) << "Create Space Failed : Space " << properties.get_space_name()
-                   << " have existed!";
+        cpp2::ErrorCode ret;
+        if (req.get_if_not_exists()) {
+            ret = cpp2::ErrorCode::SUCCEEDED;
+        } else {
+            LOG(ERROR) << "Create Space Failed : Space " << properties.get_space_name()
+                       << " have existed!";
+            ret = cpp2::ErrorCode::E_EXISTED;
+        }
+
         resp_.set_id(to(spaceRet.value(), EntryType::SPACE));
-        resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+        resp_.set_code(ret);
         onFinished();
         return;
     }

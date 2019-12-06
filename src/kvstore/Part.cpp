@@ -23,6 +23,8 @@ ResultCode toResultCode(AppendLogResult res) {
             return ResultCode::SUCCEEDED;
         case AppendLogResult::E_NOT_A_LEADER:
             return ResultCode::ERR_LEADER_CHANGED;
+        case AppendLogResult::E_WRITE_BLOCKING:
+            return ResultCode::ERR_WRITE_BLOCK_ERROR;
         default:
             return ResultCode::ERR_CONSENSUS_ERROR;
     }
@@ -60,7 +62,7 @@ std::pair<LogID, TermID> Part::lastCommittedLogId() {
     std::string val;
     ResultCode res = engine_->get(NebulaKeyUtils::systemCommitKey(partId_), &val);
     if (res != ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Cannot fetch the last committed log id from the storage engine";
+        LOG(INFO) << idStr_ << "Cannot fetch the last committed log id from the storage engine";
         return std::make_pair(0, 0);
     }
     CHECK_EQ(val.size(), sizeof(LogID) + sizeof(TermID));
@@ -189,6 +191,11 @@ void Part::asyncRemovePeer(const HostAddr& peer, KVCallback cb) {
     });
 }
 
+
+void Part::setBlocking(bool sign) {
+    blocking_ = sign;
+}
+
 void Part::onLostLeadership(TermID term) {
     VLOG(1) << "Lost the leadership for the term " << term;
 }
@@ -274,6 +281,24 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             if (batch->removeRange(range[0], range[1]) != ResultCode::SUCCEEDED) {
                 LOG(ERROR) << idStr_ << "Failed to call WriteBatch::removeRange()";
                 return false;
+            }
+            break;
+        }
+        case OP_BATCH_WRITE: {
+            auto data = decodeBatchValue(log);
+            for (auto& op : data) {
+                ResultCode code = ResultCode::SUCCEEDED;
+                if (op.first == BatchLogType::OP_BATCH_PUT) {
+                    code = batch->put(op.second.first, op.second.second);
+                } else if (op.first == BatchLogType::OP_BATCH_REMOVE) {
+                    code = batch->remove(op.second.first);
+                } else if (op.first == BatchLogType::OP_BATCH_REMOVE_RANGE) {
+                    code = batch->removeRange(op.second.first, op.second.second);
+                }
+                if (code != ResultCode::SUCCEEDED) {
+                    LOG(ERROR) << idStr_ << "Failed to call WriteBatch";
+                    return false;
+                }
             }
             break;
         }
