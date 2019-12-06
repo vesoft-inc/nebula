@@ -9,6 +9,7 @@
 #include <rocksdb/db.h>
 #include <iostream>
 #include "fs/TempDir.h"
+#include "fs/FileUtils.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/RocksEngine.h"
@@ -765,8 +766,7 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
         std::string dst = folly::stringPrintf(
             "%s/disk%d/nebula/0/data",
             rootPath.path(), i);
-        auto retCode = ::rename(src.c_str(), dst.c_str());
-        ASSERT_EQ(0, retCode);
+        ASSERT_TRUE(fs::FileUtils::rename(src, dst));
 
         src = folly::stringPrintf(
             "%s/disk%d/nebula/0/checkpoints/snapshot/wal",
@@ -774,8 +774,7 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
         dst = folly::stringPrintf(
             "%s/disk%d/nebula/0/wal",
             rootPath.path(), i);
-        retCode = ::rename(src.c_str(), dst.c_str());
-        ASSERT_EQ(0, retCode);
+        ASSERT_TRUE(fs::FileUtils::rename(src, dst));
     }
 
     LOG(INFO) << "Let's start the engine via checkpoint";
