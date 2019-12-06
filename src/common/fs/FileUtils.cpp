@@ -367,7 +367,7 @@ bool FileUtils::exist(const std::string& path) {
 // static
 bool FileUtils::rename(const std::string& src, const std::string& dst) {
     auto status = ::rename(src.c_str(), dst.c_str());
-    LOG_IF(WARNING, status < 0) << "Rename " << src << " to " << dst << " failed, the errno: "
+    LOG_IF(WARNING, status != 0) << "Rename " << src << " to " << dst << " failed, the errno: "
         << ::strerror(errno);
     return status == 0;
 }
