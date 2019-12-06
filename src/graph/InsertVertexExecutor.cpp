@@ -213,7 +213,7 @@ void InsertVertexExecutor::execute() {
 
     auto result = prepareVertices();
     if (!result.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getInsertVertexStats());
+        doError(std::move(result).status(), ectx()->getGraphStats()->getInsertVertexStats());
         return;
     }
     auto future = ectx()->getStorageClient()->addVertices(spaceId_,
