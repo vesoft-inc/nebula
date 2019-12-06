@@ -11,11 +11,10 @@ namespace nebula {
 namespace meta {
 
 void GetProcessor::process(const cpp2::GetReq& req) {
-    CHECK_SEGMENT(req.get_segment());
     auto key = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_key());
     auto result = doGet(key);
     if (!result.ok()) {
-        LOG(ERROR) << "Get Failed :" << key << " not found!";
+        LOG(ERROR) << "Get Failed: " << key << " not found!";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;

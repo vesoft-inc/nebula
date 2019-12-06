@@ -3,7 +3,7 @@
 Reference another repository: [vesoft-inc/nebula-docker-compose](https://github.com/vesoft-inc/nebula-docker-compose)
 
 <!--
-This article describes how to deploy a multi-node Nebula cluster on Docker.
+This article describes how to deploy a multi-node Nebula Graph cluster on Docker.
 
 **_Note_:** This is for testing only. DO NOT USE in production.
 
@@ -15,7 +15,7 @@ Before you start, make sure that you have installed the latest version of [Docke
 
 ### Pull Docker Image
 
-Pull the latest image of nebula from [Docker Hub](https://hub.docker.com/r/vesoft/nebula-graph/tags) using the following command
+Pull the latest image of Nebula Graph from [Docker Hub](https://hub.docker.com/r/vesoft/nebula-graph/tags) using the following command
 
 ```bash
 $docker pull vesoft/nebula-graph:nightly
@@ -73,7 +73,7 @@ $docker inspect 591e2f6f48e2 | grep IPAddress
                     "IPAddress": "172.17.0.2",
 ```
 
-Therefore, this article will deploy Nebula cluster on three hosts as follows:
+Therefore, this article will deploy Nebula Graph cluster on three hosts as follows:
 
 ```plain
 172.17.0.2 # cluster-2: metad/storaged/graphd
@@ -85,7 +85,7 @@ Therefore, this article will deploy Nebula cluster on three hosts as follows:
 
 ## Configuration
 
-All the configuration files of Nebula are located in `/usr/local/nebula/etc`, and three default configuration files are provided there. Edit them separately:
+All the configuration files of Nebula Graph are located in `/usr/local/nebula/etc`, and three default configuration files are provided there. Edit them separately:
 
 First configuration file: **nebula-metad.conf**
 

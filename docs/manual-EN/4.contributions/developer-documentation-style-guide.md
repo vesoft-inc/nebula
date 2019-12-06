@@ -1,4 +1,4 @@
-# Developer documentation style guide
+# Developer Documentation Style Guide
 
 **Key Point:** Use this guide as a style reference for our developer documentation.
 
@@ -11,25 +11,25 @@ and writing your documentation, and can help
 you keep your documentation consistent with
 our other documentation.
 
-## Non-goals
+## Non-Goals
 
 This guide isn't intended to provide an industry documentation standard, nor to compete with other well-known style guides. It's a description of our house style, not a statement that our decisions are objectively correct.
 
 This guide is a living document; it changes over time, and when it changes, we generally don't change previously published documentation to match. We strive for consistency to the extent feasible, but at any given time there are certain to be parts of our documentation that don't match this style guide. When in doubt, follow this guide rather than imitating existing documents.
 
-## Breaking the "rules"
+## Breaking the "Rules"
 
-In most contexts, Nebula has no ability nor desire to enforce these guidelines if they're not appropriate to the context. But we hope that you'll join us in striving for high-quality documentation.
+In most contexts, **Nebula Graph** has no ability nor desire to enforce these guidelines if they're not appropriate to the context. But we hope that you'll join us in striving for high-quality documentation.
 
 Like most style guides, our style guide aims to improve our documentation, especially by improving consistency; therefore, there may be contexts where it makes sense to diverge from our guidelines in order to make your documentation better.
 
-## Style and authorial tone
+## Style and Authorial Tone
 
 Aim, in your documents, for a voice and tone that's conversational, friendly, and respectful without being overly colloquial or frivolous; a voice that's casual and natural and approachable, not pedantic or pushy. Try to sound like a knowledgeable friend who understands what the developer wants to do.
 
 Don't try to write exactly the way you speak; you probably speak more colloquially and verbosely than you should write, at least for developer documentation. But aim for a conversational tone rather than a formal one.
 
-### Some techniques and approaches to consider
+### Some Techniques and Approaches to Consider
 
 - If you're having trouble expressing something, step back and ask yourself, "What am I trying to say?" Often, the answer you give yourself reveals what you should be saying in the document.
 - If you're uncertain about your phrasing or tone, ask a colleague to take a look.
@@ -56,13 +56,13 @@ A couple of specific things to not do in link text:
 - Similarly, don't use phrases like "this document." (It's easy to read "this" as meaning "the one you're reading now" rather than "the one I'm pointing to.")
 - Don't use a URL as link text. Instead, use the page title or a description of the page.
 
-### Punctuation with links
+### Punctuation With Links
 
 If you have punctuation immediately before or after a link, put the punctuation outside of the link tags where possible. In particular, put quotation marks outside of link tags.
 
-## Accessible content
+## Accessible Content
 
-### General dos and don'ts
+### General dos and Don'ts
 
 - Ensure that readers can reach all parts of the document (including tabs, form-submission buttons, and interactive elements) using only a keyboard, without a mouse or trackpad.
 - Don't use color, size, location, or other visual cues as the primary way of communicating information.
@@ -94,7 +94,7 @@ If you have punctuation immediately before or after a link, put the punctuation 
 - Provide captions.
 - Ensure that captions can be translated into major languages.
 
-## Language and grammar
+## Language and Grammar
 
 - Use second person: "you" rather than "we."
 - Use active voice; make clear who's performing the action.
@@ -102,7 +102,7 @@ Use standard American spelling and punctuation.
 Put conditional clauses before instructions, not after.
 For usage and spelling of specific words, see the word list.
 
-## Formatting, punctuation, and organization
+## Formatting, Punctuation, and Organization
 
 - [Use sentence case](https://developers.google.cn/style/capitalization) for document titles and section headings.
 - [Use numbered lists](https://developers.google.cn/style/lists) for sequences.

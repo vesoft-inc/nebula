@@ -210,10 +210,16 @@ Status YieldClauseWrapper::prepare(
     yieldColsHolder_ = std::make_unique<YieldColumns>();
     for (auto *col : cols) {
         if (col->expr()->isInputExpression()) {
+            if (inputs == nullptr) {
+                return Status::Error("Inputs nullptr.");
+            }
             if (needAllPropsFromInput(col, inputs, yields)) {
                 continue;
             }
         } else if (col->expr()->isVariableExpression()) {
+            if (varHolder == nullptr) {
+                return Status::Error("VarHolder nullptr.");
+            }
             auto ret = needAllPropsFromVar(col, varHolder, yields);
             if (!ret.ok()) {
                 return std::move(ret).status();
@@ -234,17 +240,12 @@ bool YieldClauseWrapper::needAllPropsFromInput(const YieldColumn *col,
     auto *inputExpr = static_cast<InputPropertyExpression*>(col->expr());
     auto *colName = inputExpr->prop();
     if (*colName == "*") {
-        if (inputs != nullptr) {
-            auto schema = inputs->schema();
-            auto iter = schema->begin();
-            while (iter) {
-                auto *prop = iter->getName();
-                Expression *expr = new InputPropertyExpression(new std::string(prop));
-                YieldColumn *column = new YieldColumn(expr);
-                yieldColsHolder_->addColumn(column);
-                yields.emplace_back(column);
-                ++iter;
-            }
+        auto colNames = inputs->getColNames();
+        for (auto &prop : colNames) {
+            Expression *expr = new InputPropertyExpression(new std::string(prop));
+            YieldColumn *column = new YieldColumn(expr);
+            yieldColsHolder_->addColumn(column);
+            yields.emplace_back(column);
         }
         return true;
     }
@@ -264,17 +265,19 @@ StatusOr<bool> YieldClauseWrapper::needAllPropsFromVar(
         return Status::Error("Variable `%s' not defined.", varname->c_str());
     }
     if (*colName == "*") {
-        auto schema = varInputs->schema();
-        auto iter = schema->begin();
-        while (iter) {
-            auto *alias = new std::string(*(variableExpr->alias()));
-            auto *prop = iter->getName();
-            Expression *expr =
-                    new VariablePropertyExpression(alias, new std::string(prop));
-            YieldColumn *column = new YieldColumn(expr);
-            yieldColsHolder_->addColumn(column);
-            yields.emplace_back(column);
-            ++iter;
+        if (varInputs != nullptr) {
+            auto colNames = varInputs->getColNames();
+            for (auto &prop : colNames) {
+                auto *alias = new std::string(*(variableExpr->alias()));
+                Expression *expr =
+                        new VariablePropertyExpression(alias, new std::string(prop));
+                YieldColumn *column = new YieldColumn(expr);
+                yieldColsHolder_->addColumn(column);
+                yields.emplace_back(column);
+            }
+        } else {
+            // should not reach here.
+            return Status::Error("Variable `%s' is nullptr.", varname->c_str());
         }
         return true;
     }

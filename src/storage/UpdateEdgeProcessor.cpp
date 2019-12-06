@@ -364,16 +364,23 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
             return std::string("");
         },
         [this, partId, edgeKey, req] (kvstore::ResultCode code) {
-            this->pushResultCode(this->to(code), partId);
-            if (code == kvstore::ResultCode::SUCCEEDED) {
-                onProcessFinished(req.get_return_columns().size());
-            } else {
-                LOG(ERROR) << "Failure update edge, spaceId: " << this->spaceId_
+            while (true) {
+                if (code == kvstore::ResultCode::SUCCEEDED) {
+                    onProcessFinished(req.get_return_columns().size());
+                    break;
+                }
+                LOG(ERROR) << "Fail to update edge, spaceId: " << this->spaceId_
                            << ", partId: " << partId
                            << ", src: " << edgeKey.get_src()
                            << ", edge_type: " << edgeKey.get_edge_type()
                            << ", dst: " << edgeKey.get_dst()
                            << ", ranking: " << edgeKey.get_ranking();
+                if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+                    handleLeaderChanged(this->spaceId_, partId);
+                    break;
+                }
+                this->pushResultCode(to(code), partId);
+                break;
             }
             this->onFinished();
         });

@@ -12,6 +12,7 @@
 #include "storage/Collector.h"
 #include "filter/Expressions.h"
 #include "storage/CommonUtils.h"
+#include "stats/Stats.h"
 
 namespace nebula {
 namespace storage {
@@ -43,7 +44,7 @@ public:
 protected:
     explicit QueryBaseProcessor(kvstore::KVStore* kvstore,
                                 meta::SchemaManager* schemaMan,
-                                StorageStats* stats,
+                                stats::Stats* stats,
                                 folly::Executor* executor = nullptr,
                                 VertexCache* cache = nullptr)
         : BaseProcessor<RESP>(kvstore, schemaMan, stats)

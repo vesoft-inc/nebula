@@ -5,13 +5,13 @@ Multiple vertexes or edges can map to a single hive table, where a partition col
 vertexes and edges.  
 
 Hive tables generated periodically by the upstream system and can reflect the latest data at present, and be
-partitioned by a time column to indicate the time when data are generated.
+partitioned by a time column to indicate the time when data is generated.
 
 To complete the task, *$HADOOP_HOME* env needs to be set correctly.  
 
 ## Environment
 
-component|version
+Component|Version
 ---|---
 os|CentOS 6.5 final(kernel 2.6.32-431.el6.x86_64)
 spark|1.6.2
@@ -20,7 +20,7 @@ jdk|1.8+
 scala|2.10.5
 sbt|1.2.8
 
-## Spark-submit command line reference
+## Spark-Submit Command Line Reference
 
 This is what we used in production environment:
 
@@ -41,11 +41,11 @@ ${SPARK_HOME}/bin/spark-submit --master yarn \
                                -so ${SSTFILE_OUTPUT_PATH}
 ```
 
-The application options are described as following.
+The application options are described as follows.
 
-### Spark application command line reference
+### Spark Application Command Line Reference
 
-We keep a convention when naming the option, those suffix with _i_ will be an INPUT type option, while those suffix with _o_ will be an OUTPUT type option.
+We keep a convention when naming the option, those suffixed with _i_ will be an INPUT type option, while those suffixed with _o_ will be an OUTPUT type option.
 
 ```bash
 usage: nebula spark sst file generator
@@ -53,22 +53,22 @@ usage: nebula spark sst file generator
  -di,--latest_date_input <arg>               Latest date to query, date format is YYYY-MM-dd
  -hi,--string_value_charset_input <arg>      When the value is string, the default charset encoding is UTF-8
  -ho,--hdfs_sst_file_output <arg>            Hdfs directory of SST files should not start with file:///
- -li,--limit_input <arg>                     Return limited number of edges/vertexes, usually used in POC stage, when omitted, fetch all data.
- -mi,--mapping_file_input <arg>              Hive tables to nebula graph schema mapping file
+ -li,--limit_input <arg>                     Return limited number of edges/vertexes, usually used in POC stage, when omitted, Nebula Graph fetches all data.
+ -mi,--mapping_file_input <arg>              Hive tables to nNebula Graph schema mapping file
  -pi,--date_partition_input <arg>            A partition field of type String of hive table, which represent a Date, and has format of YYY-MM-dd
  -ri,--repartition_number_input <arg>        Repartition number. Optimization trick is adapted to improve generation speed and data skewness. Need tuning to suit your data.
  -so,--local_sst_file_output <arg>           Local directories of the generated sst files should start with file:///
- -ti,--datasource_type_input <arg>           Currently supported source data types are hive|hbase|csv], and the default type is hive
+ -ti,--datasource_type_input <arg>           Currently supported source data types are [hive|hbase|csv], and the default type is hive
 ```
 
-### Mapping file schema
+### Mapping File Schema
 
 The format of the mapping files is json. File Schema is provided as [mapping-schema.json](mapping-schema.json) according to [Json Schema Standard](http://json-schema.org).
 Here is an example of mapping file: [mapping.json](mapping.json)
 
 ## FAQ
 
-### How to use libnebula-native-client.so under CentOS6.5(2.6.32-431 x86-64)
+### How to Use libnebula-native-client.so under CentOS6.5(2.6.32-431 x86-64)
 
 1. Don't use officially distributed librocksdbjni-linux64.so, build locally on CentOS6.5.
 
@@ -77,10 +77,10 @@ DEBUG_LEVEL=0 make shared_lib
 DEBUG_LEVEL=0 make rocksdbjava
 ```
 
-*make sure to keep consistent with DEBUG_LEVEL when building, or there will be some link error like `symbol not found`*
+*Make sure to keep consistent with DEBUG_LEVEL when building, or there will be some link error like `symbol not found`.*
 
-2. run `sbt assembly` to package this project to a spark job jar, whose default name is: `nebula-spark-sstfile-generator.jar`  
-3. run `jar uvf nebula-spark-sstfile-generator.jar librocksdbjni-linux64.so libnebula_native_client.so` to replace the `*.so` files packaged inside the dependency org.rocksdb:rocksdbjni:5.17.2,
+2. Run `sbt assembly` to package this project to a spark job jar, whose default name is: `nebula-spark-sstfile-generator.jar`.
+3. Run `jar uvf nebula-spark-sstfile-generator.jar librocksdbjni-linux64.so libnebula_native_client.so` to replace the `*.so` files packaged inside the dependency org.rocksdb:rocksdbjni:5.17.2,
     or the following error will occur when spark-submit:
 
 ```text

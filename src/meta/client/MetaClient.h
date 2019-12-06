@@ -18,6 +18,7 @@
 #include "thrift/ThriftClientManager.h"
 #include "meta/SchemaProviderIf.h"
 #include "meta/GflagsManager.h"
+#include "stats/Stats.h"
 
 DECLARE_int32(meta_client_retry_times);
 
@@ -108,7 +109,9 @@ public:
                         std::vector<HostAddr> addrs,
                         HostAddr localHost = HostAddr(0, 0),
                         ClusterID clusterId = 0,
-                        bool sendHeartBeat = false);
+                        bool sendHeartBeat = false,
+                        stats::Stats *stats = nullptr);
+
 
     virtual ~MetaClient();
 
@@ -133,8 +136,10 @@ public:
     /**
      * TODO(dangleptr): Use one struct to represent space description.
      * */
-    folly::Future<StatusOr<GraphSpaceID>>
-    createSpace(std::string name, int32_t partsNum, int32_t replicaFactor);
+    folly::Future<StatusOr<GraphSpaceID>> createSpace(std::string name,
+                                                      int32_t partsNum,
+                                                      int32_t replicaFactor,
+                                                      bool ifNotExists = false);
 
     folly::Future<StatusOr<std::vector<SpaceIdName>>>
     listSpaces();
@@ -155,8 +160,10 @@ public:
     getPartsAlloc(GraphSpaceID spaceId);
 
     // Operations for schema
-    folly::Future<StatusOr<TagID>>
-    createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema);
+    folly::Future<StatusOr<TagID>> createTagSchema(GraphSpaceID spaceId,
+                                                   std::string name,
+                                                   nebula::cpp2::Schema schema,
+                                                   bool ifNotExists = false);
 
     folly::Future<StatusOr<TagID>>
     alterTagSchema(GraphSpaceID spaceId,
@@ -174,8 +181,10 @@ public:
     folly::Future<StatusOr<nebula::cpp2::Schema>>
     getTagSchema(int32_t spaceId, std::string name, SchemaVer version = -1);
 
-    folly::Future<StatusOr<EdgeType>>
-    createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema);
+    folly::Future<StatusOr<EdgeType>> createEdgeSchema(GraphSpaceID spaceId,
+                                                       std::string name,
+                                                       nebula::cpp2::Schema schema,
+                                                       bool ifNotExists = false);
 
     folly::Future<StatusOr<bool>>
     alterEdgeSchema(GraphSpaceID spaceId,
@@ -236,6 +245,12 @@ public:
     folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module);
 
+    folly::Future<StatusOr<bool>> createSnapshot();
+
+    folly::Future<StatusOr<bool>> dropSnapshot(const std::string& name);
+
+    folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> listSnapshots();
+
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
@@ -255,7 +270,7 @@ public:
 
     PartsMap getPartsMapFromCache(const HostAddr& host);
 
-    PartMeta getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId);
+    StatusOr<PartMeta> getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId);
 
     bool checkPartExistInCache(const HostAddr& host,
                                GraphSpaceID spaceId,
@@ -264,7 +279,7 @@ public:
     bool checkSpaceExistInCache(const HostAddr& host,
                                 GraphSpaceID spaceId);
 
-    int32_t partsNum(GraphSpaceID spaceId);
+    StatusOr<int32_t> partsNum(GraphSpaceID spaceId);
 
     StatusOr<std::shared_ptr<const SchemaProviderIf>>
     getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer ver = -1);
@@ -273,6 +288,14 @@ public:
     getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver = -1);
 
     const std::vector<HostAddr>& getAddresses();
+
+    folly::Future<StatusOr<std::string>> getTagDefaultValue(GraphSpaceID spaceId,
+                                                            TagID tagId,
+                                                            const std::string& field);
+
+    folly::Future<StatusOr<std::string>> getEdgeDefaultValue(GraphSpaceID spaceId,
+                                                             EdgeType edgeType,
+                                                             const std::string& field);
 
     Status refreshCache();
 
@@ -379,6 +402,7 @@ private:
     cpp2::ConfigModule    gflagsModule_{cpp2::ConfigModule::UNKNOWN};
     std::atomic_bool      configReady_{false};
     std::vector<cpp2::ConfigItem> gflagsDeclared_;
+    stats::Stats         *stats_{nullptr};
 };
 
 }  // namespace meta

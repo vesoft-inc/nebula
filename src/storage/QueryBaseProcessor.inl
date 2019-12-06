@@ -41,6 +41,7 @@ void QueryBaseProcessor<REQ, RESP>::addDefaultProps(std::vector<PropContext>& p,
     p.emplace_back("_src", eType, 0, PropContext::PropInKeyType::SRC);
     p.emplace_back("_rank", eType, 1, PropContext::PropInKeyType::RANK);
     p.emplace_back("_dst", eType, 2, PropContext::PropInKeyType::DST);
+    p.emplace_back("_type", eType, 3, PropContext::PropInKeyType::TYPE);
 }
 
 template <typename REQ, typename RESP>
@@ -572,7 +573,11 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
                 if (ret != kvstore::ResultCode::SUCCEEDED
                       && failedParts.find(partId) == failedParts.end()) {
                     failedParts.emplace(partId);
-                    this->pushResultCode(this->to(ret), partId);
+                    if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+                        this->handleLeaderChanged(spaceId_, partId);
+                    } else {
+                        this->pushResultCode(this->to(ret), partId);
+                    }
                 }
             }
         }
