@@ -47,7 +47,7 @@ cpp2::ErrorCode GraphClient::connect(const std::string& username,
         client_->sync_authenticate(resp, username, password);
         if (resp.get_error_code() != cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Failed to authenticate \"" << username << "\": "
-                       << *resp.get_error_msg();
+                       << (resp.get_error_msg() == nullptr ? "" : *resp.get_error_msg());
             return resp.get_error_code();
         }
     } catch (const std::exception& ex) {
