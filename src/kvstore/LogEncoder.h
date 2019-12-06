@@ -64,17 +64,17 @@ public:
     BatchHolder() = default;
     ~BatchHolder() = default;
 
-    void put(folly::StringPiece key, folly::StringPiece val) {
+    void put(std::string&& key, std::string&& val) {
         batch_.emplace_back(BatchLogType::OP_BATCH_PUT,
                             std::make_pair(key, val));
     }
 
-    void remove(folly::StringPiece key) {
+    void remove(std::string&& key) {
         batch_.emplace_back(BatchLogType::OP_BATCH_REMOVE,
                             std::make_pair(key, ""));
     }
 
-    void rangeRemove(folly::StringPiece begin, folly::StringPiece end) {
+    void rangeRemove(std::string&& begin, std::string&& end) {
         batch_.emplace_back(BatchLogType::OP_BATCH_REMOVE_RANGE,
                             std::make_pair(begin, end));
     }

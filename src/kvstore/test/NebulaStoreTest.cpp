@@ -859,7 +859,7 @@ TEST(NebulaStoreTest, AtomicOpBatchTest) {
             for (auto i = 0; i < 20; i++) {
                 auto key = folly::stringPrintf("key_%d", i);
                 auto val = folly::stringPrintf("val_%d", i);
-                batchHolder->put(key, val);
+                batchHolder->put(key.data(), val.data());
                 expected.emplace_back(std::move(key), std::move(val));
             }
             return encodeBatchValue(batchHolder->getBatch());
@@ -891,7 +891,7 @@ TEST(NebulaStoreTest, AtomicOpBatchTest) {
             for (auto i = 0; i < 20; i++) {
                 auto key = folly::stringPrintf("key_%d", i);
                 auto val = folly::stringPrintf("val_%d", i);
-                batchHolder->put(key, val);
+                batchHolder->put(key.data(), val.data());
                 if (i%5 != 0) {
                     expected.emplace_back(std::move(key), std::move(val));
                 }
