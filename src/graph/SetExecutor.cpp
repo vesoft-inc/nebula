@@ -48,17 +48,16 @@ Status SetExecutor::prepare() {
 }
 
 void SetExecutor::setLeft() {
-    auto onFinish = [] (Executor::ProcessControl ctr) {
+    futures_.emplace_back(leftP_.getFuture());
+    auto onFinish = [this] (Executor::ProcessControl ctr) {
         UNUSED(ctr);
-        return;
+        leftP_.setValue();
     };
 
-    futures_.emplace_back(leftP_.getFuture());
     auto onResult = [this] (std::unique_ptr<InterimResult> result) {
         DCHECK(result != nullptr);
         this->leftResult_ = std::move(result);
         VLOG(3) << "Left result set.";
-        leftP_.setValue();
     };
 
     auto onError = [this] (Status s) {
@@ -73,17 +72,16 @@ void SetExecutor::setLeft() {
 }
 
 void SetExecutor::setRight() {
-    auto onFinish = [] (Executor::ProcessControl ctr) {
+    futures_.emplace_back(rightP_.getFuture());
+    auto onFinish = [this] (Executor::ProcessControl ctr) {
         UNUSED(ctr);
-        return;
+        rightP_.setValue();
     };
 
-    futures_.emplace_back(rightP_.getFuture());
     auto onResult = [this] (std::unique_ptr<InterimResult> result) {
         DCHECK(result != nullptr);
         this->rightResult_ = std::move(result);
         VLOG(3) << "Right result set.";
-        rightP_.setValue();
     };
 
     auto onError = [this] (Status s) {
@@ -122,9 +120,8 @@ void SetExecutor::execute() {
 
         if (leftResult_ == nullptr || rightResult_ == nullptr) {
             // Should not reach here.
-            LOG(ERROR) << "Get null input: " << leftResult_.get()
-                        << " " << rightResult_.get();
-            onError_(Status::Error("Internal error."));
+            LOG(ERROR) << "Get null input.";
+            onError_(Status::Error("Get null input."));
             return;
         }
 
@@ -385,11 +382,12 @@ void SetExecutor::doMinus() {
 }
 
 void SetExecutor::onEmptyInputs() {
-    auto result = std::make_unique<InterimResult>(std::move(colNames_));
     if (onResult_) {
+        auto result = std::make_unique<InterimResult>(std::move(colNames_));
         onResult_(std::move(result));
     } else if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(colNames_));
     }
     DCHECK(onFinish_);
     onFinish_(Executor::ProcessControl::kNext);
@@ -426,6 +424,7 @@ void SetExecutor::finishExecution(std::vector<cpp2::RowValue> rows) {
         if (!ret.ok()) {
             LOG(ERROR) << "Get Interim result failed.";
             onError_(std::move(ret).status());
+            return;
         }
         onResult_(std::move(ret).value());
     } else {
@@ -445,6 +444,8 @@ void SetExecutor::feedResult(std::unique_ptr<InterimResult> result) {
 
 void SetExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     if (resp_ == nullptr) {
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(colNames_));
         return;
     }
 

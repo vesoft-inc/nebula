@@ -17,7 +17,7 @@ class QueryEdgePropsProcessor
 public:
     static QueryEdgePropsProcessor* instance(kvstore::KVStore* kvstore,
                                              meta::SchemaManager* schemaMan,
-                                             StorageStats* stats) {
+                                             stats::Stats* stats) {
         return new QueryEdgePropsProcessor(kvstore, schemaMan, stats);
     }
 
@@ -27,7 +27,7 @@ public:
 private:
     explicit QueryEdgePropsProcessor(kvstore::KVStore* kvstore,
                                      meta::SchemaManager* schemaMan,
-                                     StorageStats* stats)
+                                     stats::Stats* stats)
         : QueryBaseProcessor<cpp2::EdgePropRequest,
                              cpp2::EdgePropResponse>(kvstore, schemaMan, stats) {}
 

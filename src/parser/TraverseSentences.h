@@ -13,6 +13,7 @@
 
 namespace nebula {
 
+
 class GoSentence final : public Sentence {
 public:
     GoSentence() {

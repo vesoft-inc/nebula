@@ -9,6 +9,7 @@
 
 #include <gtest/gtest_prod.h>
 #include <rocksdb/db.h>
+#include <rocksdb/utilities/checkpoint.h>
 #include "base/Base.h"
 #include "kvstore/KVIterator.h"
 #include "kvstore/KVEngine.h"
@@ -164,6 +165,11 @@ public:
     ResultCode compact() override;
 
     ResultCode flush() override;
+
+    /*********************
+     * Checkpoint operation
+     ********************/
+    ResultCode createCheckpoint(const std::string& path) override;
 
 private:
     std::string partKey(PartitionID partId);

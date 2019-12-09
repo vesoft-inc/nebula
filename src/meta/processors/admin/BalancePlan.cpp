@@ -73,7 +73,7 @@ void BalancePlan::invoke() {
                     task.invoke();
                 }
             };  // onFinished
-            tasks_[taskIndex].onError_ = [this, i, j]() {
+            tasks_[taskIndex].onError_ = [this, i, j, taskIndex]() {
                 bool finished = false;
                 bool stopped = false;
                 {
@@ -84,6 +84,7 @@ void BalancePlan::invoke() {
                         finished = true;
                         LOG(INFO) << "Balance " << id_ << " failed!";
                     }
+                    stopped = stopped_;
                 }
                 if (finished) {
                     CHECK_EQ(j, this->buckets_[i].size() - 1);
@@ -91,6 +92,11 @@ void BalancePlan::invoke() {
                     onFinished_();
                 } else if (j + 1 < this->buckets_[i].size()) {
                     auto& task = this->tasks_[this->buckets_[i][j + 1]];
+                    if (tasks_[taskIndex].spaceId_ == task.spaceId_
+                            && tasks_[taskIndex].partId_ == task.partId_) {
+                        LOG(INFO) << "Skip the task for the same partId " << task.partId_;
+                        task.ret_ = BalanceTask::Result::FAILED;
+                    }
                     if (stopped) {
                         task.ret_ = BalanceTask::Result::INVALID;
                     }
@@ -166,8 +172,10 @@ bool BalancePlan::recovery(bool resume) {
                 task.startTimeMs_ = std::get<3>(tup);
                 task.endTimeMs_ = std::get<4>(tup);
                 if (resume && task.ret_ != BalanceTask::Result::SUCCEEDED) {
-                    // Resume the failed task.
-                    task.ret_ = BalanceTask::Result::IN_PROGRESS;
+                    // Resume the failed task, skip the in-progress and invalid tasks
+                    if (task.ret_ == BalanceTask::Result::FAILED) {
+                        task.ret_ = BalanceTask::Result::IN_PROGRESS;
+                    }
                     task.status_ = BalanceTask::Status::START;
                     if (ActiveHostsMan::isLived(kv_, task.src_)) {
                         task.srcLived_ = true;

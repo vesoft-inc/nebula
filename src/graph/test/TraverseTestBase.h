@@ -11,6 +11,7 @@
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
 #include "meta/test/TestUtils.h"
+#include "storage/test/TestUtils.h"
 
 DECLARE_int32(load_data_interval_secs);
 
@@ -363,6 +364,12 @@ AssertionResult TraverseTestBase::prepareSchema() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
+
+    // fix UTs failed sometimes
+    auto kvstore = gEnv->storageServer()->kvStore_.get();
+    GraphSpaceID spaceId = 1;  // default_space id is 1
+    nebula::storage::TestUtils::waitUntilAllElected(kvstore, spaceId, 1);
+
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "USE nba";

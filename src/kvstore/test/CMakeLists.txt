@@ -1,6 +1,8 @@
 set(KVSTORE_TEST_LIBS
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:raftex_obj>
@@ -75,6 +77,13 @@ nebula_add_test(
     SOURCES LogEncoderTest.cpp
     OBJECTS ${KVSTORE_TEST_LIBS}
     LIBRARIES ${THRIFT_LIBRARIES} ${ROCKSDB_LIBRARIES} wangle gtest
+)
+
+nebula_add_test(
+        NAME snapshot_link_test
+        SOURCES SnapshotLinkTest.cpp
+        OBJECTS ${KVSTORE_TEST_LIBS}
+        LIBRARIES ${THRIFT_LIBRARIES} ${ROCKSDB_LIBRARIES} wangle gtest
 )
 
 nebula_add_executable(

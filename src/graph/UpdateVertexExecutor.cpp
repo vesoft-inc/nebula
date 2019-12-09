@@ -63,6 +63,10 @@ Status UpdateVertexExecutor::prepare() {
         }
     } while (false);
 
+    if (status.ok()) {
+        stats::Stats::addStatsValue(ectx()->getGraphStats()->getUpdateVertexStats(),
+                false, duration().elapsedInUSec());
+    }
     return status;
 }
 
@@ -164,8 +168,8 @@ void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcRe
                         LOG(FATAL) << "Unknown VariantType: " << column.which();
                 }
             } else {
-                DCHECK(onError_);
-                onError_(Status::Error("get property failed"));
+                doError(Status::Error("get property failed"),
+                        ectx()->getGraphStats()->getUpdateVertexStats());
                 return;
             }
         }
@@ -173,8 +177,7 @@ void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcRe
         rows.back().set_columns(std::move(row));
     }
     resp_->set_rows(std::move(rows));
-    DCHECK(onFinish_);
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext, ectx()->getGraphStats()->getUpdateVertexStats());
 }
 
 
@@ -191,19 +194,19 @@ void UpdateVertexExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status(), ectx()->getGraphStats()->getUpdateVertexStats());
             return;
         }
         auto rpcResp = std::move(resp).value();
         for (auto& code : rpcResp.get_result().get_failed_codes()) {
-            DCHECK(onError_);
             switch (code.get_code()) {
                 case nebula::storage::cpp2::ErrorCode::E_INVALID_FILTER:
-                      onError_(Status::Error("Maybe invalid tag or property in WHEN clause!"));
+                      doError(Status::Error("Maybe invalid tag or property in WHEN clause!"),
+                              ectx()->getGraphStats()->getUpdateVertexStats());
                       return;
                 case nebula::storage::cpp2::ErrorCode::E_INVALID_UPDATER:
-                      onError_(Status::Error("Maybe invalid tag or property in SET/YIELD clasue!"));
+                      doError(Status::Error("Maybe invalid tag or property in SET/YIELD clasue!"),
+                              ectx()->getGraphStats()->getUpdateVertexStats());
                       return;
                 default:
                       std::string errMsg =
@@ -212,7 +215,8 @@ void UpdateVertexExecutor::execute() {
                                                 code.get_part_id(),
                                                 static_cast<int32_t>(code.get_code()));
                       LOG(ERROR) << errMsg;
-                      onError_(Status::Error(errMsg));
+                      doError(Status::Error(errMsg),
+                              ectx()->getGraphStats()->getUpdateVertexStats());
                       return;
             }
         }
@@ -220,8 +224,7 @@ void UpdateVertexExecutor::execute() {
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal error"), ectx()->getGraphStats()->getUpdateVertexStats());
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }

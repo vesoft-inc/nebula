@@ -18,7 +18,7 @@ class QueryStatsProcessor
 public:
     static QueryStatsProcessor* instance(kvstore::KVStore* kvstore,
                                          meta::SchemaManager* schemaMan,
-                                         StorageStats* stats,
+                                         stats::Stats* stats,
                                          folly::Executor* executor,
                                          VertexCache* cache = nullptr) {
         return new QueryStatsProcessor(kvstore, schemaMan, stats, executor, cache);
@@ -27,7 +27,7 @@ public:
 private:
     explicit QueryStatsProcessor(kvstore::KVStore* kvstore,
                                  meta::SchemaManager* schemaMan,
-                                 StorageStats* stats,
+                                 stats::Stats* stats,
                                  folly::Executor* executor,
                                  VertexCache* cache)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,

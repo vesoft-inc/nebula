@@ -13,7 +13,6 @@
 #   NEBULA_OTHER_ROOT              -- Specify the root directory for user build
 #                                  -- Split with ":", exp: DIR:DIR
 #
-#   SKIP_JAVA_CLIENT               -- Skip building the java client
 #   ENABLE_JEMALLOC                -- Link jemalloc into all executables
 #   ENABLE_NATIVE                  -- Build native client
 #   ENABLE_TESTING                 -- Build unit test
@@ -24,7 +23,6 @@ project("Nebula Graph" C CXX)
 
 set(CMAKE_SKIP_RPATH TRUE)
 
-option(SKIP_JAVA_CLIENT "Whether to skip building the java client" ON)
 option(ENABLE_JEMALLOC "Whether to link jemalloc to all executables" ON)
 option(ENABLE_NATIVE "Whether to build native client" OFF)
 option(ENABLE_CCACHE "Whether to use ccache to speed up compiling" ON)
@@ -401,11 +399,7 @@ function(nebula_add_subdirectory dir_name)
     add_subdirectory(${dir_name})
 endfunction()
 
-if (NOT SKIP_JAVA_CLIENT)
-    set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-hbase clean-java-client)
-else()
-    set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-hbase)
-endif()
+set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-hbase)
 
 add_subdirectory(src)
 add_subdirectory(etc)
