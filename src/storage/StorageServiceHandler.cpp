@@ -26,6 +26,8 @@
 #include "storage/admin/CreateCheckpointProcessor.h"
 #include "storage/admin/DropCheckpointProcessor.h"
 #include "storage/admin/SendBlockSignProcessor.h"
+#include "storage/ScanVertexIndexProcessor.h"
+#include "storage/ScanEdgeIndexProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -234,6 +236,26 @@ StorageServiceHandler::future_dropCheckpoint(const cpp2::DropCPRequest& req) {
 folly::Future<cpp2::AdminExecResp>
 StorageServiceHandler::future_blockingWrites(const cpp2::BlockingSignRequest& req) {
     auto* processor = SendBlockSignProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ScanVertexResponse>
+StorageServiceHandler::future_scanVertexIndex(const cpp2::IndexScanRequest& req) {
+    auto* processor = ScanVertexIndexProcessor::instance(kvstore_,
+                                                         schemaMan_,
+                                                         &scanVertexIndexQpsStat_,
+                                                         getThreadManager(),
+                                                         &vertexCache_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ScanEdgeResponse>
+StorageServiceHandler::future_scanEdgeIndex(const cpp2::IndexScanRequest& req) {
+    auto* processor = ScanEdgeIndexProcessor::instance(kvstore_,
+                                                       schemaMan_,
+                                                       &scanEdgeIndexQpsStat_,
+                                                       getThreadManager(),
+                                                       &vertexCache_);
     RETURN_FUTURE(processor);
 }
 
