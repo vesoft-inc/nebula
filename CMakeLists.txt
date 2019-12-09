@@ -51,19 +51,13 @@ endif()
 
 # Testing Coverage, refer to https://github.com/codecov/example-cpp11-cmake
 # Code Coverage Configuration
-add_library(coverage_config INTERFACE)
 if(ENABLE_TESTING AND ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   # Add required flags (GCC & LLVM/Clang)
   add_compile_options(
-#    -O0        # no optimization
+    -O0        # no optimization
     -g         # generate debug info
     --coverage # sets all required flags
   )
-  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
-    target_link_options(coverage_config INTERFACE --coverage)
-  else()
-    target_link_libraries(coverage_config INTERFACE --coverage)
-  endif()
 endif()
 
 set(CMAKE_CXX_STANDARD 14)
@@ -407,7 +401,7 @@ macro(nebula_link_libraries target)
         dl
         ${GETTIME_LIB}
         -pthread
-        --coverage
+        $<$<BOOL:${ENABLE_COVERAGE}>:--coverage>
     )
 endmacro(nebula_link_libraries)
 
