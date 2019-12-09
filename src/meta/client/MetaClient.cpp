@@ -19,8 +19,10 @@ DEFINE_int32(load_data_interval_secs, 1, "Load data interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
+DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
 DECLARE_string(gflags_mode_json);
+
 
 namespace nebula {
 namespace meta {
@@ -314,7 +316,7 @@ void MetaClient::getResponse(Request req,
     folly::via(evb, [host, evb, req = std::move(req), remoteFunc = std::move(remoteFunc),
                      respGen = std::move(respGen), pro = std::move(pro),
                      toLeader, retry, retryLimit, duration, this] () mutable {
-        auto client = clientsMan_->client(host, evb);
+        auto client = clientsMan_->client(host, evb, false, FLAGS_meta_client_timeout_ms);
         VLOG(1) << "Send request to meta " << host;
         remoteFunc(client, req).via(evb)
             .then([host, req = std::move(req), remoteFunc = std::move(remoteFunc),
