@@ -7,6 +7,8 @@
 #ifndef COMMON_BASE_THRIFTTYPES_H_
 #define COMMON_BASE_THRIFTTYPES_H_
 
+#include <cstdint>
+
 namespace nebula {
 
 // Raft related types
