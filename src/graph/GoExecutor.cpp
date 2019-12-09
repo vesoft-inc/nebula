@@ -221,6 +221,10 @@ Status GoExecutor::prepareOverAll() {
         }
 
         auto v = edgeStatus.value();
+        if (isReversely()) {
+            v = -v;
+        }
+
         edgeTypes_.push_back(v);
 
         if (!expCtx_->addEdge(e, v)) {

@@ -919,6 +919,25 @@ TEST_F(GoTest, ReverselyOneStep) {
     }
     {
         cpp2::ExecutionResponse resp;
+        auto query = "GO FROM hash('Tim Duncan') OVER * REVERSELY "
+                     "YIELD like._src";
+        client_->execute(query, resp);
+        std::vector<std::tuple<int64_t>> expected = {
+            { players_["Tony Parker"].vid() },
+            { players_["Manu Ginobili"].vid() },
+            { players_["LaMarcus Aldridge"].vid() },
+            { players_["Marco Belinelli"].vid() },
+            { players_["Danny Green"].vid() },
+            { players_["Aron Baynes"].vid() },
+            { players_["Boris Diaw"].vid() },
+            { players_["Tiago Splitter"].vid() },
+            { players_["Dejounte Murray"].vid() },
+            { players_["Shaquile O'Neal"].vid() },
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         auto query = "GO FROM hash('Tim Duncan') OVER like REVERSELY "
                       "YIELD $$.player.name";
         client_->execute(query, resp);
@@ -959,6 +978,19 @@ TEST_F(GoTest, ReverselyTwoStep) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "GO 2 STEPS FROM hash('Kobe Bryant') OVER like REVERSELY "
+                     "YIELD $$.player.name";
+        client_->execute(query, resp);
+        std::vector<std::tuple<std::string>> expected = {
+            { "Marc Gasol" },
+            { "Vince Carter" },
+            { "Yao Ming" },
+            { "Grant Hill" },
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO 2 STEPS FROM hash('Kobe Bryant') OVER * REVERSELY "
                      "YIELD $$.player.name";
         client_->execute(query, resp);
         std::vector<std::tuple<std::string>> expected = {
@@ -1032,6 +1064,24 @@ TEST_F(GoTest, ReverselyWithPipe) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "GO FROM hash('Manu Ginobili') OVER like REVERSELY "
+                    "YIELD like._src AS id |"
+                    "GO FROM $-.id OVER serve";
+        client_->execute(query, resp);
+        std::vector<std::tuple<int64_t>> expected = {
+            { teams_["Spurs"].vid() },
+            { teams_["Spurs"].vid() },
+            { teams_["Hornets"].vid() },
+            { teams_["Spurs"].vid() },
+            { teams_["Hawks"].vid() },
+            { teams_["76ers"].vid() },
+            { teams_["Spurs"].vid() },
+        };
+
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO FROM hash('Manu Ginobili') OVER * REVERSELY "
                     "YIELD like._src AS id |"
                     "GO FROM $-.id OVER serve";
         client_->execute(query, resp);
