@@ -364,6 +364,14 @@ bool FileUtils::exist(const std::string& path) {
     return access(path.c_str(), F_OK) == 0;
 }
 
+// static
+bool FileUtils::rename(const std::string& src, const std::string& dst) {
+    auto status = ::rename(src.c_str(), dst.c_str());
+    LOG_IF(WARNING, status != 0) << "Rename " << src << " to " << dst << " failed, the errno: "
+        << ::strerror(errno);
+    return status == 0;
+}
+
 std::vector<std::string> FileUtils::listAllTypedEntitiesInDir(
         const char* dirpath,
         FileType type,
