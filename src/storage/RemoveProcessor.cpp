@@ -38,7 +38,7 @@ RemoveProcessor::asyncProcess(PartitionID part, std::vector<std::string> keys) {
     std::vector<std::string> encodedKeys;
     encodedKeys.reserve(keys.size());
     std::transform(keys.begin(), keys.end(), std::back_inserter(encodedKeys),
-                   [part](const auto& key) { return NebulaKeyUtils::kvKey(part, key); });
+                   [part](const auto& key) { return NebulaKeyUtils::generalKey(part, key); });
 
     executor_->add([this, pro = std::move(promise), part, encodedKeys] () mutable {
         this->kvstore_->asyncMultiRemove(space_, part, encodedKeys, [part, p = std::move(pro)]

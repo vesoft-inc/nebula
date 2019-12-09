@@ -8,6 +8,7 @@
 #define KVSTORE_PART_H_
 
 #include "base/Base.h"
+#include "base/NebulaKeyUtils.h"
 #include "raftex/RaftPart.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVEngine.h"
@@ -59,6 +60,8 @@ public:
 
     void asyncRemovePeer(const HostAddr& peer, KVCallback cb);
 
+    void setBlocking(bool sign);
+
     // Sync the information committed on follower.
     void sync(KVCallback cb);
 
@@ -74,6 +77,11 @@ public:
     void reset() {
         LOG(INFO) << idStr_ << "Clean up all wals";
         wal()->reset();
+        ResultCode res = engine_->remove(NebulaKeyUtils::systemCommitKey(partId_));
+        if (res != ResultCode::SUCCEEDED) {
+            LOG(WARNING) << idStr_ << "Remove the committedLogId failed, error "
+                         << static_cast<int32_t>(res);
+        }
     }
 
 private:

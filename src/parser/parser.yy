@@ -113,6 +113,7 @@ class GraphScanner;
 %token KW_BALANCE KW_LEADER KW_DATA KW_STOP
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL
+%token KW_SNAPSHOT KW_SNAPSHOTS
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -213,8 +214,12 @@ class GraphScanner;
 %type <sentence> download_sentence
 %type <sentence> set_config_sentence get_config_sentence balance_sentence
 %type <sentence> process_control_sentence return_sentence
+%type <sentence> create_snapshot_sentence drop_snapshot_sentence
 %type <sentence> sentence
 %type <sentences> sentences
+
+%type <boolval> opt_if_not_exists
+
 
 %start sentences
 
@@ -885,6 +890,11 @@ use_sentence
     : KW_USE name_label { $$ = new UseSentence($2); }
     ;
 
+opt_if_not_exists
+    : %empty { $$=false; }
+    | KW_IF KW_NOT KW_EXISTS { $$=true; }
+    ;
+
 opt_create_schema_prop_list
     : %empty {
         $$ = nullptr;
@@ -920,23 +930,23 @@ create_schema_prop_item
     ;
 
 create_tag_sentence
-    : KW_CREATE KW_TAG name_label L_PAREN R_PAREN opt_create_schema_prop_list {
-        if ($6 == nullptr) {
-            $6 = new SchemaPropList();
-        }
-        $$ = new CreateTagSentence($3, new ColumnSpecificationList(), $6);
-    }
-    | KW_CREATE KW_TAG name_label L_PAREN column_spec_list R_PAREN opt_create_schema_prop_list {
+    : KW_CREATE KW_TAG opt_if_not_exists name_label L_PAREN R_PAREN opt_create_schema_prop_list {
         if ($7 == nullptr) {
             $7 = new SchemaPropList();
         }
-        $$ = new CreateTagSentence($3, $5, $7);
+        $$ = new CreateTagSentence($4, new ColumnSpecificationList(), $7, $3);
     }
-    | KW_CREATE KW_TAG name_label L_PAREN column_spec_list COMMA R_PAREN opt_create_schema_prop_list {
+    | KW_CREATE KW_TAG opt_if_not_exists name_label L_PAREN column_spec_list R_PAREN opt_create_schema_prop_list {
         if ($8 == nullptr) {
             $8 = new SchemaPropList();
         }
-        $$ = new CreateTagSentence($3, $5, $8);
+        $$ = new CreateTagSentence($4, $6, $8, $3);
+    }
+    | KW_CREATE KW_TAG opt_if_not_exists name_label L_PAREN column_spec_list COMMA R_PAREN opt_create_schema_prop_list {
+        if ($9 == nullptr) {
+            $9 = new SchemaPropList();
+        }
+        $$ = new CreateTagSentence($4, $6, $9, $3);
     }
     ;
 
@@ -1001,23 +1011,23 @@ alter_schema_prop_item
     ;
 
 create_edge_sentence
-    : KW_CREATE KW_EDGE name_label L_PAREN R_PAREN opt_create_schema_prop_list {
-        if ($6 == nullptr) {
-            $6 = new SchemaPropList();
-        }
-        $$ = new CreateEdgeSentence($3,  new ColumnSpecificationList(), $6);
-    }
-    | KW_CREATE KW_EDGE name_label L_PAREN column_spec_list R_PAREN opt_create_schema_prop_list {
+    : KW_CREATE KW_EDGE opt_if_not_exists name_label L_PAREN R_PAREN opt_create_schema_prop_list {
         if ($7 == nullptr) {
             $7 = new SchemaPropList();
         }
-        $$ = new CreateEdgeSentence($3, $5, $7);
+        $$ = new CreateEdgeSentence($4,  new ColumnSpecificationList(), $7, $3);
     }
-    | KW_CREATE KW_EDGE name_label L_PAREN column_spec_list COMMA R_PAREN opt_create_schema_prop_list {
+    | KW_CREATE KW_EDGE opt_if_not_exists name_label L_PAREN column_spec_list R_PAREN opt_create_schema_prop_list {
         if ($8 == nullptr) {
             $8 = new SchemaPropList();
         }
-        $$ = new CreateEdgeSentence($3, $5, $8);
+        $$ = new CreateEdgeSentence($4, $6, $8, $3);
+    }
+    | KW_CREATE KW_EDGE opt_if_not_exists name_label L_PAREN column_spec_list COMMA R_PAREN opt_create_schema_prop_list {
+        if ($9 == nullptr) {
+            $9 = new SchemaPropList();
+        }
+        $$ = new CreateEdgeSentence($4, $6, $9, $3);
     }
     ;
 
@@ -1455,6 +1465,9 @@ show_sentence
     | KW_SHOW KW_CREATE KW_EDGE name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateEdge, $4);
     }
+    | KW_SHOW KW_SNAPSHOTS {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowSnapshots);
+    }
     ;
 
 config_module_enum
@@ -1497,13 +1510,13 @@ show_config_item
     ;
 
 create_space_sentence
-    : KW_CREATE KW_SPACE name_label {
-        auto sentence = new CreateSpaceSentence($3);
+    : KW_CREATE KW_SPACE opt_if_not_exists  name_label{
+        auto sentence = new CreateSpaceSentence($4, $3);
         $$ = sentence;
     }
-    | KW_CREATE KW_SPACE name_label L_PAREN space_opt_list R_PAREN {
-        auto sentence = new CreateSpaceSentence($3);
-        sentence->setOpts($5);
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label L_PAREN space_opt_list R_PAREN {
+        auto sentence = new CreateSpaceSentence($4, $3);
+        sentence->setOpts($6);
         $$ = sentence;
     }
     ;
@@ -1716,6 +1729,18 @@ balance_sentence
     }
     ;
 
+create_snapshot_sentence
+    : KW_CREATE KW_SNAPSHOT {
+        $$ = new CreateSnapshotSentence();
+    }
+    ;
+
+drop_snapshot_sentence
+    : KW_DROP KW_SNAPSHOT name_label {
+        $$ = new DropSnapshotSentence($3);
+    }
+    ;
+
 mutate_sentence
     : insert_vertex_sentence { $$ = $1; }
     | insert_edge_sentence { $$ = $1; }
@@ -1750,6 +1775,8 @@ maintain_sentence
     | get_config_sentence { $$ = $1; }
     | set_config_sentence { $$ = $1; }
     | balance_sentence { $$ = $1; }
+    | create_snapshot_sentence { $$ = $1; };
+    | drop_snapshot_sentence { $$ = $1; };
     ;
 
 return_sentence

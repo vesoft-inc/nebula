@@ -306,3 +306,10 @@ nebula_add_test(
     OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
+
+nebula_add_test(
+    NAME checkpoint_test
+    SOURCES CheckpointTest.cpp
+    OBJECTS ${storage_test_deps}
+    LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
+)

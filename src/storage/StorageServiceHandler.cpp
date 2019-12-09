@@ -25,6 +25,9 @@
 #include "storage/PrefixProcessor.h"
 #include "storage/ScanProcessor.h"
 #include "storage/GetUUIDProcessor.h"
+#include "storage/CreateCheckpointProcessor.h"
+#include "storage/DropCheckpointProcessor.h"
+#include "storage/SendBlockSignProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -160,6 +163,12 @@ StorageServiceHandler::future_memberChange(const cpp2::MemberChangeReq& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::AdminExecResp>
+StorageServiceHandler::future_checkPeers(const cpp2::CheckPeersReq& req) {
+    auto* processor = CheckPeersProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::GetLeaderResp>
 StorageServiceHandler::future_getLeaderPart(const cpp2::GetLeaderReq& req) {
     auto* processor = GetLeaderProcessor::instance(kvstore_);
@@ -223,6 +232,24 @@ StorageServiceHandler::future_scan(const cpp2::ScanRequest& req) {
 folly::Future<cpp2::GetUUIDResp>
 StorageServiceHandler::future_getUUID(const cpp2::GetUUIDReq& req) {
     auto* processor = GetUUIDProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::AdminExecResp>
+StorageServiceHandler::future_createCheckpoint(const cpp2::CreateCPRequest& req) {
+    auto* processor = CreateCheckpointProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::AdminExecResp>
+StorageServiceHandler::future_dropCheckpoint(const cpp2::DropCPRequest& req) {
+    auto* processor = DropCheckpointProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::AdminExecResp>
+StorageServiceHandler::future_blockingWrites(const cpp2::BlockingSignRequest& req) {
+    auto* processor = SendBlockSignProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

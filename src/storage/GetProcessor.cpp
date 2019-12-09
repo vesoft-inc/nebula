@@ -39,15 +39,15 @@ folly::Future<PartitionCode>
 GetProcessor::asyncProcess(PartitionID part, std::vector<std::string> keys) {
     folly::Promise<std::pair<PartitionID, kvstore::ResultCode>> promise;
     auto future = promise.getFuture();
-    std::vector<std::string> kvKeys;
-    kvKeys.reserve(keys.size());
-    std::transform(keys.begin(), keys.end(), std::back_inserter(kvKeys),
-                   [part](const auto& key) { return NebulaKeyUtils::kvKey(part, key); });
+    std::vector<std::string> generalKeys;
+    generalKeys.reserve(keys.size());
+    std::transform(keys.begin(), keys.end(), std::back_inserter(generalKeys),
+                   [part](const auto& key) { return NebulaKeyUtils::generalKey(part, key); });
 
     executor_->add([this, p = std::move(promise), part, keys = std::move(keys),
-                    kvKeys = std::move(kvKeys)] () mutable {
+                    generalKeys = std::move(generalKeys)] () mutable {
         std::vector<std::string> values;
-        auto ret = this->kvstore_->multiGet(space_, part, kvKeys, &values);
+        auto ret = this->kvstore_->multiGet(space_, part, generalKeys, &values);
         if (ret == kvstore::ResultCode::SUCCEEDED) {
             std::lock_guard<std::mutex> lg(this->lock_);
             for (int32_t i = 0; i < static_cast<int32_t>(keys.size()); i++) {

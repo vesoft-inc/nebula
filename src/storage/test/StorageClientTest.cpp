@@ -481,15 +481,15 @@ TEST(StorageClientTest, GeneralStorageTest) {
         }
         usleep(100000);
     }
-    auto client = std::make_unique<StorageClient>(threadPool, mClient.get());
 
+    auto client = std::make_unique<StorageClient>(threadPool, mClient.get());
     {
         std::vector<nebula::cpp2::Pair> pairs;
-        for (int32_t i = 0; i < 100; i ++) {
-            auto key = folly::stringPrintf("key_%d", i);
-            auto value = folly::stringPrintf("value_%d", i);
-            pairs.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                    std::move(key), std::move(value));
+        for (int32_t i = 0; i < 100; i++) {
+            nebula::cpp2::Pair pair;
+            pair.set_key(folly::stringPrintf("key_%d", i));
+            pair.set_value(folly::stringPrintf("value_%d", i));
+            pairs.emplace_back(std::move(pair));
         }
 
         auto f = client->put(space, std::move(pairs));
@@ -537,7 +537,53 @@ TEST(StorageClientTest, GeneralStorageTest) {
         auto resp = std::move(f).get();
         ASSERT_FALSE(resp.succeeded());
         ASSERT_FALSE(resp.failedParts().empty());
-        ASSERT_EQ(5, resp.failedParts().size());
+    }
+    {
+        auto f = client->prefix(space, "key_1");
+        auto resp = std::move(f).get();
+        ASSERT_TRUE(resp.succeeded());
+        ASSERT_TRUE(resp.failedParts().empty());
+        for (int32_t i = 0; i < 10; i++) {
+            bool found = false;
+            auto key = folly::stringPrintf("key_1%d", i);
+            LOG(INFO) << "Key: " << key;
+            for (const auto& result : resp.responses()) {
+                auto iter = result.values.find(key);
+                if (iter != result.values.end()) {
+                    ASSERT_EQ(folly::stringPrintf("value_1%d", i), iter->second);
+                    found = true;
+                    break;
+                } else {
+                    LOG(INFO) << "not found";
+                }
+            }
+            ASSERT_TRUE(found);
+        }
+    }
+    {
+        auto f = client->scan(space, "key_20", "key_30");
+        auto resp = std::move(f).get();
+        ASSERT_TRUE(resp.succeeded());
+        ASSERT_TRUE(resp.failedParts().empty());
+        for (int32_t i = 0; i < 10; i++) {
+            bool found = false;
+            auto key = folly::stringPrintf("key_2%d", i);
+            for (const auto& result : resp.responses()) {
+                auto iter = result.values.find(key);
+                if (iter != result.values.end()) {
+                    ASSERT_EQ(folly::stringPrintf("value_2%d", i), iter->second);
+                    found = true;
+                    break;
+                }
+            }
+            ASSERT_TRUE(found);
+        }
+    }
+    {
+        auto f = client->removeRange(space, "key_23", "key_25");
+        auto resp = std::move(f).get();
+        ASSERT_TRUE(resp.succeeded());
+        ASSERT_TRUE(resp.failedParts().empty());
     }
 }
 

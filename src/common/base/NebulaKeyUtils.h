@@ -57,7 +57,9 @@ public:
 
     static std::string uuidKey(PartitionID partId, const folly::StringPiece& name);
 
-    static std::string kvKey(PartitionID partId, const folly::StringPiece& name);
+    static std::string generalKey(PartitionID partId, const folly::StringPiece& name);
+
+    static std::string parseGeneralKey(folly::StringPiece key);
 
     /**
      * Prefix for

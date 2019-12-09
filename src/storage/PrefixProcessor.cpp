@@ -36,15 +36,16 @@ PrefixProcessor::asyncProcess(PartitionID part, std::string prefix) {
     folly::Promise<PartitionCode> promise;
     auto future = promise.getFuture();
 
-    auto encodedPrefix = NebulaKeyUtils::kvKey(part, prefix);
-
-    executor_->add([this, p = std::move(promise), part, encodedPrefix] () mutable {
+    auto encodedPrefix = NebulaKeyUtils::generalKey(part, prefix);
+    executor_->add([this, p = std::move(promise), part,
+                    encodedPrefix = std::move(encodedPrefix)] () mutable {
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = this->kvstore_->prefix(space_, part, encodedPrefix, &iter);
         if (ret == kvstore::ResultCode::SUCCEEDED) {
             std::lock_guard<std::mutex> lg(this->lock_);
             while (iter->valid()) {
-                pairs_.emplace(iter->key(), iter->val());
+                auto key = NebulaKeyUtils::parseGeneralKey(iter->key());
+                pairs_.emplace(std::move(key), iter->val());
                 iter->next();
             }
         }

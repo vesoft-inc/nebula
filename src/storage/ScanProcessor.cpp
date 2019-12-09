@@ -35,15 +35,17 @@ ScanProcessor::asyncProcess(PartitionID part, std::string start, std::string end
     folly::Promise<PartitionCode> promise;
     auto future = promise.getFuture();
 
-    auto encodedStart = NebulaKeyUtils::kvKey(part, start);
-    auto encodedEnd   = NebulaKeyUtils::kvKey(part, end);
-    executor_->add([this, p = std::move(promise), part, encodedStart, encodedEnd] () mutable {
+    auto startKey = NebulaKeyUtils::generalKey(part, start);
+    auto endKey   = NebulaKeyUtils::generalKey(part, end);
+    executor_->add([this, p = std::move(promise), part, startKey = std::move(startKey),
+                    endKey = std::move(endKey)] () mutable {
         std::unique_ptr<kvstore::KVIterator> iter;
-        auto ret = this->kvstore_->range(space_, part, encodedStart, encodedEnd, &iter);
+        auto ret = this->kvstore_->range(space_, part, startKey, endKey, &iter);
         if (ret == kvstore::ResultCode::SUCCEEDED) {
             std::lock_guard<std::mutex> lg(this->lock_);
             while (iter->valid()) {
-                pairs_.emplace(iter->key(), iter->val());
+                auto key = NebulaKeyUtils::parseGeneralKey(iter->key());
+                pairs_.emplace(std::move(key), iter->val());
                 iter->next();
             }
         }

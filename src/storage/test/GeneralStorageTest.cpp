@@ -37,8 +37,8 @@ TEST(GeneralStorageTest, SimpleTest) {
             std::vector<nebula::cpp2::Pair> pairs;
             for (int32_t i = 0; i < 10; i++) {
                 nebula::cpp2::Pair pair;
-                pair.set_key(folly::stringPrintf("key_1_%d", i));
-                pair.set_value(folly::stringPrintf("value_1_%d", i));
+                pair.set_key(folly::stringPrintf("key_%d_%d", part, i));
+                pair.set_value(folly::stringPrintf("value_%d_%d", part, i));
                 pairs.emplace_back(std::move(pair));
             }
             req.parts.emplace(part, std::move(pairs));
@@ -52,8 +52,8 @@ TEST(GeneralStorageTest, SimpleTest) {
         // Get Test
         cpp2::GetRequest req;
         req.set_space_id(space);
-        auto* processor = GetProcessor::instance(kv.get(), nullptr, nullptr, executor.get());
         PartitionID part = 1;
+        auto* processor = GetProcessor::instance(kv.get(), nullptr, nullptr, executor.get());
         std::vector<std::string> keys;
         for (int32_t i = 0; i < 10; i+=2) {
             keys.emplace_back(folly::stringPrintf("key_1_%d", i));
@@ -70,6 +70,23 @@ TEST(GeneralStorageTest, SimpleTest) {
         EXPECT_EQ("value_1_4", result["key_1_4"]);
         EXPECT_EQ("value_1_6", result["key_1_6"]);
         EXPECT_EQ("value_1_8", result["key_1_8"]);
+    }
+    {
+        cpp2::GetRequest req;
+        req.set_space_id(space);
+        PartitionID part = 1;
+        auto* processor = GetProcessor::instance(kv.get(), nullptr, nullptr, executor.get());
+        std::vector<std::string> keys;
+        for (int32_t i = 0; i < 20; i+=2) {
+            keys.emplace_back(folly::stringPrintf("key_1_%d", i));
+        }
+        req.parts.emplace(part, std::move(keys));
+        auto future = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(future).get();
+        EXPECT_EQ(1, resp.result.failed_codes.size());
+        auto result = resp.values;
+        EXPECT_EQ(0, result.size());
     }
     {
         // Remove Test
@@ -119,13 +136,13 @@ TEST(GeneralStorageTest, SimpleTest) {
     }
     {
         // Scan Test
-        cpp2:: ScanRequest req;
+        cpp2::ScanRequest req;
         req.set_space_id(space);
-        auto* processor = ScanProcessor::instance(kv.get(), nullptr, nullptr, executor.get());
         PartitionID part = 2;
+        auto* processor = ScanProcessor::instance(kv.get(), nullptr, nullptr, executor.get());
         nebula::cpp2::Range range;
-        range.set_start("key_2_0");
-        range.set_end("key_2_99");
+        range.set_start("key");
+        range.set_end("kez");
         req.parts.emplace(part, std::move(range));
         auto future = processor->getFuture();
         processor->process(req);
@@ -135,11 +152,11 @@ TEST(GeneralStorageTest, SimpleTest) {
     }
     {
         // Remove Range Test
-        cpp2:: RemoveRangeRequest req;
+        cpp2::RemoveRangeRequest req;
         req.set_space_id(space);
+        PartitionID part = 2;
         auto* processor = RemoveRangeProcessor::instance(kv.get(), nullptr,
                                                          nullptr, executor.get());
-        PartitionID part = 2;
         nebula::cpp2::Range range;
         range.set_start("key_2_3");
         range.set_end("key_2_6");
@@ -148,6 +165,22 @@ TEST(GeneralStorageTest, SimpleTest) {
         processor->process(req);
         auto resp = std::move(future).get();
         EXPECT_EQ(0, resp.result.failed_codes.size());
+    }
+    {
+        // Scan Test
+        cpp2::ScanRequest req;
+        req.set_space_id(space);
+        PartitionID part = 2;
+        auto* processor = ScanProcessor::instance(kv.get(), nullptr, nullptr, executor.get());
+        nebula::cpp2::Range range;
+        range.set_start("key");
+        range.set_end("kez");
+        req.parts.emplace(part, std::move(range));
+        auto future = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(future).get();
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(7, resp.values.size());
     }
 }
 

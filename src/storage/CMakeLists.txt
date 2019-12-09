@@ -20,6 +20,9 @@ nebula_add_library(
     RemoveRangeProcessor.cpp
     PrefixProcessor.cpp
     ScanProcessor.cpp
+    CreateCheckpointProcessor.cpp
+    DropCheckpointProcessor.cpp
+    SendBlockSignProcessor.cpp
 )
 
 nebula_add_library(

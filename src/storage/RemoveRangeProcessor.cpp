@@ -37,10 +37,11 @@ RemoveRangeProcessor::asyncProcess(PartitionID part, std::string start, std::str
     folly::Promise<PartitionCode> promise;
     auto future = promise.getFuture();
 
-    auto encodedStart = NebulaKeyUtils::kvKey(part, start);
-    auto encodedEnd   = NebulaKeyUtils::kvKey(part, end);
-    executor_->add([this, pro = std::move(promise), part, encodedStart, encodedEnd] () mutable {
-        this->kvstore_->asyncRemoveRange(space_, part, encodedStart, encodedEnd,
+    auto startKey = NebulaKeyUtils::generalKey(part, start);
+    auto endKey   = NebulaKeyUtils::generalKey(part, end);
+    executor_->add([this, pro = std::move(promise), part, startKey = std::move(startKey),
+                    endKey = std::move(endKey)] () mutable {
+        this->kvstore_->asyncRemoveRange(space_, part, startKey, endKey,
                                          [part, p = std::move(pro)]
                                          (kvstore::ResultCode code) mutable {
             p.setValue(std::make_pair(part, code));

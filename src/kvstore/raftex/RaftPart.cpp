@@ -542,6 +542,10 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
                                                         LogType logType,
                                                         std::string log,
                                                         AtomicOp op) {
+    if (blocking_ && (logType == LogType::NORMAL || logType == LogType::ATOMIC_OP)) {
+        return AppendLogResult::E_WRITE_BLOCKING;
+    }
+
     LogCache swappedOutLogs;
     auto retFuture = folly::Future<AppendLogResult>::makeEmpty();
 
@@ -796,7 +800,7 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
             VLOG(2) << self->idStr_ << "Received enough response";
             CHECK(!result.hasException());
             if (tracker.slow()) {
-                tracker.output(self->idStr_, folly::stringPrintf("Total send wals: %ld",
+                tracker.output(self->idStr_, folly::stringPrintf("Total send logs: %ld",
                                                                   lastLogId - prevLogId + 1));
             }
             self->processAppendLogResponses(*result,
@@ -1085,7 +1089,8 @@ bool RaftPart::leaderElection() {
                     uint64_t curWeight = weight_.load();
                     weight_.store(curWeight * 2);
                 }
-                return resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED;
+                return resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED
+                        && !hosts[idx]->isLearner();
             });
 
         VLOG(2) << idStr_
@@ -1708,7 +1713,7 @@ void RaftPart::reset() {
 }
 
 AppendLogResult RaftPart::isCatchedUp(const HostAddr& peer) {
-    std::lock_guard<std::mutex> lck(logsLock_);
+    std::lock_guard<std::mutex> lck(raftLock_);
     LOG(INFO) << idStr_ << "Check whether I catch up";
     if (role_ != Role::LEADER) {
         LOG(INFO) << idStr_ << "I am not the leader";
@@ -1737,6 +1742,24 @@ bool RaftPart::linkCurrentWAL(const char* newPath) {
     CHECK_NOTNULL(newPath);
     std::lock_guard<std::mutex> g(raftLock_);
     return wal_->linkCurrentWAL(newPath);
+}
+
+void RaftPart::checkAndResetPeers(const std::vector<HostAddr>& peers) {
+    std::lock_guard<std::mutex> lck(raftLock_);
+    // To avoid the iterator invalid, we use another container for it.
+    decltype(hosts_) hosts = hosts_;
+    for (auto& h : hosts) {
+        LOG(INFO) << idStr_ << "Check host " << h->addr_;
+        auto it = std::find(peers.begin(), peers.end(), h->addr_);
+        if (it == peers.end()) {
+            LOG(INFO) << idStr_ << "The peer " << h->addr_ << " should not exist in my peers";
+            removePeer(h->addr_);
+        }
+    }
+    for (auto& p : peers) {
+        LOG(INFO) << idStr_ << "Add peer " << p << " if not exist!";
+        addPeer(p);
+    }
 }
 
 }  // namespace raftex
