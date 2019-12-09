@@ -44,6 +44,12 @@ ErrorOr<cpp2::ErrorCode, BalanceID> Balancer::balance(std::vector<HostAddr> host
 }
 
 StatusOr<BalancePlan> Balancer::show(BalanceID id) const {
+    {
+        std::lock_guard<std::mutex> lg(lock_);
+        if (plan_ != nullptr && plan_->id() == id) {
+            return *plan_;
+        }
+    }
     if (kv_) {
         BalancePlan plan(id, kv_, client_.get());
         if (!plan.recovery(false)) {
