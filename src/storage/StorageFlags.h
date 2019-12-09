@@ -15,4 +15,8 @@ DECLARE_int32(waiting_catch_up_retry_times);
 
 DECLARE_int32(waiting_catch_up_interval_in_secs);
 
+DECLARE_int32(waiting_new_leader_retry_times);
+
+DECLARE_int32(waiting_new_leader_interval_in_secs);
+
 #endif  // STORAGE_STORAGEFLAGS_H_
