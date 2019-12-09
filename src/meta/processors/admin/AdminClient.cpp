@@ -575,9 +575,14 @@ folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId, const st
 
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
+
+    /**
+     * Don't need retry.
+     * Because existing checkpoint directories leads to fail again.
+     **/
     getResponse(allHosts, 0, std::move(req), [] (auto client, auto request) {
         return client->future_createCheckpoint(request);
-    }, 0, std::move(pro), 1 /*The snapshot operation only needs to be retried twice*/);
+    }, 0, std::move(pro), 0);
     return f;
 }
 
