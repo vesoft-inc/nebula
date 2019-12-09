@@ -11,10 +11,18 @@
 #include <limits>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
+<<<<<<< HEAD
 #include "storage/index/LookUpVertexIndexProcessor.h"
 #include "storage/index/LookUpEdgeIndexProcessor.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
+=======
+#include "storage/ScanVertexIndexProcessor.h"
+#include "storage/ScanEdgeIndexProcessor.h"
+#include "dataman/RowSetReader.h"
+#include "dataman/RowReader.h"
+DECLARE_int32(load_data_interval_secs);
+>>>>>>> online index scan
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 
@@ -31,6 +39,7 @@ std::string indexStr(RowReader* reader, const nebula::cpp2::ColumnDef& col) {
     auto&& v = value(std::move(res));
     switch (col.get_type().get_type()) {
         case nebula::cpp2::SupportedType::BOOL: {
+<<<<<<< HEAD
             auto val = boost::get<bool>(v);
             std::string raw;
             raw.reserve(sizeof(bool));
@@ -44,6 +53,21 @@ std::string indexStr(RowReader* reader, const nebula::cpp2::ColumnDef& col) {
         case nebula::cpp2::SupportedType::FLOAT:
         case nebula::cpp2::SupportedType::DOUBLE: {
             return NebulaKeyUtils::encodeDouble(boost::get<double>(v));
+=======
+            return folly::to<std::string>(boost::get<bool >(v));
+        }
+        case nebula::cpp2::SupportedType::INT:
+        case nebula::cpp2::SupportedType::TIMESTAMP: {
+            std::string raw;
+            raw.reserve(sizeof(int64_t));
+            auto val = folly::Endian::big(boost::get<int64_t>(v));
+            raw.append(reinterpret_cast<const char*>(&val), sizeof(int64_t));
+            return raw;
+        }
+        case nebula::cpp2::SupportedType::FLOAT:
+        case nebula::cpp2::SupportedType::DOUBLE: {
+            return folly::to<std::string>(boost::get<double>(v));
+>>>>>>> online index scan
         }
         case nebula::cpp2::SupportedType::STRING: {
             return boost::get<std::string>(v);
@@ -73,7 +97,11 @@ static std::string genEdgeIndexKey(meta::SchemaManager* schemaMan,
                                    GraphSpaceID spaceId,
                                    PartitionID partId,
                                    EdgeType type,
+<<<<<<< HEAD
                                    std::shared_ptr<nebula::cpp2::IndexItem>& index,
+=======
+                                   const cpp2::IndexItem &index,
+>>>>>>> online index scan
                                    VertexID src,
                                    VertexID dst) {
     auto reader = RowReader::getEdgePropReader(schemaMan,
@@ -81,9 +109,15 @@ static std::string genEdgeIndexKey(meta::SchemaManager* schemaMan,
                                                spaceId,
                                                type);
     auto values = collectIndexValues(reader.get(),
+<<<<<<< HEAD
                                      index->get_fields());
     auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
                                                  index->get_index_id(),
+=======
+                                     index.get_cols());
+    auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
+                                                 index.index_id,
+>>>>>>> online index scan
                                                  src,
                                                  0,
                                                  dst,
@@ -96,16 +130,26 @@ static std::string genVertexIndexKey(meta::SchemaManager* schemaMan,
                                      GraphSpaceID spaceId,
                                      PartitionID partId,
                                      TagID tagId,
+<<<<<<< HEAD
                                      std::shared_ptr<nebula::cpp2::IndexItem> &index,
+=======
+                                     const cpp2::IndexItem &index,
+>>>>>>> online index scan
                                      VertexID vId) {
     auto reader = RowReader::getTagPropReader(schemaMan,
                                               prop,
                                               spaceId,
                                               tagId);
     auto values = collectIndexValues(reader.get(),
+<<<<<<< HEAD
                                      index->get_fields());
     auto indexKey = NebulaKeyUtils::vertexIndexKey(partId,
                                                    index->get_index_id(),
+=======
+                                     index.get_cols());
+    auto indexKey = NebulaKeyUtils::vertexIndexKey(partId,
+                                                   index.index_id,
+>>>>>>> online index scan
                                                    vId,
                                                    values);
     return indexKey;
@@ -168,12 +212,20 @@ static std::unique_ptr<meta::SchemaManager> mockSchemaMan(GraphSpaceID spaceId,
 
 void mockData(kvstore::KVStore* kv ,
               meta::SchemaManager* schemaMan,
+<<<<<<< HEAD
               meta::IndexManager* indexMan,
               EdgeType edgeType,
               TagID tagId,
               GraphSpaceID spaceId) {
     auto vindex = indexMan->getTagIndex(spaceId, tagId).value();
     auto eindex = indexMan->getEdgeIndex(spaceId, edgeType).value();
+=======
+              EdgeType edgeType,
+              TagID tagId,
+              GraphSpaceID spaceId,
+              const cpp2::IndexItem &vindex,
+              const cpp2::IndexItem &eindex) {
+>>>>>>> online index scan
     for (auto partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
         for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
@@ -222,6 +274,7 @@ void mockData(kvstore::KVStore* kv ,
     }
 }
 
+<<<<<<< HEAD
 static std::unique_ptr<meta::IndexManager> mockIndexMan(GraphSpaceID spaceId = 0,
                                                         TagID tagId = 3001,
                                                         EdgeType edgeType = 101) {
@@ -265,12 +318,58 @@ static std::unique_ptr<meta::IndexManager> mockIndexMan(GraphSpaceID spaceId = 0
 static cpp2::LookUpVertexIndexResp execLookupVertices(const std::string& filter,
                                                       bool hasReturnCols = true) {
     fs::TempDir rootPath("/tmp/execLookupVertices.XXXXXX");
+=======
+static cpp2::IndexItem mockEdgeIndex(int32_t intFieldsNum,
+                                     int32_t stringFieldsNum,
+                                     EdgeType edgeType) {
+    std::vector<nebula::cpp2::ColumnDef> cols;
+    for (auto i = 0; i < intFieldsNum; i++) {
+        nebula::cpp2::ColumnDef column;
+        column.name = folly::stringPrintf("col_%d", i);
+        column.type.type = nebula::cpp2::SupportedType::INT;
+        cols.emplace_back(std::move(column));
+    }
+    for (auto i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
+        nebula::cpp2::ColumnDef column;
+        column.name = folly::stringPrintf("col_%d", i);
+        column.type.type = nebula::cpp2::SupportedType::STRING;
+        cols.emplace_back(std::move(column));
+    }
+    // indexId can be same with edgeType
+    return cpp2::IndexItem(apache::thrift::FragileConstructor::FRAGILE,
+                            edgeType, edgeType, std::move(cols));
+}
+
+static cpp2::IndexItem mockVertexIndex(int32_t intFieldsNum,
+                                       int32_t stringFieldsNum,
+                                       TagID tagId) {
+    std::vector<nebula::cpp2::ColumnDef> cols;
+    for (auto i = 0; i < intFieldsNum; i++) {
+        nebula::cpp2::ColumnDef column;
+        column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
+        column.type.type = nebula::cpp2::SupportedType::INT;
+        cols.emplace_back(std::move(column));
+    }
+    for (auto i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
+        nebula::cpp2::ColumnDef column;
+        column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
+        column.type.type = nebula::cpp2::SupportedType::STRING;
+        cols.emplace_back(std::move(column));
+    }
+    return cpp2::IndexItem(apache::thrift::FragileConstructor::FRAGILE,
+                           tagId, tagId, std::move(cols));
+}
+
+TEST(IndexScanTest, VertexScanTest) {
+    fs::TempDir rootPath("/tmp/VertexScanTest.XXXXXX");
+>>>>>>> online index scan
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     GraphSpaceID spaceId = 0;
     TagID tagId = 3001;
     EdgeType type = 101;
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = mockSchemaMan(spaceId, type, tagId);
+<<<<<<< HEAD
     auto indexMan = mockIndexMan(spaceId, tagId, type);
     mockData(kv.get(), schemaMan.get(), indexMan.get(), type, tagId, spaceId);
     auto *processor = LookUpVertexIndexProcessor::instance(kv.get(),
@@ -283,11 +382,28 @@ static cpp2::LookUpVertexIndexResp execLookupVertices(const std::string& filter,
     parts.emplace_back(1);
     parts.emplace_back(2);
     if (hasReturnCols) {
+=======
+    auto vindex = mockVertexIndex(3, 3, tagId);
+    auto eindex = mockEdgeIndex(10, 10, type);
+    mockData(kv.get(), schemaMan.get(), type, tagId, spaceId, vindex, eindex);
+    sleep(FLAGS_load_data_interval_secs + 1);
+    {
+        auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+        auto* processor = ScanVertexIndexProcessor::instance(kv.get(), schemaMan.get(), nullptr,
+                                                             executor.get(), nullptr);
+        cpp2::IndexScanRequest req;
+
+        decltype(req.parts) parts;
+        parts.emplace_back(0);
+        parts.emplace_back(1);
+        parts.emplace_back(2);
+>>>>>>> online index scan
         decltype(req.return_columns) cols;
         cols.emplace_back("tag_3001_col_0");
         cols.emplace_back("tag_3001_col_1");
         cols.emplace_back("tag_3001_col_3");
         cols.emplace_back("tag_3001_col_4");
+<<<<<<< HEAD
         req.set_return_columns(cols);
     }
     req.set_space_id(spaceId);
@@ -321,6 +437,44 @@ static cpp2::LookUpEdgeIndexResp execLookupEdges(const std::string& filter,
     parts.emplace_back(1);
     parts.emplace_back(2);
     if (hasReturnCols) {
+=======
+        decltype(req.hints) hints;
+        std::string braw, eraw;
+        braw.reserve(sizeof(int64_t));
+        eraw.reserve(sizeof(int64_t));
+        auto begin = folly::Endian::big(boost::get<int64_t>(1));
+        braw.append(reinterpret_cast<const char*>(&begin), sizeof(int64_t));
+        auto end = folly::Endian::big(boost::get<int64_t>(2));
+        eraw.append(reinterpret_cast<const char*>(&end), sizeof(int64_t));
+        hints.emplace_back(cpp2::IndexHint(apache::thrift::FragileConstructor::FRAGILE,
+                                           false, braw, eraw, nebula::cpp2::SupportedType::INT));
+
+        req.set_space_id(spaceId);
+        req.set_parts(std::move(parts));
+        req.set_index(vindex);
+        req.set_return_columns(cols);
+        req.set_hints(hints);
+
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(4, resp.get_schema().get_columns().size());
+        EXPECT_EQ(30, resp.rows.size());
+    }
+
+    {
+        auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+        auto* processor = ScanEdgeIndexProcessor::instance(kv.get(), schemaMan.get(), nullptr,
+                                                           executor.get(), nullptr);
+        cpp2::IndexScanRequest req;
+
+        decltype(req.parts) parts;
+        parts.emplace_back(0);
+        parts.emplace_back(1);
+        parts.emplace_back(2);
+>>>>>>> online index scan
         decltype(req.return_columns) cols;
         cols.emplace_back("col_0");
         cols.emplace_back("col_1");
@@ -330,6 +484,7 @@ static cpp2::LookUpEdgeIndexResp execLookupEdges(const std::string& filter,
         cols.emplace_back("col_11");
         cols.emplace_back("col_13");
         cols.emplace_back("col_14");
+<<<<<<< HEAD
         req.set_return_columns(cols);
     }
     req.set_space_id(spaceId);
@@ -530,10 +685,46 @@ static cpp2::LookUpEdgeIndexResp checkLookupEdgesDouble(const std::string& filte
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     GraphSpaceID spaceId = 0;
     EdgeType type = 101;
+=======
+        decltype(req.hints) hints;
+        std::string braw, eraw;
+        braw.reserve(sizeof(int64_t));
+        eraw.reserve(sizeof(int64_t));
+        auto begin = folly::Endian::big(boost::get<int64_t>(1));
+        braw.append(reinterpret_cast<const char*>(&begin), sizeof(int64_t));
+        auto end = folly::Endian::big(boost::get<int64_t>(2));
+        eraw.append(reinterpret_cast<const char*>(&end), sizeof(int64_t));
+        hints.emplace_back(cpp2::IndexHint(apache::thrift::FragileConstructor::FRAGILE,
+                                           false, braw, eraw, nebula::cpp2::SupportedType::INT));
+
+        req.set_space_id(spaceId);
+        req.set_parts(std::move(parts));
+        req.set_index(eindex);
+        req.set_return_columns(cols);
+        req.set_hints(hints);
+
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(8, resp.get_schema().get_columns().size());
+        EXPECT_EQ(210, resp.rows.size());
+    }
+}
+
+TEST(IndexScanTest, VertexStringTypeTest) {
+    fs::TempDir rootPath("/tmp/VertexStringTypeTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    GraphSpaceID spaceId = 0;
+    PartitionID partId = 0;
+    TagID tagId = 3001;
+>>>>>>> online index scan
 
     nebula::cpp2::Schema schema;
     for (auto i = 0; i < 3; i++) {
         nebula::cpp2::ColumnDef column;
+<<<<<<< HEAD
         column.name = folly::stringPrintf("col_%d", i);
         column.type.type = nebula::cpp2::SupportedType::DOUBLE;
         schema.columns.emplace_back(std::move(column));
@@ -1480,6 +1671,111 @@ TEST(IndexScanTest, VertexDoubleTest) {
     }
 }
 
+=======
+        column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
+        column.type.type = nebula::cpp2::SupportedType::STRING;
+        schema.columns.emplace_back(std::move(column));
+    }
+
+    auto* schemaMan = new AdHocSchemaManager();
+    schemaMan->addTagSchema(spaceId /*space id*/, tagId,
+                            std::make_shared<ResultSchemaProvider>(std::move(schema)));
+
+    std::vector<nebula::cpp2::ColumnDef> cols;
+    for (auto i = 0; i < 3; i++) {
+        nebula::cpp2::ColumnDef column;
+        column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
+        column.type.type = nebula::cpp2::SupportedType::STRING;
+        cols.emplace_back(std::move(column));
+    }
+    auto index = cpp2::IndexItem(apache::thrift::FragileConstructor::FRAGILE,
+                                 tagId, tagId, std::move(cols));
+
+    std::vector<kvstore::KV> data;
+    auto key = NebulaKeyUtils::vertexKey(partId, 1, tagId, 0);
+    RowWriter writer;
+    writer << "AA" << "BBAA" << "BBAA";
+    auto val = writer.encode();
+    auto indexKey = genVertexIndexKey(schemaMan, val, spaceId, partId,
+                                      tagId, index, 1);
+    data.emplace_back(std::move(indexKey), "");
+    data.emplace_back(std::move(key), std::move(val));
+    key = NebulaKeyUtils::vertexKey(partId, 2, tagId, 0);
+    RowWriter writer2;
+    writer2 << "AABB" << "AABB" << "AABB";
+    val = writer2.encode();
+    indexKey = genVertexIndexKey(schemaMan, val, spaceId, partId,
+                                 tagId, index, 1);
+    data.emplace_back(std::move(indexKey), "");
+    data.emplace_back(std::move(key), std::move(val));
+    folly::Baton<true, std::atomic> baton;
+    kv->asyncMultiPut(
+            0, partId, std::move(data),
+            [&](kvstore::ResultCode code) {
+                EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                baton.post();
+            });
+    baton.wait();
+
+    {
+        auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+        auto* processor = ScanVertexIndexProcessor::instance(kv.get(), schemaMan, nullptr,
+                                                             executor.get(), nullptr);
+        cpp2::IndexScanRequest req;
+        decltype(req.parts) parts;
+        parts.emplace_back(partId);
+        decltype(req.return_columns) retCols;
+        retCols.emplace_back("tag_3001_col_0");
+        retCols.emplace_back("tag_3001_col_1");
+        decltype(req.hints) hints;
+        hints.emplace_back(cpp2::IndexHint(apache::thrift::FragileConstructor::FRAGILE,
+                                           false, "AABB", "", nebula::cpp2::SupportedType::STRING));
+
+        req.set_space_id(spaceId);
+        req.set_parts(std::move(parts));
+        req.set_index(index);
+        req.set_return_columns(retCols);
+        req.set_hints(hints);
+
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(2, resp.get_schema().get_columns().size());
+        EXPECT_EQ(1, resp.rows.size());
+    }
+
+    {
+        auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+        auto* processor = ScanVertexIndexProcessor::instance(kv.get(), schemaMan, nullptr,
+                                                             executor.get(), nullptr);
+        cpp2::IndexScanRequest req;
+        decltype(req.parts) parts;
+        parts.emplace_back(partId);
+        decltype(req.return_columns) retCols;
+        retCols.emplace_back("tag_3001_col_0");
+        retCols.emplace_back("tag_3001_col_1");
+        decltype(req.hints) hints;
+        hints.emplace_back(cpp2::IndexHint(apache::thrift::FragileConstructor::FRAGILE,
+                                           false, "AA", "", nebula::cpp2::SupportedType::STRING));
+
+        req.set_space_id(spaceId);
+        req.set_parts(std::move(parts));
+        req.set_index(index);
+        req.set_return_columns(retCols);
+        req.set_hints(hints);
+
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(2, resp.get_schema().get_columns().size());
+        EXPECT_EQ(2, resp.rows.size());
+    }
+}
+>>>>>>> online index scan
 }  // namespace storage
 }  // namespace nebula
 
