@@ -674,6 +674,7 @@ OptVariantType UUIDExpression::eval() const {
                    << ", part " << rc.get_part_id() << ", str id " << toString();
         return OptVariantType(Status::Error("Get UUID Failed"));
      }
+     VLOG(3) << "Get UUID from " << *field_ << " to " << v.get_id();
      return v.get_id();
 }
 
