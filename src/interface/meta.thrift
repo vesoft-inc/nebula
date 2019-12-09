@@ -185,6 +185,7 @@ struct ExecResp {
 // Graph space related operations.
 struct CreateSpaceReq {
     1: SpaceProperties  properties,
+    2: bool             if_not_exists,
 }
 
 struct DropSpaceReq {
@@ -216,6 +217,7 @@ struct CreateTagReq {
     1: common.GraphSpaceID space_id,
     2: string              tag_name,
     3: common.Schema       schema,
+    4: bool                if_not_exists,
 }
 
 struct AlterTagReq {
@@ -258,6 +260,7 @@ struct CreateEdgeReq {
     1: common.GraphSpaceID space_id,
     2: string              edge_name,
     3: common.Schema       schema,
+    4: bool                if_not_exists,
 }
 
 struct AlterEdgeReq {

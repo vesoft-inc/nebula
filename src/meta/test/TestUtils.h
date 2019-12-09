@@ -100,6 +100,10 @@ public:
         return response(10);
     }
 
+    folly::Future<Status> checkPeers() override {
+        return response(8);
+    }
+
     void reset(std::vector<Status> sts) {
         statusArray_ = std::move(sts);
     }

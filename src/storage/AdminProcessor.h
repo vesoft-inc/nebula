@@ -41,14 +41,48 @@ public:
         auto host = kvstore::NebulaStore::getRaftAddr(HostAddr(req.get_new_leader().get_ip(),
                                                                req.get_new_leader().get_port()));
         part->asyncTransferLeader(host,
-                                  [this, spaceId, partId] (kvstore::ResultCode code) {
-            auto leaderRet = kvstore_->partLeader(spaceId, partId);
-            CHECK(ok(leaderRet));
+                                  [this, spaceId, partId, part] (kvstore::ResultCode code) {
             if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-                auto leader = value(std::move(leaderRet));
-                this->pushResultCode(to(code), partId, leader);
+                LOG(INFO) << "I am not the leader yet!";
+                handleLeaderChanged(spaceId, partId);
+                onFinished();
+                return;
+            } else if (code == kvstore::ResultCode::SUCCEEDED) {
+                // To avoid dead lock, we use another ioThreadPool to check the leader information.
+                folly::via(folly::getIOExecutor().get(), [this, part, spaceId, partId] {
+                    int retry = FLAGS_waiting_new_leader_retry_times;
+                    while (retry-- > 0) {
+                        auto leaderRet = kvstore_->partLeader(spaceId, partId);
+                        if (!ok(leaderRet)) {
+                            this->pushResultCode(to(error(leaderRet)), partId);
+                            onFinished();
+                            return;
+                        }
+                        auto leader = value(std::move(leaderRet));
+                        auto* store = static_cast<kvstore::NebulaStore*>(kvstore_);
+                        if (leader != HostAddr(0, 0) && leader != store->address()) {
+                            LOG(INFO) << "Found new leader " << leader;
+                            onFinished();
+                            return;
+                        } else if (leader != HostAddr(0, 0)) {
+                            LOG(INFO) << "I am choosen as leader again!";
+                            this->pushResultCode(cpp2::ErrorCode::E_TRANSFER_LEADER_FAILED, partId);
+                            onFinished();
+                            return;
+                        }
+                        LOG(INFO) << "Can't find leader for part " << partId << " on "
+                                  << store->address();
+                        sleep(FLAGS_waiting_new_leader_interval_in_secs);
+                    }
+                    this->pushResultCode(cpp2::ErrorCode::E_RETRY_EXHAUSTED, partId);
+                    onFinished();
+                });
+            } else {
+                LOG(ERROR) << "Failed transfer leader, error:" << static_cast<int32_t>(code);
+                this->pushResultCode(to(code), partId);
+                onFinished();
+                return;
             }
-            onFinished();
         });
     }
 
@@ -146,13 +180,9 @@ public:
         auto peer = kvstore::NebulaStore::getRaftAddr(HostAddr(req.get_peer().get_ip(),
                                                                req.get_peer().get_port()));
         auto cb = [this, spaceId, partId] (kvstore::ResultCode code) {
-            auto leaderRet = kvstore_->partLeader(spaceId, partId);
-            CHECK(ok(leaderRet));
-            if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-                auto leader = value(std::move(leaderRet));
-                this->pushResultCode(to(code), partId, leader);
-            }
+            handleErrorCode(code, spaceId, partId);
             onFinished();
+            return;
         };
         if (req.get_add()) {
             LOG(INFO) << "Add peer " << peer;
@@ -189,13 +219,9 @@ public:
         auto learner = kvstore::NebulaStore::getRaftAddr(HostAddr(req.get_learner().get_ip(),
                                                                   req.get_learner().get_port()));
         part->asyncAddLearner(learner, [this, spaceId, partId] (kvstore::ResultCode code) {
-            auto leaderRet = kvstore_->partLeader(spaceId, partId);
-            CHECK(ok(leaderRet));
-            if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-                auto leader = value(std::move(leaderRet));
-                this->pushResultCode(to(code), partId, leader);
-            }
+            handleErrorCode(code, spaceId, partId);
             onFinished();
+            return;
         });
     }
 
@@ -244,10 +270,7 @@ public:
                         onFinished();
                         return;
                     case raftex::AppendLogResult::E_NOT_A_LEADER: {
-                        auto leaderRet = kvstore_->partLeader(spaceId, partId);
-                        CHECK(ok(leaderRet));
-                        auto leader = value(std::move(leaderRet));
-                        this->pushResultCode(cpp2::ErrorCode::E_LEADER_CHANGED, partId, leader);
+                        handleLeaderChanged(spaceId, partId);
                         onFinished();
                         return;
                     }
@@ -267,6 +290,38 @@ public:
 
 private:
     explicit WaitingForCatchUpDataProcessor(kvstore::KVStore* kvstore)
+            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
+};
+
+class CheckPeersProcessor : public BaseProcessor<cpp2::AdminExecResp> {
+public:
+    static CheckPeersProcessor* instance(kvstore::KVStore* kvstore) {
+        return new CheckPeersProcessor(kvstore);
+    }
+
+    void process(const cpp2::CheckPeersReq& req) {
+        auto spaceId = req.get_space_id();
+        auto partId = req.get_part_id();
+        LOG(INFO) << "Check peers for space "
+                  << spaceId << ", part " << partId;
+        auto ret = kvstore_->part(spaceId, partId);
+        if (!ok(ret)) {
+            this->pushResultCode(to(error(ret)), partId);
+            onFinished();
+            return;
+        }
+        auto part = nebula::value(ret);
+        std::vector<HostAddr> peers;
+        for (auto& p : req.get_peers()) {
+            peers.emplace_back(
+                    kvstore::NebulaStore::getRaftAddr(HostAddr(p.get_ip(), p.get_port())));
+        }
+        part->checkAndResetPeers(peers);
+        this->onFinished();
+    }
+
+private:
+    explicit CheckPeersProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
 };
 
