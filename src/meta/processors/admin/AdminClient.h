@@ -31,6 +31,7 @@ public:
     virtual folly::Future<Status> memberChange() = 0;
     virtual folly::Future<Status> updateMeta() = 0;
     virtual folly::Future<Status> removePart() = 0;
+    virtual folly::Future<Status> checkPeers() = 0;
     virtual folly::Future<Status> getLeaderDist(HostLeaderMap* hostLeaderMap) = 0;
     virtual folly::Future<Status> createSnapshot() = 0;
     virtual folly::Future<Status> dropSnapshot() = 0;
@@ -92,6 +93,9 @@ public:
     folly::Future<Status> removePart(GraphSpaceID spaceId,
                                      PartitionID partId,
                                      const HostAddr& host);
+
+    folly::Future<Status> checkPeers(GraphSpaceID spaceId,
+                                     PartitionID partId);
 
     folly::Future<Status> getLeaderDist(HostLeaderMap* result);
 
