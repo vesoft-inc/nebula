@@ -6,7 +6,7 @@
 
 package com.vesoft.nebula.tools.generator.v2
 
-import org.apache.spark.sql.{Encoders, Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Encoders, Row, SparkSession}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.functions.explode
@@ -178,6 +178,14 @@ object SparkClientGenerator {
           fields.asScala.keys.toList
         }
 
+        val sourceColumn = sourceProperties.map { property =>
+          if (property == vertex) {
+            col(property).cast(LongType)
+          } else {
+            col(property)
+          }
+        }
+
         val vertexIndex      = sourceProperties.indexOf(vertex)
         val nebulaProperties = properties.mkString(",")
 
@@ -187,7 +195,7 @@ object SparkClientGenerator {
 
         if (data.isDefined && !c.dry) {
           data.get
-            .select(sourceProperties.map(col): _*)
+            .select(sourceColumn: _*)
             .withColumn(vertex, toVertexUDF(col(vertex)))
             .map { row =>
               (row.getLong(vertexIndex),
@@ -292,6 +300,27 @@ object SparkClientGenerator {
           }
         }
 
+        val sourceColumn = if (!isGeo) {
+          val source = edgeConfig.getString("source")
+          sourceProperties.map { property =>
+            if (property == source || property == target) {
+              col(property).cast(LongType)
+            } else {
+              col(property)
+            }
+          }
+        } else {
+          val latitude = edgeConfig.getString("latitude")
+          val longitude = edgeConfig.getString("longitude")
+          sourceProperties.map { property =>
+            if (property == latitude || property == longitude) {
+              col(property).cast(DoubleType)
+            } else {
+              col(property)
+            }
+          }
+        }
+
         val nebulaProperties = properties.mkString(",")
 
         val data = createDataSource(spark, pathOpt, edgeConfig)
@@ -300,7 +329,7 @@ object SparkClientGenerator {
 
         if (data.isDefined && !c.dry) {
           data.get
-            .select(sourceProperties.map(col): _*)
+            .select(sourceColumn: _*)
             .map { row =>
               val sourceField = if (!isGeo) {
                 val source = edgeConfig.getString("source")
@@ -312,7 +341,6 @@ object SparkClientGenerator {
                 val lng       = row.getDouble(row.schema.fieldIndex(longitude))
                 indexCells(lat, lng).mkString(",")
               }
-
               val targetField = row.getLong(row.schema.fieldIndex(target))
 
               val values =
@@ -399,7 +427,7 @@ object SparkClientGenerator {
     */
   private[this] def createDataSource(session: SparkSession,
                                      pathOpt: Option[String],
-                                     config: Config) = {
+                                     config: Config): Option[DataFrame] = {
     val `type` = config.getString("type")
 
     pathOpt match {
@@ -479,7 +507,7 @@ object SparkClientGenerator {
     * @param field    The field name.
     * @return
     */
-  private[this] def extraValue(row: Row, field: String) = {
+  private[this] def extraValue(row: Row, field: String): Any = {
     val index = row.schema.fieldIndex(field)
     row.schema.fields(index).dataType match {
       case StringType =>
@@ -589,7 +617,7 @@ object SparkClientGenerator {
     * @param edgeConfig  The config of edge.
     * @return
     */
-  private[this] def checkGeoSupported(edgeConfig: Config) = {
+  private[this] def checkGeoSupported(edgeConfig: Config): Boolean = {
     !edgeConfig.hasPath("source") &&
     edgeConfig.hasPath("latitude") &&
     edgeConfig.hasPath("longitude")
@@ -618,7 +646,7 @@ object SparkClientGenerator {
     * @param defaultValue   The default value for the path.
     * @return
     */
-  private[this] def getOrElse[T](config: Config, path: String, defaultValue: T) = {
+  private[this] def getOrElse[T](config: Config, path: String, defaultValue: T): T = {
     if (config.hasPath(path)) {
       config.getAnyRef(path).asInstanceOf[T]
     } else {
@@ -633,7 +661,7 @@ object SparkClientGenerator {
     * @param lng  The longitude of coordinate.
     * @return
     */
-  private[this] def indexCells(lat: Double, lng: Double) = {
+  private[this] def indexCells(lat: Double, lng: Double): IndexedSeq[Long] = {
     val coordinate = S2LatLng.fromDegrees(lat, lng)
     val s2CellId   = S2CellId.fromLatLng(coordinate)
     for (index <- DEFAULT_MIN_CELL_LEVEL to DEFAULT_MAX_CELL_LEVEL)
