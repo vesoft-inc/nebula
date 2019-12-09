@@ -6,7 +6,7 @@
 
 package com.vesoft.nebula.tools.generator.v2
 
-import org.apache.spark.sql.{Encoders, Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Encoders, Row, SparkSession}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.functions.explode
@@ -14,6 +14,7 @@ import org.apache.spark.sql.functions.udf
 import org.apache.spark.sql.functions.split
 import java.io.File
 
+import com.facebook.fb303.FacebookService.AsyncClient
 import com.google.common.geometry.{S2CellId, S2LatLng}
 import com.google.common.net.HostAndPort
 import com.vesoft.nebula.graph.ErrorCode
@@ -37,13 +38,19 @@ object SparkClientGenerator {
 
   private[this] val LOG = Logger.getLogger(this.getClass)
 
-  private[this] val BATCH_INSERT_TEMPLATE               = "INSERT %s %s(%s) VALUES %s"
-  private[this] val INSERT_VALUE_TEMPLATE               = "%d: (%s)"
-  private[this] val EDGE_VALUE_WITHOUT_RANKING_TEMPLATE = "%d->%d: (%s)"
-  private[this] val EDGE_VALUE_TEMPLATE                 = "%d->%d@%d: (%s)"
-  private[this] val USE_TEMPLATE                        = "USE %s"
+  private[this] val HASH_POLICY                                     = "hash"
+  private[this] val UUID_POLICY                                     = "uuid"
+  private[this] val BATCH_INSERT_TEMPLATE                           = "INSERT %s %s(%s) VALUES %s"
+  private[this] val INSERT_VALUE_TEMPLATE                           = "%d: (%s)"
+  private[this] val INSERT_VALUE_TEMPLATE_WITH_POLICY               = "%s(%d): (%s)"
+  private[this] val ENDPOINT_TEMPLATE                               = "%s(%d)"
+  private[this] val EDGE_VALUE_WITHOUT_RANKING_TEMPLATE             = "%d->%d: (%s)"
+  private[this] val EDGE_VALUE_WITHOUT_RANKING_TEMPLATE_WITH_POLICY = "%s->%d: (%s)"
+  private[this] val EDGE_VALUE_TEMPLATE                             = "%d->%d@%d: (%s)"
+  private[this] val EDGE_VALUE_TEMPLATE_WITH_POLICY                 = "%s->%d@%d: (%s)"
+  private[this] val USE_TEMPLATE                                    = "USE %s"
 
-  private[this] val DEFAULT_BATCH              = 2
+  private[this] val DEFAULT_BATCH              = 64
   private[this] val DEFAULT_CONNECTION_TIMEOUT = 3000
   private[this] val DEFAULT_CONNECTION_RETRY   = 3
   private[this] val DEFAULT_EXECUTION_RETRY    = 3
@@ -165,9 +172,19 @@ object SparkClientGenerator {
         }
 
         val fields = tagConfig.getObject("fields").unwrapped
+        val vertex = if (tagConfig.hasPath("vertex")) {
+          tagConfig.getString("vertex")
+        } else {
+          tagConfig.getString("vertex.field")
+        }
 
-        val vertex = tagConfig.getString("vertex")
-        val batch  = getOrElse(tagConfig, "batch", DEFAULT_BATCH)
+        val policyOpt = if (tagConfig.hasPath("vertex.policy")) {
+          Some(tagConfig.getString("vertex.policy").toLowerCase)
+        } else {
+          None
+        }
+
+        val batch = getOrElse(tagConfig, "batch", DEFAULT_BATCH)
 
         val properties      = fields.asScala.values.map(_.toString).toList
         val valueProperties = fields.asScala.keys.toList
@@ -176,6 +193,14 @@ object SparkClientGenerator {
           (fields.asScala.keySet + vertex).toList
         } else {
           fields.asScala.keys.toList
+        }
+
+        val sourceColumn = sourceProperties.map { property =>
+          if (property == vertex) {
+            col(property).cast(LongType)
+          } else {
+            col(property)
+          }
         }
 
         val vertexIndex      = sourceProperties.indexOf(vertex)
@@ -187,7 +212,7 @@ object SparkClientGenerator {
 
         if (data.isDefined && !c.dry) {
           data.get
-            .select(sourceProperties.map(col): _*)
+            .select(sourceColumn: _*)
             .withColumn(vertex, toVertexUDF(col(vertex)))
             .map { row =>
               (row.getLong(vertexIndex),
@@ -212,7 +237,21 @@ object SparkClientGenerator {
                       nebulaProperties,
                       tags
                         .map { tag =>
-                          INSERT_VALUE_TEMPLATE.format(tag._1, tag._2)
+                          if (policyOpt.isEmpty) {
+                            INSERT_VALUE_TEMPLATE.format(tag._1, tag._2)
+                          } else {
+                            policyOpt.get match {
+                              case HASH_POLICY =>
+                                INSERT_VALUE_TEMPLATE_WITH_POLICY.format(HASH_POLICY,
+                                                                         tag._1,
+                                                                         tag._2)
+                              case UUID_POLICY =>
+                                INSERT_VALUE_TEMPLATE_WITH_POLICY.format(UUID_POLICY,
+                                                                         tag._1,
+                                                                         tag._2)
+                              case _ => throw new IllegalArgumentException
+                            }
+                          }
                         }
                         .mkString(", ")
                     )
@@ -261,7 +300,18 @@ object SparkClientGenerator {
 
         val fields = edgeConfig.getObject("fields").unwrapped
         val isGeo  = checkGeoSupported(edgeConfig)
-        val target = edgeConfig.getString("target")
+        val target = if (edgeConfig.hasPath("target")) {
+          edgeConfig.getString("target")
+        } else {
+          edgeConfig.getString("target.field")
+        }
+
+        val targetPolicyOpt = if (edgeConfig.hasPath("target.policy")) {
+          Some(edgeConfig.getString("target.policy").toLowerCase)
+        } else {
+          None
+        }
+
         val rankingOpt = if (edgeConfig.hasPath("ranking")) {
           Some(edgeConfig.getString("ranking"))
         } else {
@@ -273,7 +323,12 @@ object SparkClientGenerator {
         val valueProperties = fields.asScala.keys.toList
 
         val sourceProperties = if (!isGeo) {
-          val source = edgeConfig.getString("source")
+          val source = if (edgeConfig.hasPath("source")) {
+            edgeConfig.getString("source")
+          } else {
+            edgeConfig.getString("source.field")
+          }
+
           if (!fields.containsKey(source) ||
               !fields.containsKey(target)) {
             (fields.asScala.keySet + source + target).toList
@@ -292,6 +347,33 @@ object SparkClientGenerator {
           }
         }
 
+        val sourcePolicyOpt = if (edgeConfig.hasPath("source.policy")) {
+          Some(edgeConfig.getString("source.policy").toLowerCase)
+        } else {
+          None
+        }
+
+        val sourceColumn = if (!isGeo) {
+          val source = edgeConfig.getString("source")
+          sourceProperties.map { property =>
+            if (property == source || property == target) {
+              col(property).cast(LongType)
+            } else {
+              col(property)
+            }
+          }
+        } else {
+          val latitude  = edgeConfig.getString("latitude")
+          val longitude = edgeConfig.getString("longitude")
+          sourceProperties.map { property =>
+            if (property == latitude || property == longitude) {
+              col(property).cast(DoubleType)
+            } else {
+              col(property)
+            }
+          }
+        }
+
         val nebulaProperties = properties.mkString(",")
 
         val data = createDataSource(spark, pathOpt, edgeConfig)
@@ -300,7 +382,7 @@ object SparkClientGenerator {
 
         if (data.isDefined && !c.dry) {
           data.get
-            .select(sourceProperties.map(col): _*)
+            .select(sourceColumn: _*)
             .map { row =>
               val sourceField = if (!isGeo) {
                 val source = edgeConfig.getString("source")
@@ -313,6 +395,13 @@ object SparkClientGenerator {
                 indexCells(lat, lng).mkString(",")
               }
 
+//              val target = targetPolicyOpt.get match {
+//                case HASH_POLICY =>
+//                  ENDPOINT_TEMPLATE.format(HASH_POLICY)
+//                case UUID_POLICY =>
+//                  ENDPOINT_TEMPLATE.format(UUID_POLICY)
+//                case _ => throw new IllegalArgumentException
+//              }
               val targetField = row.getLong(row.schema.fieldIndex(target))
 
               val values =
@@ -344,8 +433,21 @@ object SparkClientGenerator {
                             // TODO: (darion.yaphet) dataframe.explode() would be better ?
                             (for (source <- edge._1.split(","))
                               yield
-                                EDGE_VALUE_WITHOUT_RANKING_TEMPLATE
-                                  .format(source.toLong, edge._2, edge._4)).mkString(", ")
+                                if (sourcePolicyOpt.isEmpty && targetPolicyOpt.isEmpty) {
+                                  EDGE_VALUE_WITHOUT_RANKING_TEMPLATE
+                                    .format(source.toLong, edge._2, edge._4)
+                                } else {
+                                  val source = sourcePolicyOpt.get match {
+                                    case HASH_POLICY =>
+                                      ENDPOINT_TEMPLATE.format(HASH_POLICY)
+                                    case UUID_POLICY =>
+                                      ENDPOINT_TEMPLATE.format(UUID_POLICY)
+                                    case _ => throw new IllegalArgumentException
+                                  }
+
+                                  EDGE_VALUE_WITHOUT_RANKING_TEMPLATE_WITH_POLICY
+                                    .format(source.toLong, edge._2, edge._4)
+                                }).mkString(", ")
                           }
                           .toList
                           .mkString(", ")
@@ -399,7 +501,7 @@ object SparkClientGenerator {
     */
   private[this] def createDataSource(session: SparkSession,
                                      pathOpt: Option[String],
-                                     config: Config) = {
+                                     config: Config): Option[DataFrame] = {
     val `type` = config.getString("type")
 
     pathOpt match {
@@ -479,7 +581,7 @@ object SparkClientGenerator {
     * @param field    The field name.
     * @return
     */
-  private[this] def extraValue(row: Row, field: String) = {
+  private[this] def extraValue(row: Row, field: String): Any = {
     val index = row.schema.fieldIndex(field)
     row.schema.fields(index).dataType match {
       case StringType =>
@@ -589,7 +691,7 @@ object SparkClientGenerator {
     * @param edgeConfig  The config of edge.
     * @return
     */
-  private[this] def checkGeoSupported(edgeConfig: Config) = {
+  private[this] def checkGeoSupported(edgeConfig: Config): Boolean = {
     !edgeConfig.hasPath("source") &&
     edgeConfig.hasPath("latitude") &&
     edgeConfig.hasPath("longitude")
@@ -618,7 +720,7 @@ object SparkClientGenerator {
     * @param defaultValue   The default value for the path.
     * @return
     */
-  private[this] def getOrElse[T](config: Config, path: String, defaultValue: T) = {
+  private[this] def getOrElse[T](config: Config, path: String, defaultValue: T): T = {
     if (config.hasPath(path)) {
       config.getAnyRef(path).asInstanceOf[T]
     } else {
@@ -633,11 +735,10 @@ object SparkClientGenerator {
     * @param lng  The longitude of coordinate.
     * @return
     */
-  private[this] def indexCells(lat: Double, lng: Double) = {
+  private[this] def indexCells(lat: Double, lng: Double): IndexedSeq[Long] = {
     val coordinate = S2LatLng.fromDegrees(lat, lng)
     val s2CellId   = S2CellId.fromLatLng(coordinate)
     for (index <- DEFAULT_MIN_CELL_LEVEL to DEFAULT_MAX_CELL_LEVEL)
       yield s2CellId.parent(index).id()
   }
 }
-
