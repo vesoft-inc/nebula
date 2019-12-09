@@ -1,7 +1,7 @@
 # Create TAG / EDGE Syntax
 
 ```ngql
-CREATE {TAG | EDGE} <tag_name> | <edge_name>
+CREATE {TAG | EDGE} (IF NOT EXIST) <tag_name> | <edge_name>
     (<create_definition>, ...)
     [tag_edge_options]
   
@@ -20,6 +20,12 @@ CREATE {TAG | EDGE} <tag_name> | <edge_name>
 **Nebula Graph**'s schema is composed of tags and edges, either of which may have properties. `CREATE TAG` statement defines a tag with the given name. While `CREATE EDGE` statement is to define an edge type.
 
 The features of this syntax are described in the following sections:
+
+## IF NOT EXIST
+
+We added `If NOT EXIST` keyword for creating tags or edges. This keyword automatically detects if the corresponding tag or edge exists. If it does not exist, a new one is created. Otherwise, no tag or edge is created.
+
+**Note:** The tag or edge existence detection here only compares the tag or edge name (excluding properties).
 
 ## Tag Name and Edge Type Name
 
