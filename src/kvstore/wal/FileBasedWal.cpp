@@ -598,8 +598,8 @@ bool FileBasedWal::linkCurrentWAL(const char* newPath) {
     closeCurrFile();
     std::lock_guard<std::mutex> g(walFilesMutex_);
     if (walFiles_.empty()) {
-        LOG(INFO) << idStr_ << "Create link failed, there is no wal files!";
-        return false;
+        LOG(INFO) << idStr_ << "No wal files found, skip link";
+        return true;
     }
     if (!fs::FileUtils::makeDir(newPath)) {
         LOG(INFO) << idStr_ << "Link file parent dir make failed : " << newPath;
