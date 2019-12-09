@@ -110,6 +110,10 @@ public:
     static bool makeDir(const std::string& dir, uint32_t mode = 0775);
     // Check the path is exist
     static bool exist(const std::string& path);
+    // Like the command `mv', apply to file and directory
+    // Refer to `man 3 rename'
+    // return false when rename failed
+    static bool rename(const std::string& src, const std::string& dst);
 
     /**
      * List all entities in the given directory, whose type matches
