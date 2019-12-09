@@ -98,6 +98,9 @@ public:
     folly::Future<cpp2::AdminExecResp>
     future_memberChange(const cpp2::MemberChangeReq& req) override;
 
+    folly::Future<cpp2::AdminExecResp>
+    future_checkPeers(const cpp2::CheckPeersReq& req) override;
+
     folly::Future<cpp2::GetLeaderResp>
     future_getLeaderPart(const cpp2::GetLeaderReq& req) override;
 

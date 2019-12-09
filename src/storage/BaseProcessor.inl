@@ -41,13 +41,7 @@ void BaseProcessor<RESP>::handleAsync(GraphSpaceID spaceId,
     bool finished = false;
     {
         std::lock_guard<std::mutex> lg(this->lock_);
-        if (code != kvstore::ResultCode::SUCCEEDED) {
-            if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-                handleLeaderChanged(spaceId, partId);
-            } else {
-                pushResultCode(to(code), partId);
-            }
-        }
+        handleErrorCode(code, spaceId, partId);
         this->callingNum_--;
         if (this->callingNum_ == 0) {
             finished = true;
