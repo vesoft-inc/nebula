@@ -573,7 +573,11 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
                 if (ret != kvstore::ResultCode::SUCCEEDED
                       && failedParts.find(partId) == failedParts.end()) {
                     failedParts.emplace(partId);
-                    this->pushResultCode(this->to(ret), partId);
+                    if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+                        this->handleLeaderChanged(spaceId_, partId);
+                    } else {
+                        this->pushResultCode(this->to(ret), partId);
+                    }
                 }
             }
         }

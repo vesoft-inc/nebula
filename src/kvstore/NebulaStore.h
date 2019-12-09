@@ -36,6 +36,8 @@ class NebulaStore : public KVStore, public Handler {
     FRIEND_TEST(NebulaStoreTest, PartsTest);
     FRIEND_TEST(NebulaStoreTest, ThreeCopiesTest);
     FRIEND_TEST(NebulaStoreTest, TransLeaderTest);
+    FRIEND_TEST(NebulaStoreTest, CheckpointTest);
+    FRIEND_TEST(NebulaStoreTest, ThreeCopiesCheckpointTest);
 
 public:
     NebulaStore(KVOptions options,
@@ -161,6 +163,12 @@ public:
 
     ResultCode flush(GraphSpaceID spaceId) override;
 
+    ResultCode createCheckpoint(GraphSpaceID spaceId, const std::string& name) override;
+
+    ResultCode dropCheckpoint(GraphSpaceID spaceId, const std::string& name) override;
+
+    ResultCode setWriteBlocking(GraphSpaceID spaceId, bool sign) override;
+
     int32_t allLeader(std::unordered_map<GraphSpaceID,
                                          std::vector<PartitionID>>& leaderIds) override;
 
@@ -192,6 +200,8 @@ private:
                                   bool asLearner);
 
     ErrorOr<ResultCode, KVEngine*> engine(GraphSpaceID spaceId, PartitionID partId);
+
+    bool checkLeader(std::shared_ptr<Part> part) const;
 
 private:
     // The lock used to protect spaces_

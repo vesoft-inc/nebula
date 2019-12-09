@@ -41,12 +41,15 @@
 #include "graph/MatchExecutor.h"
 #include "graph/BalanceExecutor.h"
 #include "graph/DeleteVertexExecutor.h"
+#include "graph/DeleteEdgesExecutor.h"
 #include "graph/UpdateVertexExecutor.h"
 #include "graph/UpdateEdgeExecutor.h"
 #include "graph/FindPathExecutor.h"
 #include "graph/LimitExecutor.h"
 #include "graph/GroupByExecutor.h"
 #include "graph/ReturnExecutor.h"
+#include "graph/CreateSnapshotExecutor.h"
+#include "graph/DropSnapshotExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -148,6 +151,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kDeleteVertex:
             executor = std::make_unique<DeleteVertexExecutor>(sentence, ectx());
             break;
+        case Sentence::Kind::kDeleteEdges:
+            executor = std::make_unique<DeleteEdgesExecutor>(sentence, ectx());
+            break;
         case Sentence::Kind::kUpdateVertex:
             executor = std::make_unique<UpdateVertexExecutor>(sentence, ectx());
             break;
@@ -162,6 +168,12 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kReturn:
             executor = std::make_unique<ReturnExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kCreateSnapshot:
+            executor = std::make_unique<CreateSnapshotExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDropSnapshot:
+            executor = std::make_unique<DropSnapshotExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(ERROR) << "Sentence kind unknown";

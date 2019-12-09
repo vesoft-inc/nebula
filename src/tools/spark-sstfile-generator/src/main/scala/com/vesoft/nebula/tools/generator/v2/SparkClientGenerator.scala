@@ -230,7 +230,7 @@ object SparkClientGenerator {
                 } else {
                   LOG.error(s"Switch ${space} Failed")
                 }
-                client.disconnect()
+                client.close()
               } else {
                 LOG.error(s"Client connection failed. ${user}:${pswd}")
               }
@@ -377,7 +377,7 @@ object SparkClientGenerator {
                 } else {
                   LOG.error(s"Switch ${space} Failed")
                 }
-                client.disconnect()
+                client.close()
               } else {
                 LOG.error(s"Client connection failed. ${user}:${pswd}")
               }
