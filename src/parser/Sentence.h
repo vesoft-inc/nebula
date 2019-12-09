@@ -73,6 +73,19 @@ protected:
     Kind                kind_{Kind::kUnknown};
 };
 
+class CreateSentence : public Sentence {
+public:
+    explicit CreateSentence(bool ifNotExist) : ifNotExist_{ifNotExist} {}
+    virtual ~CreateSentence() {}
+
+    bool isIfNotExist() {
+        return ifNotExist_;
+    }
+
+private:
+    bool ifNotExist_{false};
+};
+
 inline std::ostream& operator<<(std::ostream &os, Sentence::Kind kind) {
     return os << static_cast<uint32_t>(kind);
 }
