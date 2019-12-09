@@ -220,7 +220,8 @@ void InsertEdgeExecutor::execute() {
 
     auto result = prepareEdges();
     if (!result.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getInsertEdgeStats());
+        LOG(ERROR) << "Insert edge failed, error " << result.status();
+        doError(result.status(), ectx()->getGraphStats()->getInsertEdgeStats());
         return;
     }
 
@@ -233,6 +234,11 @@ void InsertEdgeExecutor::execute() {
         // For insertion, we regard partial success as failure.
         auto completeness = resp.completeness();
         if (completeness != 100) {
+            const auto& failedCodes = resp.failedParts();
+            for (auto it = failedCodes.begin(); it != failedCodes.end(); it++) {
+                LOG(ERROR) << "Insert edge failed, error " << static_cast<int32_t>(it->second)
+                           << ", part " << it->first;
+            }
             doError(Status::Error("Internal Error"), ectx()->getGraphStats()->getInsertEdgeStats());
             return;
         }
