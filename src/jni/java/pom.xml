@@ -11,7 +11,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.vesoft</groupId>
-    <artifactId>native-client</artifactId>
+    <artifactId>nebula-utils</artifactId>
     <version>1.0.0-beta</version>
 
     <properties>
@@ -60,6 +60,7 @@
                     </execution>
                 </executions>
             </plugin>
+            <!--
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>native-maven-plugin</artifactId>
@@ -72,19 +73,20 @@
                             <goal>javah</goal>
                         </goals>
                         <configuration>
-                            <javahOutputDirectory>${basedir}/src/main/cpp
+                            <javahOutputDirectory>${project.root.dir}/jni
                             </javahOutputDirectory>
                             <javahOutputFileName>
-                                com_vesoft_client_NativeClient.h
+                                com_vesoft_client_NebulaCodec.h
                             </javahOutputFileName>
                             <javahClassNames>
-                                <javahClassName>com.vesoft.client.NativeClient
+                                <javahClassName>com.vesoft.client.NabulaCodec
                                 </javahClassName>
                             </javahClassNames>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -102,9 +104,9 @@
                             </outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${basedir}/_build</directory>
+                                    <directory>${project.root.dir}/src/jni/build/src</directory>
                                     <includes>
-                                        <include>libnebula_native_client.so
+                                        <include>libnebula_codec.so
                                         </include>
                                     </includes>
                                     <filtering>false</filtering>
@@ -152,10 +154,62 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.10</version>
                 <configuration>
-                    <!-- put nebula_native_client.so in java.library.path env before run test-->
-                    <argLine>-Djava.library.path=../build/src</argLine>
+                    <!-- put nebula_codec.so in java.library.path env before run test-->
+                    <argLine>-Djava.library.path=${project.root.dir}/src/jni/build/src</argLine>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin> 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.1.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <doclint>none</doclint>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
+    <distributionManagement>
+        <repository>
+            <id>release</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>

@@ -1,10 +1,10 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "com_vesoft_client_NativeClient.h"
+#include "com_vesoft_nebula_NebulaCodec.h"
 #include <jni.h>
 #include "datamanlite/RowReader.h"
 #include "datamanlite/RowWriter.h"
@@ -13,9 +13,9 @@
 using namespace nebula::dataman::codec;  // NOLINT
 
 
-JNIEXPORT jbyteArray JNICALL Java_com_vesoft_client_NativeClient_encode(JNIEnv *env,
-                                                                        jclass clazz,
-                                                                        jobjectArray values) {
+JNIEXPORT jbyteArray JNICALL Java_com_vesoft_nebula_NebulaCodec_encode(JNIEnv *env,
+                                                                       jclass clazz,
+                                                                       jobjectArray values) {
     jint len = env->GetArrayLength(values);
     RowWriter writer;
     for (int i = 0; i < len; i++) {
@@ -72,11 +72,11 @@ JNIEXPORT jbyteArray JNICALL Java_com_vesoft_client_NativeClient_encode(JNIEnv *
     return arrays;
 }
 
-JNIEXPORT jobject JNICALL Java_com_vesoft_client_NativeClient_decode(JNIEnv *env,
-                                                                     jclass clz,
-                                                                     jbyteArray encoded,
-                                                                     jobjectArray pairs) {
-    clz = env->FindClass("com/vesoft/client/NativeClient$Pair");
+JNIEXPORT jobject JNICALL Java_com_vesoft_nebula_NebulaCodec_decode(JNIEnv *env,
+                                                                    jclass clz,
+                                                                    jbyteArray encoded,
+                                                                    jobjectArray pairs) {
+    clz = env->FindClass("com/vesoft/nebula/NebulaCodec$Pair");
     jmethodID getField = env->GetMethodID(clz, "getField", "()Ljava/lang/String;");
     jmethodID getClazz = env->GetMethodID(clz, "getClazz", "()Ljava/lang/String;");
 
