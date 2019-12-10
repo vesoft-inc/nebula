@@ -492,7 +492,8 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
     // Or, Reversely traversal but no properties on edge and destination nodes required.
     // Note that the `dest` which used in reversely traversal means the `src` in foword edge.
     if ((!requireDstProps && !isReversely()) ||
-            (isReversely() && !requireDstProps && !requireEdgeProps)) {
+        (isReversely() && !requireDstProps && !requireEdgeProps &&
+         !(expCtx_->isOverAllEdge() && yields_.empty()))) {
         finishExecution(std::move(rpcResp));
         return;
     }
@@ -553,7 +554,7 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
                                 ectx()->getGraphStats()->getGoStats());
                         return;
                     }
-                    auto type = edge.type > 0 ? edge.type : -edge.type;
+                    auto type = std::abs(edge.type);
                     auto &edgeKeys = edgeKeysMapping[type];
                     edgeKeys.emplace_back();
                     edgeKeys.back().set_src(dst);
@@ -574,8 +575,7 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
             return;
         }
 
-        edgeType = edgeType > 0 ? edgeType : -edgeType;
-
+        edgeType = std::abs(edgeType);
         auto &edgeProps = edgePropsMapping[edgeType];
         edgeProps.emplace_back();
         edgeProps.back().owner = storage::cpp2::PropOwner::EDGE;
@@ -634,7 +634,6 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
     folly::collectAll(std::move(futures)).via(runner).thenValue(cb).thenError(error);
 }
 
-
 void GoExecutor::onVertexProps(RpcResponse &&rpcResp) {
     UNUSED(rpcResp);
 }
@@ -650,7 +649,7 @@ std::vector<std::string> GoExecutor::getEdgeNamesFromResp(RpcResponse &rpcResp) 
 
     for (auto &schema : *edgeSchema) {
         auto edgeType = schema.first;
-        auto status = ectx()->schemaManager()->toEdgeName(spaceId, edgeType);
+        auto status = ectx()->schemaManager()->toEdgeName(spaceId, std::abs(edgeType));
         DCHECK(status.ok());
         auto edgeName = status.value();
         names.emplace_back(std::move(edgeName));
@@ -1038,19 +1037,21 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                                 colTypes.back() = edgeHolder_->getType(
                                                     boost::get<VertexID>(value(dst)),
                                                     srcid,
-                                                    edgeType > 0 ? edgeType : -edgeType, prop);
+                                                    std::abs(edgeType), prop);
                             }
-                            if (edgeType != edgeStatus.value() && edgeType != -edgeStatus.value()) {
-                                return edgeHolder_->getDefaultProp(-edgeStatus.value(), prop);
+
+                            if (std::abs(edgeType) != edgeStatus.value()) {
+                                return edgeHolder_->getDefaultProp(edgeStatus.value(), prop);
                             }
+
                             return edgeHolder_->get(boost::get<VertexID>(value(dst)),
                                                     srcid,
-                                                    edgeType > 0 ? edgeType : -edgeType, prop);
+                                                    std::abs(edgeType), prop);
                         } else {
                             if (saveTypeFlag) {
                                 colTypes.back() = iter->getSchema()->getFieldType(prop).type;
                             }
-                            if (edgeType != edgeStatus.value() && edgeType != -edgeStatus.value()) {
+                            if (std::abs(edgeType) != edgeStatus.value()) {
                                 auto sit = edgeSchema.find(edgeStatus.value());
                                 if (sit == edgeSchema.end()) {
                                     return Status::Error("get schema failed");
@@ -1275,10 +1276,9 @@ Status GoExecutor::EdgeHolder::add(const storage::cpp2::EdgePropResponse &resp) 
             ++iter;
             continue;
         }
-        EdgeKey key;
-        std::get<0>(key) = boost::get<int64_t>(src.value());
-        std::get<1>(key) = boost::get<int64_t>(dst.value());
-        std::get<2>(key) = boost::get<int64_t>(type.value());
+        auto key = std::make_tuple(boost::get<int64_t>(src.value()),
+                                   boost::get<int64_t>(dst.value()),
+                                   boost::get<int64_t>(type.value()));
         RowWriter rWriter(eschema);
         auto fields = iter->numFields();
         for (auto i = 0; i < fields; i++) {
@@ -1288,7 +1288,11 @@ Status GoExecutor::EdgeHolder::add(const storage::cpp2::EdgePropResponse &resp) 
             }
             collector->collect(value(result), &rWriter);
         }
-        edges_.emplace(key, std::make_pair(eschema, rWriter.encode()));
+
+        VLOG(2) << "EdgeHolder added edge, type: " << type.value() << " src: " << src.value()
+                << " dst: " << dst.value();
+        edges_.emplace(std::move(key), std::make_pair(eschema, rWriter.encode()));
+
         schemas_.emplace(boost::get<int64_t>(type.value()), eschema);
         ++iter;
     }
@@ -1326,7 +1330,12 @@ OptVariantType GoExecutor::EdgeHolder::getDefaultProp(EdgeType type,
                                                       const std::string &prop) {
     auto sit = schemas_.find(type);
     if (sit == schemas_.end()) {
-        return Status::Error("Get default prop failed in reversely traversal.");
+        // This means that the reversely edge does not exist
+        if (prop == _DST || prop == _SRC || prop == _RANK) {
+            return static_cast<int64_t>(0);
+        } else {
+            return Status::Error("Get default prop failed in reversely traversal.");
+        }
     }
 
     return RowReader::getDefaultProp(sit->second.get(), prop);
