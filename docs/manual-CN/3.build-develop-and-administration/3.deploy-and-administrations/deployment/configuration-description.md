@@ -17,6 +17,10 @@
 `daemonize`                 | true                     | 作为 daemon 进程运行
 `cluster_id`                | 0                        | 集群的唯一 ID
 `meta_ingest_thread_num`    | 3                        | Meta daemon 的 ingest 线程数
+`ws_http_port`         | 11000         |  Meta HTTP 协议监听端口默认值为 11000
+`ws_h2_port`           | 11002        |  Meta HTTP/2 协议监听端口默认值为 11002
+`ws_ip`                | "127.0.0.1"   | IP/Hostname 绑定地址
+`ws_threads`           | 4             | web service 线程数
 
 ## Storage Service
 
@@ -49,6 +53,10 @@
 `raft_rpc_timeout_ms`               | 500                        | raft 客户端 RPC 超时时长，单位毫秒
 `raft_heartbeat_interval_secs`      | 5                          | 每次心跳间隔时长，单位秒
 `max_batch_size`                    | 256                        | 一个 batch 中最大 log 数
+`ws_http_port`         | 12000         |  Storage HTTP 12000
+`ws_h2_port`           | 12002         |  Storage HTTP/2 协议监听端口默认值为 12002
+`ws_ip`                | "127.0.0.1"   | IP/Hostname 绑定地址
+`ws_threads`           | 4             | web service 线程数
 
 ## Graph Service
 
@@ -60,8 +68,8 @@
 `session_reclaim_interval_secs` | 10                       | 超出指定时间则认为超时
 `num_netio_threads`             | 0                        | networking 线程数，0为物理 CPU 核数
 `num_accept_threads`            | 1                        | 接受进入连接的线程数
-`num_worker_threads`            | 0                        | 执行用户查询的线程数
-`reuse_port`                    | true                     | 开启 SO_REUSEPORT 选项
+`num_worker_threads`            | 0                        | 执行用户请求的线程数，线程数为系统 CPU 核数
+`reuse_port`                    | false                     | 开启 SO_REUSEPORT 选项
 `listen_backlog`                | 1024                     | listen socket 的 backlog
 `listen_netdev`                 | "any"                    | 监听的网络服务
 `pid_file`                      | "pids/nebula-graphd.pid" | 存储进程 ID 的文件
@@ -70,26 +78,17 @@
 `stderr_log_file`               | "graphd-stderr.log"      | stderr 目标文件名
 `daemonize`                     | true                     | 作为 daemon 进程运行
 `meta_server_addrs`             | ""                       |  meta server 地址列表，格式为 ip1:port1, ip2:port2, ip3:port3
-
-## Web Service
-
-属性名         | 默认值 | 说明
----------------------- | ------------- | -----------
-`ws_http_port`         | 11000         |  HTTP 协议监听端口
-`ws_h2_port`           | 11002         |  HTTP/2 协议监听端口
+`ws_http_port`         | 13000         |  Graph HTTP 协议监听端口默认值为 13000
+`ws_h2_port`           | 13002        |  Graph HTTP/2 协议监听端口默认值为 13002
 `ws_ip`                | "127.0.0.1"   | IP/Hostname 绑定地址
 `ws_threads`           | 4             | web service 线程数
-`ws_meta_http_port`    | 11000         |  Meta HTTP 协议监听端口
-`ws_meta_h2_port`      | 11002         |  Meta HTTP/2 协议监听端口
-`ws_storage_http_port` | 12000         | Storage HTTP 协议监听端口
-`ws_storage_h2_port`   | 12002         | Storage HTTP/2 协议监听端口
 
 ## Console
 
 属性名            | 默认值 | 说明
 ------------------------ | ------------- | -----------
-`addr`                   | "127.0.0.1"   | Nebula daemon IP 地址
-`port`                   | 0             | Nebula daemon 监听端口
+`addr`                   | "127.0.0.1"   | Graph daemon IP 地址
+`port`                   | 0             | Graph daemon 监听端口
 `u`                      | ""            | 用于身份验证的用户名
 `p`                      | ""            | 用于身份验证的密码
 `enable_history`         | false         | 是否保存历史命令

@@ -17,6 +17,10 @@ Property Name               | Default Value            | Description
 `daemonize`                 | true                     | Whether run as a daemon process.
 `cluster_id`                | 0                        | A unique id for each cluster.
 `meta_ingest_thread_num`    | 3                        | Meta daemon's ingest thread number.
+`ws_http_port`         | 11000   | Port to listen on Meta with HTTP protocol are 11000
+`ws_h2_port`           | 11002   | Port to listen on Meta with HTTP/2 protocol is 11002
+`ws_ip`                | "127.0.0.1"   | IP/Hostname to bind to.
+`ws_threads`           | 4             | Number of threads for the web service.
 
 ## Storage Service
 
@@ -49,6 +53,10 @@ Property Name                       | Default Value              | Description
 `raft_rpc_timeout_ms`               | 500                        | RPC timeout for raft client.
 `raft_heartbeat_interval_secs`      | 5                          | Seconds between each heartbeat.
 `max_batch_size`                    | 256                        | The max number of logs in a batch.
+`ws_http_port`         | 12000   | Port to listen on Storage with HTTP protocol is 12000
+`ws_h2_port`           | 12002   | Port to listen on Storage with HTTP/2 protocol is 12002
+`ws_ip`                | "127.0.0.1"   | IP/Hostname to bind to.
+`ws_threads`           | 4             | Number of threads for the web service.
 
 ## Graph Service
 
@@ -61,7 +69,7 @@ Property Name                   | Default Value            | Description
 `num_netio_threads`             | 0                        | Number of networking threads, 0 for number of physical CPU cores.
 `num_accept_threads`            | 1                        | Number of threads to accept incoming connections.
 `num_worker_threads`            | 0                        | Number of threads to execute user queries.
-`reuse_port`                    | true                     | Whether to turn on the SO_REUSEPORT option.
+`reuse_port`                    | false                     | Whether to turn on the SO_REUSEPORT option.
 `listen_backlog`                | 1024                     | Backlog of the listen socket.
 `listen_netdev`                 | "any"                    | The network device to listen on.
 `pid_file`                      | "pids/nebula-graphd.pid" | File to hold the process ID.
@@ -70,26 +78,17 @@ Property Name                   | Default Value            | Description
 `stderr_log_file`               | "graphd-stderr.log"      | Destination filename of stderr.
 `daemonize`                     | true                     | Whether run as a daemon process.
 `meta_server_addrs`             | ""                       | List of meta server addresses, the format looks like ip1:port1, ip2:port2, ip3:port3.
-
-## Web Service
-
-Property Name          | Default Value | Description
----------------------- | ------------- | -----------
-`ws_http_port`         | 11000         | Port to listen on with HTTP protocol.
-`ws_h2_port`           | 11002         | Port to listen on with HTTP/2 protocol.
+`ws_http_port`         | 13000   | Port to listen on Graph with HTTP protocol is 13000
+`ws_h2_port`           | 13002   | Port to listen on Graph with HTTP/2 protocol is 13002
 `ws_ip`                | "127.0.0.1"   | IP/Hostname to bind to.
 `ws_threads`           | 4             | Number of threads for the web service.
-`ws_meta_http_port`    | 11000         | Port to listen on Meta with HTTP protocol.
-`ws_meta_h2_port`      | 11002         | Port to listen on Meta with HTTP/2 protocol.
-`ws_storage_http_port` | 12000         | Port to listen on Storage with HTTP protocol.
-`ws_storage_h2_port`   | 12002         | Port to listen on Storage with HTTP/2 protocol.
 
 ## Console
 
 Property Name            | Default Value | Description
 ------------------------ | ------------- | -----------
-`addr`                   | "127.0.0.1"   | Nebula Graph daemon IP address
-`port`                   | 0             | Nebula Graph daemon listening port.
+`addr`                   | "127.0.0.1"   | Graph daemon IP address
+`port`                   | 0             | Graph daemon listening port.
 `u`                      | ""            | Username used to authenticate.
 `p`                      | ""            | Password used to authenticate.
 `enable_history`         | false         | Whether to force saving the command history.
