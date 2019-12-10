@@ -12,6 +12,8 @@ nebula_add_library(nebula_utils SHARED
             $<TARGET_OBJECTS:common_thrift_obj>
             $<TARGET_OBJECTS:thrift_obj>
             $<TARGET_OBJECTS:meta_client>
+            $<TARGET_OBJECTS:stats_obj>
+            $<TARGET_OBJECTS:time_obj>
             $<TARGET_OBJECTS:meta_thrift_obj>
             src/main/cpp/com_vesoft_nebula_NebulaUtils.cpp)
 

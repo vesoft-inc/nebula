@@ -2,7 +2,7 @@
 
 ## 接口示例
 
-nebula storage 提供 key-value 接口，用户可以通过 StorageClient 进行 kv 的相关操作，请注意用户仍然需要通过 console 来创建 space。目前支持的接口有 Get 和 Put，接口如下。
+**Nebula Graph** storage 提供 key-value 接口，用户可以通过 StorageClient 进行 kv 的相关操作，请注意用户仍然需要通过 console 来创建 space。目前支持的接口有 Get 和 Put，接口如下。
 
 ```cpp
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> put(
@@ -51,7 +51,7 @@ auto resp = std::move(future).get()
 
 ## 处理返回结果
 
-用户可以通过检查 rpc 返回结果查看相应操作是否成功。此外由于每个 nebula storage 中都对数据进行了分片，因此如果对应的 Partition 失败了，也会返回每个失败的 Partition 的错误码。若任意一个 Partition 失败，则整个请求失败(resp.succeeded()为 false)，但是其他成功的 Partition 仍然会成功写入或读取。
+用户可以通过检查 rpc 返回结果查看相应操作是否成功。此外由于每个 Nebula Graph storage 中都对数据进行了分片，因此如果对应的 Partition 失败了，也会返回每个失败的 Partition 的错误码。若任意一个 Partition 失败，则整个请求失败(resp.succeeded()为 false)，但是其他成功的 Partition 仍然会成功写入或读取。
 
 用户可以进行重试，直至所有请求都成功。目前 StorageClient 不支持自动重试，用户可以根据错误码决定是否进行重试。
 

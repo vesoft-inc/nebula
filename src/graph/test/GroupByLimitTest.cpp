@@ -363,6 +363,21 @@ TEST_F(GroupByLimitTest, GroupByTest) {
         auto query = folly::stringPrintf(fmt, player1.vid(), player2.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"},
+            {"sum_dst_age"},
+            {"avg_dst_age"},
+            {"max_src_age"},
+            {"min_src_age"},
+            {"bit_and"},
+            {"bit_or"},
+            {"bit_xor"},
+            {"COUNT($-.likeness)"},
+            {"COUNT_DISTINCT($-.likeness)"},
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string,   // name
                                int64_t,       // sum_dst_age
                                double ,       // avg_dst_age
@@ -397,6 +412,12 @@ TEST_F(GroupByLimitTest, GroupByTest) {
         auto query = folly::stringPrintf(fmt, player1.vid(), player2.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}, {"sum"}, {"count"}, {"cal"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, double, uint64_t, uint64_t>> expected = {
                 {"LeBron James", 3.0, 2, 2},
                 {"Chris Paul", 3.0, 2, 2},
@@ -422,25 +443,18 @@ TEST_F(GroupByLimitTest, GroupByTest) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}, {"sumAge"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, int64_t>> expected = {
                 {"Grizzlies", 34},
                 {"Raptors", 34},
                 {"Lakers", 40},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
-    }
-
-    // Empty input
-    {
-        cpp2::ExecutionResponse resp;
-        auto query = "GO FROM 123 OVER serve "
-                    "YIELD $$.team.name AS name, "
-                    "serve._dst AS id"
-                    "| GROUP BY $-.start_year "
-                    "YIELD COUNT($-.id)";
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        ASSERT_EQ(nullptr, resp.get_rows());
     }
 }
 
@@ -461,6 +475,12 @@ TEST_F(GroupByLimitTest, GroupByOrderByLimitTest) {
         auto query = folly::stringPrintf(fmt, player1.vid(), player2.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}, {"sum"}, {"count"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, double, uint64_t>> expected = {
                 {"Dwyane Wade", 1.5, 1},
                 {"Carmelo Anthony", 1.5, 1},
@@ -484,11 +504,68 @@ TEST_F(GroupByLimitTest, GroupByOrderByLimitTest) {
         auto query = folly::stringPrintf(fmt, player1.vid(), player2.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}, {"sum"}, {"count"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
         std::vector<std::tuple<std::string, double, uint64_t>> expected = {
                 {"Dwyane Wade", 1.5, 1},
                 {"Carmelo Anthony", 1.5, 1},
         };
         ASSERT_TRUE(verifyResult(resp, expected, false));
+    }
+}
+
+TEST_F(GroupByLimitTest, EmptyInput) {
+    std::string name = "NON EXIST VERTEX ID";
+    int64_t nonExistPlayerID = std::hash<std::string>()(name);
+    auto iter = players_.begin();
+    while (iter != players_.end()) {
+        if (iter->vid() == nonExistPlayerID) {
+            ++nonExistPlayerID;
+            iter = players_.begin();
+            continue;
+        }
+        ++iter;
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve YIELD "
+                    "$^.player.name as name, serve.start_year as start, $$.team.name as name"
+                    "| GROUP BY $-.name YIELD $-.name AS name";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like "
+                    "YIELD $$.player.name AS name"
+                    "| GROUP BY $-.name, abs(5) "
+                    "YIELD $-.name AS name, "
+                    "SUM(1.5) AS sum, "
+                    "COUNT(*) AS count "
+                    "| ORDER BY $-.sum | LIMIT 2";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"name"}, {"sum"}, {"count"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        ASSERT_EQ(nullptr, resp.get_rows());
     }
 }
 

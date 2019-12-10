@@ -113,6 +113,7 @@ public:
     STATUS_GENERATOR(UserNotFound);
     STATUS_GENERATOR(LeaderChanged);
     STATUS_GENERATOR(Balanced);
+    STATUS_GENERATOR(PartNotFound);
 
 #undef STATUS_GENERATOR
 
@@ -144,6 +145,7 @@ public:
         kUserNotFound           = 408,
         kLeaderChanged          = 409,
         kBalanced               = 410,
+        kPartNotFound           = 411,
     };
 
     Code code() const {

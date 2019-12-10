@@ -126,6 +126,16 @@ public:
 
     static UserID parseUserId(folly::StringPiece val);
 
+    static std::string tagDefaultKey(GraphSpaceID spaceId,
+                                     TagID tag,
+                                     const std::string& field);
+
+    static std::string edgeDefaultKey(GraphSpaceID spaceId,
+                                      EdgeType edge,
+                                      const std::string& field);
+
+    static const std::string& defaultPrefix();
+
     static std::string configKey(const cpp2::ConfigModule& module,
                                  const std::string& name);
 
@@ -138,6 +148,19 @@ public:
     static ConfigName parseConfigKey(folly::StringPiece rawData);
 
     static cpp2::ConfigItem parseConfigValue(folly::StringPiece rawData);
+
+    static std::string snapshotKey(const std::string& name);
+
+    static std::string snapshotVal(const cpp2::SnapshotStatus& status ,
+                                   const std::string& hosts);
+
+    static cpp2::SnapshotStatus parseSnapshotStatus(folly::StringPiece rawData);
+
+    static std::string parseSnapshotHosts(folly::StringPiece rawData);
+
+    static std::string parseSnapshotName(folly::StringPiece rawData);
+
+    static const std::string& snapshotPrefix();
 };
 
 }  // namespace meta

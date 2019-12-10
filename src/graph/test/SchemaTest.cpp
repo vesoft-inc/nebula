@@ -121,7 +121,7 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int, std::string, int, int>> expected{
-            {2, "space_with_default_options", 1024, 1},
+            {2, "space_with_default_options", 100, 1},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -134,6 +134,12 @@ TEST_F(SchemaTest, metaCommunication) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "USE default_space";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        std::string query = "CREATE SPACE IF NOT EXISTS default_space";
+        cpp2::ExecutionResponse resp;
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -174,6 +180,12 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG IF NOT EXISTS tag1()";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE TAG tag1";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -203,6 +215,20 @@ TEST_F(SchemaTest, metaCommunication) {
                             "age int, gender string, row_timestamp timestamp)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Create Tag with default value
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG person_with_default(name string, age int default 18)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG person_type_mismatch"
+                            "(name string, age int default \"hello\")";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -350,7 +376,8 @@ TEST_F(SchemaTest, metaCommunication) {
         std::vector<std::tuple<int32_t, std::string>> expected{
             {3, "tag1"},
             {4, "person"},
-            {5, "upper"},
+            {5, "person_with_default"},
+            {6, "upper"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -358,6 +385,12 @@ TEST_F(SchemaTest, metaCommunication) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE edge1()";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE IF NOT EXISTS edge1()";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -389,6 +422,18 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "CREATE EDGE buy(id int, time string)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE buy_with_default(id int, time string default \"\")";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE buy_type_mismatch(id int, time string default 0)";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // Test existent edge
     {
@@ -473,9 +518,10 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected{
-            {6, "edge1"},
-            {7, "buy"},
-            {8, "education"},
+            {7,  "edge1"},
+            {8,  "buy"},
+            {9,  "buy_with_default"},
+            {10, "education"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -618,8 +664,8 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected{
-            {1010, "animal"},
-            {1011, "person"},
+            {1012, "animal"},
+            {1013, "person"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -634,7 +680,7 @@ TEST_F(SchemaTest, metaCommunication) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected1{
-            {1013, "test_tag"},
+            {1015, "test_tag"},
         };
         ASSERT_TRUE(verifyResult(resp, expected1));
 
@@ -642,8 +688,8 @@ TEST_F(SchemaTest, metaCommunication) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected2{
-            {1010, "animal"},
-            {1011, "person"},
+            {1012, "animal"},
+            {1013, "person"},
         };
         ASSERT_TRUE(verifyResult(resp, expected2));
 
