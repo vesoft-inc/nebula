@@ -21,6 +21,7 @@ DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no re
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
 DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
+DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
 DECLARE_string(gflags_mode_json);
 
 
@@ -68,7 +69,9 @@ bool MetaClient::isMetadReady() {
         }
     }  // end if
     loadData();
-    loadCfg();
+    if (!FLAGS_local_config) {
+        loadCfg();
+    }
     return ready_;
 }
 
@@ -98,7 +101,9 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
                                 &MetaClient::heartBeatThreadFunc, this);
     }
     addLoadDataTask();
-    addLoadCfgTask();
+    if (!FLAGS_local_config) {
+        addLoadCfgTask();
+    }
     return ready_;
 }
 
