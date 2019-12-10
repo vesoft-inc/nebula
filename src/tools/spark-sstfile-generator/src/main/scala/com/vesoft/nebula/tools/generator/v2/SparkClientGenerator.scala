@@ -14,6 +14,7 @@ import org.apache.spark.sql.functions.udf
 import org.apache.spark.sql.functions.split
 import java.io.File
 
+import com.google.common.collect.Maps
 import com.google.common.geometry.{S2CellId, S2LatLng}
 import com.google.common.net.HostAndPort
 import com.vesoft.nebula.graph.ErrorCode
@@ -164,7 +165,11 @@ object SparkClientGenerator {
           None
         }
 
-        val fields = tagConfig.getObject("fields").unwrapped
+        val fields = if (tagConfig.hasPath("fields")) {
+          tagConfig.getObject("fields").unwrapped
+        } else {
+          Maps.newHashMap()
+        }
 
         val vertex = tagConfig.getString("vertex")
         val batch  = getOrElse(tagConfig, "batch", DEFAULT_BATCH)
@@ -180,17 +185,21 @@ object SparkClientGenerator {
 
         val vertexIndex      = sourceProperties.indexOf(vertex)
         val nebulaProperties = properties.mkString(",")
-
-        val toVertex: String => Long = _.toLong
-        val toVertexUDF              = udf(toVertex)
-        val data                     = createDataSource(spark, pathOpt, tagConfig)
+        val data             = createDataSource(spark, pathOpt, tagConfig)
 
         if (data.isDefined && !c.dry) {
           data.get
             .select(sourceProperties.map(col): _*)
-            .withColumn(vertex, toVertexUDF(col(vertex)))
             .map { row =>
-              (row.getLong(vertexIndex),
+              val vertexType = row.schema.fields(vertexIndex).dataType
+              val vertex = vertexType match {
+                case _: StringType  => row.getString(vertexIndex).toLong
+                case _: LongType    => row.getLong(vertexIndex)
+                case _: IntegerType => row.getInt(vertexIndex).toLong
+                case _              => throw new ClassCastException
+              }
+
+              (vertex,
                (for { property <- valueProperties if property.trim.length != 0 } yield
                  extraValue(row, property))
                  .mkString(","))
@@ -259,7 +268,11 @@ object SparkClientGenerator {
           None
         }
 
-        val fields = edgeConfig.getObject("fields").unwrapped
+        val fields = if (edgeConfig.hasPath("fields")) {
+          edgeConfig.getObject("fields").unwrapped
+        } else {
+          Maps.newHashMap()
+        }
         val isGeo  = checkGeoSupported(edgeConfig)
         val target = edgeConfig.getString("target")
         val rankingOpt = if (edgeConfig.hasPath("ranking")) {
@@ -303,8 +316,15 @@ object SparkClientGenerator {
             .select(sourceProperties.map(col): _*)
             .map { row =>
               val sourceField = if (!isGeo) {
-                val source = edgeConfig.getString("source")
-                row.getLong(row.schema.fieldIndex(source)).toString
+                val source      = edgeConfig.getString("source")
+                val sourceIndex = row.schema.fieldIndex(source)
+                val sourceType  = row.schema.fields(sourceIndex).dataType
+                sourceType match {
+                  case _: StringType  => row.getString(sourceIndex)
+                  case _: LongType    => row.getLong(sourceIndex).toString
+                  case _: IntegerType => row.getInt(sourceIndex).toString
+                  case _              => throw new ClassCastException
+                }
               } else {
                 val latitude  = edgeConfig.getString("latitude")
                 val longitude = edgeConfig.getString("longitude")
@@ -313,7 +333,14 @@ object SparkClientGenerator {
                 indexCells(lat, lng).mkString(",")
               }
 
-              val targetField = row.getLong(row.schema.fieldIndex(target))
+              val targetIndex = row.schema.fieldIndex(target)
+              val targetType  = row.schema.fields(targetIndex).dataType
+              val targetField = targetType match {
+                case _: StringType  => row.getString(targetIndex).toLong
+                case _: LongType    => row.getLong(targetIndex)
+                case _: IntegerType => row.getInt(targetIndex).toLong
+                case _              => throw new ClassCastException
+              }
 
               val values =
                 (for { property <- valueProperties if property.trim.length != 0 } yield
@@ -640,4 +667,3 @@ object SparkClientGenerator {
       yield s2CellId.parent(index).id()
   }
 }
-
