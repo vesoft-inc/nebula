@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Currently, **Nebula Graph** supports obtaining the basic performance metrics for the graph service via HTTP.
+Currently, **Nebula Graph** supports obtaining the basic performance metric for the graph service via HTTP.
 
 Each performance metrics consists of three parts, namely `<counter_name>.<statistic_type>.<time_range>`.
 
@@ -40,23 +40,23 @@ The complete metric concatenates the interface name with the corresponding metri
 
 Currently supported types are SUM, COUNT, AVG, RATE and P quantiles (P99, P999, ..., P999999). Among which:
 
-- metrics have suffixes `_qps` and `_error_qps` support SUM, COUNT, AVG, RATE but don't support P quantiles.
-- metrics have suffixes `_latency` support SUM, COUNT, AVG, RATE, and P quantiles.
+- Metrics have suffixes `_qps` and `_error_qps` support SUM, COUNT, AVG, RATE but don't support P quantiles.
+- Metrics have suffixes `_latency` support SUM, COUNT, AVG, RATE, and P quantiles.
 
 ### Time Range
 
-Currently supported time ranges are 60, 600, and 3600, which mean the last minute, the last ten minutes, and the last hour till now.
+Currently, the supported time ranges are 60s, 600s, and 3600s, which correspond to the last minute, the last ten minutes, and the last hour till now.
 
 ## Obtain the Corresponding Metrics via HTTP Interface
 
-According to the above introduction, you can make a complete metrics name, here are some examples:
+According to the above introduction, you can make a complete metrics name. Here are some examples:
 
 ```cpp
 graph_insertVertex_latency.avg.60   // the average latency of successfully inserting a vertex in the last minute
 graph_updateEdge_error_qps.count.3600  // total number of failures in updating an edge in the last hour
 ```
 
-Assume that a graph service is started locally, and the `ws_http_port` port number is set to 13000 when starting. It is sent through the GET interface of HTTP. The method name is get_stats, and the parameter is stats plus the corresponding metrics name. Here's an example of getting metrics via the HTTP interface:
+Assume that a graph service is started locally, and the `ws_http_port` port number is set to 13000 when starting. It is sent through the **GET** interface of HTTP. The method name is **get_stats**, and the parameter is stats plus the corresponding metrics name. Here's an example of getting metrics via the HTTP interface:
 
 ```bash
 # obtain a metrics

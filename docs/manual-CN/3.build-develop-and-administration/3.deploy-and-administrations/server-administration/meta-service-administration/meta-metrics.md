@@ -40,7 +40,7 @@ meta_heartbeat_error_qps.count.60   // 最近一分钟心跳的平均错误总�
 meta_heartbeat_latency.avg.60     // 最近一分钟心中的平均延时
 ```
 
-假设本地启动了一个 nebula meta service，同时启动时设置的 `ws_http_port` 端口号为 11000。通过 HTTP 的 GET 接口发送，方法名为 get_stats，参数为 stats 加对应的指标名字。下面是通过 HTTP 接口获取指标的示例：
+假设本地启动了一个 nebula meta service，同时启动时设置的 `ws_http_port` 端口号为 11000。通过 HTTP 的 **GET** 接口发送，方法名为 **get_stats**，参数为 stats 加对应的指标名字。下面是通过 HTTP 接口获取指标的示例：
 
 ```bash
 # 获取一个指标

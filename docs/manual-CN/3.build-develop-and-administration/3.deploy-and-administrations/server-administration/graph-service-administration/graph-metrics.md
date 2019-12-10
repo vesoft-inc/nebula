@@ -59,7 +59,7 @@ graph_insertVertex_latency.avg.60        // 最近一分钟插入点命令执行
 graph_updateEdge_error_qps.count.3600   // 最近一小时更新边命令失败的总计数量
 ```
 
-假设本地启动了一个 nebula graph service，同时启动时设置的 `ws_http_port` 端口号为 13000。通过 HTTP 的 GET 接口发送，方法名为 get_stats，参数为 stats 加对应的指标名字。下面是通过 HTTP 接口获取指标的示例：
+假设本地启动了一个 nebula graph service，同时启动时设置的 `ws_http_port` 端口号为 13000。通过 HTTP 的 **GET** 接口发送，方法名为 **get_stats**，参数为 stats 加对应的指标名字。下面是通过 HTTP 接口获取指标的示例：
 
 ```bash
 # 获取一个指标

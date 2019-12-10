@@ -4,7 +4,7 @@
 
 Currently, **Nebula Graph** supports obtaining the basic performance metrics for the storage service via HTTP.
 
-Each performance metrics consists of three parts, namely `<counter_name>.<statistic_type>.<time_range>`, details are introduced as the follows.
+Each performance metric consists of three parts, namely `<counter_name>.<statistic_type>.<time_range>`, details are introduced as the follows.
 
 ### Counter Names
 
@@ -37,12 +37,12 @@ The complete metric concatenates the interface name with the corresponding metri
 
 Currently supported types are SUM, COUNT, AVG, RATE, and P quantiles (P99, P999, ..., P999999). Among which:
 
-- metrics have suffixes `_qps` and `_error_qps` support SUM, COUNT, AVG, RATE but don't support P quantiles.
-- metrics have suffixes `_latency` support SUM, COUNT, AVG, RATE, and P quantiles.
+- Metrics have suffixes `_qps` and `_error_qps` support SUM, COUNT, AVG, RATE but don't support P quantiles.
+- Metrics have suffixes `_latency` support SUM, COUNT, AVG, RATE, and P quantiles.
 
 ### Time Range
 
-Currently supported time ranges are 60, 600 and 3600, which mean the last minute, the last ten minutes, and the last hour till now.
+Currently, the supported time ranges are 60s, 600s, and 3600s, which correspond to the last minute, the last ten minutes, and the last hour till now.
 
 ## Obtain the Corresponding Metrics via HTTP Interface
 
@@ -54,7 +54,7 @@ storage_get_bound_qps.rate.600  // obtain neighbor's QPS in the last ten minutes
 storage_update_edge_error_qps.count.3600  // errors occurred in updating an edge in the last hour
 ```
 
-Assume that a **Nebula Graph** storage service is started locally, and the `ws_http_port` port number is set to 12000 when starting. It is sent through the GET interface of HTTP. The method name is get_stats, and the parameter is stats plus the corresponding metrics name. Here's an example of getting metrics via the HTTP interface:
+Assume that a **Nebula Graph** storage service is started locally, and the `ws_http_port` port number is set to 12000 when starting. It is sent through the **GET** interface of HTTP. The method name is **get_stats**, and the parameter is stats plus the corresponding metrics name. Here's an example of getting metrics via the HTTP interface:
 
 ```bash
 # obtain a metrics
