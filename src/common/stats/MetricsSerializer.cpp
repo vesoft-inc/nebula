@@ -44,15 +44,12 @@ void PrometheusSerializer::writeValue(std::ostream& out, const std::string& valu
         case '\n':
             out << '\\' << 'n';
             break;
-
         case '\\':
             out << '\\' << c;
             break;
-
         case '"':
             out << '\\' << c;
             break;
-
         default:
             out << c;
             break;
