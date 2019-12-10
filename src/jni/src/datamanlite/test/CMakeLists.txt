@@ -15,6 +15,8 @@ target_link_libraries(
     pthread
 )
 
+add_test(NAME row_reader_test COMMAND row_reader_test)
+
 add_executable(
     row_writer_test
     RowWriterTest.cpp
@@ -32,3 +34,5 @@ target_link_libraries(
     pthread
     dl
 )
+
+add_test(NAME row_writer_test COMMAND row_writer_test)

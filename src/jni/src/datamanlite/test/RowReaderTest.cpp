@@ -82,29 +82,29 @@ TEST(RowReader, encodedData) {
 
     auto schema = std::make_shared<NebulaSchemaProvider>();
     // Col 0: bool_col1 -- BOOL
-    schema->addField("bool_col1", ValueType::BOOL);
+    schema->addField(Slice("bool_col1"), ValueType::BOOL);
     // Col 1: str_col1 -- STRING
-    schema->addField("str_col1", ValueType::STRING);
+    schema->addField(Slice("str_col1"), ValueType::STRING);
     // Col 2: int_col1 -- INT
-    schema->addField(colName1, ValueType::INT);
+    schema->addField(Slice(colName1), ValueType::INT);
     // Col 3: int_col2 -- INT
-    schema->addField(colName2, ValueType::INT);
+    schema->addField(Slice(colName2), ValueType::INT);
     // Col 4: vid_col -- VID
     schema->addField(Slice(colName3),
                      ValueType::VID);
     // Col 5: str_col2 -- STRING
-    schema->addField("str_col2", ValueType::STRING);
+    schema->addField(Slice("str_col2"), ValueType::STRING);
     // Col 6: bool_col2 -- BOOL
-    schema->addField(std::string("bool_col2"),
+    schema->addField(Slice("bool_col2"),
                      ValueType::BOOL);
     // Col 7: float_col -- FLOAT
-    schema->addField(std::string("float_col"),
+    schema->addField(Slice("float_col"),
                      ValueType::FLOAT);
     // Col 8: double_col -- DOUBLE
-    schema->addField(std::string("double_col"),
+    schema->addField(Slice("double_col"),
                      ValueType::DOUBLE);
     // Col 9: timestamp_col -- TIMESTAMP
-    schema->addField("timestamp_col", ValueType::TIMESTAMP);
+    schema->addField(Slice("timestamp_col"), ValueType::TIMESTAMP);
 
     std::string encoded;
     // Single byte header (Schema version is 0, no offset)
@@ -154,7 +154,7 @@ TEST(RowReader, encodedData) {
     encoded.append(reinterpret_cast<char*>(buf), len);
 
     // Now let's read it
-    auto reader = RowReader::getRowReader(encoded, schema);
+    auto reader = RowReader::getRowReader(Slice(encoded), schema);
 
     // Header info
     EXPECT_EQ(0, reader->schemaVer());
@@ -165,7 +165,6 @@ TEST(RowReader, encodedData) {
     bool bVal;
     int32_t i32Val;
     int64_t i64Val;
-    uint64_t u64Val;
     Slice sVal;
     float fVal;
     double dVal;
@@ -174,27 +173,15 @@ TEST(RowReader, encodedData) {
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader->getBool(0, bVal));
     EXPECT_TRUE(bVal);
-    bVal = false;
-    EXPECT_EQ(ResultType::SUCCEEDED,
-              reader->getBool("bool_col1", bVal));
-    EXPECT_TRUE(bVal);
 
     // Col 1
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader->getString(1, sVal));
     EXPECT_EQ(str1, sVal.toString());
-    sVal.clear();
-    EXPECT_EQ(ResultType::SUCCEEDED,
-              reader->getString("str_col1", sVal));
-    EXPECT_EQ(str1, sVal.toString());
 
     // Col 2
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader->getInt(2, i32Val));
-    EXPECT_EQ(100, i32Val);
-    i32Val = 0;
-    EXPECT_EQ(ResultType::SUCCEEDED,
-              reader->getInt("int_col1", i32Val));
     EXPECT_EQ(100, i32Val);
 
     // Col 3
@@ -202,57 +189,34 @@ TEST(RowReader, encodedData) {
               reader->getInt(3, i32Val));
     EXPECT_EQ(0xFFFFFFFF, i32Val);
     i32Val = 0;
+
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader->getInt(3, i64Val));
     EXPECT_EQ(0xFFFFFFFFFFFFFFFFL, i64Val);
-    i64Val = 0;
-    EXPECT_EQ(ResultType::SUCCEEDED,
-              reader->getInt("int_col2", u64Val));
-    EXPECT_EQ(0xFFFFFFFFFFFFFFFFL, u64Val);
 
     // Col 4
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader->getVid(4, i64Val));
-    EXPECT_EQ(0x8877665544332211L, i64Val);
-    i64Val = 0;
-    EXPECT_EQ(ResultType::SUCCEEDED,
-              reader->getVid("vid_col", i64Val));
     EXPECT_EQ(0x8877665544332211L, i64Val);
 
     // Col 5
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader->getString(5, sVal));
     EXPECT_EQ(str2, sVal.toString());
-    sVal.clear();
-    EXPECT_EQ(ResultType::SUCCEEDED,
-              reader->getString("str_col2", sVal));
-    EXPECT_EQ(str2, sVal.toString());
 
     // Col 6
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader->getBool(6, bVal));
-    EXPECT_FALSE(bVal);
-    bVal = true;
-    EXPECT_EQ(ResultType::SUCCEEDED,
-              reader->getBool("bool_col2", bVal));
     EXPECT_FALSE(bVal);
 
     // Col 7
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader->getFloat(7, fVal));
     EXPECT_FLOAT_EQ(pi, fVal);
-    fVal = 0.0;
-    EXPECT_EQ(ResultType::SUCCEEDED,
-              reader->getFloat("float_col", fVal));
-    EXPECT_FLOAT_EQ(pi, fVal);
 
     // Col 8
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader->getDouble(8, dVal));
-    EXPECT_DOUBLE_EQ(e, dVal);
-    dVal = 0.0;
-    EXPECT_EQ(ResultType::SUCCEEDED,
-              reader->getDouble("double_col", dVal));
     EXPECT_DOUBLE_EQ(e, dVal);
 
     // Col 9
@@ -260,19 +224,12 @@ TEST(RowReader, encodedData) {
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader->getInt(9, i64Val));
     EXPECT_EQ(1551331827, i64Val);
-    i64Val = 0;
-    EXPECT_EQ(ResultType::SUCCEEDED,
-              reader->getInt("timestamp_col", i64Val));
-    EXPECT_EQ(1551331827, i64Val);
 
     // Col 10 -- non-existing column
     EXPECT_EQ(ResultType::E_INDEX_OUT_OF_RANGE,
               reader->getBool(10, bVal));
-    EXPECT_EQ(ResultType::E_NAME_NOT_FOUND,
-              reader->getBool("bool_col3", bVal));
 }
 
-/*
 TEST(RowReader, iterator) {
     std::string encoded;
     encoded.append(1, 0);
@@ -283,12 +240,12 @@ TEST(RowReader, iterator) {
 
     auto schema = std::make_shared<NebulaSchemaProvider>();
     for (int i = 0; i < 64; i++) {
-        schema->addField(folly::stringPrintf("Col%02d", i),
-                          ValueType::INT);
+        schema->addField(Slice(folly::stringPrintf("Col%02d", i)),
+                         ValueType::INT);
         encoded.append(1, i + 1);
     }
 
-    auto reader = RowReader::getRowReader(encoded, schema);
+    auto reader = RowReader::getRowReader(Slice(encoded), schema);
     auto it = reader->begin();
     int32_t v1;
     int32_t v2;
@@ -302,7 +259,6 @@ TEST(RowReader, iterator) {
     EXPECT_FALSE((bool)it);
     EXPECT_EQ(it, reader->end());
 }
-*/
 
 }  // namespace codec
 }  // namespace dataman

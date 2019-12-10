@@ -20,7 +20,7 @@ project("Nebula Graph codec" C CXX)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(ENABLE_TESTING "Whether to compile unit test ON or OFF" ON)
+option(ENABLE_TESTING "Whether to compile unit test ON or OFF" OFF)
 
 message(STATUS "CMAKE_CURRENT_BINARY_DIR:" ${CMAKE_CURRENT_BINARY_DIR})
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR:" ${CMAKE_CURRENT_SOURCE_DIR})

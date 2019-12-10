@@ -10,4 +10,6 @@ add_library(nebula_codec_obj
             RowWriter.cpp
            )
 
-# add_subdirectory(test)
+if (ENABLE_TESTING)
+add_subdirectory(test)
+endif()
