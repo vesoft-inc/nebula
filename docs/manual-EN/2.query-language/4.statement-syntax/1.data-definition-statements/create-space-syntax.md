@@ -1,18 +1,15 @@
 # Create Space Syntax
 
 ```ngql
-CREATE SPACE (IF NOT EXIST) space_name
-    (space_option,...)
-
-space_option:
-    option_name = value
+CREATE SPACE [IF NOT EXIST] <space_name>
+    [(partition_num = $your_num, replica_factor = $your_num)]
 ```
 
 This statement creates a new space with the given name. SPACE is a region that provides physically isolated graphs in **Nebula Graph**. An error occurs if the database exists.
 
 ## IF NOT EXIST
 
-We added `If NOT EXIST` keyword for creating spaces. This keyword automatically detects if the corresponding space exists. If it does not exist, a new one is created. Otherwise, no space is created.
+We added the `If NOT EXIST` keywords for creating spaces. This keyword automatically detects if the corresponding space exists. If it does not exist, a new one is created. Otherwise, no space is created.
 
 **Note:** The space existence detection here only compares the space name (excluding properties).
 

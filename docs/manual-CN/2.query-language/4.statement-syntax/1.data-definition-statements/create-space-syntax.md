@@ -1,11 +1,8 @@
 # CREATE SPACE 语法
 
 ```ngql
-CREATE SPACE (IF NOT EXIST) space_name
-    (space_option,...)
-
-space_option:
-    option_name = value
+CREATE SPACE [IF NOT EXIST] <space_name>
+    [(partition_num = $your_num, replica_factor = $your_num)]
 ```
 
 以上语句用于创建一个新的图空间。不同的图空间是物理隔离的。
