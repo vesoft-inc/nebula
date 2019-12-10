@@ -10,20 +10,20 @@ Each performance metrics consists of three parts, namely `<counter_name>.<statis
 
 Each counter name is composed of the interface name and the counter name. Currently, the supported interfaces are:
 
-```text
-graph_storageClient: Requests sent via storageClient, when sending requests to multiple storages concurrently, counted as one
-graph_metaClient: Requests sent via metaClient
-graph_graph_all: Requests sent by the client to the graph, when a request contains multiple queries, counted as one
-graph_insertVertex: Insert a vertex
-graph_insertEdge: Insert an edge
-graph_deleteVertex: Delete a vertex
-graph_deleteEdge: Delete an edge // Code not ready
-graph_updateVertex: Update properties of a vertex
-graph_updateEdge: Update properties of an edge
-graph_go: Execute the go command
-graph_findPath: Find the shortest path or the full path
-graph_fetchVertex: Fetch the vertex's properties. Only count the commands executed rather than the total number of fetched vertices.
-graph_fetchEdge: Fetch the edge's properties. Only count the commands executed rather than the total number of fetched edges.
+```cpp
+graph_storageClient // Requests sent via storageClient, when sending requests to multiple storages concurrently, counted as one
+graph_metaClient // Requests sent via metaClient
+graph_graph_all // Requests sent by the client to the graph, when a request contains multiple queries, counted as one
+graph_insertVertex // Insert a vertex
+graph_insertEdge // Insert an edge
+graph_deleteVertex // Delete a vertex
+graph_deleteEdge // Delete an edge // Not supported yet
+graph_updateVertex // Update properties of a vertex
+graph_updateEdge // Update properties of an edge
+graph_go // Execute the go command
+graph_findPath // Find the shortest path or the full path
+graph_fetchVertex // Fetch the vertex's properties. Only count the commands executed rather than the total number of fetched vertices.
+graph_fetchEdge // Fetch the edge's properties. Only count the commands executed rather than the total number of fetched edges.
 ```
 
 Each interface has three metrics, namely latency (in the units of us), QPS and QPS with errors. The suffixes are as follows:
@@ -40,8 +40,8 @@ The complete metric concatenates the interface name with the corresponding metri
 
 Currently supported types are SUM, COUNT, AVG, RATE and P quantiles (P99, P999, ..., P999999). Among which:
 
-- metrics have suffixes `_latency` and `_error_qps` support SUM, COUNT, AVG, RATE but don't support P quantiles.
-- metrics have suffixes `_qps` support SUM, COUNT, AVG, RATE, and P quantiles.
+- metrics have suffixes `_qps` and `_error_qps` support SUM, COUNT, AVG, RATE but don't support P quantiles.
+- metrics have suffixes `_latency` support SUM, COUNT, AVG, RATE, and P quantiles.
 
 ### Time Range
 
@@ -52,8 +52,8 @@ Currently supported time ranges are 60, 600, and 3600, which mean the last minut
 According to the above introduction, you can make a complete metrics name, here are some examples:
 
 ```cpp
-graph_insertVertex_latency.avg.60   // the average latency of inserting a vertex in the last minute
-graph_updateEdge_error_qps.count.3600  // errors occurred in updating an edge in the last hour
+graph_insertVertex_latency.avg.60   // the average latency of successfully inserting a vertex in the last minute
+graph_updateEdge_error_qps.count.3600  // total number of failures in updating an edge in the last hour
 ```
 
 Assume that a graph service is started locally, and the `ws_http_port` port number is set to 13000 when starting. It is sent through the GET interface of HTTP. The method name is get_stats, and the parameter is stats plus the corresponding metrics name. Here's an example of getting metrics via the HTTP interface:

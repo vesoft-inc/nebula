@@ -13,7 +13,7 @@
 
 ### 指标名
 
-每个指标名都由接口名加指标名构成，目前支持获取如下接口：
+每个指标名都由服务名加模块名构成，目前支持获取如下接口：
 
 ```text
 获取点的属性 storage_vertex_props
@@ -28,7 +28,7 @@
 仅限内部使用 storage_get_bound
 ```
 
-每一个接口都有三个性能指标，分别为延迟(单位为 us)、QPS、发生错误的 QPS，后缀名如下：
+每一个接口都有三个性能指标，分别为延迟(单位为 us)、成功的 QPS、发生错误的 QPS，后缀名如下：
 
 ```text
 _latency
@@ -42,8 +42,8 @@ _error_qps
 
 目前支持的统计类型有 SUM、COUNT、AVG、RATE 和 P 分位数 (P99，P999， ... ，P999999)。其中：
 
-- `_latency` 和 `_error_qps` 这两类后缀的指标，支持 SUM、COUNT、AVG、RATE，但不支持 P 分位；
-- `_qps` 后缀的指标，支持 SUM、COUNT、AVG、RATE，也支持 P 分位。
+- `_qps`、`_error_qps` 后缀的指标，支持 SUM、COUNT、AVG、RATE，但不支持 P 分位；
+- `_latency` 后缀的指标，支持 SUM、COUNT、AVG、RATE，也支持 P 分位。
 
 ### 时间范围
 

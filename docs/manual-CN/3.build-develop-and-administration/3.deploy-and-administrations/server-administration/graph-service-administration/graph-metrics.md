@@ -11,25 +11,25 @@
 
 ### 指标名
 
-每个指标名都由接口名加指标名构成，目前支持获取如下接口：
+每个指标名都由服务名加模块名构成，目前支持获取如下接口：
 
-```text
-graph_storageClient: 通过 storageClient 发送的请求，需要同时向多个 storage 并发多条消息时，按一次统计
-graph_metaClient: 通过 metaClient 发送的请求
-graph_graph_all: 客户端向 graph 发送的请求，当一条请求包含多条语句时，按一条计算
-graph_insertVertex: 插入点
-graph_insertEdge: 插入边
-graph_deleteVertex: 删除点
-graph_deleteEdge: 删除边  //代码还没加
-graph_updateVertex: 更新点的属性
-graph_updateEdge: 更新边的属性
-graph_go: 执行 go 命令
-graph_findPath: 查找最小路径或者全路径
-graph_fetchVertex: 获取点属性，不统计获取点的总数，只统计执行命令的数量
-graph_fetchEdge: 获取边属性，不统计边的总数，只统计执行命令的数量
+```cpp
+通过 storageClient 发送的请求，需要同时向多个 storage 并发多条消息时，按一次统计  graph_storageClient
+通过 metaClient 发送的请求
+graph_graph_all 客户端向 graph 发送的请求，当一条请求包含多条语句时，按一条计算 graph_metaClient
+插入点 graph_insertVertex
+插入边 graph_insertEdge
+删除点 graph_deleteVertex
+删除边 graph_deleteEdge //未支持
+更新点的属性 graph_updateVertex
+更新边的属性 graph_updateEdge
+执行 go 命令 graph_go
+查找最小路径或者全路径 graph_findPath
+获取点属性，不统计获取点的总数，只统计执行命令的数量 graph_fetchVertex
+获取边属性，不统计边的总数，只统计执行命令的数量 graph_fetchEdge
 ```
 
-每一个接口都有三个性能指标，分别为延迟(单位为 us)、QPS、发生错误的 QPS，后缀名如下：
+每一个接口都有三个性能指标，分别为延迟(单位为 us)、成功的 QPS、发生错误的 QPS，后缀名如下：
 
 ```text
 _latency
@@ -43,8 +43,8 @@ _error_qps
 
 目前支持的统计类型有 SUM、COUNT、AVG、RATE 和 P 分位数 (P99，P999， ... ，P999999)。其中：
 
-- `_latency` 和 `_error_qps` 这两类后缀的指标，支持 SUM、COUNT、AVG、RATE，但不支持 P 分位；
-- `_qps` 后缀的指标，支持 SUM、COUNT、AVG、RATE，也支持 P 分位。
+- `_qps`、`_error_qps` 后缀的指标，支持 SUM、COUNT、AVG、RATE，但不支持 P 分位；
+- `_latency` 后缀的指标，支持 SUM、COUNT、AVG、RATE，也支持 P 分位。
 
 ### 时间范围
 
@@ -55,8 +55,8 @@ _error_qps
 根据上面的介绍，就可以写出一个完整的指标名称了，下面是一些示例：
 
 ```cpp
-graph_insertVertex_latency.avg.60        // 最近一分钟插入一个点的平均延时
-graph_updateEdge_error_qps.count.3600   // 最近一小时更新一条边发生错误的总计数量
+graph_insertVertex_latency.avg.60        // 最近一分钟插入点命令执行成功的平均延时
+graph_updateEdge_error_qps.count.3600   // 最近一小时更新边命令失败的总计数量
 ```
 
 假设本地启动了一个 nebula graph service，同时启动时设置的 `ws_http_port` 端口号为 13000。通过 HTTP 的 GET 接口发送，方法名为 get_stats，参数为 stats 加对应的指标名字。下面是通过 HTTP 接口获取指标的示例：

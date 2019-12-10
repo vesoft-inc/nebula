@@ -37,8 +37,8 @@ The complete metric concatenates the interface name with the corresponding metri
 
 Currently supported types are SUM, COUNT, AVG, RATE, and P quantiles (P99, P999, ..., P999999). Among which:
 
-- metrics with suffixes `_latency` and `_error_qps` support SUM, COUNT, AVG, RATE but don't support P quantiles.
-- metrics with suffixes `_qps` support SUM, COUNT, AVG, RATE, and P quantiles.
+- metrics have suffixes `_qps` and `_error_qps` support SUM, COUNT, AVG, RATE but don't support P quantiles.
+- metrics have suffixes `_latency` support SUM, COUNT, AVG, RATE, and P quantiles.
 
 ### Time Range
 

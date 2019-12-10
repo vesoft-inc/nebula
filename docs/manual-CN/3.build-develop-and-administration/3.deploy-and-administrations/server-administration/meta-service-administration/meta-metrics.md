@@ -11,7 +11,7 @@
 
 ### 指标名
 
-每个指标名都由接口名加指标名构成，meta 只统计心跳信息，目前支持获取如下接口：
+每个指标名都由服务名加模块名构成，meta 只统计心跳信息，目前支持获取如下接口：
 
 ```text
 meta_heartbeat_qps
@@ -23,8 +23,8 @@ meta_heartbeat_latency
 
 目前支持的统计类型有 SUM、COUNT、AVG、RATE 和 P 分位数 (P99，P999， ... ，P999999)。其中：
 
-- `_latency` 和 `_error_qps` 这两类后缀的指标，支持 SUM、COUNT、AVG、RATE，但不支持 P 分位；
-- `_qps` 后缀的指标，支持 SUM、COUNT、AVG、RATE，也支持 P 分位。
+- `_qps`、`_error_qps` 后缀的指标，支持 SUM、COUNT、AVG、RATE，但不支持 P 分位；
+- `_latency` 后缀的指标，支持 SUM、COUNT、AVG、RATE，也支持 P 分位。
 
 ### 时间范围
 
@@ -44,16 +44,16 @@ meta_heartbeat_latency.avg.60     // 最近一分钟心中的平均延时
 
 ```bash
 # 获取一个指标
-curl -G "http://127.0.0.1:12000/get_stats?stats=meta_heartbeat_qps.avg.60"
+curl -G "http://127.0.0.1:11000/get_stats?stats=meta_heartbeat_qps.avg.60"
 # meta_heartbeat_qps.avg.60=580
 
 # 同时获取多个指标
-curl -G "http://127.0.0.1:12000/get_stats?stats=meta_heartbeat_qps.avg.60,meta_heartbeat_error_qps.avg.60"
+curl -G "http://127.0.0.1:11000/get_stats?stats=meta_heartbeat_qps.avg.60,meta_heartbeat_error_qps.avg.60"
 # meta_heartbeat_qps.avg.60=537
 # meta_heartbeat_error_qps.avg.60=579
 
 # 同时获取多个指标并以 json 格式返回
-curl -G "http://127.0.0.1:12000/get_stats?stats=meta_heartbeat_qps.avg.60,meta_heartbeat_error_qps.avg.60&returnjson"
+curl -G "http://127.0.0.1:11000/get_stats?stats=meta_heartbeat_qps.avg.60,meta_heartbeat_error_qps.avg.60&returnjson"
 # [{"value":533,"name":"meta_heartbeat_qps.avg.60"},{"value":574,"name":"meta_heartbeat_error_qps.avg.60"}]
 
 # 获取所有指标
