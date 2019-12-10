@@ -90,6 +90,7 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
 
 * Deploy and Administrations
   * Deployment
+    * [Configuration Description](3.build-develop-and-administration/3.deploy-and-administrations/deployment/configuration-description.md)
     * [Deploy Cluster On Docker](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster-on-docker.md)
     * [Deploy Cluster](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
     * [Connect Prometheus](3.build-develop-and-administration/3.deploy-and-administrations/deployment/connect-prometheus.md)
