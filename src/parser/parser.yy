@@ -277,6 +277,12 @@ unreserved_keyword
      | KW_LEADER             { $$ = new std::string("leader"); }
      | KW_UUID               { $$ = new std::string("uuid"); }
      | KW_VARIABLES          { $$ = new std::string("variables"); }
+     | KW_JOB                { $$ = new std::string("job"); }
+     | KW_JOBS               { $$ = new std::string("jobs"); }
+     | KW_BACKUP             { $$ = new std::string("backup"); }
+     | KW_RECOVER            { $$ = new std::string("recover"); }
+     | KW_FLUSH              { $$ = new std::string("flush"); }
+     | KW_COMPACT            { $$ = new std::string("compact"); }
      ;
 
 agg_function

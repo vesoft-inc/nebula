@@ -117,7 +117,6 @@ TEST_F(JobFooTest, ShowJobs) {
         EXPECT_TRUE(r1[i].find(std::to_string(base+i)) != std::string::npos);
     }
 
-    // show a valid job (base + n / 2)
     auto job_valid = base + job_num / 2;
     LOG(INFO) << "job_valid=" << job_valid;
     auto r2 = jobMgr->showJob(job_valid);
