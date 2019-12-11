@@ -108,6 +108,8 @@ public:
 
     virtual ResultCode flush() = 0;
 
+    virtual ResultCode createCheckpoint(const std::string& name) = 0;
+
 protected:
     GraphSpaceID spaceId_;
 };

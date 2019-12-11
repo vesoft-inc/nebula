@@ -12,6 +12,8 @@
 
 namespace nebula {
 
+class EdgeKeys;
+
 class PropertyList final {
 public:
     void addProp(std::string *propname) {
@@ -514,48 +516,22 @@ private:
 };
 
 
-class EdgeList final {
+class DeleteEdgesSentence final : public Sentence {
 public:
-    void addEdge(Expression *srcid, Expression *dstid) {
-        edges_.emplace_back(srcid, dstid);
+    explicit DeleteEdgesSentence(std::string *edge,
+                                 EdgeKeys    *keys);
+
+    const std::string* edge() const {
+        return edge_.get();
     }
 
-    const auto& edges() const {
-        return edges_;
-    }
-
-    std::string toString() const;
-
-private:
-    using EdgeItem = std::pair<std::unique_ptr<Expression>, std::unique_ptr<Expression>>;
-    std::vector<EdgeItem>                       edges_;
-};
-
-
-class DeleteEdgeSentence final : public Sentence {
-public:
-    explicit DeleteEdgeSentence(EdgeList *edgeList) {
-        edgeList_.reset(edgeList);
-        kind_ = Kind::kDeleteEdge;
-    }
-
-    const EdgeList* edgeList() const {
-        return edgeList_.get();
-    }
-
-    void setWhereClause(WhereClause *clause) {
-        whereClause_.reset(clause);
-    }
-
-    const WhereClause* whereClause() const {
-        return whereClause_.get();
-    }
+    EdgeKeys* keys() const;
 
     std::string toString() const override;
 
 private:
-    std::unique_ptr<EdgeList>                   edgeList_;
-    std::unique_ptr<WhereClause>                whereClause_;
+    std::unique_ptr<std::string>                edge_;
+    std::unique_ptr<EdgeKeys>                   edgeKeys_;
 };
 
 

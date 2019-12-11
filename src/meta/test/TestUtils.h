@@ -87,6 +87,23 @@ public:
         return response(7);
     }
 
+
+    folly::Future<Status> createSnapshot() override {
+        return response(8);
+    }
+
+    folly::Future<Status> dropSnapshot() override {
+        return response(9);
+    }
+
+    folly::Future<Status> blockingWrites() override {
+        return response(10);
+    }
+
+    folly::Future<Status> checkPeers() override {
+        return response(8);
+    }
+
     void reset(std::vector<Status> sts) {
         statusArray_ = std::move(sts);
     }
@@ -134,7 +151,7 @@ public:
             auto retLeader = store->partLeader(0, 0);
             if (ok(retLeader)) {
                 auto leader = value(std::move(retLeader));
-                LOG(INFO) << leader;
+                LOG(INFO) << "Leader: " << leader;
                 if (leader == localhost) {
                     break;
                 }
@@ -353,6 +370,110 @@ public:
         } else {
             return Status::Error("Create user fail");
         }
+    }
+
+    static bool verifySchema(nebula::cpp2::Schema &result,
+                             nebula::cpp2::Schema &expected) {
+        if (result.get_columns().size() != expected.get_columns().size()) {
+            return false;
+        }
+
+        std::vector<nebula::cpp2::ColumnDef> resultColumns = result.get_columns();
+        std::vector<nebula::cpp2::ColumnDef> expectedColumns = expected.get_columns();
+        std::sort(resultColumns.begin(), resultColumns.end(),
+                  [](nebula::cpp2::ColumnDef col0, nebula::cpp2::ColumnDef col1) {
+                      return col0.get_name() < col1.get_name();
+                  });
+        std::sort(expectedColumns.begin(), expectedColumns.end(),
+                  [](nebula::cpp2::ColumnDef col0, nebula::cpp2::ColumnDef col1) {
+                      return col0.get_name() < col1.get_name();
+                  });
+
+        int32_t size = resultColumns.size();
+        for (auto i = 0; i < size; i++) {
+            if (resultColumns[i].get_name() != expectedColumns[i].get_name() ||
+                resultColumns[i].get_type() != expectedColumns[i].get_type()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static bool verifyMap(std::map<std::string, std::vector<std::string>> &result,
+                          std::map<std::string, std::vector<std::string>> &expected) {
+        if (result.size() != expected.size()) {
+            return false;
+        }
+
+        for (auto resultIter = result.begin(), expectedIter = expected.begin();
+             resultIter != result.end(), expectedIter != expected.end();
+             resultIter++, expectedIter++) {
+            if (resultIter->first != expectedIter->first &&
+                !verifyResult(resultIter->second, expectedIter->second)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    static bool verifyMap(std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> &result,
+                          std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> &expected) {
+        if (result.size() != expected.size()) {
+            return false;
+        }
+
+        for (auto resultIter = result.begin(), expectedIter = expected.begin();
+             resultIter != result.end(), expectedIter != expected.end();
+             resultIter++, expectedIter++) {
+            if (resultIter->first != expectedIter->first &&
+                !verifyResult(resultIter->second, expectedIter->second)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static bool verifyResult(std::vector<std::string> &result,
+                             std::vector<std::string> &expected) {
+        if (result.size() != expected.size()) {
+            return false;
+        }
+
+        std::sort(result.begin(), result.end());
+        std::sort(expected.begin(), expected.end());
+        int32_t size = result.size();
+        for (int32_t i = 0; i < size; i++) {
+            if (result[i] != expected[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    static bool verifyResult(std::vector<nebula::cpp2::ColumnDef> &result,
+                             std::vector<nebula::cpp2::ColumnDef> &expected) {
+        if (result.size() != expected.size()) {
+            return false;
+        }
+
+        std::sort(result.begin(), result.end(),
+                  [](nebula::cpp2::ColumnDef& x, nebula::cpp2::ColumnDef& y) {
+                      return x.get_name().compare(y.get_name());
+                  });
+        std::sort(expected.begin(), expected.end(),
+                  [](nebula::cpp2::ColumnDef& x, nebula::cpp2::ColumnDef& y) {
+                      return x.get_name().compare(y.get_name());
+                  });
+        int32_t size = result.size();
+        for (int32_t i = 0; i < size; i++) {
+            if (result[i].get_name() != expected[i].get_name() ||
+                result[i].get_type() != expected[i].get_type()) {
+                return false;
+            }
+        }
+        return true;
     }
 };
 

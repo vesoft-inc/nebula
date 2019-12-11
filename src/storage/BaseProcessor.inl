@@ -23,6 +23,10 @@ cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
         return cpp2::ErrorCode::E_PART_NOT_FOUND;
     case kvstore::ResultCode::ERR_CONSENSUS_ERROR:
         return cpp2::ErrorCode::E_CONSENSUS_ERROR;
+    case kvstore::ResultCode::ERR_CHECKPOINT_ERROR:
+        return cpp2::ErrorCode::E_FAILED_TO_CHECKPOINT;
+    case kvstore::ResultCode::ERR_WRITE_BLOCK_ERROR:
+        return cpp2::ErrorCode::E_CHECKPOINT_BLOCKED;
     default:
         return cpp2::ErrorCode::E_UNKNOWN;
     }
@@ -37,13 +41,7 @@ void BaseProcessor<RESP>::handleAsync(GraphSpaceID spaceId,
     bool finished = false;
     {
         std::lock_guard<std::mutex> lg(this->lock_);
-        if (code != kvstore::ResultCode::SUCCEEDED) {
-            if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-                handleLeaderChanged(spaceId, partId);
-            } else {
-                pushResultCode(to(code), partId);
-            }
-        }
+        handleErrorCode(code, spaceId, partId);
         this->callingNum_--;
         if (this->callingNum_ == 0) {
             finished = true;

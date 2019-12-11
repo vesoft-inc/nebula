@@ -1,8 +1,8 @@
 # Welcome to the Official Nebula Graph Documentation
 
-**Nebula Graph** is a distributed, scalable, lightning-fast graph database.
+**Nebula Graph** is a distributed, scalable, and lightning-fast graph database.
 
-It is the optimal solution in the world capable to host graphs with dozens of billions of vertices (nodes) and trillions of edges, while still provides millisecond latency.
+It is the optimal solution in the world capable of hosting graphs with dozens of billions of vertices (nodes) and trillions of edges with millisecond latency.
 
 ## Prefix
 
@@ -108,6 +108,7 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
         * [Spark Writer](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/spark-writer.md)
       * [Storage Balance](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-balance.md)
       * [Storage Metrics](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-metrics.md)
+      * [Cluster Snapshot](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/cluster-snapshot.md)
 
 ## Contributions (for Contributors)
 

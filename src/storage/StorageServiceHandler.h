@@ -98,6 +98,9 @@ public:
     folly::Future<cpp2::AdminExecResp>
     future_memberChange(const cpp2::MemberChangeReq& req) override;
 
+    folly::Future<cpp2::AdminExecResp>
+    future_checkPeers(const cpp2::CheckPeersReq& req) override;
+
     folly::Future<cpp2::GetLeaderResp>
     future_getLeaderPart(const cpp2::GetLeaderReq& req) override;
 
@@ -109,6 +112,16 @@ public:
 
     folly::Future<cpp2::GetUUIDResp>
     future_getUUID(const cpp2::GetUUIDReq& req) override;
+
+    folly::Future<cpp2::AdminExecResp>
+    future_createCheckpoint(const cpp2::CreateCPRequest& req) override;
+
+    folly::Future<cpp2::AdminExecResp>
+    future_dropCheckpoint(const cpp2::DropCPRequest& req) override;
+
+    folly::Future<cpp2::AdminExecResp>
+    future_blockingWrites(const cpp2::BlockingSignRequest& req) override;
+
 
 private:
     kvstore::KVStore* kvstore_ = nullptr;

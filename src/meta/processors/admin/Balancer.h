@@ -195,7 +195,7 @@ private:
     std::unique_ptr<folly::Executor> executor_;
     std::atomic_bool inLeaderBalance_{false};
     std::unique_ptr<HostLeaderMap> hostLeaderMap_;
-    std::mutex lock_;
+    mutable std::mutex lock_;
 };
 
 }  // namespace meta
