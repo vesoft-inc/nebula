@@ -664,11 +664,18 @@ OptVariantType UUIDExpression::eval() const {
      auto client = context_->storageClient();
      auto space = context_->space();
      auto uuidResult = client->getUUID(space, *field_).get();
-     if (!uuidResult.ok() ||
-         !uuidResult.value().get_result().get_failed_codes().empty()) {
-         return OptVariantType(Status::Error("Get UUID Failed"));
+     if (!uuidResult.ok()) {
+        LOG(ERROR) << "Get UUID failed for " << toString() << ", status " << uuidResult.status();
+        return OptVariantType(Status::Error("Get UUID Failed"));
      }
-     return uuidResult.value().get_id();
+     auto v = std::move(uuidResult).value();
+     for (auto& rc : v.get_result().get_failed_codes()) {
+        LOG(ERROR) << "Get UUID failed, error " << static_cast<int32_t>(rc.get_code())
+                   << ", part " << rc.get_part_id() << ", str id " << toString();
+        return OptVariantType(Status::Error("Get UUID Failed"));
+     }
+     VLOG(3) << "Get UUID from " << *field_ << " to " << v.get_id();
+     return v.get_id();
 }
 
 Status UUIDExpression::prepare() {

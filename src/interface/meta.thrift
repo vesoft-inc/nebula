@@ -30,18 +30,21 @@ enum ErrorCode {
     E_BALANCER_RUNNING = -27,
     E_CONFIG_IMMUTABLE = -28,
     E_CONFLICT         = -29,
-    E_WRONGCLUSTER     = -30,
+    E_INVALID_PARM     = -30,
+    E_WRONGCLUSTER     = -31,
 
-    E_STORE_FAILURE             = -31,
-    E_STORE_SEGMENT_ILLEGAL     = -32,
-    E_BAD_BALANCE_PLAN          = -33,
-    E_BALANCED                  = -34,
-    E_NO_RUNNING_BALANCE_PLAN   = -35,
-    E_NO_VALID_HOST             = -36,
-    E_CORRUPTTED_BALANCE_PLAN   = -37,
+    E_STORE_FAILURE             = -32,
+    E_STORE_SEGMENT_ILLEGAL     = -33,
+    E_BAD_BALANCE_PLAN          = -34,
+    E_BALANCED                  = -35,
+    E_NO_RUNNING_BALANCE_PLAN   = -36,
+    E_NO_VALID_HOST             = -37,
+    E_CORRUPTTED_BALANCE_PLAN   = -38,
 
     E_INVALID_PASSWORD       = -41,
     E_INPROPER_ROLE          = -42,
+
+    E_SNAPSHOT_FAILURE   = -51;
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
@@ -72,8 +75,10 @@ union ID {
     1: common.GraphSpaceID  space_id,
     2: common.TagID         tag_id,
     3: common.EdgeType      edge_type,
-    4: common.UserID        user_id,
-    5: common.ClusterID     cluster_id,
+    4: common.TagIndexID    tag_index_id,
+    5: common.EdgeIndexID   edge_index_id,
+    6: common.UserID        user_id,
+    7: common.ClusterID     cluster_id,
 }
 
 struct IdName {
@@ -111,10 +116,35 @@ struct EdgeItem {
     4: common.Schema        schema,
 }
 
+struct IndexProperties {
+    1: map<string, list<string>>(cpp.template = "std::map")  fields,
+}
+
+struct IndexFields {
+    1: map<string, list<common.ColumnDef>>(cpp.template = "std::map")  fields,
+}
+
+struct TagIndexItem {
+    1: common.TagIndexID    index_id,
+    2: string               index_name,
+    3: IndexFields          fields,
+}
+
+struct EdgeIndexItem {
+    1: common.EdgeIndexID   index_id,
+    2: string               index_name,
+    3: IndexFields          fields ,
+}
+
 enum HostStatus {
     ONLINE  = 0x00,
     OFFLINE = 0x01,
     UNKNOWN = 0x02,
+} (cpp.enum_strict)
+
+enum SnapshotStatus {
+    VALID    = 0x00,
+    INVALID  = 0x01,
 } (cpp.enum_strict)
 
 struct HostItem {
@@ -155,6 +185,7 @@ struct ExecResp {
 // Graph space related operations.
 struct CreateSpaceReq {
     1: SpaceProperties  properties,
+    2: bool             if_not_exists,
 }
 
 struct DropSpaceReq {
@@ -186,6 +217,7 @@ struct CreateTagReq {
     1: common.GraphSpaceID space_id,
     2: string              tag_name,
     3: common.Schema       schema,
+    4: bool                if_not_exists,
 }
 
 struct AlterTagReq {
@@ -228,6 +260,7 @@ struct CreateEdgeReq {
     1: common.GraphSpaceID space_id,
     2: string              edge_name,
     3: common.Schema       schema,
+    4: bool                if_not_exists,
 }
 
 struct AlterEdgeReq {
@@ -364,6 +397,70 @@ struct HBResp {
 struct HBReq {
     1: common.HostAddr host,
     2: common.ClusterID cluster_id,
+}
+
+struct CreateTagIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: string              index_name,
+    3: IndexProperties     properties,
+}
+
+struct DropTagIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: string              index_name,
+}
+
+struct GetTagIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: string              index_name,
+}
+
+struct GetTagIndexResp {
+    1: ErrorCode              code,
+    2: common.HostAddr        leader,
+    3: TagIndexItem           item,
+}
+
+struct ListTagIndexesReq {
+    1: common.GraphSpaceID space_id,
+}
+
+struct ListTagIndexesResp {
+    1: ErrorCode              code,
+    2: common.HostAddr        leader,
+    3: list<TagIndexItem>     items,
+}
+
+struct CreateEdgeIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: string              index_name,
+    3: IndexProperties     properties,
+}
+
+struct DropEdgeIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: string              index_name,
+}
+
+struct GetEdgeIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: string              index_name,
+}
+
+struct GetEdgeIndexResp {
+    1: ErrorCode              code,
+    2: common.HostAddr        leader,
+    3: EdgeIndexItem          item,
+}
+
+struct ListEdgeIndexesReq {
+    1: common.GraphSpaceID space_id,
+}
+
+struct ListEdgeIndexesResp {
+    1: ErrorCode              code,
+    2: common.HostAddr        leader,
+    3: list<EdgeIndexItem>    items,
 }
 
 struct CreateUserReq {
@@ -524,6 +621,29 @@ struct ListConfigsResp {
     3: list<ConfigItem>     items,
 }
 
+struct CreateSnapshotReq {
+}
+
+struct DropSnapshotReq {
+    1: string       name,
+}
+
+struct ListSnapshotsReq {
+}
+
+struct Snapshot {
+    1: string         name,
+    2: SnapshotStatus status,
+    3: string         hosts,
+}
+
+struct ListSnapshotsResp {
+    1: ErrorCode            code,
+    // Valid if code equals E_LEADER_CHANGED.
+    2: common.HostAddr      leader,
+    3: list<Snapshot>       snapshots,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -554,6 +674,15 @@ service MetaService {
     ExecResp removeRange(1: RemoveRangeReq req);
     ScanResp scan(1: ScanReq req);
 
+    ExecResp             createTagIndex(1: CreateTagIndexReq req);
+    ExecResp             dropTagIndex(1: DropTagIndexReq req );
+    GetTagIndexResp      getTagIndex(1: GetTagIndexReq req);
+    ListTagIndexesResp   listTagIndexes(1:ListTagIndexesReq req);
+    ExecResp             createEdgeIndex(1: CreateEdgeIndexReq req);
+    ExecResp             dropEdgeIndex(1: DropEdgeIndexReq req );
+    GetEdgeIndexResp     getEdgeIndex(1: GetEdgeIndexReq req);
+    ListEdgeIndexesResp  listEdgeIndexes(1: ListEdgeIndexesReq req);
+
     ExecResp createUser(1: CreateUserReq req);
     ExecResp dropUser(1: DropUserReq req);
     ExecResp alterUser(1: AlterUserReq req);
@@ -573,5 +702,9 @@ service MetaService {
     GetConfigResp getConfig(1: GetConfigReq req);
     ExecResp setConfig(1: SetConfigReq req);
     ListConfigsResp listConfigs(1: ListConfigsReq req);
+
+    ExecResp createSnapshot(1: CreateSnapshotReq req);
+    ExecResp dropSnapshot(1: DropSnapshotReq req);
+    ListSnapshotsResp listSnapshots(1: ListSnapshotsReq req);
 }
 

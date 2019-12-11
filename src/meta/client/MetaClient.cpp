@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "time/Duration.h"
 #include "meta/common/MetaCommon.h"
 #include "meta/client/MetaClient.h"
 #include "network/NetworkUtils.h"
@@ -11,13 +12,17 @@
 #include "meta/ClusterIdMan.h"
 #include "meta/GflagsManager.h"
 #include "base/Configuration.h"
+#include "stats/StatsManager.h"
+
 
 DEFINE_int32(load_data_interval_secs, 1, "Load data interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
+DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
 DECLARE_string(gflags_mode_json);
+
 
 namespace nebula {
 namespace meta {
@@ -26,12 +31,14 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
                        std::vector<HostAddr> addrs,
                        HostAddr localHost,
                        ClusterID clusterId,
-                       bool sendHeartBeat)
+                       bool sendHeartBeat,
+                       stats::Stats *stats)
     : ioThreadPool_(ioThreadPool)
     , addrs_(std::move(addrs))
     , localHost_(localHost)
     , clusterId_(clusterId)
-    , sendHeartBeat_(sendHeartBeat) {
+    , sendHeartBeat_(sendHeartBeat)
+    , stats_(stats) {
     CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
     CHECK(!addrs_.empty())
         << "No meta server address is specified. Meta server is required";
@@ -183,13 +190,13 @@ bool MetaClient::loadData() {
     }
     diff(oldCache, localCache_);
     ready_ = true;
-    LOG(INFO) << "Load data completed!";
     return true;
 }
 
 void MetaClient::addLoadDataTask() {
     size_t delayMS = FLAGS_load_data_interval_secs * 1000 + folly::Random::rand32(900);
     bgThread_->addDelayTask(delayMS, &MetaClient::loadDataThreadFunc, this);
+    LOG(INFO) << "Load data completed, call after " << delayMS << " ms";
 }
 
 
@@ -215,8 +222,8 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
 
     auto tagItemVec = tagRet.value();
     auto edgeItemVec = edgeRet.value();
-    TagIDSchemas tagIdSchemas;
-    EdgeTypeSchemas edgeTypeSchemas;
+    TagSchemas tagSchemas;
+    EdgeSchemas edgeSchemas;
     for (auto& tagIt : tagItemVec) {
         std::shared_ptr<NebulaSchemaProvider> schema(new NebulaSchemaProvider(tagIt.version));
         for (auto colIt : tagIt.schema.get_columns()) {
@@ -224,7 +231,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         }
         // handle schema property
         schema->setProp(tagIt.schema.get_schema_prop());
-        tagIdSchemas.emplace(std::make_pair(tagIt.tag_id, tagIt.version), schema);
+        tagSchemas.emplace(std::make_pair(tagIt.tag_id, tagIt.version), schema);
         tagNameIdMap.emplace(std::make_pair(spaceId, tagIt.tag_name), tagIt.tag_id);
         // get the latest tag version
         auto it = newestTagVerMap.find(std::make_pair(spaceId, tagIt.tag_id));
@@ -246,7 +253,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         }
         // handle shcem property
         schema->setProp(edgeIt.schema.get_schema_prop());
-        edgeTypeSchemas.emplace(std::make_pair(edgeIt.edge_type, edgeIt.version), schema);
+        edgeSchemas.emplace(std::make_pair(edgeIt.edge_type, edgeIt.version), schema);
         edgeNameTypeMap.emplace(std::make_pair(spaceId, edgeIt.edge_name), edgeIt.edge_type);
         edgeTypeNameMap.emplace(std::make_pair(spaceId, edgeIt.edge_type), edgeIt.edge_name);
         auto it = allEdgeMap.find(spaceId);
@@ -270,11 +277,30 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                 << " Successfully!";
     }
 
-    spaceInfoCache->tagSchemas_ = std::move(tagIdSchemas);
-    spaceInfoCache->edgeSchemas_ = std::move(edgeTypeSchemas);
+    spaceInfoCache->tagSchemas_ = std::move(tagSchemas);
+    spaceInfoCache->edgeSchemas_ = std::move(edgeSchemas);
     return true;
 }
 
+bool MetaClient::loadIndexes(GraphSpaceID spaceId,
+                             std::shared_ptr<SpaceInfoCache> cache) {
+    UNUSED(spaceId); UNUSED(cache);
+    return false;
+}
+
+bool
+MetaClient::checkTagFieldsIndexed(GraphSpaceID space, TagID tagID,
+                                  const std::vector<std::string> &fields) {
+    UNUSED(space); UNUSED(tagID); UNUSED(fields);
+    return false;
+}
+
+bool
+MetaClient::checkEdgeFieldsIndexed(GraphSpaceID space, EdgeType edgeType,
+                                   const std::vector<std::string> &fields) {
+    UNUSED(space); UNUSED(edgeType); UNUSED(fields);
+    return false;
+}
 
 std::unordered_map<HostAddr, std::vector<PartitionID>>
 MetaClient::reverse(const PartsAlloc& parts) {
@@ -299,6 +325,7 @@ void MetaClient::getResponse(Request req,
                              bool toLeader,
                              int32_t retry,
                              int32_t retryLimit) {
+    time::Duration duration;
     auto* evb = ioThreadPool_->getEventBase();
     HostAddr host;
     {
@@ -307,13 +334,13 @@ void MetaClient::getResponse(Request req,
     }
     folly::via(evb, [host, evb, req = std::move(req), remoteFunc = std::move(remoteFunc),
                      respGen = std::move(respGen), pro = std::move(pro),
-                     toLeader, retry, retryLimit, this] () mutable {
-        auto client = clientsMan_->client(host, evb);
-        LOG(INFO) << "Send request to meta " << host;
+                     toLeader, retry, retryLimit, duration, this] () mutable {
+        auto client = clientsMan_->client(host, evb, false, FLAGS_meta_client_timeout_ms);
+        VLOG(1) << "Send request to meta " << host;
         remoteFunc(client, req).via(evb)
-            .then([req = std::move(req), remoteFunc = std::move(remoteFunc),
+            .then([host, req = std::move(req), remoteFunc = std::move(remoteFunc),
                    respGen = std::move(respGen), pro = std::move(pro), toLeader, retry,
-                   retryLimit, evb, this] (folly::Try<RpcResponse>&& t) mutable {
+                   retryLimit, evb, duration, this] (folly::Try<RpcResponse>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
                 if (toLeader) {
@@ -335,9 +362,10 @@ void MetaClient::getResponse(Request req,
                     }, FLAGS_meta_client_retry_interval_secs * 1000);
                     return;
                 } else {
-                    LOG(INFO) << "Exceed retry limit";
+                    LOG(ERROR) << "Send request to " << host << ", exceed retry limit";
                     pro.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
                                                                    t.exception().what().c_str())));
+                    stats::Stats::addStatsValue(stats_, false, duration.elapsedInUSec());
                 }
                 return;
             }
@@ -345,6 +373,8 @@ void MetaClient::getResponse(Request req,
             if (resp.code == cpp2::ErrorCode::SUCCEEDED) {
                 // succeeded
                 pro.setValue(respGen(std::move(resp)));
+                stats::Stats::addStatsValue(stats_, true, duration.elapsedInUSec());
+
                 return;
             } else if (resp.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
                 HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
@@ -368,6 +398,9 @@ void MetaClient::getResponse(Request req,
                 }
             }
             pro.setValue(this->handleResponse(resp));
+            stats::Stats::addStatsValue(stats_,
+                                        resp.code == cpp2::ErrorCode::SUCCEEDED,
+                                        duration.elapsedInUSec());
         });  // then
     });  // via
 }
@@ -403,7 +436,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
         case cpp2::ErrorCode::E_NO_HOSTS:
             return Status::Error("no hosts!");
         case cpp2::ErrorCode::E_CONFIG_IMMUTABLE:
-            return Status::CfgImmutable();
+            return Status::Error("Config immutable");
         case cpp2::ErrorCode::E_CONFLICT:
             return Status::Error("conflict!");
         case cpp2::ErrorCode::E_WRONGCLUSTER:
@@ -518,14 +551,17 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
 
 /// ================================== public methods =================================
 
-folly::Future<StatusOr<GraphSpaceID>>
-MetaClient::createSpace(std::string name, int32_t partsNum, int32_t replicaFactor) {
+folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpace(std::string name,
+                                                              int32_t partsNum,
+                                                              int32_t replicaFactor,
+                                                              bool ifNotExists) {
     cpp2::SpaceProperties properties;
     properties.set_space_name(std::move(name));
     properties.set_partition_num(partsNum);
     properties.set_replica_factor(replicaFactor);
     cpp2::CreateSpaceReq req;
     req.set_properties(std::move(properties));
+    req.set_if_not_exists(ifNotExists);
     folly::Promise<StatusOr<GraphSpaceID>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
@@ -535,7 +571,6 @@ MetaClient::createSpace(std::string name, int32_t partsNum, int32_t replicaFacto
                 }, std::move(promise), true);
     return future;
 }
-
 
 folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
     cpp2::ListSpacesReq req;
@@ -825,13 +860,17 @@ PartsMap MetaClient::getPartsMapFromCache(const HostAddr& host) {
 }
 
 
-PartMeta MetaClient::getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId) {
+StatusOr<PartMeta> MetaClient::getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(spaceId);
-    CHECK(it != localCache_.end());
+    if (it == localCache_.end()) {
+        return Status::Error("Space not found, spaceid: %d", spaceId);
+    }
     auto& cache = it->second;
     auto partAllocIter = cache->partsAlloc_.find(partId);
-    CHECK(partAllocIter != cache->partsAlloc_.end());
+    if (partAllocIter == cache->partsAlloc_.end()) {
+        return Status::Error("Part not found in cache, spaceid: %d, partid: %d", spaceId, partId);
+    }
     PartMeta pm;
     pm.spaceId_ = spaceId;
     pm.partId_  = partId;
@@ -872,21 +911,24 @@ bool MetaClient::checkSpaceExistInCache(const HostAddr& host,
     return false;
 }
 
-
-int32_t MetaClient::partsNum(GraphSpaceID spaceId) {
+StatusOr<int32_t> MetaClient::partsNum(GraphSpaceID spaceId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(spaceId);
-    CHECK(it != localCache_.end());
+    if (it == localCache_.end()) {
+        return Status::Error("Space not found, spaceid: %d", spaceId);
+    }
     return it->second->partsAlloc_.size();
 }
 
-
-folly::Future<StatusOr<TagID>>
-MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {
+folly::Future<StatusOr<TagID>> MetaClient::createTagSchema(GraphSpaceID spaceId,
+                                                           std::string name,
+                                                           nebula::cpp2::Schema schema,
+                                                           bool ifNotExists) {
     cpp2::CreateTagReq req;
     req.set_space_id(std::move(spaceId));
     req.set_tag_name(std::move(name));
     req.set_schema(std::move(schema));
+    req.set_if_not_exists(ifNotExists);
     folly::Promise<StatusOr<TagID>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
@@ -896,7 +938,6 @@ MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2
                 }, std::move(promise), true);
     return future;
 }
-
 
 folly::Future<StatusOr<TagID>>
 MetaClient::alterTagSchema(GraphSpaceID spaceId,
@@ -966,23 +1007,26 @@ MetaClient::getTagSchema(int32_t spaceId, std::string name, int64_t version) {
     return future;
 }
 
-
-folly::Future<StatusOr<EdgeType>>
-MetaClient::createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {
+folly::Future<StatusOr<EdgeType>> MetaClient::createEdgeSchema(GraphSpaceID spaceId,
+                                                               std::string name,
+                                                               nebula::cpp2::Schema schema,
+                                                               bool ifNotExists) {
     cpp2::CreateEdgeReq req;
     req.set_space_id(std::move(spaceId));
     req.set_edge_name(std::move(name));
     req.set_schema(schema);
+    req.set_if_not_exists(ifNotExists);
+
     folly::Promise<StatusOr<EdgeType>> promise;
     auto future = promise.getFuture();
-    getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_createEdge(request);
-                }, [] (cpp2::ExecResp&& resp) -> EdgeType {
-                    return resp.get_id().get_edge_type();
-                }, std::move(promise), true);
+    getResponse(
+        std::move(req),
+        [](auto client, auto request) { return client->future_createEdge(request); },
+        [](cpp2::ExecResp&& resp) -> EdgeType { return resp.get_id().get_edge_type(); },
+        std::move(promise),
+        true);
     return future;
 }
-
 
 folly::Future<StatusOr<bool>>
 MetaClient::alterEdgeSchema(GraphSpaceID spaceId,
@@ -1052,6 +1096,142 @@ MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name) {
     return future;
 }
 
+folly::Future<StatusOr<TagIndexID>>
+MetaClient::createTagIndex(GraphSpaceID spaceID,
+                           std::string name,
+                           std::map<std::string, std::vector<std::string>>&& properties) {
+    cpp2::CreateTagIndexReq req;
+    req.set_space_id(std::move(spaceID));
+    req.set_index_name(std::move(name));
+    cpp2::IndexProperties indexProperties;
+    indexProperties.set_fields(std::move(properties));
+    req.set_properties(std::move(indexProperties));
+
+    folly::Promise<StatusOr<TagIndexID>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_createTagIndex(request);
+    }, [] (cpp2::ExecResp&& resp) -> TagIndexID {
+        return resp.get_id().get_tag_index_id();
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::dropTagIndex(GraphSpaceID spaceID, std::string name) {
+    cpp2::DropTagIndexReq req;
+    req.set_space_id(std::move(spaceID));
+    req.set_index_name(std::move(name));
+
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_dropTagIndex(request);
+    }, [] (cpp2::ExecResp&& resp) -> TagIndexID {
+        return resp.get_id().get_tag_index_id();
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<cpp2::TagIndexItem>>
+MetaClient::getTagIndex(GraphSpaceID spaceID, std::string name) {
+    cpp2::GetTagIndexReq req;
+    req.set_space_id(std::move(spaceID));
+    req.set_index_name(std::move(name));
+
+    folly::Promise<StatusOr<cpp2::TagIndexItem>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_getTagIndex(request);
+    }, [] (cpp2::GetTagIndexResp&& resp) -> nebula::meta::cpp2::TagIndexItem {
+        return std::move(resp).get_item();
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<cpp2::TagIndexItem>>>
+MetaClient::listTagIndexes(GraphSpaceID spaceID) {
+    cpp2::ListTagIndexesReq req;
+    req.set_space_id(std::move(spaceID));
+
+    folly::Promise<StatusOr<std::vector<cpp2::TagIndexItem>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listTagIndexes(request);
+    }, [] (cpp2::ListTagIndexesResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_items();
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<EdgeIndexID>>
+MetaClient::createEdgeIndex(GraphSpaceID spaceID,
+                            std::string name,
+                            std::map<std::string, std::vector<std::string>>&& properties) {
+    cpp2::CreateEdgeIndexReq req;
+    req.set_space_id(std::move(spaceID));
+    req.set_index_name(std::move(name));
+    cpp2::IndexProperties indexProperties;
+    indexProperties.set_fields(std::move(properties));
+    req.set_properties(std::move(indexProperties));
+
+    folly::Promise<StatusOr<EdgeIndexID>> promise;
+    auto future = promise.getFuture();
+
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_createEdgeIndex(request);
+    }, [] (cpp2::ExecResp&& resp) -> EdgeIndexID {
+        return resp.get_id().get_edge_index_id();
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::dropEdgeIndex(GraphSpaceID spaceID, std::string name) {
+    cpp2::DropEdgeIndexReq req;
+    req.set_space_id(std::move(spaceID));
+    req.set_index_name(std::move(name));
+
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_dropEdgeIndex(request);
+    }, [] (cpp2::ExecResp&& resp) -> EdgeIndexID {
+        return resp.get_id().get_edge_index_id();
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<cpp2::EdgeIndexItem>>
+MetaClient::getEdgeIndex(GraphSpaceID spaceID, std::string name) {
+    cpp2::GetEdgeIndexReq req;
+    req.set_space_id(std::move(spaceID));
+    req.set_index_name(std::move(name));
+
+    folly::Promise<StatusOr<cpp2::EdgeIndexItem>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_getEdgeIndex(request);
+    }, [] (cpp2::GetEdgeIndexResp&& resp) -> nebula::meta::cpp2::EdgeIndexItem {
+        return std::move(resp).get_item();
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<cpp2::EdgeIndexItem>>>
+MetaClient::listEdgeIndexes(GraphSpaceID spaceID) {
+    cpp2::ListEdgeIndexesReq req;
+    req.set_space_id(std::move(spaceID));
+
+    folly::Promise<StatusOr<std::vector<cpp2::EdgeIndexItem>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listEdgeIndexes(request);
+    }, [] (cpp2::ListEdgeIndexesResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_items();
+    }, std::move(promise));
+    return future;
+}
 
 StatusOr<std::shared_ptr<const SchemaProviderIf>>
 MetaClient::getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer ver) {
@@ -1074,8 +1254,8 @@ MetaClient::getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer v
 }
 
 
-StatusOr<std::shared_ptr<const SchemaProviderIf>> MetaClient::getEdgeSchemaFromCache(
-        GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver) {
+StatusOr<std::shared_ptr<const SchemaProviderIf>>
+MetaClient::getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver) {
     if (!ready_) {
         return Status::Error("Not ready!");
     }
@@ -1095,6 +1275,16 @@ StatusOr<std::shared_ptr<const SchemaProviderIf>> MetaClient::getEdgeSchemaFromC
             return edgeIt->second;
         }
     }
+}
+
+StatusOr<const cpp2::IndexProperties>
+MetaClient::getTagIndexFromCache(TagIndexID) {
+    LOG(FATAL) << "Not implemented";
+}
+
+StatusOr<const cpp2::IndexProperties>
+MetaClient::getEdgeIndexFromCache(EdgeIndexID) {
+    LOG(FATAL) << "Not implemented";
 }
 
 const std::vector<HostAddr>& MetaClient::getAddresses() {
@@ -1141,7 +1331,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     req.set_cluster_id(clusterId_.load());
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
-    LOG(INFO) << "Send heartbeat to " << leader_ << ", clusterId " << req.get_cluster_id();
+    VLOG(1) << "Send heartbeat to " << leader_ << ", clusterId " << req.get_cluster_id();
     getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_heartBeat(request);
                 }, [this] (cpp2::HBResp&& resp) -> bool {
@@ -1212,6 +1402,50 @@ folly::Future<StatusOr<bool>> MetaClient::balanceLeader() {
                 }, [] (cpp2::ExecResp&& resp) -> bool {
                     return resp.code == cpp2::ErrorCode::SUCCEEDED;
                 }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<std::string>> MetaClient::getTagDefaultValue(GraphSpaceID spaceId,
+                                                                    TagID tagId,
+                                                                    const std::string& field) {
+    cpp2::GetReq req;
+    static std::string defaultKey = "__default__";
+    req.set_segment(defaultKey);
+    std::string key;
+    key.reserve(64);
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&tagId), sizeof(TagID));
+    key.append(field);
+    req.set_key(std::move(key));
+    folly::Promise<StatusOr<std::string>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_get(request);
+    }, [] (cpp2::GetResp&& resp) -> std::string {
+        return resp.get_value();
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<std::string>> MetaClient::getEdgeDefaultValue(GraphSpaceID spaceId,
+                                                                     EdgeType edgeType,
+                                                                     const std::string& field) {
+    cpp2::GetReq req;
+    static std::string defaultKey = "__default__";
+    req.set_segment(defaultKey);
+    std::string key;
+    key.reserve(64);
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&edgeType), sizeof(EdgeType));
+    key.append(field);
+    req.set_key(std::move(key));
+    folly::Promise<StatusOr<std::string>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_get(request);
+    }, [] (cpp2::GetResp&& resp) -> std::string {
+        return resp.get_value();
+    },  std::move(promise));
     return future;
 }
 
@@ -1291,6 +1525,43 @@ MetaClient::listConfigs(const cpp2::ConfigModule& module) {
     return future;
 }
 
+folly::Future<StatusOr<bool>> MetaClient::createSnapshot() {
+    cpp2::CreateSnapshotReq req;
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_createSnapshot(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>> MetaClient::dropSnapshot(const std::string& name) {
+    cpp2::DropSnapshotReq req;
+    req.set_name(name);
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_dropSnapshot(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> MetaClient::listSnapshots() {
+    cpp2::ListSnapshotsReq req;
+    folly::Promise<StatusOr<std::vector<cpp2::Snapshot>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listSnapshots(request);
+    }, [] (cpp2::ListSnapshotsResp&& resp) -> decltype(auto){
+        return std::move(resp).get_snapshots();
+    }, std::move(promise));
+    return future;
+}
+
 void MetaClient::loadCfgThreadFunc() {
     loadCfg();
     addLoadCfgTask();
@@ -1336,7 +1607,7 @@ void MetaClient::loadCfg() {
             }
         }
     } else {
-        LOG(INFO) << "Load configs failed: " << ret.status();
+        LOG(ERROR) << "Load configs failed: " << ret.status();
         return;
     }
 }

@@ -151,6 +151,18 @@ public:
         return ResultCode::ERR_UNSUPPORTED;
     }
 
+    ResultCode createCheckpoint(GraphSpaceID, const std::string&) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
+    ResultCode dropCheckpoint(GraphSpaceID, const std::string&) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
+    ResultCode setWriteBlocking(GraphSpaceID, bool) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
 private:
     std::string getRowKey(const std::string& key) {
         return key.substr(sizeof(PartitionID), key.size() - sizeof(PartitionID));

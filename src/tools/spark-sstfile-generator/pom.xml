@@ -157,8 +157,8 @@
             <version>${config.version}</version>
         </dependency>
         <dependency>
-            <groupId>nebula-graph</groupId>
-            <artifactId>graph-client</artifactId>
+            <groupId>com.vesoft</groupId>
+            <artifactId>client</artifactId>
             <version>${nebula.version}</version>
         </dependency>
         <dependency>

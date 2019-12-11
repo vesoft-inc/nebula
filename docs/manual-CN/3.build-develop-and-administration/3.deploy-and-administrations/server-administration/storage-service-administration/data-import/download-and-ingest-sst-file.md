@@ -1,8 +1,8 @@
 # Download and Ingest
 
-Nebula 存储访问默认使用 `RocksDB` 作为 `key-value` 存储引擎。因此在大量数据加载时，可以通过运行一个 map-reduce job 离线生成 RocksDB 的 SST 文件，再直接分发到服务器上。
+**Nebula Graph** 存储访问默认使用 `RocksDB` 作为 `key-value` 存储引擎。因此在大量数据加载时，可以通过运行一个 map-reduce job 离线生成 RocksDB 的 SST 文件，再直接分发到服务器上。
 
-Nebula 提供了 `Spark-SSTFile-Generator` 工具。
+**Nebula Graph** 提供了 `Spark-SSTFile-Generator` 工具。
 
 `Spark-SSTFile-Generator` 通过映射文件，从 hive 表生成 SST 文件。
 
@@ -26,9 +26,9 @@ SST 文件名格式为 `{TYPE}-${FIRST_KEY_IN_THIS_FILE}.sst`，其中 `TYPE` �
 
 请确认所有 server 已安装 `Hadoop`，并且 `HADOOP_HOME` 已设置。
 
-运行 nebula console，执行 Download 命令：
+运行 **Nebula Graph** console，执行 Download 命令：
 
-```bash
+```ngql
 nebula > DOWNLOAD HDFS "hdfs://${HADOOP_HOST}:${HADOOP_PORT}/${HADOOP_PATH}"
 ```
 
@@ -46,7 +46,7 @@ SST 数据离线下载完成后，通过 `INGEST` 命令在线**加载**到存�
 
 Ingest 命令如下：
 
-```bash
+```ngql
 nebula > INGEST
 ```
 

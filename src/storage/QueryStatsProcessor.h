@@ -18,18 +18,24 @@ class QueryStatsProcessor
 public:
     static QueryStatsProcessor* instance(kvstore::KVStore* kvstore,
                                          meta::SchemaManager* schemaMan,
-                                         StorageStats* stats,
-                                         folly::Executor* executor) {
-        return new QueryStatsProcessor(kvstore, schemaMan, stats, executor);
+                                         stats::Stats* stats,
+                                         folly::Executor* executor,
+                                         VertexCache* cache = nullptr) {
+        return new QueryStatsProcessor(kvstore, schemaMan, stats, executor, cache);
     }
 
 private:
     explicit QueryStatsProcessor(kvstore::KVStore* kvstore,
                                  meta::SchemaManager* schemaMan,
-                                 StorageStats* stats,
-                                 folly::Executor* executor)
+                                 stats::Stats* stats,
+                                 folly::Executor* executor,
+                                 VertexCache* cache)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
-                             cpp2::QueryStatsResponse>(kvstore, schemaMan, stats, executor) {}
+                             cpp2::QueryStatsResponse>(kvstore,
+                                                       schemaMan,
+                                                       stats,
+                                                       executor,
+                                                       cache) {}
 
     kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) override;
 

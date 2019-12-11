@@ -7,6 +7,8 @@ set(PARSER_TEST_LIBS
     $<TARGET_OBJECTS:gflags_man_obj>
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:storage_client>
     $<TARGET_OBJECTS:storage_thrift_obj>
@@ -36,3 +38,7 @@ nebula_add_executable(
     OBJECTS ${PARSER_TEST_LIBS}
     LIBRARIES follybenchmark boost_regex ${THRIFT_LIBRARIES} wangle
 )
+
+if(ENABLE_FUZZ_TEST)
+    nebula_add_subdirectory(fuzzing)
+endif()
