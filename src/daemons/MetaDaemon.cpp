@@ -22,6 +22,7 @@
 #include "meta/ClusterIdMan.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/ActiveHostsMan.h"
+#include "meta/KVJobManager.h"
 
 using nebula::operator<<;
 using nebula::ProcessUtils;
@@ -131,6 +132,12 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
     return kvstore;
 }
 
+bool initJobManager(nebula::kvstore::KVStore* kvstore,
+                    nebula::thread::GenericThreadPool* pool) {
+    nebula::meta::KVJobManager* job_mgr = nebula::meta::KVJobManager::getInstance();
+    return job_mgr->init(kvstore, pool);
+}
+
 Status initWebService(nebula::WebService* svc,
                       nebula::kvstore::KVStore* kvstore,
                       nebula::hdfs::HdfsCommandHelper* helper,
@@ -226,6 +233,11 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    if (!initJobManager(kvstore.get(), pool.get())) {
+        LOG(ERROR) << "Init job manager failed";
+        return EXIT_FAILURE;
+    }
+
     // Setup the signal handlers
     status = setupSignalHandler();
     if (!status.ok()) {
@@ -268,6 +280,10 @@ void signalHandler(int sig) {
             FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
             if (gServer) {
                 gServer->stop();
+            }
+            {
+                auto gJobMgr = nebula::meta::KVJobManager::getInstance();
+                gJobMgr->shutDown();
             }
             break;
         default:

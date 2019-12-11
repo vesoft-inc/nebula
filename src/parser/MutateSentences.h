@@ -613,13 +613,20 @@ public:
     std::string toString() const override;
 };
 
-class CompactionSentence final : public Sentence {
+class AdminSentence final : public Sentence {
 public:
-    CompactionSentence() {
-        kind_ = Kind::kCompaction;
+    explicit AdminSentence(const std::string& op) : op_(op) {
+        kind_ = Kind::kAdmin;
     }
 
+    void addPara(const std::string& para);
     std::string toString() const override;
+    std::string getType() const;
+    std::vector<std::string> getParas() const;
+private:
+    std::string             op_;
+    std::vector<std::string> paras_;
 };
+
 }  // namespace nebula
 #endif  // PARSER_MUTATESENTENCES_H_

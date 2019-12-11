@@ -10,9 +10,9 @@
 namespace nebula {
 namespace http {
 
-StatusOr<std::string> HttpClient::get(const std::string& path) {
-    auto command = folly::stringPrintf("/usr/bin/curl -sG \"%s\"", path.c_str());
-    LOG(INFO) << "HTTP Get Command: " << command;
+StatusOr<std::string> HttpClient::get(const std::string& path, const std::string& options) {
+    auto command = folly::stringPrintf("/usr/bin/curl %s \"%s\"", options.c_str(), path.c_str());
+    LOG(WARNING) << "HTTP Get Command: " << command;
     auto result = nebula::ProcessUtils::runCommand(command.c_str());
     if (result.ok()) {
         return result.value();

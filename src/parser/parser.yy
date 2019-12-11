@@ -118,6 +118,7 @@ class GraphScanner;
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS
+%token KW_JOBS KW_JOB KW_BACKUP KW_RECOVER KW_FLUSH KW_COMPACT
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -132,6 +133,7 @@ class GraphScanner;
 %token <strval> STRING VARIABLE LABEL
 
 %type <strval> name_label unreserved_keyword agg_function
+%type <strval> admin_operation admin_para
 %type <expr> expression logic_xor_expression logic_or_expression logic_and_expression
 %type <expr> relational_expression multiplicative_expression additive_expression arithmetic_xor_expression
 %type <expr> unary_expression primary_expression equality_expression base_expression
@@ -218,6 +220,7 @@ class GraphScanner;
 %type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
 %type <sentence> show_sentence create_space_sentence describe_space_sentence
+%type <sentence> admin_sentence
 %type <sentence> drop_space_sentence
 %type <sentence> yield_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
@@ -1523,10 +1526,52 @@ ingest_sentence
     }
     ;
 
-compact_sentence
-    : KW_COMPACT {
-        auto sentence = new CompactionSentence();
+admin_sentence
+    : KW_ADMIN admin_operation {
+        auto sentence = new AdminSentence("add_job");
+        sentence->addPara(*$2);
         $$ = sentence;
+    }
+    | KW_SHOW KW_JOBS {
+        auto sentence = new AdminSentence("show_jobs");
+        $$ = sentence;
+    }
+    | KW_SHOW KW_JOB INTEGER {
+        auto sentence = new AdminSentence("show_job");
+        sentence->addPara(std::to_string($3));
+        $$ = sentence;
+    }
+    | KW_STOP KW_JOB INTEGER {
+        auto sentence = new AdminSentence("stop_job");
+        sentence->addPara(std::to_string($3));
+        $$ = sentence;
+    }
+    | KW_BACKUP KW_JOB INTEGER INTEGER {
+        auto sentence = new AdminSentence("backup_job");
+        sentence->addPara(std::to_string($3));
+        sentence->addPara(std::to_string($4));
+        $$ = sentence;
+    }
+    | KW_RECOVER KW_JOB INTEGER {
+        auto sentence = new AdminSentence("recover_job");
+        sentence->addPara(std::to_string($3));
+        $$ = sentence;
+    }
+    ;
+
+admin_operation
+    : KW_COMPACT { $$ = new std::string("compact"); }
+    | KW_FLUSH   { $$ = new std::string("flush"); }
+    | admin_operation admin_para {
+        $$ = new std::string(*$1 + " " + *$2);
+    }
+    ;
+
+admin_para
+    : name_label ASSIGN name_label {
+        auto left = *$1;
+        auto right = *$3;
+        $$ = new std::string(*$1 + "=" + *$3);
     }
     ;
 
@@ -1890,7 +1935,7 @@ mutate_sentence
     | delete_edge_sentence { $$ = $1; }
     | download_sentence { $$ = $1; }
     | ingest_sentence { $$ = $1; }
-    | compact_sentence { $$ = $1; }
+    | admin_sentence { $$ = $1; }
     ;
 
 maintain_sentence

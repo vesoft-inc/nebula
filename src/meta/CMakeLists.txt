@@ -70,6 +70,11 @@ nebula_add_library(
     MetaHttpIngestHandler.cpp
     MetaHttpDownloadHandler.cpp
     MetaHttpReplaceHostHandler.cpp
+    MetaHttpAdminHandler.cpp
+    KVJobManager.cpp
+    JobDescription.cpp
+    TaskDescription.cpp
+    JobStatus.cpp
 )
 
 nebula_add_library(

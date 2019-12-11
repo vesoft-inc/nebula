@@ -113,6 +113,7 @@ HDFS                        ([Hh][Dd][Ff][Ss])
 ORDER                       ([Oo][Rr][Dd][Ee][Rr])
 INGEST                      ([Ii][Nn][Gg][Ee][Ss][Tt])
 COMPACT                     ([Cc][Oo][Mm][Pp][Aa][Cc][Tt])
+FLUSH                       ([Ff][Ll][Uu][Ss][Hh])
 ASC                         ([Aa][Ss][Cc])
 DISTINCT                    ([Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
 DEFAULT                     ([Dd][Ee][Ff][Aa][Uu][Ll][Tt])
@@ -157,6 +158,10 @@ HEX                         ([0-9a-fA-F])
 OCT                         ([0-7])
 IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
+JOBS                        ([Jj][Oo][Bb][Ss])
+JOB                         ([Jj][Oo][Bb])
+BACKUP                      ([Bb][Aa][Cc][Kk][Uu][Pp])
+RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 
 %%
 
@@ -255,6 +260,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {ORDER}                     { return TokenType::KW_ORDER; }
 {INGEST}                    { return TokenType::KW_INGEST; }
 {COMPACT}                   { return TokenType::KW_COMPACT; }
+{FLUSH}                     { return TokenType::KW_FLUSH; }
 {ASC}                       { return TokenType::KW_ASC; }
 {DISTINCT}                  { return TokenType::KW_DISTINCT; }
 {DEFAULT}                   { return TokenType::KW_DEFAULT; }
@@ -286,6 +292,11 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {SNAPSHOT}                  { return TokenType::KW_SNAPSHOT; }
 {SNAPSHOTS}                 { return TokenType::KW_SNAPSHOTS; }
 {FORCE}                     { return TokenType::KW_FORCE; }
+
+{JOBS}                      { return TokenType::KW_JOBS; }
+{JOB}                       { return TokenType::KW_JOB; }
+{BACKUP}                    { return TokenType::KW_BACKUP; }
+{RECOVER}                   { return TokenType::KW_RECOVER; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
