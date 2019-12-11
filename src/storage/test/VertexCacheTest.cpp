@@ -124,7 +124,7 @@ TEST(VertexCacheTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/VertexCacheTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
-    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(1);
     prepareData(kv.get());
     VertexCache cache(1000, 0);
 
