@@ -11,6 +11,7 @@ install_manifest.txt
 
 # ccls
 .ccls
+.ccls-cache
 compile_commands.json
 
 src/common/base/Base.h.gch
