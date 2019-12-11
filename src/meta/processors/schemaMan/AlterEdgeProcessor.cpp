@@ -25,9 +25,9 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     auto edgePrefix = MetaServiceUtils::schemaEdgePrefix(req.get_space_id(), edgeType);
     auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, edgePrefix, &iter);
     if (code != kvstore::ResultCode::SUCCEEDED || !iter->valid()) {
-        LOG(WARNING) << "Edge could not be found " << req.get_edge_name()
-                     << ", spaceId " << req.get_space_id()
-                     << ", edgeType " << edgeType;
+        LOG(ERROR) << "Edge could not be found " << req.get_edge_name()
+                   << ", spaceId " << req.get_space_id()
+                   << ", edgeType " << edgeType;
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
@@ -46,7 +46,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
         for (auto& col : cols) {
             auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, edgeItem.op);
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-                LOG(WARNING) << "Alter edge column error " << static_cast<int32_t>(retCode);
+                LOG(ERROR) << "Alter edge column error " << static_cast<int32_t>(retCode);
                 resp_.set_code(retCode);
                 onFinished();
                 return;
@@ -59,7 +59,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, std::move(alterSchemaProp));
 
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-        LOG(WARNING) << "Alter edge property error " << static_cast<int32_t>(retCode);
+        LOG(ERROR) << "Alter edge property error " << static_cast<int32_t>(retCode);
         resp_.set_code(retCode);
         onFinished();
         return;
@@ -69,10 +69,9 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     schema.set_schema_prop(std::move(prop));
 
     std::vector<kvstore::KV> data;
-    LOG(INFO) << "Alter edge " << req.get_edge_name() << ", edgeTye " << edgeType;
+    LOG(INFO) << "Alter edge " << req.get_edge_name() << ", edgeType " << edgeType;
     data.emplace_back(MetaServiceUtils::schemaEdgeKey(req.get_space_id(), edgeType, version),
                       MetaServiceUtils::schemaEdgeVal(req.get_edge_name(), schema));
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(edgeType, EntryType::EDGE));
     doPut(std::move(data));
 }
