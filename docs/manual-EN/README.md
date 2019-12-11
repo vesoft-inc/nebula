@@ -1,8 +1,8 @@
 # Welcome to the Official Nebula Graph Documentation
 
-**Nebula Graph** is a distributed, scalable, lightning-fast graph database.
+**Nebula Graph** is a distributed, scalable, and lightning-fast graph database.
 
-It is the optimal solution in the world capable to host graphs with dozens of billions of vertices (nodes) and trillions of edges, while still provides millisecond latency.
+It is the optimal solution in the world capable of hosting graphs with dozens of billions of vertices (nodes) and trillions of edges with millisecond latency.
 
 ## Prefix
 
