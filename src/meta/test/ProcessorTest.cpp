@@ -27,6 +27,14 @@
 #include "meta/processors/schemaMan/ListEdgesProcessor.h"
 #include "meta/processors/schemaMan/AlterTagProcessor.h"
 #include "meta/processors/schemaMan/AlterEdgeProcessor.h"
+#include "meta/processors/indexMan/CreateTagIndexProcessor.h"
+#include "meta/processors/indexMan/DropTagIndexProcessor.h"
+#include "meta/processors/indexMan/GetTagIndexProcessor.h"
+#include "meta/processors/indexMan/ListTagIndexesProcessor.h"
+#include "meta/processors/indexMan/CreateEdgeIndexProcessor.h"
+#include "meta/processors/indexMan/DropEdgeIndexProcessor.h"
+#include "meta/processors/indexMan/GetEdgeIndexProcessor.h"
+#include "meta/processors/indexMan/ListEdgeIndexesProcessor.h"
 #include "meta/processors/customKV/MultiPutProcessor.h"
 #include "meta/processors/customKV/GetProcessor.h"
 #include "meta/processors/customKV/MultiGetProcessor.h"
@@ -40,7 +48,6 @@ namespace nebula {
 namespace meta {
 
 using nebula::cpp2::SupportedType;
-using apache::thrift::FragileConstructor::FRAGILE;
 
 TEST(ProcessorTest, ListHostsTest) {
     fs::TempDir rootPath("/tmp/ListHostsTest.XXXXXX");
@@ -158,7 +165,7 @@ TEST(ProcessorTest, ListPartsTest) {
     }
 }
 
-TEST(ProcessorTest, CreateSpaceTest) {
+TEST(ProcessorTest, SpaceTest) {
     fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
     auto kv = TestUtils::initKV(rootPath.path());
     auto hostsNum = TestUtils::createSomeHosts(kv.get());
@@ -284,6 +291,7 @@ TEST(ProcessorTest, CreateTagTest) {
     cols.emplace_back(TestUtils::columnDef(2, SupportedType::STRING));
     schema.set_columns(std::move(cols));
     {
+        // Space not exist
         cpp2::CreateTagReq req;
         req.set_space_id(0);
         req.set_tag_name("default_tag");
@@ -308,7 +316,7 @@ TEST(ProcessorTest, CreateTagTest) {
         ASSERT_EQ(3, resp.get_id().get_tag_id());
     }
     {
-        // Existed
+        // Tag have existed
         cpp2::CreateTagReq req;
         req.set_space_id(1);
         req.set_tag_name("default_tag");
@@ -607,9 +615,10 @@ TEST(ProcessorTest, KVOperationTest) {
         // Multi Put Test
         std::vector<nebula::cpp2::Pair> pairs;
         for (auto i = 0; i < 10; i++) {
-            pairs.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                               folly::stringPrintf("key_%d", i),
-                               folly::stringPrintf("value_%d", i));
+            nebula::cpp2::Pair pair;
+            pair.set_key(folly::stringPrintf("key_%d", i));
+            pair.set_value(folly::stringPrintf("value_%d", i));
+            pairs.emplace_back(std::move(pair));
         }
 
         cpp2::MultiPutReq req;
@@ -905,11 +914,12 @@ TEST(ProcessorTest, DropTagTest) {
         std::string tagVal;
         kvstore::ResultCode ret;
         std::unique_ptr<kvstore::KVIterator> iter;
-        ret = kv.get()->get(0, 0, std::move(MetaServiceUtils::indexTagKey(1, "tag_0")),
+        ret = kv.get()->get(kDefaultSpaceId, kDefaultPartId,
+                            std::move(MetaServiceUtils::indexTagKey(1, "tag_0")),
                             &tagVal);
         ASSERT_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
         std::string tagPrefix = "__tags__";
-        ret = kv.get()->prefix(0, 0, tagPrefix, &iter);
+        ret = kv.get()->prefix(kDefaultSpaceId, kDefaultPartId, tagPrefix, &iter);
         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
         ASSERT_FALSE(iter->valid());
     }
@@ -960,11 +970,12 @@ TEST(ProcessorTest, DropEdgeTest) {
         std::string edgeVal;
         kvstore::ResultCode ret;
         std::unique_ptr<kvstore::KVIterator> iter;
-        ret = kv.get()->get(0, 0, std::move(MetaServiceUtils::indexEdgeKey(1, "edge_0")),
+        ret = kv.get()->get(kDefaultSpaceId, kDefaultPartId,
+                            std::move(MetaServiceUtils::indexEdgeKey(1, "edge_0")),
                             &edgeVal);
         ASSERT_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
         std::string edgePrefix = "__edges__";
-        ret = kv.get()->prefix(0, 0, edgePrefix, &iter);
+        ret = kv.get()->prefix(kDefaultSpaceId, kDefaultPartId, edgePrefix, &iter);
         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
         ASSERT_FALSE(iter->valid());
     }
@@ -983,20 +994,20 @@ TEST(ProcessorTest, AlterTagTest) {
         nebula::cpp2::Schema addSch;
         for (auto i = 0; i < 2; i++) {
             nebula::cpp2::ColumnDef column;
-            column.name = folly::stringPrintf("tag_%d_col_%d", 0, i + 10);
+            column.name = folly::stringPrintf("tag_0_col_%d", i + 10);
             column.type.type = i < 1 ? SupportedType::INT : SupportedType::STRING;
             addSch.columns.emplace_back(std::move(column));
         }
         nebula::cpp2::Schema changeSch;
         for (auto i = 0; i < 2; i++) {
             nebula::cpp2::ColumnDef column;
-            column.name = folly::stringPrintf("tag_%d_col_%d", 0, i);
+            column.name = folly::stringPrintf("tag_0_col_%d", i);
             column.type.type = i < 1 ? SupportedType::BOOL : SupportedType::DOUBLE;
             changeSch.columns.emplace_back(std::move(column));
         }
         nebula::cpp2::Schema dropSch;
         nebula::cpp2::ColumnDef column;
-        column.name = folly::stringPrintf("tag_%d_col_%d", 0, 0);
+        column.name = "tag_0_col_0";
         dropSch.columns.emplace_back(std::move(column));
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::ADD);
@@ -1140,7 +1151,7 @@ TEST(ProcessorTest, AlterTagTest) {
         std::vector<cpp2::AlterSchemaItem> items;
         nebula::cpp2::Schema dropSch;
         nebula::cpp2::ColumnDef column;
-        column.name = folly::stringPrintf("tag_%d_col_%d", 0, 10);
+        column.name = "tag_0_col_10";
         dropSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -1236,10 +1247,10 @@ TEST(ProcessorTest, AlterEdgeTest) {
         nebula::cpp2::Schema dropSch;
         nebula::cpp2::ColumnDef column;
         std::vector<cpp2::AlterSchemaItem> items;
-        column.name = folly::stringPrintf("edge_%d_col_%d", 0, 0);
-        dropSch.columns.emplace_back(std::move(column));
-        column.name = folly::stringPrintf("edge_%d_col_%d", 0, 1);
-        dropSch.columns.emplace_back(std::move(column));
+        for (int32_t i = 0; i < 2; i++) {
+            column.name = folly::stringPrintf("edge_0_col_%d", i);
+            dropSch.columns.emplace_back(std::move(column));
+        }
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::DROP);
@@ -1265,7 +1276,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         ASSERT_EQ(2, edges.size());
         auto edge = edges[0].version > 0 ? edges[0] : edges[1];
         EXPECT_EQ(0, edge.get_edge_type());
-        EXPECT_EQ(folly::stringPrintf("edge_%d", 0), edge.get_edge_name());
+        EXPECT_EQ("edge_0", edge.get_edge_name());
         EXPECT_EQ(1, edge.version);
         EXPECT_EQ(0, edge.get_schema().columns.size());
     }
@@ -1274,10 +1285,10 @@ TEST(ProcessorTest, AlterEdgeTest) {
         nebula::cpp2::Schema addSch;
         nebula::cpp2::ColumnDef column;
         std::vector<cpp2::AlterSchemaItem> items;
-        column.name = folly::stringPrintf("edge_%d_col_%d", 0, 0);
-        addSch.columns.emplace_back(std::move(column));
-        column.name = folly::stringPrintf("edge_%d_col_%d", 0, 1);
-        addSch.columns.emplace_back(std::move(column));
+        for (int32_t i = 0; i < 2; i++) {
+            column.name = folly::stringPrintf("edge_0_col_%d", i);
+            addSch.columns.emplace_back(std::move(column));
+        }
 
         items.emplace_back();
         items.back().set_op(cpp2::AlterSchemaOp::ADD);
@@ -1310,7 +1321,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         }
         nebula::cpp2::Schema dropSch;
         nebula::cpp2::ColumnDef column;
-        column.name = folly::stringPrintf("edge_%d_col_%d", 0, 0);
+        column.name = "edge_0_col_0";
         dropSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -1348,7 +1359,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         // Get the latest one by comparing the versions.
         auto edge = edges[0].version > 0 ? edges[0] : edges[1];
         EXPECT_EQ(0, edge.get_edge_type());
-        EXPECT_EQ(folly::stringPrintf("edge_%d", 0), edge.get_edge_name());
+        EXPECT_EQ("edge_0", edge.get_edge_name());
         EXPECT_EQ(3, edge.version);
 
         nebula::cpp2::Schema schema;
@@ -1425,7 +1436,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         auto edge = edges[max_index];
 
         EXPECT_EQ(0, edge.get_edge_type());
-        EXPECT_EQ(folly::stringPrintf("edge_%d", 0), edge.get_edge_name());
+        EXPECT_EQ("edge_0", edge.get_edge_name());
         EXPECT_EQ(4, edge.version);
 
         nebula::cpp2::Schema schema;
@@ -1462,7 +1473,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         std::vector<cpp2::AlterSchemaItem> items;
         nebula::cpp2::Schema dropSch;
         nebula::cpp2::ColumnDef column;
-        column.name = folly::stringPrintf("edge_%d_col_%d", 0, 10);
+        column.name = "edge_0_col_10";
         dropSch.columns.emplace_back(std::move(column));
 
         items.emplace_back();
@@ -1547,6 +1558,585 @@ TEST(ProcessorTest, AlterEdgeTest) {
         ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
 }
+
+TEST(ProcessorTest, SameNameTagsTest) {
+    fs::TempDir rootPath("/tmp/SameNameTagsTest.XXXXXX");
+    auto kv = TestUtils::initKV(rootPath.path());
+    TestUtils::createSomeHosts(kv.get());
+
+    {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
+        cpp2::CreateSpaceReq req;
+        req.set_properties(std::move(properties));
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.get_id().get_space_id());
+    }
+    {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("second_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(1);
+        cpp2::CreateSpaceReq req;
+        req.set_properties(std::move(properties));
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(2, resp.get_id().get_space_id());
+    }
+
+    // Add same tag name in different space
+    nebula::cpp2::Schema schema;
+    decltype(schema.columns) cols;
+    cols.emplace_back(TestUtils::columnDef(0, SupportedType::INT));
+    cols.emplace_back(TestUtils::columnDef(1, SupportedType::FLOAT));
+    cols.emplace_back(TestUtils::columnDef(2, SupportedType::STRING));
+    schema.set_columns(std::move(cols));
+    {
+        cpp2::CreateTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("default_tag");
+        req.set_schema(schema);
+        auto* processor = CreateTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(3, resp.get_id().get_tag_id());
+    }
+    {
+        cpp2::CreateTagReq req;
+        req.set_space_id(2);
+        req.set_tag_name("default_tag");
+        req.set_schema(schema);
+        auto* processor = CreateTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(4, resp.get_id().get_tag_id());
+    }
+
+    // Remove Test
+    {
+        cpp2::DropTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("default_tag");
+        auto* processor = DropTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+
+    // List Test
+    {
+        cpp2::ListTagsReq req;
+        req.set_space_id(1);
+        auto* processor = ListTagsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        decltype(resp.tags) tags;
+        tags = resp.get_tags();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(0, tags.size());
+    }
+    {
+        cpp2::ListTagsReq req;
+        req.set_space_id(2);
+        auto* processor = ListTagsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        decltype(resp.tags) tags;
+        tags = resp.get_tags();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(1, tags.size());
+
+        ASSERT_EQ(4, tags[0].get_tag_id());
+        ASSERT_EQ("default_tag", tags[0].get_tag_name());
+    }
+}
+
+TEST(ProcessorTest, TagIndexTest) {
+    fs::TempDir rootPath("/tmp/TagIndexTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    TestUtils::createSomeHosts(kv.get());
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1, 1));
+    TestUtils::mockTag(kv.get(), 2);
+    {
+        cpp2::IndexProperties properties;
+        std::map<std::string, std::vector<std::string>> tagFields {
+            {"tag_0", {"tag_0_col_0"}}
+        };
+        properties.set_fields(std::move(tagFields));
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+        req.set_properties(std::move(properties));
+        auto* processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::IndexProperties properties;
+        std::map<std::string, std::vector<std::string>> tagFields {
+            {"tag_0", {"tag_0_col_0", "tag_0_col_1"}}
+        };
+        properties.set_fields(std::move(tagFields));
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("multi_field_index");
+        req.set_properties(std::move(properties));
+        auto* processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::IndexProperties properties;
+        std::map<std::string, std::vector<std::string>> tagFields {
+            {"tag_0", {"tag_0_col_0", "tag_0_col_1"}},
+            {"tag_1", {"tag_1_col_0", "tag_1_col_1"}}
+        };
+        properties.set_fields(std::move(tagFields));
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("multi_tag_index");
+        req.set_properties(std::move(properties));
+        auto* processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::IndexProperties properties;
+        std::map<std::string, std::vector<std::string>> tagFields {
+            {"tag_not_exist", {"tag_0_col_0"}}
+        };
+        properties.set_fields(std::move(tagFields));
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("tag_not_exist_index");
+        req.set_properties(std::move(properties));
+        auto* processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
+    }
+    {
+        cpp2::IndexProperties properties;
+        std::map<std::string, std::vector<std::string>> tagFields {
+            {"tag_0", {"field_not_exist"}}
+        };
+        properties.set_fields(std::move(tagFields));
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("field_not_exist_index");
+        req.set_properties(std::move(properties));
+        auto* processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
+    }
+    {
+        // Test index have exist
+        cpp2::IndexProperties properties;
+        std::map<std::string, std::vector<std::string>> tagFields {
+            {"tag_0", {"tag_0_col_0"}}
+        };
+        properties.set_fields(std::move(tagFields));
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+        req.set_properties(std::move(properties));
+        auto* processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.get_code());
+    }
+    {
+        cpp2::ListTagIndexesReq req;
+        req.set_space_id(1);
+        auto* processor = ListTagIndexesProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        auto items = resp.get_items();
+
+        ASSERT_EQ(3, items.size());
+        {
+            std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> singleField;
+            nebula::cpp2::ColumnDef column;
+            column.set_name("tag_0_col_0");
+            nebula::cpp2::ValueType type;
+            type.set_type(SupportedType::INT);
+            column.set_type(std::move(type));
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            columns.emplace_back(std::move(column));
+            singleField.emplace("tag_0", std::move(columns));
+
+            auto singleItem = items[0];
+            ASSERT_EQ(1, singleItem.get_index_id());
+            auto singleFieldResult = singleItem.get_fields().get_fields();
+            ASSERT_TRUE(TestUtils::verifyMap(singleFieldResult, singleField));
+        }
+        {
+            std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> multiField;
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            nebula::cpp2::ColumnDef intColumn;
+            intColumn.set_name("tag_0_col_0");
+            nebula::cpp2::ValueType intType;
+            intType.set_type(SupportedType::INT);
+            intColumn.set_type(std::move(intType));
+            columns.emplace_back(std::move(intColumn));
+            nebula::cpp2::ColumnDef stringColumn;
+            stringColumn.set_name("tag_0_col_1");
+            nebula::cpp2::ValueType stringType;
+            stringType.set_type(SupportedType::STRING);
+            stringColumn.set_type(std::move(stringType));
+            columns.emplace_back(std::move(stringColumn));
+            multiField.emplace("tag_0", std::move(columns));
+
+            auto multiItem = items[1];
+            ASSERT_EQ(2, multiItem.get_index_id());
+            auto multiFieldResult = multiItem.get_fields().get_fields();
+            ASSERT_TRUE(TestUtils::verifyMap(multiFieldResult, multiField));
+        }
+        {
+            std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> multiTagField;
+            for (int32_t i = 0; i< 2; i++) {
+                std::vector<nebula::cpp2::ColumnDef> columns;
+                nebula::cpp2::ColumnDef intColumn;
+                intColumn.set_name(folly::stringPrintf("tag_%d_col_0", i));
+                nebula::cpp2::ValueType intType;
+                intType.set_type(SupportedType::INT);
+                intColumn.set_type(std::move(intType));
+                columns.emplace_back(std::move(intColumn));
+
+                nebula::cpp2::ColumnDef stringColumn;
+                stringColumn.set_name(folly::stringPrintf("tag_%d_col_1", i));
+                nebula::cpp2::ValueType stringType;
+                stringType.set_type(SupportedType::STRING);
+                stringColumn.set_type(std::move(stringType));
+                columns.emplace_back(std::move(stringColumn));
+                multiTagField.emplace(folly::stringPrintf("tag_%d", i),
+                                       std::move(columns));
+            }
+            auto multiTagItem = items[2];
+            ASSERT_EQ(3, multiTagItem.get_index_id());
+            auto multiTagResult = multiTagItem.get_fields().get_fields();
+            ASSERT_TRUE(TestUtils::verifyMap(multiTagResult, multiTagField));
+        }
+    }
+    {
+        cpp2::GetTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+
+        auto* processor = GetTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        auto item = resp.get_item();
+        auto properties = item.get_fields().get_fields();
+        ASSERT_EQ(1, item.get_index_id());
+
+        nebula::cpp2::ColumnDef column;
+        column.set_name("tag_0_col_0");
+        nebula::cpp2::ValueType type;
+        type.set_type(SupportedType::INT);
+        column.set_type(std::move(type));
+        std::vector<nebula::cpp2::ColumnDef> columns;
+        columns.emplace_back(std::move(column));
+
+        TestUtils::verifyResult(columns, properties["tag_0"]);
+    }
+    {
+        cpp2::DropTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+
+        auto* processor = DropTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::GetTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+
+        auto* processor = GetTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
+    }
+    {
+        cpp2::DropTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+
+        auto* processor = DropTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
+    }
+}
+
+TEST(ProcessorTest, EdgeIndexTest) {
+    fs::TempDir rootPath("/tmp/EdgeIndexTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    TestUtils::createSomeHosts(kv.get());
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1, 1));
+    TestUtils::mockEdge(kv.get(), 2);
+    {
+        cpp2::IndexProperties   properties;
+        std::map<std::string, std::vector<std::string>> edgeFields{
+            {"edge_0", {"edge_0_col_0"}}
+        };
+        properties.set_fields(std::move(edgeFields));
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+        req.set_properties(std::move(properties));
+
+        auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::IndexProperties   properties;
+        std::map<std::string, std::vector<std::string>> edgeFields{
+            {"edge_0", {"edge_0_col_0", "edge_0_col_1"}}
+        };
+        properties.set_fields(std::move(edgeFields));
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("multi_field_index");
+        req.set_properties(std::move(properties));
+
+        auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::IndexProperties properties;
+        std::map<std::string, std::vector<std::string>> edgeFields {
+            {"edge_not_exist", {"edge_0_col_0"}}
+        };
+        properties.set_fields(std::move(edgeFields));
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("edge_not_exist_index");
+        req.set_properties(std::move(properties));
+        auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
+    }
+    {
+        cpp2::IndexProperties properties;
+        std::map<std::string, std::vector<std::string>> edgeFields {
+            {"edge_0", {"edge_field_not_exist"}}
+        };
+        properties.set_fields(std::move(edgeFields));
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("field_not_exist_index");
+        req.set_properties(std::move(properties));
+        auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
+    }
+    {
+        cpp2::IndexProperties   properties;
+        std::map<std::string, std::vector<std::string>> edgeFields{
+            {"edge_0", {"edge_0_col_0", "edge_0_col_1"}},
+            {"edge_1", {"edge_1_col_0", "edge_1_col_1"}}
+        };
+        properties.set_fields(std::move(edgeFields));
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("multi_edge_index");
+        req.set_properties(std::move(properties));
+
+        auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::IndexProperties   properties;
+        std::map<std::string, std::vector<std::string>> edgeFields{
+            {"edge_0", {"edge_0_col_0"}}
+        };
+        properties.set_fields(std::move(edgeFields));
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+        req.set_properties(std::move(properties));
+
+        auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.get_code());
+    }
+    {
+        cpp2::ListEdgeIndexesReq req;
+        req.set_space_id(1);
+        auto* processor = ListEdgeIndexesProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        auto items = resp.get_items();
+        ASSERT_EQ(3, items.size());
+
+        {
+            std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> singleField;
+            nebula::cpp2::ColumnDef column;
+            column.set_name("edge_0_col_0");
+            nebula::cpp2::ValueType type;
+            type.set_type(SupportedType::INT);
+            column.set_type(std::move(type));
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            columns.emplace_back(std::move(column));
+            singleField.emplace("edge_0", std::move(columns));
+
+            auto singleItem = items[0];
+            ASSERT_EQ(1, singleItem.get_index_id());
+            auto singleFieldResult = singleItem.get_fields().get_fields();
+            ASSERT_TRUE(TestUtils::verifyMap(singleFieldResult, singleField));
+        }
+
+        {
+            std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> multiField;
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            nebula::cpp2::ColumnDef intColumn;
+            intColumn.set_name("edge_0_col_0");
+            nebula::cpp2::ValueType intType;
+            intType.set_type(SupportedType::INT);
+            intColumn.set_type(std::move(intType));
+            columns.emplace_back(std::move(intColumn));
+            nebula::cpp2::ColumnDef stringColumn;
+            stringColumn.set_name("edge_0_col_1");
+            nebula::cpp2::ValueType stringType;
+            stringType.set_type(SupportedType::STRING);
+            stringColumn.set_type(std::move(stringType));
+            columns.emplace_back(std::move(stringColumn));
+            multiField.emplace("edge_0", std::move(columns));
+            auto multiItem = items[1];
+            ASSERT_EQ(2, multiItem.get_index_id());
+            auto multiFieldResult = multiItem.get_fields().get_fields();
+            ASSERT_TRUE(TestUtils::verifyMap(multiFieldResult, multiField));
+        }
+
+        {
+            std::map<std::string, std::vector<nebula::cpp2::ColumnDef>> multiEdgeField;
+            for (int32_t i = 0; i< 2; i++) {
+                std::vector<nebula::cpp2::ColumnDef> columns;
+                nebula::cpp2::ColumnDef intColumn;
+                intColumn.set_name(folly::stringPrintf("edge_%d_col_0", i));
+                nebula::cpp2::ValueType intType;
+                intType.set_type(SupportedType::INT);
+                intColumn.set_type(std::move(intType));
+                columns.emplace_back(std::move(intColumn));
+
+                nebula::cpp2::ColumnDef stringColumn;
+                stringColumn.set_name(folly::stringPrintf("edge_%d_col_1", i));
+                nebula::cpp2::ValueType stringType;
+                stringType.set_type(SupportedType::STRING);
+                stringColumn.set_type(std::move(stringType));
+                columns.emplace_back(std::move(stringColumn));
+                multiEdgeField.emplace(folly::stringPrintf("edge_%d", i),
+                                       std::move(columns));
+            }
+            auto multiEdgeItem = items[2];
+            ASSERT_EQ(3, multiEdgeItem.get_index_id());
+            auto multiEdgeResult = multiEdgeItem.get_fields().get_fields();
+            ASSERT_TRUE(TestUtils::verifyMap(multiEdgeResult, multiEdgeField));
+        }
+    }
+    {
+        cpp2::GetEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+
+        auto* processor = GetEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        auto item = resp.get_item();
+        auto properties = item.get_fields().get_fields();
+        ASSERT_EQ(1, item.get_index_id());
+    }
+    {
+        cpp2::DropEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+
+        auto* processor = DropEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::GetEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+
+        auto* processor = GetEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
+    }
+    {
+        cpp2::DropEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+
+        auto* processor = DropEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
+    }
+}
+
 }  // namespace meta
 }  // namespace nebula
 
