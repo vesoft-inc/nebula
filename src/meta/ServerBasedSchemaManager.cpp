@@ -82,13 +82,13 @@ StatusOr<GraphSpaceID> ServerBasedSchemaManager::toGraphSpaceID(folly::StringPie
 }
 
 StatusOr<TagID> ServerBasedSchemaManager::toTagID(GraphSpaceID space,
-                                        folly::StringPiece tagName) {
+                                                  folly::StringPiece tagName) {
     CHECK(metaClient_);
     return metaClient_->getTagIDByNameFromCache(space, tagName.str());
 }
 
 StatusOr<EdgeType> ServerBasedSchemaManager::toEdgeType(GraphSpaceID space,
-                                              folly::StringPiece typeName) {
+                                                        folly::StringPiece typeName) {
     CHECK(metaClient_);
     return metaClient_->getEdgeTypeByNameFromCache(space, typeName.str());
 }
