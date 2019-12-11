@@ -91,6 +91,10 @@ public:
         return variables_;
     }
 
+    std::vector<std::string> inputProps() const {
+        return std::vector<std::string>(inputProps_.begin(), inputProps_.end());
+    }
+
     bool hasSrcTagProp() const {
         return !srcTagProps_.empty();
     }
@@ -191,6 +195,10 @@ public:
 
     virtual bool isTypeCastingExpression() const {
         return kind_ == kTypeCasting;
+    }
+
+    virtual bool isFunCallExpression() const {
+        return kind_ == kFunctionCall;
     }
 
     /**
@@ -435,12 +443,7 @@ public:
         kind_ = kInputProp;
     }
 
-    explicit InputPropertyExpression(std::string *prop) {
-        kind_ = kInputProp;
-        ref_.reset(new std::string("$-."));
-        alias_.reset(new std::string(""));
-        prop_.reset(prop);
-    }
+    explicit InputPropertyExpression(std::string *prop);
 
     OptVariantType eval() const override;
 
@@ -453,19 +456,14 @@ private:
 };
 
 
-// $$[TagName].any_prop_name
+// $$.TagName.any_prop_name
 class DestPropertyExpression final : public AliasPropertyExpression {
 public:
     DestPropertyExpression() {
         kind_ = kDestProp;
     }
 
-    DestPropertyExpression(std::string *tag, std::string *prop) {
-        kind_ = kDestProp;
-        ref_.reset(new std::string("$$."));
-        alias_.reset(tag);
-        prop_.reset(prop);
-    }
+    DestPropertyExpression(std::string *tag, std::string *prop);
 
     OptVariantType eval() const override;
 
@@ -485,12 +483,7 @@ public:
         kind_ = kVariableProp;
     }
 
-    VariablePropertyExpression(std::string *var, std::string *prop) {
-        kind_ = kVariableProp;
-        ref_.reset(new std::string("$"));
-        alias_.reset(var);
-        prop_.reset(prop);
-    }
+    VariablePropertyExpression(std::string *var, std::string *prop);
 
     OptVariantType eval() const override;
 
@@ -514,7 +507,7 @@ public:
         kind_ = kEdgeType;
         ref_.reset(new std::string(""));
         alias_.reset(alias);
-        prop_.reset(new std::string("_type"));
+        prop_.reset(new std::string(_TYPE));
     }
 
     OptVariantType eval() const override;
@@ -539,7 +532,7 @@ public:
         kind_ = kEdgeSrcId;
         ref_.reset(new std::string(""));
         alias_.reset(alias);
-        prop_.reset(new std::string("_src"));
+        prop_.reset(new std::string(_SRC));
     }
 
     OptVariantType eval() const override;
@@ -564,7 +557,7 @@ public:
         kind_ = kEdgeDstId;
         ref_.reset(new std::string(""));
         alias_.reset(alias);
-        prop_.reset(new std::string("_dst"));
+        prop_.reset(new std::string(_DST));
     }
 
     OptVariantType eval() const override;
@@ -589,7 +582,7 @@ public:
         kind_ = kEdgeRank;
         ref_.reset(new std::string(""));
         alias_.reset(alias);
-        prop_.reset(new std::string("_rank"));
+        prop_.reset(new std::string(_RANK));
     }
 
     OptVariantType eval() const override;
@@ -603,19 +596,14 @@ private:
 };
 
 
-// $^[TagName].any_prop_name
+// $^.TagName.any_prop_name
 class SourcePropertyExpression final : public AliasPropertyExpression {
 public:
     SourcePropertyExpression() {
         kind_ = kSourceProp;
     }
 
-    SourcePropertyExpression(std::string *tag, std::string *prop) {
-        kind_ = kSourceProp;
-        ref_.reset(new std::string("$^."));
-        alias_.reset(tag);
-        prop_.reset(prop);
-    }
+    SourcePropertyExpression(std::string *tag, std::string *prop);
 
     OptVariantType eval() const override;
 
@@ -699,6 +687,10 @@ public:
             args_ = args->args();
             delete args;
         }
+    }
+
+    const std::string* name() const {
+        return name_.get();
     }
 
     std::string toString() const override;

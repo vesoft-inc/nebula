@@ -10,9 +10,8 @@ nebula_add_library(
     MetaServiceHandler.cpp
     MetaServiceUtils.cpp
     ActiveHostsMan.cpp
-    processors/partsMan/AddHostsProcessor.cpp
     processors/partsMan/ListHostsProcessor.cpp
-    processors/partsMan/RemoveHostsProcessor.cpp
+    processors/partsMan/ListPartsProcessor.cpp
     processors/partsMan/CreateSpaceProcessor.cpp
     processors/partsMan/GetSpaceProcessor.cpp
     processors/partsMan/ListSpacesProcessor.cpp
@@ -28,6 +27,14 @@ nebula_add_library(
     processors/schemaMan/GetEdgeProcessor.cpp
     processors/schemaMan/ListEdgesProcessor.cpp
     processors/schemaMan/DropEdgeProcessor.cpp
+    processors/indexMan/CreateTagIndexProcessor.cpp
+    processors/indexMan/DropTagIndexProcessor.cpp
+    processors/indexMan/GetTagIndexProcessor.cpp
+    processors/indexMan/ListTagIndexesProcessor.cpp
+    processors/indexMan/CreateEdgeIndexProcessor.cpp
+    processors/indexMan/DropEdgeIndexProcessor.cpp
+    processors/indexMan/GetEdgeIndexProcessor.cpp
+    processors/indexMan/ListEdgeIndexesProcessor.cpp
     processors/customKV/GetProcessor.cpp
     processors/customKV/MultiGetProcessor.cpp
     processors/customKV/MultiPutProcessor.cpp
@@ -37,11 +44,15 @@ nebula_add_library(
     processors/admin/HBProcessor.cpp
     processors/usersMan/AuthenticationProcessor.cpp
     processors/admin/BalanceProcessor.cpp
+    processors/admin/CreateSnapshotProcessor.cpp
+    processors/admin/DropSnapshotProcessor.cpp
+    processors/admin/ListSnapshotsProcessor.cpp
     processors/admin/Balancer.cpp
     processors/admin/BalancePlan.cpp
     processors/admin/BalanceTask.cpp
     processors/admin/AdminClient.cpp
     processors/admin/LeaderBalanceProcessor.cpp
+    processors/admin/SnapShot.cpp
     processors/configMan/RegConfigProcessor.cpp
     processors/configMan/GetConfigProcessor.cpp
     processors/configMan/ListConfigsProcessor.cpp

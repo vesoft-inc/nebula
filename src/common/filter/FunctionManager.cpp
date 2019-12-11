@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "filter/FunctionManager.h"
 #include "time/WallClock.h"
+#include "filter/geo/GeoFilter.h"
 
 namespace nebula {
 
@@ -194,10 +195,12 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 2;
         attr.body_ = [] (const auto &args) {
             if (args.empty()) {
-                return static_cast<int64_t>(folly::Random::rand32());
+                auto value = folly::Random::rand32();
+                return static_cast<int64_t>(static_cast<int32_t>(value));
             } else if (args.size() == 1UL) {
                 auto max = Expression::asInt(args[0]);
-                return static_cast<int64_t>(folly::Random::rand32(max));
+                auto value = folly::Random::rand32(max);
+                return static_cast<int64_t>(static_cast<int32_t>(value));
             }
             DCHECK_EQ(2UL, args.size());
             auto min = Expression::asInt(args[0]);
@@ -312,8 +315,8 @@ FunctionManager::FunctionManager() {
         attr.body_ = [] (const auto &args) {
             auto value = Expression::asString(args[0]);
             auto length = Expression::asInt(args[1]);
-            if (length < 0) {
-                length = 0;
+            if (length <= 0) {
+                return std::string();
             }
             return value.substr(0, length);
         };
@@ -326,7 +329,10 @@ FunctionManager::FunctionManager() {
             auto value  = Expression::asString(args[0]);
             auto length = Expression::asInt(args[1]);
             if (length <= 0) {
-                length = 0;
+                return std::string();
+            }
+            if (length > static_cast<int64_t>(value.size())) {
+                length = value.size();
             }
             return value.substr(value.size() - length);
         };
@@ -409,24 +415,115 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 1;
         attr.body_ = [] (const auto &args) {
             switch (args[0].which()) {
-                case 0: {
+                case VAR_INT64: {
                     auto v = Expression::asInt(args[0]);
                     return static_cast<int64_t>(std::hash<int64_t>()(v));
                 }
-                case 1: {
+                case VAR_DOUBLE: {
                     auto v = Expression::asDouble(args[0]);
                     return static_cast<int64_t>(std::hash<double>()(v));
                 }
-                case 2: {
+                case VAR_BOOL: {
                     auto v = Expression::asBool(args[0]);
                     return static_cast<int64_t>(std::hash<bool>()(v));
                 }
-                case 3: {
+                case VAR_STR: {
                     auto &v = Expression::asString(args[0]);
                     return static_cast<int64_t>(std::hash<std::string>()(v));
                 }
                 default:
+                    LOG(ERROR) << "Unkown type: " << args[0].which();
                     return INT64_MIN;
+            }
+        };
+    }
+    {
+        auto &attr = functions_["udf_is_in"];
+        attr.minArity_ = 2;
+        attr.maxArity_ = INT64_MAX;
+        attr.body_ = [] (const auto &args) {
+            VariantType cmp = args.front();
+            switch (cmp.which()) {
+                case VAR_INT64: {
+                    auto v = Expression::asInt(cmp);
+                    std::unordered_set<uint64_t> vals;
+                    for (auto iter = (args.begin() + 1); iter < args.end(); ++iter) {
+                        vals.emplace(Expression::toInt(*iter));
+                    }
+                    auto ret = vals.emplace(v);
+                    return !ret.second;
+                }
+                case VAR_DOUBLE: {
+                    auto v = Expression::asDouble(cmp);
+                    std::unordered_set<double> vals;
+                    for (auto iter = (args.begin() + 1); iter < args.end(); ++iter) {
+                        vals.emplace(Expression::toDouble(*iter));
+                    }
+                    auto ret = vals.emplace(v);
+                    return !ret.second;
+                }
+                case VAR_BOOL: {
+                    auto v = Expression::asBool(cmp);
+                    std::unordered_set<bool> vals;
+                    for (auto iter = (args.begin() + 1); iter < args.end(); ++iter) {
+                        vals.emplace(Expression::toBool(*iter));
+                    }
+                    auto ret = vals.emplace(v);
+                    return !ret.second;
+                }
+                case VAR_STR: {
+                    auto v = Expression::asString(cmp);
+                    std::unordered_set<std::string> vals;
+                    for (auto iter = (args.begin() + 1); iter < args.end(); ++iter) {
+                        vals.emplace(Expression::toString(*iter));
+                    }
+                    auto ret = vals.emplace(v);
+                    return !ret.second;
+                }
+                default:
+                    LOG(ERROR) << "Unkown type: " << cmp.which();
+                    return false;
+            }
+        };
+    }
+    {
+        auto &attr = functions_["near"];
+        attr.minArity_ = 2;
+        attr.maxArity_ = 2;
+        attr.body_ = [] (const auto &args) {
+            auto result = geo::GeoFilter::near(args);
+            if (!result.ok()) {
+                return std::string("");
+            } else {
+                return std::move(result).value();
+            }
+        };
+    }
+    {
+        auto &attr = functions_["cos_similarity"];
+        attr.minArity_ = 2;
+        attr.maxArity_ = INT64_MAX;
+        attr.body_ = [] (const auto &args) {
+            if (args.size() % 2 != 0) {
+                LOG(ERROR) << "The number of arguments must be even.";
+                // value range of cos is [-1, 1]
+                // it means error when we return -2
+                return static_cast<double>(-2);
+            }
+            // sum(xi * yi) / (sqrt(sum(pow(xi))) + sqrt(sum(pow(yi))))
+            auto mid = args.size() / 2;
+            double s1 = 0, s2 = 0, s3 = 0;
+            for (decltype(args.size()) i = 0; i < mid; ++i) {
+                auto xi = Expression::toDouble(args[i]);
+                auto yi = Expression::toDouble(args[i + mid]);
+                s1 += (xi * yi);
+                s2 += (xi * xi);
+                s3 += (yi * yi);
+            }
+            if (s2 == 0 || s3 == 0) {
+                return static_cast<double>(-2);
+            } else {
+                return s1 / (std::sqrt(s2) * std::sqrt(s3));
             }
         };
     }

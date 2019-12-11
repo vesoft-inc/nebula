@@ -22,8 +22,11 @@ class BalanceTask {
     friend class BalancePlan;
     FRIEND_TEST(BalanceTaskTest, SimpleTest);
     FRIEND_TEST(BalanceTest, BalancePlanTest);
+    FRIEND_TEST(BalanceTest, SpecifyHostTest);
+    FRIEND_TEST(BalanceTest, SpecifyMultiHostTest);
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
+    FRIEND_TEST(BalanceTest, StopBalanceDataTest);
 
 public:
     enum class Status : uint8_t {
@@ -36,6 +39,7 @@ public:
         MEMBER_CHANGE_REMOVE    = 0x07,
         UPDATE_PART_META        = 0x08,  // After this state, we can't rollback anymore.
         REMOVE_PART_ON_SRC      = 0x09,
+        CHECK                   = 0x0A,
         END                     = 0xFF,
     };
 

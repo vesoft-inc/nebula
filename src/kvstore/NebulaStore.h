@@ -36,6 +36,8 @@ class NebulaStore : public KVStore, public Handler {
     FRIEND_TEST(NebulaStoreTest, PartsTest);
     FRIEND_TEST(NebulaStoreTest, ThreeCopiesTest);
     FRIEND_TEST(NebulaStoreTest, TransLeaderTest);
+    FRIEND_TEST(NebulaStoreTest, CheckpointTest);
+    FRIEND_TEST(NebulaStoreTest, ThreeCopiesCheckpointTest);
 
 public:
     NebulaStore(KVOptions options,
@@ -72,6 +74,10 @@ public:
 
     uint32_t capability() const override {
         return 0;
+    }
+
+    HostAddr address() const {
+        return storeSvcAddr_;
     }
 
     std::shared_ptr<folly::IOThreadPoolExecutor> getIoPool() const {
@@ -161,6 +167,12 @@ public:
 
     ResultCode flush(GraphSpaceID spaceId) override;
 
+    ResultCode createCheckpoint(GraphSpaceID spaceId, const std::string& name) override;
+
+    ResultCode dropCheckpoint(GraphSpaceID spaceId, const std::string& name) override;
+
+    ResultCode setWriteBlocking(GraphSpaceID spaceId, bool sign) override;
+
     int32_t allLeader(std::unordered_map<GraphSpaceID,
                                          std::vector<PartitionID>>& leaderIds) override;
 
@@ -180,6 +192,10 @@ public:
     ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
 
 private:
+    void updateSpaceOption(GraphSpaceID spaceId,
+                           const std::unordered_map<std::string, std::string>& options,
+                           bool isDbOption) override;
+
     std::unique_ptr<KVEngine> newEngine(GraphSpaceID spaceId, const std::string& path);
 
     std::shared_ptr<Part> newPart(GraphSpaceID spaceId,
@@ -188,6 +204,8 @@ private:
                                   bool asLearner);
 
     ErrorOr<ResultCode, KVEngine*> engine(GraphSpaceID spaceId, PartitionID partId);
+
+    bool checkLeader(std::shared_ptr<Part> part) const;
 
 private:
     // The lock used to protect spaces_

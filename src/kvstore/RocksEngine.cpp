@@ -377,6 +377,7 @@ ResultCode RocksEngine::setOption(const std::string& configKey,
 
     rocksdb::Status status = db_->SetOptions(configOptions);
     if (status.ok()) {
+        LOG(INFO) << "SetOption Succeeded: " << configKey << ":" << configValue;
         return ResultCode::SUCCEEDED;
     } else {
         LOG(ERROR) << "SetOption Failed: " << configKey << ":" << configValue;
@@ -393,6 +394,7 @@ ResultCode RocksEngine::setDBOption(const std::string& configKey,
 
     rocksdb::Status status = db_->SetDBOptions(configOptions);
     if (status.ok()) {
+        LOG(INFO) << "SetDBOption Succeeded: " << configKey << ":" << configValue;
         return ResultCode::SUCCEEDED;
     } else {
         LOG(ERROR) << "SetDBOption Failed: " << configKey << ":" << configValue;
@@ -421,6 +423,53 @@ ResultCode RocksEngine::flush() {
         LOG(ERROR) << "Flush Failed: " << status.ToString();
         return ResultCode::ERR_UNKNOWN;
     }
+}
+
+ResultCode RocksEngine::createCheckpoint(const std::string& name) {
+    LOG(INFO) << "Begin checkpoint : " << dataPath_;
+
+    /*
+     * The default checkpoint directory structure is :
+     *   |--FLAGS_data_path
+     *   |----nebula
+     *   |------space1
+     *   |--------data
+     *   |--------wal
+     *   |--------checkpoints
+     *   |----------snapshot1
+     *   |------------data
+     *   |------------wal
+     *   |----------snapshot2
+     *   |----------snapshot3
+     *
+     */
+
+    auto checkpointPath = folly::stringPrintf("%s/checkpoints/%s/data",
+                                              dataPath_.c_str(), name.c_str());
+    LOG(INFO) << "Target checkpoint path : " << checkpointPath;
+    if (fs::FileUtils::exist(checkpointPath)) {
+        LOG(ERROR) << "The snapshot file already exists: " << checkpointPath;
+        return ResultCode::ERR_CHECKPOINT_ERROR;
+    }
+
+    auto parent = checkpointPath.substr(0, checkpointPath.rfind('/'));
+    if (!FileUtils::exist(parent)) {
+        FileUtils::makeDir(parent);
+    }
+
+    rocksdb::Checkpoint* checkpoint;
+    rocksdb::Status status = rocksdb::Checkpoint::Create(db_.get(), &checkpoint);
+    std::unique_ptr<rocksdb::Checkpoint> cp(checkpoint);
+    if (!status.ok()) {
+        LOG(ERROR) << "Init checkpoint Failed: " << status.ToString();
+        return ResultCode::ERR_CHECKPOINT_ERROR;
+    }
+    status = cp->CreateCheckpoint(checkpointPath, 0);
+    if (!status.ok()) {
+        LOG(ERROR) << "Create checkpoint Failed: " << status.ToString();
+        return ResultCode::ERR_CHECKPOINT_ERROR;
+    }
+    return ResultCode::SUCCEEDED;
 }
 
 }  // namespace kvstore

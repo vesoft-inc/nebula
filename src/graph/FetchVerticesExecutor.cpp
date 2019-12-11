@@ -49,29 +49,19 @@ Status FetchVerticesExecutor::prepareClauses() {
             break;
         }
 
-        prepareVids();
-
-        status = prepareYield();
+        status = prepareVids();
         if (!status.ok()) {
             break;
         }
-
-        // Save the type
-        auto iter = colTypes_.begin();
-        for (auto i = 0u; i < colNames_.size(); i++) {
-            auto type = labelSchema_->getFieldType(colNames_[i]);
-            if (type == CommonConstants::kInvalidValueType()) {
-                iter++;
-                continue;
-            }
-            *iter = type.type;
-            iter++;
+        status = prepareYield();
+        if (!status.ok()) {
+            break;
         }
     } while (false);
     return status;
 }
 
-void FetchVerticesExecutor::prepareVids() {
+Status FetchVerticesExecutor::prepareVids() {
     if (sentence_->isRef()) {
         auto *expr = sentence_->ref();
         if (expr->isInputExpression()) {
@@ -86,21 +76,24 @@ void FetchVerticesExecutor::prepareVids() {
             //  only support input and variable yet.
             LOG(FATAL) << "Unknown kind of expression.";
         }
+        if (colname_ != nullptr && *colname_ == "*") {
+            return Status::Error("Cant not use `*' to reference a vertex id column.");
+        }
     }
+    return Status::OK();
 }
 
 void FetchVerticesExecutor::execute() {
     FLOG_INFO("Executing FetchVertices: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status), ectx()->getGraphStats()->getFetchVerticesStats());
         return;
     }
 
     status = setupVids();
     if (!status.ok()) {
-        onError_(std::move(status));
+        doError(std::move(status), ectx()->getGraphStats()->getFetchVerticesStats());
         return;
     }
     if (vids_.empty()) {
@@ -114,8 +107,8 @@ void FetchVerticesExecutor::execute() {
 void FetchVerticesExecutor::fetchVertices() {
     auto props = getPropNames();
     if (props.empty()) {
-        DCHECK(onError_);
-        onError_(Status::Error("No props declared."));
+        doError(Status::Error("No props declared."),
+                ectx()->getGraphStats()->getFetchVerticesStats());
         return;
     }
 
@@ -124,8 +117,8 @@ void FetchVerticesExecutor::fetchVertices() {
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            DCHECK(onError_);
-            onError_(Status::Error("Get props failed"));
+            doError(Status::Error("Get props failed"),
+                    ectx()->getGraphStats()->getFetchVerticesStats());
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get vertices partially failed: "  << completeness << "%";
@@ -139,7 +132,7 @@ void FetchVerticesExecutor::fetchVertices() {
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal error"), ectx()->getGraphStats()->getFetchVerticesStats());
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -191,30 +184,35 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                 outputSchema = std::make_shared<SchemaWriter>();
                 auto status = getOutputSchema(vschema.get(), vreader.get(), outputSchema.get());
                 if (!status.ok()) {
-                    LOG(ERROR) << "Get getOutputSchema failed" << status;
-                    DCHECK(onError_);
-                    onError_(std::move(status));
+                    LOG(ERROR) << "Get getOutputSchema failed: " << status;
+                    doError(Status::Error("Internal error."),
+                            ectx()->getGraphStats()->getFetchVerticesStats());
                     return;
                 }
                 rsWriter = std::make_unique<RowSetWriter>(outputSchema);
             }
 
-            auto collector = std::make_unique<Collector>(vschema.get());
             auto writer = std::make_unique<RowWriter>(outputSchema);
-
             auto &getters = expCtx_->getters();
-            getters.getAliasProp = [&](const std::string &,
-                                       const std::string &prop) -> OptVariantType {
-                return collector->getProp(prop, vreader.get());
+            getters.getAliasProp =
+                [&vreader, &vschema] (const std::string&,
+                                      const std::string &prop) -> OptVariantType {
+                return Collector::getProp(vschema.get(), prop, vreader.get());
             };
             for (auto *column : yields_) {
                 auto *expr = column->expr();
                 auto value = expr->eval();
                 if (!value.ok()) {
-                    onError_(value.status());
+                    doError(std::move(value).status(),
+                            ectx()->getGraphStats()->getFetchVerticesStats());
                     return;
                 }
-                collector->collect(value.value(), writer.get());
+                auto status = Collector::collect(value.value(), writer.get());
+                if (!status.ok()) {
+                    LOG(ERROR) << "Collect prop error: " << status;
+                    doError(std::move(status), ectx()->getGraphStats()->getFetchVerticesStats());
+                    return;
+                }
             }
             // TODO Consider float/double, and need to reduce mem copy.
             std::string encode = writer->encode();
@@ -286,14 +284,15 @@ Status FetchVerticesExecutor::setupVidsFromRef() {
     const InterimResult *inputs;
     if (varname_ == nullptr) {
         inputs = inputs_.get();
-        if (inputs == nullptr || !inputs->hasData()) {
-            return Status::OK();
-        }
     } else {
-        inputs = ectx()->variableHolder()->get(*varname_);
-        if (inputs == nullptr || !inputs->hasData()) {
+        bool existing = false;
+        inputs = ectx()->variableHolder()->get(*varname_, &existing);
+        if (!existing) {
             return Status::Error("Variable `%s' not defined", varname_->c_str());
         }
+    }
+    if (inputs == nullptr || !inputs->hasData()) {
+        return Status::OK();
     }
 
     StatusOr<std::vector<VertexID>> result;
@@ -308,6 +307,5 @@ Status FetchVerticesExecutor::setupVidsFromRef() {
     vids_ = std::move(result).value();
     return Status::OK();
 }
-
 }  // namespace graph
 }  // namespace nebula

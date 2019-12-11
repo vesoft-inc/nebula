@@ -9,6 +9,8 @@
 #include "meta/processors/admin/AdminClient.h"
 
 DECLARE_int32(expired_threshold_sec);
+DEFINE_int32(removed_threshold_sec, 24 * 60 * 60,
+                     "Hosts will be removed in this time if no heartbeat received");
 
 namespace nebula {
 namespace meta {
@@ -44,7 +46,8 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus(
         return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(kvRet));
     }
 
-    auto now = time::WallClock::fastNowInSec();
+    auto now = time::WallClock::fastNowInMilliSec();
+    std::vector<std::string> removeHostsKey;
     while (iter->valid()) {
         cpp2::HostItem item;
         nebula::cpp2::HostAddr host;
@@ -52,12 +55,16 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus(
         memcpy(&host, hostAddrPiece.data(), hostAddrPiece.size());
         item.set_hostAddr(host);
         HostInfo info = HostInfo::decode(iter->val());
-        if (now - info.lastHBTimeInSec_ < FLAGS_expired_threshold_sec) {
-            item.set_status(cpp2::HostStatus::ONLINE);
+        if (now - info.lastHBTimeInMilliSec_ < FLAGS_removed_threshold_sec * 1000) {
+            if (now - info.lastHBTimeInMilliSec_ < FLAGS_expired_threshold_sec * 1000) {
+                item.set_status(cpp2::HostStatus::ONLINE);
+            } else {
+                item.set_status(cpp2::HostStatus::OFFLINE);
+            }
+            hostItems.emplace_back(item);
         } else {
-            item.set_status(cpp2::HostStatus::OFFLINE);
+            removeHostsKey.emplace_back(iter->key());
         }
-        hostItems.emplace_back(item);
         iter->next();
     }
 
@@ -119,6 +126,18 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus(
             it->set_leader_parts(std::move(leaderParts));
             it->set_all_parts(std::move(hostEntry.second));
         }
+    }
+
+    // Remove hosts that long time at OFFLINE status
+    if (!removeHostsKey.empty()) {
+        kvstore_->asyncMultiRemove(kDefaultSpaceId,
+                                   kDefaultPartId,
+                                   std::move(removeHostsKey),
+                                   [] (kvstore::ResultCode code) {
+                if (code != kvstore::ResultCode::SUCCEEDED) {
+                    LOG(ERROR) << "Async remove long time offline hosts failed: " << code;
+                }
+            });
     }
     return hostItems;
 }

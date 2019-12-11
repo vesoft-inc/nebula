@@ -26,11 +26,13 @@ public:
     void execute() override;
     void showHosts();
     void showSpaces();
+    void showParts();
     void showTags();
     void showEdges();
     void showCreateSpace();
     void showCreateTag();
     void showCreateEdge();
+    void showSnapshots();
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 

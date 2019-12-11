@@ -17,7 +17,7 @@ class GetProcessor : public BaseProcessor<cpp2::GeneralResponse> {
 public:
     static GetProcessor* instance(kvstore::KVStore* kvstore,
                                   meta::SchemaManager* schemaMan,
-                                  StorageStats* stats,
+                                  stats::Stats* stats,
                                   folly::Executor* executor) {
         return new GetProcessor(kvstore, schemaMan, stats, executor);
     }
@@ -27,14 +27,14 @@ public:
 protected:
     explicit GetProcessor(kvstore::KVStore* kvstore,
                           meta::SchemaManager* schemaMan,
-                          StorageStats* stats,
+                          stats::Stats* stats,
                           folly::Executor* executor = nullptr):
         BaseProcessor<cpp2::GeneralResponse>(kvstore, schemaMan, stats),
         executor_(executor) {}
 
 private:
     folly::Future<std::pair<PartitionID, kvstore::ResultCode>>
-    asyncProcess(PartitionID part, const std::vector<std::string>& keys);
+    asyncProcess(PartitionID part, std::vector<std::string> keys);
 
     folly::Executor *executor_ = nullptr;
     std::unordered_map<std::string, std::string> pairs_;

@@ -24,7 +24,11 @@ void QueryEdgeKeysProcessor::process(const cpp2::EdgeKeyRequest& req) {
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId = " << spaceId
                 << ", partId =  " << partId << ", vertexId = " << vId;
-        this->pushResultCode(this->to(ret), partId);
+        if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+            this->handleLeaderChanged(spaceId, partId);
+        } else {
+            this->pushResultCode(this->to(ret), partId);
+        }
         this->onFinished();
         return;
     }
@@ -35,8 +39,11 @@ void QueryEdgeKeysProcessor::process(const cpp2::EdgeKeyRequest& req) {
             auto dst = NebulaKeyUtils::getDstId(key);
             auto edgeType = NebulaKeyUtils::getEdgeType(key);
             auto rank = NebulaKeyUtils::getRank(key);
-            auto edge = cpp2::EdgeKey(apache::thrift::FragileConstructor::FRAGILE,
-                                      src, edgeType, rank, dst);
+            cpp2::EdgeKey edge;
+            edge.set_src(src);
+            edge.set_edge_type(edgeType);
+            edge.set_ranking(rank);
+            edge.set_dst(dst);
             edges.emplace_back(std::move(edge));
         }
         iter->next();

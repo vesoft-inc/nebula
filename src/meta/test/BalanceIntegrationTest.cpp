@@ -89,13 +89,14 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     auto ret = mClient->createSpace("storage", partition, replica).get();
     ASSERT_TRUE(ret.ok());
     auto spaceId = ret.value();
+
     std::vector<nebula::cpp2::ColumnDef> columns;
-    columns.emplace_back(FRAGILE,
-                         "c",
-                         nebula::cpp2::ValueType(FRAGILE,
-                                                 SupportedType::STRING,
-                                                 nullptr,
-                                                 nullptr));
+    nebula::cpp2::ValueType vt;
+    vt.set_type(SupportedType::STRING);
+    columns.emplace_back();
+    columns.back().set_name("c");
+    columns.back().set_type(vt);
+
     nebula::cpp2::Schema schema;
     schema.set_columns(std::move(columns));
     auto tagRet = mClient->createTagSchema(spaceId, "tag", std::move(schema)).get();
@@ -146,7 +147,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         for (int32_t vId = 0; vId < 10000; vId++) {
             vIds.emplace_back(vId);
         }
-        retCols.emplace_back(storage::TestUtils::vetexPropDef("c", tagId));
+        retCols.emplace_back(storage::TestUtils::vertexPropDef("c", tagId));
         auto f = sClient->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
         auto resp = std::move(f).get();
         if (!resp.succeeded()) {
@@ -193,7 +194,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
 
     LOG(INFO) << "Let's balance";
     auto bIdRet = balancer.balance();
-    CHECK(bIdRet.ok()) << bIdRet.status();
+    CHECK(ok(bIdRet));
     while (balancer.isRunning()) {
         sleep(1);
     }
@@ -204,10 +205,11 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         LOG(INFO) << "Balance Finished, check the newly added server";
         std::unique_ptr<kvstore::KVIterator> iter;
         auto prefix = NebulaKeyUtils::prefix(1);
-        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, newServer->kvStore_->prefix(spaceId,
-                                                                              1,
-                                                                              prefix,
-                                                                              &iter));
+        auto partRet = newServer->kvStore_->part(spaceId, 1);
+        CHECK(ok(partRet));
+        auto part = value(partRet);
+        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, part->engine()->prefix(prefix,
+                                                                         &iter));
         int num = 0;
         std::string lastKey = "";
         while (iter->valid()) {
@@ -307,8 +309,19 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
 
     auto ret = mClient->createSpace("storage", partition, replica).get();
     ASSERT_TRUE(ret.ok());
-    sleep(FLAGS_load_data_interval_secs + FLAGS_raft_heartbeat_interval_secs + 3);
-
+    while (true) {
+        int totalLeaders = 0;
+        for (int i = 0; i < replica; i++) {
+            std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+            totalLeaders += serverContexts[i]->kvStore_->allLeader(leaderIds);
+        }
+        if (totalLeaders == partition) {
+            break;
+        }
+        LOG(INFO) << "Waiting for leader election, current total leader number " << totalLeaders
+                  << ", expected " << partition;
+        sleep(1);
+    }
     auto code = balancer.leaderBalance();
     ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
 
@@ -316,7 +329,8 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
     sleep(FLAGS_raft_heartbeat_interval_secs + 1);
     for (int i = 0; i < replica; i++) {
         std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
-        EXPECT_EQ(3, serverContexts[i]->kvStore_->allLeader(leaderIds));
+        EXPECT_LE(2, serverContexts[i]->kvStore_->allLeader(leaderIds));
+        EXPECT_GE(4, serverContexts[i]->kvStore_->allLeader(leaderIds));
     }
     for (auto& c : metaClients) {
         c->stop();

@@ -14,6 +14,8 @@ std::string ShowSentence::toString() const {
             return std::string("SHOW HOSTS");
         case ShowType::kShowSpaces:
             return std::string("SHOW SPACES");
+        case ShowType::kShowParts:
+            return std::string("SHOW PARTS");
         case ShowType::kShowTags:
             return std::string("SHOW TAGS");
         case ShowType::kShowEdges:
@@ -30,6 +32,8 @@ std::string ShowSentence::toString() const {
             return folly::stringPrintf("SHOW CREATE TAG %s", name_.get()->c_str());
         case ShowType::kShowCreateEdge:
             return folly::stringPrintf("SHOW CREATE EDGE %s", name_.get()->c_str());
+        case ShowType::kShowSnapshots:
+            return folly::stringPrintf("SHOW SNAPSHOTS");
         case ShowType::kUnknown:
         default:
             FLOG_FATAL("Type illegal");
@@ -37,30 +41,6 @@ std::string ShowSentence::toString() const {
     return "Unknown";
 }
 
-
-std::string HostList::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    for (auto &host : hosts_) {
-        buf += network::NetworkUtils::intToIPv4(host->first);
-        buf += ":";
-        buf += std::to_string(host->second);
-        buf += ",";
-    }
-    if (!buf.empty()) {
-        buf.resize(buf.size() - 1);
-    }
-    return buf;
-}
-
-
-std::string AddHostsSentence::toString() const {
-    return folly::stringPrintf("ADD HOSTS (%s) ", hosts_->toString().c_str());
-}
-
-std::string RemoveHostsSentence::toString() const {
-    return folly::stringPrintf("REMOVE HOSTS (%s) ", hosts_->toString().c_str());
-}
 
 std::string SpaceOptItem::toString() const {
     switch (optType_) {
@@ -134,11 +114,11 @@ std::string ConfigRowItem::toString() const {
 std::string ConfigSentence::toString() const {
     switch (subType_) {
         case SubType::kShow:
-            return std::string("SHOW VARIABLES ") + configItem_->toString();
+            return std::string("SHOW CONFIGS ") + configItem_->toString();
         case SubType::kSet:
-            return std::string("SET VARIABLES ") + configItem_->toString();
+            return std::string("SET CONFIGS ") + configItem_->toString();
         case SubType::kGet:
-            return std::string("GET VARIABLES ") + configItem_->toString();
+            return std::string("GET CONFIGS ") + configItem_->toString();
         default:
             FLOG_FATAL("Type illegal");
     }
@@ -153,6 +133,29 @@ std::string BalanceSentence::toString() const {
             FLOG_FATAL("Type illegal");
     }
     return "Unknown";
+}
+
+std::string HostList::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &host : hosts_) {
+        buf += network::NetworkUtils::intToIPv4(host->first);
+        buf += ":";
+        buf += std::to_string(host->second);
+        buf += ",";
+    }
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
+}
+
+std::string CreateSnapshotSentence::toString() const {
+    return "CREATE SNAPSHOT";
+}
+
+std::string DropSnapshotSentence::toString() const {
+    return folly::stringPrintf("DROP SNAPSHOT %s", name_.get()->c_str());
 }
 
 }   // namespace nebula

@@ -4,13 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef GRAPH_TEST_TRAVERSETESTBASE_H
-#define GRAPH_TEST_TRAVERSETESTBASE_H
+#ifndef GRAPH_TEST_TRAVERSETESTBASE_H_
+#define GRAPH_TEST_TRAVERSETESTBASE_H_
 
 #include "base/Base.h"
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
 #include "meta/test/TestUtils.h"
+#include "storage/test/TestUtils.h"
 
 DECLARE_int32(load_data_interval_secs);
 
@@ -43,6 +44,59 @@ protected:
         ASSERT_TRUE(removeData());
         client_.reset();
     }
+
+    AssertionResult verifyPath(const cpp2::ExecutionResponse &resp,
+                               std::vector<std::string> &expected) {
+        if (resp.get_error_code() != cpp2::ErrorCode::SUCCEEDED) {
+            auto *errmsg = resp.get_error_msg();
+            return TestError() << "Query failed with `"
+                               << static_cast<int32_t>(resp.get_error_code())
+                               << (errmsg == nullptr ? "'" : "': " + *errmsg);
+        }
+
+        if (resp.get_rows() == nullptr && expected.empty()) {
+            return TestOK();
+        }
+
+        auto rows = buildPathString(*resp.get_rows());
+
+        if (expected.size() != rows.size()) {
+            return TestError() << "Rows' count not match: "
+                               << rows.size() << " vs. " << expected.size();
+        }
+
+        std::sort(rows.begin(), rows.end());
+        std::sort(expected.begin(), expected.end());
+
+        for (decltype(rows.size()) i = 0; i < rows.size(); ++i) {
+            if (rows[i] != expected[i]) {
+                return TestError() << rows[i] << " vs. " << expected[i];
+            }
+        }
+        return TestOK();
+    }
+
+    static std::vector<std::string> buildPathString(std::vector<cpp2::RowValue> rows) {
+        std::vector<std::string> paths;
+        for (auto &row : rows) {
+            auto &pathValue = row.get_columns().back().get_path();
+            auto &cols = pathValue.get_entry_list();
+            std::string pathStr;
+            auto iter = cols.begin();
+            while (iter < (cols.end() - 1)) {
+                pathStr += folly::stringPrintf("%ld<%s,%ld>",
+                                iter->get_vertex().get_id(),
+                                (iter + 1)->get_edge().get_type().c_str(),
+                                (iter + 1)->get_edge().get_ranking());
+                iter = iter + 2;
+            }
+            pathStr += folly::to<std::string>(iter->get_vertex().get_id());
+            paths.emplace_back(std::move(pathStr));
+        }
+
+        return paths;
+    }
+
 
     static AssertionResult prepareSchema();
 
@@ -310,6 +364,12 @@ AssertionResult TraverseTestBase::prepareSchema() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
+
+    // fix UTs failed sometimes
+    auto kvstore = gEnv->storageServer()->kvStore_.get();
+    GraphSpaceID spaceId = 1;  // default_space id is 1
+    nebula::storage::TestUtils::waitUntilAllElected(kvstore, spaceId, 1);
+
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "USE nba";

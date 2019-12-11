@@ -4,7 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "stats/StatsManager.h"
+#include "time/Duration.h"
 #include <folly/Try.h>
+
+DECLARE_int32(storage_client_timeout_ms);
 
 namespace nebula {
 namespace storage {
@@ -83,20 +87,21 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
         evb = ioThreadPool_->getEventBase();
     }
 
+    time::Duration duration;
     for (auto& req : requests) {
         auto& host = req.first;
         auto spaceId = req.second.get_space_id();
         auto res = context->insertRequest(host, std::move(req.second));
         DCHECK(res.second);
         // Invoke the remote method
-        folly::via(evb, [this, evb, context, host, spaceId, res] () mutable {
-            auto client = clientsMan_->client(host, evb);
+        folly::via(evb, [this, evb, context, host, spaceId, res, duration] () mutable {
+            auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
             // Result is a pair of <Request&, bool>
             context->serverMethod(client.get(), *res.first)
             // Future process code will be executed on the IO thread
             // Since all requests are sent using the same eventbase, all then-callback
             // will be executed on the same IO thread
-            .then(evb, [this, context, host, spaceId] (folly::Try<Response>&& val) {
+            .via(evb).then([this, context, host, spaceId, duration] (folly::Try<Response>&& val) {
                 auto& r = context->findRequest(host);
                 if (val.hasException()) {
                     LOG(ERROR) << "Request to " << host << " failed: " << val.exception().what();
@@ -125,7 +130,8 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                                              code.get_part_id(),
                                              HostAddr(leader->get_ip(), leader->get_port()));
                             }
-                        } else if (code.get_code() == storage::cpp2::ErrorCode::E_PART_NOT_FOUND) {
+                        } else if (code.get_code() == storage::cpp2::ErrorCode::E_PART_NOT_FOUND
+                                || code.get_code() == storage::cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
                             invalidLeader(spaceId, code.get_part_id());
                         } else {
                             // Simply keep the result
@@ -138,7 +144,8 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                     }
 
                     // Adjust the latency
-                    context->resp.setLatency(result.get_latency_in_us());
+                    auto latency = result.get_latency_in_us();
+                    context->resp.setLatency(latency);
 
                     // Keep the response
                     context->resp.responses().emplace_back(std::move(resp));
@@ -146,14 +153,19 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
 
                 if (context->removeRequest(host)) {
                     // Received all responses
+                    stats::Stats::addStatsValue(stats_,
+                                                context->resp.succeeded(),
+                                                duration.elapsedInUSec());
                     context->promise.setValue(std::move(context->resp));
                 }
             });
         });  // via
     }  // for
+
     if (context->finishSending()) {
         // Received all responses, most likely, all rpc failed
         context->promise.setValue(std::move(context->resp));
+        stats::Stats::addStatsValue(stats_, context->resp.succeeded(), duration.elapsedInUSec());
     }
 
     return context->promise.getSemiFuture();
@@ -165,6 +177,7 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
         folly::EventBase* evb,
         std::pair<HostAddr, Request> request,
         RemoteFunc remoteFunc) {
+    time::Duration duration;
     if (evb == nullptr) {
         DCHECK(!!ioThreadPool_);
         evb = ioThreadPool_->getEventBase();
@@ -172,17 +185,18 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
     folly::Promise<StatusOr<Response>> pro;
     auto f = pro.getFuture();
     folly::via(evb, [evb, request = std::move(request), remoteFunc = std::move(remoteFunc),
-                     pro = std::move(pro), this] () mutable {
+                     pro = std::move(pro), duration, this] () mutable {
         auto host = request.first;
-        auto client = clientsMan_->client(host, evb);
+        auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
         auto spaceId = request.second.get_space_id();
         auto partId = request.second.get_part_id();
         LOG(INFO) << "Send request to storage " << host;
-        remoteFunc(client.get(), std::move(request.second))
-             .then(evb,
-                   [spaceId, partId, p = std::move(pro), this] (folly::Try<Response>&& t) mutable {
+        remoteFunc(client.get(), std::move(request.second)).via(evb)
+             .then([spaceId, partId, p = std::move(pro),
+                    duration, this] (folly::Try<Response>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
+                stats::Stats::addStatsValue(stats_, false, duration.elapsedInUSec());
                 p.setValue(Status::Error(folly::stringPrintf("RPC failure in StorageClient: %s",
                                                              t.exception().what().c_str())));
                 invalidLeader(spaceId, partId);
@@ -204,6 +218,9 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
                     invalidLeader(spaceId, code.get_part_id());
                 }
             }
+            stats::Stats::addStatsValue(stats_,
+                                        result.get_failed_codes().empty(),
+                                        duration.elapsedInUSec());
             p.setValue(std::move(resp));
         });
     });  // via

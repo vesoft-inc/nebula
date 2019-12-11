@@ -24,7 +24,8 @@ Status ShowExecutor::prepare() {
 
 
 void ShowExecutor::execute() {
-    if (sentence_->showType() == ShowSentence::ShowType::kShowTags ||
+    if (sentence_->showType() == ShowSentence::ShowType::kShowParts ||
+        sentence_->showType() == ShowSentence::ShowType::kShowTags ||
         sentence_->showType() == ShowSentence::ShowType::kShowEdges ||
         sentence_->showType() == ShowSentence::ShowType::kShowCreateTag ||
         sentence_->showType() == ShowSentence::ShowType::kShowCreateEdge) {
@@ -42,6 +43,9 @@ void ShowExecutor::execute() {
             break;
         case ShowSentence::ShowType::kShowSpaces:
             showSpaces();
+            break;
+        case ShowSentence::ShowType::kShowParts:
+            showParts();
             break;
         case ShowSentence::ShowType::kShowTags:
             showTags();
@@ -62,6 +66,9 @@ void ShowExecutor::execute() {
             break;
         case ShowSentence::ShowType::kShowCreateEdge:
             showCreateEdge();
+            break;
+        case ShowSentence::ShowType::kShowSnapshots:
+            showSnapshots();
             break;
         case ShowSentence::ShowType::kUnknown:
             onError_(Status::Error("Type unknown"));
@@ -147,7 +154,7 @@ void ShowExecutor::showHosts() {
         resp_->set_rows(std::move(rows));
 
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -188,7 +195,78 @@ void ShowExecutor::showSpaces() {
         resp_->set_rows(std::move(rows));
 
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+                                                   e.what().c_str())));
+        return;
+    };
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+
+void ShowExecutor::showParts() {
+    auto spaceId = ectx()->rctx()->session()->space();
+    auto future = ectx()->getMetaClient()->listParts(spaceId);
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(std::move(resp).status());
+            return;
+        }
+
+        auto partItems = std::move(resp).value();
+        std::vector<cpp2::RowValue> rows;
+        std::vector<std::string> header{"Partition ID", "Leader", "Peers", "Losts"};
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(header));
+
+        std::sort(partItems.begin(), partItems.end(),
+            [] (const auto& a, const auto& b) {
+                return a.get_part_id() < b.get_part_id();
+            });
+
+        for (auto& item : partItems) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(4);
+            row[0].set_integer(item.get_part_id());
+
+            if (item.__isset.leader) {
+                auto leader = item.get_leader();
+                std::vector<HostAddr> leaders = {{leader->ip, leader->port}};
+                std::string leaderStr = NetworkUtils::toHosts(leaders);
+                row[1].set_str(leaderStr);
+            } else {
+                row[1].set_str("");
+            }
+
+            std::vector<HostAddr> peers;
+            for (auto& peer : item.get_peers()) {
+                peers.emplace_back(peer.ip, peer.port);
+            }
+            std::string peersStr = NetworkUtils::toHosts(peers);
+            row[2].set_str(peersStr);
+
+            std::vector<HostAddr> losts;
+            for (auto& lost : item.get_losts()) {
+                losts.emplace_back(lost.ip, lost.port);
+            }
+            std::string lostsStr = NetworkUtils::toHosts(losts);
+            row[3].set_str(lostsStr);
+
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+        resp_->set_rows(std::move(rows));
+
+        DCHECK(onFinish_);
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -218,25 +296,26 @@ void ShowExecutor::showTags() {
         auto value = std::move(resp).value();
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         std::vector<cpp2::RowValue> rows;
-        std::vector<std::string> header{"Name"};
+        std::vector<std::string> header{"ID", "Name"};
         resp_->set_column_names(std::move(header));
 
-        std::set<std::string> uniqueTags;
+        std::map<nebula::cpp2::TagID, std::string> tagItems;
         for (auto &tag : value) {
-            uniqueTags.emplace(tag.get_tag_name());
+            tagItems.emplace(tag.get_tag_id(), tag.get_tag_name());
         }
 
-        for (auto &item : uniqueTags) {
+        for (auto &item : tagItems) {
             std::vector<cpp2::ColumnValue> row;
-            row.resize(1);
-            row[0].set_str(item);
+            row.resize(2);
+            row[0].set_integer(item.first);
+            row[1].set_str(item.second);
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }
 
         resp_->set_rows(std::move(rows));
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -265,24 +344,25 @@ void ShowExecutor::showEdges() {
         auto value = std::move(resp).value();
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         std::vector<cpp2::RowValue> rows;
-        std::vector<std::string> header{"Name"};
+        std::vector<std::string> header{"ID", "Name"};
         resp_->set_column_names(std::move(header));
 
-        std::set<std::string> uniqueEdges;
+        std::map<nebula::cpp2::EdgeType, std::string> edgeItems;
         for (auto &edge : value) {
-            uniqueEdges.emplace(edge.get_edge_name());
+            edgeItems.emplace(edge.get_edge_type(), edge.get_edge_name());
         }
 
-        for (auto &item : uniqueEdges) {
+        for (auto &item : edgeItems) {
             std::vector<cpp2::ColumnValue> row;
-            row.resize(1);
-            row[0].set_str(item);
+            row.resize(2);
+            row[0].set_integer(item.first);
+            row[1].set_str(item.second);
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }
         resp_->set_rows(std::move(rows));
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -334,7 +414,7 @@ void ShowExecutor::showCreateSpace() {
         resp_->set_rows(std::move(rows));
 
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -413,7 +493,7 @@ void ShowExecutor::showCreateTag() {
         resp_->set_rows(std::move(rows));
 
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -490,7 +570,7 @@ void ShowExecutor::showCreateEdge() {
         resp_->set_rows(std::move(rows));
 
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -500,6 +580,60 @@ void ShowExecutor::showCreateEdge() {
                                                    e.what().c_str())));
     };
 
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+void ShowExecutor::showSnapshots() {
+    auto future = ectx()->getMetaClient()->listSnapshots();
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(std::move(resp).status());
+            return;
+        }
+
+        auto getStatus = [](meta::cpp2::SnapshotStatus status) -> std::string {
+            std::string str;
+            switch (status) {
+                case meta::cpp2::SnapshotStatus::INVALID :
+                    str = "INVALID";
+                    break;
+                case meta::cpp2::SnapshotStatus::VALID :
+                    str = "VALID";
+                    break;
+            }
+            return str;
+        };
+
+        auto retShowSnapshots = std::move(resp).value();
+        std::vector<cpp2::RowValue> rows;
+        std::vector<std::string> header{"Name", "Status", "Hosts"};
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(header));
+        for (auto &snapshot : retShowSnapshots) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(3);
+            row[0].set_str(snapshot.name);
+            row[1].set_str(getStatus(snapshot.status));
+            row[2].set_str(snapshot.hosts);
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+        resp_->set_rows(std::move(rows));
+
+        DCHECK(onFinish_);
+        onFinish_(Executor::ProcessControl::kNext);
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+                                                   e.what().c_str())));
+        return;
+    };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 

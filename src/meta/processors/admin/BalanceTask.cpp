@@ -8,9 +8,6 @@
 #include <folly/synchronization/Baton.h>
 #include "meta/processors/Common.h"
 
-DEFINE_int32(wait_time_after_open_part_ms, 3000,
-             "The wait time after open part, zero means no wait");
-
 namespace nebula {
 namespace meta {
 
@@ -28,14 +25,14 @@ void BalanceTask::invoke() {
     if (ret_ == Result::INVALID) {
         endTimeMs_ = time::WallClock::fastNowInMilliSec();
         saveInStore();
-        LOG(ERROR) << taskIdStr_ << "Task invalid!";
+        LOG(ERROR) << taskIdStr_ << "Task invalid, status " << static_cast<int32_t>(status_);
         onFinished_();
         return;
     }
     if (ret_ == Result::FAILED) {
         endTimeMs_ = time::WallClock::fastNowInMilliSec();
         saveInStore();
-        LOG(ERROR) << taskIdStr_ << "Task failed, status_ " << static_cast<int32_t>(status_);
+        LOG(ERROR) << taskIdStr_ << "Task failed, status " << static_cast<int32_t>(status_);
         onError_();
         return;
     }
@@ -52,7 +49,12 @@ void BalanceTask::invoke() {
             if (srcLived_) {
                 client_->transLeader(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
                     if (!resp.ok()) {
-                        ret_ = Result::FAILED;
+                        LOG(INFO) << taskIdStr_ << "Transfer leader failed, status " << resp;
+                        if (resp == nebula::Status::PartNotFound()) {
+                            ret_ = Result::INVALID;
+                        } else {
+                            ret_ = Result::FAILED;
+                        }
                     } else {
                         status_ = Status::ADD_PART_ON_DST;
                     }
@@ -69,12 +71,10 @@ void BalanceTask::invoke() {
             SAVE_STATE();
             client_->addPart(spaceId_, partId_, dst_, true).thenValue([this](auto&& resp) {
                 if (!resp.ok()) {
+                    LOG(INFO) << taskIdStr_ << "Open part failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::ADD_LEARNER;
-                    if (FLAGS_wait_time_after_open_part_ms > 0) {
-                        usleep(FLAGS_wait_time_after_open_part_ms * 1000);
-                    }
                 }
                 invoke();
             });
@@ -85,6 +85,7 @@ void BalanceTask::invoke() {
             SAVE_STATE();
             client_->addLearner(spaceId_, partId_, dst_).thenValue([this](auto&& resp) {
                 if (!resp.ok()) {
+                    LOG(INFO) << taskIdStr_ << "Add learner failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::CATCH_UP_DATA;
@@ -98,6 +99,7 @@ void BalanceTask::invoke() {
             SAVE_STATE();
             client_->waitingForCatchUpData(spaceId_, partId_, dst_).thenValue([this](auto&& resp) {
                 if (!resp.ok()) {
+                    LOG(INFO) << taskIdStr_ << "Catchup data failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::MEMBER_CHANGE_ADD;
@@ -112,6 +114,7 @@ void BalanceTask::invoke() {
             SAVE_STATE();
             client_->memberChange(spaceId_, partId_, dst_, true).thenValue([this](auto&& resp) {
                 if (!resp.ok()) {
+                    LOG(INFO) << taskIdStr_ << "Add peer failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::MEMBER_CHANGE_REMOVE;
@@ -127,6 +130,7 @@ void BalanceTask::invoke() {
             client_->memberChange(spaceId_, partId_, src_, false).thenValue(
                     [this] (auto&& resp) {
                 if (!resp.ok()) {
+                    LOG(INFO) << taskIdStr_ << "Remove peer failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::UPDATE_PART_META;
@@ -144,6 +148,7 @@ void BalanceTask::invoke() {
                 // here.
                 LOG(INFO) << "Update meta succeeded!";
                 if (!resp.ok()) {
+                    LOG(INFO) << taskIdStr_ << "Update meta failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::REMOVE_PART_ON_SRC;
@@ -158,19 +163,34 @@ void BalanceTask::invoke() {
             if (srcLived_) {
                 client_->removePart(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
                     if (!resp.ok()) {
+                        LOG(INFO) << taskIdStr_ << "Remove part failed, status " << resp;
                         ret_ = Result::FAILED;
                     } else {
                         ret_ = Result::SUCCEEDED;
-                        status_ = Status::END;
+                        status_ = Status::CHECK;
                     }
                     invoke();
                 });
                 break;
             } else {
                 LOG(INFO) << taskIdStr_ << "Don't remove part on src " << src_;
-                ret_ = Result::SUCCEEDED;
-                status_ = Status::END;
+                status_ = Status::CHECK;
             }
+        }
+        case Status::CHECK: {
+            LOG(INFO) << taskIdStr_ << "Check the peers...";
+            SAVE_STATE();
+            client_->checkPeers(spaceId_, partId_).thenValue([this] (auto&& resp) {
+                if (!resp.ok()) {
+                    LOG(INFO) << taskIdStr_ << "Check the peers failed, status " << resp;
+                    ret_ = Result::FAILED;
+                } else {
+                    ret_ = Result::SUCCEEDED;
+                    status_ = Status::END;
+                }
+                invoke();
+            });
+            break;
         }
         case Status::END: {
             LOG(INFO) << taskIdStr_ <<  "Part has been moved successfully!";

@@ -38,18 +38,18 @@ void DeleteVertexExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(Status::Error("Internal Error"));
+            doError(Status::Error("Internal Error"),
+                    ectx()->getGraphStats()->getDeleteVertexStats());
             return;
         }
         auto rpcResp = std::move(resp).value();
         std::vector<storage::cpp2::EdgeKey> allEdges;
         for (auto& edge : *rpcResp.get_edge_keys()) {
-            auto reverseEdge = storage::cpp2::EdgeKey(apache::thrift::FragileConstructor::FRAGILE,
-                                                      edge.get_dst(),
-                                                      -(edge.get_edge_type()),
-                                                      edge.get_ranking(),
-                                                      edge.get_src());
+            storage::cpp2::EdgeKey reverseEdge;
+            reverseEdge.set_src(edge.get_dst());
+            reverseEdge.set_edge_type(-(edge.get_edge_type()));
+            reverseEdge.set_ranking(edge.get_ranking());
+            reverseEdge.set_dst(edge.get_src());
             allEdges.emplace_back(std::move(edge));
             allEdges.emplace_back(std::move(reverseEdge));
         }
@@ -63,8 +63,8 @@ void DeleteVertexExecutor::execute() {
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal Error"),
+                ectx()->getGraphStats()->getDeleteVertexStats());
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -76,8 +76,8 @@ void DeleteVertexExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>* edge
     auto cb = [this] (auto &&resp) {
         auto completeness = resp.completeness();
         if (completeness != 100) {
-            DCHECK(onError_);
-            onError_(Status::Error("Internal Error"));
+            doError(Status::Error("Internal Error"),
+                    ectx()->getGraphStats()->getDeleteVertexStats());
             return;
         }
         deleteVertex();
@@ -86,8 +86,8 @@ void DeleteVertexExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>* edge
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal Error"),
+                ectx()->getGraphStats()->getDeleteVertexStats());
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -98,19 +98,18 @@ void DeleteVertexExecutor::deleteVertex() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(Status::Error("Internal Error"));
+            doError(Status::Error("Internal Error"),
+                    ectx()->getGraphStats()->getDeleteVertexStats());
             return;
         }
-        DCHECK(onFinish_);
-        onFinish_();
+        doFinish(Executor::ProcessControl::kNext, ectx()->getGraphStats()->getDeleteVertexStats());
         return;
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal Error"),
+                ectx()->getGraphStats()->getDeleteVertexStats());
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);

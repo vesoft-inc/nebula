@@ -8,6 +8,7 @@
 
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
+#include "parser/MutateSentences.h"
 #include "network/NetworkUtils.h"
 
 namespace nebula {
@@ -22,6 +23,7 @@ public:
         kUnknown,
         kShowHosts,
         kShowSpaces,
+        kShowParts,
         kShowTags,
         kShowEdges,
         kShowUsers,
@@ -29,7 +31,8 @@ public:
         kShowRoles,
         kShowCreateSpace,
         kShowCreateTag,
-        kShowCreateEdge
+        kShowCreateEdge,
+        kShowSnapshots
     };
 
     explicit ShowSentence(ShowType sType) {
@@ -62,70 +65,6 @@ private:
 inline std::ostream& operator<<(std::ostream &os, ShowSentence::ShowType type) {
     return os << static_cast<uint32_t>(type);
 }
-
-
-class HostList final {
-public:
-    void addHost(HostAddr *addr) {
-        hosts_.emplace_back(addr);
-    }
-
-    std::string toString() const;
-
-    std::vector<HostAddr> hosts() const {
-        std::vector<HostAddr> result;
-        result.reserve(hosts_.size());
-        for (auto &host : hosts_) {
-            result.emplace_back(*host);
-        }
-        return result;
-    }
-
-private:
-    std::vector<std::unique_ptr<HostAddr>>      hosts_;
-};
-
-
-class AddHostsSentence final : public Sentence {
-public:
-    AddHostsSentence() {
-        kind_ = Kind::kAddHosts;
-    }
-
-    void setHosts(HostList *hosts) {
-        hosts_.reset(hosts);
-    }
-
-    std::vector<HostAddr> hosts() const {
-        return hosts_->hosts();
-    }
-
-    std::string toString() const override;
-
-private:
-    std::unique_ptr<HostList>               hosts_;
-};
-
-
-class RemoveHostsSentence final : public Sentence {
-public:
-    RemoveHostsSentence() {
-        kind_ = Kind::kRemoveHosts;
-    }
-
-    void setHosts(HostList *hosts) {
-        hosts_.reset(hosts);
-    }
-
-    std::vector<HostAddr> hosts() const {
-        return hosts_->hosts();
-    }
-
-    std::string toString() const override;
-
-private:
-    std::unique_ptr<HostList>               hosts_;
-};
 
 
 class SpaceOptItem final {
@@ -213,9 +152,10 @@ private:
 };
 
 
-class CreateSpaceSentence final : public Sentence {
+class CreateSpaceSentence final : public CreateSentence {
 public:
-    explicit CreateSpaceSentence(std::string *spaceName) {
+    explicit CreateSpaceSentence(std::string* spaceName, bool ifNotExist)
+        : CreateSentence(ifNotExist) {
         spaceName_.reset(spaceName);
         kind_ = Kind::kCreateSpace;
     }
@@ -299,6 +239,12 @@ public:
         name_.reset(name);
     }
 
+    ConfigRowItem(ConfigModule module, std::string* name, UpdateList *items) {
+        module_ = std::make_unique<ConfigModule>(module);
+        name_.reset(name);
+        updateItems_.reset(items);
+    }
+
     const ConfigModule* getModule() {
         return module_.get();
     }
@@ -311,12 +257,17 @@ public:
         return value_.get();
     }
 
+    const UpdateList* getUpdateItems() {
+        return updateItems_.get();
+    }
+
     std::string toString() const;
 
 private:
     std::unique_ptr<ConfigModule>   module_;
     std::unique_ptr<std::string>    name_;
     std::unique_ptr<Expression>     value_;
+    std::unique_ptr<UpdateList>     updateItems_;
 };
 
 class ConfigSentence final : public Sentence {
@@ -354,12 +305,34 @@ private:
     std::unique_ptr<ConfigRowItem>  configItem_;
 };
 
+class HostList final {
+public:
+    void addHost(HostAddr *addr) {
+        hosts_.emplace_back(addr);
+    }
+
+     std::string toString() const;
+
+     std::vector<HostAddr> hosts() const {
+        std::vector<HostAddr> result;
+        result.reserve(hosts_.size());
+        for (auto &host : hosts_) {
+            result.emplace_back(*host);
+        }
+        return result;
+    }
+
+private:
+    std::vector<std::unique_ptr<HostAddr>>      hosts_;
+};
+
 class BalanceSentence final : public Sentence {
 public:
     enum class SubType : uint32_t {
         kUnknown,
         kLeader,
         kData,
+        kDataStop,
         kShowBalancePlan,
     };
 
@@ -375,6 +348,12 @@ public:
         balanceId_ = id;
     }
 
+    BalanceSentence(SubType subType, HostList *hostDel) {
+        kind_ = Kind::kBalance;
+        subType_ = std::move(subType);
+        hostDel_.reset(hostDel);
+    }
+
     std::string toString() const override;
 
     SubType subType() const {
@@ -385,9 +364,40 @@ public:
         return balanceId_;
     }
 
+    HostList* hostDel() const {
+        return hostDel_.get();
+    }
+
 private:
     SubType                         subType_{SubType::kUnknown};
     int64_t                         balanceId_{0};
+    std::unique_ptr<HostList>       hostDel_;
+};
+
+class CreateSnapshotSentence final : public Sentence {
+public:
+    CreateSnapshotSentence() {
+        kind_ = Kind::kCreateSnapshot;
+    }
+
+    std::string toString() const override;
+};
+
+class DropSnapshotSentence final : public Sentence {
+public:
+    explicit DropSnapshotSentence(std::string *name) {
+        kind_ = Kind::kDropSnapshot;
+        name_.reset(name);
+    }
+
+    const std::string* getName() {
+        return name_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>    name_;
 };
 
 }   // namespace nebula

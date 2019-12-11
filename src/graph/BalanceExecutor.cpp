@@ -27,6 +27,9 @@ void BalanceExecutor::execute() {
         case BalanceSentence::SubType::kData:
             balanceData();
             break;
+        case BalanceSentence::SubType::kDataStop:
+            balanceData(true);
+            break;
         case BalanceSentence::SubType::kShowBalancePlan:
             showBalancePlan();
             break;
@@ -53,7 +56,7 @@ void BalanceExecutor::balanceLeader() {
             return;
         }
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -66,8 +69,14 @@ void BalanceExecutor::balanceLeader() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-void BalanceExecutor::balanceData() {
-    auto future = ectx()->getMetaClient()->balance();
+void BalanceExecutor::balanceData(bool isStop) {
+    std::vector<HostAddr> hostDelList;
+    auto hostDel = sentence_->hostDel();
+    if (hostDel != nullptr) {
+        hostDelList = hostDel->hosts();
+    }
+    auto future = ectx()->getMetaClient()->balance(std::move(hostDelList),
+                                                   isStop);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
@@ -92,7 +101,7 @@ void BalanceExecutor::balanceData() {
         resp_->set_rows(std::move(rows));
 
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -163,7 +172,7 @@ void BalanceExecutor::showBalancePlan() {
         rows.back().set_columns(std::move(row));
         resp_->set_rows(std::move(rows));
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
