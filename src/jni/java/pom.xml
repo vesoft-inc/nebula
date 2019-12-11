@@ -60,7 +60,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!--
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>native-maven-plugin</artifactId>
@@ -73,20 +72,19 @@
                             <goal>javah</goal>
                         </goals>
                         <configuration>
-                            <javahOutputDirectory>${project.root.dir}/jni
+                            <javahOutputDirectory>${project.root.dir}/src/jni/src
                             </javahOutputDirectory>
                             <javahOutputFileName>
-                                com_vesoft_client_NebulaCodec.h
+                                com_vesoft_nebula_NebulaCodec.h
                             </javahOutputFileName>
                             <javahClassNames>
-                                <javahClassName>com.vesoft.client.NabulaCodec
+                                <javahClassName>com.vesoft.nebula.NebulaCodec
                                 </javahClassName>
                             </javahClassNames>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>

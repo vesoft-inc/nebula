@@ -75,14 +75,15 @@ JNIEXPORT jbyteArray JNICALL Java_com_vesoft_nebula_NebulaCodec_encode(JNIEnv *e
 JNIEXPORT jobject JNICALL Java_com_vesoft_nebula_NebulaCodec_decode(JNIEnv *env,
                                                                     jclass clz,
                                                                     jbyteArray encoded,
-                                                                    jobjectArray pairs) {
+                                                                    jobjectArray pairs,
+                                                                    jint version) {
     clz = env->FindClass("com/vesoft/nebula/NebulaCodec$Pair");
     jmethodID getField = env->GetMethodID(clz, "getField", "()Ljava/lang/String;");
     jmethodID getClazz = env->GetMethodID(clz, "getClazz", "()Ljava/lang/String;");
 
     auto len = env->GetArrayLength(pairs);
     // Now the version is zero, we should use the one passed in.
-    auto schema = std::make_shared<NebulaSchemaProvider>(0);
+    auto schema = std::make_shared<NebulaSchemaProvider>(version);
     for (int i = 0; i < len; i++) {
         jobject o = env->GetObjectArrayElement(pairs, i);
         jstring fieldValue = static_cast<jstring>(env->CallObjectMethod(o, getField));
@@ -110,9 +111,10 @@ JNIEXPORT jobject JNICALL Java_com_vesoft_nebula_NebulaCodec_decode(JNIEnv *env,
         env->ReleaseStringUTFChars(clazzValue, clazzArray);
     }
 
-    jclass hashMapClazz = env->FindClass("java/util/HashMap");
-    jmethodID hashMapInit = env->GetMethodID(hashMapClazz, "<init>", "()V");
-    jobject resultObj = env->NewObject(hashMapClazz, hashMapInit, "");
+    jclass arrayListClazz = env->FindClass("java/util/ArrayList");
+    jmethodID listInit = env->GetMethodID(arrayListClazz, "<init>", "()V");
+    jobject list_obj = env->NewObject(arrayListClazz, listInit, "");
+    jmethodID list_add = env->GetMethodID(arrayListClazz, "add", "(Ljava/lang/Object;)Z");
 
     jbyte* b = env->GetByteArrayElements(encoded, nullptr);
     const char* bytes = reinterpret_cast<const char*>(b);
@@ -120,14 +122,8 @@ JNIEXPORT jobject JNICALL Java_com_vesoft_nebula_NebulaCodec_decode(JNIEnv *env,
     auto reader = RowReader::getRowReader(Slice(bytes, size), schema);
     if (reader == nullptr) {
         env->ReleaseByteArrayElements(encoded, b, 0);
-        return resultObj;
+        return list_obj;
     }
-    // auto resultMap = result.value();
-    auto putSign = "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;";
-    jmethodID putMethod = env->GetMethodID(hashMapClazz,
-                                           "put",
-                                           putSign);
-
     for (int i = 0; i < len; i++) {
         jobject o = env->GetObjectArrayElement(pairs, i);
         jstring fieldValue = static_cast<jstring>(env->CallObjectMethod(o, getField));
@@ -135,9 +131,8 @@ JNIEXPORT jobject JNICALL Java_com_vesoft_nebula_NebulaCodec_decode(JNIEnv *env,
         const char* fieldBytes = env->GetStringUTFChars(fieldValue, nullptr);
         const char* clazzBytes = env->GetStringUTFChars(clazzValue, nullptr);
         Slice field(fieldBytes);
-        jstring key = env->NewStringUTF(field.toString().c_str());
-
         Slice clazz(clazzBytes);
+
         if (clazz == Slice("java.lang.Boolean")) {
             bool bValue;
             auto ret = reader->getBool(i, bValue);
@@ -148,7 +143,7 @@ JNIEXPORT jobject JNICALL Java_com_vesoft_nebula_NebulaCodec_decode(JNIEnv *env,
             jbyteArray values = env->NewByteArray(valueSize);
             env->SetByteArrayRegion(values, 0, valueSize,
                                     reinterpret_cast<const signed char*>(&bValue));
-            env->CallObjectMethod(resultObj, putMethod, key, values);
+            env->CallBooleanMethod(list_obj, list_add, values);
         } else if (clazz == Slice("java.lang.Integer")) {
             int32_t iValue;
             auto ret = reader->getInt(i, iValue);
@@ -159,7 +154,7 @@ JNIEXPORT jobject JNICALL Java_com_vesoft_nebula_NebulaCodec_decode(JNIEnv *env,
             jbyteArray values = env->NewByteArray(valueSize);
             env->SetByteArrayRegion(values, 0, valueSize,
                                     reinterpret_cast<const signed char*>(&iValue));
-            env->CallObjectMethod(resultObj, putMethod, key, values);
+            env->CallBooleanMethod(list_obj, list_add, values);
         } else if (clazz == Slice("java.lang.Long")) {
             int64_t lValue;
             auto ret = reader->getInt(i, lValue);
@@ -170,7 +165,7 @@ JNIEXPORT jobject JNICALL Java_com_vesoft_nebula_NebulaCodec_decode(JNIEnv *env,
             jbyteArray values = env->NewByteArray(valueSize);
             env->SetByteArrayRegion(values, 0, valueSize,
                                     reinterpret_cast<const signed char*>(&lValue));
-            env->CallObjectMethod(resultObj, putMethod, key, values);
+            env->CallBooleanMethod(list_obj, list_add, values);
         } else if (clazz == Slice("java.lang.Float")) {
             float fValue;
             auto ret = reader->getFloat(i, fValue);
@@ -181,7 +176,7 @@ JNIEXPORT jobject JNICALL Java_com_vesoft_nebula_NebulaCodec_decode(JNIEnv *env,
             jbyteArray values = env->NewByteArray(valueSize);
             env->SetByteArrayRegion(values, 0, valueSize,
                                     reinterpret_cast<const signed char*>(&fValue));
-            env->CallObjectMethod(resultObj, putMethod, key, values);
+            env->CallBooleanMethod(list_obj, list_add, values);
         } else if (clazz == Slice("java.lang.Double")) {
             double dValue;
             auto ret = reader->getDouble(i, dValue);
@@ -192,7 +187,7 @@ JNIEXPORT jobject JNICALL Java_com_vesoft_nebula_NebulaCodec_decode(JNIEnv *env,
             jbyteArray values = env->NewByteArray(valueSize);
             env->SetByteArrayRegion(values, 0, valueSize,
                                     reinterpret_cast<const signed char*>(&dValue));
-            env->CallObjectMethod(resultObj, putMethod, key, values);
+            env->CallBooleanMethod(list_obj, list_add, values);
         } else if (clazz == Slice("[B")) {
             Slice sValue;
             auto ret = reader->getString(i, sValue);
@@ -203,7 +198,7 @@ JNIEXPORT jobject JNICALL Java_com_vesoft_nebula_NebulaCodec_decode(JNIEnv *env,
             jbyteArray values = env->NewByteArray(valueSize);
             env->SetByteArrayRegion(values, 0, valueSize,
                                     reinterpret_cast<const signed char*>(sValue.data()));
-            env->CallObjectMethod(resultObj, putMethod, key, values);
+            env->CallBooleanMethod(list_obj, list_add, values);
         } else {
             // Type Error
             LOG(FATAL) << "Type Error : " << clazz.data();
@@ -215,7 +210,7 @@ JNIEXPORT jobject JNICALL Java_com_vesoft_nebula_NebulaCodec_decode(JNIEnv *env,
     }
 
     env->ReleaseByteArrayElements(encoded, b, 0);
-    return resultObj;
+    return list_obj;
 }
 
 

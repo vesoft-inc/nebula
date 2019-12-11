@@ -9,7 +9,7 @@ package com.vesoft.nebula;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.util.Map;
+import java.util.List;
 import java.util.Objects;
 
 import org.slf4j.Logger;
@@ -91,7 +91,7 @@ public class NebulaCodec {
 
     public static native byte[] encode(Object[] values);
 
-    public static native Map<String, byte[]> decode(byte[] encoded, Pair[] fields);
+    public static native List<byte[]> decode(byte[] encoded, Pair[] fields, int version);
 
     private boolean checkKey(String key) {
         return Objects.isNull(key) || key.length() == 0;

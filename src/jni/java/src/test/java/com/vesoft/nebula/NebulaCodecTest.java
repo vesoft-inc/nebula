@@ -17,8 +17,9 @@ import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Map;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -43,34 +44,29 @@ public class NebulaCodecTest {
             new NebulaCodec.Pair("s_field", byte[].class.getName())
         };
 
-        Map<String, byte[]> decodedResult = NebulaCodec.decode(result, pairs);
+        List<byte[]> decodedResult = NebulaCodec.decode(result, pairs, 0);
 
-        byte byteValue = decodedResult.get("b_field")[0];
-        boolean boolValue = (byteValue == 0x00) ? false : true;
+        byte[] byteValue = decodedResult.get(0);
+        boolean boolValue = (byteValue[0] == 0x00) ? false : true;
         assertFalse(boolValue);
 
-        assertEquals(4, decodedResult.get("i_field").length);
-        assertEquals(4, decodedResult.get("f_field").length);
-        assertEquals(8, decodedResult.get("d_field").length);
-        assertEquals(5, decodedResult.get("s_field").length);
-
-        ByteBuffer integerByteBuffer = ByteBuffer.wrap(decodedResult.get("i_field"));
+        ByteBuffer integerByteBuffer = ByteBuffer.wrap(decodedResult.get(1));
         integerByteBuffer.order(ByteOrder.LITTLE_ENDIAN);
         IntBuffer intBuffer = integerByteBuffer.asIntBuffer();
         assertEquals(7, intBuffer.get());
 
 
-        ByteBuffer floatByteBuffer = ByteBuffer.wrap(decodedResult.get("f_field"));
+        ByteBuffer floatByteBuffer = ByteBuffer.wrap(decodedResult.get(2));
         floatByteBuffer.order(ByteOrder.LITTLE_ENDIAN);
         FloatBuffer floatBuffer = floatByteBuffer.asFloatBuffer();
         assertEquals("Float Value ", 3.14F, floatBuffer.get(), 0.0001);
 
-        ByteBuffer doubleByteBuffer = ByteBuffer.wrap(decodedResult.get("d_field"));
+        ByteBuffer doubleByteBuffer = ByteBuffer.wrap(decodedResult.get(3));
         doubleByteBuffer.order(ByteOrder.LITTLE_ENDIAN);
         DoubleBuffer doubleBuffer = doubleByteBuffer.asDoubleBuffer();
         assertEquals("Double Value ", 0.618, doubleBuffer.get(), 0.0001);
 
-        ByteBuffer stringByteBuffer = ByteBuffer.wrap(decodedResult.get("s_field"));
+        ByteBuffer stringByteBuffer = ByteBuffer.wrap(decodedResult.get(4));
         assertEquals("Hello", new String(stringByteBuffer.array()));
     }
 }
