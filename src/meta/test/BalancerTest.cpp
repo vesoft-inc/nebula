@@ -14,7 +14,6 @@
 DECLARE_uint32(task_concurrency);
 DECLARE_int32(expired_threshold_sec);
 DECLARE_double(leader_balance_deviation);
-DECLARE_int32(wait_time_after_open_part_ms);
 
 namespace nebula {
 namespace meta {
@@ -32,7 +31,7 @@ public:
 
 TEST(BalanceTaskTest, SimpleTest) {
     {
-        std::vector<Status> sts(7, Status::OK());
+        std::vector<Status> sts(9, Status::OK());
         std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
         auto client = std::make_unique<AdminClient>(std::move(injector));
         BalanceTask task(0, 0, 0, HostAddr(0, 0), HostAddr(1, 1), true, nullptr, nullptr);
@@ -52,6 +51,8 @@ TEST(BalanceTaskTest, SimpleTest) {
     }
     {
         std::vector<Status> sts{Status::Error("transLeader failed!"),
+                                Status::OK(),
+                                Status::OK(),
                                 Status::OK(),
                                 Status::OK(),
                                 Status::OK(),
@@ -251,7 +252,7 @@ TEST(BalanceTest, BalancePlanTest) {
     {
         LOG(INFO) << "Test with all tasks succeeded, only one bucket!";
         BalancePlan plan(0L, nullptr, nullptr);
-        std::vector<Status> sts(7, Status::OK());
+        std::vector<Status> sts(9, Status::OK());
         std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
         auto client = std::make_unique<AdminClient>(std::move(injector));
 
@@ -276,7 +277,7 @@ TEST(BalanceTest, BalancePlanTest) {
     {
         LOG(INFO) << "Test with all tasks succeeded, 10 buckets!";
         BalancePlan plan(0L, nullptr, nullptr);
-        std::vector<Status> sts(7, Status::OK());
+        std::vector<Status> sts(9, Status::OK());
         std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
         auto client = std::make_unique<AdminClient>(std::move(injector));
 
@@ -305,7 +306,7 @@ TEST(BalanceTest, BalancePlanTest) {
         BalancePlan plan(0L, nullptr, nullptr);
         std::unique_ptr<AdminClient> client1, client2;
         {
-            std::vector<Status> sts(7, Status::OK());
+            std::vector<Status> sts(9, Status::OK());
             std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
             client1 = std::make_unique<AdminClient>(std::move(injector));
             for (int i = 0; i < 9; i++) {
@@ -317,6 +318,8 @@ TEST(BalanceTest, BalancePlanTest) {
         {
             std::vector<Status> sts {
                                 Status::Error("transLeader failed!"),
+                                Status::OK(),
+                                Status::OK(),
                                 Status::OK(),
                                 Status::OK(),
                                 Status::OK(),
@@ -359,7 +362,7 @@ TEST(BalanceTest, NormalTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
-    std::vector<Status> sts(7, Status::OK());
+    std::vector<Status> sts(9, Status::OK());
     std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
     auto client = std::make_unique<AdminClient>(std::move(injector));
     Balancer balancer(kv.get(), std::move(client));
@@ -446,7 +449,7 @@ TEST(BalanceTest, SpecifyHostTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
-    std::vector<Status> sts(7, Status::OK());
+    std::vector<Status> sts(9, Status::OK());
     std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
     auto client = std::make_unique<AdminClient>(std::move(injector));
     Balancer balancer(kv.get(), std::move(client));
@@ -531,7 +534,7 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
-    std::vector<Status> sts(7, Status::OK());
+    std::vector<Status> sts(9, Status::OK());
     std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
     auto client = std::make_unique<AdminClient>(std::move(injector));
     Balancer balancer(kv.get(), std::move(client));
@@ -623,6 +626,8 @@ TEST(BalanceTest, RecoveryTest) {
                                 Status::OK(),
                                 Status::OK(),
                                 Status::Error("catch up data failed!"),
+                                Status::OK(),
+                                Status::OK(),
                                 Status::OK(),
                                 Status::OK(),
                                 Status::OK()};
@@ -767,7 +772,7 @@ TEST(BalanceTest, StopBalanceDataTest) {
 
     sleep(1);
     TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
-    std::vector<Status> sts(7, Status::OK());
+    std::vector<Status> sts(9, Status::OK());
     std::unique_ptr<FaultInjector> injector(new TestFaultInjectorWithSleep(std::move(sts)));
     auto client = std::make_unique<AdminClient>(std::move(injector));
     Balancer balancer(kv.get(), std::move(client));
@@ -1078,7 +1083,7 @@ TEST(BalanceTest, LeaderBalanceTest) {
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
 
-    std::vector<Status> sts(8, Status::OK());
+    std::vector<Status> sts(9, Status::OK());
     std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
     auto client = std::make_unique<AdminClient>(std::move(injector));
 
@@ -1095,7 +1100,6 @@ int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
-    FLAGS_wait_time_after_open_part_ms = 0;
     return RUN_ALL_TESTS();
 }
 
