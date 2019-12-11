@@ -48,7 +48,6 @@ private:
     ErrOrString recoverJobWrapper(std::vector<std::string>& paras);
 
     ErrOrInt addJob(const std::string& type, const std::string& para = 0);
-    // int addJob(const std::string& type, const std::string& para = 0);
     std::vector<std::string> showJobs();
     std::vector<std::string> showJob(int iJob);
     int stopJob(int iJob);

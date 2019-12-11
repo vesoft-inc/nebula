@@ -109,7 +109,6 @@ void AdminExecutor::execute() {
 
         DCHECK(onFinish_);
         onFinish_(Executor::ProcessControl::kNext);
-        // onFinish_();
     };
 
     auto error = [this] (auto &&e) {

@@ -18,6 +18,7 @@
 #include "http/HttpClient.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
+#include "meta/processors/Common.h"
 #include "meta/TaskDescription.h"
 #include "meta/JobStatus.h"
 #include "meta/KVJobManager.h"
@@ -455,6 +456,7 @@ ErrOrInt KVJobManager::recoverJob(int iJob) {
 
 ErrOrInt KVJobManager::reserveJobId() {
     // todo distributed lock
+    folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
     std::string strId;
     ResultCode rc = kvStore_->get(kSpace, kPart, kCurrId, &strId);
     int ret = -1;

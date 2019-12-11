@@ -24,7 +24,7 @@ class JobFooTest : public ::testing::Test {
 protected:
     void SetUp() override {
         LOG(INFO) << "enter" << __func__;
-        rootPath_ = std::make_unique<fs::TempDir>("/tmp/MetaHttpIngestHandler.XXXXXX", false);
+        rootPath_ = std::make_unique<fs::TempDir>("/tmp/MetaHttpIngestHandler.XXXXXX");
         kv_ = TestUtils::initKV(rootPath_->path());
         TestUtils::createSomeHosts(kv_.get());
         TestUtils::assembleSpace(kv_.get(), 1, 1);
@@ -85,10 +85,10 @@ TEST_F(JobFooTest, AddJob) {
     // step 1 add job from nothing
     std::string jobType("test");
 
-    int base = 65536;
+    int base = 1000;
     jobMgr->setSingleVal(jobMgr->kCurrId, std::to_string(base-1));
     for (int i = base; i != base + 10; ++i) {
-        auto job = jobMgr->addJob("test", "this is the first job");
+        auto job = jobMgr->addJob("test_op", "test_para");
         ASSERT_EQ(ok(job), true);
         EXPECT_EQ(i, value(job));
     }
