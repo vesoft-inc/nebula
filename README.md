@@ -11,14 +11,14 @@
   <a href="https://github.com/vesoft-inc/nebula/actions?workflow=package">
     <img src="https://github.com/vesoft-inc/nebula/workflows/package/badge.svg" alt="make nebula packages workflow"/>
   </a>
+  <a href="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default">
+    <img src="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula star"/>
+  </a>
+  <a href="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default">
+    <img src="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula fork"/>
+  </a>
   <br>
 </p>
-
-<!-- <p align="center">
-  <a href="https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzU2NDkxNjI0NQ==&scene=124#wechat_redirect"><img src="https://img.shields.io/badge/%E5%85%AC%E4%BC%97%E5%8F%B7-wechat-brightgreen" alt="WeiXin"></a>
-  <a href="https://www.zhihu.com/org/nebulagraph/activities"><img src="https://img.shields.io/badge/%E7%9F%A5%E4%B9%8E-zhihu-blue" alt="Zhihu"></a>
-    <a href="https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place"><img src="https://img.shields.io/badge/%E5%BE%AE%E5%8D%9A-weibo-red" alt="Sina Weibo"></a>
-</p> -->
 
 # Nebula Graph
 
@@ -42,7 +42,9 @@ Apart from [installing from source code](docs/manual-EN/3.build-develop-and-admi
 
 ## How to Use Nebula Graph
 
-See [manual](docs/README.md) or download the [pdf](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/doc/nebulagraph.pdf).
+See [manual](docs/README.md) or download the [pdf](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/doc/manual-en-1204.pdf).
+
+You can also get started by watching [videos](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw/).
 
 ## How Can I Contribute
 

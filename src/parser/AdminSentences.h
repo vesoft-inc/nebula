@@ -154,9 +154,10 @@ private:
 };
 
 
-class CreateSpaceSentence final : public Sentence {
+class CreateSpaceSentence final : public CreateSentence {
 public:
-    explicit CreateSpaceSentence(std::string *spaceName) {
+    explicit CreateSpaceSentence(std::string* spaceName, bool ifNotExist)
+        : CreateSentence(ifNotExist) {
         spaceName_.reset(spaceName);
         kind_ = Kind::kCreateSpace;
     }

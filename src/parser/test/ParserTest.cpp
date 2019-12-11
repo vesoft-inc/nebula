@@ -1013,13 +1013,13 @@ TEST(Parser, AdminOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "SHOW TAGS INDEXES";
+        std::string query = "SHOW TAG INDEXES";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "SHOW EDGES INDEXES";
+        std::string query = "SHOW EDGE INDEXES";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

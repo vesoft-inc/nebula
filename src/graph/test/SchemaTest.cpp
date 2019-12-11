@@ -137,6 +137,12 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    {
+        std::string query = "CREATE SPACE IF NOT EXISTS default_space";
+        cpp2::ExecutionResponse resp;
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
     // show parts of default_space
     {
         cpp2::ExecutionResponse resp;
@@ -169,6 +175,12 @@ TEST_F(SchemaTest, metaCommunication) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG tag1()";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG IF NOT EXISTS tag1()";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -362,10 +374,10 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected{
-            {3, "tag1"},
-            {4, "person"},
-            {5, "person_with_default"},
-            {6, "upper"},
+            {4, "tag1"},
+            {5, "person"},
+            {6, "person_with_default"},
+            {7, "upper"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -373,6 +385,12 @@ TEST_F(SchemaTest, metaCommunication) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE edge1()";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE IF NOT EXISTS edge1()";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }

@@ -184,6 +184,11 @@ public:
 
     bool linkCurrentWAL(const char* newPath);
 
+    /**
+     * Reset my peers if not equals the argument
+     */
+    void checkAndResetPeers(const std::vector<HostAddr>& peers);
+
     /*****************************************************
      *
      * Methods to process incoming raft requests
