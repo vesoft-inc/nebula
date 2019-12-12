@@ -1618,4 +1618,22 @@ TEST(Parser, Return) {
         ASSERT_TRUE(result.ok()) << result.status();
     }
 }
+
+TEST(Parser, TimeFunction) {
+    // succeed
+    {
+        GQLParser parser;
+        std::string query = "YIELD ADDDATEFUN(\"2019-10-01\" INTERVAL 10 DAY)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // failed
+    {
+        GQLParser parser;
+        std::string query = "YIELD ADDDATEFUN(\"2019-10-01\" INTERVAL 10)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+}
 }   // namespace nebula
+

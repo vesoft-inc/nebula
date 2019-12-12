@@ -8,6 +8,8 @@
 #include "filter/FunctionManager.h"
 #include "time/WallClock.h"
 #include "filter/geo/GeoFilter.h"
+#include "TimeFunction.h"
+#include "TimeType.h"
 
 namespace nebula {
 
@@ -24,7 +26,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["abs"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             return std::abs(Expression::asDouble(args[0]));
         };
     }
@@ -33,7 +35,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["floor"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             return std::floor(Expression::asDouble(args[0]));
         };
     }
@@ -42,7 +44,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["ceil"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             return std::ceil(Expression::asDouble(args[0]));
         };
     }
@@ -51,7 +53,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["round"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             return std::round(Expression::asDouble(args[0]));
         };
     }
@@ -60,7 +62,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["sqrt"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             return std::sqrt(Expression::asDouble(args[0]));
         };
     }
@@ -69,7 +71,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["cbrt"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             return std::cbrt(Expression::asDouble(args[0]));
         };
     }
@@ -78,7 +80,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["hypot"];
         attr.minArity_ = 2;
         attr.maxArity_ = 2;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             auto x = Expression::asDouble(args[0]);
             auto y = Expression::asDouble(args[1]);
             return std::hypot(x, y);
@@ -89,7 +91,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["pow"];
         attr.minArity_ = 2;
         attr.maxArity_ = 2;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             auto base = Expression::asDouble(args[0]);
             auto exp = Expression::asDouble(args[1]);
             return std::pow(base, exp);
@@ -100,7 +102,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["exp"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             return std::exp(Expression::asDouble(args[0]));
         };
     }
@@ -109,7 +111,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["exp2"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             return std::exp2(Expression::asDouble(args[0]));
         };
     }
@@ -118,7 +120,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["log"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             return std::log(Expression::asDouble(args[0]));
         };
     }
@@ -127,7 +129,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["log2"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             return std::log2(Expression::asDouble(args[0]));
         };
     }
@@ -136,7 +138,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["log10"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             return std::log10(Expression::asDouble(args[0]));
         };
     }
@@ -144,7 +146,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["sin"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             return std::sin(Expression::asDouble(args[0]));
         };
     }
@@ -152,7 +154,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["asin"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             return std::asin(Expression::asDouble(args[0]));
         };
     }
@@ -160,7 +162,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["cos"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             return std::cos(Expression::asDouble(args[0]));
         };
     }
@@ -168,7 +170,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["acos"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             return std::acos(Expression::asDouble(args[0]));
         };
     }
@@ -176,7 +178,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["tan"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             return std::tan(Expression::asDouble(args[0]));
         };
     }
@@ -184,7 +186,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["atan"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             return std::atan(Expression::asDouble(args[0]));
         };
     }
@@ -193,7 +195,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["rand32"];
         attr.minArity_ = 0;
         attr.maxArity_ = 2;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             if (args.empty()) {
                 auto value = folly::Random::rand32();
                 return static_cast<int64_t>(static_cast<int32_t>(value));
@@ -213,7 +215,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["rand64"];
         attr.minArity_ = 0;
         attr.maxArity_ = 2;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             if (args.empty()) {
                 return static_cast<int64_t>(folly::Random::rand64());
             } else if (args.size() == 1UL) {
@@ -231,7 +233,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["now"];
         attr.minArity_ = 0;
         attr.maxArity_ = 0;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             UNUSED(args);
             return time::WallClock::fastNowInSec();
         };
@@ -240,7 +242,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["strcasecmp"];
         attr.minArity_ = 2;
         attr.maxArity_ = 2;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             auto &left = Expression::asString(args[0]);
             auto &right = Expression::asString(args[1]);
             return static_cast<int64_t>(::strcasecmp(left.c_str(), right.c_str()));
@@ -250,7 +252,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["lower"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             auto value = Expression::asString(args[0]);
             std::transform(value.begin(), value.end(), value.begin(),
                            [](unsigned char c){ return std::tolower(c);});
@@ -261,7 +263,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["upper"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             auto value = Expression::asString(args[0]);
             std::transform(value.begin(), value.end(), value.begin(),
                            [](unsigned char c){ return std::toupper(c);});
@@ -272,7 +274,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["length"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             auto value = Expression::asString(args[0]);
             return static_cast<int64_t>(value.length());
         };
@@ -281,7 +283,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["trim"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             auto value = Expression::asString(args[0]);
             value.erase(0, value.find_first_not_of(" "));
             value.erase(value.find_last_not_of(" ") + 1);
@@ -292,7 +294,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["ltrim"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             auto value = Expression::asString(args[0]);
             value.erase(0, value.find_first_not_of(" "));
             return value;
@@ -302,7 +304,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["rtrim"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             auto value = Expression::asString(args[0]);
             value.erase(value.find_last_not_of(" ") + 1);
             return value;
@@ -312,7 +314,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["left"];
         attr.minArity_ = 2;
         attr.maxArity_ = 2;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             auto value = Expression::asString(args[0]);
             auto length = Expression::asInt(args[1]);
             if (length <= 0) {
@@ -325,7 +327,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["right"];
         attr.minArity_ = 2;
         attr.maxArity_ = 2;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             auto value  = Expression::asString(args[0]);
             auto length = Expression::asInt(args[1]);
             if (length <= 0) {
@@ -341,7 +343,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["lpad"];
         attr.minArity_ = 3;
         attr.maxArity_ = 3;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             auto value = Expression::asString(args[0]);
             size_t size  = Expression::asInt(args[1]);
 
@@ -367,7 +369,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["rpad"];
         attr.minArity_ = 3;
         attr.maxArity_ = 3;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             auto value = Expression::asString(args[0]);
             size_t size  = Expression::asInt(args[1]);
             if (size < 0) {
@@ -392,7 +394,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["substr"];
         attr.minArity_ = 3;
         attr.maxArity_ = 3;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             auto value   = Expression::asString(args[0]);
             auto start   = Expression::asInt(args[1]);
             auto length  = Expression::asInt(args[2]);
@@ -413,7 +415,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["hash"];
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             switch (args[0].which()) {
                 case VAR_INT64: {
                     auto v = Expression::asInt(args[0]);
@@ -441,7 +443,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["udf_is_in"];
         attr.minArity_ = 2;
         attr.maxArity_ = INT64_MAX;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             VariantType cmp = args.front();
             switch (cmp.which()) {
                 case VAR_INT64: {
@@ -490,7 +492,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["near"];
         attr.minArity_ = 2;
         attr.maxArity_ = 2;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             auto result = geo::GeoFilter::near(args);
             if (!result.ok()) {
                 return std::string("");
@@ -503,7 +505,7 @@ FunctionManager::FunctionManager() {
         auto &attr = functions_["cos_similarity"];
         attr.minArity_ = 2;
         attr.maxArity_ = INT64_MAX;
-        attr.body_ = [] (const auto &args) {
+        attr.body_ = [] (const auto &args, const auto*) {
             if (args.size() % 2 != 0) {
                 LOG(ERROR) << "The number of arguments must be even.";
                 // value range of cos is [-1, 1]
@@ -525,6 +527,31 @@ FunctionManager::FunctionManager() {
             } else {
                 return s1 / (std::sqrt(s2) * std::sqrt(s3));
             }
+        };
+    }
+    initTimeFunction(functions_);
+}
+
+void FunctionManager::initTimeFunction(std::unordered_map<std::string,
+                                       FunctionAttributes> &functions) {
+    for (auto item : time::timeFuncVec) {
+        auto &attr = functions[item.first];
+        attr.minArity_ = 0;
+        attr.maxArity_ = 3;
+        std::string funcName = item.first;
+        attr.body_ = [funcName = std::move(funcName)] (const auto &args,
+                            const auto *timezone) -> OptVariantType {
+            LOG(INFO) << "Current timefunc: " << funcName;
+            auto timeFunc = time::timeFuncVec[funcName]();
+            auto status =  timeFunc->initNebulaTime(args, timezone);
+            if (!status.ok()) {
+                return status;
+            }
+            auto valueStatus = timeFunc->getResult();
+            if (!valueStatus.ok()) {
+                return valueStatus.status();
+            }
+            return valueStatus.value();
         };
     }
 }

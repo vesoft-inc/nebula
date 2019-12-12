@@ -1409,7 +1409,7 @@ TEST_F(SchemaTest, TestTimezone) {
         cpp2::ExecutionResponse resp;
         std::string cmd = "SET TIME_ZONE \"+08:60\"";
         auto code = client->execute(cmd, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
 }
 }   // namespace graph

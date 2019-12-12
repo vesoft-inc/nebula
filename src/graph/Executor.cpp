@@ -10,6 +10,8 @@
 #include "parser/MutateSentences.h"
 #include "parser/MaintainSentences.h"
 #include "parser/AdminSentences.h"
+#include "filter/TimeType.h"
+#include "filter/TimeFunction.h"
 #include "graph/GoExecutor.h"
 #include "graph/UseExecutor.h"
 #include "graph/PipeExecutor.h"
@@ -283,28 +285,28 @@ StatusOr<int64_t> Executor::toTimestamp(const VariantType &value) {
     }
 
     int64_t timestamp;
+    auto timezoneStatus =  ectx()->getMetaClient()->getTimezoneFromCache();
+    if (!timezoneStatus.ok()) {
+        return timezoneStatus.status();
+    }
+    auto result = timezoneStatus.value();
+    Timezone timezone;
+    timezone.eastern = result.get_eastern();
+    timezone.hour = result.get_hour();
+    timezone.minute = result.get_minute();
     if (value.which() == VAR_STR) {
-        static const std::regex reg("^([1-9]\\d{3})-"
-                                    "(0[1-9]|1[0-2]|\\d)-"
-                                    "(0[1-9]|[1-2][0-9]|3[0-1]|\\d)\\s+"
-                                    "(20|21|22|23|[0-1]\\d|\\d):"
-                                    "([0-5]\\d|\\d):"
-                                    "([0-5]\\d|\\d)$");
-        std::smatch result;
-        if (!std::regex_match(boost::get<std::string>(value), result, reg)) {
-            return Status::Error("Invalid timestamp type");
+        auto status = nebula::TimeCommon::strToUTCTimestamp(
+                boost::get<std::string>(value), timezone);
+        if (!status.ok()) {
+            return status;
         }
-        struct tm time;
-        memset(&time, 0, sizeof(time));
-        time.tm_year = atoi(result[1].str().c_str()) - 1900;
-        time.tm_mon = atoi(result[2].str().c_str()) - 1;
-        time.tm_mday = atoi(result[3].str().c_str());
-        time.tm_hour = atoi(result[4].str().c_str());
-        time.tm_min = atoi(result[5].str().c_str());
-        time.tm_sec = atoi(result[6].str().c_str());
-        timestamp = mktime(&time);
+        timestamp = status.value();
     } else {
         timestamp = boost::get<int64_t>(value);
+        auto status = nebula::TimeCommon::timestampAddTz(timestamp, timezone);
+        if (!status.ok()) {
+            return status;
+        }
     }
 
     // The mainstream Linux kernel's implementation constrains this

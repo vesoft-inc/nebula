@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "graph/TimezoneExecutor.h"
+#include "filter/TimeFunction.h"
 
 namespace nebula {
 namespace graph {
@@ -18,15 +19,12 @@ TimezoneExecutor::TimezoneExecutor(Sentence *sentence, ExecutionContext *ectx)
 
 Status TimezoneExecutor::prepare() {
     if (sentence_->getType() == TimezoneSentence::TimezoneType::kSetTimezone) {
-        auto *timezone = sentence_->getTimezone();
-        static const std::regex reg("^([-|+])(((0[0-9]|1[0-2]):([0-5]\\d))|((13):(00)))$");
-        std::smatch result;
-        if (!std::regex_match(*timezone, result, reg)) {
-            return Status::SyntaxError("Invalid timezone type");
+        auto timezone = sentence_->getTimezone();
+        auto status = nebula::TimeCommon::getTimezone(*timezone);
+        if (!status.ok()) {
+            return status.status();
         }
-        timezone_.eastern = result[1].str()[0];
-        timezone_.hour = atoi(result[2].str().substr(0, 2).c_str());
-        timezone_.minute = atoi(result[2].str().substr(2, 2).c_str());
+        timezone_ = status.value();
     }
     return Status::OK();
 }
@@ -83,7 +81,11 @@ void TimezoneExecutor::getTimezone() {
 
 void TimezoneExecutor::setTimezone() {
     auto *mc = ectx()->getMetaClient();
-    auto future = mc->setTimezone(timezone_);
+    nebula::meta::cpp2::Timezone timezone;
+    timezone.set_eastern(timezone_.eastern);
+    timezone.set_hour(timezone_.hour);
+    timezone.set_minute(timezone_.minute);
+    auto future = mc->setTimezone(std::move(timezone));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {

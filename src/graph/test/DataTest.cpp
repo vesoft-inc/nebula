@@ -8,6 +8,7 @@
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
 #include "meta/test/TestUtils.h"
+#include "filter/TimeFunction.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 
@@ -665,8 +666,16 @@ TEST_F(DataTest, InsertTest) {
                           "$$.school.create_time, (string)study.start_time";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        nebula::Timezone timezone;
+        auto status = nebula::TimeCommon::strToUTCTimestamp("2010-01-01 10:00:00", timezone);
+        ASSERT_TRUE(status.ok());
+        auto create_time = status.value();
+        status = nebula::TimeCommon::strToUTCTimestamp("2019-01-01 10:00:00", timezone);
+        ASSERT_TRUE(status.ok());
+        auto start_time = status.value();
         std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
-            {"sun_school", std::hash<std::string>()("sun_school"),  1262311200, "1546308000"},
+            {"sun_school", std::hash<std::string>()("sun_school"),
+                    create_time, std::to_string(start_time)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -677,8 +686,15 @@ TEST_F(DataTest, InsertTest) {
                           "$$.school.create_time, (string)study.start_time";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        nebula::Timezone timezone;
+        auto status = nebula::TimeCommon::strToUTCTimestamp("2010-01-01 10:00:00", timezone);
+        ASSERT_TRUE(status.ok());
+        auto create_time = status.value();
+        status = nebula::TimeCommon::strToUTCTimestamp("2019-01-01 10:00:00", timezone);
+        ASSERT_TRUE(status.ok());
+        auto start_time = status.value();
         std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
-            {"sun_school", 1262311200, "1546308000"},
+            {"sun_school", create_time, std::to_string(start_time)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -687,8 +703,12 @@ TEST_F(DataTest, InsertTest) {
         std::string cmd = "FETCH PROP ON school hash(\"sun_school\") ";;
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        nebula::Timezone timezone;
+        auto status = nebula::TimeCommon::strToUTCTimestamp("2010-01-01 10:00:00", timezone);
+        ASSERT_TRUE(status.ok());
+        auto create_time = status.value();
         std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
-                {std::hash<std::string>()("sun_school"), "sun_school", 1262311200},
+                {std::hash<std::string>()("sun_school"), "sun_school", create_time},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -697,8 +717,12 @@ TEST_F(DataTest, InsertTest) {
         std::string cmd = "FETCH PROP ON school uuid(\"sun_school\") ";;
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        nebula::Timezone timezone;
+        auto status = nebula::TimeCommon::strToUTCTimestamp("2010-01-01 10:00:00", timezone);
+        ASSERT_TRUE(status.ok());
+        auto create_time = status.value();
         std::vector<std::tuple<std::string, int64_t>> expected = {
-                {"sun_school", 1262311200},
+                {"sun_school", create_time},
         };
         ASSERT_TRUE(verifyResult(resp, expected, true,  {0}));
     }

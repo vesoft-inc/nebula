@@ -20,6 +20,7 @@ InsertEdgeExecutor::InsertEdgeExecutor(Sentence *sentence,
 
 Status InsertEdgeExecutor::prepare() {
     expCtx_ = std::make_unique<ExpressionContext>();
+    setTimezone(expCtx_.get());
     expCtx_->setStorageClient(ectx()->getStorageClient());
     return Status::OK();
 }

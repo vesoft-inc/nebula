@@ -28,6 +28,7 @@ Status FetchEdgesExecutor::prepareClauses() {
         }
 
         expCtx_ = std::make_unique<ExpressionContext>();
+        setTimezone(expCtx_.get());
         expCtx_->setStorageClient(ectx()->getStorageClient());
         spaceId_ = ectx()->rctx()->session()->space();
         yieldClause_ = DCHECK_NOTNULL(sentence_)->yieldClause();

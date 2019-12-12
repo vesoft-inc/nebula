@@ -31,6 +31,7 @@ Status FetchVerticesExecutor::prepareClauses() {
 
         expCtx_ = std::make_unique<ExpressionContext>();
         spaceId_ = ectx()->rctx()->session()->space();
+        setTimezone(expCtx_.get());
         expCtx_->setStorageClient(ectx()->getStorageClient());
         if (sentence_->isAllTagProps()) {
             break;

@@ -24,7 +24,8 @@ namespace nebula {
 
 class FunctionManager final {
 public:
-    using Function = std::function<VariantType(const std::vector<VariantType>&)>;
+    using Function = std::function<OptVariantType(const std::vector<VariantType>&,
+                                                  const Timezone*)>;
 
     /**
      * To obtain a function named `func', with the actual arity.
@@ -60,6 +61,8 @@ private:
         size_t                  maxArity_{0};
         Function                body_;
     };
+
+    void initTimeFunction(std::unordered_map<std::string, FunctionAttributes> &functions);
 
     mutable folly::RWSpinLock                           lock_;
     std::unordered_map<std::string, FunctionAttributes> functions_;

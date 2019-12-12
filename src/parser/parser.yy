@@ -118,7 +118,8 @@ class GraphScanner;
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS
-%token KW_TIME_ZONE
+%token KW_MICROSECOND KW_SECOND KW_MINUTE KW_HOUR KW_DAY KW_WEEK KW_MONTH KW_YEAR
+%token KW_INTERVAL KW_TIME_ZONE
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -190,7 +191,7 @@ class GraphScanner;
 %type <host_item> host_item
 %type <integer_list> integer_list
 
-%type <intval> unary_integer rank port
+%type <intval> unary_integer rank port interval_type
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
@@ -275,6 +276,14 @@ unreserved_keyword
      | KW_LEADER             { $$ = new std::string("leader"); }
      | KW_UUID               { $$ = new std::string("uuid"); }
      | KW_VARIABLES          { $$ = new std::string("variables"); }
+     | KW_MICROSECOND        { $$ = new std::string("microsecond"); }
+     | KW_SECOND             { $$ = new std::string("second"); }
+     | KW_MINUTE             { $$ = new std::string("minute"); }
+     | KW_HOUR               { $$ = new std::string("hour"); }
+     | KW_DAY                { $$ = new std::string("day"); }
+     | KW_WEEK               { $$ = new std::string("week"); }
+     | KW_MONTH              { $$ = new std::string("month"); }
+     | KW_YEAR               { $$ = new std::string("year"); }
      ;
 
 agg_function
@@ -398,9 +407,28 @@ alias_ref_expression
     }
     ;
 
+interval_type
+    : KW_MICROSECOND { $$ = static_cast<int64_t>(IntervalType::MICROSECOND); }
+    | KW_SECOND { $$ = static_cast<int64_t>(IntervalType::SECOND); }
+    | KW_MINUTE { $$ = static_cast<int64_t>(IntervalType::MINUTE); }
+    | KW_HOUR { $$ = static_cast<int64_t>(IntervalType::HOUR) ; }
+    | KW_DAY { $$ = static_cast<int64_t>(IntervalType::DAY); }
+    | KW_WEEK { $$ = static_cast<int64_t>(IntervalType::WEEK); }
+    | KW_MONTH { $$ = static_cast<int64_t>(IntervalType::MONTH); }
+    | KW_YEAR { $$ = static_cast<int64_t>(IntervalType::YEAR) ; }
+    ;
+
 function_call_expression
     : LABEL L_PAREN opt_argument_list R_PAREN {
         $$ = new FunctionCallExpression($1, $3);
+    }
+    | LABEL L_PAREN expression KW_INTERVAL expression interval_type R_PAREN {
+        auto args = new ArgumentList();
+        args->addArgument($3);
+        args->addArgument($5);
+        auto expr = new PrimaryExpression($6);
+        args->addArgument(expr);
+        $$ = new FunctionCallExpression($1, args);
     }
     ;
 

@@ -150,6 +150,16 @@ SNAPSHOT                    ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt])
 SNAPSHOTS                   ([Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt][Ss])
 FORCE                       ([Ff][Oo][Rr][Cc][Ee])
 TIME_ZONE                   ([Tt][Ii][Mm][Ee][_][Zz][Oo][Nn][Ee])
+MICROSECOND                 ([Mm][Ii][Cc][Rr][Oo][Ss][Ee][Cc][Oo][Nn][Dd])
+SECOND                      ([Ss][Ee][Cc][Oo][Nn][Dd])
+MINUTE                      ([Mm][Ii][Nn][Uu][Tt][Ee])
+HOUR                        ([Hh][Oo][Uu][Tt][Ee])
+DAY                         ([Dd][Aa][Yy])
+WEEK                        ([Ww][Ee][Ee][Kk])
+MONTH                       ([Mm][Oo][Nn][Tt][Hh])
+QUARTER                     ([Qq][Uu][Aa][Rr][Tt][Ee][Rr])
+YEAR                        ([Yy][Ee][Aa][Rr])
+INTERVAL                    ([Ii][Nn][Tt][Ee][Rr][Vv][Aa][Ll])
 
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
@@ -287,6 +297,15 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {SNAPSHOTS}                 { return TokenType::KW_SNAPSHOTS; }
 {FORCE}                     { return TokenType::KW_FORCE; }
 {TIME_ZONE}                 { return TokenType::KW_TIME_ZONE; }
+{MICROSECOND}               { return TokenType::KW_MICROSECOND; }
+{SECOND}                    { return TokenType::KW_SECOND; }
+{MINUTE}                    { return TokenType::KW_MINUTE; }
+{HOUR}                      { return TokenType::KW_HOUR; }
+{DAY}                       { return TokenType::KW_DAY; }
+{WEEK}                      { return TokenType::KW_WEEK; }
+{MONTH}                     { return TokenType::KW_MONTH; }
+{YEAR}                      { return TokenType::KW_YEAR; }
+{INTERVAL}                  { return TokenType::KW_INTERVAL; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

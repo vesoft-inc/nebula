@@ -26,6 +26,14 @@ nebula_add_test(
     LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} wangle
 )
 
+nebula_add_test(
+    NAME timefunction_test
+    SOURCES TimeFuncTest.cpp
+    OBJECTS ${FILTER_TEST_LIBS}
+    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES}  wangle
+)
+
+
 if (ENABLE_TESTING)
     target_compile_options(expression_test PRIVATE -Wno-parentheses)
 endif()

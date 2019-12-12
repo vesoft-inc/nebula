@@ -20,6 +20,7 @@ YieldExecutor::YieldExecutor(Sentence *sentence, ExecutionContext *ectx)
 Status YieldExecutor::prepare() {
     Status status = Status::OK();
     expCtx_ = std::make_unique<ExpressionContext>();
+    setTimezone(expCtx_.get());
     do {
         status = prepareWhere();
         if (!status.ok()) {

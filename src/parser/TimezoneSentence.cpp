@@ -18,4 +18,5 @@ std::string TimezoneSentence::toString() const {
             return "Unknown sentence";
     }
 }
-}   // namespace nebula
+}  // namespace nebula
+

@@ -116,6 +116,23 @@ protected:
     void doError(Status status, uint32_t count = 1) const;
     void doFinish(ProcessControl pro, uint32_t count = 1) const;
 
+    void setTimezone(ExpressionContext *expCtx) {
+        if (expCtx == nullptr) {
+            return;
+        }
+        auto timezoneStatus =  ectx()->getMetaClient()->getTimezoneFromCache();
+        if (timezoneStatus.ok()) {
+            auto result = timezoneStatus.value();
+            Timezone timezone;
+            timezone.eastern = result.get_eastern();
+            timezone.hour = result.get_hour();
+            timezone.minute = result.get_minute();
+            expCtx->setTimezone(timezone);
+        } else {
+            LOG(WARNING) << "Get timezone failed.";
+        }
+    }
+
 protected:
     ExecutionContext                           *ectx_;
     std::function<void(ProcessControl)>         onFinish_;

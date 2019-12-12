@@ -18,6 +18,7 @@ FindPathExecutor::FindPathExecutor(Sentence *sentence, ExecutionContext *exct)
 Status FindPathExecutor::prepare() {
     Status status;
     expCtx_ = std::make_unique<ExpressionContext>();
+    setTimezone(expCtx_.get());
     do {
         if (sentence_->from() != nullptr) {
             status = sentence_->from()->prepare(from_);

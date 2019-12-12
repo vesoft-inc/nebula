@@ -432,13 +432,14 @@ OptVariantType FunctionCallExpression::eval(Getters &getters) const {
         }
         args.emplace_back(std::move(result.value()));
     }
-
-    // TODO(simon.liu)
-    auto r = function_(args);
-    return OptVariantType(r);
+    if (context_ == nullptr) {
+        return function_(args, nullptr);
+    }
+    return function_(args, context_->getTimezone());
 }
 
 Status FunctionCallExpression::prepare() {
+    folly::toLowerAscii(*name_);
     auto result = FunctionManager::get(*name_, args_.size());
     if (!result.ok()) {
         return std::move(result).status();

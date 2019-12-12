@@ -500,6 +500,7 @@ macro(nebula_link_libraries target)
         gflags
         boost_context
         boost_system
+        boost_date_time
         event
         double-conversion
         s2

@@ -19,6 +19,8 @@ GroupByExecutor::GroupByExecutor(Sentence *sentence, ExecutionContext *ectx)
 
 Status GroupByExecutor::prepare() {
     expCtx_ = std::make_unique<ExpressionContext>();
+    setTimezone(expCtx_.get());
+
     Status status;
     do {
         status = prepareYield();

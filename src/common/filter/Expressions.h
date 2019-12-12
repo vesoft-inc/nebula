@@ -22,6 +22,13 @@ enum class ColumnType {
     INT, STRING, DOUBLE, BIGINT, BOOL, TIMESTAMP,
 };
 
+struct Timezone {
+    Timezone() : eastern(0), hour(0), minute(0) {}
+    uint8_t             eastern;
+    uint8_t             hour;
+    uint8_t             minute;
+};
+
 std::string columnTypeToString(ColumnType type);
 
 
@@ -82,6 +89,18 @@ public:
         }
         edgeMap_.emplace(alias, edgeType);
         return true;
+    }
+
+    bool setTimezone(const Timezone &timezone) {
+        timezone_ = std::make_shared<Timezone>(timezone);
+        return true;
+    }
+
+    Timezone* getTimezone() {
+        if (timezone_ == nullptr) {
+            return nullptr;
+        }
+        return timezone_.get();
     }
 
     bool getEdgeType(const std::string &alias, EdgeType &edgeType) {
@@ -178,6 +197,7 @@ private:
     bool                                      overAll_{false};
     GraphSpaceID                              space_;
     nebula::storage::StorageClient            *storageClient_{nullptr};
+    std::shared_ptr<Timezone>                 timezone_;
 };
 
 
@@ -249,13 +269,13 @@ public:
 
     static bool asBool(const VariantType &value) {
         switch (value.which()) {
-            case 0:
+            case VAR_INT64:
                 return asInt(value) != 0;
-            case 1:
+            case VAR_DOUBLE:
                 return asDouble(value) != 0.0;
-            case 2:
+            case VAR_BOOL:
                 return boost::get<bool>(value);
-            case 3:
+            case VAR_STR:
                 return asString(value).empty();
             default:
                 DCHECK(false);
@@ -268,7 +288,7 @@ public:
     }
 
     static bool isInt(const VariantType &value) {
-        return value.which() == 0;
+        return value.which() == VAR_INT64;
     }
 
     static bool isDouble(const VariantType &value) {
@@ -296,14 +316,14 @@ public:
     static std::string toString(const VariantType &value) {
         char buf[1024];
         switch (value.which()) {
-            case 0:
+            case VAR_INT64:
                 return folly::to<std::string>(boost::get<int64_t>(value));
-            case 1:
+            case VAR_DOUBLE:
                 return folly::to<std::string>(boost::get<double>(value));
-            case 2:
+            case VAR_BOOL:
                 snprintf(buf, sizeof(buf), "%s", boost::get<bool>(value) ? "true" : "false");
                 return buf;
-            case 3:
+            case VAR_STR:
                 return boost::get<std::string>(value);
         }
         LOG(FATAL) << "unknown type: " << value.which();
@@ -315,13 +335,13 @@ public:
 
     static double toDouble(const VariantType &value) {
         switch (value.which()) {
-            case 0:
+            case VAR_INT64:
                 return static_cast<double>(boost::get<int64_t>(value));
-            case 1:
+            case VAR_DOUBLE:
                 return boost::get<double>(value);
-            case 2:
+            case VAR_BOOL:
                 return boost::get<bool>(value) ? 1.0 : 0.0;
-            case 3:
+            case VAR_STR:
                 // TODO(dutor) error handling
                 return folly::to<double>(boost::get<std::string>(value));
         }
@@ -330,13 +350,13 @@ public:
 
     static int64_t toInt(const VariantType &value) {
         switch (value.which()) {
-            case 0:
+            case VAR_INT64:
                 return boost::get<int64_t>(value);
-            case 1:
+            case VAR_DOUBLE:
                 return static_cast<int64_t>(boost::get<double>(value));
-            case 2:
+            case VAR_BOOL:
                 return boost::get<bool>(value) ? 1.0 : 0.0;
-            case 3:
+            case VAR_STR:
                 // TODO(dutor) error handling
                 return folly::to<int64_t>(boost::get<std::string>(value));
         }
@@ -707,7 +727,7 @@ private:
 private:
     std::unique_ptr<std::string>                name_;
     std::vector<std::unique_ptr<Expression>>    args_;
-    std::function<VariantType(const std::vector<VariantType>&)> function_;
+    std::function<OptVariantType(const std::vector<VariantType>&, const Timezone*)> function_;
 };
 
 // (uuid)expr

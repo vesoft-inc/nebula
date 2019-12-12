@@ -638,7 +638,7 @@ struct ListSnapshotsResp {
 }
 
 struct Timezone {
-    1: byte              eastern;
+    1: byte              eastern,
     2: byte              hour,
     3: byte              minute,
 }

@@ -35,7 +35,7 @@ public:
 private:
     TimezoneSentence                          *sentence_{nullptr};
     std::unique_ptr<cpp2::ExecutionResponse>  resp_;
-    nebula::meta::cpp2::Timezone              timezone_;
+    nebula::Timezone                          timezone_;
 };
 
 }   // namespace graph

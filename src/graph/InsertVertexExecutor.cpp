@@ -21,6 +21,7 @@ InsertVertexExecutor::InsertVertexExecutor(Sentence *sentence,
 
 Status InsertVertexExecutor::prepare() {
     expCtx_ = std::make_unique<ExpressionContext>();
+    setTimezone(expCtx_.get());
     expCtx_->setStorageClient(ectx()->getStorageClient());
     return Status::OK();
 }

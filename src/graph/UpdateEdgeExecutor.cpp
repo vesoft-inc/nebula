@@ -33,6 +33,7 @@ Status UpdateEdgeExecutor::prepare() {
     expCtx_->setSpace(spaceId_);
     expCtx_->setStorageClient(ectx()->getStorageClient());
     Getters getters;
+    setTimezone(&getters);
 
     do {
         status = checkIfGraphSpaceChosen();

@@ -737,6 +737,43 @@ TEST_F(YieldTest, EmptyInput) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
+
+TEST_F(YieldTest, TimeFunction) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    // Succeed
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD AddDate(\"2019-12-08 05:10:00\", 20)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string>> expected = {
+                {"2019-12-28 05:10:00"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD AddDate(\"2019-12-08 05:10:00\" INTERVAL 2 MONTH)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string>> expected = {
+                {"2020-02-08 05:10:00"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD convertTz(\"2019-12-08 05:10:00\", \"-01:00\", \"+02:20\")";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string>> expected = {
+                {"2019-12-08 08:30:00"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
 }   // namespace graph
 }   // namespace nebula
 

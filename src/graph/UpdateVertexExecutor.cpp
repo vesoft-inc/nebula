@@ -28,6 +28,7 @@ Status UpdateVertexExecutor::prepare() {
 
     spaceId_ = ectx()->rctx()->session()->space();
     expCtx_ = std::make_unique<ExpressionContext>();
+    setTimezone(expCtx_.get());
     expCtx_->setSpace(spaceId_);
     expCtx_->setStorageClient(ectx()->getStorageClient());
 

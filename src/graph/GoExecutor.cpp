@@ -39,6 +39,7 @@ Status GoExecutor::prepareClauses() {
     DCHECK(sentence_ != nullptr);
     Status status;
     expCtx_ = std::make_unique<ExpressionContext>();
+    setTimezone(expCtx_.get());
     expCtx_->setStorageClient(ectx()->getStorageClient());
 
     do {
