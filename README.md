@@ -31,19 +31,19 @@ Compared with other graph database solutions, Nebula Graph has the following adv
 * Symmetrically distributed
 * Storage and computing separation
 * Horizontal scalability
-* Strong data consistency per RAFT protocol
-* SQL-like query language with OpenCypher interface
+* Strong data consistency by RAFT protocol
+* SQL-like query language
 * Role-based access control for higher level security
 
 ## Roadmap
 
-See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap-RC3) for what's coming soon in Nebula Graph.
+See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki#roadmap) for what's coming soon in **Nebula Graph**.
 
 ## Quick start
 
-There are two ways you can quickly start Nebula Graph:
+There are two ways you can quickly start **Nebula Graph**:
 * By [installing source code](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code.md)
-* By [docker image](https://hub.docker.com/r/vesoft/nebula-graph)
+* By [docker image](https://github.com/vesoft-inc/nebula-docker-compose)
 
 If you prefer a quick start video tutorial, visit our [YouTube channel](https://www.youtube.com/watch?v=5RjCDKQvjk8&list=PL4ArMmsAnb84uB2d9L46eXpIi7Epz2cfp).
 
