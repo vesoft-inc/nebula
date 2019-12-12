@@ -29,8 +29,12 @@ TEST_F(IndexTest, TagIndex) {
     ASSERT_NE(nullptr, client);
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE SPACE index_space(partition_num=1, replica_factor=1)";
+        std::string query = "CREATE SPACE tag_index_space(partition_num=1, replica_factor=1)";
         auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "USE tag_index_space";
+        code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         query = "CREATE TAG person(name string, age int, gender string, email string)";
@@ -44,68 +48,86 @@ TEST_F(IndexTest, TagIndex) {
     // Single Tag Single Field
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG INDEX ON person single_person_index(name)";
+        std::string query = "CREATE TAG INDEX single_person_index ON person(name)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    // Space not exist
+    // Tag not exist
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG INDEX ON student single_person_index(name)";
+        std::string query = "CREATE TAG INDEX single_person_index ON student(name)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     // Property not exist
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG INDEX ON person single_person_index(phone)";
+        std::string query = "CREATE TAG INDEX single_person_index ON person(phone)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    // Property is empty
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG INDEX single_person_index ON person()";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
     // Single Tag Multi Field
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG INDEX ON person multi_person_index(name, email)";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    // Multi Tag Multi Field
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG INDEX ON person,course person_course_index(name, teacher)";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG INDEX ON person,course "
-                            "specified_tag_index(person.name, course.teacher)";
+        std::string query = "CREATE TAG INDEX multi_person_index ON person(name, email)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // Describe Tag Index
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE TAG INDEX person_course_index";
+        std::string query = "DESCRIBE TAG INDEX multi_person_index";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        query = "DESC TAG INDEX multi_person_index";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"name",  "string"},
+            {"email", "string"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Show Create Tag Indexes
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW CREATE TAG INDEX multi_person_index";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::string createTagIndex = "CREATE TAG INDEX multi_person_index ON person(name, email)";
+        std::vector<std::tuple<std::string, std::string>> expected{
+            {"multi_person_index", createTagIndex},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
     // List Tag Indexes
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "LIST TAG INDEXES";
+        std::string query = "Show TAG INDEXES";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int32_t, std::string>> expected{
+            {4, "single_person_index"},
+            {5, "multi_person_index"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
     // Drop Tag Index
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "DROP TAG INDEX person_course_index";
+        std::string query = "DROP TAG INDEX multi_person_index";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        query = "DESCRIBE TAG INDEX person_course_index";
+        query = "DESCRIBE TAG INDEX multi_person_index";
         code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
 }
 
@@ -114,8 +136,12 @@ TEST_F(IndexTest, EdgeIndex) {
     ASSERT_NE(nullptr, client);
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE SPACE index_space(partition_num=1, replica_factor=1)";
+        std::string query = "CREATE SPACE edge_index_space(partition_num=1, replica_factor=1)";
         auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "USE edge_index_space";
+        code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         query = "CREATE EDGE friend(degree string, start_time int)";
@@ -129,66 +155,87 @@ TEST_F(IndexTest, EdgeIndex) {
     // Single Edge Single Field
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE INDEX ON friend single_friend_index(degree)";
+        std::string query = "CREATE EDGE INDEX single_friend_index ON friend(degree)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    // Space not exist
+    // Edge not exist
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG INDEX ON friendship single_person_index(name)";
+        std::string query = "CREATE EDGE INDEX single_person_index ON friendship(name)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     // Property not exist
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG INDEX ON friend single_person_index(startTime)";
+        std::string query = "CREATE EDGE INDEX single_person_index ON friend(startTime)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    // Property is empty
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE INDEX single_person_index ON friend()";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
     // Single EDGE Multi Field
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE INDEX ON friend multi_friend_index(degree, start_time)";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    // Multi EDGE Multi Field
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE INDEX ON friend,transfer "
-                            "friend_transfer_index(degree, amount)";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE INDEX ON friend,transfer "
-                            "specified_edge_index(friend.degree, transfer.amount)";
+        std::string query = "CREATE EDGE INDEX multi_friend_index ON friend(degree, start_time)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // Describe Edge Index
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE EDGE INDEX friend_transfer_index";
+        std::string query = "DESCRIBE EDGE INDEX multi_friend_index";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        query = "DESC EDGE INDEX multi_friend_index";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"degree",     "string"},
+            {"start_time", "int"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Show Create Edge Index
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW CREATE EDGE INDEX multi_friend_index";
+        auto code = client->execute(query, resp);
+        std::string createTagIndex = "CREATE EDGE INDEX multi_friend_index ON "
+                                     "friend(degree, start_time)";
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, std::string>> expected{
+            {"multi_friend_index", createTagIndex},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
     // List Edge Indexes
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "LIST EDGE INDEXES";
+        std::string query = "SHOW EDGE INDEXES";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int32_t, std::string>> expected{
+            {9,  "single_friend_index"},
+            {10, "multi_friend_index"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
     // Drop Edge Index
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "DROP EDGE INDEX friend_transfer_index";
+        std::string query = "DROP EDGE INDEX multi_friend_index";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        query = "DESCRIBE EDGE INDEX multi_friend_index";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
 }
 

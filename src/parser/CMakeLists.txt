@@ -21,7 +21,6 @@ nebula_add_library(
     MutateSentences.cpp
     AdminSentences.cpp
     UserSentences.cpp
-    IndexSentences.cpp
     ProcessControlSentences.cpp
 )
 

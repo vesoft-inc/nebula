@@ -56,8 +56,8 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
                       std::string(reinterpret_cast<const char*>(&tagId), sizeof(TagID)));
     data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, 0),
                       MetaServiceUtils::schemaTagVal(tagName, req.get_schema()));
-
     auto columns = req.get_schema().get_columns();
+    /*
     for (auto& c : columns) {
         LOG(INFO) << "name: " << c.get_name();
     }
@@ -76,6 +76,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
         onFinished();
         return;
     }
+    */
 
     for (auto& column : columns) {
         if (column.__isset.default_value) {

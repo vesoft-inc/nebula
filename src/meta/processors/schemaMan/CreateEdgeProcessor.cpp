@@ -10,8 +10,6 @@ namespace nebula {
 namespace meta {
 
 void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
-    LOG(INFO) << "CreateEdgeProcessor";
-
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     auto edgeName = req.get_edge_name();
     {
@@ -36,6 +34,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
         if (req.get_if_not_exists()) {
             ec = cpp2::ErrorCode::SUCCEEDED;
         } else {
+            LOG(ERROR) << "Create Edge Failed :" << edgeName << " has existed";
             ec = cpp2::ErrorCode::E_EXISTED;
         }
         resp_.set_id(to(ret.value(), EntryType::EDGE));
@@ -52,8 +51,13 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
         return;
     }
     auto edgeType = nebula::value(edgeTypeRet);
+    std::vector<kvstore::KV> data;
+    data.emplace_back(MetaServiceUtils::indexEdgeKey(req.get_space_id(), edgeName),
+                      std::string(reinterpret_cast<const char*>(&edgeType), sizeof(EdgeType)));
+    data.emplace_back(MetaServiceUtils::schemaEdgeKey(req.get_space_id(), edgeType, 0),
+                      MetaServiceUtils::schemaEdgeVal(edgeName, req.get_schema()));
     auto columns = req.get_schema().get_columns();
-
+    /*
     for (auto& c : columns) {
         LOG(INFO) << "name: " << c.get_name();
     }
@@ -67,14 +71,11 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
         onFinished();
         return;
     }
+    */
 
-    std::vector<kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::indexEdgeKey(req.get_space_id(), edgeName),
-                      std::string(reinterpret_cast<const char*>(&edgeType), sizeof(EdgeType)));
-    data.emplace_back(MetaServiceUtils::schemaEdgeKey(req.get_space_id(), edgeType, 0),
-                      MetaServiceUtils::schemaEdgeVal(edgeName, req.get_schema()));
 
     for (auto& column : columns) {
+        LOG(INFO) << "name: " << column.get_name();
         if (column.__isset.default_value) {
             auto name = column.get_name();
             auto value = column.get_default_value();

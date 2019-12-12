@@ -31,6 +31,7 @@ void CreateEdgeIndexExecutor::execute() {
     auto spaceId = ectx()->rctx()->session()->space();
 
     std::map<std::string, std::vector<std::string>> indexProperties;
+    indexProperties.emplace(*(sentence_->edgeName()), std::move(sentence_->names()));
     auto future = mc->createEdgeIndex(spaceId, *name, std::move(indexProperties));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {

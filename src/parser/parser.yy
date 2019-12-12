@@ -39,7 +39,7 @@ class GraphScanner;
     nebula::SequentialSentences            *sentences;
     nebula::ColumnSpecification            *colspec;
     nebula::ColumnSpecificationList        *colspeclist;
-    nebula::NameList                       *namelist;
+    nebula::ColumnNameList                 *colsnamelist;
     nebula::ColumnType                      type;
     nebula::StepClause                     *step_clause;
     nebula::StepClause                     *find_path_upto_clause;
@@ -186,9 +186,9 @@ class GraphScanner;
 
 %type <intval> unary_integer rank port
 
-%type <colspec>     column_spec
+%type <colspec> column_spec
 %type <colspeclist> column_spec_list
-%type <namelist>    name_list
+%type <colsnamelist> column_name_list
 
 %type <with_user_opt_list> with_user_opt_list
 %type <with_user_opt_item> with_user_opt_item
@@ -986,7 +986,7 @@ alter_schema_opt_item
     | KW_CHANGE L_PAREN column_spec_list R_PAREN {
         $$ = new AlterSchemaOptItem(AlterSchemaOptItem::CHANGE, $3);
     }
-    | KW_DROP L_PAREN name_list R_PAREN {
+    | KW_DROP L_PAREN column_name_list R_PAREN {
         $$ = new AlterSchemaOptItem(AlterSchemaOptItem::DROP, $3);
     }
     ;
@@ -1049,14 +1049,14 @@ alter_edge_sentence
     }
     ;
 
-name_list
+column_name_list
     : name_label {
-        $$ = new NameList();
-        $$->addName($1);
+        $$ = new ColumnNameList();
+        $$->addColumn($1);
     }
-    | name_list COMMA name_label {
+    | column_name_list COMMA name_label {
         $$ = $1;
-        $$->addName($3);
+        $$->addColumn($3);
     }
     ;
 
@@ -1122,14 +1122,14 @@ drop_edge_sentence
     ;
 
 create_tag_index_sentence
-    : KW_CREATE KW_TAG KW_INDEX name_label KW_ON name_label L_PAREN name_label R_PAREN {
-        $$ = new CreateTagIndexSentence($4, $6, $8);
+    : KW_CREATE KW_TAG KW_INDEX opt_if_not_exists name_label KW_ON name_label L_PAREN column_name_list R_PAREN {
+        $$ = new CreateTagIndexSentence($5, $7, $9, $4);
     }
     ;
 
 create_edge_index_sentence
-    : KW_CREATE KW_EDGE KW_INDEX name_label KW_ON name_label L_PAREN name_label R_PAREN {
-        $$ = new CreateEdgeIndexSentence($4, $6, $8);
+    : KW_CREATE KW_EDGE KW_INDEX opt_if_not_exists name_label KW_ON name_label L_PAREN column_name_list R_PAREN {
+        $$ = new CreateEdgeIndexSentence($5, $7, $9, $4);
     }
     ;
 
@@ -1149,10 +1149,16 @@ describe_tag_index_sentence
     : KW_DESCRIBE KW_TAG KW_INDEX name_label {
         $$ = new DescribeTagIndexSentence($4);
     }
+    | KW_DESC KW_TAG KW_INDEX name_label {
+        $$ = new DescribeTagIndexSentence($4);
+    }
     ;
 
 describe_edge_index_sentence
     : KW_DESCRIBE KW_EDGE KW_INDEX name_label {
+        $$ = new DescribeEdgeIndexSentence($4);
+    }
+    | KW_DESC KW_EDGE KW_INDEX name_label {
         $$ = new DescribeEdgeIndexSentence($4);
     }
     ;
@@ -1522,8 +1528,14 @@ show_sentence
     | KW_SHOW KW_CREATE KW_TAG name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateTag, $4);
     }
+    | KW_SHOW KW_CREATE KW_TAG KW_INDEX name_label {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateTagIndex, $5);
+    }
     | KW_SHOW KW_CREATE KW_EDGE name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateEdge, $4);
+    }
+    | KW_SHOW KW_CREATE KW_EDGE KW_INDEX name_label {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateEdgeIndex, $5);
     }
     | KW_SHOW KW_SNAPSHOTS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowSnapshots);

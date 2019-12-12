@@ -24,6 +24,11 @@ Status CreateEdgeExecutor::prepare() {
 
 
 Status CreateEdgeExecutor::getSchema() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        return status;
+    }
+
     const auto& specs = sentence_->columnSpecs();
     const auto& schemaProps = sentence_->getSchemaProps();
     return SchemaHelper::createSchema(specs, schemaProps, schema_);
@@ -31,7 +36,7 @@ Status CreateEdgeExecutor::getSchema() {
 
 
 void CreateEdgeExecutor::execute() {
-    auto status = checkIfGraphSpaceChosen();
+    auto status = getSchema();
     if (!status.ok()) {
         DCHECK(onError_);
         onError_(std::move(status));

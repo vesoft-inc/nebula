@@ -100,24 +100,25 @@ private:
     std::vector<std::unique_ptr<ColumnSpecification>> columns_;
 };
 
-class NameList final {
-public:
-    NameList() = default;
 
-    void addName(std::string *name) {
-        names_.emplace_back(name);
+class ColumnNameList final {
+public:
+    ColumnNameList() = default;
+
+    void addColumn(std::string *column) {
+        columns_.emplace_back(column);
     }
 
-    std::vector<std::string*> names() const {
+    std::vector<std::string*> columnNames() const {
         std::vector<std::string*> result;
-        result.resize(names_.size());
+        result.resize(columns_.size());
         auto get = [] (auto &ptr) { return ptr.get(); };
-        std::transform(names_.begin(), names_.end(), result.begin(), get);
+        std::transform(columns_.begin(), columns_.end(), result.begin(), get);
         return result;
     }
 
 private:
-    std::vector<std::unique_ptr<std::string>> names_;
+    std::vector<std::unique_ptr<std::string>> columns_;
 };
 
 
@@ -312,17 +313,17 @@ public:
         columns_.reset(columns);
     }
 
-    AlterSchemaOptItem(OptionType op, NameList *names) {
+    AlterSchemaOptItem(OptionType op, ColumnNameList *colNames) {
         optType_ = op;
-        names_.reset(names);
+        colNames_.reset(colNames);
     }
 
     std::vector<ColumnSpecification*> columnSpecs() const {
         return columns_->columnSpecs();
     }
 
-    std::vector<std::string*> names() const {
-        return names_->names();
+    std::vector<std::string*> columnNames() const {
+        return colNames_->columnNames();
     }
 
     OptionType getOptType() {
@@ -336,7 +337,7 @@ public:
 private:
     OptionType                                  optType_;
     std::unique_ptr<ColumnSpecificationList>    columns_;
-    std::unique_ptr<NameList>                   names_;
+    std::unique_ptr<ColumnNameList>             colNames_;
 };
 
 
@@ -496,6 +497,201 @@ public:
 private:
     std::unique_ptr<std::string>                name_;
 };
+
+
+class CreateTagIndexSentence final : public CreateSentence {
+public:
+    CreateTagIndexSentence(std::string *indexName,
+                           std::string *tagName,
+                           ColumnNameList *columns,
+                           bool ifNotExists)
+        : CreateSentence(ifNotExists) {
+        indexName_.reset(indexName);
+        tagName_.reset(tagName);
+        columns_.reset(columns);
+        kind_ = Kind::kCreateTagIndex;
+    }
+
+    std::string toString() const override;
+
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
+    const std::string* tagName() const {
+        return tagName_.get();
+    }
+
+    const ColumnNameList* columnNames() const {
+        return columns_.get();
+    }
+
+    std::vector<std::string> names() {
+        std::vector<std::string> result;
+        auto columnNames = columns_->columnNames();
+        result.resize(columnNames.size());
+        auto get = [] (auto ptr) { return *ptr; };
+        std::transform(columnNames.begin(), columnNames.end(), result.begin(), get);
+        return result;
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+    std::unique_ptr<std::string>                tagName_;
+    std::unique_ptr<ColumnNameList>             columns_;
+};
+
+
+class CreateEdgeIndexSentence final : public CreateSentence {
+public:
+    CreateEdgeIndexSentence(std::string *indexName,
+                            std::string *edgeName,
+                            ColumnNameList *columns,
+                            bool ifNotExists)
+        : CreateSentence(ifNotExists) {
+        indexName_.reset(indexName);
+        edgeName_.reset(edgeName);
+        columns_.reset(columns);
+        kind_ = Kind::kCreateEdgeIndex;
+    }
+
+    std::string toString() const override;
+
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
+    const std::string* edgeName() const {
+        return edgeName_.get();
+    }
+
+    const ColumnNameList* columnNames() const {
+        return columns_.get();
+    }
+
+    std::vector<std::string> names() {
+        std::vector<std::string> result;
+        auto columnNames = columns_->columnNames();
+        result.resize(columnNames.size());
+        auto get = [] (auto ptr) { return *ptr; };
+        std::transform(columnNames.begin(), columnNames.end(), result.begin(), get);
+        return result;
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+    std::unique_ptr<std::string>                edgeName_;
+    std::unique_ptr<ColumnNameList>             columns_;
+};
+
+
+class DescribeTagIndexSentence final : public Sentence {
+public:
+    explicit DescribeTagIndexSentence(std::string *indexName) {
+        indexName_.reset(indexName);
+        kind_ = Kind::kDescribeTagIndex;
+    }
+
+    std::string toString() const override;
+
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+};
+
+
+class DescribeEdgeIndexSentence final : public Sentence {
+public:
+    explicit DescribeEdgeIndexSentence(std::string *indexName) {
+        indexName_.reset(indexName);
+        kind_ = Kind::kDescribeEdgeIndex;
+    }
+
+    std::string toString() const override;
+
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+};
+
+
+class DropTagIndexSentence final : public Sentence {
+public:
+    explicit DropTagIndexSentence(std::string *indexName) {
+        indexName_.reset(indexName);
+        kind_ = Kind::kDropTagIndex;
+    }
+
+    std::string toString() const override;
+
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+};
+
+
+class DropEdgeIndexSentence final : public Sentence {
+public:
+    explicit DropEdgeIndexSentence(std::string *indexName) {
+        indexName_.reset(indexName);
+        kind_ = Kind::kDropEdgeIndex;
+    }
+
+    std::string toString() const override;
+
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+};
+
+
+class RebuildTagIndexSentence final : public Sentence {
+public:
+    explicit RebuildTagIndexSentence(std::string *indexName) {
+        indexName_.reset(indexName);
+        kind_ = Kind::kRebuildTagIndex;
+    }
+
+    std::string toString() const override;
+
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+};
+
+
+class RebuildEdgeIndexSentence final : public Sentence {
+public:
+    explicit RebuildEdgeIndexSentence(std::string *indexName) {
+        indexName_.reset(indexName);
+        kind_ = Kind::kRebuildEdgeIndex;
+    }
+
+    std::string toString() const override;
+
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+};
+
 }   // namespace nebula
 
 #endif  // PARSER_MAINTAINSENTENCES_H_

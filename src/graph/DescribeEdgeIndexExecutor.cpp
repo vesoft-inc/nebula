@@ -44,12 +44,19 @@ void DescribeEdgeIndexExecutor::execute() {
         std::vector<std::string> header{"Field", "Type"};
         resp_->set_column_names(std::move(header));
         std::vector<cpp2::RowValue> rows;
-        auto& item = resp.value();
-        std::vector<cpp2::ColumnValue> row;
-        row.resize(1);
-        row[0].set_str(item.index_name);
-        rows.emplace_back();
-        rows.back().set_columns(std::move(row));
+        auto& fields = resp.value().get_fields().get_fields();
+        auto iter = fields.begin();
+        while (iter != fields.end()) {
+            for (auto column : iter->second) {
+                std::vector<cpp2::ColumnValue> row;
+                row.resize(2);
+                row[0].set_str(column.name);
+                row[1].set_str(valueTypeToString(column.type));
+                rows.emplace_back();
+                rows.back().set_columns(std::move(row));
+            }
+            iter++;
+        }
 
         resp_->set_rows(std::move(rows));
         DCHECK(onFinish_);

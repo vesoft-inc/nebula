@@ -31,6 +31,7 @@ void CreateTagIndexExecutor::execute() {
     auto spaceId = ectx()->rctx()->session()->space();
 
     std::map<std::string, std::vector<std::string>> indexProperties;
+    indexProperties.emplace(*(sentence_->tagName()), std::move(sentence_->names()));
     auto future = mc->createTagIndex(spaceId, *name, std::move(indexProperties));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {

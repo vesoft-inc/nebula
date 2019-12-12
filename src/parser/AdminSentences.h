@@ -34,6 +34,8 @@ public:
         kShowCreateSpace,
         kShowCreateTag,
         kShowCreateEdge,
+        kShowCreateTagIndex,
+        kShowCreateEdgeIndex,
         kShowSnapshots
     };
 

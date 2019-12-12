@@ -7,7 +7,6 @@
 #define PARSER_SEQUENTIALSENTENCES_H_
 
 #include "base/Base.h"
-#include "parser/IndexSentences.h"
 #include "parser/MaintainSentences.h"
 #include "parser/TraverseSentences.h"
 #include "parser/MutateSentences.h"

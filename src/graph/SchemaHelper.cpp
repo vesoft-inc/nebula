@@ -149,7 +149,7 @@ Status SchemaHelper::alterSchema(const std::vector<AlterSchemaOptItem*>& schemaO
         schemaItem.set_op(opType);
         nebula::cpp2::Schema schema;
         if (opType == nebula::meta::cpp2::AlterSchemaOp::DROP) {
-            const auto& colNames = schemaOpt->names();
+            const auto& colNames = schemaOpt->columnNames();
             for (auto& colName : colNames) {
                 nebula::cpp2::ColumnDef column;
                 column.name = *colName;
