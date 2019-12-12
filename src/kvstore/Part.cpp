@@ -13,25 +13,7 @@ DEFINE_int32(cluster_id, 0, "A unique id for each cluster");
 namespace nebula {
 namespace kvstore {
 
-using raftex::AppendLogResult;
-
-namespace {
-
-ResultCode toResultCode(AppendLogResult res) {
-    switch (res) {
-        case AppendLogResult::SUCCEEDED:
-            return ResultCode::SUCCEEDED;
-        case AppendLogResult::E_NOT_A_LEADER:
-            return ResultCode::ERR_LEADER_CHANGED;
-        case AppendLogResult::E_WRITE_BLOCKING:
-            return ResultCode::ERR_WRITE_BLOCK_ERROR;
-        default:
-            return ResultCode::ERR_CONSENSUS_ERROR;
-    }
-}
-
-}  // Anonymous namespace
-
+using nebula::raftex::AppendLogResult;
 
 Part::Part(GraphSpaceID spaceId,
            PartitionID partId,
@@ -80,8 +62,8 @@ void Part::asyncPut(folly::StringPiece key, folly::StringPiece value, KVCallback
     std::string log = encodeMultiValues(OP_PUT, key, value);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
-            callback(toResultCode(res));
+        .thenValue([this, callback = std::move(cb)] (AppendLogResult res) mutable {
+            callback(this->toResultCode(res));
         });
 }
 
@@ -90,8 +72,8 @@ void Part::asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb) {
     std::string log = encodeMultiValues(OP_MULTI_PUT, keyValues);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
-            callback(toResultCode(res));
+        .thenValue([this, callback = std::move(cb)] (AppendLogResult res) mutable {
+            callback(this->toResultCode(res));
         });
 }
 
@@ -100,8 +82,8 @@ void Part::asyncRemove(folly::StringPiece key, KVCallback cb) {
     std::string log = encodeSingleValue(OP_REMOVE, key);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
-            callback(toResultCode(res));
+        .thenValue([this, callback = std::move(cb)] (AppendLogResult res) mutable {
+            callback(this->toResultCode(res));
         });
 }
 
@@ -110,8 +92,8 @@ void Part::asyncMultiRemove(const std::vector<std::string>& keys, KVCallback cb)
     std::string log = encodeMultiValues(OP_MULTI_REMOVE, keys);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
-            callback(toResultCode(res));
+        .thenValue([this, callback = std::move(cb)] (AppendLogResult res) mutable {
+            callback(this->toResultCode(res));
         });
 }
 
@@ -120,8 +102,8 @@ void Part::asyncRemovePrefix(folly::StringPiece prefix, KVCallback cb) {
     std::string log = encodeSingleValue(OP_REMOVE_PREFIX, prefix);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
-            callback(toResultCode(res));
+        .thenValue([this, callback = std::move(cb)] (AppendLogResult res) mutable {
+            callback(this->toResultCode(res));
         });
 }
 
@@ -132,22 +114,22 @@ void Part::asyncRemoveRange(folly::StringPiece start,
     std::string log = encodeMultiValues(OP_REMOVE_RANGE, start, end);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
-            callback(toResultCode(res));
+        .thenValue([this, callback = std::move(cb)] (AppendLogResult res) mutable {
+            callback(this->toResultCode(res));
         });
 }
 
 void Part::sync(KVCallback cb) {
     sendCommandAsync("")
-        .thenValue([callback = std::move(cb)] (AppendLogResult res) mutable {
-        callback(toResultCode(res));
+        .thenValue([this, callback = std::move(cb)] (AppendLogResult res) mutable {
+        callback(this->toResultCode(res));
     });
 }
 
 void Part::asyncAtomicOp(raftex::AtomicOp op, KVCallback cb) {
     atomicOpAsync(std::move(op)).thenValue(
-            [callback = std::move(cb)] (AppendLogResult res) mutable {
-        callback(toResultCode(res));
+            [this, callback = std::move(cb)] (AppendLogResult res) mutable {
+        callback(this->toResultCode(res));
     });
 }
 
@@ -156,8 +138,8 @@ void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
     sendCommandAsync(std::move(log))
         .thenValue([callback = std::move(cb), learner, this] (AppendLogResult res) mutable {
         LOG(INFO) << idStr_ << "add learner " << learner
-                  << ", result: " << static_cast<int32_t>(toResultCode(res));
-        callback(toResultCode(res));
+                  << ", result: " << static_cast<int32_t>(this->toResultCode(res));
+        callback(this->toResultCode(res));
     });
 }
 
@@ -166,8 +148,8 @@ void Part::asyncTransferLeader(const HostAddr& target, KVCallback cb) {
     sendCommandAsync(std::move(log))
         .thenValue([callback = std::move(cb), target, this] (AppendLogResult res) mutable {
         LOG(INFO) << idStr_ << "transfer leader to " << target
-                  << ", result: " << static_cast<int32_t>(toResultCode(res));
-        callback(toResultCode(res));
+                  << ", result: " << static_cast<int32_t>(this->toResultCode(res));
+        callback(this->toResultCode(res));
     });
 }
 
@@ -176,8 +158,8 @@ void Part::asyncAddPeer(const HostAddr& peer, KVCallback cb) {
     sendCommandAsync(std::move(log))
         .thenValue([callback = std::move(cb), peer, this] (AppendLogResult res) mutable {
         LOG(INFO) << idStr_ << "add peer " << peer
-                  << ", result: " << static_cast<int32_t>(toResultCode(res));
-        callback(toResultCode(res));
+                  << ", result: " << static_cast<int32_t>(this->toResultCode(res));
+        callback(this->toResultCode(res));
     });
 }
 
@@ -186,8 +168,8 @@ void Part::asyncRemovePeer(const HostAddr& peer, KVCallback cb) {
     sendCommandAsync(std::move(log))
         .thenValue([callback = std::move(cb), peer, this] (AppendLogResult res) mutable {
         LOG(INFO) << idStr_ << "remove peer " << peer
-                  << ", result: " << static_cast<int32_t>(toResultCode(res));
-        callback(toResultCode(res));
+                  << ", result: " << static_cast<int32_t>(this->toResultCode(res));
+        callback(this->toResultCode(res));
     });
 }
 
@@ -440,6 +422,23 @@ bool Part::preProcessLog(LogID logId,
     }
     return true;
 }
+
+ResultCode Part::toResultCode(raftex::AppendLogResult res) {
+    switch (res) {
+        case raftex::AppendLogResult::SUCCEEDED:
+            return ResultCode::SUCCEEDED;
+        case raftex::AppendLogResult::E_NOT_A_LEADER:
+            return ResultCode::ERR_LEADER_CHANGED;
+        case raftex::AppendLogResult::E_WRITE_BLOCKING:
+            return ResultCode::ERR_WRITE_BLOCK_ERROR;
+        default:
+            LOG(ERROR) << idStr_ << "Consensus error "
+                       << static_cast<int32_t>(res);
+            return ResultCode::ERR_CONSENSUS_ERROR;
+    }
+}
+
+
 
 }  // namespace kvstore
 }  // namespace nebula
