@@ -142,7 +142,6 @@ std::string OverEdges::toString() const {
         buf += e->toString();
         buf += ",";
     }
-    buf.pop_back();
 
     if (!buf.empty()) {
         buf.resize(buf.size() - 1);
