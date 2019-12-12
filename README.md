@@ -43,7 +43,7 @@ See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap
 
 There are two ways you can quickly start Nebula Graph:
 * By [installing source code](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code.md)
-* By [docker image](https://hub.docker.com/r/vesoft/nebula-graph)and [develop](https://hub.docker.com/u/vesoft)
+* By [docker image](https://hub.docker.com/r/vesoft/nebula-graph
 
 If you prefer a quick start video tutorial, visit our [YouTube channel](https://www.youtube.com/watch?v=5RjCDKQvjk8&list=PL4ArMmsAnb84uB2d9L46eXpIi7Epz2cfp).
 
