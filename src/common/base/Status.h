@@ -111,8 +111,11 @@ public:
     STATUS_GENERATOR(TagNotFound);
     STATUS_GENERATOR(EdgeNotFound);
     STATUS_GENERATOR(UserNotFound);
+    STATUS_GENERATOR(TagIndexNotFound);
+    STATUS_GENERATOR(EdgeIndexNotFound);
     STATUS_GENERATOR(LeaderChanged);
     STATUS_GENERATOR(Balanced);
+    STATUS_GENERATOR(PartNotFound);
 
 #undef STATUS_GENERATOR
 
@@ -144,6 +147,9 @@ public:
         kUserNotFound           = 408,
         kLeaderChanged          = 409,
         kBalanced               = 410,
+        kTagIndexNotFound       = 411,
+        kEdgeIndexNotFound      = 412,
+        kPartNotFound           = 413,
     };
 
     Code code() const {

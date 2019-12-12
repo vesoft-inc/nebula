@@ -76,6 +76,10 @@ public:
         return 0;
     }
 
+    HostAddr address() const {
+        return storeSvcAddr_;
+    }
+
     std::shared_ptr<folly::IOThreadPoolExecutor> getIoPool() const {
         return ioPool_;
     }
