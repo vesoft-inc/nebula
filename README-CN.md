@@ -40,6 +40,8 @@
 
 请查看[手册](docs/README.md)或下载 [pdf](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/doc/manual-en-1204.pdf)。
 
+您也可以观看[视频](https://space.bilibili.com/472621355)开始学习 **Nebula Graph**。
+
 ## 参与 Nebula Graph
 
 **Nebula Graph** 是一个完全开源的项目，欢迎开源爱好者参与 **Nebula Graph** 社区，目前有以下贡献方式：

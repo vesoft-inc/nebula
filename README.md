@@ -44,6 +44,8 @@ Apart from [installing from source code](docs/manual-EN/3.build-develop-and-admi
 
 See [manual](docs/README.md) or download the [pdf](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/doc/manual-en-1204.pdf).
 
+You can also get started by watching [videos](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw/).
+
 ## How Can I Contribute
 
 As the team behind **Nebula Graph**, we fully commit to the community and all-in to the open source project. All the core features are and will be implemented in the open source repository.

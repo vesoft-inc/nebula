@@ -38,7 +38,7 @@ public:
     test::ServerContext* storageServer();
 
     meta::MetaClient* metaClient();
-    
+
     const std::string getMetaRootPath() {
         return metaRootPath_.path();
     }
