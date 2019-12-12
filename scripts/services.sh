@@ -14,7 +14,7 @@ fi
 
 if [ -z $NEBULA_HOME ]; then
   echo "NEBULA_HOME is not setting, using /usr/local as default value"
-  NEBULA_HOME=/usr/local
+  NEBULA_HOME=/usr/local/nebula
 fi
 
 echo "Processing Meta Service ..."
