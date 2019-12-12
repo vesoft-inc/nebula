@@ -76,7 +76,7 @@ JNIEXPORT jobject JNICALL Java_com_vesoft_nebula_NebulaCodec_decode(JNIEnv *env,
                                                                     jclass clz,
                                                                     jbyteArray encoded,
                                                                     jobjectArray pairs,
-                                                                    jint version) {
+                                                                    jlong version) {
     clz = env->FindClass("com/vesoft/nebula/NebulaCodec$Pair");
     jmethodID getField = env->GetMethodID(clz, "getField", "()Ljava/lang/String;");
     jmethodID getClazz = env->GetMethodID(clz, "getClazz", "()Ljava/lang/String;");

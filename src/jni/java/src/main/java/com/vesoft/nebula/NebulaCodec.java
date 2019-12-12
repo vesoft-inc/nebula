@@ -91,7 +91,7 @@ public class NebulaCodec {
 
     public static native byte[] encode(Object[] values);
 
-    public static native List<byte[]> decode(byte[] encoded, Pair[] fields, int version);
+    public static native List<byte[]> decode(byte[] encoded, Pair[] fields, long version);
 
     private boolean checkKey(String key) {
         return Objects.isNull(key) || key.length() == 0;

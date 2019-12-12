@@ -42,10 +42,10 @@ JNIEXPORT jbyteArray JNICALL Java_com_vesoft_nebula_NebulaCodec_encode
 /*
  * Class:     com_vesoft_nebula_NebulaCodec
  * Method:    decode
- * Signature: ([B[Lcom/vesoft/nebula/NebulaCodec/Pair;I)Ljava/util/List;
+ * Signature: ([B[Lcom/vesoft/nebula/NebulaCodec/Pair;J)Ljava/util/List;
  */
 JNIEXPORT jobject JNICALL Java_com_vesoft_nebula_NebulaCodec_decode
-  (JNIEnv *, jclass, jbyteArray, jobjectArray, jint);
+  (JNIEnv *, jclass, jbyteArray, jobjectArray, jlong);
 
 #ifdef __cplusplus
 }
