@@ -8,6 +8,8 @@
 #include <rocksdb/db.h>
 
 DEFINE_string(path, "", "rocksdb instance path");
+DEFINE_int64(vertex_id, 0, "Specify the vertex id");
+DEFINE_int64(parts_num, 100, "Specify the parts number");
 
 namespace nebula {
 
@@ -24,7 +26,13 @@ public:
         if (!iter) {
             LOG(FATAL) << "null iterator!";
         }
-        iter->SeekToFirst();
+        if (FLAGS_vertex_id != 0) {
+            auto partId = FLAGS_vertex_id % FLAGS_parts_num + 1;
+            auto prefix = NebulaKeyUtils::edgePrefix(partId, FLAGS_vertex_id);
+            iter->Seek(prefix);
+        } else {
+            iter->SeekToFirst();
+        }
         size_t count = 0;
         while (iter->Valid()) {
             auto key = folly::StringPiece(iter->key().data(), iter->key().size());
@@ -51,6 +59,9 @@ public:
 int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
+    LOG(INFO) << "path:" << FLAGS_path
+              << ", vertex_id:" << FLAGS_vertex_id
+              << ", parts_num:" << FLAGS_parts_num;
     if (FLAGS_path.empty()) {
         LOG(INFO) << "Specify the path!";
         return -1;
