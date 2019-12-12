@@ -58,8 +58,7 @@ In case you encounter any problems playing around Nebula Graph, please reach out
 * [简体中文](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-CN/README.md)
 
 ## Architecture
-
-[Nebula Graph Architecture Overview](https://github.com/vesoft-inc/nebula-docs/raw/master/images/Nebula%20Arch.png)
+![image](https://github.com/vesoft-inc/nebula-docs/raw/master/images/Nebula%20Arch.png)
 
 ## Contributing
 
