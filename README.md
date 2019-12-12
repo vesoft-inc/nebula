@@ -47,11 +47,6 @@ There are two ways you can quickly start Nebula Graph:
 
 If you prefer a quick start video tutorial, visit our [YouTube channel](https://www.youtube.com/watch?v=5RjCDKQvjk8&list=PL4ArMmsAnb84uB2d9L46eXpIi7Epz2cfp).
 
-
-See [manual](docs/README.md) or download the [pdf](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/doc/manual-en-1204.pdf).
-
-You can also get started by watching [videos](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw/).
-
 ## Getting help
 In case you encounter any problems playing around Nebula Graph, please reach out for help:
 * [Slack channel](https://nebulagraph.slack.com/archives/DJQC9P0H5/p1557815158000200)
