@@ -92,6 +92,16 @@ protected:
         }
     }
 
+    void handleErrorCode(kvstore::ResultCode code, GraphSpaceID spaceId, PartitionID partId) {
+        if (code != kvstore::ResultCode::SUCCEEDED) {
+            if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+                handleLeaderChanged(spaceId, partId);
+            } else {
+                pushResultCode(to(code), partId);
+            }
+        }
+    }
+
     void handleLeaderChanged(GraphSpaceID spaceId, PartitionID partId) {
         auto addrRet = kvstore_->partLeader(spaceId, partId);
         if (ok(addrRet)) {

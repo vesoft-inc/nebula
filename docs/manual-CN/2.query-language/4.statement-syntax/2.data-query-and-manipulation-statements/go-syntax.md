@@ -119,4 +119,34 @@ nebula> GO FROM 100 OVER edge1, edge2 YIELD edge1.prop1, edge2.prop2
 | 0 | 202 |
 
 对于 `GO FROM 100 OVER *` 这样的例子来说，返回结果也和上面例子类似：不存在的属性或者 vid 使用默认值来填充。
-请注意从结果里面是没有办法分辨每一行属于哪条边， 未来版本会把 edge type 也在结果里面表示出来。
+请注意从结果中无法分辨每一行属于哪条边，未来版本会在结果中把 edge type 表示出来。
+
+## 反向遍历
+
+目前 **Nebula Graph** 支持使用关键词 `REVERSELY` 进行反向遍历，语法为：
+
+```ngql
+  GO FROM <node_list>
+  OVER <edge_type_list> REVERSELY
+  WHERE (expression [ AND | OR expression ...])  
+  YIELD | YIELDS  [DISTINCT] <return_list>
+```
+
+例如：
+
+```ngql
+nebula> GO FROM 125 OVER follow REVERSELY YIELD follow._src AS id | \
+        GO FROM $-.id OVER serve WHERE $^.player.age > 35 YIELD $^.player.name AS FriendOf, $$.team.name AS Team
+
+=========================
+| FriendOf    | Team    |
+=========================
+| Tim Duncan  | Spurs   |
+-------------------------
+| Tony Parker | Spurs   |
+-------------------------
+| Tony Parker | Hornets |
+-------------------------
+```
+
+遍历 follow 125 号球员的所有球员，找出这些球员服役的球队，筛选年龄大于 35 岁的球员并返回这些球员姓名和其服役的球队名称。如果此处不指定 `YIELD`，则默认返回每条边目标点的 `vid`。

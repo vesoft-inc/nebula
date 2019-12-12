@@ -11,13 +11,14 @@ namespace meta {
 
 void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
+    auto tagName = req.get_tag_name();
     {
         // if there is an edge of the same name
         // TODO: there exists race condition, we should address it in the future
         folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
-        auto conflictRet = getEdgeType(req.get_space_id(), req.get_tag_name());
+        auto conflictRet = getEdgeType(req.get_space_id(), tagName);
         if (conflictRet.ok()) {
-            LOG(ERROR) << "Failed to create tag `" << req.get_tag_name()
+            LOG(ERROR) << "Failed to create tag `" << tagName
                        << "': some edge with the same name already exists.";
             resp_.set_id(to(conflictRet.value(), EntryType::TAG));
             resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
@@ -27,11 +28,17 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     }
 
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
-    auto ret = getTagId(req.get_space_id(), req.get_tag_name());
+    auto ret = getTagId(req.get_space_id(), tagName);
     if (ret.ok()) {
-        LOG(ERROR) << "Create Tag Failed :" << req.get_tag_name() << " has existed";
+        cpp2::ErrorCode ec;
+        if (req.get_if_not_exists()) {
+            ec = cpp2::ErrorCode::SUCCEEDED;
+        } else {
+            LOG(ERROR) << "Create Tag Failed :" << tagName << " has existed";
+            ec = cpp2::ErrorCode::E_EXISTED;
+        }
         resp_.set_id(to(ret.value(), EntryType::TAG));
-        resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+        resp_.set_code(ec);
         onFinished();
         return;
     }
@@ -45,21 +52,22 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     }
     auto tagId = nebula::value(tagRet);
     std::vector<kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::indexTagKey(req.get_space_id(), req.get_tag_name()),
-                      std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId)));
-    LOG(INFO) << "Create Tag " << req.get_tag_name() << ", tagId " << tagId;
+    data.emplace_back(MetaServiceUtils::indexTagKey(req.get_space_id(), tagName),
+                      std::string(reinterpret_cast<const char*>(&tagId), sizeof(TagID)));
+    LOG(INFO) << "Create Tag " << tagName << ", tagId " << tagId;
     data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, 0),
-                      MetaServiceUtils::schemaTagVal(req.get_tag_name(), req.get_schema()));
+                      MetaServiceUtils::schemaTagVal(tagName, req.get_schema()));
 
     auto columns = req.get_schema().get_columns();
     for (auto& column : columns) {
         if (column.__isset.default_value) {
+            auto name = column.get_name();
             auto value = column.get_default_value();
             std::string defaultValue;
             switch (column.get_type().get_type()) {
                 case nebula::cpp2::SupportedType::BOOL:
                     if (value->getType() != nebula::cpp2::Value::Type::bool_value) {
-                        LOG(ERROR) << "Create Tag Failed: " << column.get_name()
+                        LOG(ERROR) << "Create Tag Failed: " << name
                                    << " type mismatch";
                         resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
                         onFinished();
@@ -69,7 +77,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
                     break;
                 case nebula::cpp2::SupportedType::INT:
                     if (value->getType() != nebula::cpp2::Value::Type::int_value) {
-                        LOG(ERROR) << "Create Tag Failed: " << column.get_name()
+                        LOG(ERROR) << "Create Tag Failed: " << name
                                    << " type mismatch";
                         resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
                         onFinished();
@@ -79,7 +87,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
                     break;
                 case nebula::cpp2::SupportedType::DOUBLE:
                     if (value->getType() != nebula::cpp2::Value::Type::double_value) {
-                        LOG(ERROR) << "Create Tag Failed: " << column.get_name()
+                        LOG(ERROR) << "Create Tag Failed: " << name
                                    << " type mismatch";
                         resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
                         onFinished();
@@ -89,7 +97,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
                     break;
                 case nebula::cpp2::SupportedType::STRING:
                     if (value->getType() != nebula::cpp2::Value::Type::string_value) {
-                        LOG(ERROR) << "Create Tag Failed: " << column.get_name()
+                        LOG(ERROR) << "Create Tag Failed: " << name
                                    << " type mismatch";
                         resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
                         onFinished();
@@ -102,16 +110,16 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
                     return;
             }
 
-            LOG(INFO) << "Get Tag Default value: Property Name " << column.get_name()
+            LOG(INFO) << "Get Tag Default value: Property Name " << name
                     << ", Value " << defaultValue;
             auto defaultKey = MetaServiceUtils::tagDefaultKey(req.get_space_id(),
                                                               tagId,
-                                                              column.get_name());
+                                                              name);
             data.emplace_back(std::move(defaultKey), std::move(defaultValue));
         }
     }
 
-    LOG(INFO) << "Create Tag " << req.get_tag_name() << ", TagID " << tagId;
+    LOG(INFO) << "Create Tag " << tagName << ", TagID " << tagId;
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(tagId, EntryType::TAG));
     doPut(std::move(data));

@@ -24,6 +24,7 @@ namespace nebula {
 namespace meta {
 
 using nebula::network::NetworkUtils;
+using FieldType = std::pair<std::string, nebula::cpp2::ValueType>;
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID) \
     if (spaceExist(spaceID) == Status::SpaceNotFound()) { \
@@ -81,6 +82,8 @@ protected:
             return cpp2::ErrorCode::E_NOT_FOUND;
         case kvstore::ResultCode::ERR_LEADER_CHANGED:
             return cpp2::ErrorCode::E_LEADER_CHANGED;
+        case kvstore::ResultCode::ERR_CHECKPOINT_ERROR:
+            return cpp2::ErrorCode::E_SNAPSHOT_FAILURE;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
         }
@@ -117,6 +120,12 @@ protected:
         case EntryType::USER:
             thriftID.set_user_id(static_cast<UserID>(id));
         case EntryType::CONFIG:
+            break;
+        case EntryType::TAG_INDEX:
+            thriftID.set_tag_index_id(static_cast<TagIndexID>(id));
+            break;
+        case EntryType::EDGE_INDEX:
+            thriftID.set_edge_index_id(static_cast<EdgeIndexID>(id));
             break;
         }
         return thriftID;
@@ -203,15 +212,33 @@ protected:
     StatusOr<TagID> getTagId(GraphSpaceID spaceId, const std::string& name);
 
     /**
+     * Fetch the latest version tag's fields.
+     */
+    StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
+    getLatestTagFields(GraphSpaceID spaceId, const std::string& name);
+
+    /**
      * Return the edgeType for name.
      */
     StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
+
+    /**
+     * Fetch the latest version edge's fields.
+     */
+    StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
+    getLatestEdgeFields(GraphSpaceID spaceId, const std::string& name);
+
+    StatusOr<TagIndexID> getTagIndexID(GraphSpaceID spaceId, const std::string& indexName);
+
+    StatusOr<EdgeIndexID> getEdgeIndexID(GraphSpaceID spaceId, const std::string& indexName);
 
     StatusOr<UserID> getUserId(const std::string& account);
 
     bool checkPassword(UserID userId, const std::string& password);
 
     StatusOr<std::string> getUserAccount(UserID userId);
+
+    bool doSyncPut(std::vector<kvstore::KV> data);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

@@ -104,6 +104,33 @@ public:
     future_listEdges(const cpp2::ListEdgesReq& req) override;
 
     /**
+     * Index related operations.
+     * */
+    folly::Future<cpp2::ExecResp>
+    future_createTagIndex(const cpp2::CreateTagIndexReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_dropTagIndex(const cpp2::DropTagIndexReq& req) override;
+
+    folly::Future<cpp2::GetTagIndexResp>
+    future_getTagIndex(const cpp2::GetTagIndexReq &req) override;
+
+    folly::Future<cpp2::ListTagIndexesResp>
+    future_listTagIndexes(const cpp2::ListTagIndexesReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_createEdgeIndex(const cpp2::CreateEdgeIndexReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_dropEdgeIndex(const cpp2::DropEdgeIndexReq& req) override;
+
+    folly::Future<cpp2::GetEdgeIndexResp>
+    future_getEdgeIndex(const cpp2::GetEdgeIndexReq& req) override;
+
+    folly::Future<cpp2::ListEdgeIndexesResp>
+    future_listEdgeIndexes(const cpp2::ListEdgeIndexesReq& req) override;
+
+    /**
      * User manager
      **/
     folly::Future<cpp2::ExecResp>
@@ -159,6 +186,15 @@ public:
 
     folly::Future<cpp2::ListConfigsResp>
     future_listConfigs(const cpp2::ListConfigsReq &req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_createSnapshot(const cpp2::CreateSnapshotReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_dropSnapshot(const cpp2::DropSnapshotReq& req) override;
+
+    folly::Future<cpp2::ListSnapshotsResp>
+    future_listSnapshots(const cpp2::ListSnapshotsReq& req) override;
 
 private:
     kvstore::KVStore* kvstore_ = nullptr;

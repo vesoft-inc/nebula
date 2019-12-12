@@ -9,7 +9,15 @@
   <a href="https://www.zhihu.com/org/nebulagraph/activities"><img src="https://img.shields.io/badge/Zhihu-%E7%9F%A5%E4%B9%8E-blue" alt="Zhihu"></a>
   <a href="https://segmentfault.com/t/nebula"><img src="https://img.shields.io/badge/SegmentFault-%E6%80%9D%E5%90%A6-green" alt="SegmentFault"></a>
   <a href="https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place"><img src="https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red" alt="Sina Weibo"></a>
+  <a href="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default">
+    <img src="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula star"/>
+  </a>
+  <a href="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default">
+    <img src="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula fork"/>
+  </a>
 </p>
+
+# Nebula Graph
 
 **Nebula Graph** 的目标是为超大规模图数据提供高并发，低延时的读、写及计算。**Nebula Graph** 是一个开源项目，我们期待与社区合作共同推广图数据库。
 
@@ -27,6 +35,12 @@
 
 除编译源代码外，也可使用 [Nebula Graph 镜像](https://hub.docker.com/r/vesoft/nebula-graph) 进行试用。
 更多详情参见 [Get Started](docs/manual-CN/1.overview/2.quick-start/1.get-started.md)。您也可以在这里访问 [详细文档](docs/manual-CN/README.md)。
+
+## 使用 Nebula Graph
+
+请查看[手册](docs/README.md)或下载 [pdf](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/doc/manual-en-1204.pdf)。
+
+您也可以观看[视频](https://space.bilibili.com/472621355)开始学习 **Nebula Graph**。
 
 ## 参与 Nebula Graph
 
@@ -47,7 +61,7 @@
 
 * 使用 [GitHub issue tracker](https://github.com/vesoft-inc/nebula/issues) 提交 issue 或功能需求。
 * 访问官网 [Home Page](http://nebula-graph.io/)。
-*  [![WeiXin](https://img.shields.io/badge/WeChat-%E5%BE%AE%E4%BF%A1-brightgreen)](https://user-images.githubusercontent.com/38887077/67449282-4362b300-f64c-11e9-878f-7efc373e5e55.jpg)
+* [![WeiXin](https://img.shields.io/badge/WeChat-%E5%BE%AE%E4%BF%A1-brightgreen)](https://user-images.githubusercontent.com/38887077/67449282-4362b300-f64c-11e9-878f-7efc373e5e55.jpg)
 [![Zhihu](https://img.shields.io/badge/Zhihu-%E7%9F%A5%E4%B9%8E-blue)](https://www.zhihu.com/org/nebulagraph/activities)
 [![SegmentFault](https://img.shields.io/badge/SegmentFault-%E6%80%9D%E5%90%A6-green)](https://segmentfault.com/t/nebula)
 [![Sina Weibo](https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red)](https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place)

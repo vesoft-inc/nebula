@@ -342,6 +342,10 @@ void GroupByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
         return;
     }
 
+    if (!result->hasData()) {
+        return;
+    }
+
     auto ret = result->getRows();
     if (!ret.ok()) {
         LOG(ERROR) << "Get rows failed: " << ret.status();

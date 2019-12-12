@@ -30,17 +30,22 @@ using SpaceIdName = std::pair<GraphSpaceID, std::string>;
 using HostStatus = std::pair<HostAddr, std::string>;
 
 // struct for in cache
-using TagIDSchemas = std::unordered_map<std::pair<TagID, SchemaVer>,
-                                        std::shared_ptr<const SchemaProviderIf>>;
-using EdgeTypeSchemas = std::unordered_map<std::pair<EdgeType, SchemaVer>,
-                                           std::shared_ptr<const SchemaProviderIf>>;
+using TagSchemas = std::unordered_map<std::pair<TagID, SchemaVer>,
+                                      std::shared_ptr<const SchemaProviderIf>>;
+using EdgeSchemas = std::unordered_map<std::pair<EdgeType, SchemaVer>,
+                                       std::shared_ptr<const SchemaProviderIf>>;
+
+using TagIndexes = std::unordered_map<TagIndexID, std::shared_ptr<const cpp2::IndexProperties>>;
+using EdgeIndexes = std::unordered_map<EdgeIndexID, std::shared_ptr<const cpp2::IndexProperties>>;
 
 struct SpaceInfoCache {
     std::string spaceName;
     PartsAlloc partsAlloc_;
     std::unordered_map<HostAddr, std::vector<PartitionID>> partsOnHost_;
-    TagIDSchemas tagSchemas_;
-    EdgeTypeSchemas edgeSchemas_;
+    TagSchemas tagSchemas_;
+    EdgeSchemas edgeSchemas_;
+    TagIndexes tagIndexes_;
+    EdgeIndexes edgeIndexes_;
 };
 
 using LocalCache = std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>>;
@@ -136,8 +141,10 @@ public:
     /**
      * TODO(dangleptr): Use one struct to represent space description.
      * */
-    folly::Future<StatusOr<GraphSpaceID>>
-    createSpace(std::string name, int32_t partsNum, int32_t replicaFactor);
+    folly::Future<StatusOr<GraphSpaceID>> createSpace(std::string name,
+                                                      int32_t partsNum,
+                                                      int32_t replicaFactor,
+                                                      bool ifNotExists = false);
 
     folly::Future<StatusOr<std::vector<SpaceIdName>>>
     listSpaces();
@@ -158,8 +165,10 @@ public:
     getPartsAlloc(GraphSpaceID spaceId);
 
     // Operations for schema
-    folly::Future<StatusOr<TagID>>
-    createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema);
+    folly::Future<StatusOr<TagID>> createTagSchema(GraphSpaceID spaceId,
+                                                   std::string name,
+                                                   nebula::cpp2::Schema schema,
+                                                   bool ifNotExists = false);
 
     folly::Future<StatusOr<TagID>>
     alterTagSchema(GraphSpaceID spaceId,
@@ -177,8 +186,10 @@ public:
     folly::Future<StatusOr<nebula::cpp2::Schema>>
     getTagSchema(int32_t spaceId, std::string name, SchemaVer version = -1);
 
-    folly::Future<StatusOr<EdgeType>>
-    createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema);
+    folly::Future<StatusOr<EdgeType>> createEdgeSchema(GraphSpaceID spaceId,
+                                                       std::string name,
+                                                       nebula::cpp2::Schema schema,
+                                                       bool ifNotExists = false);
 
     folly::Future<StatusOr<bool>>
     alterEdgeSchema(GraphSpaceID spaceId,
@@ -195,6 +206,37 @@ public:
 
     folly::Future<StatusOr<bool>>
     dropEdgeSchema(GraphSpaceID spaceId, std::string name);
+
+    // Operations for index
+    folly::Future<StatusOr<TagIndexID>>
+    createTagIndex(GraphSpaceID spaceID,
+                   std::string name,
+                   std::map<std::string, std::vector<std::string>>&& fields);
+
+    // Remove the define of tag index
+    folly::Future<StatusOr<bool>>
+    dropTagIndex(GraphSpaceID spaceId, std::string name);
+
+    folly::Future<StatusOr<cpp2::TagIndexItem>>
+    getTagIndex(GraphSpaceID spaceId, std::string name);
+
+    folly::Future<StatusOr<std::vector<cpp2::TagIndexItem>>>
+    listTagIndexes(GraphSpaceID spaceId);
+
+    folly::Future<StatusOr<EdgeIndexID>>
+    createEdgeIndex(GraphSpaceID spaceID,
+                    std::string name,
+                    std::map<std::string, std::vector<std::string>>&& fields);
+
+    // Remove the define of edge index
+    folly::Future<StatusOr<bool>>
+    dropEdgeIndex(GraphSpaceID spaceId, std::string name);
+
+    folly::Future<StatusOr<cpp2::EdgeIndexItem>>
+    getEdgeIndex(GraphSpaceID spaceId, std::string name);
+
+    folly::Future<StatusOr<std::vector<cpp2::EdgeIndexItem>>>
+    listEdgeIndexes(GraphSpaceID spaceId);
 
     // Operations for custom kv
     folly::Future<StatusOr<bool>>
@@ -239,6 +281,12 @@ public:
     folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module);
 
+    folly::Future<StatusOr<bool>> createSnapshot();
+
+    folly::Future<StatusOr<bool>> dropSnapshot(const std::string& name);
+
+    folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> listSnapshots();
+
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
@@ -274,6 +322,18 @@ public:
 
     StatusOr<std::shared_ptr<const SchemaProviderIf>>
     getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver = -1);
+
+    StatusOr<const cpp2::IndexProperties>
+    getTagIndexFromCache(TagIndexID tagIndexID);
+
+    StatusOr<const cpp2::IndexProperties>
+    getEdgeIndexFromCache(EdgeIndexID edgeIndexID);
+
+    bool checkTagFieldsIndexed(GraphSpaceID space, TagID tagID,
+                               const std::vector<std::string> &fields);
+
+    bool checkEdgeFieldsIndexed(GraphSpaceID space, EdgeType edgeType,
+                                const std::vector<std::string> &fields);
 
     const std::vector<HostAddr>& getAddresses();
 
@@ -311,6 +371,9 @@ protected:
                      SpaceNewestTagVerMap &newestTagVerMap,
                      SpaceNewestEdgeVerMap &newestEdgeVerMap,
                      SpaceAllEdgeMap &allEdgemap);
+
+    bool loadIndexes(GraphSpaceID spaceId,
+                     std::shared_ptr<SpaceInfoCache> cache);
 
     folly::Future<StatusOr<bool>> heartbeat();
 
