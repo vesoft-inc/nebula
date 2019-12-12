@@ -2,6 +2,12 @@
 
 **Nebula Graph** uses [glog](https://github.com/google/glog) to print logs, gflag to control the severity level of the log, and provides an HTTP interface to dynamically change the log level at runtime to facilitate tracking.
 
+## Log File Location
+
+Logs are stored under `/usr/local/nebula/logs/` by default.
+
+> If you delete the entire log directory (`rm -rf ./*`) at runtime, no logs will output thereafter. You can restart the process to resume log output.
+
 ## Parameter Description
 
 ### Two most commonly used flags in glog
@@ -29,13 +35,15 @@ Parameters:
 For example, check the severity minloglevel of storaged:
 
 ```bash
-> curl 127.0.0.1:12000/get_flags | grep minloglevel
+> curl 127.0.0.1:12000/get_flags | grep minloglevel  # storage
+> curl 127.0.0.1:13000/get_flags                     # metad
+
 ```
 
 Change the logs severity level to **most detailed** with the following command.
 
 ```bash
-> curl "http://127.0.0.1:12000/set_flags?flag=v&value=4"
+> curl "http://127.0.0.1:12000/set_flags?flag=v&value=3"
 > curl "http://127.0.0.1:12000/set_flags?flag=minloglevel&value=0"
 ```
 
