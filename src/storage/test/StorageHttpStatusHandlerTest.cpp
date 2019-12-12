@@ -8,7 +8,7 @@
 #include <gtest/gtest.h>
 #include <folly/json.h>
 #include "webservice/WebService.h"
-#include "storage/StorageHttpStatusHandler.h"
+#include "storage/http/StorageHttpStatusHandler.h"
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 #include "fs/TempDir.h"
