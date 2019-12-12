@@ -32,7 +32,7 @@
 
 ## 产品路线图
 
-**Nebula Graph** 产品规划路线图请参见[roadmap](https://github.com/vesoft-inc/nebula/wiki#roadmap)。
+**Nebula Graph** 产品规划路线图请参见 [roadmap](https://github.com/vesoft-inc/nebula/wiki#roadmap)。
 
 ## 快速使用
 
@@ -45,8 +45,6 @@
 在使用 **Nebula Graph** 过程中遇到任何问题，都可以通过下面的方式寻求帮助：
 * [知乎](https://www.zhihu.com/org/nebulagraph/activities)
 * [SegmentFault](https://segmentfault.com/t/nebula)
-* [Slack channel](https://nebulagraph.slack.com/archives/DJQC9P0H5/p1557815158000200)
-* [Stack Overflow](https://stackoverflow.com/questions/tagged/nebulagraph)
 
 ## 文档
 
@@ -55,7 +53,7 @@
 
 ## Nebula Graph 产品架构图
 
-![image](https://github.com/vesoft-inc/nebula-docs/raw/master/images/Nebula%20Arch.png）
+![image](https://github.com/vesoft-inc/nebula-docs/raw/master/images/Nebula%20Arch.png)
 
 ## 如何贡献
 
@@ -73,4 +71,5 @@
 
 * 访问官网 [Home Page](http://nebula-graph.io/)。
 * [![WeiXin](https://img.shields.io/badge/WeChat-%E5%BE%AE%E4%BF%A1-brightgreen)](https://user-images.githubusercontent.com/38887077/67449282-4362b300-f64c-11e9-878f-7efc373e5e55.jpg)
-[![Sina Weibo](https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red)](https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place)
+* [![Sina Weibo](https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red)](https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place)
+* email: info@vesoft.com
