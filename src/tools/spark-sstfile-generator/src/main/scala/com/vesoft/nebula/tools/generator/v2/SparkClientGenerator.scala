@@ -36,9 +36,9 @@ object SparkClientGenerator {
   private[this] val LOG = Logger.getLogger(this.getClass)
 
   private[this] val BATCH_INSERT_TEMPLATE               = "INSERT %s %s(%s) VALUES %s"
-  private[this] val INSERT_VALUE_TEMPLATE               = "%d: (%s)"
-  private[this] val EDGE_VALUE_WITHOUT_RANKING_TEMPLATE = "%d->%d: (%s)"
-  private[this] val EDGE_VALUE_TEMPLATE                 = "%d->%d@%d: (%s)"
+  private[this] val INSERT_VALUE_TEMPLATE               = "%s: (%s)"
+  private[this] val EDGE_VALUE_WITHOUT_RANKING_TEMPLATE = "%s->%s: (%s)"
+  private[this] val EDGE_VALUE_TEMPLATE                 = "%s->%s@%d: (%s)"
   private[this] val USE_TEMPLATE                        = "USE %s"
 
   private[this] val DEFAULT_BATCH              = 2
@@ -185,17 +185,19 @@ object SparkClientGenerator {
         val toVertexUDF              = udf(toVertex)
         val data                     = createDataSource(spark, pathOpt, tagConfig)
 
+
         if (data.isDefined && !c.dry) {
           repartition(data.get, partition)
             .select(sourceProperties.map(col): _*)
             .withColumn(vertex, toVertexUDF(col(vertex)))
             .map { row =>
-              (row.getLong(vertexIndex),
+              ("uuid(\"" + row.getString(vertexIndex) + "\")",
                (for { property <- valueProperties if property.trim.length != 0 } yield
                  extraValue(row, property))
                  .mkString(","))
-            }(Encoders.tuple(Encoders.scalaLong, Encoders.STRING))
-            .foreachPartition { iterator: Iterator[(Long, String)] =>
+
+            }(Encoders.tuple(Encoders.STRING, Encoders.STRING))
+            .foreachPartition { iterator: Iterator[(String, String)] =>
               val hostAndPorts = addresses.map(HostAndPort.fromString).asJava
               val client =
                 new GraphClientImpl(hostAndPorts,
@@ -218,6 +220,8 @@ object SparkClientGenerator {
                     )
 
                     LOG.debug(s"Exec : ${exec}")
+
+                    if(!c.dry){
                     breakable {
                       for (time <- 1 to executionRetry
                            if isSuccessfullyWithSleep(
@@ -225,7 +229,7 @@ object SparkClientGenerator {
                              time * executionInterval + Random.nextInt(10) * 100L)(exec)) {
                         break
                       }
-                    }
+                    }}
                   }
                 } else {
                   LOG.error(s"Switch ${space} Failed")

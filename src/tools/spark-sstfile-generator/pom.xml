@@ -12,8 +12,8 @@
         <java.version>1.8</java.version>
         <scala.2.10.version>2.10.7</scala.2.10.version>
         <scala.2.11.version>2.11.12</scala.2.11.version>
-        <scala.2.12.version>2.12.10</scala.2.12.version>
-        <scala.version>${scala.2.11.version}</scala.version>
+        <scala.2.12.version>2.12.8</scala.2.12.version>
+        <scala.version>${scala.2.12.version}</scala.version>
         <version.scala.binary>2.12</version.scala.binary>
         <spark.version>2.4.4</spark.version>
         <scalatest.version>3.0.8</scalatest.version>
@@ -22,8 +22,10 @@
         <scala-logging.version>3.9.2</scala-logging.version>
         <scopt.version>3.7.1</scopt.version>
         <config.version>1.4.0</config.version>
-        <nebula.version>1.0.0-beta</nebula.version>
+        <nebula.version>1.0.0-rc2</nebula.version>
         <s2.version>1.0.0</s2.version>
+        <hive.version>2.3.2</hive.version>
+        <hadoop.version>2.10.0</hadoop.version>
     </properties>
 
     <build>
@@ -102,32 +104,32 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_2.11</artifactId>
+            <artifactId>spark-core_2.12</artifactId>
             <version>${spark.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql_2.11</artifactId>
+            <artifactId>spark-sql_2.12</artifactId>
             <version>${spark.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-hive_2.11</artifactId>
+            <artifactId>spark-hive_2.12</artifactId>
             <version>${spark.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-yarn_2.11</artifactId>
+            <artifactId>spark-yarn_2.12</artifactId>
             <version>${spark.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.databricks</groupId>
-            <artifactId>spark-csv_2.11</artifactId>
-            <version>1.5.0</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.databricks</groupId>-->
+<!--            <artifactId>spark-csv_2.12</artifactId>-->
+<!--            <version>1.5.0</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_2.11</artifactId>
+            <artifactId>scalatest_2.12</artifactId>
             <version>${scalatest.version}</version>
             <scope>test</scope>
         </dependency>
@@ -143,12 +145,12 @@
         </dependency>
         <dependency>
             <groupId>com.typesafe.scala-logging</groupId>
-            <artifactId>scala-logging_2.11</artifactId>
+            <artifactId>scala-logging_2.12</artifactId>
             <version>${scala-logging.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.scopt</groupId>
-            <artifactId>scopt_2.11</artifactId>
+            <artifactId>scopt_2.12</artifactId>
             <version>${scopt.version}</version>
         </dependency>
         <dependency>
