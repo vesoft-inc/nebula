@@ -3,7 +3,7 @@
 目前，`WHERE` 语句仅适用于 `GO` 语句。
 
 ```ngql
-WHERE (expression [ AND | OR expression ...])  
+WHERE <expression> [ AND | OR <expression> ...])  
 ```
 
 通常，筛选条件是关于节点、边的表达式的逻辑组合。

@@ -1,7 +1,7 @@
 # DROP EDGE 语法
 
 ```ngql
-DROP EDGE edge_type_name
+DROP EDGE <edge_type_name>
 ```
 
 仅支持有 DROP 权限的用户进行此操作。
