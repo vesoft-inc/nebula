@@ -6,35 +6,37 @@
 
 package com.vesoft.nebula.tools.generator.v2
 
-import org.apache.spark.sql.{DataFrame, Encoders, Row, SparkSession}
-import com.typesafe.config.{Config, ConfigFactory}
-import org.apache.spark.sql.functions.col
-import org.apache.spark.sql.functions.udf
 import java.io.File
 
 import com.google.common.geometry.{S2CellId, S2LatLng}
 import com.google.common.net.HostAndPort
+import com.typesafe.config.{Config, ConfigFactory}
 import com.vesoft.nebula.graph.ErrorCode
 import com.vesoft.nebula.graph.client.GraphClientImpl
-import org.slf4j.LoggerFactory
+import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.{DataFrame, Encoders, Row, SparkSession}
+import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
 import scala.util.Random
-import util.control.Breaks._
+import scala.util.control.Breaks._
 
-case class Argument(config: File = new File("application.conf"),
-                    hive: Boolean = false,
-                    directly: Boolean = false,
-                    dry: Boolean = false)
+case class Argument(
+    config: File = new File("application.conf"),
+    hive: Boolean = false,
+    directly: Boolean = false,
+    dry: Boolean = false
+)
 
 /**
   * SparkClientGenerator is a simple spark job used to write data into Nebula Graph parallel.
   */
 object SparkClientGenerator {
-
   private[this] val LOG = LoggerFactory.getLogger(this.getClass)
 
+  //nSQL reference:
+  //https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/1.overview/2.quick-start/1.get-started.md
   private[this] val BATCH_INSERT_TEMPLATE               = "INSERT %s %s(%s) VALUES %s"
   private[this] val INSERT_VALUE_TEMPLATE               = "%s: (%s)"
   private[this] val EDGE_VALUE_WITHOUT_RANKING_TEMPLATE = "%s->%s: (%s)"
@@ -140,20 +142,19 @@ object SparkClientGenerator {
     }
 
     val spark =
-      if (c.hive) session.enableHiveSupport().getOrCreate()
-      else session.getOrCreate()
+      if (c.hive) {
+        session.enableHiveSupport().getOrCreate()
+      } else session.getOrCreate()
 
-    val tagConfigs =
-      if (config.hasPath("tags"))
-        Some(config.getObject("tags"))
-      else None
-
-    if (tagConfigs.isDefined) {
+    val tagConfigs = getConfigOrNone(config, "tags")
+    if (tagConfigs.isEmpty) {
+      LOG.warn("Tag is not defined")
+    } else {
       for (tagName <- tagConfigs.get.unwrapped.keySet.asScala) {
         LOG.info(s"Processing Tag `${tagName}`")
         val tagConfig = config.getConfig(s"tags.${tagName}")
         if (!tagConfig.hasPath("type")) {
-          LOG.error("The type must be specified")
+          LOG.error(s"Tag:`${tagName}`'s type must be specified")
           break()
         }
 
@@ -164,13 +165,24 @@ object SparkClientGenerator {
         }
 
         val fields = tagConfig.getObject("fields").unwrapped
+        val isUseUuidOpt = if (tagConfig.hasPath("use_uuid")) {
+          Some(tagConfig.getBoolean("use_uuid"))
+        } else {
+          None
+        }
+
+        val discriminatorPrefixOpt = if (tagConfig.hasPath("discriminator_prefix")) {
+          Some(tagConfig.getString("discriminator_prefix"))
+        } else {
+          None
+        }
 
         val vertex    = tagConfig.getString("vertex")
         val batch     = getOrElse(tagConfig, "batch", DEFAULT_BATCH)
         val partition = getOrElse(tagConfig, "partition", DEFAULT_PARTITION)
 
         val properties      = fields.asScala.values.map(_.toString).toList
-        val valueProperties = fields.asScala.keys.toList
+        val valueProperties = fields.asScala.keys.filterNot(_.trim.isEmpty).toList
 
         val sourceProperties = if (!fields.containsKey(vertex)) {
           (fields.asScala.keySet + vertex).toList
@@ -181,29 +193,32 @@ object SparkClientGenerator {
         val vertexIndex      = sourceProperties.indexOf(vertex)
         val nebulaProperties = properties.mkString(",")
 
-        val toVertex: String => Long = _.toLong
-        val toVertexUDF              = udf(toVertex)
-        val data                     = createDataSource(spark, pathOpt, tagConfig)
-
+        val data              = createDataSource(spark, pathOpt, tagConfig)
+        val idGeneratorFormat = isUseUuidOpt.fold("%s")(_ => "uuid(%s)")
 
         if (data.isDefined && !c.dry) {
           repartition(data.get, partition)
             .select(sourceProperties.map(col): _*)
-            //.withColumn(vertex, toVertexUDF(col(vertex)))
             .map { row =>
-              ("uuid(\"" + row.getString(vertexIndex) + "\")",
-               (for { property <- valueProperties if property.trim.length != 0 } yield
-                 extraValue(row, property))
-                 .mkString(","))
-
+              (
+                idGeneratorFormat.format(
+                  discriminatorPrefixOpt
+                    .fold(row.getString(vertexIndex))(prefix => prefix + row.getString(vertexIndex))
+                ),
+                valueProperties
+                  .map(extractValue(row, _))
+                  .mkString(",")
+              )
             }(Encoders.tuple(Encoders.STRING, Encoders.STRING))
             .foreachPartition { iterator: Iterator[(String, String)] =>
               val hostAndPorts = addresses.map(HostAndPort.fromString).asJava
               val client =
-                new GraphClientImpl(hostAndPorts,
-                                    connectionTimeout,
-                                    connectionRetry,
-                                    executionRetry)
+                new GraphClientImpl(
+                  hostAndPorts,
+                  connectionTimeout,
+                  connectionRetry,
+                  executionRetry
+                )
 
               if (isSuccessfully(client.connect(user, pswd))) {
                 if (isSuccessfully(client.execute(USE_TEMPLATE.format(space)))) {
@@ -219,17 +234,19 @@ object SparkClientGenerator {
                         .mkString(", ")
                     )
 
-                    LOG.debug(s"Exec : ${exec}")
+                    LOG.debug(s"执行 : ${exec}")
 
-                    if(!c.dry){
                     breakable {
-                      for (time <- 1 to executionRetry
-                           if isSuccessfullyWithSleep(
-                             client.execute(exec),
-                             time * executionInterval + Random.nextInt(10) * 100L)(exec)) {
-                        break
+                      if (!c.dry) {
+                        for (time <- 1 to executionRetry
+                             if isSuccessfullyWithSleep({
+                               LOG.debug(s"开始调用Client执行nsql...")
+                               client.execute(exec)
+                             }, time * executionInterval + Random.nextInt(10) * 100L)(exec)) {
+                          break
+                        }
                       }
-                    }}
+                    }
                   }
                 } else {
                   LOG.error(s"Switch ${space} Failed")
@@ -241,25 +258,24 @@ object SparkClientGenerator {
             }
         }
       }
-    } else {
-      LOG.warn("Tag is not defined")
     }
 
-    val edgeConfigs = getConfigOrNone(config, "edges")
-
-    if (edgeConfigs.isDefined) {
-      for (edgeName <- edgeConfigs.get.unwrapped.keySet.asScala) {
+    val edgeConfigsOpt = getConfigOrNone(config, "edges")
+    if (edgeConfigsOpt.isEmpty) {
+      LOG.warn("Edge is not defined")
+    } else
+      for (edgeName <- edgeConfigsOpt.get.unwrapped.keySet.asScala) {
         LOG.info(s"Processing Edge ${edgeName}")
         val edgeConfig = config.getConfig(s"edges.${edgeName}")
         if (!edgeConfig.hasPath("type")) {
-          LOG.error("The type must be specified")
+          LOG.error(s"Edge:${edgeName}'s type must be specified")
           break()
         }
 
         val pathOpt = if (edgeConfig.hasPath("path")) {
           Some(edgeConfig.getString("path"))
         } else {
-          LOG.warn("The path is not setting")
+          LOG.warn(s"Edge:${edgeName}'s path is not setting")
           None
         }
 
@@ -275,7 +291,7 @@ object SparkClientGenerator {
         val batch           = getOrElse(edgeConfig, "batch", DEFAULT_BATCH)
         val partition       = getOrElse(edgeConfig, "partition", DEFAULT_PARTITION)
         val properties      = fields.asScala.values.map(_.toString).toList
-        val valueProperties = fields.asScala.keys.toList
+        val valueProperties = fields.asScala.keys.filterNot(_.trim.isEmpty).toList
 
         val sourceProperties = if (!isGeo) {
           val source = edgeConfig.getString("source")
@@ -299,7 +315,7 @@ object SparkClientGenerator {
 
         val nebulaProperties = properties.mkString(",")
 
-        val data = createDataSource(spark, pathOpt, edgeConfig)
+        val dataSource = createDataSource(spark, pathOpt, edgeConfig)
         val encoder =
           Encoders.tuple(Encoders.STRING, Encoders.scalaLong, Encoders.scalaLong, Encoders.STRING)
 
@@ -319,92 +335,92 @@ object SparkClientGenerator {
               }
 
               val targetField = row.getLong(row.schema.fieldIndex(target))
+              val values      = valueProperties.map(extractValue(row, _)).mkString(",")
 
-              val values =
-                (for { property <- valueProperties if property.trim.length != 0 } yield
-                  extraValue(row, property))
-                  .mkString(",")
-
-              if (rankingOpt.isDefined) {
-                val ranking = row.getLong(row.schema.fieldIndex(rankingOpt.get))
+              rankingOpt.fold((sourceField, targetField, DEFAULT_EDGE_RANKING, values)) { rank =>
+                val ranking = row.getLong(row.schema.fieldIndex(rank))
                 (sourceField, targetField, ranking, values)
-              } else {
-                (sourceField, targetField, DEFAULT_EDGE_RANKING, values)
               }
             }(encoder)
             .foreachPartition { iterator: Iterator[(String, Long, Long, String)] =>
-              val hostAndPorts = addresses.map(HostAndPort.fromString).asJava
-              val client =
-                new GraphClientImpl(hostAndPorts,
-                                    connectionTimeout,
-                                    connectionRetry,
-                                    executionRetry)
-              if (isSuccessfully(client.connect(user, pswd))) {
-                if (isSuccessfully(client.execute(USE_TEMPLATE.format(space)))) {
-                  iterator.grouped(batch).foreach { edges =>
-                    val values =
-                      if (rankingOpt.isEmpty)
-                        edges
-                          .map { edge =>
-                            // TODO: (darion.yaphet) dataframe.explode() would be better ?
-                            (for (source <- edge._1.split(","))
-                              yield
-                                EDGE_VALUE_WITHOUT_RANKING_TEMPLATE
-                                  .format(source.toLong, edge._2, edge._4)).mkString(", ")
-                          }
-                          .toList
-                          .mkString(", ")
-                      else
-                        edges
-                          .map { edge =>
-                            // TODO: (darion.yaphet) dataframe.explode() would be better ?
-                            (for (source <- edge._1.split(","))
-                              yield
-                                EDGE_VALUE_TEMPLATE
-                                  .format(source.toLong, edge._2, edge._3, edge._4))
-                              .mkString(", ")
-                          }
-                          .toList
-                          .mkString(", ")
+              {
+                val hostAndPorts = addresses.map(HostAndPort.fromString).asJava
+                val client =
+                  new GraphClientImpl(
+                    hostAndPorts,
+                    connectionTimeout,
+                    connectionRetry,
+                    executionRetry
+                  )
 
-                    val exec = BATCH_INSERT_TEMPLATE
-                      .format(Type.Edge.toString, edgeName, nebulaProperties, values)
-                    LOG.debug(s"Exec : ${exec}")
-                    breakable {
-                      for (time <- 1 to executionRetry
-                           if isSuccessfullyWithSleep(
-                             client.execute(exec),
-                             time * executionInterval + Random.nextInt(10) * 100L)(exec)) {
-                        break
+                if (isSuccessfully(client.connect(user, pswd))) {
+                  if (isSuccessfully(client.execute(USE_TEMPLATE.format(space)))) {
+                    iterator.grouped(batch).foreach { edges =>
+                      val values =
+                        if (rankingOpt.isEmpty)
+                          edges
+                            .map { edge =>
+                              // TODO: (darion.yaphet) dataframe.explode() would be better ?
+                              (for (source <- edge._1.split(","))
+                                yield EDGE_VALUE_WITHOUT_RANKING_TEMPLATE
+                                  .format(source.toLong, edge._2, edge._4)).mkString(", ")
+                            }
+                            .toList
+                            .mkString(", ")
+                        else
+                          edges
+                            .map { edge =>
+                              // TODO: (darion.yaphet) dataframe.explode() would be better ?
+                              (for (source <- edge._1.split(","))
+                                yield EDGE_VALUE_TEMPLATE
+                                  .format(source.toLong, edge._2, edge._3, edge._4))
+                                .mkString(", ")
+                            }
+                            .toList
+                            .mkString(", ")
+
+                      val exec = BATCH_INSERT_TEMPLATE
+                        .format(Type.Edge.toString, edgeName, nebulaProperties, values)
+
+                      LOG.debug(s"执行 : ${exec}")
+                      breakable {
+                        if (!c.dry) { // When dryRun, just not send nsql to server side.
+                          for (time <- 1 to executionRetry
+                               if isSuccessfullyWithSleep(
+                                 client.execute(exec),
+                                 time * executionInterval + Random.nextInt(10) * 100L
+                               )(exec)) {
+                            break
+                          }
+                        }
                       }
                     }
+                  } else {
+                    LOG.error(s"Switch ${space} Failed")
                   }
+                  client.close()
                 } else {
-                  LOG.error(s"Switch ${space} Failed")
+                  LOG.error(s"Client connection failed. ${user}:${pswd}")
                 }
-                client.close()
-              } else {
-                LOG.error(s"Client connection failed. ${user}:${pswd}")
               }
             }
         }
       }
-    } else {
-      LOG.warn("Edge is not defined")
-    }
   }
 
   /**
     * Create data source for different data type.
     *
-    * @param session    The Spark Session.
-    * @param pathOpt    The path for config.
-    * @param config     The config.
+    * @param session The Spark Session.
+    * @param pathOpt The path for config.
+    * @param config  The config.
     * @return
     */
-  private[this] def createDataSource(session: SparkSession,
-                                     pathOpt: Option[String],
-                                     config: Config) = {
+  private[this] def createDataSource(
+      session: SparkSession,
+      pathOpt: Option[String],
+      config: Config
+  ) = {
     val `type` = config.getString("type")
 
     pathOpt match {
@@ -426,11 +442,11 @@ object SparkClientGenerator {
             if (!config.hasPath("exec")) {
               LOG.error("Reading from hive should setting SQL command")
               None
+            } else {
+              val exec = config.getString("exec")
+              LOG.info(s"""Loading from Hive and exec ${exec}""")
+              Some(session.sql(exec))
             }
-
-            val exec = config.getString("exec")
-            LOG.info(s"""Loading from Hive and exec ${exec}""")
-            Some(session.sql(exec))
           }
           // TODO: (darion.yaphet) Support Structured Streaming
           case "socket" => {
@@ -438,34 +454,37 @@ object SparkClientGenerator {
             if (!config.hasPath("host") || !config.hasPath("port")) {
               LOG.error("Reading socket source should specify host and port")
               None
+            } else {
+              val host = config.getString("host")
+              val port = config.getInt("port")
+              LOG.info(s"""Reading data stream from Socket ${host}:${port}""")
+              Some(
+                session.readStream
+                  .format("socket")
+                  .option("host", host)
+                  .option("port", port)
+                  .load()
+              )
             }
-
-            val host = config.getString("host")
-            val port = config.getInt("port")
-            LOG.info(s"""Reading data stream from Socket ${host}:${port}""")
-            Some(
-              session.readStream
-                .format("socket")
-                .option("host", host)
-                .option("port", port)
-                .load())
           }
 
           case "kafka" => {
             if (!config.hasPath("servers") || !config.hasPath("topic")) {
               LOG.error("Reading kafka source should specify servers and topic")
               None
+            } else {
+              val server = config.getString("server")
+              val topic  = config.getString("kafka")
+              LOG.info(s"""Loading from Kafka ${server} and subscribe ${topic}""")
+              Some(
+                session.readStream
+                  .format("kafka")
+                  .option("kafka.bootstrap.servers", server)
+                  .option("subscribe", topic)
+                  .load()
+              )
             }
 
-            val server = config.getString("server")
-            val topic  = config.getString("kafka")
-            LOG.info(s"""Loading from Kafka ${server} and subscribe ${topic}""")
-            Some(
-              session.readStream
-                .format("kafka")
-                .option("kafka.bootstrap.servers", server)
-                .option("subscribe", topic)
-                .load())
           }
           case _ => {
             LOG.error(s"Data source ${`type`} not supported")
@@ -476,15 +495,16 @@ object SparkClientGenerator {
     }
   }
 
+  //TODO: Is it reasonable to default every null field? Must support nullable property
   /**
-    * Extra value from the row by field name.
+    * Extract value from the row by field name.
     * When the field is null, we will fill it with default value.
     *
-    * @param row      The row value.
-    * @param field    The field name.
+    * @param row   The row value.
+    * @param field The field name.
     * @return
     */
-  private[this] def extraValue(row: Row, field: String) = {
+  private[this] def extractValue(row: Row, field: String) = {
     val index = row.schema.fieldIndex(field)
     row.schema.fields(index).dataType match {
       case StringType =>
@@ -580,21 +600,24 @@ object SparkClientGenerator {
   /**
     * Check the statement execution result.
     *
-    * @param code     The statement's execution result code.
+    * @param code The statement's execution result code.
     * @return
     */
+  @inline
   private[this] def isSuccessfully(code: Int) = code == ErrorCode.SUCCEEDED
 
   /**
     * Check the statement execution result.
     * If the result code is not SUCCEEDED, will sleep a little while.
     *
-    * @param code       The sentence execute's result code.
-    * @param interval   The sleep interval.
+    * @param code     The sentence execute's result code.
+    * @param interval The sleep interval.
     * @return
     */
+  @inline
   private[this] def isSuccessfullyWithSleep(code: Int, interval: Long)(
-      implicit exec: String): Boolean = {
+      implicit exec: String
+  ): Boolean = {
     val result = isSuccessfully(code)
     if (!result) {
       LOG.error(s"Exec Failed: ${exec} retry interval ${interval}")
@@ -606,9 +629,10 @@ object SparkClientGenerator {
   /**
     * Whether the edge is Geo supported.
     *
-    * @param edgeConfig  The config of edge.
+    * @param edgeConfig The config of edge.
     * @return
     */
+  @inline
   private[this] def checkGeoSupported(edgeConfig: Config) = {
     !edgeConfig.hasPath("source") &&
     edgeConfig.hasPath("latitude") &&
@@ -618,10 +642,11 @@ object SparkClientGenerator {
   /**
     * Get the config by the path.
     *
-    * @param config   The config.
-    * @param path     The path of the config.
+    * @param config The config.
+    * @param path   The path of the config.
     * @return
     */
+  @inline
   private[this] def getConfigOrNone(config: Config, path: String) = {
     if (config.hasPath(path)) {
       Some(config.getObject(path))
@@ -633,11 +658,12 @@ object SparkClientGenerator {
   /**
     * Get the value from config by the path. If the path not exist, return the default value.
     *
-    * @param config         The config.
-    * @param path           The path of the config.
-    * @param defaultValue   The default value for the path.
+    * @param config       The config.
+    * @param path         The path of the config.
+    * @param defaultValue The default value for the path.
     * @return
     */
+  @inline
   private[this] def getOrElse[T](config: Config, path: String, defaultValue: T) = {
     if (config.hasPath(path)) {
       config.getAnyRef(path).asInstanceOf[T]
@@ -649,14 +675,13 @@ object SparkClientGenerator {
   /**
     * Calculate the coordinate's correlation id list.
     *
-    * @param lat  The latitude of coordinate.
-    * @param lng  The longitude of coordinate.
+    * @param lat The latitude of coordinate.
+    * @param lng The longitude of coordinate.
     * @return
     */
   private[this] def indexCells(lat: Double, lng: Double) = {
     val coordinate = S2LatLng.fromDegrees(lat, lng)
     val s2CellId   = S2CellId.fromLatLng(coordinate)
-    for (index <- DEFAULT_MIN_CELL_LEVEL to DEFAULT_MAX_CELL_LEVEL)
-      yield s2CellId.parent(index).id()
+    (DEFAULT_MIN_CELL_LEVEL to DEFAULT_MAX_CELL_LEVEL).map(s2CellId.parent(_).id())
   }
 }
