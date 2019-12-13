@@ -216,8 +216,7 @@ function install_gcc {
 # Clean GCC
 function clean_gcc {
     cd $gcc_object_dir
-    make -s -j $building_jobs_num clean
-    [[ $? -ne 0 ]] && { echo "Failed to clean GCC" 1>&2; exit 1; }
+    make -s -j $building_jobs_num clean || true
     cd $OLDPWD
 }
 
@@ -261,9 +260,9 @@ function install_binutils {
 }
 
 # Clean binutils
-function install_binutils {
+function clean_binutils {
     cd $bu_object_dir
-    make -s clean || { echo "Failed to clean binutils" 1>&2; exit 1; }
+    make -s clean || true
     cd $OLDPWD
 }
 
@@ -325,8 +324,8 @@ set -o pipefail
 echo "Starting build, on any failure, see $logfile"
 mkdir -p $root_dir
 
+fetch_tarballs
 {
-    fetch_tarballs
     unpack_tarballs
     setup_deps
 }   |& tee $logfile
