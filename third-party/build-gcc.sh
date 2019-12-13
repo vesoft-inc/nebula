@@ -49,14 +49,14 @@ bu_checksum=a3bf359889e4b299fce1f4cb919dc7b6
 
 # Building directories setup
 cur_dir=$PWD
-root_dir=$PWD/gcc-build
+root_dir=$PWD/toolset-build
 tarballs_dir=$root_dir/downloads
 source_dir=$root_dir/source
 gcc_object_dir=$root_dir/gcc-build
 bu_object_dir=$root_dir/binutils-build
 prefix=$1
-install_dir=${prefix:-$root_dir/install}/gcc/$gcc_version
-logfile=$root_dir/build.log
+install_dir=${prefix:-$root_dir/install}/nebula/toolset/gcc/$gcc_version
+logfile=$root_dir/gcc-build.log
 triplet=x86_64-vesoft-linux
 distro=$(lsb_release -si)
 
@@ -83,12 +83,19 @@ function fetch_tarball {
 }
 
 function fetch_tarballs {
-    hash wget &> /dev/null && download_cmd="wget -c"
+    hash wget &> /dev/null && download_cmd="wget -c --progress=bar:force:noscroll"
     if [[ -z $download_cmd ]]
     then
         echo "'wget' not found for downloading" 1>&2;
         exit 1;
     fi
+    set +e
+    set +o pipefail
+    wget --help | grep -q '\--show-progress' && \
+            download_cmd="$download_cmd -q --show-progress"
+    set -e
+    set -o pipefail
+    echo "Download command: '$download_cmd'"
 
     mkdir -p $tarballs_dir && cd $tarballs_dir
 
@@ -193,7 +200,7 @@ function configure_gcc {
 # Start building GCC
 function build_gcc {
     cd $gcc_object_dir
-    make -s -j $building_jobs_num
+    make -s -j $building_jobs_num bootstrap-lean
     [[ $? -ne 0 ]] && { echo "Failed to build GCC" 1>&2; exit 1; }
     cd $OLDPWD
 }
@@ -203,6 +210,14 @@ function install_gcc {
     cd $gcc_object_dir
     make -s -j $building_jobs_num install-strip
     [[ $? -ne 0 ]] && { echo "Failed to install GCC" 1>&2; exit 1; }
+    cd $OLDPWD
+}
+
+# Clean GCC
+function clean_gcc {
+    cd $gcc_object_dir
+    make -s -j $building_jobs_num clean
+    [[ $? -ne 0 ]] && { echo "Failed to clean GCC" 1>&2; exit 1; }
     cd $OLDPWD
 }
 
@@ -245,10 +260,17 @@ function install_binutils {
     cd $OLDPWD
 }
 
+# Clean binutils
+function install_binutils {
+    cd $bu_object_dir
+    make -s clean || { echo "Failed to clean binutils" 1>&2; exit 1; }
+    cd $OLDPWD
+}
+
 # Finalize the building
 function finalize {
     # Remove all of the annoying libtool files,
-    # so that the installation would be copied around
+    # so that the installation could be copied around
     find $install_dir -name '*.la' | xargs rm -f
 }
 
@@ -271,7 +293,7 @@ function make_package {
 set -e
 
 [[ \$# -ne 0 ]] && prefix=\$(echo "\$@" | sed 's;.*--prefix=(\S*).*;\1;' -r)
-prefix=\${prefix:-/opt/nebula/toolset}
+prefix=\${prefix:-/opt}/nebula/toolset
 
 hash xz &> /dev/null || { echo "xz: Command not found"; exit 1; }
 
@@ -285,13 +307,14 @@ echo "GCC-$gcc_version has been installed to \$prefix/gcc/$gcc_version"
 echo "Performing usability tests"
 CXX=\$prefix/gcc/$gcc_version/bin/g++ \$prefix/gcc/$gcc_version/cxx-compiler-usability-test.sh
 echo "Run 'source \$prefix/gcc/$gcc_version/enable' to start using."
+echo "Run 'source \$prefix/gcc/$gcc_version/disable' to stop using."
 
 exit 0
 
 __start_of_archive__
 EOF
     cd $install_dir/../..
-    tar -cJf - * >> $exec_file
+    tar -cJf - gcc/$gcc_version >> $exec_file
     chmod 0755 $exec_file
     cd $OLDPWD
 }
@@ -312,14 +335,16 @@ mkdir -p $root_dir
     configure_gcc
     build_gcc
     install_gcc
+    clean_gcc
 
     configure_binutils
     build_binutils
     install_binutils
+    clean_binutils
 
     finalize
 }   |& tee -a $logfile \
-    | grep --line-buffered '^Making\|^Configuring\|^Comaparing\|^Comparison\|^Failed to'
+    | grep --line-buffered '^Making\|^Configuring\|^Comparing\|^Comparison\|^Failed to'
 
 usability_test
 
@@ -332,7 +357,7 @@ export CC=\$this_path/bin/gcc
 export CXX=\$this_path/bin/g++
 hash -r
 echo "Only PATH was setup so as not to pollute your library path"
-echo "You could run 'export LD_LIBRARY_PATH=\$this_path/lib64:\\\$LD_LIBRARY_PATH'"
+echo "You could run 'export LD_LIBRARY_PATH=\$this_path/lib64:\\\$LD_LIBRARY_PATH' if needed"
 EOF
 
 cat > $install_dir/disable <<EOF
