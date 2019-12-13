@@ -250,7 +250,7 @@ int64_t RowReader::skipToNext(int64_t index, int64_t offset) const noexcept {
             break;
         }
         case ValueType::FLOAT: {
-            // Eight bytes
+            // Four bytes
             offset += sizeof(float);
             break;
         }

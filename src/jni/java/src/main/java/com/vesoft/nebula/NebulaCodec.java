@@ -19,7 +19,13 @@ public class NebulaCodec {
     private static final Logger LOGGER = LoggerFactory.getLogger(NebulaCodec.class.getName());
 
     static {
-        System.loadLibrary("nebula_codec");
+        try {
+            System.loadLibrary("nebula_codec");
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+        } catch (Error e) {
+            LOGGER.error(e.getMessage(), e);
+        }
     }
 
     public static class Pair {

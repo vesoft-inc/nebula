@@ -69,7 +69,8 @@ public:
     public:
         template<typename T>
         typename std::enable_if<std::is_integral<T>::value, ResultType>::type
-            getInt(T& v) const noexcept;
+        getInt(T& v) const noexcept;
+
         ResultType getBool(bool& v) const noexcept;
         ResultType getFloat(float& v) const noexcept;
         ResultType getDouble(double& v) const noexcept;
@@ -199,7 +200,8 @@ private:
     // A negative number will be returned if an error occurs
     template<typename T>
     typename std::enable_if<std::is_integral<T>::value, int32_t>::type
-        readInteger(int64_t offset, T& v) const noexcept;
+    readInteger(int64_t offset, T& v) const noexcept;
+
     int32_t readFloat(int64_t offset, float& v) const noexcept;
     int32_t readDouble(int64_t offset, double& v) const noexcept;
     int32_t readString(int64_t offset, Slice& v) const noexcept;
@@ -210,7 +212,8 @@ private:
     // When succeeded, offset will advance
     template<typename T>
     typename std::enable_if<std::is_integral<T>::value, ResultType>::type
-        getInt(int64_t index, int64_t& offset, T& v) const noexcept;
+    getInt(int64_t index, int64_t& offset, T& v) const noexcept;
+
     ResultType getBool(int64_t index, int64_t& offset, bool& v) const noexcept;
     ResultType getFloat(int64_t index, int64_t& offset, float& v) const noexcept;
     ResultType getDouble(int64_t index, int64_t& offset, double& v)
