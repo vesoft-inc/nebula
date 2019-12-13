@@ -740,7 +740,12 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(getResultColumnNames());
         if (outputs != nullptr && outputs->hasData()) {
+            auto start = time::WallClock::fastNowInMicroSec();
             auto ret = outputs->getRows();
+            if (FLAGS_trace_go) {
+                LOG(INFO) << "Get Rows, total time cost "
+                          << time::WallClock::fastNowInMicroSec() - start;
+            }
             if (!ret.ok()) {
                 LOG(ERROR) << "Get rows failed: " << ret.status();
                 doError(std::move(ret).status(), ectx()->getGraphStats()->getGoStats());
@@ -891,7 +896,7 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
     std::unique_ptr<RowSetWriter> rsWriter;
     auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
     auto cb = [&] (std::vector<VariantType> record,
-                       std::vector<nebula::cpp2::SupportedType> colTypes) {
+                   std::vector<nebula::cpp2::SupportedType> colTypes) {
         if (schema == nullptr) {
             schema = std::make_shared<SchemaWriter>();
             auto colnames = getResultColumnNames();
@@ -983,6 +988,7 @@ void GoExecutor::onEmptyInputs() {
 bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
     auto all = rpcResp.responses();
     auto spaceId = ectx()->rctx()->session()->space();
+    auto start = time::WallClock::fastNowInMicroSec();
     for (auto &resp : all) {
         if (resp.get_vertices() == nullptr) {
             continue;
@@ -1181,6 +1187,10 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
             }
         }   // for `vdata'
     }   // for `resp'
+    if (FLAGS_trace_go) {
+        LOG(INFO) << "Process the resp from storaged, total time "
+                  << time::WallClock::fastNowInMicroSec() - start << "us";
+    }
     return true;
 }
 
