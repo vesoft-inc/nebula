@@ -1019,8 +1019,8 @@ void GoExecutor::onEmptyInputs() {
 
 
 bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
-    auto all = rpcResp.responses();
-    auto spaceId = ectx()->rctx()->session()->space();
+    auto& all = rpcResp.responses();
+    // auto spaceId = ectx()->rctx()->session()->space();
     auto start = time::WallClock::fastNowInMicroSec();
     for (auto &resp : all) {
         if (resp.get_vertices() == nullptr) {
@@ -1061,9 +1061,9 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                 DCHECK(it != edgeSchema.end());
                 RowSetReader rsReader(it->second, edata.data);
                 auto iter = rsReader.begin();
-                auto edgeType = edata.type;
+//                auto edgeType = edata.type;
                 while (iter) {
-                    std::vector<SupportedType> colTypes;
+                    /*
                     bool saveTypeFlag = false;
                     auto &getters = expCtx_->getters();
                     getters.getAliasProp = [&iter,
@@ -1195,8 +1195,12 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                             continue;
                         }
                     }
+                    */
+                    std::vector<SupportedType> colTypes;
                     std::vector<VariantType> record;
                     record.reserve(yields_.size());
+                    record.emplace_back(value(RowReader::getPropByIndex(&*iter, 0)));
+                    /*
                     saveTypeFlag = true;
                     for (auto *column : yields_) {
                         colTypes.emplace_back(SupportedType::UNKNOWN);
@@ -1214,6 +1218,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         }
                         record.emplace_back(std::move(value.value()));
                     }
+                    */
                     cb(std::move(record), std::move(colTypes));
                     ++iter;
                 }  // while `iter'
