@@ -37,7 +37,7 @@ private:
     HttpCode err_{HttpCode::SUCCEEDED};
     // TODO(shylock) Could expose metrics by name?
     // std::vector<std::string> metricNames_;
-    std::unique_ptr<stats::MetricsSerializer> serializer_{nullptr};
+    stats::MetricsSerializer serializer_;
 };
 
 }  // namespace nebula

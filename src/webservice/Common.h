@@ -21,7 +21,6 @@ enum class HttpCode {
     E_UNSUPPORTED_METHOD = -1,
     E_UNPROCESSABLE      = -2,
     E_ILLEGAL_ARGUMENT   = -3,
-    E_NULL_POINTER       = -4,
 };
 
 enum class HttpStatusCode {

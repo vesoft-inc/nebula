@@ -124,7 +124,7 @@ private:
     static VT readValue(StatsHolder& stats, TimeRange range, StatsMethod method);
 
     FRIEND_TEST(StatsManager, SimpleTest);
-    friend class PrometheusSerializer;
+    friend class MetricsSerializer;
 
 private:
     std::string domain_;

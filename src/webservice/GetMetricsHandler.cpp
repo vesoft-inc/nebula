@@ -27,11 +27,6 @@ void GetMetricsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept
         err_ = HttpCode::E_UNSUPPORTED_METHOD;
         return;
     }
-    serializer_.reset(new(std::nothrow) stats::PrometheusSerializer());
-    if (serializer_ == nullptr) {
-        LOG(ERROR) << "Create MetricsSerializer failed!";
-        err_ = HttpCode::E_NULL_POINTER;
-    }
 }
 
 
@@ -48,22 +43,15 @@ void GetMetricsHandler::onEOM() noexcept {
                         WebServiceUtils::toString(HttpStatusCode::METHOD_NOT_ALLOWED))
                 .sendWithEOM();
             return;
-        case HttpCode::E_NULL_POINTER:
-            ResponseBuilder(downstream_)
-                .status(WebServiceUtils::to(HttpStatusCode::INTERNAL_ERROR),
-                        WebServiceUtils::toString(HttpStatusCode::INTERNAL_ERROR))
-                .sendWithEOM();
-            return;
         default:
             break;
     }
 
-    // read metrics
-    std::string vals = DCHECK_NOTNULL(serializer_)->serialize(stats::StatsManager::get());
+    std::string vals = serializer_.serialize(stats::StatsManager::get());
     ResponseBuilder(downstream_)
         .status(WebServiceUtils::to(HttpStatusCode::OK),
                 WebServiceUtils::toString(HttpStatusCode::OK))
-        .body(vals)
+        .body(std::move(vals))
         .sendWithEOM();
 }
 
