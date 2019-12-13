@@ -124,6 +124,9 @@ private:
         return;
     }
 
+
+    ResultCode toResultCode(raftex::AppendLogResult res);
+
 protected:
     GraphSpaceID spaceId_;
     PartitionID partId_;
