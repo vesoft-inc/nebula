@@ -1,15 +1,15 @@
-# Welcome to the official Nebula Graph documentation
+# Welcome to the Official Nebula Graph Documentation
 
-**Nebula Graph** is a distributed, scalable, lightning-fast graph database.
+**Nebula Graph** is a distributed, scalable, and lightning-fast graph database.
 
-It is the optimal solution in the world capable to host graphs with dozens of billions of vertices (nodes) and trillions of edges, while still provides millisecond latency.
+It is the optimal solution in the world capable of hosting graphs with dozens of billions of vertices (nodes) and trillions of edges with millisecond latency.
 
 ## Prefix
 
 * [About This Manual](0.about-this-manual.md)
 * [Manual Change Log](CHANGELOG.md)
 
-## Overview (For Beginners)
+## Overview (for Beginners)
 
 * [Introduction](1.overview/0.introduction.md)
 * Concepts
@@ -21,18 +21,18 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
   * [Deploy Cluster](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
   * [Import .csv File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
   * [Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
-  * [Nebula Clients](1.overview/2.quick-start/3.supported-clients.md)
+  * [Nebula Graph Clients](1.overview/2.quick-start/3.supported-clients.md)
 
-* Design And Architecture
+* Design and Architecture
   * [Design Overview](1.overview/3.design-and-architecture/1.design-and-architecture.md)
   * [Storage Architecture](1.overview/3.design-and-architecture/2.storage-design.md)
 
-## Query Language (For All Users)
+## Query Language (for All Users)
 
 * Data Types
   * [Data Types](2.query-language/1.data-types/data-types.md)
   * [Type Conversion](2.query-language/1.data-types/type-conversion.md)
-* Functions And Operators
+* Functions and Operators
   * [Bitwise Operators](2.query-language/2.functions-and-operators/bitwise-operators.md)
   * [Built-In Functions](2.query-language/2.functions-and-operators/built-in-functions.md)
   * [Comparison Functions And Operators](2.query-language/2.functions-and-operators/comparison-functions-and-operators.md)
@@ -61,7 +61,7 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
     * [Drop Edge Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-edge-syntax.md)
     * [Drop Space Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-space-syntax.md)
     * [Drop Tag Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-tag-syntax.md)
-  * Data Query And Manipulation Statements
+  * Data Query and Manipulation Statements
     * [Delete Edge Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-edge-syntax.md)
     * [Delete Vertex Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-vertex-syntax.md)
     * [Fetch Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/fetch-syntax.md)
@@ -84,14 +84,16 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
 * Build
   * [Build Source Code](3.build-develop-and-administration/1.build/1.build-source-code.md)
   * [Build By Docker](3.build-develop-and-administration/1.build/2.build-by-docker.md)
-* Develop And Interface
+* Develop and Interface
   * [Key Value API](3.build-develop-and-administration/2.develop-and-interface/kv-interfaces.md)
-  * [Nebula Clients](1.overview/2.quick-start/3.supported-clients.md)
+  * [Nebula Graph Clients](1.overview/2.quick-start/3.supported-clients.md)
 
-* Deploy And Administrations
+* Deploy and Administrations
   * Deployment
     * [Deploy Cluster On Docker](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster-on-docker.md)
     * [Deploy Cluster](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
+    * [Connect Prometheus](3.build-develop-and-administration/3.deploy-and-administrations/deployment/connect-prometheus.md)
+
   * Server Administration
     * Account Management Statements
       * [Drop User Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/drop-user-syntax.md)
@@ -103,12 +105,14 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
       * Data Import
         * [Download And Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
         * [Import .csv File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
+        * [Spark Writer](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/spark-writer.md)
       * [Storage Balance](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-balance.md)
       * [Storage Metrics](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-metrics.md)
+      * [Cluster Snapshot](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/cluster-snapshot.md)
 
-## Contributions (For Contributors)
+## Contributions (for Contributors)
 
-* [Contribute To Documentations](4.contributions/contribute-to-documentation.md)
+* [Contribute to Documentations](4.contributions/contribute-to-documentation.md)
 * [Cpp Coding Style](4.contributions/cpp-coding-style.md)
 * [Developer Documentation Style Guide](4.contributions/developer-documentation-style-guide.md)
 * [How to Contribute](4.contributions/how-to-contribute.md)

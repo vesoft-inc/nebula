@@ -1,4 +1,4 @@
-# Comparison Functions And Operators
+# Comparison Functions and Operators
 
 | Name  | Description |
 |:----|:----:|

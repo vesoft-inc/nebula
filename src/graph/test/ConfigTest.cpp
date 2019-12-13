@@ -253,8 +253,7 @@ TEST_F(ConfigTest, ConfigTest) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "UPDATE CONFIGS storage:k4 = {"
-                                "write_buffer_size = 2097152,"
-                                "disable_auto_compaction = true,"
+                                "disable_auto_compactions = true,"
                                 "level0_file_num_compaction_trigger=4"
                             "}";
         auto code = client->execute(query, resp);

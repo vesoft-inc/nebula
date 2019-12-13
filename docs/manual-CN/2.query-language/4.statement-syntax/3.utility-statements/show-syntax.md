@@ -5,7 +5,7 @@ SHOW {SPACES | TAGS | EDGES | HOSTS | PARTS}
 SHOW CONFIGS [graph|meta|storage]
 ```
 
-`SHOW SPACES` 列出 Nebula Graph 集群中的所有图空间。
+`SHOW SPACES` 列出 **Nebula Graph** 集群中的所有图空间。
 
 `SHOW TAGS` 和 `SHOW EDGES` 则返回当前图空间中被定义的 tag 和 edge type。
 

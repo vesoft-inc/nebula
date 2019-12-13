@@ -15,7 +15,7 @@
 
 // [WAL]
 DEFINE_bool(rocksdb_disable_wal,
-            false,
+            true,
             "Whether to disable the WAL in rocksdb");
 
 // [DBOptions]
@@ -36,10 +36,6 @@ DEFINE_string(rocksdb_block_based_table_options,
 DEFINE_int32(rocksdb_batch_size,
              4 * 1024,
              "default reserved bytes for one batch operation");
-
-DEFINE_string(part_man_type,
-              "memory",
-              "memory, meta");
 /*
  * For these un-supported string options as below, will need to specify them with gflag.
  */
@@ -101,6 +97,7 @@ bool loadOptionsMap(std::unordered_map<std::string, std::string> &map, const std
         return false;
     }
     conf.forEachItem([&map] (const std::string& key, const folly::dynamic& val) {
+        LOG(INFO) << "Emplace rocksdb option " << key << "=" << val.asString();
         map.emplace(key, val.asString());
     });
     return true;

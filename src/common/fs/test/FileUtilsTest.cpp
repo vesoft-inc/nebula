@@ -234,13 +234,15 @@ TEST(FileUtils, listContentInDir) {
     std::string fn1 = FileUtils::joinPath(dirTemp, "file1");
     FILE* f1 = fopen(fn1.c_str(), "w");
     ASSERT_NE(nullptr, f1);
-    fwrite("file1", 5, 1, f1);
+    auto r = fwrite("file1", 5, 1, f1);
+    ASSERT_EQ(r, 1);
     ASSERT_EQ(0, fclose(f1));
 
     std::string fn2 = FileUtils::joinPath(dirTemp, "file2");
     FILE* f2 = fopen(fn2.c_str(), "w");
     ASSERT_NE(nullptr, f2);
-    fwrite("file2", 5, 1, f2);
+    r = fwrite("file2", 5, 1, f2);
+    ASSERT_EQ(r, 1);
     ASSERT_EQ(0, fclose(f2));
 
     // Create two symbolic links

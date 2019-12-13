@@ -28,7 +28,15 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
     if (!addrs.ok()) {
         return addrs.status();
     }
-    metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs.value()));
+
+    stats_ = std::make_unique<GraphStats>();
+
+    metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor,
+                                                     std::move(addrs.value()),
+                                                     HostAddr(0, 0),
+                                                     0,
+                                                     false,
+                                                     stats_->getMetaClientStats());
     // load data try 3 time
     bool loadDataOk = metaClient_->waitForMetadReady(3);
     if (!loadDataOk) {
@@ -41,7 +49,9 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
 
     gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(metaClient_.get());
 
-    storage_ = std::make_unique<storage::StorageClient>(ioExecutor, metaClient_.get());
+    storage_ = std::make_unique<storage::StorageClient>(ioExecutor,
+                                                        metaClient_.get(),
+                                                        stats_->getStorageClientStats());
     return Status::OK();
 }
 
@@ -50,7 +60,8 @@ void ExecutionEngine::execute(RequestContextPtr rctx) {
                                                    schemaManager_.get(),
                                                    gflagsManager_.get(),
                                                    storage_.get(),
-                                                   metaClient_.get());
+                                                   metaClient_.get(),
+                                                   stats_.get());
     // TODO(dutor) add support to plan cache
     auto plan = new ExecutionPlan(std::move(ectx));
 
