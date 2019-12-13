@@ -8,10 +8,10 @@ It indicates to travel in a graph with specific filters (the `WHERE` clause), to
 <!-- >You can refer to `FIND` statement (in progress), which is the counterpart of `SELECT` in SQL. -->
 
 ```ngql
-GO [ <N> STEPS ] FROM <node_list>
-OVER <edge_type_list> [REVERSELY]
-[ WHERE <expression> [ AND | OR expression ...]) ]
-YIELD | YIELDS [DISTINCT] <return_list>
+  GO [ <N> STEPS ] FROM <node_list>
+  OVER <edge_type_list> [REVERSELY]
+  [ WHERE <expression> [ AND | OR expression ...]) ]
+  YIELD | YIELDS [DISTINCT] <return_list>
 
 <node_list>
    | vid [, vid ...]

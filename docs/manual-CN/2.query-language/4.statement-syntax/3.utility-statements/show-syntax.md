@@ -1,7 +1,7 @@
 # SHOW 语法
 
 ```ngql
-SHOW SPACES | TAGS | EDGES | HOSTS | PARTS
+SHOW {SPACES | TAGS | EDGES | HOSTS | PARTS}
 SHOW CONFIGS [graph|meta|storage]
 ```
 

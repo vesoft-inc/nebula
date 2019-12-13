@@ -6,10 +6,10 @@
 <!-- >请参考`FIND`的用法，它对应于SQL中的`SELECT`。 -->
 
 ```ngql
-GO [ <N> STEPS ] FROM <node_list>
-OVER <edge_type_list> [REVERSELY]
-[ WHERE <expression> [ AND | OR expression ...]) ]
-YIELD | YIELDS [DISTINCT] <return_list>
+  GO [ <N> STEPS ] FROM <node_list>
+  OVER <edge_type_list> [REVERSELY]
+  [ WHERE <expression> [ AND | OR expression ...]) ]
+  YIELD | YIELDS [DISTINCT] <return_list>
 
 <node_list>
    | vid [, vid ...]

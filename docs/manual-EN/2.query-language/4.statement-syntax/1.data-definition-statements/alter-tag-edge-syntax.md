@@ -1,7 +1,7 @@
 # Alter Tag/Edge Syntax
 
 ```ngql
-ALTER <TAG> | <EDGE> <tag_name> | <edge_name>
+ALTER TAG | EDGE <tag_name> | <edge_name>
     <alter_definition> [, alter_definition] ...]
     [ttl_definition [, ttl_definition] ... ]
   
