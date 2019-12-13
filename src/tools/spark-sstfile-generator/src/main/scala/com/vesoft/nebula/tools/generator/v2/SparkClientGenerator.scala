@@ -16,7 +16,7 @@ import com.google.common.geometry.{S2CellId, S2LatLng}
 import com.google.common.net.HostAndPort
 import com.vesoft.nebula.graph.ErrorCode
 import com.vesoft.nebula.graph.client.GraphClientImpl
-import org.apache.log4j.Logger
+import org.slf4j.LoggerFactory
 import org.apache.spark.sql.types._
 
 import scala.collection.JavaConverters._
@@ -33,7 +33,7 @@ case class Argument(config: File = new File("application.conf"),
   */
 object SparkClientGenerator {
 
-  private[this] val LOG = Logger.getLogger(this.getClass)
+  private[this] val LOG = LoggerFactory.getLogger(this.getClass)
 
   private[this] val BATCH_INSERT_TEMPLATE               = "INSERT %s %s(%s) VALUES %s"
   private[this] val INSERT_VALUE_TEMPLATE               = "%s: (%s)"
@@ -150,7 +150,7 @@ object SparkClientGenerator {
 
     if (tagConfigs.isDefined) {
       for (tagName <- tagConfigs.get.unwrapped.keySet.asScala) {
-        LOG.info(s"Processing Tag ${tagName}")
+        LOG.info(s"Processing Tag `${tagName}`")
         val tagConfig = config.getConfig(s"tags.${tagName}")
         if (!tagConfig.hasPath("type")) {
           LOG.error("The type must be specified")
@@ -189,7 +189,7 @@ object SparkClientGenerator {
         if (data.isDefined && !c.dry) {
           repartition(data.get, partition)
             .select(sourceProperties.map(col): _*)
-            .withColumn(vertex, toVertexUDF(col(vertex)))
+            //.withColumn(vertex, toVertexUDF(col(vertex)))
             .map { row =>
               ("uuid(\"" + row.getString(vertexIndex) + "\")",
                (for { property <- valueProperties if property.trim.length != 0 } yield
