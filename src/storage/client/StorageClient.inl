@@ -6,6 +6,7 @@
 
 #include "stats/StatsManager.h"
 #include "time/Duration.h"
+#include "time/WallClock.h"
 #include <folly/Try.h>
 
 DECLARE_int32(storage_client_timeout_ms);
@@ -97,11 +98,17 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
         folly::via(evb, [this, evb, context, host, spaceId, res, duration] () mutable {
             auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
             // Result is a pair of <Request&, bool>
+            auto start = time::WallClock::fastNowInMicroSec();
             context->serverMethod(client.get(), *res.first)
             // Future process code will be executed on the IO thread
             // Since all requests are sent using the same eventbase, all then-callback
             // will be executed on the same IO thread
-            .via(evb).then([this, context, host, spaceId, duration] (folly::Try<Response>&& val) {
+            .via(evb).then([this,
+                            context,
+                            host,
+                            spaceId,
+                            duration,
+                            start] (folly::Try<Response>&& val) {
                 auto& r = context->findRequest(host);
                 if (val.hasException()) {
                     LOG(ERROR) << "Request to " << host << " failed: " << val.exception().what();
@@ -145,7 +152,9 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
 
                     // Adjust the latency
                     auto latency = result.get_latency_in_us();
-                    context->resp.setLatency(host, latency);
+                    context->resp.setLatency(host,
+                                             latency,
+                                             time::WallClock::fastNowInMicroSec() - start);
 
                     // Keep the response
                     context->resp.responses().emplace_back(std::move(resp));

@@ -460,8 +460,10 @@ void GoExecutor::stepOut() {
                       << " finished, total request vertices " << starts_.size();
             auto& hostLatency = result.hostLatency();
             for (size_t i = 0; i < hostLatency.size(); i++) {
-                LOG(INFO) << hostLatency[i].first << ", time cost " << hostLatency[i].second
-                          << ", total results " << result.responses()[i].get_vertices()->size();
+                LOG(INFO) << std::get<0>(hostLatency[i])
+                          << ", time cost " << std::get<1>(hostLatency[i])
+                          << "us / " << std::get<2>(hostLatency[i])
+                          << "us, total results " << result.responses()[i].get_vertices()->size();
             }
         }
         onStepOutResponse(std::move(result));
