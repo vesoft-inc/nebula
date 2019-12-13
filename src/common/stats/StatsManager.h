@@ -95,9 +95,11 @@ public:
                                   double pct);
     static void readAllValue(folly::dynamic& vals);
 
-    static StatsManager& get();
+    static std::string toJson();
 
 private:
+    static StatsManager& get();
+
     static constexpr bool isStatIndex(int32_t i) {
         return i > 0;
     }
@@ -124,7 +126,6 @@ private:
     static VT readValue(StatsHolder& stats, TimeRange range, StatsMethod method);
 
     FRIEND_TEST(StatsManager, SimpleTest);
-    friend class MetricsSerializer;
 
 private:
     std::string domain_;

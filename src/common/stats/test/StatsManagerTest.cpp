@@ -112,6 +112,11 @@ TEST(StatsManager, HistogramTest) {
     EXPECT_FALSE(StatsManager::readValue("stat02.t9599.60").ok());
 }
 
+TEST(StatsManager, toJson) {
+    std::string json = StatsManager::toJson();
+    folly::dynamic obj = folly::parseJson(json);
+}
+
 
 }   // namespace stats
 }   // namespace nebula

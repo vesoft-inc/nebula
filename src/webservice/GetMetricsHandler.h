@@ -11,7 +11,6 @@
 #include "webservice/Common.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include "stats/StatsManager.h"
-#include "stats/MetricsSerializer.h"
 
 
 namespace nebula {
@@ -37,7 +36,6 @@ private:
     HttpCode err_{HttpCode::SUCCEEDED};
     // TODO(shylock) Could expose metrics by name?
     // std::vector<std::string> metricNames_;
-    stats::MetricsSerializer serializer_;
 };
 
 }  // namespace nebula

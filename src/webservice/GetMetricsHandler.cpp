@@ -47,7 +47,7 @@ void GetMetricsHandler::onEOM() noexcept {
             break;
     }
 
-    std::string vals = serializer_.serialize(stats::StatsManager::get());
+    std::string vals = stats::StatsManager::toJson();
     ResponseBuilder(downstream_)
         .status(WebServiceUtils::to(HttpStatusCode::OK),
                 WebServiceUtils::toString(HttpStatusCode::OK))
