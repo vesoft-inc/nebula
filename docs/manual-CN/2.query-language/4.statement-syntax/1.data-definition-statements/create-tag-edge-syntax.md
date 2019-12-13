@@ -1,7 +1,7 @@
 # CREATE TAG / EDGE 语法
 
 ```ngql
-CREATE <TAG> | <EDGE> [IF NOT EXIST] <tag_name> | <edge_name>
+CREATE TAG | EDGE [IF NOT EXIST] <tag_name> | <edge_name>
     ([<create_definition>, ...])
     [tag_edge_options]
   
