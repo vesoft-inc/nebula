@@ -60,6 +60,7 @@
 **Nebula Graph** 是一个完全开源的项目，欢迎开源爱好者通过以下方式参与到 **Nebula Graph** 社区：
 * 从标记为 [good first issues](https://github.com/vesoft-inc/nebula/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) 的问题入手
 * 贡献代码，详情请参见 [如何贡献](docs/manual-CN/4.contributions/how-to-contribute.md)
+* 直接在GitHub上提Issue:[https://github.com/vesoft-inc/nebula/issues](https://github.com/vesoft-inc/nebula/issues)
 
 ## 许可证
 
