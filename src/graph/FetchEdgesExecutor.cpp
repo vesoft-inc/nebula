@@ -10,7 +10,7 @@
 namespace nebula {
 namespace graph {
 FetchEdgesExecutor::FetchEdgesExecutor(Sentence *sentence, ExecutionContext *ectx)
-        : FetchExecutor(ectx) {
+        : FetchExecutor(ectx, "fetch_edges") {
     sentence_ = static_cast<FetchEdgesSentence*>(sentence);
 }
 
@@ -103,12 +103,12 @@ void FetchEdgesExecutor::execute() {
     FLOG_INFO("Executing FetchEdges: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getFetchEdgesStats());
+        doError(std::move(status));
         return;
     }
     status = setupEdgeKeys();
     if (!status.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getFetchEdgesStats());
+        doError(std::move(status));
         return;
     }
 
@@ -261,13 +261,12 @@ void FetchEdgesExecutor::fetchEdges() {
     std::vector<storage::cpp2::PropDef> props;
     auto status = getPropNames(props);
     if (!status.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getFetchEdgesStats());
+        doError(std::move(status));
         return;
     }
 
     if (props.empty()) {
-        doError(Status::Error("No props declared."),
-                 ectx()->getGraphStats()->getFetchEdgesStats());
+        doError(Status::Error("No props declared."));
         return;
     }
 
@@ -276,8 +275,7 @@ void FetchEdgesExecutor::fetchEdges() {
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            doError(Status::Error("Get props failed"),
-                    ectx()->getGraphStats()->getFetchEdgesStats());
+            doError(Status::Error("Get props failed"));
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get edges partially failed: "  << completeness << "%";
@@ -291,8 +289,7 @@ void FetchEdgesExecutor::fetchEdges() {
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"),
-                ectx()->getGraphStats()->getFetchEdgesStats());
+        doError(Status::Error("Internal error"));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -334,8 +331,7 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             auto status = getOutputSchema(eschema.get(), &*iter, outputSchema.get());
             if (!status.ok()) {
                 LOG(ERROR) << "Get getOutputSchema failed: " << status;
-                doError(Status::Error("Internal error."),
-                        ectx()->getGraphStats()->getFetchEdgesStats());
+                doError(Status::Error("Internal error."));
                 return;
             }
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
@@ -353,14 +349,13 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
                 auto *expr = column->expr();
                 auto value = expr->eval();
                 if (!value.ok()) {
-                    doError(std::move(value).status(),
-                             ectx()->getGraphStats()->getFetchEdgesStats());
+                    doError(std::move(value).status());
                     return;
                 }
                 auto status = Collector::collect(value.value(), writer.get());
                 if (!status.ok()) {
                     LOG(ERROR) << "Collect prop error: " << status;
-                    doError(std::move(status), ectx()->getGraphStats()->getFetchEdgesStats());
+                    doError(std::move(status));
                     return;
                 }
             }

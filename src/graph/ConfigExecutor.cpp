@@ -13,7 +13,8 @@ namespace graph {
 const std::string kConfigUnknown = "UNKNOWN"; // NOLINT
 
 ConfigExecutor::ConfigExecutor(Sentence *sentence,
-                               ExecutionContext *ectx) : Executor(ectx) {
+                               ExecutionContext *ectx)
+    : Executor(ectx, "config") {
     sentence_ = static_cast<ConfigSentence*>(sentence);
 }
 
@@ -35,7 +36,7 @@ void ConfigExecutor::execute() {
             getVariables();
             break;
         case ConfigSentence::SubType::kUnknown:
-            onError_(Status::Error("Type unknown"));
+            doError(Status::Error("Type unknown"));
             break;
     }
 }
@@ -49,8 +50,7 @@ void ConfigExecutor::showVariables() {
     }
 
     if (module == meta::cpp2::ConfigModule::UNKNOWN) {
-        DCHECK(onError_);
-        onError_(Status::Error("Parse config module error"));
+        doError(Status::Error("Parse config module error"));
         return;
     }
 
@@ -59,8 +59,7 @@ void ConfigExecutor::showVariables() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp.status()));
+            doError(std::move(resp.status()));
             return;
         }
 
@@ -77,14 +76,12 @@ void ConfigExecutor::showVariables() {
         }
         resp_->set_rows(std::move(rows));
 
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s", e.what().c_str())));
+        doError(Status::Error(folly::stringPrintf("Internal error : %s", e.what().c_str())));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -105,8 +102,7 @@ void ConfigExecutor::setVariables() {
         if (configItem_->getValue() != nullptr) {
             auto v = configItem_->getValue()->eval();
             if (!v.ok()) {
-                DCHECK(onError_);
-                onError_(v.status());
+                doError(v.status());
                 return;
             }
             value = v.value();
@@ -124,15 +120,13 @@ void ConfigExecutor::setVariables() {
                     type = meta::cpp2::ConfigType::STRING;
                     break;
                 default:
-                    DCHECK(onError_);
-                    onError_(Status::Error("Parse value type error"));
+                    doError(Status::Error("Parse value type error"));
                     return;
             }
         } else if (configItem_->getUpdateItems() != nullptr) {
             auto status = configItem_->getUpdateItems()->toEvaledString();
             if (!status.ok()) {
-                DCHECK(onError_);
-                onError_(status.status());
+                doError(status.status());
                 return;
             }
             value = status.value();
@@ -142,8 +136,7 @@ void ConfigExecutor::setVariables() {
     }
 
     if (module == meta::cpp2::ConfigModule::UNKNOWN) {
-        DCHECK(onError_);
-        onError_(Status::Error("Parse config module error"));
+        doError(Status::Error("Parse config module error"));
         return;
     }
 
@@ -152,21 +145,17 @@ void ConfigExecutor::setVariables() {
 
     auto cb = [this] (auto && resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp.status()));
+            doError(std::move(resp.status()));
             return;
         }
 
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+        doError(Status::Error(folly::stringPrintf("Internal error : %s",
                                                    e.what().c_str())));
         return;
     };
@@ -186,8 +175,7 @@ void ConfigExecutor::getVariables() {
     }
 
     if (module == meta::cpp2::ConfigModule::UNKNOWN) {
-        DCHECK(onError_);
-        onError_(Status::Error("Parse config module error"));
+        doError(Status::Error("Parse config module error"));
         return;
     }
 
@@ -196,8 +184,7 @@ void ConfigExecutor::getVariables() {
 
     auto cb = [this] (auto && resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp.status()));
+            doError(std::move(resp.status()));
             return;
         }
 
@@ -213,15 +200,12 @@ void ConfigExecutor::getVariables() {
             rows.back().set_columns(std::move(row));
         }
         resp_->set_rows(std::move(rows));
-
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s", e.what().c_str())));
+        doError(Status::Error(folly::stringPrintf("Internal error : %s", e.what().c_str())));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);

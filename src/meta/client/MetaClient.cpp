@@ -32,13 +32,12 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
                        HostAddr localHost,
                        ClusterID clusterId,
                        bool sendHeartBeat,
-                       stats::Stats *stats)
+                       const std::string &serviceName)
     : ioThreadPool_(ioThreadPool)
     , addrs_(std::move(addrs))
     , localHost_(localHost)
     , clusterId_(clusterId)
-    , sendHeartBeat_(sendHeartBeat)
-    , stats_(stats) {
+    , sendHeartBeat_(sendHeartBeat) {
     CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
     CHECK(!addrs_.empty())
         << "No meta server address is specified. Meta server is required";
@@ -49,6 +48,7 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
     updateLeader();
     bgThread_ = std::make_unique<thread::GenericWorker>();
     LOG(INFO) << "Create meta client to " << active_;
+    stats_ = std::make_unique<stats::Stats>(serviceName, "metaClient");
 }
 
 
@@ -365,7 +365,7 @@ void MetaClient::getResponse(Request req,
                     LOG(ERROR) << "Send request to " << host << ", exceed retry limit";
                     pro.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
                                                                    t.exception().what().c_str())));
-                    stats::Stats::addStatsValue(stats_, false, duration.elapsedInUSec());
+                    stats::Stats::addStatsValue(stats_.get(), false, duration.elapsedInUSec());
                 }
                 return;
             }
@@ -373,7 +373,7 @@ void MetaClient::getResponse(Request req,
             if (resp.code == cpp2::ErrorCode::SUCCEEDED) {
                 // succeeded
                 pro.setValue(respGen(std::move(resp)));
-                stats::Stats::addStatsValue(stats_, true, duration.elapsedInUSec());
+                stats::Stats::addStatsValue(stats_.get(), true, duration.elapsedInUSec());
 
                 return;
             } else if (resp.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
@@ -398,7 +398,7 @@ void MetaClient::getResponse(Request req,
                 }
             }
             pro.setValue(this->handleResponse(resp));
-            stats::Stats::addStatsValue(stats_,
+            stats::Stats::addStatsValue(stats_.get(),
                                         resp.code == cpp2::ErrorCode::SUCCEEDED,
                                         duration.elapsedInUSec());
         });  // then

@@ -18,12 +18,12 @@ namespace storage {
 
 StorageClient::StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> threadPool,
                              meta::MetaClient *client,
-                             stats::Stats* stats)
+                             const std::string &serviceName)
         : ioThreadPool_(threadPool)
-        , client_(client)
-        , stats_(stats) {
+        , client_(client) {
     clientsMan_
         = std::make_unique<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>();
+    stats_ = std::make_unique<stats::Stats>(serviceName, "storageCliet");
 }
 
 

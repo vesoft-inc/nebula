@@ -12,7 +12,7 @@ namespace nebula {
 namespace graph {
 
 GroupByExecutor::GroupByExecutor(Sentence *sentence, ExecutionContext *ectx)
-    : TraverseExecutor(ectx) {
+    : TraverseExecutor(ectx, "group_by") {
     sentence_ = static_cast<GroupBySentence*>(sentence);
 }
 
@@ -180,8 +180,6 @@ Status GroupByExecutor::checkAll() {
 
 void GroupByExecutor::execute() {
     FLOG_INFO("Executing Group by: %s", sentence_->toString().c_str());
-    DCHECK(onError_);
-    DCHECK(onFinish_);
 
     if (rows_.empty()) {
         onEmptyInputs();
@@ -190,36 +188,32 @@ void GroupByExecutor::execute() {
 
     auto status = checkAll();
     if (!status.ok()) {
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
     status = groupingData();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
     status = generateOutputSchema();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
     if (onResult_) {
         auto ret = setupInterimResult();
         if (!ret.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(ret).status());
+            doError(std::move(ret).status());
             return;
         }
         onResult_(std::move(ret).value());
     }
 
-    DCHECK(onFinish_);
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 
@@ -416,7 +410,7 @@ void GroupByExecutor::onEmptyInputs() {
         auto result = std::make_unique<InterimResult>(getResultColumnNames());
         onResult_(std::move(result));
     }
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 

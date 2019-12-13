@@ -115,7 +115,7 @@ public:
                         HostAddr localHost = HostAddr(0, 0),
                         ClusterID clusterId = 0,
                         bool sendHeartBeat = false,
-                        stats::Stats *stats = nullptr);
+                        const std::string &serviceName = "");
 
 
     virtual ~MetaClient();
@@ -453,7 +453,7 @@ private:
     cpp2::ConfigModule    gflagsModule_{cpp2::ConfigModule::UNKNOWN};
     std::atomic_bool      configReady_{false};
     std::vector<cpp2::ConfigItem> gflagsDeclared_;
-    stats::Stats         *stats_{nullptr};
+    std::unique_ptr<stats::Stats> stats_;
 };
 
 }  // namespace meta
