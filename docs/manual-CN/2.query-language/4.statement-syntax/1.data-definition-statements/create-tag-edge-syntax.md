@@ -1,7 +1,7 @@
 # CREATE TAG / EDGE 语法
 
 ```ngql
-CREATE TAG | EDGE [IF NOT EXIST] <tag_name> | <edge_name>
+CREATE {TAG <tag_name> | EDGE <edge_name>} [IF NOT EXIST]
     ([<create_definition>, ...])
     [tag_edge_options]
   
@@ -23,7 +23,7 @@ CREATE TAG | EDGE [IF NOT EXIST] <tag_name> | <edge_name>
 
 ## IF NOT EXIST
 
-创建 tag 或 edge 新增 `IF NOT EXIST` 关键字，这个关键字会自动检测对应的 tag 或 edge 是否存在，如果不存在则创建新的，如果存在则直接返回。
+创建 tag 或 edge 可使用 `IF NOT EXIST` 关键字，这个关键字会自动检测对应的 tag 或 edge 是否存在，如果不存在则创建新的，如果存在则直接返回。
 
 **注意：** 这里判断 tag 或 edge 是否存在只是比较 tag 或 edge 的名字(不包括属性)。
 

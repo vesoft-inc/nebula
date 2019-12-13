@@ -1,7 +1,7 @@
 # Create TAG / EDGE Syntax
 
 ```ngql
-CREATE TAG | EDGE [IF NOT EXIST] <tag_name> | <edge_name>
+CREATE {TAG <tag_name> | EDGE <edge_name>} [IF NOT EXIST]
     ([<create_definition>, ...])
     [tag_edge_options]
   
@@ -23,7 +23,7 @@ The features of this syntax are described in the following sections:
 
 ## IF NOT EXIST
 
-We added the `If NOT EXIST` keywords for creating tags or edges. This keyword automatically detects if the corresponding tag or edge exists. If it does not exist, a new one is created. Otherwise, no tag or edge is created.
+You can use the `If NOT EXIST` keywords when creating tags or edges. This keyword automatically detects if the corresponding tag or edge exists. If it does not exist, a new one is created. Otherwise, no tag or edge is created.
 
 **Note:** The tag or edge existence detection here only compares the tag or edge name (excluding properties).
 
