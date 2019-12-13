@@ -12,6 +12,8 @@
 #include "dataman/ResultSchemaProvider.h"
 
 
+DEFINE_bool(trace_go, false, "Whether to dump the detail trace log from one go request");
+
 namespace nebula {
 namespace graph {
 
@@ -451,6 +453,15 @@ void GoExecutor::stepOut() {
             for (auto &error : result.failedParts()) {
                 LOG(ERROR) << "part: " << error.first
                            << "error code: " << static_cast<int>(error.second);
+            }
+        }
+        if (FLAGS_trace_go) {
+            LOG(INFO) << "Step:" << curStep_
+                      << " finished, total request vertices " << starts_.size();
+            auto& hostLatency = result.hostLatency();
+            for (size_t i = 0; i < hostLatency.size(); i++) {
+                LOG(INFO) << hostLatency[i].first << ", time cost " << hostLatency[i].second
+                          << ", total results " << result.responses()[i].get_vertices()->size();
             }
         }
         onStepOutResponse(std::move(result));

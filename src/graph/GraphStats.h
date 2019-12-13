@@ -16,7 +16,7 @@ namespace graph {
 class GraphStats final {
 public:
     GraphStats() {
-        storageClientStats_ = std::make_unique<stats::Stats>("graph", "storageCliet");
+        storageClientStats_ = std::make_unique<stats::Stats>("graph", "storageClient");
         metaClientStats_ = std::make_unique<stats::Stats>("graph", "metaClient");
         graphAllStats_ = std::make_unique<stats::Stats>("graph", "graph_all");
         parseErrorStats_ = std::make_unique<stats::Stats>("graph", "parse_error");

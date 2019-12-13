@@ -38,10 +38,11 @@ public:
         return maxLatency_;
     }
 
-    void setLatency(int32_t latency) {
+    void setLatency(HostAddr host, int32_t latency) {
         if (latency > maxLatency_) {
             maxLatency_ = latency;
         }
+        hostLatency_.emplace_back(std::make_pair(host, latency));
     }
 
     void markFailure() {
@@ -62,6 +63,10 @@ public:
         return responses_;
     }
 
+    const std::vector<std::pair<HostAddr, int32_t>>& hostLatency() const {
+        return hostLatency_;
+    }
+
 private:
     const size_t totalReqsSent_;
     size_t failedReqs_{0};
@@ -70,6 +75,7 @@ private:
     std::unordered_map<PartitionID, storage::cpp2::ErrorCode> failedParts_;
     int32_t maxLatency_{0};
     std::vector<Response> responses_;
+    std::vector<std::pair<HostAddr, int32_t>> hostLatency_;
 };
 
 

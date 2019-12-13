@@ -145,7 +145,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
 
                     // Adjust the latency
                     auto latency = result.get_latency_in_us();
-                    context->resp.setLatency(latency);
+                    context->resp.setLatency(host, latency);
 
                     // Keep the response
                     context->resp.responses().emplace_back(std::move(resp));
