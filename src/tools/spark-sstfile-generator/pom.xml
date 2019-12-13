@@ -24,8 +24,6 @@
         <config.version>1.4.0</config.version>
         <nebula.version>1.0.0-rc2</nebula.version>
         <s2.version>1.0.0</s2.version>
-        <hive.version>2.3.2</hive.version>
-        <hadoop.version>2.10.0</hadoop.version>
     </properties>
 
     <build>
@@ -122,11 +120,6 @@
             <artifactId>spark-yarn_2.12</artifactId>
             <version>${spark.version}</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>com.databricks</groupId>-->
-<!--            <artifactId>spark-csv_2.12</artifactId>-->
-<!--            <version>1.5.0</version>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_2.12</artifactId>
