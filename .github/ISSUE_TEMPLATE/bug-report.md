@@ -1,3 +1,9 @@
+---
+name: Bug report	
+about: Help us to improve this project
+
+---
+
 **Describe the bug (__must be provided__)**
 
 A clear and concise description of what the bug is.
