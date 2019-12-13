@@ -155,6 +155,7 @@ private:
                                    std::vector<nebula::cpp2::SupportedType>)>;
     bool processFinalResult(RpcResponse &rpcResp, Callback cb) const;
 
+    StatusOr<std::vector<cpp2::RowValue>> toThriftResponse(RpcResponse&& resp);
     /**
      * A container to hold the mapping from vertex id to its properties, used for lookups
      * during the final evaluation process.

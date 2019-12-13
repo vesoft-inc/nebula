@@ -954,6 +954,23 @@ TEST_F(GoTest, ReverselyOneStep) {
     }
 }
 
+TEST_F(GoTest, OnlyIdTwoSteps) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tony Parker"];
+        auto *fmt = "GO 2 STEPS FROM %ld OVER like YIELD like._dst";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        client_->execute(query, resp);
+        std::vector<std::tuple<VertexID>> expected = {
+            {3394245602834314645},
+            {-7579316172763586624},
+            {-7579316172763586624},
+            {5662213458193308137},
+            {5662213458193308137}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
 
 TEST_F(GoTest, ReverselyTwoStep) {
     {

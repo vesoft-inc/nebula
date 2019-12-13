@@ -729,32 +729,65 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
         }
     }
 
-    std::unique_ptr<InterimResult> outputs;
-    if (!setupInterimResult(std::move(rpcResp), outputs)) {
-        return;
-    }
 
     if (onResult_) {
+        std::unique_ptr<InterimResult> outputs;
+        if (!setupInterimResult(std::move(rpcResp), outputs)) {
+            return;
+        }
         onResult_(std::move(outputs));
     } else {
+        auto start = time::WallClock::fastNowInMicroSec();
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(getResultColumnNames());
-        if (outputs != nullptr && outputs->hasData()) {
-            auto start = time::WallClock::fastNowInMicroSec();
-            auto ret = outputs->getRows();
-            if (FLAGS_trace_go) {
-                LOG(INFO) << "Get Rows, total time cost "
-                          << time::WallClock::fastNowInMicroSec() - start;
-            }
-            if (!ret.ok()) {
-                LOG(ERROR) << "Get rows failed: " << ret.status();
-                doError(std::move(ret).status(), ectx()->getGraphStats()->getGoStats());
-                return;
-            }
-            resp_->set_rows(std::move(ret).value());
+        auto ret = toThriftResponse(std::forward<RpcResponse>(rpcResp));
+        if (FLAGS_trace_go) {
+            LOG(INFO) << "toThriftResponse total time cost "
+                      << time::WallClock::fastNowInMicroSec() - start;
         }
+        if (!ret.ok()) {
+            LOG(ERROR) << "Get rows failed: " << ret.status();
+            doError(std::move(ret).status(), ectx()->getGraphStats()->getGoStats());
+            return;
+        }
+        resp_->set_rows(std::move(ret).value());
     }
     doFinish(Executor::ProcessControl::kNext, ectx()->getGraphStats()->getGoStats());
+}
+
+StatusOr<std::vector<cpp2::RowValue>> GoExecutor::toThriftResponse(RpcResponse&& rpcResp) {
+    std::vector<cpp2::RowValue> rows;
+    auto cb = [&] (std::vector<VariantType> record,
+                   std::vector<nebula::cpp2::SupportedType>) {
+        std::vector<cpp2::ColumnValue> row;
+        row.reserve(record.size());
+        for (auto &column : record) {
+            row.emplace_back();
+            switch (column.which()) {
+                case VAR_INT64:
+                    row.back().set_id(boost::get<int64_t>(column));
+                    break;
+                case VAR_DOUBLE:
+                    row.back().set_double_precision(boost::get<double>(column));
+                    break;
+                case VAR_BOOL:
+                    row.back().set_bool_val(boost::get<bool>(column));
+                    break;
+                case VAR_STR:
+                    row.back().set_str(boost::get<std::string>(column));
+                    break;
+                default:
+                    LOG(FATAL) << "Unknown VariantType: " << column.which();
+            }
+        }
+        rows.emplace_back();
+        rows.back().set_columns(std::move(row));
+    };  // cb
+
+    if (!processFinalResult(rpcResp, cb)) {
+        return Status::Error("process failed");
+    }
+    return rows;
 }
 
 StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
