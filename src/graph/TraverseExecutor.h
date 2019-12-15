@@ -54,7 +54,10 @@ private:
 
 class Collector final {
 public:
-    static Status collect(VariantType &var, RowWriter *writer);
+    static Status collect(VariantType &var,
+                          RowWriter *writer,
+                          nebula::cpp2::SupportedType type = nebula::cpp2::SupportedType::UNKNOWN,
+                          const nebula::Timezone* timezone = nullptr);
 
     static Status collectWithoutSchema(VariantType &var, RowWriter *writer);
 

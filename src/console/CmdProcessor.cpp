@@ -121,15 +121,10 @@ void CmdProcessor::calColumnWidths(
                     break;
                 }
                 case cpp2::ColumnValue::Type::timestamp: {
-                    if (widths[idx] < 19) {
-                        widths[idx] = 19;
-                        genFmt = true;
-                    }
+                    GET_VALUE_WIDTH(int64_t, timestamp, "%ld")
                     if (genFmt) {
                         formats[idx] =
-                            folly::stringPrintf(" %%%ldd-%%02d-%%02d"
-                                                " %%02d:%%02d:%%02d |",
-                                                widths[idx] - 15);
+                                folly::stringPrintf(" %%-%ldld |", widths[idx]);
                     }
                     break;
                 }
@@ -317,22 +312,7 @@ void CmdProcessor::printData(const cpp2::ExecutionResponse& resp,
                     break;
                 }
                 case cpp2::ColumnValue::Type::timestamp: {
-                    time_t timestamp = col.get_timestamp();
-                    struct tm time;
-                    if (nullptr == localtime_r(&timestamp, &time)) {
-                        time.tm_year = 1970;
-                        time.tm_mon = 1;
-                        time.tm_mday = 1;
-                        time.tm_hour = 0;
-                        time.tm_min = 0;
-                        time.tm_sec = 0;
-                    }
-                    PRINT_FIELD_VALUE(time.tm_year + 1900,
-                                      time.tm_mon + 1,
-                                      time.tm_mday,
-                                      time.tm_hour,
-                                      time.tm_min,
-                                      time.tm_sec);
+                    PRINT_FIELD_VALUE(col.get_timestamp());
                     break;
                 }
                 case cpp2::ColumnValue::Type::year: {

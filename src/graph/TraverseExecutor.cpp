@@ -5,6 +5,7 @@
  */
 
 #include "base/Base.h"
+#include "filter/TimeFunction.h"
 #include "graph/TraverseExecutor.h"
 #include "parser/TraverseSentences.h"
 #include "dataman/RowReader.h"
@@ -84,10 +85,24 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
     return executor;
 }
 
-Status Collector::collect(VariantType &var, RowWriter *writer) {
+Status Collector::collect(VariantType &var,
+                          RowWriter *writer,
+                          nebula::cpp2::SupportedType type,
+                          const nebula::Timezone* timezone) {
     switch (var.which()) {
         case VAR_INT64:
-            (*writer) << boost::get<int64_t>(var);
+            // timestamp type need to add the timezone
+            if (type == nebula::cpp2::SupportedType::TIMESTAMP) {
+                if (timezone == nullptr) {
+                    LOG(ERROR) << "Need timezone";
+                    return Status::Error("Timezone is null");
+                }
+                auto timestampValue = boost::get<int64_t>(var);
+                TimeCommon::timestampAddTz(timestampValue, *timezone);
+                (*writer) << timestampValue;
+            } else {
+                (*writer) << boost::get<int64_t>(var);
+            }
             break;
         case VAR_DOUBLE:
             (*writer) << boost::get<double>(var);
@@ -192,9 +207,9 @@ OptVariantType Collector::getProp(const meta::SchemaProviderIf *schema,
 }
 
 Status Collector::getSchema(const std::vector<VariantType> &vals,
-                          const std::vector<std::string> &colNames,
-                          const std::vector<nebula::cpp2::SupportedType> &colTypes,
-                          SchemaWriter *outputSchema) {
+                            const std::vector<std::string> &colNames,
+                            const std::vector<nebula::cpp2::SupportedType> &colTypes,
+                            SchemaWriter *outputSchema) {
     DCHECK(outputSchema != nullptr);
     DCHECK_EQ(vals.size(), colNames.size());
     DCHECK_EQ(vals.size(), colTypes.size());

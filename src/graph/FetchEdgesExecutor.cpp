@@ -374,6 +374,7 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
                                    const std::string &prop) -> OptVariantType {
                 return Collector::getProp(eschema.get(), prop, &*iter);
             };
+            auto typeIndex = 0u;
             for (auto *column : yields_) {
                 auto *expr = column->expr();
                 auto value = expr->eval(getters);
@@ -381,12 +382,16 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
                     doError(std::move(value).status());
                     return;
                 }
-                auto status = Collector::collect(value.value(), writer.get());
+                auto status = Collector::collect(value.value(),
+                                                 writer.get(),
+                                                 outputSchema->getFieldType(typeIndex).type,
+                                                 expCtx_->getTimezone());
                 if (!status.ok()) {
                     LOG(ERROR) << "Collect prop error: " << status;
                     doError(std::move(status));
                     return;
                 }
+                typeIndex++;
             }
 
             std::string encode = writer->encode();

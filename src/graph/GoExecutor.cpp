@@ -5,6 +5,7 @@
  */
 
 #include "base/Base.h"
+#include "filter/TimeFunction.h"
 #include "graph/GoExecutor.h"
 #include "graph/SchemaHelper.h"
 #include "dataman/RowReader.h"
@@ -986,54 +987,24 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
                 return Status::Error("Record size is not equal to column type size, [%lu != %lu]",
                                       record.size(), colTypes.size());
             }
-            for (auto i = 0u; i < record.size(); i++) {
-                SupportedType type;
-                if (colTypes[i] == SupportedType::UNKNOWN) {
-                    switch (record[i].which()) {
-                        case VAR_INT64:
-                            // all integers in InterimResult are regarded as type of INT
-                            type = SupportedType::INT;
-                            break;
-                        case VAR_DOUBLE:
-                            type = SupportedType::DOUBLE;
-                            break;
-                        case VAR_BOOL:
-                            type = SupportedType::BOOL;
-                            break;
-                        case VAR_STR:
-                            type = SupportedType::STRING;
-                            break;
-                        default:
-                            LOG(ERROR) << "Unknown VariantType: " << record[i].which();
-                            return Status::Error("Unknown VariantType: %d", record[i].which());
-                    }
-                } else {
-                    type = colTypes[i];
-                }
-                schema->appendCol(colnames[i], type);
-            }  // for
+            auto status = Collector::getSchema(record, colnames, colTypes, schema.get());
+            if (!status.ok()) {
+                return status;
+            }
             rsWriter = std::make_unique<RowSetWriter>(schema);
         }  // if
 
         RowWriter writer(schema);
+        auto typeIndex = 0u;
         for (auto &column : record) {
-            switch (column.which()) {
-                case VAR_INT64:
-                    writer << boost::get<int64_t>(column);
-                    break;
-                case VAR_DOUBLE:
-                    writer << boost::get<double>(column);
-                    break;
-                case VAR_BOOL:
-                    writer << boost::get<bool>(column);
-                    break;
-                case VAR_STR:
-                    writer << boost::get<std::string>(column);
-                    break;
-                default:
-                    LOG(ERROR) << "Unknown VariantType: " << column.which();
-                    return Status::Error("Unknown VariantType: %d", column.which());
+            auto status = Collector::collect(column,
+                                             &writer,
+                                             schema->getFieldType(typeIndex).type,
+                                             expCtx_->getTimezone());
+            if (!status.ok()) {
+                return status;
             }
+            typeIndex++;
         }
 
         rsWriter->addRow(writer.encode());
