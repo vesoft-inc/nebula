@@ -23,7 +23,7 @@ StorageClient::StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> thread
         , client_(client) {
     clientsMan_
         = std::make_unique<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>();
-    stats_ = std::make_unique<stats::Stats>(serviceName, "storageCliet");
+    stats_ = std::make_unique<stats::Stats>(serviceName, "storageClient");
 }
 
 
