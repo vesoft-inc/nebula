@@ -383,6 +383,14 @@ StatusOr<VariantType> Executor::transformDefaultValue(nebula::cpp2::SupportedTyp
         case nebula::cpp2::SupportedType::STRING:
             return originalValue;
             break;
+        case nebula::cpp2::SupportedType::TIMESTAMP:
+            try {
+                return folly::to<int64_t>(originalValue);
+            } catch (const std::exception& ex) {
+                LOG(ERROR) << "Conversion to int64_t failed: " << originalValue;
+                return Status::Error("Type Conversion Failed");
+            }
+            break;
         default:
             LOG(ERROR) << "Unknow type";
             return Status::Error("Unknow type");

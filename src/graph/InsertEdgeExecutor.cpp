@@ -147,6 +147,8 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         }
 
         RowWriter writer(schema_);
+        int64_t valuesSize = values.size();
+        int32_t handleValueNum = 0;
         for (size_t schemaIndex = 0; schemaIndex < schema_->getNumFields(); schemaIndex++) {
             auto fieldName = schema_->getFieldName(schemaIndex);
             auto positionIter = propsPosition_.find(fieldName);
@@ -155,6 +157,10 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             auto schemaType = schema_->getFieldType(schemaIndex);
             if (positionIter != propsPosition_.end()) {
                 auto position = propsPosition_[fieldName];
+                if (position >= valuesSize) {
+                    LOG(ERROR) << fieldName << " need input value";
+                    return Status::Error("`%s' need input value", fieldName);
+                }
                 value = values[position];
                 if (!checkValueType(schemaType, value)) {
                    DCHECK(onError_);
@@ -183,6 +189,11 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             } else {
                 writeVariantType(writer, value);
             }
+            handleValueNum++;
+        }
+        // Input values more than schema props
+        if (handleValueNum < valuesSize) {
+            return Status::Error("Column count doesn't match value count");
         }
 
         {

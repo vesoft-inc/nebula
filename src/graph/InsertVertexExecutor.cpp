@@ -48,14 +48,14 @@ Status InsertVertexExecutor::check() {
         auto *tagName = item->tagName();
         auto tagStatus = ectx()->schemaManager()->toTagID(spaceId_, *tagName);
         if (!tagStatus.ok()) {
-            LOG(ERROR) << "No schema found for " << tagName;
+            LOG(ERROR) << "No schema found for " << *tagName;
             return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
         auto tagId = tagStatus.value();
         auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
         if (schema == nullptr) {
-            LOG(ERROR) << "No schema found for " << tagName;
+            LOG(ERROR) << "No schema found for " << *tagName;
             return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
@@ -80,7 +80,7 @@ Status InsertVertexExecutor::check() {
                 auto valueResult = mc->getTagDefaultValue(spaceId_, tagId, name).get();
                 if (!valueResult.ok()) {
                     LOG(ERROR) << "Not exist default value: " << name;
-                    return Status::Error("Not exist default value");
+                    return Status::Error("`%s' not exist default value", name.c_str());
                 } else {
                     VLOG(3) << "Default Value: " << name << ":" << valueResult.value();
                     defaultValues_.emplace(name, valueResult.value());
@@ -142,7 +142,9 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
         storage::cpp2::Vertex vertex;
         std::vector<storage::cpp2::Tag> tags(tagIds_.size());
 
+        int32_t valuesSize = values.size();
         int32_t valuePosition = 0;
+        int32_t handleValueNum = 0;
         for (auto index = 0u; index < tagIds_.size(); index++) {
             auto &tag = tags[index];
             auto tagId = tagIds_[index];
@@ -160,6 +162,10 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
                 auto schemaType = schema->getFieldType(schemaIndex);
                 if (positionIter != propsPosition.end()) {
                     auto position = propsPosition[fieldName];
+                    if (position + valuePosition >= valuesSize) {
+                        LOG(ERROR) << fieldName << " need input value";
+                        return Status::Error("`%s' need input value", fieldName);
+                    }
                     value = values[position + valuePosition];
 
                     if (!checkValueType(schemaType, value)) {
@@ -188,11 +194,16 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
                 } else {
                     writeVariantType(writer, value);
                 }
+                handleValueNum++;
             }
 
             tag.set_tag_id(tagId);
             tag.set_props(writer.encode());
             valuePosition += propsPosition.size();
+        }
+        // Input values more than schema props
+        if (handleValueNum < valuesSize) {
+            return Status::Error("Column count doesn't match value count");
         }
 
         vertex.set_id(id);
