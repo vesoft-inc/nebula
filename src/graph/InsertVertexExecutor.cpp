@@ -66,6 +66,14 @@ Status InsertVertexExecutor::check() {
             return Status::Error("Wrong number of props");
         }
 
+        // Check prop name is in schema
+        for (auto *it : props) {
+            if (schema->getFieldIndex(*it) < 0) {
+                LOG(ERROR) << "Unknown column `" << *it << "' in schema";
+                return Status::Error("Unknown column `%s' in schema", it->c_str());
+            }
+        }
+
         auto *mc = ectx()->getMetaClient();
 
         std::unordered_map<std::string, int32_t> propsPosition;
