@@ -196,6 +196,7 @@ public:
     folly::Future<cpp2::ListSnapshotsResp>
     future_listSnapshots(const cpp2::ListSnapshotsReq& req) override;
 
+    folly::Future<cpp2::ExecResp>
     future_setTimezone(const cpp2::SetTimezoneReq &req) override;
 
     folly::Future<cpp2::GetTimezoneResp>
