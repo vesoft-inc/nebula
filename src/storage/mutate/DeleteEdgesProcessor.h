@@ -33,7 +33,7 @@ private:
                             const std::vector<cpp2::EdgeKey>& edges);
 
 private:
-    const std::vector<cpp2::IndexItem>* indexes_{nullptr};
+    std::vector<cpp2::IndexItem> indexes_;
 };
 
 }  // namespace storage

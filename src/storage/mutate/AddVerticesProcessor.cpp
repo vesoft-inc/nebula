@@ -24,21 +24,49 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
     const auto& partVertices = req.get_parts();
     spaceId_ = req.get_space_id();
     callingNum_ = partVertices.size();
-    if (req.__isset.indexes) {
-        indexes_ = req.get_indexes();
+    auto iRet = schemaMan_->getTagIndexes(spaceId_);
+    if (iRet.ok()) {
+        for (auto& index : iRet.value()) {
+            indexes_.emplace_back(index);
+        }
     }
+
     CHECK_NOTNULL(kvstore_);
-    std::for_each(partVertices.begin(), partVertices.end(), [&](auto& pv) {
-        auto partId = pv.first;
-        const auto &vertices = pv.second;
-        auto atomic = [&]() -> std::string {
-            return addVertices(version, partId, vertices);
-        };
-        auto callback = [partId, this](kvstore::ResultCode code) {
-            handleAsync(spaceId_, partId, code);
-        };
-        this->kvstore_->asyncAtomicOp(spaceId_, partId, atomic, callback);
-    });
+    if (indexes_.empty()) {
+        std::for_each(partVertices.begin(), partVertices.end(), [&](auto& pv) {
+            auto partId = pv.first;
+            const auto& vertices = pv.second;
+            std::vector<kvstore::KV> data;
+            std::for_each(vertices.begin(), vertices.end(), [&](auto& v){
+                const auto& tags = v.get_tags();
+                std::for_each(tags.begin(), tags.end(), [&](auto& tag) {
+                    VLOG(3) << "PartitionID: " << partId << ", VertexID: " << v.get_id()
+                            << ", TagID: " << tag.get_tag_id() << ", TagVersion: " << version;
+                    auto key = NebulaKeyUtils::vertexKey(partId, v.get_id(),
+                                                         tag.get_tag_id(), version);
+                    data.emplace_back(std::move(key), std::move(tag.get_props()));
+                    if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
+                        vertexCache_->evict(std::make_pair(v.get_id(), tag.get_tag_id()), partId);
+                        VLOG(3) << "Evict cache for vId " << v.get_id()
+                                << ", tagId " << tag.get_tag_id();
+                    }
+                });
+            });
+            doPut(spaceId_, partId, std::move(data));
+        });
+    } else {
+        std::for_each(partVertices.begin(), partVertices.end(), [&](auto &pv) {
+            auto partId = pv.first;
+            const auto &vertices = pv.second;
+            auto atomic = [&]() -> std::string {
+                return addVertices(version, partId, vertices);
+            };
+            auto callback = [partId, this](kvstore::ResultCode code) {
+                handleAsync(spaceId_, partId, code);
+            };
+            this->kvstore_->asyncAtomicOp(spaceId_, partId, atomic, callback);
+        });
+    }
 }
 
 std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partId,
@@ -60,14 +88,12 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
                     this->vertexCache_->evict(std::make_pair(vId, tagId), partId);
                     VLOG(3) << "Evict cache for vId " << vId << ", tagId " << tagId;
                 }
-                if (indexes_ != nullptr) {
-                    std::for_each(indexes_->begin(), indexes_->end(), [&](auto& index) {
-                        if (index.get_schema() == tagId) {
-                            auto vkVal = NebulaKeyUtils::vertexPrefix(partId, vId, tagId);
-                            newIndexes[vkVal] = std::make_pair(tag.get_props(),
-                                                               std::make_pair(vId, index));
-                        }
-                    });
+                for (auto& index : indexes_) {
+                    if (index.get_schema() == tagId) {
+                        auto vkVal = NebulaKeyUtils::vertexPrefix(partId, vId, tagId);
+                        newIndexes[vkVal] = std::make_pair(tag.get_props(),
+                                                           std::make_pair(vId, index));
+                    }
                 }
             });
         });

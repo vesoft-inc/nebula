@@ -265,8 +265,8 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     auto nVal = updater_->encode();
     batchHolder->put(std::move(key_), std::move(nVal));
-    if (indexes_ != nullptr) {
-        std::for_each(indexes_->begin(), indexes_->end(), [&](auto& index) {
+    if (!indexes_.empty()) {
+        for (auto& index : indexes_) {
             auto indexId = index.get_index_id();
             if (index.get_schema() == edgeKey.edge_type) {
                 auto prop = updater_->encode();
@@ -279,7 +279,6 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
                 auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
                                                              indexId,
                                                              edgeKey.src,
-                                                             edgeKey.edge_type,
                                                              edgeKey.ranking,
                                                              edgeKey.dst,
                                                              values);
@@ -294,7 +293,6 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
                     auto rIndexKey = NebulaKeyUtils::edgeIndexKey(partId,
                                                                   indexId,
                                                                   edgeKey.src,
-                                                                  edgeKey.edge_type,
                                                                   edgeKey.ranking,
                                                                   edgeKey.dst,
                                                                   rValues);
@@ -305,7 +303,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
                     }
                 }
             }
-        });
+        }
     }
     return encodeBatchValue(batchHolder->getBatch());
 }
@@ -447,9 +445,13 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
     }
     updateItems_ = req.get_update_items();
 
-    if (req.__isset.indexes) {
-        indexes_ = req.get_indexes();
+    auto iRet = schemaMan_->getEdgeIndexes(spaceId_);
+    if (iRet.ok()) {
+        for (auto& index : iRet.value()) {
+            indexes_.emplace_back(index);
+        }
     }
+
     VLOG(3) << "Update edge, spaceId: " << this->spaceId_ << ", partId:  " << partId
             << ", src: " << edgeKey.get_src() << ", edge_type: " << edgeKey.get_edge_type()
             << ", dst: " << edgeKey.get_dst() << ", ranking: " << edgeKey.get_ranking();

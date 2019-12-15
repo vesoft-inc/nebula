@@ -59,6 +59,16 @@ public:
     StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
     StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) override;
+    
+    StatusOr<std::vector<storage::cpp2::IndexItem>>
+    getTagIndexes(GraphSpaceID space) override;
+
+    StatusOr<std::vector<storage::cpp2::IndexItem>>
+    getEdgeIndexes(GraphSpaceID space) override;
+
+    void addTagIndex(GraphSpaceID space, const storage::cpp2::IndexItem& index);
+
+    void addEdgeIndex(GraphSpaceID space, const storage::cpp2::IndexItem& index);
 
     StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID) override {
         LOG(FATAL) << "Unimplemented";
@@ -84,6 +94,9 @@ protected:
     std::set<GraphSpaceID> spaces_;
     // Key: spaceId + tagName,  Val: tagId
     std::unordered_map<std::string, TagID> tagNameToId_;
+
+    std::unordered_map<GraphSpaceID, std::vector<storage::cpp2::IndexItem>> edgeIndexes_;
+    std::unordered_map<GraphSpaceID, std::vector<storage::cpp2::IndexItem>> tagIndexes_;
 };
 
 }  // namespace storage

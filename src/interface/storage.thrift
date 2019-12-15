@@ -200,8 +200,6 @@ struct AddVerticesRequest {
     2: map<common.PartitionID, list<Vertex>>(cpp.template = "std::unordered_map") parts,
     // If true, it equals an upsert operation.
     3: bool overwritable,
-    // Index item
-    4: optional list<IndexItem> indexes,
 }
 
 struct AddEdgesRequest {
@@ -210,8 +208,6 @@ struct AddEdgesRequest {
     2: map<common.PartitionID, list<Edge>>(cpp.template = "std::unordered_map") parts,
     // If true, it equals an upsert operation.
     3: bool overwritable,
-    // index item
-    4: optional list<IndexItem> indexes,
 }
 
 struct EdgeKeyRequest {
@@ -224,14 +220,12 @@ struct DeleteVertexRequest {
     1: common.GraphSpaceID      space_id,
     2: common.PartitionID       part_id,
     3: common.VertexID          vid;
-    4: optional list<IndexItem> indexes,
 }
 
 struct DeleteEdgesRequest {
     1: common.GraphSpaceID space_id,
     // partId => edgeKeys
     2: map<common.PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") parts,
-    3: optional list<IndexItem> indexes,
 }
 
 struct AdminExecResp {
@@ -310,7 +304,6 @@ struct UpdateVertexRequest {
     5: list<UpdateItem>         update_items,
     6: list<binary>             return_columns,
     7: bool                     insertable,
-    8: optional list<IndexItem> indexes,
 }
 
 struct UpdateEdgeRequest {
@@ -321,7 +314,6 @@ struct UpdateEdgeRequest {
     5: list<UpdateItem>         update_items,
     6: list<binary>             return_columns,
     7: bool                     insertable,
-    8: optional list<IndexItem> indexes,
 }
 
 struct PutRequest {

@@ -8,8 +8,6 @@
 
 namespace nebula {
 
-const std::string kIndexPrefix = "_i_";           // NOLINT
-
 // static
 std::string NebulaKeyUtils::vertexKey(PartitionID partId, VertexID vId,
                                       TagID tagId, TagVersion tv) {
@@ -89,9 +87,7 @@ std::string NebulaKeyUtils::kvKey(PartitionID partId, const folly::StringPiece& 
 }
 
 // static
-std::string NebulaKeyUtils::indexRaw(const IndexValues &values) {
-    std::string raw;
-    raw.reserve(1024);
+void NebulaKeyUtils::indexRaw(const IndexValues &values, std::string& raw) {
     std::vector<int32_t> colsLen;
     for (auto& col : values) {
         if (col.first == cpp2::SupportedType::STRING) {
@@ -102,39 +98,32 @@ std::string NebulaKeyUtils::indexRaw(const IndexValues &values) {
     for (auto len : colsLen) {
         raw.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
     }
-    return raw;
 }
 
 // static
 std::string NebulaKeyUtils::vertexIndexKey(PartitionID partId, IndexID indexId, VertexID vId,
                                            const IndexValues& values) {
-    auto raw = indexRaw(values);
-    int32_t item = (partId << 8) | static_cast<uint32_t>(NebulaKeyType::kData);
+    int32_t item = (partId << 8) | static_cast<uint32_t>(NebulaKeyType::kIndex);
     std::string key;
-    key.reserve(kIndexPrefix.size() + kVertexIndexLen + raw.size());
+    key.reserve(256);
     key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
-       .append(kIndexPrefix.data(), kIndexPrefix.size())
-       .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID))
-       .append(raw.data(), raw.size())
-       .append(reinterpret_cast<const char*>(&vId), sizeof(VertexID));
+       .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID));
+    indexRaw(values, key);
+    key.append(reinterpret_cast<const char*>(&vId), sizeof(VertexID));
     return key;
 }
 
 // static
 std::string NebulaKeyUtils::edgeIndexKey(PartitionID partId, IndexID indexId,
-                                         VertexID srcId, EdgeType type,
-                                         EdgeRanking rank, VertexID dstId,
-                                         const IndexValues& values) {
-    auto raw = indexRaw(values);
-    int32_t item = (partId << 8) | static_cast<uint32_t>(NebulaKeyType::kData);
+                                         VertexID srcId, EdgeRanking rank,
+                                         VertexID dstId, const IndexValues& values) {
+    int32_t item = (partId << 8) | static_cast<uint32_t>(NebulaKeyType::kIndex);
     std::string key;
-    key.reserve(kIndexPrefix.size() + kEdgeIndexLen + raw.size());
+    key.reserve(256);
     key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
-       .append(kIndexPrefix.data(), kIndexPrefix.size())
-       .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID))
-       .append(raw.data(), raw.size())
-       .append(reinterpret_cast<const char*>(&srcId), sizeof(VertexID))
-       .append(reinterpret_cast<const char*>(&type), sizeof(EdgeType))
+       .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID));
+    indexRaw(values, key);
+    key.append(reinterpret_cast<const char*>(&srcId), sizeof(VertexID))
        .append(reinterpret_cast<const char*>(&rank), sizeof(EdgeRanking))
        .append(reinterpret_cast<const char*>(&dstId), sizeof(VertexID));
     return key;
@@ -142,11 +131,10 @@ std::string NebulaKeyUtils::edgeIndexKey(PartitionID partId, IndexID indexId,
 
 // static
 std::string NebulaKeyUtils::indexPrefix(PartitionID partId, IndexID indexId) {
-    PartitionID item = (partId << 8) | static_cast<uint32_t>(NebulaKeyType::kData);
+    PartitionID item = (partId << 8) | static_cast<uint32_t>(NebulaKeyType::kIndex);
     std::string key;
-    key.reserve(kIndexPrefix.size() + sizeof(PartitionID) + sizeof(IndexID));
+    key.reserve(sizeof(PartitionID) + sizeof(IndexID));
     key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID))
-       .append(kIndexPrefix.data(), kIndexPrefix.size())
        .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID));
     return key;
 }

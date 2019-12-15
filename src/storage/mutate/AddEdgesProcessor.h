@@ -41,7 +41,7 @@ private:
 
 private:
     GraphSpaceID  spaceId_;
-    const std::vector<cpp2::IndexItem>* indexes_{nullptr};
+    std::vector<cpp2::IndexItem> indexes_;
 };
 
 }  // namespace storage

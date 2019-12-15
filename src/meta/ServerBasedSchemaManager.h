@@ -46,6 +46,12 @@ public:
 
     StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) override;
 
+    StatusOr<std::vector<storage::cpp2::IndexItem>>
+    getTagIndexes(GraphSpaceID space) override;
+
+    StatusOr<std::vector<storage::cpp2::IndexItem>>
+    getEdgeIndexes(GraphSpaceID space) override;
+
     void init(MetaClient *client) override;
 
 private:

@@ -63,7 +63,7 @@ private:
     std::string                                                     key_;
     std::string                                                     val_;
     std::unique_ptr<RowUpdater>                                     updater_;
-    const std::vector<cpp2::IndexItem>*                             indexes_{nullptr};
+    std::vector<cpp2::IndexItem>                                    indexes_;
 };
 
 }  // namespace storage

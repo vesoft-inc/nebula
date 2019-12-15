@@ -65,7 +65,7 @@ private:
     std::set<TagID>                                                 updateTagIds_;
     std::unordered_map<std::pair<TagID, std::string>, VariantType>  tagFilters_;
     std::unordered_map<TagID, std::unique_ptr<KeyUpdaterPair>>      tagUpdaters_;
-    const std::vector<cpp2::IndexItem>*                             indexes_{nullptr};
+    std::vector<cpp2::IndexItem>                                    indexes_;
 };
 
 }  // namespace storage

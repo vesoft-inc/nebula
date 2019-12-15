@@ -266,8 +266,8 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
         auto nKey = u.second->kv.first;
         auto nVal = u.second->updater->encode();
         batchHolder->put(std::move(nKey), std::move(nVal));
-        if (indexes_ != nullptr) {
-            std::for_each(indexes_->begin(), indexes_->end(), [&](auto &index) {
+        if (!indexes_.empty()) {
+            for (auto &index : indexes_) {
                 if (index.get_schema() == u.first) {
                     auto prop = u.second->updater->encode();
                     auto reader = RowReader::getTagPropReader(this->schemaMan_,
@@ -296,7 +296,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
                         }
                     }
                 }
-            });
+            }
         }
     }
     return encodeBatchValue(batchHolder->getBatch());
@@ -398,9 +398,13 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
     }
     auto vId = req.get_vertex_id();
     updateItems_ = req.get_update_items();
-    if (req.__isset.indexes) {
-        indexes_ = req.get_indexes();
+    auto iRet = schemaMan_->getTagIndexes(spaceId_);
+    if (iRet.ok()) {
+        for (auto& index : iRet.value()) {
+            indexes_.emplace_back(index);
+        }
     }
+
     VLOG(3) << "Update vertex, spaceId: " << this->spaceId_
             << ", partId: " << partId << ", vId: " << vId;
     CHECK_NOTNULL(kvstore_);

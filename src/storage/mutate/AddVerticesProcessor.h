@@ -47,7 +47,7 @@ private:
 private:
     GraphSpaceID  spaceId_;
     VertexCache* vertexCache_ = nullptr;
-    const std::vector<cpp2::IndexItem>* indexes_{nullptr};
+    std::vector<cpp2::IndexItem> indexes_;
 };
 
 

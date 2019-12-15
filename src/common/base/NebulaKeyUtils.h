@@ -66,15 +66,14 @@ public:
     /**
      * Generate vertex|edge index key for kv store
      **/
-    static std::string indexRaw(const IndexValues &values);
+    static void indexRaw(const IndexValues &values, std::string& raw);
 
     static std::string vertexIndexKey(PartitionID partId, IndexID indexId, VertexID vId,
                                       const IndexValues& values);
 
     static std::string edgeIndexKey(PartitionID partId, IndexID indexId,
-                                    VertexID srcId, EdgeType type,
-                                    EdgeRanking rank, VertexID dstId,
-                                    const IndexValues& values);
+                                    VertexID srcId, EdgeRanking rank,
+                                    VertexID dstId, const IndexValues& values);
 
     static std::string indexPrefix(PartitionID partId, IndexID indexId);
 
