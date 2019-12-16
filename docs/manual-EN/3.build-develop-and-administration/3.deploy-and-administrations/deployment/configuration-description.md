@@ -1,5 +1,7 @@
 # Configuration Description
 
+This documentation details the descriptions of the configuration files under the `etc/` directory.
+
 ## Meta Service
 
 Property Name               | Default Value            | Description
