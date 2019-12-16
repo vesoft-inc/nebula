@@ -169,8 +169,6 @@ void ShowExecutor::showHosts() {
             }
             if (!leaders.empty()) {
                 leaders.resize(leaders.size() - 2);
-            } else {
-                leaders = "0";
             }
 
             std::string parts;
@@ -180,8 +178,6 @@ void ShowExecutor::showHosts() {
             }
             if (!parts.empty()) {
                 parts.resize(parts.size() - 2);
-            } else {
-                parts = "0";
             }
 
             row[0].set_str("Total");
