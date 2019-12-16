@@ -10,6 +10,9 @@
 #define ID_HASH(id, numShards) \
     ((static_cast<uint64_t>(id)) % numShards + 1)
 
+
+DEFINE_int32(storage_client_timeout_ms, 60 * 1000, "storage client timeout");
+
 namespace nebula {
 namespace storage {
 

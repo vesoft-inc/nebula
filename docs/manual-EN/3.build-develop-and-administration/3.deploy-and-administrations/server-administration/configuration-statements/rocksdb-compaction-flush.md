@@ -21,7 +21,7 @@ nebula> GET CONFIGS storage:rocksdb_column_family_options
 ---------------------------------------------------------------------------------------------------------
 ```
 
-**Note:** You can turn off auto compaction before bulk writing data, but remember to turn it on again since long-term shutdown auto compaction affects the subsequent read performance.
+**Note:** You can turn off auto compaction before bulk writing data, but remember to turn it on again since long-term shutdown auto compaction affects the subsequent read performance, or make service restart time much longer.
 
 ### Turn on Auto Compaction
 

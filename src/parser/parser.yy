@@ -104,7 +104,7 @@ class GraphScanner;
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
-%token KW_CONFIGS KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
+%token KW_CONFIGS KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE KW_FORCE
 %token KW_TTL_DURATION KW_TTL_COL KW_DEFAULT
 %token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET KW_GROUP
 %token KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN KW_STD KW_BIT_AND KW_BIT_OR KW_BIT_XOR
@@ -1683,8 +1683,11 @@ get_config_sentence
     ;
 
 set_config_sentence
-    : KW_UPDATE KW_CONFIGS set_config_item  {
+    : KW_UPDATE KW_CONFIGS set_config_item {
         $$ = new ConfigSentence(ConfigSentence::SubType::kSet, $3);
+    }
+    | KW_UPDATE KW_CONFIGS set_config_item KW_FORCE {
+        $$ = new ConfigSentence(ConfigSentence::SubType::kSet, $3, true);
     }
     ;
 
