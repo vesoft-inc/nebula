@@ -24,7 +24,7 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
     }
 
     LOG(INFO) << "Get Edge Index SpaceID: " << spaceID << " Index Name: " << indexName;
-    auto edgeKey = MetaServiceUtils::edgeIndexKey(spaceID, edgeIndexIDResult.value());
+    auto edgeKey = MetaServiceUtils::indexKey(spaceID, edgeIndexIDResult.value());
     auto edgeResult = doGet(edgeKey);
     if (!edgeResult.ok()) {
         LOG(ERROR) << "Get Edge Index Failed: SpaceID " << spaceID
@@ -33,9 +33,9 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
         return;
     }
 
-    cpp2::EdgeIndexItem item;
+    cpp2::IndexItem item;
     item.set_index_id(edgeIndexIDResult.value());
-    item.set_fields(MetaServiceUtils::parseEdgeIndex(edgeResult.value()));
+    item.set_fields(MetaServiceUtils::parseIndex(edgeResult.value()));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_item(std::move(item));
     onFinished();

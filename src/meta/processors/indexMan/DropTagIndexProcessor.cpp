@@ -24,11 +24,11 @@ void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
     }
 
     std::vector<std::string> keys;
-    keys.emplace_back(MetaServiceUtils::indexTagIndexKey(spaceID, indexName));
-    keys.emplace_back(MetaServiceUtils::tagIndexKey(spaceID, tagIndexID.value()));
+    keys.emplace_back(MetaServiceUtils::indexIndexKey(spaceID, indexName));
+    keys.emplace_back(MetaServiceUtils::indexKey(spaceID, tagIndexID.value()));
 
     LOG(INFO) << "Drop Tag Index " << indexName;
-    resp_.set_id(to(tagIndexID.value(), EntryType::TAG_INDEX));
+    resp_.set_id(to(tagIndexID.value(), EntryType::INDEX));
     doMultiRemove(keys);
 }
 

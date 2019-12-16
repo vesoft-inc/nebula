@@ -12,6 +12,7 @@
 #include "interface/gen-cpp2/StorageService.h"
 #include "kvstore/KVStore.h"
 #include "meta/SchemaManager.h"
+#include "meta/IndexManager.h"
 #include "stats/StatsManager.h"
 #include "storage/CommonUtils.h"
 #include "stats/Stats.h"
@@ -28,9 +29,11 @@ class StorageServiceHandler final : public cpp2::StorageServiceSvIf {
 public:
     StorageServiceHandler(kvstore::KVStore* kvstore,
                           meta::SchemaManager* schemaMan,
+                          meta::IndexManager* indexMan,
                           meta::MetaClient* client)
         : kvstore_(kvstore)
         , schemaMan_(schemaMan)
+        , indexMan_(indexMan)
         , metaClient_(client)
         , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp) {
         getBoundQpsStat_ = stats::Stats("storage", "get_bound");
@@ -124,9 +127,10 @@ public:
 
 
 private:
-    kvstore::KVStore* kvstore_ = nullptr;
-    meta::SchemaManager* schemaMan_ = nullptr;
-    meta::MetaClient* metaClient_ = nullptr;
+    kvstore::KVStore* kvstore_{nullptr};
+    meta::SchemaManager* schemaMan_{nullptr};
+    meta::IndexManager* indexMan_{nullptr};
+    meta::MetaClient* metaClient_{nullptr};
     VertexCache vertexCache_;
 
     stats::Stats getBoundQpsStat_;

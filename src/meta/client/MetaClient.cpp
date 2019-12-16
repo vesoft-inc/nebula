@@ -134,19 +134,24 @@ bool MetaClient::loadData() {
         LOG(ERROR) << "The threads number in ioThreadPool should be greater than 0";
         return false;
     }
+
     auto ret = listSpaces().get();
     if (!ret.ok()) {
         LOG(ERROR) << "List space failed, status:" << ret.status();
         return false;
     }
-    decltype(localCache_) cache;
-    decltype(spaceIndexByName_) spaceIndexByName;
-    decltype(spaceTagIndexByName_) spaceTagIndexByName;
-    decltype(spaceEdgeIndexByName_) spaceEdgeIndexByName;
-    decltype(spaceNewestTagVerMap_) spaceNewestTagVerMap;
+
+    decltype(localCache_)            cache;
+    decltype(spaceIndexByName_)      spaceIndexByName;
+    decltype(spaceTagIndexByName_)   spaceTagIndexByName;
+    decltype(spaceEdgeIndexByName_)  spaceEdgeIndexByName;
+    decltype(spaceNewestTagVerMap_)  spaceNewestTagVerMap;
     decltype(spaceNewestEdgeVerMap_) spaceNewestEdgeVerMap;
     decltype(spaceEdgeIndexByType_)  spaceEdgeIndexByType;
-    decltype(spaceAllEdgeMap_)      spaceAllEdgeMap;
+    decltype(spaceAllEdgeMap_)       spaceAllEdgeMap;
+
+    decltype(tagIDIndexMap_)         tagIDIndexMap;
+    decltype(edgeTypeIndexMap_)      edgeTypeIndexMap;
 
     for (auto space : ret.value()) {
         auto spaceId = space.first;
@@ -174,6 +179,15 @@ bool MetaClient::loadData() {
                          spaceNewestTagVerMap,
                          spaceNewestEdgeVerMap,
                          spaceAllEdgeMap)) {
+            LOG(ERROR) << "Load Schemas Failed";
+            return false;
+        }
+
+        if (!loadIndexes(spaceId,
+                         spaceCache,
+                         tagIDIndexMap,
+                         edgeTypeIndexMap)) {
+            LOG(ERROR) << "Load Indexes Failed";
             return false;
         }
 
@@ -183,15 +197,17 @@ bool MetaClient::loadData() {
     decltype(localCache_) oldCache;
     {
         folly::RWSpinLock::WriteHolder holder(localCacheLock_);
-        oldCache = std::move(localCache_);
-        localCache_ = std::move(cache);
-        spaceIndexByName_ = std::move(spaceIndexByName);
-        spaceTagIndexByName_ = std::move(spaceTagIndexByName);
-        spaceEdgeIndexByName_ = std::move(spaceEdgeIndexByName);
-        spaceNewestTagVerMap_ = std::move(spaceNewestTagVerMap);
+        oldCache               = std::move(localCache_);
+        localCache_            = std::move(cache);
+        spaceIndexByName_      = std::move(spaceIndexByName);
+        spaceTagIndexByName_   = std::move(spaceTagIndexByName);
+        spaceEdgeIndexByName_  = std::move(spaceEdgeIndexByName);
+        spaceNewestTagVerMap_  = std::move(spaceNewestTagVerMap);
         spaceNewestEdgeVerMap_ = std::move(spaceNewestEdgeVerMap);
         spaceEdgeIndexByType_  = std::move(spaceEdgeIndexByType);
-        spaceAllEdgeMap_ = std::move(spaceAllEdgeMap);
+        spaceAllEdgeMap_       = std::move(spaceAllEdgeMap);
+        tagIDIndexMap_         = std::move(tagIDIndexMap);
+        edgeTypeIndexMap_      = std::move(edgeTypeIndexMap);
     }
     diff(oldCache, localCache_);
     ready_ = true;
@@ -288,23 +304,116 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
 }
 
 bool MetaClient::loadIndexes(GraphSpaceID spaceId,
-                             std::shared_ptr<SpaceInfoCache> cache) {
-    UNUSED(spaceId); UNUSED(cache);
-    return false;
+                             std::shared_ptr<SpaceInfoCache> cache,
+                             TagIDIndexMap &tagIDIndexMap,
+                             EdgeTypeIndexMap &edgeTypeIndexMap) {
+    auto tagIndexesRet = listTagIndexes(spaceId).get();
+    if (!tagIndexesRet.ok()) {
+        LOG(ERROR) << "Get tag indexes failed for spaceId " << spaceId
+                   << ", " << tagIndexesRet.status();
+        return false;
+    }
+
+    auto edgeIndexesRet = listEdgeIndexes(spaceId).get();
+    if (!edgeIndexesRet.ok()) {
+        LOG(ERROR) << "Get edge indexes failed for spaceId " << spaceId
+                   << ", " << edgeIndexesRet.status();
+        return false;
+    }
+
+    Indexes tagIndexes;
+    for (auto& tagIndex : tagIndexesRet.value()) {
+        auto fields = tagIndex.fields;
+        auto indexFields = std::make_shared<cpp2::IndexFields>(fields);
+
+        tagIndexes.emplace(tagIndex.get_index_id(), indexFields);
+        for (auto iter = fields.get_fields().begin(); iter != fields.fields.end(); iter++) {
+            auto tagName = iter->first;
+            auto tagIDRet = getTagIDByNameFromCache(spaceId, tagName);
+            if (!tagIDRet.ok()) {
+                LOG(ERROR) << "Fetch tag " << tagName << " Failed";
+                continue;
+            }
+
+            auto tagID = tagIDRet.value();
+            indexTagMap_.emplace(tagIndex.index_id, tagID);
+
+            std::pair<GraphSpaceID, std::string> key(spaceId, tagIndex.get_index_name());
+            tagIndexNameMap_.emplace(std::move(key), tagIndex.get_index_id());
+            std::pair<GraphSpaceID, TagID> tagKey = std::make_pair(spaceId, tagID);
+            auto it = tagIDIndexMap.find(tagKey);
+            if (it != tagIDIndexMap.end()) {
+                it->second.emplace_back(tagIndex.get_index_id());
+            } else {
+                std::vector<IndexID> indexes{tagIndex.get_index_id()};
+                tagIDIndexMap.emplace(tagKey, std::move(indexes));
+            }
+
+            VLOG(3) << "Load Tag Index From Space " << spaceId << ", Tag ID " << tagID
+                    << ", Name " << tagName << " Index ID " << tagIndex.index_id
+                    << ", Name " << tagIndex.index_name << " Successfully!";
+        }
+    }
+    cache->tagIndexes_ = std::move(tagIndexes);
+
+    Indexes edgeIndexes;
+    for (auto& edgeIndex : edgeIndexesRet.value()) {
+        auto fields = edgeIndex.fields;
+        auto indexFields = std::make_shared<cpp2::IndexFields>(fields);
+        edgeIndexes.emplace(edgeIndex.index_id, indexFields);
+        for (auto iter = fields.get_fields().begin(); iter != fields.fields.end(); iter++) {
+            auto edgeName = iter->first;
+            auto edgeTypeRet = getEdgeTypeByNameFromCache(spaceId, edgeName);
+            if (!edgeTypeRet.ok()) {
+                LOG(ERROR) << "Fetch edge " << edgeName << " Failed";
+                continue;
+            }
+
+            auto edgeType = edgeTypeRet.value();
+            indexEdgeMap_.emplace(edgeIndex.index_id, edgeType);
+            std::pair<GraphSpaceID, TagID> edgeKey = std::make_pair(spaceId, edgeType);
+            auto it = edgeTypeIndexMap.find(edgeKey);
+            if (it != edgeTypeIndexMap.end()) {
+                it->second.emplace_back(edgeIndex.index_id);
+            } else {
+                std::vector<IndexID> indexes{edgeIndex.index_id};
+                edgeTypeIndexMap.emplace(edgeKey, std::move(indexes));
+            }
+            VLOG(3) << "Load Edge Index From Space " << spaceId << ", Edge Type " << edgeType
+                    << ", Name " << edgeName << " Index ID " << edgeIndex.index_id
+                    << ", Name " << edgeIndex.index_name << " Successfully!";
+        }
+    }
+    cache->edgeIndexes_ = std::move(edgeIndexes);
+    return true;
 }
 
-bool
-MetaClient::checkTagFieldsIndexed(GraphSpaceID space, TagID tagID,
-                                  const std::vector<std::string> &fields) {
-    UNUSED(space); UNUSED(tagID); UNUSED(fields);
-    return false;
+Status MetaClient::checkTagIndexed(GraphSpaceID space, TagID tagID) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = localCache_.find(space);
+    if (it != localCache_.end()) {
+        auto tagIt = it->second->tagIndexes_.find(tagID);
+        if (tagIt != it->second->tagIndexes_.end()) {
+            return Status::OK();
+        } else {
+            return Status::TagIndexNotFound();
+        }
+    }
+    return Status::SpaceNotFound();
 }
 
-bool
-MetaClient::checkEdgeFieldsIndexed(GraphSpaceID space, EdgeType edgeType,
-                                   const std::vector<std::string> &fields) {
-    UNUSED(space); UNUSED(edgeType); UNUSED(fields);
-    return false;
+Status MetaClient::checkEdgeIndexed(GraphSpaceID space, EdgeType edgeType) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = localCache_.find(space);
+    if (it != localCache_.end()) {
+        auto edgeIt = it->second->edgeIndexes_.find(edgeType);
+        if (edgeIt != it->second->edgeIndexes_.end()) {
+            return Status::OK();
+        } else {
+            return Status::EdgeIndexNotFound();
+        }
+    }
+    return Status::SpaceNotFound();
 }
 
 std::unordered_map<HostAddr, std::vector<PartitionID>>
@@ -741,8 +850,10 @@ MetaClient::multiPut(std::string segment,
     cpp2::MultiPutReq req;
     std::vector<nebula::cpp2::Pair> data;
     for (auto& element : pairs) {
-        data.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                          std::move(element.first), std::move(element.second));
+        nebula::cpp2::Pair pair;
+        pair.set_key(std::move(element.first));
+        pair.set_value(std::move(element.second));
+        data.emplace_back(std::move(pair));
     }
     req.set_segment(std::move(segment));
     req.set_pairs(std::move(data));
@@ -884,9 +995,9 @@ StatusOr<PartMeta> MetaClient::getPartMetaFromCache(GraphSpaceID spaceId, Partit
 }
 
 
-bool MetaClient::checkPartExistInCache(const HostAddr& host,
-                                       GraphSpaceID spaceId,
-                                       PartitionID partId) {
+Status  MetaClient::checkPartExistInCache(const HostAddr& host,
+                                          GraphSpaceID spaceId,
+                                          PartitionID partId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(spaceId);
     if (it != localCache_.end()) {
@@ -894,26 +1005,30 @@ bool MetaClient::checkPartExistInCache(const HostAddr& host,
         if (partsIt != it->second->partsOnHost_.end()) {
             for (auto& pId : partsIt->second) {
                 if (pId == partId) {
-                    return true;
+                    return Status::OK();
                 }
             }
+        } else {
+            return Status::PartNotFound();
         }
     }
-    return false;
+    return Status::SpaceNotFound();
 }
 
 
-bool MetaClient::checkSpaceExistInCache(const HostAddr& host,
-                                        GraphSpaceID spaceId) {
+Status MetaClient::checkSpaceExistInCache(const HostAddr& host,
+                                          GraphSpaceID spaceId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(spaceId);
     if (it != localCache_.end()) {
         auto partsIt = it->second->partsOnHost_.find(host);
         if (partsIt != it->second->partsOnHost_.end() && !partsIt->second.empty()) {
-            return true;
+            return Status::OK();
+        } else {
+            return Status::PartNotFound();
         }
     }
-    return false;
+    return Status::SpaceNotFound();
 }
 
 StatusOr<int32_t> MetaClient::partsNum(GraphSpaceID spaceId) {
@@ -1101,7 +1216,7 @@ MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name) {
     return future;
 }
 
-folly::Future<StatusOr<TagIndexID>>
+folly::Future<StatusOr<IndexID>>
 MetaClient::createTagIndex(GraphSpaceID spaceID,
                            std::string name,
                            std::map<std::string, std::vector<std::string>>&& properties) {
@@ -1112,12 +1227,12 @@ MetaClient::createTagIndex(GraphSpaceID spaceID,
     indexProperties.set_fields(std::move(properties));
     req.set_properties(std::move(indexProperties));
 
-    folly::Promise<StatusOr<TagIndexID>> promise;
+    folly::Promise<StatusOr<IndexID>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_createTagIndex(request);
-    }, [] (cpp2::ExecResp&& resp) -> TagIndexID {
-        return resp.get_id().get_tag_index_id();
+    }, [] (cpp2::ExecResp&& resp) -> IndexID {
+        return resp.get_id().get_index_id();
     }, std::move(promise), true);
     return future;
 }
@@ -1132,34 +1247,34 @@ MetaClient::dropTagIndex(GraphSpaceID spaceID, std::string name) {
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_dropTagIndex(request);
-    }, [] (cpp2::ExecResp&& resp) -> TagIndexID {
-        return resp.get_id().get_tag_index_id();
+    }, [] (cpp2::ExecResp&& resp) -> IndexID {
+        return resp.get_id().get_index_id();
     }, std::move(promise), true);
     return future;
 }
 
-folly::Future<StatusOr<cpp2::TagIndexItem>>
+folly::Future<StatusOr<cpp2::IndexItem>>
 MetaClient::getTagIndex(GraphSpaceID spaceID, std::string name) {
     cpp2::GetTagIndexReq req;
     req.set_space_id(std::move(spaceID));
     req.set_index_name(std::move(name));
 
-    folly::Promise<StatusOr<cpp2::TagIndexItem>> promise;
+    folly::Promise<StatusOr<cpp2::IndexItem>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_getTagIndex(request);
-    }, [] (cpp2::GetTagIndexResp&& resp) -> nebula::meta::cpp2::TagIndexItem {
+    }, [] (cpp2::GetTagIndexResp&& resp) -> nebula::meta::cpp2::IndexItem {
         return std::move(resp).get_item();
     }, std::move(promise));
     return future;
 }
 
-folly::Future<StatusOr<std::vector<cpp2::TagIndexItem>>>
+folly::Future<StatusOr<std::vector<cpp2::IndexItem>>>
 MetaClient::listTagIndexes(GraphSpaceID spaceID) {
     cpp2::ListTagIndexesReq req;
     req.set_space_id(std::move(spaceID));
 
-    folly::Promise<StatusOr<std::vector<cpp2::TagIndexItem>>> promise;
+    folly::Promise<StatusOr<std::vector<cpp2::IndexItem>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_listTagIndexes(request);
@@ -1169,7 +1284,7 @@ MetaClient::listTagIndexes(GraphSpaceID spaceID) {
     return future;
 }
 
-folly::Future<StatusOr<EdgeIndexID>>
+folly::Future<StatusOr<IndexID>>
 MetaClient::createEdgeIndex(GraphSpaceID spaceID,
                             std::string name,
                             std::map<std::string, std::vector<std::string>>&& properties) {
@@ -1180,13 +1295,13 @@ MetaClient::createEdgeIndex(GraphSpaceID spaceID,
     indexProperties.set_fields(std::move(properties));
     req.set_properties(std::move(indexProperties));
 
-    folly::Promise<StatusOr<EdgeIndexID>> promise;
+    folly::Promise<StatusOr<IndexID>> promise;
     auto future = promise.getFuture();
 
     getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_createEdgeIndex(request);
-    }, [] (cpp2::ExecResp&& resp) -> EdgeIndexID {
-        return resp.get_id().get_edge_index_id();
+    }, [] (cpp2::ExecResp&& resp) -> IndexID {
+        return resp.get_id().get_index_id();
     }, std::move(promise), true);
     return future;
 }
@@ -1201,34 +1316,34 @@ MetaClient::dropEdgeIndex(GraphSpaceID spaceID, std::string name) {
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_dropEdgeIndex(request);
-    }, [] (cpp2::ExecResp&& resp) -> EdgeIndexID {
-        return resp.get_id().get_edge_index_id();
+    }, [] (cpp2::ExecResp&& resp) -> IndexID {
+        return resp.get_id().get_index_id();
     }, std::move(promise), true);
     return future;
 }
 
-folly::Future<StatusOr<cpp2::EdgeIndexItem>>
+folly::Future<StatusOr<cpp2::IndexItem>>
 MetaClient::getEdgeIndex(GraphSpaceID spaceID, std::string name) {
     cpp2::GetEdgeIndexReq req;
     req.set_space_id(std::move(spaceID));
     req.set_index_name(std::move(name));
 
-    folly::Promise<StatusOr<cpp2::EdgeIndexItem>> promise;
+    folly::Promise<StatusOr<cpp2::IndexItem>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_getEdgeIndex(request);
-    }, [] (cpp2::GetEdgeIndexResp&& resp) -> nebula::meta::cpp2::EdgeIndexItem {
+    }, [] (cpp2::GetEdgeIndexResp&& resp) -> nebula::meta::cpp2::IndexItem {
         return std::move(resp).get_item();
     }, std::move(promise));
     return future;
 }
 
-folly::Future<StatusOr<std::vector<cpp2::EdgeIndexItem>>>
+folly::Future<StatusOr<std::vector<cpp2::IndexItem>>>
 MetaClient::listEdgeIndexes(GraphSpaceID spaceID) {
     cpp2::ListEdgeIndexesReq req;
     req.set_space_id(std::move(spaceID));
 
-    folly::Promise<StatusOr<std::vector<cpp2::EdgeIndexItem>>> promise;
+    folly::Promise<StatusOr<std::vector<cpp2::IndexItem>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_listEdgeIndexes(request);
@@ -1268,13 +1383,13 @@ MetaClient::getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, Sche
     auto spaceIt = localCache_.find(spaceId);
     if (spaceIt == localCache_.end()) {
         // Not found
-        VLOG(3) << "Space " << spaceId << " not found!";
+        LOG(ERROR) << "Space " << spaceId << " not found!";
         return std::shared_ptr<const SchemaProviderIf>();
     } else {
         auto edgeIt = spaceIt->second->edgeSchemas_.find(std::make_pair(edgeType, ver));
         if (edgeIt == spaceIt->second->edgeSchemas_.end()) {
-            VLOG(3) << "Space " << spaceId << ", EdgeType " << edgeType << ", version "
-                    << ver << " not found!";
+            LOG(ERROR) << "Space " << spaceId << ", EdgeType " << edgeType << ", version "
+                       << ver << " not found!";
             return std::shared_ptr<const SchemaProviderIf>();
         } else {
             return edgeIt->second;
@@ -1282,14 +1397,163 @@ MetaClient::getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, Sche
     }
 }
 
-StatusOr<const cpp2::IndexProperties>
-MetaClient::getTagIndexFromCache(TagIndexID) {
-    LOG(FATAL) << "Not implemented";
+StatusOr<std::shared_ptr<TagIndexTuple>>
+MetaClient::getTagIndexByNameFromCache(const GraphSpaceID space, const std::string& name) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+    std::pair<GraphSpaceID, std::string> key(space, name);
+    auto iter = tagIndexNameMap_.find(key);
+    if (iter == tagIndexNameMap_.end()) {
+        return Status::TagIndexNotFound();
+    }
+    auto indexID = iter->second;
+    auto pairStatus = getTagIndexFromCache(space, indexID);
+    if (!pairStatus.ok()) {
+        return pairStatus.status();
+    }
+    auto pair = pairStatus.value();
+    auto tuple = std::make_tuple(pair->first, indexID, pair->second);
+    return std::make_shared<TagIndexTuple>(tuple);
 }
 
-StatusOr<const cpp2::IndexProperties>
-MetaClient::getEdgeIndexFromCache(EdgeIndexID) {
-    LOG(FATAL) << "Not implemented";
+StatusOr<std::shared_ptr<EdgeIndexTuple>>
+MetaClient::getEdgeIndexByNameFromCache(const GraphSpaceID space, const std::string& name) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+    std::pair<GraphSpaceID, std::string> key(space, name);
+    auto iter = edgeIndexNameMap_.find(key);
+    if (iter == edgeIndexNameMap_.end()) {
+        return Status::EdgeIndexNotFound();
+    }
+    auto indexID = iter->second;
+    auto pairStatus = getEdgeIndexFromCache(space, indexID);
+    if (!pairStatus.ok()) {
+        return pairStatus.status();
+    }
+    auto pair = pairStatus.value();
+    auto tuple = std::make_tuple(pair->first, indexID, pair->second);
+    return std::make_shared<EdgeIndexTuple>(tuple);
+}
+
+StatusOr<std::shared_ptr<TagIndexPair>>
+MetaClient::getTagIndexFromCache(GraphSpaceID spaceId, IndexID indexID) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto spaceIt = localCache_.find(spaceId);
+    if (spaceIt == localCache_.end()) {
+        // Not found
+        LOG(ERROR) << "Space " << spaceId << " not found!";
+        return Status::SpaceNotFound();
+    } else {
+        auto iter = spaceIt->second->tagIndexes_.find(indexID);
+        if (iter == spaceIt->second->tagIndexes_.end()) {
+            LOG(ERROR) << "Space " << spaceId << ", Tag Index " << indexID << " not found!";
+            return Status::TagIndexNotFound();
+        } else {
+            // fetch tagID from indexTagMap_
+            auto tagIter = indexTagMap_.find(indexID);
+            if (tagIter == indexTagMap_.end()) {
+                LOG(ERROR) << "Space " << spaceId << ", Tag not found!";
+                return Status::TagNotFound();
+            }
+            auto tagID = tagIter->second;
+            auto fields = *iter->second;
+            return std::make_shared<std::pair<TagID, cpp2::IndexFields>>(tagID, fields);
+        }
+    }
+}
+
+StatusOr<std::shared_ptr<EdgeIndexPair>>
+MetaClient::getEdgeIndexFromCache(GraphSpaceID spaceId, IndexID indexID) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto spaceIt = localCache_.find(spaceId);
+    if (spaceIt == localCache_.end()) {
+        // Not found
+        VLOG(3) << "Space " << spaceId << " not found!";
+        return Status::SpaceNotFound();
+    } else {
+        auto iter = spaceIt->second->edgeIndexes_.find(indexID);
+        if (iter == spaceIt->second->edgeIndexes_.end()) {
+            VLOG(3) << "Space " << spaceId << ", Edge Index " << indexID << " not found!";
+            return Status::EdgeIndexNotFound();
+        } else {
+            // fetch tagID from indexTagMap_
+            auto edgeIter = indexEdgeMap_.find(indexID);
+            if (edgeIter == indexEdgeMap_.end()) {
+                VLOG(3) << "Space " << spaceId << ", Edge not found!";
+                return Status::EdgeNotFound();
+            }
+            auto edgeType = edgeIter->second;
+            auto fields = *iter->second;
+            return std::make_shared<std::pair<EdgeType, cpp2::IndexFields>>(edgeType, fields);
+        }
+    }
+}
+
+StatusOr<std::vector<std::shared_ptr<TagIndexTuple>>>
+MetaClient::getTagIndexesFromCache(GraphSpaceID spaceId) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto spaceIt = localCache_.find(spaceId);
+    if (spaceIt == localCache_.end()) {
+        VLOG(3) << "Space " << spaceId << " not found!";
+        return Status::SpaceNotFound();
+    } else {
+        auto tagIndexes = spaceIt->second->tagIndexes_;
+        auto iter = tagIndexes.begin();
+        std::vector<std::shared_ptr<TagIndexTuple>> items;
+        while (iter != tagIndexes.end()) {
+            auto tagIndexID =  iter->first;
+            auto fields = *iter->second;
+            auto tagIter = indexTagMap_.find(tagIndexID);
+            auto tagID = tagIter->second;
+            auto tuple = std::make_tuple(tagID, tagIndexID, fields);
+            items.emplace_back(std::make_shared<TagIndexTuple>(tuple));
+            iter++;
+        }
+        return items;
+    }
+}
+
+StatusOr<std::vector<std::shared_ptr<EdgeIndexTuple>>>
+MetaClient::getEdgeIndexesFromCache(GraphSpaceID spaceId) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto spaceIt = localCache_.find(spaceId);
+    if (spaceIt == localCache_.end()) {
+        VLOG(3) << "Space " << spaceId << " not found!";
+        return Status::SpaceNotFound();
+    } else {
+        auto edgeIndexes = spaceIt->second->edgeIndexes_;
+        auto iter = edgeIndexes.begin();
+        std::vector<std::shared_ptr<EdgeIndexTuple>> items;
+        while (iter != edgeIndexes.end()) {
+            auto edgeIndexID =  iter->first;
+            auto fields = *iter->second;
+            auto edgeIter = indexEdgeMap_.find(edgeIndexID);
+            auto edgeType = edgeIter->second;
+
+            auto tuple = std::make_tuple(edgeType, edgeIndexID, fields);
+            items.emplace_back(std::make_shared<EdgeIndexTuple>(tuple));
+            iter++;
+        }
+        return items;
+    }
 }
 
 const std::vector<HostAddr>& MetaClient::getAddresses() {

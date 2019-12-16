@@ -49,12 +49,12 @@ public:
     /**
      * Check current part exist or not on host.
      * */
-    virtual bool partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) = 0;
+    virtual Status partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) = 0;
 
     /**
      * Check current space exist or not.
      * */
-    virtual bool spaceExist(const HostAddr& host, GraphSpaceID spaceId) = 0;
+    virtual Status spaceExist(const HostAddr& host, GraphSpaceID spaceId) = 0;
 
     /**
      * Register Handler
@@ -120,11 +120,14 @@ public:
         }
     }
 
-    bool partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
+    Status partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
 
-    bool spaceExist(const HostAddr& host, GraphSpaceID spaceId) override {
-        UNUSED(host);
-        return partsMap_.find(spaceId) != partsMap_.end();
+    Status spaceExist(const HostAddr&, GraphSpaceID spaceId) override {
+        if (partsMap_.find(spaceId) != partsMap_.end()) {
+            return Status::OK();
+        } else {
+            return Status::SpaceNotFound();
+        }
     }
 
     PartsMap& partsMap() {
@@ -146,9 +149,9 @@ public:
 
      StatusOr<PartMeta> partMeta(GraphSpaceID spaceId, PartitionID partId) override;
 
-     bool partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
+     Status partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
 
-     bool spaceExist(const HostAddr& host, GraphSpaceID spaceId) override;
+     Status spaceExist(const HostAddr& host, GraphSpaceID spaceId) override;
 
      /**
       * Implement the interfaces in MetaChangedListener

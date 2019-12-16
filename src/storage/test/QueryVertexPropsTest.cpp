@@ -77,6 +77,7 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     auto* processor = QueryVertexPropsProcessor::instance(kv.get(),
                                                           schemaMan.get(),
                                                           nullptr,
+                                                          nullptr,
                                                           executor.get());
     auto f = processor->getFuture();
     processor->process(req);

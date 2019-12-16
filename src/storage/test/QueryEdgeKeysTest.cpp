@@ -21,7 +21,7 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     // Add edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
+        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr, nullptr);
 
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
@@ -68,7 +68,7 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
     {
         for (auto partId = 0; partId < 3; partId++) {
             for (auto srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
-                auto* processor = QueryEdgeKeysProcessor::instance(kv.get(), nullptr);
+                auto* processor = QueryEdgeKeysProcessor::instance(kv.get(), nullptr, nullptr);
                 cpp2::EdgeKeyRequest req;
                 req.space_id = 0;
                 req.part_id = partId;

@@ -8,6 +8,7 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:filter_obj>
     $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:index_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:ws_common_obj>

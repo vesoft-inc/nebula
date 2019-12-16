@@ -85,12 +85,12 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     }
 
     auto tagIndex = nebula::value(tagIndexRet);
-    data.emplace_back(MetaServiceUtils::indexTagIndexKey(space, indexName),
-                      std::string(reinterpret_cast<const char*>(&tagIndex), sizeof(TagIndexID)));
-    data.emplace_back(MetaServiceUtils::tagIndexKey(space, tagIndex),
-                      MetaServiceUtils::tagIndexVal(indexName, std::move(indexFields)));
+    data.emplace_back(MetaServiceUtils::indexIndexKey(space, indexName),
+                      std::string(reinterpret_cast<const char*>(&tagIndex), sizeof(IndexID)));
+    data.emplace_back(MetaServiceUtils::indexKey(space, tagIndex),
+                      MetaServiceUtils::indexVal(indexName, std::move(indexFields)));
     LOG(INFO) << "Create Tag Index " << indexName << ", tagIndex " << tagIndex;
-    resp_.set_id(to(tagIndex, EntryType::TAG_INDEX));
+    resp_.set_id(to(tagIndex, EntryType::INDEX));
     doPut(std::move(data));
 }
 

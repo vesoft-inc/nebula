@@ -22,7 +22,7 @@ namespace storage {
 
 void addVertices(kvstore::KVStore* kv, VertexCache* cache, int nums) {
     LOG(INFO) << "Build AddVerticesRequest...";
-    auto* processor = AddVerticesProcessor::instance(kv, nullptr, nullptr, cache);
+    auto* processor = AddVerticesProcessor::instance(kv, nullptr, nullptr, nullptr, cache);
     cpp2::AddVerticesRequest req;
     req.space_id = 0;
     req.overwritable = true;
@@ -95,6 +95,7 @@ void fetchVertices(kvstore::KVStore* kv,
     LOG(INFO) << "Test QueryVertexPropsRequest...";
     auto* processor = QueryVertexPropsProcessor::instance(kv,
                                                           schemaMan,
+                                                          nullptr,
                                                           nullptr,
                                                           executor,
                                                           cache);

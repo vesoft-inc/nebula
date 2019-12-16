@@ -8,12 +8,14 @@
 #define STORAGE_TEST_TESTUTILS_H_
 
 #include "AdHocSchemaManager.h"
+#include "AdHocIndexManager.h"
 #include "test/ServerContext.h"
 #include "base/Base.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/SchemaManager.h"
+#include "meta/IndexManager.h"
 #include "meta/SchemaProviderIf.h"
 #include "dataman/ResultSchemaProvider.h"
 #include "storage/StorageServiceHandler.h"
@@ -89,6 +91,12 @@ public:
         }
         std::unique_ptr<meta::SchemaManager> sm(schemaMan);
         return sm;
+    }
+
+    static std::unique_ptr<meta::IndexManager> mockIndexMan() {
+        auto* indexMan = new AdHocIndexManager();
+        std::unique_ptr<meta::IndexManager> im(indexMan);
+        return im;
     }
 
     static std::vector<cpp2::Vertex> setupVertices(
@@ -210,8 +218,11 @@ public:
             sc->schemaMan_->init(mClient);
         }
 
+        auto indexMan = meta::IndexManager::create();
+        indexMan->init(mClient);
+
         auto handler = std::make_shared<nebula::storage::StorageServiceHandler>(
-            sc->kvStore_.get(), sc->schemaMan_.get(), mClient);
+            sc->kvStore_.get(), sc->schemaMan_.get(), indexMan.get(), mClient);
         sc->mockCommon("storage", port, handler);
         auto ptr = dynamic_cast<kvstore::MetaServerBasedPartManager*>(
             sc->kvStore_->partManager());

@@ -14,6 +14,7 @@ set(storage_test_deps
     $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:index_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:thread_obj>
@@ -28,6 +29,11 @@ set(storage_test_deps
 nebula_add_library(
     adHocSchema_obj OBJECT
     AdHocSchemaManager.cpp
+)
+
+nebula_add_library(
+    adHocIndex_obj OBJECT
+    AdHocIndexManager.cpp
 )
 
 nebula_add_test(

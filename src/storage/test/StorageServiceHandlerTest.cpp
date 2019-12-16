@@ -29,6 +29,7 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
 
     auto storageServiceHandler = std::make_unique<StorageServiceHandler>(kvstore.get(),
                                                                          nullptr,
+                                                                         nullptr,
                                                                          nullptr);
     auto resp = storageServiceHandler->future_addVertices(req).get();
     EXPECT_EQ(typeid(cpp2::ExecResponse).name() , typeid(resp).name());

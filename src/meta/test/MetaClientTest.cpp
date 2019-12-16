@@ -589,7 +589,10 @@ TEST(MetaClientTest, TagIndexTest) {
 
     auto ret = client->createSpace("default_space", 8, 3).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
-    auto space = ret.value();
+    GraphSpaceID space = ret.value();
+    IndexID singleFieldIndexID;
+    IndexID multiFieldIndexID;
+    IndexID multiTagIndexID;
     {
         for (auto i = 0; i < 2; i++) {
             std::vector<nebula::cpp2::ColumnDef> columns;
@@ -622,6 +625,7 @@ TEST(MetaClientTest, TagIndexTest) {
                                              "tag_single_field_index",
                                              std::move(fields)).get();
         ASSERT_TRUE(result.ok());
+        singleFieldIndexID = result.value();
     }
     {
         std::map<std::string, std::vector<std::string>>&& fields {
@@ -631,6 +635,7 @@ TEST(MetaClientTest, TagIndexTest) {
                                              "tag_multi_field_index",
                                              std::move(fields)).get();
         ASSERT_TRUE(result.ok());
+        multiFieldIndexID = result.value();
     }
     {
         std::map<std::string, std::vector<std::string>>&& fields {
@@ -641,6 +646,7 @@ TEST(MetaClientTest, TagIndexTest) {
                                              "tag_multi_tag_index",
                                              std::move(fields)).get();
         ASSERT_TRUE(result.ok());
+        multiTagIndexID = result.value();
     }
     {
         std::map<std::string, std::vector<std::string>>&& fields {
@@ -664,7 +670,7 @@ TEST(MetaClientTest, TagIndexTest) {
     }
     {
         auto result = client->listTagIndexes(space).get();
-        std::vector<cpp2::TagIndexItem> values = result.value();
+        std::vector<cpp2::IndexItem> values = result.value();
         ASSERT_EQ(3, values.size());
 
         {
@@ -752,6 +758,38 @@ TEST(MetaClientTest, TagIndexTest) {
             ASSERT_TRUE(TestUtils::verifyResult(columns, fields[folly::stringPrintf("tag_%d", i)]));
         }
     }
+    sleep(FLAGS_load_data_interval_secs * 5);
+    // Test Tag Index Properties Cache
+    {
+        auto tagSingleFieldResult = client->getTagIndexFromCache(space, singleFieldIndexID);
+        ASSERT_TRUE(tagSingleFieldResult.ok());
+        auto tagMultiFieldResult = client->getTagIndexFromCache(space, multiFieldIndexID);
+        ASSERT_TRUE(tagMultiFieldResult.ok());
+        auto tagMultiTagResult = client->getTagIndexFromCache(space, multiTagIndexID);
+        ASSERT_TRUE(tagMultiTagResult.ok());
+    }
+    {
+        GraphSpaceID spaceNotExist = 99;
+        IndexID tagIndexNotExist = 99;
+        auto checkTagIndexNotExist = client->checkTagIndexed(space, tagIndexNotExist);
+        ASSERT_EQ(Status::TagIndexNotFound(), checkTagIndexNotExist);
+
+        auto checkSpaceNotExist = client->checkTagIndexed(spaceNotExist, singleFieldIndexID);
+        ASSERT_EQ(Status::SpaceNotFound(), checkSpaceNotExist);
+
+        auto spaceNotExistRet = client->getTagIndexFromCache(spaceNotExist, singleFieldIndexID);
+        ASSERT_FALSE(spaceNotExistRet.ok());
+    }
+    {
+        auto tagIndexes = client->getTagIndexesFromCache(space);
+        ASSERT_TRUE(tagIndexes.ok());
+        ASSERT_EQ(3, tagIndexes.value().size());
+    }
+    {
+        GraphSpaceID spaceNotExist = 99;
+        auto spaceNotExistRet = client->getTagIndexesFromCache(spaceNotExist);
+        ASSERT_FALSE(spaceNotExistRet.ok());
+    }
     {
         auto result = client->dropTagIndex(space, "tag_single_field_index").get();
         ASSERT_TRUE(result.ok());
@@ -787,6 +825,9 @@ TEST(MetaClientTest, EdgeIndexTest) {
     TestUtils::registerHB(sc->kvStore_.get(), hosts);
     auto ret = client->createSpace("default_space", 8, 3).get();
     GraphSpaceID space = ret.value();
+    IndexID singleFieldIndexID;
+    IndexID multiFieldIndexID;
+    IndexID multiEdgeIndexID;
     {
         for (auto i = 0; i < 2; i++) {
             std::vector<nebula::cpp2::ColumnDef> columns;
@@ -820,6 +861,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
                                               "edge_single_field_index",
                                               std::move(fields)).get();
         ASSERT_TRUE(result.ok());
+        singleFieldIndexID = result.value();
     }
     {
         std::map<std::string, std::vector<std::string>>&& fields {
@@ -829,6 +871,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
                                               "edge_multi_field_index",
                                               std::move(fields)).get();
         ASSERT_TRUE(result.ok());
+        multiFieldIndexID = result.value();
     }
     {
         std::map<std::string, std::vector<std::string>>&& fields {
@@ -839,6 +882,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
                                               "edge_multi_tag_index",
                                               std::move(fields)).get();
         ASSERT_TRUE(result.ok());
+        multiEdgeIndexID = result.value();
     }
     {
         std::map<std::string, std::vector<std::string>>&& fields {
@@ -862,7 +906,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
     }
     {
         auto result = client->listEdgeIndexes(space).get();
-        std::vector<cpp2::EdgeIndexItem> values = result.value();
+        std::vector<cpp2::IndexItem> values = result.value();
         ASSERT_EQ(3, values.size());
 
         {
@@ -946,6 +990,41 @@ TEST(MetaClientTest, EdgeIndexTest) {
             ASSERT_TRUE(TestUtils::verifyResult(columns,
                                                 fields[folly::stringPrintf("edge_%d", i)]));
         }
+    }
+    sleep(FLAGS_load_data_interval_secs * 5);
+    // Test Edge Index Properties Cache
+    {
+        auto checkEdgeIndexed = client->checkEdgeIndexed(space, singleFieldIndexID);
+        ASSERT_EQ(Status::OK(), checkEdgeIndexed);
+
+        auto edgeSingleFieldResult = client->getEdgeIndexFromCache(space, singleFieldIndexID);
+        ASSERT_TRUE(edgeSingleFieldResult.ok());
+        auto edgeMultiFieldResult = client->getEdgeIndexFromCache(space, multiFieldIndexID);
+        ASSERT_TRUE(edgeMultiFieldResult.ok());
+        auto edgeMultiEdgeResult = client->getEdgeIndexFromCache(space, multiEdgeIndexID);
+        ASSERT_TRUE(edgeMultiEdgeResult.ok());
+    }
+    {
+        GraphSpaceID spaceNotExist = 99;
+        IndexID edgeIndexNotExist = 99;
+        auto checkEdgeIndexNotExist = client->checkEdgeIndexed(space, edgeIndexNotExist);
+        ASSERT_EQ(Status::EdgeIndexNotFound(), checkEdgeIndexNotExist);
+
+        auto checkSpaceNotExist = client->checkEdgeIndexed(spaceNotExist, singleFieldIndexID);
+        ASSERT_EQ(Status::SpaceNotFound(), checkSpaceNotExist);
+
+        auto spaceNotExistRet = client->getEdgeIndexFromCache(spaceNotExist, singleFieldIndexID);
+        ASSERT_FALSE(spaceNotExistRet.ok());
+    }
+    {
+        auto edgeIndexes = client->getEdgeIndexesFromCache(space);
+        ASSERT_TRUE(edgeIndexes.ok());
+        ASSERT_EQ(3, edgeIndexes.value().size());
+    }
+    {
+        GraphSpaceID spaceNotExist = 99;
+        auto spaceNotExistRet = client->getEdgeIndexesFromCache(spaceNotExist);
+        ASSERT_FALSE(spaceNotExistRet.ok());
     }
     {
         auto result = client->dropEdgeIndex(space, "edge_single_field_index").get();

@@ -35,8 +35,19 @@ using TagSchemas = std::unordered_map<std::pair<TagID, SchemaVer>,
 using EdgeSchemas = std::unordered_map<std::pair<EdgeType, SchemaVer>,
                                        std::shared_ptr<const SchemaProviderIf>>;
 
-using TagIndexes = std::unordered_map<TagIndexID, std::shared_ptr<const cpp2::IndexProperties>>;
-using EdgeIndexes = std::unordered_map<EdgeIndexID, std::shared_ptr<const cpp2::IndexProperties>>;
+using Indexes = std::unordered_map<IndexID, std::shared_ptr<cpp2::IndexFields>>;
+
+// IndexID => TagID
+using IndexTagMap  = std::unordered_map<IndexID, TagID>;
+
+// IndexID => EdgeType
+using IndexEdgeMap = std::unordered_map<IndexID, EdgeType>;
+
+using TagIndexPair  = std::pair<TagID, cpp2::IndexFields>;
+using EdgeIndexPair = std::pair<EdgeType, cpp2::IndexFields>;
+
+using TagIndexTuple  = std::tuple<TagID, IndexID, cpp2::IndexFields>;
+using EdgeIndexTuple = std::tuple<EdgeType, IndexID, cpp2::IndexFields>;
 
 struct SpaceInfoCache {
     std::string spaceName;
@@ -44,25 +55,39 @@ struct SpaceInfoCache {
     std::unordered_map<HostAddr, std::vector<PartitionID>> partsOnHost_;
     TagSchemas tagSchemas_;
     EdgeSchemas edgeSchemas_;
-    TagIndexes tagIndexes_;
-    EdgeIndexes edgeIndexes_;
+    Indexes tagIndexes_;
+    Indexes edgeIndexes_;
 };
 
 using LocalCache = std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>>;
 
 using SpaceNameIdMap = std::unordered_map<std::string, GraphSpaceID>;
+
 // get tagID via spaceId and tagName
 using SpaceTagNameIdMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, TagID>;
+
 // get edgeType via spaceId and edgeName
 using SpaceEdgeNameTypeMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, EdgeType>;
+
 // get latest tag version via spaceId and TagID
 using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, SchemaVer>;
+
 // get latest edge version via spaceId and edgeType
 using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
+
 // get edgeName via spaceId and edgeType
 using SpaceEdgeTypeNameMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, std::string>;
+
 // get all edgeType edgeName via spaceId
 using SpaceAllEdgeMap = std::unordered_map<GraphSpaceID, std::vector<std::string>>;
+
+using TagIDIndexMap = std::unordered_map<std::pair<GraphSpaceID, TagID>,
+                                         std::vector<IndexID>>;
+
+using EdgeTypeIndexMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>,
+                                            std::vector<IndexID>>;
+
+using IndexNameMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, IndexID>;
 
 struct ConfigItem {
     ConfigItem() {}
@@ -208,7 +233,7 @@ public:
     dropEdgeSchema(GraphSpaceID spaceId, std::string name);
 
     // Operations for index
-    folly::Future<StatusOr<TagIndexID>>
+    folly::Future<StatusOr<IndexID>>
     createTagIndex(GraphSpaceID spaceID,
                    std::string name,
                    std::map<std::string, std::vector<std::string>>&& fields);
@@ -217,13 +242,13 @@ public:
     folly::Future<StatusOr<bool>>
     dropTagIndex(GraphSpaceID spaceId, std::string name);
 
-    folly::Future<StatusOr<cpp2::TagIndexItem>>
+    folly::Future<StatusOr<cpp2::IndexItem>>
     getTagIndex(GraphSpaceID spaceId, std::string name);
 
-    folly::Future<StatusOr<std::vector<cpp2::TagIndexItem>>>
+    folly::Future<StatusOr<std::vector<cpp2::IndexItem>>>
     listTagIndexes(GraphSpaceID spaceId);
 
-    folly::Future<StatusOr<EdgeIndexID>>
+    folly::Future<StatusOr<IndexID>>
     createEdgeIndex(GraphSpaceID spaceID,
                     std::string name,
                     std::map<std::string, std::vector<std::string>>&& fields);
@@ -232,10 +257,10 @@ public:
     folly::Future<StatusOr<bool>>
     dropEdgeIndex(GraphSpaceID spaceId, std::string name);
 
-    folly::Future<StatusOr<cpp2::EdgeIndexItem>>
+    folly::Future<StatusOr<cpp2::IndexItem>>
     getEdgeIndex(GraphSpaceID spaceId, std::string name);
 
-    folly::Future<StatusOr<std::vector<cpp2::EdgeIndexItem>>>
+    folly::Future<StatusOr<std::vector<cpp2::IndexItem>>>
     listEdgeIndexes(GraphSpaceID spaceId);
 
     // Operations for custom kv
@@ -288,19 +313,23 @@ public:
     folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> listSnapshots();
 
     // Opeartions for cache.
-    StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
+    StatusOr<GraphSpaceID>
+    getSpaceIdByNameFromCache(const std::string& name);
 
-    StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& space, const std::string& name);
+    StatusOr<TagID>
+    getTagIDByNameFromCache(const GraphSpaceID& space, const std::string& name);
 
-    StatusOr<EdgeType> getEdgeTypeByNameFromCache(const GraphSpaceID& space,
-                                                  const std::string& name);
-    StatusOr<std::string> getEdgeNameByTypeFromCache(const GraphSpaceID& space,
-                                                     const EdgeType edgeType);
+    StatusOr<EdgeType>
+    getEdgeTypeByNameFromCache(const GraphSpaceID& space, const std::string& name);
 
-    StatusOr<SchemaVer> getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
+    StatusOr<std::string>
+    getEdgeNameByTypeFromCache(const GraphSpaceID& space, const EdgeType edgeType);
 
-    StatusOr<SchemaVer> getNewestEdgeVerFromCache(const GraphSpaceID& space,
-                                                  const EdgeType& edgeType);
+    StatusOr<SchemaVer>
+    getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
+
+    StatusOr<SchemaVer>
+    getNewestEdgeVerFromCache(const GraphSpaceID& space, const EdgeType& edgeType);
 
     StatusOr<std::vector<std::string>> getAllEdgeFromCache(const GraphSpaceID& space);
 
@@ -308,12 +337,12 @@ public:
 
     StatusOr<PartMeta> getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId);
 
-    bool checkPartExistInCache(const HostAddr& host,
-                               GraphSpaceID spaceId,
-                               PartitionID partId);
+    Status checkPartExistInCache(const HostAddr& host,
+                                 GraphSpaceID spaceId,
+                                 PartitionID partId);
 
-    bool checkSpaceExistInCache(const HostAddr& host,
-                                GraphSpaceID spaceId);
+    Status checkSpaceExistInCache(const HostAddr& host,
+                                  GraphSpaceID spaceId);
 
     StatusOr<int32_t> partsNum(GraphSpaceID spaceId);
 
@@ -323,17 +352,27 @@ public:
     StatusOr<std::shared_ptr<const SchemaProviderIf>>
     getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver = -1);
 
-    StatusOr<const cpp2::IndexProperties>
-    getTagIndexFromCache(TagIndexID tagIndexID);
+    StatusOr<std::shared_ptr<TagIndexTuple>>
+    getTagIndexByNameFromCache(const GraphSpaceID space, const std::string& name);
 
-    StatusOr<const cpp2::IndexProperties>
-    getEdgeIndexFromCache(EdgeIndexID edgeIndexID);
+    StatusOr<std::shared_ptr<EdgeIndexTuple>>
+    getEdgeIndexByNameFromCache(const GraphSpaceID space, const std::string& name);
 
-    bool checkTagFieldsIndexed(GraphSpaceID space, TagID tagID,
-                               const std::vector<std::string> &fields);
+    StatusOr<std::shared_ptr<TagIndexPair>>
+    getTagIndexFromCache(GraphSpaceID spaceId, IndexID indexID);
 
-    bool checkEdgeFieldsIndexed(GraphSpaceID space, EdgeType edgeType,
-                                const std::vector<std::string> &fields);
+    StatusOr<std::shared_ptr<EdgeIndexPair>>
+    getEdgeIndexFromCache(GraphSpaceID spaceId, IndexID indexID);
+
+    StatusOr<std::vector<std::shared_ptr<TagIndexTuple>>>
+    getTagIndexesFromCache(GraphSpaceID spaceId);
+
+    StatusOr<std::vector<std::shared_ptr<EdgeIndexTuple>>>
+    getEdgeIndexesFromCache(GraphSpaceID spaceId);
+
+    Status checkTagIndexed(GraphSpaceID space, TagID tagID);
+
+    Status checkEdgeIndexed(GraphSpaceID space, EdgeType edgeType);
 
     const std::vector<HostAddr>& getAddresses();
 
@@ -373,7 +412,9 @@ protected:
                      SpaceAllEdgeMap &allEdgemap);
 
     bool loadIndexes(GraphSpaceID spaceId,
-                     std::shared_ptr<SpaceInfoCache> cache);
+                     std::shared_ptr<SpaceInfoCache> cache,
+                     TagIDIndexMap &tagIDIndexMap,
+                     EdgeTypeIndexMap &edgeTypeIndexMap);
 
     folly::Future<StatusOr<bool>> heartbeat();
 
@@ -440,7 +481,15 @@ private:
     SpaceEdgeTypeNameMap  spaceEdgeIndexByType_;
     SpaceNewestTagVerMap  spaceNewestTagVerMap_;
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
-    SpaceAllEdgeMap      spaceAllEdgeMap_;
+    SpaceAllEdgeMap       spaceAllEdgeMap_;
+
+    TagIDIndexMap         tagIDIndexMap_;
+    EdgeTypeIndexMap      edgeTypeIndexMap_;
+    IndexTagMap           indexTagMap_;
+    IndexEdgeMap          indexEdgeMap_;
+    IndexNameMap          tagIndexNameMap_;
+    IndexNameMap          edgeIndexNameMap_;
+
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
     folly::RWSpinLock     listenerLock_;

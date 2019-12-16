@@ -24,9 +24,10 @@ class UpdateVertexProcessor
 public:
     static UpdateVertexProcessor* instance(kvstore::KVStore* kvstore,
                                            meta::SchemaManager* schemaMan,
+                                           meta::IndexManager* indexMan,
                                            stats::Stats* stats,
                                            VertexCache* cache = nullptr) {
-        return new UpdateVertexProcessor(kvstore, schemaMan, stats, cache);
+        return new UpdateVertexProcessor(kvstore, schemaMan, indexMan, stats, cache);
     }
 
     void process(const cpp2::UpdateVertexRequest& req);
@@ -34,10 +35,12 @@ public:
 private:
     explicit UpdateVertexProcessor(kvstore::KVStore* kvstore,
                                    meta::SchemaManager* schemaMan,
+                                   meta::IndexManager* indexMan,
                                    stats::Stats* stats,
                                    VertexCache* cache)
         : QueryBaseProcessor<cpp2::UpdateVertexRequest,
-                             cpp2::UpdateResponse>(kvstore, schemaMan, stats, nullptr, cache) {}
+                             cpp2::UpdateResponse>(kvstore, schemaMan, indexMan,
+                                                   stats, nullptr, cache) {}
 
     kvstore::ResultCode processVertex(PartitionID, VertexID) override {
         LOG(FATAL) << "Unimplement!";

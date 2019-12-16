@@ -216,7 +216,7 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
     LOG(INFO) << "Test QueryOutBoundRequest...";
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(), nullptr,
-                                                    executor.get());
+                                                    nullptr, executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -240,7 +240,7 @@ TEST(QueryBoundTest, inBoundSimpleTest) {
     LOG(INFO) << "Test QueryInBoundRequest...";
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(), nullptr,
-                                                    executor.get());
+                                                    nullptr, executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -273,6 +273,7 @@ TEST(QueryBoundTest, FilterTest_OnlyEdgeFilter) {
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryBoundProcessor::instance(kv.get(),
                                                     schemaMan.get(),
+                                                    nullptr,
                                                     nullptr,
                                                     executor.get());
     auto f = processor->getFuture();
@@ -308,6 +309,7 @@ TEST(QueryBoundTest, FilterTest_OnlyTagFilter) {
     auto* processor = QueryBoundProcessor::instance(kv.get(),
                                                     schemaMan.get(),
                                                     nullptr,
+                                                    nullptr,
                                                     executor.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -322,7 +324,7 @@ TEST(QueryBoundTest, GenBucketsTest) {
         cpp2::GetNeighborsRequest req;
         std::vector<EdgeType> et = {-101};
         buildRequest(req, et);
-        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(10, buckets.size());
         for (auto& bucket : buckets) {
@@ -335,7 +337,7 @@ TEST(QueryBoundTest, GenBucketsTest) {
         cpp2::GetNeighborsRequest req;
         std::vector<EdgeType> et = {-101};
         buildRequest(req, et);
-        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(9, buckets.size());
         for (auto i = 0; i < 3; i++) {
@@ -351,7 +353,7 @@ TEST(QueryBoundTest, GenBucketsTest) {
         cpp2::GetNeighborsRequest req;
         std::vector<EdgeType> et = {-101};
         buildRequest(req, et);
-        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(7, buckets.size());
         for (auto i = 0; i < 2; i++) {
@@ -366,7 +368,7 @@ TEST(QueryBoundTest, GenBucketsTest) {
         cpp2::GetNeighborsRequest req;
         std::vector<EdgeType> et = {-101};
         buildRequest(req, et);
-        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(1, buckets.size());
         ASSERT_EQ(30, buckets[0].vertices_.size());
@@ -407,6 +409,7 @@ TEST(QueryBoundTest, FilterTest_TagAndEdgeFilter) {
     auto* processor = QueryBoundProcessor::instance(kv.get(),
                                                     schemaMan.get(),
                                                     nullptr,
+                                                    nullptr,
                                                     executor.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -437,6 +440,7 @@ TEST(QueryBoundTest, FilterTest_InvalidFilter) {
     auto* processor = QueryBoundProcessor::instance(kv.get(),
                                                     schemaMan.get(),
                                                     nullptr,
+                                                    nullptr,
                                                     executor.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -465,6 +469,7 @@ TEST(QueryBoundTest, MultiEdgeQueryTest) {
     auto* processor = QueryBoundProcessor::instance(kv.get(),
                                                     schemaMan.get(),
                                                     nullptr,
+                                                    nullptr,
                                                     executor.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -491,7 +496,7 @@ TEST(QueryBoundTest, MaxEdgesReturenedTest) {
     LOG(INFO) << "Test QueryOutBoundRequest...";
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(), nullptr,
-                                                    executor.get());
+                                                    nullptr, executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

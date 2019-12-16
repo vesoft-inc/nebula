@@ -7,7 +7,6 @@
 #ifndef META_ADHOCSCHEMAMANAGER_H_
 #define META_ADHOCSCHEMAMANAGER_H_
 
-#include "base/Base.h"
 #include <folly/RWSpinLock.h>
 #include "meta/SchemaProviderIf.h"
 #include "meta/SchemaManager.h"

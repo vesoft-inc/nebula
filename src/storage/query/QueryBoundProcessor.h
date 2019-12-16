@@ -22,20 +22,23 @@ class QueryBoundProcessor
 public:
     static QueryBoundProcessor* instance(kvstore::KVStore* kvstore,
                                          meta::SchemaManager* schemaMan,
+                                         meta::IndexManager* indexMan,
                                          stats::Stats* stats,
                                          folly::Executor* executor,
                                          VertexCache* cache = nullptr) {
-        return new QueryBoundProcessor(kvstore, schemaMan, stats, executor, cache);
+        return new QueryBoundProcessor(kvstore, schemaMan, indexMan, stats, executor, cache);
     }
 
 protected:
     explicit QueryBoundProcessor(kvstore::KVStore* kvstore,
                                  meta::SchemaManager* schemaMan,
+                                 meta::IndexManager* indexMan,
                                  stats::Stats* stats,
                                  folly::Executor* executor,
                                  VertexCache* cache)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
-                             cpp2::QueryResponse>(kvstore, schemaMan, stats, executor, cache) {}
+                             cpp2::QueryResponse>(kvstore, schemaMan, indexMan,
+                                                  stats, executor, cache) {}
 
     kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) override;
 
@@ -46,6 +49,7 @@ private:
 
     kvstore::ResultCode processEdge(PartitionID partId, VertexID vId, FilterContext &fcontext,
                                     cpp2::VertexData& vdata);
+
     kvstore::ResultCode processEdgeImpl(const PartitionID partId, const VertexID vId,
                                         const EdgeType edgeType,
                                         const std::vector<PropContext>& props,

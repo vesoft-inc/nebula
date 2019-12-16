@@ -16,16 +16,22 @@ namespace storage {
 class DeleteEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static DeleteEdgesProcessor* instance(kvstore::KVStore* kvstore,
-                                          meta::SchemaManager* schemaMan) {
-        return new DeleteEdgesProcessor(kvstore, schemaMan);
+                                          meta::SchemaManager* schemaMan,
+                                          meta::IndexManager* indexMan) {
+        return new DeleteEdgesProcessor(kvstore, schemaMan, indexMan);
     }
 
      void process(const cpp2::DeleteEdgesRequest& req);
 
 private:
     explicit DeleteEdgesProcessor(kvstore::KVStore* kvstore,
-                                  meta::SchemaManager* schemaMan)
-            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan) {}
+                                  meta::SchemaManager* schemaMan,
+                                  meta::IndexManager* indexMan)
+            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan)
+            , indexMan_(indexMan) {}
+
+private:
+    meta::IndexManager* indexMan_{nullptr};
 };
 
 }  // namespace storage

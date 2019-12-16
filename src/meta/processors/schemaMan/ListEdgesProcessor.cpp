@@ -30,8 +30,12 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
         auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
         auto edgeName = val.subpiece(sizeof(int32_t), nameLen).str();
         auto schema = MetaServiceUtils::parseSchema(val);
-        edges.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                           edgeType, edgeName, vers, schema);
+        cpp2::EdgeItem edge;
+        edge.set_edge_type(edgeType);
+        edge.set_edge_name(std::move(edgeName));
+        edge.set_version(vers);
+        edge.set_schema(std::move(schema));
+        edges.emplace_back(std::move(edge));
         iter->next();
     }
     resp_.set_edges(std::move(edges));

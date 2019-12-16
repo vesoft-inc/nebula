@@ -120,7 +120,7 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -254,7 +254,7 @@ TEST(UpdateVertexTest, Insertable_Test) {
     req.set_insertable(true);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -330,7 +330,7 @@ TEST(UpdateVertexTest, Invalid_Set_Test) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -378,7 +378,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

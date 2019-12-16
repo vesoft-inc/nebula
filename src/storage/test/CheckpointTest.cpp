@@ -19,7 +19,7 @@ TEST(CheckpointTest, simpleTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath.path()));
     // Add vertices
     {
-        auto* processor = AddVerticesProcessor::instance(kv.get(), nullptr, nullptr);
+        auto* processor = AddVerticesProcessor::instance(kv.get(), nullptr, nullptr, nullptr);
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
         req.overwritable = false;

@@ -152,7 +152,7 @@ TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
     req.set_return_columns(std::move(tmpColumns));
     req.set_insertable(false);
     LOG(INFO) << "Test UpdateEdgeRequest...";
-    auto* processor = UpdateEdgeProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateEdgeProcessor::instance(kv.get(), schemaMan.get(), nullptr, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -272,7 +272,7 @@ TEST(UpdateEdgeTest, Insertable_Test) {
     req.set_insertable(true);
 
     LOG(INFO) << "Test UpdateEdgeRequest...";
-    auto* processor = UpdateEdgeProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateEdgeProcessor::instance(kv.get(), schemaMan.get(), nullptr, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

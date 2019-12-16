@@ -84,12 +84,12 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     }
 
     auto edgeIndex = nebula::value(edgeIndexRet);
-    data.emplace_back(MetaServiceUtils::indexEdgeIndexKey(space, indexName),
-                      std::string(reinterpret_cast<const char*>(&edgeIndex), sizeof(EdgeIndexID)));
-    data.emplace_back(MetaServiceUtils::edgeIndexKey(space, edgeIndex),
-                      MetaServiceUtils::edgeIndexVal(indexName, indexFields));
+    data.emplace_back(MetaServiceUtils::indexIndexKey(space, indexName),
+                      std::string(reinterpret_cast<const char*>(&edgeIndex), sizeof(IndexID)));
+    data.emplace_back(MetaServiceUtils::indexKey(space, edgeIndex),
+                      MetaServiceUtils::indexVal(indexName, indexFields));
     LOG(INFO) << "Create Edge Index " << indexName << ", edgeIndex " << edgeIndex;
-    resp_.set_id(to(edgeIndex, EntryType::EDGE_INDEX));
+    resp_.set_id(to(edgeIndex, EntryType::INDEX));
     doPut(std::move(data));
 }
 
