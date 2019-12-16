@@ -1,15 +1,15 @@
 # CREATE SPACE 语法
 
 ```ngql
-CREATE SPACE [IF NOT EXIST] <space_name>
+CREATE SPACE [IF NOT EXISTS] <space_name>
    [(partition_num = <part_num>, replica_factor = <raft_copy>)]
 ```
 
 以上语句用于创建一个新的图空间。不同的图空间是物理隔离的。
 
-## IF NOT EXIST
+## IF NOT EXISTS
 
-创建图空间可使用 `IF NOT EXIST` 关键字，这个关键字会自动检测对应的图空间是否存在，如果不存在则创建新的，如果存在则直接返回。
+创建图空间可使用 `IF NOT EXISTS` 关键字，这个关键字会自动检测对应的图空间是否存在，如果不存在则创建新的，如果存在则直接返回。
 
 **注意：** 这里判断图空间是否存在只是比较图空间的名字(不包括属性)。
 
