@@ -48,14 +48,20 @@ protected:
 
     bool checkDataValidity(bool isEdge, const folly::StringPiece& key);
 
+    void putResultCodes(cpp2::ErrorCode code, const std::vector<PartitionID>& parts) {
+        for (auto& p : parts) {
+            this->pushResultCode(code, p);
+        }
+        this->onFinished();
+    }
+
 protected:
     GraphSpaceID                           spaceId_;
     int64_t                                vlColNum_{0};
-    bool                                   isRangeScan_;
     std::string                            prefix_;
     std::pair<std::string, std::string>    range_;
     cpp2::IndexItem                        index_;
-    std::vector<cpp2::IndexHint>           hints_;
+    nebula::cpp2::IndexHint                hint_;
     std::shared_ptr<SchemaWriter>          schema_;
     folly::Executor*                       executor_ = nullptr;
     VertexCache*                           vertexCache_ = nullptr;

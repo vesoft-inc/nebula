@@ -11,28 +11,24 @@ namespace storage {
 
 void ScanEdgeIndexProcessor::process(const cpp2::IndexScanRequest& req) {
     spaceId_ = req.get_space_id();
-    index_ = req.get_index();
-    hints_ = req.get_hints();
-    DCHECK_GT(hints_.size() , 0);
-    isRangeScan_ = hints_[0].get_is_range();
-    auto indexId = index_.index_id;
+    hint_ = req.get_hint();
+    auto indexId = hint_.index_id;
+    auto iRet = schemaMan_->getEdgeIndex(spaceId_, indexId);
+    if (!iRet.ok()) {
+        putResultCodes(cpp2::ErrorCode::E_LOAD_META_FAILED, req.get_parts());
+        return;
+    }
+    index_ = iRet.value();
     auto edgeType = index_.schema;
-
     auto hintRet = buildIndexHint();
     if (hintRet != cpp2::ErrorCode::SUCCEEDED) {
-        for (auto& p : req.get_parts()) {
-            this->pushResultCode(hintRet, p);
-        }
-        this->onFinished();
+        putResultCodes(hintRet, req.get_parts());
         return;
     }
 
     auto schemaRet = createResultSchema(true, edgeType, req.get_return_columns());
     if (schemaRet != cpp2::ErrorCode::SUCCEEDED) {
-        for (auto& p : req.get_parts()) {
-            this->pushResultCode(schemaRet, p);
-        }
-        this->onFinished();
+        putResultCodes(schemaRet, req.get_parts());
         return;
     }
 
@@ -88,7 +84,7 @@ ScanEdgeIndexProcessor::asyncProcess(PartitionID part,
 kvstore::ResultCode
 ScanEdgeIndexProcessor::processEdges(PartitionID part, IndexID indexId, EdgeType edgeType) {
     auto prefix = NebulaKeyUtils::indexPrefix(part, indexId);
-    if (isRangeScan_) {
+    if (hint_.is_range) {
         std::unique_ptr<kvstore::KVIterator> iter;
         auto begin = prefix + range_.first;
         auto end = prefix + range_.second;

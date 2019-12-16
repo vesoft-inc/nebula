@@ -528,8 +528,7 @@ StorageClient::get(GraphSpaceID space,
 
 folly::SemiFuture<StorageRpcResponse<storage::cpp2::ScanVertexResponse>>
 StorageClient::scanVertexIndex(GraphSpaceID space,
-                               cpp2::IndexItem index,
-                               std::vector<cpp2::IndexHint> hints,
+                               nebula::cpp2::IndexHint hint,
                                std::vector<std::string> returnCols,
                                folly::EventBase* evb) {
     auto status = getHostParts(space);
@@ -544,8 +543,7 @@ StorageClient::scanVertexIndex(GraphSpaceID space,
         auto& req = requests[host];
         req.set_space_id(space);
         req.set_parts(std::move(c.second));
-        req.set_index(index);
-        req.set_hints(hints);
+        req.set_hint(hint);
         req.set_return_columns(returnCols);
     }
     return getResponse(evb, std::move(requests),
@@ -557,8 +555,7 @@ StorageClient::scanVertexIndex(GraphSpaceID space,
 
 folly::SemiFuture<StorageRpcResponse<storage::cpp2::ScanEdgeResponse>>
 StorageClient::scanEdgeIndex(GraphSpaceID space,
-                             cpp2::IndexItem index,
-                             std::vector<cpp2::IndexHint> hints,
+                             nebula::cpp2::IndexHint hint,
                              std::vector<std::string> returnCols,
                              folly::EventBase* evb) {
     auto status = getHostParts(space);
@@ -573,8 +570,7 @@ StorageClient::scanEdgeIndex(GraphSpaceID space,
         auto& req = requests[host];
         req.set_space_id(space);
         req.set_parts(std::move(c.second));
-        req.set_index(index);
-        req.set_hints(hints);
+        req.set_hint(hint);
         req.set_return_columns(returnCols);
     }
     return getResponse(evb, std::move(requests),

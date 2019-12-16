@@ -184,15 +184,13 @@ public:
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ScanVertexResponse>> scanVertexIndex(
         GraphSpaceID space,
-        cpp2::IndexItem index,
-        std::vector<cpp2::IndexHint> hints,
+        nebula::cpp2::IndexHint hint,
         std::vector<std::string> returnCols,
         folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ScanEdgeResponse>> scanEdgeIndex(
         GraphSpaceID space,
-        cpp2::IndexItem index,
-        std::vector<cpp2::IndexHint> hints,
+        nebula::cpp2::IndexHint hint,
         std::vector<std::string> returnCols,
         folly::EventBase* evb = nullptr);
 

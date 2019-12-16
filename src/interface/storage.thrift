@@ -203,13 +203,6 @@ struct Edge {
     2: binary props,
 }
 
-struct IndexHint {
-    1: bool                  is_range,
-    2: binary                first_str,
-    3: binary                second_str,
-    4: common.SupportedType  type,
-}
-
 struct IndexItem {
     1: required common.IndexID          index_id,
     2: required i32                     schema,
@@ -244,9 +237,8 @@ struct EdgePropRequest {
 struct IndexScanRequest {
     1: common.GraphSpaceID       space_id,
     2: list<common.PartitionID>  parts,
-    3: IndexItem                 index,
-    5: list<IndexHint>           hints,
-    6: list<string>              return_columns,
+    3: common.IndexHint          hint,
+    4: list<string>              return_columns,
 }
 
 struct AddVerticesRequest {

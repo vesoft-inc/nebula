@@ -155,12 +155,16 @@ static std::shared_ptr<meta::SchemaProviderIf> genTagSchemaProvider(
 
 static std::unique_ptr<meta::SchemaManager> mockSchemaMan(GraphSpaceID spaceId,
                                                           EdgeType edgeType,
-                                                          TagID tagId) {
+                                                          TagID tagId,
+                                                          const storage::cpp2::IndexItem& vindex,
+                                                          const storage::cpp2::IndexItem& eindex) {
     auto* schemaMan = new AdHocSchemaManager();
     schemaMan->addEdgeSchema(spaceId /*space id*/, edgeType /*edge type*/,
                              genEdgeSchemaProvider(10, 10));
     schemaMan->addTagSchema(spaceId /*space id*/, tagId,
                              genTagSchemaProvider(tagId, 3, 3));
+    schemaMan->addTagIndex(spaceId, vindex);
+    schemaMan->addEdgeIndex(spaceId, eindex);
     std::unique_ptr<meta::SchemaManager> sm(schemaMan);
     return sm;
 }
@@ -268,9 +272,10 @@ TEST(IndexScanTest, VertexScanTest) {
     TagID tagId = 3001;
     EdgeType type = 101;
     LOG(INFO) << "Prepare meta...";
-    auto schemaMan = mockSchemaMan(spaceId, type, tagId);
     auto vindex = mockVertexIndex(3, 3, tagId);
     auto eindex = mockEdgeIndex(10, 10, type);
+    auto schemaMan = mockSchemaMan(spaceId, type, tagId, vindex, eindex);
+
     mockData(kv.get(), schemaMan.get(), type, tagId, spaceId, vindex, eindex);
     sleep(FLAGS_load_data_interval_secs + 1);
     {
@@ -288,7 +293,7 @@ TEST(IndexScanTest, VertexScanTest) {
         cols.emplace_back("tag_3001_col_1");
         cols.emplace_back("tag_3001_col_3");
         cols.emplace_back("tag_3001_col_4");
-        decltype(req.hints) hints;
+        decltype(req.hint) hint;
         std::string braw, eraw;
         braw.reserve(sizeof(int64_t));
         eraw.reserve(sizeof(int64_t));
@@ -296,14 +301,18 @@ TEST(IndexScanTest, VertexScanTest) {
         braw.append(reinterpret_cast<const char*>(&begin), sizeof(int64_t));
         auto end = folly::Endian::big(boost::get<int64_t>(2));
         eraw.append(reinterpret_cast<const char*>(&end), sizeof(int64_t));
-        hints.emplace_back(cpp2::IndexHint(apache::thrift::FragileConstructor::FRAGILE,
-                                           false, braw, eraw, nebula::cpp2::SupportedType::INT));
+        hint.set_index_id(tagId);
+        hint.set_is_range(false);
+        decltype(hint.hint_items) items;
+        items.emplace_back(nebula::cpp2::IndexHintItem(
+                apache::thrift::FragileConstructor::FRAGILE,
+                braw, eraw, nebula::cpp2::SupportedType::INT));
+        hint.set_hint_items(items);
 
         req.set_space_id(spaceId);
         req.set_parts(std::move(parts));
-        req.set_index(vindex);
         req.set_return_columns(cols);
-        req.set_hints(hints);
+        req.set_hint(hint);
 
         auto f = processor->getFuture();
         processor->process(req);
@@ -333,7 +342,7 @@ TEST(IndexScanTest, VertexScanTest) {
         cols.emplace_back("col_11");
         cols.emplace_back("col_13");
         cols.emplace_back("col_14");
-        decltype(req.hints) hints;
+        decltype(req.hint) hint;
         std::string braw, eraw;
         braw.reserve(sizeof(int64_t));
         eraw.reserve(sizeof(int64_t));
@@ -341,14 +350,17 @@ TEST(IndexScanTest, VertexScanTest) {
         braw.append(reinterpret_cast<const char*>(&begin), sizeof(int64_t));
         auto end = folly::Endian::big(boost::get<int64_t>(2));
         eraw.append(reinterpret_cast<const char*>(&end), sizeof(int64_t));
-        hints.emplace_back(cpp2::IndexHint(apache::thrift::FragileConstructor::FRAGILE,
-                                           false, braw, eraw, nebula::cpp2::SupportedType::INT));
-
+        hint.set_is_range(false);
+        hint.set_index_id(type);
+        decltype(hint.hint_items) items;
+        items.emplace_back(nebula::cpp2::IndexHintItem(
+                apache::thrift::FragileConstructor::FRAGILE,
+                braw, eraw, nebula::cpp2::SupportedType::INT));
+        hint.set_hint_items(items);
         req.set_space_id(spaceId);
         req.set_parts(std::move(parts));
-        req.set_index(eindex);
         req.set_return_columns(cols);
-        req.set_hints(hints);
+        req.set_hint(hint);
 
         auto f = processor->getFuture();
         processor->process(req);
@@ -379,6 +391,7 @@ TEST(IndexScanTest, VertexStringTypeTest) {
     schemaMan->addTagSchema(spaceId /*space id*/, tagId,
                             std::make_shared<ResultSchemaProvider>(std::move(schema)));
 
+
     std::vector<nebula::cpp2::ColumnDef> cols;
     for (auto i = 0; i < 3; i++) {
         nebula::cpp2::ColumnDef column;
@@ -388,6 +401,7 @@ TEST(IndexScanTest, VertexStringTypeTest) {
     }
     auto index = cpp2::IndexItem(apache::thrift::FragileConstructor::FRAGILE,
                                  tagId, tagId, std::move(cols));
+    schemaMan->addTagIndex(spaceId, index);
 
     std::vector<kvstore::KV> data;
     auto key = NebulaKeyUtils::vertexKey(partId, 1, tagId, 0);
@@ -425,15 +439,18 @@ TEST(IndexScanTest, VertexStringTypeTest) {
         decltype(req.return_columns) retCols;
         retCols.emplace_back("tag_3001_col_0");
         retCols.emplace_back("tag_3001_col_1");
-        decltype(req.hints) hints;
-        hints.emplace_back(cpp2::IndexHint(apache::thrift::FragileConstructor::FRAGILE,
-                                           false, "AABB", "", nebula::cpp2::SupportedType::STRING));
-
+        decltype(req.hint) hint;
+        hint.set_index_id(tagId);
+        hint.set_is_range(false);
+        decltype(hint.hint_items) items;
+        items.emplace_back(nebula::cpp2::IndexHintItem(
+                apache::thrift::FragileConstructor::FRAGILE,
+                "AABB", "", nebula::cpp2::SupportedType::STRING));
+        hint.set_hint_items(items);
         req.set_space_id(spaceId);
         req.set_parts(std::move(parts));
-        req.set_index(index);
         req.set_return_columns(retCols);
-        req.set_hints(hints);
+        req.set_hint(hint);
 
         auto f = processor->getFuture();
         processor->process(req);
@@ -454,15 +471,18 @@ TEST(IndexScanTest, VertexStringTypeTest) {
         decltype(req.return_columns) retCols;
         retCols.emplace_back("tag_3001_col_0");
         retCols.emplace_back("tag_3001_col_1");
-        decltype(req.hints) hints;
-        hints.emplace_back(cpp2::IndexHint(apache::thrift::FragileConstructor::FRAGILE,
-                                           false, "AA", "", nebula::cpp2::SupportedType::STRING));
-
+        decltype(req.hint) hint;
+        hint.set_is_range(false);
+        hint.set_index_id(tagId);
+        decltype(hint.hint_items) items;
+        items.emplace_back(nebula::cpp2::IndexHintItem(
+                apache::thrift::FragileConstructor::FRAGILE,
+                "AA", "", nebula::cpp2::SupportedType::STRING));
+        hint.set_hint_items(items);
         req.set_space_id(spaceId);
         req.set_parts(std::move(parts));
-        req.set_index(index);
         req.set_return_columns(retCols);
-        req.set_hints(hints);
+        req.set_hint(hint);
 
         auto f = processor->getFuture();
         processor->process(req);

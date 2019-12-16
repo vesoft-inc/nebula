@@ -113,4 +113,16 @@ struct Pair {
 }
 
 
+struct IndexHintItem {
+    1: binary                first_str,
+    2: binary                second_str,
+    3: SupportedType         type,
+}
+
+struct IndexHint {
+    1: IndexID               index_id,
+    2: bool                  is_range,
+    3: list<IndexHintItem>   hint_items,
+}
+
 const ValueType kInvalidValueType = {"type" : UNKNOWN}
