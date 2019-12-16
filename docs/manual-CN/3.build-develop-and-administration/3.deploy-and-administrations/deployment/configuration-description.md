@@ -7,7 +7,7 @@
 `port`                      | 45500                    | Meta daemon 监听端口
 `reuse_port`                | true                     | 开启 SO_REUSEPORT 选项
 `data_path`                 | ""                       | 根数据路径，不支持多条路径
-`meta_server_addrs`         | ""                       | 一系列由逗号分隔的 IP 地址，IP 数与副本数相等，如果为空，则表明副本数为 0
+`meta_server_addrs`         | ""                       | 一系列由逗号分隔的 IP 地址，用于集群部署，IP 数与副本数相等，如果为空，则表明是单机
 `local_ip`                  | ""                       | 为 NetworkUtils :: getLocalIP 指定本地 IP  
 `num_io_threads`            | 16                       | IO 线程数
 `meta_http_thread_num`      | 3                        | meta daemon 的 http 线程数

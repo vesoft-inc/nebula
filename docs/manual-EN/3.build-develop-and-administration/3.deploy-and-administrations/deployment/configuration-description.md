@@ -7,7 +7,7 @@ Property Name               | Default Value            | Description
 `port`                      | 45500                    | Meta daemon listening port.
 `reuse_port`                | true                     | Whether to turn on the SO_REUSEPORT option.
 `data_path`                 | ""                       | Root data path. Multi-paths are not supported.
-`meta_server_addrs`         | ""                       | A list of IPs split by comma, the number of IPs is equal to that of the replica. If empty, it means replica is 0.
+`meta_server_addrs`         | ""                       | A list of IPs split by comma, used in cluster deployment, the number of IPs is equal to that of the replica. If empty, it means a single node.
 `local_ip`                  | ""                       | Local ip specified for NetworkUtils::getLocalIP.
 `num_io_threads`            | 16                       | Number of IO threads.
 `meta_http_thread_num`      | 3                        | Number of meta daemon's http thread.
