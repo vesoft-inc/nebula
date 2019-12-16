@@ -102,6 +102,10 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
       * [Configs Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/configs-syntax.md)
       * [RocksDB Compaction and Flush](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/rocksdb-compaction-flush.md)
       * [Logs](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/log.md)
+    * Graph Service Administration
+      * [Graph Metrics](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/graph-service-administration/graph-metrics.md)
+    * Meta Service Administration
+      * [Meta Metrics](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/meta-service-administration/meta-metrics.md)
     * Storage Service Administration
       * Data Import
         * [Download And Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)

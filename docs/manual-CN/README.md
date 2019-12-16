@@ -92,7 +92,7 @@
     * [配置文件说明](3.build-develop-and-administration/3.deploy-and-administrations/deployment/configuration-description.md)
     * [用 Docker 部署](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster-on-docker.md)
     * [部署集群](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
-    * [连接 Prometheus](3.build-develop-and-administration/3.deploy-and-administrations/deployment/connect-prometheus.md)
+    * [接入 Prometheus](3.build-develop-and-administration/3.deploy-and-administrations/deployment/connect-prometheus.md)
   * 服务器管理操作
     * 账号管理
       * [Drop User](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/drop-user-syntax.md)
@@ -100,13 +100,17 @@
       * [服务器配置](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/configs-syntax.md)
       * [RocksDB Compaction 和 Flush](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/rocksdb-compaction-flush.md)
       * [日志](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/log.md)
+    * 计算服务相关运维
+      * [计算层运行统计 (metrics)](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/graph-service-administration/graph-metrics.md)
+    * meta 服务相关运维
+      * [meta 层运行统计 (metrics)](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/meta-service-administration/meta-metrics.md)
     * 存储服务相关运维
       * 离线数据加载
         * [加载 .sst 文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
         * [读取 .csv 文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
         * [Spark 导入工具](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/spark-writer.md)
       * [负载均衡和数据迁移](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-balance.md)
-      * [存储层运行统计 (metric)](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-metrics.md)
+      * [存储层运行统计 (metrics)](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-metrics.md)
       * [集群快照](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/cluster-snapshot.md)
 
 ## 社区贡献 (开源社区爱好者)
