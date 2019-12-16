@@ -28,11 +28,27 @@ class ExpressionContext final {
 public:
     using EdgeInfo = boost::variant<std::string, EdgeType>;
     void addSrcTagProp(const std::string &tag, const std::string &prop) {
+        tagMap_.emplace(tag, -1);
         srcTagProps_.emplace(tag, prop);
     }
 
     void addDstTagProp(const std::string &tag, const std::string &prop) {
+        tagMap_.emplace(tag, -1);
         dstTagProps_.emplace(tag, prop);
+    }
+
+    std::unordered_map<std::string, TagID>& getTagMap() {
+        return tagMap_;
+    }
+
+    bool getTagId(const std::string &tag, TagID &tagId) const {
+        auto tagFound = tagMap_.find(tag);
+        if (tagFound == tagMap_.end() || tagFound->second < 0) {
+            return false;
+        }
+
+        tagId = tagFound->second;
+        return true;
     }
 
     void addVariableProp(const std::string &var, const std::string &prop) {
@@ -49,17 +65,17 @@ public:
     }
 
     bool addEdge(const std::string &alias, EdgeType edgeType) {
-        auto it = edgeMaps_.find(alias);
-        if (it != edgeMaps_.end()) {
+        auto it = edgeMap_.find(alias);
+        if (it != edgeMap_.end()) {
             return false;
         }
-        edgeMaps_.emplace(alias, edgeType);
+        edgeMap_.emplace(alias, edgeType);
         return true;
     }
 
     bool getEdgeType(const std::string &alias, EdgeType &edgeType) {
-        auto it = edgeMaps_.find(alias);
-        if (it == edgeMaps_.end()) {
+        auto it = edgeMap_.find(alias);
+        if (it == edgeMap_.end()) {
             return false;
         }
 
@@ -160,7 +176,8 @@ private:
     std::unordered_set<std::string>           variables_;
     std::unordered_set<std::string>           inputProps_;
     // alias => edgeType
-    std::unordered_map<std::string, EdgeType> edgeMaps_;
+    std::unordered_map<std::string, EdgeType> edgeMap_;
+    std::unordered_map<std::string, TagID>    tagMap_;
     bool                                      overAll_{false};
     GraphSpaceID                              space_;
     nebula::storage::StorageClient            *storageClient_{nullptr};

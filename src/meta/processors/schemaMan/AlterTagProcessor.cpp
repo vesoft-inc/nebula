@@ -25,9 +25,9 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     auto tagPrefix = MetaServiceUtils::schemaTagPrefix(req.get_space_id(), tagId);
     auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, tagPrefix, &iter);
     if (code != kvstore::ResultCode::SUCCEEDED || !iter->valid()) {
-        LOG(WARNING) << "Tag could not be found " << req.get_tag_name()
-                     << ", spaceId " << req.get_space_id()
-                     << ", tagId " << tagId;
+        LOG(ERROR) << "Tag could not be found " << req.get_tag_name()
+                   << ", spaceId " << req.get_space_id()
+                   << ", tagId " << tagId;
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
@@ -46,7 +46,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
         for (auto& col : cols) {
             auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, tagItem.op);
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-                LOG(WARNING) << "Alter tag column error " << static_cast<int32_t>(retCode);
+                LOG(ERROR) << "Alter tag column error " << static_cast<int32_t>(retCode);
                 resp_.set_code(retCode);
                 onFinished();
                 return;
@@ -59,7 +59,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, std::move(alterSchemaProp));
 
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-        LOG(WARNING) << "Alter tag property error " << static_cast<int32_t>(retCode);
+        LOG(ERROR) << "Alter tag property error " << static_cast<int32_t>(retCode);
         resp_.set_code(retCode);
         onFinished();
         return;
@@ -72,7 +72,6 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     LOG(INFO) << "Alter Tag " << req.get_tag_name() << ", tagId " << tagId;
     data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, version),
                       MetaServiceUtils::schemaTagVal(req.get_tag_name(), schema));
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(tagId, EntryType::TAG));
     doPut(std::move(data));
 }
