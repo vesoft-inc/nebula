@@ -330,8 +330,10 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
     std::vector<std::string> parts;
     folly::split(".", metricName, parts, true);
     if (parts.size() != 3) {
-        LOG(ERROR) << "\"" << metricName << "\" is not a valid metric name";
-        return Status::Error("\"%s\" is not a valid metric name", metricName.data());
+        std::string err = folly::stringPrintf(
+            "\"%s\" is not a valid metric name", metricName.data());
+        LOG(ERROR) << err;
+        return Status::Error(std::move(err));
     }
 
     std::string name = parts[0];
@@ -344,9 +346,8 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
         range = TimeRange::ONE_HOUR;
     } else {
         // Unsupported time range
-        LOG(ERROR) << "Unsupported time range \"" << parts[2] << "\"";
-        return Status::Error(folly::stringPrintf("Unsupported time range \"%s\"",
-                                                 parts[2].c_str()));
+        std::string err = folly::stringPrintf("Unsupported time range \"%s\"", parts[2].c_str());
+        return Status::Error(std::move(err));
     }
 
     StatsMethod method;
@@ -361,9 +362,10 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
         method = StatsMethod::RATE;
     // } else if (parts[1][0] == 'p') {   // TODO(shylock)
     } else {
-        LOG(ERROR) << "Unsupported statistic method \"" << parts[1] << "\"";
-        return Status::Error(folly::stringPrintf("Unsupported statistic method \"%s\"",
-                                                 parts[1].c_str()));
+        std::string err = folly::stringPrintf(
+            "Unsupported statistic method \"%s\"", parts[1].c_str());
+        LOG(ERROR) << err;
+        return Status::Error(std::move(err));
     }
 
     return StatsManager::ParsedName {
