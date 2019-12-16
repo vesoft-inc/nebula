@@ -608,6 +608,7 @@ struct GetConfigResp {
 
 struct SetConfigReq {
     1: ConfigItem           item,
+    2: bool                 force,
 }
 
 struct ListConfigsReq {
