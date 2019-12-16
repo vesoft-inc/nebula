@@ -457,12 +457,39 @@ TEST_F(GoTest, MULTI_EDGES) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {player.vid(), 0},
-            {player.vid(), 0},
-            {player.vid(), 0},
+        std::vector<std::tuple<int64_t, int64_t, int64_t>> expected = {
+            {0, 0, player.vid()},
+            {0, 0, player.vid()},
+            {0, 0, player.vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like, teammate REVERSELY yield like.likeness, "
+                    "teammate.start_year, $$.player.name";
+        auto &player = players_["Manu Ginobili"];
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t, std::string>> expected = {
+            {95, 0, "Tim Duncan"},
+            {95, 0, "Tony Parker"},
+            {90, 0, "Tiago Splitter"},
+            {99, 0, "Dejounte Murray"},
+            {0, 2002, "Tim Duncan"},
+            {0, 2002, "Tony Parker"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER * REVERSELY yield like.likeness, teammate.start_year, "
+                    "serve.start_year, $$.player.name";
+        auto &player = players_["Manu Ginobili"];
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -522,11 +549,14 @@ TEST_F(GoTest, MULTI_EDGES) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {0, teams_["Grizzlies"].vid()},    {0, teams_["Lakers"].vid()},
-            {0, teams_["Bulls"].vid()},        {0, teams_["Spurs"].vid()},
-            {0, teams_["Bucks"].vid()},        {players_["Kobe Bryant"].vid(), 0},
-            {players_["Marc Gasol"].vid(), 0},
+        std::vector<std::tuple<int64_t, int64_t, int64_t>> expected = {
+            {teams_["Grizzlies"].vid(), 0, 0},
+            {teams_["Lakers"].vid(), 0, 0},
+            {teams_["Bulls"].vid(), 0, 0},
+            {teams_["Spurs"].vid(), 0, 0},
+            {teams_["Bucks"].vid(), 0, 0},
+            {0, 0, players_["Kobe Bryant"].vid()},
+            {0, 0, players_["Marc Gasol"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -1016,6 +1046,8 @@ TEST_F(GoTest, ReverselyOneStep) {
             { players_["Tiago Splitter"].vid() },
             { players_["Dejounte Murray"].vid() },
             { players_["Shaquile O'Neal"].vid() },
+            { 0 },
+            { 0 },
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

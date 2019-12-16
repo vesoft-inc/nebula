@@ -69,6 +69,10 @@ protected:
         std::sort(expected.begin(), expected.end());
 
         for (decltype(rows.size()) i = 0; i < rows.size(); ++i) {
+            VLOG(2) << rows[i];
+        }
+
+        for (decltype(rows.size()) i = 0; i < rows.size(); ++i) {
             if (rows[i] != expected[i]) {
                 return TestError() << rows[i] << " vs. " << expected[i];
             }
@@ -139,6 +143,11 @@ protected:
             return *this;
         }
 
+        Player& teammate(std::string player, int64_t startYear, int64_t endYear) {
+            teammates_.emplace_back(std::move(player), startYear, endYear);
+            return *this;
+        }
+
         const auto& serves() const {
             return serves_;
         }
@@ -147,14 +156,20 @@ protected:
             return likes_;
         }
 
+        const auto& teammates() const {
+            return teammates_;
+        }
+
     private:
         using Serve = std::tuple<std::string, int64_t, int64_t>;
         using Like = std::tuple<std::string, int64_t>;
+        using TeamMate = std::tuple<std::string, int64_t, int64_t>;
         std::string                             name_;
         int64_t                                 vid_{0};
         int64_t                                 age_{0};
         std::vector<Serve>                      serves_;
         std::vector<Like>                       likes_;
+        std::vector<TeamMate>                   teammates_;
     };
 
     template <typename Vertex, typename Key = std::string>
@@ -410,6 +425,14 @@ AssertionResult TraverseTestBase::prepareSchema() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE EDGE teammate(start_year int, end_year int)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
     sleep(FLAGS_load_data_interval_secs + 3);
     return TestOK();
 }
@@ -419,16 +442,26 @@ AssertionResult TraverseTestBase::prepareData() {
     // TODO(dutor) Maybe we should move these data into some kind of testing resources, later.
     players_["Tim Duncan"].serve("Spurs", 1997, 2016)
                           .like("Tony Parker", 95)
-                          .like("Manu Ginobili", 95);
+                          .like("Manu Ginobili", 95)
+                          .teammate("Tony Parker", 2001, 2016)
+                          .teammate("Manu Ginobili", 2002, 2016)
+                          .teammate("LaMarcus Aldridge", 2015, 2016)
+                          .teammate("Danny Green", 2010, 2016);
 
     players_["Tony Parker"].serve("Spurs", 1999, 2018)
                            .serve("Hornets", 2018, 2019)
                            .like("Tim Duncan", 95)
                            .like("Manu Ginobili", 95)
-                           .like("LaMarcus Aldridge", 90);
+                           .like("LaMarcus Aldridge", 90)
+                           .teammate("Tim Duncan", 2001, 2016)
+                           .teammate("Manu Ginobili", 2002, 2018)
+                           .teammate("LaMarcus Aldridge", 2015, 2018)
+                           .teammate("Kyle Anderson", 2014, 2016);
 
     players_["Manu Ginobili"].serve("Spurs", 2002, 2018)
-                             .like("Tim Duncan", 90);
+                             .like("Tim Duncan", 90)
+                             .teammate("Tim Duncan", 2002, 2016)
+                             .teammate("Tony Parker", 2002, 2016);
 
     players_["LaMarcus Aldridge"].serve("Trail Blazers", 2006, 2015)
                                  .serve("Spurs", 2015, 2019)
@@ -915,6 +948,57 @@ AssertionResult TraverseTestBase::prepareData() {
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `like' failed: "
                                << static_cast<int32_t>(code);
+        }
+    }
+
+    {
+        // Insert edges `teammate'
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query += "INSERT EDGE teammate(start_year, end_year) VALUES ";
+        for (auto &player : players_) {
+            for (auto &tm : player.teammates()) {
+                auto &other = std::get<0>(tm);
+                auto startYear = std::get<1>(tm);
+                auto endYear = std::get<2>(tm);
+                query += std::to_string(player.vid()) + " -> ";
+                query += std::to_string(players_[other].vid()) + ": (";
+                query += std::to_string(startYear) + ", ";
+                query += std::to_string(endYear) + "),\n\t";
+            }
+        }
+        query.resize(query.size() - 3);
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert `teammate' failed: " << static_cast<int32_t>(code);
+        }
+    }
+    {
+        // Insert edges `teammate' with uuid
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query += "INSERT EDGE teammate(start_year, end_year) VALUES ";
+        for (auto &player : players_) {
+            for (auto &tm : player.teammates()) {
+                auto &other = std::get<0>(tm);
+                auto startYear = std::get<1>(tm);
+                auto endYear = std::get<2>(tm);
+                query += "uuid(\"";
+                query += player.name();
+                query += "\") -> uuid(\"";
+                query += players_[other].name();
+                query += "\"): (";
+                query += std::to_string(startYear) + ", ";
+                query += std::to_string(endYear);
+                query += "),\n\t";
+            }
+        }
+        query.resize(query.size() - 3);
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert `teammate' failed: " << static_cast<int32_t>(code);
         }
     }
     return TestOK();
