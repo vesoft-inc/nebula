@@ -17,14 +17,15 @@ cpp2::ErrorCode ScanIndexBaseProcessor<REQ, RESP>::buildIndexHint() {
     // TODO(sky) : Currently only supported :
     //             1) Range query for the first column
     //             2) Equivalent query for all columns
-    if (isRangeScan_) {
-        if (hints_.size() != 1) {
+    if (hint_.is_range) {
+        if (hint_.hint_items.size() != 1) {
             return cpp2::ErrorCode::E_INVALID_INDEX_HINT;
         }
-        range_ = std::make_pair(hints_[0].get_first_str(), hints_[0].get_second_str());
+        range_ = std::make_pair(hint_.hint_items[0].get_first_str(),
+                                hint_.hint_items[0].get_second_str());
     } else {
         prefix_.reserve(128);
-        for (auto& hint : hints_) {
+        for (auto& hint : hint_.hint_items) {
                 prefix_.append(hint.get_first_str());
         }
     }
@@ -178,7 +179,7 @@ bool ScanIndexBaseProcessor<REQ, RESP>::checkDataValidity(bool isEdge,
                                                           const folly::StringPiece& key) {
     auto offset = (isEdge) ? key.size() - sizeof(VertexID) * 2 - sizeof(EdgeRanking) - vlColNum_ :
                              key.size() - sizeof(VertexID) - vlColNum_ * sizeof(int32_t);
-    for (auto & col : hints_) {
+    for (auto & col : hint_.hint_items) {
         if (col.type == nebula::cpp2::SupportedType::STRING) {
             auto len = static_cast<size_t >
                        (*reinterpret_cast<const int32_t *>(key.begin() + offset));

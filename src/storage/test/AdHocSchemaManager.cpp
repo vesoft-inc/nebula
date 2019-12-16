@@ -171,6 +171,5 @@ StatusOr<std::string> AdHocSchemaManager::toEdgeName(GraphSpaceID space, EdgeTyp
     }
     return "";
 }
-
 }  // namespace storage
 }  // namespace nebula

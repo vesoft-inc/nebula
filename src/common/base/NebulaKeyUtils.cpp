@@ -8,8 +8,6 @@
 
 namespace nebula {
 
-const std::string kIndexPrefix = "_i_";           // NOLINT
-
 // static
 std::string NebulaKeyUtils::vertexKey(PartitionID partId, VertexID vId,
                                       TagID tagId, TagVersion tv) {
@@ -142,12 +140,6 @@ std::string NebulaKeyUtils::indexPrefix(PartitionID partId, IndexID indexId) {
 }
 
 // static
-VertexID NebulaKeyUtils::getVertexID(folly::StringPiece rawKey) {
-    auto offset = rawKey.size() - sizeof(VertexID);
-    return *reinterpret_cast<const VertexID*>(rawKey.data() + offset);
-}
-
-// static
 std::string NebulaKeyUtils::vertexPrefix(PartitionID partId, VertexID vId, TagID tagId) {
     tagId &= kTagMaskSet;
     PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kData);
@@ -233,6 +225,26 @@ std::string NebulaKeyUtils::edgePrefix(PartitionID partId,
             .append(reinterpret_cast<const char*>(&dstId), sizeof(VertexID));
     return key;
 }
+
+// static
+std::string NebulaKeyUtils::prefix(PartitionID partId) {
+    PartitionID item = (partId << 8) | static_cast<uint32_t>(NebulaKeyType::kData);
+    std::string key;
+    key.reserve(sizeof(PartitionID));
+    key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID));
+    return key;
+}
+
+// static
+std::string NebulaKeyUtils::vertexPrefix(PartitionID partId, VertexID vId) {
+    PartitionID item = (partId << 8) | static_cast<uint32_t>(NebulaKeyType::kData);
+    std::string key;
+    key.reserve(sizeof(PartitionID) + sizeof(VertexID));
+    key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID))
+       .append(reinterpret_cast<const char*>(&vId), sizeof(VertexID));
+    return key;
+}
+
 // static
 std::string NebulaKeyUtils::edgePrefix(PartitionID partId, VertexID vId) {
     PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kData);
@@ -268,13 +280,6 @@ std::string NebulaKeyUtils::prefix(PartitionID partId, VertexID src, EdgeType ty
        .append(reinterpret_cast<const char*>(&dst), sizeof(VertexID));
     return key;
 }
-
-// static
-folly::StringPiece NebulaKeyUtils::indexVal(size_t begin, size_t end,
-                                            const folly::StringPiece& rawKey) {
-    auto pos = sizeof(PartitionID) + kIndexPrefix.size() + sizeof(IndexID);
-        return rawKey.subpiece(begin + pos, end);
-    }
 
 }  // namespace nebula
 
