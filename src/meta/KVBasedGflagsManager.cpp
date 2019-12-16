@@ -29,8 +29,9 @@ Status KVBasedGflagsManager::init() {
 
 folly::Future<StatusOr<bool>>
 KVBasedGflagsManager::setConfig(const cpp2::ConfigModule& module, const std::string& name,
-                                const cpp2::ConfigType& type, const VariantType &value) {
-    UNUSED(module); UNUSED(name); UNUSED(type); UNUSED(value);
+                                const cpp2::ConfigType& type, const VariantType &value,
+                                const bool isForce) {
+    UNUSED(module); UNUSED(name); UNUSED(type); UNUSED(value); UNUSED(isForce);
     LOG(FATAL) << "Unimplement!";
     return Status::NotSupported();
 }
