@@ -17,39 +17,50 @@
   </a>
 </p>
 
-# Nebula Graph
+# Nebula Graph是什么？
 
-**Nebula Graph** 的目标是为超大规模图数据提供高并发，低延时的读、写及计算。**Nebula Graph** 是一个开源项目，我们期待与社区合作共同推广图数据库。
+**Nebula Graph** 是一款开源的图数据库，擅长处理千亿个顶点和万亿条边的超大规模数据集。
 
-**Nebula Graph** 的主要特点：
+与其他图数据库产品相比，**Nebula Graph** 具有如下优势：
 
 * 全对称分布式架构
-* 可扩展
-* 高可用
-* 数据强一致
+* 存储与计算分离
+* 水平可扩展性
+* RAFT 协议下的数据强一致
 * 类 SQL 查询语言
 * 用户鉴权
-* 支持多存储后端
 
-## 获取 Nebula Graph
+## 产品路线图
 
-除编译源代码外，也可使用 [Nebula Graph 镜像](https://hub.docker.com/r/vesoft/nebula-graph) 进行试用。
-更多详情参见 [Get Started](docs/manual-CN/1.overview/2.quick-start/1.get-started.md)。您也可以在这里访问 [详细文档](docs/manual-CN/README.md)。
+**Nebula Graph** 产品规划路线图请参见 [roadmap](https://github.com/vesoft-inc/nebula/wiki#roadmap)。
 
-## 使用 Nebula Graph
+## 快速使用
 
-请查看[手册](docs/README.md)或下载 [pdf](https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/doc/manual-en-1204.pdf)。
+请查看[快速使用手册](docs/manual-CN/1.overview/2.quick-start/1.get-started.md)，开始使用 **Nebula Graph**。
 
-您也可以观看[视频](https://space.bilibili.com/472621355)开始学习 **Nebula Graph**。
+在开始使用 **Nebula Graph** 之前，必须通过[编译源码](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code.md)或者 [docker compose](https://github.com/vesoft-inc/nebula-docker-compose) 方式安装 **Nebula Graph**。您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **Nebula Graph**。
 
-## 参与 Nebula Graph
+## 获取帮助
 
-**Nebula Graph** 是一个完全开源的项目，欢迎开源爱好者参与 **Nebula Graph** 社区，目前有以下贡献方式：
+在使用 **Nebula Graph** 过程中遇到任何问题，都可以通过下面的方式寻求帮助：
+* [知乎](https://www.zhihu.com/org/nebulagraph/activities)
+* [SegmentFault](https://segmentfault.com/t/nebula)
 
-* 试用 **Nebula Graph** 并给出反馈
-* 提交功能需求或者 issue
+## 文档
+
+* [简体中文](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-CN/README.md)
+* [English](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/README.md)
+
+## Nebula Graph 产品架构图
+
+![image](https://github.com/vesoft-inc/nebula-docs/raw/master/images/Nebula%20Arch.png)
+
+## 如何贡献
+
+**Nebula Graph** 是一个完全开源的项目，欢迎开源爱好者通过以下方式参与到 **Nebula Graph** 社区：
+* 从标记为 [good first issues](https://github.com/vesoft-inc/nebula/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) 的问题入手
 * 贡献代码，详情请参见 [如何贡献](docs/manual-CN/4.contributions/how-to-contribute.md)
-* 帮助我们完善文档，详情参见 [贡献文档](docs/manual-CN/4.contributions/contribute-to-documentation.md)
+* 直接在GitHub上提 [Issue](https://github.com/vesoft-inc/nebula/issues)
 
 ## 许可证
 
@@ -59,9 +70,7 @@
 
 ## 联系方式
 
-* 使用 [GitHub issue tracker](https://github.com/vesoft-inc/nebula/issues) 提交 issue 或功能需求。
 * 访问官网 [Home Page](http://nebula-graph.io/)。
 * [![WeiXin](https://img.shields.io/badge/WeChat-%E5%BE%AE%E4%BF%A1-brightgreen)](https://user-images.githubusercontent.com/38887077/67449282-4362b300-f64c-11e9-878f-7efc373e5e55.jpg)
-[![Zhihu](https://img.shields.io/badge/Zhihu-%E7%9F%A5%E4%B9%8E-blue)](https://www.zhihu.com/org/nebulagraph/activities)
-[![SegmentFault](https://img.shields.io/badge/SegmentFault-%E6%80%9D%E5%90%A6-green)](https://segmentfault.com/t/nebula)
-[![Sina Weibo](https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red)](https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place)
+* [![Sina Weibo](https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red)](https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place)
+* email: info@vesoft.com
