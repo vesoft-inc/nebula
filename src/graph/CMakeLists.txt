@@ -14,16 +14,24 @@ nebula_add_library(
     GoExecutor.cpp
     PipeExecutor.cpp
     CreateEdgeExecutor.cpp
-    CreateTagExecutor.cpp
     AlterEdgeExecutor.cpp
+    DescribeEdgeExecutor.cpp
+    CreateTagExecutor.cpp
     AlterTagExecutor.cpp
     DropTagExecutor.cpp
     DropEdgeExecutor.cpp
     DescribeTagExecutor.cpp
-    DescribeEdgeExecutor.cpp
     InsertVertexExecutor.cpp
     UpdateVertexExecutor.cpp
     InsertEdgeExecutor.cpp
+    CreateEdgeIndexExecutor.cpp
+    DropEdgeIndexExecutor.cpp
+    DescribeEdgeIndexExecutor.cpp
+    BuildEdgeIndexExecutor.cpp
+    CreateTagIndexExecutor.cpp
+    DropTagIndexExecutor.cpp
+    DescribeTagIndexExecutor.cpp
+    BuildTagIndexExecutor.cpp
     UpdateEdgeExecutor.cpp
     AssignmentExecutor.cpp
     InterimResult.cpp

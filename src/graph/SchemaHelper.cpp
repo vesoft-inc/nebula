@@ -49,24 +49,21 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
             switch (spec->type()) {
                 case nebula::ColumnType::BOOL:
                     v.set_bool_value(spec->getBoolValue());
-                    column.set_default_value(std::move(v));
                     break;
                 case nebula::ColumnType::INT:
                     v.set_int_value(spec->getIntValue());
-                    column.set_default_value(std::move(v));
                     break;
                 case nebula::ColumnType::DOUBLE:
                     v.set_double_value(spec->getDoubleValue());
-                    column.set_default_value(std::move(v));
                     break;
                 case nebula::ColumnType::STRING:
                     v.set_string_value(spec->getStringValue());
-                    column.set_default_value(std::move(v));
                     break;
                 default:
                     LOG(ERROR) << "Unsupport Type";
                     return Status::Error("Unsupport Type");
             }
+            column.set_default_value(std::move(v));
         }
         schema.columns.emplace_back(std::move(column));
     }

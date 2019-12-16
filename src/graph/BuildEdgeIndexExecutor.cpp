@@ -1,42 +1,25 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "graph/CreateEdgeExecutor.h"
-#include "dataman/ResultSchemaProvider.h"
-#include "graph/SchemaHelper.h"
+#include "graph/BuildEdgeIndexExecutor.h"
 
 namespace nebula {
 namespace graph {
 
-CreateEdgeExecutor::CreateEdgeExecutor(Sentence *sentence,
-                                       ExecutionContext *ectx) : Executor(ectx) {
-    sentence_ = static_cast<CreateEdgeSentence*>(sentence);
+BuildEdgeIndexExecutor::BuildEdgeIndexExecutor(Sentence *sentence,
+                                               ExecutionContext *ectx) : Executor(ectx) {
+    sentence_ = static_cast<BuildEdgeIndexSentence*>(sentence);
 }
 
-
-Status CreateEdgeExecutor::prepare() {
+Status BuildEdgeIndexExecutor::prepare() {
     return Status::OK();
 }
 
-
-Status CreateEdgeExecutor::getSchema() {
+void BuildEdgeIndexExecutor::execute() {
     auto status = checkIfGraphSpaceChosen();
-    if (!status.ok()) {
-        return status;
-    }
-
-    const auto& specs = sentence_->columnSpecs();
-    const auto& schemaProps = sentence_->getSchemaProps();
-    return SchemaHelper::createSchema(specs, schemaProps, schema_);
-}
-
-
-void CreateEdgeExecutor::execute() {
-    auto status = getSchema();
     if (!status.ok()) {
         DCHECK(onError_);
         onError_(std::move(status));
@@ -44,10 +27,10 @@ void CreateEdgeExecutor::execute() {
     }
 
     auto *mc = ectx()->getMetaClient();
-    auto *name = sentence_->name();
+    auto *name = sentence_->indexName();
     auto spaceId = ectx()->rctx()->session()->space();
 
-    auto future = mc->createEdgeSchema(spaceId, *name, schema_, sentence_->isIfNotExist());
+    auto future = mc->rebuildEdgeIndex(spaceId, *name);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {

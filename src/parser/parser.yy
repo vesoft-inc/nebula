@@ -99,20 +99,20 @@ class GraphScanner;
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
-%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PARTS KW_TIMESTAMP KW_ADD
-%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_UUID
+%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD KW_INDEX KW_INDEXES
+%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_BUILD KW_PARTS 
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
-%token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
-%token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
-%token KW_CONFIGS KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE KW_FORCE
-%token KW_TTL_DURATION KW_TTL_COL KW_DEFAULT
-%token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET KW_GROUP
 %token KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN KW_STD KW_BIT_AND KW_BIT_OR KW_BIT_XOR
+%token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
+%token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
+%token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
+%token KW_TTL KW_TTL_DURATION KW_TTL_COL KW_DATA KW_STOP
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
+%token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET KW_GROUP
 %token KW_DISTINCT KW_ALL KW_OF
-%token KW_BALANCE KW_LEADER KW_DATA KW_STOP
+%token KW_BALANCE KW_LEADER
 %token KW_SHORTEST KW_PATH
-%token KW_IS KW_NULL
+%token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS
 
 /* symbols */
@@ -198,20 +198,26 @@ class GraphScanner;
 %type <sentence> go_sentence match_sentence use_sentence find_sentence find_path_sentence
 %type <sentence> order_by_sentence limit_sentence group_by_sentence
 %type <sentence> fetch_vertices_sentence fetch_edges_sentence
+
 %type <sentence> create_tag_sentence create_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
-%type <sentence> describe_tag_sentence describe_edge_sentence
 %type <sentence> drop_tag_sentence drop_edge_sentence
+%type <sentence> describe_tag_sentence describe_edge_sentence
+
+%type <sentence> create_tag_index_sentence create_edge_index_sentence
+%type <sentence> drop_tag_index_sentence drop_edge_index_sentence
+%type <sentence> describe_tag_index_sentence describe_edge_index_sentence
+%type <sentence> build_tag_index_sentence build_edge_index_sentence
+
 %type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence fetch_sentence
 %type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
-%type <sentence> ingest_sentence
 %type <sentence> show_sentence create_space_sentence describe_space_sentence
 %type <sentence> drop_space_sentence
 %type <sentence> yield_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
 %type <sentence> grant_sentence revoke_sentence
-%type <sentence> download_sentence
+%type <sentence> download_sentence ingest_sentence
 %type <sentence> set_config_sentence get_config_sentence balance_sentence
 %type <sentence> process_control_sentence return_sentence
 %type <sentence> create_snapshot_sentence drop_snapshot_sentence
@@ -1115,6 +1121,60 @@ drop_edge_sentence
     }
     ;
 
+create_tag_index_sentence
+    : KW_CREATE KW_TAG KW_INDEX opt_if_not_exists name_label KW_ON name_label L_PAREN column_name_list R_PAREN {
+        $$ = new CreateTagIndexSentence($5, $7, $9, $4);
+    }
+    ;
+
+create_edge_index_sentence
+    : KW_CREATE KW_EDGE KW_INDEX opt_if_not_exists name_label KW_ON name_label L_PAREN column_name_list R_PAREN {
+        $$ = new CreateEdgeIndexSentence($5, $7, $9, $4);
+    }
+    ;
+
+drop_tag_index_sentence
+    : KW_DROP KW_TAG KW_INDEX name_label {
+        $$ = new DropTagIndexSentence($4);
+    }
+    ;
+
+drop_edge_index_sentence
+    : KW_DROP KW_EDGE KW_INDEX name_label {
+        $$ = new DropEdgeIndexSentence($4);
+    }
+    ;
+
+describe_tag_index_sentence
+    : KW_DESCRIBE KW_TAG KW_INDEX name_label {
+        $$ = new DescribeTagIndexSentence($4);
+    }
+    | KW_DESC KW_TAG KW_INDEX name_label {
+        $$ = new DescribeTagIndexSentence($4);
+    }
+    ;
+
+describe_edge_index_sentence
+    : KW_DESCRIBE KW_EDGE KW_INDEX name_label {
+        $$ = new DescribeEdgeIndexSentence($4);
+    }
+    | KW_DESC KW_EDGE KW_INDEX name_label {
+        $$ = new DescribeEdgeIndexSentence($4);
+    }
+    ;
+
+build_tag_index_sentence
+    : KW_BUILD KW_TAG KW_INDEX name_label {
+        $$ = new BuildTagIndexSentence($4);
+    }
+    ;
+
+build_edge_index_sentence
+    : KW_BUILD KW_EDGE KW_INDEX name_label {
+        $$ = new BuildEdgeIndexSentence($4);
+    }
+    ;
+
 traverse_sentence
     : L_PAREN piped_sentence R_PAREN { $$ = $2; }
     | L_PAREN set_sentence R_PAREN { $$ = $2; }
@@ -1444,6 +1504,12 @@ show_sentence
     | KW_SHOW KW_EDGES {
          $$ = new ShowSentence(ShowSentence::ShowType::kShowEdges);
     }
+    | KW_SHOW KW_TAG KW_INDEXES {
+         $$ = new ShowSentence(ShowSentence::ShowType::kShowTagIndexes);
+    }
+    | KW_SHOW KW_EDGE KW_INDEXES {
+         $$ = new ShowSentence(ShowSentence::ShowType::kShowEdgeIndexes);
+    }
     | KW_SHOW KW_USERS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowUsers);
     }
@@ -1462,8 +1528,14 @@ show_sentence
     | KW_SHOW KW_CREATE KW_TAG name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateTag, $4);
     }
+    | KW_SHOW KW_CREATE KW_TAG KW_INDEX name_label {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateTagIndex, $5);
+    }
     | KW_SHOW KW_CREATE KW_EDGE name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateEdge, $4);
+    }
+    | KW_SHOW KW_CREATE KW_EDGE KW_INDEX name_label {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateEdgeIndex, $5);
     }
     | KW_SHOW KW_SNAPSHOTS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowSnapshots);
@@ -1510,7 +1582,7 @@ show_config_item
     ;
 
 create_space_sentence
-    : KW_CREATE KW_SPACE opt_if_not_exists  name_label{
+    : KW_CREATE KW_SPACE opt_if_not_exists name_label {
         auto sentence = new CreateSpaceSentence($4, $3);
         $$ = sentence;
     }
@@ -1764,6 +1836,14 @@ maintain_sentence
     | describe_edge_sentence { $$ = $1; }
     | drop_tag_sentence { $$ = $1; }
     | drop_edge_sentence { $$ = $1; }
+    | create_tag_index_sentence { $$ = $1; }
+    | create_edge_index_sentence { $$ = $1; }
+    | drop_tag_index_sentence { $$ = $1; }
+    | drop_edge_index_sentence { $$ = $1; }
+    | describe_tag_index_sentence { $$ = $1; }
+    | describe_edge_index_sentence { $$ = $1; }
+    | build_tag_index_sentence { $$ = $1; }
+    | build_edge_index_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
     | create_space_sentence { $$ = $1; }
     | describe_space_sentence { $$ = $1; }

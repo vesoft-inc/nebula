@@ -21,6 +21,14 @@
 #include "graph/DropEdgeExecutor.h"
 #include "graph/DescribeTagExecutor.h"
 #include "graph/DescribeEdgeExecutor.h"
+#include "graph/CreateTagIndexExecutor.h"
+#include "graph/CreateEdgeIndexExecutor.h"
+#include "graph/DropTagIndexExecutor.h"
+#include "graph/DropEdgeIndexExecutor.h"
+#include "graph/DescribeTagIndexExecutor.h"
+#include "graph/DescribeEdgeIndexExecutor.h"
+#include "graph/BuildTagIndexExecutor.h"
+#include "graph/BuildEdgeIndexExecutor.h"
 #include "graph/InsertVertexExecutor.h"
 #include "graph/InsertEdgeExecutor.h"
 #include "graph/AssignmentExecutor.h"
@@ -90,6 +98,30 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
              break;
         case Sentence::Kind::kDropEdge:
              executor = std::make_unique<DropEdgeExecutor>(sentence, ectx());
+             break;
+        case Sentence::Kind::kCreateTagIndex:
+            executor = std::make_unique<CreateTagIndexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kCreateEdgeIndex:
+            executor = std::make_unique<CreateEdgeIndexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDescribeTagIndex:
+            executor = std::make_unique<DescribeTagIndexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDescribeEdgeIndex:
+            executor = std::make_unique<DescribeEdgeIndexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDropTagIndex:
+             executor = std::make_unique<DropTagIndexExecutor>(sentence, ectx());
+             break;
+        case Sentence::Kind::kDropEdgeIndex:
+             executor = std::make_unique<DropEdgeIndexExecutor>(sentence, ectx());
+             break;
+        case Sentence::Kind::kBuildTagIndex:
+             executor = std::make_unique<BuildTagIndexExecutor>(sentence, ectx());
+             break;
+        case Sentence::Kind::kBuildEdgeIndex:
+             executor = std::make_unique<BuildEdgeIndexExecutor>(sentence, ectx());
              break;
         case Sentence::Kind::kInsertVertex:
             executor = std::make_unique<InsertVertexExecutor>(sentence, ectx());

@@ -26,12 +26,16 @@ public:
         kShowParts,
         kShowTags,
         kShowEdges,
+        kShowTagIndexes,
+        kShowEdgeIndexes,
         kShowUsers,
         kShowUser,
         kShowRoles,
         kShowCreateSpace,
         kShowCreateTag,
         kShowCreateEdge,
+        kShowCreateTagIndex,
+        kShowCreateEdgeIndex,
         kShowSnapshots
     };
 
