@@ -160,5 +160,14 @@ StatusOr<EdgeType> AdHocSchemaManager::toEdgeType(GraphSpaceID space, folly::Str
     return -1;
 }
 
+StatusOr<std::string> AdHocSchemaManager::toEdgeName(GraphSpaceID space, EdgeType edgeType) {
+    UNUSED(space);
+    try {
+        return folly::to<std::string>(edgeType);
+    } catch (const std::exception& e) {
+        LOG(FATAL) << e.what();
+    }
+    return "";
+}
 }  // namespace storage
 }  // namespace nebula
