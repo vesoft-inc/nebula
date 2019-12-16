@@ -382,8 +382,9 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
 // The raw data can be transformed to multiple specified foramt (various user-defined metric format)
 // E.G.
 // {
-//     "Gauges": [...],
-//     "Histograms:" [...],
+//     "name": "meta",
+//     "gauges": [...],
+//     "histograms:" [...],
 // }
 // Gauge
 // {
@@ -400,8 +401,8 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
 // }
 //
 /*static*/ std::string StatsManager::toJson() {
-    constexpr char kGauges[] = "Gauges";
-    constexpr char kHistograms[] = "Histograms";
+    constexpr char kGauges[] = "gauges";
+    constexpr char kHistograms[] = "histograms";
     auto& sm = get();
     folly::dynamic obj = folly::dynamic::object(kGauges, folly::dynamic::array())
         (kHistograms, folly::dynamic::array());
