@@ -104,6 +104,8 @@ void ShowExecutor::showHosts() {
             return a.get_status() < b.get_status();
         });
 
+        std::unordered_map<std::string, int32_t> allPartsCount;
+        std::unordered_map<std::string, int32_t> leaderPartsCount;
         for (auto& item : hostItems) {
             std::vector<cpp2::ColumnValue> row;
             row.resize(6);
@@ -126,6 +128,7 @@ void ShowExecutor::showHosts() {
                 leaderCount += spaceEntry.second.size();
                 leaders += spaceEntry.first + ": " +
                            folly::to<std::string>(spaceEntry.second.size()) + ", ";
+                leaderPartsCount[spaceEntry.first] += spaceEntry.second.size();
             }
             if (!leaders.empty()) {
                 leaders.resize(leaders.size() - 2);
@@ -137,6 +140,7 @@ void ShowExecutor::showHosts() {
             for (auto& spaceEntry : item.get_all_parts()) {
                 parts += spaceEntry.first + ": " +
                          folly::to<std::string>(spaceEntry.second.size()) + ", ";
+                allPartsCount[spaceEntry.first] += spaceEntry.second.size();
             }
             if (!parts.empty()) {
                 parts.resize(parts.size() - 2);
@@ -145,6 +149,45 @@ void ShowExecutor::showHosts() {
                 leaders = kNoValidPart;
                 parts = kNoValidPart;
             }
+            row[4].set_str(leaders);
+            row[5].set_str(parts);
+
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+        {
+            // set sum of leader/partitions of all hosts
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(6);
+
+            int32_t leaderCount = 0;
+            std::string leaders;
+            for (const auto& spaceEntry : leaderPartsCount) {
+                leaders += spaceEntry.first + ": " +
+                           folly::to<std::string>(spaceEntry.second) + ", ";
+                leaderCount += spaceEntry.second;
+            }
+            if (!leaders.empty()) {
+                leaders.resize(leaders.size() - 2);
+            } else {
+                leaders = "0";
+            }
+
+            std::string parts;
+            for (const auto& spaceEntry : allPartsCount) {
+                parts += spaceEntry.first + ": " +
+                         folly::to<std::string>(spaceEntry.second) + ", ";
+            }
+            if (!parts.empty()) {
+                parts.resize(parts.size() - 2);
+            } else {
+                parts = "0";
+            }
+
+            row[0].set_str("Total");
+            row[1].set_str("");
+            row[2].set_str("");
+            row[3].set_integer(leaderCount);
             row[4].set_str(leaders);
             row[5].set_str(parts);
 
@@ -211,7 +254,7 @@ void ShowExecutor::showSpaces() {
 
 void ShowExecutor::showParts() {
     auto spaceId = ectx()->rctx()->session()->space();
-    auto future = ectx()->getMetaClient()->listParts(spaceId);
+    auto future = ectx()->getMetaClient()->listParts(spaceId, sentence_->getId());
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {

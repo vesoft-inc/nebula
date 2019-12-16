@@ -14,7 +14,20 @@ namespace meta {
 void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
     spaceId_ = req.get_space_id();
     std::unordered_map<PartitionID, std::vector<nebula::cpp2::HostAddr>> partHostsMap;
-    {
+
+    if (req.__isset.part_id) {
+        partId_ = *req.get_part_id();
+        auto partKey = MetaServiceUtils::partKey(spaceId_, partId_);
+        folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+        std::string value;
+        auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, partKey, &value);
+        if (retCode == kvstore::ResultCode::SUCCEEDED) {
+            partHostsMap[partId_] = MetaServiceUtils::parsePartVal(value);
+        } else {
+            onFinished();
+            return;
+        }
+    } else {
         folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
         auto status = getAllParts();
         if (!status.ok()) {
@@ -98,7 +111,8 @@ void ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& partItems) {
                     });
                 if (it != partItems.end()) {
                     it->set_leader(this->toThriftHost(leader));
-                } else {
+                } else if (partId_ == 0) {
+                    // if partId_ is 0, which means the command is "show parts"
                     LOG(ERROR) << "Maybe not get the leader of partition " << partId;
                 }
             }

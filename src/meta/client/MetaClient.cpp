@@ -629,9 +629,15 @@ folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts() {
 }
 
 folly::Future<StatusOr<std::vector<cpp2::PartItem>>>
-MetaClient::listParts(GraphSpaceID spaceId) {
+MetaClient::listParts(GraphSpaceID spaceId, PartitionID partId) {
+    if (partId < 0) {
+        return Status::Error("Invalid partId");
+    }
     cpp2::ListPartsReq req;
     req.set_space_id(std::move(spaceId));
+    if (partId) {
+        req.set_part_id(partId);
+    }
     folly::Promise<StatusOr<std::vector<cpp2::PartItem>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {

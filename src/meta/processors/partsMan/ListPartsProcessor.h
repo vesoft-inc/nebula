@@ -37,6 +37,7 @@ private:
 private:
     AdminClient*                                        adminClient_;
     GraphSpaceID                                        spaceId_;
+    PartitionID                                         partId_{0};
 };
 
 }  // namespace meta

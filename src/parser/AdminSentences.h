@@ -40,6 +40,12 @@ public:
         showType_ = std::move(sType);
     }
 
+    ShowSentence(ShowType sType, int64_t id) {
+        kind_ = Kind::kShow;
+        id_ = id;
+        showType_ = std::move(sType);
+    }
+
     ShowSentence(ShowType sType, std::string *name) {
         kind_ = Kind::kShow;
         name_.reset(name);
@@ -52,12 +58,17 @@ public:
         return showType_;
     }
 
+    int64_t getId() {
+        return id_;
+    }
+
     std::string* getName() {
         return name_.get();
     }
 
 private:
     ShowType                        showType_{ShowType::kUnknown};
+    int64_t                         id_{0};
     std::unique_ptr<std::string>    name_;
 };
 

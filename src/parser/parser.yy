@@ -1438,6 +1438,9 @@ show_sentence
     | KW_SHOW KW_PARTS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowParts);
     }
+    | KW_SHOW KW_PARTS INTEGER {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowParts, $3);
+    }
     | KW_SHOW KW_TAGS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowTags);
     }
