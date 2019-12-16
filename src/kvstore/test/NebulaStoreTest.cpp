@@ -13,6 +13,7 @@
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/RocksEngine.h"
+#include "kvstore/LogEncoder.h"
 #include "network/NetworkUtils.h"
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
@@ -829,6 +830,100 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
     }
 }
 
+TEST(NebulaStoreTest, AtomicOpBatchTest) {
+    auto partMan = std::make_unique<MemPartManager>();
+    auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+    // space id : 1 , part id : 0
+    partMan->partsMap_[1][0] = PartMeta();
+
+    VLOG(1) << "Total space num is " << partMan->partsMap_.size()
+            << ", total local partitions num is "
+            << partMan->parts(HostAddr(0, 0)).size();
+
+    fs::TempDir rootPath("/tmp/nebula_store_test.XXXXXX");
+    std::vector<std::string> paths;
+    paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath.path()));
+
+    KVOptions options;
+    options.dataPaths_ = std::move(paths);
+    options.partMan_ = std::move(partMan);
+    HostAddr local = {0, 0};
+    auto store = std::make_unique<NebulaStore>(std::move(options),
+                                               ioThreadPool,
+                                               local,
+                                               getHandlers());
+    store->init();
+    sleep(FLAGS_raft_heartbeat_interval_secs);
+    // put kv
+    {
+        std::vector<std::pair<std::string, std::string>> expected, result;
+        auto atomic = [&]() -> std::string {
+            std::unique_ptr<kvstore::BatchHolder> batchHolder =
+                    std::make_unique<kvstore::BatchHolder>();
+            for (auto i = 0; i < 20; i++) {
+                auto key = folly::stringPrintf("key_%d", i);
+                auto val = folly::stringPrintf("val_%d", i);
+                batchHolder->put(key.data(), val.data());
+                expected.emplace_back(std::move(key), std::move(val));
+            }
+            return encodeBatchValue(batchHolder->getBatch());
+        };
+
+        folly::Baton<true, std::atomic> baton;
+        auto callback = [&] (ResultCode code) {
+            EXPECT_EQ(ResultCode::SUCCEEDED, code);
+            baton.post();
+        };
+        store->asyncAtomicOp(1, 0, atomic, callback);
+        baton.wait();
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = store->prefix(1, 0, "key", &iter);
+        EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+        while (iter->valid()) {
+            result.emplace_back(iter->key(), iter->val());
+            iter->next();
+        }
+        std::sort(expected.begin(), expected.end());
+        EXPECT_EQ(expected, result);
+    }
+    // put and remove
+    {
+        std::vector<std::pair<std::string, std::string>> expected, result;
+        auto atomic = [&]() -> std::string {
+            std::unique_ptr<kvstore::BatchHolder> batchHolder =
+                    std::make_unique<kvstore::BatchHolder>();
+            for (auto i = 0; i < 20; i++) {
+                auto key = folly::stringPrintf("key_%d", i);
+                auto val = folly::stringPrintf("val_%d", i);
+                batchHolder->put(key.data(), val.data());
+                if (i%5 != 0) {
+                    expected.emplace_back(std::move(key), std::move(val));
+                }
+            }
+            for (auto i = 0; i < 20; i = i + 5) {
+                batchHolder->remove(folly::stringPrintf("key_%d", i));
+            }
+            return encodeBatchValue(batchHolder->getBatch());
+        };
+
+        folly::Baton<true, std::atomic> baton;
+        auto callback = [&] (ResultCode code) {
+            EXPECT_EQ(ResultCode::SUCCEEDED, code);
+            baton.post();
+        };
+        store->asyncAtomicOp(1, 0, atomic, callback);
+        baton.wait();
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = store->prefix(1, 0, "key", &iter);
+        EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+        while (iter->valid()) {
+            result.emplace_back(iter->key(), iter->val());
+            iter->next();
+        }
+        std::sort(expected.begin(), expected.end());
+        EXPECT_EQ(expected, result);
+    }
+}
 }  // namespace kvstore
 }  // namespace nebula
 

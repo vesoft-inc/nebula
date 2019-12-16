@@ -117,6 +117,7 @@ protected:
     std::unordered_map<EdgeType, std::vector<PropContext>> edgeContexts_;
     folly::Executor* executor_ = nullptr;
     VertexCache* vertexCache_ = nullptr;
+    std::unordered_map<std::string, EdgeType> edgeMap_;
 };
 
 }  // namespace storage
