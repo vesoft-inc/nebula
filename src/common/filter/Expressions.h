@@ -961,16 +961,8 @@ public:
         right_.reset(expr);
     }
 
-    bool isAnd() {
-        return op_ == AND;
-    }
-
-    bool isOr() {
-        return op_ == OR;
-    }
-
-    bool isXor() {
-        return op_ == XOR;
+    const Operator op() const {
+        return op_;
     }
 
     const Expression* left() const {

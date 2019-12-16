@@ -111,17 +111,14 @@ public:
 private:
     Status encode();
 
-    Status rewrite();
-
-    bool rewriteOr(LogicalExpression *expr) const;
-
-    bool rewriteAnd(LogicalExpression *expr) const;
+    bool rewrite(Expression *expr) const;
 
     bool canPushdown(Expression *expr) const;
 
 private:
     friend class TraverseExecutor;
     friend class GoExecutor;
+    friend class GoTest_FilterPushdown_Test;
     const WhereClause              *where_{nullptr};
     std::unique_ptr<Expression>     filterRewrite_;
     Expression                     *filter_{nullptr};

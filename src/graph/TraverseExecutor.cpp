@@ -299,105 +299,96 @@ Status WhereWrapper::prepare(ExpressionContext *ectx) {
         }
     }
 
-    status = rewrite();
-    if (!status.ok()) {
-        return status;
-    }
-    if (filterRewrite_ != nullptr) {
-        filterPushdown_ = Expression::encode(filterRewrite_.get());
-    }
-    return status;
-}
-
-Status WhereWrapper::rewrite() {
     auto encode = Expression::encode(where_->filter());
     auto decode = Expression::decode(std::move(encode));
     if (!decode.ok()) {
         return std::move(decode).status();
     }
     filterRewrite_ = std::move(decode).value();
-    if (filterRewrite_->isLogicalExpression()) {
-        auto *expr = static_cast<LogicalExpression*>(filterRewrite_.get());
-        if ((expr->isOr() && !rewriteOr(expr))
-            || (expr->isAnd() && !rewriteAnd(expr))) {
-            filterRewrite_ = nullptr;
-            return Status::OK();
-        }
-    }
-    if (!canPushdown(filterRewrite_.get())) {
+    if (!rewrite(filterRewrite_.get())) {
         filterRewrite_ = nullptr;
     }
-
-    return Status::OK();
+    if (filterRewrite_ != nullptr) {
+        VLOG(1) << "Filter pushdown: " << filterRewrite_->toString();
+        filterPushdown_ = Expression::encode(filterRewrite_.get());
+    }
+    return status;
 }
 
-bool WhereWrapper::rewriteOr(LogicalExpression *filter) const {
-    auto left = filter->left();
-    if (left->isLogicalExpression()) {
-        auto leftFilter = static_cast<LogicalExpression*>(
-                            const_cast<Expression*>(left));
-        if ((leftFilter->isOr() && !rewriteOr(leftFilter))
-            || (leftFilter->isAnd() && !rewriteAnd(leftFilter))) {
+bool WhereWrapper::rewrite(Expression *expr) const {
+    switch (expr->kind()) {
+        case Expression::kLogical: {
+            auto *logExpr = static_cast<LogicalExpression*>(expr);
+            // Rewrite rule will not be applied to XOR
+            if (logExpr->op() == LogicalExpression::Operator::XOR) {
+                return canPushdown(logExpr);
+            }
+            auto rewriteLeft = rewrite(const_cast<Expression*>(logExpr->left()));
+            auto rewriteRight = rewrite(const_cast<Expression*>(logExpr->right()));
+            switch (logExpr->op()) {
+                case LogicalExpression::Operator::OR: {
+                    if (!rewriteLeft || !rewriteRight) {
+                        return false;
+                    } else {
+                        return true;
+                    }
+                }
+                case LogicalExpression::Operator::AND: {
+                    if (!rewriteLeft && !rewriteRight) {
+                        return false;
+                    } else if (!rewriteLeft) {
+                        auto *truePri = new PrimaryExpression(true);
+                        logExpr->resetLeft(truePri);
+                    } else if (!rewriteRight) {
+                        auto *truePri = new PrimaryExpression(true);
+                        logExpr->resetRight(truePri);
+                    }
+                    return true;
+                }
+                default:
+                    return false;
+            }
+        }
+        case Expression::kUnary: {
+            auto *unaExpr = static_cast<UnaryExpression*>(expr);
+            return rewrite(const_cast<Expression*>(unaExpr->operand()));
+        }
+        case Expression::kTypeCasting: {
+            auto *typExpr = static_cast<TypeCastingExpression*>(expr);
+            return rewrite(const_cast<Expression*>(typExpr->operand()));
+        }
+        case Expression::kArithmetic: {
+            auto *ariExp = static_cast<ArithmeticExpression*>(expr);
+            return rewrite(const_cast<Expression*>(ariExp->left()))
+                    && rewrite(const_cast<Expression*>(ariExp->right()));
+        }
+        case Expression::kRelational: {
+            auto *relExp = static_cast<RelationalExpression*>(expr);
+            return rewrite(const_cast<Expression*>(relExp->left()))
+                    && rewrite(const_cast<Expression*>(relExp->right()));
+        }
+        case Expression::kPrimary:
+        case Expression::kSourceProp:
+        case Expression::kEdgeRank:
+        case Expression::kEdgeDstId:
+        case Expression::kEdgeSrcId:
+        case Expression::kEdgeType:
+        case Expression::kAliasProp: {
+            return true;
+        }
+        case Expression::kMax:
+        case Expression::kVariableProp:
+        case Expression::kDestProp:
+        case Expression::kInputProp:
+        case Expression::kFunctionCall:
+        case Expression::kUUID: {
+            return false;
+        }
+        default: {
+            LOG(ERROR) << "Unkown expression: " << expr->kind();
             return false;
         }
     }
-
-    auto right = filter->right();
-    if (right->isLogicalExpression()) {
-        auto rightFilter = static_cast<LogicalExpression*>(
-                            const_cast<Expression*>(right));
-        if ((rightFilter->isOr() && !rewriteOr(rightFilter))
-            || (rightFilter->isAnd() && !rewriteAnd(rightFilter))) {
-            return false;
-        }
-    }
-
-    auto canLeftPushdown = canPushdown(const_cast<Expression*>(left));
-    auto canRightPushdown = canPushdown(const_cast<Expression*>(right));
-    if (canLeftPushdown && canRightPushdown) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-bool WhereWrapper::rewriteAnd(LogicalExpression *filter) const {
-    auto left = filter->left();
-    if (left->isLogicalExpression()) {
-        auto leftFilter = static_cast<LogicalExpression*>(
-                            const_cast<Expression*>(left));
-        if ((leftFilter->isOr() && !rewriteOr(leftFilter))
-            || (leftFilter->isAnd() && !rewriteAnd(leftFilter))) {
-            auto *truePri = new PrimaryExpression(true);
-            filter->resetLeft(truePri);
-        }
-    }
-
-    auto right = filter->right();
-    if (right->isLogicalExpression()) {
-        auto rightFilter = static_cast<LogicalExpression*>(
-                            const_cast<Expression*>(right));
-        if ((rightFilter->isOr() && !rewriteOr(rightFilter))
-            || (rightFilter->isAnd() && !rewriteAnd(rightFilter))) {
-            auto *truePri = new PrimaryExpression(true);
-            filter->resetRight(truePri);
-        }
-    }
-
-    left = filter->left();
-    auto canLeftPushdown = canPushdown(const_cast<Expression*>(left));
-    right = filter->right();
-    auto canRightPushdown = canPushdown(const_cast<Expression*>(right));
-    if (!canLeftPushdown && !canRightPushdown) {
-        return false;
-    } else if (!canLeftPushdown) {
-        auto *truePri = new PrimaryExpression(true);
-        filter->resetLeft(truePri);
-    } else if (!canRightPushdown) {
-        auto *truePri = new PrimaryExpression(true);
-        filter->resetRight(truePri);
-    }
-    return true;
 }
 
 bool WhereWrapper::canPushdown(Expression *expr) const {
@@ -417,6 +408,5 @@ bool WhereWrapper::canPushdown(Expression *expr) const {
     }
     return true;
 }
-
 }   // namespace graph
 }   // namespace nebula
