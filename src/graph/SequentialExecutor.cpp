@@ -14,7 +14,7 @@ namespace nebula {
 namespace graph {
 
 SequentialExecutor::SequentialExecutor(SequentialSentences *sentences,
-                                       ExecutionContext *ectx) : Executor(ectx, "") {
+                                       ExecutionContext *ectx) : Executor(ectx) {
     sentences_ = sentences;
 }
 

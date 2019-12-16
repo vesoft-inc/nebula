@@ -28,7 +28,7 @@ namespace graph {
 
 class Executor : public cpp::NonCopyable, public cpp::NonMovable {
 public:
-    explicit Executor(ExecutionContext *ectx, const std::string statsName) {
+    explicit Executor(ExecutionContext *ectx, const std::string &statsName = "") {
         ectx_ = ectx;
         if (!statsName.empty()) {
             stats_ = std::make_unique<stats::Stats>("graph", statsName);

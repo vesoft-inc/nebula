@@ -11,7 +11,7 @@ namespace nebula {
 namespace graph {
 
 PipeExecutor::PipeExecutor(Sentence *sentence,
-                           ExecutionContext *ectx) : TraverseExecutor(ectx, "") {
+                           ExecutionContext *ectx) : TraverseExecutor(ectx) {
     sentence_ = static_cast<PipedSentence*>(sentence);
 }
 

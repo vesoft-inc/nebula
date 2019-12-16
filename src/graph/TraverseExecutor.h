@@ -93,7 +93,7 @@ private:
 class TraverseExecutor : public Executor {
 public:
     explicit TraverseExecutor(ExecutionContext *ectx,
-                              const std::string &statsName) : Executor(ectx, statsName) {}
+                              const std::string &statsName = "") : Executor(ectx, statsName) {}
 
     using OnResult = std::function<void(std::unique_ptr<InterimResult>)>;
 
