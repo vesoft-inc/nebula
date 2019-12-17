@@ -235,7 +235,6 @@ object SparkClientGenerator {
                     )
 
                     LOG.debug(s"Exec: ${exec}")
-
                     breakable {
                       for (time <- 1 to executionRetry
                            if isSuccessfullyWithSleep({
@@ -372,19 +371,28 @@ object SparkClientGenerator {
                   if (isSuccessfully(client.execute(USE_TEMPLATE.format(space)))) {
                     iterator.grouped(batch).foreach { edges =>
                       val values =
-                        if (rankingOpt.isEmpty)
+                        if (rankingOpt.isEmpty) {
                           edges
                             .map { edge =>
                               // TODO: (darion.yaphet) dataframe.explode() would be better ?
                               edge._1
-                                .split(",")
+                                .split(",") // TODO: (spacewalkman) Why comma-split sourceField?
                                 .map { source =>
+                                  val sourceEscaped =
+                                    source
+                                      .replaceAll("\"", "\\\\\"")
+                                      .replaceAll("\'", "\\\\\'")
                                   val sourceIdPrefixDecorated = discriminatorPrefixSrcOpt
-                                    .fold(source)(srcPrefix => srcPrefix + source)
+                                    .fold(sourceEscaped)(srcPrefix => srcPrefix + sourceEscaped)
+
+                                  val destEscaped =
+                                    edge._2.toString
+                                      .replaceAll("\"", "\\\\\"")
+                                      .replaceAll("\'", "\\\\\'")
 
                                   val destIdPrefixDecorated = discriminatorPrefixDestOpt
-                                    .fold(edge._2.toString)(
-                                      destPrefix => destPrefix + edge._2.toString
+                                    .fold(destEscaped)(
+                                      destPrefix => destPrefix + destEscaped
                                     )
 
                                   val (sourceIdUuidDecorated, destIdUuidDecorated) =
@@ -402,19 +410,29 @@ object SparkClientGenerator {
                             }
                             .toList
                             .mkString(", ")
-                        else
+                        } else {
                           edges
                             .map { edge =>
                               // TODO: (darion.yaphet) dataframe.explode() would be better ?
                               edge._1
-                                .split(",")
+                                .split(",") // TODO: (spacewalkman) Why comma-split sourceField?
                                 .map { source =>
+                                  val sourceEscaped =
+                                    source
+                                      .replaceAll("\"", "\\\\\"")
+                                      .replaceAll("\'", "\\\\\'")
+
                                   val sourceIdPrefixDecorated = discriminatorPrefixSrcOpt
-                                    .fold(source)(srcPrefix => srcPrefix + source)
+                                    .fold(sourceEscaped)(srcPrefix => srcPrefix + sourceEscaped)
+
+                                  val destEscaped =
+                                    edge._2.toString
+                                      .replaceAll("\"", "\\\\\"")
+                                      .replaceAll("\'", "\\\\\'")
 
                                   val destIdPrefixDecorated = discriminatorPrefixDestOpt
-                                    .fold(edge._2.toString)(
-                                      destPrefix => destPrefix + edge._2.toString
+                                    .fold(destEscaped)(
+                                      destPrefix => destPrefix + destEscaped
                                     )
 
                                   val (sourceIdUuidDecorated, destIdUuidDecorated) =
@@ -424,13 +442,19 @@ object SparkClientGenerator {
                                         s"""uuid("${destIdPrefixDecorated}")"""
                                       )
                                     else (sourceIdPrefixDecorated, destIdPrefixDecorated)
-                                  EDGE_VALUE_WITHOUT_RANKING_TEMPLATE
-                                    .format(sourceIdUuidDecorated, destIdUuidDecorated, edge._4)
+                                  EDGE_VALUE_TEMPLATE
+                                    .format(
+                                      sourceIdUuidDecorated,
+                                      destIdUuidDecorated,
+                                      edge._3,
+                                      edge._4
+                                    )
                                 }
                                 .mkString(", ")
                             }
                             .toList
                             .mkString(", ")
+                        }
 
                       val exec = BATCH_INSERT_TEMPLATE
                         .format(Type.Edge.toString, edgeName, nebulaProperties, values)
