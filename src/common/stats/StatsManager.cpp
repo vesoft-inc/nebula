@@ -400,6 +400,8 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
 //     "name": "xxxxx",
 //     "value_range": [0, 100],
 //     "buckets": [2, 3, 0, 11, ...],
+//     "sum": 233,
+//     "count": 332,
 //     "labels": [
 //         {"name": "name", "value": "nebula"},
 //         {"name": "type", "value": "latency"}
@@ -428,6 +430,22 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
             obj[kGauges].push_back(std::move(gauge));
         } else if (StatsManager::isHistoIndex(index.second)) {
             auto& p = sm.histograms_[StatsManager::physicalHistoIndex(index.second)];
+            std::int64_t sum = 0;
+            if (parsedName != nullptr) {
+                sum = readStats(index.second, parsedName->range, StatsManager::StatsMethod::SUM)
+                    .value();
+            } else {
+                sum = readStats(index.second, StatsManager::TimeRange::ONE_HOUR,
+                    StatsManager::StatsMethod::SUM).value();
+            }
+            std::uint64_t count = 0;
+            if (parsedName != nullptr) {
+                count = readStats(index.second, parsedName->range,
+                    StatsManager::StatsMethod::COUNT).value();
+            } else {
+                count = readStats(index.second, StatsManager::TimeRange::ONE_HOUR,
+                    StatsManager::StatsMethod::COUNT).value();
+            }
             std::lock_guard<std::mutex> lk(*p.first);
             auto& hist = p.second;
             folly::dynamic buckets = folly::dynamic::array();
@@ -444,8 +462,14 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
             folly::dynamic histogram = folly::dynamic::object("name", name)
                 ("value_range", folly::dynamic::array(hist->getMin(), hist->getMax()))
                 ("buckets", std::move(buckets))
+                ("count", count)
+                ("sum", sum)
                 ("labels", labels);
             obj[kHistograms].push_back(std::move(histogram));
+
+            // Expose the metrics computed from Histogram
+            // Now we only use Histogram for latency, So just expose the p99
+            // It's a temporary solution and Hard Code! Not a general work.
         }
     }
     return folly::toJson(obj);
