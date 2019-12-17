@@ -146,6 +146,8 @@ object SparkClientGenerator {
         session.enableHiveSupport().getOrCreate()
       } else session.getOrCreate()
 
+    import spark.implicits._
+
     val tagConfigs = getConfigOrNone(config, "tags")
     if (tagConfigs.isEmpty) {
       LOG.warn("Tag is not defined")
@@ -199,6 +201,7 @@ object SparkClientGenerator {
         if (dataSource.isDefined && !c.dry) {
           repartition(dataSource.get, partition)
             .select(sourceProperties.map(col): _*)
+            .filter($"${vertex}".isNotNull) //sourceProperties always contains vertex
             .map { row =>
               (
                 idGeneratorFormat.format(
@@ -277,6 +280,7 @@ object SparkClientGenerator {
 
         val fields = edgeConfig.getObject("fields").unwrapped
         val isGeo  = checkGeoSupported(edgeConfig)
+        val source = edgeConfig.getString("source")
         val target = edgeConfig.getString("target")
         val rankingOpt = if (edgeConfig.hasPath("ranking")) {
           Some(edgeConfig.getString("ranking"))
@@ -308,7 +312,6 @@ object SparkClientGenerator {
         val tableColumnNames = fields.asScala.keys.filterNot(_.trim.isEmpty).toList
 
         val sourceProperties = if (!isGeo) {
-          val source = edgeConfig.getString("source")
           if (!fields.containsKey(source) ||
               !fields.containsKey(target)) {
             (fields.asScala.keySet + source + target).toList
@@ -336,6 +339,7 @@ object SparkClientGenerator {
         if (dataSource.isDefined && !c.dry) {
           repartition(dataSource.get, partition)
             .select(sourceProperties.map(col): _*)
+            .filter($"${source}".isNotNull and $"${target}".isNotNull)
             .map { row =>
               val sourceField = if (!isGeo) {
                 val source = edgeConfig.getString("source")
