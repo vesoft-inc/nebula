@@ -2,7 +2,7 @@
 
 **Nebula Graph** supports `UPDATE` properties of a vertex or an edge, as well as CAS operation and returning related properties.
 
-## Update vertex
+## Update Vertex
 
 ```ngql
 UPDATE VERTEX <vid> SET <update_columns> WHEN <condition> YIELD <columns>
