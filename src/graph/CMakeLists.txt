@@ -51,6 +51,8 @@ nebula_add_library(
     LimitExecutor.cpp
     GroupByExecutor.cpp
     ReturnExecutor.cpp
+    CreateSnapshotExecutor.cpp
+    DropSnapshotExecutor.cpp
 )
 
 nebula_add_library(

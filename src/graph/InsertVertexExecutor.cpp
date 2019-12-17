@@ -62,7 +62,7 @@ Status InsertVertexExecutor::check() {
         auto props = item->properties();
         if (props.size() > schema->getNumFields()) {
             LOG(ERROR) << "Input props number " << props.size()
-                << ", schema fields number " << schema->getNumFields();
+                       << ", schema fields number " << schema->getNumFields();
             return Status::Error("Wrong number of props");
         }
 
@@ -213,7 +213,8 @@ void InsertVertexExecutor::execute() {
 
     auto result = prepareVertices();
     if (!result.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getInsertVertexStats());
+        LOG(ERROR) << "Insert vertices failed, error " << result.status().toString();
+        doError(result.status(), ectx()->getGraphStats()->getInsertVertexStats());
         return;
     }
     auto future = ectx()->getStorageClient()->addVertices(spaceId_,
@@ -225,6 +226,11 @@ void InsertVertexExecutor::execute() {
         // For insertion, we regard partial success as failure.
         auto completeness = resp.completeness();
         if (completeness != 100) {
+            const auto& failedCodes = resp.failedParts();
+            for (auto it = failedCodes.begin(); it != failedCodes.end(); it++) {
+                LOG(ERROR) << "Insert vertices failed, error " << static_cast<int32_t>(it->second)
+                           << ", part " << it->first;
+            }
             doError(Status::Error("Internal Error"),
                     ectx()->getGraphStats()->getInsertVertexStats());
             return;

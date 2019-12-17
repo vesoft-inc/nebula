@@ -8,6 +8,8 @@
 #include "time/Duration.h"
 #include <folly/Try.h>
 
+DECLARE_int32(storage_client_timeout_ms);
+
 namespace nebula {
 namespace storage {
 
@@ -93,7 +95,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
         DCHECK(res.second);
         // Invoke the remote method
         folly::via(evb, [this, evb, context, host, spaceId, res, duration] () mutable {
-            auto client = clientsMan_->client(host, evb);
+            auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
             // Result is a pair of <Request&, bool>
             context->serverMethod(client.get(), *res.first)
             // Future process code will be executed on the IO thread
@@ -128,7 +130,8 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                                              code.get_part_id(),
                                              HostAddr(leader->get_ip(), leader->get_port()));
                             }
-                        } else if (code.get_code() == storage::cpp2::ErrorCode::E_PART_NOT_FOUND) {
+                        } else if (code.get_code() == storage::cpp2::ErrorCode::E_PART_NOT_FOUND
+                                || code.get_code() == storage::cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
                             invalidLeader(spaceId, code.get_part_id());
                         } else {
                             // Simply keep the result
@@ -184,7 +187,7 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
     folly::via(evb, [evb, request = std::move(request), remoteFunc = std::move(remoteFunc),
                      pro = std::move(pro), duration, this] () mutable {
         auto host = request.first;
-        auto client = clientsMan_->client(host, evb);
+        auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
         auto spaceId = request.second.get_space_id();
         auto partId = request.second.get_part_id();
         LOG(INFO) << "Send request to storage " << host;

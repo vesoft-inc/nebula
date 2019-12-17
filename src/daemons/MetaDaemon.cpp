@@ -30,17 +30,17 @@ using nebula::Status;
 DEFINE_int32(port, 45500, "Meta daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_string(data_path, "", "Root data path");
-DEFINE_string(meta_server_addrs, "", "It is a list of IPs split by comma,"
-                                     "the ips number equals replica number."
-                                     "If empty, it means replica is 0");
-DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
+DEFINE_string(meta_server_addrs, "", "It is a list of IPs split by comma, used in cluster deployment"
+                                     "the ips number is equal to the replica number."
+                                     "If empty, it means it's a single node");
+DEFINE_string(local_ip, "", "Local ip specified for NetworkUtils::getLocalIP");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(meta_http_thread_num, 3, "Number of meta daemon's http thread");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
-DECLARE_string(part_man_type);
 
 DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
 DEFINE_bool(daemonize, true, "Whether run as a daemon process");
+DECLARE_bool(check_leader);
 
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 static void signalHandler(int sig);
@@ -69,6 +69,8 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
                                  FLAGS_num_worker_threads, true /*stats*/));
     threadManager->setNamePrefix("executor");
     threadManager->start();
+    // On metad, we are allowed to read on follower
+    FLAGS_check_leader = false;
     nebula::kvstore::KVOptions options;
     options.dataPaths_ = {FLAGS_data_path};
     options.partMan_ = std::move(partMan);

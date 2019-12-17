@@ -39,6 +39,14 @@ public:
 
     meta::MetaClient* metaClient();
 
+    const std::string getMetaRootPath() {
+        return metaRootPath_.path();
+    }
+
+    const std::string getStorageRootPath() {
+        return storageRootPath_.path();
+    }
+
 private:
     nebula::fs::TempDir                             metaRootPath_{"/tmp/MetaTest.XXXXXX"};
     nebula::fs::TempDir                             storageRootPath_{"/tmp/StorageTest.XXXXXX"};

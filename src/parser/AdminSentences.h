@@ -31,7 +31,8 @@ public:
         kShowRoles,
         kShowCreateSpace,
         kShowCreateTag,
-        kShowCreateEdge
+        kShowCreateEdge,
+        kShowSnapshots
     };
 
     explicit ShowSentence(ShowType sType) {
@@ -151,9 +152,10 @@ private:
 };
 
 
-class CreateSpaceSentence final : public Sentence {
+class CreateSpaceSentence final : public CreateSentence {
 public:
-    explicit CreateSpaceSentence(std::string *spaceName) {
+    explicit CreateSpaceSentence(std::string* spaceName, bool ifNotExist)
+        : CreateSentence(ifNotExist) {
         spaceName_.reset(spaceName);
         kind_ = Kind::kCreateSpace;
     }
@@ -282,10 +284,11 @@ public:
         subType_ = std::move(subType);
     }
 
-    ConfigSentence(SubType subType, ConfigRowItem* item) {
+    ConfigSentence(SubType subType, ConfigRowItem* item, bool force = false) {
         kind_ = Kind::kConfig;
         subType_ = std::move(subType);
         configItem_.reset(item);
+        isForce_ = force;
     }
 
     std::string toString() const override;
@@ -298,8 +301,13 @@ public:
         return configItem_.get();
     }
 
+    bool isForce() {
+        return isForce_;
+    }
+
 private:
     SubType                         subType_{SubType::kUnknown};
+    bool                            isForce_{false};
     std::unique_ptr<ConfigRowItem>  configItem_;
 };
 
@@ -370,6 +378,32 @@ private:
     SubType                         subType_{SubType::kUnknown};
     int64_t                         balanceId_{0};
     std::unique_ptr<HostList>       hostDel_;
+};
+
+class CreateSnapshotSentence final : public Sentence {
+public:
+    CreateSnapshotSentence() {
+        kind_ = Kind::kCreateSnapshot;
+    }
+
+    std::string toString() const override;
+};
+
+class DropSnapshotSentence final : public Sentence {
+public:
+    explicit DropSnapshotSentence(std::string *name) {
+        kind_ = Kind::kDropSnapshot;
+        name_.reset(name);
+    }
+
+    const std::string* getName() {
+        return name_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>    name_;
 };
 
 }   // namespace nebula
