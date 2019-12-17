@@ -398,7 +398,7 @@ Status GroupByExecutor::generateOutputSchema() {
 StatusOr<std::unique_ptr<InterimResult>> GroupByExecutor::setupInterimResult() {
     auto result = std::make_unique<InterimResult>(getResultColumnNames());
     if (rows_.empty() || resultSchema_ == nullptr) {
-        return result;
+        return std::move(result);
     }
     // Generate results
     std::unique_ptr<RowSetWriter> rsWriter = std::make_unique<RowSetWriter>(resultSchema_);

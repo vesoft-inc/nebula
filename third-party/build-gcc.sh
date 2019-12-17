@@ -364,6 +364,8 @@ this_path=\$(dirname \$(readlink -f \$BASH_SOURCE))
 export PATH=\$(echo \$PATH | sed "s#\$this_path/bin:##")
 export CC=\$OLD_CC
 export CXX=\$OLD_CXX
+[ -z \$CC ] && unset CC
+[ -z \$CXX ] && unset CXX
 hash -r
 EOF
 
