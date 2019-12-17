@@ -100,8 +100,8 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                 break;
             }
             case cpp2::PropOwner::EDGE: {
-                auto it = kPropsInKey_.find(col.name);
                 EdgeType edgeType = col.id.get_edge_type();
+                auto it = kPropsInKey_.find(col.name);
                 if (it != kPropsInKey_.end()) {
                     prop.pikType_ = it->second;
                     if (prop.pikType_ == PropContext::PropInKeyType::SRC ||
@@ -111,6 +111,13 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                         prop.type_.type = nebula::cpp2::SupportedType::INT;
                     }
                 } else if (edgeType > 0) {
+                    auto edgeName = this->schemaMan_->toEdgeName(spaceId_, edgeType);
+                    if (!edgeName.ok()) {
+                        VLOG(3) << "Can't find spaceId " << spaceId_ << ", edgeType " << edgeType;
+                        return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+                    }
+                    this->edgeMap_.emplace(edgeName.value(), edgeType);
+
                     // Only outBound have properties on edge.
                     auto schema = this->schemaMan_->getEdgeSchema(spaceId_,
                                                                   edgeType);
@@ -436,12 +443,15 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                 auto& getters = expCtx_->getters();
                 getters.getAliasProp = [this, edgeType, &reader](const std::string& edgeName,
                                            const std::string& prop) -> OptVariantType {
-                    auto edgeStatus = this->schemaMan_->toEdgeType(spaceId_, edgeName);
-                    CHECK(edgeStatus.ok());
-
-                    if (edgeType != edgeStatus.value()) {
-                        return Status::Error("ignore this edge");
+                    auto edgeFound = this->edgeMap_.find(edgeName);
+                    if (edgeFound == edgeMap_.end()) {
+                        return Status::Error(
+                                "Edge `%s' not found when call getters.", edgeName.c_str());
                     }
+                    if (edgeType != edgeFound->second) {
+                        return Status::Error("Ignore this edge");
+                    }
+
                     auto res = RowReader::getPropByName(reader.get(), prop);
                     if (!ok(res)) {
                         return Status::Error("Invalid Prop");

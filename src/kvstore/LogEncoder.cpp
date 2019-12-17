@@ -165,7 +165,7 @@ std::vector<folly::StringPiece> decodeMultiValues(folly::StringPiece encoded) {
 }
 
 std::string encodeBatchValue(const std::vector<std::pair<BatchLogType,
-                             std::pair<folly::StringPiece, folly::StringPiece>>>& batch) {
+                             std::pair<std::string, std::string>>>& batch) {
     auto type = LogType::OP_BATCH_WRITE;
     std::string encoded;
     encoded.reserve(1024);
