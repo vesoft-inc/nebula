@@ -23,7 +23,7 @@ ExternalProject_Add(
 
     BUILD_COMMAND make -s -j${BUILDING_JOBS_NUM}
     BUILD_IN_SOURCE 1
-    INSTALL_COMMAND make -s -j${BUILDING_JOBS_NUM} install
+    INSTALL_COMMAND make -s -j${BUILDING_JOBS_NUM} install/strip
     LOG_CONFIGURE TRUE
     LOG_BUILD TRUE
     LOG_INSTALL TRUE

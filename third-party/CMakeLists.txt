@@ -211,6 +211,15 @@ add_custom_command(
 )
 
 add_custom_target(
+    strip-archives ALL
+    COMMAND
+        strip --strip-unneeded ${CMAKE_INSTALL_PREFIX}/lib/*.a
+    COMMAND
+        strip --strip-unneeded ${CMAKE_INSTALL_PREFIX}/lib64/*.a
+    DEPENDS ${ALL_TARGETS}
+)
+
+add_custom_target(
     clean-all
     DEPENDS ${CLEAN_TARGETS}
 )

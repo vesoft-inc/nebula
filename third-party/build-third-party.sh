@@ -95,10 +95,9 @@ fi
 if [[ ! $checksum = 375f349b7b5ae1212bd4195bfc30f43a ]]
 then
     hash wget &> /dev/null && download_cmd="wget -c"
-    hash axel &> /dev/null && download_cmd="axel -a -n 8"
     if [[ -z $download_cmd ]]
     then
-        echo "Neither 'wget' nor 'axel' available for downloading" 1>&2;
+        echo "'wget' not found for downloading" 1>&2;
     elif ! bash -c "$download_cmd $source_url"
     then
         # Resort to the builtin download method of cmake on failure
@@ -128,6 +127,8 @@ make |& \
          tee -a $logfile | \
          grep --line-buffered 'Creating\|^Scanning\|Performing\|Completed\|CMakeFiles.*Error'
 end_time=$(date +%s)
+
+cd $OLDPWD && rm -rf $build_dir
 
 echo
 echo "Third parties have been successfully installed to $install_dir"
