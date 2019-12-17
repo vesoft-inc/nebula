@@ -390,14 +390,20 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
 // {
 //     "name": "xxxxx",
 //     "value": 33,
-//     "labels": ["name:nebula", "type:qps"]  // key:value
+//     "labels": [
+//         {"name": "name", "value": "nebula"},
+//         {"name": "type", "value": "qps"}
+//     ]
 // }
 // Histogram
 // {
 //     "name": "xxxxx",
 //     "value_range": [0, 100],
 //     "buckets": [2, 3, 0, 11, ...],
-//     "labels": ["name:nebula", "type:latency"]
+//     "labels": [
+//         {"name": "name", "value": "nebula"},
+//         {"name": "type", "value": "latency"}
+//     ]
 // }
 //
 /*static*/ std::string StatsManager::toJson() {
@@ -406,6 +412,8 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
     auto& sm = get();
     folly::dynamic obj = folly::dynamic::object(kGauges, folly::dynamic::array())
         (kHistograms, folly::dynamic::array());
+    folly::dynamic labels = folly::dynamic::array(
+        folly::dynamic(folly::dynamic::object("name", "root")("value", "nebula")));
 
     // insert
     for (auto& index : sm.nameMap_) {
@@ -416,7 +424,7 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
                     ("value", StatsManager::readStats(index.second,
                         StatsManager::TimeRange::ONE_MINUTE,
                         StatsManager::StatsMethod::AVG).value())
-                    ("labels", folly::dynamic::array("name:nebula"));
+                    ("labels", labels);
             obj[kGauges].push_back(std::move(gauge));
         } else if (StatsManager::isHistoIndex(index.second)) {
             auto& p = sm.histograms_[StatsManager::physicalHistoIndex(index.second)];
@@ -436,7 +444,7 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
             folly::dynamic histogram = folly::dynamic::object("name", name)
                 ("value_range", folly::dynamic::array(hist->getMin(), hist->getMax()))
                 ("buckets", std::move(buckets))
-                ("lables", folly::dynamic::array("name:nebula"));
+                ("labels", labels);
             obj[kHistograms].push_back(std::move(histogram));
         }
     }
