@@ -12,14 +12,17 @@
 #include "base/Base.h"
 #include "base/ErrorOr.h"
 #include "kvstore/NebulaStore.h"
-#include "meta/JobDescription.h"
+#include "meta/processors/jobMan/JobStatus.h"
+#include "meta/processors/jobMan/JobDescription.h"
 
 #include "meta/SimpleBlockingQueue.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace meta {
 
 class KVJobManager{
+    using ResultCodeOrSVEC = nebula::ErrorOr<nebula::kvstore::ResultCode, std::vector<std::string>>;
     using ErrOrString = ErrorOr<nebula::kvstore::ResultCode, std::string>;
     using ErrOrInt = ErrorOr<nebula::kvstore::ResultCode, int>;
     FRIEND_TEST(JobFooTest, InternalHelper);
@@ -37,15 +40,15 @@ public:
 
     void shutDown();
 
-    ErrOrString runJob(const std::string& op, std::vector<std::string>& paras);
+    ResultCodeOrSVEC runJob(nebula::meta::cpp2::AdminJobOp op, std::vector<std::string>& paras);
 
 private:
-    ErrOrString addJobWrapper(std::vector<std::string>& paras);
-    ErrOrString showJobsWrapper();
-    ErrOrString showJobWrapper(std::vector<std::string>& paras);
-    ErrOrString stopJobWrapper(std::vector<std::string>& paras);
-    ErrOrString backupJobWrapper(std::vector<std::string>& paras);
-    ErrOrString recoverJobWrapper(std::vector<std::string>& paras);
+    ResultCodeOrSVEC addJobWrapper(std::vector<std::string>& paras);
+    ResultCodeOrSVEC showJobsWrapper();
+    ResultCodeOrSVEC showJobWrapper(std::vector<std::string>& paras);
+    ResultCodeOrSVEC stopJobWrapper(std::vector<std::string>& paras);
+    ResultCodeOrSVEC backupJobWrapper(std::vector<std::string>& paras);
+    ResultCodeOrSVEC recoverJobWrapper(std::vector<std::string>& paras);
 
     ErrOrInt addJob(const std::string& type, const std::string& para = 0);
     std::vector<std::string> showJobs();
@@ -54,7 +57,7 @@ private:
     ErrOrInt recoverJob(int iJob);
 
     void runBackground();
-    bool runInternal(int iJob);
+    bool runJobInternal(int iJob);
     std::pair<int, int> backupJob(int iBegin, int iEnd);
 
     // simple util functions
@@ -71,6 +74,7 @@ private:
     ErrorOr<nebula::kvstore::ResultCode, int> reserveJobId();
     int getSpaceId(const std::string& name);
     std::shared_ptr<JobDescription> getJobDescription(int iJob, int iTask = -1);
+    nebula::kvstore::ResultCode setJobStatus(int iJob, int iTask, JobStatus::Status st);
     nebula::kvstore::ResultCode setJobStatus(int iJob, int iTask,
                                              const std::string& status);
     nebula::kvstore::ResultCode setTaskStatus(int iJob, int iTask, const std::string& dest,
@@ -89,9 +93,9 @@ private:
     std::string         kJobArchive;
     std::string         kCurrId;
 
-    std::thread         executor_;
-
     SimpleBlockingQueue<int> queue_;
+    std::unique_ptr<thread::GenericWorker> bgThread_;
+
     nebula::kvstore::KVStore* kvStore_;
     nebula::thread::GenericThreadPool *pool_;
 };

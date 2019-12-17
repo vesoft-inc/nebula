@@ -19,14 +19,17 @@
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
 #include "meta/processors/Common.h"
-#include "meta/TaskDescription.h"
-#include "meta/JobStatus.h"
-#include "meta/KVJobManager.h"
+#include "meta/processors/jobMan/JobManager.h"
+#include "meta/processors/jobMan/TaskDescription.h"
+#include "meta/processors/jobMan/JobStatus.h"
 #include "meta/MetaServiceUtils.h"
 #include "webservice/Common.h"
 
+#define ILOG LOG(INFO) << "JobManager::" << __func__ << " "
+
 using nebula::kvstore::ResultCode;
 using nebula::kvstore::KVIterator;
+using ResultCodeOrSVEC = nebula::ErrorOr<nebula::kvstore::ResultCode, std::vector<std::string>>;
 using ErrOrString = nebula::ErrorOr<nebula::kvstore::ResultCode, std::string>;
 using ErrOrInt = nebula::ErrorOr<nebula::kvstore::ResultCode, int>;
 
@@ -52,127 +55,168 @@ bool KVJobManager::init(nebula::kvstore::KVStore* store,
     kJobKey = kJobPrefix + "_";
     kJobArchive = kJobPrefix + "archive_";
 
-    executor_ = std::thread(&KVJobManager::runBackground, this);
-    executor_.detach();
+    bgThread_ = std::make_unique<thread::GenericWorker>();
+    CHECK(bgThread_->start());
+    bgThread_->addTask(&KVJobManager::runBackground, this);
+
+    // executor_ = std::thread(&KVJobManager::runBackground, this);
+    // executor_.detach();
 
     return true;
 }
 
-ErrOrString KVJobManager::runJob(const std::string& op,
-                                std::vector<std::string>& paras) {
-    if (op == "add_job") {
-        return addJobWrapper(paras);
-    } else if (op == "show_jobs") {
-        return showJobsWrapper();
-    } else if (op == "show_job") {
-        return showJobWrapper(paras);
-    } else if (op == "stop_job") {
-        return stopJobWrapper(paras);
-    } else if (op == "backup_job") {
-        return stopJobWrapper(paras);
-    } else if (op == "recover_job") {
-        return stopJobWrapper(paras);
-    } else {
-        return nebula::kvstore::ERR_INVALID_ARGUMENT;
+ResultCodeOrSVEC
+KVJobManager::runJob(nebula::meta::cpp2::AdminJobOp op, std::vector<std::string>& paras) {
+    switch (op) {
+        case nebula::meta::cpp2::AdminJobOp::ADD:
+        {
+            return addJobWrapper(paras);
+        }
+        case nebula::meta::cpp2::AdminJobOp::SHOW_All:
+        {
+            return showJobsWrapper();
+        }
+
+        case nebula::meta::cpp2::AdminJobOp::SHOW_ONE:
+        {
+            return showJobWrapper(paras);
+        }
+        case nebula::meta::cpp2::AdminJobOp::STOP:
+        {
+            return stopJobWrapper(paras);
+        }
+        case nebula::meta::cpp2::AdminJobOp::BACKUP:
+        {
+            return backupJobWrapper(paras);
+        }
+        case nebula::meta::cpp2::AdminJobOp::RECOVER:
+        {
+            return recoverJobWrapper(paras);
+        }
+        default:
+            return nebula::kvstore::ERR_INVALID_ARGUMENT;
     }
 }
 
-ErrOrString KVJobManager::addJobWrapper(std::vector<std::string>& paras) {
+
+ResultCodeOrSVEC
+KVJobManager::addJobWrapper(std::vector<std::string>& paras) {
+    std::stringstream oss;
+    for (auto& p : paras) { oss << p << " "; }
+    ILOG << "enter, paras=" << oss.str();
     if (paras.size() < 2) {
+        ILOG << "exit with err: paras.size() < 2";
         return nebula::kvstore::ERR_INVALID_ARGUMENT;
     }
-    auto ret = addJob(paras[0], paras[1]);
-    if (!ok(ret)) {
-        return error(ret);
+    auto iJob = addJob(paras[0], paras[1]);
+    if (!ok(iJob)) {
+        ILOG << "exit with err: addJob failed";
+        return error(iJob);
     }
-    return std::to_string(value(ret));
-}
-
-ErrOrString KVJobManager::showJobsWrapper() {
-    auto jobDescriptions = showJobs();
-    std::string ret{""};
-    if (jobDescriptions.empty()) {
-        return ret;
-    }
-    for (auto& job : jobDescriptions) {
-        ret.append(job).append(kRowDelimeter);
-    }
-    return ret.substr(0, ret.length() - 1);
-}
-
-ErrOrString KVJobManager::showJobWrapper(std::vector<std::string>& paras) {
-    if (paras.empty()) {
-        return nebula::kvstore::ERR_INVALID_ARGUMENT;
-    }
-    std::string ret{""};
-    int iJob = atoi(paras[0].c_str());
-    auto tasks = showJob(iJob);
-    if (tasks.empty()) {
-        return nebula::kvstore::ERR_KEY_NOT_FOUND;
-    }
-    for (auto& t : tasks) {
-        ret.append(t).append(kRowDelimeter);
-    }
-    return ret.substr(0, ret.length() - 1);
-}
-
-ErrOrString KVJobManager::stopJobWrapper(std::vector<std::string>& paras) {
-    if (paras.empty()) {
-        return nebula::kvstore::ERR_INVALID_ARGUMENT;
-    }
-    std::string ret{""};
-    int job_id = atoi(paras[0].c_str());
-    auto ans = stopJob(job_id);
-    if (ans) {
-        ret = "job " + std::to_string(job_id) + " stopped";
-    } else {
-        ret = "invalid job id " + std::to_string(job_id);
-    }
+    std::vector<std::string> ret;
+    ret.emplace_back(std::to_string(value(iJob)));
     return ret;
 }
 
-ErrOrString KVJobManager::backupJobWrapper(std::vector<std::string>& paras) {
-    for (auto& str : paras) {
-        LOG(INFO) << str;
+ResultCodeOrSVEC
+KVJobManager::showJobsWrapper() {
+    return showJobs();
+}
+
+ResultCodeOrSVEC
+KVJobManager::showJobWrapper(std::vector<std::string>& paras) {
+    ILOG << "enter";
+    if (paras.empty()) {
+        ILOG << "return nebula::kvstore::ERR_INVALID_ARGUMENT";
+        return nebula::kvstore::ERR_INVALID_ARGUMENT;
     }
+    int iJob = atoi(paras[0].c_str());
+    auto ret = showJob(iJob);
+    if (ret.empty()) {
+        ILOG << "return nebula::kvstore::ERR_KEY_NOT_FOUND";
+        return nebula::kvstore::ERR_KEY_NOT_FOUND;
+    }
+    ILOG << "exit";
+    return ret;
+}
+
+ResultCodeOrSVEC
+KVJobManager::stopJobWrapper(std::vector<std::string>& paras) {
+    ILOG << "enter";
+    if (paras.empty()) {
+        return nebula::kvstore::ERR_INVALID_ARGUMENT;
+    }
+
+    std::vector<std::string> ret;
+    int iJob = atoi(paras[0].c_str());
+    auto ans = stopJob(iJob);
+    if (ans) {
+        ret.emplace_back("job " + std::to_string(iJob) + " stopped");
+    } else {
+        ret.emplace_back("invalid job id " + std::to_string(iJob));
+    }
+    ILOG << "exit";
+    return ret;
+}
+
+ResultCodeOrSVEC
+KVJobManager::backupJobWrapper(std::vector<std::string>& paras) {
+    std::stringstream oss;
+    for (auto& p : paras) { oss << p << " "; }
+    ILOG << "enter paras=" << oss.str();
 
     int iStart = atoi(paras[0].c_str());
     int iStop = atoi(paras[1].c_str());
-    auto ret = backupJob(iStart, iStop);
+    auto nJobTask = backupJob(iStart, iStop);
     std::string msg = folly::stringPrintf("backup %d job%s %d task%s",
-                                           ret.first,
-                                           ret.first > 0 ? "s" : "",
-                                           ret.second,
-                                           ret.second > 0 ? "s" : "");
-    return msg;
+                                           nJobTask.first,
+                                           nJobTask.first > 0 ? "s" : "",
+                                           nJobTask.second,
+                                           nJobTask.second > 0 ? "s" : "");
+    std::vector<std::string> ret{msg};
+    ILOG << "exit";
+    return ret;
 }
 
-ErrOrString KVJobManager::recoverJobWrapper(std::vector<std::string>& paras) {
+ResultCodeOrSVEC
+KVJobManager::recoverJobWrapper(std::vector<std::string>& paras) {
+    ILOG << "enter";
     int iJob = atoi(paras[0].c_str());
 
-    auto ret = recoverJob(iJob);
-    if (ok(ret)) {
-        return std::to_string(value(ret));
+    auto jobRecovered = recoverJob(iJob);
+    if (!ok(jobRecovered)) {
+        return nebula::kvstore::ERR_INVALID_ARGUMENT;
     }
-    return nebula::kvstore::ERR_INVALID_ARGUMENT;
+
+    std::vector<std::string> ret{std::to_string(value(jobRecovered))};
+    ILOG << "exit";
+    return ret;
 }
 
 void KVJobManager::runBackground() {
+    ILOG << "enter";
     for (;;) {
         auto spJob = queue_.take();
-        if (!spJob) break;  // which means stop called
-        ResultCode rc = setJobStatus(*spJob, -1, JobStatus::running);
+        if (!spJob) {
+            ILOG << "detect shutdown called, exit";
+            break;  // which means stop called
+        }
+        sleep(5);
+        ResultCode rc = setJobStatus(*spJob, -1, JobStatus::Status::RUNNING);
         if (rc != nebula::kvstore::SUCCEEDED) {
+            LOG(ERROR) << "KVJobManager::" << __func__
+                       << " skip job " << *spJob;
             continue;
         }
-        auto success = runInternal(*spJob);
-        std::string status = success ? JobStatus::finished : JobStatus::failed;
+        auto success = runJobInternal(*spJob);
+        JobStatus::Status st = success ? JobStatus::Status::FINISHED :JobStatus::Status::FAILED;
 
-        setJobStatus(*spJob, -1, status);
+        setJobStatus(*spJob, -1, st);
     }
+    ILOG << "exit";
 }
 
-bool KVJobManager::runInternal(int iJob) {
+bool KVJobManager::runJobInternal(int iJob) {
     LOG(INFO) << "admin run job = " << iJob;
     std::string jobKey = encodeJobKey(iJob);
     std::string jobVal;
@@ -222,16 +266,16 @@ bool KVJobManager::runInternal(int iJob) {
                                            op.c_str(),
                                            spaceName.c_str());
             LOG(INFO) << "make admin url: " << url << ", iTask=" << iTask;
-            setTaskStatus(iJob, iTask, storageIP, JobStatus::running);
+            setTaskStatus(iJob, iTask, storageIP, JobStatus::toString(JobStatus::Status::RUNNING));
             auto AdminResult = nebula::http::HttpClient::get(url, "-GSs");
             bool ans = AdminResult.ok() && AdminResult.value() == "ok";
 
-            std::string status = ans ? JobStatus::finished : JobStatus::failed;
+            JobStatus::Status st = ans ? JobStatus::Status::FINISHED : JobStatus::Status::FAILED;
             if (!ans) {
                 LOG(INFO) << "AdminResult.ok()=" << AdminResult.ok()
                        << ", AdminResult.value()=" << AdminResult.value();
             }
-            setTaskStatus(iJob, iTask, storageIP, status);
+            setTaskStatus(iJob, iTask, storageIP, JobStatus::toString(st));
             return ans;
         };
         auto future = pool_->addTask(dispatcher);
@@ -262,7 +306,12 @@ KVJobManager::~KVJobManager() {
 }
 
 void KVJobManager::shutDown() {
+    ILOG << "enter";
     queue_.stop();
+    // bgThread_
+    bgThread_->stop();
+    bgThread_->wait();
+    ILOG << "exit";
 }
 
 /*
@@ -280,14 +329,14 @@ void KVJobManager::shutDown() {
  *      int if succeed
  * */
 ErrOrInt KVJobManager::addJob(const std::string& type, const std::string& para) {
-    LOG(INFO) << folly::stringPrintf("[%s] type=%s, para=%s\n", __func__,
+    ILOG << folly::stringPrintf("[%s] type=%s, para=%s\n", __func__,
                                      type.c_str(), para.c_str());
     auto iJob = reserveJobId();
     if (!ok(iJob)) {
         return error(iJob);
     }
     auto job_key = encodeJobKey(value(iJob));
-    LOG(INFO) << folly::stringPrintf("[%s] newJobId=%d\n", __func__, value(iJob));
+    ILOG << folly::stringPrintf("[%s] newJobId=%d\n", __func__, value(iJob));
 
     JobDescription jd;
     jd.type = type;
@@ -306,6 +355,7 @@ ErrOrInt KVJobManager::addJob(const std::string& type, const std::string& para) 
 }
 
 std::vector<std::string> KVJobManager::showJobs() {
+    ILOG << "enter";
     std::vector<std::string> ret;
 
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -324,6 +374,7 @@ std::vector<std::string> KVJobManager::showJobs() {
         ret.emplace_back(jd->toString());
         LOG(INFO) << "emplace_back " << ret.back();
     }
+    ILOG << "exit";
     return ret;
 }
 
@@ -380,7 +431,7 @@ int KVJobManager::stopJob(int iJob) {
     }
 
     // 2. set job status to 'stopped' in kvstore
-    ResultCode rc = setJobStatus(iJob, -1, JobStatus::stopped);
+    ResultCode rc = setJobStatus(iJob, -1, JobStatus::Status::STOPPED);
     return rc == nebula::kvstore::SUCCEEDED;
 }
 
@@ -455,7 +506,6 @@ ErrOrInt KVJobManager::recoverJob(int iJob) {
 }
 
 ErrOrInt KVJobManager::reserveJobId() {
-    // todo distributed lock
     folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
     std::string strId;
     ResultCode rc = kvStore_->get(kSpace, kPart, kCurrId, &strId);
@@ -473,7 +523,8 @@ ErrOrInt KVJobManager::reserveJobId() {
     return ret;
 }
 
-nebula::kvstore::ResultCode KVJobManager::setSingleVal(const std::string& k, const std::string& v) {
+nebula::kvstore::ResultCode
+KVJobManager::setSingleVal(const std::string& k, const std::string& v) {
     std::vector<kvstore::KV> data{std::make_pair(k, v)};
     folly::Baton<true, std::atomic> baton;
     nebula::kvstore::ResultCode rc;
@@ -493,30 +544,41 @@ nebula::kvstore::ResultCode KVJobManager::setSingleVal(const std::string& k, con
  *      ERR_KEY_NOT_FOUND      if no specific job/task in kvstore
  *      ERR_INVALID_ARGUMENT   if current status already later than status
  * */
-ResultCode KVJobManager::setJobStatus(int iJob, int iTask, const std::string& status) {
-    LOG(INFO) << "iJob=" << iJob << ", iTask=" << iTask << ", status=" << status;
+ResultCode KVJobManager::setJobStatus(int iJob, int iTask, JobStatus::Status status) {
+    std::string msgPara = folly::stringPrintf("iJob=%d, iTask=%d, status=%s\n",
+                                              iJob, iTask, JobStatus::toString(status).c_str());
+    LOG(INFO) << msgPara;
     auto jobKey = encodeJobKey(iJob, iTask);
 
     auto jd = getJobDescription(iJob, iTask);
     if (!jd) {
+        LOG(ERROR) << "KVJobManager::setJobStatus error: " << msgPara
+                   << " [can't get JobDescription of target iJob, iTask";
         return nebula::kvstore::ERR_KEY_NOT_FOUND;
     }
 
-    if (JobStatus::laterThan(jd->status, status)) {
+    if (JobStatus::laterThan(JobStatus::toStatus(jd->status), status)) {
+        LOG(ERROR) << "KVJobManager::setJobStatus error: " << msgPara
+                   << ", trying to update status from " << jd->status
+                   << "to " << JobStatus::toString(status);
         return nebula::kvstore::ERR_INVALID_ARGUMENT;
     }
 
-    jd->status = status;
+    jd->status = JobStatus::toString(status);
 
-    if (status == JobStatus::running) {
+    if (status == JobStatus::Status::RUNNING) {
         jd->startTime = timeNow();
     }
-    if (JobStatus::laterThan(status, JobStatus::running)) {
+    if (JobStatus::laterThan(status, JobStatus::Status::RUNNING)) {
         jd->stopTime = timeNow();
     }
 
     setSingleVal(jobKey, jd->toString());
     return nebula::kvstore::SUCCEEDED;
+}
+
+ResultCode KVJobManager::setJobStatus(int iJob, int iTask, const std::string& status) {
+    return setJobStatus(iJob, iTask, JobStatus::toStatus(status));
 }
 
 // val shoule be : dest|status
@@ -536,27 +598,26 @@ ResultCode KVJobManager::setTaskStatus(int iJob, int iTask, const std::string& s
         td = TaskDescription(val);
     } else if (rc == nebula::kvstore::ERR_KEY_NOT_FOUND) {
         // if newStatus later than running, there must be a key
-        if (JobStatus::laterThan(newStatus, JobStatus::running)) {
+        if (JobStatus::laterThan(JobStatus::toStatus(newStatus), JobStatus::Status::RUNNING)) {
             LOG(INFO) << "ERR_INVALID_ARGUMENT";
             return nebula::kvstore::ERR_INVALID_ARGUMENT;
         }
     } else {
-        LOG(INFO) << "rc";
         return rc;
     }
 
     td.status = newStatus;
-    if (JobStatus::laterThan(td.status, newStatus)) {
+    if (JobStatus::laterThan(JobStatus::toStatus(td.status), JobStatus::toStatus(newStatus))) {
         LOG(INFO) << "ERR_INVALID_ARGUMENT oldStatus=" << td.status << ", newStatus=" << newStatus;
         return nebula::kvstore::ERR_INVALID_ARGUMENT;
     }
 
     td.dest = sDest;
-    if (td.status == JobStatus::running) {
+    if (JobStatus::toStatus(td.status) == JobStatus::Status::RUNNING) {
         td.startTime = timeNow();
     }
 
-    if (JobStatus::laterThan(td.status, JobStatus::running)) {
+    if (JobStatus::laterThan(JobStatus::toStatus(td.status), JobStatus::Status::RUNNING)) {
         td.stopTime = timeNow();
     }
 

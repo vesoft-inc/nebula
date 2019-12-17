@@ -12,7 +12,7 @@
 #include "kvstore/Common.h"
 #include "webservice/WebService.h"
 
-#include "meta/KVJobManager.h"
+#include "meta/processors/jobMan/JobManager.h"
 
 DECLARE_int32(ws_storage_http_port);
 using ResultCode = nebula::kvstore::ResultCode;
@@ -92,7 +92,7 @@ TEST_F(JobFooTest, AddJob) {
         ASSERT_EQ(ok(job), true);
         EXPECT_EQ(i, value(job));
     }
-    sleep(2);
+    // sleep(2);
 }
 
 TEST_F(JobFooTest, ShowJobs) {

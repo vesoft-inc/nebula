@@ -172,6 +172,27 @@ struct DropSpaceReq {
     2: bool if_exists,
 }
 
+enum AdminJobOp {
+    ADD         = 0x01,
+    SHOW_All    = 0x02,
+    SHOW_ONE    = 0x03,
+    STOP        = 0x04,
+    BACKUP      = 0x05,
+    RECOVER     = 0x06,
+    INVALID     = 0xFF,
+} (cpp.enum_strict)
+
+struct AdminJobReq {
+    1: AdminJobOp   op
+    2: list<string> paras;
+}
+
+struct AdminJobResp {
+    1: ErrorCode         code,
+    2: common.HostAddr  leader,
+    3: list<string> result;
+}
+
 struct ListSpacesReq {
 }
 
@@ -699,5 +720,6 @@ service MetaService {
     ExecResp createSnapshot(1: CreateSnapshotReq req);
     ExecResp dropSnapshot(1: DropSnapshotReq req);
     ListSnapshotsResp listSnapshots(1: ListSnapshotsReq req);
+    AdminJobResp runAdminJob(1: AdminJobReq req);
 }
 

@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef GRAPH_ADMINEXECUTOR_H
-#define GRAPH_ADMINEXECUTOR_H
+#ifndef GRAPH_ADMINJOBEXECUTOR_H
+#define GRAPH_ADMINJOBEXECUTOR_H
 
 #include "base/Base.h"
 #include "graph/Executor.h"
@@ -13,30 +13,34 @@
 namespace nebula {
 namespace graph {
 
-class AdminExecutor final : public Executor {
+class AdminJobExecutor final : public Executor {
 public:
-    AdminExecutor(Sentence *sentence, ExecutionContext *ectx);
+    AdminJobExecutor(Sentence *sentence, ExecutionContext *ectx);
 
     const char* name() const override {
-        return "AdminExecutor";
+        return "AdminJobExecutor";
     }
 
     Status MUST_USE_RESULT prepare() override;
 
     void execute() override;
 
+    // void executeHttp();
+
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
-    bool opNeedsSpace(const std::string& op);
+    std::vector<std::string>
+    getHeader(nebula::meta::cpp2::AdminJobOp op, bool succeed = true);
+    bool opNeedsSpace(nebula::meta::cpp2::AdminJobOp op);
+    nebula::meta::cpp2::AdminJobOp toAdminJobOp(const std::string& op);
 
 private:
     AdminSentence                             *sentence_{nullptr};
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
-    std::map<std::string, std::string>          header_;
 };
 
 }   // namespace graph
 }   // namespace nebula
 
-#endif  // GRAPH_ADMINEXECUTOR_H
+#endif  // GRAPH_AdminJobExecutor_H

@@ -5,7 +5,7 @@
  */
 
 #include "folly/String.h"
-#include "meta/JobDescription.h"
+#include "meta/processors/jobMan/JobDescription.h"
 
 namespace nebula {
 namespace meta {

@@ -63,6 +63,11 @@ nebula_add_library(
     processors/configMan/GetConfigProcessor.cpp
     processors/configMan/ListConfigsProcessor.cpp
     processors/configMan/SetConfigProcessor.cpp
+    processors/jobMan/JobManager.cpp
+    processors/jobMan/JobDescription.cpp
+    processors/jobMan/TaskDescription.cpp
+    processors/jobMan/JobStatus.cpp
+    processors/jobMan/AdminJobProcessor.cpp
 )
 
 nebula_add_library(
@@ -70,11 +75,6 @@ nebula_add_library(
     MetaHttpIngestHandler.cpp
     MetaHttpDownloadHandler.cpp
     MetaHttpReplaceHostHandler.cpp
-    MetaHttpAdminHandler.cpp
-    KVJobManager.cpp
-    JobDescription.cpp
-    TaskDescription.cpp
-    JobStatus.cpp
 )
 
 nebula_add_library(

@@ -22,7 +22,7 @@
 #include "meta/ClusterIdMan.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/KVJobManager.h"
+#include "meta/processors/jobMan/JobManager.h"
 
 using nebula::operator<<;
 using nebula::ProcessUtils;
