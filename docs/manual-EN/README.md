@@ -22,6 +22,8 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
   * [Import .csv File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
   * [Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
   * [Nebula Graph Clients](1.overview/2.quick-start/3.supported-clients.md)
+  * [FAQ](1.overview/2.quick-start/5.FAQ.md)
+
 
 * Design and Architecture
   * [Design Overview](1.overview/3.design-and-architecture/1.design-and-architecture.md)
