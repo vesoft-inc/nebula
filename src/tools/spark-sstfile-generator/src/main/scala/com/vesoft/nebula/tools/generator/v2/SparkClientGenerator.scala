@@ -6,12 +6,10 @@
 
 package com.vesoft.nebula.tools.generator.v2
 
-import org.apache.spark.sql.{Encoders, Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Encoders, Row, SparkSession}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.spark.sql.functions.col
-import org.apache.spark.sql.functions.explode
 import org.apache.spark.sql.functions.udf
-import org.apache.spark.sql.functions.split
 import java.io.File
 
 import com.google.common.geometry.{S2CellId, S2LatLng}
@@ -44,6 +42,7 @@ object SparkClientGenerator {
   private[this] val USE_TEMPLATE                        = "USE %s"
 
   private[this] val DEFAULT_BATCH              = 2
+  private[this] val DEFAULT_PARTITION          = -1
   private[this] val DEFAULT_CONNECTION_TIMEOUT = 3000
   private[this] val DEFAULT_CONNECTION_RETRY   = 3
   private[this] val DEFAULT_EXECUTION_RETRY    = 3
@@ -166,8 +165,9 @@ object SparkClientGenerator {
 
         val fields = tagConfig.getObject("fields").unwrapped
 
-        val vertex = tagConfig.getString("vertex")
-        val batch  = getOrElse(tagConfig, "batch", DEFAULT_BATCH)
+        val vertex    = tagConfig.getString("vertex")
+        val batch     = getOrElse(tagConfig, "batch", DEFAULT_BATCH)
+        val partition = getOrElse(tagConfig, "partition", DEFAULT_PARTITION)
 
         val properties      = fields.asScala.values.map(_.toString).toList
         val valueProperties = fields.asScala.keys.toList
@@ -186,7 +186,7 @@ object SparkClientGenerator {
         val data                     = createDataSource(spark, pathOpt, tagConfig)
 
         if (data.isDefined && !c.dry) {
-          data.get
+          repartition(data.get, partition)
             .select(sourceProperties.map(col): _*)
             .withColumn(vertex, toVertexUDF(col(vertex)))
             .map { row =>
@@ -269,6 +269,7 @@ object SparkClientGenerator {
         }
 
         val batch           = getOrElse(edgeConfig, "batch", DEFAULT_BATCH)
+        val partition       = getOrElse(edgeConfig, "partition", DEFAULT_PARTITION)
         val properties      = fields.asScala.values.map(_.toString).toList
         val valueProperties = fields.asScala.keys.toList
 
@@ -299,7 +300,7 @@ object SparkClientGenerator {
           Encoders.tuple(Encoders.STRING, Encoders.scalaLong, Encoders.scalaLong, Encoders.STRING)
 
         if (data.isDefined && !c.dry) {
-          data.get
+          repartition(data.get, partition)
             .select(sourceProperties.map(col): _*)
             .map { row =>
               val sourceField = if (!isGeo) {
@@ -558,6 +559,21 @@ object SparkClientGenerator {
   }
 
   /**
+    * Repartition the data frame using the specified partition number.
+    *
+    * @param frame
+    * @param partition
+    * @return
+    */
+  private[this] def repartition(frame: DataFrame, partition: Int): DataFrame = {
+    if (partition > 0) {
+      frame.repartition(partition).toDF
+    } else {
+      frame
+    }
+  }
+
+  /**
     * Check the statement execution result.
     *
     * @param code     The statement's execution result code.
@@ -640,4 +656,3 @@ object SparkClientGenerator {
       yield s2CellId.parent(index).id()
   }
 }
-
