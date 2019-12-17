@@ -14,7 +14,7 @@ It indicates to travel in a graph with specific filters (the `WHERE` clause), to
   YIELD | YIELDS [DISTINCT] <return_list>
 
 <node_list>
-   | vid [, vid ...]
+   | <vid> [, <vid> ...]
    | $-.id
 
 <edge_type_list>

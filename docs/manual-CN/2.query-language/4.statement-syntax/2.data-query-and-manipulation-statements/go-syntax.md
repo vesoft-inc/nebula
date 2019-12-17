@@ -12,7 +12,7 @@
   YIELD | YIELDS [DISTINCT] <return_list>
 
 <node_list>
-   | vid [, vid ...]
+   | <vid> [, <vid> ...]
    | $-.id
 
 <edge_type_list>
