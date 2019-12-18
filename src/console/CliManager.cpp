@@ -19,6 +19,7 @@ DECLARE_string(addr);
 DECLARE_int32(port);
 DECLARE_string(u);
 DECLARE_string(p);
+DECLARE_int32(server_conn_timeout_ms);
 DEFINE_bool(enable_history, false, "Whether to force saving the command history");
 
 namespace nebula {
@@ -60,9 +61,17 @@ bool CliManager::connect() {
     port_ = port;
     username_ = user;
 
-    NebulaClientImpl::initConnectionPool(addr_, port_, 1);
-    auto client = std::make_unique<NebulaClientImpl>();
-    cpp2::ErrorCode res = client->authenticate(username_, pass);
+    ConnectionInfo connectionInfo;
+    connectionInfo.addr = addr_;
+    connectionInfo.port = port_;
+    connectionInfo.connectionNum = 1;
+    connectionInfo.timeout = FLAGS_server_conn_timeout_ms;
+
+    std::vector<ConnectionInfo> connVec(1, connectionInfo);
+    NebulaClientImpl::initConnectionPool(connVec);
+    auto client = std::make_unique<NebulaClientImpl>(addr_, port_);
+    cpp2::ErrorCode res = client->authenticate(username_, passwd);
+
     if (res == cpp2::ErrorCode::SUCCEEDED) {
 #if defined(NEBULA_BUILD_VERSION)
         std::cerr << "\nWelcome to Nebula Graph (Version "

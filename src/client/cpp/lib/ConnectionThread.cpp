@@ -50,7 +50,7 @@ ConnectionThread::authenticate(const std::string& username, const std::string& p
                 p->setValue(Status::Error(std::move(error)));
                 return;
             }
-            auto resp = std::move(t.value());
+            auto resp = std::move(t).value();
             sessionId_ = *(resp.get_session_id());
             LOG(INFO) << "sessionId = " << sessionId_;
             p->setValue(std::move(resp));

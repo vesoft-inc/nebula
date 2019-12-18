@@ -34,8 +34,9 @@ protected:
 };
 
 TEST_F(CppClientTest, all) {
-    auto cb = [] (const std::string &name) {
-        NebulaClient client;
+    auto serverPort = gEnv->graphServerPort();
+    auto cb = [serverPort] (const std::string &name) {
+        NebulaClient client("127.0.0.1", serverPort);
         auto code = client.authenticate("user", "password");
         if (code != kSucceed) {
             LOG(ERROR) << "Authenticate graphd failed, code: " << code;
@@ -203,8 +204,9 @@ TEST_F(CppClientTest, all) {
 }
 
 TEST_F(CppClientTest, testReuseConnection) {
+    auto serverPort = gEnv->graphServerPort();
     {
-        NebulaClient client1;
+        NebulaClient client1("127.0.0.1", serverPort);
         auto code = client1.authenticate("user", "password");
         if (code != kSucceed) {
             LOG(ERROR) << "Authenticate graphd failed, code: " << code;
@@ -218,7 +220,7 @@ TEST_F(CppClientTest, testReuseConnection) {
         code = client1.execute(cmd, resp);
         ASSERT_EQ(code, kSucceed);
 
-        NebulaClient client2;
+        NebulaClient client2("127.0.0.1", serverPort);
         code = client2.authenticate("user", "password");
         if (code != kSucceed) {
             LOG(INFO) << "Authenticate graphd failed, code: " << code;
@@ -229,7 +231,7 @@ TEST_F(CppClientTest, testReuseConnection) {
         ASSERT_EQ(code, kSucceed);
     }
     {
-        NebulaClient client;
+        NebulaClient client("127.0.0.1", serverPort);
         auto code = client.authenticate("user", "password");
         if (code != kSucceed) {
             LOG(ERROR) << "Authenticate graphd failed, code: " << code;

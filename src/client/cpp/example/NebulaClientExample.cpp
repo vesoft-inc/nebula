@@ -74,14 +74,26 @@ int main(int argc, char *argv[]) {
     google::SetStderrLogging(google::ERROR);
 
     // must call: init connection pool
-    nebula::NebulaClient::initConnectionPool("127.0.0.1", 3699, 2, 2000);
+    nebula::ConnectionInfo connectionInfo;
+    connectionInfo.addr = "127.0.0.1";
+    connectionInfo.port = 3699;
+    connectionInfo.connectionNum = 2;
+    connectionInfo.timeout = 2000;
+    std::vector<nebula::ConnectionInfo> connVec(1);
+    connVec.emplace_back(connectionInfo);
+    connectionInfo.port = 3700;
+    connVec.emplace_back(connectionInfo);
+    nebula::NebulaClient::initConnectionPool(connVec);
 
-    auto fun = [&] (const std::string &name) {
+    auto fun = [&] (const std::string &name, const std::string &addr, const uint32_t port) {
+        std::this_thread::sleep_for(std::chrono::seconds(atoi(name.c_str())));
+        std::cout << name << ": service " << addr << ":" << port << std::endl;
         try {
-            nebula::NebulaClient client;
+            nebula::NebulaClient client(addr, port);
             auto code = client.authenticate("user", "password");
             if (code != nebula::kSucceed) {
-                std::cout << "Connect 127.0.0.1:3699 failed, code: " << code << std::endl;
+                std::cout << "Connect " << addr << ":" << port
+                          << " failed, code: " << code << std::endl;
                 return;
             }
 
@@ -93,8 +105,6 @@ int main(int argc, char *argv[]) {
                     std::cout << "Async do cmd \" SHOW SPACE \" failed" << std::endl;
                 }
             };
-
-            std::this_thread::sleep_for(std::chrono::seconds(atoi(name.c_str())));
 
             // async execute succeed
             client.asyncExecute("SHOW SPACES", cb);
@@ -139,8 +149,8 @@ int main(int argc, char *argv[]) {
     };
 
     // Test multi threads
-    std::thread thread1(fun, "1");
-    std::thread thread2(fun, "2");
+    std::thread thread1(fun, "1", "127.0.0.1", 3699);
+    std::thread thread2(fun, "2", "127.0.0.1", 3700);
 
     sleep(2);
 

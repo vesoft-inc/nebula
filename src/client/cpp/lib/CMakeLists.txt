@@ -21,6 +21,8 @@ nebula_add_library(
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:stats_obj>
     $<TARGET_OBJECTS:gflags_man_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>

@@ -7,22 +7,19 @@
 #ifndef CLIENT_CPP_INCLUDE_NEBULACLIENT_H_
 #define CLIENT_CPP_INCLUDE_NEBULACLIENT_H_
 
-
+#include <vector>
 #include "ExecutionResponse.h"
 
 namespace nebula {
 
 class NebulaClient final {
 public:
-    NebulaClient();
+    explicit NebulaClient(const std::string &addr, const uint32_t port);
     ~NebulaClient();
 
     // must be call on the front of the main()
     static void init(int argc, char *argv[]);
-    static void initConnectionPool(const std::string& addr,
-                                   uint16_t port,
-                                   uint16_t connectionNum = 10,
-                                   int32_t timeout = 1000 /* ms */);
+    static void initConnectionPool(const std::vector<ConnectionInfo> &addrInfo);
     // Authenticate the user
     ErrorCode authenticate(const std::string& username,
                            const std::string& password);

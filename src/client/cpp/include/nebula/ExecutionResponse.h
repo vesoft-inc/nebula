@@ -326,6 +326,14 @@ private:
     std::vector<RowValue>           rows_;
 };
 
+struct ConnectionInfo {
+    ConnectionInfo() : connectionNum(10), timeout(1000) {}
+    std::string addr;           // addr of graphd
+    uint32_t    port;           // port of graphd
+    uint32_t    connectionNum;  // connection number
+    int32_t     timeout;        // timeout ms
+};
+
 using CallbackFun = std::function<void(ExecutionResponse*, ErrorCode)>;
 
 }  // namespace nebula

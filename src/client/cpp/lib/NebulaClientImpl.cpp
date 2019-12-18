@@ -15,11 +15,8 @@ void NebulaClientImpl::initEnv(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
 }
 
-void NebulaClientImpl::initConnectionPool(const std::string& addr,
-                                          uint16_t port,
-                                          uint16_t connectionNum,
-                                          int32_t timeout) {
-    if (!ConnectionPool::instance().init(addr, port, connectionNum, timeout)) {
+void NebulaClientImpl::initConnectionPool(const std::vector<ConnectionInfo> &addrInfo) {
+    if (!ConnectionPool::instance().init(addrInfo)) {
         LOG(ERROR) << "Init pool failed";
         return;
     }
@@ -31,7 +28,7 @@ NebulaClientImpl::~NebulaClientImpl() {
 
 cpp2::ErrorCode NebulaClientImpl::authenticate(const std::string& username,
                                                const std::string& password) {
-    connection_ = ConnectionPool::instance().getConnection(indexId_);
+    connection_ = ConnectionPool::instance().getConnection(addr_, port_, indexId_);
     if (connection_ == nullptr) {
         LOG(ERROR) << "Get connection failed";
         return cpp2::ErrorCode::E_FAIL_TO_CONNECT;
@@ -57,7 +54,7 @@ void NebulaClientImpl::signout() {
 
     // Log out
     connection_->signout().get();
-    ConnectionPool::instance().returnConnection(indexId_);
+    ConnectionPool::instance().returnConnection(addr_, port_, indexId_);
 }
 
 void NebulaClientImpl::feedPath(const cpp2::Path &inPath, Path& outPath) {
@@ -168,7 +165,7 @@ cpp2::ErrorCode NebulaClientImpl::execute(folly::StringPiece stmt,
     if (!status.ok()) {
         return cpp2::ErrorCode::E_RPC_FAILURE;
     }
-    resp = std::move(status.value());
+    resp = std::move(status).value();
     return resp.get_error_code();
 }
 

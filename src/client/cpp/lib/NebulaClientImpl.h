@@ -17,15 +17,14 @@ namespace graph {
 
 class NebulaClientImpl final {
 public:
-    NebulaClientImpl() = default;
+    explicit NebulaClientImpl(const std::string &addr, const uint32_t port)
+        : addr_(addr)
+        , port_(port) {}
     ~NebulaClientImpl();
 
     // must be call on the front of the main()
     static void initEnv(int argc, char *argv[]);
-    static void initConnectionPool(const std::string& addr,
-                                   uint16_t port,
-                                   uint16_t connectionNum = 10,
-                                   int32_t timeout = 1000);
+    static void initConnectionPool(const std::vector<ConnectionInfo> &addrInfo);
 
     // Authenticate the user
     ErrorCode doAuthenticate(const std::string& username,
@@ -51,6 +50,8 @@ private:
 private:
     ConnectionThread*                   connection_{nullptr};
     int32_t                             indexId_{-1};
+    std::string                         addr_;
+    uint32_t                            port_;
 };
 
 }  // namespace graph

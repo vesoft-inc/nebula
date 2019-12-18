@@ -8,6 +8,7 @@
 #define CLIENT_CPP_LIB__CONNECTIONPOOL_H
 
 #include "ConnectionThread.h"
+#include "client/cpp/include/nebula/ExecutionResponse.h"
 
 namespace nebula {
 namespace graph {
@@ -20,29 +21,25 @@ public:
 
     ~ConnectionPool();
 
-    bool init(const std::string &addr,   /* the addr of graphd */
-              uint16_t port,             /* the port of graphd */
-              uint16_t connNum = 10,     /* the number of connections */
-              int32_t timeout = 1000     /* ms */);
+    bool init(const std::vector<ConnectionInfo> &addrInfo);
 
     // If there has not idle socket, it will return nullptr
     // TODO: support to block when there has no idle socket
-    ConnectionThread* getConnection(int32_t &indexId);
+    ConnectionThread* getConnection(const std::string &addr, uint32_t port, int32_t &indexId);
 
-    void returnConnection(int32_t indexId);
+    void returnConnection(const std::string &addr, uint32_t port, int32_t indexId);
 
+    // TODO: add reconnect handle
 private:
     ConnectionPool() = default;
 
 private:
     // key: connection id, value: ConnectionThread
     using ConnectionMap = std::unordered_map<int32_t, std::unique_ptr<ConnectionThread>>;
-    ConnectionMap                                      threads_;
-    std::vector<int32_t>                               unusedIds_;
-    std::mutex                                         lock_;
-    std::atomic_int                                    nextThreadToUse_;
-    int32_t                                            threadNum_{10};
-    bool                                               hasInit_{false};
+    std::unordered_map<std::string, ConnectionMap>         threads_;
+    std::unordered_map<std::string, std::vector<int32_t>>  unusedIds_;
+    std::mutex                                             lock_;
+    bool                                                   hasInit_{false};
 };
 
 }  // namespace graph

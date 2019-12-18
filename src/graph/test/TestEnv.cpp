@@ -74,7 +74,13 @@ void TestEnv::SetUp() {
 
     // Create graphServer
     graphServer_ = TestUtils::mockGraphServer(0);
-    NebulaClientImpl::initConnectionPool("127.0.0.1", graphServerPort(), 2);
+    ConnectionInfo connectionInfo;
+    connectionInfo.addr = "127.0.0.1";
+    connectionInfo.port = graphServerPort();
+    connectionInfo.connectionNum = 2;
+    connectionInfo.timeout = 1000;
+    std::vector<ConnectionInfo> connVec(1, connectionInfo);
+    NebulaClientImpl::initConnectionPool(connVec);
 }
 
 

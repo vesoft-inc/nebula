@@ -13,15 +13,12 @@ void NebulaClient::init(int argc, char *argv[]) {
     graph::NebulaClientImpl::initEnv(argc, argv);
 }
 
-void NebulaClient::initConnectionPool(const std::string& addr,
-                                      uint16_t port,
-                                      uint16_t connectionNum,
-                                      int32_t timeout) {
-    graph::NebulaClientImpl::initConnectionPool(addr, port, connectionNum, timeout);
+void NebulaClient::initConnectionPool(const std::vector<ConnectionInfo> &addrInfo) {
+    graph::NebulaClientImpl::initConnectionPool(addrInfo);
 }
 
-NebulaClient::NebulaClient() {
-    client_ = std::make_unique<graph::NebulaClientImpl>();
+NebulaClient::NebulaClient(const std::string &addr, const uint32_t port) {
+    client_ = std::make_unique<graph::NebulaClientImpl>(addr, port);
 }
 
 NebulaClient::~NebulaClient() {
