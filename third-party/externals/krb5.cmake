@@ -41,6 +41,7 @@ ExternalProject_Add_Step(krb5 mannual-configure
             --disable-rpath
             --disable-aesni
             --disable-thread-support
+            --without-system-verto
     WORKING_DIRECTORY ${source_dir}/src
 )
 
