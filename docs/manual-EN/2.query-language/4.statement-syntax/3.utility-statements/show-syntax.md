@@ -2,6 +2,7 @@
 
 ```ngql
 SHOW {SPACES | TAGS | EDGES | HOSTS | PARTS}
+SHOW PART <part_id>
 SHOW CREATE {TAG | EDGE} {<tag_name> | <edge_name>}
 SHOW CONFIGS [graph|meta|storage]
 ```
@@ -15,6 +16,8 @@ SHOW CONFIGS [graph|meta|storage]
 `SHOW HOSTS` is to list storage hosts registered by the meta server. There are 6 columns: ip, port, status (online/offline), leader partitions count in all spaces, leader partitions count in each space, total partitions count in all spaces.
 
 `SHOW PARTS` lists the partition information of the given SPACE.
+
+`SHOW PART <part_id>` lists the specified partition information.
 
 For more information about `SHOW CONFIGS [graph|meta|storage]`, please refer to [configs syntax](../../../3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/configs-syntax.md).
 
