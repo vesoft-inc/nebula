@@ -1,7 +1,7 @@
 # Drop Edge Syntax
 
 ```ngql
-DROP EDGE edge_type_name
+DROP EDGE <edge_type_name>
 ```
 
 You must have the DROP privilege for the edge type.
