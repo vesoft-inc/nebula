@@ -14,10 +14,12 @@
 #include "meta/ServerBasedSchemaManager.h"
 #include "kvstore/RocksEngine.h"
 
+DECLARE_string(space);
 DECLARE_string(db_path);
 DECLARE_string(meta_server);
-DECLARE_string(part);
-DECLARE_string(scan);
+DECLARE_string(parts);
+DECLARE_string(mode);
+DECLARE_string(vids);
 DECLARE_string(tags);
 DECLARE_string(edges);
 DECLARE_int64(limit);
@@ -44,11 +46,15 @@ private:
 
     Status openDb();
 
-    void scan(kvstore::RocksPrefixIter* it);
+    void seekToFirst();
 
-    bool printTagKey(const folly::StringPiece& key);
+    void seek(std::string& prefix);
 
-    bool printEdgeKey(const folly::StringPiece& key);
+    void iterates(kvstore::RocksPrefixIter* it);
+
+    inline void printTagKey(const folly::StringPiece& key);
+
+    inline void printEdgeKey(const folly::StringPiece& key);
 
     std::string getTagName(const TagID tagId);
 
@@ -70,9 +76,12 @@ private:
     std::unordered_set<EdgeType>                            edges_;
     std::vector<std::function<bool(const folly::StringPiece&)>>    beforePrintVertex_;
     std::vector<std::function<bool(const folly::StringPiece&)>>    beforePrintEdge_;
-    std::unordered_map<std::string, uint32_t>               tagCount_;
-    std::unordered_map<std::string, uint32_t>               edgeCount_;
+    // For statistics
+    std::unordered_map<TagID, uint32_t>                     tagStat_;
+    std::unordered_map<EdgeType, uint32_t>                  edgeStat_;
     int64_t                                                 count_{0};
+    int64_t                                                 vertexCount_{0};
+    int64_t                                                 edgeCount_{0};
 };
 }  // namespace storage
 }  // namespace nebula

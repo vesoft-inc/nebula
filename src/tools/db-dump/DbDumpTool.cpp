@@ -33,7 +33,21 @@ void printHelp() {
 
        --limit=<N>
          Limit to output.
-)");
+    )");
+}
+
+void printParams() {
+    std::cout << "=======================================================\n";
+    std::cout << "mode: " << FLAGS_mode << "\n";
+    std::cout << "seta server: " << FLAGS_meta_server << "\n";
+    std::cout << "space: " << FLAGS_space << "\n";
+    std::cout << "path: " << FLAGS_db_path << "\n";
+    std::cout << "parts: " << FLAGS_parts << "\n";
+    std::cout << "vids: " << FLAGS_vids << "\n";
+    std::cout << "tags: " << FLAGS_tags << "\n";
+    std::cout << "edges: " << FLAGS_edges << "\n";
+    std::cout << "limit: " << FLAGS_limit << "\n";
+    std::cout << "=======================================================\n";
 }
 
 int main(int argc, char *argv[]) {
@@ -46,10 +60,12 @@ int main(int argc, char *argv[]) {
 
     google::SetStderrLogging(google::FATAL);
 
+    printParams();
+
     nebula::storage::DbDumper dumper;
     auto status = dumper.init();
     if (!status.ok()) {
-      std::cerr << status << "\n\n";
+      std::cerr << "Error: " << status << "\n\n";
       return EXIT_FAILURE;
     }
     dumper.run();

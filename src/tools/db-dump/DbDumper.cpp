@@ -14,11 +14,11 @@
 DEFINE_string(space, "", "The space name.");
 DEFINE_string(db_path, "./", "Path to rocksdb.");
 DEFINE_string(meta_server, "127.0.0.1:45500", "Meta servers' address.");
-DEFINE_string(mode, "scan", "Dump mode, scan | prefix | stat");
+DEFINE_string(mode, "scan", "Dump mode, scan | stat");
 DEFINE_string(parts, "", "A list of partition id seperated by comma.");
 DEFINE_string(vids, "", "A list of vertex id seperated by comma.");
-DEFINE_string(tags, "", "Filtering with given tags.");
-DEFINE_string(edges, "", "Filtering with given edges.");
+DEFINE_string(tags, "", "A list of tag name seperated by comma.");
+DEFINE_string(edges, "", "A list of edge name seperated by comma.");
 DEFINE_int64(limit, 1000, "Limit to output.");
 
 namespace nebula {
@@ -43,12 +43,12 @@ Status DbDumper::init() {
     if (!status.ok()) {
         return status;
     }
+
     return Status::OK();
 }
 
 Status DbDumper::initMeta() {
     FLAGS_load_data_interval_secs = 3600;
-    std::cout << "Meta server: " << FLAGS_meta_server << "\n";
     auto addrs = network::NetworkUtils::toHosts(FLAGS_meta_server);
     if (!addrs.ok()) {
         return addrs.status();
@@ -69,7 +69,6 @@ Status DbDumper::initMeta() {
 }
 
 Status DbDumper::initSpace() {
-    std::cout << "Space: " << FLAGS_space << "\n";
     if (FLAGS_space == "") {
         return Status::Error("Space is not given.");
     }
@@ -90,13 +89,9 @@ Status DbDumper::initSpace() {
 Status DbDumper::initParams() {
     std::vector<std::string> tags, edges;
     try {
-        std::cout << "parts: " << FLAGS_parts << "\n";
         folly::splitTo<PartitionID>(',', FLAGS_parts, std::inserter(parts_, parts_.begin()), true);
-        std::cout << "vids: " << FLAGS_vids << "\n";
         folly::splitTo<VertexID>(',', FLAGS_vids, std::inserter(vids_, vids_.begin()), true);
-        std::cout << "tags: " << FLAGS_tags << "\n";
         folly::splitTo<std::string>(',', FLAGS_tags, std::inserter(tags, tags.begin()), true);
-        std::cout << "edges: " << FLAGS_edges << "\n";
         folly::splitTo<std::string>(',', FLAGS_edges, std::inserter(edges, edges.begin()), true);
     } catch (const std::exception& e) {
         return Status::Error("Parse parts/tags/edges error: %s", e.what());
@@ -116,11 +111,14 @@ Status DbDumper::initParams() {
         }
         edges_.emplace(edgeType.value());
     }
+
+    if (FLAGS_mode.compare("scan") != 0 && FLAGS_mode.compare("stat") != 0) {
+        return Status::Error("Unkown mode '%s'.", FLAGS_mode.c_str());
+    }
     return Status::OK();
 }
 
 Status DbDumper::openDb() {
-    std::cout << "Path: " << FLAGS_db_path << "\n";
     if (!fs::FileUtils::exist(FLAGS_db_path)) {
         return Status::Error("Db path '%s' not exist.", FLAGS_db_path.c_str());
     }
@@ -177,40 +175,28 @@ void DbDumper::run() {
     switch (bitmap) {
         case 0b00000000: {
             // nothing specified,seek to first and print them all
-            const auto it = db_->NewIterator(rocksdb::ReadOptions());
-            it->SeekToFirst();
-            const auto prefixIt = std::make_unique<kvstore::RocksPrefixIter>(it, "");
-            scan(prefixIt.get());
+            seekToFirst();
             break;
         }
         case 0b00000001: {
             // specified edges, seek to first and only print edges if found.
             beforePrintVertex_.emplace_back(noPrint);
             beforePrintEdge_.emplace_back(printIfEdgeFound);
-            const auto it = db_->NewIterator(rocksdb::ReadOptions());
-            it->SeekToFirst();
-            const auto prefixIt = std::make_unique<kvstore::RocksPrefixIter>(it, "");
-            scan(prefixIt.get());
+            seekToFirst();
             break;
         }
         case 0b00000010: {
             // specified tags, seek to first and only print vertices if found.
             beforePrintVertex_.emplace_back(printIfTagFound);
             beforePrintEdge_.emplace_back(noPrint);
-            const auto it = db_->NewIterator(rocksdb::ReadOptions());
-            it->SeekToFirst();
-            const auto prefixIt = std::make_unique<kvstore::RocksPrefixIter>(it, "");
-            scan(prefixIt.get());
+            seekToFirst();
             break;
         }
         case 0b00000011: {
             // specified tags and edges, seek to first and print if found.
             beforePrintVertex_.emplace_back(printIfTagFound);
             beforePrintEdge_.emplace_back(printIfEdgeFound);
-            const auto it = db_->NewIterator(rocksdb::ReadOptions());
-            it->SeekToFirst();
-            const auto prefixIt = std::make_unique<kvstore::RocksPrefixIter>(it, "");
-            scan(prefixIt.get());
+            seekToFirst();
             break;
         }
         case 0b00000100: {
@@ -218,10 +204,7 @@ void DbDumper::run() {
             for (auto vid : vids_) {
                 auto part = ID_HASH(vid, partNum_);
                 auto prefix = NebulaKeyUtils::vertexPrefix(part, vid);
-                const auto it = db_->NewIterator(rocksdb::ReadOptions());
-                it->Seek(rocksdb::Slice(prefix));
-                const auto prefixIt = std::make_unique<kvstore::RocksPrefixIter>(it, prefix);
-                scan(prefixIt.get());
+                seek(prefix);
             }
             break;
         }
@@ -231,10 +214,7 @@ void DbDumper::run() {
                 auto part = ID_HASH(vid, partNum_);
                 for (auto edge : edges_) {
                     auto prefix = NebulaKeyUtils::edgePrefix(part, vid, edge);
-                    const auto it = db_->NewIterator(rocksdb::ReadOptions());
-                    it->Seek(rocksdb::Slice(prefix));
-                    const auto prefixIt = std::make_unique<kvstore::RocksPrefixIter>(it, prefix);
-                    scan(prefixIt.get());
+                    seek(prefix);
                 }
             }
             break;
@@ -245,10 +225,7 @@ void DbDumper::run() {
                 auto part = ID_HASH(vid, partNum_);
                 for (auto tag : tags_) {
                     auto prefix = NebulaKeyUtils::vertexPrefix(part, vid, tag);
-                    const auto it = db_->NewIterator(rocksdb::ReadOptions());
-                    it->Seek(rocksdb::Slice(prefix));
-                    const auto prefixIt = std::make_unique<kvstore::RocksPrefixIter>(it, prefix);
-                    scan(prefixIt.get());
+                    seek(prefix);
                 }
             }
             break;
@@ -259,10 +236,7 @@ void DbDumper::run() {
                 auto part = ID_HASH(vid, partNum_);
                 for (auto edge : edges_) {
                     auto prefix = NebulaKeyUtils::edgePrefix(part, vid, edge);
-                    const auto it = db_->NewIterator(rocksdb::ReadOptions());
-                    it->Seek(rocksdb::Slice(prefix));
-                    const auto prefixIt = std::make_unique<kvstore::RocksPrefixIter>(it, prefix);
-                    scan(prefixIt.get());
+                    seek(prefix);
                 }
             }
             // specified vids and tags, seek with prefix and print.
@@ -270,10 +244,7 @@ void DbDumper::run() {
                 auto part = ID_HASH(vid, partNum_);
                 for (auto tag : tags_) {
                     auto prefix = NebulaKeyUtils::vertexPrefix(part, vid, tag);
-                    const auto it = db_->NewIterator(rocksdb::ReadOptions());
-                    it->Seek(rocksdb::Slice(prefix));
-                    const auto prefixIt = std::make_unique<kvstore::RocksPrefixIter>(it, prefix);
-                    scan(prefixIt.get());
+                    seek(prefix);
                 }
             }
             break;
@@ -282,10 +253,7 @@ void DbDumper::run() {
             // specified part, seek with prefix and print them all
             for (auto part : parts_) {
                 auto prefix = NebulaKeyUtils::prefix(part);
-                const auto it = db_->NewIterator(rocksdb::ReadOptions());
-                it->Seek(rocksdb::Slice(prefix));
-                const auto prefixIt = std::make_unique<kvstore::RocksPrefixIter>(it, prefix);
-                scan(prefixIt.get());
+                seek(prefix);
             }
             break;
         }
@@ -295,10 +263,7 @@ void DbDumper::run() {
             beforePrintEdge_.emplace_back(printIfEdgeFound);
             for (auto part : parts_) {
                 auto prefix = NebulaKeyUtils::prefix(part);
-                const auto it = db_->NewIterator(rocksdb::ReadOptions());
-                it->Seek(rocksdb::Slice(prefix));
-                const auto prefixIt = std::make_unique<kvstore::RocksPrefixIter>(it, prefix);
-                scan(prefixIt.get());
+                seek(prefix);
             }
             break;
         }
@@ -308,10 +273,7 @@ void DbDumper::run() {
             beforePrintEdge_.emplace_back(noPrint);
             for (auto part : parts_) {
                 auto prefix = NebulaKeyUtils::prefix(part);
-                const auto it = db_->NewIterator(rocksdb::ReadOptions());
-                it->Seek(rocksdb::Slice(prefix));
-                const auto prefixIt = std::make_unique<kvstore::RocksPrefixIter>(it, prefix);
-                scan(prefixIt.get());
+                seek(prefix);
             }
             break;
         }
@@ -320,10 +282,7 @@ void DbDumper::run() {
             beforePrintEdge_.emplace_back(printIfEdgeFound);
             for (auto part : parts_) {
                 auto prefix = NebulaKeyUtils::prefix(part);
-                const auto it = db_->NewIterator(rocksdb::ReadOptions());
-                it->Seek(rocksdb::Slice(prefix));
-                const auto prefixIt = std::make_unique<kvstore::RocksPrefixIter>(it, prefix);
-                scan(prefixIt.get());
+                seek(prefix);
             }
 
             beforePrintVertex_.clear();
@@ -332,10 +291,7 @@ void DbDumper::run() {
             beforePrintEdge_.emplace_back(noPrint);
             for (auto part : parts_) {
                 auto prefix = NebulaKeyUtils::prefix(part);
-                const auto it = db_->NewIterator(rocksdb::ReadOptions());
-                it->Seek(rocksdb::Slice(prefix));
-                const auto prefixIt = std::make_unique<kvstore::RocksPrefixIter>(it, prefix);
-                scan(prefixIt.get());
+                seek(prefix);
             }
             break;
         }
@@ -343,10 +299,7 @@ void DbDumper::run() {
             for (auto part : parts_) {
                 for (auto vid : vids_) {
                     auto prefix = NebulaKeyUtils::vertexPrefix(part, vid);
-                    const auto it = db_->NewIterator(rocksdb::ReadOptions());
-                    it->Seek(rocksdb::Slice(prefix));
-                    const auto prefixIt = std::make_unique<kvstore::RocksPrefixIter>(it, prefix);
-                    scan(prefixIt.get());
+                    seek(prefix);
                 }
             }
             break;
@@ -356,11 +309,7 @@ void DbDumper::run() {
                 for (auto vid : vids_) {
                     for (auto edge : edges_) {
                         auto prefix = NebulaKeyUtils::edgePrefix(part, vid, edge);
-                        const auto it = db_->NewIterator(rocksdb::ReadOptions());
-                        it->Seek(rocksdb::Slice(prefix));
-                        const auto prefixIt =
-                            std::make_unique<kvstore::RocksPrefixIter>(it, prefix);
-                        scan(prefixIt.get());
+                        seek(prefix);
                     }
                 }
             }
@@ -371,11 +320,7 @@ void DbDumper::run() {
                 for (auto vid : vids_) {
                     for (auto tag : tags_) {
                         auto prefix = NebulaKeyUtils::vertexPrefix(part, vid, tag);
-                        const auto it = db_->NewIterator(rocksdb::ReadOptions());
-                        it->Seek(rocksdb::Slice(prefix));
-                        const auto prefixIt =
-                            std::make_unique<kvstore::RocksPrefixIter>(it, prefix);
-                        scan(prefixIt.get());
+                        seek(prefix);
                     }
                 }
             }
@@ -386,11 +331,7 @@ void DbDumper::run() {
                 for (auto vid : vids_) {
                     for (auto edge : edges_) {
                         auto prefix = NebulaKeyUtils::edgePrefix(part, vid, edge);
-                        const auto it = db_->NewIterator(rocksdb::ReadOptions());
-                        it->Seek(rocksdb::Slice(prefix));
-                        const auto prefixIt =
-                            std::make_unique<kvstore::RocksPrefixIter>(it, prefix);
-                        scan(prefixIt.get());
+                        seek(prefix);
                     }
                 }
             }
@@ -399,11 +340,7 @@ void DbDumper::run() {
                 for (auto vid : vids_) {
                     for (auto tag : tags_) {
                         auto prefix = NebulaKeyUtils::edgePrefix(part, vid, tag);
-                        const auto it = db_->NewIterator(rocksdb::ReadOptions());
-                        it->Seek(rocksdb::Slice(prefix));
-                        const auto prefixIt =
-                            std::make_unique<kvstore::RocksPrefixIter>(it, prefix);
-                        scan(prefixIt.get());
+                        seek(prefix);
                     }
                 }
             }
@@ -413,52 +350,109 @@ void DbDumper::run() {
             std::cerr << "error";
         }
     }
+
+    std::cout << "=======================================================\n";
+    std::cout << "COUNT: " << count_ << "\n";
+    std::cout << "VERTEX COUNT: " << vertexCount_ << "\n";
+    std::cout << "EDGE COUNT: " << edgeCount_ << "\n";
+    std::cout << "TAG STATISTICS: \n";
+    for (auto &t : tagStat_) {
+        std::cout << "\t" << getTagName(t.first) << " : " << t.second << "\n";
+    }
+    std::cout << "EDGE STATISTICS: \n";
+    for (auto &e : edgeStat_) {
+        std::cout << "\t" << getEdgeName(e.first) << " : " << e.second << "\n";
+    }
+    std::cout << "=======================================================\n";
 }
 
-void DbDumper::scan(kvstore::RocksPrefixIter* it) {
+void DbDumper::seekToFirst() {
+    const auto it = db_->NewIterator(rocksdb::ReadOptions());
+    it->SeekToFirst();
+    const auto prefixIt = std::make_unique<kvstore::RocksPrefixIter>(it, "");
+    iterates(prefixIt.get());
+}
+
+void DbDumper::seek(std::string& prefix) {
+    const auto it = db_->NewIterator(rocksdb::ReadOptions());
+    it->Seek(rocksdb::Slice(prefix));
+    const auto prefixIt = std::make_unique<kvstore::RocksPrefixIter>(it, prefix);
+    iterates(prefixIt.get());
+}
+
+void DbDumper::iterates(kvstore::RocksPrefixIter* it) {
     for (; it->valid(); it->next()) {
+        if (FLAGS_limit > 0 && count_ >= FLAGS_limit) {
+            break;
+        }
+
         auto key = it->key();
         auto value = it->val();
 
         if (NebulaKeyUtils::isVertex(key)) {
-            if (!printTagKey(key)) {
-                continue;
+            // filts the data
+            for (auto& cb : beforePrintVertex_) {
+                if (!cb(key)) {
+                    continue;
+                }
             }
 
-            auto schema = schemaMng_->getTagSchema(spaceId_, NebulaKeyUtils::getTagId(key));
-            if (schema == nullptr) {
-                continue;
+            auto tagId = NebulaKeyUtils::getTagId(key);
+            // only print to screen with scan mode
+            if (FLAGS_mode != "stat") {
+                printTagKey(key);
+                auto schema = schemaMng_->getTagSchema(spaceId_, tagId);
+                if (schema == nullptr) {
+                    continue;
+                }
+                printValue(value, schema);
             }
-            printValue(value, schema);
+
+            // statistics
+            auto tagStat = tagStat_.find(NebulaKeyUtils::getTagId(key));
+            if (tagStat == tagStat_.end()) {
+                tagStat_.emplace(tagId, 1);
+            } else {
+                ++(tagStat->second);
+            }
+            ++vertexCount_;
             ++count_;
         }
 
         if (NebulaKeyUtils::isEdge(key)) {
-            if (!printEdgeKey(key)) {
-                continue;
+            // filts the data
+            for (auto &cb : beforePrintEdge_) {
+                if (!cb(key)) {
+                    continue;
+                }
             }
 
-            auto schema = schemaMng_->getEdgeSchema(spaceId_, NebulaKeyUtils::getEdgeType(key));
-            if (schema == nullptr) {
-                continue;
+            auto edgeType = NebulaKeyUtils::getEdgeType(key);
+            // only print to screen with scan mode
+            if (FLAGS_mode != "stat") {
+                printEdgeKey(key);
+                auto schema = schemaMng_->getEdgeSchema(spaceId_, edgeType);
+                if (schema == nullptr) {
+                    continue;
+                }
+                printValue(value, schema);
             }
-            printValue(value, schema);
+
+
+            // statistics
+            auto edgeStat = edgeStat_.find(edgeType);
+            if (edgeStat == edgeStat_.end()) {
+                edgeStat_.emplace(edgeType, 1);
+            } else {
+                ++(edgeStat->second);
+            }
+            ++edgeCount_;
             ++count_;
-        }
-
-        if (FLAGS_limit > 0 && count_ > FLAGS_limit) {
-            break;
         }
     }
 }
 
-bool DbDumper::printTagKey(const folly::StringPiece& key) {
-    for (auto& cb : beforePrintVertex_) {
-        if (!cb(key)) {
-            return false;
-        }
-    }
-
+inline void DbDumper::printTagKey(const folly::StringPiece& key) {
     auto part = NebulaKeyUtils::getPart(key);
     auto vid = NebulaKeyUtils::getVertexId(key);
     auto tagId = NebulaKeyUtils::getTagId(key);
@@ -466,15 +460,9 @@ bool DbDumper::printTagKey(const folly::StringPiece& key) {
             << part << ", "
             << vid << ", "
             << getTagName(tagId);
-    return true;
 }
 
-bool DbDumper::printEdgeKey(const folly::StringPiece& key) {
-    for (auto &cb : beforePrintEdge_) {
-        if (!cb(key)) {
-            return false;
-        }
-    }
+inline void DbDumper::printEdgeKey(const folly::StringPiece& key) {
     auto part = NebulaKeyUtils::getPart(key);
     auto edgeType = NebulaKeyUtils::getEdgeType(key);
     auto src = NebulaKeyUtils::getSrcId(key);
@@ -486,7 +474,6 @@ bool DbDumper::printEdgeKey(const folly::StringPiece& key) {
             << getEdgeName(edgeType) << ", "
             << rank << ", "
             << dst;
-    return true;
 }
 
 void DbDumper::printValue(const folly::StringPiece& data,
