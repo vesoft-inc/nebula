@@ -79,6 +79,8 @@ source_tar_name=nebula-third-party-src-1.0.tgz
 source_url=https://nebula-graph.oss-accelerate.aliyuncs.com/third-party/${source_tar_name}
 logfile=$build_root/build.log
 
+trap '[[ $? -ne 0 ]] && echo "Building failed, see $logfile for more details." 1>&2' EXIT
+
 # Allow to customize compilers
 [[ -n ${CC} ]] && C_COMPILER_ARG="-DCMAKE_C_COMPILER=${CC}"
 [[ -n ${CXX} ]] && CXX_COMPILER_ARG="-DCMAKE_CXX_COMPILER=${CXX}"
@@ -116,7 +118,7 @@ fi
 mkdir -p $build_dir $install_dir
 cd $build_dir
 
-echo "Starting build, on any failure, please see $logfile"
+echo "Starting build"
 
 cmake -DDOWNLOAD_DIR=$download_dir \
       -DCMAKE_INSTALL_PREFIX=$install_dir \
@@ -125,7 +127,7 @@ cmake -DDOWNLOAD_DIR=$download_dir \
 
 make |& \
          tee -a $logfile | \
-         grep --line-buffered 'Creating\|^Scanning\|Performing\|Completed\|CMakeFiles.*Error'
+         grep --line-buffered 'Creating\|^Scanning\|Performing\|Completed\|CMakeFiles.*Error\|strip-archives'
 end_time=$(date +%s)
 
 cd $OLDPWD && rm -rf $build_dir

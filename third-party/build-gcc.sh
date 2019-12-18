@@ -321,7 +321,8 @@ EOF
 start_time=$(date +%s)
 set -e
 set -o pipefail
-echo "Starting build, on any failure, see $logfile"
+echo "Starting build"
+trap '[[ $? -ne 0 ]] && echo "Building failed, see $logfile for more details." 1>&2' EXIT
 mkdir -p $root_dir
 
 fetch_tarballs
