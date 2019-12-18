@@ -141,10 +141,12 @@ set(CMAKE_MODULE_PATH "${NEBULA_HOME}/cmake" ${CMAKE_MODULE_PATH})
 
 # When NEBULA_THIRDPARTY_ROOT is null, set default value as /opt/nebula/third-party
 if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
-    if (EXISTS ${CMAKE_BINARY_DIR}/third-party/install)
+    if(EXISTS ${CMAKE_BINARY_DIR}/third-party/install)
         SET(NEBULA_THIRDPARTY_ROOT ${CMAKE_BINARY_DIR}/third-party/install)
+    elseif(EXISTS /opt/nebula/third-party)
+    set(NEBULA_THIRDPARTY_ROOT "/opt/nebula/third-party")
     else()
-        SET(NEBULA_THIRDPARTY_ROOT "/opt/nebula/third-party")
+        include(BuildThirdParty)
     endif()
 endif()
 
