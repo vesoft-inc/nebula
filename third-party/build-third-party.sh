@@ -127,7 +127,7 @@ cmake -DDOWNLOAD_DIR=$download_dir \
 
 make |& \
          tee -a $logfile | \
-         grep --line-buffered 'Creating\|^Scanning\|Performing\|Completed\|CMakeFiles.*Error\|strip-archives'
+        { grep --line-buffered 'Creating\|^Scanning\|Performing\|Completed\|CMakeFiles.*Error' || true; }
 end_time=$(date +%s)
 
 cd $OLDPWD && rm -rf $build_dir
