@@ -480,9 +480,8 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
                 // ("labels", labels);
             // obj[kHistograms].push_back(std::move(histogram));
 
-            // Expose the metrics computed from Histogram
-            // Now we only use Histogram for latency, So just expose the p99
-            // It's a temporary solution and Hard Code! Not a general work.
+            // Expose the metrics computed from Histogram instead of the whole distribution
+            // Now we only expose the p99 metrics for simpler
             auto value = readHisto(index.second, StatsManager::TimeRange::ONE_HOUR, 99).value();
             folly::dynamic gauge = folly::dynamic::object("name", name+"_p99")
                     ("value", value)
