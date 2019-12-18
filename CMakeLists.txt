@@ -13,7 +13,6 @@
 #   NEBULA_OTHER_ROOT              -- Specify the root directory for user build
 #                                  -- Split with ":", exp: DIR:DIR
 #
-#   SKIP_JAVA_CLIENT               -- Skip building the java client
 #   ENABLE_JEMALLOC                -- Link jemalloc into all executables
 #   ENABLE_NATIVE                  -- Build native client
 #   ENABLE_TESTING                 -- Build unit test
@@ -24,18 +23,19 @@ project("Nebula Graph" C CXX)
 
 set(CMAKE_SKIP_RPATH TRUE)
 
-option(SKIP_JAVA_CLIENT "Whether to skip building the java client" ON)
 option(ENABLE_JEMALLOC "Whether to link jemalloc to all executables" ON)
 option(ENABLE_NATIVE "Whether to build native client" OFF)
 option(ENABLE_CCACHE "Whether to use ccache to speed up compiling" ON)
 option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
 option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
 option(ENABLE_UBSAN "Whether to turn Undefined Behavior Sanitizer ON or OFF" OFF)
+option(ENABLE_FUZZ_TEST "Whether to turn Fuzz Test ON or OFF" OFF)
 set(NEBULA_DEBUG_INFO_LEVEL 1 CACHE STRING "Level of debug info, used only in Debug or RelWithDebInfo")
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
 message(STATUS "ENABLE_UBSAN: ${ENABLE_UBSAN}")
+message(STATUS "ENABLE_FUZZ_TEST: ${ENABLE_FUZZ_TEST}")
 
 
 if (ENABLE_NATIVE)
@@ -261,6 +261,13 @@ if(ENABLE_UBSAN)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined")
 endif()
 
+if(ENABLE_FUZZ_TEST)
+    check_cxx_compiler_flag("-fsanitize=fuzzer" ENABLE_FUZZ_OK)
+    if (NOT ENABLE_FUZZ_OK)
+        MESSAGE(FATAL_ERROR "The compiler does not support fuzz testing")
+    endif()
+endif()
+
 macro(nebula_add_executable)
     cmake_parse_arguments(
         nebula_exec                 # prefix
@@ -283,7 +290,7 @@ endmacro()
 macro(nebula_add_test)
     cmake_parse_arguments(
         nebula_test                 # prefix
-        "DISABLED"                  # <options>
+        "DISABLED;FUZZER"           # <options>
         "NAME"                      # <one_value_args>
         "SOURCES;OBJECTS;LIBRARIES" # <multi_value_args>
         ${ARGN}
@@ -296,7 +303,13 @@ macro(nebula_add_test)
         LIBRARIES ${nebula_test_LIBRARIES}
     )
 
-    if (NOT ${nebula_test_DISABLED})
+    if (${nebula_test_FUZZER})
+        #Currently only Clang supports fuzz test
+        if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+            set_target_properties(${nebula_test_NAME} PROPERTIES COMPILE_FLAGS "-g -fsanitize=fuzzer")
+            set_target_properties(${nebula_test_NAME} PROPERTIES LINK_FLAGS "-fsanitize=fuzzer")
+        endif()
+    elseif (NOT ${nebula_test_DISABLED})
         string(REGEX REPLACE "${CMAKE_SOURCE_DIR}/src/(.*)/test" "\\1" test_group ${CMAKE_CURRENT_SOURCE_DIR})
         add_test(NAME ${nebula_test_NAME} COMMAND ${nebula_test_NAME})
         set_tests_properties(${nebula_test_NAME} PROPERTIES LABELS ${test_group})
@@ -424,11 +437,7 @@ function(nebula_add_subdirectory dir_name)
     add_subdirectory(${dir_name})
 endfunction()
 
-if (NOT SKIP_JAVA_CLIENT)
-    set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-hbase clean-java-client)
-else()
-    set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-hbase)
-endif()
+set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-hbase)
 
 add_subdirectory(src)
 add_subdirectory(etc)

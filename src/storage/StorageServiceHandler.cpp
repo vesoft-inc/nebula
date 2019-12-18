@@ -159,6 +159,12 @@ StorageServiceHandler::future_memberChange(const cpp2::MemberChangeReq& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::AdminExecResp>
+StorageServiceHandler::future_checkPeers(const cpp2::CheckPeersReq& req) {
+    auto* processor = CheckPeersProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::GetLeaderResp>
 StorageServiceHandler::future_getLeaderPart(const cpp2::GetLeaderReq& req) {
     auto* processor = GetLeaderProcessor::instance(kvstore_);

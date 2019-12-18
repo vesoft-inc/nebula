@@ -17,7 +17,6 @@ nebula_add_test(
         gtest
 )
 
-
 nebula_add_test(
     NAME
         processor_test
@@ -52,7 +51,6 @@ nebula_add_test(
         gtest
 )
 
-
 nebula_add_test(
     NAME
         hb_processor_test
@@ -84,7 +82,6 @@ nebula_add_test(
         wangle
         gtest
 )
-
 
 nebula_add_test(
     NAME
@@ -119,7 +116,6 @@ nebula_add_test(
         wangle
         gtest
 )
-
 
 nebula_add_test(
     NAME

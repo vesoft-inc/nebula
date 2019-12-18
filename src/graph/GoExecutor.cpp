@@ -359,6 +359,17 @@ Status GoExecutor::prepareNeededProps() {
                 break;
             }
         }
+
+        auto &tagMap = expCtx_->getTagMap();
+        auto spaceId = ectx()->rctx()->session()->space();
+        for (auto &entry : tagMap) {
+            auto tagId = ectx()->schemaManager()->toTagID(spaceId, entry.first);
+            if (!tagId.ok()) {
+                status == Status::Error("Tag `%s' not found.", entry.first.c_str());
+                break;
+            }
+            entry.second = tagId.value();
+        }
     } while (false);
 
     return status;
@@ -1023,9 +1034,11 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                                             srcid = vdata.get_vertex_id(),
                                             this](const std::string &edgeName,
                                                   const std::string &prop) -> OptVariantType {
-                        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, edgeName);
-                        if (!edgeStatus.ok()) {
-                            return edgeStatus.status();
+                        EdgeType type;
+                        auto found = expCtx_->getEdgeType(edgeName, type);
+                        if (!found) {
+                            return Status::Error(
+                                    "Get edge type for `%s' failed in getters.", edgeName.c_str());
                         }
 
                         if (isReversely()) {
@@ -1036,8 +1049,8 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                                                     srcid,
                                                     edgeType > 0 ? edgeType : -edgeType, prop);
                             }
-                            if (edgeType != edgeStatus.value() && edgeType != -edgeStatus.value()) {
-                                return edgeHolder_->getDefaultProp(-edgeStatus.value(), prop);
+                            if (edgeType != type && edgeType != -type) {
+                                return edgeHolder_->getDefaultProp(-type, prop);
                             }
                             return edgeHolder_->get(boost::get<VertexID>(value(dst)),
                                                     srcid,
@@ -1046,8 +1059,8 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                             if (saveTypeFlag) {
                                 colTypes.back() = iter->getSchema()->getFieldType(prop).type;
                             }
-                            if (edgeType != edgeStatus.value() && edgeType != -edgeStatus.value()) {
-                                auto sit = edgeSchema.find(edgeStatus.value());
+                            if (edgeType != type && edgeType != -type) {
+                                auto sit = edgeSchema.find(type);
                                 if (sit == edgeSchema.end()) {
                                     return Status::Error("get schema failed");
                                 }
@@ -1065,11 +1078,13 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     getters.getSrcTagProp =
                         [&iter, &spaceId, &tagData, &tagSchema, &saveTypeFlag, &colTypes, this](
                             const std::string &tag, const std::string &prop) -> OptVariantType {
-                        auto status = ectx()->schemaManager()->toTagID(spaceId, tag);
-                        if (!status.ok()) {
-                            return status.status();
+                        TagID tagId;
+                        auto found = expCtx_->getTagId(tag, tagId);
+                        if (!found) {
+                            return Status::Error(
+                                    "Get tag id for `%s' failed in getters.", tag.c_str());
                         }
-                        auto tagId = status.value();
+
                         auto it2 =
                             std::find_if(tagData.cbegin(), tagData.cend(), [&tagId](auto &td) {
                                 if (td.tag_id == tagId) {
@@ -1104,11 +1119,14 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                                 folly::sformat("get prop({}.{}) failed", tag, prop));
                         }
                         auto vid = boost::get<int64_t>(value(std::move(dst)));
-                        auto status = ectx()->schemaManager()->toTagID(spaceId, tag);
-                        if (!status.ok()) {
-                            return status.status();
+
+                        TagID tagId;
+                        auto found = expCtx_->getTagId(tag, tagId);
+                        if (!found) {
+                            return Status::Error(
+                                    "Get tag id for `%s' failed in getters.", tag.c_str());
                         }
-                        auto tagId = status.value();
+
                         if (saveTypeFlag) {
                             SupportedType type = vertexHolder_->getType(vid, tagId, prop);
                             colTypes.back() = type;

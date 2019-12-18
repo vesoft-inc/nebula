@@ -39,7 +39,7 @@ RowWriter::writeInt(T v) {
     uint8_t buf[10];
     size_t len = folly::encodeVarint(v, buf);
     DCHECK_GT(len, 0UL);
-    cord_ << folly::ByteRange(buf, len);
+    cord_.write(reinterpret_cast<const char*>(&buf[0]), len);
 }
 
 }  // namespace nebula
