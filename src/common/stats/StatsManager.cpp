@@ -434,10 +434,15 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
         auto parsedName = sm.idParsedName_[index.second].get();
         std::string name = parsedName != nullptr ? parsedName->name : index.first;
         if (StatsManager::isStatIndex(index.second)) {
+            auto result = StatsManager::readStats(index.second,
+                    StatsManager::TimeRange::ONE_MINUTE,
+                    StatsManager::StatsMethod::AVG);
+            if (!result.ok()) {
+                LOG(ERROR) << "Failed read stats value of " << name << " : " << result.status();
+                continue;
+            }
             folly::dynamic gauge = folly::dynamic::object("name", name)
-                    ("value", StatsManager::readStats(index.second,
-                        StatsManager::TimeRange::ONE_MINUTE,
-                        StatsManager::StatsMethod::AVG).value())
+                    ("value", result.value())
                     ("labels", labels);
             obj[kGauges].push_back(std::move(gauge));
         } else if (StatsManager::isHistoIndex(index.second)) {
@@ -482,9 +487,14 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
 
             // Expose the metrics computed from Histogram instead of the whole distribution
             // Now we only expose the p99 metrics for simpler
-            auto value = readHisto(index.second, StatsManager::TimeRange::ONE_HOUR, 99).value();
+            auto result = readHisto(index.second, StatsManager::TimeRange::ONE_HOUR, 99);
+            if (!result.ok()) {
+                LOG(ERROR) << "Failed read histogram metrics of " << name << " : "
+                    << result.status();
+                continue;
+            }
             folly::dynamic gauge = folly::dynamic::object("name", name+"_p99")
-                    ("value", value)
+                    ("value", result.value())
                     ("labels", labels);
             obj[kGauges].push_back(std::move(gauge));
         }
