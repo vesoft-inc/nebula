@@ -7,6 +7,8 @@
 #ifndef COMMON_BASE_THRIFTTYPES_H_
 #define COMMON_BASE_THRIFTTYPES_H_
 
+#include <cstdint>
+
 namespace nebula {
 
 // Raft related types
@@ -18,6 +20,8 @@ using LogID = int64_t;
 using IPv4 = int32_t;
 using Port = int32_t;
 
+using TagIndexID = int32_t;
+using EdgeIndexID = int32_t;
 using VertexID = int64_t;
 using TagID = int32_t;
 using TagVersion = int64_t;

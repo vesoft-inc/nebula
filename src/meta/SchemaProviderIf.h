@@ -77,7 +77,7 @@ public:
 
     private:
         explicit Iterator(const SchemaProviderIf* schema,
-                         int64_t idx = 0)
+                          int64_t idx = 0)
                 : schema_(schema)
                 , numFields_(schema_->getNumFields())
                 , index_(idx) {
