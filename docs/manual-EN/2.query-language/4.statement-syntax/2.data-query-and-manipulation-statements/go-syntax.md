@@ -8,13 +8,13 @@ It indicates to travel in a graph with specific filters (the `WHERE` clause), to
 <!-- >You can refer to `FIND` statement (in progress), which is the counterpart of `SELECT` in SQL. -->
 
 ```ngql
-  GO FROM <node_list>
-  OVER <edge_type_list>
-  WHERE (expression [ AND | OR expression ...])  
-  YIELD | YIELDS  [DISTINCT] <return_list>
+  GO [ <N> STEPS ] FROM <node_list>
+  OVER <edge_type_list> [REVERSELY]
+  [ WHERE <expression> [ AND | OR expression ...]) ]
+  YIELD | YIELDS [DISTINCT] <return_list>
 
 <node_list>
-   | vid [, vid ...]
+   | <vid> [, <vid> ...]
    | $-.id
 
 <edge_type_list>
@@ -25,9 +25,10 @@ It indicates to travel in a graph with specific filters (the `WHERE` clause), to
     <col_name> [AS <col_alias>] [, <col_name> [AS <col_alias>] ...]
 ```
 
+* [ <N> STEPS ] specifies the N query hops
 * <node_list> is either a list of node's vid separated by comma(,), or a special place holder `$-.id` (refer `PIPE` syntax).
 * <edge_type_list> is a list of edge types which graph traversal can go through.
-* WHERE <filter_list> extracts only those results that fulfill the specified conditions. WHERE syntax can be conditions for src-vertex, the edges, and dst-vertex. The logical AND, OR, NOT are also supported. see WHERE-syntax for more information.
+* [ WHERE <expression> ] extracts only those results that fulfill the specified conditions. WHERE syntax can be conditions for src-vertex, the edges, and dst-vertex. The logical AND, OR, NOT are also supported. see WHERE-syntax for more information.
 * YIELD [DISTINCT] <return_list> statement returns the result in column format and rename as an alias name. See `YIELD`-syntax for more information. The `DISTINCT` syntax works the same as SQL.
 
 ## Examples
@@ -42,6 +43,18 @@ nebula> GO FROM 101 OVER serve  \
 -------
 | 215 |
 -------
+```
+
+```ngql
+nebula> GO 2 STEPS FROM 103 OVER follow \
+  /* Returns the 2 hop friends of the vertex 103 */
+===============
+| follow._dst |
+===============
+| 100         |
+---------------
+| 101         |
+---------------
 ```
 
 ```ngql

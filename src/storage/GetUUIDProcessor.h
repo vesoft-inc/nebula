@@ -44,29 +44,21 @@ public:
             std::vector<kvstore::KV> data;
             data.emplace_back(std::move(key), std::move(val));
 
-            folly::Baton<true, std::atomic> baton;
             kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
-                                    [&] (kvstore::ResultCode code) {
-                ret = code;
-                baton.post();
+                                    [vId, spaceId, partId, this] (kvstore::ResultCode code) {
+                if (code == kvstore::ResultCode::SUCCEEDED) {
+                    resp_.set_id(vId);
+                } else {
+                    this->handleErrorCode(code, spaceId, partId);
+                }
+                this->onFinished();
             });
-            baton.wait();
-            if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-                this->handleLeaderChanged(spaceId, partId);
-                this->onFinished();
-                return;
-            } else if (ret != kvstore::ResultCode::SUCCEEDED) {
-                this->pushResultCode(to(ret), partId);
-                this->onFinished();
-                return;
-            }
         } else {
             CHECK_EQ(val.size(), sizeof(VertexID));
             vId = *reinterpret_cast<const VertexID*>(val.c_str());
+            resp_.set_id(vId);
+            this->onFinished();
         }
-
-        resp_.set_id(vId);
-        this->onFinished();
     }
 
 private:
