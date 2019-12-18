@@ -9,21 +9,19 @@ package com.vesoft.nebula.tools.generator.v2
 import org.apache.spark.sql.{DataFrame, Encoders, Row, SparkSession}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.spark.sql.functions.col
-import org.apache.spark.sql.functions.explode
 import org.apache.spark.sql.functions.udf
-import org.apache.spark.sql.functions.split
 import java.io.File
 
-import com.facebook.fb303.FacebookService.AsyncClient
+import com.google.common.base.Optional
 import com.google.common.geometry.{S2CellId, S2LatLng}
 import com.google.common.net.HostAndPort
+import com.google.common.util.concurrent.{FutureCallback, Futures}
+import com.vesoft.nebula.client.graph.async.AsyncGraphClientImpl
 import com.vesoft.nebula.graph.ErrorCode
-import com.vesoft.nebula.graph.client.GraphClientImpl
 import org.apache.log4j.Logger
 import org.apache.spark.sql.types._
 
 import scala.collection.JavaConverters._
-import scala.util.Random
 import util.control.Breaks._
 
 case class Argument(config: File = new File("application.conf"),
@@ -45,17 +43,19 @@ object SparkClientGenerator {
   private[this] val INSERT_VALUE_TEMPLATE_WITH_POLICY               = "%s(%d): (%s)"
   private[this] val ENDPOINT_TEMPLATE                               = "%s(%d)"
   private[this] val EDGE_VALUE_WITHOUT_RANKING_TEMPLATE             = "%d->%d: (%s)"
-  private[this] val EDGE_VALUE_WITHOUT_RANKING_TEMPLATE_WITH_POLICY = "%s->%d: (%s)"
+  private[this] val EDGE_VALUE_WITHOUT_RANKING_TEMPLATE_WITH_POLICY = "%s->%s: (%s)"
   private[this] val EDGE_VALUE_TEMPLATE                             = "%d->%d@%d: (%s)"
-  private[this] val EDGE_VALUE_TEMPLATE_WITH_POLICY                 = "%s->%d@%d: (%s)"
+  private[this] val EDGE_VALUE_TEMPLATE_WITH_POLICY                 = "%s->%s@%d: (%s)"
   private[this] val USE_TEMPLATE                                    = "USE %s"
 
   private[this] val DEFAULT_BATCH              = 64
+  private[this] val DEFAULT_PARTITION          = -1
   private[this] val DEFAULT_CONNECTION_TIMEOUT = 3000
   private[this] val DEFAULT_CONNECTION_RETRY   = 3
   private[this] val DEFAULT_EXECUTION_RETRY    = 3
   private[this] val DEFAULT_EXECUTION_INTERVAL = 3000
   private[this] val DEFAULT_EDGE_RANKING       = 0L
+  private[this] val DEFAULT_ERROR_TIMES        = 16
 
   // GEO default config
   private[this] val DEFAULT_MIN_CELL_LEVEL = 5
@@ -156,6 +156,8 @@ object SparkClientGenerator {
         Some(config.getObject("tags"))
       else None
 
+    class TooManyErrorException(e: String) extends Exception(e) {}
+
     if (tagConfigs.isDefined) {
       for (tagName <- tagConfigs.get.unwrapped.keySet.asScala) {
         LOG.info(s"Processing Tag ${tagName}")
@@ -184,7 +186,8 @@ object SparkClientGenerator {
           None
         }
 
-        val batch = getOrElse(tagConfig, "batch", DEFAULT_BATCH)
+        val batch     = getOrElse(tagConfig, "batch", DEFAULT_BATCH)
+        val partition = getOrElse(tagConfig, "partition", DEFAULT_PARTITION)
 
         val properties      = fields.asScala.values.map(_.toString).toList
         val valueProperties = fields.asScala.keys.toList
@@ -211,7 +214,10 @@ object SparkClientGenerator {
         val data                     = createDataSource(spark, pathOpt, tagConfig)
 
         if (data.isDefined && !c.dry) {
-          data.get
+          val batchSuccess = spark.sparkContext.longAccumulator(s"batchSuccess.${tagName}")
+          val batchFailure = spark.sparkContext.longAccumulator(s"batchFailure.${tagName}")
+
+          repartition(data.get, partition)
             .select(sourceColumn: _*)
             .withColumn(vertex, toVertexUDF(col(vertex)))
             .map { row =>
@@ -222,14 +228,16 @@ object SparkClientGenerator {
             }(Encoders.tuple(Encoders.scalaLong, Encoders.STRING))
             .foreachPartition { iterator: Iterator[(Long, String)] =>
               val hostAndPorts = addresses.map(HostAndPort.fromString).asJava
-              val client =
-                new GraphClientImpl(hostAndPorts,
-                                    connectionTimeout,
-                                    connectionRetry,
-                                    executionRetry)
+              val client = new AsyncGraphClientImpl(hostAndPorts,
+                                                    connectionTimeout,
+                                                    connectionRetry,
+                                                    executionRetry)
+              client.setUser(user)
+              client.setPassword(pswd)
 
-              if (isSuccessfully(client.connect(user, pswd))) {
-                if (isSuccessfully(client.execute(USE_TEMPLATE.format(space)))) {
+              if (isSuccessfully(client.connect())) {
+                val switchSpaceCode = client.execute(USE_TEMPLATE.format(space)).get().get()
+                if (isSuccessfully(switchSpaceCode)) {
                   iterator.grouped(batch).foreach { tags =>
                     val exec = BATCH_INSERT_TEMPLATE.format(
                       Type.Vertex.toString,
@@ -257,14 +265,22 @@ object SparkClientGenerator {
                     )
 
                     LOG.debug(s"Exec : ${exec}")
-                    breakable {
-                      for (time <- 1 to executionRetry
-                           if isSuccessfullyWithSleep(
-                             client.execute(exec),
-                             time * executionInterval + Random.nextInt(10) * 100L)(exec)) {
-                        break
+                    val future = client.execute(exec)
+                    Futures.addCallback(
+                      future,
+                      new FutureCallback[Optional[Integer]] {
+                        override def onSuccess(result: Optional[Integer]): Unit = {
+                          batchSuccess.add(1)
+                        }
+
+                        override def onFailure(t: Throwable): Unit = {
+                          if (batchFailure.value > DEFAULT_ERROR_TIMES) {
+                            throw new TooManyErrorException("too many error")
+                          }
+                          batchFailure.add(1)
+                        }
                       }
-                    }
+                    )
                   }
                 } else {
                   LOG.error(s"Switch ${space} Failed")
@@ -319,6 +335,7 @@ object SparkClientGenerator {
         }
 
         val batch           = getOrElse(edgeConfig, "batch", DEFAULT_BATCH)
+        val partition       = getOrElse(edgeConfig, "partition", DEFAULT_PARTITION)
         val properties      = fields.asScala.values.map(_.toString).toList
         val valueProperties = fields.asScala.keys.toList
 
@@ -381,7 +398,10 @@ object SparkClientGenerator {
           Encoders.tuple(Encoders.STRING, Encoders.scalaLong, Encoders.scalaLong, Encoders.STRING)
 
         if (data.isDefined && !c.dry) {
-          data.get
+          val batchSuccess = spark.sparkContext.longAccumulator(s"batchSuccess.${edgeName}")
+          val batchFailure = spark.sparkContext.longAccumulator(s"batchFailure.${edgeName}")
+
+          repartition(data.get, partition)
             .select(sourceColumn: _*)
             .map { row =>
               val sourceField = if (!isGeo) {
@@ -395,13 +415,6 @@ object SparkClientGenerator {
                 indexCells(lat, lng).mkString(",")
               }
 
-//              val target = targetPolicyOpt.get match {
-//                case HASH_POLICY =>
-//                  ENDPOINT_TEMPLATE.format(HASH_POLICY)
-//                case UUID_POLICY =>
-//                  ENDPOINT_TEMPLATE.format(UUID_POLICY)
-//                case _ => throw new IllegalArgumentException
-//              }
               val targetField = row.getLong(row.schema.fieldIndex(target))
 
               val values =
@@ -418,13 +431,16 @@ object SparkClientGenerator {
             }(encoder)
             .foreachPartition { iterator: Iterator[(String, Long, Long, String)] =>
               val hostAndPorts = addresses.map(HostAndPort.fromString).asJava
-              val client =
-                new GraphClientImpl(hostAndPorts,
-                                    connectionTimeout,
-                                    connectionRetry,
-                                    executionRetry)
-              if (isSuccessfully(client.connect(user, pswd))) {
-                if (isSuccessfully(client.execute(USE_TEMPLATE.format(space)))) {
+              val client = new AsyncGraphClientImpl(hostAndPorts,
+                                                    connectionTimeout,
+                                                    connectionRetry,
+                                                    executionRetry)
+
+              client.setUser(user)
+              client.setPassword(pswd)
+              if (isSuccessfully(client.connect())) {
+                val switchSpaceCode = client.switchSpace(space).get().get()
+                if (isSuccessfully(switchSpaceCode)) {
                   iterator.grouped(batch).foreach { edges =>
                     val values =
                       if (rankingOpt.isEmpty)
@@ -439,14 +455,22 @@ object SparkClientGenerator {
                                 } else {
                                   val source = sourcePolicyOpt.get match {
                                     case HASH_POLICY =>
-                                      ENDPOINT_TEMPLATE.format(HASH_POLICY)
+                                      ENDPOINT_TEMPLATE.format(HASH_POLICY, edge._1)
                                     case UUID_POLICY =>
-                                      ENDPOINT_TEMPLATE.format(UUID_POLICY)
+                                      ENDPOINT_TEMPLATE.format(UUID_POLICY, edge._1)
+                                    case _ => throw new IllegalArgumentException
+                                  }
+
+                                  val target = targetPolicyOpt.get match {
+                                    case HASH_POLICY =>
+                                      ENDPOINT_TEMPLATE.format(HASH_POLICY, edge._2)
+                                    case UUID_POLICY =>
+                                      ENDPOINT_TEMPLATE.format(UUID_POLICY, edge._2)
                                     case _ => throw new IllegalArgumentException
                                   }
 
                                   EDGE_VALUE_WITHOUT_RANKING_TEMPLATE_WITH_POLICY
-                                    .format(source.toLong, edge._2, edge._4)
+                                    .format(source, target, edge._4)
                                 }).mkString(", ")
                           }
                           .toList
@@ -457,8 +481,29 @@ object SparkClientGenerator {
                             // TODO: (darion.yaphet) dataframe.explode() would be better ?
                             (for (source <- edge._1.split(","))
                               yield
-                                EDGE_VALUE_TEMPLATE
-                                  .format(source.toLong, edge._2, edge._3, edge._4))
+                                if (sourcePolicyOpt.isEmpty && targetPolicyOpt.isEmpty) {
+                                  EDGE_VALUE_TEMPLATE
+                                    .format(source.toLong, edge._2, edge._3, edge._4)
+                                } else {
+                                  val source = sourcePolicyOpt.get match {
+                                    case HASH_POLICY =>
+                                      ENDPOINT_TEMPLATE.format(HASH_POLICY, edge._1)
+                                    case UUID_POLICY =>
+                                      ENDPOINT_TEMPLATE.format(UUID_POLICY, edge._1)
+                                    case _ => throw new IllegalArgumentException
+                                  }
+
+                                  val target = targetPolicyOpt.get match {
+                                    case HASH_POLICY =>
+                                      ENDPOINT_TEMPLATE.format(HASH_POLICY, edge._2)
+                                    case UUID_POLICY =>
+                                      ENDPOINT_TEMPLATE.format(UUID_POLICY, edge._2)
+                                    case _ => throw new IllegalArgumentException
+                                  }
+
+                                  EDGE_VALUE_TEMPLATE_WITH_POLICY
+                                    .format(source, target, edge._3, edge._4)
+                                })
                               .mkString(", ")
                           }
                           .toList
@@ -467,14 +512,22 @@ object SparkClientGenerator {
                     val exec = BATCH_INSERT_TEMPLATE
                       .format(Type.Edge.toString, edgeName, nebulaProperties, values)
                     LOG.debug(s"Exec : ${exec}")
-                    breakable {
-                      for (time <- 1 to executionRetry
-                           if isSuccessfullyWithSleep(
-                             client.execute(exec),
-                             time * executionInterval + Random.nextInt(10) * 100L)(exec)) {
-                        break
+                    val future = client.execute(exec)
+                    Futures.addCallback(
+                      future,
+                      new FutureCallback[Optional[Integer]] {
+                        override def onSuccess(result: Optional[Integer]): Unit = {
+                          batchSuccess.add(1)
+                        }
+
+                        override def onFailure(t: Throwable): Unit = {
+                          if (batchFailure.value > DEFAULT_ERROR_TIMES) {
+                            throw new TooManyErrorException("too many error")
+                          }
+                          batchFailure.add(1)
+                        }
                       }
-                    }
+                    )
                   }
                 } else {
                   LOG.error(s"Switch ${space} Failed")
@@ -656,6 +709,21 @@ object SparkClientGenerator {
         } else {
           "\"{}\""
         }
+    }
+  }
+
+  /**
+    * Repartition the data frame using the specified partition number.
+    *
+    * @param frame
+    * @param partition
+    * @return
+    */
+  private[this] def repartition(frame: DataFrame, partition: Int): DataFrame = {
+    if (partition > 0) {
+      frame.repartition(partition).toDF
+    } else {
+      frame
     }
   }
 
