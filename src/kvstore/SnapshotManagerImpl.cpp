@@ -24,7 +24,7 @@ void SnapshotManagerImpl::accessAllRowsInSnapshot(GraphSpaceID spaceId,
     int32_t batchSize = 0;
     int64_t totalSize = 0;
     int64_t totalCount = 0;
-    while (iter->valid()) {
+    while (iter && iter->valid()) {
         if (batchSize >= FLAGS_snapshot_batch_size) {
             cb(std::move(data), totalCount, totalSize, false);
             data.clear();
@@ -38,9 +38,7 @@ void SnapshotManagerImpl::accessAllRowsInSnapshot(GraphSpaceID spaceId,
         totalCount++;
         iter->next();
     }
-    if (data.size() > 0) {
-        cb(std::move(data), totalCount, totalSize, true);
-    }
+    cb(std::move(data), totalCount, totalSize, true);
 }
 }  // namespace kvstore
 }  // namespace nebula

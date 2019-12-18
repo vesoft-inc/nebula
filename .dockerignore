@@ -1,0 +1,33 @@
+*.md
+LICENSES/
+docs/
+
+*.swp
+*.so
+*.DS_Store
+
+# build
+build/
+_build/
+_build.log
+_install/
+install_manifest.txt
+
+# ccls
+.ccls
+compile_commands.json
+
+src/common/base/Base.h.gch
+gen-*
+
+CPackConfig.cmake
+CPackSourceConfig.cmake
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+CTestTestfile.cmake
+CMakeFiles/
+Testing/
+target/
+cluster.id
+pids/

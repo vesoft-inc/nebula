@@ -8,10 +8,12 @@
 #define KVSTORE_PART_H_
 
 #include "base/Base.h"
+#include "base/NebulaKeyUtils.h"
 #include "raftex/RaftPart.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/raftex/SnapshotManager.h"
+#include "kvstore/wal/FileBasedWal.h"
 
 namespace nebula {
 namespace kvstore {
@@ -54,12 +56,32 @@ public:
 
     void asyncTransferLeader(const HostAddr& target, KVCallback cb);
 
+    void asyncAddPeer(const HostAddr& peer, KVCallback cb);
+
+    void asyncRemovePeer(const HostAddr& peer, KVCallback cb);
+
+    void setBlocking(bool sign);
+
+    // Sync the information committed on follower.
+    void sync(KVCallback cb);
+
     void registerNewLeaderCb(NewLeaderCallback cb) {
         newLeaderCb_ = std::move(cb);
     }
 
     void unRegisterNewLeaderCb() {
         newLeaderCb_ = nullptr;
+    }
+
+    // clean up all data about this part.
+    void reset() {
+        LOG(INFO) << idStr_ << "Clean up all wals";
+        wal()->reset();
+        ResultCode res = engine_->remove(NebulaKeyUtils::systemCommitKey(partId_));
+        if (res != ResultCode::SUCCEEDED) {
+            LOG(WARNING) << idStr_ << "Remove the committedLogId failed, error "
+                         << static_cast<int32_t>(res);
+        }
     }
 
 private:
@@ -89,8 +111,21 @@ private:
     ResultCode putCommitMsg(WriteBatch* batch, LogID committedLogId, TermID committedLogTerm);
 
     void cleanup() override {
-        LOG(INFO) << idStr_ << "Clean up all data, not implement!";
+        LOG(INFO) << idStr_ << "Clean up all data, just reset the committedLogId!";
+        auto batch = engine_->startBatchWrite();
+        if (ResultCode::SUCCEEDED != putCommitMsg(batch.get(), 0, 0)) {
+            LOG(ERROR) << idStr_ << "Put failed in commit";
+            return;
+        }
+        if (ResultCode::SUCCEEDED != engine_->commitBatchWrite(std::move(batch))) {
+            LOG(ERROR) << idStr_ << "Put failed in commit";
+            return;
+        }
+        return;
     }
+
+
+    ResultCode toResultCode(raftex::AppendLogResult res);
 
 protected:
     GraphSpaceID spaceId_;

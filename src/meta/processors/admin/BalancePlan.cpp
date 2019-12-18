@@ -7,6 +7,7 @@
 #include "meta/processors/admin/BalancePlan.h"
 #include <folly/synchronization/Baton.h>
 #include "meta/processors/Common.h"
+#include "meta/ActiveHostsMan.h"
 
 DEFINE_uint32(task_concurrency, 10, "The tasks number could be invoked simultaneously");
 
@@ -47,6 +48,7 @@ void BalancePlan::invoke() {
             auto taskIndex = buckets_[i][j];
             tasks_[taskIndex].onFinished_ = [this, i, j]() {
                 bool finished = false;
+                bool stopped = false;
                 {
                     std::lock_guard<std::mutex> lg(lock_);
                     finishedTaskNum_++;
@@ -54,39 +56,51 @@ void BalancePlan::invoke() {
                         finished = true;
                         if (status_ == Status::IN_PROGRESS) {
                             status_ = Status::SUCCEEDED;
+                            LOG(INFO) << "Balance " << id_ << " succeeded!";
                         }
                     }
+                    stopped = stopped_;
                 }
                 if (finished) {
                     CHECK_EQ(j, this->buckets_[i].size() - 1);
                     saveInStore(true);
                     onFinished_();
-                } else {
-                    if (j + 1 < this->buckets_[i].size()) {
-                        auto& task = this->tasks_[this->buckets_[i][j + 1]];
-                        task.invoke();
+                } else if (j + 1 < this->buckets_[i].size()) {
+                    auto& task = this->tasks_[this->buckets_[i][j + 1]];
+                    if (stopped) {
+                        task.ret_ = BalanceTask::Result::INVALID;
                     }
+                    task.invoke();
                 }
             };  // onFinished
-            tasks_[taskIndex].onError_ = [this, i, j]() {
+            tasks_[taskIndex].onError_ = [this, i, j, taskIndex]() {
                 bool finished = false;
+                bool stopped = false;
                 {
                     std::lock_guard<std::mutex> lg(lock_);
                     finishedTaskNum_++;
                     status_ = Status::FAILED;
                     if (finishedTaskNum_ == tasks_.size()) {
                         finished = true;
+                        LOG(INFO) << "Balance " << id_ << " failed!";
                     }
+                    stopped = stopped_;
                 }
                 if (finished) {
                     CHECK_EQ(j, this->buckets_[i].size() - 1);
                     saveInStore(true);
                     onFinished_();
-                } else {
-                    if (j + 1 < this->buckets_[i].size()) {
-                        auto& task = this->tasks_[this->buckets_[i][j + 1]];
-                        task.invoke();
+                } else if (j + 1 < this->buckets_[i].size()) {
+                    auto& task = this->tasks_[this->buckets_[i][j + 1]];
+                    if (tasks_[taskIndex].spaceId_ == task.spaceId_
+                            && tasks_[taskIndex].partId_ == task.partId_) {
+                        LOG(INFO) << "Skip the task for the same partId " << task.partId_;
+                        task.ret_ = BalanceTask::Result::FAILED;
                     }
+                    if (stopped) {
+                        task.ret_ = BalanceTask::Result::INVALID;
+                    }
+                    task.invoke();
                 }
             };  // onError
         }  // for (auto j = 0; j < buckets_[i].size(); j++)
@@ -128,7 +142,7 @@ bool BalancePlan::saveInStore(bool onlyPlan) {
     return true;
 }
 
-bool BalancePlan::recovery() {
+bool BalancePlan::recovery(bool resume) {
     if (kv_) {
         const auto& prefix = BalanceTask::prefix(id_);
         std::unique_ptr<kvstore::KVIterator> iter;
@@ -148,17 +162,30 @@ bool BalancePlan::recovery() {
                 task.partId_ = std::get<2>(tup);
                 task.src_ = std::get<3>(tup);
                 task.dst_ = std::get<4>(tup);
+                task.taskIdStr_ = task.buildTaskId();
             }
             {
                 auto tup = BalanceTask::parseVal(iter->val());
                 task.status_ = std::get<0>(tup);
                 task.ret_ = std::get<1>(tup);
-                if (task.ret_ == BalanceTask::Result::FAILED) {
-                    // Resume the failed task.
-                    task.ret_ = BalanceTask::Result::IN_PROGRESS;
+                task.srcLived_ = std::get<2>(tup);
+                task.startTimeMs_ = std::get<3>(tup);
+                task.endTimeMs_ = std::get<4>(tup);
+                if (resume && task.ret_ != BalanceTask::Result::SUCCEEDED) {
+                    // Resume the failed task, skip the in-progress and invalid tasks
+                    if (task.ret_ == BalanceTask::Result::FAILED) {
+                        task.ret_ = BalanceTask::Result::IN_PROGRESS;
+                    }
+                    task.status_ = BalanceTask::Status::START;
+                    if (ActiveHostsMan::isLived(kv_, task.src_)) {
+                        task.srcLived_ = true;
+                    } else {
+                        task.srcLived_ = false;
+                    }
+                    if (!ActiveHostsMan::isLived(kv_, task.dst_)) {
+                        task.ret_ = BalanceTask::Result::INVALID;
+                    }
                 }
-                task.startTimeMs_ = std::get<2>(tup);
-                task.endTimeMs_ = std::get<3>(tup);
             }
             tasks_.emplace_back(std::move(task));
             iter->next();

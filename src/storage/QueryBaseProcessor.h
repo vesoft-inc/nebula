@@ -12,10 +12,10 @@
 #include "storage/Collector.h"
 #include "filter/Expressions.h"
 #include "storage/CommonUtils.h"
+#include "stats/Stats.h"
 
 namespace nebula {
 namespace storage {
-
 
 const std::unordered_map<std::string, PropContext::PropInKeyType> kPropsInKey_ = {
     {"_src", PropContext::PropInKeyType::SRC},
@@ -44,9 +44,13 @@ public:
 protected:
     explicit QueryBaseProcessor(kvstore::KVStore* kvstore,
                                 meta::SchemaManager* schemaMan,
-                                folly::Executor* executor = nullptr)
-        : BaseProcessor<RESP>(kvstore, schemaMan)
-        , executor_(executor) {}
+                                stats::Stats* stats,
+                                folly::Executor* executor = nullptr,
+                                VertexCache* cache = nullptr)
+        : BaseProcessor<RESP>(kvstore, schemaMan, stats)
+        , executor_(executor)
+        , vertexCache_(cache) {}
+
     /**
      * Check whether current operation on the data is valid or not.
      * */
@@ -62,6 +66,7 @@ protected:
      * Check request meta is illegal or not and build contexts for tag and edge.
      * */
     cpp2::ErrorCode checkAndBuildContexts(const REQ& req);
+
     /**
      * collect props in one row, you could define custom behavior by implement your own collector.
      * */
@@ -71,11 +76,13 @@ protected:
                       FilterContext* fcontext,
                       Collector* collector);
 
-    virtual kvstore::ResultCode processVertex(PartitionID partID,
-                                              VertexID vId) = 0;
+    virtual kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) = 0;
 
     virtual void onProcessFinished(int32_t retNum) = 0;
 
+    /**
+     * Collect props for one vertex tag.
+     * */
     kvstore::ResultCode collectVertexProps(
                             PartitionID partId,
                             VertexID vId,
@@ -109,6 +116,8 @@ protected:
     std::vector<TagContext> tagContexts_;
     std::unordered_map<EdgeType, std::vector<PropContext>> edgeContexts_;
     folly::Executor* executor_ = nullptr;
+    VertexCache* vertexCache_ = nullptr;
+    std::unordered_map<std::string, EdgeType> edgeMap_;
 };
 
 }  // namespace storage

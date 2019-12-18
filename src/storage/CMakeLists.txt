@@ -1,6 +1,7 @@
 nebula_add_library(
     storage_service_handler OBJECT
     StorageServiceHandler.cpp
+    StorageFlags.cpp
     QueryBaseProcessor.cpp
     AddVerticesProcessor.cpp
     AddEdgesProcessor.cpp
@@ -11,6 +12,13 @@ nebula_add_library(
     QueryEdgePropsProcessor.cpp
     QueryStatsProcessor.cpp
     QueryEdgeKeysProcessor.cpp
+    UpdateVertexProcessor.cpp
+    UpdateEdgeProcessor.cpp
+    PutProcessor.cpp
+    GetProcessor.cpp
+    CreateCheckpointProcessor.cpp
+    DropCheckpointProcessor.cpp
+    SendBlockSignProcessor.cpp
 )
 
 nebula_add_library(
@@ -31,4 +39,4 @@ nebula_add_library(
     StorageServer.cpp
 )
 
-add_subdirectory(test)
+nebula_add_subdirectory(test)

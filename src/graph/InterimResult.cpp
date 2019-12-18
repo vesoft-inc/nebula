@@ -13,23 +13,27 @@ namespace graph {
 
 constexpr char NotSupported[] = "Type not supported yet";
 
-InterimResult::InterimResult(std::unique_ptr<RowSetWriter> rsWriter) {
-    rsWriter_ = std::move(rsWriter);
-    rsReader_ = std::make_unique<RowSetReader>(rsWriter_->schema(), rsWriter_->data());
-}
-
-
 InterimResult::InterimResult(std::vector<VertexID> vids) {
     vids_ = std::move(vids);
 }
 
+InterimResult::InterimResult(std::vector<std::string> &&colNames) {
+    colNames_ = std::move(colNames);
+}
+
+void InterimResult::setInterim(std::unique_ptr<RowSetWriter> rsWriter) {
+    rsWriter_ = std::move(rsWriter);
+    rsReader_ = std::make_unique<RowSetReader>(rsWriter_->schema(), rsWriter_->data());
+}
 
 StatusOr<std::vector<VertexID>> InterimResult::getVIDs(const std::string &col) const {
     if (!vids_.empty()) {
         DCHECK(rsReader_ == nullptr);
         return vids_;
     }
-    DCHECK(rsReader_ != nullptr);
+    if (!hasData()) {
+        return Status::Error("Interim has no data.");
+    }
     std::vector<VertexID> result;
     auto iter = rsReader_->begin();
     while (iter) {
@@ -49,7 +53,9 @@ StatusOr<std::vector<VertexID>> InterimResult::getDistinctVIDs(const std::string
         DCHECK(rsReader_ == nullptr);
         return vids_;
     }
-    DCHECK(rsReader_ != nullptr);
+    if (!hasData()) {
+        return Status::Error("Interim has no data.");
+    }
     std::unordered_set<VertexID> uniq;
     auto iter = rsReader_->begin();
     while (iter) {
@@ -65,8 +71,10 @@ StatusOr<std::vector<VertexID>> InterimResult::getDistinctVIDs(const std::string
     return result;
 }
 
-std::vector<cpp2::RowValue> InterimResult::getRows() const {
-    DCHECK(rsReader_ != nullptr);
+StatusOr<std::vector<cpp2::RowValue>> InterimResult::getRows() const {
+    if (!hasData()) {
+        return Status::Error("Interim has no data.");
+    }
     auto schema = rsReader_->schema();
     auto columnCnt = schema->getNumFields();
     std::vector<cpp2::RowValue> rows;
@@ -85,27 +93,35 @@ std::vector<cpp2::RowValue> InterimResult::getRows() const {
                 case SupportedType::VID: {
                     int64_t v;
                     auto rc = rowIter->getVid(field, v);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (rc != ResultType::SUCCEEDED) {
+                        return Status::Error("Get vid from interim failed.");
+                    }
                     row.back().set_id(v);
                     break;
                 }
                 case SupportedType::DOUBLE: {
                     double v;
                     auto rc = rowIter->getDouble(field, v);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (rc != ResultType::SUCCEEDED) {
+                        return Status::Error("Get double from interim failed.");
+                    }
                     row.back().set_double_precision(v);
                     break;
                 }
                 case SupportedType::BOOL: {
                     bool v;
                     auto rc = rowIter->getBool(field, v);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (rc != ResultType::SUCCEEDED) {
+                        return Status::Error("Get bool from interim failed.");
+                    }
                     row.back().set_bool_val(v);
                     break;
                 }
                 case SupportedType::STRING: {
                     auto rc = rowIter->getString(field, piece);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (rc != ResultType::SUCCEEDED) {
+                        return Status::Error("Get bool from interim failed.");
+                    }
                     row.back().set_str(piece.toString());
                     break;
                 }
@@ -124,7 +140,10 @@ std::vector<cpp2::RowValue> InterimResult::getRows() const {
                     break;
                 }
                 default:
-                    LOG(FATAL) << "Unknown Type: " << static_cast<int32_t>(type);
+                    std::string err =
+                        folly::sformat("Unknown Type: %d", static_cast<int32_t>(type));
+                    LOG(ERROR) << err;
+                    return Status::Error(err);
             }
             ++fieldIter;
         }
@@ -135,12 +154,14 @@ std::vector<cpp2::RowValue> InterimResult::getRows() const {
     return rows;
 }
 
-std::unique_ptr<InterimResult::InterimResultIndex>
+StatusOr<std::unique_ptr<InterimResult::InterimResultIndex>>
 InterimResult::buildIndex(const std::string &vidColumn) const {
     using nebula::cpp2::SupportedType;
     std::unique_ptr<InterimResultIndex> index;
 
-    DCHECK(rsReader_ != nullptr);
+    if (!hasData()) {
+        return Status::Error("Interim has no data.");
+    }
     auto schema = rsReader_->schema();
     auto columnCnt = schema->getNumFields();
     uint32_t vidIndex = 0u;
@@ -150,7 +171,8 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
         auto name = schema->getFieldName(i);
         if (vidColumn == name) {
             if (schema->getFieldType(i).type != SupportedType::VID) {
-                return nullptr;
+                return Status::Error("The specific vid column `%s' is not type of VID.",
+                                      vidColumn.c_str());
             }
             vidIndex = i;
         }
@@ -168,7 +190,9 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
                 case SupportedType::VID: {
                     int64_t v;
                     auto rc = rowIter->getVid(i, v);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (rc != ResultType::SUCCEEDED) {
+                        return Status::Error("Get vid from interim failed.");
+                    }
                     if (i == vidIndex) {
                         index->vidToRowIndex_[v] = rowIndex++;
                     }
@@ -178,21 +202,27 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
                 case SupportedType::DOUBLE: {
                     double v;
                     auto rc = rowIter->getDouble(i, v);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (rc != ResultType::SUCCEEDED) {
+                        return Status::Error("Get double from interim failed.");
+                    }
                     row.emplace_back(v);
                     break;
                 }
                 case SupportedType::BOOL: {
                     bool v;
                     auto rc = rowIter->getBool(i, v);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (rc != ResultType::SUCCEEDED) {
+                        return Status::Error("Get bool from interim failed.");
+                    }
                     row.emplace_back(v);
                     break;
                 }
                 case SupportedType::STRING: {
                     folly::StringPiece piece;
                     auto rc = rowIter->getString(i, piece);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (rc != ResultType::SUCCEEDED) {
+                        return Status::Error("Get bool from interim failed.");
+                    }
                     row.emplace_back(piece.toString());
                     break;
                 }
@@ -205,14 +235,17 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
                     break;
                 }
                 default:
-                    LOG(FATAL) << "Unknown Type: " << static_cast<int32_t>(type);
+                    std::string err =
+                        folly::sformat("Unknown Type: %d", static_cast<int32_t>(type));
+                    LOG(ERROR) << err;
+                    return Status::Error(err);
             }
         }
         index->rows_.emplace_back(std::move(row));
         ++rowIter;
     }
     index->schema_ = schema;
-    return index;
+    return std::move(index);
 }
 
 
@@ -504,7 +537,8 @@ Status InterimResult::castToStr(cpp2::ColumnValue *col) {
     return Status::OK();
 }
 
-std::unique_ptr<InterimResult> InterimResult::getInterim(
+StatusOr<std::unique_ptr<InterimResult>>
+InterimResult::getInterim(
             std::shared_ptr<const meta::SchemaProviderIf> resultSchema,
             std::vector<cpp2::RowValue> &rows) {
     auto rsWriter = std::make_unique<RowSetWriter>(resultSchema);
@@ -533,13 +567,76 @@ std::unique_ptr<InterimResult> InterimResult::getInterim(
                     break;
                 default:
                     LOG(ERROR) << NotSupported << static_cast<int32_t>(col.getType());
-                    return nullptr;
+                    return Status::Error(NotSupported);
             }
         }
         rsWriter->addRow(writer);
     }
 
-    return std::make_unique<InterimResult>(std::move(rsWriter));
+    std::vector<std::string> colNames;
+    auto iter = resultSchema->begin();
+    while (iter) {
+        colNames.emplace_back(iter->getName());
+        ++iter;
+    }
+    auto result = std::make_unique<InterimResult>(std::move(colNames));
+    result->setInterim(std::move(rsWriter));
+    return std::move(result);
+}
+
+Status InterimResult::applyTo(std::function<Status(const RowReader *reader)> visitor,
+                              int64_t limit) const {
+    auto status = Status::OK();
+    auto iter = rsReader_->begin();
+    while (iter && (limit > 0)) {
+        status = visitor(&*iter);
+        if (!status.ok()) {
+            break;
+        }
+        --limit;
+        ++iter;
+    }
+    return status;
+}
+
+Status InterimResult::getResultWriter(const std::vector<cpp2::RowValue> &rows,
+                                      RowSetWriter *rsWriter) {
+    if (rsWriter == nullptr) {
+        return Status::Error("rsWriter is nullptr");
+    }
+    using Type = cpp2::ColumnValue::Type;
+    for (auto &row : rows) {
+        RowWriter writer(rsWriter->schema());
+        auto columns = row.get_columns();
+        for (auto &column : columns) {
+            switch (column.getType()) {
+                case Type::id:
+                    writer << column.get_id();
+                    break;
+                case Type::integer:
+                    writer << column.get_integer();
+                    break;
+                case Type::double_precision:
+                    writer << column.get_double_precision();
+                    break;
+                case Type::bool_val:
+                    writer << column.get_bool_val();
+                    break;
+                case Type::str:
+                    writer << column.get_str();
+                    break;
+                case Type::timestamp:
+                    writer << column.get_timestamp();
+                    break;
+                default:
+                    LOG(ERROR) << "Not Support: " << column.getType();
+                    return Status::Error("Not Support: %d", column.getType());
+            }
+        }
+        rsWriter->addRow(writer);
+    }
+
+    return Status::OK();
 }
 }   // namespace graph
 }   // namespace nebula

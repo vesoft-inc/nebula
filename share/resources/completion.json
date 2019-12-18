@@ -12,7 +12,7 @@
         },
         "SHOW" : {
             "sub_keywords": [
-                "HOSTS", "TAGS", "EDGES", "SPACES", "USERS", "ROLES", "USER", "VARIABLES"
+                "HOSTS", "PARTS", "TAGS", "EDGES", "SPACES", "USERS", "ROLES", "USER", "CONFIGS"
             ]
         },
         "DESCRIBE" : {
@@ -39,6 +39,16 @@
         "ALTER": {
             "sub_keywords": [
                 "TAG", "EDGE", "ADD", "CHANGE", "DROP"
+            ]
+        },
+        "UPDATE": {
+            "sub_keywords": [
+                "VERTEX", "EDGE", "OF", "SET", "WHEN", "YIELD"
+            ]
+        },
+        "UPSERT": {
+            "sub_keywords": [
+                "VERTEX", "EDGE", "OF", "SET", "WHEN", "YIELD"
             ]
         },
         "DELETE": {
@@ -79,12 +89,24 @@
         },
         "UPDATE": {
             "sub_keywords": [
-                "VARIABLES"
+                "CONFIGS"
             ]
         },
         "GET": {
             "sub_keywords": [
-                "VARIABLES"
+                "CONFIGS"
+            ]
+        },
+        "ORDER BY": {
+        },
+        "LIMIT": {
+            "sub_keywords": [
+                "OFFSET"
+            ]
+        },
+        "GROUP BY": {
+            "sub_keywords": [
+                "YIELD", "COUNT", "COUNT_DISTINCT", "SUM", "AVG", "MAX", "MIN", "STD", "BIT_AND", "BIT_OR", "BIT_XOR"
             ]
         }
     },

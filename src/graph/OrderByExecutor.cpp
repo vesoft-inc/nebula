@@ -83,7 +83,12 @@ void OrderByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
     }
     DCHECK(sentence_ != nullptr);
     inputs_ = std::move(result);
-    rows_ = inputs_->getRows();
+    colNames_ = inputs_->getColNames();
+    auto ret = inputs_->getRows();
+    if (!ret.ok()) {
+        return;
+    }
+    rows_ = std::move(ret).value();
 }
 
 void OrderByExecutor::execute() {
@@ -125,11 +130,11 @@ void OrderByExecutor::execute() {
     if (onResult_) {
         onResult_(setupInterimResult());
     }
-    onFinish_();
+    onFinish_(Executor::ProcessControl::kNext);
 }
 
 Status OrderByExecutor::beforeExecute() {
-    if (inputs_ == nullptr) {
+    if (inputs_ == nullptr || !inputs_->hasData()) {
         return Status::OK();
     }
 
@@ -150,8 +155,9 @@ Status OrderByExecutor::beforeExecute() {
 }
 
 std::unique_ptr<InterimResult> OrderByExecutor::setupInterimResult() {
+    auto result = std::make_unique<InterimResult>(std::move(colNames_));
     if (rows_.empty()) {
-        return nullptr;
+        return result;
     }
 
     auto schema = inputs_->schema();
@@ -187,23 +193,16 @@ std::unique_ptr<InterimResult> OrderByExecutor::setupInterimResult() {
         rsWriter->addRow(writer);
     }
 
-    return std::make_unique<InterimResult>(std::move(rsWriter));
+    result->setInterim(std::move(rsWriter));
+    return result;
 }
 
 void OrderByExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
+    resp.set_column_names(std::move(colNames_));
+
     if (rows_.empty()) {
         return;
     }
-
-    auto schema = inputs_->schema();
-    std::vector<std::string> columnNames;
-    columnNames.reserve(schema->getNumFields());
-    auto field = schema->begin();
-    while (field) {
-        columnNames.emplace_back(field->getName());
-        ++field;
-    }
-    resp.set_column_names(std::move(columnNames));
     resp.set_rows(std::move(rows_));
 }
 

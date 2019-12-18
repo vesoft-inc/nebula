@@ -19,7 +19,10 @@
         folly::Promise<storage::cpp2::AdminExecResp> pro; \
         auto f = pro.getFuture(); \
         storage::cpp2::AdminExecResp resp; \
-        resp.set_code(storage::cpp2::ErrorCode::SUCCEEDED); \
+        storage::cpp2::ResponseCommon result; \
+        std::vector<storage::cpp2::ResultCode> partRetCode; \
+        result.set_failed_codes(partRetCode); \
+        resp.set_result(result); \
         pro.setValue(std::move(resp)); \
         return f; \
     } while (false)
@@ -30,8 +33,14 @@
         folly::Promise<storage::cpp2::AdminExecResp> pro; \
         auto f = pro.getFuture(); \
         storage::cpp2::AdminExecResp resp; \
-        resp.set_code(storage::cpp2::ErrorCode::E_LEADER_CHANGED); \
-        resp.set_leader(leader); \
+        storage::cpp2::ResponseCommon result; \
+        std::vector<storage::cpp2::ResultCode> partRetCode; \
+        storage::cpp2::ResultCode thriftRet; \
+        thriftRet.set_code(storage::cpp2::ErrorCode::E_LEADER_CHANGED); \
+        thriftRet.set_leader(leader); \
+        partRetCode.emplace_back(std::move(thriftRet)); \
+        result.set_failed_codes(partRetCode); \
+        resp.set_result(result); \
         pro.setValue(std::move(resp)); \
         return f; \
     } while (false)
@@ -115,8 +124,8 @@ TEST(AdminClientTest, SimpleTest) {
     {
         LOG(INFO) << "Test transLeader...";
         folly::Baton<true, std::atomic> baton;
-        client->transLeader(0, 0, {localIp, sc->port_}).then([&baton](auto&& st) {
-            CHECK(st.ok());
+        client->transLeader(0, 0, {localIp, sc->port_}, HostAddr(1, 1))
+            .thenValue([&baton](auto&&) {
             baton.post();
         });
         baton.wait();
@@ -124,8 +133,7 @@ TEST(AdminClientTest, SimpleTest) {
     {
         LOG(INFO) << "Test addPart...";
         folly::Baton<true, std::atomic> baton;
-        client->addPart(0, 0, {localIp, sc->port_}, true).then([&baton](auto&& st) {
-            CHECK(st.ok());
+        client->addPart(0, 0, {localIp, sc->port_}, true).thenValue([&baton](auto&&) {
             baton.post();
         });
         baton.wait();
@@ -133,8 +141,7 @@ TEST(AdminClientTest, SimpleTest) {
     {
         LOG(INFO) << "Test removePart...";
         folly::Baton<true, std::atomic> baton;
-        client->removePart(0, 0, {localIp, sc->port_}).then([&baton](auto&& st) {
-            CHECK(st.ok());
+        client->removePart(0, 0, {localIp, sc->port_}).thenValue([&baton](auto&&) {
             baton.post();
         });
         baton.wait();
@@ -163,11 +170,19 @@ TEST(AdminClientTest, RetryTest) {
         LOG(INFO) << "Write some part information!";
         std::vector<nebula::cpp2::HostAddr> thriftPeers;
         // The first peer is one broken host.
-        thriftPeers.emplace_back(apache::thrift::FragileConstructor::FRAGILE, 0, 0);
+        thriftPeers.emplace_back();
+        thriftPeers.back().set_ip(0);
+        thriftPeers.back().set_port(0);
+
         // The second one is not leader.
-        thriftPeers.emplace_back(apache::thrift::FragileConstructor::FRAGILE, localIp, sc2->port_);
+        thriftPeers.emplace_back();
+        thriftPeers.back().set_ip(localIp);
+        thriftPeers.back().set_port(sc2->port_);
+
         // The third one is healthy.
-        thriftPeers.emplace_back(apache::thrift::FragileConstructor::FRAGILE, localIp, sc1->port_);
+        thriftPeers.emplace_back();
+        thriftPeers.back().set_ip(localIp);
+        thriftPeers.back().set_port(sc1->port_);
 
         std::vector<kvstore::KV> data;
         data.emplace_back(MetaServiceUtils::partKey(0, 1),
@@ -188,7 +203,8 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test transLeader, return ok if target is not leader";
         folly::Baton<true, std::atomic> baton;
-        client->transLeader(0, 1, {localIp, sc2->port_}).then([&baton](auto&& st) {
+        client->transLeader(0, 1, {localIp, sc2->port_}, HostAddr(1, 1))
+            .thenValue([&baton](auto&& st) {
             CHECK(st.ok());
             baton.post();
         });
@@ -197,7 +213,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test member change...";
         folly::Baton<true, std::atomic> baton;
-        client->memberChange(0, 1).then([&baton](auto&& st) {
+        client->memberChange(0, 1, HostAddr(0, 0), true).thenValue([&baton](auto&& st) {
             CHECK(st.ok());
             baton.post();
         });
@@ -206,7 +222,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test add learner...";
         folly::Baton<true, std::atomic> baton;
-        client->addLearner(0, 1).then([&baton](auto&& st) {
+        client->addLearner(0, 1, HostAddr(0, 0)).thenValue([&baton](auto&& st) {
             CHECK(st.ok());
             baton.post();
         });
@@ -215,7 +231,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test waitingForCatchUpData...";
         folly::Baton<true, std::atomic> baton;
-        client->waitingForCatchUpData(0, 1).then([&baton](auto&& st) {
+        client->waitingForCatchUpData(0, 1, HostAddr(0, 0)).thenValue([&baton](auto&& st) {
             CHECK(st.ok());
             baton.post();
         });
@@ -225,7 +241,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test member change...";
         folly::Baton<true, std::atomic> baton;
-        client->memberChange(0, 1).then([&baton](auto&& st) {
+        client->memberChange(0, 1, HostAddr(0, 0), true).thenValue([&baton](auto&& st) {
             CHECK(!st.ok());
             CHECK_EQ("Leader changed!", st.toString());
             baton.post();
@@ -235,7 +251,7 @@ TEST(AdminClientTest, RetryTest) {
     {
         LOG(INFO) << "Test update meta...";
         folly::Baton<true, std::atomic> baton;
-        client->updateMeta(0, 1, HostAddr(0, 0), HostAddr(1, 1)).then([&baton](auto&& st) {
+        client->updateMeta(0, 1, HostAddr(0, 0), HostAddr(1, 1)).thenValue([&baton](auto&& st) {
             CHECK(st.ok());
             baton.post();
         });

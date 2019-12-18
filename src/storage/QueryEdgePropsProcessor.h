@@ -16,17 +16,20 @@ class QueryEdgePropsProcessor
     : public QueryBaseProcessor<cpp2::EdgePropRequest, cpp2::EdgePropResponse> {
 public:
     static QueryEdgePropsProcessor* instance(kvstore::KVStore* kvstore,
-                                             meta::SchemaManager* schemaMan) {
-        return new QueryEdgePropsProcessor(kvstore, schemaMan);
+                                             meta::SchemaManager* schemaMan,
+                                             stats::Stats* stats) {
+        return new QueryEdgePropsProcessor(kvstore, schemaMan, stats);
     }
 
     // It is one new method for QueryBaseProcessor.process.
     void process(const cpp2::EdgePropRequest& req);
 
 private:
-    explicit QueryEdgePropsProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
+    explicit QueryEdgePropsProcessor(kvstore::KVStore* kvstore,
+                                     meta::SchemaManager* schemaMan,
+                                     stats::Stats* stats)
         : QueryBaseProcessor<cpp2::EdgePropRequest,
-                             cpp2::EdgePropResponse>(kvstore, schemaMan) {}
+                             cpp2::EdgePropResponse>(kvstore, schemaMan, stats) {}
 
     kvstore::ResultCode collectEdgesProps(PartitionID partId,
                                           const cpp2::EdgeKey& edgeKey,

@@ -81,14 +81,10 @@ void CmdProcessor::calColumnWidths(
                     break;
                 }
                 case cpp2::ColumnValue::Type::id: {
-                    // Enough to hold "0x{16 letters}"
-                    if (widths[idx] < 18UL) {
-                        widths[idx] = 18UL;
-                        genFmt = true;
-                    }
+                    GET_VALUE_WIDTH(int64_t, id, "%ld");
+
                     if (genFmt) {
-                        formats[idx] =
-                            folly::stringPrintf(" %%-%ldLX |", widths[idx]);
+                        formats[idx] = folly::stringPrintf(" %%-%ldld |", widths[idx]);
                     }
                     break;
                 }
@@ -177,6 +173,46 @@ void CmdProcessor::calColumnWidths(
                                                 " %%02d:%%02d:%%02d"
                                                 ".%%03d%%03d |",
                                                 widths[idx] - 22);
+                    }
+                    break;
+                }
+                case cpp2::ColumnValue::Type::path: {
+                    auto pathValue = col.get_path();
+                    auto entryList = pathValue.get_entry_list();
+                    decltype(entryList.size()) entryIdx = 0;
+                    formats.resize(entryList.size(), "");
+                    widths.resize(entryList.size(), 0);
+                    for (auto &entry : entryList) {
+                        if (entry.getType() ==  cpp2::PathEntry::vertex) {
+                            auto v = entry.get_vertex();
+                            auto id = v.get_id();
+                            size_t idLen = folly::stringPrintf("%ld", id).size();
+                            if (widths[entryIdx] < idLen) {
+                                widths[entryIdx] = idLen;
+                                genFmt = true;
+                            }
+                            if (genFmt) {
+                                formats[entryIdx] =
+                                        folly::stringPrintf(" %%%ldld", idLen);
+                            }
+                        }
+                        if (entry.getType() == cpp2::PathEntry::edge) {
+                            auto e = entry.get_edge();
+                            auto type = e.get_type();
+                            auto ranking = e.get_ranking();
+                            size_t typeLen = folly::stringPrintf("%s", type.c_str()).size();
+                            size_t rankingLen = folly::stringPrintf("%ld", ranking).size();
+                            size_t len = typeLen + rankingLen + 4;
+                            if (widths[entryIdx] < len) {
+                                widths[entryIdx] = len;
+                                genFmt = true;
+                            }
+                            if (genFmt) {
+                                formats[entryIdx] =
+                                    folly::stringPrintf(" <%%%lds,%%%ldld>", typeLen, rankingLen);
+                            }
+                        }
+                        ++entryIdx;
                     }
                     break;
                 }
@@ -321,6 +357,22 @@ void CmdProcessor::printData(const cpp2::ExecutionResponse& resp,
                                       dt.get_microsec());
                     break;
                 }
+                case cpp2::ColumnValue::Type::path: {
+                    auto pathValue = col.get_path();
+                    auto entryList = pathValue.get_entry_list();
+                    cIdx = 0;
+                    for (auto &entry : entryList) {
+                        if (entry.getType() == cpp2::PathEntry::vertex) {
+                            PRINT_FIELD_VALUE(entry.get_vertex().get_id());
+                        }
+                        if (entry.getType() == cpp2::PathEntry::edge) {
+                            auto e = entry.get_edge();
+                            PRINT_FIELD_VALUE(e.get_type().c_str(), e.get_ranking());
+                        }
+                        ++cIdx;
+                    }
+                    break;
+                }
             }
             ++cIdx;
         }
@@ -436,4 +488,3 @@ const std::string& CmdProcessor::getSpaceName() const {
 
 }  // namespace graph
 }  // namespace nebula
-

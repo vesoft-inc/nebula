@@ -8,12 +8,14 @@
 #define STORAGE_CLIENT_STORAGECLIENT_H_
 
 #include "base/Base.h"
+#include "base/StatusOr.h"
 #include <gtest/gtest_prod.h>
 #include <folly/futures/Future.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
 #include "gen-cpp2/StorageServiceAsyncClient.h"
 #include "meta/client/MetaClient.h"
 #include "thrift/ThriftClientManager.h"
+#include "stats/Stats.h"
 
 namespace nebula {
 namespace storage {
@@ -81,8 +83,19 @@ class StorageClient {
 
 public:
     StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
-                  meta::MetaClient *client);
+                  meta::MetaClient *client,
+                  stats::Stats *stats = nullptr);
     virtual ~StorageClient();
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> put(
+      GraphSpaceID space,
+      std::vector<nebula::cpp2::Pair> values,
+      folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> get(
+      GraphSpaceID space,
+      const std::vector<std::string>& keys,
+      folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addVertices(
         GraphSpaceID space,
@@ -139,20 +152,49 @@ public:
         VertexID vid,
         folly::EventBase* evb = nullptr);
 
+    folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateVertex(
+        GraphSpaceID space,
+        VertexID vertexId,
+        std::string filter,
+        std::vector<storage::cpp2::UpdateItem> updateItems,
+        std::vector<std::string> returnCols,
+        bool insertable,
+        folly::EventBase* evb = nullptr);
+
+    folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateEdge(
+        GraphSpaceID space,
+        storage::cpp2::EdgeKey edgeKey,
+        std::string filter,
+        std::vector<storage::cpp2::UpdateItem> updateItems,
+        std::vector<std::string> returnCols,
+        bool insertable,
+        folly::EventBase* evb = nullptr);
+
+    folly::Future<StatusOr<cpp2::GetUUIDResp>> getUUID(
+        GraphSpaceID space,
+        const std::string& name,
+        folly::EventBase* evb = nullptr);
+
 protected:
     // Calculate the partition id for the given vertex id
-    PartitionID partId(GraphSpaceID spaceId, int64_t id) const;
+    StatusOr<PartitionID> partId(GraphSpaceID spaceId, int64_t id) const;
 
-    const HostAddr& leader(const PartMeta& partMeta) const {
+    const HostAddr leader(const PartMeta& partMeta) const {
+        auto part = std::make_pair(partMeta.spaceId_, partMeta.partId_);
         {
             folly::RWSpinLock::ReadHolder rh(leadersLock_);
-            auto it = leaders_.find(std::make_pair(partMeta.spaceId_, partMeta.partId_));
+            auto it = leaders_.find(part);
             if (it != leaders_.end()) {
                 return it->second;
             }
         }
-        VLOG(1) << "No leader exists. Choose one random.";
-        return partMeta.peers_[folly::Random::rand32(partMeta.peers_.size())];
+        {
+            folly::RWSpinLock::WriteHolder wh(leadersLock_);
+            VLOG(1) << "No leader exists. Choose one random.";
+            const auto& random = partMeta.peers_[folly::Random::rand32(partMeta.peers_.size())];
+            leaders_[part] = random;
+            return random;
+        }
     }
 
     void updateLeader(GraphSpaceID spaceId, PartitionID partId, const HostAddr& leader) {
@@ -198,11 +240,11 @@ protected:
     //  host_addr (A host, but in most case, the leader will be chosen)
     //      => (partition -> [ids that belong to the shard])
     template<class Container, class GetIdFunc>
-    std::unordered_map<HostAddr,
+    StatusOr<std::unordered_map<HostAddr,
                        std::unordered_map<PartitionID,
                                           std::vector<typename Container::value_type>
                                          >
-                      >
+                      >>
     clusterIdsToHosts(GraphSpaceID spaceId, Container ids, GetIdFunc f) const {
         std::unordered_map<HostAddr,
                            std::unordered_map<PartitionID,
@@ -210,21 +252,31 @@ protected:
                                              >
                           > clusters;
         for (auto& id : ids) {
-            PartitionID part = partId(spaceId, f(id));
-            auto partMeta = getPartMeta(spaceId, part);
+            auto status = partId(spaceId, f(id));
+            if (!status.ok()) {
+                return status;
+            }
+
+            auto part = status.value();
+            auto metaStatus = getPartMeta(spaceId, part);
+            if (!metaStatus.ok()) {
+                return status;
+            }
+
+            auto partMeta = metaStatus.value();
             CHECK_GT(partMeta.peers_.size(), 0U);
-            const auto& leader = this->leader(partMeta);
+            const auto leader = this->leader(partMeta);
             clusters[leader][part].emplace_back(std::move(id));
         }
         return clusters;
     }
 
-    virtual int32_t partsNum(GraphSpaceID spaceId) const {
+    virtual StatusOr<int32_t> partsNum(GraphSpaceID spaceId) const {
         CHECK(client_ != nullptr);
         return client_->partsNum(spaceId);
     }
 
-    virtual PartMeta getPartMeta(GraphSpaceID spaceId, PartitionID partId) const {
+    virtual StatusOr<PartMeta> getPartMeta(GraphSpaceID spaceId, PartitionID partId) const {
         CHECK(client_ != nullptr);
         return client_->getPartMetaFromCache(spaceId, partId);
     }
@@ -235,7 +287,8 @@ private:
     std::unique_ptr<thrift::ThriftClientManager<
                         storage::cpp2::StorageServiceAsyncClient>> clientsMan_;
     mutable folly::RWSpinLock leadersLock_;
-    std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> leaders_;
+    mutable std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> leaders_;
+    stats::Stats         *stats_{nullptr};
 };
 
 }   // namespace storage

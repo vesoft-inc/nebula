@@ -39,7 +39,8 @@ Status PipeExecutor::prepare() {
 
     // Setup dependencies
     {
-        auto onFinish = [this] () {
+        auto onFinish = [this] (Executor::ProcessControl ctr) {
+            UNUSED(ctr);
             // Start executing `right_' when `left_' is finished.
             right_->execute();
         };
@@ -47,6 +48,8 @@ Status PipeExecutor::prepare() {
 
         auto onResult = [this] (std::unique_ptr<InterimResult> result) {
             // Feed results from `left_' to `right_'
+            // result should never be null, it should give the column names at least.
+            DCHECK(result != nullptr);
             right_->feedResult(std::move(result));
         };
         left_->setOnResult(onResult);
@@ -54,16 +57,18 @@ Status PipeExecutor::prepare() {
         left_->setOnError(onError);
     }
     {
-        auto onFinish = [this] () {
+        auto onFinish = [this] (Executor::ProcessControl ctr) {
             // This executor is done when `right_' finishes.
             DCHECK(onFinish_);
-            onFinish_();
+            onFinish_(ctr);
         };
         right_->setOnFinish(onFinish);
 
         if (onResult_) {
             auto onResult = [this] (std::unique_ptr<InterimResult> result) {
                 // This executor takes results of `right_' as results.
+                // result should never be null, it should give the column names at least.
+                DCHECK(result != nullptr);
                 onResult_(std::move(result));
             };
             right_->setOnResult(onResult);
@@ -98,6 +103,10 @@ Status PipeExecutor::syntaxPreCheck() {
     // Go | (Go | Go $- UNION GO)
     if (sentence_->right()->kind() == Sentence::Kind::kSet) {
         return Status::SyntaxError("Set op not support input.");
+    }
+
+    if (sentence_->left()->kind() == Sentence::Kind::kFindPath) {
+        return Status::SyntaxError("Can not reference the result of FindPath.");
     }
 
     return Status::OK();

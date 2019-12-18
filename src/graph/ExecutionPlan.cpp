@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "graph/ExecutionPlan.h"
+#include "stats/StatsManager.h"
 
 namespace nebula {
 namespace graph {
@@ -19,6 +20,8 @@ void ExecutionPlan::execute() {
         auto result = GQLParser().parse(rctx->query());
         if (!result.ok()) {
             status = std::move(result).status();
+            LOG(ERROR) << status;
+            stats::Stats::addStatsValue(ectx()->getGraphStats()->getParseErrorStats(), false);
             break;
         }
 
@@ -37,7 +40,8 @@ void ExecutionPlan::execute() {
     }
 
     // Prepared
-    auto onFinish = [this] () {
+    auto onFinish = [this] (Executor::ProcessControl ctr) {
+        UNUSED(ctr);
         this->onFinish();
     };
     auto onError = [this] (Status s) {
@@ -54,6 +58,7 @@ void ExecutionPlan::onFinish() {
     auto *rctx = ectx()->rctx();
     executor_->setupResponse(rctx->resp());
     auto latency = rctx->duration().elapsedInUSec();
+    stats::Stats::addStatsValue(ectx()->getGraphStats()->getGraphAllStats(), true, latency);
     rctx->resp().set_latency_in_us(latency);
     auto &spaceName = rctx->session()->spaceName();
     rctx->resp().set_space_name(spaceName);
@@ -78,6 +83,7 @@ void ExecutionPlan::onError(Status status) {
     }
     rctx->resp().set_error_msg(status.toString());
     auto latency = rctx->duration().elapsedInUSec();
+    stats::Stats::addStatsValue(ectx()->getGraphStats()->getGraphAllStats(), false, latency);
     rctx->resp().set_latency_in_us(latency);
     rctx->finish();
     delete this;

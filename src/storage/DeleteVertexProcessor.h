@@ -16,15 +16,24 @@ namespace storage {
 class DeleteVertexProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static DeleteVertexProcessor* instance(kvstore::KVStore* kvstore,
-                                           meta::SchemaManager* schemaMan) {
-        return new DeleteVertexProcessor(kvstore, schemaMan);
+                                           meta::SchemaManager* schemaMan,
+                                           stats::Stats* stats,
+                                           VertexCache* cache = nullptr) {
+        return new DeleteVertexProcessor(kvstore, schemaMan, stats, cache);
     }
 
     void process(const cpp2::DeleteVertexRequest& req);
 
 private:
-    explicit DeleteVertexProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
-            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan) {}
+    explicit DeleteVertexProcessor(kvstore::KVStore* kvstore,
+                                   meta::SchemaManager* schemaMan,
+                                   stats::Stats* stats,
+                                   VertexCache* cache)
+            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats)
+            , vertexCache_(cache) {}
+
+private:
+    VertexCache* vertexCache_ = nullptr;
 };
 
 

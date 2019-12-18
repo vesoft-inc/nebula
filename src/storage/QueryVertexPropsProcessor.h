@@ -17,8 +17,10 @@ class QueryVertexPropsProcessor : public QueryBoundProcessor {
 public:
     static QueryVertexPropsProcessor* instance(kvstore::KVStore* kvstore,
                                                meta::SchemaManager* schemaMan,
-                                               folly::Executor* executor) {
-        return new QueryVertexPropsProcessor(kvstore, schemaMan, executor);
+                                               stats::Stats* stats,
+                                               folly::Executor* executor,
+                                               VertexCache* cache = nullptr) {
+        return new QueryVertexPropsProcessor(kvstore, schemaMan, stats, executor, cache);
     }
 
     void process(const cpp2::VertexPropRequest& req);
@@ -26,8 +28,10 @@ public:
 private:
     explicit QueryVertexPropsProcessor(kvstore::KVStore* kvstore,
                                        meta::SchemaManager* schemaMan,
-                                       folly::Executor* executor)
-        : QueryBoundProcessor(kvstore, schemaMan, executor) {}
+                                       stats::Stats* stats,
+                                       folly::Executor* executor,
+                                       VertexCache* cache)
+        : QueryBoundProcessor(kvstore, schemaMan, stats, executor, cache) {}
 };
 
 }  // namespace storage

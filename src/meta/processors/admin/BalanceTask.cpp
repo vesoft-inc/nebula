@@ -22,9 +22,17 @@ const std::string kBalanceTaskTable = "__b_task__"; // NOLINT
 
 void BalanceTask::invoke() {
     CHECK_NOTNULL(client_);
+    if (ret_ == Result::INVALID) {
+        endTimeMs_ = time::WallClock::fastNowInMilliSec();
+        saveInStore();
+        LOG(ERROR) << taskIdStr_ << "Task invalid, status " << static_cast<int32_t>(status_);
+        onFinished_();
+        return;
+    }
     if (ret_ == Result::FAILED) {
         endTimeMs_ = time::WallClock::fastNowInMilliSec();
         saveInStore();
+        LOG(ERROR) << taskIdStr_ << "Task failed, status " << static_cast<int32_t>(status_);
         onError_();
         return;
     }
@@ -38,21 +46,32 @@ void BalanceTask::invoke() {
         case Status::CHANGE_LEADER: {
             LOG(INFO) << taskIdStr_ << "Ask the src to give up the leadership.";
             SAVE_STATE();
-            client_->transLeader(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
-                if (!resp.ok()) {
-                    ret_ = Result::FAILED;
-                } else {
-                    status_ = Status::ADD_PART_ON_DST;
-                }
-                invoke();
-            });
-            break;
+            if (srcLived_) {
+                client_->transLeader(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
+                    if (!resp.ok()) {
+                        LOG(INFO) << taskIdStr_ << "Transfer leader failed, status " << resp;
+                        if (resp == nebula::Status::PartNotFound()) {
+                            ret_ = Result::INVALID;
+                        } else {
+                            ret_ = Result::FAILED;
+                        }
+                    } else {
+                        status_ = Status::ADD_PART_ON_DST;
+                    }
+                    invoke();
+                });
+                break;
+            } else {
+                LOG(INFO) << taskIdStr_ << "Src host has been lost, so no need to transfer leader";
+                status_ = Status::ADD_PART_ON_DST;
+            }
         }
         case Status::ADD_PART_ON_DST: {
             LOG(INFO) << taskIdStr_ << "Open the part as learner on dst.";
             SAVE_STATE();
             client_->addPart(spaceId_, partId_, dst_, true).thenValue([this](auto&& resp) {
                 if (!resp.ok()) {
+                    LOG(INFO) << taskIdStr_ << "Open part failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::ADD_LEARNER;
@@ -64,8 +83,9 @@ void BalanceTask::invoke() {
         case Status::ADD_LEARNER: {
             LOG(INFO) << taskIdStr_ << "Add learner dst.";
             SAVE_STATE();
-            client_->addLearner(spaceId_, partId_).thenValue([this](auto&& resp) {
+            client_->addLearner(spaceId_, partId_, dst_).thenValue([this](auto&& resp) {
                 if (!resp.ok()) {
+                    LOG(INFO) << taskIdStr_ << "Add learner failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::CATCH_UP_DATA;
@@ -77,23 +97,40 @@ void BalanceTask::invoke() {
         case Status::CATCH_UP_DATA: {
             LOG(INFO) << taskIdStr_ << "Waiting for the data catch up.";
             SAVE_STATE();
-            client_->waitingForCatchUpData(spaceId_, partId_).thenValue([this](auto&& resp) {
+            client_->waitingForCatchUpData(spaceId_, partId_, dst_).thenValue([this](auto&& resp) {
                 if (!resp.ok()) {
+                    LOG(INFO) << taskIdStr_ << "Catchup data failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
-                    status_ = Status::MEMBER_CHANGE;
+                    status_ = Status::MEMBER_CHANGE_ADD;
                 }
                 invoke();
             });
             break;
         }
-        case Status::MEMBER_CHANGE: {
+        case Status::MEMBER_CHANGE_ADD: {
             LOG(INFO) << taskIdStr_ << "Send member change request to the leader"
-                      << ", it will add the new member on dst host"
-                      << " and remove the old member on src host.";
+                      << ", it will add the new member on dst host";
             SAVE_STATE();
-            client_->memberChange(spaceId_, partId_).thenValue([this](auto&& resp) {
+            client_->memberChange(spaceId_, partId_, dst_, true).thenValue([this](auto&& resp) {
                 if (!resp.ok()) {
+                    LOG(INFO) << taskIdStr_ << "Add peer failed, status " << resp;
+                    ret_ = Result::FAILED;
+                } else {
+                    status_ = Status::MEMBER_CHANGE_REMOVE;
+                }
+                invoke();
+            });
+            break;
+        }
+        case Status::MEMBER_CHANGE_REMOVE: {
+            LOG(INFO) << taskIdStr_ << "Send member change request to the leader"
+                      << ", it will remove the old member on src host";
+            SAVE_STATE();
+            client_->memberChange(spaceId_, partId_, src_, false).thenValue(
+                    [this] (auto&& resp) {
+                if (!resp.ok()) {
+                    LOG(INFO) << taskIdStr_ << "Remove peer failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::UPDATE_PART_META;
@@ -105,8 +142,13 @@ void BalanceTask::invoke() {
         case Status::UPDATE_PART_META: {
             LOG(INFO) << taskIdStr_ << "Update meta for part.";
             SAVE_STATE();
-            client_->updateMeta(spaceId_, partId_, src_, dst_).thenValue([this](auto&& resp) {
+            client_->updateMeta(spaceId_, partId_, src_, dst_).thenValue(
+                        [this] (auto&& resp) {
+                // The callback will be called inside raft set value. So don't call invoke directly
+                // here.
+                LOG(INFO) << "Update meta succeeded!";
                 if (!resp.ok()) {
+                    LOG(INFO) << taskIdStr_ << "Update meta failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     status_ = Status::REMOVE_PART_ON_SRC;
@@ -116,10 +158,31 @@ void BalanceTask::invoke() {
             break;
         }
         case Status::REMOVE_PART_ON_SRC: {
-            LOG(INFO) << taskIdStr_ << "Close part on src host.";
+            LOG(INFO) << taskIdStr_ << "Close part on src host, srcLived " << srcLived_;
             SAVE_STATE();
-            client_->removePart(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
+            if (srcLived_) {
+                client_->removePart(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
+                    if (!resp.ok()) {
+                        LOG(INFO) << taskIdStr_ << "Remove part failed, status " << resp;
+                        ret_ = Result::FAILED;
+                    } else {
+                        ret_ = Result::SUCCEEDED;
+                        status_ = Status::CHECK;
+                    }
+                    invoke();
+                });
+                break;
+            } else {
+                LOG(INFO) << taskIdStr_ << "Don't remove part on src " << src_;
+                status_ = Status::CHECK;
+            }
+        }
+        case Status::CHECK: {
+            LOG(INFO) << taskIdStr_ << "Check the peers...";
+            SAVE_STATE();
+            client_->checkPeers(spaceId_, partId_).thenValue([this] (auto&& resp) {
                 if (!resp.ok()) {
+                    LOG(INFO) << taskIdStr_ << "Check the peers failed, status " << resp;
                     ret_ = Result::FAILED;
                 } else {
                     ret_ = Result::SUCCEEDED;
@@ -188,6 +251,7 @@ std::string BalanceTask::taskVal() {
     str.reserve(32);
     str.append(reinterpret_cast<const char*>(&status_), sizeof(status_));
     str.append(reinterpret_cast<const char*>(&ret_), sizeof(ret_));
+    str.append(reinterpret_cast<const char*>(&srcLived_), sizeof(srcLived_));
     str.append(reinterpret_cast<const char*>(&startTimeMs_), sizeof(startTimeMs_));
     str.append(reinterpret_cast<const char*>(&endTimeMs_), sizeof(endTimeMs_));
     return str;
@@ -216,17 +280,19 @@ BalanceTask::parseKey(const folly::StringPiece& rawKey) {
     return std::make_tuple(balanceId, spaceId, partId, src, dst);
 }
 
-std::tuple<BalanceTask::Status, BalanceTask::Result, int64_t, int64_t>
+std::tuple<BalanceTask::Status, BalanceTask::Result, bool, int64_t, int64_t>
 BalanceTask::parseVal(const folly::StringPiece& rawVal) {
     int32_t offset = 0;
     auto status = *reinterpret_cast<const BalanceTask::Status*>(rawVal.begin() + offset);
     offset += sizeof(BalanceTask::Status);
     auto ret = *reinterpret_cast<const BalanceTask::Result*>(rawVal.begin() + offset);
     offset += sizeof(BalanceTask::Result);
+    auto srcLived = *reinterpret_cast<const bool*>(rawVal.begin() + offset);
+    offset += sizeof(bool);
     auto start = *reinterpret_cast<const int64_t*>(rawVal.begin() + offset);
     offset += sizeof(int64_t);
     auto end = *reinterpret_cast<const int64_t*>(rawVal.begin() + offset);
-    return std::make_tuple(status, ret, start, end);
+    return std::make_tuple(status, ret, srcLived, start, end);
 }
 
 }  // namespace meta

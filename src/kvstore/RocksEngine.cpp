@@ -17,8 +17,6 @@ namespace kvstore {
 using fs::FileUtils;
 using fs::FileType;
 
-const char* kSystemParts = "__system__parts__";
-
 namespace {
 
 /***************************************
@@ -306,12 +304,7 @@ ResultCode RocksEngine::removePrefix(const std::string& prefix) {
 
 
 std::string RocksEngine::partKey(PartitionID partId) {
-    std::string key;
-    static const size_t prefixLen = ::strlen(kSystemParts);
-    key.reserve(prefixLen + sizeof(PartitionID));
-    key.append(kSystemParts, prefixLen);
-    key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID));
-    return key;
+    return NebulaKeyUtils::systemPartKey(partId);
 }
 
 
@@ -337,16 +330,22 @@ void RocksEngine::removePart(PartitionID partId) {
 
 std::vector<PartitionID> RocksEngine::allParts() {
     std::unique_ptr<KVIterator> iter;
-    static const size_t prefixLen = ::strlen(kSystemParts);
-    static const std::string prefixStr(kSystemParts, prefixLen);
+    static const std::string prefixStr = NebulaKeyUtils::systemPrefix();
     CHECK_EQ(ResultCode::SUCCEEDED, this->prefix(prefixStr, &iter));
 
     std::vector<PartitionID> parts;
     while (iter->valid()) {
         auto key = iter->key();
-        CHECK_EQ(key.size(), prefixLen + sizeof(PartitionID));
-        parts.emplace_back(
-           *reinterpret_cast<const PartitionID*>(key.data() + key.size() - sizeof(PartitionID)));
+        CHECK_EQ(key.size(), sizeof(PartitionID) + sizeof(NebulaSystemKeyType));
+        PartitionID partId = *reinterpret_cast<const PartitionID*>(key.data());
+        if (!NebulaKeyUtils::isSystemPart(key)) {
+            VLOG(3) << "Skip: " << std::bitset<32>(partId);
+            iter->next();
+            continue;
+        }
+
+        partId = partId >> 8;
+        parts.emplace_back(partId);
         iter->next();
     }
     return parts;
@@ -378,6 +377,7 @@ ResultCode RocksEngine::setOption(const std::string& configKey,
 
     rocksdb::Status status = db_->SetOptions(configOptions);
     if (status.ok()) {
+        LOG(INFO) << "SetOption Succeeded: " << configKey << ":" << configValue;
         return ResultCode::SUCCEEDED;
     } else {
         LOG(ERROR) << "SetOption Failed: " << configKey << ":" << configValue;
@@ -394,6 +394,7 @@ ResultCode RocksEngine::setDBOption(const std::string& configKey,
 
     rocksdb::Status status = db_->SetDBOptions(configOptions);
     if (status.ok()) {
+        LOG(INFO) << "SetDBOption Succeeded: " << configKey << ":" << configValue;
         return ResultCode::SUCCEEDED;
     } else {
         LOG(ERROR) << "SetDBOption Failed: " << configKey << ":" << configValue;
@@ -422,6 +423,53 @@ ResultCode RocksEngine::flush() {
         LOG(ERROR) << "Flush Failed: " << status.ToString();
         return ResultCode::ERR_UNKNOWN;
     }
+}
+
+ResultCode RocksEngine::createCheckpoint(const std::string& name) {
+    LOG(INFO) << "Begin checkpoint : " << dataPath_;
+
+    /*
+     * The default checkpoint directory structure is :
+     *   |--FLAGS_data_path
+     *   |----nebula
+     *   |------space1
+     *   |--------data
+     *   |--------wal
+     *   |--------checkpoints
+     *   |----------snapshot1
+     *   |------------data
+     *   |------------wal
+     *   |----------snapshot2
+     *   |----------snapshot3
+     *
+     */
+
+    auto checkpointPath = folly::stringPrintf("%s/checkpoints/%s/data",
+                                              dataPath_.c_str(), name.c_str());
+    LOG(INFO) << "Target checkpoint path : " << checkpointPath;
+    if (fs::FileUtils::exist(checkpointPath)) {
+        LOG(ERROR) << "The snapshot file already exists: " << checkpointPath;
+        return ResultCode::ERR_CHECKPOINT_ERROR;
+    }
+
+    auto parent = checkpointPath.substr(0, checkpointPath.rfind('/'));
+    if (!FileUtils::exist(parent)) {
+        FileUtils::makeDir(parent);
+    }
+
+    rocksdb::Checkpoint* checkpoint;
+    rocksdb::Status status = rocksdb::Checkpoint::Create(db_.get(), &checkpoint);
+    std::unique_ptr<rocksdb::Checkpoint> cp(checkpoint);
+    if (!status.ok()) {
+        LOG(ERROR) << "Init checkpoint Failed: " << status.ToString();
+        return ResultCode::ERR_CHECKPOINT_ERROR;
+    }
+    status = cp->CreateCheckpoint(checkpointPath, 0);
+    if (!status.ok()) {
+        LOG(ERROR) << "Create checkpoint Failed: " << status.ToString();
+        return ResultCode::ERR_CHECKPOINT_ERROR;
+    }
+    return ResultCode::SUCCEEDED;
 }
 
 }  // namespace kvstore

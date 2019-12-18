@@ -13,12 +13,12 @@
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
+#include "meta/SchemaManager.h"
 #include "meta/SchemaProviderIf.h"
 #include "dataman/ResultSchemaProvider.h"
 #include "storage/StorageServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include <folly/synchronization/Baton.h>
-#include "meta/SchemaManager.h"
 #include <folly/executors/ThreadPoolExecutor.h>
 #include <folly/executors/CPUThreadPoolExecutor.h>
 #include "dataman/RowReader.h"
@@ -36,7 +36,7 @@ public:
             HostAddr localhost = {0, 0},
             meta::MetaClient* mClient = nullptr,
             bool useMetaServer = false,
-            std::shared_ptr<kvstore::KVCompactionFilterFactory> cfFactory = nullptr) {
+            std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder = nullptr) {
         auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
         auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
                                  1, true /*stats*/);
@@ -67,7 +67,7 @@ public:
 
         // Prepare KVStore
         options.dataPaths_ = std::move(paths);
-        options.cfFactory_ = std::move(cfFactory);
+        options.cffBuilder_ = std::move(cffBuilder);
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
                                                             localhost,
@@ -92,26 +92,27 @@ public:
     }
 
     static std::vector<cpp2::Vertex> setupVertices(
-            const PartitionID partitionID,
-            const int64_t verticesNum,
-            const int32_t tagsNum) {
+            PartitionID partitionID,
+            int64_t verticesNum,
+            int32_t tagsNum,
+            int32_t tagsFrom = 0,
+            int32_t vIdFrom = 0) {
         // partId => List<Vertex>
         // Vertex => {Id, List<VertexProp>}
         // VertexProp => {tagId, tags}
         std::vector<cpp2::Vertex> vertices;
-        VertexID vertexID = 0;
-        while (vertexID < verticesNum) {
-              TagID tagID = 0;
+        for (VertexID vId = vIdFrom, vNum = 0;  vNum< verticesNum; vId++, vNum++) {
               std::vector<cpp2::Tag> tags;
-              while (tagID < tagsNum) {
-                    tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                      tagID,
-                                      folly::stringPrintf("%d_%ld_%d",
-                                                          partitionID, vertexID, tagID++));
-               }
-               vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                     vertexID++,
-                                     std::move(tags));
+              for (TagID tId = tagsFrom, tNum = 0; tNum < tagsNum; tId++, tNum++) {
+                  cpp2::Tag t;
+                  t.set_tag_id(tId);
+                  t.set_props(folly::stringPrintf("%d_%ld_%d", partitionID, vId, tId));
+                  tags.emplace_back(std::move(t));
+              }
+              cpp2::Vertex v;
+              v.set_id(vId);
+              v.set_tags(std::move(tags));
+              vertices.emplace_back(std::move(v));
         }
         return vertices;
     }
@@ -163,7 +164,7 @@ public:
         return std::make_shared<ResultSchemaProvider>(std::move(schema));
     }
 
-    static cpp2::PropDef vetexPropDef(std::string name, TagID tagId) {
+    static cpp2::PropDef vertexPropDef(std::string name, TagID tagId) {
         cpp2::PropDef prop;
         prop.set_name(std::move(name));
         prop.set_owner(cpp2::PropOwner::SOURCE);
@@ -179,8 +180,8 @@ public:
         return prop;
     }
 
-    static cpp2::PropDef vetexPropDef(std::string name, cpp2::StatType type, TagID tagId) {
-        auto prop = TestUtils::vetexPropDef(std::move(name), tagId);
+    static cpp2::PropDef vertexPropDef(std::string name, cpp2::StatType type, TagID tagId) {
+        auto prop = TestUtils::vertexPropDef(std::move(name), tagId);
         prop.set_stat(type);
         return prop;
     }
@@ -210,7 +211,7 @@ public:
         }
 
         auto handler = std::make_shared<nebula::storage::StorageServiceHandler>(
-            sc->kvStore_.get(), sc->schemaMan_.get());
+            sc->kvStore_.get(), sc->schemaMan_.get(), mClient);
         sc->mockCommon("storage", port, handler);
         auto ptr = dynamic_cast<kvstore::MetaServerBasedPartManager*>(
             sc->kvStore_->partManager());
@@ -226,6 +227,28 @@ public:
         LOG(INFO) << "The storage daemon started on port " << sc->port_
                   << ", data path is at \"" << dataPath << "\"";
         return sc;
+    }
+
+    static void waitUntilAllElected(kvstore::KVStore* kvstore, GraphSpaceID spaceId, int partNum) {
+        auto* nKV = static_cast<kvstore::NebulaStore*>(kvstore);
+        // wait until all part leader exists
+        while (true) {
+            int readyNum = 0;
+            for (auto partId = 1; partId <= partNum; partId++) {
+                auto retLeader = nKV->partLeader(spaceId, partId);
+                if (ok(retLeader)) {
+                    auto leader = value(std::move(retLeader));
+                    if (leader != HostAddr(0, 0)) {
+                        readyNum++;
+                    }
+                }
+            }
+            if (readyNum == partNum) {
+                LOG(INFO) << "All leaders have been elected!";
+                break;
+            }
+            usleep(100000);
+        }
     }
 };
 

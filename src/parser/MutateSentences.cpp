@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "base/Base.h"
+#include "parser/TraverseSentences.h"
 #include "parser/MutateSentences.h"
 
 namespace nebula {
@@ -162,6 +163,22 @@ std::string UpdateItem::toString() const {
     return buf;
 }
 
+StatusOr<std::string> UpdateItem::toEvaledString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += *field_;
+    buf += "=";
+    auto ret = value_->eval();
+    if (!ret.ok()) {
+        return ret.status();
+    }
+    if (Expression::isString(ret.value())) {
+        return Status::Error("Invalid string config value");
+    }
+
+    buf += Expression::toString(ret.value());
+    return buf;
+}
 
 std::string UpdateList::toString() const {
     std::string buf;
@@ -176,21 +193,39 @@ std::string UpdateList::toString() const {
     return buf;
 }
 
+StatusOr<std::string> UpdateList::toEvaledString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &item : items_) {
+        auto ret = item->toEvaledString();
+        if (!ret.ok()) {
+            return ret.status();
+        }
+        buf += ret.value();
+        buf += ",";
+    }
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
+}
+
 
 std::string UpdateVertexSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "UPDATE ";
     if (insertable_) {
-        buf += "OR INSERT ";
+        buf += "UPSERT ";
+    } else {
+        buf += "UPDATE ";
     }
     buf += "VERTEX ";
     buf += vid_->toString();
     buf += " SET ";
-    buf += updateItems_->toString();
-    if (whereClause_ != nullptr) {
+    buf += updateList_->toString();
+    if (whenClause_ != nullptr) {
         buf += " ";
-        buf += whereClause_->toString();
+        buf += whenClause_->toString();
     }
     if (yieldClause_ != nullptr) {
         buf += " ";
@@ -204,19 +239,24 @@ std::string UpdateVertexSentence::toString() const {
 std::string UpdateEdgeSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "UPDATE ";
     if (insertable_) {
-        buf += "OR INSERT ";
+        buf += "UPSERT ";
+    } else {
+        buf += "UPDATE ";
     }
     buf += "EDGE ";
     buf += srcid_->toString();
     buf += "->";
     buf += dstid_->toString();
+    if (hasRank_) {
+        buf += " AT" + std::to_string(rank_);
+    }
+    buf += " OF " + *edgeType_;
     buf += " SET ";
-    buf += updateItems_->toString();
-    if (whereClause_ != nullptr) {
+    buf += updateList_->toString();
+    if (whenClause_ != nullptr) {
         buf += " ";
-        buf += whereClause_->toString();
+        buf += whenClause_->toString();
     }
     if (yieldClause_ != nullptr) {
         buf += " ";
@@ -234,31 +274,25 @@ std::string DeleteVertexSentence::toString() const {
     return buf;
 }
 
-std::string EdgeList::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    for (auto &edge : edges_) {
-        buf += edge.first->toString();
-        buf += "->";
-        buf += edge.second->toString();
-        buf += ",";
-    }
-    if (!buf.empty()) {
-        buf.resize(buf.size() - 1);
-    }
-    return buf;
-}
-
-std::string DeleteEdgeSentence::toString() const {
+std::string DeleteEdgesSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "DELETE EDGE ";
-    buf += edgeList_->toString();
-    if (whereClause_ != nullptr) {
-        buf += " ";
-        buf += whereClause_->toString();
-    }
+    buf += *edge_;
+    buf += " ";
+    buf += edgeKeys_->toString();
     return buf;
+}
+
+DeleteEdgesSentence::DeleteEdgesSentence(std::string *edge,
+                                         EdgeKeys    *keys) {
+        edge_.reset(edge);
+        edgeKeys_.reset(keys);
+        kind_ = Kind::kDeleteEdges;
+}
+
+EdgeKeys* DeleteEdgesSentence::keys() const {
+    return edgeKeys_.get();
 }
 
 std::string DownloadSentence::toString() const {

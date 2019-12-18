@@ -16,6 +16,8 @@ namespace nebula {
 
 class ColumnSpecification final {
 public:
+    using Value = boost::variant<int64_t, bool, double, std::string>;
+
     ColumnSpecification(ColumnType type, std::string *name) {
         type_ = type;
         name_.reset(name);
@@ -29,9 +31,53 @@ public:
         return name_.get();
     }
 
+    void setIntValue(int64_t v) {
+        defaultValue_ = v;
+        hasDefault_ = true;
+    }
+
+    int64_t getIntValue() {
+        int64_t v = boost::get<int64_t>(defaultValue_);
+        return v;
+    }
+
+    void setBoolValue(bool v) {
+        defaultValue_ = v;
+        hasDefault_ = true;
+    }
+
+    bool getBoolValue() {
+        return boost::get<bool>(defaultValue_);
+    }
+
+    void setDoubleValue(double v) {
+        defaultValue_ = v;
+        hasDefault_ = true;
+    }
+
+    double getDoubleValue() {
+        return boost::get<double>(defaultValue_);
+    }
+
+    void setStringValue(std::string *v) {
+        defaultValue_ = *v;
+        hasDefault_ = true;
+        delete v;
+    }
+
+    std::string getStringValue() {
+        return boost::get<std::string>(defaultValue_);
+    }
+
+    bool hasDefault() {
+        return hasDefault_;
+    }
+
 private:
     ColumnType                                  type_;
     std::unique_ptr<std::string>                name_;
+    bool                                        hasDefault_{false};
+    Value                                       defaultValue_;
 };
 
 
@@ -185,11 +231,13 @@ private:
 };
 
 
-class CreateTagSentence final : public Sentence {
+class CreateTagSentence final : public CreateSentence {
 public:
     CreateTagSentence(std::string *name,
                       ColumnSpecificationList *columns,
-                      SchemaPropList *schemaProps) {
+                      SchemaPropList *schemaProps,
+                      bool ifNotExists)
+        : CreateSentence(ifNotExists) {
         name_.reset(name);
         columns_.reset(columns);
         schemaProps_.reset(schemaProps);
@@ -217,11 +265,13 @@ private:
 };
 
 
-class CreateEdgeSentence final : public Sentence {
+class CreateEdgeSentence final : public CreateSentence {
 public:
     CreateEdgeSentence(std::string *name,
                        ColumnSpecificationList *columns,
-                       SchemaPropList *schemaProps) {
+                       SchemaPropList *schemaProps,
+                       bool ifNotExists)
+        : CreateSentence(ifNotExists) {
         name_.reset(name);
         columns_.reset(columns);
         schemaProps_.reset(schemaProps);
@@ -445,24 +495,6 @@ public:
 
 private:
     std::unique_ptr<std::string>                name_;
-};
-
-
-class YieldSentence final : public Sentence {
-public:
-    explicit YieldSentence(YieldColumns *fields) {
-        yieldColumns_.reset(fields);
-        kind_ = Kind::kYield;
-    }
-
-    std::vector<YieldColumn*> columns() const {
-        return yieldColumns_->columns();
-    }
-
-    std::string toString() const override;
-
-private:
-    std::unique_ptr<YieldColumns>              yieldColumns_;
 };
 }   // namespace nebula
 

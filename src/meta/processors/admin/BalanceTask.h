@@ -22,16 +22,41 @@ class BalanceTask {
     friend class BalancePlan;
     FRIEND_TEST(BalanceTaskTest, SimpleTest);
     FRIEND_TEST(BalanceTest, BalancePlanTest);
+    FRIEND_TEST(BalanceTest, SpecifyHostTest);
+    FRIEND_TEST(BalanceTest, SpecifyMultiHostTest);
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
+    FRIEND_TEST(BalanceTest, StopBalanceDataTest);
 
 public:
+    enum class Status : uint8_t {
+        START                   = 0x01,
+        CHANGE_LEADER           = 0x02,
+        ADD_PART_ON_DST         = 0x03,
+        ADD_LEARNER             = 0x04,
+        CATCH_UP_DATA           = 0x05,
+        MEMBER_CHANGE_ADD       = 0x06,
+        MEMBER_CHANGE_REMOVE    = 0x07,
+        UPDATE_PART_META        = 0x08,  // After this state, we can't rollback anymore.
+        REMOVE_PART_ON_SRC      = 0x09,
+        CHECK                   = 0x0A,
+        END                     = 0xFF,
+    };
+
+    enum class Result : uint8_t {
+        SUCCEEDED           = 0x01,
+        FAILED              = 0x02,
+        IN_PROGRESS         = 0x03,
+        INVALID             = 0x04,
+    };
+
     BalanceTask() = default;
     BalanceTask(BalanceID balanceId,
                 GraphSpaceID spaceId,
                 PartitionID partId,
                 const HostAddr& src,
                 const HostAddr& dst,
+                bool srcLived,
                 kvstore::KVStore* kv,
                 AdminClient* client)
         : balanceId_(balanceId)
@@ -39,14 +64,8 @@ public:
         , partId_(partId)
         , src_(src)
         , dst_(dst)
-        , taskIdStr_(folly::stringPrintf(
-                                      "[%ld, %d, %s:%d->%s:%d] ",
-                                      balanceId,
-                                      partId,
-                                      network::NetworkUtils::intToIPv4(src.first).c_str(),
-                                      src.second,
-                                      network::NetworkUtils::intToIPv4(dst.first).c_str(),
-                                      dst.second))
+        , srcLived_(srcLived)
+        , taskIdStr_(buildTaskId())
         , kv_(kv)
         , client_(client) {}
 
@@ -58,24 +77,21 @@ public:
 
     void rollback();
 
-private:
-    enum class Status : uint8_t {
-        START               = 0x01,
-        CHANGE_LEADER       = 0x02,
-        ADD_PART_ON_DST     = 0x03,
-        ADD_LEARNER         = 0x04,
-        CATCH_UP_DATA       = 0x05,
-        MEMBER_CHANGE       = 0x06,
-        UPDATE_PART_META    = 0x07,  // After this state, we can't rollback anymore.
-        REMOVE_PART_ON_SRC  = 0x08,
-        END                 = 0xFF,
-    };
+    Result result() const {
+        return ret_;
+    }
 
-    enum class Result : uint8_t {
-        SUCCEEDED           = 0x01,
-        FAILED              = 0x02,
-        IN_PROGRESS         = 0x03,
-    };
+private:
+    std::string buildTaskId() {
+        return folly::stringPrintf("[%ld, %d:%d, %s:%d->%s:%d] ",
+                                   balanceId_,
+                                   spaceId_,
+                                   partId_,
+                                   network::NetworkUtils::intToIPv4(src_.first).c_str(),
+                                   src_.second,
+                                   network::NetworkUtils::intToIPv4(dst_.first).c_str(),
+                                   dst_.second);
+    }
 
     bool saveInStore();
 
@@ -88,7 +104,7 @@ private:
     static std::tuple<BalanceID, GraphSpaceID, PartitionID, HostAddr, HostAddr>
     parseKey(const folly::StringPiece& rawKey);
 
-    static std::tuple<BalanceTask::Status, BalanceTask::Result, int64_t, int64_t>
+    static std::tuple<BalanceTask::Status, BalanceTask::Result, bool, int64_t, int64_t>
     parseVal(const folly::StringPiece& rawVal);
 
 private:
@@ -97,6 +113,7 @@ private:
     PartitionID  partId_;
     HostAddr     src_;
     HostAddr     dst_;
+    bool         srcLived_ = true;  // false means the src host have been lost.
     std::string  taskIdStr_;
     kvstore::KVStore* kv_ = nullptr;
     AdminClient* client_ = nullptr;

@@ -73,7 +73,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req) {
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 2; i++) {
         tmpColumns.emplace_back(
-            TestUtils::vetexPropDef(folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2),
+            TestUtils::vertexPropDef(folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2),
                                     cpp2::StatType::AVG, 3001 + i * 2));
     }
     // Return edge props col_0, col_2, col_4 ... col_18
@@ -145,7 +145,8 @@ TEST(QueryStatsTest, StatsSimpleTest) {
     buildRequest(req);
 
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-    auto* processor = QueryStatsProcessor::instance(kv.get(), schemaMan.get(), executor.get());
+    auto* processor = QueryStatsProcessor::instance(kv.get(), schemaMan.get(), nullptr,
+                                                    executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

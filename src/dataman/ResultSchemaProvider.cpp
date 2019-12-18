@@ -40,6 +40,16 @@ bool ResultSchemaProvider::ResultSchemaField::isValid() const {
 }
 
 
+bool ResultSchemaProvider::ResultSchemaField::hasDefault() const {
+    LOG(FATAL) << "Not Supported";
+}
+
+
+std::string ResultSchemaProvider::ResultSchemaField::getDefaultValue() const {
+    LOG(FATAL) << "Not Supported";
+}
+
+
 /***********************************
  *
  * ResultSchemaProvider

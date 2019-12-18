@@ -25,8 +25,6 @@
 #include "graph/InsertEdgeExecutor.h"
 #include "graph/AssignmentExecutor.h"
 #include "graph/ShowExecutor.h"
-#include "graph/AddHostsExecutor.h"
-#include "graph/RemoveHostsExecutor.h"
 #include "graph/CreateSpaceExecutor.h"
 #include "graph/DescribeSpaceExecutor.h"
 #include "graph/DropSpaceExecutor.h"
@@ -43,6 +41,15 @@
 #include "graph/MatchExecutor.h"
 #include "graph/BalanceExecutor.h"
 #include "graph/DeleteVertexExecutor.h"
+#include "graph/DeleteEdgesExecutor.h"
+#include "graph/UpdateVertexExecutor.h"
+#include "graph/UpdateEdgeExecutor.h"
+#include "graph/FindPathExecutor.h"
+#include "graph/LimitExecutor.h"
+#include "graph/GroupByExecutor.h"
+#include "graph/ReturnExecutor.h"
+#include "graph/CreateSnapshotExecutor.h"
+#include "graph/DropSnapshotExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -96,12 +103,6 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kAssignment:
             executor = std::make_unique<AssignmentExecutor>(sentence, ectx());
             break;
-        case Sentence::Kind::kAddHosts:
-            executor = std::make_unique<AddHostsExecutor>(sentence, ectx());
-            break;
-        case Sentence::Kind::kRemoveHosts:
-            executor = std::make_unique<RemoveHostsExecutor>(sentence, ectx());
-            break;
         case Sentence::Kind::kCreateSpace:
             executor = std::make_unique<CreateSpaceExecutor>(sentence, ectx());
             break;
@@ -126,6 +127,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kConfig:
             executor = std::make_unique<ConfigExecutor>(sentence, ectx());
             break;
+        case Sentence::Kind::KGroupBy:
+            executor = std::make_unique<GroupByExecutor>(sentence, ectx());
+            break;
         case Sentence::Kind::kFetchVertices:
             executor = std::make_unique<FetchVerticesExecutor>(sentence, ectx());
             break;
@@ -147,12 +151,36 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kDeleteVertex:
             executor = std::make_unique<DeleteVertexExecutor>(sentence, ectx());
             break;
+        case Sentence::Kind::kDeleteEdges:
+            executor = std::make_unique<DeleteEdgesExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kUpdateVertex:
+            executor = std::make_unique<UpdateVertexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kUpdateEdge:
+            executor = std::make_unique<UpdateEdgeExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kFindPath:
+            executor = std::make_unique<FindPathExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kLimit:
+            executor = std::make_unique<LimitExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kReturn:
+            executor = std::make_unique<ReturnExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kCreateSnapshot:
+            executor = std::make_unique<CreateSnapshotExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDropSnapshot:
+            executor = std::make_unique<DropSnapshotExecutor>(sentence, ectx());
+            break;
         case Sentence::Kind::kUnknown:
-            LOG(FATAL) << "Sentence kind unknown";
-            break;
+            LOG(ERROR) << "Sentence kind unknown";
+            return nullptr;
         default:
-            LOG(FATAL) << "Sentence kind illegal: " << kind;
-            break;
+            LOG(ERROR) << "Sentence kind illegal: " << kind;
+            return nullptr;
     }
     return executor;
 }
@@ -211,23 +239,6 @@ bool Executor::checkValueType(const nebula::cpp2::ValueType &type, const Variant
     return false;
 }
 
-Status Executor::checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> schema,
-                                std::vector<std::string*> props) {
-    for (auto fieldIndex = 0u; fieldIndex < schema->getNumFields(); fieldIndex++) {
-        auto schemaFieldName = schema->getFieldName(fieldIndex);
-        if (UNLIKELY(nullptr == schemaFieldName)) {
-            return Status::Error("Invalid field index");
-        }
-        if (schemaFieldName != *props[fieldIndex]) {
-            LOG(ERROR) << "Field name is wrong, schema field " << schemaFieldName
-                       << ", input field " << *props[fieldIndex];
-            return Status::Error("Input field name `%s' is wrong",
-                                 props[fieldIndex]->c_str());
-        }
-    }
-    return Status::OK();
-}
-
 StatusOr<int64_t> Executor::toTimestamp(const VariantType &value) {
     if (value.which() != VAR_INT64 && value.which() != VAR_STR) {
         return Status::Error("Invalid value type");
@@ -266,22 +277,129 @@ StatusOr<int64_t> Executor::toTimestamp(const VariantType &value) {
     return timestamp;
 }
 
-nebula::cpp2::SupportedType Executor::ColumnTypeToSupportedType(ColumnType type) const {
-    switch (type) {
-        case INT:
-            return nebula::cpp2::SupportedType::INT;
-        case STRING:
-            return nebula::cpp2::SupportedType::STRING;
-        case DOUBLE:
-            return nebula::cpp2::SupportedType::DOUBLE;
-        case BOOL:
-            return nebula::cpp2::SupportedType::BOOL;
-        case TIMESTAMP:
-            return nebula::cpp2::SupportedType::TIMESTAMP;
-        default:
-            LOG(ERROR) << "Unknown type: " << static_cast<int32_t>(type);
-            return nebula::cpp2::SupportedType::UNKNOWN;
+StatusOr<cpp2::ColumnValue> Executor::toColumnValue(const VariantType& value,
+                                                    cpp2::ColumnValue::Type type) const {
+    cpp2::ColumnValue colVal;
+    try {
+        if (type == cpp2::ColumnValue::Type::__EMPTY__) {
+            switch (value.which()) {
+                case VAR_INT64:
+                    colVal.set_integer(boost::get<int64_t>(value));
+                    break;
+                case VAR_DOUBLE:
+                    colVal.set_double_precision(boost::get<double>(value));
+                    break;
+                case VAR_BOOL:
+                    colVal.set_bool_val(boost::get<bool>(value));
+                    break;
+                case VAR_STR:
+                    colVal.set_str(boost::get<std::string>(value));
+                    break;
+                default:
+                    LOG(ERROR) << "Wrong Type: " << value.which();
+                    return Status::Error("Wrong Type: %d", value.which());
+            }
+            return colVal;
+        }
+        switch (type) {
+            case cpp2::ColumnValue::Type::id:
+                colVal.set_id(boost::get<int64_t>(value));
+                break;
+            case cpp2::ColumnValue::Type::integer:
+                colVal.set_integer(boost::get<int64_t>(value));
+                break;
+            case cpp2::ColumnValue::Type::timestamp:
+                colVal.set_timestamp(boost::get<int64_t>(value));
+                break;
+            case cpp2::ColumnValue::Type::double_precision:
+                colVal.set_double_precision(boost::get<double>(value));
+                break;
+            case cpp2::ColumnValue::Type::bool_val:
+                colVal.set_bool_val(boost::get<bool>(value));
+                break;
+            case cpp2::ColumnValue::Type::str:
+                colVal.set_str(boost::get<std::string>(value));
+                break;
+            default:
+                LOG(ERROR) << "Wrong Type: " << static_cast<int32_t>(type);
+                return Status::Error("Wrong Type: %d", static_cast<int32_t>(type));
+        }
+    } catch (const std::exception& e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        return Status::Error("Wrong Type: %d", static_cast<int32_t>(type));
     }
+    return colVal;
+}
+
+OptVariantType Executor::toVariantType(const cpp2::ColumnValue& value) const {
+    switch (value.getType()) {
+        case cpp2::ColumnValue::Type::id:
+            return value.get_id();
+        case cpp2::ColumnValue::Type::integer:
+            return value.get_integer();
+        case cpp2::ColumnValue::Type::bool_val:
+            return value.get_bool_val();
+        case cpp2::ColumnValue::Type::double_precision:
+            return value.get_double_precision();
+        case cpp2::ColumnValue::Type::str:
+            return value.get_str();
+        case cpp2::ColumnValue::Type::timestamp:
+            return value.get_timestamp();
+        default:
+            break;
+    }
+
+    LOG(ERROR) << "Unknown ColumnType: " << static_cast<int32_t>(value.getType());
+    return Status::Error("Unknown ColumnType: %d", static_cast<int32_t>(value.getType()));
+}
+
+StatusOr<VariantType> Executor::transformDefaultValue(nebula::cpp2::SupportedType type,
+                                                      std::string& originalValue) {
+    switch (type) {
+        case nebula::cpp2::SupportedType::BOOL:
+            try {
+                return folly::to<bool>(originalValue);
+            } catch (const std::exception& ex) {
+                LOG(ERROR) << "Conversion to bool failed: " << originalValue;
+                return Status::Error("Type Conversion Failed");
+            }
+            break;
+        case nebula::cpp2::SupportedType::INT:
+            try {
+                return folly::to<int64_t>(originalValue);
+            } catch (const std::exception& ex) {
+                LOG(ERROR) << "Conversion to int64_t failed: " << originalValue;
+                return Status::Error("Type Conversion Failed");
+            }
+            break;
+        case nebula::cpp2::SupportedType::DOUBLE:
+            try {
+                return folly::to<double>(originalValue);
+            } catch (const std::exception& ex) {
+                LOG(ERROR) << "Conversion to double failed: " << originalValue;
+                return Status::Error("Type Conversion Failed");
+            }
+            break;
+        case nebula::cpp2::SupportedType::STRING:
+            return originalValue;
+            break;
+        default:
+            LOG(ERROR) << "Unknow type";
+            return Status::Error("Unknow type");
+    }
+    return Status::OK();
+}
+
+void Executor::doError(Status status, const stats::Stats* stats, uint32_t count) const {
+    stats::Stats::addStatsValue(stats, false, duration().elapsedInUSec(), count);
+    DCHECK(onError_);
+    onError_(std::move(status));
+}
+
+void Executor::doFinish(ProcessControl pro, const stats::Stats* stats, uint32_t count) const {
+    stats::Stats::addStatsValue(stats, true, duration().elapsedInUSec(), count);
+    DCHECK(onFinish_);
+    onFinish_(pro);
 }
 }   // namespace graph
 }   // namespace nebula

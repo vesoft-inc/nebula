@@ -11,6 +11,8 @@
 
 DECLARE_int32(max_handlers_per_req);
 DECLARE_int32(min_vertices_per_bucket);
+DECLARE_int32(max_edge_returned_per_vertex);
+DECLARE_bool(enable_vertex_cache);
 
 namespace nebula {
 namespace storage {
@@ -39,6 +41,7 @@ void QueryBaseProcessor<REQ, RESP>::addDefaultProps(std::vector<PropContext>& p,
     p.emplace_back("_src", eType, 0, PropContext::PropInKeyType::SRC);
     p.emplace_back("_rank", eType, 1, PropContext::PropInKeyType::RANK);
     p.emplace_back("_dst", eType, 2, PropContext::PropInKeyType::DST);
+    p.emplace_back("_type", eType, 3, PropContext::PropInKeyType::TYPE);
 }
 
 template <typename REQ, typename RESP>
@@ -97,8 +100,8 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                 break;
             }
             case cpp2::PropOwner::EDGE: {
-                auto it = kPropsInKey_.find(col.name);
                 EdgeType edgeType = col.id.get_edge_type();
+                auto it = kPropsInKey_.find(col.name);
                 if (it != kPropsInKey_.end()) {
                     prop.pikType_ = it->second;
                     if (prop.pikType_ == PropContext::PropInKeyType::SRC ||
@@ -108,6 +111,13 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                         prop.type_.type = nebula::cpp2::SupportedType::INT;
                     }
                 } else if (edgeType > 0) {
+                    auto edgeName = this->schemaMan_->toEdgeName(spaceId_, edgeType);
+                    if (!edgeName.ok()) {
+                        VLOG(3) << "Can't find spaceId " << spaceId_ << ", edgeType " << edgeType;
+                        return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+                    }
+                    this->edgeMap_.emplace(edgeName.value(), edgeType);
+
                     // Only outBound have properties on edge.
                     auto schema = this->schemaMan_->getEdgeSchema(spaceId_,
                                                                   edgeType);
@@ -239,8 +249,7 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
         case Expression::kEdgeType: {
             return true;
         }
-        case Expression::kAliasProp:
-        case Expression::kEdgeProp: {
+        case Expression::kAliasProp: {
             if (edgeContexts_.empty()) {
                 VLOG(1) << "No edge requested!";
                 return false;
@@ -268,7 +277,7 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
             }
 
             const auto* propName = edgeExp->prop();
-            auto field           = schema->field(*propName);
+            auto field = schema->field(*propName);
             if (field == nullptr) {
                 VLOG(1) << "Can't find related prop " << *propName << " on edge "
                         << *(edgeExp->alias());
@@ -278,8 +287,9 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
         }
         case Expression::kVariableProp:
         case Expression::kDestProp:
-        case Expression::kInputProp:
+        case Expression::kInputProp: {
             return false;
+        }
         default: {
             VLOG(1) << "Unsupport expression type! kind = "
                     << std::to_string(static_cast<uint8_t>(exp->kind()));
@@ -295,26 +305,28 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
                                                  FilterContext* fcontext,
                                                  Collector* collector) {
     for (auto& prop : props) {
-        switch (prop.pikType_) {
-            case PropContext::PropInKeyType::NONE:
-                break;
-            case PropContext::PropInKeyType::SRC:
-                VLOG(3) << "collect _src, value = " << NebulaKeyUtils::getSrcId(key);
-                collector->collectVid(NebulaKeyUtils::getSrcId(key), prop);
-                continue;
-            case PropContext::PropInKeyType::DST:
-                VLOG(3) << "collect _dst, value = " << NebulaKeyUtils::getDstId(key);
-                collector->collectVid(NebulaKeyUtils::getDstId(key), prop);
-                continue;
-            case PropContext::PropInKeyType::TYPE:
-                VLOG(3) << "collect _type, value = " << NebulaKeyUtils::getEdgeType(key);
-                collector->collectInt64(static_cast<int64_t>(NebulaKeyUtils::getEdgeType(key)),
-                                        prop);
-                continue;
-            case PropContext::PropInKeyType::RANK:
-                VLOG(3) << "collect _rank, value = " << NebulaKeyUtils::getRank(key);
-                collector->collectInt64(NebulaKeyUtils::getRank(key), prop);
-                continue;
+        if (!key.empty()) {
+            switch (prop.pikType_) {
+                case PropContext::PropInKeyType::NONE:
+                    break;
+                case PropContext::PropInKeyType::SRC:
+                    VLOG(3) << "collect _src, value = " << NebulaKeyUtils::getSrcId(key);
+                    collector->collectVid(NebulaKeyUtils::getSrcId(key), prop);
+                    continue;
+                case PropContext::PropInKeyType::DST:
+                    VLOG(3) << "collect _dst, value = " << NebulaKeyUtils::getDstId(key);
+                    collector->collectVid(NebulaKeyUtils::getDstId(key), prop);
+                    continue;
+                case PropContext::PropInKeyType::TYPE:
+                    VLOG(3) << "collect _type, value = " << NebulaKeyUtils::getEdgeType(key);
+                    collector->collectInt64(static_cast<int64_t>(NebulaKeyUtils::getEdgeType(key)),
+                                            prop);
+                    continue;
+                case PropContext::PropInKeyType::RANK:
+                    VLOG(3) << "collect _rank, value = " << NebulaKeyUtils::getRank(key);
+                    collector->collectInt64(NebulaKeyUtils::getRank(key), prop);
+                    continue;
+            }
         }
         if (reader != nullptr) {
             const auto& name = prop.prop_.get_name();
@@ -349,7 +361,6 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
     }  // for
 }
 
-
 template<typename REQ, typename RESP>
 kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
                             PartitionID partId,
@@ -358,7 +369,19 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
                             const std::vector<PropContext>& props,
                             FilterContext* fcontext,
                             Collector* collector) {
-    auto prefix = NebulaKeyUtils::prefix(partId, vId, tagId);
+    if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
+        auto result = vertexCache_->get(std::make_pair(vId, tagId), partId);
+        if (result.ok()) {
+            auto v = std::move(result).value();
+            auto reader = RowReader::getTagPropReader(this->schemaMan_, v, spaceId_, tagId);
+            this->collectProps(reader.get(), "", props, fcontext, collector);
+            VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagId;
+            return kvstore::ResultCode::SUCCEEDED;
+        } else {
+            VLOG(3) << "Miss cache for vId " << vId << ", tagId " << tagId;
+        }
+    }
+    auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId, tagId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -370,6 +393,11 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
     if (iter && iter->valid()) {
         auto reader = RowReader::getTagPropReader(this->schemaMan_, iter->val(), spaceId_, tagId);
         this->collectProps(reader.get(), iter->key(), props, fcontext, collector);
+        if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
+            vertexCache_->insert(std::make_pair(vId, tagId),
+                                 iter->val().str(), partId);
+            VLOG(3) << "Insert cache for vId " << vId << ", tagId " << tagId;
+        }
     } else {
         VLOG(3) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagId;
         return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
@@ -385,7 +413,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                                                const std::vector<PropContext>& props,
                                                FilterContext* fcontext,
                                                EdgeProcessor proc) {
-    auto prefix = NebulaKeyUtils::prefix(partId, vId, edgeType);
+    auto prefix = NebulaKeyUtils::edgePrefix(partId, vId, edgeType);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
@@ -394,7 +422,8 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
     EdgeRanking lastRank  = -1;
     VertexID    lastDstId = 0;
     bool        firstLoop = true;
-    for (; iter->valid(); iter->next()) {
+    int         cnt = 0;
+    for (; iter->valid() && cnt < FLAGS_max_edge_returned_per_vertex; iter->next()) {
         auto key = iter->key();
         auto val = iter->val();
         auto rank = NebulaKeyUtils::getRank(key);
@@ -414,12 +443,15 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                 auto& getters = expCtx_->getters();
                 getters.getAliasProp = [this, edgeType, &reader](const std::string& edgeName,
                                            const std::string& prop) -> OptVariantType {
-                    auto edgeStatus = this->schemaMan_->toEdgeType(spaceId_, edgeName);
-                    CHECK(edgeStatus.ok());
-
-                    if (edgeType != edgeStatus.value()) {
-                        return Status::Error("ignore this edge");
+                    auto edgeFound = this->edgeMap_.find(edgeName);
+                    if (edgeFound == edgeMap_.end()) {
+                        return Status::Error(
+                                "Edge `%s' not found when call getters.", edgeName.c_str());
                     }
+                    if (edgeType != edgeFound->second) {
+                        return Status::Error("Ignore this edge");
+                    }
+
                     auto res = RowReader::getPropByName(reader.get(), prop);
                     if (!ok(res)) {
                         return Status::Error("Invalid Prop");
@@ -448,6 +480,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
             }
         }
         proc(reader.get(), key, props);
+        ++cnt;
         if (firstLoop) {
             firstLoop = false;
         }
@@ -550,7 +583,11 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
                 if (ret != kvstore::ResultCode::SUCCEEDED
                       && failedParts.find(partId) == failedParts.end()) {
                     failedParts.emplace(partId);
-                    this->pushResultCode(this->to(ret), partId);
+                    if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+                        this->handleLeaderChanged(spaceId_, partId);
+                    } else {
+                        this->pushResultCode(this->to(ret), partId);
+                    }
                 }
             }
         }

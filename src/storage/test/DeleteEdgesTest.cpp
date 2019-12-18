@@ -18,12 +18,11 @@ namespace nebula {
 namespace storage {
 
 TEST(DeleteEdgesTest, SimpleTest) {
-    fs::TempDir rootPath("/tmp/AddEdgesTest.XXXXXX");
+    fs::TempDir rootPath("/tmp/DeleteEdgesTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     // Add edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr);
-        LOG(INFO) << "Build AddEdgesRequest...";
+        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
@@ -32,18 +31,18 @@ TEST(DeleteEdgesTest, SimpleTest) {
         for (auto partId = 0; partId < 3; partId++) {
             std::vector<cpp2::Edge> edges;
             for (auto srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
-                edges.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                   cpp2::EdgeKey(apache::thrift::FragileConstructor::FRAGILE,
-                                                 srcId,
-                                                 srcId*100 + 1,
-                                                 srcId*100 + 2,
-                                                 srcId*100 + 3),
-                                   folly::stringPrintf("%d_%d", partId, srcId));
+                cpp2::EdgeKey key;
+                key.set_src(srcId);
+                key.set_edge_type(srcId * 100 + 1);
+                key.set_ranking(srcId * 100 + 2);
+                key.set_dst(srcId * 100 + 3);
+                edges.emplace_back();
+                edges.back().set_key(std::move(key));
+                edges.back().set_props(folly::stringPrintf("%d_%d", partId, srcId));
             }
             req.parts.emplace(partId, std::move(edges));
         }
 
-        LOG(INFO) << "Test AddEdgesProcessor...";
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
@@ -51,8 +50,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
     }
     // Add multi version edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr);
-        LOG(INFO) << "Build AddEdgesRequest...";
+        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
@@ -61,28 +59,27 @@ TEST(DeleteEdgesTest, SimpleTest) {
         for (auto partId = 0; partId < 3; partId++) {
             std::vector<cpp2::Edge> edges;
             for (auto srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
-                edges.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                   cpp2::EdgeKey(apache::thrift::FragileConstructor::FRAGILE,
-                                                 srcId,
-                                                 srcId*100 + 1,
-                                                 srcId*100 + 2,
-                                                 srcId*100 + 3),
-                                   folly::stringPrintf("%d_%d_new", partId, srcId));
+                cpp2::EdgeKey key;
+                key.set_src(srcId);
+                key.set_edge_type(srcId * 100 + 1);
+                key.set_ranking(srcId * 100 + 2);
+                key.set_dst(srcId * 100 + 3);
+                edges.emplace_back();
+                edges.back().set_key(std::move(key));
+                edges.back().set_props(folly::stringPrintf("%d_%d_new", partId, srcId));
             }
             req.parts.emplace(partId, std::move(edges));
         }
 
-        LOG(INFO) << "Test AddEdgesProcessor...";
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_codes.size());
     }
 
-    LOG(INFO) << "Check data in kv store...";
     for (auto partId = 0; partId < 3; partId++) {
         for (auto srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
-            auto prefix = NebulaKeyUtils::prefix(partId, srcId, srcId*100 + 1);
+            auto prefix = NebulaKeyUtils::edgePrefix(partId, srcId, srcId * 100 + 1);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             int num = 0;
@@ -102,30 +99,31 @@ TEST(DeleteEdgesTest, SimpleTest) {
     // Delete edges
     {
         auto* processor = DeleteEdgesProcessor::instance(kv.get(), nullptr);
-        LOG(INFO) << "Build DeleteEdgesRequest...";
         cpp2::DeleteEdgesRequest req;
         req.set_space_id(0);
         // partId => List<EdgeKey>
         for (auto partId = 0; partId < 3; partId++) {
             std::vector<cpp2::EdgeKey> keys;
             for (auto srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
-                keys.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                  srcId, srcId*100 + 1, srcId*100 + 2, srcId*100 + 3);
+                cpp2::EdgeKey key;
+                key.set_src(srcId);
+                key.set_edge_type(srcId * 100 + 1);
+                key.set_ranking(srcId * 100 + 2);
+                key.set_dst(srcId * 100 + 3);
+                keys.emplace_back(std::move(key));
             }
             req.parts.emplace(partId, std::move(keys));
         }
 
-        LOG(INFO) << "Test DeleteEdgesProcessor...";
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_codes.size());
     }
 
-    LOG(INFO) << "Check data again in kv store...";
     for (auto partId = 0; partId < 3; partId++) {
         for (auto srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
-            auto prefix = NebulaKeyUtils::prefix(partId, srcId, srcId*100 + 1);
+            auto prefix = NebulaKeyUtils::vertexPrefix(partId, srcId, srcId * 100 + 1);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             CHECK(!iter->valid());

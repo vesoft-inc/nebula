@@ -48,7 +48,7 @@ void CreateTagExecutor::execute() {
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();
 
-    auto future = mc->createTagSchema(spaceId, *name, schema_);
+    auto future = mc->createTagSchema(spaceId, *name, schema_, sentence_->isIfNotExist());
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
@@ -58,7 +58,7 @@ void CreateTagExecutor::execute() {
         }
 
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {

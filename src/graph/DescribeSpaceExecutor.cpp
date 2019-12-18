@@ -48,7 +48,7 @@ void DescribeSpaceExecutor::execute() {
         rows.back().set_columns(std::move(row));
         resp_->set_rows(std::move(rows));
         DCHECK(onFinish_);
-        onFinish_();
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {

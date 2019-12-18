@@ -88,8 +88,8 @@ public:
         folly::StringPiece row,
         std::shared_ptr<const meta::SchemaProviderIf> schema);
 
-    static VariantType getDefaultProp(const meta::SchemaProviderIf* schema,
-                                      const std::string& prop) {
+    static StatusOr<VariantType> getDefaultProp(const meta::SchemaProviderIf* schema,
+                                                const std::string& prop) {
         auto& vType = schema->getFieldType(prop);
         switch (vType.type) {
             case nebula::cpp2::SupportedType::BOOL: {
@@ -109,8 +109,9 @@ public:
                 return static_cast<std::string>("");
             }
             default:
-                LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(vType.type);
-                return "";
+                auto msg = folly::sformat("Unknown type: {}", static_cast<int32_t>(vType.type));
+                LOG(ERROR) << "Unknown type: " << msg;
+                return Status::Error(msg);
         }
     }
 
@@ -175,7 +176,7 @@ public:
 
 
     static ErrorOr<ResultType, VariantType> getPropByIndex(const RowReader *reader,
-                                                           int64_t index) {
+                                                           const int64_t index) {
         auto& vType = reader->getSchema()->getFieldType(index);
         switch (vType.get_type()) {
             case nebula::cpp2::SupportedType::BOOL: {
@@ -267,8 +268,8 @@ public:
     ResultType getVid(int64_t index, int64_t& v) const noexcept;
 
 
-    const meta::SchemaProviderIf* getSchema() const {
-        return schema_.get();
+    std::shared_ptr<const meta::SchemaProviderIf> getSchema() const {
+        return schema_;
     }
 
     // TODO getPath(const std::string& name) const noexcept;

@@ -18,11 +18,62 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
         onFinished();
         return;
     }
-    if (req.get_id() != nullptr) {
-        LOG(ERROR) << "Unsupport show status for specific balance plan, id=" << *req.get_id();
-        resp_.set_code(cpp2::ErrorCode::E_UNSUPPORTED);
+    if (req.get_stop() != nullptr) {
+        if (!(*req.get_stop())) {
+            resp_.set_code(cpp2::ErrorCode::E_UNKNOWN);
+            onFinished();
+            return;
+        }
+        auto ret = Balancer::instance(kvstore_)->stop();
+        if (!ret.ok()) {
+            resp_.set_code(cpp2::ErrorCode::E_NO_RUNNING_BALANCE_PLAN);
+            onFinished();
+            return;
+        }
+        resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+        resp_.set_id(ret.value());
         onFinished();
         return;
+    }
+    if (req.get_id() != nullptr) {
+        auto ret = Balancer::instance(kvstore_)->show(*req.get_id());
+        if (!ret.ok()) {
+            resp_.set_code(cpp2::ErrorCode::E_BAD_BALANCE_PLAN);
+            onFinished();
+            return;
+        }
+        resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+        const auto& plan = ret.value();
+        std::vector<cpp2::BalanceTask> thriftTasks;
+        for (auto& task : plan.tasks()) {
+            cpp2::BalanceTask t;
+            t.set_id(task.taskIdStr());
+            switch (task.result()) {
+                case BalanceTask::Result::SUCCEEDED:
+                    t.set_result(cpp2::TaskResult::SUCCEEDED);
+                    break;
+                case BalanceTask::Result::FAILED:
+                    t.set_result(cpp2::TaskResult::FAILED);
+                    break;
+                case BalanceTask::Result::IN_PROGRESS:
+                    t.set_result(cpp2::TaskResult::IN_PROGRESS);
+                    break;
+                case BalanceTask::Result::INVALID:
+                    t.set_result(cpp2::TaskResult::INVALID);
+                    break;
+            }
+            thriftTasks.emplace_back(std::move(t));
+        }
+        resp_.set_tasks(std::move(thriftTasks));
+        onFinished();
+        return;
+    }
+    std::vector<HostAddr> hostDel;
+    if (req.get_host_del() != nullptr) {
+        hostDel.reserve(req.get_host_del()->size());
+        std::transform(req.get_host_del()->begin(), req.get_host_del()->end(),
+                       std::back_inserter(hostDel),
+                       [] (const auto& h) { return HostAddr(h.get_ip(), h.get_port()); });
     }
     auto hosts = ActiveHostsMan::getActiveHosts(kvstore_);
     if (hosts.empty()) {
@@ -31,14 +82,13 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
         onFinished();
         return;
     }
-    auto ret = Balancer::instance(kvstore_)->balance();
-    if (!ret.ok()) {
-        LOG(INFO) << "The balancer is running.";
-        resp_.set_code(cpp2::ErrorCode::E_BALANCER_RUNNING);
+    auto ret = Balancer::instance(kvstore_)->balance(std::move(hostDel));
+    if (!ok(ret)) {
+        resp_.set_code(error(ret));
         onFinished();
         return;
     }
-    resp_.set_id(ret.value());
+    resp_.set_id(value(ret));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }

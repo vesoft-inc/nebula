@@ -3,5 +3,5 @@ nebula_add_library(
     NetworkUtils.cpp
 )
 
-add_subdirectory(test)
+nebula_add_subdirectory(test)
 

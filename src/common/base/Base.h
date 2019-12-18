@@ -155,6 +155,12 @@ using VariantType = boost::variant<int64_t, double, bool, std::string>;
 #define VAR_STR 3
 #endif
 
+// reserved property names
+constexpr char _ID[]    = "_id";
+constexpr char _SRC[]   = "_src";
+constexpr char _TYPE[]  = "_type";
+constexpr char _RANK[]  = "_rank";
+constexpr char _DST[]   = "_dst";
 // Useful type traits
 
 // Tell if `T' is copy-constructible

@@ -10,6 +10,21 @@
 
 namespace nebula {
 
+TEST(Cord, empty) {
+    Cord cord;
+    std::string a;
+    std::string b;
+    EXPECT_TRUE(cord.empty());
+    EXPECT_EQ(0, cord.size());
+    EXPECT_EQ(a, cord.str());
+    cord.appendTo(b);
+    EXPECT_EQ(a, b);
+    EXPECT_TRUE(cord.applyTo([](const char* s, int32_t len) -> bool {
+        return s == nullptr && len == 0;
+    }));
+    cord.clear();
+}
+
 TEST(Cord, write) {
     Cord cord;
 
@@ -71,7 +86,7 @@ TEST(Cord, byteStream) {
         0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
     Cord cord2;
 
-    cord2 << folly::ByteRange(bytes, sizeof(bytes));
+    cord2.write(reinterpret_cast<const char*>(&bytes[0]), sizeof(bytes));
     std::string str = cord2.str();
 
     EXPECT_EQ(sizeof(bytes), str.size());
@@ -172,7 +187,8 @@ TEST(Cord, stringStream) {
 
     Cord cord;
 
-    cord << str1 << str2 << folly::StringPiece(str3);
+    cord << str1 << str2;
+    cord.write(str3.data(), str3.size());
 
     EXPECT_EQ(str1.size() + strlen(str2) + str3.size(), cord.size());
     EXPECT_EQ(str1.size() + strlen(str2) + str3.size(), cord.str().size());

@@ -17,6 +17,8 @@ typedef i32 (cpp.type = "nebula::TagID") TagID
 typedef i32 (cpp.type = "nebula::EdgeType") EdgeType
 typedef i64 (cpp.type = "nebula::EdgeRanking") EdgeRanking
 typedef i64 (cpp.type = "nebula::VertexID") VertexID
+typedef i32 (cpp.type = "nebula::TagIndexID") TagIndexID
+typedef i32 (cpp.type = "nebula::EdgeIndexID") EdgeIndexID
 
 typedef i32 (cpp.type = "nebula::IPv4") IPv4
 typedef i32 (cpp.type = "nebula::Port") Port
@@ -64,9 +66,17 @@ struct ValueType {
     3: optional Schema schema (cpp.ref = true);
 } (cpp.virtual)
 
+union Value {
+    1: i64     int_value;
+    2: bool    bool_value;
+    3: double  double_value;
+    4: string  string_value;
+}
+
 struct ColumnDef {
     1: required string name,
     2: required ValueType type,
+    3: optional Value default_value,
 }
 
 struct SchemaProp {
@@ -82,6 +92,11 @@ struct Schema {
 struct HostAddr {
     1: IPv4  ip,
     2: Port  port,
+}
+
+struct Pair {
+    1: string key,
+    2: string value,
 }
 
 const ValueType kInvalidValueType = {"type" : UNKNOWN}

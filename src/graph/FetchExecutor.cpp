@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "FetchExecutor.h"
+#include "SchemaHelper.h"
 
 namespace nebula {
 namespace graph {
@@ -34,28 +35,35 @@ Status FetchExecutor::prepareYield() {
         // such as YIELD 1+1, it has not type in schema, the type from the eval()
         colTypes_.emplace_back(nebula::cpp2::SupportedType::UNKNOWN);
         if (col->expr()->isAliasExpression()) {
-            colNames_.emplace_back(*static_cast<InputPropertyExpression*>(col->expr())->prop());
-            continue;
+            auto prop = *static_cast<AliasPropertyExpression*>(col->expr())->prop();
+            auto type = labelSchema_->getFieldType(prop);
+            if (type != CommonConstants::kInvalidValueType()) {
+                colTypes_.back() = type.get_type();
+            }
         } else if (col->expr()->isTypeCastingExpression()) {
             // type cast
-            auto exprPtr = static_cast<TypeCastingExpression*>(col->expr());
-            colTypes_.back() = ColumnTypeToSupportedType(exprPtr->getType());
+            auto exprPtr = dynamic_cast<TypeCastingExpression*>(col->expr());
+            colTypes_.back() = SchemaHelper::columnTypeToSupportedType(exprPtr->getType());
         }
-
-        colNames_.emplace_back(col->expr()->toString());
     }
 
     if (expCtx_->hasSrcTagProp() || expCtx_->hasDstTagProp()) {
         return Status::SyntaxError(
-                    "Only support form of alias.prop in fetch sentence.");
+                    "tag.prop and edgetype.prop are supported in fetch sentence.");
+    }
+
+    if (expCtx_->hasInputProp() || expCtx_->hasVariableProp()) {
+        // TODO: support yield input and variable props
+        return Status::SyntaxError(
+                    "`$-' and `$variable' not supported in fetch yet.");
     }
 
     auto aliasProps = expCtx_->aliasProps();
     for (auto pair : aliasProps) {
         if (pair.first != *labelName_) {
             return Status::SyntaxError(
-                "[%s.%s] tag not declared in %s.",
-                    pair.first.c_str(), pair.second.c_str(), (*labelName_).c_str());
+                "Near [%s.%s], tag or edge should be declared in statement first.",
+                    pair.first.c_str(), pair.second.c_str());
         }
     }
 
@@ -63,8 +71,7 @@ Status FetchExecutor::prepareYield() {
 }
 
 void FetchExecutor::setupColumns() {
-    DCHECK_NOTNULL(labelSchema_);
-    auto iter = labelSchema_->begin();
+    auto iter = DCHECK_NOTNULL(labelSchema_)->begin();
     if (yieldColsHolder_ == nullptr) {
         yieldColsHolder_ = std::make_unique<YieldColumns>();
     }
@@ -84,17 +91,20 @@ void FetchExecutor::setupColumns() {
 void FetchExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(resultColNames_));
     }
     resp = std::move(*resp_);
 }
 
 void FetchExecutor::onEmptyInputs() {
     if (onResult_) {
-        onResult_(nullptr);
+        auto outputs = std::make_unique<InterimResult>(std::move(resultColNames_));
+        onResult_(std::move(outputs));
     } else if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(resultColNames_));
     }
-    onFinish_();
+    doFinish(Executor::ProcessControl::kNext, getStats());
 }
 
 Status FetchExecutor::getOutputSchema(
@@ -102,12 +112,11 @@ Status FetchExecutor::getOutputSchema(
         const RowReader *reader,
         SchemaWriter *outputSchema) const {
     if (expCtx_ == nullptr || resultColNames_.empty()) {
-        LOG(FATAL) << "Input is empty";
+        return Status::Error("Input is empty.");
     }
-    auto collector = std::make_unique<Collector>(schema);
     auto &getters = expCtx_->getters();
-    getters.getAliasProp = [&] (const std::string&, const std::string &prop) {
-        return collector->getProp(prop, reader);
+    getters.getAliasProp = [schema, reader] (const std::string&, const std::string &prop) {
+        return Collector::getProp(schema, prop, reader);
     };
     std::vector<VariantType> record;
     for (auto *column : yields_) {
@@ -119,59 +128,40 @@ Status FetchExecutor::getOutputSchema(
         record.emplace_back(std::move(value.value()));
     }
 
-    if (colTypes_.size() != record.size()) {
-        return Status::Error("Input is not equal to output");
-    }
-    using nebula::cpp2::SupportedType;
-    auto index = 0u;
-    for (auto &it : colTypes_) {
-        SupportedType type;
-        if (it == SupportedType::UNKNOWN) {
-            switch (record[index].which()) {
-                case VAR_INT64:
-                    // all integers in InterimResult are regarded as type of INT
-                    type = SupportedType::INT;
-                    break;
-                case VAR_DOUBLE:
-                    type = SupportedType::DOUBLE;
-                    break;
-                case VAR_BOOL:
-                    type = SupportedType::BOOL;
-                    break;
-                case VAR_STR:
-                    type = SupportedType::STRING;
-                    break;
-                default:
-                    LOG(FATAL) << "Unknown VariantType: " << record[index].which();
-            }
-        } else {
-            type = it;
-        }
-
-        outputSchema->appendCol(resultColNames_[index], type);
-        index++;
-    }
-    return Status::OK();
+    return Collector::getSchema(record, resultColNames_, colTypes_, outputSchema);
 }
 
 void FetchExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
-    std::unique_ptr<InterimResult> outputs;
+    auto outputs = std::make_unique<InterimResult>(std::move(resultColNames_));
     if (rsWriter != nullptr) {
-        outputs = std::make_unique<InterimResult>(std::move(rsWriter));
+        outputs->setInterim(std::move(rsWriter));
     }
 
     if (onResult_) {
         onResult_(std::move(outputs));
     } else {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        resp_->set_column_names(std::move(resultColNames_));
-        if (outputs != nullptr) {
-            auto rows = outputs->getRows();
-            resp_->set_rows(std::move(rows));
+        auto colNames = outputs->getColNames();
+        resp_->set_column_names(std::move(colNames));
+        if (outputs->hasData()) {
+            auto ret = outputs->getRows();
+            if (!ret.ok()) {
+                LOG(ERROR) << "Get rows failed: " << ret.status();
+                doError(std::move(ret).status(), getStats());
+                return;
+            }
+            resp_->set_rows(std::move(ret).value());
         }
     }
-    DCHECK(onFinish_);
-    onFinish_();
+    doFinish(Executor::ProcessControl::kNext, getStats());
+}
+
+stats::Stats* FetchExecutor::getStats() const {
+    if (0 == strcmp(name(), "FetchVerticesExecutor")) {
+        return ectx()->getGraphStats()->getFetchVerticesStats();
+    } else {
+        return ectx()->getGraphStats()->getFetchEdgesStats();
+    }
 }
 }  // namespace graph
 }  // namespace nebula

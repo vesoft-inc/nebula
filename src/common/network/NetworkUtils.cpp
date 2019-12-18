@@ -114,13 +114,56 @@ bool NetworkUtils::getDynamicPortRange(uint16_t& low, uint16_t& high) {
 
 std::unordered_set<uint16_t> NetworkUtils::getPortsInUse() {
     static const std::regex regex("[^:]+:[^:]+:([0-9A-F]+).+");
-    fs::FileUtils::FileLineIterator iter("/proc/net/tcp", &regex);
     std::unordered_set<uint16_t> inUse;
-    while (iter.valid()) {
-        auto &sm = iter.matched();
-        inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
-        ++iter;
+    {
+        fs::FileUtils::FileLineIterator iter("/proc/net/tcp", &regex);
+        while (iter.valid()) {
+            auto &sm = iter.matched();
+            inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
+            ++iter;
+        }
     }
+    {
+        fs::FileUtils::FileLineIterator iter("/proc/net/tcp6", &regex);
+        while (iter.valid()) {
+            auto &sm = iter.matched();
+            inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
+            ++iter;
+        }
+    }
+    {
+        fs::FileUtils::FileLineIterator iter("/proc/net/udp", &regex);
+        while (iter.valid()) {
+            auto &sm = iter.matched();
+            inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
+            ++iter;
+        }
+    }
+    {
+        fs::FileUtils::FileLineIterator iter("/proc/net/udp6", &regex);
+        while (iter.valid()) {
+            auto &sm = iter.matched();
+            inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
+            ++iter;
+        }
+    }
+    {
+        fs::FileUtils::FileLineIterator iter("/proc/net/raw", &regex);
+        while (iter.valid()) {
+            auto &sm = iter.matched();
+            inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
+            ++iter;
+        }
+    }
+    {
+        fs::FileUtils::FileLineIterator iter("/proc/net/raw6", &regex);
+        while (iter.valid()) {
+            auto &sm = iter.matched();
+            inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
+            ++iter;
+        }
+    }
+
     return inUse;
 }
 
@@ -135,9 +178,18 @@ uint16_t NetworkUtils::getAvailablePort() {
 
     std::unordered_set<uint16_t> portsInUse = getPortsInUse();
     uint16_t port = 0;
-    do {
-        port = folly::Random::rand32(low, static_cast<int32_t>(high) + 1);
-    } while (portsInUse.find(port) != portsInUse.end());
+    while (true) {
+        // NOTE
+        // The availablity of port number *outside* the ephemeral port range is
+        // relatively stable for the binding purpose.
+        port = folly::Random::rand32(1025, low);
+        if (portsInUse.find(port) != portsInUse.end()) {
+            continue;
+        }
+        if (portsInUse.find(port + 1) == portsInUse.end()) {
+            break;
+        }
+    }
 
     return port;
 }
@@ -215,7 +267,7 @@ std::string NetworkUtils::intToIPv4(IPv4 ip) {
     return buf;
 }
 
-StatusOr<std::vector<HostAddr>> NetworkUtils::resolveHost(const std::string &ip, int32_t port) {
+StatusOr<std::vector<HostAddr>> NetworkUtils::resolveHost(const std::string& host, int32_t port) {
     std::vector<HostAddr> addrs;
     struct addrinfo hints, *res, *rp;
     ::memset(&hints, 0, sizeof(struct addrinfo));
@@ -224,8 +276,8 @@ StatusOr<std::vector<HostAddr>> NetworkUtils::resolveHost(const std::string &ip,
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_ADDRCONFIG;
 
-    if (getaddrinfo(ip.c_str(), nullptr, &hints, &res) != 0) {
-        return Status::Error("host not found:%s", ip.c_str());
+    if (getaddrinfo(host.c_str(), nullptr, &hints, &res) != 0) {
+        return Status::Error("host not found:%s", host.c_str());
     }
 
     for (rp = res; rp != nullptr; rp = rp->ai_next) {
@@ -248,12 +300,11 @@ StatusOr<std::vector<HostAddr>> NetworkUtils::resolveHost(const std::string &ip,
     freeaddrinfo(res);
 
     if (addrs.empty()) {
-        return Status::Error("host not found: %s", ip.c_str());
+        return Status::Error("host not found: %s", host.c_str());
     }
 
     return addrs;
 }
-
 
 StatusOr<HostAddr> NetworkUtils::toHostAddr(const std::string &ip, int32_t port) {
     IPv4 ipV4;
@@ -299,6 +350,19 @@ StatusOr<std::vector<HostAddr>> NetworkUtils::toHosts(const std::string& peersSt
         return resolveAddr.status();
     }
     return hosts;
+}
+
+std::string NetworkUtils::toHosts(const std::vector<HostAddr>& hosts) {
+    std::string hostsString = "";
+    for (auto& host : hosts) {
+        std::string addrStr = network::NetworkUtils::ipFromHostAddr(host);
+        int32_t port = network::NetworkUtils::portFromHostAddr(host);
+        hostsString += folly::stringPrintf("%s:%d, ", addrStr.c_str(), port);
+    }
+    if (!hostsString.empty()) {
+        hostsString.resize(hostsString.size() - 2);
+    }
+    return hostsString;
 }
 
 std::string NetworkUtils::ipFromHostAddr(const HostAddr& host) {

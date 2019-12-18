@@ -234,7 +234,7 @@ bool RowReader::processHeader(folly::StringPiece row) {
     uint32_t numOffsets = (numFields >> 4);
     if (numBytesForOffset_ * numOffsets + verBytes + 1 > row.size()) {
         // Data is too short
-        LOG(ERROR) << "Rowe data is too short";
+        LOG(ERROR) << "Row data is too short";
         return false;
     }
     offsets_.resize(numFields + 1, -1);
@@ -293,7 +293,7 @@ int64_t RowReader::skipToNext(int64_t index, int64_t offset) const noexcept {
             break;
         }
         case cpp2::SupportedType::FLOAT: {
-            // Eight bytes
+            // Four bytes
             offset += sizeof(float);
             break;
         }

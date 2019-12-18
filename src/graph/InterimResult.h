@@ -23,15 +23,15 @@ class InterimResult final {
 public:
     InterimResult() = default;
     ~InterimResult() = default;
-    InterimResult(const InterimResult &) = default;
-    InterimResult& operator=(const InterimResult &) = default;
+    InterimResult(const InterimResult &) = delete;
+    InterimResult& operator=(const InterimResult &) = delete;
     InterimResult(InterimResult &&) = default;
     InterimResult& operator=(InterimResult &&) = default;
 
-    explicit InterimResult(std::unique_ptr<RowSetWriter> rsWriter);
     explicit InterimResult(std::vector<VertexID> vids);
+    explicit InterimResult(std::vector<std::string> &&colNames);
 
-    static std::unique_ptr<InterimResult> getInterim(
+    static StatusOr<std::unique_ptr<InterimResult>> getInterim(
             std::shared_ptr<const meta::SchemaProviderIf> resultSchema,
             std::vector<cpp2::RowValue> &rows);
     static Status castTo(cpp2::ColumnValue *col,
@@ -43,22 +43,42 @@ public:
     static Status castToBool(cpp2::ColumnValue *col);
     static Status castToStr(cpp2::ColumnValue *col);
 
+    static Status getResultWriter(const std::vector<cpp2::RowValue> &rows,
+                                  RowSetWriter *rsWriter);
+
+    void setColNames(std::vector<std::string> &&colNames) {
+        colNames_ = std::move(colNames);
+    }
+
+    void setInterim(std::unique_ptr<RowSetWriter> rsWriter);
+
+    bool hasData() const {
+        return (rsWriter_ != nullptr) && (rsReader_ != nullptr);
+    }
+
     std::shared_ptr<const meta::SchemaProviderIf> schema() const {
+        if (!hasData()) {
+            return nullptr;
+        }
         return rsReader_->schema();
     }
 
-    std::string& data() const {
-        return rsWriter_->data();
+    std::vector<std::string> getColNames() const {
+        return colNames_;
     }
 
     StatusOr<std::vector<VertexID>> getVIDs(const std::string &col) const;
 
     StatusOr<std::vector<VertexID>> getDistinctVIDs(const std::string &col) const;
 
-    std::vector<cpp2::RowValue> getRows() const;
+    StatusOr<std::vector<cpp2::RowValue>> getRows() const;
 
     class InterimResultIndex;
-    std::unique_ptr<InterimResultIndex> buildIndex(const std::string &vidColumn) const;
+    StatusOr<std::unique_ptr<InterimResultIndex>>
+    buildIndex(const std::string &vidColumn) const;
+
+    Status applyTo(std::function<Status(const RowReader *reader)> visitor,
+                   int64_t limit = INT64_MAX) const;
 
     class InterimResultIndex final {
     public:
@@ -77,6 +97,7 @@ public:
 
 private:
     using Row = std::vector<VariantType>;
+    std::vector<std::string>                    colNames_;
     std::unique_ptr<RowSetReader>               rsReader_;
     std::unique_ptr<RowSetWriter>               rsWriter_;
     std::vector<VertexID>                       vids_;

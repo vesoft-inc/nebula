@@ -24,6 +24,7 @@ namespace raftex {
 class RaftPart;
 
 class Host final : public std::enable_shared_from_this<Host> {
+    friend class RaftPart;
 public:
     Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner = false);
 
@@ -56,6 +57,10 @@ public:
 
     bool isLearner() const {
         return isLearner_;
+    }
+
+    void setLearner(bool isLearner) {
+        isLearner_ = isLearner;
     }
 
     folly::Future<cpp2::AskForVoteResponse> askForVote(
@@ -127,6 +132,9 @@ private:
 
     LogID committedLogId_{0};
     std::atomic_bool sendingSnapshot_{false};
+
+    // CommittedLogId of follower
+    LogID followerCommittedLogId_{0};
 };
 
 }  // namespace raftex

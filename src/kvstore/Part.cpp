@@ -6,31 +6,14 @@
 
 #include "kvstore/Part.h"
 #include "kvstore/LogEncoder.h"
+#include "base/NebulaKeyUtils.h"
 
 DEFINE_int32(cluster_id, 0, "A unique id for each cluster");
 
 namespace nebula {
 namespace kvstore {
 
-using raftex::AppendLogResult;
-
-const char* kCommitKeyPrefix = "__system_commit_msg_";
-
-namespace {
-
-ResultCode toResultCode(AppendLogResult res) {
-    switch (res) {
-        case AppendLogResult::SUCCEEDED:
-            return ResultCode::SUCCEEDED;
-        case AppendLogResult::E_NOT_A_LEADER:
-            return ResultCode::ERR_LEADER_CHANGED;
-        default:
-            return ResultCode::ERR_CONSENSUS_ERROR;
-    }
-}
-
-}  // Anonymous namespace
-
+using nebula::raftex::AppendLogResult;
 
 Part::Part(GraphSpaceID spaceId,
            PartitionID partId,
@@ -59,9 +42,9 @@ Part::Part(GraphSpaceID spaceId,
 
 std::pair<LogID, TermID> Part::lastCommittedLogId() {
     std::string val;
-    ResultCode res = engine_->get(folly::stringPrintf("%s%d", kCommitKeyPrefix, partId_), &val);
+    ResultCode res = engine_->get(NebulaKeyUtils::systemCommitKey(partId_), &val);
     if (res != ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Cannot fetch the last committed log id from the storage engine";
+        LOG(INFO) << idStr_ << "Cannot fetch the last committed log id from the storage engine";
         return std::make_pair(0, 0);
     }
     CHECK_EQ(val.size(), sizeof(LogID) + sizeof(TermID));
@@ -79,8 +62,8 @@ void Part::asyncPut(folly::StringPiece key, folly::StringPiece value, KVCallback
     std::string log = encodeMultiValues(OP_PUT, key, value);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
-            callback(toResultCode(res));
+        .thenValue([this, callback = std::move(cb)] (AppendLogResult res) mutable {
+            callback(this->toResultCode(res));
         });
 }
 
@@ -89,8 +72,8 @@ void Part::asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb) {
     std::string log = encodeMultiValues(OP_MULTI_PUT, keyValues);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
-            callback(toResultCode(res));
+        .thenValue([this, callback = std::move(cb)] (AppendLogResult res) mutable {
+            callback(this->toResultCode(res));
         });
 }
 
@@ -99,8 +82,8 @@ void Part::asyncRemove(folly::StringPiece key, KVCallback cb) {
     std::string log = encodeSingleValue(OP_REMOVE, key);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
-            callback(toResultCode(res));
+        .thenValue([this, callback = std::move(cb)] (AppendLogResult res) mutable {
+            callback(this->toResultCode(res));
         });
 }
 
@@ -109,8 +92,8 @@ void Part::asyncMultiRemove(const std::vector<std::string>& keys, KVCallback cb)
     std::string log = encodeMultiValues(OP_MULTI_REMOVE, keys);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
-            callback(toResultCode(res));
+        .thenValue([this, callback = std::move(cb)] (AppendLogResult res) mutable {
+            callback(this->toResultCode(res));
         });
 }
 
@@ -119,8 +102,8 @@ void Part::asyncRemovePrefix(folly::StringPiece prefix, KVCallback cb) {
     std::string log = encodeSingleValue(OP_REMOVE_PREFIX, prefix);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
-            callback(toResultCode(res));
+        .thenValue([this, callback = std::move(cb)] (AppendLogResult res) mutable {
+            callback(this->toResultCode(res));
         });
 }
 
@@ -131,31 +114,68 @@ void Part::asyncRemoveRange(folly::StringPiece start,
     std::string log = encodeMultiValues(OP_REMOVE_RANGE, start, end);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
-            callback(toResultCode(res));
+        .thenValue([this, callback = std::move(cb)] (AppendLogResult res) mutable {
+            callback(this->toResultCode(res));
         });
 }
 
+void Part::sync(KVCallback cb) {
+    sendCommandAsync("")
+        .thenValue([this, callback = std::move(cb)] (AppendLogResult res) mutable {
+        callback(this->toResultCode(res));
+    });
+}
+
 void Part::asyncAtomicOp(raftex::AtomicOp op, KVCallback cb) {
-    atomicOpAsync(std::move(op)).then([callback = std::move(cb)] (AppendLogResult res) mutable {
-        callback(toResultCode(res));
+    atomicOpAsync(std::move(op)).thenValue(
+            [this, callback = std::move(cb)] (AppendLogResult res) mutable {
+        callback(this->toResultCode(res));
     });
 }
 
 void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
-    std::string log = encodeLearner(learner);
+    std::string log = encodeHost(OP_ADD_LEARNER, learner);
     sendCommandAsync(std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
-        callback(toResultCode(res));
+        .thenValue([callback = std::move(cb), learner, this] (AppendLogResult res) mutable {
+        LOG(INFO) << idStr_ << "add learner " << learner
+                  << ", result: " << static_cast<int32_t>(this->toResultCode(res));
+        callback(this->toResultCode(res));
     });
 }
 
 void Part::asyncTransferLeader(const HostAddr& target, KVCallback cb) {
-    std::string log = encodeTransLeader(target);
+    std::string log = encodeHost(OP_TRANS_LEADER, target);
     sendCommandAsync(std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
-        callback(toResultCode(res));
+        .thenValue([callback = std::move(cb), target, this] (AppendLogResult res) mutable {
+        LOG(INFO) << idStr_ << "transfer leader to " << target
+                  << ", result: " << static_cast<int32_t>(this->toResultCode(res));
+        callback(this->toResultCode(res));
     });
+}
+
+void Part::asyncAddPeer(const HostAddr& peer, KVCallback cb) {
+    std::string log = encodeHost(OP_ADD_PEER, peer);
+    sendCommandAsync(std::move(log))
+        .thenValue([callback = std::move(cb), peer, this] (AppendLogResult res) mutable {
+        LOG(INFO) << idStr_ << "add peer " << peer
+                  << ", result: " << static_cast<int32_t>(this->toResultCode(res));
+        callback(this->toResultCode(res));
+    });
+}
+
+void Part::asyncRemovePeer(const HostAddr& peer, KVCallback cb) {
+    std::string log = encodeHost(OP_REMOVE_PEER, peer);
+    sendCommandAsync(std::move(log))
+        .thenValue([callback = std::move(cb), peer, this] (AppendLogResult res) mutable {
+        LOG(INFO) << idStr_ << "remove peer " << peer
+                  << ", result: " << static_cast<int32_t>(this->toResultCode(res));
+        callback(this->toResultCode(res));
+    });
+}
+
+
+void Part::setBlocking(bool sign) {
+    blocking_ = sign;
 }
 
 void Part::onLostLeadership(TermID term) {
@@ -246,13 +266,46 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             }
             break;
         }
+        case OP_BATCH_WRITE: {
+            auto data = decodeBatchValue(log);
+            for (auto& op : data) {
+                ResultCode code = ResultCode::SUCCEEDED;
+                if (op.first == BatchLogType::OP_BATCH_PUT) {
+                    code = batch->put(op.second.first, op.second.second);
+                } else if (op.first == BatchLogType::OP_BATCH_REMOVE) {
+                    code = batch->remove(op.second.first);
+                } else if (op.first == BatchLogType::OP_BATCH_REMOVE_RANGE) {
+                    code = batch->removeRange(op.second.first, op.second.second);
+                }
+                if (code != ResultCode::SUCCEEDED) {
+                    LOG(ERROR) << idStr_ << "Failed to call WriteBatch";
+                    return false;
+                }
+            }
+            break;
+        }
+        case OP_ADD_PEER:
         case OP_ADD_LEARNER: {
             break;
         }
         case OP_TRANS_LEADER: {
-            auto newLeader = decodeTransLeader(log);
-            commitTransLeader(newLeader);
-            LOG(INFO) << idStr_ << "Transfer leader to " << newLeader;
+            auto newLeader = decodeHost(OP_TRANS_LEADER, log);
+            auto ts = getTimestamp(log);
+            if (ts > startTimeMs_) {
+                commitTransLeader(newLeader);
+            } else {
+                LOG(INFO) << idStr_ << "Skip commit stale transfer leader " << newLeader;
+            }
+            break;
+        }
+        case OP_REMOVE_PEER: {
+            auto peer = decodeHost(OP_REMOVE_PEER, log);
+            auto ts = getTimestamp(log);
+            if (ts > startTimeMs_) {
+                commitRemovePeer(peer);
+            } else {
+                LOG(INFO) << idStr_ << "Skip commit stale remove peer " << peer;
+            }
             break;
         }
         default: {
@@ -306,8 +359,7 @@ ResultCode Part::putCommitMsg(WriteBatch* batch, LogID committedLogId, TermID co
     commitMsg.reserve(sizeof(LogID) + sizeof(TermID));
     commitMsg.append(reinterpret_cast<char*>(&committedLogId), sizeof(LogID));
     commitMsg.append(reinterpret_cast<char*>(&committedLogTerm), sizeof(TermID));
-    return batch->put(folly::stringPrintf("%s%d", kCommitKeyPrefix, partId_),
-                      commitMsg);
+    return batch->put(NebulaKeyUtils::systemCommitKey(partId_), commitMsg);
 }
 
 bool Part::preProcessLog(LogID logId,
@@ -320,15 +372,47 @@ bool Part::preProcessLog(LogID logId,
     if (!log.empty()) {
         switch (log[sizeof(int64_t)]) {
             case OP_ADD_LEARNER: {
-                auto learner = decodeLearner(log);
-                addLearner(learner);
-                LOG(INFO) << idStr_ << "Preprocess add learner " << learner;
+                auto learner = decodeHost(OP_ADD_LEARNER, log);
+                auto ts = getTimestamp(log);
+                if (ts > startTimeMs_) {
+                    LOG(INFO) << idStr_ << "preprocess add learner " << learner;
+                    addLearner(learner);
+                } else {
+                    LOG(INFO) << idStr_ << "Skip stale add learner " << learner;
+                }
                 break;
             }
             case OP_TRANS_LEADER: {
-                auto newLeader = decodeTransLeader(log);
-                preProcessTransLeader(newLeader);
-                LOG(INFO) << idStr_ << "Preprocess transfer leader to " << newLeader;
+                auto newLeader = decodeHost(OP_TRANS_LEADER, log);
+                auto ts = getTimestamp(log);
+                if (ts > startTimeMs_) {
+                    LOG(INFO) << idStr_ << "preprocess trans leader " << newLeader;
+                    preProcessTransLeader(newLeader);
+                } else {
+                    LOG(INFO) << idStr_ << "Skip stale transfer leader " << newLeader;
+                }
+                break;
+            }
+            case OP_ADD_PEER: {
+                auto peer = decodeHost(OP_ADD_PEER, log);
+                auto ts = getTimestamp(log);
+                if (ts > startTimeMs_) {
+                    LOG(INFO) << idStr_ << "preprocess add peer " << peer;
+                    addPeer(peer);
+                } else {
+                    LOG(INFO) << idStr_ << "Skip stale add peer " << peer;
+                }
+                break;
+            }
+            case OP_REMOVE_PEER: {
+                auto peer = decodeHost(OP_REMOVE_PEER, log);
+                auto ts = getTimestamp(log);
+                if (ts > startTimeMs_) {
+                    LOG(INFO) << idStr_ << "preprocess remove peer " << peer;
+                    preProcessRemovePeer(peer);
+                } else {
+                    LOG(INFO) << idStr_ << "Skip stale remove peer " << peer;
+                }
                 break;
             }
             default: {
@@ -338,6 +422,23 @@ bool Part::preProcessLog(LogID logId,
     }
     return true;
 }
+
+ResultCode Part::toResultCode(raftex::AppendLogResult res) {
+    switch (res) {
+        case raftex::AppendLogResult::SUCCEEDED:
+            return ResultCode::SUCCEEDED;
+        case raftex::AppendLogResult::E_NOT_A_LEADER:
+            return ResultCode::ERR_LEADER_CHANGED;
+        case raftex::AppendLogResult::E_WRITE_BLOCKING:
+            return ResultCode::ERR_WRITE_BLOCK_ERROR;
+        default:
+            LOG(ERROR) << idStr_ << "Consensus error "
+                       << static_cast<int32_t>(res);
+            return ResultCode::ERR_CONSENSUS_ERROR;
+    }
+}
+
+
 
 }  // namespace kvstore
 }  // namespace nebula
