@@ -429,7 +429,6 @@ object SparkClientGenerator {
                                   val sourceEscaped =
                                     source
                                       .replaceAll("\"", "\\\\\"")
-                                      .replaceAll("\'", "\\\\\'")
 
                                   val sourceIdPrefixDecorated = discriminatorPrefixSrcOpt
                                     .fold(sourceEscaped)(srcPrefix => srcPrefix + sourceEscaped)
@@ -437,7 +436,6 @@ object SparkClientGenerator {
                                   val destEscaped =
                                     edge._2.toString
                                       .replaceAll("\"", "\\\\\"")
-                                      .replaceAll("\'", "\\\\\'")
 
                                   val destIdPrefixDecorated = discriminatorPrefixDestOpt
                                     .fold(destEscaped)(
