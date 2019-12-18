@@ -204,10 +204,17 @@ object SparkClientGenerator {
             .filter($"${vertex}".isNotNull) //sourceProperties always contains vertex
             .map { row =>
               (
-                idGeneratorFormat.format(
-                  discriminatorPrefixOpt
-                    .fold(row.getString(vertexIndex))(prefix => prefix + row.getString(vertexIndex))
-                ),
+                {
+                  val vertexIdString =
+                    row
+                      .getString(vertexIndex)
+                      .replaceAll("\"", "\\\\\"")
+
+                  idGeneratorFormat.format(
+                    discriminatorPrefixOpt
+                      .fold(vertexIdString)(prefix => prefix + vertexIdString)
+                  )
+                },
                 tableColumnNames
                   .map(extractValue(row, _))
                   .mkString(",")
@@ -385,14 +392,12 @@ object SparkClientGenerator {
                                   val sourceEscaped =
                                     source
                                       .replaceAll("\"", "\\\\\"")
-                                      .replaceAll("\'", "\\\\\'")
                                   val sourceIdPrefixDecorated = discriminatorPrefixSrcOpt
                                     .fold(sourceEscaped)(srcPrefix => srcPrefix + sourceEscaped)
 
                                   val destEscaped =
                                     edge._2.toString
                                       .replaceAll("\"", "\\\\\"")
-                                      .replaceAll("\'", "\\\\\'")
 
                                   val destIdPrefixDecorated = discriminatorPrefixDestOpt
                                     .fold(destEscaped)(
