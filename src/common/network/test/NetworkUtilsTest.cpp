@@ -125,6 +125,11 @@ TEST(NetworkUtils, toHosts) {
     ASSERT_FALSE(s.ok());
 }
 
+TEST(NetworkUtils, debug) {
+    std::string hostsString = "127.0.0.1:45513";
+    auto addresRet = NetworkUtils::toHosts(hostsString);
+    ASSERT_TRUE(addresRet.ok());
+}
 }   // namespace network
 }   // namespace nebula
 

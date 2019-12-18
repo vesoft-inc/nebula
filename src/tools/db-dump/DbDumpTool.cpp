@@ -5,19 +5,19 @@
  */
 
 #include "base/Base.h"
+#include "DbDumper.h"
 
 void printHelp() {
     fprintf(stderr,
-           R"(  db_dump --db=<path to rocksdb> --meta_seve=<ip:port,...>
+           R"(  db_dump --db_path=<path to rocksdb> --meta_seve=<ip:port,...>
 
-       --db=<path to rocksdb>
-       Path to the rocksdb data directory. Default: ./
+       --db_path=<path to rocksdb>
+        Path to the rocksdb data directory. Default: ./
 
        --meta_server=<ip:port,...>
          A list of meta severs' ip:port seperated by comma, if there exists.
          Default: 127.0.0.1:45500
 
-       optional:
        --part=<list of partition id>
          A list of partition id seperated by comma.
          Would output all patitions if it is not given,
@@ -33,16 +33,25 @@ void printHelp() {
 
        --limit=<N>
          Limit to output.
-
-       --output=console | csv
-         Output to the concole, default: console.
-         csv is not supported yet.
 )");
 }
 
 int main(int argc, char *argv[]) {
-    UNUSED(argc);
-    UNUSED(argv);
-    printHelp();
+    if (argc == 1) {
+        printHelp();
+        return EXIT_FAILURE;
+    } else {
+        folly::init(&argc, &argv, true);
+    }
+
+    google::SetStderrLogging(google::FATAL);
+
+    nebula::storage::DbDumper dumper;
+    auto status = dumper.init();
+    if (!status.ok()) {
+      std::cerr << status << "\n\n";
+      return EXIT_FAILURE;
+    }
+    dumper.run();
 }
 

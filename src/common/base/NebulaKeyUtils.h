@@ -80,6 +80,10 @@ public:
 
     static std::string prefix(PartitionID partId);
 
+    static PartitionID getPart(const folly::StringPiece& rawKey) {
+        return readInt<PartitionID>(rawKey.data(), sizeof(PartitionID)) >> 8;
+    }
+
     static bool isVertex(const folly::StringPiece& rawKey) {
         constexpr uint32_t tagMask  = 0x40000000;
         constexpr uint32_t typeMask = 0x000000FF;
@@ -91,6 +95,12 @@ public:
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
         TagID tagId =  readInt<TagID>(rawKey.data() + offset, sizeof(TagID));
         return !(tagId & tagMask);
+    }
+
+    static VertexID getVertexId(const folly::StringPiece& rawKey) {
+        CHECK_EQ(rawKey.size(), kVertexLen);
+        auto offset = sizeof(PartitionID);
+        return readInt<VertexID>(rawKey.data() + offset, sizeof(VertexID));
     }
 
     static TagID getTagId(const folly::StringPiece& rawKey) {
