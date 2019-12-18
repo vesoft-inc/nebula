@@ -93,6 +93,9 @@ public:
     static StatusOr<VT> readHisto(const std::string& counterName,
                                   TimeRange range,
                                   double pct);
+    static StatusOr<StatsManager::VT> readHisto(const size_t index,
+            StatsManager::TimeRange range,
+            double pct);
     static void readAllValue(folly::dynamic& vals);
 
     static std::string toJson();

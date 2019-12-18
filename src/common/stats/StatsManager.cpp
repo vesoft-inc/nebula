@@ -323,6 +323,18 @@ StatusOr<StatsManager::VT> StatsManager::readHisto(const std::string& counterNam
     return sm.histograms_[index].second->getPercentileEstimate(pct, level);
 }
 
+/*static */
+StatusOr<StatsManager::VT> StatsManager::readHisto(const size_t index,
+        StatsManager::TimeRange range,
+        double pct) {
+    auto& sm = get();
+    std::lock_guard<std::mutex> g(*(sm.histograms_[physicalHistoIndex(index)].first));
+    sm.histograms_[physicalHistoIndex(index)].second->update(
+        std::chrono::seconds(time::WallClock::fastNowInSec()));
+    auto level = static_cast<size_t>(range);
+    return sm.histograms_[physicalHistoIndex(index)].second->getPercentileEstimate(pct, level);
+}
+
 
 // static
 StatusOr<StatsManager::ParsedName>
@@ -429,47 +441,53 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
                     ("labels", labels);
             obj[kGauges].push_back(std::move(gauge));
         } else if (StatsManager::isHistoIndex(index.second)) {
-            auto& p = sm.histograms_[StatsManager::physicalHistoIndex(index.second)];
-            std::int64_t sum = 0;
-            if (parsedName != nullptr) {
-                sum = readStats(index.second, parsedName->range, StatsManager::StatsMethod::SUM)
-                    .value();
-            } else {
-                sum = readStats(index.second, StatsManager::TimeRange::ONE_HOUR,
-                    StatsManager::StatsMethod::SUM).value();
-            }
-            std::uint64_t count = 0;
-            if (parsedName != nullptr) {
-                count = readStats(index.second, parsedName->range,
-                    StatsManager::StatsMethod::COUNT).value();
-            } else {
-                count = readStats(index.second, StatsManager::TimeRange::ONE_HOUR,
-                    StatsManager::StatsMethod::COUNT).value();
-            }
-            std::lock_guard<std::mutex> lk(*p.first);
-            auto& hist = p.second;
-            folly::dynamic buckets = folly::dynamic::array();
-            for (std::size_t i = 0; i < hist->getNumBuckets(); ++i) {
-                if (parsedName != nullptr) {
-                    buckets.push_back(
-                        hist->getBucket(i).count(static_cast<std::size_t>(parsedName->range)));
-                } else {
-                    buckets.push_back(
-                        hist->getBucket(i).count(static_cast<std::size_t>(
-                            StatsManager::TimeRange::ONE_HOUR)));
-                }
-            }
-            folly::dynamic histogram = folly::dynamic::object("name", name)
-                ("value_range", folly::dynamic::array(hist->getMin(), hist->getMax()))
-                ("buckets", std::move(buckets))
-                ("count", count)
-                ("sum", sum)
-                ("labels", labels);
-            obj[kHistograms].push_back(std::move(histogram));
+            // Comment temporary for maybe used later
+            // auto& p = sm.histograms_[StatsManager::physicalHistoIndex(index.second)];
+            // std::int64_t sum = 0;
+            // if (parsedName != nullptr) {
+                // sum = readStats(index.second, parsedName->range, StatsManager::StatsMethod::SUM)
+                    // .value();
+            // } else {
+                // sum = readStats(index.second, StatsManager::TimeRange::ONE_HOUR,
+                    // StatsManager::StatsMethod::SUM).value();
+            // }
+            // std::uint64_t count = 0;
+            // if (parsedName != nullptr) {
+                // count = readStats(index.second, parsedName->range,
+                    // StatsManager::StatsMethod::COUNT).value();
+            // } else {
+                // count = readStats(index.second, StatsManager::TimeRange::ONE_HOUR,
+                    // StatsManager::StatsMethod::COUNT).value();
+            // }
+            // std::lock_guard<std::mutex> lk(*p.first);
+            // auto& hist = p.second;
+            // folly::dynamic buckets = folly::dynamic::array();
+            // for (std::size_t i = 0; i < hist->getNumBuckets(); ++i) {
+                // if (parsedName != nullptr) {
+                    // buckets.push_back(
+                        // hist->getBucket(i).count(static_cast<std::size_t>(parsedName->range)));
+                // } else {
+                    // buckets.push_back(
+                        // hist->getBucket(i).count(static_cast<std::size_t>(
+                            // StatsManager::TimeRange::ONE_HOUR)));
+                // }
+            // }
+            // folly::dynamic histogram = folly::dynamic::object("name", name)
+                // ("value_range", folly::dynamic::array(hist->getMin(), hist->getMax()))
+                // ("buckets", std::move(buckets))
+                // ("count", count)
+                // ("sum", sum)
+                // ("labels", labels);
+            // obj[kHistograms].push_back(std::move(histogram));
 
             // Expose the metrics computed from Histogram
             // Now we only use Histogram for latency, So just expose the p99
             // It's a temporary solution and Hard Code! Not a general work.
+            auto value = readHisto(index.second, StatsManager::TimeRange::ONE_HOUR, 99).value();
+            folly::dynamic gauge = folly::dynamic::object("name", name+"_p99")
+                    ("value", value)
+                    ("labels", labels);
+            obj[kGauges].push_back(std::move(gauge));
         }
     }
     return folly::toJson(obj);
