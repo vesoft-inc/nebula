@@ -21,7 +21,7 @@ nebula> GET CONFIGS storage:rocksdb_column_family_options
 ---------------------------------------------------------------------------------------------------------
 ```
 
-**注意：** 可以在大批量数据写入前关闭 auto compaction，但请记得批量写入后再将其打开，长期关闭 auto compaction 会影响后续的读性能。
+**注意：** 可以在大批量数据写入前关闭 auto compaction，但请记得批量写入后再将其打开，长期关闭 `auto compaction` 会影响后续的读性能，也可能导致重启要比较久的时间。
 
 ### 打开自动 Compaction
 
