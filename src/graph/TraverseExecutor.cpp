@@ -353,33 +353,12 @@ bool WhereWrapper::rewrite(Expression *expr) const {
                     return false;
             }
         }
-        case Expression::kUnary: {
-            auto *unaExpr = static_cast<UnaryExpression*>(expr);
-            return rewrite(const_cast<Expression*>(unaExpr->operand()));
-        }
-        case Expression::kTypeCasting: {
-            auto *typExpr = static_cast<TypeCastingExpression*>(expr);
-            return rewrite(const_cast<Expression*>(typExpr->operand()));
-        }
-        case Expression::kArithmetic: {
-            auto *ariExp = static_cast<ArithmeticExpression*>(expr);
-            return rewrite(const_cast<Expression*>(ariExp->left()))
-                    && rewrite(const_cast<Expression*>(ariExp->right()));
-        }
-        case Expression::kRelational: {
-            auto *relExp = static_cast<RelationalExpression*>(expr);
-            return rewrite(const_cast<Expression*>(relExp->left()))
-                    && rewrite(const_cast<Expression*>(relExp->right()));
-        }
+        case Expression::kUnary:
+        case Expression::kTypeCasting:
+        case Expression::kArithmetic:
+        case Expression::kRelational:
         case Expression::kFunctionCall: {
-            auto *funcExp = static_cast<FunctionCallExpression*>(expr);
-            auto &args = funcExp->args();
-            for (auto &arg : args) {
-                if (!rewrite(arg)) {
-                    return false;
-                }
-            }
-            return true;
+            return canPushdown(expr);
         }
         case Expression::kPrimary:
         case Expression::kSourceProp:
@@ -405,9 +384,6 @@ bool WhereWrapper::rewrite(Expression *expr) const {
 }
 
 bool WhereWrapper::canPushdown(Expression *expr) const {
-    if (expr->isFunCallExpression()) {
-        return false;
-    }
     auto ectx = std::make_unique<ExpressionContext>();
     expr->setContext(ectx.get());
     auto status = expr->prepare();

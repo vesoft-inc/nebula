@@ -1808,6 +1808,96 @@ TEST_P(GoTest, FilterPushdown) {
         std::vector<std::tuple<int64_t>> expected;
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "WHERE udf_is_in(serve._dst, %ld, 2, 3)";
+        auto query = folly::stringPrintf(fmt,
+                players_["Rajon Rondo"].vid(), teams_["Celtics"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+            true,
+            folly::stringPrintf("udf_is_in(serve._dst,%ld,2,3)", teams_["Celtics"].vid()));
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Celtics"].vid()}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "WHERE udf_is_in(\"test\", $$.team.name)";
+        auto query = folly::stringPrintf(fmt, players_["Rajon Rondo"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+            false,
+            "");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected;
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "WHERE udf_is_in($^.player.name, \"Tim Duncan\")";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+            true,
+            "udf_is_in($^.player.name,Tim Duncan)");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Spurs"].vid()}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "WHERE !udf_is_in($^.player.name, \"Tim Duncan\")";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+            true,
+            "!(udf_is_in($^.player.name,Tim Duncan))");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected;
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
 #undef TEST_FILTER_PUSHDWON_REWRITE
 }
 
