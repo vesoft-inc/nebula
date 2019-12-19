@@ -16,6 +16,7 @@ namespace nebula {
 using nebula::network::NetworkUtils;
 
 class ConfigRowItem;
+class IntegerList;
 
 class ShowSentence final : public Sentence {
 public:
@@ -40,9 +41,9 @@ public:
         showType_ = std::move(sType);
     }
 
-    ShowSentence(ShowType sType, int64_t id) {
+    ShowSentence(ShowType sType, IntegerList* list) {
         kind_ = Kind::kShow;
-        id_ = id;
+        list_.reset(list);
         showType_ = std::move(sType);
     }
 
@@ -58,8 +59,8 @@ public:
         return showType_;
     }
 
-    int64_t getId() {
-        return id_;
+    IntegerList* getList() {
+        return list_.get();
     }
 
     std::string* getName() {
@@ -68,7 +69,7 @@ public:
 
 private:
     ShowType                        showType_{ShowType::kUnknown};
-    int64_t                         id_{0};
+    std::unique_ptr<IntegerList>    list_;
     std::unique_ptr<std::string>    name_;
 };
 
@@ -328,9 +329,9 @@ public:
         hosts_.emplace_back(addr);
     }
 
-     std::string toString() const;
+    std::string toString() const;
 
-     std::vector<HostAddr> hosts() const {
+    std::vector<HostAddr> hosts() const {
         std::vector<HostAddr> result;
         result.reserve(hosts_.size());
         for (auto &host : hosts_) {
@@ -341,6 +342,20 @@ public:
 
 private:
     std::vector<std::unique_ptr<HostAddr>>      hosts_;
+};
+
+class IntegerList final {
+public:
+    void addInteger(int32_t num) {
+        list_.emplace_back(num);
+    }
+
+    std::vector<int32_t> get() const {
+        return list_;
+    }
+
+private:
+    std::vector<int32_t> list_;
 };
 
 class BalanceSentence final : public Sentence {

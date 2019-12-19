@@ -37,7 +37,8 @@ private:
 private:
     AdminClient*                                        adminClient_;
     GraphSpaceID                                        spaceId_;
-    PartitionID                                         partId_{0};
+    std::vector<PartitionID>                            partIds_;
+    bool                                                showAllParts_{true};
 };
 
 }  // namespace meta

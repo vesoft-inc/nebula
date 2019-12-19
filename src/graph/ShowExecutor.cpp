@@ -250,7 +250,12 @@ void ShowExecutor::showSpaces() {
 
 void ShowExecutor::showParts() {
     auto spaceId = ectx()->rctx()->session()->space();
-    auto future = ectx()->getMetaClient()->listParts(spaceId, sentence_->getId());
+    std::vector<PartitionID> partIds;
+    auto *list = sentence_->getList();
+    if (list != nullptr) {
+        partIds = list->get();
+    }
+    auto future = ectx()->getMetaClient()->listParts(spaceId, partIds);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {

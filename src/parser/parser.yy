@@ -87,6 +87,7 @@ class GraphScanner;
     nebula::GroupClause                    *group_clause;
     nebula::HostList                       *host_list;
     nebula::HostAddr                       *host_item;
+    nebula::IntegerList                    *integer_list;
 }
 
 /* destructors */
@@ -99,7 +100,7 @@ class GraphScanner;
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
-%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PARTS KW_TIMESTAMP KW_ADD
+%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PART KW_PARTS KW_TIMESTAMP KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_UUID
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
@@ -183,6 +184,7 @@ class GraphScanner;
 %type <group_clause> group_clause
 %type <host_list> host_list
 %type <host_item> host_item
+%type <integer_list> integer_list
 
 %type <intval> unary_integer rank port
 
@@ -1438,7 +1440,10 @@ show_sentence
     | KW_SHOW KW_PARTS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowParts);
     }
-    | KW_SHOW KW_PARTS INTEGER {
+    | KW_SHOW KW_PART integer_list {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowParts, $3);
+    }
+    | KW_SHOW KW_PARTS integer_list {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowParts, $3);
     }
     | KW_SHOW KW_TAGS {
@@ -1716,6 +1721,20 @@ host_item
     }
 
 port : INTEGER { $$ = $1; }
+
+integer_list
+    : INTEGER {
+        $$ = new IntegerList();
+        $$->addInteger($1);
+    }
+    | integer_list COMMA INTEGER {
+        $$ = $1;
+        $$->addInteger($3);
+    }
+    | integer_list COMMA {
+        $$ = $1;
+    }
+    ;
 
 balance_sentence
     : KW_BALANCE KW_LEADER {

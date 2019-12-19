@@ -159,7 +159,7 @@ public:
     listHosts();
 
     folly::Future<StatusOr<std::vector<cpp2::PartItem>>>
-    listParts(GraphSpaceID spaceId, PartitionID partId);
+    listParts(GraphSpaceID spaceId, std::vector<PartitionID> partIds);
 
     folly::Future<StatusOr<PartsAlloc>>
     getPartsAlloc(GraphSpaceID spaceId);

@@ -317,7 +317,7 @@ struct PartItem {
 
 struct ListPartsReq {
     1: common.GraphSpaceID space_id,
-    2: optional common.PartitionID part_id;
+    2: list<common.PartitionID> part_ids;
 }
 
 struct ListPartsResp {
