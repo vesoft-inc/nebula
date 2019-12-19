@@ -43,8 +43,8 @@ object SparkClientGenerator {
   private[this] val EDGE_VALUE_TEMPLATE = "%s->%s@%d: (%s)"
   private[this] val USE_TEMPLATE = "USE %s"
 
-  private[this] val DEFAULT_BATCH              = 16
-  private[this] val DEFAULT_PARTITION          = -1
+  private[this] val DEFAULT_BATCH = 16
+  private[this] val DEFAULT_PARTITION = -1
   private[this] val DEFAULT_CONNECTION_TIMEOUT = 3000
   private[this] val DEFAULT_CONNECTION_RETRY = 3
   private[this] val DEFAULT_EXECUTION_RETRY = 3
@@ -55,7 +55,7 @@ object SparkClientGenerator {
   private[this] val DEFAULT_MIN_CELL_LEVEL = 5
   private[this] val DEFAULT_MAX_CELL_LEVEL = 24
 
-  private[this] val MAX_CORES = 64
+  private[this] val MAX_CORES = 64 // TODO: Where does MAGIC NUMBER come from?
 
   private object Type extends Enumeration {
     type Type = Value
@@ -110,7 +110,7 @@ object SparkClientGenerator {
     val executionInterval =
       getOrElse(nebulaConfig, "execution.interval", DEFAULT_EXECUTION_INTERVAL)
 
-    LOG.info(s"Nebula Addresses ${addresses} for ${user}:${pswd}")
+    LOG.info(s"Nebula Addresses ${user}@${addresses}")
     LOG.info(s"Connection Timeout ${connectionTimeout} Retry ${connectionRetry}")
     LOG.info(s"Execution Retry ${executionRetry} Interval Base ${executionInterval}")
     LOG.info(s"Switch to ${space}")
@@ -178,8 +178,8 @@ object SparkClientGenerator {
           None
         }
 
-        val vertex    = tagConfig.getString("vertex")
-        val batch     = getOrElse(tagConfig, "batch", DEFAULT_BATCH)
+        val vertex = tagConfig.getString("vertex")
+        val batch = getOrElse(tagConfig, "batch", DEFAULT_BATCH)
         val partition = getOrElse(tagConfig, "partition", DEFAULT_PARTITION)
         val tagPropertyNames = fields.asScala.values.map(_.toString).toList
         val tableColumnNames = fields.asScala.keys.filterNot(_.trim.isEmpty).toList
@@ -251,7 +251,7 @@ object SparkClientGenerator {
                 }
                 client.close()
               } else {
-                LOG.error(s"Client connection failed. ${user}:${pswd}")
+                LOG.error(s"Client connection failed. ${user}@${addresses}")
               }
             }
         }
@@ -287,7 +287,7 @@ object SparkClientGenerator {
           None
         }
 
-        val batch     = getOrElse(edgeConfig, "batch", DEFAULT_BATCH)
+        val batch = getOrElse(edgeConfig, "batch", DEFAULT_BATCH)
         val partition = getOrElse(edgeConfig, "partition", DEFAULT_PARTITION)
         val isUseUuid = if (edgeConfig.hasPath("use_uuid")) {
           edgeConfig.getBoolean("use_uuid")
@@ -616,12 +616,12 @@ object SparkClientGenerator {
   }
 
   /**
-    * Repartition the data frame using the specified partition number.
-    *
-    * @param frame
-    * @param partition
-    * @return
-    */
+   * Repartition the data frame using the specified partition number.
+   *
+   * @param frame
+   * @param partition
+   * @return
+   */
   @inline
   private[this] def repartition(frame: DataFrame, partition: Int): DataFrame = {
     if (partition > 0) {
@@ -632,11 +632,11 @@ object SparkClientGenerator {
   }
 
   /**
-    * Check the statement execution result.
-    *
-    * @param code The statement's execution result code.
-    * @return
-    */
+   * Check the statement execution result.
+   *
+   * @param code The statement's execution result code.
+   * @return
+   */
   @inline
   private[this] def isSuccessfully(code: Int) = code == ErrorCode.SUCCEEDED
 
