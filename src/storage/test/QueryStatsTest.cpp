@@ -18,30 +18,30 @@ namespace nebula {
 namespace storage {
 
 void mockData(kvstore::KVStore* kv) {
-    for (auto partId = 0; partId < 3; partId++) {
+    for (int32_t partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
-        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            for (auto tagId = 3001; tagId < 3010; tagId++) {
+        for (int32_t vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+            for (int32_t tagId = 3001; tagId < 3010; tagId++) {
                 auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
                 RowWriter writer;
                 for (int64_t numInt = 0; numInt < 3; numInt++) {
                     writer << numInt;
                 }
-                for (auto numString = 3; numString < 6; numString++) {
+                for (int32_t numString = 3; numString < 6; numString++) {
                     writer << folly::stringPrintf("tag_string_col_%d", numString);
                 }
                 auto val = writer.encode();
                 data.emplace_back(std::move(key), std::move(val));
             }
             // Generate 7 edges for each edgeType.
-            for (auto dstId = 10001; dstId <= 10007; dstId++) {
+            for (int32_t dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101, dstId - 10001, dstId, 0);
                 RowWriter writer(nullptr);
                 for (int64_t numInt = 0; numInt < 10; numInt++) {
                     writer << numInt;
                 }
-                for (auto numString = 10; numString < 20; numString++) {
+                for (int32_t numString = 10; numString < 20; numString++) {
                     writer << folly::stringPrintf("string_col_%d", numString);
                 }
                 auto val = writer.encode();

@@ -24,19 +24,8 @@ TEST(CheckpointTest, simpleTest) {
         req.space_id = 0;
         req.overwritable = false;
         // partId => List<Vertex>
-        for (auto partId = 0; partId < 3; partId++) {
-            std::vector<cpp2::Vertex> vertices;
-            for (auto vertexId = partId * 10; vertexId < 10 * (partId + 1); vertexId++) {
-                std::vector<cpp2::Tag> tags;
-                for (auto tagId = 0; tagId < 10; tagId++) {
-                    tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                      tagId,
-                                      folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId));
-                }
-                vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                      vertexId,
-                                      std::move(tags));
-            }
+        for (PartitionID partId = 0; partId < 3; partId++) {
+            auto vertices = TestUtils::setupVertices(partId, 10, 10, 0, partId * 10);
             req.parts.emplace(partId, std::move(vertices));
         }
 

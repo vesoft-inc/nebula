@@ -26,7 +26,7 @@ void addVertices(kvstore::KVStore* kv, VertexCache* cache, int nums) {
     cpp2::AddVerticesRequest req;
     req.space_id = 0;
     req.overwritable = true;
-    auto vertices = TestUtils::setupVertices(0, nums, 1, 3001);
+    auto vertices = TestUtils::setupVertices(0, 0, nums, 3001, 3002);
     req.parts.emplace(0, std::move(vertices));
 
     LOG(INFO) << "Test AddVerticesProcessor...";
@@ -46,13 +46,13 @@ void prepareData(kvstore::KVStore* kv) {
     LOG(INFO) << "Prepare data...";
     std::vector<kvstore::KV> data;
     TagID tagId = 3001;
-    for (auto vertexId = 0; vertexId < 10000; vertexId++) {
+    for (int32_t vertexId = 0; vertexId < 10000; vertexId++) {
         auto key = NebulaKeyUtils::vertexKey(0, vertexId, tagId, 0);
         RowWriter writer;
         for (int64_t numInt = 0; numInt < 3; numInt++) {
             writer << numInt;
         }
-        for (auto numString = 3; numString < 6; numString++) {
+        for (int32_t numString = 3; numString < 6; numString++) {
             writer << folly::stringPrintf("tag_string_col_%d", numString);
         }
         auto val = writer.encode();

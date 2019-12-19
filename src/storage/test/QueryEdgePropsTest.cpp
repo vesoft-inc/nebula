@@ -18,21 +18,14 @@ namespace nebula {
 namespace storage {
 
 void mockData(kvstore::KVStore* kv) {
-    for (auto partId = 0; partId < 3; partId++) {
+    for (PartitionID partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
-        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+        for (VertexID vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             // Generate 7 edges for each source vertex id
-            for (auto dstId = 10001; dstId <= 10007; dstId++) {
+            for (VertexID dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101, dstId - 10001, dstId, 0);
-                RowWriter writer(nullptr);
-                for (int64_t numInt = 0; numInt < 10; numInt++) {
-                    writer << numInt;
-                }
-                for (auto numString = 10; numString < 20; numString++) {
-                    writer << folly::stringPrintf("string_col_%d", numString);
-                }
-                auto val = writer.encode();
+                auto val = TestUtils::setupEncode(10, 20);
                 data.emplace_back(std::move(key), std::move(val));
             }
         }
@@ -51,9 +44,9 @@ void mockData(kvstore::KVStore* kv) {
 void buildRequest(cpp2::EdgePropRequest& req) {
     req.set_space_id(0);
     decltype(req.parts) tmpEdges;
-    for (auto partId = 0; partId < 3; partId++) {
-        for (auto vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            for (auto dstId = 10001; dstId <= 10007; dstId++) {
+    for (PartitionID partId = 0; partId < 3; partId++) {
+        for (VertexID vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+            for (VertexID dstId = 10001; dstId <= 10007; dstId++) {
                 tmpEdges[partId].emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                               vertexId, 101, dstId - 10001, dstId);
             }
