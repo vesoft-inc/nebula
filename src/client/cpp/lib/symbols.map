@@ -1,0 +1,23 @@
+{
+global:
+    extern "C++" {
+	nebula::NebulaClient::*;
+	nebula::ExecutionResponse::*;
+	nebula::RowValue::*;
+	nebula::ColValue::*;
+	nebula::ValueType::*;
+	nebula::ErrorCode::*;
+	nebula::Value::*;
+	nebula::Path::*;
+	nebula::PathEntry::*;
+	nebula::Entry::*;
+	nebula::EntryType::*;
+	nebula::Edge::*;
+	nebula::Vertex::*;
+	nebula::DateTime::*;
+	nebula::Date::*;
+	nebula::YearMonth::*;
+    };
+local:
+    *;
+};

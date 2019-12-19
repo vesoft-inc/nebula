@@ -12,6 +12,7 @@ endif()
 
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib64")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/symbols.map")
 
 nebula_add_library(
     nebulaClient SHARED
@@ -57,6 +58,10 @@ target_link_libraries(
     -static-libstdc++
     -lpthread
     -ldl
+    -lssl
+    -lcrypto
+    #-lbz2
+    #-Wl,--no-undefined
 )
 
 install(
