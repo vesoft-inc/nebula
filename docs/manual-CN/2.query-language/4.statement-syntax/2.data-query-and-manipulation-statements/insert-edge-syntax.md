@@ -1,9 +1,9 @@
 # INSERT EDGE 语法
 
 ```ngql
-INSERT EDGE edge_name ( <prop_name_list> ) {VALUES | VALUE}
-<src_vid> -> <dst_vid>@ranking : ( <prop_value_list> )
-[, <src_vid> -> <dst_vid> : ( <prop_value_list> )]
+INSERT EDGE <edge_name> ( <prop_name_list> ) VALUES | VALUE
+<src_vid> -> <dst_vid>[@<ranking>] : ( <prop_value_list> )
+[, <src_vid> -> <dst_vid> : ( <prop_value_list> ), ...]
 
 <prop_name_list>:
   [ <prop_name> [, <prop_name> ] ...]
