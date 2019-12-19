@@ -14,6 +14,35 @@
     <artifactId>nebula-utils</artifactId>
     <version>1.0.0-rc2</version>
 
+    <name>nebula-utils</name>
+    <description>Nebula jni utils</description>
+    <url>https://github.com/vesoft-inc/nebula/tree/master/src/jni</url>
+    <scm>
+        <connection>scm:git:https://github.com/vesoft-inc/nebula</connection>
+        <url>https://github.com/vesoft-inc/nebula</url>
+        <developerConnection>scm:git:https://github.com/vesoft-inc/nebula</developerConnection>
+    </scm>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+            <comments>license</comments>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>nebula</id>
+            <name>vesoft</name>
+            <organization>vesoft</organization>
+            <roles>
+                <role>architect</role>
+                <role>developer</role>
+            </roles>
+        </developer>
+    </developers>
+
     <properties>
         <project.root.dir>../../..</project.root.dir>
     </properties>
@@ -195,6 +224,16 @@
                         <goals>
                             <goal>sign</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-deploy</id>
+                        <phase>deploy</phase>
                     </execution>
                 </executions>
             </plugin>
