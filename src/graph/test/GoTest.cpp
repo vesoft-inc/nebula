@@ -1785,14 +1785,13 @@ TEST_F(GoTest, FilterPushdown) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
-        // Function call is not supported in storage now.
         auto *fmt = "GO FROM %ld OVER serve "
                     "WHERE udf_is_in(serve._dst, 1, 2, 3)";
         auto query = folly::stringPrintf(fmt, players_["Rajon Rondo"].vid());
 
         TEST_FILTER_PUSHDOWN_REWRITE(
-                false,
-                "");
+                true,
+                "udf_is_in(serve._dst,1,2,3)");
 
         cpp2::ExecutionResponse resp;
         auto code = client_->execute(query, resp);

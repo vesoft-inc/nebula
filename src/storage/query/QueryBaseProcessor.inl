@@ -8,6 +8,7 @@
 #include <algorithm>
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
+#include "filter/FunctionManager.h"
 
 DECLARE_int32(max_handlers_per_req);
 DECLARE_int32(min_vertices_per_bucket);
@@ -101,6 +102,13 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
             }
             case cpp2::PropOwner::EDGE: {
                 EdgeType edgeType = col.id.get_edge_type();
+                auto edgeName = this->schemaMan_->toEdgeName(spaceId_, std::abs(edgeType));
+                if (!edgeName.ok()) {
+                    VLOG(3) << "Can't find spaceId " << spaceId_ << ", edgeType " << edgeType;
+                    return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+                }
+                this->edgeMap_.emplace(edgeName.value(), edgeType);
+
                 auto it = kPropsInKey_.find(col.name);
                 if (it != kPropsInKey_.end()) {
                     prop.pikType_ = it->second;
@@ -111,13 +119,6 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                         prop.type_.type = nebula::cpp2::SupportedType::INT;
                     }
                 } else if (edgeType > 0) {
-                    auto edgeName = this->schemaMan_->toEdgeName(spaceId_, edgeType);
-                    if (!edgeName.ok()) {
-                        VLOG(3) << "Can't find spaceId " << spaceId_ << ", edgeType " << edgeType;
-                        return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
-                    }
-                    this->edgeMap_.emplace(edgeName.value(), edgeType);
-
                     // Only outBound have properties on edge.
                     auto schema = this->schemaMan_->getEdgeSchema(spaceId_,
                                                                   edgeType);
@@ -172,9 +173,23 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
     switch (exp->kind()) {
         case Expression::kPrimary:
             return true;
-        case Expression::kFunctionCall:
-            // TODO(heng): we should support it in the future.
-            return false;
+        case Expression::kFunctionCall: {
+            auto* funcExp = static_cast<FunctionCallExpression*>(
+                              const_cast<Expression*>(exp));
+            auto* name = funcExp->name();
+            auto args = funcExp->args();
+            auto func = FunctionManager::get(*name, args.size());
+            if (!func.ok()) {
+                return false;
+            }
+            for (auto& arg : args) {
+                if (!checkExp(arg)) {
+                    return false;
+                }
+            }
+            funcExp->setFunc(std::move(func).value());
+            return true;
+        }
         case Expression::kUnary: {
             auto* unaExp = static_cast<const UnaryExpression*>(exp);
             return checkExp(unaExp->operand());

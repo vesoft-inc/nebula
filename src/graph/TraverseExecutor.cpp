@@ -323,23 +323,23 @@ bool WhereWrapper::rewrite(Expression *expr) const {
             if (logExpr->op() == LogicalExpression::Operator::XOR) {
                 return canPushdown(logExpr);
             }
-            auto rewriteLeft = rewrite(const_cast<Expression*>(logExpr->left()));
-            auto rewriteRight = rewrite(const_cast<Expression*>(logExpr->right()));
+            auto leftCanPushdown = rewrite(const_cast<Expression*>(logExpr->left()));
+            auto rightCanPushdown = rewrite(const_cast<Expression*>(logExpr->right()));
             switch (logExpr->op()) {
                 case LogicalExpression::Operator::OR: {
-                    if (!rewriteLeft || !rewriteRight) {
+                    if (!leftCanPushdown || !rightCanPushdown) {
                         return false;
                     } else {
                         return true;
                     }
                 }
                 case LogicalExpression::Operator::AND: {
-                    if (!rewriteLeft && !rewriteRight) {
+                    if (!leftCanPushdown && !rightCanPushdown) {
                         return false;
-                    } else if (!rewriteLeft) {
+                    } else if (!leftCanPushdown) {
                         auto *truePri = new PrimaryExpression(true);
                         logExpr->resetLeft(truePri);
-                    } else if (!rewriteRight) {
+                    } else if (!rightCanPushdown) {
                         auto *truePri = new PrimaryExpression(true);
                         logExpr->resetRight(truePri);
                     }
@@ -367,6 +367,16 @@ bool WhereWrapper::rewrite(Expression *expr) const {
             return rewrite(const_cast<Expression*>(relExp->left()))
                     && rewrite(const_cast<Expression*>(relExp->right()));
         }
+        case Expression::kFunctionCall: {
+            auto *funcExp = static_cast<FunctionCallExpression*>(expr);
+            auto &args = funcExp->args();
+            for (auto &arg : args) {
+                if (!rewrite(arg)) {
+                    return false;
+                }
+            }
+            return true;
+        }
         case Expression::kPrimary:
         case Expression::kSourceProp:
         case Expression::kEdgeRank:
@@ -380,7 +390,6 @@ bool WhereWrapper::rewrite(Expression *expr) const {
         case Expression::kVariableProp:
         case Expression::kDestProp:
         case Expression::kInputProp:
-        case Expression::kFunctionCall:
         case Expression::kUUID: {
             return false;
         }

@@ -670,6 +670,13 @@ public:
         return name_.get();
     }
 
+    const std::vector<Expression*> args() const {
+        std::vector<Expression*> args;
+        std::transform(args_.begin(), args_.end(), std::back_inserter(args),
+                [] (auto &e) { return e.get(); } );
+        return args;
+    }
+
     std::string toString() const override;
 
     OptVariantType eval(Getters &getters) const override;
@@ -681,6 +688,10 @@ public:
         for (auto &arg : args_) {
             arg->setContext(ctx);
         }
+    }
+
+    void setFunc(std::function<VariantType(const std::vector<VariantType>&)> func) {
+        function_ = func;
     }
 
 private:
