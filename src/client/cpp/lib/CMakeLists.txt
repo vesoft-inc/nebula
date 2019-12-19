@@ -15,7 +15,7 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/symbols.map")
 
 nebula_add_library(
-    nebulaClient SHARED
+    nebula_client SHARED
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
@@ -38,7 +38,7 @@ nebula_add_library(
 )
 
 target_link_libraries(
-    nebulaClient
+    nebula_client
     ${OPENSSL_SSL_LIBRARY}
     ${OPENSSL_CRYPTO_LIBRARY}
     ${THRIFT_LIBRARIES}
@@ -65,7 +65,7 @@ target_link_libraries(
 )
 
 install(
-    TARGETS nebulaClient
+    TARGETS nebula_client
     PERMISSIONS
         OWNER_WRITE OWNER_READ
         GROUP_READ

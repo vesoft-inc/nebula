@@ -299,9 +299,12 @@ public:
     ~ExecutionResponse() {}
 
 public:
-    // get value
-    int32_t getErrorCode();
+    // get error code
+    ErrorCode getErrorCode();
+    // the latency of graphd handle
     int32_t getLatencyInUs();
+    // the latency from send msg to receive msg, without convert data time
+    int64_t getWholeLatencyInUs();
 
     std::string const & getErrorMsg() const &;
     std::string const & getSpaceName() const &;
@@ -310,8 +313,9 @@ public:
 
 protected:
     // set value
-    void setErrorCode(ErrorCode code);
-    void setLatencyInUs(int32_t latency);
+    void setErrorCode(const ErrorCode code);
+    void setLatencyInUs(const int32_t latency);
+    void setWholeLatencyInUss(const int64_t latency);
     void setErrorMsg(std::string errorMsg);
     void setSpaceName(std::string spaceName);
     void setColumnNames(std::vector<std::string> columnNames);
@@ -320,6 +324,7 @@ protected:
 private:
     ErrorCode                       errorCode_;
     int32_t                         latencyInUs_{0};
+    int64_t                         wholeLatencyInUs_{0};
     std::string                     spaceName_;
     std::string                     errorMsg_;
     std::vector<std::string>        columnNames_;

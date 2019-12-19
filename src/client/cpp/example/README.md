@@ -98,9 +98,8 @@ If you want to connect 3 graphd, you can give three graphd's addr and port in in
 
 Please refer to the [sample code](NebulaClientExample.cpp) on detail usage.
 
-### Add libraries to your Makefile
-- nebulaClient
-- ssl
-- bz2
-- crypto
-- pthread
+build example code
+
+```
+g++ -std=c++11 NebulaClientExample.cpp -lnebula_client -lbz2 -lpthread -lglog -o nebula_client_example
+```

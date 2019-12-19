@@ -295,12 +295,16 @@ void ColValue::clear() {
     type_ = kEmptyType;
 }
 
-void ExecutionResponse::setErrorCode(ErrorCode code) {
+void ExecutionResponse::setErrorCode(const ErrorCode code) {
     errorCode_ = code;
 }
 
-void ExecutionResponse::setLatencyInUs(int32_t latency) {
+void ExecutionResponse::setLatencyInUs(const int32_t latency) {
     latencyInUs_ = latency;
+}
+
+void ExecutionResponse::setWholeLatencyInUss(const int64_t latency) {
+    wholeLatencyInUs_ = latency;
 }
 
 void ExecutionResponse::setErrorMsg(std::string errorMsg) {
@@ -319,12 +323,16 @@ void ExecutionResponse::setRows(std::vector<RowValue> rows) {
     rows_ = std::move(rows);
 }
 
-int32_t ExecutionResponse::getErrorCode() {
+ErrorCode ExecutionResponse::getErrorCode() {
     return errorCode_;
 }
 
 int32_t ExecutionResponse::getLatencyInUs() {
     return latencyInUs_;
+}
+
+int64_t ExecutionResponse::getWholeLatencyInUs() {
+    return wholeLatencyInUs_;
 }
 
 std::string const & ExecutionResponse::getErrorMsg() const & {

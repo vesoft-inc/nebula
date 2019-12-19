@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
             }
 
             // async execute cmd: show spaces
-            auto cb = [&] (nebula::ExecutionResponse* response, nebula::ErrorCode resultCode) {
+            auto cb = [] (nebula::ExecutionResponse* response, nebula::ErrorCode resultCode) {
                 if (resultCode == nebula::kSucceed) {
                     std::cout << "Async do cmd \" SHOW SPACES \" succeed" << std::endl;
                 } else {

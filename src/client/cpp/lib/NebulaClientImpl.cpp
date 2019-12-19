@@ -5,6 +5,7 @@
  */
 
 #include "base/Base.h"
+#include "time/Duration.h"
 #include "NebulaClientImpl.h"
 #include "ConnectionPool.h"
 
@@ -171,9 +172,11 @@ cpp2::ErrorCode NebulaClientImpl::execute(folly::StringPiece stmt,
 
 ErrorCode NebulaClientImpl::doExecute(std::string stmt,
                                       ExecutionResponse& resp) {
+    time::Duration duration;
     cpp2::ExecutionResponse response;
     cpp2::ErrorCode code = execute(stmt, response);
 
+    resp.setWholeLatencyInUss(duration.elapsedInUSec());
     resp.setErrorCode(static_cast<ErrorCode>(code));
     resp.setLatencyInUs(response.get_latency_in_us());
     if (response.get_error_msg() != nullptr) {
@@ -190,12 +193,12 @@ ErrorCode NebulaClientImpl::doExecute(std::string stmt,
     if (response.get_rows() != nullptr) {
         feedRows(response, resp);
     }
-
     return static_cast<ErrorCode>(code);
 }
 
 void NebulaClientImpl::doAsyncExecute(std::string stmt, CallbackFun cb) {
-    auto handler = [cb = std::move(cb), this] (auto &&response) {
+    time::Duration duration;
+    auto handler = [cb = std::move(cb), duration = std::move(duration), this] (auto &&response) {
         if (!response.ok()) {
             cb(nullptr, kRpcFailure);
             return;
@@ -204,6 +207,7 @@ void NebulaClientImpl::doAsyncExecute(std::string stmt, CallbackFun cb) {
         auto resp = response.value();
 
         ExecutionResponse result;
+        result.setWholeLatencyInUss(duration.elapsedInUSec());
         result.setErrorCode(static_cast<ErrorCode>(resp.get_error_code()));
         result.setLatencyInUs(resp.get_latency_in_us());
         if (resp.get_error_msg() != nullptr) {

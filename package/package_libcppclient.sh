@@ -26,7 +26,7 @@ function build {
 
     cmake -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=${VERSION} -DENABLE_CPPCLIENT_LIB=ON ..
 
-    if !( make nebulaClient -j $(nproc) ); then
+    if !( make nebula_client -j $(nproc) ); then
         echo ">>> build nebula client failed <<<"
         exit -1
     fi
@@ -51,12 +51,12 @@ License: Apache 2.0 + Common Clause 1.0
 mkdir -p \${RPM_BUILD_ROOT}/usr/local/include
 mkdir -p \${RPM_BUILD_ROOT}/usr/local/lib
 cp -r %{_include_dir}/nebula \${RPM_BUILD_ROOT}/usr/local/include
-cp %{_lib_dir}/libnebulaClient.so \${RPM_BUILD_ROOT}/usr/local/lib
+cp %{_lib_dir}/libnebula_client.so \${RPM_BUILD_ROOT}/usr/local/lib
 
 %files
 %doc
 /usr/local/include/nebula
-/usr/local/lib/libnebulaClient.so
+/usr/local/lib/libnebula_client.so
 
 %define debug_package %{nil}
 %define __os_install_post %{nil}
