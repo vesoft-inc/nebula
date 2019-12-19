@@ -194,13 +194,13 @@ object SparkClientGenerator {
         val dataSource = createDataSource(spark, pathOpt, tagConfig)
         val idGeneratorFormat = isUseUuidOpt.fold("%s")(_ => "uuid(\"%s\")")
 
-        if (dataSource.isDefined && !c.dry) {
+        if (dataSource.isDefined) {
           repartition(dataSource.get, partition)
             .select(sourceProperties.map(col): _*)
             .filter($"${vertex}".isNotNull) //sourceProperties always contains vertex
             .map { row =>
               ( {
-                val vertexIdString = extractValue(row, vertex)
+                val vertexIdString = extractValue(row, vertex, true)
 
                 idGeneratorFormat.format(
                   discriminatorPrefixOpt
@@ -334,14 +334,14 @@ object SparkClientGenerator {
         val encoder =
           Encoders.tuple(Encoders.STRING, Encoders.STRING, Encoders.scalaLong, Encoders.STRING)
 
-        if (dataSource.isDefined && !c.dry) {
+        if (dataSource.isDefined) {
           repartition(dataSource.get, partition)
             .select(sourceProperties.map(col): _*)
             .filter($"${source}".isNotNull and $"${target}".isNotNull)
             .map { row =>
               val sourceField = if (!isGeo) {
                 val source = edgeConfig.getString("source")
-                extractValue(row, source).toString
+                extractValue(row, source, true).toString
               } else {
                 val latitude = edgeConfig.getString("latitude")
                 val longitude = edgeConfig.getString("longitude")
@@ -350,7 +350,7 @@ object SparkClientGenerator {
                 indexCells(lat, lng).mkString(",")
               }
 
-              val targetField = extractValue(row, target).toString // Could be non-integer
+              val targetField = extractValue(row, target, true).toString // Could be non-integer
               val colValues = tableColumnNames.map(extractValue(row, _)).mkString(",")
 
               rankingOpt.fold((sourceField, targetField, DEFAULT_EDGE_RANKING, colValues)) { rank =>
@@ -533,16 +533,21 @@ object SparkClientGenerator {
    * @param field The field name.
    * @return
    */
-  private[this] def extractValue(row: Row, field: String) = {
+  private[this] def extractValue(row: Row, field: String, isPK: Boolean = false) = {
     val index = row.schema.fieldIndex(field)
     row.schema.fields(index).dataType match {
       case StringType =>
         if (!row.isNullAt(index)) {
-          row
+          val value = row
             .getString(index)
             .replaceAll("\\\\", "\\\\\\\\") // Escape double quote and back slash
             .replaceAll("\"", "\\\\\"")
-            .mkString("\"", "", "\"")
+
+          if (!isPK) {
+            value.mkString("\"", "", "\"")
+          } else {
+            value
+          }
         } else {
           "\"\""
         }
