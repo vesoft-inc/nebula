@@ -300,6 +300,12 @@ nebula_add_test(
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 
+nebula_add_test(
+    NAME uuid_cache_test
+    SOURCES UUIDCacheTest.cpp
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
+    LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
+)
 
 nebula_add_test(
     NAME checkpoint_test

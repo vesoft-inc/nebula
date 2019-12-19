@@ -27,6 +27,8 @@ cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
         return cpp2::ErrorCode::E_FAILED_TO_CHECKPOINT;
     case kvstore::ResultCode::ERR_WRITE_BLOCK_ERROR:
         return cpp2::ErrorCode::E_CHECKPOINT_BLOCKED;
+    case kvstore::ResultCode::ERR_ATOMIC_OP_FAILURE:
+        return cpp2::ErrorCode::E_ATOMIC_OP_FAIL;
     default:
         return cpp2::ErrorCode::E_UNKNOWN;
     }

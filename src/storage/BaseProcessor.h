@@ -121,10 +121,9 @@ protected:
         return tHost;
     }
 
-private:
+protected:
     void handleAsync(GraphSpaceID spaceId, PartitionID partId, kvstore::ResultCode code);
 
-protected:
     kvstore::KVStore*                               kvstore_ = nullptr;
     meta::SchemaManager*                            schemaMan_ = nullptr;
     stats::Stats*                                   stats_ = nullptr;

@@ -18,6 +18,8 @@
 
 DECLARE_int32(vertex_cache_num);
 DECLARE_int32(vertex_cache_bucket_exp);
+DECLARE_int32(uuid_cache_num);
+DECLARE_int32(uuid_cache_bucket_exp);
 
 namespace nebula {
 namespace storage {
@@ -32,7 +34,8 @@ public:
         : kvstore_(kvstore)
         , schemaMan_(schemaMan)
         , metaClient_(client)
-        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp) {
+        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp)
+        , uuidCache_(FLAGS_uuid_cache_num, FLAGS_uuid_cache_bucket_exp) {
         getBoundQpsStat_ = stats::Stats("storage", "get_bound");
         boundStatsQpsStat_ = stats::Stats("storage", "bound_stats");
         vertexPropsQpsStat_ = stats::Stats("storage", "vertex_props");
@@ -128,6 +131,7 @@ private:
     meta::SchemaManager* schemaMan_ = nullptr;
     meta::MetaClient* metaClient_ = nullptr;
     VertexCache vertexCache_;
+    UUIDCache uuidCache_;
 
     stats::Stats getBoundQpsStat_;
     stats::Stats boundStatsQpsStat_;

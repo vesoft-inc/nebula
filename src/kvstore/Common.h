@@ -26,6 +26,7 @@ enum ResultCode {
     ERR_UNSUPPORTED         = -8,
     ERR_CHECKPOINT_ERROR    = -9,
     ERR_WRITE_BLOCK_ERROR   = -10,
+    ERR_ATOMIC_OP_FAILURE   = -11,
     ERR_UNKNOWN             = -100,
 };
 

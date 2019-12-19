@@ -17,6 +17,7 @@ namespace storage {
 using TagProp = std::pair<std::string, std::string>;
 
 using VertexCache = ConcurrentLRUCache<std::pair<VertexID, TagID>, std::string>;
+using UUIDCache = ConcurrentLRUCache<std::string, VertexID>;
 
 struct FilterContext {
     // key: <tagName, propName> -> propValue

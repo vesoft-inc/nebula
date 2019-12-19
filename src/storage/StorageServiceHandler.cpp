@@ -32,6 +32,8 @@
 
 DEFINE_int32(vertex_cache_num, 16 * 1000 * 1000, "Total keys inside the cache");
 DEFINE_int32(vertex_cache_bucket_exp, 4, "Total buckets number is 1 << cache_bucket_exp");
+DEFINE_int32(uuid_cache_num, 16 * 1000 * 1000, "Total keys inside the cache");
+DEFINE_int32(uuid_cache_bucket_exp, 4, "Total buckets number is 1 << cache_bucket_exp");
 
 namespace nebula {
 namespace storage {
@@ -188,7 +190,7 @@ StorageServiceHandler::future_get(const cpp2::GetRequest& req) {
 
 folly::Future<cpp2::GetUUIDResp>
 StorageServiceHandler::future_getUUID(const cpp2::GetUUIDReq& req) {
-    auto* processor = GetUUIDProcessor::instance(kvstore_);
+    auto* processor = GetUUIDProcessor::instance(kvstore_, &uuidCache_);
     RETURN_FUTURE(processor);
 }
 

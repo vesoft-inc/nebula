@@ -25,6 +25,7 @@ enum ErrorCode {
     E_PART_NOT_FOUND = -14,
     E_KEY_NOT_FOUND = -15,
     E_CONSENSUS_ERROR = -16,
+    E_ATOMIC_OP_FAIL = -17,
 
     // meta failures
     E_EDGE_PROP_NOT_FOUND = -21,
