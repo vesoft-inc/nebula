@@ -11,6 +11,7 @@
 #include "meta/MetaHttpIngestHandler.h"
 #include "meta/MetaHttpStatusHandler.h"
 #include "meta/MetaHttpDownloadHandler.h"
+#include "meta/MetaHttpReplaceHostHandler.h"
 #include "webservice/WebService.h"
 #include "network/NetworkUtils.h"
 #include "process/ProcessUtils.h"
@@ -30,7 +31,8 @@ using nebula::Status;
 DEFINE_int32(port, 45500, "Meta daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_string(data_path, "", "Root data path");
-DEFINE_string(meta_server_addrs, "", "It is a list of IPs split by comma, used in cluster deployment"
+DEFINE_string(meta_server_addrs, "", "It is a list of IPs split by comma, "
+                                     "used in cluster deployment, "
                                      "the ips number is equal to the replica number."
                                      "If empty, it means it's a single node");
 DEFINE_string(local_ip, "", "Local ip specified for NetworkUtils::getLocalIP");
@@ -145,6 +147,12 @@ bool initWebService(nebula::kvstore::KVStore* kvstore,
         handler->init(kvstore, pool);
         return handler;
     });
+    nebula::WebService::registerHandler("/replace", [kvstore] {
+        auto handler = new nebula::meta::MetaHttpReplaceHostHandler();
+        handler->init(kvstore);
+        return handler;
+    });
+
     auto status = nebula::WebService::start();
     if (!status.ok()) {
         LOG(ERROR) << "Failed to start web service: " << status;
