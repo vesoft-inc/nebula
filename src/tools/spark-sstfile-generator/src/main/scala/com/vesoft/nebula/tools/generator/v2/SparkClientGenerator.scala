@@ -591,7 +591,7 @@ object SparkClientGenerator {
     row.schema.fields(index).dataType match {
       case StringType =>
         if (!row.isNullAt(index)) {
-          row.getString(index).mkString("\"", "", "\"")
+          row.getString(index).replaceAll("\"", "\\\\\"").mkString("\"", "", "\"")
         } else {
           "\"\""
         }
