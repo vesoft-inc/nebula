@@ -166,40 +166,39 @@ void DbDumper::run() {
         return true;
     };
 
-    uint8_t bitmap =
+    uint32_t bitmap =
         (parts_.empty() ? 0 : 1 << 3)
         | (vids_.empty() ? 0 : 1 << 2)
         | (tags_.empty() ? 0 : 1 << 1)
         | (edges_.empty() ? 0 : 1);
-    std::cout << bitmap;
     switch (bitmap) {
-        case 0b00000000: {
+        case 0b0000: {
             // nothing specified,seek to first and print them all
             seekToFirst();
             break;
         }
-        case 0b00000001: {
+        case 0b0001: {
             // specified edges, seek to first and only print edges if found.
             beforePrintVertex_.emplace_back(noPrint);
             beforePrintEdge_.emplace_back(printIfEdgeFound);
             seekToFirst();
             break;
         }
-        case 0b00000010: {
+        case 0b0010: {
             // specified tags, seek to first and only print vertices if found.
             beforePrintVertex_.emplace_back(printIfTagFound);
             beforePrintEdge_.emplace_back(noPrint);
             seekToFirst();
             break;
         }
-        case 0b00000011: {
+        case 0b0011: {
             // specified tags and edges, seek to first and print if found.
             beforePrintVertex_.emplace_back(printIfTagFound);
             beforePrintEdge_.emplace_back(printIfEdgeFound);
             seekToFirst();
             break;
         }
-        case 0b00000100: {
+        case 0b0100: {
             // specified vids, seek with prefix and print.
             for (auto vid : vids_) {
                 auto part = ID_HASH(vid, partNum_);
@@ -208,7 +207,7 @@ void DbDumper::run() {
             }
             break;
         }
-        case 0b00000101: {
+        case 0b0101: {
             // specified vids and edges, seek with prefix and print.
             for (auto vid : vids_) {
                 auto part = ID_HASH(vid, partNum_);
@@ -219,7 +218,7 @@ void DbDumper::run() {
             }
             break;
         }
-        case 0b00000110: {
+        case 0b0110: {
             // specified vids and tags, seek with prefix and print.
             for (auto vid : vids_) {
                 auto part = ID_HASH(vid, partNum_);
@@ -230,7 +229,7 @@ void DbDumper::run() {
             }
             break;
         }
-        case 0b00000111: {
+        case 0b0111: {
             // specified vids and edges, seek with prefix and print.
             for (auto vid : vids_) {
                 auto part = ID_HASH(vid, partNum_);
@@ -249,7 +248,7 @@ void DbDumper::run() {
             }
             break;
         }
-        case 0b00001000: {
+        case 0b1000: {
             // specified part, seek with prefix and print them all
             for (auto part : parts_) {
                 auto prefix = NebulaKeyUtils::prefix(part);
@@ -257,8 +256,8 @@ void DbDumper::run() {
             }
             break;
         }
-        case 0b00001001: {
-            // specified part, seek with prefix and print edge if found
+        case 0b1001: {
+            // specified part and edge, seek with prefix and print edge if found
             beforePrintVertex_.emplace_back(noPrint);
             beforePrintEdge_.emplace_back(printIfEdgeFound);
             for (auto part : parts_) {
@@ -267,8 +266,8 @@ void DbDumper::run() {
             }
             break;
         }
-        case 0b00001010: {
-            // specified part, seek with prefix and print vertex if found
+        case 0b1010: {
+            // specified part and tag, seek with prefix and print vertex if found
             beforePrintVertex_.emplace_back(printIfTagFound);
             beforePrintEdge_.emplace_back(noPrint);
             for (auto part : parts_) {
@@ -277,7 +276,8 @@ void DbDumper::run() {
             }
             break;
         }
-        case 0b00001011: {
+        case 0b1011: {
+            // specified part/tag/edge, with prefix and print
             beforePrintVertex_.emplace_back(noPrint);
             beforePrintEdge_.emplace_back(printIfEdgeFound);
             for (auto part : parts_) {
@@ -295,7 +295,8 @@ void DbDumper::run() {
             }
             break;
         }
-        case 0b00001100: {
+        case 0b1100: {
+            // specified part and vid
             for (auto part : parts_) {
                 for (auto vid : vids_) {
                     auto prefix = NebulaKeyUtils::vertexPrefix(part, vid);
@@ -304,7 +305,8 @@ void DbDumper::run() {
             }
             break;
         }
-        case 0b00001101: {
+        case 0b1101: {
+            // specified part/vid/edge
             for (auto part : parts_) {
                 for (auto vid : vids_) {
                     for (auto edge : edges_) {
@@ -315,7 +317,8 @@ void DbDumper::run() {
             }
             break;
         }
-        case 0b00001110: {
+        case 0b1110: {
+            // specified part/vid/tag
             for (auto part : parts_) {
                 for (auto vid : vids_) {
                     for (auto tag : tags_) {
@@ -326,7 +329,8 @@ void DbDumper::run() {
             }
             break;
         }
-        case 0b00001111: {
+        case 0b1111: {
+            // specified part/vid/tag/edge
             for (auto part : parts_) {
                 for (auto vid : vids_) {
                     for (auto edge : edges_) {
@@ -391,10 +395,15 @@ void DbDumper::iterates(kvstore::RocksPrefixIter* it) {
 
         if (NebulaKeyUtils::isVertex(key)) {
             // filts the data
+            bool isFiltered = false;
             for (auto& cb : beforePrintVertex_) {
                 if (!cb(key)) {
-                    continue;
+                    isFiltered = true;
+                    break;
                 }
+            }
+            if (isFiltered) {
+                continue;
             }
 
             auto tagId = NebulaKeyUtils::getTagId(key);
@@ -421,13 +430,22 @@ void DbDumper::iterates(kvstore::RocksPrefixIter* it) {
 
         if (NebulaKeyUtils::isEdge(key)) {
             // filts the data
+            bool isFiltered = false;
             for (auto &cb : beforePrintEdge_) {
                 if (!cb(key)) {
-                    continue;
+                    isFiltered = true;
+                    break;
                 }
+            }
+            if (isFiltered) {
+                continue;
             }
 
             auto edgeType = NebulaKeyUtils::getEdgeType(key);
+            if (edgeType < 0) {
+                // reverse edge will be discarded
+                continue;
+            }
             // only print to screen with scan mode
             if (FLAGS_mode != "stat") {
                 printEdgeKey(key);
@@ -437,7 +455,6 @@ void DbDumper::iterates(kvstore::RocksPrefixIter* it) {
                 }
                 printValue(value, schema);
             }
-
 
             // statistics
             auto edgeStat = edgeStat_.find(edgeType);
