@@ -312,18 +312,19 @@ inline void FindPathExecutor::meetOddPath(VertexID src, VertexID dst, Neighbor &
             VLOG(2) << "PathT: " << buildPathString(j->second);
 
             auto target = std::get<0>(*(path.back()));
+            auto pathTarget = std::get<0>(*(path.back())) + std::get<1>(*(path.back()));
             if (shortest_) {
                 targetNotFound_.erase(target);
-                if (finalPath_.count(target) > 0) {
+                if (finalPath_.count(pathTarget) > 0) {
                     // already found a shorter path
                     continue;
                 } else {
                     VLOG(2) << "Found path: " << buildPathString(path);
-                    finalPath_.emplace(target, std::move(path));
+                    finalPath_.emplace(std::move(pathTarget), std::move(path));
                 }
             } else {
                 VLOG(2) << "Found path: " << buildPathString(path);
-                finalPath_.emplace(target, std::move(path));
+                finalPath_.emplace(std::move(pathTarget), std::move(path));
             }
         }  // for `j'
     }  // for `i'
@@ -361,18 +362,19 @@ inline void FindPathExecutor::meetEvenPath(VertexID intersectId) {
             VLOG(2) << "PathT: " << buildPathString(j->second);
             path.insert(path.end(), j->second.begin(), j->second.end());
             auto target = std::get<0>(*(path.back()));
+            auto pathTarget = std::get<0>(*(path.back())) + std::get<1>(*(path.back()));
             if (shortest_) {
-                if (finalPath_.count(target) > 0) {
+                if (finalPath_.count(pathTarget) > 0) {
                     // already found a shorter path
                     continue;
                 } else {
                     targetNotFound_.erase(target);
                     VLOG(2) << "Found path: " << buildPathString(path);
-                    finalPath_.emplace(target, std::move(path));
+                    finalPath_.emplace(std::move(pathTarget), std::move(path));
                 }
             } else {
                 VLOG(2) << "Found path: " << buildPathString(path);
-                finalPath_.emplace(target, std::move(path));
+                finalPath_.emplace(std::move(pathTarget), std::move(path));
             }
         }
     }
