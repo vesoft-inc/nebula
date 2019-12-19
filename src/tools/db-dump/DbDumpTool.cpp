@@ -9,31 +9,45 @@
 
 void printHelp() {
     fprintf(stderr,
-           R"(  db_dump --db_path=<path to rocksdb> --meta_seve=<ip:port,...>
+           R"(  ./db_dump --space=<space name>
 
+required:
+       --space=<space name>
+         A space name must be given.
+
+optional:
        --db_path=<path to rocksdb>
-        Path to the rocksdb data directory. Default: ./
+         Path to the rocksdb data directory. If nebula was installed in /usr/local/nebula, 
+         the db_path would be /usr/local/nebula/data/storage/nebula/
+         Default: ./
 
        --meta_server=<ip:port,...>
-         A list of meta severs' ip:port seperated by comma, if there exists.
+         A list of meta severs' ip:port seperated by comma.
          Default: 127.0.0.1:45500
 
-       --part=<list of partition id>
+       --mode= scan | stat
+         scan: print to screen when records meet the condition, and also print statistics 
+               to screen in final.
+         stat: print statistics to screen.
+         Defualt: scan
+
+       --vids=<list of vid>
+         A list of vid seperated by comma.
+         Would scan the whole space's records if it is not given.
+
+       --parts=<list of partition id>
          A list of partition id seperated by comma.
-         Would output all patitions if it is not given,
+         Would output all patitions if it is not given.
 
-       --scan=vertex | edge | all
-         Vertex or edge would output if set. Default: all.
+       --tags=<list of tag name>
+         A list of tag name seperated by comma.
 
-       --tag=<list of tags>
-         Filtering with given tags.
-
-       --edge=<list of edges>
-         Filtering with given edges.
+       --edges=<list of edge name>
+         A list of edge name seperated by comma.
 
        --limit=<N>
-         Limit to output.
-    )");
+         A positive number that limits the output.
+         Would output all if set 0 or negative number.)");
 }
 
 void printParams() {

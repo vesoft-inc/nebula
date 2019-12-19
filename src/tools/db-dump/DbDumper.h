@@ -64,24 +64,24 @@ private:
                     const std::shared_ptr<const meta::SchemaProviderIf> schema);
 
 private:
-    std::unique_ptr<rocksdb::DB>                            db_;
-    rocksdb::Options                                        options_;
-    std::unique_ptr<meta::MetaClient>                       metaClient_;
-    std::unique_ptr<meta::ServerBasedSchemaManager>         schemaMng_;
-    GraphSpaceID                                            spaceId_;
-    int32_t                                                 partNum_;
-    std::unordered_set<PartitionID>                         parts_;
-    std::unordered_set<VertexID>                            vids_;
-    std::unordered_set<TagID>                               tags_;
-    std::unordered_set<EdgeType>                            edges_;
+    std::unique_ptr<rocksdb::DB>                                   db_;
+    rocksdb::Options                                               options_;
+    std::unique_ptr<meta::MetaClient>                              metaClient_;
+    std::unique_ptr<meta::ServerBasedSchemaManager>                schemaMng_;
+    GraphSpaceID                                                   spaceId_;
+    int32_t                                                        partNum_;
+    std::unordered_set<PartitionID>                                parts_;
+    std::unordered_set<VertexID>                                   vids_;
+    std::unordered_set<TagID>                                      tags_;
+    std::unordered_set<EdgeType>                                   edges_;
     std::vector<std::function<bool(const folly::StringPiece&)>>    beforePrintVertex_;
     std::vector<std::function<bool(const folly::StringPiece&)>>    beforePrintEdge_;
     // For statistics
-    std::unordered_map<TagID, uint32_t>                     tagStat_;
-    std::unordered_map<EdgeType, uint32_t>                  edgeStat_;
-    int64_t                                                 count_{0};
-    int64_t                                                 vertexCount_{0};
-    int64_t                                                 edgeCount_{0};
+    std::unordered_map<TagID, uint32_t>                            tagStat_;
+    std::unordered_map<EdgeType, uint32_t>                         edgeStat_;
+    int64_t                                                        count_{0};
+    int64_t                                                        vertexCount_{0};
+    int64_t                                                        edgeCount_{0};
 };
 }  // namespace storage
 }  // namespace nebula

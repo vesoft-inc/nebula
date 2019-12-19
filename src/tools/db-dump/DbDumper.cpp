@@ -512,8 +512,12 @@ void DbDumper::printValue(const folly::StringPiece& data,
 }
 
 std::string DbDumper::getTagName(const TagID tagId) {
-    // return metaClient_->getTagName();
-    return folly::stringPrintf("%d", tagId);
+    auto name = schemaMng_->toTagName(spaceId_, tagId);
+    if (!name.ok()) {
+        return folly::stringPrintf("%d", tagId);
+    } else {
+        return name.value();
+    }
 }
 
 std::string DbDumper::getEdgeName(const EdgeType edgeType) {
