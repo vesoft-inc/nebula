@@ -57,6 +57,9 @@ void MetaHttpReplaceHostHandler::onRequest(std::unique_ptr<HTTPMessage> headers)
         err_ = HttpCode::E_ILLEGAL_ARGUMENT;
         errMsg_ = folly::stringPrintf("invalid argument to=%s", sTo.c_str());
     }
+
+    LOG(INFO) << folly::stringPrintf("change host info in metadata from %s to %s",
+                                     sFrom.c_str(), sTo.c_str());
 }
 
 void MetaHttpReplaceHostHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
