@@ -11,15 +11,18 @@
 #include "meta/test/TestUtils.h"
 #include "parser/GQLParser.h"
 #include "graph/TraverseExecutor.h"
+#include "graph/GoExecutor.h"
 
 
 namespace nebula {
 namespace graph {
 
-class GoTest : public TraverseTestBase {
+class GoTest : public TraverseTestBase,
+               public ::testing::WithParamInterface<bool>{
 protected:
     void SetUp() override {
         TraverseTestBase::SetUp();
+        FLAGS_filter_pushdown = GetParam();
         // ...
     }
 
@@ -29,7 +32,7 @@ protected:
     }
 };
 
-TEST_F(GoTest, OneStepOutBound) {
+TEST_P(GoTest, OneStepOutBound) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve";
@@ -147,7 +150,7 @@ TEST_F(GoTest, OneStepOutBound) {
 }
 
 
-TEST_F(GoTest, AssignmentSimple) {
+TEST_P(GoTest, AssignmentSimple) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Tracy McGrady"];
@@ -171,7 +174,7 @@ TEST_F(GoTest, AssignmentSimple) {
 }
 
 
-TEST_F(GoTest, AssignmentPipe) {
+TEST_P(GoTest, AssignmentPipe) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Tracy McGrady"];
@@ -200,7 +203,7 @@ TEST_F(GoTest, AssignmentPipe) {
 }
 
 
-TEST_F(GoTest, VariableUndefined) {
+TEST_P(GoTest, VariableUndefined) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "GO FROM $var OVER like";
@@ -210,7 +213,7 @@ TEST_F(GoTest, VariableUndefined) {
 }
 
 
-TEST_F(GoTest, AssignmentEmptyResult) {
+TEST_P(GoTest, AssignmentEmptyResult) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "$var = GO FROM -1 OVER like YIELD like._dst as id; "
@@ -225,7 +228,7 @@ TEST_F(GoTest, AssignmentEmptyResult) {
 
 
 // REVERSELY not supported yet
-TEST_F(GoTest, DISABLED_OneStepInBound) {
+TEST_P(GoTest, DISABLED_OneStepInBound) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve REVERSELY";
@@ -243,7 +246,7 @@ TEST_F(GoTest, DISABLED_OneStepInBound) {
 }
 
 // REVERSELY not supported yet
-TEST_F(GoTest, DISABLED_OneStepInOutBound) {
+TEST_P(GoTest, DISABLED_OneStepInOutBound) {
     // Ever served in the same team
     {
         cpp2::ExecutionResponse resp;
@@ -264,7 +267,7 @@ TEST_F(GoTest, DISABLED_OneStepInOutBound) {
     }
 }
 
-TEST_F(GoTest, Distinct) {
+TEST_P(GoTest, Distinct) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Nobody"];
@@ -300,7 +303,7 @@ TEST_F(GoTest, Distinct) {
 }
 
 
-TEST_F(GoTest, VertexNotExist) {
+TEST_P(GoTest, VertexNotExist) {
     std::string name = "NON EXIST VERTEX ID";
     int64_t nonExistPlayerID = std::hash<std::string>()(name);
     auto iter = players_.begin();
@@ -366,7 +369,7 @@ TEST_F(GoTest, VertexNotExist) {
     }
 }
 
-TEST_F(GoTest, MULTI_EDGES) {
+TEST_P(GoTest, MULTI_EDGES) {
     // Ever served in the same team
     {
         cpp2::ExecutionResponse resp;
@@ -622,7 +625,7 @@ TEST_F(GoTest, MULTI_EDGES) {
     }
 }
 
-TEST_F(GoTest, ReferencePipeInYieldAndWhere) {
+TEST_P(GoTest, ReferencePipeInYieldAndWhere) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "GO FROM hash('Tim Duncan'),hash('Chris Paul') OVER like "
@@ -709,7 +712,7 @@ TEST_F(GoTest, ReferencePipeInYieldAndWhere) {
 }
 
 
-TEST_F(GoTest, ReferenceVariableInYieldAndWhere) {
+TEST_P(GoTest, ReferenceVariableInYieldAndWhere) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "$var = GO FROM hash('Tim Duncan'),hash('Chris Paul') OVER like "
@@ -795,7 +798,7 @@ TEST_F(GoTest, ReferenceVariableInYieldAndWhere) {
     }
 }
 
-TEST_F(GoTest, NotExistTagProp) {
+TEST_P(GoTest, NotExistTagProp) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve yield $^.test";
@@ -813,7 +816,7 @@ TEST_F(GoTest, NotExistTagProp) {
     }
 }
 
-TEST_F(GoTest, is_inCall) {
+TEST_P(GoTest, is_inCall) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
@@ -877,7 +880,7 @@ TEST_F(GoTest, is_inCall) {
     }
 }
 
-TEST_F(GoTest, returnTest) {
+TEST_P(GoTest, ReturnTest) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "$A = GO FROM %ld OVER like YIELD like._dst AS dst;" /* 1st hop */
@@ -1012,7 +1015,7 @@ TEST_F(GoTest, returnTest) {
 }
 
 
-TEST_F(GoTest, ReverselyOneStep) {
+TEST_P(GoTest, ReverselyOneStep) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "GO FROM hash('Tim Duncan') OVER like REVERSELY "
@@ -1091,7 +1094,7 @@ TEST_F(GoTest, ReverselyOneStep) {
 }
 
 
-TEST_F(GoTest, ReverselyTwoStep) {
+TEST_P(GoTest, ReverselyTwoStep) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "GO 2 STEPS FROM hash('Kobe Bryant') OVER like REVERSELY "
@@ -1121,7 +1124,7 @@ TEST_F(GoTest, ReverselyTwoStep) {
 }
 
 
-TEST_F(GoTest, ReverselyWithPipe) {
+TEST_P(GoTest, ReverselyWithPipe) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "GO FROM hash('LeBron James') OVER serve YIELD serve._dst AS id |"
@@ -1248,7 +1251,7 @@ TEST_F(GoTest, ReverselyWithPipe) {
     */
 }
 
-TEST_F(GoTest, FilterPushdown) {
+TEST_P(GoTest, FilterPushdown) {
     #define TEST_FILTER_PUSHDOWN_REWRITE(rewrite_expected, filter_pushdown)             \
         auto result = GQLParser().parse(query);                                         \
         ASSERT_TRUE(result.ok());                                                       \
@@ -1264,7 +1267,7 @@ TEST_F(GoTest, FilterPushdown) {
         if (isRewriteSucceded) {                                                        \
             filterPushdown = filter->toString();                                        \
         }                                                                               \
-        LOG(INFO) << "Filter pushdown: " << filterPushdown;                             \
+        LOG(INFO) << "Filter rewrite: " << filterPushdown;                             \
         ASSERT_EQ(filter_pushdown, filterPushdown);
 
     {
@@ -1807,5 +1810,7 @@ TEST_F(GoTest, FilterPushdown) {
     }
 #undef TEST_FILTER_PUSHDWON_REWRITE
 }
+
+INSTANTIATE_TEST_CASE_P(IfPushdownFilter, GoTest, ::testing::Bool());
 }   // namespace graph
 }   // namespace nebula

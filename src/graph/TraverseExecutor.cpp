@@ -299,6 +299,10 @@ Status WhereWrapper::prepare(ExpressionContext *ectx) {
         }
     }
 
+    if (!FLAGS_filter_pushdown) {
+        return status;
+    }
+
     auto encode = Expression::encode(where_->filter());
     auto decode = Expression::decode(std::move(encode));
     if (!decode.ok()) {

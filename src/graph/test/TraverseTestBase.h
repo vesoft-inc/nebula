@@ -18,7 +18,7 @@ DECLARE_int32(load_data_interval_secs);
 namespace nebula {
 namespace graph {
 class TraverseTestBase : public TestBase {
-protected:
+public:
     void SetUp() override {
         TestBase::SetUp();
         // ...
