@@ -20,7 +20,6 @@ void GetConfigProcessor::process(const cpp2::GetConfigReq& req) {
             getOneConfig(module, name, items);
         } else {
             getOneConfig(cpp2::ConfigModule::GRAPH, name, items);
-            getOneConfig(cpp2::ConfigModule::META, name, items);
             getOneConfig(cpp2::ConfigModule::STORAGE, name, items);
         }
     }
