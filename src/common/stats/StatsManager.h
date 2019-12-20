@@ -46,6 +46,8 @@ class StatsManager final {
     using HistogramType = folly::TimeseriesHistogram<VT>;
 
 public:
+    static constexpr std::int32_t kInvalidIndex = 0;
+
     enum class StatsMethod {
         SUM = 1,
         COUNT,
