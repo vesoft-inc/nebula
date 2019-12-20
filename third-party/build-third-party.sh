@@ -128,7 +128,7 @@ cmake -DDOWNLOAD_DIR=$download_dir \
       ${C_COMPILER_ARG} ${CXX_COMPILER_ARG} \
       $source_dir |& tee $logfile
 
-make -j2 |& \
+make |& \
          tee -a $logfile | \
         { grep --line-buffered 'Creating\|^Scanning\|Performing\|Completed\|CMakeFiles.*Error' || true; }
 end_time=$(date +%s)
@@ -143,7 +143,7 @@ function make_package {
     set +e
     libc_version=$(ldd --version | head -1 | cut -d ' ' -f4 | cut -d '-' -f1)
     set -e
-    exec_file=$build_root/vesoft-third-party-x86_64-glibc-$libc_version-glibcxx-$libcxx_version-abi-$abi_version.sh
+    exec_file=$build_root/vesoft-third-party-x86_64-libc-$libc_version-libcxx-$libcxx_version-abi-$abi_version.sh
 
     echo "Creating self-extractable package $exec_file"
     cat > $exec_file <<EOF
