@@ -8,7 +8,7 @@
 #include <gtest/gtest.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/GetUUIDProcessor.h"
+#include "storage/query/GetUUIDProcessor.h"
 
 DECLARE_int32(max_handlers_per_req);
 

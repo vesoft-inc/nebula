@@ -8,6 +8,7 @@ nebula_add_library(
     query/QueryEdgePropsProcessor.cpp
     query/QueryStatsProcessor.cpp
     query/QueryEdgeKeysProcessor.cpp
+    query/GetUUIDProcessor.cpp
     mutate/AddVerticesProcessor.cpp
     mutate/AddEdgesProcessor.cpp
     mutate/DeleteEdgesProcessor.cpp

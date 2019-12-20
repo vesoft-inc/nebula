@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "storage/GetUUIDProcessor.h"
+#include "storage/query/GetUUIDProcessor.h"
 #include "base/NebulaKeyUtils.h"
 #include "base/MurmurHash2.h"
 #include "kvstore/LogEncoder.h"
@@ -44,7 +44,6 @@ void GetUUIDProcessor::process(const cpp2::GetUUIDReq& req) {
         if (code == kvstore::ResultCode::SUCCEEDED) {
             vId_ = *reinterpret_cast<const VertexID*>(value.c_str());
             succeeded_ = true;
-            LOG(INFO) << "!!!";
             return std::string("");
         } else if (code == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
             // need to generate new vertex id of this uuid
@@ -53,7 +52,6 @@ void GetUUIDProcessor::process(const cpp2::GetUUIDReq& req) {
             auto now = time::WallClock::fastNowInSec();
             vId_ = (hashValue & hashMask) | (now & timeMask);
             value.append(reinterpret_cast<char*>(&vId_), sizeof(VertexID));
-            LOG(INFO) << "@@@";
             return kvstore::encodeMultiValues(kvstore::LogType::OP_PUT,
                                               std::move(key), std::move(value));
         }
@@ -61,7 +59,6 @@ void GetUUIDProcessor::process(const cpp2::GetUUIDReq& req) {
     };
     auto callback = [spaceId, partId, key, this](kvstore::ResultCode code) {
         if (succeeded_ || code == kvstore::ResultCode::SUCCEEDED) {
-            LOG(INFO) << "###";
             resp_.set_id(vId_);
             if (FLAGS_enable_uuid_cache && uuidCache_ != nullptr) {
                 uuidCache_->putIfAbsent(std::move(key), vId_, partId);
@@ -70,7 +67,6 @@ void GetUUIDProcessor::process(const cpp2::GetUUIDReq& req) {
             this->onFinished();
             return;
         }
-        LOG(INFO) << "$$$";
         handleAsync(spaceId, partId, code);
     };
     this->kvstore_->asyncAtomicOp(spaceId, partId, atomicOp, callback);
