@@ -139,7 +139,6 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
             values.emplace_back(ovalue.value());
         }
 
-        storage::cpp2::Vertex vertex;
         std::vector<storage::cpp2::Tag> tags(tagIds_.size());
 
         int32_t valuePosition = 0;
@@ -195,9 +194,9 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
             valuePosition += propsPosition.size();
         }
 
+        auto& vertex = vertices[i];
         vertex.set_id(id);
         vertex.set_tags(std::move(tags));
-        vertices.emplace_back(std::move(vertex));
     }
 
     return vertices;
