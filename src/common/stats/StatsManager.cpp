@@ -329,6 +329,9 @@ StatusOr<StatsManager::VT> StatsManager::readHisto(const size_t index,
         double pct) {
     auto& sm = get();
     std::lock_guard<std::mutex> g(*(sm.histograms_[physicalHistoIndex(index)].first));
+    if (physicalHistoIndex(index) >= sm.histograms_.size()) {
+        return Status::Error("Out of size.");
+    }
     sm.histograms_[physicalHistoIndex(index)].second->update(
         std::chrono::seconds(time::WallClock::fastNowInSec()));
     auto level = static_cast<size_t>(range);
@@ -446,45 +449,6 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
                     ("labels", labels);
             obj[kGauges].push_back(std::move(gauge));
         } else if (StatsManager::isHistoIndex(index.second)) {
-            // Comment temporary for maybe used later
-            // auto& p = sm.histograms_[StatsManager::physicalHistoIndex(index.second)];
-            // std::int64_t sum = 0;
-            // if (parsedName != nullptr) {
-                // sum = readStats(index.second, parsedName->range, StatsManager::StatsMethod::SUM)
-                    // .value();
-            // } else {
-                // sum = readStats(index.second, StatsManager::TimeRange::ONE_HOUR,
-                    // StatsManager::StatsMethod::SUM).value();
-            // }
-            // std::uint64_t count = 0;
-            // if (parsedName != nullptr) {
-                // count = readStats(index.second, parsedName->range,
-                    // StatsManager::StatsMethod::COUNT).value();
-            // } else {
-                // count = readStats(index.second, StatsManager::TimeRange::ONE_HOUR,
-                    // StatsManager::StatsMethod::COUNT).value();
-            // }
-            // std::lock_guard<std::mutex> lk(*p.first);
-            // auto& hist = p.second;
-            // folly::dynamic buckets = folly::dynamic::array();
-            // for (std::size_t i = 0; i < hist->getNumBuckets(); ++i) {
-                // if (parsedName != nullptr) {
-                    // buckets.push_back(
-                        // hist->getBucket(i).count(static_cast<std::size_t>(parsedName->range)));
-                // } else {
-                    // buckets.push_back(
-                        // hist->getBucket(i).count(static_cast<std::size_t>(
-                            // StatsManager::TimeRange::ONE_HOUR)));
-                // }
-            // }
-            // folly::dynamic histogram = folly::dynamic::object("name", name)
-                // ("value_range", folly::dynamic::array(hist->getMin(), hist->getMax()))
-                // ("buckets", std::move(buckets))
-                // ("count", count)
-                // ("sum", sum)
-                // ("labels", labels);
-            // obj[kHistograms].push_back(std::move(histogram));
-
             // Expose the metrics computed from Histogram instead of the whole distribution
             // Now we only expose the p99 metrics for simpler
             auto result = readHisto(index.second, StatsManager::TimeRange::ONE_HOUR, 99);
