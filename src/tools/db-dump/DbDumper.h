@@ -13,6 +13,7 @@
 #include "meta/client/MetaClient.h"
 #include "meta/ServerBasedSchemaManager.h"
 #include "kvstore/RocksEngine.h"
+#include "dataman/RowReader.h"
 
 DECLARE_string(space);
 DECLARE_string(db_path);
@@ -60,8 +61,7 @@ private:
 
     std::string getEdgeName(const EdgeType edgeType);
 
-    void printValue(const folly::StringPiece& data,
-                    const std::shared_ptr<const meta::SchemaProviderIf> schema);
+    void printValue(const RowReader* reader);
 
 private:
     std::unique_ptr<rocksdb::DB>                                   db_;

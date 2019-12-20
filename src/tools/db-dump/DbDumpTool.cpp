@@ -17,7 +17,7 @@ required:
 
 optional:
        --db_path=<path to rocksdb>
-         Path to the rocksdb data directory. If nebula was installed in /usr/local/nebula, 
+         Path to the rocksdb data directory. If nebula was installed in /usr/local/nebula,
          the db_path would be /usr/local/nebula/data/storage/nebula/
          Default: ./
 
@@ -26,13 +26,13 @@ optional:
          Default: 127.0.0.1:45500
 
        --mode= scan | stat
-         scan: print to screen when records meet the condition, and also print statistics 
+         scan: print to screen when records meet the condition, and also print statistics
                to screen in final.
          stat: print statistics to screen.
          Defualt: scan
 
        --vids=<list of vid>
-         A list of vid seperated by comma.
+         A list of vid seperated by comma. This parameter means vertex_id/edge_src_id
          Would scan the whole space's records if it is not given.
 
        --parts=<list of partition id>
@@ -47,13 +47,17 @@ optional:
 
        --limit=<N>
          A positive number that limits the output.
-         Would output all if set 0 or negative number.)");
+         Would output all if set 0 or negative number.
+         Default: 1000
+
+
+)");
 }
 
 void printParams() {
-    std::cout << "=======================================================\n";
+    std::cout << "===========================PARAMS============================\n";
     std::cout << "mode: " << FLAGS_mode << "\n";
-    std::cout << "seta server: " << FLAGS_meta_server << "\n";
+    std::cout << "meta server: " << FLAGS_meta_server << "\n";
     std::cout << "space: " << FLAGS_space << "\n";
     std::cout << "path: " << FLAGS_db_path << "\n";
     std::cout << "parts: " << FLAGS_parts << "\n";
@@ -61,7 +65,7 @@ void printParams() {
     std::cout << "tags: " << FLAGS_tags << "\n";
     std::cout << "edges: " << FLAGS_edges << "\n";
     std::cout << "limit: " << FLAGS_limit << "\n";
-    std::cout << "=======================================================\n";
+    std::cout << "===========================PARAMS============================\n\n";
 }
 
 int main(int argc, char *argv[]) {

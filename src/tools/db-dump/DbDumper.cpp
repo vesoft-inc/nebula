@@ -7,16 +7,16 @@
 #include "base/Base.h"
 #include "DbDumper.h"
 #include "base/NebulaKeyUtils.h"
-#include "dataman/RowReader.h"
 #include "fs/FileUtils.h"
 #include "kvstore/RocksEngine.h"
+#include "time/Duration.h"
 
 DEFINE_string(space, "", "The space name.");
 DEFINE_string(db_path, "./", "Path to rocksdb.");
 DEFINE_string(meta_server, "127.0.0.1:45500", "Meta servers' address.");
 DEFINE_string(mode, "scan", "Dump mode, scan | stat");
 DEFINE_string(parts, "", "A list of partition id seperated by comma.");
-DEFINE_string(vids, "", "A list of vertex id seperated by comma.");
+DEFINE_string(vids, "", "A list of vertex ids seperated by comma.");
 DEFINE_string(tags, "", "A list of tag name seperated by comma.");
 DEFINE_string(edges, "", "A list of edge name seperated by comma.");
 DEFINE_int64(limit, 1000, "Limit to output.");
@@ -120,7 +120,7 @@ Status DbDumper::initParams() {
 
 Status DbDumper::openDb() {
     if (!fs::FileUtils::exist(FLAGS_db_path)) {
-        return Status::Error("Db path '%s' not exist.", FLAGS_db_path.c_str());
+        return Status::Error("Db path '%s' not exists.", FLAGS_db_path.c_str());
     }
     auto subDirs = fs::FileUtils::listAllDirsInDir(FLAGS_db_path.c_str());
     auto spaceFound = std::find(subDirs.begin(), subDirs.end(),
@@ -143,6 +143,7 @@ Status DbDumper::openDb() {
 }
 
 void DbDumper::run() {
+    time::Duration dur;
     auto noPrint = [] (const folly::StringPiece& key) -> bool {
         UNUSED(key);
         return false;
@@ -343,7 +344,7 @@ void DbDumper::run() {
             for (auto part : parts_) {
                 for (auto vid : vids_) {
                     for (auto tag : tags_) {
-                        auto prefix = NebulaKeyUtils::edgePrefix(part, vid, tag);
+                        auto prefix = NebulaKeyUtils::vertexPrefix(part, vid, tag);
                         seek(prefix);
                     }
                 }
@@ -355,7 +356,7 @@ void DbDumper::run() {
         }
     }
 
-    std::cout << "=======================================================\n";
+    std::cout << "===========================STATISTICS============================\n";
     std::cout << "COUNT: " << count_ << "\n";
     std::cout << "VERTEX COUNT: " << vertexCount_ << "\n";
     std::cout << "EDGE COUNT: " << edgeCount_ << "\n";
@@ -367,7 +368,8 @@ void DbDumper::run() {
     for (auto &e : edgeStat_) {
         std::cout << "\t" << getEdgeName(e.first) << " : " << e.second << "\n";
     }
-    std::cout << "=======================================================\n";
+    std::cout << "============================STATISTICS===========================\n";
+    std::cout << "Time cost: " << dur.elapsedInUSec() << " us\n\n";
 }
 
 void DbDumper::seekToFirst() {
@@ -408,13 +410,11 @@ void DbDumper::iterates(kvstore::RocksPrefixIter* it) {
 
             auto tagId = NebulaKeyUtils::getTagId(key);
             // only print to screen with scan mode
-            if (FLAGS_mode != "stat") {
+            if (FLAGS_mode == "scan") {
                 printTagKey(key);
-                auto schema = schemaMng_->getTagSchema(spaceId_, tagId);
-                if (schema == nullptr) {
-                    continue;
-                }
-                printValue(value, schema);
+                auto reader =
+                    RowReader::getTagPropReader(schemaMng_.get(), value, spaceId_, tagId);
+                printValue(reader.get());
             }
 
             // statistics
@@ -447,13 +447,11 @@ void DbDumper::iterates(kvstore::RocksPrefixIter* it) {
                 continue;
             }
             // only print to screen with scan mode
-            if (FLAGS_mode != "stat") {
+            if (FLAGS_mode == "scan") {
                 printEdgeKey(key);
-                auto schema = schemaMng_->getEdgeSchema(spaceId_, edgeType);
-                if (schema == nullptr) {
-                    continue;
-                }
-                printValue(value, schema);
+                auto reader =
+                    RowReader::getEdgePropReader(schemaMng_.get(), value, spaceId_, edgeType);
+                printValue(reader.get());
             }
 
             // statistics
@@ -493,18 +491,21 @@ inline void DbDumper::printEdgeKey(const folly::StringPiece& key) {
             << dst;
 }
 
-void DbDumper::printValue(const folly::StringPiece& data,
-                          const std::shared_ptr<const meta::SchemaProviderIf> schema) {
-    std::cout << " value:";
-    auto reader = RowReader::getRowReader(data, schema);
+void DbDumper::printValue(const RowReader* reader) {
+    std::cout << " value: ";
+    auto schema = reader->getSchema();
+    if (schema == nullptr) {
+        std::cerr << "schema not found.";
+        return;
+    }
     auto iter = schema->begin();
     size_t index = 0;
     while (iter) {
-        auto field = RowReader::getPropByIndex(reader.get(), index);
+        auto field = RowReader::getPropByIndex(reader, index);
         if (!ok(field)) {
             continue;
         }
-        std::cout << value(field) << ",";
+        std::cout << value(field) << ", ";
         ++iter;
         ++index;
     }
