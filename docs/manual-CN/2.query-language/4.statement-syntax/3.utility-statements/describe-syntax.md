@@ -1,9 +1,9 @@
 # DESCRIBE 语法
 
 ```ngql
-DESCRIBE SPACE space_name
-DESCRIBE TAG tag_name
-DESCRIBE EDGE edge_name
+DESCRIBE SPACE <space_name>
+DESCRIBE TAG <tag_name>
+DESCRIBE EDGE <edge_name>
 ```
 
 DESCRIBE 关键词的作用是获取关于 space, tag, edge 结构的信息。
