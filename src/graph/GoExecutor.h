@@ -122,7 +122,7 @@ private:
     /**
      * To retrieve the dst ids from a stepping out response.
      */
-    std::vector<VertexID> getDstIdsFromResp(RpcResponse &rpcResp) const;
+    StatusOr<std::vector<VertexID>> getDstIdsFromResp(RpcResponse &rpcResp) const;
 
     /**
      * get the edgeName from response when over all edges
@@ -202,7 +202,7 @@ private:
                            VertexID dst,
                            EdgeType type,
                            const std::string &prop) const;
-        nebula::cpp2::SupportedType getType(VertexID src,
+        StatusOr<nebula::cpp2::SupportedType> getType(VertexID src,
                            VertexID dst,
                            EdgeType type,
                            const std::string &prop) const;

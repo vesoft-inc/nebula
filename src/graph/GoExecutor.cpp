@@ -482,7 +482,12 @@ void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
         maybeFinishExecution(std::move(rpcResp));
         return;
     } else {
-        starts_ = getDstIdsFromResp(rpcResp);
+        auto status = getDstIdsFromResp(rpcResp);
+        if (!status.ok()) {
+            doError(std::move(status).status(), ectx()->getGraphStats()->getGoStats());
+            return;
+        }
+        starts_ = std::move(status).value();
         if (starts_.empty()) {
             onEmptyInputs();
             return;
@@ -507,7 +512,14 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
         return;
     }
 
-    auto dstids = getDstIdsFromResp(rpcResp);
+    auto dstIdStatus = getDstIdsFromResp(rpcResp);
+
+    if (!dstIdStatus.ok()) {
+        doError(std::move(dstIdStatus).status(), ectx()->getGraphStats()->getGoStats());
+        return;
+    }
+
+    auto dstids = std::move(dstIdStatus).value();
 
     // Reaching the dead end
     if (dstids.empty()) {
@@ -662,7 +674,7 @@ std::vector<std::string> GoExecutor::getEdgeNamesFromResp(RpcResponse &rpcResp) 
     return names;
 }
 
-std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const {
+StatusOr<std::vector<VertexID>> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const {
     std::unordered_set<VertexID> set;
     for (auto &resp : rpcResp.responses()) {
         auto *vertices = resp.get_vertices();
@@ -691,7 +703,10 @@ std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const 
                 while (iter) {
                     VertexID dst;
                     auto rc = iter->getVid(_DST, dst);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (rc != ResultType::SUCCEEDED) {
+                        LOG(ERROR) << "Get dst id failed";
+                        return Status::Error("Get dst id failed");
+                    }
                     if (!isFinalStep() && backTracker_ != nullptr) {
                         backTracker_->add(vdata.get_vertex_id(), dst);
                     }
@@ -1037,10 +1052,14 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         if (isReversely()) {
                             auto dst = RowReader::getPropByName(&*iter, _DST);
                             if (saveTypeFlag) {
-                                colTypes.back() = edgeHolder_->getType(
+                                auto typeStatus = edgeHolder_->getType(
                                                     boost::get<VertexID>(value(dst)),
                                                     srcid,
                                                     std::abs(edgeType), prop);
+                                if (!typeStatus.ok()) {
+                                    return typeStatus.status();
+                                }
+                                colTypes.back() = typeStatus.value();
                             }
                             if (std::abs(edgeType) != std::abs(type)) {
                                 return edgeHolder_->getDefaultProp(std::abs(type), prop);
@@ -1311,7 +1330,12 @@ OptVariantType GoExecutor::EdgeHolder::get(VertexID src,
                                            EdgeType type,
                                            const std::string &prop) const {
     auto iter = edges_.find(std::make_tuple(src, dst, type));
-    CHECK(iter != edges_.end());
+    if (iter == edges_.end()) {
+        LOG(ERROR) << "EdgeHolder couldn't find src: "
+                   << src << ", dst: " << dst << ", edge type: " << type;
+        return Status::Error("EdgeHolder couldn't find src: %ld, dst: %ld, type: %d",
+                             src, dst, prop);
+    }
     auto reader = RowReader::getRowReader(iter->second.second, iter->second.first);
     auto result = RowReader::getPropByName(reader.get(), prop);
     if (!ok(result)) {
@@ -1321,12 +1345,17 @@ OptVariantType GoExecutor::EdgeHolder::get(VertexID src,
 }
 
 
-SupportedType GoExecutor::EdgeHolder::getType(VertexID src,
-                                              VertexID dst,
-                                              EdgeType type,
-                                              const std::string &prop) const {
+StatusOr<SupportedType> GoExecutor::EdgeHolder::getType(VertexID src,
+                                                        VertexID dst,
+                                                        EdgeType type,
+                                                        const std::string &prop) const {
     auto iter = edges_.find(std::make_tuple(src, dst, type));
-    CHECK(iter != edges_.end());
+    if (iter == edges_.end()) {
+        LOG(ERROR) << "EdgeHolder couldn't find src: "
+                   << src << ", dst: " << dst << ", edge type: " << type;
+        return Status::Error("EdgeHolder couldn't find src: %ld, dst: %ld, type: %d",
+                             src, dst, prop);
+    }
     return iter->second.first->getFieldType(prop).type;
 }
 
