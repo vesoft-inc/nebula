@@ -18,6 +18,8 @@ then
     exit $?
 fi
 
+this_dir=$(dirname $(readlink -f $0))
+
 # CMake and GCC version checking
 function version_cmp {
     mapfile -t left < <( echo $1 | tr . '\n' )
@@ -79,6 +81,7 @@ source_tar_name=nebula-third-party-src-1.0.tgz
 source_url=https://nebula-graph.oss-accelerate.aliyuncs.com/third-party/${source_tar_name}
 logfile=$build_root/build.log
 
+
 trap '[[ $? -ne 0 ]] && echo "Building failed, see $logfile for more details." 1>&2' EXIT
 
 # Allow to customize compilers
@@ -125,12 +128,52 @@ cmake -DDOWNLOAD_DIR=$download_dir \
       ${C_COMPILER_ARG} ${CXX_COMPILER_ARG} \
       $source_dir |& tee $logfile
 
-make |& \
+make -j2 |& \
          tee -a $logfile | \
         { grep --line-buffered 'Creating\|^Scanning\|Performing\|Completed\|CMakeFiles.*Error' || true; }
 end_time=$(date +%s)
 
 cd $OLDPWD && rm -rf $build_dir
+
+find $install_dir -name '*.la' | xargs rm -f
+
+function make_package {
+    libcxx_version=$($this_dir/cxx-compiler-libcxx-version.sh)
+    abi_version=$($this_dir/cxx-compiler-abi-version.sh)
+    set +e
+    libc_version=$(ldd --version | head -1 | cut -d ' ' -f4 | cut -d '-' -f1)
+    set -e
+    exec_file=$build_root/vesoft-third-party-x86_64-glibc-$libc_version-glibcxx-$libcxx_version-abi-$abi_version.sh
+
+    echo "Creating self-extractable package $exec_file"
+    cat > $exec_file <<EOF
+#! /usr/bin/env bash
+set -e
+
+hash xz &> /dev/null || { echo "xz: Command not found"; exit 1; }
+
+[[ \$# -ne 0 ]] && prefix=\$(echo "\$@" | sed 's;.*--prefix=(\S*).*;\1;p' -rn)
+prefix=\${prefix:-\$PWD/third-party/install}
+mkdir -p \$prefix
+
+[[ -w \$prefix ]] || { echo "\$prefix: No permission to write"; exit 1; }
+
+archive_offset=\$(awk '/^__start_of_archive__$/{print NR+1; exit 0;}' \$0)
+tail -n+\$archive_offset \$0 | tar --no-same-owner --numeric-owner -xJf - -C \$prefix
+
+echo "Nebula Third Party has been installed to \$prefix"
+
+exit 0
+
+__start_of_archive__
+EOF
+    cd $install_dir
+    tar -cJf - * >> $exec_file
+    chmod 0755 $exec_file
+    cd $OLDPWD
+}
+
+[[ $build_package -ne 0 ]] && make_package
 
 echo
 echo "Third parties have been successfully installed to $install_dir"
