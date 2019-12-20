@@ -10,8 +10,8 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/AddVerticesProcessor.h"
-#include "storage/QueryVertexPropsProcessor.h"
+#include "storage/mutate/AddVerticesProcessor.h"
+#include "storage/query/QueryVertexPropsProcessor.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 

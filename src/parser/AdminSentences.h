@@ -284,10 +284,11 @@ public:
         subType_ = std::move(subType);
     }
 
-    ConfigSentence(SubType subType, ConfigRowItem* item) {
+    ConfigSentence(SubType subType, ConfigRowItem* item, bool force = false) {
         kind_ = Kind::kConfig;
         subType_ = std::move(subType);
         configItem_.reset(item);
+        isForce_ = force;
     }
 
     std::string toString() const override;
@@ -300,8 +301,13 @@ public:
         return configItem_.get();
     }
 
+    bool isForce() {
+        return isForce_;
+    }
+
 private:
     SubType                         subType_{SubType::kUnknown};
+    bool                            isForce_{false};
     std::unique_ptr<ConfigRowItem>  configItem_;
 };
 

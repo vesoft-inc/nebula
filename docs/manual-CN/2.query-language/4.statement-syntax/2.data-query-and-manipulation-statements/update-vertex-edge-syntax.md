@@ -5,18 +5,18 @@
 ## 更新点
 
 ```ngql
-UPDATE VERTEX $vid SET $update_columns WHEN $condition YIELD $columns
+UPDATE VERTEX <vid> SET <update_columns> WHEN <condition> YIELD <columns>
 ```
 
 **注意：**`WHEN` 和 `YIELD` 是可选的。
 
-- `$vid` 表示需要更新的 vertex ID。
-- `$update_columns` 表示需要更新的 tag 上的 columns，比如 `tag1.col1 = $^.tag2.col2 + 1` 表示把这个点的 `tag1.col1` 更新成 `tag2.col2 + 1`。
+- `vid` 表示需要更新的 vertex ID。
+- `update_columns` 表示需要更新的 tag 上的 columns，比如 `tag1.col1 = $^.tag2.col2 + 1` 表示把这个点的 `tag1.col1` 更新成 `tag2.col2 + 1`。
 
     **注意：**  `$^`表示 `UPDATE` 中需要更新的点
 
-- `$condition` 是一些约束条件，只有满足这个条件，`UPDATE` 才会真正执行，支持表达式操作。
-- `$columns` 表示需要返回的 columns，此处 `YIELD` 可返回 update 以后最新的 columns 值。
+- `condition` 是一些约束条件，只有满足这个条件，`UPDATE` 才会真正执行，支持表达式操作。
+- `columns` 表示需要返回的 columns，此处 `YIELD` 可返回 update 以后最新的 columns 值。
 
 ### 示例
 
@@ -29,15 +29,15 @@ nebula> UPDATE VERTEX 101 SET course.credits = $^.course.credits + 1, building.n
 ## 更新边
 
 ```ngql
-UPDATE EDGE $edge SET $update_columns WHEN $condition YIELD $columns
+UPDATE EDGE <edge> SET <update_columns> WHEN <condition> YIELD <columns>
 ```
 
 **注意：**`WHEN` 和 `YIELD` 是可选的。
 
-- `$edge` 表示需要更新的 edge，edge 的格式为 `$src->$dst@$rank OF $type`。
-- `$update_columns` 表示需要更新的 edge 上的属性。
-- `$condition` 是一些约束条件，只有满足这个条件，update 才会真正执行，支持表达式操作。
-- `$columns` 表示需要返回的 columns，此处 YIELD 可返回 update 以后最新的 columns 值。
+- `edge` 表示需要更新的 edge，edge 的格式为 `$src->$dst@$rank OF $type`。
+- `update_columns` 表示需要更新的 edge 上的属性。
+- `condition` 是一些约束条件，只有满足这个条件，update 才会真正执行，支持表达式操作。
+- `columns` 表示需要返回的 columns，此处 YIELD 可返回 update 以后最新的 columns 值。
 
 ### 示例
 

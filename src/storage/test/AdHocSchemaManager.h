@@ -54,9 +54,7 @@ public:
 
     StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
-    StatusOr<std::string> toEdgeName(GraphSpaceID, EdgeType) override {
-        LOG(FATAL) << "Unimplemented";
-    }
+    StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) override;
 
     StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID) override {
         LOG(FATAL) << "Unimplemented";

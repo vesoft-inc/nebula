@@ -3,7 +3,7 @@
 Currently, the `WHERE` statement only applies to the `GO` statement.
 
 ```ngql
-WHERE (expression [ AND | OR expression ...])  
+WHERE <expression> [ AND | OR <expression> ...])  
 ```
 
 Usually, `WHERE` is a set of logical combination that filters vertex or edge properties.

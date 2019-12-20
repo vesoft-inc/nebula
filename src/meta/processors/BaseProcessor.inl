@@ -12,13 +12,16 @@ namespace meta {
 
 template<typename RESP>
 void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
+    folly::Baton<true, std::atomic> baton;
     kvstore_->asyncMultiPut(kDefaultSpaceId,
                             kDefaultPartId,
                             std::move(data),
-                            [this] (kvstore::ResultCode code) {
+                            [this, &baton] (kvstore::ResultCode code) {
         this->resp_.set_code(to(code));
-        this->onFinished();
+        baton.post();
     });
+    baton.wait();
+    this->onFinished();
 }
 
 
@@ -63,39 +66,48 @@ BaseProcessor<RESP>::doMultiGet(const std::vector<std::string>& keys) {
 
 template<typename RESP>
 void BaseProcessor<RESP>::doRemove(const std::string& key) {
+    folly::Baton<true, std::atomic> baton;
     kvstore_->asyncRemove(kDefaultSpaceId,
                           kDefaultPartId,
                           key,
-                          [this] (kvstore::ResultCode code) {
+                          [this, &baton] (kvstore::ResultCode code) {
         this->resp_.set_code(to(code));
-        this->onFinished();
+        baton.post();
     });
+    baton.wait();
+    this->onFinished();
 }
 
 
 template<typename RESP>
 void BaseProcessor<RESP>::doMultiRemove(std::vector<std::string> keys) {
+    folly::Baton<true, std::atomic> baton;
     kvstore_->asyncMultiRemove(kDefaultSpaceId,
                                kDefaultPartId,
                                std::move(keys),
-                               [this] (kvstore::ResultCode code) {
+                               [this, &baton] (kvstore::ResultCode code) {
         this->resp_.set_code(to(code));
-        this->onFinished();
+        baton.post();
     });
+    baton.wait();
+    this->onFinished();
 }
 
 
 template<typename RESP>
 void BaseProcessor<RESP>::doRemoveRange(const std::string& start,
                                         const std::string& end) {
+    folly::Baton<true, std::atomic> baton;
     kvstore_->asyncRemoveRange(kDefaultSpaceId,
                                kDefaultPartId,
                                start,
                                end,
-                               [this] (kvstore::ResultCode code) {
+                               [this, &baton] (kvstore::ResultCode code) {
         this->resp_.set_code(to(code));
-        this->onFinished();
+        baton.post();
     });
+    baton.wait();
+    this->onFinished();
 }
 
 
@@ -359,7 +371,7 @@ bool BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
     kvstore_->asyncMultiPut(kDefaultSpaceId,
                             kDefaultPartId,
                             std::move(data),
-                            [this, &ret, &baton] (kvstore::ResultCode code) {
+                            [&ret, &baton] (kvstore::ResultCode code) {
                                 if (kvstore::ResultCode::SUCCEEDED == code) {
                                     ret = true;
                                 } else {
