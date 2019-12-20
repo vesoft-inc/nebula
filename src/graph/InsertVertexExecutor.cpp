@@ -103,7 +103,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
     expCtx_->setStorageClient(ectx()->getStorageClient());
     expCtx_->setSpace(spaceId_);
 
-    std::vector<storage::cpp2::Vertex> vertices(rows_.size());
+    std::vector<storage::cpp2::Vertex> vertices;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto rid = row->id();
