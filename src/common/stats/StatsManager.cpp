@@ -439,7 +439,7 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
         if (StatsManager::isStatIndex(index.second)) {
             auto result = StatsManager::readStats(index.second,
                     StatsManager::TimeRange::ONE_MINUTE,
-                    StatsManager::StatsMethod::AVG);
+                    StatsManager::StatsMethod::RATE);
             if (!result.ok()) {
                 LOG(ERROR) << "Failed read stats value of " << name << " : " << result.status();
                 continue;
