@@ -16,6 +16,7 @@
 #include "storage/CommonUtils.h"
 #include "stats/Stats.h"
 
+DECLARE_int32(general_storage_page_size);
 DECLARE_int32(vertex_cache_num);
 DECLARE_int32(vertex_cache_bucket_exp);
 

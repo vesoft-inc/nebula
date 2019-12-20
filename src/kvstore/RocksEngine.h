@@ -19,12 +19,24 @@ namespace kvstore {
 
 class RocksRangeIter : public KVIterator {
 public:
-    RocksRangeIter(rocksdb::Iterator* iter, rocksdb::Slice start, rocksdb::Slice end)
+    RocksRangeIter(rocksdb::Iterator* iter,
+                   rocksdb::Slice start,
+                   rocksdb::Slice end,
+                   rocksdb::Slice seekPosition,
+                   int32_t limit)
         : iter_(iter)
         , start_(start)
-        , end_(end) {}
+        , end_(end)
+        , seekPosition_(seekPosition)
+        , limit_(limit) {}
 
     ~RocksRangeIter()  = default;
+
+    void seek() override {
+        if (!seekPosition_.empty()) {
+            iter_->Seek(seekPosition_);
+        }
+    }
 
     bool valid() const override {
         return !!iter_ && iter_->Valid() && (iter_->key().compare(end_) < 0);
@@ -50,16 +62,29 @@ private:
     std::unique_ptr<rocksdb::Iterator> iter_;
     rocksdb::Slice start_;
     rocksdb::Slice end_;
+    rocksdb::Slice seekPosition_;
+    int32_t limit_;
 };
 
 
 class RocksPrefixIter : public KVIterator {
 public:
-    RocksPrefixIter(rocksdb::Iterator* iter, rocksdb::Slice prefix)
+    RocksPrefixIter(rocksdb::Iterator* iter,
+                    rocksdb::Slice prefix,
+                    rocksdb::Slice seekPosition,
+                    int32_t limit)
         : iter_(iter)
-        , prefix_(prefix) {}
+        , prefix_(prefix)
+        , seekPosition_(seekPosition)
+        , limit_(limit) {}
 
     ~RocksPrefixIter()  = default;
+
+    void seek() override {
+        if (!seekPosition_.empty()) {
+            iter_->Seek(seekPosition_);
+        }
+    }
 
     bool valid() const override {
         return !!iter_ && iter_->Valid() && (iter_->key().starts_with(prefix_));
@@ -84,6 +109,8 @@ public:
 private:
     std::unique_ptr<rocksdb::Iterator> iter_;
     rocksdb::Slice prefix_;
+    rocksdb::Slice seekPosition_;
+    int32_t limit_;
 };
 
 
@@ -122,10 +149,14 @@ public:
 
     ResultCode range(const std::string& start,
                      const std::string& end,
-                     std::unique_ptr<KVIterator>* iter) override;
+                     std::unique_ptr<KVIterator>* iter,
+                     const std::string& seekPosition = "",
+                     int32_t limit = -1) override;
 
     ResultCode prefix(const std::string& prefix,
-                      std::unique_ptr<KVIterator>* iter) override;
+                      std::unique_ptr<KVIterator>* iter,
+                      const std::string& seekPosition = "",
+                      int32_t limit = -1) override;
 
     /*********************
      * Data modification

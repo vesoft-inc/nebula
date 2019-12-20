@@ -1,7 +1,7 @@
 # DROP SPACE 语法
 
 ```ngql
-DROP SPACE space_name
+DROP SPACE <space_name<>
 ```
 
 仅支持有 DROP 权限的用户进行此操作。

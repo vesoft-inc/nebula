@@ -175,25 +175,33 @@ ResultCode RocksEngine::multiGet(const std::vector<std::string>& keys,
 
 ResultCode RocksEngine::range(const std::string& start,
                               const std::string& end,
-                              std::unique_ptr<KVIterator>* storageIter) {
+                              std::unique_ptr<KVIterator>* storageIter,
+                              const std::string& seekPosition,
+                              int32_t limit) {
     rocksdb::ReadOptions options;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(start));
     }
-    storageIter->reset(new RocksRangeIter(iter, start, end));
+    auto rangeIter = new RocksRangeIter(iter, start, end, seekPosition, limit);
+    rangeIter->seek();
+    storageIter->reset(std::move(rangeIter));
     return ResultCode::SUCCEEDED;
 }
 
 
 ResultCode RocksEngine::prefix(const std::string& prefix,
-                               std::unique_ptr<KVIterator>* storageIter) {
+                               std::unique_ptr<KVIterator>* storageIter,
+                               const std::string& seekPosition,
+                               int32_t limit) {
     rocksdb::ReadOptions options;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(prefix));
     }
-    storageIter->reset(new RocksPrefixIter(iter, prefix));
+    auto prefixIter = new RocksPrefixIter(iter, prefix, seekPosition, limit);
+    prefixIter->seek();
+    storageIter->reset(std::move(prefixIter));
     return ResultCode::SUCCEEDED;
 }
 

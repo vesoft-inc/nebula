@@ -30,6 +30,8 @@ enum ErrorCode {
     E_EDGE_PROP_NOT_FOUND = -21,
     E_TAG_PROP_NOT_FOUND = -22,
     E_IMPROPER_DATA_TYPE = -23,
+    E_EDGE_NOT_FOUND = -24,
+    E_TAG_NOT_FOUND = -25,
 
     // Invalid request
     E_INVALID_FILTER = -31,
@@ -328,19 +330,33 @@ struct GetRequest {
     2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") parts,
 }
 
+struct PrefixCoordinate {
+    1: string prefix,
+    2: optional string cursor = "",
+}
+
 struct PrefixRequest {
     1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, string>(cpp.template = "std::unordered_map") parts,
+    2: map<common.PartitionID, PrefixCoordinate>(cpp.template = "std::unordered_map") parts,
+    3: optional i32 limit = 128,
+}
+
+struct ScanCoordinate {
+    1: string start,
+    2: string end,
+    3: optional string cursor = "",
 }
 
 struct ScanRequest {
     1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, common.Range>(cpp.template = "std::unordered_map") parts,
+    2: map<common.PartitionID, ScanCoordinate>(cpp.template = "std::unordered_map") parts,
+    3: optional i32 limit = 128,
 }
 
 struct GeneralResponse {
     1: required ResponseCommon result,
     2: map<string, string>(cpp.template = "std::unordered_map") values,
+    3: optional map<common.PartitionID, string>(cpp.template = "std::unordered_map") seek_positions,
 }
 
 struct GetUUIDReq {

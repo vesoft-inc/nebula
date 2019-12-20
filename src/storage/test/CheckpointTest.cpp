@@ -9,8 +9,8 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/CreateCheckpointProcessor.h"
-#include "storage/AddVerticesProcessor.h"
+#include "storage/admin/CreateCheckpointProcessor.h"
+#include "storage/mutate/AddVerticesProcessor.h"
 
 namespace nebula {
 namespace storage {

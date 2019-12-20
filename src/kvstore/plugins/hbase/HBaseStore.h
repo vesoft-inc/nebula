@@ -31,6 +31,10 @@ public:
         return current_ != end_;
     }
 
+    void seek() override {
+        LOG(ERROR) << "Unsupported";
+    }
+
     void next() override {
         CHECK(current_ != end_);
         current_++;

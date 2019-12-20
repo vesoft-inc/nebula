@@ -18,6 +18,8 @@ public:
 
     virtual bool valid() const = 0;
 
+    virtual void seek() = 0;
+
     virtual void next() = 0;
 
     virtual void prev() = 0;

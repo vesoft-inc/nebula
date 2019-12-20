@@ -189,12 +189,16 @@ public:
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> prefix(
         GraphSpaceID space,
         std::string key,
+        std::string cursor = "",
+        int32_t limit = -1,
         folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>> scan(
         GraphSpaceID space,
         std::string start,
         std::string end,
+        std::string cursor = "",
+        int32_t limit = -1,
         folly::EventBase* evb = nullptr);
 
 protected:

@@ -7,12 +7,12 @@
 #include "base/Base.h"
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/PutProcessor.h"
-#include "storage/GetProcessor.h"
-#include "storage/RemoveProcessor.h"
-#include "storage/RemoveRangeProcessor.h"
-#include "storage/PrefixProcessor.h"
-#include "storage/ScanProcessor.h"
+#include "storage/kv/PutProcessor.h"
+#include "storage/kv/GetProcessor.h"
+#include "storage/kv/RemoveProcessor.h"
+#include "storage/kv/RemoveRangeProcessor.h"
+#include "storage/kv/PrefixProcessor.h"
+#include "storage/kv/ScanProcessor.h"
 
 #include <gtest/gtest.h>
 #include <folly/Executor.h>

@@ -6,34 +6,35 @@
 
 #include "storage/StorageServiceHandler.h"
 #include "base/Base.h"
-#include "storage/AddVerticesProcessor.h"
-#include "storage/AddEdgesProcessor.h"
-#include "storage/QueryBoundProcessor.h"
-#include "storage/QueryVertexPropsProcessor.h"
-#include "storage/QueryEdgePropsProcessor.h"
-#include "storage/QueryStatsProcessor.h"
-#include "storage/AdminProcessor.h"
-#include "storage/DeleteVertexProcessor.h"
-#include "storage/DeleteEdgesProcessor.h"
-#include "storage/QueryEdgeKeysProcessor.h"
-#include "storage/UpdateVertexProcessor.h"
-#include "storage/UpdateEdgeProcessor.h"
-#include "storage/PutProcessor.h"
-#include "storage/GetProcessor.h"
-#include "storage/RemoveProcessor.h"
-#include "storage/RemoveRangeProcessor.h"
-#include "storage/PrefixProcessor.h"
-#include "storage/ScanProcessor.h"
-#include "storage/GetUUIDProcessor.h"
-#include "storage/CreateCheckpointProcessor.h"
-#include "storage/DropCheckpointProcessor.h"
-#include "storage/SendBlockSignProcessor.h"
+#include "storage/query/QueryBoundProcessor.h"
+#include "storage/query/QueryVertexPropsProcessor.h"
+#include "storage/query/QueryEdgePropsProcessor.h"
+#include "storage/query/QueryStatsProcessor.h"
+#include "storage/query/GetUUIDProcessor.h"
+#include "storage/query/QueryEdgeKeysProcessor.h"
+#include "storage/mutate/AddVerticesProcessor.h"
+#include "storage/mutate/AddEdgesProcessor.h"
+#include "storage/mutate/DeleteVertexProcessor.h"
+#include "storage/mutate/DeleteEdgesProcessor.h"
+#include "storage/mutate/UpdateVertexProcessor.h"
+#include "storage/mutate/UpdateEdgeProcessor.h"
+#include "storage/kv/PutProcessor.h"
+#include "storage/kv/GetProcessor.h"
+#include "storage/kv/RemoveProcessor.h"
+#include "storage/kv/RemoveRangeProcessor.h"
+#include "storage/kv/PrefixProcessor.h"
+#include "storage/kv/ScanProcessor.h"
+#include "storage/admin/AdminProcessor.h"
+#include "storage/admin/CreateCheckpointProcessor.h"
+#include "storage/admin/DropCheckpointProcessor.h"
+#include "storage/admin/SendBlockSignProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
     processor->process(req); \
     return f;
 
+DEFINE_int32(general_storage_page_size, 128, "Storage record's in one page");
 DEFINE_int32(vertex_cache_num, 16 * 1000 * 1000, "Total keys inside the cache");
 DEFINE_int32(vertex_cache_bucket_exp, 4, "Total buckets number is 1 << cache_bucket_exp");
 

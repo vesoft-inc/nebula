@@ -10,6 +10,9 @@
 #define ID_HASH(id, numShards) \
     ((static_cast<uint64_t>(id)) % numShards + 1)
 
+
+DEFINE_int32(storage_client_timeout_ms, 60 * 1000, "storage client timeout");
+
 namespace nebula {
 namespace storage {
 
@@ -594,7 +597,9 @@ StorageClient::removeRange(GraphSpaceID space,
 
 folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>>
 StorageClient::prefix(GraphSpaceID space,
-                      std::string key,
+                      std::string prefix,
+                      std::string cursor,
+                      int32_t limit,
                       folly::EventBase* evb) {
     auto status = leaderHosts(space);
     if (!status.ok()) {
@@ -608,11 +613,16 @@ StorageClient::prefix(GraphSpaceID space,
         auto& host = c.first;
         auto& req = requests[host];
         req.set_space_id(space);
-        std::unordered_map<PartitionID, std::string> parts;
+        std::unordered_map<PartitionID, cpp2::PrefixCoordinate> parts;
         for (auto part : c.second) {
-            parts.emplace(part, key);
+            cpp2::PrefixCoordinate coordinate;
+            coordinate.set_prefix(prefix);
+            coordinate.set_cursor(cursor);
+            // parts.emplace(part, std::move(coordinate));
+            parts.emplace(part, coordinate);
         }
         req.set_parts(std::move(parts));
+        req.set_limit(limit);
     }
 
     return collectResponse(evb, std::move(requests),
@@ -626,6 +636,8 @@ folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>>
 StorageClient::scan(GraphSpaceID space,
                     std::string start,
                     std::string end,
+                    std::string cursor,
+                    int32_t limit,
                     folly::EventBase* evb) {
     auto status = leaderHosts(space);
     if (!status.ok()) {
@@ -639,11 +651,16 @@ StorageClient::scan(GraphSpaceID space,
         auto& host = c.first;
         auto& req = requests[host];
         req.set_space_id(space);
-        std::unordered_map<PartitionID, nebula::cpp2::Range> parts;
+        std::unordered_map<PartitionID, cpp2::ScanCoordinate> parts;
         for (auto part : c.second) {
-            parts.emplace(part, nebula::cpp2::Range(FRAGILE, start, end));
+            cpp2::ScanCoordinate coordinate;
+            coordinate.set_start(start);
+            coordinate.set_end(end);
+            coordinate.set_cursor(cursor);
+            parts.emplace(part, coordinate);
         }
         req.set_parts(std::move(parts));
+        req.set_limit(limit);
     }
 
     return collectResponse(evb, std::move(requests),

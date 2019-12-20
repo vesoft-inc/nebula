@@ -1,8 +1,8 @@
 # 修改 Tag / Edge
 
 ```ngql
-ALTER {TAG | EDGE} tag_name | edge_name
-    [alter_definition [, alter_definition] ...]
+ALTER TAG | EDGE <tag_name> | <edge_name>
+    <alter_definition> [, alter_definition] ...]
     [ttl_definition [, ttl_definition] ... ]
 
 alter_definition:
