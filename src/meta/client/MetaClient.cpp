@@ -1490,8 +1490,7 @@ MetaClient::getConfig(const cpp2::ConfigModule& module, const std::string& name)
 
 folly::Future<StatusOr<bool>>
 MetaClient::setConfig(const cpp2::ConfigModule& module, const std::string& name,
-                      const cpp2::ConfigType& type, const std::string& value,
-                      const bool isForce) {
+                      const cpp2::ConfigType& type, const std::string& value) {
     if (!configReady_) {
         return Status::Error("Not ready!");
     }
@@ -1503,7 +1502,6 @@ MetaClient::setConfig(const cpp2::ConfigModule& module, const std::string& name,
 
     cpp2::SetConfigReq req;
     req.set_item(item);
-    req.set_force(isForce);
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
@@ -1625,6 +1623,10 @@ void MetaClient::addLoadCfgTask() {
 }
 
 void MetaClient::updateGflagsValue(const ConfigItem& item) {
+    if (item.mode_ != cpp2::ConfigMode::MUTABLE) {
+        return;
+    }
+
     std::string metaValue;
     switch (item.type_) {
         case cpp2::ConfigType::INT64:
