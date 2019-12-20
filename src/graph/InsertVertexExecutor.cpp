@@ -197,7 +197,6 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
         auto& vertex = vertices[i];
         vertex.set_id(id);
         vertex.set_tags(std::move(tags));
-        vertices.emplace_back(std::move(vertex));
     }
 
     return vertices;
