@@ -21,7 +21,6 @@
 #include "meta/ClusterIdMan.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/KVBasedGflagsManager.h"
 
 using nebula::operator<<;
 using nebula::ProcessUtils;
@@ -153,12 +152,6 @@ bool initWebService(nebula::kvstore::KVStore* kvstore,
     return true;
 }
 
-bool initComponents(nebula::kvstore::KVStore* kvstore) {
-    auto gflagsManager = std::make_unique<nebula::meta::KVBasedGflagsManager>(kvstore);
-    gflagsManager->init();
-    return true;
-}
-
 int main(int argc, char *argv[]) {
     google::SetVersionString(nebula::versionString());
     folly::init(&argc, &argv, true);
@@ -215,11 +208,6 @@ int main(int argc, char *argv[]) {
     auto kvstore = initKV(peersRet.value(), hostAddrRet.value());
     if (kvstore == nullptr) {
         LOG(ERROR) << "Init kv failed!";
-        return EXIT_FAILURE;
-    }
-
-    if (!initComponents(kvstore.get())) {
-        LOG(ERROR) << "Init components failed";
         return EXIT_FAILURE;
     }
 
