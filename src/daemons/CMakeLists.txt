@@ -112,7 +112,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:kv_gflags_man_obj>
         $<TARGET_OBJECTS:gflags_man_obj>
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:thread_obj>
