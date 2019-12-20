@@ -30,8 +30,11 @@ Status FetchVerticesExecutor::prepareClauses() {
         }
 
         expCtx_ = std::make_unique<ExpressionContext>();
-        expCtx_->setStorageClient(ectx()->getStorageClient());
+        if (sentence_->isAllTagProps()) {
+            break;
+        }
 
+        expCtx_->setStorageClient(ectx()->getStorageClient());
         spaceId_ = ectx()->rctx()->session()->space();
         yieldClause_ = DCHECK_NOTNULL(sentence_)->yieldClause();
         labelName_ = sentence_->tag();
@@ -105,7 +108,11 @@ void FetchVerticesExecutor::execute() {
         return;
     }
 
-    fetchVertices();
+    if (sentence_->isAllTagProps()) {
+        fetchVertexWithAllTagProps();
+    } else {
+        fetchVertices();
+    }
 }
 
 void FetchVerticesExecutor::fetchVertices() {
@@ -236,7 +243,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
 
 Status FetchVerticesExecutor::setupVids() {
     Status status = Status::OK();
-    if (sentence_->isRef()) {
+    if (sentence_->isRef() && !sentence_->isAllTagProps()) {
         status = setupVidsFromRef();
     } else {
         status = setupVidsFromExpr();
@@ -311,6 +318,11 @@ Status FetchVerticesExecutor::setupVidsFromRef() {
     }
     vids_ = std::move(result).value();
     return Status::OK();
+}
+
+void FetchVerticesExecutor::fetchVertexWithAllTagProps() {
+    // TODO
+    onEmptyInputs();
 }
 }  // namespace graph
 }  // namespace nebula
