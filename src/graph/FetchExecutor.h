@@ -39,6 +39,8 @@ protected:
 
     stats::Stats* getStats() const;
 
+    void doEmptyResp();
+
 protected:
     GraphSpaceID                                    spaceId_{INT_MIN};
     std::unique_ptr<ExpressionContext>              expCtx_;

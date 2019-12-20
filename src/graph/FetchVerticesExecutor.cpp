@@ -37,6 +37,7 @@ Status FetchVerticesExecutor::prepareClauses() {
         labelName_ = sentence_->tag();
         auto result = ectx()->schemaManager()->toTagID(spaceId_, *labelName_);
         if (!result.ok()) {
+            LOG(ERROR) << "Get Tag Id failed: " << result.status();
             status = result.status();
             break;
         }
@@ -50,10 +51,12 @@ Status FetchVerticesExecutor::prepareClauses() {
 
         status = prepareVids();
         if (!status.ok()) {
+            LOG(ERROR) << "Prepare vertex id failed: " << status;
             break;
         }
         status = prepareYield();
         if (!status.ok()) {
+            LOG(ERROR) << "Prepare yield failed: " << status;
             break;
         }
     } while (false);
@@ -86,16 +89,19 @@ void FetchVerticesExecutor::execute() {
     FLOG_INFO("Executing FetchVertices: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
+        LOG(ERROR) << "Prepare clauses failed: " << status;
         doError(std::move(status), ectx()->getGraphStats()->getFetchVerticesStats());
         return;
     }
 
     status = setupVids();
     if (!status.ok()) {
+        LOG(ERROR) << "Setup vids failed: " << status;
         doError(std::move(status), ectx()->getGraphStats()->getFetchVerticesStats());
         return;
     }
     if (vids_.empty()) {
+        LOG(WARNING) << "Empty vids";
         onEmptyInputs();
         return;
     }
@@ -106,8 +112,8 @@ void FetchVerticesExecutor::execute() {
 void FetchVerticesExecutor::fetchVertices() {
     auto props = getPropNames();
     if (props.empty()) {
-        doError(Status::Error("No props declared."),
-                ectx()->getGraphStats()->getFetchVerticesStats());
+        LOG(WARNING) << "Empty props";
+        doEmptyResp();
         return;
     }
 
@@ -116,6 +122,7 @@ void FetchVerticesExecutor::fetchVertices() {
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
+            LOG(ERROR) << "Get props failed";
             doError(Status::Error("Get props failed"),
                     ectx()->getGraphStats()->getFetchVerticesStats());
             return;

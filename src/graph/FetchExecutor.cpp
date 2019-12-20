@@ -156,6 +156,13 @@ void FetchExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
     doFinish(Executor::ProcessControl::kNext, getStats());
 }
 
+void FetchExecutor::doEmptyResp() {
+    resp_ = std::make_unique<cpp2::ExecutionResponse>();
+    resp_->set_column_names(std::vector<std::string>());
+    resp_->set_rows(std::vector<cpp2::RowValue>());
+    doFinish(Executor::ProcessControl::kNext, getStats());
+}
+
 stats::Stats* FetchExecutor::getStats() const {
     if (0 == strcmp(name(), "FetchVerticesExecutor")) {
         return ectx()->getGraphStats()->getFetchVerticesStats();
