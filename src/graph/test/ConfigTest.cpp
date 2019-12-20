@@ -52,7 +52,7 @@ std::vector<meta::cpp2::ConfigItem> mockRegisterGflags() {
                                  meta::toThriftValueStr(type, value)));
     }
     {
-        auto module = meta::cpp2::ConfigModule::META;
+        auto module = meta::cpp2::ConfigModule::GRAPH;
         auto mode = meta::cpp2::ConfigMode::MUTABLE;
         auto type = meta::cpp2::ConfigType::DOUBLE;
         double value = 1.0;
@@ -60,7 +60,7 @@ std::vector<meta::cpp2::ConfigItem> mockRegisterGflags() {
                                  meta::toThriftValueStr(type, value)));
     }
     {
-        auto module = meta::cpp2::ConfigModule::META;
+        auto module = meta::cpp2::ConfigModule::GRAPH;
         auto mode = meta::cpp2::ConfigMode::MUTABLE;
         auto type = meta::cpp2::ConfigType::STRING;
         std::string value = "nebula";
@@ -72,8 +72,6 @@ std::vector<meta::cpp2::ConfigItem> mockRegisterGflags() {
         auto mode = meta::cpp2::ConfigMode::MUTABLE;
         std::string value = "nebula";
         configItems.emplace_back(meta::toThriftConfigItem(meta::cpp2::ConfigModule::GRAPH, "k3",
-                                 type, mode, meta::toThriftValueStr(type, value)));
-        configItems.emplace_back(meta::toThriftConfigItem(meta::cpp2::ConfigModule::META, "k3",
                                  type, mode, meta::toThriftValueStr(type, value)));
         configItems.emplace_back(meta::toThriftConfigItem(meta::cpp2::ConfigModule::STORAGE, "k3",
                                  type, mode, meta::toThriftValueStr(type, value)));
@@ -145,17 +143,17 @@ TEST_F(ConfigTest, ConfigTest) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "UPDATE CONFIGS meta:k1=3.14";
+        std::string query = "UPDATE CONFIGS graph:k1=3.14";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "GET CONFIGS meta:k1";
+        std::string query = "GET CONFIGS graph:k1";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 5>>
-            expected { {"META", "k1", "DOUBLE", "MUTABLE", "3.140000"} };
+            expected { {"GRAPH", "k1", "DOUBLE", "MUTABLE", "3.140000"} };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
@@ -176,17 +174,17 @@ TEST_F(ConfigTest, ConfigTest) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "UPDATE CONFIGS meta:k2=abc";
+        std::string query = "UPDATE CONFIGS graph:k2=abc";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "GET CONFIGS meta:k2";
+        std::string query = "GET CONFIGS graph:k2";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 5>> expected {
-            {"META", "k2", "STRING", "MUTABLE", "abc"}
+            {"GRAPH", "k2", "STRING", "MUTABLE", "abc"}
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -200,10 +198,9 @@ TEST_F(ConfigTest, ConfigTest) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "SHOW CONFIGS meta";
+        std::string query = "SHOW CONFIGS graph";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        ASSERT_EQ(3, resp.get_rows()->size());
     }
     // set and get a config of all module
     {
@@ -219,7 +216,6 @@ TEST_F(ConfigTest, ConfigTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 5>> expected {
             {"GRAPH", "k3", "STRING", "MUTABLE", "vesoft"},
-            {"META", "k3", "STRING", "MUTABLE", "vesoft"},
             {"STORAGE", "k3", "STRING", "MUTABLE", "vesoft"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -228,10 +224,6 @@ TEST_F(ConfigTest, ConfigTest) {
         cpp2::ExecutionResponse resp;
         std::string query = "UPDATE CONFIGS graph:k3=abc";
         auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-
-        query = "UPDATE CONFIGS meta:k3=bcd";
-        code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         query = "UPDATE CONFIGS storage:k3=cde";
@@ -245,7 +237,6 @@ TEST_F(ConfigTest, ConfigTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 5>> expected {
             {"GRAPH", "k3", "STRING", "MUTABLE", "abc"},
-            {"META", "k3", "STRING", "MUTABLE", "bcd"},
             {"STORAGE", "k3", "STRING", "MUTABLE", "cde"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
