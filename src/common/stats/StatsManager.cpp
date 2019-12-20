@@ -424,6 +424,9 @@ StatsManager::parseMetricName(folly::StringPiece metricName) {
 // }
 //
 /*static*/ std::string StatsManager::toJson() {
+    // TODO(shylock) There too much hard code but could fit current usage
+    // Consider defined a Format to Create/Evaluate metric
+    // Draft, https://www.yuque.com/docs/share/c2ec6b5a-77a2-47d6-9676-4c4b1b4325e4?#
     constexpr char kGauges[] = "gauges";
     constexpr char kHistograms[] = "histograms";
     auto& sm = get();
