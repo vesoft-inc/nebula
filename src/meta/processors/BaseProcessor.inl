@@ -371,7 +371,7 @@ bool BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
     kvstore_->asyncMultiPut(kDefaultSpaceId,
                             kDefaultPartId,
                             std::move(data),
-                            [this, &ret, &baton] (kvstore::ResultCode code) {
+                            [&ret, &baton] (kvstore::ResultCode code) {
                                 if (kvstore::ResultCode::SUCCEEDED == code) {
                                     ret = true;
                                 } else {

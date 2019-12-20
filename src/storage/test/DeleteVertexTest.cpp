@@ -9,8 +9,8 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/DeleteVertexProcessor.h"
-#include "storage/AddVerticesProcessor.h"
+#include "storage/mutate/DeleteVertexProcessor.h"
+#include "storage/mutate/AddVerticesProcessor.h"
 #include "base/NebulaKeyUtils.h"
 
 

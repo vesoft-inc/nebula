@@ -8,7 +8,7 @@
 #include <gtest/gtest.h>
 #include "http/HttpClient.h"
 #include "webservice/WebService.h"
-#include "storage/StorageHttpDownloadHandler.h"
+#include "storage/http/StorageHttpDownloadHandler.h"
 #include "storage/test/MockHdfsHelper.h"
 #include "storage/test/TestUtils.h"
 #include "fs/TempDir.h"
