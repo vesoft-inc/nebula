@@ -81,9 +81,4 @@ nebula_add_library(
     ClientBasedGflagsManager.cpp
 )
 
-nebula_add_library(
-    kv_gflags_man_obj OBJECT
-    KVBasedGflagsManager.cpp
-)
-
 nebula_add_subdirectory(test)

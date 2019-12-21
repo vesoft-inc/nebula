@@ -6,13 +6,13 @@
 <!-- >请参考`FIND`的用法，它对应于SQL中的`SELECT`。 -->
 
 ```ngql
-  GO FROM <node_list>
-  OVER <edge_type_list>
-  WHERE (expression [ AND | OR expression ...])  
-  YIELD | YIELDS  [DISTINCT] <return_list>
+  GO [ <N> STEPS ] FROM <node_list>
+  OVER <edge_type_list> [REVERSELY]
+  [ WHERE <expression> [ AND | OR expression ...]) ]
+  YIELD | YIELDS [DISTINCT] <return_list>
 
 <node_list>
-   | vid [, vid ...]
+   | <vid> [, <vid> ...]
    | $-.id
 
 <edge_type_list>
@@ -22,10 +22,10 @@
     <col_name> [AS <col_alias>] [, <col_name> [AS <col_alias>] ...]
 ```
 
+* [ <N> STEPS ] 指定查询 N 跳
 * <node_list> 为逗号隔开的节点 ID，或特殊占位符 `$-.id` (参看 `PIPE` 用法)。
 * <edge_type_list> 为图遍历返回的边类型列表。
-* WHERE <filter_list> 指定被筛选的逻辑条件，WHERE 可用于起点，边及终点，同样支持逻辑关键词
- AND，OR，NOT，详情参见 WHERE 的用法。
+* [ WHERE <expression> ] 指定被筛选的逻辑条件，WHERE 可用于起点，边及终点，同样支持逻辑关键词 AND、OR、NOT，详情参见 WHERE 的用法。
 * YIELD [DISTINCT] <return_list> 以列的形式返回结果，并可对列进行重命名。详情参看 `YIELD`
  用法。`DISTINCT` 的用法与 SQL 相同。
 
@@ -41,6 +41,18 @@ nebula> GO FROM 101 OVER serve  \
 -------
 | 215 |
 -------
+```
+
+```ngql
+nebula> GO 2 STEPS FROM 103 OVER follow \
+  /* 返回点 103 的 2 度的好友 */
+===============
+| follow._dst |
+===============
+| 100         |
+---------------
+| 101         |
+---------------
 ```
 
 ```ngql

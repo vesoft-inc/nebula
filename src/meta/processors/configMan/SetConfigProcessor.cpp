@@ -46,8 +46,8 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
     auto module = req.get_item().get_module();
     auto name = req.get_item().get_name();
     auto type = req.get_item().get_type();
-    auto mode = req.get_item().get_mode();
     auto value = req.get_item().get_value();
+    auto isForce = req.get_force();
 
     folly::SharedMutex::WriteHolder wHolder(LockUtils::configLock());
     cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
@@ -57,21 +57,17 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
             if (module != cpp2::ConfigModule::ALL) {
                 // When we set config of a specified module, check if it exists.
                 // If it exists and is mutable, update it.
-                code = setOneConfig(module, name, type, mode, value, data);
+                code = setOneConfig(module, name, type, value, isForce, data);
                 if (code != cpp2::ErrorCode::SUCCEEDED) {
                     break;
                 }
             } else {
                 // When we set config of all module, then try to set it of every module.
-                code = setOneConfig(cpp2::ConfigModule::GRAPH, name, type, mode, value, data);
+                code = setOneConfig(cpp2::ConfigModule::GRAPH, name, type, value, isForce, data);
                 if (code != cpp2::ErrorCode::SUCCEEDED) {
                     break;
                 }
-                code = setOneConfig(cpp2::ConfigModule::META, name, type, mode, value, data);
-                if (code != cpp2::ErrorCode::SUCCEEDED) {
-                    break;
-                }
-                code = setOneConfig(cpp2::ConfigModule::STORAGE, name, type, mode, value, data);
+                code = setOneConfig(cpp2::ConfigModule::STORAGE, name, type, value, isForce, data);
                 if (code != cpp2::ErrorCode::SUCCEEDED) {
                     break;
                 }
@@ -80,20 +76,16 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
             // For those nested options like FLAGS_rocksdb_db_options, if any field has changed,
             // we update them and put it back
             if (module != cpp2::ConfigModule::ALL) {
-                code = setNestedConfig(module, name, type, mode, value, data);
+                code = setNestedConfig(module, name, type, value, data);
                 if (code != cpp2::ErrorCode::SUCCEEDED) {
                     break;
                 }
             } else {
-                code = setNestedConfig(cpp2::ConfigModule::GRAPH, name, type, mode, value, data);
+                code = setNestedConfig(cpp2::ConfigModule::GRAPH, name, type, value, data);
                 if (code != cpp2::ErrorCode::SUCCEEDED) {
                     break;
                 }
-                code = setNestedConfig(cpp2::ConfigModule::META, name, type, mode, value, data);
-                if (code != cpp2::ErrorCode::SUCCEEDED) {
-                    break;
-                }
-                code = setNestedConfig(cpp2::ConfigModule::STORAGE, name, type, mode, value, data);
+                code = setNestedConfig(cpp2::ConfigModule::STORAGE, name, type, value, data);
                 if (code != cpp2::ErrorCode::SUCCEEDED) {
                     break;
                 }
@@ -113,8 +105,8 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
 cpp2::ErrorCode SetConfigProcessor::setOneConfig(const cpp2::ConfigModule& module,
                                                  const std::string& name,
                                                  const cpp2::ConfigType& type,
-                                                 const cpp2::ConfigMode& mode,
                                                  const std::string& value,
+                                                 const bool isForce,
                                                  std::vector<kvstore::KV>& data) {
     std::string configKey = MetaServiceUtils::configKey(module, name);
     auto ret = doGet(std::move(configKey));
@@ -123,10 +115,11 @@ cpp2::ErrorCode SetConfigProcessor::setOneConfig(const cpp2::ConfigModule& modul
     }
 
     cpp2::ConfigItem item = MetaServiceUtils::parseConfigValue(ret.value());
-    if (item.get_mode() == cpp2::ConfigMode::IMMUTABLE) {
+    cpp2::ConfigMode curMode = item.get_mode();
+    if (curMode == cpp2::ConfigMode::IMMUTABLE && !isForce) {
         return cpp2::ErrorCode::E_CONFIG_IMMUTABLE;
     }
-    std::string configValue = MetaServiceUtils::configValue(type, mode, value);
+    std::string configValue = MetaServiceUtils::configValue(type, curMode, value);
     data.emplace_back(std::move(configKey), std::move(configValue));
     return cpp2::ErrorCode::SUCCEEDED;
 }
@@ -134,22 +127,22 @@ cpp2::ErrorCode SetConfigProcessor::setOneConfig(const cpp2::ConfigModule& modul
 cpp2::ErrorCode SetConfigProcessor::setNestedConfig(const cpp2::ConfigModule& module,
                                                     const std::string& name,
                                                     const cpp2::ConfigType& type,
-                                                    const cpp2::ConfigMode& mode,
                                                     const std::string& updateList,
-        std::vector<kvstore::KV>& data) {
+                                                    std::vector<kvstore::KV>& data) {
     std::string configKey = MetaServiceUtils::configKey(module, name);
     auto ret = doGet(std::move(configKey));
     if (!ret.ok()) {
         return cpp2::ErrorCode::E_NOT_FOUND;
     }
 
-    cpp2::ConfigItem current = MetaServiceUtils::parseConfigValue(ret.value());
-    if (current.get_mode() == cpp2::ConfigMode::IMMUTABLE) {
+    cpp2::ConfigItem item = MetaServiceUtils::parseConfigValue(ret.value());
+    cpp2::ConfigMode curMode = item.get_mode();
+    if (curMode == cpp2::ConfigMode::IMMUTABLE) {
         return cpp2::ErrorCode::E_CONFIG_IMMUTABLE;
     }
 
     Configuration conf;
-    auto confRet = conf.parseFromString(current.get_value());
+    auto confRet = conf.parseFromString(item.get_value());
     CHECK(confRet.ok());
 
     std::vector<std::string> updateFields;
@@ -173,7 +166,7 @@ cpp2::ErrorCode SetConfigProcessor::setNestedConfig(const cpp2::ConfigModule& mo
     }
 
     if (updated) {
-        std::string configValue = MetaServiceUtils::configValue(type, mode, conf.dumpToString());
+        std::string configValue = MetaServiceUtils::configValue(type, curMode, conf.dumpToString());
         data.emplace_back(std::move(configKey), std::move(configValue));
     }
     return cpp2::ErrorCode::SUCCEEDED;

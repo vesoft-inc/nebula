@@ -276,7 +276,7 @@ public:
 
     folly::Future<StatusOr<bool>>
     setConfig(const cpp2::ConfigModule& module, const std::string& name,
-              const cpp2::ConfigType& type, const std::string& value);
+              const cpp2::ConfigType& type, const std::string& value, const bool isForce);
 
     folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module);

@@ -21,7 +21,6 @@ Status FetchVerticesExecutor::prepare() {
 }
 
 Status FetchVerticesExecutor::prepareClauses() {
-    DCHECK_NOTNULL(sentence_);
     Status status = Status::OK();
 
     do {
@@ -34,7 +33,7 @@ Status FetchVerticesExecutor::prepareClauses() {
         expCtx_->setStorageClient(ectx()->getStorageClient());
 
         spaceId_ = ectx()->rctx()->session()->space();
-        yieldClause_ = sentence_->yieldClause();
+        yieldClause_ = DCHECK_NOTNULL(sentence_)->yieldClause();
         labelName_ = sentence_->tag();
         auto result = ectx()->schemaManager()->toTagID(spaceId_, *labelName_);
         if (!result.ok()) {
