@@ -413,20 +413,24 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
         if (resp.get_rows() && !resp.get_rows()->empty()) {
             printResult(resp);
             std::cout << "Got " << resp.get_rows()->size()
-                      << " rows (Time spent: "
-                      << resp.get_latency_in_us() << "/"
-                      << dur.elapsedInUSec() << " us)\n";
+                      << " rows (Time spent: ";
         } else if (resp.get_rows()) {
-            std::cout << "Empty set (Time spent: "
-                      << resp.get_latency_in_us() << "/"
-                      << dur.elapsedInUSec() << " us)\n";
+            std::cout << "Empty set (Time spent: ";
         } else {
-            std::cout << "Execution succeeded (Time spent: "
-                      << resp.get_latency_in_us() << "/"
+            std::cout << "Execution succeeded (Time spent: ";
+        }
+        if (resp.get_latency_in_us() < 1000 || dur.elapsedInUSec() < 1000) {
+            std::cout << resp.get_latency_in_us() << "/"
                       << dur.elapsedInUSec() << " us)\n";
+        } else if (resp.get_latency_in_us() < 1000000 || dur.elapsedInUSec() < 1000000) {
+            std::cout << resp.get_latency_in_us() / 1000.0 << "/"
+                      << dur.elapsedInUSec() / 1000.0 << " ms)\n";
+        } else {
+            std::cout << resp.get_latency_in_us() / 1000000.0 << "/"
+                      << dur.elapsedInUSec() / 1000000.0 << " s)\n";
         }
         std::cout << std::endl;
-    } else if (res == cpp2::ErrorCode::E_SYNTAX_ERROR) {
+   } else if (res == cpp2::ErrorCode::E_SYNTAX_ERROR) {
         static const std::regex range("at 1.([0-9]+)-([0-9]+)");
         static const std::regex single("at 1.([0-9]+)");
         std::smatch result;
