@@ -88,6 +88,7 @@ trap '[[ $? -ne 0 ]] && echo "Building failed, see $logfile for more details." 1
 # Allow to customize compilers
 [[ -n ${CC} ]] && C_COMPILER_ARG="-DCMAKE_C_COMPILER=${CC}"
 [[ -n ${CXX} ]] && CXX_COMPILER_ARG="-DCMAKE_CXX_COMPILER=${CXX}"
+[[ ${disable_cxx11_abi} -ne 0 ]] && DISABLE_CXX11_ABI="-DDISABLE_CXX11_ABI=1"
 
 # Download source archives if necessary
 mkdir -p $build_root
@@ -124,9 +125,10 @@ cd $build_dir
 
 echo "Starting build"
 
-cmake -DDOWNLOAD_DIR=$download_dir \
-      -DCMAKE_INSTALL_PREFIX=$install_dir \
-      ${C_COMPILER_ARG} ${CXX_COMPILER_ARG} \
+cmake -DDOWNLOAD_DIR=$download_dir              \
+      -DCMAKE_INSTALL_PREFIX=$install_dir       \
+      ${C_COMPILER_ARG} ${CXX_COMPILER_ARG}     \
+      ${diable_cxx11_abi}                       \
       $source_dir |& tee $logfile
 
 make |& \
