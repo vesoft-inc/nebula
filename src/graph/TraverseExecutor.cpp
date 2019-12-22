@@ -17,7 +17,7 @@
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 #include "graph/SetExecutor.h"
-#include "graph/FindExecutor.h"
+#include "graph/LookupExecutor.h"
 #include "graph/MatchExecutor.h"
 #include "graph/FindPathExecutor.h"
 #include "graph/LimitExecutor.h"
@@ -59,8 +59,8 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
         case Sentence::Kind::kMatch:
             executor = std::make_unique<MatchExecutor>(sentence, ectx);
             break;
-        case Sentence::Kind::kFind:
-            executor = std::make_unique<FindExecutor>(sentence, ectx);
+        case Sentence::Kind::kLookup:
+            executor = std::make_unique<LookupExecutor>(sentence, ectx);
             break;
         case Sentence::Kind::kYield:
             executor = std::make_unique<YieldExecutor>(sentence, ectx);

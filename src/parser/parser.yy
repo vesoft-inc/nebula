@@ -97,7 +97,7 @@ class GraphScanner;
 /* keywords */
 %token KW_GO KW_AS KW_TO KW_OR KW_AND KW_XOR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
-%token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
+%token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_LOOKUP
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PARTS KW_TIMESTAMP KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_UUID
@@ -195,7 +195,7 @@ class GraphScanner;
 %type <role_type_clause> role_type_clause
 %type <acl_item_clause> acl_item_clause
 
-%type <sentence> go_sentence match_sentence use_sentence find_sentence find_path_sentence
+%type <sentence> go_sentence match_sentence use_sentence lookup_sentence find_path_sentence
 %type <sentence> order_by_sentence limit_sentence group_by_sentence
 %type <sentence> fetch_vertices_sentence fetch_edges_sentence
 %type <sentence> create_tag_sentence create_edge_sentence
@@ -718,10 +718,11 @@ match_sentence
     : KW_MATCH { $$ = new MatchSentence; }
     ;
 
-find_sentence
-    : KW_FIND prop_list KW_FROM name_label where_clause {
-        auto sentence = new FindSentence($4, $2);
-        sentence->setWhereClause($5);
+lookup_sentence
+    : KW_LOOKUP KW_ON name_label where_clause yield_clause {
+        auto sentence = new LookupSentence($3);
+        sentence->setWhereClause($4);
+        sentence->setYieldClause($5);
         $$ = sentence;
     }
     ;
@@ -1120,7 +1121,7 @@ traverse_sentence
     | L_PAREN set_sentence R_PAREN { $$ = $2; }
     | go_sentence { $$ = $1; }
     | match_sentence { $$ = $1; }
-    | find_sentence { $$ = $1; }
+    | lookup_sentence { $$ = $1; }
     | group_by_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }

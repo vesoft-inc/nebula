@@ -948,6 +948,10 @@ public:
         return right_.get();
     }
 
+    const Operator op() const {
+        return op_;
+    }
+
 private:
     void encode(Cord &cord) const override;
 
@@ -999,6 +1003,10 @@ public:
 
     const Expression* right() const {
         return right_.get();
+    }
+
+    const Operator op() const {
+        return op_;
     }
 
 private:

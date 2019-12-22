@@ -28,6 +28,8 @@ typedef i64 (cpp.type = "nebula::SchemaVer") SchemaVer
 typedef i32 (cpp.type = "nebula::UserID") UserID
 typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
 
+typedef i32 (cpp.type = "nebula::IndexID") IndexID
+
 // These are all data types supported in the graph properties
 enum SupportedType {
     UNKNOWN = 0,
@@ -97,6 +99,18 @@ struct HostAddr {
 struct Pair {
     1: string key,
     2: string value,
+}
+
+struct IndexHintItem {
+    1: binary                first_str,
+    2: binary                second_str,
+    3: SupportedType         type,
+}
+
+struct IndexHint {
+    1: IndexID               index_id,
+    2: bool                  is_range,
+    3: list<IndexHintItem>   hint_items,
 }
 
 const ValueType kInvalidValueType = {"type" : UNKNOWN}

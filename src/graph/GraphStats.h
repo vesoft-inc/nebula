@@ -30,6 +30,7 @@ public:
         findPathStats_ = std::make_unique<stats::Stats>("graph", "find_path");
         fetchVStats_ = std::make_unique<stats::Stats>("graph", "fetch_vertex");
         fetchEStats_ = std::make_unique<stats::Stats>("graph", "fetch_edge");
+        lookupStats_ = std::make_unique<stats::Stats>("graph", "lookup");
     }
 
     ~GraphStats() = default;
@@ -49,6 +50,7 @@ public:
     stats::Stats* getFindPathStats() const { return findPathStats_.get(); }
     stats::Stats* getFetchVerticesStats() const { return fetchVStats_.get(); }
     stats::Stats* getFetchEdgesStats() const { return fetchEStats_.get(); }
+    stats::Stats* getLookupStats() const { return lookupStats_.get(); }
 
 private:
     std::unique_ptr<stats::Stats> storageClientStats_;         // storageClient stats
@@ -65,6 +67,7 @@ private:
     std::unique_ptr<stats::Stats> findPathStats_;              // findPath stats
     std::unique_ptr<stats::Stats> fetchVStats_;                // fetch vertex stats
     std::unique_ptr<stats::Stats> fetchEStats_;                // fetch edge stats
+    std::unique_ptr<stats::Stats> lookupStats_;                // fetch edge stats
 };
 
 }  // namespace graph
