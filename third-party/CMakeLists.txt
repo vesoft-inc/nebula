@@ -50,6 +50,9 @@ set(BUILDING_PATH "${CMAKE_INSTALL_PREFIX}/bin:${CMAKE_INSTALL_PREFIX}/sbin:$ENV
 set(ACLOCAL_PATH "${CMAKE_INSTALL_PREFIX}/share/aclocal:${CMAKE_INSTALL_PREFIX}/share/aclocal-1.15")
 
 set(extra_link_libs "-static-libstdc++ -static-libgcc")
+if (USE_CXX11_ABI)
+    set(extra_cpp_flags "-D_GLIBCXX_USE_CXX11_ABI=1")
+endif()
 
 if(GLIBC_VERSION VERSION_LESS 2.17)
     set(extra_link_libs "${extra_link_libs} -lrt")
@@ -57,10 +60,10 @@ endif()
 
 set(common_cmake_args
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-    "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -fPIC"
-    "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} -fPIC"
+    "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+    "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
+    "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -fPIC ${extra_cpp_flags}"
+    "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} -fPIC ${extra_cpp_flags}"
     "-DCMAKE_EXE_LINKER_FLAGS=${extra_link_libs}"
     "-DCMAKE_SHARED_LINKER_FLAGS=${extra_link_libs}"
     -DCMAKE_INCLUDE_PATH=${CMAKE_INSTALL_PREFIX}/include
@@ -75,9 +78,9 @@ set(common_configure_envs
     "env"
     "CC=${CMAKE_C_COMPILER}"
     "CXX=${CMAKE_CXX_COMPILER}"
-    "CFLAGS=${CMAKE_C_FLAGS} -fPIC -O2 -D_DEFAULT_SOURCE -D_GNU_SOURCE"
-    "CXXFLAGS=${CMAKE_CXX_FLAGS} -fPIC -O2 -D_DEFAULT_SOURCE -D_GNU_SOURCE"
-    "CPPFLAGS=-isystem ${CMAKE_INSTALL_PREFIX}/include"
+    "CFLAGS=${CMAKE_C_FLAGS} -fPIC -O2 -D_DEFAULT_SOURCE -D_GNU_SOURCE ${extra_cpp_flags}"
+    "CXXFLAGS=${CMAKE_CXX_FLAGS} -fPIC -O2 -D_DEFAULT_SOURCE -D_GNU_SOURCE ${extra_cpp_flags}"
+    "CPPFLAGS=-isystem ${CMAKE_INSTALL_PREFIX}/include ${extra_cpp_flags}"
     "LDFLAGS=-L${CMAKE_INSTALL_PREFIX}/lib -L${CMAKE_INSTALL_PREFIX}/lib64 ${extra_link_libs}"
     "PATH=${BUILDING_PATH}"
     "ACLOCAL_PATH=${ACLOCAL_PATH}"
