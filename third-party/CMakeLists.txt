@@ -98,6 +98,7 @@ set(ALL_TARGETS
     lz4
     libaio
     mstch
+    gperf
     fatal
     double-conversion
     gflags
@@ -144,11 +145,6 @@ endif()
 find_package(FLEX 2.6.0 QUIET)
 if (NOT FLEX_FOUND)
     list(APPEND ALL_TARGETS flex)
-endif()
-
-find_package(GPERF 2.8 QUIET)
-if (NOT GPERF_FOUND)
-    list(APPEND ALL_TARGETS gperf)
 endif()
 
 find_package(Gettext QUIET)

@@ -75,7 +75,8 @@ cur_dir=`pwd`
 source_dir=$(readlink -f $(dirname $0)/..)/third-party
 build_root=$cur_dir/third-party
 build_dir=$build_root/build
-install_dir=$build_root/install
+prefix=$1
+install_dir=${prefix:-$build_root/install}
 download_dir=$build_root/downloads
 source_tar_name=nebula-third-party-src-1.0.tgz
 source_url=https://nebula-graph.oss-accelerate.aliyuncs.com/third-party/${source_tar_name}
@@ -153,7 +154,7 @@ set -e
 hash xz &> /dev/null || { echo "xz: Command not found"; exit 1; }
 
 [[ \$# -ne 0 ]] && prefix=\$(echo "\$@" | sed 's;.*--prefix=(\S*).*;\1;p' -rn)
-prefix=\${prefix:-\$PWD/third-party/install}
+prefix=\${prefix:-/opt/vesoft/third-party}
 mkdir -p \$prefix
 
 [[ -w \$prefix ]] || { echo "\$prefix: No permission to write"; exit 1; }

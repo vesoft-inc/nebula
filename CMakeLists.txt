@@ -146,7 +146,7 @@ if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
     elseif(NOT $ENV{NEBULA_THIRDPARTY_ROOT} STREQUAL "")
         SET(NEBULA_THIRDPARTY_ROOT $ENV{NEBULA_THIRDPARTY_ROOT})
     else()
-        SET(NEBULA_THIRDPARTY_ROOT "/opt/nebula/third-party")
+        SET(NEBULA_THIRDPARTY_ROOT "/opt/vesoft/third-party")
     endif()
 endif()
 

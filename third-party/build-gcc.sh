@@ -55,7 +55,7 @@ source_dir=$root_dir/source
 gcc_object_dir=$root_dir/gcc-build
 bu_object_dir=$root_dir/binutils-build
 prefix=$1
-install_dir=${prefix:-$root_dir/install}/nebula/toolset/gcc/$gcc_version
+install_dir=${prefix:-$root_dir/install}/vesoft/toolset/gcc/$gcc_version
 logfile=$root_dir/gcc-build.log
 triplet=x86_64-vesoft-linux
 distro=$(lsb_release -si)
@@ -292,7 +292,7 @@ function make_package {
 set -e
 
 [[ \$# -ne 0 ]] && prefix=\$(echo "\$@" | sed 's;.*--prefix=(\S*).*;\1;' -r)
-prefix=\${prefix:-/opt}/nebula/toolset
+prefix=\${prefix:-/opt}/vesoft/toolset
 
 hash xz &> /dev/null || { echo "xz: Command not found"; exit 1; }
 
