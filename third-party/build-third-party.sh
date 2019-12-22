@@ -128,7 +128,7 @@ echo "Starting build"
 cmake -DDOWNLOAD_DIR=$download_dir              \
       -DCMAKE_INSTALL_PREFIX=$install_dir       \
       ${C_COMPILER_ARG} ${CXX_COMPILER_ARG}     \
-      ${diable_cxx11_abi}                       \
+      ${DISABLE_CXX11_ABI}                      \
       $source_dir |& tee $logfile
 
 make |& \
