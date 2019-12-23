@@ -1,8 +1,8 @@
-# Nebula Graph Installation with rmp Package
+# Nebula Graph Installation with rpm Package
 
 ## Overview
 
-This guide will walk you through the process of installing **Nebula Graph** with rmp packages.
+This guide will walk you through the process of installing **Nebula Graph** with rpm packages.
 
 ## Prerequisites
 
@@ -13,7 +13,7 @@ Before getting started, ensure that you meet the following requirements:
 
 ## Installing Nebula Graph
 
-To install **Nebula Graph** with a rmp package, you must complete the following steps:
+To install **Nebula Graph** with a rpm package, you must complete the following steps:
 
 1. Log in to GitHub and click [this link](https://github.com/vesoft-inc/nebula/actions) to locate the rpm package.
 
@@ -32,6 +32,7 @@ To install **Nebula Graph** with a rmp package, you must complete the following 
 ```shell
 $ rpm -ivh nebula-5ace754.el7-5.x86_64.rpm
 ```
+
 **Note**: Replace the above file name with your own file name, otherwise, this command might fail.
 
 ## Starting **Nebula Graph** Services
@@ -67,4 +68,3 @@ If you want to stop **Nebula Graph** services, you can enter the following comma
 ```shell
 $ /usr/local/nebula/scripts/nebula.service stop all
 ```
-
