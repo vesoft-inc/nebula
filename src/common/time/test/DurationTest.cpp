@@ -14,7 +14,7 @@ TEST(Duration, elapsedInSeconds) {
     for (int i = 0; i < 5; i++) {
         Duration dur;
         auto start = std::chrono::steady_clock::now();
-        sleep(2);
+        sleep(3);
         auto diff = std::chrono::steady_clock::now() - start;
         dur.pause();
 
@@ -26,7 +26,7 @@ TEST(Duration, elapsedInSeconds) {
 
 TEST(Duration, elapsedInMilliSeconds) {
     Duration dur;
-    for (int i = 0; i < 200; i++) {
+    for (int i = 0; i < 300; i++) {
         dur.reset();
         auto start = std::chrono::steady_clock::now();
         usleep(5000);   // Sleep for 5 ms
