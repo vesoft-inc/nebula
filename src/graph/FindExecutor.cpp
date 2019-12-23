@@ -11,7 +11,7 @@ namespace nebula {
 namespace graph {
 
 FindExecutor::FindExecutor(Sentence *sentence, ExecutionContext *ectx)
-    : TraverseExecutor(ectx) {
+    : TraverseExecutor(ectx, "find") {
     sentence_ = static_cast<FindSentence*>(sentence);
 }
 

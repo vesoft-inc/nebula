@@ -107,6 +107,7 @@ private:
     // <counter_name> => index
     // when index > 0, (index - 1) is the index of stats_ list
     // when index < 0, [- (index + 1)] is the index of histograms_ list
+    folly::RWSpinLock nameMapLock_;
     std::unordered_map<std::string, int32_t> nameMap_;
 
     // All time series stats

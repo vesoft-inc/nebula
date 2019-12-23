@@ -390,14 +390,14 @@ StatusOr<VariantType> Executor::transformDefaultValue(nebula::cpp2::SupportedTyp
     return Status::OK();
 }
 
-void Executor::doError(Status status, const stats::Stats* stats, uint32_t count) const {
-    stats::Stats::addStatsValue(stats, false, duration().elapsedInUSec(), count);
+void Executor::doError(Status status, uint32_t count) const {
+    stats::Stats::addStatsValue(stats_.get(), false, duration().elapsedInUSec(), count);
     DCHECK(onError_);
     onError_(std::move(status));
 }
 
-void Executor::doFinish(ProcessControl pro, const stats::Stats* stats, uint32_t count) const {
-    stats::Stats::addStatsValue(stats, true, duration().elapsedInUSec(), count);
+void Executor::doFinish(ProcessControl pro, uint32_t count) const {
+    stats::Stats::addStatsValue(stats_.get(), true, duration().elapsedInUSec(), count);
     DCHECK(onFinish_);
     onFinish_(pro);
 }

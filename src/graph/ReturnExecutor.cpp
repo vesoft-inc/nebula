@@ -11,7 +11,7 @@
 namespace nebula {
 namespace graph {
 ReturnExecutor::ReturnExecutor(Sentence *sentence,
-                               ExecutionContext *ectx) : Executor(ectx) {
+                               ExecutionContext *ectx) : Executor(ectx, "return") {
     sentence_ = static_cast<ReturnSentence*>(sentence);
 }
 
@@ -21,20 +21,18 @@ Status ReturnExecutor::prepare() {
 
 void ReturnExecutor::execute() {
     FLOG_INFO("Executing Return: %s", sentence_->toString().c_str());
-    DCHECK(onFinish_);
-    DCHECK(onError_);
     DCHECK(sentence_);
 
     auto *var = sentence_->var();
     auto *condition = sentence_->condition();
     if (var == nullptr) {
         // Shall never reach here.
-        onError_(Status::SyntaxError("Variable not declared."));
+        doError(Status::SyntaxError("Variable not declared."));
         return;
     }
 
     if ((condition != nullptr) && (*condition != *var)) {
-        onError_(Status::SyntaxError(
+        doError(Status::SyntaxError(
                     "Variable(%s) to be returned is not euqal to condition(%s)", var, condition));
         return;
     }
@@ -42,12 +40,12 @@ void ReturnExecutor::execute() {
     bool existing = false;
     auto *varInputs = ectx()->variableHolder()->get(*var, &existing);
     if (varInputs == nullptr && !existing) {
-        onError_(Status::Error("Variable(%s) not declared.", var));
+        doError(Status::Error("Variable(%s) not declared.", var));
         return;
     }
 
     if (varInputs == nullptr || !varInputs->hasData()) {
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     } else {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         auto colNames = varInputs->getColNames();
@@ -55,17 +53,17 @@ void ReturnExecutor::execute() {
         auto ret = varInputs->getRows();
         if (!ret.ok()) {
             LOG(ERROR) << "Get rows failed: " << ret.status();
-            onError_(std::move(ret).status());
+            doError(std::move(ret).status());
             return;
         }
         auto rows = ret.value();
         if (rows.empty()) {
-            onFinish_(Executor::ProcessControl::kNext);
+            doFinish(Executor::ProcessControl::kNext);
             return;
         }
         resp_->set_rows(std::move(rows));
         // Will return if variable has values.
-        onFinish_(Executor::ProcessControl::kReturn);
+        doFinish(Executor::ProcessControl::kReturn);
     }
 }
 
