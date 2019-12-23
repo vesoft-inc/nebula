@@ -26,8 +26,8 @@
 #include "storage/admin/CreateCheckpointProcessor.h"
 #include "storage/admin/DropCheckpointProcessor.h"
 #include "storage/admin/SendBlockSignProcessor.h"
-#include "storage/ScanVertexIndexProcessor.h"
-#include "storage/ScanEdgeIndexProcessor.h"
+#include "storage/index/ScanVertexIndexProcessor.h"
+#include "storage/index/ScanEdgeIndexProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \

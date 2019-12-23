@@ -72,7 +72,7 @@ protected:
 }  // namespace storage
 }  // namespace nebula
 
-#include "storage/ScanIndexBaseProcessor.inl"
+#include "ScanIndexBaseProcessor.inl"
 
 
 #endif  // STORAGE_SCANINDEXBASEPROCESSOR_H

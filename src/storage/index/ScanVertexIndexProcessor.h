@@ -9,7 +9,7 @@
 
 #include "base/Base.h"
 #include "kvstore/NebulaStore.h"
-#include "storage/ScanIndexBaseProcessor.h"
+#include "ScanIndexBaseProcessor.h"
 
 namespace nebula {
 namespace storage {

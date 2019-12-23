@@ -11,8 +11,8 @@
 #include <limits>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/ScanVertexIndexProcessor.h"
-#include "storage/ScanEdgeIndexProcessor.h"
+#include "storage/index/ScanVertexIndexProcessor.h"
+#include "storage/index/ScanEdgeIndexProcessor.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 DECLARE_int32(load_data_interval_secs);
