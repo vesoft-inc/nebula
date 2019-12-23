@@ -9,7 +9,7 @@
 #include "http/HttpClient.h"
 #include "webservice/WebService.h"
 #include "storage/test/TestUtils.h"
-#include "storage/StorageHttpIngestHandler.h"
+#include "storage/http/StorageHttpIngestHandler.h"
 #include <gtest/gtest.h>
 #include <rocksdb/sst_file_writer.h>
 

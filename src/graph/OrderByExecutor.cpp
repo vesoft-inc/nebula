@@ -69,7 +69,7 @@ bool ColumnValue::operator < (const ColumnValue& rhs) const {
 }  // namespace cpp2
 
 OrderByExecutor::OrderByExecutor(Sentence *sentence, ExecutionContext *ectx)
-    : TraverseExecutor(ectx) {
+    : TraverseExecutor(ectx, "order_by") {
     sentence_ = static_cast<OrderBySentence*>(sentence);
 }
 
@@ -92,13 +92,11 @@ void OrderByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
 }
 
 void OrderByExecutor::execute() {
-    DCHECK(onFinish_);
-    DCHECK(onError_);
     FLOG_INFO("Executing Order By: %s", sentence_->toString().c_str());
     auto status = beforeExecute();
     if (!status.ok()) {
         LOG(ERROR) << "Error happened before execute: " << status.toString();
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
@@ -130,7 +128,7 @@ void OrderByExecutor::execute() {
     if (onResult_) {
         onResult_(setupInterimResult());
     }
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 Status OrderByExecutor::beforeExecute() {
