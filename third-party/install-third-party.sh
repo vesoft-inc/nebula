@@ -46,9 +46,14 @@ hash wget &>/dev/null || {
 }
 
 download_cmd="wget -c"
-wget --help | grep -q '\--show-progress' && \
-         download_cmd="$download_cmd -q --show-progress" || \
-         download_cmd="$download_cmd --progress=bar:force:noscroll"
+if [[ -t 1 ]]
+then
+    wget --help | grep -q '\--show-progress' && \
+            download_cmd="$download_cmd -q --show-progress" || \
+            download_cmd="$download_cmd --progress=bar:force:noscroll"
+else
+    download_cmd="$download_cmd -q"
+fi
 
 function version_cmp {
     mapfile -t left < <( echo $1 | tr . '\n' )
@@ -91,8 +96,6 @@ selected_libcxx=$(select_by_version $this_libcxx "${libcxx_preset[@]}")
 }
 
 selected_archive=vesoft-third-party-x86_64-libc-$selected_libc-libcxx-$selected_libcxx-abi-$this_abi.sh
-
-echo $selected_archive
 
 url=$url_base/$selected_archive
 $download_cmd $url

@@ -209,14 +209,14 @@ add_custom_command(
     TARGET rocksdb POST_BUILD
     COMMAND
         rm -rf ${CMAKE_INSTALL_PREFIX}/lib64/librocksdb.so*
+    COMMAND
+        rm -rf ${CMAKE_INSTALL_PREFIX}/lib/librocksdb.so*
 )
 
 add_custom_target(
     strip-archives ALL
     COMMAND
         strip --strip-unneeded ${CMAKE_INSTALL_PREFIX}/lib/*.a
-    COMMAND
-        strip --strip-unneeded ${CMAKE_INSTALL_PREFIX}/lib64/*.a
     DEPENDS ${ALL_TARGETS}
 )
 
