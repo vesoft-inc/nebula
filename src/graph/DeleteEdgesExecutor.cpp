@@ -14,7 +14,8 @@ namespace nebula {
 namespace graph {
 
 DeleteEdgesExecutor::DeleteEdgesExecutor(Sentence *sentence,
-                                         ExecutionContext *ectx) : Executor(ectx) {
+                                         ExecutionContext *ectx)
+    : Executor(ectx, "delete_dege") {
     sentence_ = static_cast<DeleteEdgesSentence*>(sentence);
 }
 
@@ -48,8 +49,7 @@ Status DeleteEdgesExecutor::prepare() {
 void DeleteEdgesExecutor::execute() {
     auto status = setupEdgeKeys();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
@@ -62,18 +62,15 @@ void DeleteEdgesExecutor::execute() {
         auto completeness = resp.completeness();
         if (completeness != 100) {
             // TODO Need to consider atomic issues
-            DCHECK(onError_);
-            onError_(Status::Error("Internal Error"));
+            doError(Status::Error("Internal Error"));
             return;
         }
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext, edgeKeys_.size());
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal error"));
         return;
     };
 
