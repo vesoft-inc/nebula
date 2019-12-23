@@ -3,6 +3,9 @@ name: Bug report
 about: Help us to improve this project
 
 ---
+**Please check the FAQ documentation before raising an issue**
+
+Please check the [FAQ](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/1.overview/2.quick-start/2.FAQ.md) documentation and old issues before raising an issue in case someone has asked the same question that you are asking.
 
 **Describe the bug (__must be provided__)**
 
@@ -30,5 +33,3 @@ A clear and concise description of what you expected to happen.
 **Additional context**
 
 Provide logs and configs, or any other context to trace the problem.
-
-See [Trouble Shooting](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/1.overview/2.quick-start/2.trouble-shooting.md) for possible errors.
