@@ -13,7 +13,7 @@ namespace nebula {
 namespace graph {
 
 YieldExecutor::YieldExecutor(Sentence *sentence, ExecutionContext *ectx)
-    : TraverseExecutor(ectx) {
+    : TraverseExecutor(ectx, "yield") {
     sentence_ = static_cast<YieldSentence*>(sentence);
 }
 
@@ -154,8 +154,7 @@ void YieldExecutor::execute() {
 
     if (!status.ok()) {
         LOG(INFO) << status.toString();
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 }
@@ -432,14 +431,13 @@ void YieldExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
             auto ret = outputs->getRows();
             if (!ret.ok()) {
                 LOG(ERROR) << "Get rows failed: " << ret.status();
-                onError_(std::move(ret).status());
+                doError(std::move(ret).status());
                 return;
             }
             resp_->set_rows(std::move(ret).value());
         }
     }
-    DCHECK(onFinish_);
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 void YieldExecutor::feedResult(std::unique_ptr<InterimResult> result) {

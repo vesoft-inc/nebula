@@ -104,7 +104,7 @@ void FetchExecutor::onEmptyInputs() {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(std::move(resultColNames_));
     }
-    doFinish(Executor::ProcessControl::kNext, getStats());
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 Status FetchExecutor::getOutputSchema(
@@ -147,21 +147,13 @@ void FetchExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
             auto ret = outputs->getRows();
             if (!ret.ok()) {
                 LOG(ERROR) << "Get rows failed: " << ret.status();
-                doError(std::move(ret).status(), getStats());
+                doError(std::move(ret).status());
                 return;
             }
             resp_->set_rows(std::move(ret).value());
         }
     }
-    doFinish(Executor::ProcessControl::kNext, getStats());
-}
-
-stats::Stats* FetchExecutor::getStats() const {
-    if (0 == strcmp(name(), "FetchVerticesExecutor")) {
-        return ectx()->getGraphStats()->getFetchVerticesStats();
-    } else {
-        return ectx()->getGraphStats()->getFetchEdgesStats();
-    }
+    doFinish(Executor::ProcessControl::kNext);
 }
 }  // namespace graph
 }  // namespace nebula

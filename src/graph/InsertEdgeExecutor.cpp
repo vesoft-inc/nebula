@@ -12,7 +12,8 @@ namespace nebula {
 namespace graph {
 
 InsertEdgeExecutor::InsertEdgeExecutor(Sentence *sentence,
-                                       ExecutionContext *ectx) : Executor(ectx) {
+                                       ExecutionContext *ectx)
+    : Executor(ectx, "insert_edge") {
     sentence_ = static_cast<InsertEdgeSentence*>(sentence);
 }
 
@@ -158,7 +159,6 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
                 auto position = propsPosition_[fieldName];
                 value = values[position];
                 if (!checkValueType(schemaType, value)) {
-                   DCHECK(onError_);
                     LOG(ERROR) << "ValueType is wrong, schema type "
                                << static_cast<int32_t>(schemaType.type)
                                 << ", input type " <<  value.which();
@@ -215,14 +215,14 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
 void InsertEdgeExecutor::execute() {
     auto status = check();
     if (!status.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getInsertEdgeStats());
+        doError(std::move(status));
         return;
     }
 
     auto result = prepareEdges();
     if (!result.ok()) {
         LOG(ERROR) << "Insert edge failed, error " << result.status();
-        doError(result.status(), ectx()->getGraphStats()->getInsertEdgeStats());
+        doError(result.status());
         return;
     }
 
@@ -240,17 +240,15 @@ void InsertEdgeExecutor::execute() {
                 LOG(ERROR) << "Insert edge failed, error " << static_cast<int32_t>(it->second)
                            << ", part " << it->first;
             }
-            doError(Status::Error("Internal Error"), ectx()->getGraphStats()->getInsertEdgeStats());
+            doError(Status::Error("Internal Error"));
             return;
         }
-        doFinish(Executor::ProcessControl::kNext,
-                 ectx()->getGraphStats()->getInsertEdgeStats(),
-                 rows_.size());
+        doFinish(Executor::ProcessControl::kNext, rows_.size());
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"), ectx()->getGraphStats()->getInsertEdgeStats());
+        doError(Status::Error("Internal error"));
         return;
     };
 

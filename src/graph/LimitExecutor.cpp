@@ -10,7 +10,8 @@
 namespace nebula {
 namespace graph {
 
-LimitExecutor::LimitExecutor(Sentence *sentence, ExecutionContext *ectx) : TraverseExecutor(ectx) {
+LimitExecutor::LimitExecutor(Sentence *sentence, ExecutionContext *ectx)
+    : TraverseExecutor(ectx, "limit") {
     sentence_ = static_cast<LimitSentence*>(sentence);
 }
 
@@ -39,8 +40,7 @@ void LimitExecutor::execute() {
     auto ret = inputs_->getRows();
     if (!ret.ok()) {
         LOG(ERROR) << "Get rows failed: " << ret.status();
-        DCHECK(onError_);
-        onError_(std::move(ret).status());
+        doError(std::move(ret).status());
         return;
     }
     auto inRows = std::move(ret).value();
@@ -60,8 +60,7 @@ void LimitExecutor::execute() {
         onResult_(std::move(output));
     }
 
-    DCHECK(onFinish_);
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 
@@ -125,7 +124,7 @@ void LimitExecutor::onEmptyInputs() {
         auto result = std::make_unique<InterimResult>(std::move(colNames_));
         onResult_(std::move(result));
     }
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 
