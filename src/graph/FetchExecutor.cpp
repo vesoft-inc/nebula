@@ -114,14 +114,14 @@ Status FetchExecutor::getOutputSchema(
     if (expCtx_ == nullptr || resultColNames_.empty()) {
         return Status::Error("Input is empty.");
     }
-    auto &getters = expCtx_->getters();
+    Getters getters;
     getters.getAliasProp = [schema, reader] (const std::string&, const std::string &prop) {
         return Collector::getProp(schema, prop, reader);
     };
     std::vector<VariantType> record;
     for (auto *column : yields_) {
         auto *expr = column->expr();
-        auto value = expr->eval();
+        auto value = expr->eval(getters);
         if (!value.ok()) {
             return value.status();
         }

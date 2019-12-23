@@ -12,6 +12,8 @@
 #include "dataman/ResultSchemaProvider.h"
 
 
+DEFINE_bool(filter_pushdown, true, "If pushdown the filter to storage.");
+
 namespace nebula {
 namespace graph {
 
@@ -167,6 +169,7 @@ Status GoExecutor::prepareFrom() {
         auto space = ectx()->rctx()->session()->space();
         expCtx_->setSpace(space);
         auto vidList = clause->vidList();
+        Getters getters;
         for (auto *expr : vidList) {
             expr->setContext(expCtx_.get());
 
@@ -174,7 +177,7 @@ Status GoExecutor::prepareFrom() {
             if (!status.ok()) {
                 break;
             }
-            auto value = expr->eval();
+            auto value = expr->eval(getters);
             if (!value.ok()) {
                 status = Status::Error();
                 break;
@@ -285,10 +288,9 @@ Status GoExecutor::prepareOver() {
 
 Status GoExecutor::prepareWhere() {
     auto *clause = sentence_->whereClause();
-    if (clause != nullptr) {
-        filter_ = clause->filter();
-    }
-    return Status::OK();
+    whereWrapper_ = std::make_unique<WhereWrapper>(clause);
+    auto status = whereWrapper_->prepare(expCtx_.get());
+    return status;
 }
 
 
@@ -319,14 +321,6 @@ Status GoExecutor::prepareYield() {
 Status GoExecutor::prepareNeededProps() {
     auto status = Status::OK();
     do {
-        if (filter_ != nullptr) {
-            filter_->setContext(expCtx_.get());
-            status = filter_->prepare();
-            if (!status.ok()) {
-                break;
-            }
-        }
-
         for (auto *col : yields_) {
             col->expr()->setContext(expCtx_.get());
             status = col->expr()->prepare();
@@ -446,11 +440,16 @@ void GoExecutor::stepOut() {
         return;
     }
     auto returns = status.value();
+    std::string filterPushdown = "";
+    if (FLAGS_filter_pushdown && isFinalStep() && !isReversely()) {
+        // TODO: not support filter pushdown in reversely traversal now.
+        filterPushdown = whereWrapper_->filterPushdown_;
+    }
     auto future  = ectx()->getStorageClient()->getNeighbors(spaceId,
-                                                            starts_,
-                                                            edgeTypes_,
-                                                            "",
-                                                            std::move(returns));
+                                                   starts_,
+                                                   edgeTypes_,
+                                                   filterPushdown,
+                                                   std::move(returns));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
         auto completeness = result.completeness();
@@ -1019,7 +1018,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                 while (iter) {
                     std::vector<SupportedType> colTypes;
                     bool saveTypeFlag = false;
-                    auto &getters = expCtx_->getters();
+                    Getters getters;
                     getters.getAliasProp = [&iter,
                                             &edgeType,
                                             &saveTypeFlag,
@@ -1144,8 +1143,8 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     };
 
                     // Evaluate filter
-                    if (filter_ != nullptr) {
-                        auto value = filter_->eval();
+                    if (whereWrapper_->filter_ != nullptr) {
+                        auto value = whereWrapper_->filter_->eval(getters);
                         if (!value.ok()) {
                             doError(std::move(value).status());
                             return false;
@@ -1161,7 +1160,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     for (auto *column : yields_) {
                         colTypes.emplace_back(SupportedType::UNKNOWN);
                         auto *expr = column->expr();
-                        auto value = expr->eval();
+                        auto value = expr->eval(getters);
                         if (!value.ok()) {
                             doError(std::move(value).status());
                             return false;
