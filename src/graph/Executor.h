@@ -28,8 +28,11 @@ namespace graph {
 
 class Executor : public cpp::NonCopyable, public cpp::NonMovable {
 public:
-    explicit Executor(ExecutionContext *ectx) {
+    explicit Executor(ExecutionContext *ectx, const std::string &statsName = "") {
         ectx_ = ectx;
+        if (!statsName.empty()) {
+            stats_ = std::make_unique<stats::Stats>("graph", statsName);
+        }
     }
 
     virtual ~Executor() {}
@@ -110,16 +113,15 @@ protected:
 
     StatusOr<VariantType> transformDefaultValue(nebula::cpp2::SupportedType type,
                                                 std::string& originalValue);
-    void doError(Status status, const stats::Stats* stats = nullptr, uint32_t count = 1) const;
-    void doFinish(ProcessControl pro,
-                  const stats::Stats* stats = nullptr,
-                  uint32_t count = 1) const;
+    void doError(Status status, uint32_t count = 1) const;
+    void doFinish(ProcessControl pro, uint32_t count = 1) const;
 
 protected:
     ExecutionContext                           *ectx_;
     std::function<void(ProcessControl)>         onFinish_;
     std::function<void(Status)>                 onError_;
     time::Duration                              duration_;
+    std::unique_ptr<stats::Stats>               stats_;
 };
 
 }   // namespace graph

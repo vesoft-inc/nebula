@@ -18,7 +18,8 @@ namespace graph {
 // UPDATE/UPSERT EDGE <vertex_id> -> <vertex_id> [@<ranking>] OF <edge_type>
 // SET <update_decl> [WHEN <conditions>] [YIELD <field_list>]
 UpdateEdgeExecutor::UpdateEdgeExecutor(Sentence *sentence,
-                                       ExecutionContext *ectx) : Executor(ectx) {
+                                       ExecutionContext *ectx)
+    : Executor(ectx, "update_edge") {
     sentence_ = static_cast<UpdateEdgeSentence*>(sentence);
 }
 
@@ -31,6 +32,7 @@ Status UpdateEdgeExecutor::prepare() {
     expCtx_ = std::make_unique<ExpressionContext>();
     expCtx_->setSpace(spaceId_);
     expCtx_->setStorageClient(ectx()->getStorageClient());
+    Getters getters;
 
     do {
         status = checkIfGraphSpaceChosen();
@@ -44,7 +46,7 @@ Status UpdateEdgeExecutor::prepare() {
         if (!status.ok()) {
             break;
         }
-        auto src = sid->eval();
+        auto src = sid->eval(getters);
         if (!src.ok() || !Expression::isInt(src.value())) {
             status = Status::Error("SRC Vertex ID should be of type integer");
             break;
@@ -57,7 +59,7 @@ Status UpdateEdgeExecutor::prepare() {
         if (!status.ok()) {
             break;
         }
-        auto dst = did->eval();
+        auto dst = did->eval(getters);
         if (!dst.ok() || !Expression::isInt(dst.value())) {
             status = Status::Error("DST Vertex ID should be of type integer");
             break;
@@ -89,8 +91,7 @@ Status UpdateEdgeExecutor::prepare() {
     } while (false);
 
     if (!status.ok()) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getUpdateEdgeStats(),
-                false, duration().elapsedInUSec());
+        stats::Stats::addStatsValue(stats_.get(), false, duration().elapsedInUSec());
     }
     return status;
 }
@@ -179,8 +180,7 @@ void UpdateEdgeExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcResp
                         LOG(FATAL) << "Unknown VariantType: " << column.which();
                 }
             } else {
-                doError(Status::Error("get property failed"),
-                        ectx()->getGraphStats()->getUpdateEdgeStats());
+                doError(Status::Error("get property failed"));
                 return;
             }
         }
@@ -188,7 +188,7 @@ void UpdateEdgeExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcResp
         rows.back().set_columns(std::move(row));
     }
     resp_->set_rows(std::move(rows));
-    doFinish(Executor::ProcessControl::kNext, ectx()->getGraphStats()->getUpdateEdgeStats());
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 
@@ -215,8 +215,7 @@ void UpdateEdgeExecutor::insertReverselyEdge(storage::cpp2::UpdateResponse &&rpc
         auto completeness = resp.completeness();
         if (completeness != 100) {
             // Very bad, it should delete the upsert positive edge!!!
-            doError(Status::Error("Insert the reversely edge failed."),
-                    ectx()->getGraphStats()->getUpdateEdgeStats());
+            doError(Status::Error("Insert the reversely edge failed."));
             return;
         }
         this->finishExecution(std::move(updateResp));
@@ -224,8 +223,7 @@ void UpdateEdgeExecutor::insertReverselyEdge(storage::cpp2::UpdateResponse &&rpc
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
         // Very bad, it should delete the upsert positive edge!!!
-        doError(Status::Error("Internal error: insert reversely edge."),
-                ectx()->getGraphStats()->getUpdateEdgeStats());
+        doError(Status::Error("Internal error: insert reversely edge."));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -244,19 +242,17 @@ void UpdateEdgeExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(std::move(resp).status(), ectx()->getGraphStats()->getUpdateEdgeStats());
+            doError(std::move(resp).status());
             return;
         }
         auto rpcResp = std::move(resp).value();
         for (auto& code : rpcResp.get_result().get_failed_codes()) {
             switch (code.get_code()) {
                 case nebula::storage::cpp2::ErrorCode::E_INVALID_FILTER:
-                      doError(Status::Error("Maybe invalid edge or property in WHEN clause!"),
-                              ectx()->getGraphStats()->getUpdateEdgeStats());
+                      doError(Status::Error("Maybe invalid edge or property in WHEN clause!"));
                       return;
                 case nebula::storage::cpp2::ErrorCode::E_INVALID_UPDATER:
-                      doError(Status::Error("Maybe invalid property in SET/YIELD clasue!"),
-                              ectx()->getGraphStats()->getUpdateEdgeStats());
+                      doError(Status::Error("Maybe invalid property in SET/YIELD clasue!"));
                       return;
                 default:
                       std::string errMsg =
@@ -265,8 +261,7 @@ void UpdateEdgeExecutor::execute() {
                                                 code.get_part_id(),
                                                 static_cast<int32_t>(code.get_code()));
                       LOG(ERROR) << errMsg;
-                      doError(Status::Error(errMsg),
-                               ectx()->getGraphStats()->getUpdateEdgeStats());
+                      doError(Status::Error(errMsg));
                       return;
             }
         }
@@ -279,8 +274,7 @@ void UpdateEdgeExecutor::execute() {
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error about updateEdge"),
-                ectx()->getGraphStats()->getUpdateEdgeStats());
+        doError(Status::Error("Internal error about updateEdge"));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
