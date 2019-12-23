@@ -98,6 +98,7 @@ selected_libcxx=$(select_by_version $this_libcxx "${libcxx_preset[@]}")
 selected_archive=vesoft-third-party-x86_64-libc-$selected_libc-libcxx-$selected_libcxx-abi-$this_abi.sh
 
 url=$url_base/$selected_archive
+echo "Downloading $selected_archive..."
 $download_cmd $url
 [[ $? -ne 0 ]] && {
     echo "Downloading $selected_archive failed" 1>&2
