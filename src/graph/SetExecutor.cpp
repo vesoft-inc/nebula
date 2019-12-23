@@ -17,7 +17,7 @@ bool RowValue::operator<(const RowValue& rhs) const {
 }
 
 SetExecutor::SetExecutor(Sentence *sentence, ExecutionContext *ectx)
-    : TraverseExecutor(ectx) {
+    : TraverseExecutor(ectx, "set") {
     sentence_ = static_cast<SetSentence*>(sentence);
 }
 
@@ -98,7 +98,7 @@ void SetExecutor::setRight() {
 void SetExecutor::execute() {
     auto status = checkIfGraphSpaceChosen();
     if (!status.ok()) {
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
@@ -114,14 +114,14 @@ void SetExecutor::execute() {
             msg += leftS_.toString();
             msg += " rhs has error: ";
             msg += rightS_.toString();
-            onError_(Status::Error(msg));
+            doError(Status::Error(msg));
             return;
         }
 
         if (leftResult_ == nullptr || rightResult_ == nullptr) {
             // Should not reach here.
             LOG(ERROR) << "Get null input.";
-            onError_(Status::Error("Get null input."));
+            doError(Status::Error("Get null input."));
             return;
         }
 
@@ -130,7 +130,7 @@ void SetExecutor::execute() {
         if (colNames_.size() != rightResult_->getColNames().size()) {
             std::string err = "Field count not match.";
             LOG(ERROR) << err;
-            onError_(Status::Error(std::move(err)));
+            doError(Status::Error(std::move(err)));
             return;
         }
         if (!leftResult_->hasData() && !rightResult_->hasData()) {
@@ -174,23 +174,20 @@ void SetExecutor::doUnion() {
 
     Status status = checkSchema();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(status);
+        doError(status);
         return;
     }
 
     auto ret = leftResult_->getRows();
     if (!ret.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(ret).status());
+        doError(std::move(ret).status());
         return;
     }
     auto leftRows = std::move(ret).value();
 
     ret = rightResult_->getRows();
     if (!ret.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(ret).status());
+        doError(std::move(ret).status());
         return;
     }
     auto rightRows = std::move(ret).value();
@@ -198,8 +195,7 @@ void SetExecutor::doUnion() {
     if (!castingMap_.empty()) {
         auto stat = doCasting(rightRows);
         if (!stat.ok()) {
-            DCHECK(onError_);
-            onError_(status);
+            doError(status);
             return;
         }
     }
@@ -277,23 +273,20 @@ void SetExecutor::doIntersect() {
 
     Status status = checkSchema();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(status);
+        doError(status);
         return;
     }
 
     auto ret = leftResult_->getRows();
     if (!ret.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(ret).status());
+        doError(std::move(ret).status());
         return;
     }
     auto leftRows = std::move(ret).value();
 
     ret = rightResult_->getRows();
     if (!ret.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(ret).status());
+        doError(std::move(ret).status());
         return;
     }
     auto rightRows = std::move(ret).value();
@@ -301,8 +294,7 @@ void SetExecutor::doIntersect() {
     if (!castingMap_.empty()) {
         Status stat = doCasting(rightRows);
         if (!stat.ok()) {
-            DCHECK(onError_);
-            onError_(status);
+            doError(status);
             return;
         }
     }
@@ -337,23 +329,20 @@ void SetExecutor::doMinus() {
 
     Status status = checkSchema();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(status);
+        doError(status);
         return;
     }
 
     auto ret = leftResult_->getRows();
     if (!ret.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(ret).status());
+        doError(std::move(ret).status());
         return;
     }
     auto leftRows = std::move(ret).value();
 
     ret = rightResult_->getRows();
     if (!ret.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(ret).status());
+        doError(std::move(ret).status());
         return;
     }
     auto rightRows = std::move(ret).value();
@@ -361,8 +350,7 @@ void SetExecutor::doMinus() {
     if (!castingMap_.empty()) {
         Status stat = doCasting(rightRows);
         if (!stat.ok()) {
-            DCHECK(onError_);
-            onError_(status);
+            doError(status);
             return;
         }
     }
@@ -389,8 +377,7 @@ void SetExecutor::onEmptyInputs() {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(std::move(colNames_));
     }
-    DCHECK(onFinish_);
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 void SetExecutor::finishExecution(std::unique_ptr<InterimResult> result) {
@@ -406,16 +393,14 @@ void SetExecutor::finishExecution(std::unique_ptr<InterimResult> result) {
         if (result->hasData()) {
             auto ret = result->getRows();
             if (!ret.ok()) {
-                DCHECK(onError_);
-                onError_(std::move(ret).status());
+                doError(std::move(ret).status());
                 return;
             }
             resp_->set_rows(std::move(ret).value());
         }
     }
 
-    DCHECK(onFinish_);
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 void SetExecutor::finishExecution(std::vector<cpp2::RowValue> rows) {
@@ -423,7 +408,7 @@ void SetExecutor::finishExecution(std::vector<cpp2::RowValue> rows) {
         auto ret = InterimResult::getInterim(resultSchema_, rows);
         if (!ret.ok()) {
             LOG(ERROR) << "Get Interim result failed.";
-            onError_(std::move(ret).status());
+            doError(std::move(ret).status());
             return;
         }
         onResult_(std::move(ret).value());
@@ -432,8 +417,7 @@ void SetExecutor::finishExecution(std::vector<cpp2::RowValue> rows) {
         resp_->set_column_names(std::move(colNames_));
         resp_->set_rows(std::move(rows));
     }
-    DCHECK(onFinish_);
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 void SetExecutor::feedResult(std::unique_ptr<InterimResult> result) {

@@ -67,10 +67,6 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
                 if (code != cpp2::ErrorCode::SUCCEEDED) {
                     break;
                 }
-                code = setOneConfig(cpp2::ConfigModule::META, name, type, value, isForce, data);
-                if (code != cpp2::ErrorCode::SUCCEEDED) {
-                    break;
-                }
                 code = setOneConfig(cpp2::ConfigModule::STORAGE, name, type, value, isForce, data);
                 if (code != cpp2::ErrorCode::SUCCEEDED) {
                     break;
@@ -86,10 +82,6 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
                 }
             } else {
                 code = setNestedConfig(cpp2::ConfigModule::GRAPH, name, type, value, data);
-                if (code != cpp2::ErrorCode::SUCCEEDED) {
-                    break;
-                }
-                code = setNestedConfig(cpp2::ConfigModule::META, name, type, value, data);
                 if (code != cpp2::ErrorCode::SUCCEEDED) {
                     break;
                 }
