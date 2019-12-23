@@ -140,7 +140,8 @@ Status GoExecutor::prepareFrom() {
     auto *clause = sentence_->fromClause();
     do {
         if (clause == nullptr) {
-            LOG(FATAL) << "From clause shall never be null";
+            LOG(ERROR) << "From clause shall never be null";
+            return Status::Error("From clause shall never be null");
         }
 
         if (clause->isRef()) {
@@ -156,7 +157,8 @@ Status GoExecutor::prepareFrom() {
                 colname_ = vexpr->prop();
             } else {
                 // No way to happen except memory corruption
-                LOG(FATAL) << "Unknown kind of expression";
+                LOG(ERROR) << "Unknown kind of expression";
+                return Status::Error("Unknown kind of expression");
             }
 
             if (colname_ != nullptr && *colname_ == "*") {
@@ -243,7 +245,8 @@ Status GoExecutor::prepareOver() {
     Status status = Status::OK();
     auto *clause = sentence_->overClause();
     if (clause == nullptr) {
-        LOG(FATAL) << "Over clause shall never be null";
+        LOG(ERROR) << "Over clause shall never be null";
+        return Status::Error("Over clause shall never be null");
     }
 
     isReversely_ = clause->isReversely();
@@ -899,13 +902,15 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
     std::unique_ptr<RowSetWriter> rsWriter;
     auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
     auto cb = [&] (std::vector<VariantType> record,
-                       std::vector<nebula::cpp2::SupportedType> colTypes) {
+                       std::vector<nebula::cpp2::SupportedType> colTypes) -> Status {
         if (schema == nullptr) {
             schema = std::make_shared<SchemaWriter>();
             auto colnames = getResultColumnNames();
             if (record.size() != colTypes.size()) {
-                LOG(FATAL) << "data nums: " << record.size()
-                           << " != type nums: " << colTypes.size();
+                LOG(ERROR) << "Record size: " << record.size()
+                           << " != column type size: " << colTypes.size();
+                return Status::Error("Record size is not equal to column type size, [%d != %d]",
+                                      record.size(), colTypes.size());
             }
             for (auto i = 0u; i < record.size(); i++) {
                 SupportedType type;
@@ -925,7 +930,8 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
                             type = SupportedType::STRING;
                             break;
                         default:
-                            LOG(FATAL) << "Unknown VariantType: " << record[i].which();
+                            LOG(ERROR) << "Unknown VariantType: " << record[i].which();
+                            return Status::Error("Unknown VariantType: %d", record[i].which());
                     }
                 } else {
                     type = colTypes[i];
@@ -951,7 +957,8 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
                     writer << boost::get<std::string>(column);
                     break;
                 default:
-                    LOG(FATAL) << "Unknown VariantType: " << column.which();
+                    LOG(ERROR) << "Unknown VariantType: " << column.which();
+                    return Status::Error("Unknown VariantType: %d", column.which());
             }
         }
         // TODO Consider float/double, and need to reduce mem copy.
@@ -964,6 +971,7 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
         } else {
             rsWriter->addRow(std::move(encode));
         }
+        return Status::OK();
     };  // cb
     if (!processFinalResult(rpcResp, cb)) {
         return false;
@@ -1191,7 +1199,12 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         }
                         record.emplace_back(std::move(value.value()));
                     }
-                    cb(std::move(record), std::move(colTypes));
+                    auto cbStatus = cb(std::move(record), std::move(colTypes));
+                    if (!cbStatus.ok()) {
+                        LOG(ERROR) << cbStatus;
+                        doError(std::move(cbStatus), ectx()->getGraphStats()->getGoStats());
+                        return false;
+                    }
                     ++iter;
                 }  // while `iter'
             }

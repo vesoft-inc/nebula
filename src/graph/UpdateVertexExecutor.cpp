@@ -166,7 +166,10 @@ void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcRe
                         row[index].set_str(boost::get<std::string>(column));
                         break;
                     default:
-                        LOG(FATAL) << "Unknown VariantType: " << column.which();
+                        LOG(ERROR) << "Unknown VariantType: " << column.which();
+                        doError(Status::Error("Unknown VariantType: %d", column.which()),
+                                ectx()->getGraphStats()->getUpdateVertexStats());
+                        return;
                 }
             } else {
                 doError(Status::Error("get property failed"));

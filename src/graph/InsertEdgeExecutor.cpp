@@ -180,9 +180,12 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
                 if (!timestamp.ok()) {
                     return timestamp.status();
                 }
-                writeVariantType(writer, timestamp.value());
+                status = writeVariantType(writer, timestamp.value());
             } else {
-                writeVariantType(writer, value);
+                status = writeVariantType(writer, value);
+            }
+            if (!status.ok()) {
+                return status;
             }
         }
 
