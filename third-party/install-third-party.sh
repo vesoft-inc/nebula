@@ -27,7 +27,7 @@ this_dir=$(dirname $(readlink -f $0))
 # We consider two derivatives: Red Hat and Debian
 # Place preset libc versions of each from newer to older
 libc_preset=( 2.17 2.12 )
-libcxx_preset=( 3.4.25 3.4.23 )
+libcxx_preset=( 3.4.26 3.4.25 3.4.23 )
 
 selected_libc=
 selected_libcxx=
@@ -35,6 +35,10 @@ selected_archive=
 this_libc=$(ldd --version | head -1 | cut -d ')' -f 2 | cut -d ' ' -f 2)
 this_libcxx=$($this_dir/cxx-compiler-libcxx-version.sh)
 this_abi=$($this_dir/cxx-compiler-abi-version.sh)
+
+# There is no reliable way to detect version of libcxx of RedHat devtoolset.
+# So we back off to use the oldest usable version
+[[ -z $this_libcxx ]] && this_libcxx=3.4.23
 
 hash wget &>/dev/null || {
     echo "'wget' not fould, please install it first" 1>&2
