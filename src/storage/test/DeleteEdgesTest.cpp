@@ -9,8 +9,8 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/DeleteEdgesProcessor.h"
-#include "storage/AddEdgesProcessor.h"
+#include "storage/mutate/DeleteEdgesProcessor.h"
+#include "storage/mutate/AddEdgesProcessor.h"
 #include "base/NebulaKeyUtils.h"
 
 

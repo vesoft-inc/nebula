@@ -15,7 +15,8 @@ namespace nebula {
 namespace graph {
 class FetchExecutor : public TraverseExecutor {
 public:
-    explicit FetchExecutor(ExecutionContext *ectx) : TraverseExecutor(ectx) {}
+    explicit FetchExecutor(ExecutionContext *ectx,
+                           const std::string &statsName) : TraverseExecutor(ectx, statsName) {}
 
     void feedResult(std::unique_ptr<InterimResult> result) override {
         inputs_ = std::move(result);
@@ -36,8 +37,6 @@ protected:
             SchemaWriter *outputSchema) const;
 
     void finishExecution(std::unique_ptr<RowSetWriter> rsWriter);
-
-    stats::Stats* getStats() const;
 
     void doEmptyResp();
 

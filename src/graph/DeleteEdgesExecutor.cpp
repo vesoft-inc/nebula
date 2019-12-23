@@ -14,7 +14,8 @@ namespace nebula {
 namespace graph {
 
 DeleteEdgesExecutor::DeleteEdgesExecutor(Sentence *sentence,
-                                         ExecutionContext *ectx) : Executor(ectx) {
+                                         ExecutionContext *ectx)
+    : Executor(ectx, "delete_dege") {
     sentence_ = static_cast<DeleteEdgesSentence*>(sentence);
 }
 
@@ -48,8 +49,7 @@ Status DeleteEdgesExecutor::prepare() {
 void DeleteEdgesExecutor::execute() {
     auto status = setupEdgeKeys();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
@@ -62,18 +62,15 @@ void DeleteEdgesExecutor::execute() {
         auto completeness = resp.completeness();
         if (completeness != 100) {
             // TODO Need to consider atomic issues
-            DCHECK(onError_);
-            onError_(Status::Error("Internal Error"));
+            doError(Status::Error("Internal Error"));
             return;
         }
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext, edgeKeys_.size());
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal error"));
         return;
     };
 
@@ -83,6 +80,7 @@ void DeleteEdgesExecutor::execute() {
 Status DeleteEdgesExecutor::setupEdgeKeys() {
     auto status = Status::OK();
     auto edgeKeysExpr = sentence_->keys()->keys();
+    Getters getters;
     for (auto *keyExpr : edgeKeysExpr) {
         auto *srcExpr = keyExpr->srcid();
         srcExpr->setContext(expCtx_.get());
@@ -99,12 +97,12 @@ Status DeleteEdgesExecutor::setupEdgeKeys() {
         if (!status.ok()) {
             break;
         }
-        auto value = srcExpr->eval();
+        auto value = srcExpr->eval(getters);
         if (!value.ok()) {
             return value.status();
         }
         auto srcid = value.value();
-        value = dstExpr->eval();
+        value = dstExpr->eval(getters);
         if (!value.ok()) {
             return value.status();
         }
