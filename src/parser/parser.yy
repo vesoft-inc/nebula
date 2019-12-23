@@ -87,12 +87,12 @@ class GraphScanner;
     nebula::GroupClause                    *group_clause;
     nebula::HostList                       *host_list;
     nebula::HostAddr                       *host_item;
-    nebula::IntegerList                    *integer_list;
+    std::vector<int32_t>                   *integer_list;
 }
 
 /* destructors */
 %destructor {} <sentences>
-%destructor {} <boolval> <intval> <doubleval> <type> <config_module>
+%destructor {} <boolval> <intval> <doubleval> <type> <config_module> <integer_list>
 %destructor { delete $$; } <*>
 
 /* keywords */
@@ -1724,12 +1724,12 @@ port : INTEGER { $$ = $1; }
 
 integer_list
     : INTEGER {
-        $$ = new IntegerList();
-        $$->addInteger($1);
+        $$ = new std::vector<int32_t>();
+        $$->emplace_back($1);
     }
     | integer_list COMMA INTEGER {
         $$ = $1;
-        $$->addInteger($3);
+        $$->emplace_back($3);
     }
     | integer_list COMMA {
         $$ = $1;

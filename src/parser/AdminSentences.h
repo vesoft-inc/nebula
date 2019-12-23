@@ -41,7 +41,7 @@ public:
         showType_ = std::move(sType);
     }
 
-    ShowSentence(ShowType sType, IntegerList* list) {
+    ShowSentence(ShowType sType, std::vector<int32_t>* list) {
         kind_ = Kind::kShow;
         list_.reset(list);
         showType_ = std::move(sType);
@@ -59,7 +59,7 @@ public:
         return showType_;
     }
 
-    IntegerList* getList() {
+    std::vector<int32_t>* getList() {
         return list_.get();
     }
 
@@ -69,7 +69,7 @@ public:
 
 private:
     ShowType                        showType_{ShowType::kUnknown};
-    std::unique_ptr<IntegerList>    list_;
+    std::unique_ptr<std::vector<int32_t>> list_;
     std::unique_ptr<std::string>    name_;
 };
 

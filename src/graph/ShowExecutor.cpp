@@ -163,8 +163,8 @@ void ShowExecutor::showHosts() {
             int32_t leaderCount = 0;
             std::string leaders;
             for (const auto& spaceEntry : leaderPartsCount) {
-                leaders += spaceEntry.first + ": " +
-                           folly::to<std::string>(spaceEntry.second) + ", ";
+                leaders.append(spaceEntry.first + ": " +
+                               folly::to<std::string>(spaceEntry.second) + ", ");
                 leaderCount += spaceEntry.second;
             }
             if (!leaders.empty()) {
@@ -173,8 +173,8 @@ void ShowExecutor::showHosts() {
 
             std::string parts;
             for (const auto& spaceEntry : allPartsCount) {
-                parts += spaceEntry.first + ": " +
-                         folly::to<std::string>(spaceEntry.second) + ", ";
+                parts.append(spaceEntry.first + ": " +
+                             folly::to<std::string>(spaceEntry.second) + ", ");
             }
             if (!parts.empty()) {
                 parts.resize(parts.size() - 2);
@@ -253,7 +253,7 @@ void ShowExecutor::showParts() {
     std::vector<PartitionID> partIds;
     auto *list = sentence_->getList();
     if (list != nullptr) {
-        partIds = list->get();
+        partIds = *list;
     }
     auto future = ectx()->getMetaClient()->listParts(spaceId, partIds);
     auto *runner = ectx()->rctx()->runner();
