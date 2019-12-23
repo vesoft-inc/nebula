@@ -223,13 +223,13 @@ Status GroupByExecutor::groupingData() {
     using GroupData = std::unordered_map<ColVals, FunCols, ColsHasher>;
 
     GroupData data;
+    Getters getters;
     for (auto& it : rows_) {
         ColVals groupVals;
         FunCols calVals;
 
         // Firstly: group the cols
         for (auto &col : groupCols_) {
-            auto &getters = expCtx_->getters();
             cpp2::ColumnValue::Type valType = cpp2::ColumnValue::Type::__EMPTY__;
             getters.getInputProp = [&] (const std::string & prop) -> OptVariantType {
                 auto indexIt = schemaMap_.find(prop);
@@ -242,7 +242,7 @@ Status GroupByExecutor::groupingData() {
                 return toVariantType(val);
             };
 
-            auto eval = col->expr()->eval();
+            auto eval = col->expr()->eval(getters);
             if (!eval.ok()) {
                 return eval.status();
             }
@@ -271,7 +271,6 @@ Status GroupByExecutor::groupingData() {
         // Apply value
         auto i = 0u;
         for (auto &col : calVals) {
-            auto &getters = expCtx_->getters();
             cpp2::ColumnValue::Type valType = cpp2::ColumnValue::Type::__EMPTY__;
             getters.getInputProp = [&] (const std::string &prop) -> OptVariantType{
                 auto indexIt = schemaMap_.find(prop);
@@ -283,7 +282,7 @@ Status GroupByExecutor::groupingData() {
                 valType = val.getType();
                 return toVariantType(val);
             };
-            auto eval = yieldCols_[i]->expr()->eval();
+            auto eval = yieldCols_[i]->expr()->eval(getters);
             if (!eval.ok()) {
                 return eval.status();
             }

@@ -80,6 +80,7 @@ void DeleteEdgesExecutor::execute() {
 Status DeleteEdgesExecutor::setupEdgeKeys() {
     auto status = Status::OK();
     auto edgeKeysExpr = sentence_->keys()->keys();
+    Getters getters;
     for (auto *keyExpr : edgeKeysExpr) {
         auto *srcExpr = keyExpr->srcid();
         srcExpr->setContext(expCtx_.get());
@@ -96,12 +97,12 @@ Status DeleteEdgesExecutor::setupEdgeKeys() {
         if (!status.ok()) {
             break;
         }
-        auto value = srcExpr->eval();
+        auto value = srcExpr->eval(getters);
         if (!value.ok()) {
             return value.status();
         }
         auto srcid = value.value();
-        value = dstExpr->eval();
+        value = dstExpr->eval(getters);
         if (!value.ok()) {
             return value.status();
         }

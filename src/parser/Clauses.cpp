@@ -67,12 +67,13 @@ Status VerticesClause::prepare(Clause::Vertices &vertices) const {
         auto uniqID = std::make_unique<std::unordered_set<VertexID>>();
         auto vidList = vidList_->vidList();
         vertices.vids_.reserve(vidList.size());
+        Getters getters;
         for (auto *expr : vidList) {
             status = expr->prepare();
             if (!status.ok()) {
                 break;
             }
-            auto value = expr->eval();
+            auto value = expr->eval(getters);
             if (!value.ok()) {
                 status = value.status();
                 break;
