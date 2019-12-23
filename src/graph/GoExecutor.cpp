@@ -487,7 +487,7 @@ void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
     } else {
         auto status = getDstIdsFromResp(rpcResp);
         if (!status.ok()) {
-            doError(std::move(status).status(), ectx()->getGraphStats()->getGoStats());
+            doError(std::move(status).status());
             return;
         }
         starts_ = std::move(status).value();
@@ -518,7 +518,7 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
     auto dstIdStatus = getDstIdsFromResp(rpcResp);
 
     if (!dstIdStatus.ok()) {
-        doError(std::move(dstIdStatus).status(), ectx()->getGraphStats()->getGoStats());
+        doError(std::move(dstIdStatus).status());
         return;
     }
 
@@ -1202,7 +1202,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     auto cbStatus = cb(std::move(record), std::move(colTypes));
                     if (!cbStatus.ok()) {
                         LOG(ERROR) << cbStatus;
-                        doError(std::move(cbStatus), ectx()->getGraphStats()->getGoStats());
+                        doError(std::move(cbStatus));
                         return false;
                     }
                     ++iter;

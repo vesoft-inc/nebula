@@ -167,8 +167,7 @@ void UpdateVertexExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcRe
                         break;
                     default:
                         LOG(ERROR) << "Unknown VariantType: " << column.which();
-                        doError(Status::Error("Unknown VariantType: %d", column.which()),
-                                ectx()->getGraphStats()->getUpdateVertexStats());
+                        doError(Status::Error("Unknown VariantType: %d", column.which()));
                         return;
                 }
             } else {

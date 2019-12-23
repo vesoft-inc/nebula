@@ -178,8 +178,7 @@ void UpdateEdgeExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcResp
                         break;
                     default:
                         LOG(ERROR) << "Unknown VariantType: " << column.which();
-                        doError(Status::Error("Unknown VariantType: %d", column.which()),
-                                ectx()->getGraphStats()->getUpdateEdgeStats());
+                        doError(Status::Error("Unknown VariantType: %d", column.which()));
                         return;
                 }
             } else {
