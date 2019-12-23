@@ -89,6 +89,7 @@ trap '[[ $? -ne 0 ]] && echo "Building failed, see $logfile for more details." 1
 [[ -n ${CC} ]] && C_COMPILER_ARG="-DCMAKE_C_COMPILER=${CC}"
 [[ -n ${CXX} ]] && CXX_COMPILER_ARG="-DCMAKE_CXX_COMPILER=${CXX}"
 [[ ${disable_cxx11_abi} -ne 0 ]] && DISABLE_CXX11_ABI="-DDISABLE_CXX11_ABI=1"
+export disable_cxx11_abi
 
 # Download source archives if necessary
 mkdir -p $build_root
@@ -138,7 +139,13 @@ end_time=$(date +%s)
 
 cd $OLDPWD && rm -rf $build_dir
 
+# Remove all libtool files
 find $install_dir -name '*.la' | xargs rm -f
+
+# Make krb5 relocatable
+sed -i 's/^prefix=.*$/prefix=$(dirname $(dirname $(readlink -f $0)))/' $install_dir/bin/krb5-config
+sed -i 's#^LDFLAGS=.*$#LDFLAGS="-L$prefix/lib -L$prefix/lib64"#' $install_dir/bin/krb5-config
+sed -i -r 's#^DEFCKTNAME=.*(/var.*keytab).*#DEFCKTNAME="FILE:$prefix\1"#' $install_dir/bin/krb5-config
 
 function make_package {
     libcxx_version=$($this_dir/cxx-compiler-libcxx-version.sh)

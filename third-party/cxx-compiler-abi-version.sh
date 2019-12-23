@@ -9,6 +9,7 @@ set -e
 abi="unknown"
 cxx_cmd=${CXX:-g++}
 link_flags="-std=c++14 -static-libstdc++ -static-libgcc"
+[[ $disable_cxx11_abi -ne 0 ]] && extra_flags="$extra_flags -D_GLIBCXX_USE_CXX11_ABI=0"
 tmpdir=$(mktemp -q -d /tmp/nebula-compiler-test.XXXX 2>/dev/null)
 object=$tmpdir/a.out.o
 
