@@ -10,12 +10,12 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/AddVerticesProcessor.h"
-#include "storage/AddEdgesProcessor.h"
-#include "storage/DeleteVertexProcessor.h"
-#include "storage/DeleteEdgesProcessor.h"
-#include "storage/UpdateEdgeProcessor.h"
-#include "storage/UpdateVertexProcessor.h"
+#include "storage/mutate/AddVerticesProcessor.h"
+#include "storage/mutate/AddEdgesProcessor.h"
+#include "storage/mutate/DeleteVertexProcessor.h"
+#include "storage/mutate/DeleteEdgesProcessor.h"
+#include "storage/mutate/UpdateEdgeProcessor.h"
+#include "storage/mutate/UpdateVertexProcessor.h"
 
 namespace nebula {
 namespace storage {
