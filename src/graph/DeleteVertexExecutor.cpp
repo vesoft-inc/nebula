@@ -11,7 +11,8 @@ namespace nebula {
 namespace graph {
 
 DeleteVertexExecutor::DeleteVertexExecutor(Sentence *sentence,
-                                           ExecutionContext *ectx) : Executor(ectx) {
+                                           ExecutionContext *ectx)
+    : Executor(ectx, "delete_vertex") {
     sentence_ = static_cast<DeleteVertexSentence*>(sentence);
 }
 
@@ -38,8 +39,7 @@ void DeleteVertexExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(Status::Error("Internal Error"),
-                    ectx()->getGraphStats()->getDeleteVertexStats());
+            doError(Status::Error("Internal Error"));
             return;
         }
         auto rpcResp = std::move(resp).value();
@@ -63,8 +63,7 @@ void DeleteVertexExecutor::execute() {
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal Error"),
-                ectx()->getGraphStats()->getDeleteVertexStats());
+        doError(Status::Error("Internal Error"));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -76,8 +75,7 @@ void DeleteVertexExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>* edge
     auto cb = [this] (auto &&resp) {
         auto completeness = resp.completeness();
         if (completeness != 100) {
-            doError(Status::Error("Internal Error"),
-                    ectx()->getGraphStats()->getDeleteVertexStats());
+            doError(Status::Error("Internal Error"));
             return;
         }
         deleteVertex();
@@ -86,8 +84,7 @@ void DeleteVertexExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>* edge
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal Error"),
-                ectx()->getGraphStats()->getDeleteVertexStats());
+        doError(Status::Error("Internal Error"));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -98,18 +95,16 @@ void DeleteVertexExecutor::deleteVertex() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(Status::Error("Internal Error"),
-                    ectx()->getGraphStats()->getDeleteVertexStats());
+            doError(Status::Error("Internal Error"));
             return;
         }
-        doFinish(Executor::ProcessControl::kNext, ectx()->getGraphStats()->getDeleteVertexStats());
+        doFinish(Executor::ProcessControl::kNext);
         return;
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal Error"),
-                ectx()->getGraphStats()->getDeleteVertexStats());
+        doError(Status::Error("Internal Error"));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);

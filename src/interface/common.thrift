@@ -71,6 +71,7 @@ union Value {
     2: bool    bool_value;
     3: double  double_value;
     4: string  string_value;
+    5: i64     timestamp;
 }
 
 struct ColumnDef {
