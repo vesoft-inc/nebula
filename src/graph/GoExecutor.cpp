@@ -369,7 +369,7 @@ Status GoExecutor::prepareNeededProps() {
         for (auto &entry : tagMap) {
             auto tagId = ectx()->schemaManager()->toTagID(spaceId, entry.first);
             if (!tagId.ok()) {
-                status == Status::Error("Tag `%s' not found.", entry.first.c_str());
+                status = Status::Error("Tag `%s' not found.", entry.first.c_str());
                 break;
             }
             entry.second = tagId.value();
@@ -983,7 +983,6 @@ void GoExecutor::onEmptyInputs() {
 
 bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
     auto all = rpcResp.responses();
-    auto spaceId = ectx()->rctx()->session()->space();
     for (auto &resp : all) {
         if (resp.get_vertices() == nullptr) {
             continue;
@@ -1029,7 +1028,6 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     bool saveTypeFlag = false;
                     auto &getters = expCtx_->getters();
                     getters.getAliasProp = [&iter,
-                                            &spaceId,
                                             &edgeType,
                                             &saveTypeFlag,
                                             &colTypes,
@@ -1080,7 +1078,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         }
                     };
                     getters.getSrcTagProp =
-                        [&iter, &spaceId, &tagData, &tagSchema, &saveTypeFlag, &colTypes, this](
+                        [&iter, &tagData, &tagSchema, &saveTypeFlag, &colTypes, this](
                             const std::string &tag, const std::string &prop) -> OptVariantType {
                         TagID tagId;
                         auto found = expCtx_->getTagId(tag, tagId);
@@ -1114,7 +1112,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         }
                         return value(res);
                     };
-                    getters.getDstTagProp = [&iter, &spaceId, &saveTypeFlag, &colTypes, this](
+                    getters.getDstTagProp = [&iter, &saveTypeFlag, &colTypes, this](
                                                 const std::string &tag,
                                                 const std::string &prop) -> OptVariantType {
                         auto dst = RowReader::getPropByName(&*iter, "_dst");
