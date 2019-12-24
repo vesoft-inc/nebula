@@ -603,7 +603,7 @@ MetaClient::getSpace(std::string name) {
     return future;
 }
 
-folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name, bool ifExist) {
+folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name, const bool ifExist) {
     cpp2::DropSpaceReq req;
     req.set_space_name(std::move(name));
     req.set_if_exists(ifExist);
@@ -982,7 +982,7 @@ MetaClient::listTagSchemas(GraphSpaceID spaceId) {
 
 
 folly::Future<StatusOr<bool>>
-MetaClient::dropTagSchema(int32_t spaceId, std::string tagName, bool ifExist) {
+MetaClient::dropTagSchema(int32_t spaceId, std::string tagName, const bool ifExist) {
     cpp2::DropTagReq req;
     req.set_space_id(spaceId);
     req.set_tag_name(std::move(tagName));
@@ -1089,7 +1089,7 @@ MetaClient::getEdgeSchema(GraphSpaceID spaceId, std::string name, SchemaVer vers
 
 
 folly::Future<StatusOr<bool>>
-MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name, bool ifExist) {
+MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name, const bool ifExist) {
     cpp2::DropEdgeReq req;
     req.set_space_id(std::move(spaceId));
     req.set_edge_name(std::move(name));
