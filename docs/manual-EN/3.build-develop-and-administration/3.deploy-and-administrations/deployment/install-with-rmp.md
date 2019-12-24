@@ -1,8 +1,8 @@
-# Nebula Graph Installation with rpm Package
+# Nebula Graph Installation with rpm/deb Package
 
 ## Overview
 
-This guide will walk you through the process of installing **Nebula Graph** with rpm packages.
+This guide will walk you through the process of installing **Nebula Graph** with rpm/deb packages.
 
 ## Prerequisites
 
