@@ -185,23 +185,6 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        fetch_empty_props_test
-    SOURCES
-        FetchEmptyPropsTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:client_cpp_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
-        ${GRAPH_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
-        ${ROCKSDB_LIBRARIES}
-        wangle
-        gtest
-)
-
-nebula_add_test(
-    NAME
         set_test
     SOURCES
         SetTest.cpp
