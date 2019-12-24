@@ -28,7 +28,7 @@ void DropEdgeExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();
-    auto future = mc->dropEdgeSchema(spaceId, *name);
+    auto future = mc->dropEdgeSchema(spaceId, *name, sentence_->isIfExist());
 
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {

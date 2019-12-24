@@ -86,6 +86,18 @@ private:
     bool ifNotExist_{false};
 };
 
+class DropSentence : public Sentence {
+public:
+    explicit  DropSentence(bool ifExist) : ifExist_{ifExist} {}
+    virtual ~DropSentence() = default;
+
+    bool isIfExist() {
+        return ifExist_;
+    }
+private:
+    bool ifExist_{false};
+};
+
 inline std::ostream& operator<<(std::ostream &os, Sentence::Kind kind) {
     return os << static_cast<uint32_t>(kind);
 }
