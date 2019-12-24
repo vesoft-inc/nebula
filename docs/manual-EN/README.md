@@ -24,7 +24,6 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
   * [Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
   * [Nebula Graph Clients](1.overview/2.quick-start/3.supported-clients.md)
 
-
 * Design and Architecture
   * [Design Overview](1.overview/3.design-and-architecture/1.design-and-architecture.md)
   * [Storage Architecture](1.overview/3.design-and-architecture/2.storage-design.md)
@@ -97,10 +96,8 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
     * [Configuration Description](3.build-develop-and-administration/3.deploy-and-administrations/deployment/configuration-description.md)
     * [Deploy Cluster On Docker](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster-on-docker.md)
     * [Deploy Cluster](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
-    * [Connect Prometheus](3.build-develop-and-administration/3.deploy-and-administrations/deployment/connect-prometheus.md)
     * [Installation With rpm](3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb.md)
-
-
+    * [Metrics Exposer](3.build-develop-and-administration/3.deploy-and-administrations/deployment/metrics-exposer.md)
   * Server Administration
     * Account Management Statements
       * [Drop User Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/drop-user-syntax.md)
