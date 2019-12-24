@@ -80,6 +80,8 @@
     * [Show](2.query-language/4.statement-syntax/3.utility-statements/show-syntax.md)
   * 图算法
     * [查找路径](2.query-language/4.statement-syntax/4.graph-algorithms/find-path-syntax.md)
+  * 附录
+    * [Gremlin 与 nGQL 对比](2.query-language/5.appendix/gremlin-ngql.md)
 
 ## 编译、部署与运维 (程序员和 DBA )
 

@@ -82,6 +82,8 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
     * [Show Syntax](2.query-language/4.statement-syntax/3.utility-statements/show-syntax.md)
   * Graph Algorithms
     * [Find Path Syntax](2.query-language/4.statement-syntax/4.graph-algorithms/find-path-syntax.md)
+  * Appendix
+    * [Gremlin VS nGQL](2.query-language/5.appendix/gremlin-ngql.md)
 
 ## Build Develop And Administration (For Developers And DBA)
 
