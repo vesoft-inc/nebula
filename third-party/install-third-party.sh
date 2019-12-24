@@ -25,7 +25,7 @@ this_dir=$(dirname $(readlink -f $0))
 
 # We consider two derivatives: Red Hat and Debian
 # Place preset libc versions of each from newer to older
-libc_preset=( 2.23 2.17 2.12 )
+libc_preset=( 2.27 2.23 2.17 2.12 )
 libcxx_preset=( 3.4.27 3.4.26 3.4.25 3.4.24 3.4.23 )
 
 selected_libc=
