@@ -13,7 +13,6 @@
 #include "meta/test/TestUtils.h"
 #include "meta/GflagsManager.h"
 #include "meta/ClientBasedGflagsManager.h"
-#include "meta/KVBasedGflagsManager.h"
 #include "meta/processors/configMan/GetConfigProcessor.h"
 #include "meta/processors/configMan/SetConfigProcessor.h"
 #include "meta/processors/configMan/ListConfigsProcessor.h"

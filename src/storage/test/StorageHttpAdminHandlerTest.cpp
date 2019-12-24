@@ -9,7 +9,7 @@
 #include <folly/json.h>
 #include "webservice/WebService.h"
 #include "webservice/test/TestUtils.h"
-#include "storage/StorageHttpAdminHandler.h"
+#include "storage/http/StorageHttpAdminHandler.h"
 #include "storage/test/TestUtils.h"
 #include "fs/TempDir.h"
 
