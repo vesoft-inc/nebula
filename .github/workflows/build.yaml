@@ -8,8 +8,8 @@ on:
       - 'docs/**'
 
 jobs:
-  build-gcc:
-    name: build-gcc
+  build:
+    name: build
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -18,90 +18,33 @@ jobs:
           - centos7
           - ubuntu1604
           - ubuntu1804
-    container:
-      image: vesoft/nebula-dev:${{ matrix.tag }}
+        compiler: [gcc, clang]
+        exclude:
+          - tag: centos6
+            compiler: clang
+          - tag: centos7
+            compiler: clang
     steps:
       - uses: actions/checkout@v1
         with:
           fetch-depth: 1
-      - name: cmake
-        env:
-          NEBULA_DEP_BIN: /opt/nebula/third-party/bin
-          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
+      - name: Mount tmpfs
         run: |
-          mkdir _build && cd _build
-          ${NEBULA_DEP_BIN}/cmake -DCMAKE_C_COMPILER=${NEBULA_DEP_BIN}/gcc -DCMAKE_CXX_COMPILER=${NEBULA_DEP_BIN}/g++ -DCMAKE_BUILD_TYPE=Release ..
-        shell: bash
-      - name: make
-        env:
-          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
-        run: |
-          cd _build && make -j $(nproc)
-        shell: bash
-      - name: test in multithreads
-        timeout-minutes: 20
-        env:
-          NEBULA_DEP_BIN: /opt/nebula/third-party/bin
-          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
-        run: |
-          cd _build
-          ${NEBULA_DEP_BIN}/ctest -j $(nproc) --output-on-failure
-        shell: bash
-      - name: test in singlethread
-        if: failure()
-        timeout-minutes: 40
-        env:
-          NEBULA_DEP_BIN: /opt/nebula/third-party/bin
-          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
-        run: |
-          cd _build
-          ${NEBULA_DEP_BIN}/ctest --output-on-failure
-        shell: bash
-  build-clang:
-    name: build-clang
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        tag:
-          - ubuntu1604
-          - ubuntu1804
-    container:
-      image: vesoft/nebula-dev:${{ matrix.tag }}
-    steps:
-      - uses: actions/checkout@v1
+          mkdir -p ${{ github.workspace }}/.cache
+          sudo mount -t tmpfs -o size=1G tmpfs ${{ github.workspace }}/.cache
+      - uses: actions/cache@v1
         with:
-          fetch-depth: 1
-      - name: cmake
-        env:
-          NEBULA_DEP_BIN: /opt/nebula/third-party/bin
-          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
+          path: ${{ github.workspace }}/.cache/ccache
+          key: ${{ matrix.tag }}-${{ matrix.compiler }}-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ matrix.tag }}-${{ matrix.compiler }}-
+      - name: Pull dev docker image
+        run: docker pull vesoft/nebula-dev:${{ matrix.tag }}
+      - name: Build and test
+        timeout-minutes: 80
         run: |
-          mkdir _build && cd _build
-          ${NEBULA_DEP_BIN}/cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DENABLE_UBSAN=on ..
-        shell: bash
-      - name: make
-        env:
-          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
-        run: |
-          cd _build && make -j $(nproc)
-        shell: bash
-      - name: test in multithreads
-        timeout-minutes: 20
-        env:
-          NEBULA_DEP_BIN: /opt/nebula/third-party/bin
-          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
-        run: |
-          cd _build
-          ${NEBULA_DEP_BIN}/ctest -j $(nproc) --output-on-failure
-        shell: bash
-      - name: test in singlethread
-        if: failure()
-        timeout-minutes: 40
-        env:
-          NEBULA_DEP_BIN: /opt/nebula/third-party/bin
-          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
-        run: |
-          cd _build
-          ${NEBULA_DEP_BIN}/ctest --output-on-failure
-        shell: bash
-
+          docker run --rm \
+            -v ${{ github.workspace }}:/home/nebula \
+            -e CCACHE_DIR=/home/nebula/.cache/ccache \
+            --entrypoint ./ci/scripts/build-and-test-${{ matrix.compiler }}.sh \
+            vesoft/nebula-dev:${{ matrix.tag }}
