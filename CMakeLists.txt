@@ -12,6 +12,7 @@
 #   NEBULA_THIRDPARTY_ROOT         -- Specify the root directory for third-party
 #   NEBULA_OTHER_ROOT              -- Specify the root directory for user build
 #                                  -- Split with ":", exp: DIR:DIR
+#   NEBULA_CLANG_USED_GCC_TOOLCHAIN           -- Set the gcc installation directory used by Clang(libstdc++)
 #
 #   ENABLE_JEMALLOC                -- Link jemalloc into all executables
 #   ENABLE_NATIVE                  -- Build native client
@@ -128,6 +129,10 @@ if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
     SET(NEBULA_THIRDPARTY_ROOT "/opt/nebula/third-party")
 endif()
 
+if ("${NEBULA_CLANG_USED_GCC_TOOLCHAIN}" STREQUAL "")
+    SET(NEBULA_CLANG_USED_GCC_TOOLCHAIN "${NEBULA_THIRDPARTY_ROOT}")
+endif()
+
 # third-party
 if(NOT ${NEBULA_THIRDPARTY_ROOT} STREQUAL "")
     message(STATUS "Specified NEBULA_THIRDPARTY_ROOT: " ${NEBULA_THIRDPARTY_ROOT})
@@ -205,10 +210,16 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
         add_compile_options(-Wsuggest-override)
     endif()
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  add_compile_options(-Wno-overloaded-virtual)
-  add_compile_options(-Wno-self-assign-overloaded)
-  add_compile_options(-Wno-self-move)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -latomic")
+    MESSAGE(STATUS "NEBULA_CLANG_USED_GCC_TOOLCHAIN: ${NEBULA_CLANG_USED_GCC_TOOLCHAIN}")
+    # Here we need to specify the path of libstdc++ used by Clang
+    if(NOT ${NEBULA_CLANG_USED_GCC_TOOLCHAIN} STREQUAL "")
+        add_compile_options("--gcc-toolchain=${NEBULA_CLANG_USED_GCC_TOOLCHAIN}")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --gcc-toolchain=${NEBULA_CLANG_USED_GCC_TOOLCHAIN}")
+    endif()
+    add_compile_options(-Wno-overloaded-virtual)
+    add_compile_options(-Wno-self-assign-overloaded)
+    add_compile_options(-Wno-self-move)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -latomic")
 endif()
 
 include(CheckCXXCompilerFlag)
