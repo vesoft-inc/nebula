@@ -1,8 +1,8 @@
-# Nebula Graph Installation with rpm/deb Package
+# **Nebula Graph** Installation with rpm/deb Package
 
 ## Overview
 
-This guide will walk you through the process of installing **Nebula Graph** with rpm/deb packages.
+This guide will walk you through the process of installing **Nebula Graph** with `rpm/deb` packages.
 
 ## Prerequisites
 
@@ -13,9 +13,9 @@ Before getting started, ensure that you meet the following requirements:
 
 ## Installing **Nebula Graph**
 
-To install **Nebula Graph** with a rpm/deb package, you must complete the following steps:
+To install **Nebula Graph** with a `rpm/deb` package, you must complete the following steps:
 
-1. Log in to GitHub and click [this link](https://github.com/vesoft-inc/nebula/actions) to locate the rpm/deb package.
+1. Log in to GitHub and click [rpm/deb](https://github.com/vesoft-inc/nebula/actions) to locate the `rpm/deb` package.
 
 2. Under the **Actions** tab, click **package** on the left. All packages available are displayed.
 
@@ -29,13 +29,13 @@ To install **Nebula Graph** with a rpm/deb package, you must complete the follow
 
 5. Install **Nebula Graph**.
 
-* For a rmp file, install **Nebula Graph** with the following command:
+* For a `rmp` file, install **Nebula Graph** with the following command:
 
 ```shell
 $ rpm -ivh nebula-2019.12.23-nightly.el6-5.x86_64.rpm
 ```
 
-* For a deb file, install **Nebula Graph** with the following command:
+* For a `deb` file, install **Nebula Graph** with the following command:
 
 ```shell
 $ dpkg -i nebula-2019.12.23-nightly.ubuntu1604.amd64.deb
