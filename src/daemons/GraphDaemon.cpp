@@ -99,10 +99,6 @@ int main(int argc, char *argv[]) {
     nebula::WebService::registerHandler("/status", [] {
         return new nebula::graph::GraphHttpHandler();
     });
-    status = nebula::WebService::start();
-    if (!status.ok()) {
-        return EXIT_FAILURE;
-    }
 
     if (FLAGS_num_netio_threads == 0) {
         FLAGS_num_netio_threads = std::thread::hardware_concurrency();
@@ -122,6 +118,10 @@ int main(int argc, char *argv[]) {
     }
     LOG(INFO) << "Number of worker threads: " << FLAGS_num_worker_threads;
 
+    status = nebula::WebService::start();
+    if (!status.ok()) {
+        return EXIT_FAILURE;
+    }
     auto threadFactory = std::make_shared<folly::NamedThreadFactory>("graph-netio");
     auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(
                             FLAGS_num_netio_threads, std::move(threadFactory));
@@ -132,6 +132,7 @@ int main(int argc, char *argv[]) {
     status = interface->init(ioThreadPool);
     if (!status.ok()) {
         LOG(ERROR) << status;
+        nebula::WebService::stop();
         return EXIT_FAILURE;
     }
 
