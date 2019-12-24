@@ -67,7 +67,7 @@ $ /usr/local/nebula/scripts/nebula.service status all
 $ /usr/local/nebula/bin/nebula -u user -p password
 ```
 
-**注意**： 如果您成功连接了 **Nebula Graph** 服务，将返回 `Welcome to Nebula information` 消息。
+**注意**：如果您成功连接了 **Nebula Graph** 服务，将返回 `Welcome to Nebula information` 消息。
 
 ## 停止 **Nebula Graph** 服务
 
