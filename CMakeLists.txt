@@ -114,6 +114,7 @@ message(STATUS "NEBULA_DEBUG_INFO_LEVEL = ${NEBULA_DEBUG_INFO_LEVEL} "
 # while all executables at ${CMAKE_BINARY_DIR}/bin.
 # But for the sake of cleanliness, all executables ending with `_test' will be placed
 # at ${CMAKE_BINARY_DIR}/bin/test, while those ending with `_bm' at ${CMAKE_BINARY_DIR}/bin/bench.
+# Please see `nebula_add_executable' for this rule.
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
@@ -311,6 +312,13 @@ macro(nebula_add_executable)
         ${nebula_exec_LIBRARIES}
     )
 
+    if(${nebula_exec_NAME} MATCHES "_test")
+        set_target_properties(
+            ${nebula_exec_NAME}
+            PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test
+        )
+    endif()
+
     if(${nebula_exec_NAME} MATCHES "_bm$")
         set_target_properties(
             ${nebula_exec_NAME}
@@ -333,11 +341,6 @@ macro(nebula_add_test)
         SOURCES ${nebula_test_SOURCES}
         OBJECTS ${nebula_test_OBJECTS}
         LIBRARIES ${nebula_test_LIBRARIES}
-    )
-
-    set_target_properties(
-        ${nebula_test_NAME}
-        PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test
     )
 
     if (${nebula_test_FUZZER})
