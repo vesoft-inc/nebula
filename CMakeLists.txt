@@ -38,7 +38,6 @@ option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
 option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
 option(ENABLE_UBSAN "Whether to turn Undefined Behavior Sanitizer ON or OFF" OFF)
 option(ENABLE_FUZZ_TEST "Whether to turn Fuzz Test ON or OFF" OFF)
-set(NEBULA_DEBUG_INFO_LEVEL 1 CACHE STRING "Level of debug info, used only in Debug or RelWithDebInfo")
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
@@ -92,7 +91,6 @@ if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    add_compile_options(-g${NEBULA_DEBUG_INFO_LEVEL})
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--compress-debug-sections=zlib")
 endif()
 
@@ -107,8 +105,6 @@ endif()
 
 message(STATUS "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE} "
                "(Options are: Debug, Release, RelWithDebInfo, MinSizeRel)")
-message(STATUS "NEBULA_DEBUG_INFO_LEVEL = ${NEBULA_DEBUG_INFO_LEVEL} "
-               "(Options are: 0, 1, 2, 3)")
 
 # By default, all dynamic and static libraries will be placed at ${CMAKE_BINARY_DIR}/lib,
 # while all executables at ${CMAKE_BINARY_DIR}/bin.
@@ -269,7 +265,7 @@ if(ENABLE_ASAN)
         MESSAGE(FATAL_ERROR "The compiler does not support address sanitizer")
     endif()
     add_compile_options(-fsanitize=address)
-    add_compile_options(-g${NEBULA_DEBUG_INFO_LEVEL})
+    add_compile_options(-g)
     add_compile_options(-fno-omit-frame-pointer)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
 endif()
@@ -281,7 +277,7 @@ if(ENABLE_UBSAN)
     endif()
     add_compile_options(-fsanitize=undefined -fno-sanitize=alignment)
     if(NOT ENABLE_ASAN)
-        add_compile_options(-g${NEBULA_DEBUG_INFO_LEVEL})
+        add_compile_options(-g)
         add_compile_options(-fno-omit-frame-pointer)
     endif()
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined")
