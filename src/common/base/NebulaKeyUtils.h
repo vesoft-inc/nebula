@@ -20,11 +20,11 @@ namespace nebula {
  *
  * */
 
-enum class NebulaKeyType : uint32_t {
-    kData              = 0x00000001,
-    kIndex             = 0x00000002,
-    kUUID              = 0x00000003,
-    kSystem            = 0x00000004,
+enum class NebulaKeyType : uint8_t {
+    kData              = 0x01,
+    kIndex             = 0x02,
+    kUUID              = 0x03,
+    kSystem            = 0x04,
 };
 
 enum class NebulaSystemKeyType : uint32_t {
@@ -83,7 +83,7 @@ public:
     static bool isVertex(const folly::StringPiece& rawKey) {
         constexpr uint32_t tagMask  = 0x40000000;
         constexpr uint32_t typeMask = 0x000000FF;
-        constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
+        constexpr int32_t len = static_cast<int32_t>(sizeof(PartitionID));
         auto type = readInt<uint32_t>(rawKey.data(), len) & typeMask;
         if (static_cast<uint32_t>(NebulaKeyType::kData) != type) {
             return false;
@@ -102,7 +102,7 @@ public:
     static bool isEdge(const folly::StringPiece& rawKey) {
         constexpr uint32_t edgeMask = 0x40000000;
         constexpr uint32_t typeMask = 0x000000FF;
-        constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
+        constexpr int32_t len = static_cast<int32_t>(sizeof(PartitionID));
         auto type = readInt<uint32_t>(rawKey.data(), len) & typeMask;
         if (static_cast<uint32_t>(NebulaKeyType::kData) != type) {
             return false;
@@ -167,14 +167,14 @@ public:
 
     static bool isDataKey(const folly::StringPiece& key) {
         constexpr uint32_t typeMask = 0x000000FF;
-        constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
+        constexpr int32_t len = static_cast<int32_t>(sizeof(PartitionID));
         auto type = readInt<int32_t>(key.data(), len) & typeMask;
         return static_cast<uint32_t>(NebulaKeyType::kData) == type;
     }
 
     static bool isIndexKey(const folly::StringPiece& key) {
         constexpr uint32_t typeMask = 0x000000FF;
-        constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
+        constexpr int32_t len = static_cast<int32_t>(sizeof(PartitionID));
         auto type = readInt<int32_t>(key.data(), len) & typeMask;
         return static_cast<uint32_t>(NebulaKeyType::kIndex) == type;
     }
