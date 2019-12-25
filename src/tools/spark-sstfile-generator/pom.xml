@@ -22,7 +22,7 @@
         <scala-logging.version>3.9.2</scala-logging.version>
         <scopt.version>3.7.1</scopt.version>
         <config.version>1.4.0</config.version>
-        <nebula.version>1.0.0-beta</nebula.version>
+        <nebula.version>1.0.0-rc2</nebula.version>
         <s2.version>1.0.0</s2.version>
     </properties>
 

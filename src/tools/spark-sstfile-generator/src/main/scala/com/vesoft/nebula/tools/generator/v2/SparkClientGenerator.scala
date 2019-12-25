@@ -6,7 +6,7 @@
 
 package com.vesoft.nebula.tools.generator.v2
 
-import org.apache.spark.sql.{DataFrame, Encoders, Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Encoders, Row, SaveMode, SparkSession}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.functions.udf
@@ -20,13 +20,17 @@ import org.apache.log4j.Logger
 import org.apache.spark.sql.types._
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 import util.control.Breaks._
 
-case class Argument(config: File = new File("application.conf"),
-                    hive: Boolean = false,
-                    directly: Boolean = false,
-                    dry: Boolean = false)
+final case class Argument(config: File = new File("application.conf"),
+                          hive: Boolean = false,
+                          directly: Boolean = false,
+                          dry: Boolean = false,
+                          reload: String = "/tmp/nebula.writer.errors/")
+
+final case class TooManyErrorException(private val message: String) extends Exception(message)
 
 /**
   * SparkClientGenerator is a simple spark job used to write data into Nebula Graph parallel.
@@ -41,13 +45,15 @@ object SparkClientGenerator {
   private[this] val EDGE_VALUE_TEMPLATE                 = "%d->%d@%d: (%s)"
   private[this] val USE_TEMPLATE                        = "USE %s"
 
-  private[this] val DEFAULT_BATCH              = 2
-  private[this] val DEFAULT_PARTITION          = -1
-  private[this] val DEFAULT_CONNECTION_TIMEOUT = 3000
-  private[this] val DEFAULT_CONNECTION_RETRY   = 3
-  private[this] val DEFAULT_EXECUTION_RETRY    = 3
-  private[this] val DEFAULT_EXECUTION_INTERVAL = 3000
-  private[this] val DEFAULT_EDGE_RANKING       = 0L
+  private[this] val DEFAULT_BATCH                = 2
+  private[this] val DEFAULT_PARTITION            = -1
+  private[this] val DEFAULT_CONNECTION_TIMEOUT   = 3000
+  private[this] val DEFAULT_CONNECTION_RETRY     = 3
+  private[this] val DEFAULT_EXECUTION_RETRY      = 3
+  private[this] val DEFAULT_EXECUTION_INTERVAL   = 3000
+  private[this] val DEFAULT_EDGE_RANKING         = 0L
+  private[this] val DEFAULT_ERROR_OUTPUT_PATH    = "/tmp/nebula.writer.errors/"
+  private[this] val DEFAULT_ERROR_MAX_BATCH_SIZE = Int.MaxValue
 
   // GEO default config
   private[this] val DEFAULT_MIN_CELL_LEVEL = 5
@@ -83,6 +89,11 @@ object SparkClientGenerator {
       opt[Unit]('D', "dry")
         .action((_, c) => c.copy(dry = true))
         .text("dry run")
+
+      opt[String]('r', "reload")
+        .valueName("<path>")
+        .action((x, c) => c.copy(reload = x))
+        .text("reload path")
     }
 
     val c: Argument = parser.parse(args, Argument()) match {
@@ -108,19 +119,23 @@ object SparkClientGenerator {
     val executionInterval =
       getOrElse(nebulaConfig, "execution.interval", DEFAULT_EXECUTION_INTERVAL)
 
+    val errorPath    = getOrElse(nebulaConfig, "error.output", DEFAULT_ERROR_OUTPUT_PATH)
+    val errorMaxSize = getOrElse(nebulaConfig, "error.max", DEFAULT_ERROR_MAX_BATCH_SIZE)
+
     LOG.info(s"Nebula Addresses ${addresses} for ${user}:${pswd}")
     LOG.info(s"Connection Timeout ${connectionTimeout} Retry ${connectionRetry}")
     LOG.info(s"Execution Retry ${executionRetry} Interval Base ${executionInterval}")
+    LOG.info(s"Error Path ${errorPath}")
     LOG.info(s"Switch to ${space}")
-
-    val session = SparkSession
-      .builder()
-      .appName(PROGRAM_NAME)
 
     if (config.hasPath("spark.cores.max") &&
         config.getInt("spark.cores.max") > MAX_CORES) {
       LOG.warn(s"Concurrency is higher than ${MAX_CORES}")
     }
+
+    val session = SparkSession
+      .builder()
+      .appName(PROGRAM_NAME)
 
     val sparkConfig = config.getObject("spark")
     for (key <- sparkConfig.unwrapped().keySet().asScala) {
@@ -139,21 +154,53 @@ object SparkClientGenerator {
       }
     }
 
+    if (!c.reload.isEmpty) {
+      session
+        .getOrCreate()
+        .read
+        .text(c.reload)
+        .foreachPartition { records =>
+          val hostAndPorts = addresses.map(HostAndPort.fromString).asJava
+          val client =
+            new GraphClientImpl(hostAndPorts, connectionTimeout, connectionRetry, executionRetry)
+
+          if (isSuccessfully(client.connect(user, pswd))) {
+            records.foreach { row =>
+              val exec = row.getString(0)
+              breakable {
+                for (time <- 1 to executionRetry
+                     if isSuccessfullyWithSleep(
+                       client.execute(exec),
+                       time * executionInterval + Random.nextInt(10) * 100L)(exec)) {
+                  break
+                }
+              }
+            }
+            client.close()
+          } else {
+            LOG.error(s"Client connection failed. ${user}:${pswd}")
+          }
+        }
+
+      sys.exit(0)
+    }
+
     val spark =
       if (c.hive) session.enableHiveSupport().getOrCreate()
       else session.getOrCreate()
 
-    val tagConfigs =
-      if (config.hasPath("tags"))
-        Some(config.getObject("tags"))
-      else None
-
+    val tagConfigs = getConfigOrNone(config, "tags")
     if (tagConfigs.isDefined) {
-      for (tagName <- tagConfigs.get.unwrapped.keySet.asScala) {
+      for (tagConfig <- tagConfigs.get.asScala) {
+        if (!tagConfig.hasPath("name")) {
+          LOG.error("The `name` must be specified")
+          break()
+        }
+
+        val tagName = tagConfig.getString("name")
         LOG.info(s"Processing Tag ${tagName}")
-        val tagConfig = config.getConfig(s"tags.${tagName}")
         if (!tagConfig.hasPath("type")) {
-          LOG.error("The type must be specified")
+          LOG.error("The `type` must be specified")
           break()
         }
 
@@ -204,6 +251,7 @@ object SparkClientGenerator {
                                     executionRetry)
 
               if (isSuccessfully(client.connect(user, pswd))) {
+                val errorBuffer = ArrayBuffer[String]()
                 if (isSuccessfully(client.execute(USE_TEMPLATE.format(space)))) {
                   iterator.grouped(batch).foreach { tags =>
                     val exec = BATCH_INSERT_TEMPLATE.format(
@@ -225,8 +273,21 @@ object SparkClientGenerator {
                              time * executionInterval + Random.nextInt(10) * 100L)(exec)) {
                         break
                       }
+                      LOG.debug("Save the error execution sentence into buffer")
+                      errorBuffer += exec
+
+                      if (errorBuffer.size == errorMaxSize) {
+                        throw TooManyErrorException(s"Too Many Error ${errorMaxSize}")
+                      }
                     }
                   }
+                  spark
+                    .createDataset(errorBuffer)(Encoders.STRING)
+                    .repartition(1)
+                    .write
+                    .mode(SaveMode.Append)
+                    .text(s"${errorPath}/${tagName}")
+
                 } else {
                   LOG.error(s"Switch ${space} Failed")
                 }
@@ -242,20 +303,22 @@ object SparkClientGenerator {
     }
 
     val edgeConfigs = getConfigOrNone(config, "edges")
-
     if (edgeConfigs.isDefined) {
-      for (edgeName <- edgeConfigs.get.unwrapped.keySet.asScala) {
-        LOG.info(s"Processing Edge ${edgeName}")
-        val edgeConfig = config.getConfig(s"edges.${edgeName}")
+      for (edgeConfig <- edgeConfigs.get.asScala) {
+        if (!edgeConfig.hasPath("name")) {
+          LOG.error("The `name` must be specified")
+          break()
+        }
+
+        val edgeName = edgeConfig.getString("name")
         if (!edgeConfig.hasPath("type")) {
-          LOG.error("The type must be specified")
+          LOG.error("The `type` must be specified")
           break()
         }
 
         val pathOpt = if (edgeConfig.hasPath("path")) {
           Some(edgeConfig.getString("path"))
         } else {
-          LOG.warn("The path is not setting")
           None
         }
 
@@ -336,6 +399,7 @@ object SparkClientGenerator {
                                     connectionRetry,
                                     executionRetry)
               if (isSuccessfully(client.connect(user, pswd))) {
+                val errorBuffer = ArrayBuffer[String]()
                 if (isSuccessfully(client.execute(USE_TEMPLATE.format(space)))) {
                   iterator.grouped(batch).foreach { edges =>
                     val values =
@@ -373,8 +437,21 @@ object SparkClientGenerator {
                              time * executionInterval + Random.nextInt(10) * 100L)(exec)) {
                         break
                       }
+                      LOG.debug("Save the error execution sentence into buffer")
+                      errorBuffer += exec
+
+                      if (errorBuffer.size == errorMaxSize) {
+                        throw TooManyErrorException(s"Too Many Error ${errorMaxSize}")
+                      }
                     }
                   }
+
+                  spark
+                    .createDataset(errorBuffer)(Encoders.STRING)
+                    .repartition(1)
+                    .write
+                    .mode(SaveMode.Append)
+                    .text(s"${errorPath}/${edgeName}")
                 } else {
                   LOG.error(s"Switch ${space} Failed")
                 }
@@ -620,7 +697,7 @@ object SparkClientGenerator {
     */
   private[this] def getConfigOrNone(config: Config, path: String) = {
     if (config.hasPath(path)) {
-      Some(config.getObject(path))
+      Some(config.getConfigList(path))
     } else {
       None
     }
