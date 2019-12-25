@@ -8,7 +8,7 @@
 
 在开始前，请确保满足以下条件：
 
-* 硬盘 50 GB
+* 硬盘：50 GB
 * 内存：8 GB
 
 ## 安装 **Nebula Graph**
@@ -29,7 +29,7 @@
 
 5. 安装 **Nebula Graph**。
 
-* 如果是 `rmp` 文件，使用以下命令安装 **Nebula Graph**：
+* 如果是 `rpm` 文件，使用以下命令安装 **Nebula Graph**：
 
 ```shell
 $ rpm -ivh nebula-2019.12.23-nightly.el6-5.x86_64.rpm
@@ -67,7 +67,7 @@ $ /usr/local/nebula/scripts/nebula.service status all
 $ /usr/local/nebula/bin/nebula -u user -p password
 ```
 
-**注意**：如果您成功连接了 **Nebula Graph** 服务，将返回 `Welcome to Nebula information` 消息。
+**注意**：如果您成功连接了 **Nebula Graph** 服务，将返回 `Welcome to Nebula Graph` 消息。
 
 ## 停止 **Nebula Graph** 服务
 
