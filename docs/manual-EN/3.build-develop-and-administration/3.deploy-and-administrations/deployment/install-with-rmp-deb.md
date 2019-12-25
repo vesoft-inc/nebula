@@ -29,15 +29,15 @@ To install **Nebula Graph** with a `rpm/deb` package, you must complete the foll
 
 5. Install **Nebula Graph**.
 
-* For a `rmp` file, install **Nebula Graph** with the following command:
+* For a `rpm` file, install **Nebula Graph** with the following command:
 
-```shell
+```bash
 $ rpm -ivh nebula-2019.12.23-nightly.el6-5.x86_64.rpm
 ```
 
 * For a `deb` file, install **Nebula Graph** with the following command:
 
-```shell
+```bash
 $ dpkg -i nebula-2019.12.23-nightly.ubuntu1604.amd64.deb
 ```
 
@@ -47,7 +47,7 @@ $ dpkg -i nebula-2019.12.23-nightly.ubuntu1604.amd64.deb
 
 After **Nebula Graph** is installed successfully, you can start **Nebula Graph** services with the following command:
 
-```shell
+```bash
 $ /usr/local/nebula/scripts/nebula.service start all
 ```
 
@@ -55,7 +55,7 @@ $ /usr/local/nebula/scripts/nebula.service start all
 
 You can check the **Nebula Graph** services with the following command:
 
-```shell
+```bash
 $ /usr/local/nebula/scripts/nebula.service status all
 ```
 
@@ -63,16 +63,16 @@ $ /usr/local/nebula/scripts/nebula.service status all
 
 You can connect to **Nebula Graph** services with the following command:
 
-```shell
+```bash
 $ /usr/local/nebula/bin/nebula -u user -p password
 ```
 
-**Note**: If you successfully connect to **Nebula Graph**, the `Welcome to Nebula information` is returned.
+**Note**: If you successfully connect to **Nebula Graph**, the `Welcome to Nebula Graph` information is returned.
 
 ## Stopping **Nebula Graph** Services
 
 If you want to stop **Nebula Graph** services, you can enter the following command:
 
-```shell
+```bash
 $ /usr/local/nebula/scripts/nebula.service stop all
 ```
