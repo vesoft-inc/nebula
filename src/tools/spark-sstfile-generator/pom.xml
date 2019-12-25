@@ -6,7 +6,7 @@
 
     <groupId>com.vesoft</groupId>
     <artifactId>sst.generator</artifactId>
-    <version>1.0.0-beta</version>
+    <version>1.0.0-rc2</version>
 
     <properties>
         <java.version>1.8</java.version>
@@ -22,7 +22,7 @@
         <scala-logging.version>3.9.2</scala-logging.version>
         <scopt.version>3.7.1</scopt.version>
         <config.version>1.4.0</config.version>
-        <nebula.version>1.0.0-beta</nebula.version>
+        <nebula.version>1.0.0-rc2</nebula.version>
         <s2.version>1.0.0</s2.version>
     </properties>
 
@@ -49,11 +49,11 @@
                         </goals>
                         <configuration>
                             <excludes>
-                                com/vesoft/tools/**
+                                <exclude>com/vesoft/tools/**</exclude>
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
                             </excludes>
-                            <exclude>META-INF/*.SF</exclude>
-                            <exclude>META-INF/*.DSA</exclude>
-                            <exclude>META-INF/*.RSA</exclude>
                         </configuration>
                     </execution>
                     <execution>
