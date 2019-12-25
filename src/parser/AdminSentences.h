@@ -16,7 +16,6 @@ namespace nebula {
 using nebula::network::NetworkUtils;
 
 class ConfigRowItem;
-class IntegerList;
 
 class ShowSentence final : public Sentence {
 public:
@@ -342,20 +341,6 @@ public:
 
 private:
     std::vector<std::unique_ptr<HostAddr>>      hosts_;
-};
-
-class IntegerList final {
-public:
-    void addInteger(int32_t num) {
-        list_.emplace_back(num);
-    }
-
-    std::vector<int32_t> get() const {
-        return list_;
-    }
-
-private:
-    std::vector<int32_t> list_;
 };
 
 class BalanceSentence final : public Sentence {
