@@ -168,7 +168,8 @@ StatusOr<std::string> UpdateItem::toEvaledString() const {
     buf.reserve(256);
     buf += *field_;
     buf += "=";
-    auto ret = value_->eval();
+    Getters getters;
+    auto ret = value_->eval(getters);
     if (!ret.ok()) {
         return ret.status();
     }
