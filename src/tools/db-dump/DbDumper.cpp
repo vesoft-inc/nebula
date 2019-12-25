@@ -69,7 +69,7 @@ Status DbDumper::initMeta() {
 }
 
 Status DbDumper::initSpace() {
-    if (FLAGS_space == "") {
+    if (FLAGS_space.empty()) {
         return Status::Error("Space is not given.");
     }
     auto space = schemaMng_->toGraphSpaceID(FLAGS_space);
@@ -151,20 +151,12 @@ void DbDumper::run() {
     auto printIfTagFound = [this] (const folly::StringPiece& key) -> bool {
         auto tag = NebulaKeyUtils::getTagId(key);
         auto tagFound = tags_.find(tag);
-        if (tagFound == tags_.end()) {
-            return false;
-        }
-
-        return true;
+        return !(tagFound == tags_.end());
     };
     auto printIfEdgeFound = [this] (const folly::StringPiece& key) -> bool {
         auto edge = NebulaKeyUtils::getEdgeType(key);
         auto edgeFound = edges_.find(edge);
-        if (edgeFound == edges_.end()) {
-            return false;
-        }
-
-        return true;
+        return !(edgeFound == edges_.end());
     };
 
     uint32_t bitmap =
