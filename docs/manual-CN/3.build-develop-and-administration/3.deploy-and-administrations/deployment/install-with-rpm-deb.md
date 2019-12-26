@@ -32,23 +32,26 @@
 * 如果是 `rpm` 文件，使用以下命令安装 **Nebula Graph**：
 
 ```bash
-$ rpm -ivh nebula-2019.12.23-nightly.el6-5.x86_64.rpm
+$ sudo rpm -ivh nebula-2019.12.23-nightly.el6-5.x86_64.rpm
 ```
 
 * 如果是 `deb` 文件，使用以下命令安装 **Nebula Graph**：
 
 ```bash
-$ dpkg -i nebula-2019.12.23-nightly.ubuntu1604.amd64.deb
+$ sudo dpkg -i nebula-2019.12.23-nightly.ubuntu1604.amd64.deb
 ```
 
-**注意**：使用您自己的文件名替换以上命令中的文件名，否则以上命令可能执行失败。
+**注意**：
+
+1. 使用您自己的文件名替换以上命令中的文件名，否则以上命令可能执行失败。
+2. **Nebula Graph** 安装在 /usr/local/nebula 目录下。
 
 ## 启动 **Nebula Graph** 服务
 
 成功安装 **Nebula Graph** 后，输入以下命令启动 **Nebula Graph** 服务：
 
 ```bash
-$ /usr/local/nebula/scripts/nebula.service start all
+$ sudo /usr/local/nebula/scripts/nebula.service start all
 ```
 
 ## 查看 **Nebula Graph** 服务
@@ -56,7 +59,7 @@ $ /usr/local/nebula/scripts/nebula.service start all
 输入以下命令查看 **Nebula Graph** 服务：
 
 ```bash
-$ /usr/local/nebula/scripts/nebula.service status all
+$ sudo /usr/local/nebula/scripts/nebula.service status all
 ```
 
 ## 连接 **Nebula Graph** 服务
@@ -64,7 +67,7 @@ $ /usr/local/nebula/scripts/nebula.service status all
 输入以下命令连接 **Nebula Graph** 服务：
 
 ```bash
-$ /usr/local/nebula/bin/nebula -u user -p password
+$ sudo /usr/local/nebula/bin/nebula -u user -p password
 ```
 
 **注意**：如果您成功连接了 **Nebula Graph** 服务，将返回 `Welcome to Nebula Graph` 消息。
@@ -74,5 +77,5 @@ $ /usr/local/nebula/bin/nebula -u user -p password
 输入以下命令停止 **Nebula Graph** 服务：
 
 ```bash
-$ /usr/local/nebula/scripts/nebula.service stop all
+$ sudo /usr/local/nebula/scripts/nebula.service stop all
 ```
