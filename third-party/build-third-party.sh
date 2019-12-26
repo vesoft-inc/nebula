@@ -148,12 +148,13 @@ sed -i 's#^LDFLAGS=.*$#LDFLAGS="-L$prefix/lib -L$prefix/lib64"#' $install_dir/bi
 sed -i -r 's#^DEFCKTNAME=.*(/var.*keytab).*#DEFCKTNAME="FILE:$prefix\1"#' $install_dir/bin/krb5-config
 
 function make_package {
-    libcxx_version=$($this_dir/cxx-compiler-libcxx-version.sh)
+    cxx_cmd=${CXX:-g++}
+    gcc_version=$($cxx_cmd -dumpfullversion -dumpversion)
     abi_version=$($this_dir/cxx-compiler-abi-version.sh)
     set +e
     libc_version=$(ldd --version | head -1 | cut -d ' ' -f4 | cut -d '-' -f1)
     set -e
-    exec_file=$build_root/vesoft-third-party-x86_64-libc-$libc_version-libcxx-$libcxx_version-abi-$abi_version.sh
+    exec_file=$build_root/vesoft-third-party-x86_64-libc-$libc_version-gcc-$gcc_version-abi-$abi_version.sh
 
     echo "Creating self-extractable package $exec_file"
     cat > $exec_file <<EOF

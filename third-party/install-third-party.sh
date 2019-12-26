@@ -22,22 +22,19 @@ fi
 
 url_base=https://nebula-graph.oss-accelerate.aliyuncs.com/third-party
 this_dir=$(dirname $(readlink -f $0))
+cxx_cmd=${CXX:-g++}
 
 # We consider two derivatives: Red Hat and Debian
 # Place preset libc versions of each from newer to older
 libc_preset=( 2.27 2.23 2.17 2.12 )
-libcxx_preset=( 3.4.27 3.4.26 3.4.25 3.4.24 3.4.23 )
+gcc_preset=( 9.2.0 9.1.0 8.3.0 7.5.0 7.1.0 )
 
 selected_libc=
-selected_libcxx=
+selected_gcc=
 selected_archive=
 this_libc=$(ldd --version | head -1 | cut -d ')' -f 2 | cut -d ' ' -f 2)
-this_libcxx=$($this_dir/cxx-compiler-libcxx-version.sh)
+this_gcc=$($cxx_cmd -dumpfullversion -dumpversion)
 this_abi=$($this_dir/cxx-compiler-abi-version.sh)
-
-# There is no reliable way to detect version of libcxx of RedHat devtoolset.
-# So we back off to use the oldest usable version
-[[ -z $this_libcxx ]] && this_libcxx=3.4.23
 
 hash wget &>/dev/null || {
     echo "'wget' not fould, please install it first" 1>&2
@@ -86,15 +83,15 @@ function select_by_version {
 }
 
 selected_libc=$(select_by_version $this_libc "${libc_preset[@]}")
-selected_libcxx=$(select_by_version $this_libcxx "${libcxx_preset[@]}")
+selected_gcc=$(select_by_version $this_gcc "${gcc_preset[@]}")
 
 [[ -z $selected_libc ]] && {
-    echo "No prebuilt third-party found to download for your environment: libc-$this_libc, libcxx-$this_libcxx, ABI $this_abi_version" 1>&2
+    echo "No prebuilt third-party found to download for your environment: libc-$this_libc, GCC-$this_gcc, ABI $this_abi_version" 1>&2
     echo "Please invoke $this_dir/build-third-party.sh to build manually" 1>&2
     exit 1
 }
 
-selected_archive=vesoft-third-party-x86_64-libc-$selected_libc-libcxx-$selected_libcxx-abi-$this_abi.sh
+selected_archive=vesoft-third-party-x86_64-libc-$selected_libc-gcc-$selected_gcc-abi-$this_abi.sh
 
 url=$url_base/$selected_archive
 echo "Downloading $selected_archive..."
