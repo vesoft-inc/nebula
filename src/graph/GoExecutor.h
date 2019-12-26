@@ -122,7 +122,7 @@ private:
     /**
      * To retrieve the dst ids from a stepping out response.
      */
-    std::vector<VertexID> getDstIdsFromResp(RpcResponse &rpcResp) const;
+    StatusOr<std::vector<VertexID>> getDstIdsFromResp(RpcResponse &rpcResp) const;
 
     /**
      * get the edgeName from response when over all edges
@@ -153,7 +153,7 @@ private:
      * To iterate on the final data collection, and evaluate the filter and yield columns.
      * For each row that matches the filter, `cb' would be invoked.
      */
-    using Callback = std::function<void(std::vector<VariantType>,
+    using Callback = std::function<Status(std::vector<VariantType>,
                                    std::vector<nebula::cpp2::SupportedType>)>;
     bool processFinalResult(RpcResponse &rpcResp, Callback cb) const;
 
@@ -202,7 +202,7 @@ private:
                            VertexID dst,
                            EdgeType type,
                            const std::string &prop) const;
-        nebula::cpp2::SupportedType getType(VertexID src,
+        StatusOr<nebula::cpp2::SupportedType> getType(VertexID src,
                            VertexID dst,
                            EdgeType type,
                            const std::string &prop) const;
