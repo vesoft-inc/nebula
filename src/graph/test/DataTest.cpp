@@ -80,11 +80,12 @@ AssertionResult DataTest::prepareSchema() {
     // create tag with default value
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "CREATE TAG personWithDefault(name string default \"\", "
-                                                       "age int default 18, "
-                                                       "isMarried bool default false, "
-                                                       "BMI double default 18.5, "
-                                                       "department string default \"engineering\")";
+        std::string cmd = "CREATE TAG personWithDefault(name string DEFAULT \"\", "
+                                                       "age int DEFAULT 18, "
+                                                       "isMarried bool DEFAULT false, "
+                                                       "BMI double DEFAULT 18.5, "
+                                                       "department string DEFAULT \"engineering\","
+                                                       "birthday timestamp DEFAULT 0)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd
@@ -103,7 +104,7 @@ AssertionResult DataTest::prepareSchema() {
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE TAG studentWithDefault"
-                          "(grade string default \"one\", number int)";
+                          "(grade string DEFAULT \"one\", number int)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd
@@ -122,14 +123,14 @@ AssertionResult DataTest::prepareSchema() {
     // create edge with default value
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "CREATE EDGE schoolmateWithDefault(likeness int default 80)";
+        std::string cmd = "CREATE EDGE schoolmateWithDefault(likeness int DEFAULT 80)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd
                                << " failed, error code "<< static_cast<int32_t>(code);
         }
     }
-    // Test same propName diff tyep in diff tags
+    // Test same propName diff type in diff tags
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE TAG employee(name int)";
@@ -713,11 +714,21 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // Insert lack of the column value
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "INSERT VERTEX personWithDefault"
-                          "(name, age, isMarried, BMI, department, redundant)"
-                          "VALUES hash(\"Tom\"):(\"Tom\", 18, false, 18.5, \"dev\", 0)";
+                          "(age, isMarried, BMI)"
+                          "VALUES hash(\"Tom\"):(18, false)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    // Insert column doesn't match value count
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX studentWithDefault"
+                          "(grade, number)"
+                          "VALUES hash(\"Tom\"):(\"one\", 111, \"\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
@@ -760,6 +771,22 @@ TEST_F(DataTest, InsertWithDefaultValueTest) {
                           "hash(\"Peter\"):(\"Peter\")";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Insert lack of the column value
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmateWithDefault(likeness) VALUES "
+                          "hash(\"Tom\")->hash(\"Lucy\"):()";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    // Column count doesn't match value count
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmateWithDefault(likeness) VALUES "
+                          "hash(\"Tom\")->hash(\"Lucy\"):(60, \"\")";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;
