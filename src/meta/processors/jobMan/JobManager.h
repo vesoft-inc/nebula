@@ -4,24 +4,24 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef META_KVJOBMANAGER_H_
-#define META_KVJOBMANAGER_H_
+#ifndef META_JOBMANAGER_H_
+#define META_JOBMANAGER_H_
 
 #include <string>
 #include <gtest/gtest_prod.h>
+#include <folly/concurrency/UnboundedQueue.h>
 #include "base/Base.h"
 #include "base/ErrorOr.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/processors/jobMan/JobStatus.h"
 #include "meta/processors/jobMan/JobDescription.h"
 
-#include "meta/SimpleBlockingQueue.h"
 #include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace meta {
 
-class KVJobManager{
+class JobManager{
     using ResultCodeOrSVEC = nebula::ErrorOr<nebula::kvstore::ResultCode, std::vector<std::string>>;
     using ErrOrString = ErrorOr<nebula::kvstore::ResultCode, std::string>;
     using ErrOrInt = ErrorOr<nebula::kvstore::ResultCode, int>;
@@ -32,9 +32,9 @@ class KVJobManager{
     FRIEND_TEST(JobFooTest, BackupJob);
 
 public:
-    ~KVJobManager();
+    ~JobManager();
 
-    static KVJobManager* getInstance();
+    static JobManager* getInstance();
 
     bool init(nebula::kvstore::KVStore* store, nebula::thread::GenericThreadPool *pool);
 
@@ -56,7 +56,7 @@ private:
     int stopJob(int iJob);
     ErrOrInt recoverJob(int iJob);
 
-    void runBackground();
+    void runJobBackground();
     bool runJobInternal(int iJob);
     std::pair<int, int> backupJob(int iBegin, int iEnd);
 
@@ -81,7 +81,7 @@ private:
                                               const std::string& status);
 
 private:
-    KVJobManager();
+    JobManager();
 
     GraphSpaceID        kSpace{0};
     PartitionID         kPart{0};
@@ -92,8 +92,9 @@ private:
     std::string         kJobKey;
     std::string         kJobArchive;
     std::string         kCurrId;
+    bool                shutDown_{false};
 
-    SimpleBlockingQueue<int> queue_;
+    std::unique_ptr<folly::UMPSCQueue<int32_t, true>> queue_;
     std::unique_ptr<thread::GenericWorker> bgThread_;
 
     nebula::kvstore::KVStore* kvStore_;
@@ -103,5 +104,5 @@ private:
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_KVJOBMANAGER_H_
+#endif  // META_JOBMANAGER_H_
 

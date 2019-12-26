@@ -30,7 +30,7 @@ protected:
         TestUtils::assembleSpace(kv_.get(), 1, 1);
         pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
         pool_->start(1);
-        jobMgr = KVJobManager::getInstance();
+        jobMgr = JobManager::getInstance();
         jobMgr->init(kv_.get(), pool_.get());
         LOG(INFO) << "exit" << __func__;
     }
@@ -46,7 +46,7 @@ protected:
     std::unique_ptr<fs::TempDir> rootPath_{nullptr};
     std::unique_ptr<kvstore::KVStore> kv_{nullptr};
     std::unique_ptr<nebula::thread::GenericThreadPool> pool_{nullptr};
-    KVJobManager* jobMgr{nullptr};
+    JobManager* jobMgr{nullptr};
 };
 
 /*
@@ -60,7 +60,8 @@ protected:
 */
 
 TEST_F(JobFooTest, InternalHelper) {
-    KVJobManager* job_mgr = jobMgr;
+    LOG(INFO) << "InternalHelper [enter]";
+    JobManager* job_mgr = jobMgr;
     {
         auto len_val = job_mgr->decodeLenVal("e35000a0");
         ASSERT_EQ(len_val.first, 5);
@@ -79,6 +80,7 @@ TEST_F(JobFooTest, InternalHelper) {
         ASSERT_EQ(job_task.first, 35000);
         ASSERT_EQ(job_task.second, 16);
     }
+    LOG(INFO) << "InternalHelper [exit]";
 }
 
 TEST_F(JobFooTest, AddJob) {

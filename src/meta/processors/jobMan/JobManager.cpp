@@ -36,18 +36,18 @@ using ErrOrInt = nebula::ErrorOr<nebula::kvstore::ResultCode, int>;
 namespace nebula {
 namespace meta {
 
-KVJobManager::KVJobManager() {
+JobManager::JobManager() {
 }
 
-KVJobManager* KVJobManager::getInstance() {
-    static KVJobManager inst;
+JobManager* JobManager::getInstance() {
+    static JobManager inst;
     return &inst;
 }
 
-bool KVJobManager::init(nebula::kvstore::KVStore* store,
+bool JobManager::init(nebula::kvstore::KVStore* store,
                         nebula::thread::GenericThreadPool *pool) {
     if (!store || !pool) return false;
-    KVJobManager* inst = KVJobManager::getInstance();
+    JobManager* inst = JobManager::getInstance();
     inst->kvStore_ = store;
     inst->pool_ = pool;
 
@@ -55,18 +55,15 @@ bool KVJobManager::init(nebula::kvstore::KVStore* store,
     kJobKey = kJobPrefix + "_";
     kJobArchive = kJobPrefix + "archive_";
 
+    queue_ = std::make_unique<folly::UMPSCQueue<int32_t, true>>();
     bgThread_ = std::make_unique<thread::GenericWorker>();
     CHECK(bgThread_->start());
-    bgThread_->addTask(&KVJobManager::runBackground, this);
-
-    // executor_ = std::thread(&KVJobManager::runBackground, this);
-    // executor_.detach();
-
+    bgThread_->addTask(&JobManager::runJobBackground, this);
     return true;
 }
 
 ResultCodeOrSVEC
-KVJobManager::runJob(nebula::meta::cpp2::AdminJobOp op, std::vector<std::string>& paras) {
+JobManager::runJob(nebula::meta::cpp2::AdminJobOp op, std::vector<std::string>& paras) {
     switch (op) {
         case nebula::meta::cpp2::AdminJobOp::ADD:
         {
@@ -100,7 +97,7 @@ KVJobManager::runJob(nebula::meta::cpp2::AdminJobOp op, std::vector<std::string>
 
 
 ResultCodeOrSVEC
-KVJobManager::addJobWrapper(std::vector<std::string>& paras) {
+JobManager::addJobWrapper(std::vector<std::string>& paras) {
     std::stringstream oss;
     for (auto& p : paras) { oss << p << " "; }
     ILOG << "enter, paras=" << oss.str();
@@ -119,12 +116,12 @@ KVJobManager::addJobWrapper(std::vector<std::string>& paras) {
 }
 
 ResultCodeOrSVEC
-KVJobManager::showJobsWrapper() {
+JobManager::showJobsWrapper() {
     return showJobs();
 }
 
 ResultCodeOrSVEC
-KVJobManager::showJobWrapper(std::vector<std::string>& paras) {
+JobManager::showJobWrapper(std::vector<std::string>& paras) {
     ILOG << "enter";
     if (paras.empty()) {
         ILOG << "return nebula::kvstore::ERR_INVALID_ARGUMENT";
@@ -141,7 +138,7 @@ KVJobManager::showJobWrapper(std::vector<std::string>& paras) {
 }
 
 ResultCodeOrSVEC
-KVJobManager::stopJobWrapper(std::vector<std::string>& paras) {
+JobManager::stopJobWrapper(std::vector<std::string>& paras) {
     ILOG << "enter";
     if (paras.empty()) {
         return nebula::kvstore::ERR_INVALID_ARGUMENT;
@@ -160,7 +157,7 @@ KVJobManager::stopJobWrapper(std::vector<std::string>& paras) {
 }
 
 ResultCodeOrSVEC
-KVJobManager::backupJobWrapper(std::vector<std::string>& paras) {
+JobManager::backupJobWrapper(std::vector<std::string>& paras) {
     std::stringstream oss;
     for (auto& p : paras) { oss << p << " "; }
     ILOG << "enter paras=" << oss.str();
@@ -179,7 +176,7 @@ KVJobManager::backupJobWrapper(std::vector<std::string>& paras) {
 }
 
 ResultCodeOrSVEC
-KVJobManager::recoverJobWrapper(std::vector<std::string>& paras) {
+JobManager::recoverJobWrapper(std::vector<std::string>& paras) {
     ILOG << "enter";
     int iJob = atoi(paras[0].c_str());
 
@@ -193,30 +190,33 @@ KVJobManager::recoverJobWrapper(std::vector<std::string>& paras) {
     return ret;
 }
 
-void KVJobManager::runBackground() {
+void JobManager::runJobBackground() {
     ILOG << "enter";
     for (;;) {
-        auto spJob = queue_.take();
-        if (!spJob) {
-            ILOG << "detect shutdown called, exit";
-            break;  // which means stop called
+        int32_t iJob = 0;
+        if (!queue_->try_dequeue(iJob)) {
+            if (shutDown_) {
+                ILOG << "detect shutdown called, exit";
+                break;
+            }
+            sleep(0.5);
         }
-        sleep(5);
-        ResultCode rc = setJobStatus(*spJob, -1, JobStatus::Status::RUNNING);
+
+        ResultCode rc = setJobStatus(iJob, -1, JobStatus::Status::RUNNING);
         if (rc != nebula::kvstore::SUCCEEDED) {
-            LOG(ERROR) << "KVJobManager::" << __func__
-                       << " skip job " << *spJob;
+            LOG(ERROR) << "JobManager::" << __func__
+                       << " skip job " << iJob;
             continue;
         }
-        auto success = runJobInternal(*spJob);
+        auto success = runJobInternal(iJob);
         JobStatus::Status st = success ? JobStatus::Status::FINISHED :JobStatus::Status::FAILED;
 
-        setJobStatus(*spJob, -1, st);
+        setJobStatus(iJob, -1, st);
     }
     ILOG << "exit";
 }
 
-bool KVJobManager::runJobInternal(int iJob) {
+bool JobManager::runJobInternal(int iJob) {
     LOG(INFO) << "admin run job = " << iJob;
     std::string jobKey = encodeJobKey(iJob);
     std::string jobVal;
@@ -301,14 +301,13 @@ bool KVJobManager::runJobInternal(int iJob) {
     return successfully;
 }
 
-KVJobManager::~KVJobManager() {
+JobManager::~JobManager() {
     shutDown();
 }
 
-void KVJobManager::shutDown() {
+void JobManager::shutDown() {
     ILOG << "enter";
-    queue_.stop();
-    // bgThread_
+    shutDown_ = true;
     bgThread_->stop();
     bgThread_->wait();
     ILOG << "exit";
@@ -328,7 +327,7 @@ void KVJobManager::shutDown() {
  * Return:
  *      int if succeed
  * */
-ErrOrInt KVJobManager::addJob(const std::string& type, const std::string& para) {
+ErrOrInt JobManager::addJob(const std::string& type, const std::string& para) {
     ILOG << folly::stringPrintf("[%s] type=%s, para=%s\n", __func__,
                                      type.c_str(), para.c_str());
     auto iJob = reserveJobId();
@@ -350,11 +349,11 @@ ErrOrInt KVJobManager::addJob(const std::string& type, const std::string& para) 
         return rc;
     }
 
-    queue_.put(value(iJob));
+    queue_->enqueue(value(iJob));
     return iJob;
 }
 
-std::vector<std::string> KVJobManager::showJobs() {
+std::vector<std::string> JobManager::showJobs() {
     ILOG << "enter";
     std::vector<std::string> ret;
 
@@ -378,7 +377,7 @@ std::vector<std::string> KVJobManager::showJobs() {
     return ret;
 }
 
-std::vector<std::string> KVJobManager::showJob(int iJob) {
+std::vector<std::string> JobManager::showJob(int iJob) {
     LOG(INFO) << "iJob=" << iJob;
     std::vector<std::string> ret;
     auto key = encodeJobKey(iJob);
@@ -416,21 +415,12 @@ std::vector<std::string> KVJobManager::showJob(int iJob) {
 }
 
 // Description:
-//      1.1 remove iJob from class member queue
-//      1.2 set job status to 'stopped' in kvstore
+//      set job status to 'stopped' in kvstore
 // Return:
-//      1 if 1.1 & 1.2 succeed
-//      0 if iJob not exist in queue
-//      0 if key not exist in kvstore
-int KVJobManager::stopJob(int iJob) {
-    LOG(INFO) << " iJob = " << iJob;
+//      true if succeed
+int JobManager::stopJob(int iJob) {
+    ILOG << " iJob = " << iJob;
 
-    // 1. remove job id from queue
-    if (!queue_.remove(iJob)) {
-        return 0;
-    }
-
-    // 2. set job status to 'stopped' in kvstore
     ResultCode rc = setJobStatus(iJob, -1, JobStatus::Status::STOPPED);
     return rc == nebula::kvstore::SUCCEEDED;
 }
@@ -438,7 +428,7 @@ int KVJobManager::stopJob(int iJob) {
 // Return
 //      pair(task, job)
 std::pair<int, int>
-KVJobManager::backupJob(int iBegin, int iEnd) {
+JobManager::backupJob(int iBegin, int iEnd) {
     LOG(INFO) << "begin=" << iBegin << ", end=" << iEnd;
     int iJobBackup = 0;
     int iTaskBackup = 0;
@@ -495,7 +485,7 @@ KVJobManager::backupJob(int iBegin, int iEnd) {
 // Return
 //      new Job Id if succeed
 //      -1 iff no job desc in kv store
-ErrOrInt KVJobManager::recoverJob(int iJob) {
+ErrOrInt JobManager::recoverJob(int iJob) {
     LOG(INFO) << "iJob=" << iJob;
     auto jobDesc = getJobDescription(iJob);
     if (!jobDesc) {
@@ -505,7 +495,7 @@ ErrOrInt KVJobManager::recoverJob(int iJob) {
     return addJob(jobDesc->type, jobDesc->para);
 }
 
-ErrOrInt KVJobManager::reserveJobId() {
+ErrOrInt JobManager::reserveJobId() {
     folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
     std::string strId;
     ResultCode rc = kvStore_->get(kSpace, kPart, kCurrId, &strId);
@@ -524,7 +514,7 @@ ErrOrInt KVJobManager::reserveJobId() {
 }
 
 nebula::kvstore::ResultCode
-KVJobManager::setSingleVal(const std::string& k, const std::string& v) {
+JobManager::setSingleVal(const std::string& k, const std::string& v) {
     std::vector<kvstore::KV> data{std::make_pair(k, v)};
     folly::Baton<true, std::atomic> baton;
     nebula::kvstore::ResultCode rc;
@@ -544,7 +534,7 @@ KVJobManager::setSingleVal(const std::string& k, const std::string& v) {
  *      ERR_KEY_NOT_FOUND      if no specific job/task in kvstore
  *      ERR_INVALID_ARGUMENT   if current status already later than status
  * */
-ResultCode KVJobManager::setJobStatus(int iJob, int iTask, JobStatus::Status status) {
+ResultCode JobManager::setJobStatus(int iJob, int iTask, JobStatus::Status status) {
     std::string msgPara = folly::stringPrintf("iJob=%d, iTask=%d, status=%s\n",
                                               iJob, iTask, JobStatus::toString(status).c_str());
     LOG(INFO) << msgPara;
@@ -552,13 +542,13 @@ ResultCode KVJobManager::setJobStatus(int iJob, int iTask, JobStatus::Status sta
 
     auto jd = getJobDescription(iJob, iTask);
     if (!jd) {
-        LOG(ERROR) << "KVJobManager::setJobStatus error: " << msgPara
+        LOG(ERROR) << "JobManager::setJobStatus error: " << msgPara
                    << " [can't get JobDescription of target iJob, iTask";
         return nebula::kvstore::ERR_KEY_NOT_FOUND;
     }
 
     if (JobStatus::laterThan(JobStatus::toStatus(jd->status), status)) {
-        LOG(ERROR) << "KVJobManager::setJobStatus error: " << msgPara
+        LOG(ERROR) << "JobManager::setJobStatus error: " << msgPara
                    << ", trying to update status from " << jd->status
                    << "to " << JobStatus::toString(status);
         return nebula::kvstore::ERR_INVALID_ARGUMENT;
@@ -577,7 +567,7 @@ ResultCode KVJobManager::setJobStatus(int iJob, int iTask, JobStatus::Status sta
     return nebula::kvstore::SUCCEEDED;
 }
 
-ResultCode KVJobManager::setJobStatus(int iJob, int iTask, const std::string& status) {
+ResultCode JobManager::setJobStatus(int iJob, int iTask, const std::string& status) {
     return setJobStatus(iJob, iTask, JobStatus::toStatus(status));
 }
 
@@ -585,7 +575,7 @@ ResultCode KVJobManager::setJobStatus(int iJob, int iTask, const std::string& st
 // may failed if
 //      1. try to set task status running but job already stopped
 //      2. try to set finished/failed/stopped, but there is no target key
-ResultCode KVJobManager::setTaskStatus(int iJob, int iTask, const std::string& sDest,
+ResultCode JobManager::setTaskStatus(int iJob, int iTask, const std::string& sDest,
                                        const std::string& newStatus) {
     LOG(INFO) << "iJob=" << iJob << ", iTask=" << iTask << ", dest=" << sDest
               << ", newStatus=" << newStatus;
@@ -625,7 +615,7 @@ ResultCode KVJobManager::setTaskStatus(int iJob, int iTask, const std::string& s
     return nebula::kvstore::SUCCEEDED;
 }
 
-std::shared_ptr<JobDescription> KVJobManager::getJobDescription(int iJob, int iTask) {
+std::shared_ptr<JobDescription> JobManager::getJobDescription(int iJob, int iTask) {
     std::shared_ptr<JobDescription> ret;
     auto key = encodeJobKey(iJob, iTask);
     std::string val;
@@ -638,12 +628,12 @@ std::shared_ptr<JobDescription> KVJobManager::getJobDescription(int iJob, int iT
 }
 
 
-std::string KVJobManager::encodeLenVal(const std::string& src) {
+std::string JobManager::encodeLenVal(const std::string& src) {
     char c = 'a' + src.length() - 1;
     return std::string(1, c) + src;
 }
 
-std::pair<int, int> KVJobManager::decodeLenVal(const std::string& len_val) {
+std::pair<int, int> JobManager::decodeLenVal(const std::string& len_val) {
     if (len_val.length() < 0) return std::make_pair(-1, -1);
     if (len_val.length() == 0) return std::make_pair(0, -1);
 
@@ -652,7 +642,7 @@ std::pair<int, int> KVJobManager::decodeLenVal(const std::string& len_val) {
     return std::make_pair(len, val);
 }
 
-std::string KVJobManager::encodeJobKey(int job, int task) {
+std::string JobManager::encodeJobKey(int job, int task) {
     std::string key;
     key.reserve(30);
     key.append(kJobKey);
@@ -661,7 +651,7 @@ std::string KVJobManager::encodeJobKey(int job, int task) {
     return key;
 }
 
-std::pair<int, int> KVJobManager::decodeJobKey(const std::string& key) {
+std::pair<int, int> JobManager::decodeJobKey(const std::string& key) {
     auto n = key.length();
     int job = -1;
     int task = -1;
@@ -683,7 +673,7 @@ std::pair<int, int> KVJobManager::decodeJobKey(const std::string& key) {
     return std::make_pair(job, task);
 }
 
-int KVJobManager::getSpaceId(const std::string& name) {
+int JobManager::getSpaceId(const std::string& name) {
     auto indexKey = MetaServiceUtils::indexSpaceKey(name);
     std::string val;
     auto ret = kvStore_->get(0, 0, indexKey, &val);
@@ -693,7 +683,7 @@ int KVJobManager::getSpaceId(const std::string& name) {
     return -1;
 }
 
-std::string KVJobManager::timeNow() {
+std::string JobManager::timeNow() {
     std::time_t tm = std::time(nullptr);
     char mbstr[50];
     int len = std::strftime(mbstr, sizeof(mbstr), "%x %X", std::localtime(&tm));

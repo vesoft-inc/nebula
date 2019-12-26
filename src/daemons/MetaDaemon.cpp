@@ -134,7 +134,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
 
 bool initJobManager(nebula::kvstore::KVStore* kvstore,
                     nebula::thread::GenericThreadPool* pool) {
-    nebula::meta::KVJobManager* job_mgr = nebula::meta::KVJobManager::getInstance();
+    nebula::meta::JobManager* job_mgr = nebula::meta::JobManager::getInstance();
     return job_mgr->init(kvstore, pool);
 }
 
@@ -282,7 +282,7 @@ void signalHandler(int sig) {
                 gServer->stop();
             }
             {
-                auto gJobMgr = nebula::meta::KVJobManager::getInstance();
+                auto gJobMgr = nebula::meta::JobManager::getInstance();
                 gJobMgr->shutDown();
             }
             break;

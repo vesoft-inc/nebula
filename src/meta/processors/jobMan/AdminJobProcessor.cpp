@@ -16,7 +16,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         paras.emplace_back(p);
     }
 
-    auto job_mgr = KVJobManager::getInstance();
+    auto job_mgr = JobManager::getInstance();
     auto ret = job_mgr->runJob(req.get_op(), paras);
     if (!ok(ret)) {
         resp_.set_code(to(error(ret)));
