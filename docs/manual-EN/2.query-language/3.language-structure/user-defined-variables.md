@@ -1,6 +1,6 @@
 # User-Defined Variables
 
-**Nebula Graph** supports user-defined variables, which allows passing the result of one statement to another. A user-defined variable in written as `$ var_name`, `var_name` is the name of variable and can consist of alphanumeric characters, any other characters are not recommended currently.
+**Nebula Graph** supports user-defined variables, which allows passing the result of one statement to another. A user-defined variable in written as `$var_name`, where `var_name` is a user-defined name/variable that consists of alphanumeric characters, any other characters are not recommended currently.
 
 User-defined variables can only be used in one execution (compound statements separated by semicolon `;` or pipe `|` and are submitted to the server to execute together).
 
@@ -8,7 +8,7 @@ Be noted that a user-defined variable is valid only at the current session and e
 
 User-defined variables are case-sensitive.
 
-One way to use a user-defined variable is by the YIELD statement:
+Example:
 
 ```ngql
 nebula> $var = GO FROM hash('curry') OVER follow YIELD follow._dst AS id; \
