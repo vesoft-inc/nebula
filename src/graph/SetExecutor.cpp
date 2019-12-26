@@ -44,6 +44,12 @@ Status SetExecutor::prepare() {
         return status;
     }
 
+    if (sentence_->op() != SetSentence::Operator::UNION &&
+            sentence_->op() != SetSentence::Operator::INTERSECT &&
+            sentence_->op() != SetSentence::Operator::MINUS) {
+        LOG(ERROR) << "Unknown operator: " << sentence_->op();
+        return Status::Error("Unknown operator: %d", sentence_->op());
+    }
     return Status::OK();
 }
 
@@ -102,6 +108,11 @@ void SetExecutor::execute() {
         return;
     }
 
+    if (hasFeedResult_) {
+        onError_(Status::Error("Set operation not support input yet."));
+        return;
+    }
+
     auto *runner = ectx()->rctx()->runner();
     runner->add([this] () mutable { left_->execute(); });
     runner->add([this] () mutable { right_->execute(); });
@@ -150,8 +161,6 @@ void SetExecutor::execute() {
             case SetSentence::Operator::MINUS:
                 doMinus();
                 break;
-            default:
-                LOG(FATAL) << "Unknown operator: " << sentence_->op();
         }
     };
     folly::collectAll(futures_).via(runner).thenValue(cb);
@@ -423,7 +432,8 @@ void SetExecutor::finishExecution(std::vector<cpp2::RowValue> rows) {
 void SetExecutor::feedResult(std::unique_ptr<InterimResult> result) {
     // Feed input for set operator is an act of reservation.
     UNUSED(result);
-    LOG(FATAL) << "Set operation not support input yet.";
+    LOG(ERROR) << "Set operation not support input yet.";
+    hasFeedResult_ = true;
 }
 
 void SetExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
