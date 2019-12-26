@@ -354,7 +354,6 @@ Status GroupByExecutor::generateOutputSchema() {
     if (resultSchema_ == nullptr) {
         resultSchema_ = std::make_shared<SchemaWriter>();
         auto colnames = getResultColumnNames();
-        CHECK(!rows_.empty());
         for (auto i = 0u; i < rows_[0].columns.size(); i++) {
             SupportedType type;
             switch (rows_[0].columns[i].getType()) {

@@ -73,7 +73,8 @@ Status FetchVerticesExecutor::prepareVids() {
         } else {
             //  should never come to here.
             //  only support input and variable yet.
-            LOG(FATAL) << "Unknown kind of expression.";
+            LOG(ERROR) << "Unknown kind of expression.";
+            return Status::Error("Unknown kind of expression.");
         }
         if (colname_ != nullptr && *colname_ == "*") {
             return Status::Error("Cant not use `*' to reference a vertex id column.");
