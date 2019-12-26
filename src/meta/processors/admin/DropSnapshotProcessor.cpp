@@ -45,13 +45,13 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
         // Need update the snapshot status to invalid, maybe some storage engine drop done.
         data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
                           MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
-        auto ret_code = doSyncPut(std::move(data));
-        if (ret_code != cpp2::ErrorCode::SUCCEEDED) {
+        auto retCode = doSyncPut(std::move(data));
+        if (retCode != cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Update snapshot status error. "
                           "snapshot : " << snapshot;
-            resp_.set_code(ret_code);
+            resp_.set_code(retCode);
         } else {
-            resp_.set_code(ret_code);
+            resp_.set_code(retCode);
         }
         onFinished();
         return;
@@ -64,13 +64,13 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
         // Need update the snapshot status to invalid, maybe storage engines drop done.
         data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
                           MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
-        auto ret_code = doSyncPut(std::move(data));
-        if (ret_code != cpp2::ErrorCode::SUCCEEDED) {
+        auto retCode = doSyncPut(std::move(data));
+        if (retCode != cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Update snapshot status error. "
                           "snapshot : " << snapshot;
-            resp_.set_code(ret_code);
+            resp_.set_code(retCode);
         } else {
-            resp_.set_code(ret_code);
+            resp_.set_code(retCode);
         }
         onFinished();
         return;
