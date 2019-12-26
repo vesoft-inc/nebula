@@ -30,6 +30,8 @@ enum ErrorCode {
     E_EDGE_PROP_NOT_FOUND = -21,
     E_TAG_PROP_NOT_FOUND = -22,
     E_IMPROPER_DATA_TYPE = -23,
+    E_EDGE_NOT_FOUND = -24,
+    E_TAG_NOT_FOUND = -25,
 
     // Invalid request
     E_INVALID_FILTER = -31,
@@ -37,6 +39,7 @@ enum ErrorCode {
     E_INVALID_STORE = -33,
     E_INVALID_PEER  = -34,
     E_RETRY_EXHAUSTED = -35,
+    E_TRANSFER_LEADER_FAILED = -36,
 
     // meta client failed
     E_LOAD_META_FAILED = -41,
@@ -260,6 +263,12 @@ struct CatchUpDataReq {
     3: common.HostAddr     target,
 }
 
+struct CheckPeersReq {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID  part_id,
+    3: list<common.HostAddr> peers,
+}
+
 struct GetLeaderReq {
 }
 
@@ -388,12 +397,13 @@ service StorageService {
     AdminExecResp waitingForCatchUpData(1: CatchUpDataReq req);
     AdminExecResp removePart(1: RemovePartReq req);
     AdminExecResp memberChange(1: MemberChangeReq req);
+    AdminExecResp checkPeers(1: CheckPeersReq req);
+    GetLeaderResp getLeaderPart(1: GetLeaderReq req);
+
     // Interfaces for nebula cluster checkpoint
     AdminExecResp createCheckpoint(1: CreateCPRequest req);
     AdminExecResp dropCheckpoint(1: DropCPRequest req);
     AdminExecResp blockingWrites(1: BlockingSignRequest req);
-
-    GetLeaderResp getLeaderPart(1: GetLeaderReq req);
 
     // Interfaces for key-value storage
     ExecResponse      put(1: PutRequest req);

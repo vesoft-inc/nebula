@@ -86,6 +86,10 @@ cpp2::ErrorCode GraphClient::execute(folly::StringPiece stmt,
         return cpp2::ErrorCode::E_RPC_FAILURE;
     }
 
+    auto* msg = resp.get_error_msg();
+    if (msg != nullptr) {
+        LOG(WARNING) << *msg;
+    }
     return resp.get_error_code();
 }
 

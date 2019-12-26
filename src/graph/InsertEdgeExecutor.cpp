@@ -12,7 +12,8 @@ namespace nebula {
 namespace graph {
 
 InsertEdgeExecutor::InsertEdgeExecutor(Sentence *sentence,
-                                       ExecutionContext *ectx) : Executor(ectx) {
+                                       ExecutionContext *ectx)
+    : Executor(ectx, "insert_edge") {
     sentence_ = static_cast<InsertEdgeSentence*>(sentence);
 }
 
@@ -55,6 +56,14 @@ Status InsertEdgeExecutor::check() {
         return Status::Error("Wrong number of props");
     }
 
+    // Check prop name is in schema
+    for (auto *it : props_) {
+        if (schema_->getFieldIndex(*it) < 0) {
+            LOG(ERROR) << "Unknown column `" << *it << "' in schema";
+            return Status::Error("Unknown column `%s' in schema", it->c_str());
+        }
+    }
+
     auto *mc = ectx()->getMetaClient();
 
     for (size_t i = 0; i < schema_->getNumFields(); i++) {
@@ -91,6 +100,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
 
     std::vector<storage::cpp2::Edge> edges(rows_.size() * 2);   // inbound and outbound
     auto index = 0;
+    Getters getters;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto sid = row->srcid();
@@ -99,7 +109,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         if (!status.ok()) {
             return status;
         }
-        auto ovalue = sid->eval();
+        auto ovalue = sid->eval(getters);
         if (!ovalue.ok()) {
             return ovalue.status();
         }
@@ -116,7 +126,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         if (!status.ok()) {
             return status;
         }
-        ovalue = did->eval();
+        ovalue = did->eval(getters);
         if (!ovalue.ok()) {
             return ovalue.status();
         }
@@ -139,7 +149,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
                 return status;
             }
 
-            ovalue = expr->eval();
+            ovalue = expr->eval(getters);
             if (!ovalue.ok()) {
                 return ovalue.status();
             }
@@ -147,6 +157,8 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         }
 
         RowWriter writer(schema_);
+        int64_t valuesSize = values.size();
+        int32_t handleValueNum = 0;
         for (size_t schemaIndex = 0; schemaIndex < schema_->getNumFields(); schemaIndex++) {
             auto fieldName = schema_->getFieldName(schemaIndex);
             auto positionIter = propsPosition_.find(fieldName);
@@ -155,9 +167,12 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             auto schemaType = schema_->getFieldType(schemaIndex);
             if (positionIter != propsPosition_.end()) {
                 auto position = propsPosition_[fieldName];
+                if (position >= valuesSize) {
+                    LOG(ERROR) << fieldName << " need input value";
+                    return Status::Error("`%s' need input value", fieldName);
+                }
                 value = values[position];
                 if (!checkValueType(schemaType, value)) {
-                   DCHECK(onError_);
                     LOG(ERROR) << "ValueType is wrong, schema type "
                                << static_cast<int32_t>(schemaType.type)
                                 << ", input type " <<  value.which();
@@ -179,10 +194,18 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
                 if (!timestamp.ok()) {
                     return timestamp.status();
                 }
-                writeVariantType(writer, timestamp.value());
+                status = writeVariantType(writer, timestamp.value());
             } else {
-                writeVariantType(writer, value);
+                status = writeVariantType(writer, value);
             }
+            if (!status.ok()) {
+                return status;
+            }
+            handleValueNum++;
+        }
+        // Input values more than schema props
+        if (handleValueNum < valuesSize) {
+            return Status::Error("Column count doesn't match value count");
         }
 
         {
@@ -214,13 +237,14 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
 void InsertEdgeExecutor::execute() {
     auto status = check();
     if (!status.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getInsertEdgeStats());
+        doError(std::move(status));
         return;
     }
 
     auto result = prepareEdges();
     if (!result.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getInsertEdgeStats());
+        LOG(ERROR) << "Insert edge failed, error " << result.status();
+        doError(result.status());
         return;
     }
 
@@ -233,17 +257,20 @@ void InsertEdgeExecutor::execute() {
         // For insertion, we regard partial success as failure.
         auto completeness = resp.completeness();
         if (completeness != 100) {
-            doError(Status::Error("Internal Error"), ectx()->getGraphStats()->getInsertEdgeStats());
+            const auto& failedCodes = resp.failedParts();
+            for (auto it = failedCodes.begin(); it != failedCodes.end(); it++) {
+                LOG(ERROR) << "Insert edge failed, error " << static_cast<int32_t>(it->second)
+                           << ", part " << it->first;
+            }
+            doError(Status::Error("Internal Error"));
             return;
         }
-        doFinish(Executor::ProcessControl::kNext,
-                 ectx()->getGraphStats()->getInsertEdgeStats(),
-                 rows_.size());
+        doFinish(Executor::ProcessControl::kNext, rows_.size());
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"), ectx()->getGraphStats()->getInsertEdgeStats());
+        doError(Status::Error("Internal error"));
         return;
     };
 

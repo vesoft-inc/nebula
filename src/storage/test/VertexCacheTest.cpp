@@ -10,10 +10,12 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/AddVerticesProcessor.h"
-#include "storage/QueryVertexPropsProcessor.h"
+#include "storage/mutate/AddVerticesProcessor.h"
+#include "storage/query/QueryVertexPropsProcessor.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
+
+DECLARE_int32(max_handlers_per_req);
 
 namespace nebula {
 namespace storage {
@@ -121,10 +123,11 @@ void fetchVertices(kvstore::KVStore* kv,
 }
 
 TEST(VertexCacheTest, SimpleTest) {
+    FLAGS_max_handlers_per_req = 1;
     fs::TempDir rootPath("/tmp/VertexCacheTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
-    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(1);
     prepareData(kv.get());
     VertexCache cache(1000, 0);
 
