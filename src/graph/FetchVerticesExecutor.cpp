@@ -37,6 +37,7 @@ Status FetchVerticesExecutor::prepareClauses() {
         labelName_ = sentence_->tag();
         auto result = ectx()->schemaManager()->toTagID(spaceId_, *labelName_);
         if (!result.ok()) {
+            LOG(ERROR) << "Get Tag Id failed: " << result.status();
             status = result.status();
             break;
         }
@@ -50,10 +51,12 @@ Status FetchVerticesExecutor::prepareClauses() {
 
         status = prepareVids();
         if (!status.ok()) {
+            LOG(ERROR) << "Prepare vertex id failed: " << status;
             break;
         }
         status = prepareYield();
         if (!status.ok()) {
+            LOG(ERROR) << "Prepare yield failed: " << status;
             break;
         }
     } while (false);
@@ -97,6 +100,7 @@ void FetchVerticesExecutor::execute() {
         return;
     }
     if (vids_.empty()) {
+        LOG(WARNING) << "Empty vids";
         onEmptyInputs();
         return;
     }
@@ -107,7 +111,8 @@ void FetchVerticesExecutor::execute() {
 void FetchVerticesExecutor::fetchVertices() {
     auto props = getPropNames();
     if (props.empty()) {
-        doError(Status::Error("No props declared."));
+        LOG(WARNING) << "Empty props";
+        doEmptyResp();
         return;
     }
 
