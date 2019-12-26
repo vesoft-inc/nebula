@@ -14,9 +14,13 @@ StatusOr<std::string> HttpClient::get(const std::string& path) {
     auto command = folly::stringPrintf("/usr/bin/curl -G \"%s\"", path.c_str());
     LOG(INFO) << "HTTP Get Command: " << command;
     auto result = nebula::ProcessUtils::runCommand(command.c_str());
+    time_t now_time = time(NULL);
+    tm*  t_tm = localtime_r(&now_time);
     if (result.ok()) {
+        std:: cout << "local time is    " << asctime_r(t_tm);
         return result.value();
     } else {
+        std:: cout << "local time is    " << asctime_r(t_tm);
         return Status::Error(folly::stringPrintf("Http Get Failed: %s", path.c_str()));
     }
 }
