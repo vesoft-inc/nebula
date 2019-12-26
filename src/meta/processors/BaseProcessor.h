@@ -238,7 +238,7 @@ protected:
 
     StatusOr<std::string> getUserAccount(UserID userId);
 
-    bool doSyncPut(std::vector<kvstore::KV> data);
+    cpp2::ErrorCode doSyncPut(std::vector<kvstore::KV> data);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

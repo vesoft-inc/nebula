@@ -34,9 +34,10 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
                       MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID,
                                                     NetworkUtils::toHosts(hosts)));
 
-    if (!doSyncPut(std::move(data))) {
+    auto ret = doSyncPut(std::move(data));
+    if (ret != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Write snapshot meta error";
-        resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
+        resp_.set_code(ret);
         onFinished();
         return;
     }
@@ -84,11 +85,12 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
                       MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::VALID,
                                                     NetworkUtils::toHosts(hosts)));
 
-    if (!doSyncPut(std::move(data))) {
+    ret = doSyncPut(std::move(data));
+    if (ret != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "All checkpoint creations are done, "
                       "but update checkpoint status error. "
                       "snapshot : " << snapshot;
-        resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
+        resp_.set_code(ret);
     }
 
     onFinished();
