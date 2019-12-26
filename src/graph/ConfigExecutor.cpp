@@ -141,8 +141,7 @@ void ConfigExecutor::setVariables() {
         return;
     }
 
-    bool isForce = sentence_->isForce();
-    auto future = ectx()->gflagsManager()->setConfig(module, name, type, value, isForce);
+    auto future = ectx()->gflagsManager()->setConfig(module, name, type, value);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto && resp) {
