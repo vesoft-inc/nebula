@@ -11,5 +11,6 @@
 使用自定义变量的一种方法是使用 YIELD 语句：
 
 ```ngql
-$var = GO FROM hash('curry') OVER follow YIELD follow._dst AS id; GO FROM $var.id OVER serve;
+nebula> $var = GO FROM hash('curry') OVER follow YIELD follow._dst AS id; \
+GO FROM $var.id OVER serve;
 ```
