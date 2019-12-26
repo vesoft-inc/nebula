@@ -32,23 +32,26 @@ To install **Nebula Graph** with a `rpm/deb` package, you must complete the foll
 * For a `rpm` file, install **Nebula Graph** with the following command:
 
 ```bash
-$ rpm -ivh nebula-2019.12.23-nightly.el6-5.x86_64.rpm
+$ sudo rpm -ivh nebula-2019.12.23-nightly.el6-5.x86_64.rpm
 ```
 
 * For a `deb` file, install **Nebula Graph** with the following command:
 
 ```bash
-$ dpkg -i nebula-2019.12.23-nightly.ubuntu1604.amd64.deb
+$ sudo dpkg -i nebula-2019.12.23-nightly.ubuntu1604.amd64.deb
 ```
 
-**Note**: Replace the above file name with your own file name, otherwise, this command might fail.
+**Note**: 
+
+1. Replace the above file name with your own file name, otherwise, this command might fail.
+2. **Nebula Graph** is installed in the /usr/local/nebula directory.
 
 ## Starting **Nebula Graph** Services
 
 After **Nebula Graph** is installed successfully, you can start **Nebula Graph** services with the following command:
 
 ```bash
-$ /usr/local/nebula/scripts/nebula.service start all
+$ sudo /usr/local/nebula/scripts/nebula.service start all
 ```
 
 ## Checking **Nebula Graph** Services
@@ -56,7 +59,7 @@ $ /usr/local/nebula/scripts/nebula.service start all
 You can check the **Nebula Graph** services with the following command:
 
 ```bash
-$ /usr/local/nebula/scripts/nebula.service status all
+$ sudo /usr/local/nebula/scripts/nebula.service status all
 ```
 
 ## Connecting to **Nebula Graph** Services
@@ -64,7 +67,7 @@ $ /usr/local/nebula/scripts/nebula.service status all
 You can connect to **Nebula Graph** services with the following command:
 
 ```bash
-$ /usr/local/nebula/bin/nebula -u user -p password
+$ sudo /usr/local/nebula/bin/nebula -u user -p password
 ```
 
 **Note**: If you successfully connect to **Nebula Graph**, the `Welcome to Nebula Graph` information is returned.
@@ -74,5 +77,5 @@ $ /usr/local/nebula/bin/nebula -u user -p password
 If you want to stop **Nebula Graph** services, you can enter the following command:
 
 ```bash
-$ /usr/local/nebula/scripts/nebula.service stop all
+$ sudo /usr/local/nebula/scripts/nebula.service stop all
 ```
