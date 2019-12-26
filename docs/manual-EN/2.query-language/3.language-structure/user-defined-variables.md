@@ -4,7 +4,7 @@
 
 User-defined variables can only be used in one execution (compound statements separated by semicolon `;` or pipe `|` and are submitted to the server to execute together).
 
-Be noted that a user-defined variable is valid only at the current session and execution. A user-defined variable in one statement can NOT be used in neither other clients nor other executions, which means that the definition statement and the statements that use it should be submitted together. And when the session ends these variables are automatically expired.
+Be noted that a user-defined variable is valid only at the current session and execution. A user-defined variable in one statement can NOT be used in neither other clients nor other executions, which means that the definition statement and the statements that use it must be submitted together. And when the session ends these variables are automatically expired.
 
 User-defined variables are case-sensitive.
 
