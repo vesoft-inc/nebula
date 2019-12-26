@@ -128,14 +128,18 @@ StatusOr<std::vector<cpp2::RowValue>> InterimResult::getRows() const {
                 case SupportedType::INT: {
                     int64_t v;
                     auto rc = rowIter->getInt(field, v);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (rc != ResultType::SUCCEEDED) {
+                        return Status::Error("Get int from interim failed.");
+                    }
                     row.back().set_integer(v);
                     break;
                 }
                 case SupportedType::TIMESTAMP: {
                     int64_t v;
                     auto rc = rowIter->getInt(field, v);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (rc != ResultType::SUCCEEDED) {
+                        return Status::Error("Get timestamp from interim failed.");
+                    }
                     row.back().set_timestamp(v);
                     break;
                 }
@@ -230,7 +234,9 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
                 case SupportedType::TIMESTAMP: {
                     int64_t v;
                     auto rc = rowIter->getInt(i, v);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (rc != ResultType::SUCCEEDED) {
+                        return Status::Error("Get int from interim failed.");
+                    }
                     row.emplace_back(v);
                     break;
                 }

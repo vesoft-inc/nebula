@@ -140,7 +140,8 @@ Status GoExecutor::prepareFrom() {
     auto *clause = sentence_->fromClause();
     do {
         if (clause == nullptr) {
-            LOG(FATAL) << "From clause shall never be null";
+            LOG(ERROR) << "From clause shall never be null";
+            return Status::Error("From clause shall never be null");
         }
 
         if (clause->isRef()) {
@@ -156,7 +157,8 @@ Status GoExecutor::prepareFrom() {
                 colname_ = vexpr->prop();
             } else {
                 // No way to happen except memory corruption
-                LOG(FATAL) << "Unknown kind of expression";
+                LOG(ERROR) << "Unknown kind of expression";
+                return Status::Error("Unknown kind of expression");
             }
 
             if (colname_ != nullptr && *colname_ == "*") {
@@ -243,7 +245,8 @@ Status GoExecutor::prepareOver() {
     Status status = Status::OK();
     auto *clause = sentence_->overClause();
     if (clause == nullptr) {
-        LOG(FATAL) << "Over clause shall never be null";
+        LOG(ERROR) << "Over clause shall never be null";
+        return Status::Error("Over clause shall never be null");
     }
 
     isReversely_ = clause->isReversely();
@@ -482,7 +485,12 @@ void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
         maybeFinishExecution(std::move(rpcResp));
         return;
     } else {
-        starts_ = getDstIdsFromResp(rpcResp);
+        auto status = getDstIdsFromResp(rpcResp);
+        if (!status.ok()) {
+            doError(std::move(status).status());
+            return;
+        }
+        starts_ = std::move(status).value();
         if (starts_.empty()) {
             onEmptyInputs();
             return;
@@ -507,7 +515,14 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
         return;
     }
 
-    auto dstids = getDstIdsFromResp(rpcResp);
+    auto dstIdStatus = getDstIdsFromResp(rpcResp);
+
+    if (!dstIdStatus.ok()) {
+        doError(std::move(dstIdStatus).status());
+        return;
+    }
+
+    auto dstids = std::move(dstIdStatus).value();
 
     // Reaching the dead end
     if (dstids.empty()) {
@@ -662,7 +677,7 @@ std::vector<std::string> GoExecutor::getEdgeNamesFromResp(RpcResponse &rpcResp) 
     return names;
 }
 
-std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const {
+StatusOr<std::vector<VertexID>> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const {
     std::unordered_set<VertexID> set;
     for (auto &resp : rpcResp.responses()) {
         auto *vertices = resp.get_vertices();
@@ -691,7 +706,10 @@ std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const 
                 while (iter) {
                     VertexID dst;
                     auto rc = iter->getVid(_DST, dst);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (rc != ResultType::SUCCEEDED) {
+                        LOG(ERROR) << "Get dst id failed";
+                        return Status::Error("Get dst id failed");
+                    }
                     if (!isFinalStep() && backTracker_ != nullptr) {
                         backTracker_->add(vdata.get_vertex_id(), dst);
                     }
@@ -884,13 +902,15 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
     std::unique_ptr<RowSetWriter> rsWriter;
     auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
     auto cb = [&] (std::vector<VariantType> record,
-                       std::vector<nebula::cpp2::SupportedType> colTypes) {
+                       std::vector<nebula::cpp2::SupportedType> colTypes) -> Status {
         if (schema == nullptr) {
             schema = std::make_shared<SchemaWriter>();
             auto colnames = getResultColumnNames();
             if (record.size() != colTypes.size()) {
-                LOG(FATAL) << "data nums: " << record.size()
-                           << " != type nums: " << colTypes.size();
+                LOG(ERROR) << "Record size: " << record.size()
+                           << " != column type size: " << colTypes.size();
+                return Status::Error("Record size is not equal to column type size, [%d != %d]",
+                                      record.size(), colTypes.size());
             }
             for (auto i = 0u; i < record.size(); i++) {
                 SupportedType type;
@@ -910,7 +930,8 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
                             type = SupportedType::STRING;
                             break;
                         default:
-                            LOG(FATAL) << "Unknown VariantType: " << record[i].which();
+                            LOG(ERROR) << "Unknown VariantType: " << record[i].which();
+                            return Status::Error("Unknown VariantType: %d", record[i].which());
                     }
                 } else {
                     type = colTypes[i];
@@ -936,7 +957,8 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
                     writer << boost::get<std::string>(column);
                     break;
                 default:
-                    LOG(FATAL) << "Unknown VariantType: " << column.which();
+                    LOG(ERROR) << "Unknown VariantType: " << column.which();
+                    return Status::Error("Unknown VariantType: %d", column.which());
             }
         }
         // TODO Consider float/double, and need to reduce mem copy.
@@ -949,6 +971,7 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
         } else {
             rsWriter->addRow(std::move(encode));
         }
+        return Status::OK();
     };  // cb
     if (!processFinalResult(rpcResp, cb)) {
         return false;
@@ -1037,10 +1060,14 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         if (isReversely()) {
                             auto dst = RowReader::getPropByName(&*iter, _DST);
                             if (saveTypeFlag) {
-                                colTypes.back() = edgeHolder_->getType(
+                                auto typeStatus = edgeHolder_->getType(
                                                     boost::get<VertexID>(value(dst)),
                                                     srcid,
                                                     std::abs(edgeType), prop);
+                                if (!typeStatus.ok()) {
+                                    return typeStatus.status();
+                                }
+                                colTypes.back() = typeStatus.value();
                             }
                             if (std::abs(edgeType) != std::abs(type)) {
                                 return edgeHolder_->getDefaultProp(std::abs(type), prop);
@@ -1172,7 +1199,12 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         }
                         record.emplace_back(std::move(value.value()));
                     }
-                    cb(std::move(record), std::move(colTypes));
+                    auto cbStatus = cb(std::move(record), std::move(colTypes));
+                    if (!cbStatus.ok()) {
+                        LOG(ERROR) << cbStatus;
+                        doError(std::move(cbStatus));
+                        return false;
+                    }
                     ++iter;
                 }  // while `iter'
             }
@@ -1311,7 +1343,12 @@ OptVariantType GoExecutor::EdgeHolder::get(VertexID src,
                                            EdgeType type,
                                            const std::string &prop) const {
     auto iter = edges_.find(std::make_tuple(src, dst, type));
-    CHECK(iter != edges_.end());
+    if (iter == edges_.end()) {
+        LOG(ERROR) << "EdgeHolder couldn't find src: "
+                   << src << ", dst: " << dst << ", edge type: " << type;
+        return Status::Error("EdgeHolder couldn't find src: %ld, dst: %ld, type: %d",
+                             src, dst, prop);
+    }
     auto reader = RowReader::getRowReader(iter->second.second, iter->second.first);
     auto result = RowReader::getPropByName(reader.get(), prop);
     if (!ok(result)) {
@@ -1321,12 +1358,17 @@ OptVariantType GoExecutor::EdgeHolder::get(VertexID src,
 }
 
 
-SupportedType GoExecutor::EdgeHolder::getType(VertexID src,
-                                              VertexID dst,
-                                              EdgeType type,
-                                              const std::string &prop) const {
+StatusOr<SupportedType> GoExecutor::EdgeHolder::getType(VertexID src,
+                                                        VertexID dst,
+                                                        EdgeType type,
+                                                        const std::string &prop) const {
     auto iter = edges_.find(std::make_tuple(src, dst, type));
-    CHECK(iter != edges_.end());
+    if (iter == edges_.end()) {
+        LOG(ERROR) << "EdgeHolder couldn't find src: "
+                   << src << ", dst: " << dst << ", edge type: " << type;
+        return Status::Error("EdgeHolder couldn't find src: %ld, dst: %ld, type: %d",
+                             src, dst, prop);
+    }
     return iter->second.first->getFieldType(prop).type;
 }
 
