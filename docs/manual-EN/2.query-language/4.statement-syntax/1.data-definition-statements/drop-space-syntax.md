@@ -1,7 +1,7 @@
 # Drop Space Syntax
 
 ```ngql
-DROP SPACE space_name
+DROP SPACE <space_name>
 ```
 
 You must have the DROP privilege for the graph space.

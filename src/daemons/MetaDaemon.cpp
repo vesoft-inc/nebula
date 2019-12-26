@@ -21,7 +21,6 @@
 #include "meta/ClusterIdMan.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/KVBasedGflagsManager.h"
 
 using nebula::operator<<;
 using nebula::ProcessUtils;
@@ -30,10 +29,12 @@ using nebula::Status;
 DEFINE_int32(port, 45500, "Meta daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_string(data_path, "", "Root data path");
-DEFINE_string(meta_server_addrs, "", "It is a list of IPs split by comma,"
-                                     "the ips number equals replica number."
-                                     "If empty, it means replica is 0");
-DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
+DEFINE_string(meta_server_addrs,
+              "",
+              "It is a list of IPs split by comma, used in cluster deployment"
+              "the ips number is equal to the replica number."
+              "If empty, it means it's a single node");
+DEFINE_string(local_ip, "", "Local ip specified for NetworkUtils::getLocalIP");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(meta_http_thread_num, 3, "Number of meta daemon's http thread");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
@@ -153,12 +154,6 @@ bool initWebService(nebula::kvstore::KVStore* kvstore,
     return true;
 }
 
-bool initComponents(nebula::kvstore::KVStore* kvstore) {
-    auto gflagsManager = std::make_unique<nebula::meta::KVBasedGflagsManager>(kvstore);
-    gflagsManager->init();
-    return true;
-}
-
 int main(int argc, char *argv[]) {
     google::SetVersionString(nebula::versionString());
     folly::init(&argc, &argv, true);
@@ -212,14 +207,9 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto kvstore = initKV(peersRet.value(), hostAddrRet.value());
+    auto kvstore = initKV(peersRet.value(), localhost);
     if (kvstore == nullptr) {
         LOG(ERROR) << "Init kv failed!";
-        return EXIT_FAILURE;
-    }
-
-    if (!initComponents(kvstore.get())) {
-        LOG(ERROR) << "Init components failed";
         return EXIT_FAILURE;
     }
 

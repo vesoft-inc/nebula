@@ -21,6 +21,7 @@ DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no re
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
 DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
+DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
 DECLARE_string(gflags_mode_json);
 
 
@@ -32,13 +33,12 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
                        HostAddr localHost,
                        ClusterID clusterId,
                        bool sendHeartBeat,
-                       stats::Stats *stats)
+                       const std::string &serviceName)
     : ioThreadPool_(ioThreadPool)
     , addrs_(std::move(addrs))
     , localHost_(localHost)
     , clusterId_(clusterId)
-    , sendHeartBeat_(sendHeartBeat)
-    , stats_(stats) {
+    , sendHeartBeat_(sendHeartBeat) {
     CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
     CHECK(!addrs_.empty())
         << "No meta server address is specified. Meta server is required";
@@ -49,6 +49,7 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
     updateLeader();
     bgThread_ = std::make_unique<thread::GenericWorker>();
     LOG(INFO) << "Create meta client to " << active_;
+    stats_ = std::make_unique<stats::Stats>(serviceName, "metaClient");
 }
 
 
@@ -68,7 +69,9 @@ bool MetaClient::isMetadReady() {
         }
     }  // end if
     loadData();
-    loadCfg();
+    if (!FLAGS_local_config) {
+        loadCfg();
+    }
     return ready_;
 }
 
@@ -98,7 +101,9 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
                                 &MetaClient::heartBeatThreadFunc, this);
     }
     addLoadDataTask();
-    addLoadCfgTask();
+    if (!FLAGS_local_config) {
+        addLoadCfgTask();
+    }
     return ready_;
 }
 
@@ -365,7 +370,7 @@ void MetaClient::getResponse(Request req,
                     LOG(ERROR) << "Send request to " << host << ", exceed retry limit";
                     pro.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
                                                                    t.exception().what().c_str())));
-                    stats::Stats::addStatsValue(stats_, false, duration.elapsedInUSec());
+                    stats::Stats::addStatsValue(stats_.get(), false, duration.elapsedInUSec());
                 }
                 return;
             }
@@ -373,7 +378,7 @@ void MetaClient::getResponse(Request req,
             if (resp.code == cpp2::ErrorCode::SUCCEEDED) {
                 // succeeded
                 pro.setValue(respGen(std::move(resp)));
-                stats::Stats::addStatsValue(stats_, true, duration.elapsedInUSec());
+                stats::Stats::addStatsValue(stats_.get(), true, duration.elapsedInUSec());
 
                 return;
             } else if (resp.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
@@ -398,7 +403,7 @@ void MetaClient::getResponse(Request req,
                 }
             }
             pro.setValue(this->handleResponse(resp));
-            stats::Stats::addStatsValue(stats_,
+            stats::Stats::addStatsValue(stats_.get(),
                                         resp.code == cpp2::ErrorCode::SUCCEEDED,
                                         duration.elapsedInUSec());
         });  // then
@@ -1493,7 +1498,6 @@ MetaClient::setConfig(const cpp2::ConfigModule& module, const std::string& name,
     item.set_module(module);
     item.set_name(name);
     item.set_type(type);
-    item.set_mode(cpp2::ConfigMode::MUTABLE);
     item.set_value(value);
 
     cpp2::SetConfigReq req;

@@ -7,10 +7,10 @@
 `UNION ALL` 返回数据集 A 和 B 的并集（包含重复元素）。`UNION` 语法为
 
 ```ngql
-<left> UNION [DISTINCT | ALL] <right>
+<left> UNION [DISTINCT | ALL] <right> [ UNION [DISTINCT | ALL] <right> ...]
 ```
 
-`<left>` 和 `<right>` 必须列数相同，且数据类型相同。
+`<left>` 和 `<right>` 必须列数相同，且数据类型相同。如果数据类型不同，将按照[类型转换](../1.data-types/type-conversion.md)进行转换。
 
 ### 示例
 
@@ -28,7 +28,7 @@ nebula> GO FROM 1 OVER e1 \
         GO FROM 2 OVER e1
 ```
 
-以上语句返回点 `1` 和 `2` 关联的点，其中存在重复点。
+以上语句返回点 `1` 和 `2` 关联的所有点，其中存在重复点。
 
 `UNION` 亦可与 `YIELD` 同时使用，例如以下语句：
 
@@ -53,9 +53,9 @@ nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.pro
 ```
 
 ```ngql
-nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2
-UNION /* DISTINCT */
-GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
+nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left_1, $$.tag.prop2 AS left_2   \
+        UNION /* DISTINCT */     \
+        GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right_1, $$.tag.prop2 AS right_2
 ```
 
 以上语句返回

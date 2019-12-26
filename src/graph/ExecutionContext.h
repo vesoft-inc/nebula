@@ -10,7 +10,6 @@
 #include "base/Base.h"
 #include "cpp/helpers.h"
 #include "graph/RequestContext.h"
-#include "graph/GraphStats.h"
 #include "parser/SequentialSentences.h"
 #include "meta/SchemaManager.h"
 #include "meta/ClientBasedGflagsManager.h"
@@ -34,15 +33,13 @@ public:
                      meta::SchemaManager *sm,
                      meta::ClientBasedGflagsManager *gflagsManager,
                      storage::StorageClient *storage,
-                     meta::MetaClient *metaClient,
-                     GraphStats* stats) {
+                     meta::MetaClient *metaClient) {
         rctx_ = std::move(rctx);
         sm_ = sm;
         gflagsManager_ = gflagsManager;
         storageClient_ = storage;
         metaClient_ = metaClient;
         variableHolder_ = std::make_unique<VariableHolder>();
-        stats_ = stats;
     }
 
     ~ExecutionContext();
@@ -71,10 +68,6 @@ public:
         return metaClient_;
     }
 
-    GraphStats* getGraphStats() const {
-        return stats_;
-    }
-
 private:
     RequestContextPtr                           rctx_;
     meta::SchemaManager                        *sm_{nullptr};
@@ -82,7 +75,6 @@ private:
     storage::StorageClient                     *storageClient_{nullptr};
     meta::MetaClient                           *metaClient_{nullptr};
     std::unique_ptr<VariableHolder>             variableHolder_;
-    GraphStats                                 *stats_{nullptr};
 };
 
 }   // namespace graph
