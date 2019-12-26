@@ -188,7 +188,6 @@ void signalHandler(int sig) {
         // default:
            // FLOG_ERROR("Signal %d(%s) received but ignored", sig, ::strsignal(sig));
     // }
-// }
     if (sig == SIGINT ||  sig == SIGTERM) {
         FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
         gServer->stop();

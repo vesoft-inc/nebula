@@ -72,7 +72,7 @@ function aptget_install {
         maven \
         openjdk-8-jdk \
         unzip \
-	curl ####
+        curl #添加这一行
 
     installPackage $1
     addAlias $1
