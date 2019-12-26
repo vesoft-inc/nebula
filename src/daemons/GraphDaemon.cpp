@@ -179,14 +179,21 @@ Status setupSignalHandler() {
 
 
 void signalHandler(int sig) {
-    switch (sig) {
-       case SIGINT:
-        case SIGTERM:
-            FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
-            gServer->stop();
-           break;
-        default:
-           FLOG_ERROR("Signal %d(%s) received but ignored", sig, ::strsignal(sig));
+   // switch (sig) {
+      // case SIGINT:
+       // case SIGTERM:
+           // FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
+           // gServer->stop();
+          // break;
+       // default:
+          // FLOG_ERROR("Signal %d(%s) received but ignored", sig, ::strsignal(sig));
+   // }
+// }
+    if (sig == SIGINT ||  sig == SIGTERM) {
+        FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
+        gServer->stop();
+    } else {
+        FLOG_ERROR("Signal %d(%s) received but ignored", sig, ::strsignal(sig));
     }
 }
 

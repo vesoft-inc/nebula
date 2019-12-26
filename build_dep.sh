@@ -71,7 +71,8 @@ function aptget_install {
         python \
         maven \
         openjdk-8-jdk \
-        unzip
+        unzip \
+        curl #添加这一行
 
     installPackage $1
     addAlias $1
