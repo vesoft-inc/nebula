@@ -94,19 +94,19 @@ std::string BaseProcessor<RESP>::indexStr(RowReader* reader,
     auto&& v = value(std::move(res));
     switch (col.get_type().get_type()) {
         case nebula::cpp2::SupportedType::BOOL: {
-            return folly::to<std::string>(boost::get<bool >(v));
+            auto val = boost::get<bool>(v);
+            std::string raw;
+            raw.reserve(sizeof(bool));
+            raw.append(reinterpret_cast<const char*>(&val), sizeof(bool));
+            return raw;
         }
         case nebula::cpp2::SupportedType::INT:
         case nebula::cpp2::SupportedType::TIMESTAMP: {
-            std::string raw;
-            raw.reserve(sizeof(int64_t));
-            auto val = folly::Endian::big(boost::get<int64_t>(v));
-            raw.append(reinterpret_cast<const char*>(&val), sizeof(int64_t));
-            return raw;
+            return NebulaKeyUtils::encodeInt64(boost::get<int64_t>(v));
         }
         case nebula::cpp2::SupportedType::FLOAT:
         case nebula::cpp2::SupportedType::DOUBLE: {
-            return folly::to<std::string>(boost::get<double>(v));
+            return NebulaKeyUtils::encodeDouble(boost::get<double>(v));
         }
         case nebula::cpp2::SupportedType::STRING: {
             return boost::get<std::string>(v);
@@ -120,7 +120,7 @@ std::string BaseProcessor<RESP>::indexStr(RowReader* reader,
 
 template <typename RESP>
 IndexValues BaseProcessor<RESP>::collectIndexValues(RowReader* reader,
-        const std::vector<nebula::cpp2::ColumnDef>& cols) {
+    const std::vector<nebula::cpp2::ColumnDef>& cols) {
     IndexValues values;
     if (reader == nullptr) {
         return values;

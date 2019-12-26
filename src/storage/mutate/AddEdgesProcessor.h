@@ -34,14 +34,17 @@ private:
                          const std::vector<cpp2::Edge>& edges);
 
     std::string obsoleteIndex(PartitionID partId,
-                              const std::pair<cpp2::EdgeKey, cpp2::IndexItem>& pair);
+                              const folly::StringPiece& rawKey,
+                              const nebula::cpp2::IndexItem& index);
 
     std::string newIndex(PartitionID partId,
-            const std::pair<std::string, std::pair<cpp2::EdgeKey, cpp2::IndexItem>>& index);
+                         const folly::StringPiece& rawKey,
+                         const std::pair<std::string,
+                                         nebula::cpp2::IndexItem>& index);
 
 private:
     GraphSpaceID  spaceId_;
-    std::vector<cpp2::IndexItem> indexes_;
+    std::vector<nebula::cpp2::IndexItem> indexes_;
 };
 
 }  // namespace storage

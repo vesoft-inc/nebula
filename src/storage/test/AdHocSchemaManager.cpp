@@ -170,7 +170,7 @@ StatusOr<std::string> AdHocSchemaManager::toEdgeName(GraphSpaceID space, EdgeTyp
     return "";
 }
 
-StatusOr<std::vector<storage::cpp2::IndexItem>>
+StatusOr<std::vector<nebula::cpp2::IndexItem>>
 AdHocSchemaManager::getTagIndexes(GraphSpaceID space) {
     auto indexes = tagIndexes_.find(space);
     if (indexes == tagIndexes_.end()) {
@@ -179,7 +179,7 @@ AdHocSchemaManager::getTagIndexes(GraphSpaceID space) {
     return indexes->second;
 }
 
-StatusOr<std::vector<storage::cpp2::IndexItem>>
+StatusOr<std::vector<nebula::cpp2::IndexItem>>
 AdHocSchemaManager::getEdgeIndexes(GraphSpaceID space) {
     auto indexes = edgeIndexes_.find(space);
     if (indexes == edgeIndexes_.end()) {
@@ -189,12 +189,12 @@ AdHocSchemaManager::getEdgeIndexes(GraphSpaceID space) {
 }
 
 void AdHocSchemaManager::addTagIndex(GraphSpaceID space,
-                                     const storage::cpp2::IndexItem& index) {
+                                     const nebula::cpp2::IndexItem& index) {
     tagIndexes_[space].emplace_back(index);
 }
 
 void AdHocSchemaManager::addEdgeIndex(GraphSpaceID space,
-                                      const storage::cpp2::IndexItem& index) {
+                                      const nebula::cpp2::IndexItem& index) {
     edgeIndexes_[space].emplace_back(index);
 }
 

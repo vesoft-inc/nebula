@@ -61,8 +61,8 @@ static std::shared_ptr<meta::SchemaProviderIf> genEdgeSchema(
 
 static std::unique_ptr<meta::SchemaManager> mockSchemaMan(
         GraphSpaceID spaceId,
-        const std::vector<cpp2::IndexItem>& tagIndexes,
-        const std::vector<cpp2::IndexItem>& edgeIndexes) {
+        const std::vector<nebula::cpp2::IndexItem>& tagIndexes,
+        const std::vector<nebula::cpp2::IndexItem>& edgeIndexes) {
     auto* schemaMan = new AdHocSchemaManager();
     for (auto edgeType = 101; edgeType < 110; edgeType++) {
         schemaMan->addEdgeSchema(spaceId /*space id*/, edgeType /*edge type*/,
@@ -82,10 +82,10 @@ static std::unique_ptr<meta::SchemaManager> mockSchemaMan(
     return sm;
 }
 
-static std::vector<cpp2::IndexItem> mockIndexes(bool isEdge,
-                                                int32_t intFieldsNum,
-                                                int32_t stringFieldsNum) {
-    std::vector<cpp2::IndexItem> indexes;
+static std::vector<nebula::cpp2::IndexItem> mockIndexes(bool isEdge,
+                                                        int32_t intFieldsNum,
+                                                        int32_t stringFieldsNum) {
+    std::vector<nebula::cpp2::IndexItem> indexes;
     if (isEdge) {
         for (auto edgeType = 101; edgeType < 110; edgeType++) {
             std::vector<nebula::cpp2::ColumnDef> cols;
@@ -133,7 +133,7 @@ TEST(IndexTest, InsertVerticesTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     LOG(INFO) << "Prepare meta...";
     auto indexes = mockIndexes(false, 3, 3);
-    auto schemaMan = mockSchemaMan(0, indexes, std::vector<cpp2::IndexItem>());
+    auto schemaMan = mockSchemaMan(0, indexes, std::vector<nebula::cpp2::IndexItem>());
     cpp2::AddVerticesRequest req;
     req.space_id = 0;
     req.overwritable = true;
@@ -201,7 +201,7 @@ TEST(IndexTest, InsertEdgeTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     LOG(INFO) << "Prepare meta...";
     auto indexes = mockIndexes(true, 10, 10);
-    auto schemaMan = mockSchemaMan(0, std::vector<cpp2::IndexItem>(), indexes);
+    auto schemaMan = mockSchemaMan(0, std::vector<nebula::cpp2::IndexItem>(), indexes);
     LOG(INFO) << "Build AddEdgesRequest...";
     auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
     cpp2::AddEdgesRequest req;
@@ -281,7 +281,7 @@ TEST(IndexTest, DeleteVertexTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     LOG(INFO) << "Prepare meta...";
     auto indexes = mockIndexes(false, 3, 3);
-    auto schemaMan = mockSchemaMan(0, indexes, std::vector<cpp2::IndexItem>());
+    auto schemaMan = mockSchemaMan(0, indexes, std::vector<nebula::cpp2::IndexItem>());
     {
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
@@ -342,7 +342,7 @@ TEST(IndexTest, DeleteEdgeTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     LOG(INFO) << "Prepare meta...";
     auto indexes = mockIndexes(true, 10, 10);
-    auto schemaMan = mockSchemaMan(0, std::vector<cpp2::IndexItem>(), indexes);
+    auto schemaMan = mockSchemaMan(0, std::vector<nebula::cpp2::IndexItem>(), indexes);
     LOG(INFO) << "Build AddEdgesRequest...";
     {
         auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
@@ -423,7 +423,7 @@ TEST(IndexTest, UpdateVertexTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     LOG(INFO) << "Prepare meta...";
     auto indexes = mockIndexes(false, 3, 3);
-    auto schemaMan = mockSchemaMan(0, indexes, std::vector<cpp2::IndexItem>());
+    auto schemaMan = mockSchemaMan(0, indexes, std::vector<nebula::cpp2::IndexItem>());
     {
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
@@ -552,7 +552,7 @@ TEST(IndexTest, UpdateEdgeTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     LOG(INFO) << "Prepare meta...";
     auto indexes = mockIndexes(true, 10, 10);
-    auto schemaMan = mockSchemaMan(0, std::vector<cpp2::IndexItem>(), indexes);
+    auto schemaMan = mockSchemaMan(0, std::vector<nebula::cpp2::IndexItem>(), indexes);
     LOG(INFO) << "Build AddEdgesRequest...";
     {
         auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan.get(), nullptr);

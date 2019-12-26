@@ -81,7 +81,7 @@ std::string DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
             batchHolder->remove(iter->key().str());
             for (auto& index : indexes_) {
                 auto indexId = index.get_index_id();
-                if (index.get_schema() == type) {
+                if (index.get_tagOrEdge() == type) {
                     auto reader = RowReader::getEdgePropReader(this->schemaMan_,
                                                                iter->val(),
                                                                spaceId,

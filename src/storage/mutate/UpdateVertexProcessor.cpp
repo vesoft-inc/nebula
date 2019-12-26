@@ -268,7 +268,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
         batchHolder->put(std::move(nKey), std::move(nVal));
         if (!indexes_.empty()) {
             for (auto &index : indexes_) {
-                if (index.get_schema() == u.first) {
+                if (index.get_tagOrEdge() == u.first) {
                     auto prop = u.second->updater->encode();
                     auto reader = RowReader::getTagPropReader(this->schemaMan_,
                                                               std::move(prop),

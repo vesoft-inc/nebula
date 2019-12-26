@@ -268,7 +268,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
     if (!indexes_.empty()) {
         for (auto& index : indexes_) {
             auto indexId = index.get_index_id();
-            if (index.get_schema() == edgeKey.edge_type) {
+            if (index.get_tagOrEdge() == edgeKey.edge_type) {
                 auto prop = updater_->encode();
                 auto reader = RowReader::getEdgePropReader(this->schemaMan_,
                                                            std::move(prop),

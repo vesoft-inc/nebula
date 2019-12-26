@@ -110,7 +110,7 @@ std::string DeleteVertexProcessor::deleteVertex(GraphSpaceID spaceId,
         batchHolder->remove(key.str());
         for (auto& index : indexes_) {
             auto indexId = index.get_index_id();
-            if (index.get_schema() == tagId) {
+            if (index.get_tagOrEdge() == tagId) {
                 auto reader = RowReader::getTagPropReader(this->schemaMan_,
                                                           iter->val(),
                                                           spaceId,

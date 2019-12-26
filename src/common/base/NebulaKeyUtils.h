@@ -216,6 +216,46 @@ public:
         return rawKey.subpiece(0, rawKey.size() - sizeof(int64_t));
     }
 
+    /**
+     * Default, positive number first bit is 0, negative number is 1 .
+     * To keep the string in order, the first bit must to be inverse.
+     * for example as below :
+     *    9223372036854775807     -> "\377\377\377\377\377\377\377\377"
+     *    1                       -> "\200\000\000\000\000\000\000\001"
+     *    0                       -> "\200\000\000\000\000\000\000\000"
+     *    -1                      -> "\177\377\377\377\377\377\377\377"
+     *    -9223372036854775808    -> "\000\000\000\000\000\000\000\000"
+     */
+
+    static std::string encodeInt64(int64_t v) {
+        v ^= folly::to<int64_t>(1) << 63;
+        auto val = folly::Endian::big(v);
+        std::string raw;
+        raw.reserve(sizeof(int64_t));
+        raw.append(reinterpret_cast<const char*>(&val), sizeof(int64_t));
+        return raw;
+    }
+
+    /*
+     * Default, the double memory structure is :
+     *   sign bit（1bit）+  exponent bit(11bit) + float bit(52bit)
+     *   The first bit is the sign bit, 0 for positive and 1 for negative
+     *   To keep the string in order, the first bit must to be inverse,
+     *   then need to subtract from maximum.
+     */
+    static std::string encodeDouble(double v) {
+        if (v < 0) {
+            v = -(std::numeric_limits<double>::max() + v);
+        }
+        auto val = folly::Endian::big(v);
+        auto* c = reinterpret_cast<char*>(&val);
+        c[0] ^= 0x80;
+        std::string raw;
+        raw.reserve(sizeof(double));
+        raw.append(c, sizeof(double));
+        return raw;
+    }
+
 private:
     NebulaKeyUtils() = delete;
 

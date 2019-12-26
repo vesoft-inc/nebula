@@ -37,7 +37,7 @@ private:
 
 private:
     VertexCache* vertexCache_ = nullptr;
-    std::vector<cpp2::IndexItem> indexes_;
+    std::vector<nebula::cpp2::IndexItem> indexes_;
 };
 
 

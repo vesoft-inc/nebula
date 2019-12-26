@@ -102,4 +102,10 @@ struct Pair {
     2: string value,
 }
 
+struct IndexItem {
+     1: required IndexID          index_id,
+     2: required i32              tagOrEdge,
+     3: required list<ColumnDef>  cols,
+}
+
 const ValueType kInvalidValueType = {"type" : UNKNOWN}

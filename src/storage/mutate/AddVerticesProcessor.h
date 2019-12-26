@@ -39,15 +39,18 @@ private:
                             const std::vector<cpp2::Vertex>& vertices);
 
     std::string obsoleteIndex(PartitionID partId,
-                              const std::pair<VertexID, cpp2::IndexItem>& index);
+                              VertexID vId,
+                              const nebula::cpp2::IndexItem& index);
 
     std::string newIndex(PartitionID partId,
-            const std::pair<std::string, std::pair<VertexID, cpp2::IndexItem>>& index);
+                         VertexID vId,
+                         const std::pair<std::string,
+                                         nebula::cpp2::IndexItem>& index);
 
 private:
     GraphSpaceID  spaceId_;
     VertexCache* vertexCache_ = nullptr;
-    std::vector<cpp2::IndexItem> indexes_;
+    std::vector<nebula::cpp2::IndexItem> indexes_;
 };
 
 

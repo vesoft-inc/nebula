@@ -48,10 +48,10 @@ public:
 
     virtual StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) = 0;
 
-    virtual StatusOr<std::vector<storage::cpp2::IndexItem>>
+    virtual StatusOr<std::vector<nebula::cpp2::IndexItem>>
     getTagIndexes(GraphSpaceID space) = 0;
 
-    virtual StatusOr<std::vector<storage::cpp2::IndexItem>>
+    virtual StatusOr<std::vector<nebula::cpp2::IndexItem>>
     getEdgeIndexes(GraphSpaceID space) = 0;
 
     virtual void init(MetaClient *client = nullptr) = 0;

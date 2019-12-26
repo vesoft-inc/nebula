@@ -163,12 +163,6 @@ struct Edge {
     2: binary props,
 }
 
-struct IndexItem {
-     1: required common.IndexID          index_id,
-     2: required i32                     schema,
-     3: required list<common.ColumnDef>  cols,
-}
-
 struct GetNeighborsRequest {
     1: common.GraphSpaceID space_id,
     // partId => ids

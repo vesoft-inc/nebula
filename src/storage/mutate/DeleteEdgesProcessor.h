@@ -33,7 +33,7 @@ private:
                             const std::vector<cpp2::EdgeKey>& edges);
 
 private:
-    std::vector<cpp2::IndexItem> indexes_;
+    std::vector<nebula::cpp2::IndexItem> indexes_;
 };
 
 }  // namespace storage

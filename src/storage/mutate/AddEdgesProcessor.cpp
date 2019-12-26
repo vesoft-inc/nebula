@@ -32,7 +32,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
             auto partId = partEdges.first;
             std::vector<kvstore::KV> data;
             std::for_each(partEdges.second.begin(), partEdges.second.end(), [&](auto& edge){
-                VLOG(4) << "PartitionID: " << partId << ", VertexID: " << edge.key.src
+                VLOG(3) << "PartitionID: " << partId << ", VertexID: " << edge.key.src
                         << ", EdgeType: " << edge.key.edge_type << ", EdgeRanking: "
                         << edge.key.ranking << ", VertexID: "
                         << edge.key.dst << ", EdgeVersion: " << version;
@@ -60,48 +60,72 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
 std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
                                         const std::vector<cpp2::Edge>& edges) {
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
-    std::map<std::string, std::pair<std::string,
-             std::pair<cpp2::EdgeKey, cpp2::IndexItem>>> newIndexes;
+
+    /*
+     * Define the map newIndexes to avoid inserting duplicate edge.
+     * This map means :
+     * map<edge_unique_key, pair<edge_prop, IndexItem>> ,
+     * -- edge_unique_key is only used as the unique key , for example:
+     * insert below edges in the same request:
+     *     kv(part1_src1_edgeType1_rank1_dst1 , v1)
+     *     kv(part1_src1_edgeType1_rank1_dst1 , v2)
+     *     kv(part1_src1_edgeType1_rank1_dst1 , v3)
+     *     kv(part1_src1_edgeType1_rank1_dst1 , v4)
+     *
+     * Ultimately, kv(part1_src1_edgeType1_rank1_dst1 , v4) . It's just what I need.
+     */
+    std::map<std::string, std::pair<std::string, nebula::cpp2::IndexItem>> newIndexes;
     std::for_each(edges.begin(), edges.end(), [&](auto& edge){
         auto prop = edge.get_props();
         auto type = edge.key.edge_type;
         auto srcId = edge.key.src;
         auto rank = edge.key.ranking;
         auto dstId = edge.key.dst;
-        VLOG(4) << "PartitionID: " << partId << ", VertexID: " << srcId
+        VLOG(3) << "PartitionID: " << partId << ", VertexID: " << srcId
                 << ", EdgeType: " << type << ", EdgeRanking: " << rank
                 << ", VertexID: " << dstId << ", EdgeVersion: " << version;
-        auto key = NebulaKeyUtils::edgeKey(partId, srcId, type, rank, dstId, version);
-        batchHolder->put(std::move(key), std::move(prop));
         for (auto& index : indexes_) {
             /**
              * skip the in-edge.
              **/
-            if (index.get_schema() == type) {
-                cpp2::EdgeKey ek(apache::thrift::FragileConstructor::FRAGILE,
-                        srcId, type, rank, dstId);
-                auto ekVal = NebulaKeyUtils::edgePrefix(partId, srcId, type, rank, dstId);
-                newIndexes[ekVal] = std::make_pair(edge.get_props(), std::make_pair(ek, index));
+            if (index.get_tagOrEdge() == type) {
+                auto ekVal = NebulaKeyUtils::edgeKey(partId, srcId, type, rank, dstId, version);
+                newIndexes[ekVal] = std::make_pair(edge.get_props(), index);
             }
         }
     });
     for (auto& index : newIndexes) {
-        auto ni = newIndex(partId, index.second);
-        batchHolder->put(std::move(ni), "");
-        auto oi = obsoleteIndex(partId, index.second.second);
+        /*
+         * step 1 , Delete old version index if exists.
+         */
+        auto oi = obsoleteIndex(partId, index.first, index.second.second);
         if (!oi.empty()) {
             batchHolder->remove(std::move(oi));
         }
+        /*
+         * step 2 , Insert new edge data
+         */
+        auto key = index.first;
+        auto prop = index.second.first;
+        batchHolder->put(std::move(key), std::move(prop));
+        /*
+         * step 3 , Insert new edge index
+         */
+        auto ni = newIndex(partId, index.first, index.second);
+        batchHolder->put(std::move(ni), "");
     }
 
     return encodeBatchValue(batchHolder->getBatch());
 }
 
 std::string AddEdgesProcessor::obsoleteIndex(PartitionID partId,
-        const std::pair<cpp2::EdgeKey, cpp2::IndexItem>& pair) {
-    auto key = pair.first;
-    auto index = pair.second;
-    auto prefix = NebulaKeyUtils::edgePrefix(partId, key.src, key.edge_type, key.ranking, key.dst);
+                                             const folly::StringPiece& rawKey,
+                                             const nebula::cpp2::IndexItem& index) {
+    auto prefix = NebulaKeyUtils::edgePrefix(partId,
+                                             NebulaKeyUtils::getSrcId(rawKey),
+                                             NebulaKeyUtils::getEdgeType(rawKey),
+                                             NebulaKeyUtils::getRank(rawKey),
+                                             NebulaKeyUtils::getDstId(rawKey));
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(this->spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -113,12 +137,15 @@ std::string AddEdgesProcessor::obsoleteIndex(PartitionID partId,
         auto reader = RowReader::getEdgePropReader(this->schemaMan_,
                                                   iter->val(),
                                                   spaceId_,
-                                                  key.edge_type);
+                                                  index.get_tagOrEdge());
         const auto& cols = index.get_cols();
         auto values = collectIndexValues(reader.get(), cols);
-        auto indexKey = NebulaKeyUtils::edgeIndexKey(partId, index.get_index_id(),
-                                                     key.src, key.ranking,
-                                                     key.dst, values);
+        auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
+                                                     index.get_index_id(),
+                                                     NebulaKeyUtils::getSrcId(rawKey),
+                                                     NebulaKeyUtils::getRank(rawKey),
+                                                     NebulaKeyUtils::getDstId(rawKey),
+                                                     values);
         std::string val;
         auto result = kvstore_->get(spaceId_, partId, indexKey, &val);
         if (result == kvstore::ResultCode::SUCCEEDED) {
@@ -129,17 +156,20 @@ std::string AddEdgesProcessor::obsoleteIndex(PartitionID partId,
 }
 
 std::string AddEdgesProcessor::newIndex(PartitionID partId,
-        const std::pair<std::string, std::pair<cpp2::EdgeKey, cpp2::IndexItem>>& index) {
-    auto key = index.second.first;
-    auto indexItem = index.second.second;
+                                        const folly::StringPiece& rawKey,
+                                        const std::pair<std::string,
+                                                        nebula::cpp2::IndexItem>& index) {
     auto reader = RowReader::getEdgePropReader(this->schemaMan_,
                                                index.first,
                                                spaceId_,
-                                               key.edge_type);
-    auto values = collectIndexValues(reader.get(), indexItem.get_cols());
-    return NebulaKeyUtils::edgeIndexKey(partId, indexItem.get_index_id(),
-                                        key.src, key.ranking,
-                                        key.dst, values);
+                                               index.second.get_tagOrEdge());
+    auto values = collectIndexValues(reader.get(), index.second.get_cols());
+    return NebulaKeyUtils::edgeIndexKey(partId,
+                                        index.second.get_index_id(),
+                                        NebulaKeyUtils::getSrcId(rawKey),
+                                        NebulaKeyUtils::getRank(rawKey),
+                                        NebulaKeyUtils::getDstId(rawKey),
+                                        values);
 }
 
 }  // namespace storage
