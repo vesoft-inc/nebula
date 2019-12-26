@@ -27,6 +27,8 @@ class ExecutionPlan final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
     explicit ExecutionPlan(std::unique_ptr<ExecutionContext> ectx) {
         ectx_ = std::move(ectx);
+        allStats_ = std::make_unique<stats::Stats>("graph", "all");
+        parseStats_ = std::make_unique<stats::Stats>("graph", "parse");
     }
 
     ~ExecutionPlan() = default;
@@ -54,6 +56,8 @@ private:
     std::unique_ptr<SequentialSentences>        sentences_;
     std::unique_ptr<ExecutionContext>           ectx_;
     std::unique_ptr<SequentialExecutor>         executor_;
+    std::unique_ptr<stats::Stats>               allStats_;
+    std::unique_ptr<stats::Stats>               parseStats_;
 };
 
 }   // namespace graph

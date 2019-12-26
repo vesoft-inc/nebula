@@ -30,7 +30,7 @@ public:
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
-    std::unique_ptr<InterimResult> setupInterimResult();
+    StatusOr<std::unique_ptr<InterimResult>> setupInterimResult();
 
     void onEmptyInputs();
 

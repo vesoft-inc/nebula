@@ -10,7 +10,8 @@ namespace nebula {
 namespace graph {
 
 DropEdgeExecutor::DropEdgeExecutor(Sentence *sentence,
-                                   ExecutionContext *ectx) : Executor(ectx) {
+                                   ExecutionContext *ectx)
+    : Executor(ectx, "drop_edge") {
     sentence_ = static_cast<DropEdgeSentence*>(sentence);
 }
 
@@ -21,8 +22,7 @@ Status DropEdgeExecutor::prepare() {
 void DropEdgeExecutor::execute() {
     auto status = checkIfGraphSpaceChosen();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
     auto *mc = ectx()->getMetaClient();
@@ -33,18 +33,15 @@ void DropEdgeExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status());
             return;
         }
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal error"));
         return;
     };
 

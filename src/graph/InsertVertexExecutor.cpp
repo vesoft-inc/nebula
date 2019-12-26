@@ -13,7 +13,8 @@ namespace nebula {
 namespace graph {
 
 InsertVertexExecutor::InsertVertexExecutor(Sentence *sentence,
-                                           ExecutionContext *ectx) : Executor(ectx) {
+                                           ExecutionContext *ectx)
+    : Executor(ectx, "insert_vertex") {
     sentence_ = static_cast<InsertVertexSentence*>(sentence);
 }
 
@@ -48,14 +49,14 @@ Status InsertVertexExecutor::check() {
         auto *tagName = item->tagName();
         auto tagStatus = ectx()->schemaManager()->toTagID(spaceId_, *tagName);
         if (!tagStatus.ok()) {
-            LOG(ERROR) << "No schema found for " << tagName;
+            LOG(ERROR) << "No schema found for " << *tagName;
             return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
         auto tagId = tagStatus.value();
         auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
         if (schema == nullptr) {
-            LOG(ERROR) << "No schema found for " << tagName;
+            LOG(ERROR) << "No schema found for " << *tagName;
             return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
@@ -104,6 +105,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
     expCtx_->setSpace(spaceId_);
 
     std::vector<storage::cpp2::Vertex> vertices(rows_.size());
+    Getters getters;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto rid = row->id();
@@ -113,7 +115,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
         if (!status.ok()) {
             return status;
         }
-        auto ovalue = rid->eval();
+        auto ovalue = rid->eval(getters);
         if (!ovalue.ok()) {
             return ovalue.status();
         }
@@ -132,14 +134,13 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
             if (!status.ok()) {
                 return status;
             }
-            ovalue = expr->eval();
+            ovalue = expr->eval(getters);
             if (!ovalue.ok()) {
                 return ovalue.status();
             }
             values.emplace_back(ovalue.value());
         }
 
-        storage::cpp2::Vertex vertex;
         std::vector<storage::cpp2::Tag> tags(tagIds_.size());
 
         int32_t valuePosition = 0;
@@ -184,9 +185,12 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
                     if (!timestamp.ok()) {
                         return timestamp.status();
                     }
-                    writeVariantType(writer, timestamp.value());
+                    status = writeVariantType(writer, timestamp.value());
                 } else {
-                    writeVariantType(writer, value);
+                    status = writeVariantType(writer, value);
+                }
+                if (!status.ok()) {
+                    return status;
                 }
             }
 
@@ -195,9 +199,9 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
             valuePosition += propsPosition.size();
         }
 
+        auto& vertex = vertices[i];
         vertex.set_id(id);
         vertex.set_tags(std::move(tags));
-        vertices.emplace_back(std::move(vertex));
     }
 
     return vertices;
@@ -207,14 +211,14 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
 void InsertVertexExecutor::execute() {
     auto status = check();
     if (!status.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getInsertVertexStats());
+        doError(std::move(status));
         return;
     }
 
     auto result = prepareVertices();
     if (!result.ok()) {
         LOG(ERROR) << "Insert vertices failed, error " << result.status().toString();
-        doError(result.status(), ectx()->getGraphStats()->getInsertVertexStats());
+        doError(result.status());
         return;
     }
     auto future = ectx()->getStorageClient()->addVertices(spaceId_,
@@ -231,19 +235,15 @@ void InsertVertexExecutor::execute() {
                 LOG(ERROR) << "Insert vertices failed, error " << static_cast<int32_t>(it->second)
                            << ", part " << it->first;
             }
-            doError(Status::Error("Internal Error"),
-                    ectx()->getGraphStats()->getInsertVertexStats());
+            doError(Status::Error("Internal Error"));
             return;
         }
-        doFinish(Executor::ProcessControl::kNext,
-                 ectx()->getGraphStats()->getInsertVertexStats(),
-                 rows_.size());
+        doFinish(Executor::ProcessControl::kNext, rows_.size());
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal Error"),
-                ectx()->getGraphStats()->getInsertVertexStats());
+        doError(Status::Error("Internal Error"));
         return;
     };
 

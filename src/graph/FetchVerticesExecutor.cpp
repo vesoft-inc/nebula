@@ -12,7 +12,7 @@
 namespace nebula {
 namespace graph {
 FetchVerticesExecutor::FetchVerticesExecutor(Sentence *sentence, ExecutionContext *ectx)
-        : FetchExecutor(ectx) {
+        : FetchExecutor(ectx, "fetch_vertices") {
     sentence_ = static_cast<FetchVerticesSentence*>(sentence);
 }
 
@@ -73,7 +73,8 @@ Status FetchVerticesExecutor::prepareVids() {
         } else {
             //  should never come to here.
             //  only support input and variable yet.
-            LOG(FATAL) << "Unknown kind of expression.";
+            LOG(ERROR) << "Unknown kind of expression.";
+            return Status::Error("Unknown kind of expression.");
         }
         if (colname_ != nullptr && *colname_ == "*") {
             return Status::Error("Cant not use `*' to reference a vertex id column.");
@@ -86,13 +87,13 @@ void FetchVerticesExecutor::execute() {
     FLOG_INFO("Executing FetchVertices: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getFetchVerticesStats());
+        doError(std::move(status));
         return;
     }
 
     status = setupVids();
     if (!status.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getFetchVerticesStats());
+        doError(std::move(status));
         return;
     }
     if (vids_.empty()) {
@@ -106,8 +107,7 @@ void FetchVerticesExecutor::execute() {
 void FetchVerticesExecutor::fetchVertices() {
     auto props = getPropNames();
     if (props.empty()) {
-        doError(Status::Error("No props declared."),
-                ectx()->getGraphStats()->getFetchVerticesStats());
+        doError(Status::Error("No props declared."));
         return;
     }
 
@@ -116,8 +116,7 @@ void FetchVerticesExecutor::fetchVertices() {
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            doError(Status::Error("Get props failed"),
-                    ectx()->getGraphStats()->getFetchVerticesStats());
+            doError(Status::Error("Get props failed"));
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get vertices partially failed: "  << completeness << "%";
@@ -131,7 +130,7 @@ void FetchVerticesExecutor::fetchVertices() {
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"), ectx()->getGraphStats()->getFetchVerticesStats());
+        doError(Status::Error("Internal error"));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -154,6 +153,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
     std::shared_ptr<SchemaWriter> outputSchema;
     std::unique_ptr<RowSetWriter> rsWriter;
     auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
+    Getters getters;
     for (auto &resp : all) {
         if (!resp.__isset.vertices) {
             continue;
@@ -184,15 +184,13 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                 auto status = getOutputSchema(vschema.get(), vreader.get(), outputSchema.get());
                 if (!status.ok()) {
                     LOG(ERROR) << "Get getOutputSchema failed: " << status;
-                    doError(Status::Error("Internal error."),
-                            ectx()->getGraphStats()->getFetchVerticesStats());
+                    doError(Status::Error("Internal error."));
                     return;
                 }
                 rsWriter = std::make_unique<RowSetWriter>(outputSchema);
             }
 
             auto writer = std::make_unique<RowWriter>(outputSchema);
-            auto &getters = expCtx_->getters();
             getters.getAliasProp =
                 [&vreader, &vschema] (const std::string&,
                                       const std::string &prop) -> OptVariantType {
@@ -200,16 +198,15 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             };
             for (auto *column : yields_) {
                 auto *expr = column->expr();
-                auto value = expr->eval();
+                auto value = expr->eval(getters);
                 if (!value.ok()) {
-                    doError(std::move(value).status(),
-                            ectx()->getGraphStats()->getFetchVerticesStats());
+                    doError(std::move(value).status());
                     return;
                 }
                 auto status = Collector::collect(value.value(), writer.get());
                 if (!status.ok()) {
                     LOG(ERROR) << "Collect prop error: " << status;
-                    doError(std::move(status), ectx()->getGraphStats()->getFetchVerticesStats());
+                    doError(std::move(status));
                     return;
                 }
             }
@@ -249,13 +246,14 @@ Status FetchVerticesExecutor::setupVidsFromExpr() {
 
     expCtx_->setSpace(spaceId_);
     auto vidList = sentence_->vidList();
+    Getters getters;
     for (auto *expr : vidList) {
         expr->setContext(expCtx_.get());
         status = expr->prepare();
         if (!status.ok()) {
             break;
         }
-        auto value = expr->eval();
+        auto value = expr->eval(getters);
         if (!value.ok()) {
             return value.status();
         }
