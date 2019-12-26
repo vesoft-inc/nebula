@@ -17,14 +17,17 @@
   * [查询语言概览](1.overview/1.concepts/2.nGQL-overview.md)
 * 快速开始和常用链接
   * [开始试用](1.overview/2.quick-start/1.get-started.md)
+  * [常见问题](1.overview/2.quick-start/2.trouble-shooting.md)
   * [编译源代码](3.build-develop-and-administration/1.build/1.build-source-code.md)
   * [部署集群](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
   * [导入 .csv 文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
   * [加载 .sst 文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
   * [Nebula Graph 客户端](1.overview/2.quick-start/3.supported-clients.md)
+  * [常见问题 FAQ](1.overview/2.quick-start/2.FAQ.md)
 * 系统设计与架构
   * [设计总览](1.overview/3.design-and-architecture/1.design-and-architecture.md)
   * [存储层架构](1.overview/3.design-and-architecture/2.storage-design.md)
+  * [查询引擎架构](1.overview/3.design-and-architecture/3.query-engine.md)
 
 ## 查询语言 (所有用户)
 
