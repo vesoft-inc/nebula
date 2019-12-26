@@ -35,13 +35,13 @@ Gremlin 和 nGQL 均使用唯一标识符标记顶点和边。在 **Nebula Graph
 -----                  |---------        |   -----       |
 新建图空间     | g = TinkerGraph.open().traversal() | CREATE SPACE gods |
 Show vertices' types   | g.V().label()   | SHOW TAGS |
-插入指定类型节点 | g.addV(String vertexLabel).property() | INSERT VERTEX <tag_name> (prop_name_list) VALUES vid:(prop_value_list) |
+插入指定类型点 | g.addV(String vertexLabel).property() | INSERT VERTEX <tag_name> (prop_name_list) VALUES vid:(prop_value_list) |
 插入指定类型边 | g.addE(String edgeLabel).from(v1).to(v2).property()| INSERT EDGE <edge_name> ( <prop_name_list> ) VALUES <src_vid> -> <dst_vid>: ( <prop_value_list> ) |
 删除点 | g.V(\<vid>).drop() | DELETE VERTEX \<vid> |
 删除边  | g.E(\<vid>).outE(\<type>).where(otherV().is(\<vid>))drop() | DELETE EDGE <edge_type> \<vid> -> \<vid> |
 更新点属性 | g.V(\<vid>).property() | UPDATE VERTEX <vid> SET <update_columns> |
 查看指定点 | g.V(\<vid>) | FETCH PROP ON <tag_name> \<vid>|
-查看指定边    | g.E(<start_vid> >> <dst_vid>) | FETCH PROP ON <edge_name> <start_vid> -> <dst_vid> |
+查看指定边 | g.E(<start_vid> >> <dst_vid>) | FETCH PROP ON <edge_name> <start_vid> -> <dst_vid> |
 沿指定点查询指定边 | g.V(\<vid>).outE( \<edge>) | GO FROM \<vid> OVER  \<edge> |
 沿指定点反向查询指定边 | g.V(\<vid>).in( \<edge>) | GO FROM \<vid>  OVER \<edge> REVERSELY |
 沿指定点查询指定边 N 跳 | g.V(\<vid>).repeat(out(\<edge>)).times(N) | GO N STEPS FROM \<vid> OVER \<edge> |
@@ -71,22 +71,22 @@ Show vertices' types   | g.V().label()   | SHOW TAGS |
 
   # 插入边
   nebula> INSERT EDGE father() VALUES hash("jupiter")->hash("saturn"):();
-  gremlin> g.addE("father").from(v1).to(v2).property(T.id, 3)
+  gremlin> g.addE("father").from(v1).to(v2).property(T.id, 3);
   ==>e[3][1-father->2]
   ```
 
 - 删除数据
   
   ```bash
-  nebula> DELETE VERTEX hash("prometheus")
-  gremlin> g.V(v3).drop()
+  nebula> DELETE VERTEX hash("prometheus");
+  gremlin> g.V(v3).drop();
   ```
 
 - 更新数据
 
 ```bash
 nebula> UPDATE VERTEX hash("jesus") SET character.type = 'titan';
-gremlin> g.V(v4).property('age', 6000)
+gremlin> g.V(v4).property('age', 6000);
 ```
 
 - 查看数据
@@ -99,35 +99,35 @@ gremlin> g.V(v4).property('age', 6000)
   | saturn         | 10000         | titan          |
   ---------------------------------------------------
 
-  gremlin> g.V(1).valueMap()
+  gremlin> g.V(1).valueMap();
   ==>[name:[saturn],type:[titan],age:[10000]]
   ```
 
 - 查询 hercules 的祖父
 
     ```bash
-    nebula> GO 2 STEPS FROM hash("hercules") OVER father YIELD  $$.character.name
+    nebula> GO 2 STEPS FROM hash("hercules") OVER father YIELD  $$.character.name;
     =====================
     | $$.character.name |
     =====================
     | saturn            |
     ---------------------
 
-    gremlin> g.V().hasLabel('character').has('name','hercules').out ('father').out('father').values('name')
+    gremlin> g.V().hasLabel('character').has('name','hercules').out ('father').out('father').values('name');
     ==>saturn
     ```
 
 - 查询 hercules 的父亲
 
     ```bash
-    nebula> GO FROM hash("hercules") OVER father YIELD $$.character.name
+    nebula> GO FROM hash("hercules") OVER father YIELD $$.character.name;
     =====================
     | $$.character.name |
     =====================
     | jupiter           |
     ---------------------
 
-    gremlin> g.V().hasLabel('character').has('name','hercules').out ('father').values('name')
+    gremlin> g.V().hasLabel('character').has('name','hercules').out ('father').values('name');
     ==>jupiter
     ```
 
@@ -135,15 +135,15 @@ gremlin> g.V(v4).property('age', 6000)
 
     ```bash
     nebula> XXX # not supported yet
-    gremlin> g.V().hasLabel('character').has('age',gt(100))
+    gremlin> g.V().hasLabel('character').has('age',gt(100));
     ```
 
 - 查询和 pluto 一起居住的人物
 
     ```bash
     nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | \
-                          GO FROM $-.place OVER lives REVERSELY YIELD \
-                          $$.character.name AS cohabitants
+            GO FROM $-.place OVER lives REVERSELY YIELD \
+            $$.character.name AS cohabitants;
     ===============
     | cohabitants |
     ===============
@@ -152,7 +152,7 @@ gremlin> g.V(v4).property('age', 6000)
     | cerberus    |
     ---------------
 
-    gremlin> g.V(pluto).out('lives').in('lives').values('name')
+    gremlin> g.V(pluto).out('lives').in('lives').values('name');
     ==>pluto
     ==>cerberus
     ```
@@ -163,14 +163,14 @@ gremlin> g.V(v4).property('age', 6000)
     nebula>  GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | \
                         GO FROM $-.place OVER lives REVERSELY WHERE \
                         $$.character.name != "pluto" YIELD \
-                        $$.character.name AS cohabitants
+                        $$.character.name AS cohabitants;
     ===============
     | cohabitants |
     ===============
     | cerberus    |
     ---------------
 
-    gremlin> g.V(pluto).out('lives').in('lives').where(is(neq(pluto)))  .values('name')
+    gremlin> g.V(pluto).out('lives').in('lives').where(is(neq(pluto)))  .values('name');
     ==>cerberus
     ```
 
@@ -182,7 +182,7 @@ gremlin> g.V(v4).property('age', 6000)
     nebula> GO FROM hash("pluto") OVER brother \
                         YIELD brother._dst AS brother | \
                         GO FROM $-.brother OVER lives \
-                        YIELD $$.location.name  
+                        YIELD $$.location.name;
     ====================
     | $$.location.name |
     ====================
@@ -191,7 +191,7 @@ gremlin> g.V(v4).property('age', 6000)
     | sea              |
     --------------------
 
-    gremlin> g.V(pluto).out('brother').out('lives').values('name')
+    gremlin> g.V(pluto).out('brother').out('lives').values('name');
     ==>sky
     ==>sea
 
@@ -200,7 +200,7 @@ gremlin> g.V(v4).property('age', 6000)
     nebula> GO FROM hash("pluto") OVER brother \
                           YIELD brother._dst AS god | \
                           GO FROM $-.god OVER lives YIELD \
-                          $^.character.name AS Brother, $$.location.name AS Habitations
+                          $^.character.name AS Brother, $$.location.name AS Habitations;
     =========================
     | Brother | Habitations |
     =========================
@@ -209,7 +209,7 @@ gremlin> g.V(v4).property('age', 6000)
     | neptune | sea         |
     -------------------------
 
-    gremlin> g.V(pluto).out('brother').as('god').out('lives').as('place').select('god','place').by('name')
+    gremlin> g.V(pluto).out('brother').as('god').out('lives').as('place').select('god','place').by('name');
     ==>[god:jupiter, place:sky]
     ==>[god:neptune, place:sea]
     ```

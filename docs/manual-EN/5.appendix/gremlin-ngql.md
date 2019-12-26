@@ -6,13 +6,13 @@
 
 ## Introduction to nGQL
 
-**Nebula Graph** introduces its own query language, [nGQL](../1.overview/1.concepts/2.nGQL-overview.md), which a declarative, textual query language like SQL, but for graphs. Unlike SQL, `nGQL` is all about expressing graph patterns. The features of `nGQL` is as follows:
+**Nebula Graph** introduces its own query language, [nGQL](../1.overview/1.concepts/2.nGQL-overview.md), which is a declarative, textual query language like SQL, but for graphs. Unlike SQL, `nGQL` is all about expressing graph patterns. The features of `nGQL` are as follows:
 
 - Syntax is close to SQL, but not exactly the same (Easy to learn)
 - Expandable
 - Case insensitive
 - Support basic graph traverse
-- Support pattern match
+- Support pattern matching
 - Support aggregation
 - Support graph mutation
 - Support distributed transaction (future release)
@@ -35,7 +35,7 @@ Name                   | Gremlin         | nGQL          |
 -----                  |---------        |   -----       |
 Create a new graph     | g = TinkerGraph.open().traversal() | CREATE SPACE gods |
 Show vertices' types   | g.V().label()   | SHOW TAGS |
-Insert a vertex with specified type | g.addV(String vertexLabel).property() | INSERT VERTEX <tag_name> (prop_name_list) VALUES vid:(prop_value_list) |
+Insert a vertex with a specified type | g.addV(String vertexLabel).property() | INSERT VERTEX <tag_name> (prop_name_list) VALUES vid:(prop_value_list) |
 Insert an edge with specified edge type | g.addE(String edgeLabel).from(v1).to(v2).property()| INSERT EDGE <edge_name> ( <prop_name_list> ) VALUES <src_vid> -> <dst_vid>: ( <prop_value_list> ) |
 Delete a vertex | g.V(\<vid>).drop() | DELETE VERTEX \<vid> |
 Delete an edge  | g.E(\<vid>).outE(\<type>).where(otherV().is(\<vid>))drop() | DELETE EDGE <edge_type> \<vid> -> \<vid> |
@@ -71,22 +71,22 @@ The examples in this section make extensive use of the toy graph distributed wit
 
   # insert edge
   nebula> INSERT EDGE father() VALUES hash("jupiter")->hash("saturn"):();
-  gremlin> g.addE("father").from(v1).to(v2).property(T.id, 3)
+  gremlin> g.addE("father").from(v1).to(v2).property(T.id, 3);
   ==>e[3][1-father->2]
   ```
 
-- Delete data
+- Delete vertex
   
   ```bash
-  nebula> DELETE VERTEX hash("prometheus")
-  gremlin> g.V(v3).drop()
+  nebula> DELETE VERTEX hash("prometheus");
+  gremlin> g.V(v3).drop();
   ```
 
 - Update vertex
 
 ```bash
 nebula> UPDATE VERTEX hash("jesus") SET character.type = 'titan';
-gremlin> g.V(v7).property('age', 6000)
+gremlin> g.V(v7).property('age', 6000);
 ```
 
 - Fetch data
@@ -99,35 +99,35 @@ gremlin> g.V(v7).property('age', 6000)
   | saturn         | 10000         | titan          |
   ---------------------------------------------------
 
-  gremlin> g.V(1).valueMap()
+  gremlin> g.V(1).valueMap();
   ==>[name:[saturn],type:[titan],age:[10000]]
   ```
 
 - Find the name of hercules's grandfather
 
     ```bash
-    nebula> GO 2 STEPS FROM hash("hercules") OVER father YIELD  $$.character.name
+    nebula> GO 2 STEPS FROM hash("hercules") OVER father YIELD  $$.character.name;
     =====================
     | $$.character.name |
     =====================
     | saturn            |
     ---------------------
 
-    gremlin> g.V().hasLabel('character').has('name','hercules').out ('father').out('father').values('name')
+    gremlin> g.V().hasLabel('character').has('name','hercules').out ('father').out('father').values('name');
     ==>saturn
     ```
 
 - Find the name of hercules's father
 
     ```bash
-    nebula> GO FROM hash("hercules") OVER father YIELD $$.character.name
+    nebula> GO FROM hash("hercules") OVER father YIELD $$.character.name;
     =====================
     | $$.character.name |
     =====================
     | jupiter           |
     ---------------------
 
-    gremlin> g.V().hasLabel('character').has('name','hercules').out ('father').values('name')
+    gremlin> g.V().hasLabel('character').has('name','hercules').out ('father').values('name');
     ==>jupiter
     ```
 
@@ -135,7 +135,7 @@ gremlin> g.V(v7).property('age', 6000)
 
     ```bash
     nebula> XXX # not supported yet
-    gremlin> g.V().hasLabel('character').has('age',gt(100))
+    gremlin> g.V().hasLabel('character').has('age',gt(100));
     ```
 
 - Find who are pluto's cohabitants
@@ -143,7 +143,7 @@ gremlin> g.V(v7).property('age', 6000)
     ```bash
     nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | \
                           GO FROM $-.place OVER lives REVERSELY YIELD \
-                          $$.character.name AS cohabitants
+                          $$.character.name AS cohabitants;
     ===============
     | cohabitants |
     ===============
@@ -152,7 +152,7 @@ gremlin> g.V(v7).property('age', 6000)
     | cerberus    |
     ---------------
 
-    gremlin> g.V(pluto).out('lives').in('lives').values('name')
+    gremlin> g.V(pluto).out('lives').in('lives').values('name');
     ==>pluto
     ==>cerberus
     ```
@@ -161,16 +161,16 @@ gremlin> g.V(v7).property('age', 6000)
 
     ```bash
     nebula>  GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | \
-                        GO FROM $-.place OVER lives REVERSELY WHERE \
-                        $$.character.name != "pluto" YIELD \
-                        $$.character.name AS cohabitants
+            GO FROM $-.place OVER lives REVERSELY WHERE \
+            $$.character.name != "pluto" YIELD \
+            $$.character.name AS cohabitants;
     ===============
     | cohabitants |
     ===============
     | cerberus    |
     ---------------
 
-    gremlin> g.V(pluto).out('lives').in('lives').where(is(neq(pluto)))  .values('name')
+    gremlin> g.V(pluto).out('lives').in('lives').where(is(neq(pluto)))  .values('name');
     ==>cerberus
     ```
 
@@ -182,7 +182,7 @@ gremlin> g.V(v7).property('age', 6000)
     nebula> GO FROM hash("pluto") OVER brother \
                         YIELD brother._dst AS brother | \
                         GO FROM $-.brother OVER lives \
-                        YIELD $$.location.name  
+                        YIELD $$.location.name; 
     ====================
     | $$.location.name |
     ====================
@@ -191,7 +191,7 @@ gremlin> g.V(v7).property('age', 6000)
     | sea              |
     --------------------
 
-    gremlin> g.V(pluto).out('brother').out('lives').values('name')
+    gremlin> g.V(pluto).out('brother').out('lives').values('name');
     ==>sky
     ==>sea
 
@@ -200,7 +200,7 @@ gremlin> g.V(v7).property('age', 6000)
     nebula> GO FROM hash("pluto") OVER brother \
                           YIELD brother._dst AS god | \
                           GO FROM $-.god OVER lives YIELD \
-                          $^.character.name AS Brother, $$.location.name AS Habitations
+                          $^.character.name AS Brother, $$.location.name AS Habitations,
     =========================
     | Brother | Habitations |
     =========================
@@ -209,7 +209,7 @@ gremlin> g.V(v7).property('age', 6000)
     | neptune | sea         |
     -------------------------
 
-    gremlin> g.V(pluto).out('brother').as('god').out('lives').as('place')   .select('god','place').by('name')
+    gremlin> g.V(pluto).out('brother').as('god').out('lives').as('place')   .select('god','place').by('name'),
     ==>[god:jupiter, place:sky]
     ==>[god:neptune, place:sea]
     ```
