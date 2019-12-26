@@ -47,7 +47,6 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
     auto name = req.get_item().get_name();
     auto type = req.get_item().get_type();
     auto value = req.get_item().get_value();
-    auto isForce = req.get_force();
 
     folly::SharedMutex::WriteHolder wHolder(LockUtils::configLock());
     cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
@@ -57,17 +56,17 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
             if (module != cpp2::ConfigModule::ALL) {
                 // When we set config of a specified module, check if it exists.
                 // If it exists and is mutable, update it.
-                code = setOneConfig(module, name, type, value, isForce, data);
+                code = setOneConfig(module, name, type, value, data);
                 if (code != cpp2::ErrorCode::SUCCEEDED) {
                     break;
                 }
             } else {
                 // When we set config of all module, then try to set it of every module.
-                code = setOneConfig(cpp2::ConfigModule::GRAPH, name, type, value, isForce, data);
+                code = setOneConfig(cpp2::ConfigModule::GRAPH, name, type, value, data);
                 if (code != cpp2::ErrorCode::SUCCEEDED) {
                     break;
                 }
-                code = setOneConfig(cpp2::ConfigModule::STORAGE, name, type, value, isForce, data);
+                code = setOneConfig(cpp2::ConfigModule::STORAGE, name, type, value, data);
                 if (code != cpp2::ErrorCode::SUCCEEDED) {
                     break;
                 }
@@ -106,7 +105,6 @@ cpp2::ErrorCode SetConfigProcessor::setOneConfig(const cpp2::ConfigModule& modul
                                                  const std::string& name,
                                                  const cpp2::ConfigType& type,
                                                  const std::string& value,
-                                                 const bool isForce,
                                                  std::vector<kvstore::KV>& data) {
     std::string configKey = MetaServiceUtils::configKey(module, name);
     auto ret = doGet(std::move(configKey));
@@ -116,7 +114,7 @@ cpp2::ErrorCode SetConfigProcessor::setOneConfig(const cpp2::ConfigModule& modul
 
     cpp2::ConfigItem item = MetaServiceUtils::parseConfigValue(ret.value());
     cpp2::ConfigMode curMode = item.get_mode();
-    if (curMode == cpp2::ConfigMode::IMMUTABLE && !isForce) {
+    if (curMode == cpp2::ConfigMode::IMMUTABLE) {
         return cpp2::ErrorCode::E_CONFIG_IMMUTABLE;
     }
     std::string configValue = MetaServiceUtils::configValue(type, curMode, value);

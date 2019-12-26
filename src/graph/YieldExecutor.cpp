@@ -446,8 +446,9 @@ void YieldExecutor::feedResult(std::unique_ptr<InterimResult> result) {
 }
 
 void YieldExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
-    CHECK(resp_ != nullptr);
-    resp = std::move(*resp_);
+    if (resp_ != nullptr) {
+        resp = std::move(*resp_);
+    }
 }
 
 }   // namespace graph
