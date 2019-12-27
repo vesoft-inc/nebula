@@ -10,8 +10,6 @@
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 
-DECLARE_int32(load_data_interval_secs);
-
 namespace nebula {
 namespace graph {
 
@@ -762,7 +760,6 @@ TEST_F(SchemaTest, metaCommunication) {
         ASSERT_EQ(1, (*(resp.get_rows())).size());
     }
 
-    sleep(FLAGS_load_data_interval_secs + 1);
     int retry = 60;
     while (retry-- > 0) {
         auto spaceResult = gEnv->metaClient()->getSpaceIdByNameFromCache("default_space");
