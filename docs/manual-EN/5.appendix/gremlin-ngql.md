@@ -61,33 +61,33 @@ The examples in this section make extensive use of the toy graph distributed wit
   # insert vertex
   nebula> INSERT VERTEX character(name, age, type) VALUES hash("saturn"):("saturn", 10000, "titan"), hash("jupiter"):("jupiter", 5000, "god");
 
-  gremlin> v1 = g.addV("character").property(T.id, 1).property('name', 'saturn').property('age', 10000).property('type', 'titan');
+  gremlin> saturn = g.addV("character").property(T.id, 1).property('name', 'saturn').property('age', 10000).property('type', 'titan').next();
   ==>v[1]
-  gremlin> v2 = g.addV("character").property(T.id, 2)property('name','jupiter').property('age', 5000).property('type', 'god');
+  gremlin> jupiter = g.addV("character").property(T.id, 2).property('name', 'jupiter').property('age', 5000).property('type', 'god').next();
   ==>v[2]
-  gremlin> v3 = g.addV("character").property(T.id, 3).property('name',  'prometheus').property('age', 1000).property('type', 'god').next();
-  ==>v[3]
-  gremlin> v4 = g.addV("character").property(T.id, 4).property('name',  'jesus').property('age', 5000).property('type', 'god').next();
-  ==>v[4]
+  gremlin> prometheus = g.addV("character").property(T.id, 31).property('name',  'prometheus').property('age', 1000).property('type', 'god').next();
+  ==>v[31]
+  gremlin> jesus = g.addV("character").property(T.id, 32).property('name',  'jesus').property('age', 5000).property('type', 'god').next();
+  ==>v[32]
 
   # insert edge
   nebula> INSERT EDGE father() VALUES hash("jupiter")->hash("saturn"):();
-  gremlin> g.addE("father").from(v1).to(v2).property(T.id, 3);
-  ==>e[3][1-father->2]
+  gremlin> g.addE("father").from(jupiter).to(saturn).property(T.id, 13);
+  ==>e[13][2-father->1]
   ```
 
 - Delete vertex
   
   ```bash
   nebula> DELETE VERTEX hash("prometheus");
-  gremlin> g.V(v3).drop();
+  gremlin> g.V(prometheus).drop();
   ```
 
 - Update vertex
 
 ```bash
 nebula> UPDATE VERTEX hash("jesus") SET character.type = 'titan';
-gremlin> g.V(v7).property('age', 6000);
+gremlin> g.V(jesus).property('age', 6000);
 ```
 
 - Fetch data
@@ -100,7 +100,7 @@ gremlin> g.V(v7).property('age', 6000);
   | saturn         | 10000         | titan          |
   ---------------------------------------------------
 
-  gremlin> g.V(1).valueMap();
+  gremlin> g.V(saturn).valueMap();
   ==>[name:[saturn],type:[titan],age:[10000]]
   ```
 
@@ -136,7 +136,11 @@ gremlin> g.V(v7).property('age', 6000);
 
     ```bash
     nebula> XXX # not supported yet
-    gremlin> g.V().hasLabel('character').has('age',gt(100));
+    gremlin> g.V().hasLabel('character').has('age',gt(100)).values('name');
+    ==>saturn
+    ==>jupiter
+    ==>neptune
+    ==>pluto
     ```
 
 - Find who are pluto's cohabitants
@@ -184,7 +188,7 @@ gremlin> g.V(v7).property('age', 6000);
     nebula> GO FROM hash("pluto") OVER brother \
                         YIELD brother._dst AS brother | \
                         GO FROM $-.brother OVER lives \
-                        YIELD $$.location.name; 
+                        YIELD $$.location.name;
     ====================
     | $$.location.name |
     ====================

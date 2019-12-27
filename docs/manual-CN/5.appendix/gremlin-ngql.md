@@ -61,33 +61,33 @@ Gremlin 和 nGQL 均使用唯一标识符标记顶点和边。在 **Nebula Graph
   # 插入点
   nebula> INSERT VERTEX character(name, age, type) VALUES hash("saturn"):("saturn", 10000, "titan"), hash("jupiter"):("jupiter", 5000, "god");
 
-  gremlin> v1 = g.addV("character").property(T.id, 1).property('name', 'saturn').property('age', 10000).property('type', 'titan').next();
+  gremlin> saturn = g.addV("character").property(T.id, 1).property('name', 'saturn').property('age', 10000).property('type', 'titan').next();
   ==>v[1]
-  gremlin> v2 = g.addV("character").property(T.id, 2).property('name','jupiter').property('age', 5000).property('type', 'god').next();
+  gremlin> jupiter = g.addV("character").property(T.id, 2).property('name', 'jupiter').property('age', 5000).property('type', 'god').next();
   ==>v[2]
-  gremlin> v3 = g.addV("character").property(T.id, 3).property('name',  'prometheus').property('age', 1000).property('type', 'god').next();
-  ==>v[3]
-  gremlin> v4 = g.addV("character").property(T.id, 4).property('name',  'jesus').property('age', 5000).property('type', 'god').next();
-  ==>v[4]
+  gremlin> prometheus = g.addV("character").property(T.id, 31).property('name',  'prometheus').property('age', 1000).property('type', 'god').next();
+  ==>v[31]
+  gremlin> jesus = g.addV("character").property(T.id, 32).property('name',  'jesus').property('age', 5000).property('type', 'god').next();
+  ==>v[32]
 
   # 插入边
   nebula> INSERT EDGE father() VALUES hash("jupiter")->hash("saturn"):();
-  gremlin> g.addE("father").from(v1).to(v2).property(T.id, 3);
-  ==>e[3][1-father->2]
+  gremlin> g.addE("father").from(jupiter).to(saturn).property(T.id, 13);
+  ==>e[13][2-father->1]
   ```
 
 - 删除数据
   
   ```bash
   nebula> DELETE VERTEX hash("prometheus");
-  gremlin> g.V(v3).drop();
+  gremlin> g.V(prometheus).drop();
   ```
 
 - 更新数据
 
 ```bash
 nebula> UPDATE VERTEX hash("jesus") SET character.type = 'titan';
-gremlin> g.V(v4).property('age', 6000);
+gremlin> g.V(jesus).property('age', 6000);
 ```
 
 - 查看数据
@@ -100,7 +100,7 @@ gremlin> g.V(v4).property('age', 6000);
   | saturn         | 10000         | titan          |
   ---------------------------------------------------
 
-  gremlin> g.V(1).valueMap();
+  gremlin> g.V(saturn).valueMap();
   ==>[name:[saturn],type:[titan],age:[10000]]
   ```
 
@@ -136,7 +136,11 @@ gremlin> g.V(v4).property('age', 6000);
 
     ```bash
     nebula> XXX # not supported yet
-    gremlin> g.V().hasLabel('character').has('age',gt(100));
+    gremlin> g.V().hasLabel('character').has('age',gt(100)).values('name');
+    ==>saturn
+    ==>jupiter
+    ==>neptune
+    ==>pluto
     ```
 
 - 查询和 pluto 一起居住的人物
