@@ -10,8 +10,6 @@
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 
-DECLARE_int32(load_data_interval_secs);
-
 namespace nebula {
 namespace graph {
 
@@ -46,6 +44,36 @@ TEST_F(SchemaTest, TestComment) {
     }
 }
 
+TEST_F(SchemaTest, TestDefaultValue) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    // Test command is comment
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG default_tag(name string DEFAULT 10)";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG default_tag(name string, age int DEFAULT \"10\")";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG default_tag(name string  DEFAULT \"\", "
+                          "age int DEFAULT \"10\")";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG default_tag(name string  DEFAULT 10, age int DEFAULT 10)";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
 TEST_F(SchemaTest, metaCommunication) {
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
@@ -732,7 +760,6 @@ TEST_F(SchemaTest, metaCommunication) {
         ASSERT_EQ(1, (*(resp.get_rows())).size());
     }
 
-    sleep(FLAGS_load_data_interval_secs + 1);
     int retry = 60;
     while (retry-- > 0) {
         auto spaceResult = gEnv->metaClient()->getSpaceIdByNameFromCache("default_space");

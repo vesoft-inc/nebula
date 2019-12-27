@@ -1,24 +1,31 @@
 # CREATE TAG / EDGE 语法
 
 ```ngql
-CREATE {TAG | EDGE} tag_name|edge_name
-    (create_definition, ...)
+CREATE {TAG <tag_name> | EDGE <edge_name>} [IF NOT EXISTS]
+    ([<create_definition>, ...])
     [tag_edge_options]
   
-create_definition:
-    prop_name data_type
+<create_definition> ::=
+    <prop_name> <data_type>
 
-tag_edge_options:
-    option [, option ...]
+<tag_edge_options> ::=
+    <option> [, <option> ...]
 
-option:
-    TTL_DURATION [=] ttl_duration
-    | TTL_COL [=] prop_name
+<option> ::=
+    TTL_DURATION [=] <ttl_duration>
+    | TTL_COL [=] <prop_name>
+    | DEFAULT <default_value>
 ```
 
 **Nebula Graph** 的图结构由带有属性的 tags 和 edges 组成。`CREATE TAG` 使用一个给定的名称创建一个新的 tag。`CREATE EDGE` 则创建一个新的 edge type。
 
 `CREATE TAG/EDGE` 语法有一些特点，在如下分块中将对这些特点进行讨论：
+
+## IF NOT EXISTS
+
+创建 tag 或 edge 可使用 `IF NOT EXISTS` 关键字，这个关键字会自动检测对应的 tag 或 edge 是否存在，如果不存在则创建新的，如果存在则直接返回。
+
+**注意：** 这里判断 tag 或 edge 是否存在只是比较 tag 或 edge 的名字(不包括属性)。
 
 ## Tag 名称和 Edge Type 名称
 

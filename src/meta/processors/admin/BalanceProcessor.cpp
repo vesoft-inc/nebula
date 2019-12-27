@@ -90,6 +90,7 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
     }
     resp_.set_id(value(ret));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     onFinished();
 }
 
