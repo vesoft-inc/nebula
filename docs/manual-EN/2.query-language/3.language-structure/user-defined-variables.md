@@ -1,6 +1,6 @@
 # User-Defined Variables
 
-**Nebula Graph** supports user-defined variables, which allows passing the result of one statement to another. A user-defined variable in written as `$var_name`, where `var_name` is a user-defined name/variable that consists of alphanumeric characters, any other characters are not recommended currently.
+**Nebula Graph** supports user-defined variables, which allows passing the result of one statement to another. A user-defined variable is written as `$var_name`, where `var_name` is a user-defined name/variable that consists of alphanumeric characters, any other characters are not recommended currently.
 
 User-defined variables can only be used in one execution (compound statements separated by semicolon `;` or pipe `|` and are submitted to the server to execute together).
 
