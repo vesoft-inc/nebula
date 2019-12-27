@@ -57,6 +57,7 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
   * [Property Reference](2.query-language/3.language-structure/property-reference.md)
   * [Schema Object Names](2.query-language/3.language-structure/schema-object-names.md)
   * [Statement Composition](2.query-language/3.language-structure/statement-composition.md)
+  * [User-Defined Variables](2.query-language/3.language-structure/user-defined-variables.md)
 * Statement Syntax
   * Data Definition Statements
     * [Alter Tag/Edge Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/alter-tag-edge-syntax.md)
