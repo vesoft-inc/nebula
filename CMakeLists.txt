@@ -308,14 +308,12 @@ macro(nebula_add_executable)
         ${nebula_exec_LIBRARIES}
     )
 
-    if(${nebula_exec_NAME} MATCHES "_test")
+    if(${nebula_exec_NAME} MATCHES "_test$")
         set_target_properties(
             ${nebula_exec_NAME}
             PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test
         )
-    endif()
-
-    if(${nebula_exec_NAME} MATCHES "_bm$")
+    elseif(${nebula_exec_NAME} MATCHES "_bm$")
         set_target_properties(
             ${nebula_exec_NAME}
             PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/bench
