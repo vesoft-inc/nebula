@@ -10,7 +10,7 @@
 
 - 类 SQL，易学易用
 - 可扩展
-- 大小写不敏感
+- 关键词大小写不敏感
 - 支持图遍历
 - 支持模式匹配
 - 支持聚合运算
@@ -26,6 +26,8 @@ vertex, node       | vertex  | vertex        |
 edge, relationship | edge    | edge          |
 vertex type        | label   | tag           |
 edge type          | label   | edge type     |
+vertex id          | vid     | vid           |
+edge id            | eid     | 无            |
 
 Gremlin 和 nGQL 均使用唯一标识符标记顶点和边。在 **Nebula Graph** 中，用户可以使用指定标识符、哈希或 uuid 函数自动生成标识符。
 
@@ -34,14 +36,14 @@ Gremlin 和 nGQL 均使用唯一标识符标记顶点和边。在 **Nebula Graph
 名称                   | Gremlin         | nGQL          |
 -----                  |---------        |   -----       |
 新建图空间     | g = TinkerGraph.open().traversal() | CREATE SPACE gods |
-Show vertices' types   | g.V().label()   | SHOW TAGS |
-插入指定类型点 | g.addV(String vertexLabel).property() | INSERT VERTEX <tag_name> (prop_name_list) VALUES vid:(prop_value_list) |
+查看点类型   | g.V().label()   | SHOW TAGS |
+插入指定类型点 | g.addV(String vertexLabel).property() | INSERT VERTEX <tag_name> (prop_name_list) VALUES \<vid>:(prop_value_list) |
 插入指定类型边 | g.addE(String edgeLabel).from(v1).to(v2).property()| INSERT EDGE <edge_name> ( <prop_name_list> ) VALUES <src_vid> -> <dst_vid>: ( <prop_value_list> ) |
 删除点 | g.V(\<vid>).drop() | DELETE VERTEX \<vid> |
-删除边  | g.E(\<vid>).outE(\<type>).where(otherV().is(\<vid>))drop() | DELETE EDGE <edge_type> \<vid> -> \<vid> |
-更新点属性 | g.V(\<vid>).property() | UPDATE VERTEX <vid> SET <update_columns> |
+删除边  | g.E(\<vid>).outE(\<type>).where(otherV().is(\<vid>))drop() | DELETE EDGE <edge_type> \<src_vid> -> \<dst_vid> |
+更新点属性 | g.V(\<vid>).property() | UPDATE VERTEX \<vid> SET <update_columns> |
 查看指定点 | g.V(\<vid>) | FETCH PROP ON <tag_name> \<vid>|
-查看指定边 | g.E(<start_vid> >> <dst_vid>) | FETCH PROP ON <edge_name> <start_vid> -> <dst_vid> |
+查看指定边 | g.E(<src_vid> >> <dst_vid>) | FETCH PROP ON <edge_name> <src_vid> -> <dst_vid> |
 沿指定点查询指定边 | g.V(\<vid>).outE( \<edge>) | GO FROM \<vid> OVER  \<edge> |
 沿指定点反向查询指定边 | g.V(\<vid>).in( \<edge>) | GO FROM \<vid>  OVER \<edge> REVERSELY |
 沿指定点查询指定边 N 跳 | g.V(\<vid>).repeat(out(\<edge>)).times(N) | GO N STEPS FROM \<vid> OVER \<edge> |
@@ -51,14 +53,13 @@ Show vertices' types   | g.V().label()   | SHOW TAGS |
 
 本节中的示例使用了 [Janus Graph](https://janusgraph.org/) 的示例图 [_The Graphs of Gods_](https://docs.janusgraph.org/#getting-started)。该图结构如下图所示。此处使用[属性图模型](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-ZH/1.overview/1.concepts/1.data-model.md)描述罗马万神话中诸神关系。
 
-![image](https://user-images.githubusercontent.com/42762957/71347155-a1f0d280-25a4-11ea-98f0-d1754e9ea3e4.png)
+![image](https://user-images.githubusercontent.com/42762957/71503167-0e264b80-28af-11ea-87c5-76f4fd1275cd.png)
 
 - 插入数据
   
   ```bash
   # 插入点
-  nebula> INSERT VERTEX character(name, age, type) VALUES hash("saturn"):("saturn", 10000, "titan");
-  nebula> INSERT VERTEX character(name, age, type) VALUES hash("jupiter"):("jupiter", 5000, "god");
+  nebula> INSERT VERTEX character(name, age, type) VALUES hash("saturn"):("saturn", 10000, "titan"), hash("jupiter"):("jupiter", 5000, "god");
 
   gremlin> v1 = g.addV("character").property(T.id, 1).property('name', 'saturn').property('age', 10000).property('type', 'titan').next();
   ==>v[1]
@@ -141,7 +142,8 @@ gremlin> g.V(v4).property('age', 6000);
 - 查询和 pluto 一起居住的人物
 
     ```bash
-    nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | \
+    nebula> GO FROM hash("pluto") OVER lives \
+            YIELD lives._dst AS place | \
             GO FROM $-.place OVER lives REVERSELY YIELD \
             $$.character.name AS cohabitants;
     ===============
@@ -198,9 +200,11 @@ gremlin> g.V(v4).property('age', 6000);
     # which brother lives in which place?
 
     nebula> GO FROM hash("pluto") OVER brother \
-                          YIELD brother._dst AS god | \
-                          GO FROM $-.god OVER lives YIELD \
-                          $^.character.name AS Brother, $$.location.name AS Habitations;
+            YIELD brother._dst AS god | \
+            GO FROM $-.god OVER lives YIELD \
+            $^.character.name AS \
+            Brother, $$.location.name AS \
+            Habitations;
     =========================
     | Brother | Habitations |
     =========================

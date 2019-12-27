@@ -10,7 +10,7 @@
 
 - Syntax is close to SQL, but not exactly the same (Easy to learn)
 - Expandable
-- Case insensitive
+- Keyword is case insensitive
 - Support basic graph traverse
 - Support pattern matching
 - Support aggregation
@@ -26,6 +26,8 @@ vertex, node       | vertex  | vertex        |
 edge, relationship | edge    | edge          |
 vertex type        | label   | tag           |
 edge type          | label   | edge type     |
+vertex id          | vid     | vid           |
+edge id            | eid     | not support   |
 
 In Gremlin and nGQL, vertices and edges are identified with unique identifiers. In **Nebula Graph**, you can either specify identifiers or generate automatically with the hash or uuid function.
 
@@ -35,13 +37,13 @@ Name                   | Gremlin         | nGQL          |
 -----                  |---------        |   -----       |
 Create a new graph     | g = TinkerGraph.open().traversal() | CREATE SPACE gods |
 Show vertices' types   | g.V().label()   | SHOW TAGS |
-Insert a vertex with a specified type | g.addV(String vertexLabel).property() | INSERT VERTEX <tag_name> (prop_name_list) VALUES vid:(prop_value_list) |
+Insert a vertex with a specified type | g.addV(String vertexLabel).property() | INSERT VERTEX <tag_name> (prop_name_list) VALUES \<vid>:(prop_value_list) |
 Insert an edge with specified edge type | g.addE(String edgeLabel).from(v1).to(v2).property()| INSERT EDGE <edge_name> ( <prop_name_list> ) VALUES <src_vid> -> <dst_vid>: ( <prop_value_list> ) |
 Delete a vertex | g.V(\<vid>).drop() | DELETE VERTEX \<vid> |
-Delete an edge  | g.E(\<vid>).outE(\<type>).where(otherV().is(\<vid>))drop() | DELETE EDGE <edge_type> \<vid> -> \<vid> |
-Update a vertex property | g.V(\<vid>).property() | UPDATE VERTEX <vid> SET <update_columns> |
+Delete an edge  | g.E(\<vid>).outE(\<type>).where(otherV().is(\<vid>))drop() | DELETE EDGE <edge_type> \<src_vid> -> \<dst_vid> |
+Update a vertex property | g.V(\<vid>).property() | UPDATE VERTEX \<vid> SET <update_columns> |
 Fetch vertices with ID | g.V(\<vid>) | FETCH PROP ON <tag_name> \<vid>|
-Fetch edges with ID    | g.E(<start_vid> >> <dst_vid>) | FETCH PROP ON <edge_name> <start_vid> -> <dst_vid> |
+Fetch edges with ID    | g.E(<src_vid> >> <dst_vid>) | FETCH PROP ON <edge_name> <src_vid> -> <dst_vid> |
 Query a vertex along specified edge type | g.V(\<vid>).outE( \<edge>) | GO FROM \<vid> OVER  \<edge> |
 Query a vertex along specified edge type reversely | g.V(\<vid>).in( \<edge>) | GO FROM \<vid>  OVER \<edge> REVERSELY |
 Query N hops along a specified edge | g.V(\<vid>).repeat(out(\<edge>)).times(N) | GO N STEPS FROM \<vid> OVER \<edge> |
@@ -51,14 +53,13 @@ Find path between two vertices | g.V(\<vid>).repeat(out()).until(\<vid>).path() 
 
 The examples in this section make extensive use of the toy graph distributed with [Janus Graph](https://janusgraph.org/) called [_The Graphs of Gods_](https://docs.janusgraph.org/#getting-started). This graph is diagrammed below. The abstract data model is known as a [Property Graph Model](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/1.overview/1.concepts/1.data-model.md) and this particular instance describes the relationships between the beings and places of the Roman pantheon.
 
-![image](https://user-images.githubusercontent.com/42762957/71347155-a1f0d280-25a4-11ea-98f0-d1754e9ea3e4.png)
+![image](https://user-images.githubusercontent.com/42762957/71503167-0e264b80-28af-11ea-87c5-76f4fd1275cd.png)
 
 - Insert data
   
   ```bash
   # insert vertex
-  nebula> INSERT VERTEX character(name, age, type) VALUES hash("saturn"):("saturn", 10000, "titan");
-  nebula> INSERT VERTEX character(name, age, type) VALUES hash("jupiter"):("jupiter", 5000, "god");
+  nebula> INSERT VERTEX character(name, age, type) VALUES hash("saturn"):("saturn", 10000, "titan"), hash("jupiter"):("jupiter", 5000, "god");
 
   gremlin> v1 = g.addV("character").property(T.id, 1).property('name', 'saturn').property('age', 10000).property('type', 'titan');
   ==>v[1]
@@ -141,9 +142,10 @@ gremlin> g.V(v7).property('age', 6000);
 - Find who are pluto's cohabitants
 
     ```bash
-    nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | \
-                          GO FROM $-.place OVER lives REVERSELY YIELD \
-                          $$.character.name AS cohabitants;
+    nebula> GO FROM hash("pluto") OVER lives \
+            YIELD lives._dst AS place | \
+            GO FROM $-.place OVER lives REVERSELY YIELD \
+            $$.character.name AS cohabitants;
     ===============
     | cohabitants |
     ===============
@@ -198,9 +200,11 @@ gremlin> g.V(v7).property('age', 6000);
     # which brother lives in which place?
 
     nebula> GO FROM hash("pluto") OVER brother \
-                          YIELD brother._dst AS god | \
-                          GO FROM $-.god OVER lives YIELD \
-                          $^.character.name AS Brother, $$.location.name AS Habitations,
+            YIELD brother._dst AS god | \
+            GO FROM $-.god OVER lives YIELD \
+            $^.character.name AS \
+            Brother, $$.location.name AS \
+            Habitations;
     =========================
     | Brother | Habitations |
     =========================
@@ -209,7 +213,7 @@ gremlin> g.V(v7).property('age', 6000);
     | neptune | sea         |
     -------------------------
 
-    gremlin> g.V(pluto).out('brother').as('god').out('lives').as('place')   .select('god','place').by('name'),
+    gremlin> g.V(pluto).out('brother').as('god').out('lives').as('place').select('god','place').by('name'),
     ==>[god:jupiter, place:sky]
     ==>[god:neptune, place:sea]
     ```
