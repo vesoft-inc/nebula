@@ -13,9 +13,10 @@
 #include "meta/GflagsManager.h"
 #include "base/Configuration.h"
 #include "stats/StatsManager.h"
+#include <folly/ScopeGuard.h>
 
 
-DEFINE_int32(heartbeat_interval_secs, 30, "Heartbeat interval");
+DEFINE_int32(heartbeat_interval_secs, 3, "Heartbeat interval");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
 DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
@@ -97,9 +98,7 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
     CHECK(bgThread_->start());
     LOG(INFO) << "Register time task for heartbeat!";
     size_t delayMS = FLAGS_heartbeat_interval_secs * 1000 + folly::Random::rand32(900);
-    bgThread_->addTimerTask(delayMS,
-                            FLAGS_heartbeat_interval_secs * 1000,
-                            &MetaClient::heartBeatThreadFunc, this);
+    bgThread_->addDelayTask(delayMS, &MetaClient::heartBeatThreadFunc, this);
     return ready_;
 }
 
@@ -113,6 +112,11 @@ void MetaClient::stop() {
 }
 
 void MetaClient::heartBeatThreadFunc() {
+    SCOPE_EXIT {
+        bgThread_->addDelayTask(FLAGS_heartbeat_interval_secs * 1000,
+                                &MetaClient::heartBeatThreadFunc,
+                                this);
+    };
     auto ret = heartbeat().get();
     if (!ret.ok()) {
         LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
