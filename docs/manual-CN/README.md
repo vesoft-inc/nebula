@@ -54,6 +54,7 @@
   * [属性引用](2.query-language/3.language-structure/property-reference.md)
   * [标识符命名规则](2.query-language/3.language-structure/schema-object-names.md)
   * [语句组合](2.query-language/3.language-structure/statement-composition.md)
+  * [用户自定义变量](2.query-language/3.language-structure/user-defined-variables.md)
 * 语句语法
   * 数据定义语句 (DDL)
     * [新建图空间](2.query-language/4.statement-syntax/1.data-definition-statements/create-space-syntax.md)

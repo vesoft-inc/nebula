@@ -153,7 +153,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
 
                 if (context->removeRequest(host)) {
                     // Received all responses
-                    stats::Stats::addStatsValue(stats_,
+                    stats::Stats::addStatsValue(stats_.get(),
                                                 context->resp.succeeded(),
                                                 duration.elapsedInUSec());
                     context->promise.setValue(std::move(context->resp));
@@ -165,7 +165,9 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
     if (context->finishSending()) {
         // Received all responses, most likely, all rpc failed
         context->promise.setValue(std::move(context->resp));
-        stats::Stats::addStatsValue(stats_, context->resp.succeeded(), duration.elapsedInUSec());
+        stats::Stats::addStatsValue(stats_.get(),
+                                    context->resp.succeeded(),
+                                    duration.elapsedInUSec());
     }
 
     return context->promise.getSemiFuture();
@@ -196,7 +198,7 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
                     duration, this] (folly::Try<Response>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
-                stats::Stats::addStatsValue(stats_, false, duration.elapsedInUSec());
+                stats::Stats::addStatsValue(stats_.get(), false, duration.elapsedInUSec());
                 p.setValue(Status::Error(folly::stringPrintf("RPC failure in StorageClient: %s",
                                                              t.exception().what().c_str())));
                 invalidLeader(spaceId, partId);
@@ -218,7 +220,7 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
                     invalidLeader(spaceId, code.get_part_id());
                 }
             }
-            stats::Stats::addStatsValue(stats_,
+            stats::Stats::addStatsValue(stats_.get(),
                                         result.get_failed_codes().empty(),
                                         duration.elapsedInUSec());
             p.setValue(std::move(resp));

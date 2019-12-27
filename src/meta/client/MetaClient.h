@@ -115,7 +115,7 @@ public:
                         HostAddr localHost = HostAddr(0, 0),
                         ClusterID clusterId = 0,
                         bool sendHeartBeat = false,
-                        stats::Stats *stats = nullptr);
+                        const std::string &serviceName = "");
 
 
     virtual ~MetaClient();
@@ -276,7 +276,7 @@ public:
 
     folly::Future<StatusOr<bool>>
     setConfig(const cpp2::ConfigModule& module, const std::string& name,
-              const cpp2::ConfigType& type, const std::string& value, const bool isForce);
+              const cpp2::ConfigType& type, const std::string& value);
 
     folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module);
@@ -453,7 +453,7 @@ private:
     cpp2::ConfigModule    gflagsModule_{cpp2::ConfigModule::UNKNOWN};
     std::atomic_bool      configReady_{false};
     std::vector<cpp2::ConfigItem> gflagsDeclared_;
-    stats::Stats         *stats_{nullptr};
+    std::unique_ptr<stats::Stats> stats_;
 };
 
 }  // namespace meta
