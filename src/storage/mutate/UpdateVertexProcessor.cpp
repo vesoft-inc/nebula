@@ -18,8 +18,25 @@ void UpdateVertexProcessor::onProcessFinished(int32_t retNum) {
         nebula::cpp2::Schema respScheam;
         respScheam.columns.reserve(retNum);
         RowWriter writer(nullptr);
+        Getters getters;
+        getters.getSrcTagProp = [this] (const std::string& tagName,
+                                        const std::string& prop) -> OptVariantType {
+            auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
+            if (!tagRet.ok()) {
+                VLOG(1) << "Can't find tag " << tagName << ", in space " << this->spaceId_;
+                return Status::Error("Invalid Filter Tag: " + tagName);
+            }
+            auto tagId = tagRet.value();
+            auto it = tagFilters_.find(std::make_pair(tagId, prop));
+            if (it == tagFilters_.end()) {
+                return Status::Error("Invalid Tag Filter");
+            }
+            VLOG(1) << "Hit srcProp filter for tag: " << tagName
+                    << ", prop: " << prop << ", value: " << it->second;
+            return it->second;
+        };
         for (auto& exp : returnColumnsExp_) {
-            auto value = exp->eval();
+            auto value = exp->eval(getters);
             if (!value.ok()) {
                 LOG(ERROR) << value.status();
                 return;
@@ -144,7 +161,7 @@ bool UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID
         }
     }
 
-    auto& getters = this->expCtx_->getters();
+    Getters getters;
     getters.getSrcTagProp = [&, this] (const std::string& tagName,
                                        const std::string& prop) -> OptVariantType {
         auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
@@ -163,7 +180,7 @@ bool UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID
     };
 
     if (this->exp_ != nullptr) {
-        auto filterResult = this->exp_->eval();
+        auto filterResult = this->exp_->eval(getters);
         if (!filterResult.ok() || !Expression::asBool(filterResult.value())) {
             VLOG(1) << "Filter skips the update";
             return false;
@@ -174,6 +191,24 @@ bool UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID
 
 
 std::string UpdateVertexProcessor::updateAndWriteBack() {
+    Getters getters;
+    getters.getSrcTagProp = [this] (const std::string& tagName,
+                                       const std::string& prop) -> OptVariantType {
+        auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
+        if (!tagRet.ok()) {
+            VLOG(1) << "Can't find tag " << tagName << ", in space " << this->spaceId_;
+            return Status::Error("Invalid Filter Tag: " + tagName);
+        }
+        auto tagId = tagRet.value();
+        auto it = tagFilters_.find(std::make_pair(tagId, prop));
+        if (it == tagFilters_.end()) {
+            return Status::Error("Invalid Tag Filter");
+        }
+        VLOG(1) << "Hit srcProp filter for tag: " << tagName
+                << ", prop: " << prop << ", value: " << it->second;
+        return it->second;
+    };
+
     for (auto& item : updateItems_) {
         auto tagName = item.get_name();
         auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
@@ -189,7 +224,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack() {
         }
         auto vexp = std::move(exp).value();
         vexp->setContext(this->expCtx_.get());
-        auto value = vexp->eval();
+        auto value = vexp->eval(getters);
         if (!value.ok()) {
             return std::string("");
         }
@@ -328,7 +363,7 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
         return;
     }
     auto vId = req.get_vertex_id();
-    updateItems_ = std::move(req).get_update_items();
+    updateItems_ = req.get_update_items();
 
     VLOG(3) << "Update vertex, spaceId: " << this->spaceId_
             << ", partId: " << partId << ", vId: " << vId;

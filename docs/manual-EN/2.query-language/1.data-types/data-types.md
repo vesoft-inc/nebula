@@ -12,13 +12,13 @@ An integer is declared with keyword `int` , which is 64-bit *signed*, the range 
 1. Hexadecimal, for example `0xdeadbeaf`
 1. Octal, for example `01234567`
 
-### Floating Point
+<!-- ### Floating Point
 
 Floating point data type is used for storing single precision floating point values. Keyword used for floating point data type is `float`, which is only meaningful for schema definitions and the number of bytes stored. Floating point literal constants are treated as double precision floating point numbers during parsing and arithmetic operations.
 
 ### Double Floating Point
 
-Double floating point data type is used for storing double precision floating point values. Keyword used for double floating point data type is `double`. There are no upper and lower ranges.
+Double floating point data type is used for storing double precision floating point values. Keyword used for double floating point data type is `double`. There are no upper and lower ranges. -->
 
 ## Boolean
 

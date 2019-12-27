@@ -50,10 +50,8 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus(
     std::vector<std::string> removeHostsKey;
     while (iter->valid()) {
         cpp2::HostItem item;
-        nebula::cpp2::HostAddr host;
-        auto hostAddrPiece = iter->key().subpiece(hostPrefix.size());
-        memcpy(&host, hostAddrPiece.data(), hostAddrPiece.size());
-        item.set_hostAddr(host);
+        auto host = MetaServiceUtils::parseHostKey(iter->key());
+        item.set_hostAddr(std::move(host));
         HostInfo info = HostInfo::decode(iter->val());
         if (now - info.lastHBTimeInMilliSec_ < FLAGS_removed_threshold_sec * 1000) {
             if (now - info.lastHBTimeInMilliSec_ < FLAGS_expired_threshold_sec * 1000) {
@@ -97,9 +95,7 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus(
             return Status::Error("Cant't find any partitions");
         }
         while (iter->valid()) {
-            auto key = iter->key();
-            PartitionID partId;
-            memcpy(&partId, key.data() + partPrefix.size(), sizeof(PartitionID));
+            PartitionID partId = MetaServiceUtils::parsePartKeyPartId(iter->key());
             auto partHosts = MetaServiceUtils::parsePartVal(iter->val());
             for (auto& host : partHosts) {
                 hostParts[HostAddr(host.ip, host.port)].emplace_back(partId);
@@ -175,7 +171,6 @@ void ListHostsProcessor::getLeaderDist(
         }
     }
 }
-
 
 }  // namespace meta
 }  // namespace nebula

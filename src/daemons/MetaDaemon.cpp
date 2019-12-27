@@ -221,12 +221,14 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << "Init web service failed";
         return EXIT_FAILURE;
     }
+    SCOPE_EXIT {
+        nebula::WebService::stop();
+    };
 
     // Setup the signal handlers
     status = setupSignalHandler();
     if (!status.ok()) {
         LOG(ERROR) << status;
-        nebula::WebService::stop();
         return EXIT_FAILURE;
     }
 
@@ -240,12 +242,10 @@ int main(int argc, char *argv[]) {
         gServer->setInterface(std::move(handler));
         gServer->serve();  // Will wait until the server shuts down
     } catch (const std::exception &e) {
-        nebula::WebService::stop();
         LOG(ERROR) << "Exception thrown: " << e.what();
         return EXIT_FAILURE;
     }
 
-    nebula::WebService::stop();
     LOG(INFO) << "The meta Daemon stopped";
     return EXIT_SUCCESS;
 }
