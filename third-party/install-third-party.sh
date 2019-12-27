@@ -26,15 +26,15 @@ cxx_cmd=${CXX:-g++}
 
 # We consider two derivatives: Red Hat and Debian
 # Place preset libc versions of each from newer to older
-libc_preset=( 2.27 2.23 2.17 2.12 )
-gcc_preset=( 9.2.0 9.1.0 8.3.0 7.5.0 7.1.0 )
+libc_preset_versions=( 2.27 2.23 2.17 2.12 )
+gcc_preset_versions=( 9.2.0 9.1.0 8.3.0 7.5.0 7.1.0 )
 
-selected_libc=
-selected_gcc=
+selected_libc_version=
+selected_gcc_version=
 selected_archive=
-this_libc=$(ldd --version | head -1 | cut -d ')' -f 2 | cut -d ' ' -f 2)
-this_gcc=$($cxx_cmd -dumpfullversion -dumpversion)
-this_abi=$($this_dir/cxx-compiler-abi-version.sh)
+this_libc_version=$(ldd --version | head -1 | cut -d ')' -f 2 | cut -d ' ' -f 2)
+this_gcc_version=$($cxx_cmd -dumpfullversion -dumpversion)
+this_abi_version=$($this_dir/cxx-compiler-abi-version.sh)
 
 hash wget &>/dev/null || {
     echo "'wget' not fould, please install it first" 1>&2
@@ -82,16 +82,16 @@ function select_by_version {
     done
 }
 
-selected_libc=$(select_by_version $this_libc "${libc_preset[@]}")
-selected_gcc=$(select_by_version $this_gcc "${gcc_preset[@]}")
+selected_libc_version=$(select_by_version $this_libc_version "${libc_preset_versions[@]}")
+selected_gcc_version=$(select_by_version $this_gcc_version "${gcc_preset_versions[@]}")
 
-[[ -z $selected_libc ]] && {
-    echo "No prebuilt third-party found to download for your environment: libc-$this_libc, GCC-$this_gcc, ABI $this_abi_version" 1>&2
+[[ -z $selected_libc_version ]] && {
+    echo "No prebuilt third-party found to download for your environment: libc-$this_libc_version, GCC-$this_gcc_version, ABI $this_abi_version" 1>&2
     echo "Please invoke $this_dir/build-third-party.sh to build manually" 1>&2
     exit 1
 }
 
-selected_archive=vesoft-third-party-x86_64-libc-$selected_libc-gcc-$selected_gcc-abi-$this_abi.sh
+selected_archive=vesoft-third-party-x86_64-libc-$selected_libc_version-gcc-$selected_gcc_version-abi-$this_abi_version.sh
 
 url=$url_base/$selected_archive
 echo "Downloading $selected_archive..."

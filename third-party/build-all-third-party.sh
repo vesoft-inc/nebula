@@ -11,7 +11,7 @@ this_dir=$(dirname $(readlink -f $0))
 
 for v in 7.1.0 7.5.0 8.3.0 9.1.0 9.2.0
 do
-    echo $v;
+    echo $v
     source /opt/vesoft/toolset/gcc/$v/enable;
     rm -rf /opt/vesoft/third-party
     build_package=1 disable_cxx11_abi=0 $this_dir/build-third-party.sh /opt/vesoft/third-party

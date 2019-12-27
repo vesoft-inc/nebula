@@ -25,15 +25,15 @@ url_base=https://nebula-graph.oss-accelerate.aliyuncs.com/toolset
 this_dir=$(dirname $(readlink -f $0))
 
 # We consider two derivatives: Red Hat and Debian
-# Place preset libc versions of each from newer to older
-CentOS_libc_preset=( 2.17 2.12 )
-Debian_libc_preset=( 2.19 2.13 )
+# Place preset libc versions of each from higher to lower
+CentOS_libc_preset_version=( 2.17 2.12 )
+Debian_libc_preset_version=( 2.19 2.13 )
 
 selected_distro=
-selected_libc=
+selected_libc_version=
 selected_archive=
 this_distro=$(lsb_release -si)
-this_libc=$(ldd --version | head -1 | cut -d ')' -f 2 | cut -d ' ' -f 2)
+this_libc_version=$(ldd --version | head -1 | cut -d ')' -f 2 | cut -d ' ' -f 2)
 
 hash wget &>/dev/null || {
     echo "'wget' not fould, please install it first" 1>&2
@@ -89,20 +89,20 @@ function select_libc {
 
 case $selected_distro in
     CentOS)
-        selected_libc=$(select_libc $this_libc "${CentOS_libc_preset[@]}")
+        selected_libc_version=$(select_libc $this_libc_version "${CentOS_libc_preset_version[@]}")
     ;;
     Debian)
-        selected_libc=$(select_libc $this_libc "${Debian_libc_preset[@]}")
+        selected_libc_version=$(select_libc $this_libc_version "${Debian_libc_preset_version[@]}")
     ;;
 esac
 
-[[ -z $selected_libc ]] && {
-    echo "No suitable GCC found to download for your environment: $this_distro, glibc-$this_libc" 1>&2
+[[ -z $selected_libc_version ]] && {
+    echo "No suitable GCC found to download for your environment: $this_distro, glibc-$this_libc_version" 1>&2
     echo "Please invoke $this_dir/build-gcc.sh to build one manually" 1>&2
     exit 1
 }
 
-selected_archive=vesoft-gcc-$version-$selected_distro-x86_64-glibc-$selected_libc.sh
+selected_archive=vesoft-gcc-$version-$selected_distro-x86_64-glibc-$selected_libc_version.sh
 
 url=$url_base/$selected_archive
 $download_cmd $url

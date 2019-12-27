@@ -114,7 +114,7 @@ then
         echo "Source of third party was downdloaded to $build_root"
         echo -n "Extracting into $download_dir..."
         tar -xzf $source_tar_name
-        echo  "done"
+        echo "done"
     fi
 else
     tar -xzf $source_tar_name
