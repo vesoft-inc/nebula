@@ -418,9 +418,7 @@ void DbDumper::iterates(kvstore::RocksPrefixIter* it) {
             }
             ++vertexCount_;
             ++count_;
-        }
-
-        if (NebulaKeyUtils::isEdge(key)) {
+        } else if (NebulaKeyUtils::isEdge(key)) {
             // filts the data
             bool isFiltered = false;
             for (auto &cb : beforePrintEdge_) {

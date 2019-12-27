@@ -702,7 +702,7 @@ StatusOr<std::string> MetaClient::getTagNameByIdFromCache(const GraphSpaceID& sp
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceTagIndexById_.find(std::make_pair(space, tagId));
     if (it == spaceTagIndexById_.end()) {
-        std::string error = folly::stringPrintf("EdgeType `%d'  is nonexistent", tagId);
+        std::string error = folly::stringPrintf("TagID `%d'  is nonexistent", tagId);
         return Status::Error(std::move(error));
     }
     return it->second;
