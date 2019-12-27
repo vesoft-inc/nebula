@@ -11,6 +11,7 @@
 #include "meta/MetaHttpIngestHandler.h"
 #include "meta/MetaHttpStatusHandler.h"
 #include "meta/MetaHttpDownloadHandler.h"
+#include "meta/MetaHttpReplaceHostHandler.h"
 #include "webservice/WebService.h"
 #include "network/NetworkUtils.h"
 #include "process/ProcessUtils.h"
@@ -146,6 +147,12 @@ bool initWebService(nebula::kvstore::KVStore* kvstore,
         handler->init(kvstore, pool);
         return handler;
     });
+    nebula::WebService::registerHandler("/replace", [kvstore] {
+        auto handler = new nebula::meta::MetaHttpReplaceHostHandler();
+        handler->init(kvstore);
+        return handler;
+    });
+
     auto status = nebula::WebService::start();
     if (!status.ok()) {
         LOG(ERROR) << "Failed to start web service: " << status;
