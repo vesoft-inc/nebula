@@ -53,7 +53,7 @@ void DescribeSpaceExecutor::execute() {
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        doError(Status::Error("Describe space exception: %s", e.what().c_str()));
         return;
     };
 

@@ -121,7 +121,7 @@ void FetchVerticesExecutor::fetchVertices() {
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            doError(Status::Error("Get props failed"));
+            doError(Status::Error("Get tag `%s' props failed", sentence_->tag()->c_str()));
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get vertices partially failed: "  << completeness << "%";
@@ -134,8 +134,10 @@ void FetchVerticesExecutor::fetchVertices() {
         return;
     };
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        auto msg = folly::stringPrintf("Get tag `%s' props exception: %s.",
+                sentence_->tag()->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(msg));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -188,8 +190,9 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                 outputSchema = std::make_shared<SchemaWriter>();
                 auto status = getOutputSchema(vschema.get(), vreader.get(), outputSchema.get());
                 if (!status.ok()) {
-                    LOG(ERROR) << "Get getOutputSchema failed: " << status;
-                    doError(Status::Error("Internal error."));
+                    LOG(ERROR) << "Get output schema failed: " << status;
+                    doError(Status::Error("Get output schema failed: %s.",
+                                status.toString().c_str()));
                     return;
                 }
                 rsWriter = std::make_unique<RowSetWriter>(outputSchema);

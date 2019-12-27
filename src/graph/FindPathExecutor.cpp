@@ -206,7 +206,7 @@ void FindPathExecutor::getNeighborsAndFindPath() {
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error."));
+        doError(Status::Error("Find path exception: %s", e.what().c_str()));
     };
     folly::collectAll(futures).via(runner).thenValue(cb).thenError(error);
 }
@@ -484,7 +484,7 @@ void FindPathExecutor::getFromFrontiers(
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        fStatus_ = Status::Error("Get neighbors failed.");
+        fStatus_ = Status::Error("Get neighbors exception: %s.", e.what().c_str());
     };
     std::move(future).via(runner, folly::Executor::HI_PRI).thenValue(cb).thenError(error);
 }
@@ -522,7 +522,7 @@ void FindPathExecutor::getToFrontiers(
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        tStatus_ = Status::Error("Get neighbors failed.");
+        tStatus_ = Status::Error("Get neighbors exception: %s.", e.what().c_str());
     };
     std::move(future).via(runner, folly::Executor::HI_PRI).thenValue(cb).thenError(error);
 }

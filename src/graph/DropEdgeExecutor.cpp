@@ -33,15 +33,18 @@ void DropEdgeExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(std::move(resp).status());
+            doError(Status::Error("Drop edge `%s'failed: %s.",
+                        sentence_->name()->c_str(), resp.status().toString().c_str()));
             return;
         }
         doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        auto msg = folly::stringPrintf("Drop edge `%s' exception: %s.",
+                sentence_->name()->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(msg));
         return;
     };
 

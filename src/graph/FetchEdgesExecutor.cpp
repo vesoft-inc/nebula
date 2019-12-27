@@ -65,14 +65,14 @@ Status FetchEdgesExecutor::prepareEdgeKeys() {
 
             srcid_ = edgeKeyRef->srcid();
             if (srcid_ == nullptr) {
-                status = Status::Error("Internal error.");
+                status = Status::Error("Src id nullptr.");
                 LOG(ERROR) << "Get src nullptr.";
                 break;
             }
 
             dstid_ = edgeKeyRef->dstid();
             if (dstid_ == nullptr) {
-                status = Status::Error("Internal error.");
+                status = Status::Error("Dst id nullptr.");
                 LOG(ERROR) << "Get dst nullptr.";
                 break;
             }
@@ -276,7 +276,7 @@ void FetchEdgesExecutor::fetchEdges() {
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            doError(Status::Error("Get props failed"));
+            doError(Status::Error("Get edge `%s' props failed", sentence_->edge()->c_str()));
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get edges partially failed: "  << completeness << "%";
@@ -289,8 +289,10 @@ void FetchEdgesExecutor::fetchEdges() {
         return;
     };
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        auto msg = folly::stringPrintf("Get edge `%s' props faield: %s.",
+                sentence_->edge()->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(msg));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -332,8 +334,8 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             outputSchema = std::make_shared<SchemaWriter>();
             auto status = getOutputSchema(eschema.get(), &*iter, outputSchema.get());
             if (!status.ok()) {
-                LOG(ERROR) << "Get getOutputSchema failed: " << status;
-                doError(Status::Error("Internal error."));
+                LOG(ERROR) << "Get output schema failed: " << status;
+                doError(Status::Error("Get output schema failed: %s.", status.toString().c_str()));
                 return;
             }
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
