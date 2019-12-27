@@ -35,6 +35,18 @@ TEST(WallClock, TimePointInMilliSeconds) {
     }
 }
 
+TEST(WallClock, TimePointInMicroSeconds) {
+    for (int i = 0; i < 100; i++) {
+        auto tp1 = WallClock::slowNowInMicroSec();
+        auto tp2 = WallClock::fastNowInMicroSec();
+        auto tp3 = WallClock::slowNowInMicroSec();
+
+        // Allow 500000 us off
+        ASSERT_LE(tp1 - 500000, tp2);
+        ASSERT_LE(tp2, tp3 + 500000);
+    }
+}
+
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
