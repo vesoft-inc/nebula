@@ -11,30 +11,6 @@ nebula_add_test(
         gtest
 )
 
-nebula_add_test(
-    NAME
-        test-zcs
-    SOURCES
-        test-zcs.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:thread_obj>
-    LIBRARIES
-        gtest
-)
-nebula_add_test(
-    NAME
-        test-ctx
-    SOURCES
-        test-ctx.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:thread_obj>
-    LIBRARIES
-        gtest
-)
 
 
 
