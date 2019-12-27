@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include <gtest/gtest.h>
 #include "time/Duration.h"
+#include <time.h>
 
 using nebula::time::Duration;
 
@@ -17,9 +18,12 @@ TEST(Duration, elapsedInSeconds) {
         sleep(2);
         auto diff = std::chrono::steady_clock::now() - start;
         dur.pause();
-
+        time_t Nowt = time(0);
+        char strTime[50];
+        ctime_r(&Nowt, strTime);
         ASSERT_EQ(std::chrono::duration_cast<std::chrono::seconds>(diff).count(),
                   dur.elapsedInSec()) << "Inaccuracy in iteration " << i;
+        std::cout << strTime << std::endl;
     }
 }
 
