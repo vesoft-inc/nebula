@@ -151,7 +151,7 @@ TEST(Configuration, GetArray) {
     std::string json =
         "{"
         "   \"int_array\" : [1, \"2\", 3, \"4\", 5],"
-        "   \"string_array\" : [\"Hello\", \"World\"],"
+        "   \"string_array\" : [\"Hello\", \"no\",\"World\"],"
         "   \"bool_array\" : [0, 1],"
         "   \"double_array\" : [1.2, \"2.3\", 3.4]"
         "}";
@@ -169,9 +169,10 @@ TEST(Configuration, GetArray) {
 
     std::vector<std::string> strArray;
     ASSERT_TRUE(conf.fetchAsStringArray("string_array", strArray).ok());
-    ASSERT_EQ(2L, strArray.size());
+    ASSERT_EQ(3L, strArray.size());
     EXPECT_EQ("Hello", strArray[0]);
-    EXPECT_EQ("World", strArray[1]);
+    EXPECT_EQ("no", strArray[1]);
+    EXPECT_EQ("World", strArray[2]);
 
     std::vector<bool> boolArray;
     ASSERT_TRUE(conf.fetchAsBoolArray("bool_array", boolArray).ok());
@@ -192,7 +193,7 @@ TEST(Configuration, Iterator) {
     std::string json =
         "{"
         "   \"int_array\" : [1, \"2\", 3, \"4\", 5],"
-        "   \"string_array\" : [\"Hello\", \"World\"],"
+        "   \"string_array\" : [\"Hello\", \"no\",\"World\"],"
         "   \"int_val\" : 100,"
         "   \"double_val\" : 2.3"
         "}";
@@ -220,7 +221,7 @@ TEST(Configuration, Iterator) {
             EXPECT_EQ(5L, val.size());
         } else if (key == "string_array") {
             ASSERT_TRUE(val.isArray());
-            EXPECT_EQ(2L, val.size());
+            EXPECT_EQ(3L, val.size());
         } else if (key == "int_val") {
             ASSERT_TRUE(val.isInt());
             EXPECT_EQ(100, val.asInt());
