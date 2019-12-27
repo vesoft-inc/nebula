@@ -36,7 +36,7 @@ function yum_install {
         maven \
         java-1.8.0-openjdk \
         unzip \
-	curl
+        curl
 
     # feroda and centos7 has it
     if [[ $1 == 1 || $1 == 2 ]]; then
@@ -73,7 +73,7 @@ function aptget_install {
         maven \
         openjdk-8-jdk \
         unzip \
-	curl
+        curl
 
     installPackage $1
     addAlias $1
