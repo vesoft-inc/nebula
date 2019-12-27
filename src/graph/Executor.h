@@ -93,7 +93,7 @@ protected:
 
     std::string valueTypeToString(nebula::cpp2::ValueType type);
 
-    void writeVariantType(RowWriter &writer, const VariantType &value);
+    Status writeVariantType(RowWriter &writer, const VariantType &value);
 
     bool checkValueType(const nebula::cpp2::ValueType &type, const VariantType &value);
 

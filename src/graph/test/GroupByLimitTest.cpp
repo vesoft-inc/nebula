@@ -471,7 +471,7 @@ TEST_F(GroupByLimitTest, GroupByOrderByLimitTest) {
                     "YIELD $-.name AS name, "
                     "SUM(1.5) AS sum, "
                     "COUNT(*) AS count "
-                    "| ORDER BY $-.sum";
+                    "| ORDER BY $-.sum, $-.name";
         auto query = folly::stringPrintf(fmt, player1.vid(), player2.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -482,8 +482,8 @@ TEST_F(GroupByLimitTest, GroupByOrderByLimitTest) {
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
         std::vector<std::tuple<std::string, double, uint64_t>> expected = {
-                {"Dwyane Wade", 1.5, 1},
                 {"Carmelo Anthony", 1.5, 1},
+                {"Dwyane Wade", 1.5, 1},
                 {"Chris Paul", 3.0, 2},
                 {"LeBron James", 3.0, 2},
         };
@@ -500,7 +500,7 @@ TEST_F(GroupByLimitTest, GroupByOrderByLimitTest) {
                     "YIELD $-.name AS name, "
                     "SUM(1.5) AS sum, "
                     "COUNT(*) AS count "
-                    "| ORDER BY $-.sum | LIMIT 2";
+                    "| ORDER BY $-.sum, $-.name DESC | LIMIT 2";
         auto query = folly::stringPrintf(fmt, player1.vid(), player2.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
