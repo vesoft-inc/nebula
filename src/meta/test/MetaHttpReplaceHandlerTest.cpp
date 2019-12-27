@@ -23,7 +23,7 @@ namespace meta {
 
 meta::MetaHttpReplaceHostHandler* gHandler = nullptr;
 kvstore::KVStore*   gKVStore = nullptr;
-std::vector<std::string> dumpKVStore(kvstore::KVStore* p);
+std::vector<std::string> dumpKVStore(kvstore::KVStore* kvstore);
 
 class MetaHttpReplaceHandlerTestEnv : public ::testing::Environment {
 public:

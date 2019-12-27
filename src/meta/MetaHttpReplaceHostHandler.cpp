@@ -167,10 +167,12 @@ bool MetaHttpReplaceHostHandler::replaceHost(IPv4 ipv4From, IPv4 ipv4To) {
     kvstore_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
                         [&] (kvstore::ResultCode code) {
                             updateSucceed = (code == kvstore::ResultCode::SUCCEEDED);
+                            errMsg_ = folly::stringPrintf("write to kvstore failed, %s , %d",
+                                                          __func__, __LINE__);
                             baton.post();
                         });
     baton.wait();
-    return true;
+    return updateSucceed;
 }
 
 }  // namespace meta
