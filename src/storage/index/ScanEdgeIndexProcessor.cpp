@@ -19,17 +19,19 @@ void ScanEdgeIndexProcessor::process(const cpp2::IndexScanRequest& req) {
         return;
     }
     index_ = iRet.value();
-    auto edgeType = index_.schema;
+    auto edgeType = index_.tagOrEdge;
     auto hintRet = buildIndexHint();
     if (hintRet != cpp2::ErrorCode::SUCCEEDED) {
         putResultCodes(hintRet, req.get_parts());
         return;
     }
-
-    auto schemaRet = createResultSchema(true, edgeType, req.get_return_columns());
-    if (schemaRet != cpp2::ErrorCode::SUCCEEDED) {
-        putResultCodes(schemaRet, req.get_parts());
-        return;
+    returnColsNeed_ = !req.get_return_columns().empty();
+    if (returnColsNeed_) {
+        auto schemaRet = createResultSchema(true, edgeType, req.get_return_columns());
+        if (schemaRet != cpp2::ErrorCode::SUCCEEDED) {
+            putResultCodes(schemaRet, req.get_parts());
+            return;
+        }
     }
 
     for (const auto & col : index_.get_cols()) {
@@ -55,15 +57,19 @@ void ScanEdgeIndexProcessor::process(const cpp2::IndexScanRequest& req) {
                         this->pushResultCode(this->to(resultCode), part);
                     }
                 }
-                decltype(resp_.schema) s;
-                decltype(resp_.schema.columns) cols;
-                for (auto i = 0; i < static_cast<int64_t>(schema_->getNumFields()); i++) {
-                    cols.emplace_back(columnDef(schema_->getFieldName(i),
-                                                schema_->getFieldType(i).get_type()));
+                if (schema_ != nullptr) {
+                    decltype(resp_.schema) s;
+                    decltype(resp_.schema.columns) cols;
+                    for (auto i = 0; i < static_cast<int64_t>(schema_->getNumFields()); i++) {
+                        cols.emplace_back(columnDef(schema_->getFieldName(i),
+                                                    schema_->getFieldType(i).get_type()));
+                    }
+                    s.set_columns(std::move(cols));
+                    resp_.set_schema(std::move(s));
                 }
-                s.set_columns(std::move(cols));
-                resp_.set_schema(std::move(s));
-                resp_.set_rows(edgeRows_);
+                if (!edgeRows_.empty()) {
+                    resp_.set_rows(edgeRows_);
+                }
                 this->onFinished();
             });
 }
@@ -101,12 +107,25 @@ ScanEdgeIndexProcessor::processEdges(PartitionID part, IndexID indexId, EdgeType
                     continue;
                 }
                 cpp2::Edge data;
-                auto rowRet = getEdgeRow(part, edgeType, key, &data);
-                if (rowRet == kvstore::SUCCEEDED) {
-                    std::lock_guard<std::mutex> lg(lock_);
-                    edgeRows_.emplace_back(std::move(data));
-                    ++cnt;
+                if (returnColsNeed_) {
+                    auto rowRet = getEdgeRow(part, edgeType, key, &data);
+                    if (rowRet != kvstore::SUCCEEDED) {
+                        return rowRet;
+                    }
+                } else {
+                    auto src = NebulaKeyUtils::getIndexSrcId(key);
+                    auto rank = NebulaKeyUtils::getIndexRank(key);
+                    auto dst = NebulaKeyUtils::getIndexDstId(key);
+                    cpp2::EdgeKey edgeKey;
+                    edgeKey.set_src(src);
+                    edgeKey.set_edge_type(edgeType);
+                    edgeKey.set_ranking(rank);
+                    edgeKey.set_dst(dst);
+                    data.set_key(edgeKey);
                 }
+                std::lock_guard<std::mutex> lg(lock_);
+                edgeRows_.emplace_back(std::move(data));
+                ++cnt;
             }
         }
         return ret;
@@ -125,12 +144,25 @@ ScanEdgeIndexProcessor::processEdges(PartitionID part, IndexID indexId, EdgeType
                     continue;
                 }
                 cpp2::Edge data;
-                auto rowRet = getEdgeRow(part, edgeType, key, &data);
-                if (rowRet == kvstore::SUCCEEDED) {
-                    std::lock_guard<std::mutex> lg(lock_);
-                    edgeRows_.emplace_back(std::move(data));
-                    ++cnt;
+                if (returnColsNeed_) {
+                    auto rowRet = getEdgeRow(part, edgeType, key, &data);
+                    if (rowRet != kvstore::SUCCEEDED) {
+                        return rowRet;
+                    }
+                } else {
+                    auto src = NebulaKeyUtils::getIndexSrcId(key);
+                    auto rank = NebulaKeyUtils::getIndexRank(key);
+                    auto dst = NebulaKeyUtils::getIndexDstId(key);
+                    cpp2::EdgeKey edgeKey;
+                    edgeKey.set_src(src);
+                    edgeKey.set_edge_type(edgeType);
+                    edgeKey.set_ranking(rank);
+                    edgeKey.set_dst(dst);
+                    data.set_key(edgeKey);
                 }
+                std::lock_guard<std::mutex> lg(lock_);
+                edgeRows_.emplace_back(std::move(data));
+                ++cnt;
             }
         }
         return ret;

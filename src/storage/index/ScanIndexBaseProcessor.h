@@ -58,13 +58,14 @@ protected:
 protected:
     GraphSpaceID                           spaceId_;
     int64_t                                vlColNum_{0};
+    bool                                   returnColsNeed_{false};
     std::string                            prefix_;
     std::pair<std::string, std::string>    range_;
-    cpp2::IndexItem                        index_;
+    nebula::cpp2::IndexItem                index_;
     nebula::cpp2::IndexHint                hint_;
-    std::shared_ptr<SchemaWriter>          schema_;
-    folly::Executor*                       executor_ = nullptr;
-    VertexCache*                           vertexCache_ = nullptr;
+    std::shared_ptr<SchemaWriter>          schema_{nullptr};
+    folly::Executor*                       executor_{nullptr};
+    VertexCache*                           vertexCache_{nullptr};
     std::vector<cpp2::VertexIndexData>     vertexRows_;
     std::vector<cpp2::Edge>                edgeRows_;
 };

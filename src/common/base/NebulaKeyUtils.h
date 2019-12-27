@@ -123,8 +123,7 @@ public:
 
     static VertexID getVertexId(const folly::StringPiece& rawKey) {
         CHECK_EQ(rawKey.size(), kVertexLen);
-        auto offset = sizeof(PartitionID);
-        return readInt<VertexID>(rawKey.data() + offset, sizeof(VertexID));
+        return readInt<VertexID>(rawKey.data() + sizeof(PartitionID), sizeof(VertexID));
     }
 
     static TagID getTagId(const folly::StringPiece& rawKey) {
@@ -293,7 +292,6 @@ public:
      *    -1                      -> "\177\377\377\377\377\377\377\377"
      *    -9223372036854775808    -> "\000\000\000\000\000\000\000\000"
      */
-
     static std::string encodeInt64(int64_t v) {
         v ^= folly::to<int64_t>(1) << 63;
         auto val = folly::Endian::big(v);
