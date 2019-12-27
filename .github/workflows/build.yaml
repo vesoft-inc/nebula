@@ -1,16 +1,23 @@
 name: build
 
 on:
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
   push:
     branches:
       - master
     paths-ignore:
       - 'docs/**'
+      - '**.md'
 
 jobs:
   build:
     name: build
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       matrix:
         tag:
@@ -24,27 +31,33 @@ jobs:
             compiler: clang
           - tag: centos7
             compiler: clang
+    container:
+      image: vesoft/nebula-dev:${{ matrix.tag }}
+      env:
+        CCACHE_DIR: /tmp/ccache/${{ matrix.tag }}-${{ matrix.compiler }}
+        NEBULA_DEP_BIN: /opt/nebula/third-party/bin
+        LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
+      options: --mount type=tmpfs,destination=/tmp/ccache,tmpfs-size=1073741824 -v /tmp/ccache/${{ matrix.tag }}-${{ matrix.compiler }}:/tmp/ccache/${{ matrix.tag }}-${{ matrix.compiler }}
     steps:
       - uses: actions/checkout@v1
         with:
           fetch-depth: 1
-      - name: Mount tmpfs
+      - name: Prepare environment
         run: |
-          mkdir -p ${{ github.workspace }}/.cache
-          sudo mount -t tmpfs -o size=1G tmpfs ${{ github.workspace }}/.cache
-      - uses: actions/cache@v1
-        with:
-          path: ${{ github.workspace }}/.cache/ccache
-          key: ${{ matrix.tag }}-${{ matrix.compiler }}-${{ hashFiles('**/CMakeLists.txt') }}
-          restore-keys: |
-            ${{ matrix.tag }}-${{ matrix.compiler }}-
-      - name: Pull dev docker image
-        run: docker pull vesoft/nebula-dev:${{ matrix.tag }}
-      - name: Build and test
-        timeout-minutes: 80
-        run: |
-          docker run --rm \
-            -v ${{ github.workspace }}:/home/nebula \
-            -e CCACHE_DIR=/home/nebula/.cache/ccache \
-            --entrypoint ./ci/scripts/build-and-test-${{ matrix.compiler }}.sh \
-            vesoft/nebula-dev:${{ matrix.tag }}
+          [ -f "$CCACHE_DIR/ccache.conf" ] || cp ci/ccache.conf "$CCACHE_DIR"
+          mkdir -p build
+      - name: CMake
+        run: ./ci/scripts/cmake-${{ matrix.compiler }}.sh
+        shell: bash
+      - name: Make
+        run: cd build && make -j $(nproc)
+      - name: CTest with multiple threads
+        timeout-minutes: 15
+        run: cd build && ${NEBULA_DEP_BIN}/ctest -j $(nproc) --output-on-failure
+      - name: CTest with single thread
+        if: failure()
+        timeout-minutes: 30
+        run: cd build && ${NEBULA_DEP_BIN}/ctest --output-on-failure
+      - name: Cleanup
+        if: always()
+        run: rm -rf build
