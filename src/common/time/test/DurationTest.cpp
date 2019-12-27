@@ -7,19 +7,21 @@
 #include "base/Base.h"
 #include <gtest/gtest.h>
 #include "time/Duration.h"
+#include <vector>
 
 using nebula::time::Duration;
 
+volatile int sink;
 TEST(Duration, elapsedInSeconds) {
-    for (int i = 0; i < 5; i++) {
+    for (int size = 1; sizze < 100000001; size *= 100) {
         Duration dur;
         auto start = std::chrono::steady_clock::now();
-        sleep(2);
-        auto diff = std::chrono::steady_clock::now() - start;
+	std::vector<int> v(size, 42);
+        sink = std::accumulate(v.begin(),v.end(),7);
+        std::chrono::duration<double> diff = std::chrono::steady_clock::now() - start;
         dur.pause();
 
-        ASSERT_EQ(std::chrono::duration_cast<std::chrono::seconds>(diff).count(),
-                  dur.elapsedInSec()) << "Inaccuracy in iteration " << i;
+        std::cout << "Time to fill and iterate a vector of " << size << " ints : " << diff.count() << " s\n";
     }
 }
 
