@@ -45,7 +45,7 @@ private:
     using RpcResponse = storage::StorageRpcResponse<storage::cpp2::QueryResponse>;
     void processResult(RpcResponse &&result);
 
-    void fetchVertexWithAllTagProps();
+    void processAllPropsResult(RpcResponse &&result);
 
 private:
     FetchVerticesSentence                      *sentence_{nullptr};

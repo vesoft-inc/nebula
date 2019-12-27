@@ -86,6 +86,14 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
             }
         }
         vResp.set_tag_data(std::move(td));
+    } else if (tagContexts_.empty() && onlyVertexProps_) {
+        std::vector<cpp2::TagData> td;
+        auto ret = collectVertexProps(partId, vId, td);
+        if (ret != kvstore::ResultCode::ERR_KEY_NOT_FOUND
+                && ret != kvstore::ResultCode::SUCCEEDED) {
+            return ret;
+        }
+        vResp.set_tag_data(std::move(td));
     }
 
     if (onlyVertexProps_) {

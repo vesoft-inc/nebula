@@ -30,12 +30,12 @@ Status FetchVerticesExecutor::prepareClauses() {
         }
 
         expCtx_ = std::make_unique<ExpressionContext>();
+        spaceId_ = ectx()->rctx()->session()->space();
+        expCtx_->setStorageClient(ectx()->getStorageClient());
         if (sentence_->isAllTagProps()) {
             break;
         }
 
-        expCtx_->setStorageClient(ectx()->getStorageClient());
-        spaceId_ = ectx()->rctx()->session()->space();
         yieldClause_ = DCHECK_NOTNULL(sentence_)->yieldClause();
         labelName_ = sentence_->tag();
         auto result = ectx()->schemaManager()->toTagID(spaceId_, *labelName_);
@@ -108,19 +108,18 @@ void FetchVerticesExecutor::execute() {
         return;
     }
 
-    if (sentence_->isAllTagProps()) {
-        fetchVertexWithAllTagProps();
-    } else {
-        fetchVertices();
-    }
+    fetchVertices();
 }
 
 void FetchVerticesExecutor::fetchVertices() {
-    auto props = getPropNames();
-    if (props.empty()) {
-        LOG(WARNING) << "Empty props";
-        doEmptyResp();
-        return;
+    std::vector<storage::cpp2::PropDef> props;
+    if (!sentence_->isAllTagProps()) {
+        props = getPropNames();
+        if (props.empty()) {
+            LOG(WARNING) << "Empty props";
+            doEmptyResp();
+            return;
+        }
     }
 
     auto future = ectx()->getStorageClient()->getVertexProps(spaceId_, vids_, std::move(props));
@@ -137,7 +136,11 @@ void FetchVerticesExecutor::fetchVertices() {
                            << "error code: " << static_cast<int>(error.second);
             }
         }
-        processResult(std::move(result));
+        if (!sentence_->isAllTagProps()) {
+            processResult(std::move(result));
+        } else {
+            processAllPropsResult(std::move(result));
+        }
         return;
     };
     auto error = [this] (auto &&e) {
@@ -320,9 +323,38 @@ Status FetchVerticesExecutor::setupVidsFromRef() {
     return Status::OK();
 }
 
-void FetchVerticesExecutor::fetchVertexWithAllTagProps() {
-    // TODO
-    onEmptyInputs();
+void FetchVerticesExecutor::processAllPropsResult(RpcResponse &&result) {
+    auto &all = result.responses();
+    std::unique_ptr<RowSetWriter> rsWriter;
+    for (auto &resp : all) {
+        if (!resp.__isset.vertices) {
+            continue;
+        }
+
+        for (auto &vdata : resp.vertices) {
+            if (!vdata.__isset.tag_data || vdata.tag_data.empty()) {
+                continue;
+            }
+            for (auto &tdata : vdata.tag_data) {
+                auto ver = RowReader::getSchemaVer(tdata.data);
+                if (ver < 0) {
+                    LOG(ERROR) << "Found schema version negative " << ver;
+                    continue;
+                }
+                auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tdata.tag_id, ver);
+                rsWriter = std::make_unique<RowSetWriter>(schema);
+                rsWriter->addRow(tdata.data);
+
+                auto iter = schema->begin();
+                while (iter) {
+                    auto name = iter->getName();
+                    resultColNames_.emplace_back(std::move(name));
+                    ++iter;
+                }
+            }
+        }
+    }
+    finishExecution(std::move(rsWriter));
 }
 }  // namespace graph
 }  // namespace nebula

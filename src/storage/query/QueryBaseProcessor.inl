@@ -409,6 +409,47 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
     }
     return ret;
 }
+template<typename REQ, typename RESP>
+kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
+                            PartitionID partId,
+                            VertexID vId,
+                            std::vector<cpp2::TagData> &tds) {
+    auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        return ret;
+    }
+
+    bool missedKey = true;
+    for (; iter && iter->valid(); iter->next()) {
+        if (!NebulaKeyUtils::isVertex(iter->key())) {
+            continue;
+        }
+        missedKey = false;
+        auto val = iter->val().toString();
+        auto ver = RowReader::getSchemaVer(val);
+        if (ver < 0) {
+            LOG(ERROR) << "Found schema version negative " << ver;
+            continue;
+        }
+        auto tagId = NebulaKeyUtils::getTagId(iter->key());
+        if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
+            vertexCache_->insert(std::make_pair(vId, tagId),
+                                 iter->val().str(), partId);
+            VLOG(3) << "Insert cache for vId " << vId << ", tagId " << tagId;
+        }
+        cpp2::TagData td;
+        td.set_tag_id(tagId);
+        td.set_data(iter->val().toString());
+        tds.emplace_back(std::move(td));
+    }
+    if (missedKey) {
+        VLOG(3) << "Missed partId " << partId << ", vId " << vId;
+        return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
+    }
+    return kvstore::ResultCode::SUCCEEDED;
+}
 
 template<typename REQ, typename RESP>
 kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
