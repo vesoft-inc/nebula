@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include <time.h>
+#include<string>
 
 namespace nebula {
 namespace time {
@@ -32,6 +33,7 @@ public:
 
     static int64_t slowNowInMicroSec();
     static int64_t fastNowInMicroSec();
+    static std::string  getCurrentTimeStr();
 };
 
 }  // namespace time

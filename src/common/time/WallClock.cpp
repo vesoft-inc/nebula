@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "time/detail/TscHelper.h"
 #include "time/WallClock.h"
+#include<string>
 
 namespace nebula {
 namespace time {
@@ -47,6 +48,13 @@ int64_t WallClock::slowNowInMicroSec() {
 int64_t WallClock::fastNowInMicroSec() {
     static const int64_t st = kStartTime.tv_sec * 1000000 + kStartTime.tv_nsec / 1000;
     return (readTsc() - kFirstTick) * ticksPerUSecFactor + st;
+}
+
+std::string WallClock::getCurrentTimeStr() {
+    time_t t = std::time(NULL);
+    char ch[64] = {0};
+    strftime(ch , sizeof(ch) - 1, "%Y-%m-%d %H:%M:%S" , localtime(&t));     //年-月-日 时-分-秒
+    return ch;
 }
 
 }  // namespace time

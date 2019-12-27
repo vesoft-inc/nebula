@@ -23,6 +23,19 @@ nebula_add_test(
         gtest
 )
 
+nebula_add_test(
+    NAME
+        test_test
+    SOURCES
+        test.cpp
+    OBJECTS
+         $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:thread_obj>
+    LIBRARIES
+        gtest
+)
+
 nebula_add_executable(
     NAME
         duration_bm
@@ -36,6 +49,8 @@ nebula_add_executable(
         follybenchmark
         boost_regex
 )
+
+
 
 nebula_add_executable(
     NAME wallclock_bm
