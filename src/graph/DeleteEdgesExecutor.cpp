@@ -15,7 +15,7 @@ namespace graph {
 
 DeleteEdgesExecutor::DeleteEdgesExecutor(Sentence *sentence,
                                          ExecutionContext *ectx)
-    : Executor(ectx, "delete_dege") {
+    : Executor(ectx, "delete_edge") {
     sentence_ = static_cast<DeleteEdgesSentence*>(sentence);
 }
 

@@ -46,6 +46,36 @@ TEST_F(SchemaTest, TestComment) {
     }
 }
 
+TEST_F(SchemaTest, TestDefaultValue) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    // Test command is comment
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG default_tag(name string DEFAULT 10)";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG default_tag(name string, age int DEFAULT \"10\")";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG default_tag(name string  DEFAULT \"\", "
+                          "age int DEFAULT \"10\")";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG default_tag(name string  DEFAULT 10, age int DEFAULT 10)";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
 TEST_F(SchemaTest, metaCommunication) {
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);

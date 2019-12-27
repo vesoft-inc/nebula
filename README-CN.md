@@ -38,7 +38,7 @@
 
 请查看[快速使用手册](docs/manual-CN/1.overview/2.quick-start/1.get-started.md)，开始使用 **Nebula Graph**。
 
-在开始使用 **Nebula Graph** 之前，必须通过[编译源码](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code.md)或者 [docker compose](https://github.com/vesoft-inc/nebula-docker-compose) 方式安装 **Nebula Graph**。您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **Nebula Graph**。
+在开始使用 **Nebula Graph** 之前，必须通过[编译源码](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code.md)，[rpm/deb 包](https://github.com/vesoft-inc/nebula/tree/master/docs/manual-CN/3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb.md) 或者 [docker compose](https://github.com/vesoft-inc/nebula-docker-compose) 方式安装 **Nebula Graph**。您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **Nebula Graph**。
 
 ## 获取帮助
 
