@@ -13,7 +13,7 @@ using nebula::time::Duration;
 
 volatile int sink;
 TEST(Duration, elapsedInSeconds) {
-    for (int size = 1; sizze < 100000001; size *= 100) {
+    for (int size = 1; size < 100000001; size *= 100) {
         Duration dur;
         auto start = std::chrono::steady_clock::now();
 	std::vector<int> v(size, 42);
