@@ -146,11 +146,7 @@ std::string AddEdgesProcessor::obsoleteIndex(PartitionID partId,
                                                      NebulaKeyUtils::getRank(rawKey),
                                                      NebulaKeyUtils::getDstId(rawKey),
                                                      values);
-        std::string val;
-        auto result = kvstore_->get(spaceId_, partId, indexKey, &val);
-        if (result == kvstore::ResultCode::SUCCEEDED) {
-            return indexKey;
-        }
+        return indexKey;
     }
     return "";
 }

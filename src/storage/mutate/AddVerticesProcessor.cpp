@@ -158,11 +158,7 @@ std::string AddVerticesProcessor::obsoleteIndex(PartitionID partId,
                                                        index.get_index_id(),
                                                        vId,
                                                        values);
-        std::string val;
-        auto result = kvstore_->get(spaceId_, partId, indexKey, &val);
-        if (result == kvstore::ResultCode::SUCCEEDED) {
-            return indexKey;
-        }
+        return indexKey;
     }
     return "";
 }

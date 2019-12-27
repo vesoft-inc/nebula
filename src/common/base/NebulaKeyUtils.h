@@ -11,8 +11,6 @@
 #include "interface/gen-cpp2/common_types.h"
 
 namespace nebula {
-
-
 using IndexValues = std::vector<std::pair<nebula::cpp2::SupportedType, std::string>>;
 
 /**
@@ -216,6 +214,28 @@ public:
         return rawKey.subpiece(0, rawKey.size() - sizeof(int64_t));
     }
 
+    static std::string encodeVariant(const VariantType& v)  {
+        switch (v.which()) {
+            case VAR_INT64:
+                return encodeInt64(boost::get<int64_t>(v));
+            case VAR_DOUBLE:
+                return encodeDouble(boost::get<double>(v));
+            case VAR_BOOL: {
+                auto val = boost::get<bool>(v);
+                std::string raw;
+                raw.reserve(sizeof(bool));
+                raw.append(reinterpret_cast<const char*>(&val), sizeof(bool));
+                return raw;
+            }
+            case VAR_STR:
+                return boost::get<std::string>(v);
+            default:
+                std::string errMsg = folly::stringPrintf("Unknown VariantType: %d", v.which());
+                LOG(ERROR) << errMsg;
+        }
+        return "";
+    }
+
     /**
      * Default, positive number first bit is 0, negative number is 1 .
      * To keep the string in order, the first bit must to be inverse.
@@ -286,13 +306,6 @@ private:
     static constexpr uint32_t kEdgeMaskSet      = kTagEdgeMask;
     // Write Tag by |=
     static constexpr uint32_t kTagMaskSet       = ~kTagEdgeMask;
-
-    static constexpr int32_t kEdgeIndexLen = sizeof(PartitionID) + sizeof(IndexID)
-                                           + sizeof(VertexID) + sizeof(EdgeType)
-                                           + sizeof(EdgeRanking) + sizeof(VertexID);
-
-    static constexpr int32_t kVertexIndexLen = sizeof(PartitionID) + sizeof(IndexID)
-                                             + sizeof(VertexID);
 };
 
 }  // namespace nebula
