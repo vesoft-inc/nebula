@@ -1405,6 +1405,8 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
                 }
                 req.set_leader_partIds(std::move(leaderIds));
             }
+        } else {
+            req.set_leader_partIds(std::move(leaderIds));
         }
     }
     folly::Promise<StatusOr<bool>> promise;

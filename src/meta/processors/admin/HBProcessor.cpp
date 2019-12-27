@@ -27,6 +27,8 @@ void HBProcessor::process(const cpp2::HBReq& req) {
     }
 
     auto ret = kvstore::ResultCode::SUCCEEDED;
+    bool updateLeader = false;
+    int64_t lastUpdateTime;
     if (req.get_in_storaged()) {
         LOG(INFO) << "Receive heartbeat from " << host;
         ClusterID peerCluserId = req.get_cluster_id();
@@ -40,21 +42,26 @@ void HBProcessor::process(const cpp2::HBReq& req) {
             return;
         }
         HostInfo info(time::WallClock::fastNowInMilliSec());
-        ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info);
         if (req.__isset.leader_partIds) {
-            const auto& leaderIds = req.get_leader_partIds();
-            UNUSED(leaderIds);
-            // TODO(zhangguoqing) put the leader parts information into kvstore
+            ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info,
+                                                 req.get_leader_partIds());
+            updateLeader = true;
+            lastUpdateTime = time::WallClock::fastNowInMilliSec();
+            LastUpdateTimeMan::update(kvstore_, lastUpdateTime);
+        } else {
+            ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info);
+        }
+        if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+            auto leaderRet = kvstore_->partLeader(kDefaultSpaceId, kDefaultPartId);
+            if (nebula::ok(leaderRet)) {
+                resp_.set_leader(toThriftHost(nebula::value(leaderRet)));
+            }
         }
     }
     resp_.set_code(to(ret));
-    if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-        auto leaderRet = kvstore_->partLeader(kDefaultSpaceId, kDefaultPartId);
-        if (nebula::ok(leaderRet)) {
-            resp_.set_leader(toThriftHost(nebula::value(leaderRet)));
-        }
+    if (!updateLeader) {
+        lastUpdateTime = LastUpdateTimeMan::get(this->kvstore_);
     }
-    int64_t lastUpdateTime = LastUpdateTimeMan::get(this->kvstore_);
     resp_.set_last_update_time_in_ms(lastUpdateTime);
     onFinished();
 }
