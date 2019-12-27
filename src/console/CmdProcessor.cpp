@@ -396,7 +396,30 @@ bool CmdProcessor::processClientCmd(folly::StringPiece cmd,
 
     return false;
 }
+#define Kilo 1000.0
+#define Million 1000000.0
 
+void time_transformation(int32_t temp_time,
+                uint64_t temp_time1,
+                time::Duration dur,
+                cpp2::ExecutionResponse resp) {
+    if (temp_time < Kilo || temp_time1 < Kilo) {
+        std::cout << "Got " << resp.get_rows()->size()
+                      << " rows (Time spent: "
+                      << temp_time << "/"
+                      << dur.elapsedInUSec() << " us)\n";
+    } else if (temp_time/Kilo < Kilo) {
+        std::cout << "Got " << resp.get_rows()->size()
+                      << " rows (Time spent: "
+                      << resp.get_latency_in_us()/Kilo << "/"
+                      << dur.elapsedInMSec() << " ms)\n";
+    } else {
+        std::cout << "Got " << resp.get_rows()->size()
+                      << " rows (Time spent: "
+                      << resp.get_latency_in_us()/Million << "/"
+                      << dur.elapsedInSec() << " s)\n";
+    }
+}
 
 void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
     time::Duration dur;
@@ -419,16 +442,9 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
         } else {
             std::cout << "Execution succeeded (Time spent: ";
         }
-        if (resp.get_latency_in_us() < 1000 || dur.elapsedInUSec() < 1000) {
-            std::cout << resp.get_latency_in_us() << "/"
-                      << dur.elapsedInUSec() << " us)\n";
-        } else if (resp.get_latency_in_us() < 1000000 || dur.elapsedInUSec() < 1000000) {
-            std::cout << resp.get_latency_in_us() / 1000.0 << "/"
-                      << dur.elapsedInUSec() / 1000.0 << " ms)\n";
-        } else {
-            std::cout << resp.get_latency_in_us() / 1000000.0 << "/"
-                      << dur.elapsedInUSec() / 1000000.0 << " s)\n";
-        }
+        auto temp_time = resp.get_latency_in_us();
+        uint64_t temp_time1 = dur.elapsedInUSec();
+        time_transformation(temp_time, temp_time1, dur, resp);
         std::cout << std::endl;
    } else if (res == cpp2::ErrorCode::E_SYNTAX_ERROR) {
         static const std::regex range("at 1.([0-9]+)-([0-9]+)");
