@@ -19,18 +19,22 @@ void ScanVertexIndexProcessor::process(const cpp2::IndexScanRequest& req) {
         return;
     }
     index_ = iRet.value();
-    auto tagId = index_.schema;
+    auto tagId = index_.tagOrEdge;
 
     auto hintRet = buildIndexHint();
     if (hintRet != cpp2::ErrorCode::SUCCEEDED) {
         putResultCodes(hintRet, req.get_parts());
         return;
     }
-
-    auto schemaRet = createResultSchema(false, tagId, req.get_return_columns());
-    if (schemaRet != cpp2::ErrorCode::SUCCEEDED) {
-        putResultCodes(schemaRet, req.get_parts());
-        return;
+    returnColsNeed_ = !req.get_return_columns().empty();
+    if (returnColsNeed_) {
+        auto schemaRet = createResultSchema(false,
+                                            tagId,
+                                            req.get_return_columns());
+        if (schemaRet != cpp2::ErrorCode::SUCCEEDED) {
+            putResultCodes(schemaRet, req.get_parts());
+            return;
+        }
     }
 
     for (const auto & col : index_.get_cols()) {
@@ -56,15 +60,19 @@ void ScanVertexIndexProcessor::process(const cpp2::IndexScanRequest& req) {
                         this->pushResultCode(this->to(resultCode), part);
                     }
                 }
-                decltype(resp_.schema) s;
-                decltype(resp_.schema.columns) cols;
-                for (auto i = 0; i < static_cast<int64_t>(schema_->getNumFields()); i++) {
-                    cols.emplace_back(columnDef(schema_->getFieldName(i),
-                                      schema_->getFieldType(i).get_type()));
+                if (schema_ != nullptr) {
+                    decltype(resp_.schema) s;
+                    decltype(resp_.schema.columns) cols;
+                    for (auto i = 0; i < static_cast<int64_t>(schema_->getNumFields()); i++) {
+                        cols.emplace_back(columnDef(schema_->getFieldName(i),
+                                                    schema_->getFieldType(i).get_type()));
+                    }
+                    s.set_columns(std::move(cols));
+                    resp_.set_schema(std::move(s));
                 }
-                s.set_columns(std::move(cols));
-                resp_.set_schema(std::move(s));
-                resp_.set_rows(vertexRows_);
+                if (!vertexRows_.empty()) {
+                    resp_.set_rows(vertexRows_);
+                }
                 this->onFinished();
             });
 }
@@ -102,12 +110,17 @@ ScanVertexIndexProcessor::processVertices(PartitionID part, IndexID indexId, Tag
                     continue;
                 }
                 cpp2::VertexIndexData data;
-                auto rowRet = getVertexRow(part, tagId, key, &data);
-                if (rowRet == kvstore::SUCCEEDED) {
-                    std::lock_guard<std::mutex> lg(lock_);
-                    vertexRows_.emplace_back(std::move(data));
-                    ++cnt;
+                if (returnColsNeed_) {
+                    auto rowRet = getVertexRow(part, tagId, key, &data);
+                    if (rowRet != kvstore::SUCCEEDED) {
+                        return rowRet;
+                    }
+                } else {
+                    data.set_vertex_id(NebulaKeyUtils::getIndexVertexID(key));
                 }
+                std::lock_guard<std::mutex> lg(lock_);
+                vertexRows_.emplace_back(std::move(data));
+                ++cnt;
             }
         }
         return ret;
@@ -126,12 +139,17 @@ ScanVertexIndexProcessor::processVertices(PartitionID part, IndexID indexId, Tag
                     continue;
                 }
                 cpp2::VertexIndexData data;
-                auto rowRet = getVertexRow(part, tagId, key, &data);
-                if (rowRet == kvstore::SUCCEEDED) {
-                    std::lock_guard<std::mutex> lg(lock_);
-                    vertexRows_.emplace_back(std::move(data));
-                    ++cnt;
+                if (returnColsNeed_) {
+                    auto rowRet = getVertexRow(part, tagId, key, &data);
+                    if (rowRet != kvstore::SUCCEEDED) {
+                        return rowRet;
+                    }
+                } else {
+                    data.set_vertex_id(NebulaKeyUtils::getIndexVertexID(key));
                 }
+                std::lock_guard<std::mutex> lg(lock_);
+                vertexRows_.emplace_back(std::move(data));
+                ++cnt;
             }
         }
         return ret;

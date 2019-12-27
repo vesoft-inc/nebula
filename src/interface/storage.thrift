@@ -148,13 +148,13 @@ struct QueryResponse {
 
 struct ScanVertexResponse {
     1: required ResponseCommon             result,
-    2: required common.Schema              schema,
+    2: optional common.Schema              schema,
     3: optional list<VertexIndexData>      rows,
 }
 
 struct ScanEdgeResponse {
     1: required ResponseCommon             result,
-    2: required common.Schema              schema,
+    2: optional common.Schema              schema,
     3: optional list<Edge>                 rows,
 }
 
@@ -201,12 +201,6 @@ struct EdgeKey {
 struct Edge {
     1: EdgeKey key,
     2: binary props,
-}
-
-struct IndexItem {
-    1: required common.IndexID          index_id,
-    2: required i32                     schema,
-    3: required list<common.ColumnDef>  cols,
 }
 
 struct GetNeighborsRequest {

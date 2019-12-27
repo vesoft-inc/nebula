@@ -112,7 +112,6 @@ struct Pair {
     2: string value,
 }
 
-
 struct IndexHintItem {
     1: binary                first_str,
     2: binary                second_str,

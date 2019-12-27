@@ -15,7 +15,6 @@
 #include "storage/index/ScanEdgeIndexProcessor.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
-DECLARE_int32(load_data_interval_secs);
 
 namespace nebula {
 namespace storage {
@@ -30,19 +29,19 @@ std::string indexStr(RowReader* reader, const nebula::cpp2::ColumnDef& col) {
     auto&& v = value(std::move(res));
     switch (col.get_type().get_type()) {
         case nebula::cpp2::SupportedType::BOOL: {
-            return folly::to<std::string>(boost::get<bool >(v));
+            auto val = boost::get<bool>(v);
+            std::string raw;
+            raw.reserve(sizeof(bool));
+            raw.append(reinterpret_cast<const char*>(&val), sizeof(bool));
+            return raw;
         }
         case nebula::cpp2::SupportedType::INT:
         case nebula::cpp2::SupportedType::TIMESTAMP: {
-            std::string raw;
-            raw.reserve(sizeof(int64_t));
-            auto val = folly::Endian::big(boost::get<int64_t>(v));
-            raw.append(reinterpret_cast<const char*>(&val), sizeof(int64_t));
-            return raw;
+            return NebulaKeyUtils::encodeInt64(boost::get<int64_t>(v));
         }
         case nebula::cpp2::SupportedType::FLOAT:
         case nebula::cpp2::SupportedType::DOUBLE: {
-            return folly::to<std::string>(boost::get<double>(v));
+            return NebulaKeyUtils::encodeDouble(boost::get<double>(v));
         }
         case nebula::cpp2::SupportedType::STRING: {
             return boost::get<std::string>(v);
@@ -72,7 +71,7 @@ static std::string genEdgeIndexKey(meta::SchemaManager* schemaMan,
                                    GraphSpaceID spaceId,
                                    PartitionID partId,
                                    EdgeType type,
-                                   const cpp2::IndexItem &index,
+                                   const nebula::cpp2::IndexItem &index,
                                    VertexID src,
                                    VertexID dst) {
     auto reader = RowReader::getEdgePropReader(schemaMan,
@@ -95,7 +94,7 @@ static std::string genVertexIndexKey(meta::SchemaManager* schemaMan,
                                      GraphSpaceID spaceId,
                                      PartitionID partId,
                                      TagID tagId,
-                                     const cpp2::IndexItem &index,
+                                     const nebula::cpp2::IndexItem &index,
                                      VertexID vId) {
     auto reader = RowReader::getTagPropReader(schemaMan,
                                               prop,
@@ -156,8 +155,8 @@ static std::shared_ptr<meta::SchemaProviderIf> genTagSchemaProvider(
 static std::unique_ptr<meta::SchemaManager> mockSchemaMan(GraphSpaceID spaceId,
                                                           EdgeType edgeType,
                                                           TagID tagId,
-                                                          const storage::cpp2::IndexItem& vindex,
-                                                          const storage::cpp2::IndexItem& eindex) {
+                                                          const nebula::cpp2::IndexItem& vindex,
+                                                          const nebula::cpp2::IndexItem& eindex) {
     auto* schemaMan = new AdHocSchemaManager();
     schemaMan->addEdgeSchema(spaceId /*space id*/, edgeType /*edge type*/,
                              genEdgeSchemaProvider(10, 10));
@@ -174,8 +173,8 @@ void mockData(kvstore::KVStore* kv ,
               EdgeType edgeType,
               TagID tagId,
               GraphSpaceID spaceId,
-              const cpp2::IndexItem &vindex,
-              const cpp2::IndexItem &eindex) {
+              const nebula::cpp2::IndexItem &vindex,
+              const nebula::cpp2::IndexItem &eindex) {
     for (auto partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
         for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
@@ -224,9 +223,9 @@ void mockData(kvstore::KVStore* kv ,
     }
 }
 
-static cpp2::IndexItem mockEdgeIndex(int32_t intFieldsNum,
-                                     int32_t stringFieldsNum,
-                                     EdgeType edgeType) {
+static nebula::cpp2::IndexItem mockEdgeIndex(int32_t intFieldsNum,
+                                             int32_t stringFieldsNum,
+                                             EdgeType edgeType) {
     std::vector<nebula::cpp2::ColumnDef> cols;
     for (auto i = 0; i < intFieldsNum; i++) {
         nebula::cpp2::ColumnDef column;
@@ -240,14 +239,16 @@ static cpp2::IndexItem mockEdgeIndex(int32_t intFieldsNum,
         column.type.type = nebula::cpp2::SupportedType::STRING;
         cols.emplace_back(std::move(column));
     }
-    // indexId can be same with edgeType
-    return cpp2::IndexItem(apache::thrift::FragileConstructor::FRAGILE,
-                            edgeType, edgeType, std::move(cols));
+    nebula::cpp2::IndexItem indexItem;
+    indexItem.set_index_id(edgeType);
+    indexItem.set_tagOrEdge(edgeType);
+    indexItem.set_cols(std::move(cols));
+    return indexItem;
 }
 
-static cpp2::IndexItem mockVertexIndex(int32_t intFieldsNum,
-                                       int32_t stringFieldsNum,
-                                       TagID tagId) {
+static nebula::cpp2::IndexItem mockVertexIndex(int32_t intFieldsNum,
+                                               int32_t stringFieldsNum,
+                                               TagID tagId) {
     std::vector<nebula::cpp2::ColumnDef> cols;
     for (auto i = 0; i < intFieldsNum; i++) {
         nebula::cpp2::ColumnDef column;
@@ -261,8 +262,11 @@ static cpp2::IndexItem mockVertexIndex(int32_t intFieldsNum,
         column.type.type = nebula::cpp2::SupportedType::STRING;
         cols.emplace_back(std::move(column));
     }
-    return cpp2::IndexItem(apache::thrift::FragileConstructor::FRAGILE,
-                           tagId, tagId, std::move(cols));
+    nebula::cpp2::IndexItem indexItem;
+    indexItem.set_index_id(tagId);
+    indexItem.set_tagOrEdge(tagId);
+    indexItem.set_cols(std::move(cols));
+    return indexItem;
 }
 
 TEST(IndexScanTest, VertexScanTest) {
@@ -277,7 +281,6 @@ TEST(IndexScanTest, VertexScanTest) {
     auto schemaMan = mockSchemaMan(spaceId, type, tagId, vindex, eindex);
 
     mockData(kv.get(), schemaMan.get(), type, tagId, spaceId, vindex, eindex);
-    sleep(FLAGS_load_data_interval_secs + 1);
     {
         auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
         auto* processor = ScanVertexIndexProcessor::instance(kv.get(), schemaMan.get(), nullptr,
@@ -294,19 +297,16 @@ TEST(IndexScanTest, VertexScanTest) {
         cols.emplace_back("tag_3001_col_3");
         cols.emplace_back("tag_3001_col_4");
         decltype(req.hint) hint;
-        std::string braw, eraw;
-        braw.reserve(sizeof(int64_t));
-        eraw.reserve(sizeof(int64_t));
-        auto begin = folly::Endian::big(boost::get<int64_t>(1));
-        braw.append(reinterpret_cast<const char*>(&begin), sizeof(int64_t));
-        auto end = folly::Endian::big(boost::get<int64_t>(2));
-        eraw.append(reinterpret_cast<const char*>(&end), sizeof(int64_t));
+        auto braw = NebulaKeyUtils::encodeInt64(boost::get<int64_t>(1));
+        auto eraw = NebulaKeyUtils::encodeInt64(boost::get<int64_t>(2));
         hint.set_index_id(tagId);
         hint.set_is_range(false);
         decltype(hint.hint_items) items;
-        items.emplace_back(nebula::cpp2::IndexHintItem(
-                apache::thrift::FragileConstructor::FRAGILE,
-                braw, eraw, nebula::cpp2::SupportedType::INT));
+        nebula::cpp2::IndexHintItem hintItem;
+        hintItem.set_first_str(std::move(braw));
+        hintItem.set_second_str(std::move(eraw));
+        hintItem.set_type(nebula::cpp2::SupportedType::INT);
+        items.emplace_back(std::move(hintItem));
         hint.set_hint_items(items);
 
         req.set_space_id(spaceId);
@@ -319,7 +319,7 @@ TEST(IndexScanTest, VertexScanTest) {
         auto resp = std::move(f).get();
 
         EXPECT_EQ(0, resp.result.failed_codes.size());
-        EXPECT_EQ(4, resp.get_schema().get_columns().size());
+        EXPECT_EQ(4, resp.get_schema()->get_columns().size());
         EXPECT_EQ(30, resp.rows.size());
     }
 
@@ -343,19 +343,16 @@ TEST(IndexScanTest, VertexScanTest) {
         cols.emplace_back("col_13");
         cols.emplace_back("col_14");
         decltype(req.hint) hint;
-        std::string braw, eraw;
-        braw.reserve(sizeof(int64_t));
-        eraw.reserve(sizeof(int64_t));
-        auto begin = folly::Endian::big(boost::get<int64_t>(1));
-        braw.append(reinterpret_cast<const char*>(&begin), sizeof(int64_t));
-        auto end = folly::Endian::big(boost::get<int64_t>(2));
-        eraw.append(reinterpret_cast<const char*>(&end), sizeof(int64_t));
+        auto braw = NebulaKeyUtils::encodeInt64(boost::get<int64_t>(1));
+        auto eraw = NebulaKeyUtils::encodeInt64(boost::get<int64_t>(2));
         hint.set_is_range(false);
         hint.set_index_id(type);
         decltype(hint.hint_items) items;
-        items.emplace_back(nebula::cpp2::IndexHintItem(
-                apache::thrift::FragileConstructor::FRAGILE,
-                braw, eraw, nebula::cpp2::SupportedType::INT));
+        nebula::cpp2::IndexHintItem hintItem;
+        hintItem.set_first_str(std::move(braw));
+        hintItem.set_second_str(std::move(eraw));
+        hintItem.set_type(nebula::cpp2::SupportedType::INT);
+        items.emplace_back(std::move(hintItem));
         hint.set_hint_items(items);
         req.set_space_id(spaceId);
         req.set_parts(std::move(parts));
@@ -367,7 +364,7 @@ TEST(IndexScanTest, VertexScanTest) {
         auto resp = std::move(f).get();
 
         EXPECT_EQ(0, resp.result.failed_codes.size());
-        EXPECT_EQ(8, resp.get_schema().get_columns().size());
+        EXPECT_EQ(8, resp.get_schema()->get_columns().size());
         EXPECT_EQ(210, resp.rows.size());
     }
 }
@@ -399,8 +396,10 @@ TEST(IndexScanTest, VertexStringTypeTest) {
         column.type.type = nebula::cpp2::SupportedType::STRING;
         cols.emplace_back(std::move(column));
     }
-    auto index = cpp2::IndexItem(apache::thrift::FragileConstructor::FRAGILE,
-                                 tagId, tagId, std::move(cols));
+    nebula::cpp2::IndexItem index;
+    index.set_index_id(tagId);
+    index.set_tagOrEdge(tagId);
+    index.set_cols(std::move(cols));
     schemaMan->addTagIndex(spaceId, index);
 
     std::vector<kvstore::KV> data;
@@ -443,9 +442,11 @@ TEST(IndexScanTest, VertexStringTypeTest) {
         hint.set_index_id(tagId);
         hint.set_is_range(false);
         decltype(hint.hint_items) items;
-        items.emplace_back(nebula::cpp2::IndexHintItem(
-                apache::thrift::FragileConstructor::FRAGILE,
-                "AABB", "", nebula::cpp2::SupportedType::STRING));
+        nebula::cpp2::IndexHintItem hintItem;
+        hintItem.set_first_str("AABB");
+        hintItem.set_second_str("");
+        hintItem.set_type(nebula::cpp2::SupportedType::STRING);
+        items.emplace_back(hintItem);
         hint.set_hint_items(items);
         req.set_space_id(spaceId);
         req.set_parts(std::move(parts));
@@ -457,7 +458,7 @@ TEST(IndexScanTest, VertexStringTypeTest) {
         auto resp = std::move(f).get();
 
         EXPECT_EQ(0, resp.result.failed_codes.size());
-        EXPECT_EQ(2, resp.get_schema().get_columns().size());
+        EXPECT_EQ(2, resp.get_schema()->get_columns().size());
         EXPECT_EQ(1, resp.rows.size());
     }
 
@@ -475,9 +476,11 @@ TEST(IndexScanTest, VertexStringTypeTest) {
         hint.set_is_range(false);
         hint.set_index_id(tagId);
         decltype(hint.hint_items) items;
-        items.emplace_back(nebula::cpp2::IndexHintItem(
-                apache::thrift::FragileConstructor::FRAGILE,
-                "AA", "", nebula::cpp2::SupportedType::STRING));
+        nebula::cpp2::IndexHintItem hintItem;
+        hintItem.set_first_str("AA");
+        hintItem.set_second_str("");
+        hintItem.set_type(nebula::cpp2::SupportedType::STRING);
+        items.emplace_back(std::move(hintItem));
         hint.set_hint_items(items);
         req.set_space_id(spaceId);
         req.set_parts(std::move(parts));
@@ -489,7 +492,7 @@ TEST(IndexScanTest, VertexStringTypeTest) {
         auto resp = std::move(f).get();
 
         EXPECT_EQ(0, resp.result.failed_codes.size());
-        EXPECT_EQ(2, resp.get_schema().get_columns().size());
+        EXPECT_EQ(2, resp.get_schema()->get_columns().size());
         EXPECT_EQ(2, resp.rows.size());
     }
 }

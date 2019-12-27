@@ -60,7 +60,7 @@ kvstore::ResultCode ScanIndexBaseProcessor<REQ, RESP>::getVertexRow(PartitionID 
                                                                     TagID tagId,
                                                                     const folly::StringPiece& key,
                                                                     cpp2::VertexIndexData* data) {
-    auto vId = NebulaKeyUtils::getVertexID(key);
+    auto vId = NebulaKeyUtils::getIndexVertexID(key);
     data->set_vertex_id(vId);
 
     if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
@@ -114,8 +114,13 @@ kvstore::ResultCode ScanIndexBaseProcessor<REQ, RESP>::getEdgeRow(PartitionID pa
     auto rank = NebulaKeyUtils::getIndexRank(key);
     auto dst = NebulaKeyUtils::getIndexDstId(key);
 
-    data->set_key(cpp2::EdgeKey(apache::thrift::FragileConstructor::FRAGILE,
-                                src, edgeType, rank, dst));
+    cpp2::EdgeKey edgeKey;
+    edgeKey.set_src(src);
+    edgeKey.set_edge_type(edgeType);
+    edgeKey.set_ranking(rank);
+    edgeKey.set_dst(dst);
+
+    data->set_key(std::move(edgeKey));
 
     auto prefix = NebulaKeyUtils::edgePrefix(partId, src, edgeType, rank, dst);
     std::unique_ptr<kvstore::KVIterator> iter;
