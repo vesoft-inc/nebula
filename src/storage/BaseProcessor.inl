@@ -127,5 +127,41 @@ BaseProcessor<RESP>::collectIndexValues(RowReader* reader,
 }
     
 
+template <typename RESP>
+void BaseProcessor<RESP>::collectProps(RowReader* reader,
+                                       const std::vector<PropContext>& props,
+                                       Collector* collector) {
+    for (auto& prop : props) {
+        if (reader != nullptr) {
+            const auto& name = prop.prop_.get_name();
+            auto res = RowReader::getPropByName(reader, name);
+            if (!ok(res)) {
+                VLOG(1) << "Skip the bad value for prop " << name;
+                continue;
+            }
+            auto&& v = value(std::move(res));
+            if (prop.returned_) {
+                switch (v.which()) {
+                    case VAR_INT64:
+                        collector->collectInt64(boost::get<int64_t>(v), prop);
+                        break;
+                    case VAR_DOUBLE:
+                        collector->collectDouble(boost::get<double>(v), prop);
+                        break;
+                    case VAR_BOOL:
+                        collector->collectBool(boost::get<bool>(v), prop);
+                        break;
+                    case VAR_STR:
+                        collector->collectString(boost::get<std::string>(v), prop);
+                        break;
+                    default:
+                        LOG(FATAL) << "Unknown VariantType: " << v.which();
+                }
+            }
+        }
+    }
+}
+    
+
 }  // namespace storage
 }  // namespace nebula

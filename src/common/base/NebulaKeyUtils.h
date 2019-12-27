@@ -123,12 +123,6 @@ public:
         return readInt<VertexID>(rawKey.data() + offset, sizeof(VertexID));
     }
 
-    static TagID getVertexId(const folly::StringPiece& rawKey) {
-        CHECK_EQ(rawKey.size(), kVertexLen);
-        auto offset = sizeof(PartitionID);
-        return readInt<VertexID>(rawKey.data() + offset, sizeof(VertexID));
-    }
-
     static TagID getTagId(const folly::StringPiece& rawKey) {
         CHECK_EQ(rawKey.size(), kVertexLen);
         auto offset = sizeof(PartitionID) + sizeof(VertexID);

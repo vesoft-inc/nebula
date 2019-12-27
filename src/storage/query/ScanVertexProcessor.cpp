@@ -9,6 +9,10 @@
 #include <limits>
 #include "time/WallClock.h"
 #include "kvstore/RocksEngine.h"
+#include "dataman/RowReader.h"
+#include "dataman/RowWriter.h"
+#include "meta/NebulaSchemaProvider.h"
+
 
 DECLARE_int32(max_scan_block_size);
 
@@ -16,39 +20,36 @@ namespace nebula {
 namespace storage {
 
 void ScanVertexProcessor::process(const cpp2::ScanVertexRequest& req) {
-    auto spaceId = req.get_space_id();
-    auto partId = req.get_part_id();
-    std::string start;
-    std::string prefix = NebulaKeyUtils::prefix(partId);
+    spaceId_ = req.get_space_id();
+    partId_ = req.get_part_id();
+    returnAllColumns_ = req.get_all_columns();
 
+    auto retCode = checkAndBuildContexts(req);
+    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+        this->pushResultCode(retCode, partId_);
+        this->onFinished();
+        return;
+    }
+
+    std::string start;
+    std::string prefix = NebulaKeyUtils::prefix(partId_);
     if (req.get_cursor() == nullptr || req.get_cursor()->empty()) {
-        if (req.get_vertex_id() != nullptr) {
-            auto vId = *req.get_vertex_id();
-            start = NebulaKeyUtils::vertexPrefix(partId, vId);
-        } else {
-            start = NebulaKeyUtils::prefix(partId);
-        }
+        start = NebulaKeyUtils::prefix(partId_);
     } else {
         start = *req.get_cursor();
     }
 
-    if (req.get_vertex_id() != nullptr) {
-        auto vId = *req.get_vertex_id();
-        prefix = NebulaKeyUtils::vertexPrefix(partId, vId);
-    }
-
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto kvRet = doRangeWithPrefix(spaceId, partId, start, prefix, &iter);
+    auto kvRet = doRangeWithPrefix(spaceId_, partId_, start, prefix, &iter);
     if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        pushResultCode(to(kvRet), partId);
+        pushResultCode(to(kvRet), partId_);
         onFinished();
         return;
     }
 
-    std::unordered_map<TagID, nebula::cpp2::Schema> vertexSchema;
     std::vector<cpp2::ScanVertex> vertexData;
     int32_t rowCount = 0;
-    int32_t rowLimit = req.get_row_limit();
+    int32_t rowLimit = req.get_limit();
     int64_t startTime = req.get_start_time(), endTime = req.get_end_time();
     int32_t blockSize = 0;
 
@@ -67,37 +68,95 @@ void ScanVertexProcessor::process(const cpp2::ScanVertexRequest& req) {
         }
 
         TagID tagId = NebulaKeyUtils::getTagId(key);
-
-        // schema
-        if (vertexSchema.find(tagId) == vertexSchema.end()) {
-            // need to handle schema change
-            auto provider = schemaMan_->getTagSchema(spaceId, tagId);
-            if (provider != nullptr) {
-                vertexSchema.emplace(tagId, std::move(provider->toSchema()));
-            } else {
-                continue;
-            }
+        auto ctxIter = tagContexts_.find(tagId);
+        if (ctxIter == tagContexts_.end()) {
+            continue;
         }
 
-        auto value = iter->val();
+        VertexID vId = NebulaKeyUtils::getVertexId(key);
         cpp2::ScanVertex data;
+        data.set_vertexId(vId);
         data.set_tagId(tagId);
-        data.set_key(key.str());
-        data.set_value(value.str());
+        auto value = iter->val();
+        if (returnAllColumns_) {
+            // return all columns
+            data.set_value(value.str());
+        } else if (!ctxIter->second.empty()) {
+            // only return specified columns
+            auto reader = RowReader::getTagPropReader(schemaMan_, value, spaceId_, tagId);
+            RowWriter writer;
+            PropsCollector collector(&writer);
+            auto& props = ctxIter->second;
+            collectProps(reader.get(), props, &collector);
+            data.set_value(writer.encode());
+        }
+
         vertexData.emplace_back(std::move(data));
         rowCount++;
         blockSize += key.size() + value.size();
     }
 
-    resp_.set_vertex_schema(std::move(vertexSchema));
+    resp_.set_vertex_schema(std::move(tagSchema_));
     resp_.set_vertex_data(std::move(vertexData));
     if (iter->valid()) {
         resp_.set_has_next(true);
-        resp_.set_next_cursor(std::move(iter->key().str()));
+        resp_.set_next_cursor(iter->key().str());
     } else {
         resp_.set_has_next(false);
     }
     onFinished();
+}
+
+cpp2::ErrorCode ScanVertexProcessor::checkAndBuildContexts(const cpp2::ScanVertexRequest& req) {
+    for (const auto& tagIter : req.get_return_columns()) {
+        int32_t index = 0;
+        TagID tagId = tagIter.first;
+        std::vector<PropContext> propContexts;
+        auto schema = this->schemaMan_->getTagSchema(spaceId_, tagId);
+        if (!schema) {
+            return cpp2::ErrorCode::E_TAG_NOT_FOUND;
+        }
+
+        if (returnAllColumns_) {
+            // return all columns
+            tagContexts_.emplace(tagId, std::move(propContexts));
+            tagSchema_.emplace(tagId, schema->toSchema());
+            continue;
+        } else if (tagIter.second.empty()) {
+            // return none columns
+            tagContexts_.emplace(tagId, std::move(propContexts));
+            continue;
+        }
+
+        // return specified columns
+        meta::NebulaSchemaProvider retSchema(schema->getVersion());
+        // return specifid columns
+        for (const auto& col : tagIter.second) {
+            PropContext prop;
+            switch (col.owner) {
+                case cpp2::PropOwner::SOURCE: {
+                    auto ftype = schema->getFieldType(col.name);
+                    if (UNLIKELY(ftype == CommonConstants::kInvalidValueType())) {
+                        return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
+                    }
+                    prop.type_ = ftype;
+                    retSchema.addField(col.name, std::move(ftype));
+
+                    prop.retIndex_ = index++;
+                    prop.prop_ = std::move(col);
+                    prop.returned_ = true;
+                    propContexts.emplace_back(std::move(prop));
+                    break;
+                }
+                default: {
+                    continue;
+                }
+            }
+        }
+        tagContexts_.emplace(tagId, std::move(propContexts));
+        tagSchema_.emplace(tagId, retSchema.toSchema());
+    }
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace storage

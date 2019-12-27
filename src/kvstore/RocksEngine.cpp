@@ -206,7 +206,7 @@ ResultCode RocksEngine::rangeWithPrefix(const std::string& start,
     if (iter) {
         iter->Seek(rocksdb::Slice(start));
     }
-    storageIter->reset(new RocksRangeWithPrefixIter(iter, start, prefix));
+    storageIter->reset(new RocksPrefixIter(iter, prefix));
     return ResultCode::SUCCEEDED;
 }
 

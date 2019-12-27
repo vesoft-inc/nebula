@@ -13,7 +13,8 @@
 namespace nebula {
 namespace storage {
 
-class ScanVertexProcessor : public BaseProcessor<cpp2::ScanVertexResponse> {
+class ScanVertexProcessor
+    : public BaseProcessor<cpp2::ScanVertexResponse> {
 public:
     static ScanVertexProcessor* instance(kvstore::KVStore* kvstore,
                                          meta::SchemaManager* schemaMan,
@@ -28,6 +29,14 @@ private:
                                  meta::SchemaManager* schemaMan,
                                  stats::Stats* stats)
             : BaseProcessor<cpp2::ScanVertexResponse>(kvstore, schemaMan, stats) {}
+
+    cpp2::ErrorCode checkAndBuildContexts(const cpp2::ScanVertexRequest& req);
+
+    std::unordered_map<TagID, std::vector<PropContext>> tagContexts_;
+    std::unordered_map<TagID, nebula::cpp2::Schema> tagSchema_;
+    bool returnAllColumns_{false};
+    GraphSpaceID spaceId_;
+    PartitionID partId_;
 };
 
 }  // namespace storage

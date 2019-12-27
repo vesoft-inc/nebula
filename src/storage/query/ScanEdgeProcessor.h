@@ -13,7 +13,8 @@
 namespace nebula {
 namespace storage {
 
-class ScanEdgeProcessor : public BaseProcessor<cpp2::ScanEdgeResponse> {
+class ScanEdgeProcessor
+    : public BaseProcessor<cpp2::ScanEdgeResponse> {
 public:
     static ScanEdgeProcessor* instance(kvstore::KVStore* kvstore,
                                        meta::SchemaManager* schemaMan,
@@ -28,6 +29,14 @@ private:
                                meta::SchemaManager* schemaMan,
                                stats::Stats* stats)
             : BaseProcessor<cpp2::ScanEdgeResponse>(kvstore, schemaMan, stats) {}
+
+    cpp2::ErrorCode checkAndBuildContexts(const cpp2::ScanEdgeRequest& req);
+
+    std::unordered_map<EdgeType, std::vector<PropContext>> edgeContexts_;
+    std::unordered_map<EdgeType, nebula::cpp2::Schema> edgeSchema_;
+    bool returnAllColumns_{false};
+    GraphSpaceID spaceId_;
+    PartitionID partId_;
 };
 
 }  // namespace storage

@@ -315,27 +315,28 @@ struct ScanEdgeRequest {
     2: common.PartitionID part_id,
     // start key of this block
     3: optional binary cursor,
-    // vertex ids used as prefix
-    4: optional common.VertexID vertex_id,
+    // If specified, only return specified columns, if not, no columns are returned
+    4: map<common.EdgeType, list<PropDef>> (cpp.template = "std::unordered_map") return_columns,
+    5: bool all_columns,
     // max row count of edge in this response
-    5: i32 row_limit,
-    6: i64 start_time,
-    7: i64 end_time,
-    8: i32 max_versions,                        // support later
-}
-
-struct ScanEdge {
-    1: common.EdgeType type,
-    2: binary          key,
-    3: binary          value,                   // decode according to edge_schema.
+    6: i32 limit,
+    7: i64 start_time,
+    8: i64 end_time,
 }
 
 struct ScanEdgeResponse {
     1: required ResponseCommon result,
-    2: optional map<common.EdgeType, common.Schema>(cpp.template = "std::unordered_map")    edge_schema,
-    3: optional list<ScanEdge> edge_data,
+    2: map<common.EdgeType, common.Schema> (cpp.template = "std::unordered_map") edge_schema,
+    3: list<ScanEdge> edge_data,
     4: bool has_next,
-    5: binary next_cursor,                      // next start key of scan
+    5: binary next_cursor, // next start key of scan
+}
+
+struct ScanEdge {
+    1: common.VertexID src,
+    2: common.EdgeType type,
+    3: common.VertexID dst,
+    4: binary value, // decode according to edge_schema.
 }
 
 struct ScanVertexRequest {
@@ -343,27 +344,27 @@ struct ScanVertexRequest {
     2: common.PartitionID part_id,
     // start key of this block
     3: optional binary cursor,
-    // vertex ids used as prefix
-    4: optional common.VertexID vertex_id,
+    // If specified, only return specified columns, if not, no columns are returned
+    4: map<common.TagID, list<PropDef>> (cpp.template = "std::unordered_map") return_columns,
+    5: bool all_columns,
     // max row count of tag in this response
-    5: i32 row_limit,
-    6: i64 start_time,
-    7: i64 end_time,
-    8: i32 max_versions,                        // support later
+    6: i32 limit,
+    7: i64 start_time,
+    8: i64 end_time,
 }
 
 struct ScanVertex {
-    1: common.TagID     tagId,
-    2: binary           key,
+    1: common.VertexID  vertexId,
+    2: common.TagID     tagId,
     3: binary           value,                  // decode according to vertex_schema.
 }
 
 struct ScanVertexResponse {
     1: required ResponseCommon result,
-    2: optional map<common.TagID, common.Schema>(cpp.template = "std::unordered_map")    vertex_schema,
-    3: optional list<ScanVertex> vertex_data,
+    2: map<common.TagID, common.Schema> (cpp.template = "std::unordered_map") vertex_schema,
+    3: list<ScanVertex> vertex_data,
     4: bool has_next,
-    5: binary next_cursor,                      // next start key of scan
+    5: binary next_cursor,          // next start key of scan
 }
 
 struct PutRequest {

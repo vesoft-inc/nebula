@@ -56,8 +56,7 @@ std::string ResultSchemaProvider::ResultSchemaField::getDefaultValue() const {
  *
  **********************************/
 ResultSchemaProvider::ResultSchemaProvider(Schema schema)
-        : columns_(std::move(schema.get_columns()))
-        , schemaProp_(std::move(schema.get_schema_prop())) {
+        : columns_(std::move(schema.get_columns())) {
     for (int64_t i = 0; i < static_cast<int64_t>(columns_.size()); i++) {
         const std::string& name = columns_[i].get_name();
         nameIndex_.emplace(std::make_pair(SpookyHashV2::Hash64(name.data(), name.size(), 0), i));
@@ -127,7 +126,6 @@ std::shared_ptr<const meta::SchemaProviderIf::Field> ResultSchemaProvider::field
 nebula::cpp2::Schema ResultSchemaProvider::toSchema() const {
     nebula::cpp2::Schema schema;
     schema.set_columns(columns_);
-    schema.set_schema_prop(schemaProp_);
     return schema;
 }
 

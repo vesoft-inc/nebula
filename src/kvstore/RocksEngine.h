@@ -52,41 +52,6 @@ private:
     rocksdb::Slice end_;
 };
 
-class RocksRangeWithPrefixIter : public KVIterator {
-public:
-    RocksRangeWithPrefixIter(rocksdb::Iterator* iter, rocksdb::Slice start, rocksdb::Slice prefix)
-        : iter_(iter)
-        , start_(start)
-        , prefix_(prefix) {}
-
-    ~RocksRangeWithPrefixIter()  = default;
-
-    bool valid() const override {
-        return !!iter_ && iter_->Valid() && (iter_->key().starts_with(prefix_));
-    }
-
-    void next() override {
-        iter_->Next();
-    }
-
-    void prev() override {
-        iter_->Prev();
-    }
-
-    folly::StringPiece key() const override {
-        return folly::StringPiece(iter_->key().data(), iter_->key().size());
-    }
-
-    folly::StringPiece val() const override {
-        return folly::StringPiece(iter_->value().data(), iter_->value().size());
-    }
-
-private:
-    std::unique_ptr<rocksdb::Iterator> iter_;
-    rocksdb::Slice start_;
-    rocksdb::Slice prefix_;
-};
-
 class RocksPrefixIter : public KVIterator {
 public:
     RocksPrefixIter(rocksdb::Iterator* iter, rocksdb::Slice prefix)
@@ -115,7 +80,7 @@ public:
         return folly::StringPiece(iter_->value().data(), iter_->value().size());
     }
 
-private:
+protected:
     std::unique_ptr<rocksdb::Iterator> iter_;
     rocksdb::Slice prefix_;
 };

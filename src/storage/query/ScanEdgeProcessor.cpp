@@ -9,6 +9,9 @@
 #include <limits>
 #include "time/WallClock.h"
 #include "kvstore/RocksEngine.h"
+#include "dataman/RowReader.h"
+#include "dataman/RowWriter.h"
+#include "meta/NebulaSchemaProvider.h"
 
 DEFINE_int32(max_scan_block_size, 4 * 1024 * 1024, "Max size of a respsonse block");
 
@@ -16,39 +19,36 @@ namespace nebula {
 namespace storage {
 
 void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
-    auto spaceId = req.get_space_id();
-    auto partId = req.get_part_id();
-    std::string start;
-    std::string prefix = NebulaKeyUtils::prefix(partId);
+    spaceId_ = req.get_space_id();
+    partId_ = req.get_part_id();
+    returnAllColumns_ = req.get_all_columns();
 
+    auto retCode = checkAndBuildContexts(req);
+    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+        this->pushResultCode(retCode, partId_);
+        this->onFinished();
+        return;
+    }
+
+    std::string start;
+    std::string prefix = NebulaKeyUtils::prefix(partId_);
     if (req.get_cursor() == nullptr || req.get_cursor()->empty()) {
-        if (req.get_vertex_id() != nullptr) {
-            auto vId = *req.get_vertex_id();
-            start = NebulaKeyUtils::edgePrefix(partId, vId);
-        } else {
-            start = NebulaKeyUtils::prefix(partId);
-        }
+        start = NebulaKeyUtils::prefix(partId_);
     } else {
         start = *req.get_cursor();
     }
 
-    if (req.get_vertex_id() != nullptr) {
-        auto vId = *req.get_vertex_id();
-        prefix = NebulaKeyUtils::edgePrefix(partId, vId);
-    }
-
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto kvRet = doRangeWithPrefix(spaceId, partId, start, prefix, &iter);
+    auto kvRet = doRangeWithPrefix(spaceId_, partId_, start, prefix, &iter);
     if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        pushResultCode(to(kvRet), partId);
+        pushResultCode(to(kvRet), partId_);
         onFinished();
         return;
     }
 
-    std::unordered_map<EdgeType, nebula::cpp2::Schema> edgeSchema;
     std::vector<cpp2::ScanEdge> edgeData;
     int32_t rowCount = 0;
-    int32_t rowLimit = req.get_row_limit();
+    int32_t rowLimit = req.get_limit();
     int64_t startTime = req.get_start_time(), endTime = req.get_end_time();
     int32_t blockSize = 0;
 
@@ -71,36 +71,102 @@ void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
             continue;
         }
 
-        // schema
-        if (edgeSchema.find(edgeType) == edgeSchema.end()) {
-            // need to handle schema change
-            auto provider = schemaMan_->getEdgeSchema(spaceId, edgeType);
-            if (provider != nullptr) {
-                edgeSchema.emplace(edgeType, std::move(provider->toSchema()));
-            } else {
-                continue;
-            }
+        auto ctxIter = edgeContexts_.find(edgeType);
+        if (ctxIter == edgeContexts_.end()) {
+            continue;
         }
 
-        auto value = iter->val();
+        auto srcId = NebulaKeyUtils::getSrcId(key);
+        auto dstId = NebulaKeyUtils::getDstId(key);
         cpp2::ScanEdge data;
+        data.set_src(srcId);
         data.set_type(edgeType);
-        data.set_key(key.str());
-        data.set_value(value.str());
+        data.set_dst(dstId);
+        auto value = iter->val();
+        if (returnAllColumns_) {
+            // return all columns
+            data.set_value(value.str());
+        } else if (!ctxIter->second.empty()) {
+            // only return specified columns
+            auto reader = RowReader::getEdgePropReader(schemaMan_, value, spaceId_, edgeType);
+            RowWriter writer;
+            PropsCollector collector(&writer);
+            auto& props = ctxIter->second;
+            collectProps(reader.get(), props, &collector);
+            data.set_value(writer.encode());
+        }
+
         edgeData.emplace_back(std::move(data));
         rowCount++;
         blockSize += key.size() + value.size();
     }
 
-    resp_.set_edge_schema(std::move(edgeSchema));
+    resp_.set_edge_schema(std::move(edgeSchema_));
     resp_.set_edge_data(std::move(edgeData));
     if (iter->valid()) {
         resp_.set_has_next(true);
-        resp_.set_next_cursor(std::move(iter->key().str()));
+        resp_.set_next_cursor(iter->key().str());
     } else {
         resp_.set_has_next(false);
     }
     onFinished();
+}
+
+cpp2::ErrorCode ScanEdgeProcessor::checkAndBuildContexts(const cpp2::ScanEdgeRequest& req) {
+    for (const auto& edgeIter : req.get_return_columns()) {
+        int32_t index = 0;
+        EdgeType edgeType = edgeIter.first;
+        std::vector<PropContext> propContexts;
+        auto schema = this->schemaMan_->getEdgeSchema(spaceId_, edgeType);
+        if (!schema) {
+            return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+        }
+
+        if (returnAllColumns_) {
+            // return all columns
+            edgeContexts_.emplace(edgeType, std::move(propContexts));
+            edgeSchema_.emplace(edgeType, schema->toSchema());
+            continue;
+        } else if (edgeIter.second.empty()) {
+            // return none columns
+            edgeContexts_.emplace(edgeType, std::move(propContexts));
+            continue;
+        }
+
+        // return specified columns
+        meta::NebulaSchemaProvider retSchema(schema->getVersion());
+        // return specifid columns
+        for (const auto& col : edgeIter.second) {
+            PropContext prop;
+            switch (col.owner) {
+                case cpp2::PropOwner::EDGE: {
+                    if (col.id.get_edge_type() > 0) {
+                        // Only outBound have properties on edge.
+                        auto ftype = schema->getFieldType(col.name);
+                        if (UNLIKELY(ftype == CommonConstants::kInvalidValueType())) {
+                            return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
+                        }
+                        prop.type_ = ftype;
+                        retSchema.addField(col.name, std::move(ftype));
+                    } else {
+                        VLOG(3) << "InBound has none props, skip it!";
+                        break;
+                    }
+                    prop.retIndex_ = index++;
+                    prop.prop_ = std::move(col);
+                    prop.returned_ = true;
+                    propContexts.emplace_back(std::move(prop));
+                    break;
+                }
+                default: {
+                    continue;
+                }
+            }
+        }
+        edgeContexts_.emplace(edgeType, std::move(propContexts));
+        edgeSchema_.emplace(edgeType, retSchema.toSchema());
+    }
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace storage
