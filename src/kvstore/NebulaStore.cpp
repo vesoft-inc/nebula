@@ -581,13 +581,23 @@ ResultCode NebulaStore::compact(GraphSpaceID spaceId) {
         return error(spaceRet);
     }
     auto space = nebula::value(spaceRet);
+
+    auto code = ResultCode::SUCCEEDED;
+    std::vector<std::thread> threads;
     for (auto& engine : space->engines_) {
-        auto code = engine->compact();
-        if (code != ResultCode::SUCCEEDED) {
-            return code;
-        }
+        threads.emplace_back(std::thread([&engine, &code] {
+            auto ret = engine->compact();
+            if (ret != ResultCode::SUCCEEDED) {
+                code = ret;
+            }
+        }));
     }
-    return ResultCode::SUCCEEDED;
+
+    // Wait for all threads to finish
+    for (auto& t : threads) {
+        t.join();
+    }
+    return code;
 }
 
 ResultCode NebulaStore::flush(GraphSpaceID spaceId) {
