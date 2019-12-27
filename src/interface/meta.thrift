@@ -392,11 +392,14 @@ struct HBResp {
     1: ErrorCode code,
     2: common.HostAddr  leader,
     3: common.ClusterID cluster_id,
+    4: i64 last_update_time_in_ms,
 }
 
 struct HBReq {
-    1: common.HostAddr host,
-    2: common.ClusterID cluster_id,
+    1: bool in_storaged,
+    2: common.HostAddr host,
+    3: common.ClusterID cluster_id,
+    4: optional map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_partIds;
 }
 
 struct CreateTagIndexReq {

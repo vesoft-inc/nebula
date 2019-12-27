@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include "base/Status.h"
 #include "interface/gen-cpp2/meta_types.h"
+#include "meta/ActiveHostsMan.h"
 
 namespace nebula {
 namespace meta {
@@ -30,6 +31,10 @@ class MetaServiceUtils final {
 public:
     MetaServiceUtils() = delete;
 
+    static std::string lastUpdateTimeKey();
+
+    static std::string lastUpdateTimeVal(const int64_t timeInMilliSec);
+
     static std::string spaceKey(GraphSpaceID spaceId);
 
     static std::string spaceVal(const cpp2::SpaceProperties &properties);
@@ -43,6 +48,10 @@ public:
     static std::string spaceName(folly::StringPiece rawVal);
 
     static std::string partKey(GraphSpaceID spaceId, PartitionID partId);
+
+    static GraphSpaceID parsePartKeySpaceId(folly::StringPiece key);
+
+    static PartitionID parsePartKeyPartId(folly::StringPiece key);
 
     static std::string partVal(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
