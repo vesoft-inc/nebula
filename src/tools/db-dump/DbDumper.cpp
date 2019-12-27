@@ -48,7 +48,6 @@ Status DbDumper::init() {
 }
 
 Status DbDumper::initMeta() {
-    FLAGS_load_data_interval_secs = 3600;
     auto addrs = network::NetworkUtils::toHosts(FLAGS_meta_server);
     if (!addrs.ok()) {
         return addrs.status();

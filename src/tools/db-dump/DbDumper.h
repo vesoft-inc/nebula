@@ -24,7 +24,6 @@ DECLARE_string(vids);
 DECLARE_string(tags);
 DECLARE_string(edges);
 DECLARE_int64(limit);
-DECLARE_int32(load_data_interval_secs);
 
 namespace nebula {
 namespace storage {
