@@ -25,8 +25,6 @@ public:
 
     void execute() override;
 
-    // void executeHttp();
-
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
