@@ -17,9 +17,6 @@ DECLARE_bool(hosts_whitelist_enabled);
 namespace nebula {
 namespace meta {
 
-using nebula::cpp2::SupportedType;
-using apache::thrift::FragileConstructor::FRAGILE;
-
 TEST(HBProcessorTest, HBTest) {
     fs::TempDir rootPath("/tmp/HBTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
@@ -27,6 +24,7 @@ TEST(HBProcessorTest, HBTest) {
     {
         for (auto i = 0; i < 5; i++) {
             cpp2::HBReq req;
+            req.set_in_storaged(true);
             nebula::cpp2::HostAddr thriftHost;
             thriftHost.set_ip(i);
             thriftHost.set_port(i);
@@ -68,5 +66,4 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
 

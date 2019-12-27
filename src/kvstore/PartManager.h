@@ -24,6 +24,8 @@ public:
                                    bool isDbOption) = 0;
     virtual void removeSpace(GraphSpaceID spaceId) = 0;
     virtual void removePart(GraphSpaceID spaceId, PartitionID partId) = 0;
+    virtual int32_t allLeader(std::unordered_map<GraphSpaceID,
+                                                 std::vector<PartitionID>>& leaderIds) = 0;
 };
 
 
@@ -166,6 +168,9 @@ public:
      void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) override;
 
      void onPartUpdated(const PartMeta& partMeta) override;
+
+     void fetchLeaderInfo(std::unordered_map<GraphSpaceID,
+                                             std::vector<PartitionID>>& leaderParts) override;
 
      HostAddr getLocalHost() {
         return localHost_;
