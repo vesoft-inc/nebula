@@ -16,7 +16,7 @@ TEST(Duration, elapsedInSeconds) {
     for (int size = 1; size < 100000001; size *= 100) {
         Duration dur;
         auto start = std::chrono::steady_clock::now();
-	std::vector<int> v(size, 42);
+        std::vector<int> v(size, 42);
         sink = std::accumulate(v.begin(),v.end(),7);
         std::chrono::duration<double> diff = std::chrono::steady_clock::now() - start;
         dur.pause();
