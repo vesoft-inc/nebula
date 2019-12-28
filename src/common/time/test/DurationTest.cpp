@@ -7,9 +7,12 @@
 #include "base/Base.h"
 #include <gtest/gtest.h>
 #include "time/Duration.h"
+#include "vector"
+#include "cmath"
+#include "time/WallClock.h"
 
 using nebula::time::Duration;
-
+using nebula::time::WallClock;
 TEST(Duration, elapsedInSeconds) {
     for (int i = 0; i < 5; i++) {
         Duration dur;
@@ -40,7 +43,31 @@ TEST(Duration, elapsedInMilliSeconds) {
                   dur.elapsedInMSec()) << "Inaccuracy in iteration " << i;
     }
 }
+TEST(WallClock , time ) {
+    std::vector<int64_t> time1;
+    std::vector<int64_t> time2;
+    for (uint32_t i = 0; i < 10; i++) {
+        auto sec1 = WallClock::fastNowInMicroSec();
+        usleep(3000);
+        auto sec2 = WallClock::fastNowInMicroSec();
+        auto cost_time = sec2-sec1;
+        time1.push_back(cost_time);
+    }
+    std::cout << time1[0] << std::endl;
+    int64_t sum = std::accumulate(time1.begin(), time1.end(), 0);
+    double average = sum*1.0/10;
+    std::cout << "Mean Error  : " << average-3000 << "ms " <<std::endl;
 
+    for (int i = 0; i < 10 ; i++) {
+        int64_t a = (time1[i]-average)*(time1[i]-average);
+        time2.push_back(a);
+    }
+    int64_t sum2 = std::accumulate(time2.begin(), time2.end(), 0);
+    double variance = sum2*1.0/9;
+    std::cout << "The  Variance  Is : "<< variance << std::endl;
+    double error = (abs(average-3000) * 1.0 / 3000) * 100;
+    std :: cout << "Test Error Is  : " << error  << "%" << std::endl;
+}
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
