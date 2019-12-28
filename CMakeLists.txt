@@ -12,6 +12,7 @@
 #   NEBULA_THIRDPARTY_ROOT         -- Specify the root directory for third-party
 #   NEBULA_OTHER_ROOT              -- Specify the root directory for user build
 #                                  -- Split with ":", exp: DIR:DIR
+#   NEBULA_CLANG_USED_GCC_TOOLCHAIN           -- Set the gcc installation directory used by Clang(libstdc++)
 #
 #   ENABLE_JEMALLOC                -- Link jemalloc into all executables
 #   ENABLE_NATIVE                  -- Build native client
@@ -29,10 +30,12 @@ option(ENABLE_CCACHE "Whether to use ccache to speed up compiling" ON)
 option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
 option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
 option(ENABLE_UBSAN "Whether to turn Undefined Behavior Sanitizer ON or OFF" OFF)
+option(ENABLE_FUZZ_TEST "Whether to turn Fuzz Test ON or OFF" OFF)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
 message(STATUS "ENABLE_UBSAN: ${ENABLE_UBSAN}")
+message(STATUS "ENABLE_FUZZ_TEST: ${ENABLE_FUZZ_TEST}")
 
 
 if (ENABLE_NATIVE)
@@ -126,6 +129,10 @@ if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
     SET(NEBULA_THIRDPARTY_ROOT "/opt/nebula/third-party")
 endif()
 
+if ("${NEBULA_CLANG_USED_GCC_TOOLCHAIN}" STREQUAL "")
+    SET(NEBULA_CLANG_USED_GCC_TOOLCHAIN "${NEBULA_THIRDPARTY_ROOT}")
+endif()
+
 # third-party
 if(NOT ${NEBULA_THIRDPARTY_ROOT} STREQUAL "")
     message(STATUS "Specified NEBULA_THIRDPARTY_ROOT: " ${NEBULA_THIRDPARTY_ROOT})
@@ -203,10 +210,16 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
         add_compile_options(-Wsuggest-override)
     endif()
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  add_compile_options(-Wno-overloaded-virtual)
-  add_compile_options(-Wno-self-assign-overloaded)
-  add_compile_options(-Wno-self-move)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -latomic")
+    MESSAGE(STATUS "NEBULA_CLANG_USED_GCC_TOOLCHAIN: ${NEBULA_CLANG_USED_GCC_TOOLCHAIN}")
+    # Here we need to specify the path of libstdc++ used by Clang
+    if(NOT ${NEBULA_CLANG_USED_GCC_TOOLCHAIN} STREQUAL "")
+        add_compile_options("--gcc-toolchain=${NEBULA_CLANG_USED_GCC_TOOLCHAIN}")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --gcc-toolchain=${NEBULA_CLANG_USED_GCC_TOOLCHAIN}")
+    endif()
+    add_compile_options(-Wno-overloaded-virtual)
+    add_compile_options(-Wno-self-assign-overloaded)
+    add_compile_options(-Wno-self-move)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -latomic")
 endif()
 
 include(CheckCXXCompilerFlag)
@@ -237,6 +250,13 @@ if(ENABLE_UBSAN)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined")
 endif()
 
+if(ENABLE_FUZZ_TEST)
+    check_cxx_compiler_flag("-fsanitize=fuzzer" ENABLE_FUZZ_OK)
+    if (NOT ENABLE_FUZZ_OK)
+        MESSAGE(FATAL_ERROR "The compiler does not support fuzz testing")
+    endif()
+endif()
+
 macro(nebula_add_executable)
     cmake_parse_arguments(
         nebula_exec                 # prefix
@@ -259,7 +279,7 @@ endmacro()
 macro(nebula_add_test)
     cmake_parse_arguments(
         nebula_test                 # prefix
-        "DISABLED"                  # <options>
+        "DISABLED;FUZZER"           # <options>
         "NAME"                      # <one_value_args>
         "SOURCES;OBJECTS;LIBRARIES" # <multi_value_args>
         ${ARGN}
@@ -272,7 +292,13 @@ macro(nebula_add_test)
         LIBRARIES ${nebula_test_LIBRARIES}
     )
 
-    if (NOT ${nebula_test_DISABLED})
+    if (${nebula_test_FUZZER})
+        #Currently only Clang supports fuzz test
+        if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+            set_target_properties(${nebula_test_NAME} PROPERTIES COMPILE_FLAGS "-g -fsanitize=fuzzer")
+            set_target_properties(${nebula_test_NAME} PROPERTIES LINK_FLAGS "-fsanitize=fuzzer")
+        endif()
+    elseif (NOT ${nebula_test_DISABLED})
         string(REGEX REPLACE "${CMAKE_SOURCE_DIR}/src/(.*)/test" "\\1" test_group ${CMAKE_CURRENT_SOURCE_DIR})
         add_test(NAME ${nebula_test_NAME} COMMAND ${nebula_test_NAME})
         set_tests_properties(${nebula_test_NAME} PROPERTIES LABELS ${test_group})

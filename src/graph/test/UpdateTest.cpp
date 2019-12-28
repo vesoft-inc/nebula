@@ -10,8 +10,6 @@
 #include "graph/test/UpdateTestBase.h"
 #include "meta/test/TestUtils.h"
 
-DECLARE_int32(load_data_interval_secs);
-
 namespace nebula {
 namespace graph {
 

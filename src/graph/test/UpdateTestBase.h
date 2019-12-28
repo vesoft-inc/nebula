@@ -12,7 +12,7 @@
 #include "graph/test/TestBase.h"
 #include "meta/test/TestUtils.h"
 
-DECLARE_int32(load_data_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace graph {
@@ -118,7 +118,7 @@ AssertionResult UpdateTestBase::prepareSchema() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
-    sleep(FLAGS_load_data_interval_secs + 3);
+    sleep(FLAGS_heartbeat_interval_secs + 3);
     return TestOK();
 }
 

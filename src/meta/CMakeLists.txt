@@ -64,6 +64,7 @@ nebula_add_library(
     MetaHttpIngestHandler.cpp
     MetaHttpDownloadHandler.cpp
     MetaHttpStatusHandler.cpp
+    MetaHttpReplaceHostHandler.cpp
 )
 
 nebula_add_library(
@@ -79,11 +80,6 @@ nebula_add_library(
 nebula_add_library(
     meta_gflags_man_obj OBJECT
     ClientBasedGflagsManager.cpp
-)
-
-nebula_add_library(
-    kv_gflags_man_obj OBJECT
-    KVBasedGflagsManager.cpp
 )
 
 nebula_add_subdirectory(test)

@@ -11,7 +11,7 @@ namespace nebula {
 namespace graph {
 
 FindPathExecutor::FindPathExecutor(Sentence *sentence, ExecutionContext *exct)
-        : TraverseExecutor(exct) {
+        : TraverseExecutor(exct, "find_path") {
     sentence_ = static_cast<FindPathSentence*>(sentence);
 }
 
@@ -53,8 +53,7 @@ Status FindPathExecutor::prepare() {
     } while (false);
 
     if (!status.ok()) {
-        stats::Stats::addStatsValue(ectx()->getGraphStats()->getFindPathStats(),
-                false, duration().elapsedInUSec());
+        stats::Stats::addStatsValue(stats_.get(), false, duration().elapsedInUSec());
     }
     return status;
 }
@@ -145,7 +144,7 @@ Status FindPathExecutor::prepareOver() {
 void FindPathExecutor::execute() {
     auto status = beforeExecute();
     if (!status.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getFindPathStats());
+        doError(std::move(status));
         return;
     }
 
@@ -182,14 +181,14 @@ void FindPathExecutor::getNeighborsAndFindPath() {
 
     auto props = getStepOutProps(false);
     if (!props.ok()) {
-        doError(std::move(props).status(), ectx()->getGraphStats()->getFindPathStats());
+        doError(std::move(props).status());
         return;
     }
     getFromFrontiers(std::move(props).value());
 
     props = getStepOutProps(true);
     if (!props.ok()) {
-        doError(std::move(props).status(), ectx()->getGraphStats()->getFindPathStats());
+        doError(std::move(props).status());
         return;
     }
     getToFrontiers(std::move(props).value());
@@ -199,7 +198,7 @@ void FindPathExecutor::getNeighborsAndFindPath() {
         UNUSED(result);
         if (!fStatus_.ok() || !tStatus_.ok()) {
             std::string msg = fStatus_.toString() + " " + tStatus_.toString();
-            doError(Status::Error(std::move(msg)), ectx()->getGraphStats()->getFindPathStats());
+            doError(Status::Error(std::move(msg)));
             return;
         }
 
@@ -207,7 +206,7 @@ void FindPathExecutor::getNeighborsAndFindPath() {
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error."), ectx()->getGraphStats()->getFindPathStats());
+        doError(Status::Error("Internal error."));
     };
     folly::collectAll(futures).via(runner).thenValue(cb).thenError(error);
 }
@@ -267,7 +266,7 @@ void FindPathExecutor::findPath() {
     // if frontiersF meets frontiersT, we found an even path
     if (!intersect.empty()) {
         if (shortest_ && targetNotFound_.empty()) {
-            doFinish(Executor::ProcessControl::kNext, ectx()->getGraphStats()->getFindPathStats());
+            doFinish(Executor::ProcessControl::kNext);
             return;
         }
         for (auto intersectId : intersect) {
@@ -277,7 +276,7 @@ void FindPathExecutor::findPath() {
 
     if (isFinalStep() ||
          (shortest_ && targetNotFound_.empty())) {
-        doFinish(Executor::ProcessControl::kNext, ectx()->getGraphStats()->getFindPathStats());
+        doFinish(Executor::ProcessControl::kNext);
         return;
     } else {
         VLOG(2) << "Current step:" << currentStep_;
@@ -312,18 +311,19 @@ inline void FindPathExecutor::meetOddPath(VertexID src, VertexID dst, Neighbor &
             VLOG(2) << "PathT: " << buildPathString(j->second);
 
             auto target = std::get<0>(*(path.back()));
+            auto pathTarget = std::get<0>(*(path.back())) + std::get<1>(*(path.back()));
             if (shortest_) {
                 targetNotFound_.erase(target);
-                if (finalPath_.count(target) > 0) {
+                if (finalPath_.count(pathTarget) > 0) {
                     // already found a shorter path
                     continue;
                 } else {
                     VLOG(2) << "Found path: " << buildPathString(path);
-                    finalPath_.emplace(target, std::move(path));
+                    finalPath_.emplace(std::move(pathTarget), std::move(path));
                 }
             } else {
                 VLOG(2) << "Found path: " << buildPathString(path);
-                finalPath_.emplace(target, std::move(path));
+                finalPath_.emplace(std::move(pathTarget), std::move(path));
             }
         }  // for `j'
     }  // for `i'
@@ -361,18 +361,19 @@ inline void FindPathExecutor::meetEvenPath(VertexID intersectId) {
             VLOG(2) << "PathT: " << buildPathString(j->second);
             path.insert(path.end(), j->second.begin(), j->second.end());
             auto target = std::get<0>(*(path.back()));
+            auto pathTarget = std::get<0>(*(path.back())) + std::get<1>(*(path.back()));
             if (shortest_) {
-                if (finalPath_.count(target) > 0) {
+                if (finalPath_.count(pathTarget) > 0) {
                     // already found a shorter path
                     continue;
                 } else {
                     targetNotFound_.erase(target);
                     VLOG(2) << "Found path: " << buildPathString(path);
-                    finalPath_.emplace(target, std::move(path));
+                    finalPath_.emplace(std::move(pathTarget), std::move(path));
                 }
             } else {
                 VLOG(2) << "Found path: " << buildPathString(path);
-                finalPath_.emplace(target, std::move(path));
+                finalPath_.emplace(std::move(pathTarget), std::move(path));
             }
         }
     }

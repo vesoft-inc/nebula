@@ -30,6 +30,8 @@ enum ErrorCode {
     E_EDGE_PROP_NOT_FOUND = -21,
     E_TAG_PROP_NOT_FOUND = -22,
     E_IMPROPER_DATA_TYPE = -23,
+    E_EDGE_NOT_FOUND = -24,
+    E_TAG_NOT_FOUND = -25,
 
     // Invalid request
     E_INVALID_FILTER = -31,

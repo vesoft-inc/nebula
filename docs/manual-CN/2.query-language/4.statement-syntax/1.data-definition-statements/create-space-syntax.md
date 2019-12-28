@@ -1,14 +1,17 @@
 # CREATE SPACE 语法
 
 ```ngql
-CREATE SPACE space_name
-    (space_option,...)
-
-space_option:
-    option_name = value
+CREATE SPACE [IF NOT EXISTS] <space_name>
+   [(partition_num = <part_num>, replica_factor = <raft_copy>)]
 ```
 
 以上语句用于创建一个新的图空间。不同的图空间是物理隔离的。
+
+## IF NOT EXISTS
+
+创建图空间可使用 `IF NOT EXISTS` 关键字，这个关键字会自动检测对应的图空间是否存在，如果不存在则创建新的，如果存在则直接返回。
+
+**注意：** 这里判断图空间是否存在只是比较图空间的名字(不包括属性)。
 
 ## Space Name 图空间名
 
@@ -16,9 +19,9 @@ space_option:
 
     图空间的名称在集群中标明了一个唯一的空间。命名规则详见 [Schema Object Names](../../3.language-structure/schema-object-names.md)
 
-### Space Options 图空间选项
+## 自定义图空间选项
 
-在创建图空间的时候，可以传入自定义选项。选项名称 _option_name_ 可以是以下任何一个：
+在创建图空间的时候，可以传入如下两个自定义选项：
 
 * _partition_num_
 
@@ -30,7 +33,7 @@ space_option:
 
 如果没有自定义选项，**Nebula Graph** 会使用默认的值（partition_number 和 replica_factor）来创建图空间。
 
-### 示例
+## 示例
 
 ```ngql
 nebula> CREATE SPACE my_space_1; -- 使用默认选项创建图空间

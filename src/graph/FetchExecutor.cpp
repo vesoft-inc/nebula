@@ -71,8 +71,7 @@ Status FetchExecutor::prepareYield() {
 }
 
 void FetchExecutor::setupColumns() {
-    DCHECK_NOTNULL(labelSchema_);
-    auto iter = labelSchema_->begin();
+    auto iter = DCHECK_NOTNULL(labelSchema_)->begin();
     if (yieldColsHolder_ == nullptr) {
         yieldColsHolder_ = std::make_unique<YieldColumns>();
     }
@@ -105,7 +104,7 @@ void FetchExecutor::onEmptyInputs() {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(std::move(resultColNames_));
     }
-    doFinish(Executor::ProcessControl::kNext, getStats());
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 Status FetchExecutor::getOutputSchema(
@@ -115,14 +114,14 @@ Status FetchExecutor::getOutputSchema(
     if (expCtx_ == nullptr || resultColNames_.empty()) {
         return Status::Error("Input is empty.");
     }
-    auto &getters = expCtx_->getters();
+    Getters getters;
     getters.getAliasProp = [schema, reader] (const std::string&, const std::string &prop) {
         return Collector::getProp(schema, prop, reader);
     };
     std::vector<VariantType> record;
     for (auto *column : yields_) {
         auto *expr = column->expr();
-        auto value = expr->eval();
+        auto value = expr->eval(getters);
         if (!value.ok()) {
             return value.status();
         }
@@ -148,21 +147,21 @@ void FetchExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
             auto ret = outputs->getRows();
             if (!ret.ok()) {
                 LOG(ERROR) << "Get rows failed: " << ret.status();
-                doError(std::move(ret).status(), getStats());
+                doError(std::move(ret).status());
                 return;
             }
             resp_->set_rows(std::move(ret).value());
         }
     }
-    doFinish(Executor::ProcessControl::kNext, getStats());
+    doFinish(Executor::ProcessControl::kNext);
 }
 
-stats::Stats* FetchExecutor::getStats() const {
-    if (0 == strcmp(name(), "FetchVerticesExecutor")) {
-        return ectx()->getGraphStats()->getFetchVerticesStats();
-    } else {
-        return ectx()->getGraphStats()->getFetchEdgesStats();
-    }
+void FetchExecutor::doEmptyResp() {
+    resp_ = std::make_unique<cpp2::ExecutionResponse>();
+    resp_->set_column_names(std::vector<std::string>());
+    resp_->set_rows(std::vector<cpp2::RowValue>());
+    doFinish(Executor::ProcessControl::kNext);
 }
+
 }  // namespace graph
 }  // namespace nebula

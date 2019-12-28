@@ -8,14 +8,13 @@
 #include <gtest/gtest.h>
 #include <folly/json.h>
 #include "webservice/WebService.h"
-#include "storage/StorageHttpStatusHandler.h"
+#include "storage/http/StorageHttpStatusHandler.h"
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 #include "fs/TempDir.h"
 #include "http/HttpClient.h"
 
 DECLARE_string(meta_server_addrs);
-DECLARE_int32(load_data_interval_secs);
 
 namespace nebula {
 namespace storage {

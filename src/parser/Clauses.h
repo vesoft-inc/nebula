@@ -134,9 +134,10 @@ public:
     }
 
     std::vector<nebula::OptVariantType> eval() const {
+        Getters getters;
         std::vector<nebula::OptVariantType> vertices;
         for (auto& vertex : vidList_) {
-            auto vid = vertex->eval();
+            auto vid = vertex->eval(getters);
             vertices.emplace_back(vid);
         }
         return vertices;

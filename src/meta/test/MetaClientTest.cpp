@@ -17,7 +17,6 @@
 #include "meta/test/TestUtils.h"
 #include "meta/ClientBasedGflagsManager.h"
 
-DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_string(rocksdb_db_options);
 
@@ -30,7 +29,7 @@ using nebula::cpp2::Value;
 using nebula::cpp2::ValueType;
 
 TEST(MetaClientTest, InterfacesTest) {
-    FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
 
     // Let the system choose an available port for us
@@ -45,7 +44,9 @@ TEST(MetaClientTest, InterfacesTest) {
     HostAddr localHost{localIp, clientPort};
     auto client = std::make_shared<MetaClient>(threadPool,
                                                std::vector<HostAddr>{HostAddr(localIp, sc->port_)},
-                                               localHost);
+                                               localHost,
+                                               0,
+                                               false);
     client->waitForMetadReady();
     {
         // Add hosts automatically, then testing listHosts interface.
@@ -159,7 +160,7 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ(ret1.value().begin()->schema.columns.size(), 5);
 
             // getTagSchemaFromCache
-            sleep(FLAGS_load_data_interval_secs + 1);
+            sleep(FLAGS_heartbeat_interval_secs + 1);
             auto ret = client->getNewestTagVerFromCache(spaceId,
                                                         ret1.value().begin()->tag_id);
             CHECK(ret.ok());
@@ -232,7 +233,7 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_STREQ("edgeItem0", outSchema1->getFieldName(0));
         }
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     {
         // Test cache interfaces
         auto partsMap = client->getPartsMapFromCache(HostAddr(0, 0));
@@ -331,7 +332,7 @@ TEST(MetaClientTest, InterfacesTest) {
 }
 
 TEST(MetaClientTest, TagTest) {
-    FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTagTest.XXXXXX");
 
     // Let the system choose an available port for us
@@ -342,7 +343,7 @@ TEST(MetaClientTest, TagTest) {
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
-    auto client = std::make_shared<MetaClient>(threadPool, localhosts);
+    auto client = std::make_shared<MetaClient>(threadPool, localhosts, HostAddr(0, 0), 0, false);
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     client->waitForMetadReady();
     TestUtils::registerHB(sc->kvStore_.get(), hosts);
@@ -448,7 +449,7 @@ TEST(MetaClientTest, TagTest) {
 }
 
 TEST(MetaClientTest, EdgeTest) {
-    FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientEdgeTest.XXXXXX");
 
     // Let the system choose an available port for us
@@ -571,7 +572,7 @@ TEST(MetaClientTest, EdgeTest) {
 }
 
 TEST(MetaClientTest, TagIndexTest) {
-    FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTagIndexTest.XXXXXX");
 
     // Let the system choose an available port for us
@@ -769,7 +770,7 @@ TEST(MetaClientTest, TagIndexTest) {
 }
 
 TEST(MetaClientTest, EdgeIndexTest) {
-    FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientEdgeIndexTest.XXXXXX");
 
     // Let the system choose an available port for us
@@ -1000,6 +1001,12 @@ public:
         partChanged++;
     }
 
+    void fetchLeaderInfo(std::unordered_map<GraphSpaceID,
+                                            std::vector<PartitionID>>& leaderIds) override {
+        LOG(INFO) << "Get leader distribution!";
+        UNUSED(leaderIds);
+    }
+
     HostAddr getLocalHost() {
         return HostAddr(0, 0);
     }
@@ -1011,7 +1018,7 @@ public:
 };
 
 TEST(MetaClientTest, DiffTest) {
-    FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
 
     // Let the system choose an available port for us
@@ -1023,7 +1030,10 @@ TEST(MetaClientTest, DiffTest) {
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto listener = std::make_unique<TestListener>();
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+                                               std::vector<HostAddr>{HostAddr(localIp, sc->port_)},
+                                               HostAddr(0, 0),
+                                               0,
+                                               false);
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {
@@ -1043,14 +1053,14 @@ TEST(MetaClientTest, DiffTest) {
         auto ret = client->createSpace("default_space", 9, 1).get();
         ASSERT_TRUE(ret.ok()) << ret.status();
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     ASSERT_EQ(1, listener->spaceNum);
     ASSERT_EQ(9, listener->partNum);
     {
         auto ret = client->createSpace("default_space_1", 5, 1).get();
         ASSERT_TRUE(ret.ok()) << ret.status();
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     ASSERT_EQ(2, listener->spaceNum);
     ASSERT_EQ(14, listener->partNum);
     {
@@ -1058,13 +1068,12 @@ TEST(MetaClientTest, DiffTest) {
         auto ret = client->dropSpace("default_space_1").get();
         ASSERT_TRUE(ret.ok()) << ret.status();
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     ASSERT_EQ(1, listener->spaceNum);
     ASSERT_EQ(9, listener->partNum);
 }
 
 TEST(MetaClientTest, HeartbeatTest) {
-    FLAGS_load_data_interval_secs = 5;
     FLAGS_heartbeat_interval_secs = 1;
     const nebula::ClusterID kClusterId = 10;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
@@ -1081,7 +1090,7 @@ TEST(MetaClientTest, HeartbeatTest) {
                                                std::vector<HostAddr>{HostAddr(localIp, 10001)},
                                                localHost,
                                                kClusterId,
-                                               true);  // send heartbeat
+                                               true);
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {
@@ -1148,6 +1157,7 @@ private:
 };
 
 TEST(MetaClientTest, SimpleTest) {
+    FLAGS_heartbeat_interval_secs = 3600;
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
@@ -1173,6 +1183,7 @@ TEST(MetaClientTest, SimpleTest) {
 }
 
 TEST(MetaClientTest, RetryWithExceptionTest) {
+    FLAGS_heartbeat_interval_secs = 3600;
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
@@ -1195,6 +1206,7 @@ TEST(MetaClientTest, RetryWithExceptionTest) {
 }
 
 TEST(MetaClientTest, RetryOnceTest) {
+    FLAGS_heartbeat_interval_secs = 3600;
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
@@ -1234,6 +1246,7 @@ TEST(MetaClientTest, RetryOnceTest) {
 }
 
 TEST(MetaClientTest, RetryUntilLimitTest) {
+    FLAGS_heartbeat_interval_secs = 3600;
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
@@ -1272,7 +1285,7 @@ TEST(MetaClientTest, RetryUntilLimitTest) {
 }
 
 TEST(MetaClientTest, RocksdbOptionsTest) {
-    FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/RocksdbOptionsTest.XXXXXX");
     uint32_t localMetaPort = 0;
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
@@ -1308,7 +1321,7 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
         std::vector<HostAddr> hosts = {{0, 0}};
         TestUtils::registerHB(sc->kvStore_.get(), hosts);
         client->createSpace("default_space", 9, 1).get();
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_heartbeat_interval_secs + 1);
     }
     {
         std::string name = "rocksdb_db_options";
@@ -1324,7 +1337,7 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
         auto item = getRet.value().front();
         auto value = boost::get<std::string>(item.get_value());
 
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_heartbeat_interval_secs + 1);
         ASSERT_EQ(FLAGS_rocksdb_db_options, value);
         ASSERT_EQ(listener->options["disable_auto_compactions"], "true");
         ASSERT_EQ(listener->options["level0_file_num_compaction_trigger"], "4");

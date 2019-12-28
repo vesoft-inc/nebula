@@ -202,7 +202,7 @@ std::string Executor::valueTypeToString(nebula::cpp2::ValueType type) {
     }
 }
 
-void Executor::writeVariantType(RowWriter &writer, const VariantType &value) {
+Status Executor::writeVariantType(RowWriter &writer, const VariantType &value) {
     switch (value.which()) {
         case VAR_INT64:
             writer << boost::get<int64_t>(value);
@@ -217,8 +217,10 @@ void Executor::writeVariantType(RowWriter &writer, const VariantType &value) {
             writer << boost::get<std::string>(value);
             break;
         default:
-            LOG(FATAL) << "Unknown value type: " << static_cast<uint32_t>(value.which());
+            LOG(ERROR) << "Unknown value type: " << static_cast<uint32_t>(value.which());
+            return Status::Error("Unknown value type: %d", value.which());
     }
+    return Status::OK();
 }
 
 bool Executor::checkValueType(const nebula::cpp2::ValueType &type, const VariantType &value) {
@@ -383,6 +385,14 @@ StatusOr<VariantType> Executor::transformDefaultValue(nebula::cpp2::SupportedTyp
         case nebula::cpp2::SupportedType::STRING:
             return originalValue;
             break;
+        case nebula::cpp2::SupportedType::TIMESTAMP:
+            try {
+                return folly::to<int64_t>(originalValue);
+            } catch (const std::exception& ex) {
+                LOG(ERROR) << "Conversion to int64_t failed: " << originalValue;
+                return Status::Error("Type Conversion Failed");
+            }
+            break;
         default:
             LOG(ERROR) << "Unknow type";
             return Status::Error("Unknow type");
@@ -390,14 +400,14 @@ StatusOr<VariantType> Executor::transformDefaultValue(nebula::cpp2::SupportedTyp
     return Status::OK();
 }
 
-void Executor::doError(Status status, const stats::Stats* stats, uint32_t count) const {
-    stats::Stats::addStatsValue(stats, false, duration().elapsedInUSec(), count);
+void Executor::doError(Status status, uint32_t count) const {
+    stats::Stats::addStatsValue(stats_.get(), false, duration().elapsedInUSec(), count);
     DCHECK(onError_);
     onError_(std::move(status));
 }
 
-void Executor::doFinish(ProcessControl pro, const stats::Stats* stats, uint32_t count) const {
-    stats::Stats::addStatsValue(stats, true, duration().elapsedInUSec(), count);
+void Executor::doFinish(ProcessControl pro, uint32_t count) const {
+    stats::Stats::addStatsValue(stats_.get(), true, duration().elapsedInUSec(), count);
     DCHECK(onFinish_);
     onFinish_(pro);
 }
