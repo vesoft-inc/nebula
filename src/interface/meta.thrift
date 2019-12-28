@@ -10,6 +10,14 @@ namespace go nebula.meta
 
 include "common.thrift"
 
+typedef i64 (cpp.type = "nebula::SchemaVer") SchemaVer
+
+typedef i32 (cpp.type = "nebula::UserID") UserID
+typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
+typedef i32 (cpp.type = "nebula::TagIndexID") TagIndexID
+typedef i32 (cpp.type = "nebula::EdgeIndexID") EdgeIndexID
+
+
 enum ErrorCode {
     SUCCEEDED          = 0,
 
@@ -49,6 +57,7 @@ enum ErrorCode {
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
 
+
 enum AlterSchemaOp {
     ADD    = 0x01,
     CHANGE = 0x02,
@@ -75,10 +84,49 @@ union ID {
     1: common.GraphSpaceID  space_id,
     2: common.TagID         tag_id,
     3: common.EdgeType      edge_type,
-    4: common.TagIndexID    tag_index_id,
-    5: common.EdgeIndexID   edge_index_id,
-    6: common.UserID        user_id,
-    7: common.ClusterID     cluster_id,
+    4: TagIndexID           tag_index_id,
+    5: EdgeIndexID          edge_index_id
+    6: UserID               user_id,
+    7: ClusterID            cluster_id,
+}
+
+// These are all data types supported in the graph properties
+enum PropertyType {
+    UNKNOWN = 0,
+
+    // Simple types
+    BOOL = 1,
+    INTEGER = 2,  // Persisted as a variant int
+    FIXED_INT = 3,  // Persisted as an 8-byte integer
+    FLOAT = 4,
+    DOUBLE = 5,
+    STRING = 6,
+
+    // Date time
+    TIMESTAMP = 21,
+    DATE = 22,
+    DATETIME = 23,
+} (cpp.enum_strict)
+
+struct ColumnDef {
+    1: required string name,
+    2: required PropertyType type,
+//    3: optional union {
+//        1: bool bVal;
+//        2: i64 iVal;
+//        3: double dVal;
+//        4: string sVal;
+//    } default_value,
+}
+
+struct SchemaProp {
+    1: optional i64      ttl_duration,
+    2: optional string   ttl_col,
+}
+
+struct Schema {
+    1: list<ColumnDef> columns,
+    2: SchemaProp schema_prop,
 }
 
 struct IdName {
@@ -87,9 +135,9 @@ struct IdName {
 }
 
 struct SpaceProperties {
-    1: string               space_name,
-    2: i32                  partition_num,
-    3: i32                  replica_factor,
+    1: string   space_name,
+    2: i32      partition_num,
+    3: i32      replica_factor,
 }
 
 struct SpaceItem {
@@ -98,22 +146,22 @@ struct SpaceItem {
 }
 
 struct TagItem {
-    1: common.TagID         tag_id,
-    2: string               tag_name,
-    3: common.SchemaVer     version,
-    4: common.Schema        schema,
+    1: common.TagID     tag_id,
+    2: string           tag_name,
+    3: SchemaVer        version,
+    4: Schema           schema,
 }
 
 struct AlterSchemaItem {
-    1: AlterSchemaOp        op,
-    2: common.Schema        schema,
+    1: AlterSchemaOp    op,
+    2: Schema           schema,
 }
 
 struct EdgeItem {
-    1: common.EdgeType      edge_type,
-    2: string               edge_name,
-    3: common.SchemaVer     version,
-    4: common.Schema        schema,
+    1: common.EdgeType  edge_type,
+    2: string           edge_name,
+    3: SchemaVer        version,
+    4: Schema           schema,
 }
 
 struct IndexProperties {
@@ -121,19 +169,19 @@ struct IndexProperties {
 }
 
 struct IndexFields {
-    1: map<string, list<common.ColumnDef>>(cpp.template = "std::map")  fields,
+    1: map<string, list<ColumnDef>>(cpp.template = "std::map")  fields,
 }
 
 struct TagIndexItem {
-    1: common.TagIndexID    index_id,
-    2: string               index_name,
-    3: IndexFields          fields,
+    1: TagIndexID   index_id,
+    2: string       index_name,
+    3: IndexFields  fields,
 }
 
 struct EdgeIndexItem {
-    1: common.EdgeIndexID   index_id,
-    2: string               index_name,
-    3: IndexFields          fields ,
+    1: EdgeIndexID  index_id,
+    2: string       index_name,
+    3: IndexFields  fields ,
 }
 
 enum HostStatus {
@@ -169,7 +217,7 @@ struct UserItem {
 }
 
 struct RoleItem {
-    1: common.UserID        user_id,
+    1: UserID               user_id,
     2: common.GraphSpaceID  space_id,
     3: RoleType             role_type,
 }
@@ -214,17 +262,17 @@ struct GetSpaceResp {
 
 // Tags related operations
 struct CreateTagReq {
-    1: common.GraphSpaceID space_id,
-    2: string              tag_name,
-    3: common.Schema       schema,
-    4: bool                if_not_exists,
+    1: common.GraphSpaceID  space_id,
+    2: string               tag_name,
+    3: Schema               schema,
+    4: bool                 if_not_exists,
 }
 
 struct AlterTagReq {
     1: common.GraphSpaceID      space_id,
     2: string                   tag_name,
     3: list<AlterSchemaItem>    tag_items,
-    4: common.SchemaProp        schema_prop,
+    4: SchemaProp               schema_prop,
 }
 
 struct DropTagReq {
@@ -244,22 +292,22 @@ struct ListTagsResp {
 }
 
 struct GetTagReq {
-    1: common.GraphSpaceID space_id,
-    2: string              tag_name,
-    3: common.SchemaVer    version,
+    1: common.GraphSpaceID  space_id,
+    2: string               tag_name,
+    3: SchemaVer            version,
 }
 
 struct GetTagResp {
     1: ErrorCode        code,
     2: common.HostAddr  leader,
-    3: common.Schema    schema,
+    3: Schema           schema,
 }
 
 // Edge related operations.
 struct CreateEdgeReq {
-    1: common.GraphSpaceID space_id,
-    2: string              edge_name,
-    3: common.Schema       schema,
+    1: common.GraphSpaceID  space_id,
+    2: string               edge_name,
+    3: Schema               schema,
     4: bool                if_not_exists,
 }
 
@@ -267,19 +315,19 @@ struct AlterEdgeReq {
     1: common.GraphSpaceID      space_id,
     2: string                   edge_name,
     3: list<AlterSchemaItem>    edge_items,
-    4: common.SchemaProp        schema_prop,
+    4: SchemaProp               schema_prop,
 }
 
 struct GetEdgeReq {
-    1: common.GraphSpaceID space_id,
-    2: string              edge_name,
-    3: common.SchemaVer    version,
+    1: common.GraphSpaceID  space_id,
+    2: string               edge_name,
+    3: SchemaVer            version,
 }
 
 struct GetEdgeResp {
     1: ErrorCode        code,
     2: common.HostAddr  leader,
-    3: common.Schema    schema,
+    3: Schema           schema,
 }
 
 struct DropEdgeReq {
@@ -340,7 +388,7 @@ struct MultiPutReq {
     // segment is used to avoid conflict with system data.
     // it should be comprised of numbers and letters.
     1: string     segment,
-    2: list<common.Pair> pairs,
+    2: list<common.KeyValue> pairs,
 }
 
 struct GetReq {
@@ -389,14 +437,14 @@ struct ScanResp {
 }
 
 struct HBResp {
-    1: ErrorCode code,
+    1: ErrorCode        code,
     2: common.HostAddr  leader,
-    3: common.ClusterID cluster_id,
+    3: ClusterID        cluster_id,
 }
 
 struct HBReq {
-    1: common.HostAddr host,
-    2: common.ClusterID cluster_id,
+    1: common.HostAddr  host,
+    2: ClusterID        cluster_id,
 }
 
 struct CreateTagIndexReq {
@@ -504,7 +552,7 @@ struct ListUsersResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: map<common.UserID, UserItem>(cpp.template = "std::unordered_map") users,
+    3: map<UserID, UserItem>(cpp.template = "std::unordered_map") users,
 }
 
 struct ListRolesReq {

@@ -52,179 +52,401 @@ enum ErrorCode {
 } (cpp.enum_strict)
 
 
-enum PropOwner {
-    SOURCE = 1,
-    DEST = 2,
-    EDGE = 3,
-} (cpp.enum_strict)
-
-enum EngineSignType {
-    BLOCK_ON = 1,
-    BLOCK_OFF = 2,
+struct PartitionResult {
+    1: required ErrorCode           code,
+    2: required common.PartitionID  part_id,
+    // Only valid when code is E_LEADER_CHANAGED.
+    3: optional common.HostAddr     leader,
 }
 
-union EntryId {
-    1: common.TagID tag_id,
-    2: common.EdgeType edge_type,
+
+struct ResponseCommon {
+    // Only contains the partition that returns error
+    1: required list<PartitionResult>   failed_parts,
+    // Query latency from storage service
+    2: required i32                     latency_in_us,
 }
 
-struct PropDef {
-    1: PropOwner owner,
-    2: EntryId   id,
-    3: string name,      // Property name
-    4: StatType stat,    // calc stats when setted.
+
+/**********************************************************
+ *
+ * Common types used by all services
+ *
+ *********************************************************/
+// Define a vertex property
+struct VertexProp {
+    1: common.TagID tag,    // Tag ID
+    2: string name,         // Property name
 }
 
+
+// Define an edge property
+struct EdgeProp {
+    1: common.EdgeType  type,   // Edge type
+    2: string           name,   // Property name
+}
+
+
+// Enumeration of the statistic methods
 enum StatType {
     SUM = 1,
     COUNT = 2,
     AVG = 3,
 } (cpp.enum_strict)
 
-struct ResultCode {
-    1: required ErrorCode code,
-    2: required common.PartitionID part_id,
-    // Only valid when code is E_LEADER_CHANAGED.
-    3: optional common.HostAddr  leader,
+
+// Define a statistic properties
+struct StatProp {
+    1: common.EdgeType  type,   // Edge type
+    2: string           name,   // Property name
+    3: StatType         stat,   // Stats method
 }
 
-struct EdgeData {
-    1: common.EdgeType type,
-    2: binary          data,   // decode according to edge_schema.
+
+// A list of property values to return
+struct PropData {
+    // The order of the props follows the order to the corresponding prop list,
+    // so no need to return prop names
+    1: list<common.Value>   props,
 }
 
-struct TagData {
-    1: common.TagID          tag_id,
-    2: binary                data,
+
+/**********************************************************
+ *
+ * Requests, responses for the GraphStorageService
+ *
+ *********************************************************/
+/*********************************************************
+ *                                                       *
+ * GetNeighbors                                          *
+ *                                                       */
+struct GetNeighborsRequest {
+    1: common.GraphSpaceID space_id,
+    // partId => ids
+    2: map<common.PartitionID, list<common.VertexID>>(
+        cpp.template = "std::unordered_map") parts,
+    // When edge_type > 0, going along the out-edge, otherwise, along the in-edge
+    // If the edge type list is empty, all edges will be scaned
+    3: list<common.EdgeType> edge_types,
+    // If there is no property specified, only neighbor vertex id will be returned
+    4: optional list<VertexProp> vertex_props,
+    5: optional list<StatProp> stat_props,
+    6: optional list<EdgeProp> edge_props,
+    7: optional binary filter,
 }
 
-struct VertexData {
-    1: common.VertexID       vertex_id,
-    2: list<TagData>         tag_data,
-    3: list<EdgeData>        edge_data,
+
+// Data returned for a given vertex, includintg the vertex properties,
+// statistic properties, and edges
+struct Vertex {
+    1: common.VertexID          id,  // Source vertex id
+    2: optional PropData        vertex_data,
+    3: optional PropData        stat_data,
+    4: optional list<PropData>  edge_data,
 }
 
-struct ResponseCommon {
-    // Only contains the partition that returns error
-    1: required list<ResultCode> failed_codes,
-    // Query latency from storage service
-    2: required i32 latency_in_us,
-}
 
-struct QueryResponse {
+struct GetNeighborsResponse {
     1: required ResponseCommon result,
-    2: optional map<common.TagID, common.Schema>(cpp.template = "std::unordered_map")       vertex_schema,
-    3: optional map<common.EdgeType, common.Schema>(cpp.template = "std::unordered_map")    edge_schema,
-    4: optional list<VertexData> vertices,
+    2: optional list<Vertex> vertices,
 }
+/*                                                       *
+ * GetNeighbors                                          *
+ *                                                       *
+ *********************************************************/
 
+
+//
+// Response for data modification requests
+//
 struct ExecResponse {
     1: required ResponseCommon result,
 }
 
-struct EdgePropResponse {
-    1: required ResponseCommon result,
-    2: optional common.Schema schema,          // edge related props
-    3: optional binary data,
+
+/*********************************************************
+ *                                                       *
+ * GetVertexProp                                         *
+ *                                                       */
+// Return properties for a given vertex
+struct VertexPropData {
+    1: required common.VertexID     id,
+    2: optional list<PropData>      props,
+    // When the get prop request does not provide property name list (ask for
+    // all properties), this will return all property names
+    3: optional list<VertexProp>    names,
 }
 
-struct QueryStatsResponse {
-    1: required ResponseCommon result,
-    2: optional common.Schema schema,
-    3: optional binary data,
-}
-
-struct EdgeKeyResponse {
-    1: required ResponseCommon result,
-    2: optional list<EdgeKey> edge_keys,      // out-edges and in-edges
-}
-
-struct Tag {
-    1: common.TagID tag_id,
-    2: binary props,
-}
-
-struct Vertex {
-    1: common.VertexID id,
-    2: list<Tag> tags,
-}
-
-struct EdgeKey {
-    1: common.VertexID src,
-    // When edge_type > 0, it's an out-edge, otherwise, it's an in-edge
-    // When query edge props, the field could be unset.
-    2: common.EdgeType edge_type,
-    3: common.EdgeRanking ranking,
-    4: common.VertexID dst,
-}
-
-struct Edge {
-    1: EdgeKey key,
-    2: binary props,
-}
-
-struct GetNeighborsRequest {
-    1: common.GraphSpaceID space_id,
-    // partId => ids
-    2: map<common.PartitionID, list<common.VertexID>>(cpp.template = "std::unordered_map") parts,
-    // When edge_type > 0, going along the out-edge, otherwise, along the in-edge
-    3: list<common.EdgeType> edge_types,
-    4: binary filter,
-    5: list<PropDef> return_columns,
-}
 
 struct VertexPropRequest {
-    1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, list<common.VertexID>>(cpp.template = "std::unordered_map") parts,
-    3: list<PropDef> return_columns,
+    1: common.GraphSpaceID                      space_id,
+    2: map<common.PartitionID, list<common.VertexID>>(
+        cpp.template = "std::unordered_map")    parts,
+    // If the property list is empty, return all properties
+    // If the property list is not set, no property but the vertex ID
+    // will be returned
+    3: optional list<VertexProp>                vertex_props,
+    4: optional binary                          filter,
 }
 
-struct EdgePropRequest {
-    1: common.GraphSpaceID space_id,
-    // partId => edges
-    2: map<common.PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") parts,
-    3: common.EdgeType edge_type,
-    4: binary filter,
-    5: list<PropDef> return_columns,
+
+struct VertexPropResponse {
+    1: ResponseCommon       result,
+    2: list<VertexPropData> data,
 }
+/*                                                       *
+ * GetVertexProp                                         *
+ *                                                       *
+ *********************************************************/
+
+
+/*********************************************************
+ *                                                       *
+ * GetEdgeProp                                           *
+ *                                                       */
+struct EdgeKey {
+    1: common.VertexID      src,
+    // When edge_type > 0, it's an out-edge, otherwise, it's an in-edge
+    // When query edge props, the field could be unset.
+    2: common.EdgeType      edge_type,
+    3: common.EdgeRanking   ranking,
+    4: common.VertexID      dst,
+}
+
+
+// Return properties for a given edge
+struct EdgePropData {
+    1: required EdgeKey         key,
+    2: optional list<PropData>  props,
+    // When the get prop request does not provide property name list (ask for
+    //   all properties), this will return all property names
+    3: optional list<string>    names,
+}
+
+
+struct EdgePropRequest {
+    1: common.GraphSpaceID                      space_id,
+    // partId => edges
+    2: map<common.PartitionID, list<EdgeKey>>(
+        cpp.template = "std::unordered_map")    parts,
+    // If the property list is empty, return all properties
+    // If the property list is not set, no property but the edge key
+    // will be returned
+    3: optional list<EdgeProp>                  edge_props,
+    4: optional binary                          filter,
+}
+
+
+struct EdgePropResponse {
+    1: ResponseCommon       result,
+    2: list<EdgePropData>   data,
+}
+/*                                                       *
+ * GetEdgeProp                                           *
+ *                                                       *
+ *********************************************************/
+
+
+/*********************************************************
+ *                                                       *
+ * AddVertices                                           *
+ *                                                       */
+struct NewTag {
+    1: common.TagID tag_id,
+    2: list<PropData> props,
+    // If the name list is empty, the order of the properties has to be
+    // exactly same as that the schema defines
+    3: optional list<string> names,
+}
+
+
+struct NewVertex {
+    1: common.VertexID id,
+    2: list<NewTag> tags,
+}
+
+
+struct NewEdge {
+    1: EdgeKey key,
+    2: list<PropData> props,
+    // If the name list is empty, the order of the properties has to be
+    // exactly same as that the schema defines
+    3: optional list<string> names,
+}
+
 
 struct AddVerticesRequest {
     1: common.GraphSpaceID space_id,
     // partId => vertices
-    2: map<common.PartitionID, list<Vertex>>(cpp.template = "std::unordered_map") parts,
-    // If true, it equals an upsert operation.
-    3: bool overwritable,
+    2: map<common.PartitionID, list<NewVertex>>(
+        cpp.template = "std::unordered_map") parts,
+    // If true, it equals an (up)sert operation.
+    3: bool overwritable = true,
 }
 
 struct AddEdgesRequest {
     1: common.GraphSpaceID space_id,
     // partId => edges
-    2: map<common.PartitionID, list<Edge>>(cpp.template = "std::unordered_map") parts,
+    2: map<common.PartitionID, list<NewEdge>>(
+        cpp.template = "std::unordered_map") parts,
     // If true, it equals an upsert operation.
-    3: bool overwritable,
+    3: bool overwritable = true,
 }
+/*                                                       *
+ * AddVertices                                           *
+ *                                                       *
+ *********************************************************/
 
-struct EdgeKeyRequest {
-    1: common.GraphSpaceID space_id,
-    2: common.PartitionID part_id,
-    3: common.VertexID vid,
-}
 
+/*********************************************************
+ *                                                       *
+ * DeleteVertex                                          *
+ *                                                       */
 struct DeleteVertexRequest {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
     3: common.VertexID     vid;
 }
 
+
 struct DeleteEdgesRequest {
     1: common.GraphSpaceID space_id,
     // partId => edgeKeys
-    2: map<common.PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") parts,
+    2: map<common.PartitionID, list<EdgeKey>>(
+        cpp.template = "std::unordered_map") parts,
+}
+/*                                                       *
+ * DeleteVertex                                          *
+ *                                                       *
+ *********************************************************/
+
+
+// Response for update requests
+struct UpdateResponse {
+    1: required ResponseCommon result,
+    // it's true when the vertex or the edge is inserted
+    2: optional bool inserted = false,
+    3: optional list<PropData> data,
 }
 
+
+/*********************************************************
+ *                                                       *
+ * UpdateVertex                                          *
+ *                                                       */
+struct UpdatedVertexProp {
+    1: required common.TagID    tag_id,     // the Tag ID
+    2: required string          name,       // property name
+    3: required common.Value    value,      // new value
+}
+
+
+struct UpdateVertexRequest {
+    1: common.GraphSpaceID          space_id,
+    2: common.PartitionID           part_id,
+    3: common.VertexID              vertex_id,
+    4: list<UpdatedVertexProp>       updated_props,
+    5: optional bool                insertable = false,
+    6: optional list<VertexProp>    return_props,
+    // If provided, the update happens only when the condition evaluates true
+    7: optional binary              condition,
+}
+/*                                                       *
+ * UpdateVertex                                          *
+ *                                                       *
+ *********************************************************/
+
+
+/*********************************************************
+ *                                                       *
+ * UpdateEdge                                            *
+ *                                                       */
+struct UpdatedEdgeProp {
+    1: required string          name,       // property name
+    2: required common.Value    value,      // new value
+}
+
+
+struct CheckPeersReq {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID  part_id,
+    3: list<common.HostAddr> peers,
+}
+
+
+struct UpdateEdgeRequest {
+    1: common.GraphSpaceID      space_id,
+    2: common.PartitionID       part_id,
+    3: EdgeKey                  edge_key,
+    4: list<UpdatedEdgeProp>    updated_props,
+    5: optional bool            insertable = false,
+    6: optional list<EdgeProp>  return_props,
+    // If provided, the update happens only when the condition evaluates true
+    7: optional binary          condition,
+}
+/*                                                       *
+ * UpdateEdge                                            *
+ *                                                       *
+ *********************************************************/
+
+
+/*********************************************************
+ *                                                       *
+ * GetUUID                                               *
+ *                                                       */
+struct GetUUIDReq {
+    1: common.GraphSpaceID  space_id,
+    2: common.PartitionID   part_id,
+    3: string               name,
+}
+
+
+struct GetUUIDResp {
+    1: required ResponseCommon result,
+    2: common.VertexID id,
+}
+/*                                                       *
+ * GetUUID                                               *
+ *                                                       *
+ *********************************************************/
+
+
+service GraphStorageService {
+    GetNeighborsResponse getNeighbors(1: GetNeighborsRequest req)
+
+    VertexPropResponse getVertexProps(1: VertexPropRequest req);
+    EdgePropResponse getEdgeProps(1: EdgePropRequest req)
+
+    ExecResponse addVertices(1: AddVerticesRequest req);
+    ExecResponse addEdges(1: AddEdgesRequest req);
+
+    ExecResponse deleteEdges(1: DeleteEdgesRequest req);
+    ExecResponse deleteVertex(1: DeleteVertexRequest req);
+
+    UpdateResponse updateVertex(1: UpdateVertexRequest req);
+    UpdateResponse updateEdge(1: UpdateEdgeRequest req);
+
+    GetUUIDResp getUUID(1: GetUUIDReq req);
+}
+
+
+/**********************************************************
+ *
+ * Requests, responses for the StorageAdminService
+ *
+ *********************************************************/
+// Common response for admin methods
 struct AdminExecResp {
     1: required ResponseCommon result,
 }
+
+
+struct TransLeaderReq {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID  part_id,
+    3: common.HostAddr     new_leader,
+}
+
 
 struct AddPartReq {
     1: common.GraphSpaceID space_id,
@@ -232,10 +454,19 @@ struct AddPartReq {
     3: bool                as_learner,
 }
 
+
+struct AddLearnerReq {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID  part_id,
+    3: common.HostAddr     learner,
+}
+
+
 struct RemovePartReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
 }
+
 
 struct MemberChangeReq {
     1: common.GraphSpaceID space_id,
@@ -245,17 +476,6 @@ struct MemberChangeReq {
     4: bool                add,
 }
 
-struct TransLeaderReq {
-    1: common.GraphSpaceID space_id,
-    2: common.PartitionID  part_id,
-    3: common.HostAddr     new_leader,
-}
-
-struct AddLearnerReq {
-    1: common.GraphSpaceID space_id,
-    2: common.PartitionID  part_id,
-    3: common.HostAddr     learner,
-}
 
 struct CatchUpDataReq {
     1: common.GraphSpaceID space_id,
@@ -263,153 +483,111 @@ struct CatchUpDataReq {
     3: common.HostAddr     target,
 }
 
-struct CheckPeersReq {
-    1: common.GraphSpaceID space_id,
-    2: common.PartitionID  part_id,
-    3: list<common.HostAddr> peers,
-}
-
-struct GetLeaderReq {
-}
-
-struct GetLeaderResp {
-    1: required ResponseCommon result,
-    2: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts;
-}
-
-struct UpdateResponse {
-    1: required ResponseCommon result,
-    2: optional common.Schema schema,   // return column related props schema
-    3: optional binary data,            // return column related props value
-    4: optional bool upsert = false,    // it's true when need to be inserted by UPSERT
-}
-
-struct UpdateItem {
-    1: required binary name,    // the Tag name or Edge name
-    2: required binary prop,    // property
-    3: required binary value,   // new value expression which is encoded
-}
-
-struct UpdateVertexRequest {
-    1: common.GraphSpaceID space_id,
-    2: common.VertexID vertex_id,
-    3: common.PartitionID part_id,
-    4: binary filter,
-    5: list<UpdateItem> update_items,
-    6: list<binary> return_columns,
-    7: bool insertable,
-}
-
-struct UpdateEdgeRequest {
-    1: common.GraphSpaceID space_id,
-    2: EdgeKey edge_key,
-    3: common.PartitionID part_id,
-    4: binary filter,
-    5: list<UpdateItem> update_items,
-    6: list<binary> return_columns,
-    7: bool insertable,
-}
-
-struct PutRequest {
-    1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, list<common.Pair>>(cpp.template = "std::unordered_map") parts,
-}
-
-struct RemoveRequest {
-    1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") parts,
-}
-
-struct RemoveRangeRequest {
-    1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, list<common.Pair>>(cpp.template = "std::unordered_map") parts,
-}
-
-struct GetRequest {
-    1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") parts,
-}
-
-struct PrefixRequest {
-    1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, string>(cpp.template = "std::unordered_map") parts,
-}
-
-struct ScanRequest {
-    1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, common.Pair>(cpp.template = "std::unordered_map") parts,
-}
-
-struct GeneralResponse {
-    1: required ResponseCommon result,
-    2: map<string, string>(cpp.template = "std::unordered_map") values,
-}
-
-struct GetUUIDReq {
-    1: common.GraphSpaceID space_id,
-    2: common.PartitionID  part_id,
-    3: string name,
-}
-
-struct GetUUIDResp {
-    1: required ResponseCommon result,
-    2: common.VertexID id,
-}
-
-struct BlockingSignRequest {
-    1: common.GraphSpaceID          space_id,
-    2: required EngineSignType      sign,
-}
 
 struct CreateCPRequest {
-    1: common.GraphSpaceID          space_id,
-    2: string                       name,
+    1: common.GraphSpaceID  space_id,
+    2: string               name,
 }
+
 
 struct DropCPRequest {
-    1: common.GraphSpaceID          space_id,
-    2: string                       name,
+    1: common.GraphSpaceID  space_id,
+    2: string               name,
 }
 
-service StorageService {
-    QueryResponse getBound(1: GetNeighborsRequest req)
 
-    QueryStatsResponse boundStats(1: GetNeighborsRequest req)
+enum EngineSignType {
+    BLOCK_ON = 1,
+    BLOCK_OFF = 2,
+}
 
-    // When return_columns is empty, return all properties
-    QueryResponse getProps(1: VertexPropRequest req);
-    EdgePropResponse getEdgeProps(1: EdgePropRequest req)
 
-    ExecResponse addVertices(1: AddVerticesRequest req);
-    ExecResponse addEdges(1: AddEdgesRequest req);
+struct BlockingSignRequest {
+    1: common.GraphSpaceID      space_id,
+    2: required EngineSignType  sign,
+}
 
-    EdgeKeyResponse getEdgeKeys(1: EdgeKeyRequest req);
-    ExecResponse deleteEdges(1: DeleteEdgesRequest req);
-    ExecResponse deleteVertex(1: DeleteVertexRequest req);
 
-    UpdateResponse updateVertex(1: UpdateVertexRequest req)
-    UpdateResponse updateEdge(1: UpdateEdgeRequest req)
+struct GetLeaderPartsResp {
+    1: required ResponseCommon result,
+    2: map<common.GraphSpaceID, list<common.PartitionID>> (
+        cpp.template = "std::unordered_map") leader_parts;
+}
 
+
+service StorageAdminService {
     // Interfaces for admin operations
     AdminExecResp transLeader(1: TransLeaderReq req);
     AdminExecResp addPart(1: AddPartReq req);
     AdminExecResp addLearner(1: AddLearnerReq req);
-    AdminExecResp waitingForCatchUpData(1: CatchUpDataReq req);
     AdminExecResp removePart(1: RemovePartReq req);
     AdminExecResp memberChange(1: MemberChangeReq req);
-    AdminExecResp checkPeers(1: CheckPeersReq req);
-    GetLeaderResp getLeaderPart(1: GetLeaderReq req);
+    AdminExecResp waitingForCatchUpData(1: CatchUpDataReq req);
 
     // Interfaces for nebula cluster checkpoint
     AdminExecResp createCheckpoint(1: CreateCPRequest req);
     AdminExecResp dropCheckpoint(1: DropCPRequest req);
     AdminExecResp blockingWrites(1: BlockingSignRequest req);
 
-    // Interfaces for key-value storage
-    ExecResponse      put(1: PutRequest req);
-    GeneralResponse   get(1: GetRequest req);
-    ExecResponse      remove(1: RemoveRequest req);
-    ExecResponse      removeRange(1: RemoveRangeRequest req);
-
-    GetUUIDResp getUUID(1: GetUUIDReq req);
+    // Return all leader partitions on this host
+    GetLeaderPartsResp getLeaderParts();
+    // Return all peers
+    AdminExecResp checkPeers(1: CheckPeersReq req);
 }
+
+
+/**********************************************************
+ *
+ * Requests, responses for the GeneralStorageService
+ *
+ *********************************************************/
+struct KVGetRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<binary>>(
+        cpp.template = "std::unordered_map") parts,
+}
+
+
+struct KVGetResponse {
+    1: required ResponseCommon result,
+    2: map<binary, binary>(cpp.template = "std::unordered_map") key_values,
+}
+
+
+struct KVPutRequest {
+    1: common.GraphSpaceID space_id,
+    // part -> key/value
+    2: map<common.PartitionID, list<common.KeyValue>>(
+        cpp.template = "std::unordered_map") parts,
+}
+
+
+struct KVRemoveRequest {
+    1: common.GraphSpaceID space_id,
+    // part -> key
+    2: map<common.PartitionID, list<binary>>(
+        cpp.template = "std::unordered_map") parts,
+}
+
+
+struct KeyRange {
+    1: binary start,
+    2: binary end,
+}
+
+
+struct KVRemoveRangeRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<KeyRange>>(
+        cpp.template = "std::unordered_map") parts,
+}
+
+
+service GeneralStorageService {
+    // Interfaces for key-value storage
+    KVGetResponse   get(1: KVGetRequest req);
+    ExecResponse    put(1: KVPutRequest req);
+    ExecResponse    remove(1: KVRemoveRequest req);
+    ExecResponse    removeRange(1: KVRemoveRangeRequest req);
+}
+

@@ -17,7 +17,13 @@ thrift_generate("graph" "GraphService" ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRE
 thrift_generate("raftex" "RaftexService" ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} "interface")
 
 # Target object name : storage_thrift_obj
-thrift_generate("storage" "StorageService" ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} "interface")
+thrift_generate(
+    "storage"
+    "GraphStorageService;StorageAdminService;GeneralStorageService"
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
+    "interface"
+)
 
 # Target object name : meta_thrift_obj
 thrift_generate("meta" "MetaService" ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} "interface")

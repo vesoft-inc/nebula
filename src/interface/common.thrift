@@ -17,87 +17,83 @@ typedef i32 (cpp.type = "nebula::TagID") TagID
 typedef i32 (cpp.type = "nebula::EdgeType") EdgeType
 typedef i64 (cpp.type = "nebula::EdgeRanking") EdgeRanking
 typedef i64 (cpp.type = "nebula::VertexID") VertexID
-typedef i32 (cpp.type = "nebula::TagIndexID") TagIndexID
-typedef i32 (cpp.type = "nebula::EdgeIndexID") EdgeIndexID
+
+typedef i64 (cpp.type = "nebula::Timestamp") Timestamp
 
 typedef i32 (cpp.type = "nebula::IPv4") IPv4
 typedef i32 (cpp.type = "nebula::Port") Port
 
-typedef i64 (cpp.type = "nebula::SchemaVer") SchemaVer
 
-typedef i32 (cpp.type = "nebula::UserID") UserID
-typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
-
-// These are all data types supported in the graph properties
-enum SupportedType {
-    UNKNOWN = 0,
-
-    // Simple types
-    BOOL = 1,
-    INT = 2,
-    VID = 3,
-    FLOAT = 4,
-    DOUBLE = 5,
-    STRING = 6,
-
-    // Date time
-    TIMESTAMP = 21,
-    YEAR = 22,
-    YEARMONTH = 23,
-    DATE = 24,
-    DATETIME = 25,
-
-    // Graph specific
-    PATH = 41,
-
-    // Container types
-    // LIST = 101,
-    // SET = 102,
-    // MAP = 103,      // The key type is always a STRING
-    // STRUCT = 104,
-} (cpp.enum_strict)
+// !! Struct Date has a shadow data type defined in the ThriftTypes.h
+// So any change here needs to be reflected to the shadow type there
+struct Date {
+    1: i16 year;    // Calendar year, such as 2019
+    2: byte month;    // Calendar month: 1 - 12
+    3: byte day;      // Calendar day: 1 -31
+}
 
 
-struct ValueType {
-    1: SupportedType type;
-    // vtype only exists when the type is a LIST, SET, or MAP
-    2: optional ValueType value_type (cpp.ref = true);
-    // When the type is STRUCT, schema defines the struct
-    3: optional Schema schema (cpp.ref = true);
-} (cpp.virtual)
+// !! Struct DateTime has a shadow data type defined in the ThriftTypes.h
+// So any change here needs to be reflected to the shadow type there
+struct DateTime {
+    1: i16 year;
+    2: byte month;
+    3: byte day;
+    4: byte hour;         // Hour: 0 - 23
+    5: byte minute;       // Minute: 0 - 59
+    6: byte sec;          // Second: 0 - 59
+    7: i32 microsec;    // Micro-second: 0 - 999,999
+    8: i32 timezone;    // Time difference in seconds
+}
 
+
+struct Step {
+    1: EdgeType type;
+    2: EdgeRanking ranking;
+    3: VertexID dst;
+}
+
+
+// Special type to support path during the query
+struct Path {
+    1: VertexID src;
+    2: list<Step> steps;
+}
+
+
+// The type to hold any supported values during the query
 union Value {
-    1: i64     int_value;
-    2: bool    bool_value;
-    3: double  double_value;
-    4: string  string_value;
-    5: i64     timestamp;
+    1: bool         bVal;
+    2: i64          iVal;
+    3: double       fVal;
+    4: string       sVal;
+    5: Timestamp    tVal;
+    6: Date         dVal;
+    7: DateTime     dtVal;
+    8: Path         pVal (cpp2.ref_type = "unique");
+    9: List         lVal (cpp2.ref_type = "unique");
+    10: Map         mVal (cpp2.ref_type = "unique");
 }
 
-struct ColumnDef {
-    1: required string name,
-    2: required ValueType type,
-    3: optional Value default_value,
+
+struct List {
+    1: list<Value> values;
 }
 
-struct SchemaProp {
-    1: optional i64      ttl_duration,
-    2: optional string   ttl_col,
+
+struct Map {
+    1: map<string, Value> (cpp.template = "std::unordered_map") kvs;
 }
 
-struct Schema {
-    1: list<ColumnDef> columns,
-    2: SchemaProp schema_prop,
-}
 
 struct HostAddr {
     1: IPv4  ip,
     2: Port  port,
 }
 
-struct Pair {
-    1: string key,
-    2: string value,
+
+struct KeyValue {
+    1: binary key,
+    2: binary value,
 }
 
-const ValueType kInvalidValueType = {"type" : UNKNOWN}
