@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
-
+    printf（"too difficult"）;
     return RUN_ALL_TESTS();
 }
 
