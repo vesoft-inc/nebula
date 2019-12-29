@@ -134,8 +134,8 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
 
 bool initJobManager(nebula::kvstore::KVStore* kvstore,
                     nebula::thread::GenericThreadPool* pool) {
-    nebula::meta::JobManager* job_mgr = nebula::meta::JobManager::getInstance();
-    return job_mgr->init(kvstore, pool);
+    nebula::meta::JobManager* jobMgr = nebula::meta::JobManager::getInstance();
+    return jobMgr->init(kvstore, pool);
 }
 
 Status initWebService(nebula::WebService* svc,

@@ -31,17 +31,16 @@ void AdminJobExecutor::execute() {
             onError_(std::move(status));
             return;
         }
-        std::string spaceName = ectx()->rctx()->session()->spaceName();
+        const std::string& spaceName = ectx()->rctx()->session()->spaceName();
         sentence_->addPara(spaceName);
     }
 
-    LOG(INFO) << __func__ << " going to run admin job";
     auto future = ectx()->getMetaClient()->runAdminJob(opEnum, sentence_->getParas());
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this, opEnum] (auto &&resp) {
         if (!resp.ok()) {
             DCHECK(onError_);
-            onError_(std::move(resp).status());
+            onError_(std::forward<nebula::Status>(resp.status()));
             return;
         }
 
@@ -49,7 +48,7 @@ void AdminJobExecutor::execute() {
         std::vector<std::string> header = getHeader(opEnum);
         resp_->set_column_names(std::move(header));
 
-        auto resultSet = std::move(resp).value();
+        auto resultSet = std::forward<std::vector<std::string>>(resp.value());
         std::vector<cpp2::RowValue> table;
         for (auto& result : resultSet) {
             std::vector<std::string> ret_cols;
