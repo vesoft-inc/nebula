@@ -63,16 +63,17 @@ struct Path {
 
 // The type to hold any supported values during the query
 union Value {
-    1: bool         bVal;
-    2: i64          iVal;
-    3: double       fVal;
-    4: string       sVal;
-    5: Timestamp    tVal;
-    6: Date         dVal;
-    7: DateTime     dtVal;
-    8: Path         pVal (cpp2.ref_type = "unique");
-    9: List         lVal (cpp2.ref_type = "unique");
-    10: Map         mVal (cpp2.ref_type = "unique");
+    1: VertexID     idVal;
+    2: bool         bVal;
+    3: i64          iVal;
+    4: double       fVal;
+    5: string       sVal;
+    6: Timestamp    tVal;
+    7: Date         dVal;
+    8: DateTime     dtVal;
+    9: Path         pVal (cpp2.ref_type = "unique");
+    10: List        lVal (cpp2.ref_type = "unique");
+    11: Map         mVal (cpp2.ref_type = "unique");
 }
 
 

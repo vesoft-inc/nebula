@@ -101,6 +101,9 @@ enum PropertyType {
     FLOAT = 4,
     DOUBLE = 5,
     STRING = 6,
+    // String with fixed length. If the string content is shorteri
+    // than the given length, '\0' will be padded to the end
+    FIXED_STRING = 7,
 
     // Date time
     TIMESTAMP = 21,
@@ -111,6 +114,7 @@ enum PropertyType {
 struct ColumnDef {
     1: required string name,
     2: required PropertyType type,
+    3: required i16 type_length,
 //    3: optional union {
 //        1: bool bVal;
 //        2: i64 iVal;
