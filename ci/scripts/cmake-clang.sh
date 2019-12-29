@@ -7,6 +7,9 @@
 
 set -ex
 
-cd build
+CURR_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR=$CURR_DIR/../..
 
-${NEBULA_DEP_BIN}/cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DENABLE_UBSAN=on ..
+cd $PROJECT_DIR/build
+
+${NEBULA_DEP_BIN}/cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DENABLE_UBSAN=on $PROJECT_DIR
