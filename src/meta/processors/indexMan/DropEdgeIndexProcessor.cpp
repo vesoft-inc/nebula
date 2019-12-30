@@ -27,6 +27,7 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
     keys.emplace_back(MetaServiceUtils::indexEdgeIndexKey(spaceID, indexName));
     keys.emplace_back(MetaServiceUtils::edgeIndexKey(spaceID, edgeIndexID.value()));
 
+    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     LOG(INFO) << "Drop Edge Index " << indexName;
     resp_.set_id(to(edgeIndexID.value(), EntryType::EDGE_INDEX));
     doMultiRemove(keys);

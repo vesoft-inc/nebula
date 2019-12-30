@@ -97,6 +97,8 @@ public:
     virtual void onPartAdded(const PartMeta& partMeta) = 0;
     virtual void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) = 0;
     virtual void onPartUpdated(const PartMeta& partMeta) = 0;
+    virtual void fetchLeaderInfo(std::unordered_map<GraphSpaceID,
+                                                    std::vector<PartitionID>>& leaderIds) = 0;
 };
 
 class MetaClient {
@@ -114,9 +116,8 @@ public:
                         std::vector<HostAddr> addrs,
                         HostAddr localHost = HostAddr(0, 0),
                         ClusterID clusterId = 0,
-                        bool sendHeartBeat = false,
+                        bool inStoraged = true,
                         const std::string &serviceName = "");
-
 
     virtual ~MetaClient();
 
@@ -159,7 +160,7 @@ public:
     listHosts();
 
     folly::Future<StatusOr<std::vector<cpp2::PartItem>>>
-    listParts(GraphSpaceID spaceId);
+    listParts(GraphSpaceID spaceId, std::vector<PartitionID> partIds);
 
     folly::Future<StatusOr<PartsAlloc>>
     getPartsAlloc(GraphSpaceID spaceId);
@@ -348,18 +349,12 @@ public:
     Status refreshCache();
 
 protected:
-    void loadDataThreadFunc();
     // Return true if load succeeded.
     bool loadData();
-
-    void addLoadDataTask();
-
+    bool loadCfg();
     void heartBeatThreadFunc();
 
-    void loadCfgThreadFunc();
-    void loadCfg();
     bool registerCfg();
-    void addLoadCfgTask();
     void updateGflagsValue(const ConfigItem& item);
     void updateNestedGflags(const std::string& name);
 
@@ -425,6 +420,11 @@ private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     std::shared_ptr<thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>> clientsMan_;
 
+    std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds_;
+    folly::RWSpinLock     leaderIdsLock_;
+    int64_t               localLastUpdateTime_{0};
+    int64_t               metadLastUpdateTime_{0};
+
     LocalCache localCache_;
     std::vector<HostAddr> addrs_;
     // The lock used to protect active_ and leader_.
@@ -440,13 +440,13 @@ private:
     SpaceEdgeTypeNameMap  spaceEdgeIndexByType_;
     SpaceNewestTagVerMap  spaceNewestTagVerMap_;
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
-    SpaceAllEdgeMap      spaceAllEdgeMap_;
+    SpaceAllEdgeMap       spaceAllEdgeMap_;
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
     folly::RWSpinLock     listenerLock_;
     std::atomic<ClusterID> clusterId_{0};
     bool                  isRunning_{false};
-    bool                  sendHeartBeat_{false};
+    bool                  inStoraged_{true};
     std::atomic_bool      ready_{false};
     MetaConfigMap         metaConfigMap_;
     folly::RWSpinLock     configCacheLock_;

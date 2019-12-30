@@ -56,6 +56,14 @@ Status InsertEdgeExecutor::check() {
         return Status::Error("Wrong number of props");
     }
 
+    // Check prop name is in schema
+    for (auto *it : props_) {
+        if (schema_->getFieldIndex(*it) < 0) {
+            LOG(ERROR) << "Unknown column `" << *it << "' in schema";
+            return Status::Error("Unknown column `%s' in schema", it->c_str());
+        }
+    }
+
     auto *mc = ectx()->getMetaClient();
 
     for (size_t i = 0; i < schema_->getNumFields(); i++) {
@@ -149,6 +157,8 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         }
 
         RowWriter writer(schema_);
+        int64_t valuesSize = values.size();
+        int32_t handleValueNum = 0;
         for (size_t schemaIndex = 0; schemaIndex < schema_->getNumFields(); schemaIndex++) {
             auto fieldName = schema_->getFieldName(schemaIndex);
             auto positionIter = propsPosition_.find(fieldName);
@@ -157,6 +167,10 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             auto schemaType = schema_->getFieldType(schemaIndex);
             if (positionIter != propsPosition_.end()) {
                 auto position = propsPosition_[fieldName];
+                if (position >= valuesSize) {
+                    LOG(ERROR) << fieldName << " need input value";
+                    return Status::Error("`%s' need input value", fieldName);
+                }
                 value = values[position];
                 if (!checkValueType(schemaType, value)) {
                     LOG(ERROR) << "ValueType is wrong, schema type "
@@ -180,10 +194,18 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
                 if (!timestamp.ok()) {
                     return timestamp.status();
                 }
-                writeVariantType(writer, timestamp.value());
+                status = writeVariantType(writer, timestamp.value());
             } else {
-                writeVariantType(writer, value);
+                status = writeVariantType(writer, value);
             }
+            if (!status.ok()) {
+                return status;
+            }
+            handleValueNum++;
+        }
+        // Input values more than schema props
+        if (handleValueNum < valuesSize) {
+            return Status::Error("Column count doesn't match value count");
         }
 
         {
