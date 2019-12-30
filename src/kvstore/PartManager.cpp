@@ -167,5 +167,14 @@ void MetaServerBasedPartManager::onPartUpdated(const PartMeta& partMeta) {
     UNUSED(partMeta);
 }
 
+void MetaServerBasedPartManager::fetchLeaderInfo(
+        std::unordered_map<GraphSpaceID, std::vector<PartitionID>>& leaderIds) {
+    if (handler_ != nullptr) {
+        handler_->allLeader(leaderIds);
+    } else {
+        VLOG(1) << "handler_ is nullptr!";
+    }
+}
+
 }  // namespace kvstore
 }  // namespace nebula

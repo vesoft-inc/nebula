@@ -13,8 +13,7 @@
 namespace nebula {
 namespace storage {
 
-using TagIndexTuple  = std::tuple<TagID, IndexID, meta::cpp2::IndexFields>;
-using EdgeIndexTuple = std::tuple<EdgeType, IndexID, meta::cpp2::IndexFields>;
+using IndexItem = nebula::cpp2::IndexItem;
 
 class AdHocIndexManager final : public nebula::meta::IndexManager {
 public:
@@ -24,23 +23,23 @@ public:
     void addTagIndex(GraphSpaceID space,
                      IndexID indexID,
                      TagID tagID,
-                     meta::cpp2::IndexFields fields);
+                     std::vector<nebula::cpp2::ColumnDef>&& fields);
 
     void addEdgeIndex(GraphSpaceID space,
                       IndexID indexID,
                       EdgeType edgeType,
-                      meta::cpp2::IndexFields fields);
+                      std::vector<nebula::cpp2::ColumnDef>&& fields);
 
-    StatusOr<std::shared_ptr<std::pair<TagID, meta::cpp2::IndexFields>>>
+    StatusOr<std::shared_ptr<IndexItem>>
     getTagIndex(GraphSpaceID space, IndexID index);
 
-    StatusOr<std::shared_ptr<std::pair<EdgeType, meta::cpp2::IndexFields>>>
+    StatusOr<std::shared_ptr<IndexItem>>
     getEdgeIndex(GraphSpaceID space, IndexID index);
 
-    StatusOr<std::vector<std::shared_ptr<TagIndexTuple>>>
+    StatusOr<std::vector<std::shared_ptr<IndexItem>>>
     getTagIndexes(GraphSpaceID space);
 
-    StatusOr<std::vector<std::shared_ptr<EdgeIndexTuple>>>
+    StatusOr<std::vector<std::shared_ptr<IndexItem>>>
     getEdgeIndexes(GraphSpaceID space);
 
     Status checkTagIndexed(GraphSpaceID space, TagID tagID);
@@ -51,8 +50,10 @@ protected:
     folly::RWSpinLock tagIndexLock_;
     folly::RWSpinLock edgeIndexLock_;
 
-    std::unordered_map<GraphSpaceID, std::vector<std::shared_ptr<TagIndexTuple>>> tagIndexes_;
-    std::unordered_map<GraphSpaceID, std::vector<std::shared_ptr<EdgeIndexTuple>>> edgeIndexes_;
+    std::unordered_map<GraphSpaceID,
+                       std::vector<std::shared_ptr<IndexItem>>> tagIndexes_;
+    std::unordered_map<GraphSpaceID,
+                       std::vector<std::shared_ptr<IndexItem>>> edgeIndexes_;
 };
 
 }  // namespace storage

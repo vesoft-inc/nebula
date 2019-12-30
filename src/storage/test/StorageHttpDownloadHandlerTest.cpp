@@ -14,7 +14,6 @@
 #include "fs/TempDir.h"
 
 DECLARE_string(meta_server_addrs);
-DECLARE_int32(load_data_interval_secs);
 
 namespace nebula {
 namespace storage {

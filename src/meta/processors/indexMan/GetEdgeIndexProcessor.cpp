@@ -33,9 +33,7 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
         return;
     }
 
-    cpp2::IndexItem item;
-    item.set_index_id(edgeIndexIDResult.value());
-    item.set_fields(MetaServiceUtils::parseIndex(edgeResult.value()));
+    auto item = MetaServiceUtils::parseIndex(edgeResult.value());
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_item(std::move(item));
     onFinished();

@@ -69,6 +69,7 @@ nebula_add_library(
     MetaHttpIngestHandler.cpp
     MetaHttpDownloadHandler.cpp
     MetaHttpStatusHandler.cpp
+    MetaHttpReplaceHostHandler.cpp
 )
 
 nebula_add_library(

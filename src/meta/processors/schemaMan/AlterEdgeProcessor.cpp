@@ -73,6 +73,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     data.emplace_back(MetaServiceUtils::schemaEdgeKey(req.get_space_id(), edgeType, version),
                       MetaServiceUtils::schemaEdgeVal(req.get_edge_name(), schema));
     resp_.set_id(to(edgeType, EntryType::EDGE));
+    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     doPut(std::move(data));
 }
 

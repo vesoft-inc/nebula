@@ -89,6 +89,19 @@ struct Schema {
     2: SchemaProp schema_prop,
 }
 
+union SchemaID {
+    1: TagID         tag_id,
+    2: EdgeType      edge_type,
+}
+
+struct IndexItem {
+    1: IndexID             index_id,
+    2: string              index_name,
+    3: SchemaID            schema_id
+    4: string              schema_name,
+    5: list<ColumnDef>     fields,
+}
+
 struct HostAddr {
     1: IPv4  ip,
     2: Port  port,

@@ -24,16 +24,16 @@ public:
 
     void init(MetaClient *client);
 
-    StatusOr<std::shared_ptr<std::pair<TagID, cpp2::IndexFields>>>
+    StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>>
     getTagIndex(GraphSpaceID space, IndexID index);
 
-    StatusOr<std::shared_ptr<std::pair<EdgeType, cpp2::IndexFields>>>
+    StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>>
     getEdgeIndex(GraphSpaceID space, IndexID index);
 
-    StatusOr<std::vector<std::shared_ptr<std::tuple<TagID, IndexID, cpp2::IndexFields>>>>
+    StatusOr<std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>>
     getTagIndexes(GraphSpaceID space);
 
-    StatusOr<std::vector<std::shared_ptr<std::tuple<EdgeType, IndexID, cpp2::IndexFields>>>>
+    StatusOr<std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>>
     getEdgeIndexes(GraphSpaceID space);
 
     StatusOr<IndexID>

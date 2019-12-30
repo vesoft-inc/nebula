@@ -26,16 +26,8 @@ void ListEdgeIndexesProcessor::process(const cpp2::ListEdgeIndexesReq& req) {
 
     decltype(resp_.items) items;
     while (iter->valid()) {
-        auto key = iter->key();
         auto val = iter->val();
-        auto nameSize = *reinterpret_cast<const int32_t *>(val.data());
-        auto name = val.subpiece(sizeof(int32_t), nameSize).str();
-        auto edgeIndex = *reinterpret_cast<const IndexID *>(key.data() + prefix.size());
-        auto fields = MetaServiceUtils::parseIndex(val);
-        cpp2::IndexItem item;
-        item.set_index_id(edgeIndex);
-        item.set_index_name(std::move(name));
-        item.set_fields(std::move(fields));
+        auto item = MetaServiceUtils::parseIndex(val);
         items.emplace_back(std::move(item));
         iter->next();
     }

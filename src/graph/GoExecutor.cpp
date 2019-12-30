@@ -1347,7 +1347,7 @@ OptVariantType GoExecutor::EdgeHolder::get(VertexID src,
         LOG(ERROR) << "EdgeHolder couldn't find src: "
                    << src << ", dst: " << dst << ", edge type: " << type;
         return Status::Error("EdgeHolder couldn't find src: %ld, dst: %ld, type: %d",
-                             src, dst, prop);
+                             src, dst, type);
     }
     auto reader = RowReader::getRowReader(iter->second.second, iter->second.first);
     auto result = RowReader::getPropByName(reader.get(), prop);
@@ -1367,7 +1367,7 @@ StatusOr<SupportedType> GoExecutor::EdgeHolder::getType(VertexID src,
         LOG(ERROR) << "EdgeHolder couldn't find src: "
                    << src << ", dst: " << dst << ", edge type: " << type;
         return Status::Error("EdgeHolder couldn't find src: %ld, dst: %ld, type: %d",
-                             src, dst, prop);
+                             src, dst, type);
     }
     return iter->second.first->getFieldType(prop).type;
 }

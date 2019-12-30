@@ -12,70 +12,84 @@ namespace storage {
 void AdHocIndexManager::addTagIndex(GraphSpaceID space,
                                     IndexID indexID,
                                     TagID tagID,
-                                    meta::cpp2::IndexFields fields) {
+                                    std::vector<nebula::cpp2::ColumnDef>&& fields) {
     folly::RWSpinLock::WriteHolder wh(tagIndexLock_);
+    nebula::cpp2::IndexItem item;
+    item.set_index_id(indexID);
+    item.set_index_name(folly::stringPrintf("index_%d", indexID));
+    nebula::cpp2::SchemaID schemaID;
+    schemaID.set_tag_id(tagID);
+    item.set_schema_id(schemaID);
+    item.set_schema_name(folly::stringPrintf("tag_%d", tagID));
+    item.set_fields(std::move(fields));
+    std::shared_ptr<IndexItem> itemPtr = std::make_shared<IndexItem>(item);
+
     auto iter = tagIndexes_.find(space);
     if (iter == tagIndexes_.end()) {
-        auto tuple = std::make_tuple(indexID, tagID, fields);
-        std::shared_ptr<TagIndexTuple> tuplePtr = std::make_shared<TagIndexTuple>(tuple);
-        std::vector<std::shared_ptr<TagIndexTuple>> tuples{tuplePtr};
-        tagIndexes_.emplace(space, tuples);
+        std::vector<std::shared_ptr<IndexItem>> items{itemPtr};
+        tagIndexes_.emplace(space, std::move(items));
+    } else {
+        iter->second.emplace_back(std::move(itemPtr));
     }
 }
 
 void AdHocIndexManager::addEdgeIndex(GraphSpaceID space,
                                      IndexID indexID,
                                      EdgeType edgeType,
-                                     meta::cpp2::IndexFields fields) {
+                                     std::vector<nebula::cpp2::ColumnDef>&& fields) {
     folly::RWSpinLock::WriteHolder wh(edgeIndexLock_);
+    nebula::cpp2::IndexItem item;
+    item.set_index_id(indexID);
+    item.set_index_name(folly::stringPrintf("index_%d", indexID));
+    nebula::cpp2::SchemaID schemaID;
+    schemaID.set_edge_type(edgeType);
+    item.set_schema_id(schemaID);
+    item.set_schema_name(folly::stringPrintf("edge_%d", edgeType));
+    item.set_fields(std::move(fields));
+    std::shared_ptr<IndexItem> itemPtr = std::make_shared<IndexItem>(item);
+
     auto iter = edgeIndexes_.find(space);
     if (iter == edgeIndexes_.end()) {
-        auto tuple = std::make_tuple(indexID, edgeType, fields);
-        std::shared_ptr<EdgeIndexTuple> tuplePtr = std::make_shared<EdgeIndexTuple>(tuple);
-        std::vector<std::shared_ptr<EdgeIndexTuple>> tuples{tuplePtr};
-        edgeIndexes_.emplace(space, tuples);
+        std::vector<std::shared_ptr<IndexItem>> items{itemPtr};
+        edgeIndexes_.emplace(space, items);
+    } else {
+        iter->second.emplace_back(std::move(itemPtr));
     }
 }
 
-StatusOr<std::shared_ptr<std::pair<TagID, meta::cpp2::IndexFields>>>
+StatusOr<std::shared_ptr<IndexItem>>
 AdHocIndexManager::getTagIndex(GraphSpaceID space, IndexID index) {
     folly::RWSpinLock::ReadHolder rh(tagIndexLock_);
     auto iter = tagIndexes_.find(space);
     if (iter == tagIndexes_.end()) {
         return Status::SpaceNotFound();
     }
-    auto tuples = iter->second;
-    for (auto &tuple : tuples) {
-        if (std::get<1>(*tuple) == index) {
-            auto tagID = std::get<0>(*tuple);
-            auto fields = std::get<2>(*tuple);
-            auto pair = std::make_pair(tagID, fields);
-            return std::make_shared<std::pair<TagID, meta::cpp2::IndexFields>>(pair);
+    auto items = iter->second;
+    for (auto &item : items) {
+        if (item->get_index_id() == index) {
+            return item;
         }
     }
     return Status::TagIndexNotFound();
 }
 
-StatusOr<std::shared_ptr<std::pair<EdgeType, meta::cpp2::IndexFields>>>
+StatusOr<std::shared_ptr<IndexItem>>
 AdHocIndexManager::getEdgeIndex(GraphSpaceID space, IndexID index) {
     folly::RWSpinLock::ReadHolder rh(edgeIndexLock_);
     auto iter = edgeIndexes_.find(space);
     if (iter == edgeIndexes_.end()) {
         return Status::SpaceNotFound();
     }
-    auto tuples = iter->second;
-    for (auto &tuple : tuples) {
-        if (std::get<1>(*tuple) == index) {
-            auto edgeType = std::get<0>(*tuple);
-            auto fields = std::get<2>(*tuple);
-            auto pair = std::make_pair(edgeType, fields);
-            return std::make_shared<std::pair<EdgeType, meta::cpp2::IndexFields>>(pair);
+    auto items = iter->second;
+    for (auto &item : items) {
+        if (item->get_index_id() == index) {
+            return item;
         }
     }
     return Status::EdgeIndexNotFound();
 }
 
-StatusOr<std::vector<std::shared_ptr<TagIndexTuple>>>
+StatusOr<std::vector<std::shared_ptr<IndexItem>>>
 AdHocIndexManager::getTagIndexes(GraphSpaceID space) {
     folly::RWSpinLock::ReadHolder rh(tagIndexLock_);
     auto iter = tagIndexes_.find(space);
@@ -85,7 +99,7 @@ AdHocIndexManager::getTagIndexes(GraphSpaceID space) {
     return iter->second;
 }
 
-StatusOr<std::vector<std::shared_ptr<EdgeIndexTuple>>>
+StatusOr<std::vector<std::shared_ptr<IndexItem>>>
 AdHocIndexManager::getEdgeIndexes(GraphSpaceID space) {
     folly::RWSpinLock::ReadHolder rh(edgeIndexLock_);
     auto iter = edgeIndexes_.find(space);
@@ -101,9 +115,10 @@ Status AdHocIndexManager::checkTagIndexed(GraphSpaceID space, TagID tagID) {
     if (iter == tagIndexes_.end()) {
         return Status::SpaceNotFound();
     }
-    auto tuples = iter->second;
-    for (auto &tuple : tuples) {
-        if (std::get<0>(*tuple) == tagID) {
+
+    auto items = iter->second;
+    for (auto &item : items) {
+        if (item->get_schema_id().get_tag_id() == tagID) {
             return Status::OK();
         }
     }
@@ -116,9 +131,10 @@ Status AdHocIndexManager::checkEdgeIndexed(GraphSpaceID space, EdgeType edgeType
     if (iter == edgeIndexes_.end()) {
         return Status::SpaceNotFound();
     }
-    auto tuples = iter->second;
-    for (auto &tuple : tuples) {
-        if (std::get<0>(*tuple) == edgeType) {
+
+    auto items = iter->second;
+    for (auto &item : items) {
+        if (item->get_schema_id().get_edge_type() == edgeType) {
             return Status::OK();
         }
     }

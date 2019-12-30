@@ -18,22 +18,22 @@ void IndexManager::init(MetaClient *client) {
     metaClient_ = client;
 }
 
-StatusOr<std::shared_ptr<std::pair<TagID, cpp2::IndexFields>>>
+StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>>
 IndexManager::getTagIndex(GraphSpaceID space, IndexID index) {
     return metaClient_->getTagIndexFromCache(space, index);
 }
 
-StatusOr<std::shared_ptr<std::pair<EdgeType, cpp2::IndexFields>>>
+StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>>
 IndexManager::getEdgeIndex(GraphSpaceID space, IndexID index) {
     return metaClient_->getEdgeIndexFromCache(space, index);
 }
 
-StatusOr<std::vector<std::shared_ptr<std::tuple<TagID, IndexID, cpp2::IndexFields>>>>
+StatusOr<std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>>
 IndexManager::getTagIndexes(GraphSpaceID space) {
     return metaClient_->getTagIndexesFromCache(space);
 }
 
-StatusOr<std::vector<std::shared_ptr<std::tuple<EdgeType, IndexID, cpp2::IndexFields>>>>
+StatusOr<std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>>
 IndexManager::getEdgeIndexes(GraphSpaceID space) {
     return metaClient_->getEdgeIndexesFromCache(space);
 }
@@ -44,7 +44,7 @@ IndexManager::toTagIndexID(GraphSpaceID space, std::string tagName) {
     if (!status.ok()) {
         return status.status();
     }
-    return std::get<1>(*status.value());
+    return status.value()->get_index_id();
 }
 
 StatusOr<IndexID>
@@ -53,7 +53,7 @@ IndexManager::toEdgeIndexID(GraphSpaceID space, std::string edgeName) {
     if (!status.ok()) {
         return status.status();
     }
-    return std::get<1>(*status.value());
+    return status.value()->get_index_id();
 }
 
 Status IndexManager::checkTagIndexed(GraphSpaceID space, TagID tagID) {

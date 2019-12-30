@@ -35,25 +35,20 @@ using TagSchemas = std::unordered_map<std::pair<TagID, SchemaVer>,
 using EdgeSchemas = std::unordered_map<std::pair<EdgeType, SchemaVer>,
                                        std::shared_ptr<const SchemaProviderIf>>;
 
-using Indexes = std::unordered_map<IndexID, std::shared_ptr<cpp2::IndexFields>>;
 
-// IndexID => TagID
-using IndexTagMap  = std::unordered_map<IndexID, TagID>;
+// Space and Schema Name => IndexID
+// Get IndexID via space ID and index name
+using NameIndexMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, IndexID>;
 
-// IndexID => EdgeType
-using IndexEdgeMap = std::unordered_map<IndexID, EdgeType>;
-
-using TagIndexPair  = std::pair<TagID, cpp2::IndexFields>;
-using EdgeIndexPair = std::pair<EdgeType, cpp2::IndexFields>;
-
-using TagIndexTuple  = std::tuple<TagID, IndexID, cpp2::IndexFields>;
-using EdgeIndexTuple = std::tuple<EdgeType, IndexID, cpp2::IndexFields>;
+// Index ID => Index Item
+// Get Index Structure by indexID
+using Indexes = std::unordered_map<IndexID, std::shared_ptr<nebula::cpp2::IndexItem>>;
 
 struct SpaceInfoCache {
     std::string spaceName;
     PartsAlloc partsAlloc_;
     std::unordered_map<HostAddr, std::vector<PartitionID>> partsOnHost_;
-    TagSchemas tagSchemas_;
+    TagSchemas  tagSchemas_;
     EdgeSchemas edgeSchemas_;
     Indexes tagIndexes_;
     Indexes edgeIndexes_;
@@ -81,13 +76,6 @@ using SpaceEdgeTypeNameMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType
 // get all edgeType edgeName via spaceId
 using SpaceAllEdgeMap = std::unordered_map<GraphSpaceID, std::vector<std::string>>;
 
-using TagIDIndexMap = std::unordered_map<std::pair<GraphSpaceID, TagID>,
-                                         std::vector<IndexID>>;
-
-using EdgeTypeIndexMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>,
-                                            std::vector<IndexID>>;
-
-using IndexNameMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, IndexID>;
 
 struct ConfigItem {
     ConfigItem() {}
@@ -122,6 +110,8 @@ public:
     virtual void onPartAdded(const PartMeta& partMeta) = 0;
     virtual void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) = 0;
     virtual void onPartUpdated(const PartMeta& partMeta) = 0;
+    virtual void fetchLeaderInfo(std::unordered_map<GraphSpaceID,
+                                                    std::vector<PartitionID>>& leaderIds) = 0;
 };
 
 class MetaClient {
@@ -139,9 +129,8 @@ public:
                         std::vector<HostAddr> addrs,
                         HostAddr localHost = HostAddr(0, 0),
                         ClusterID clusterId = 0,
-                        bool sendHeartBeat = false,
+                        bool inStoraged = true,
                         const std::string &serviceName = "");
-
 
     virtual ~MetaClient();
 
@@ -184,7 +173,7 @@ public:
     listHosts();
 
     folly::Future<StatusOr<std::vector<cpp2::PartItem>>>
-    listParts(GraphSpaceID spaceId);
+    listParts(GraphSpaceID spaceId, std::vector<PartitionID> partIds);
 
     folly::Future<StatusOr<PartsAlloc>>
     getPartsAlloc(GraphSpaceID spaceId);
@@ -235,32 +224,34 @@ public:
     // Operations for index
     folly::Future<StatusOr<IndexID>>
     createTagIndex(GraphSpaceID spaceID,
-                   std::string name,
-                   std::map<std::string, std::vector<std::string>>&& fields);
+                   std::string indexName,
+                   std::string schemaName,
+                   std::vector<std::string>&& fields);
 
     // Remove the define of tag index
     folly::Future<StatusOr<bool>>
     dropTagIndex(GraphSpaceID spaceId, std::string name);
 
-    folly::Future<StatusOr<cpp2::IndexItem>>
+    folly::Future<StatusOr<nebula::cpp2::IndexItem>>
     getTagIndex(GraphSpaceID spaceId, std::string name);
 
-    folly::Future<StatusOr<std::vector<cpp2::IndexItem>>>
+    folly::Future<StatusOr<std::vector<nebula::cpp2::IndexItem>>>
     listTagIndexes(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<IndexID>>
     createEdgeIndex(GraphSpaceID spaceID,
-                    std::string name,
-                    std::map<std::string, std::vector<std::string>>&& fields);
+                    std::string indexName,
+                    std::string schemaName,
+                    std::vector<std::string>&& fields);
 
     // Remove the define of edge index
     folly::Future<StatusOr<bool>>
     dropEdgeIndex(GraphSpaceID spaceId, std::string name);
 
-    folly::Future<StatusOr<cpp2::IndexItem>>
+    folly::Future<StatusOr<nebula::cpp2::IndexItem>>
     getEdgeIndex(GraphSpaceID spaceId, std::string name);
 
-    folly::Future<StatusOr<std::vector<cpp2::IndexItem>>>
+    folly::Future<StatusOr<std::vector<nebula::cpp2::IndexItem>>>
     listEdgeIndexes(GraphSpaceID spaceId);
 
     // Operations for custom kv
@@ -352,22 +343,22 @@ public:
     StatusOr<std::shared_ptr<const SchemaProviderIf>>
     getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver = -1);
 
-    StatusOr<std::shared_ptr<TagIndexTuple>>
+    StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>>
     getTagIndexByNameFromCache(const GraphSpaceID space, const std::string& name);
 
-    StatusOr<std::shared_ptr<EdgeIndexTuple>>
+    StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>>
     getEdgeIndexByNameFromCache(const GraphSpaceID space, const std::string& name);
 
-    StatusOr<std::shared_ptr<TagIndexPair>>
+    StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>>
     getTagIndexFromCache(GraphSpaceID spaceId, IndexID indexID);
 
-    StatusOr<std::shared_ptr<EdgeIndexPair>>
+    StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>>
     getEdgeIndexFromCache(GraphSpaceID spaceId, IndexID indexID);
 
-    StatusOr<std::vector<std::shared_ptr<TagIndexTuple>>>
+    StatusOr<std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>>
     getTagIndexesFromCache(GraphSpaceID spaceId);
 
-    StatusOr<std::vector<std::shared_ptr<EdgeIndexTuple>>>
+    StatusOr<std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>>
     getEdgeIndexesFromCache(GraphSpaceID spaceId);
 
     Status checkTagIndexed(GraphSpaceID space, TagID tagID);
@@ -387,18 +378,12 @@ public:
     Status refreshCache();
 
 protected:
-    void loadDataThreadFunc();
     // Return true if load succeeded.
     bool loadData();
-
-    void addLoadDataTask();
-
+    bool loadCfg();
     void heartBeatThreadFunc();
 
-    void loadCfgThreadFunc();
-    void loadCfg();
     bool registerCfg();
-    void addLoadCfgTask();
     void updateGflagsValue(const ConfigItem& item);
     void updateNestedGflags(const std::string& name);
 
@@ -412,9 +397,7 @@ protected:
                      SpaceAllEdgeMap &allEdgemap);
 
     bool loadIndexes(GraphSpaceID spaceId,
-                     std::shared_ptr<SpaceInfoCache> cache,
-                     TagIDIndexMap &tagIDIndexMap,
-                     EdgeTypeIndexMap &edgeTypeIndexMap);
+                     std::shared_ptr<SpaceInfoCache> cache);
 
     folly::Future<StatusOr<bool>> heartbeat();
 
@@ -466,6 +449,11 @@ private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     std::shared_ptr<thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>> clientsMan_;
 
+    std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds_;
+    folly::RWSpinLock     leaderIdsLock_;
+    int64_t               localLastUpdateTime_{0};
+    int64_t               metadLastUpdateTime_{0};
+
     LocalCache localCache_;
     std::vector<HostAddr> addrs_;
     // The lock used to protect active_ and leader_.
@@ -483,19 +471,15 @@ private:
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
     SpaceAllEdgeMap       spaceAllEdgeMap_;
 
-    TagIDIndexMap         tagIDIndexMap_;
-    EdgeTypeIndexMap      edgeTypeIndexMap_;
-    IndexTagMap           indexTagMap_;
-    IndexEdgeMap          indexEdgeMap_;
-    IndexNameMap          tagIndexNameMap_;
-    IndexNameMap          edgeIndexNameMap_;
+    NameIndexMap          tagNameIndexMap_;
+    NameIndexMap          edgeNameIndexMap_;
 
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
     folly::RWSpinLock     listenerLock_;
     std::atomic<ClusterID> clusterId_{0};
     bool                  isRunning_{false};
-    bool                  sendHeartBeat_{false};
+    bool                  inStoraged_{true};
     std::atomic_bool      ready_{false};
     MetaConfigMap         metaConfigMap_;
     folly::RWSpinLock     configCacheLock_;
