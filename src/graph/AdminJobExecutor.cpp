@@ -23,6 +23,7 @@ AdminJobExecutor::AdminJobExecutor(Sentence *sentence,
 void AdminJobExecutor::execute() {
     LOG(INFO) << __func__ << " enter";
     auto opEnum = toAdminJobOp(sentence_->getType());
+    auto paras = sentence_->getParas();
 
     if (opNeedsSpace(opEnum)) {
         auto status = checkIfGraphSpaceChosen();
@@ -31,11 +32,10 @@ void AdminJobExecutor::execute() {
             onError_(std::move(status));
             return;
         }
-        const std::string& spaceName = ectx()->rctx()->session()->spaceName();
-        sentence_->addPara(spaceName);
+        paras.emplace_back(ectx()->rctx()->session()->spaceName());
     }
 
-    auto future = ectx()->getMetaClient()->runAdminJob(opEnum, sentence_->getParas());
+    auto future = ectx()->getMetaClient()->runAdminJob(opEnum, paras);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this, opEnum] (auto &&resp) {
         if (!resp.ok()) {
