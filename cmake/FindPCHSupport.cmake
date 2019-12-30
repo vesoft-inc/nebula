@@ -73,12 +73,17 @@ MACRO(ADD_PRECOMPILED_HEADER _targetName _input)
 
     SEPARATE_ARGUMENTS(_compiler_FLAGS)
     MESSAGE("Precompile header file " ${_source} " into " ${_output})
+    IF(CMAKE_CXX_EXTENSIONS)
+        SET(_cxx_standard "gnu++${CMAKE_CXX_STANDARD}")
+    ELSE()
+        SET(_cxx_standard "c++${CMAKE_CXX_STANDARD}")
+    ENDIF()
     ADD_CUSTOM_COMMAND(
         OUTPUT ${_output}
         COMMAND ${CMAKE_CXX_COMPILER}
                 ${_compiler_FLAGS}
                 -x c++-header
-                -std=gnu++14
+                -std=${_cxx_standard}
                 -o ${_output} ${_source}
         MAIN_DEPENDENCY ${_source})
     ADD_CUSTOM_TARGET(${_targetName}_gch DEPENDS ${_output})
