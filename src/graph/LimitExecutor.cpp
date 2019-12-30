@@ -10,7 +10,8 @@
 namespace nebula {
 namespace graph {
 
-LimitExecutor::LimitExecutor(Sentence *sentence, ExecutionContext *ectx) : TraverseExecutor(ectx) {
+LimitExecutor::LimitExecutor(Sentence *sentence, ExecutionContext *ectx)
+    : TraverseExecutor(ectx, "limit") {
     sentence_ = static_cast<LimitSentence*>(sentence);
 }
 
@@ -39,8 +40,7 @@ void LimitExecutor::execute() {
     auto ret = inputs_->getRows();
     if (!ret.ok()) {
         LOG(ERROR) << "Get rows failed: " << ret.status();
-        DCHECK(onError_);
-        onError_(std::move(ret).status());
+        doError(std::move(ret).status());
         return;
     }
     auto inRows = std::move(ret).value();
@@ -56,12 +56,16 @@ void LimitExecutor::execute() {
     }
 
     if (onResult_) {
-        auto output = setupInterimResult();
-        onResult_(std::move(output));
+        auto status = setupInterimResult();
+        if (!status.ok()) {
+            DCHECK(onError_);
+            onError_(std::move(status).status());
+            return;
+        }
+        onResult_(std::move(status).value());
     }
 
-    DCHECK(onFinish_);
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 
@@ -75,7 +79,7 @@ void LimitExecutor::feedResult(std::unique_ptr<InterimResult> result) {
 }
 
 
-std::unique_ptr<InterimResult> LimitExecutor::setupInterimResult() {
+StatusOr<std::unique_ptr<InterimResult>> LimitExecutor::setupInterimResult() {
     auto result = std::make_unique<InterimResult>(std::move(colNames_));
     if (rows_.empty()) {
         return result;
@@ -107,7 +111,8 @@ std::unique_ptr<InterimResult> LimitExecutor::setupInterimResult() {
                     writer << column.get_timestamp();
                     break;
                 default:
-                    LOG(FATAL) << "Not Support: " << column.getType();
+                    LOG(ERROR) << "Not Support type: " << column.getType();
+                    return Status::Error("Not Support type: %d", column.getType());
             }
         }
         rsWriter->addRow(writer);
@@ -125,7 +130,7 @@ void LimitExecutor::onEmptyInputs() {
         auto result = std::make_unique<InterimResult>(std::move(colNames_));
         onResult_(std::move(result));
     }
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 

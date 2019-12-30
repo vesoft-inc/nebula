@@ -11,10 +11,9 @@
 #include "meta/MetaHttpDownloadHandler.h"
 #include "meta/test/MockHdfsHelper.h"
 #include "meta/test/TestUtils.h"
-#include "storage/StorageHttpDownloadHandler.h"
+#include "storage/http/StorageHttpDownloadHandler.h"
 #include "fs/TempDir.h"
 
-DECLARE_int32(load_data_interval_secs);
 DECLARE_string(pid_file);
 DECLARE_int32(ws_storage_http_port);
 

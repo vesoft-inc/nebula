@@ -11,6 +11,7 @@
 #include "meta/MetaHttpIngestHandler.h"
 #include "meta/MetaHttpStatusHandler.h"
 #include "meta/MetaHttpDownloadHandler.h"
+#include "meta/MetaHttpReplaceHostHandler.h"
 #include "webservice/WebService.h"
 #include "network/NetworkUtils.h"
 #include "process/ProcessUtils.h"
@@ -21,7 +22,6 @@
 #include "meta/ClusterIdMan.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/KVBasedGflagsManager.h"
 
 using nebula::operator<<;
 using nebula::ProcessUtils;
@@ -30,9 +30,11 @@ using nebula::Status;
 DEFINE_int32(port, 45500, "Meta daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_string(data_path, "", "Root data path");
-DEFINE_string(meta_server_addrs, "", "It is a list of IPs split by comma, used in cluster deployment"
-                                     "the ips number is equal to the replica number."
-                                     "If empty, it means it's a single node");
+DEFINE_string(meta_server_addrs,
+              "",
+              "It is a list of IPs split by comma, used in cluster deployment"
+              "the ips number is equal to the replica number."
+              "If empty, it means it's a single node");
 DEFINE_string(local_ip, "", "Local ip specified for NetworkUtils::getLocalIP");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(meta_http_thread_num, 3, "Number of meta daemon's http thread");
@@ -145,17 +147,17 @@ bool initWebService(nebula::kvstore::KVStore* kvstore,
         handler->init(kvstore, pool);
         return handler;
     });
+    nebula::WebService::registerHandler("/replace", [kvstore] {
+        auto handler = new nebula::meta::MetaHttpReplaceHostHandler();
+        handler->init(kvstore);
+        return handler;
+    });
+
     auto status = nebula::WebService::start();
     if (!status.ok()) {
         LOG(ERROR) << "Failed to start web service: " << status;
         return false;
     }
-    return true;
-}
-
-bool initComponents(nebula::kvstore::KVStore* kvstore) {
-    auto gflagsManager = std::make_unique<nebula::meta::KVBasedGflagsManager>(kvstore);
-    gflagsManager->init();
     return true;
 }
 
@@ -212,14 +214,9 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto kvstore = initKV(peersRet.value(), hostAddrRet.value());
+    auto kvstore = initKV(peersRet.value(), localhost);
     if (kvstore == nullptr) {
         LOG(ERROR) << "Init kv failed!";
-        return EXIT_FAILURE;
-    }
-
-    if (!initComponents(kvstore.get())) {
-        LOG(ERROR) << "Init components failed";
         return EXIT_FAILURE;
     }
 
@@ -231,12 +228,14 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << "Init web service failed";
         return EXIT_FAILURE;
     }
+    SCOPE_EXIT {
+        nebula::WebService::stop();
+    };
 
     // Setup the signal handlers
     status = setupSignalHandler();
     if (!status.ok()) {
         LOG(ERROR) << status;
-        nebula::WebService::stop();
         return EXIT_FAILURE;
     }
 
@@ -250,12 +249,10 @@ int main(int argc, char *argv[]) {
         gServer->setInterface(std::move(handler));
         gServer->serve();  // Will wait until the server shuts down
     } catch (const std::exception &e) {
-        nebula::WebService::stop();
         LOG(ERROR) << "Exception thrown: " << e.what();
         return EXIT_FAILURE;
     }
 
-    nebula::WebService::stop();
     LOG(INFO) << "The meta Daemon stopped";
     return EXIT_SUCCESS;
 }

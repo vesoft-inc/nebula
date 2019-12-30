@@ -1,7 +1,7 @@
 # INSERT VERTEX 语法
 
 ```ngql
-INSERT VERTEX tag_name[, tag_name] (prop_name_list[, prop_name_list])
+INSERT VERTEX <tag_name> [, <tag_name>, ...] (prop_name_list[, prop_name_list])
      {VALUES | VALUE} vid: (prop_value_list[, prop_value_list])
 
 prop_name_list:
@@ -16,8 +16,6 @@ INSERT VERTEX 可向 **Nebula Graph** 插入节点。
 - `tag_name` 表示标签（节点类型），在进行 `INSERT VERTEX` 操作前需创建好。
 - `prop_name_list` 指定标签的属性列表。
 - `prop_value_list` 须根据 <prop_name_list> 列出属性，如无匹配类型，则返回错误。
-
-> 目前版本尚不支持默认属性值。
 
 ## 示例
 

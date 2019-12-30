@@ -534,6 +534,10 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
+    std::unordered_map<HostAddr, int32_t> partCount;
+    for (int32_t i = 0; i < 6; i++) {
+        partCount[HostAddr(i, i)] = 6;
+    }
     std::vector<Status> sts(9, Status::OK());
     std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
     auto client = std::make_unique<AdminClient>(std::move(injector));
@@ -578,7 +582,9 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
                 task.spaceId_ = std::get<1>(tup);
                 ASSERT_EQ(1, task.spaceId_);
                 task.src_ = std::get<3>(tup);
-                ASSERT_TRUE(task.src_ == HostAddr(2, 2) || task.src_ == HostAddr(3, 3));
+                task.dst_ = std::get<4>(tup);
+                partCount[task.src_]--;
+                partCount[task.dst_]++;
             }
             {
                 auto tup = BalanceTask::parseVal(iter->val());
@@ -594,8 +600,13 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
             num++;
             iter->next();
         }
-        ASSERT_EQ(12, num);
     }
+    ASSERT_EQ(9, partCount[HostAddr(0, 0)]);
+    ASSERT_EQ(9, partCount[HostAddr(1, 1)]);
+    ASSERT_EQ(0, partCount[HostAddr(2, 2)]);
+    ASSERT_EQ(0, partCount[HostAddr(3, 3)]);
+    ASSERT_EQ(9, partCount[HostAddr(4, 4)]);
+    ASSERT_EQ(9, partCount[HostAddr(5, 5)]);
 }
 
 TEST(BalanceTest, RecoveryTest) {

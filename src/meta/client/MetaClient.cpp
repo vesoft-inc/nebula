@@ -13,10 +13,10 @@
 #include "meta/GflagsManager.h"
 #include "base/Configuration.h"
 #include "stats/StatsManager.h"
+#include <folly/ScopeGuard.h>
 
 
-DEFINE_int32(load_data_interval_secs, 1, "Load data interval");
-DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
+DEFINE_int32(heartbeat_interval_secs, 3, "Heartbeat interval");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
 DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
@@ -32,14 +32,13 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
                        std::vector<HostAddr> addrs,
                        HostAddr localHost,
                        ClusterID clusterId,
-                       bool sendHeartBeat,
-                       stats::Stats *stats)
+                       bool inStoraged,
+                       const std::string &serviceName)
     : ioThreadPool_(ioThreadPool)
     , addrs_(std::move(addrs))
     , localHost_(localHost)
     , clusterId_(clusterId)
-    , sendHeartBeat_(sendHeartBeat)
-    , stats_(stats) {
+    , inStoraged_(inStoraged) {
     CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
     CHECK(!addrs_.empty())
         << "No meta server address is specified. Meta server is required";
@@ -50,6 +49,7 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
     updateLeader();
     bgThread_ = std::make_unique<thread::GenericWorker>();
     LOG(INFO) << "Create meta client to " << active_;
+    stats_ = std::make_unique<stats::Stats>(serviceName, "metaClient");
 }
 
 
@@ -60,17 +60,20 @@ MetaClient::~MetaClient() {
 
 
 bool MetaClient::isMetadReady() {
-    if (sendHeartBeat_) {
-        auto ret = heartbeat().get();
-        if (!ret.ok() && ret.status() != Status::LeaderChanged()) {
-            LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
-            ready_ = false;
-            return ready_;
-        }
-    }  // end if
-    loadData();
+    auto ret = heartbeat().get();
+    if (!ret.ok() && ret.status() != Status::LeaderChanged()) {
+        LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
+        ready_ = false;
+        return ready_;
+    }
+
+    bool ldRet = loadData();
+    bool lcRet = true;
     if (!FLAGS_local_config) {
-        loadCfg();
+        lcRet = loadCfg();
+    }
+    if (ldRet && lcRet) {
+        localLastUpdateTime_ = metadLastUpdateTime_;
     }
     return ready_;
 }
@@ -93,17 +96,9 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
     }
 
     CHECK(bgThread_->start());
-    if (sendHeartBeat_) {
-        LOG(INFO) << "Register time task for heartbeat!";
-        size_t delayMS = FLAGS_heartbeat_interval_secs * 1000 + folly::Random::rand32(900);
-        bgThread_->addTimerTask(delayMS,
-                                FLAGS_heartbeat_interval_secs * 1000,
-                                &MetaClient::heartBeatThreadFunc, this);
-    }
-    addLoadDataTask();
-    if (!FLAGS_local_config) {
-        addLoadCfgTask();
-    }
+    LOG(INFO) << "Register time task for heartbeat!";
+    size_t delayMS = FLAGS_heartbeat_interval_secs * 1000 + folly::Random::rand32(900);
+    bgThread_->addDelayTask(delayMS, &MetaClient::heartBeatThreadFunc, this);
     return ready_;
 }
 
@@ -117,16 +112,28 @@ void MetaClient::stop() {
 }
 
 void MetaClient::heartBeatThreadFunc() {
+    SCOPE_EXIT {
+        bgThread_->addDelayTask(FLAGS_heartbeat_interval_secs * 1000,
+                                &MetaClient::heartBeatThreadFunc,
+                                this);
+    };
     auto ret = heartbeat().get();
     if (!ret.ok()) {
         LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
         return;
     }
-}
 
-void MetaClient::loadDataThreadFunc() {
-    loadData();
-    addLoadDataTask();
+    // if MetaServer has some changes, refesh the localCache_
+    if (localLastUpdateTime_ < metadLastUpdateTime_) {
+        bool ldRet = loadData();
+        bool lcRet = true;
+        if (!FLAGS_local_config) {
+            lcRet = loadCfg();
+        }
+        if (ldRet && lcRet) {
+            localLastUpdateTime_ = metadLastUpdateTime_;
+        }
+    }
 }
 
 bool MetaClient::loadData() {
@@ -197,13 +204,6 @@ bool MetaClient::loadData() {
     ready_ = true;
     return true;
 }
-
-void MetaClient::addLoadDataTask() {
-    size_t delayMS = FLAGS_load_data_interval_secs * 1000 + folly::Random::rand32(900);
-    bgThread_->addDelayTask(delayMS, &MetaClient::loadDataThreadFunc, this);
-    LOG(INFO) << "Load data completed, call after " << delayMS << " ms";
-}
-
 
 bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                              std::shared_ptr<SpaceInfoCache> spaceInfoCache,
@@ -370,7 +370,7 @@ void MetaClient::getResponse(Request req,
                     LOG(ERROR) << "Send request to " << host << ", exceed retry limit";
                     pro.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
                                                                    t.exception().what().c_str())));
-                    stats::Stats::addStatsValue(stats_, false, duration.elapsedInUSec());
+                    stats::Stats::addStatsValue(stats_.get(), false, duration.elapsedInUSec());
                 }
                 return;
             }
@@ -378,7 +378,7 @@ void MetaClient::getResponse(Request req,
             if (resp.code == cpp2::ErrorCode::SUCCEEDED) {
                 // succeeded
                 pro.setValue(respGen(std::move(resp)));
-                stats::Stats::addStatsValue(stats_, true, duration.elapsedInUSec());
+                stats::Stats::addStatsValue(stats_.get(), true, duration.elapsedInUSec());
 
                 return;
             } else if (resp.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
@@ -403,7 +403,7 @@ void MetaClient::getResponse(Request req,
                 }
             }
             pro.setValue(this->handleResponse(resp));
-            stats::Stats::addStatsValue(stats_,
+            stats::Stats::addStatsValue(stats_.get(),
                                         resp.code == cpp2::ErrorCode::SUCCEEDED,
                                         duration.elapsedInUSec());
         });  // then
@@ -629,9 +629,10 @@ folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts() {
 }
 
 folly::Future<StatusOr<std::vector<cpp2::PartItem>>>
-MetaClient::listParts(GraphSpaceID spaceId) {
+MetaClient::listParts(GraphSpaceID spaceId, std::vector<PartitionID> partIds) {
     cpp2::ListPartsReq req;
     req.set_space_id(std::move(spaceId));
+    req.set_part_ids(std::move(partIds));
     folly::Promise<StatusOr<std::vector<cpp2::PartItem>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
@@ -1309,7 +1310,6 @@ StatusOr<SchemaVer> MetaClient::getNewestTagVerFromCache(const GraphSpaceID& spa
     return it->second;
 }
 
-
 StatusOr<SchemaVer> MetaClient::getNewestEdgeVerFromCache(const GraphSpaceID& space,
                                                           const EdgeType& edgeType) {
     if (!ready_) {
@@ -1323,17 +1323,31 @@ StatusOr<SchemaVer> MetaClient::getNewestEdgeVerFromCache(const GraphSpaceID& sp
     return it->second;
 }
 
-
 folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     if (clusterId_.load() == 0) {
         clusterId_ = ClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
     }
     cpp2::HBReq req;
+    req.set_in_storaged(inStoraged_);
     nebula::cpp2::HostAddr thriftHost;
     thriftHost.set_ip(localHost_.first);
     thriftHost.set_port(localHost_.second);
     req.set_host(std::move(thriftHost));
     req.set_cluster_id(clusterId_.load());
+
+    if (inStoraged_ && listener_ != nullptr) {
+        std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+        listener_->fetchLeaderInfo(leaderIds);
+        if (leaderIds_ != leaderIds) {
+            {
+                folly::RWSpinLock::WriteHolder holder(leaderIdsLock_);
+                leaderIds_.clear();
+                leaderIds_ = leaderIds;
+            }
+            req.set_leader_partIds(std::move(leaderIds));
+        }
+    }
+
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
     VLOG(1) << "Send heartbeat to " << leader_ << ", clusterId " << req.get_cluster_id();
@@ -1350,7 +1364,9 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
                                        << FLAGS_cluster_id_path;
                         }
                     }
-                    return true;
+                    metadLastUpdateTime_ = resp.get_last_update_time_in_ms();
+                    LOG(INFO) << "Metad last update time: " << metadLastUpdateTime_;
+                    return true;  // resp.code == cpp2::ErrorCode::SUCCEEDED
                 }, std::move(promise), true);
     return future;
 }
@@ -1490,8 +1506,7 @@ MetaClient::getConfig(const cpp2::ConfigModule& module, const std::string& name)
 
 folly::Future<StatusOr<bool>>
 MetaClient::setConfig(const cpp2::ConfigModule& module, const std::string& name,
-                      const cpp2::ConfigType& type, const std::string& value,
-                      const bool isForce) {
+                      const cpp2::ConfigType& type, const std::string& value) {
     if (!configReady_) {
         return Status::Error("Not ready!");
     }
@@ -1503,7 +1518,6 @@ MetaClient::setConfig(const cpp2::ConfigModule& module, const std::string& name,
 
     cpp2::SetConfigReq req;
     req.set_item(item);
-    req.set_force(isForce);
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
@@ -1568,11 +1582,6 @@ folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> MetaClient::listSnapshots()
     return future;
 }
 
-void MetaClient::loadCfgThreadFunc() {
-    loadCfg();
-    addLoadCfgTask();
-}
-
 bool MetaClient::registerCfg() {
     auto ret = regConfig(gflagsDeclared_).get();
     if (ret.ok()) {
@@ -1582,9 +1591,9 @@ bool MetaClient::registerCfg() {
     return configReady_;
 }
 
-void MetaClient::loadCfg() {
+bool MetaClient::loadCfg() {
     if (!configReady_ && !registerCfg()) {
-        return;
+        return false;
     }
     // only load current module's config is enough
     auto ret = listConfigs(gflagsModule_).get();
@@ -1614,17 +1623,16 @@ void MetaClient::loadCfg() {
         }
     } else {
         LOG(ERROR) << "Load configs failed: " << ret.status();
-        return;
+        return false;
     }
-}
-
-void MetaClient::addLoadCfgTask() {
-    size_t delayMS = FLAGS_load_data_interval_secs * 1000 + folly::Random::rand32(900);
-    bgThread_->addDelayTask(delayMS, &MetaClient::loadCfgThreadFunc, this);
-    LOG(INFO) << "Load configs completed, call after " << delayMS << " ms";
+    return true;
 }
 
 void MetaClient::updateGflagsValue(const ConfigItem& item) {
+    if (item.mode_ != cpp2::ConfigMode::MUTABLE) {
+        return;
+    }
+
     std::string metaValue;
     switch (item.type_) {
         case cpp2::ConfigType::INT64:

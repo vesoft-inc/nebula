@@ -13,7 +13,6 @@
 #include "meta/test/TestUtils.h"
 #include "meta/GflagsManager.h"
 #include "meta/ClientBasedGflagsManager.h"
-#include "meta/KVBasedGflagsManager.h"
 #include "meta/processors/configMan/GetConfigProcessor.h"
 #include "meta/processors/configMan/SetConfigProcessor.h"
 #include "meta/processors/configMan/ListConfigsProcessor.h"
@@ -21,7 +20,7 @@
 #include "storage/test/TestUtils.h"
 #include "rocksdb/utilities/options_util.h"
 
-DECLARE_int32(load_data_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 DECLARE_string(rocksdb_db_options);
 DECLARE_string(rocksdb_column_family_options);
 
@@ -265,7 +264,7 @@ ConfigItem toConfigItem(const cpp2::ConfigItem& item) {
 }
 
 TEST(ConfigManTest, MetaConfigManTest) {
-    FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaConfigManTest.XXXXXX");
     uint32_t localMetaPort = 0;
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
@@ -313,7 +312,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         std::string name = "not_existed";
         auto type = cpp2::ConfigType::INT64;
 
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_heartbeat_interval_secs + 1);
         // get/set without register
         auto setRet = cfgMan.setConfig(module, name, type, 101l).get();
         ASSERT_FALSE(setRet.ok());
@@ -336,7 +335,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         auto value = boost::get<int64_t>(item.value_);
         ASSERT_EQ(value, 100);
 
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_heartbeat_interval_secs + 1);
         ASSERT_EQ(FLAGS_int64_key_immutable, 100);
     }
     // mutable config
@@ -357,7 +356,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(value, 102);
 
         // get from cache
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_heartbeat_interval_secs + 1);
         ASSERT_EQ(FLAGS_int64_key, 102);
     }
     {
@@ -377,7 +376,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(value, true);
 
         // get from cache
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_heartbeat_interval_secs + 1);
         ASSERT_EQ(FLAGS_bool_key, true);
     }
     {
@@ -397,7 +396,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(value, 3.14);
 
         // get from cache
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_heartbeat_interval_secs + 1);
         ASSERT_EQ(FLAGS_double_key, 3.14);
     }
     {
@@ -418,7 +417,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(value, "abc");
 
         // get from cache
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_heartbeat_interval_secs + 1);
         ASSERT_EQ(FLAGS_string_key, "abc");
     }
     {
@@ -446,7 +445,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(val, "8");
 
         // get from cache
-        sleep(FLAGS_load_data_interval_secs + 1);
+        sleep(FLAGS_heartbeat_interval_secs + 1);
         confRet = conf.parseFromString(FLAGS_nested_key);
         ASSERT_TRUE(confRet.ok());
         status = conf.fetchAsString("max_background_compactions", val);
@@ -461,7 +460,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
 }
 
 TEST(ConfigManTest, MockConfigTest) {
-    FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MockConfigTest.XXXXXX");
     uint32_t localMetaPort = 0;
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
@@ -511,7 +510,7 @@ TEST(ConfigManTest, MockConfigTest) {
     }
 
     // check values in ClientBaseGflagsManager
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     ASSERT_EQ(FLAGS_test0, "updated0");
     ASSERT_EQ(FLAGS_test1, "updated1");
     ASSERT_EQ(FLAGS_test2, "updated2");
@@ -520,7 +519,7 @@ TEST(ConfigManTest, MockConfigTest) {
 }
 
 TEST(ConfigManTest, RocksdbOptionsTest) {
-    FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/RocksdbOptionsTest.XXXXXX");
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
@@ -542,8 +541,11 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
     LOG(INFO) << "Create meta client...";
     uint32_t storagePort = network::NetworkUtils::getAvailablePort();
     HostAddr storageAddr(localIp, storagePort);
-    auto mClient = std::make_unique<meta::MetaClient>(threadPool, metaAddr, storageAddr,
-                                                      kClusterId, true);
+    auto mClient = std::make_unique<meta::MetaClient>(threadPool,
+                                                      metaAddr,
+                                                      storageAddr,
+                                                      kClusterId,
+                                                      true);
     mClient->waitForMetadReady();
     mClient->gflagsModule_ = module;
 
@@ -576,7 +578,7 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
     auto ret = mClient->createSpace("storage", 9, 1).get();
     ASSERT_TRUE(ret.ok());
     auto spaceId = ret.value();
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     storage::TestUtils::waitUntilAllElected(sc->kvStore_.get(), spaceId, 9);
     {
         std::string name = "rocksdb_db_options";
@@ -591,7 +593,7 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
         auto item = getRet.value().front();
         auto value = boost::get<std::string>(item.get_value());
 
-        sleep(FLAGS_load_data_interval_secs + 3);
+        sleep(FLAGS_heartbeat_interval_secs + 3);
         ASSERT_EQ(FLAGS_rocksdb_db_options, value);
     }
     {
@@ -608,12 +610,12 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
         auto item = getRet.value().front();
         auto value = boost::get<std::string>(item.get_value());
 
-        sleep(FLAGS_load_data_interval_secs + 3);
+        sleep(FLAGS_heartbeat_interval_secs + 3);
         ASSERT_EQ(FLAGS_rocksdb_column_family_options, value);
     }
     {
         // need to sleep a bit to take effect on rocksdb
-        sleep(3);
+        sleep(FLAGS_heartbeat_interval_secs + 2);
         rocksdb::DBOptions loadedDbOpt;
         std::vector<rocksdb::ColumnFamilyDescriptor> loadedCfDescs;
         std::string rocksPath = folly::stringPrintf("%s/disk1/nebula/%d/data",
