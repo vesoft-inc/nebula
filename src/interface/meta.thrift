@@ -175,7 +175,7 @@ struct DropSpaceReq {
 enum AdminJobOp {
     ADD         = 0x01,
     SHOW_All    = 0x02,
-    SHOW_ONE    = 0x03,
+    SHOW        = 0x03,
     STOP        = 0x04,
     BACKUP      = 0x05,
     RECOVER     = 0x06,

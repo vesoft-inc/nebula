@@ -101,7 +101,7 @@ AdminJobExecutor::getHeader(nebula::meta::cpp2::AdminJobOp op, bool succeed) {
         return {"New Job Id"};
     case nebula::meta::cpp2::AdminJobOp::SHOW_All:
         return {"Job Id", "Command", "Status", "Start Time", "Stop Time"};
-    case nebula::meta::cpp2::AdminJobOp::SHOW_ONE:
+    case nebula::meta::cpp2::AdminJobOp::SHOW:
         return {"Job Id(TaskId)", "Command(Dest)", "Status", "Start Time", "Stop Time"};
     case nebula::meta::cpp2::AdminJobOp::STOP:
         return {"Result"};
@@ -121,7 +121,7 @@ AdminJobExecutor::toAdminJobOp(const std::string& op) {
     } else if (op == "show_jobs") {
         return nebula::meta::cpp2::AdminJobOp::SHOW_All;
     } else if (op == "show_job") {
-        return nebula::meta::cpp2::AdminJobOp::SHOW_ONE;
+        return nebula::meta::cpp2::AdminJobOp::SHOW;
     } else if (op == "stop_job") {
         return nebula::meta::cpp2::AdminJobOp::STOP;
     } else if (op == "backup_job") {

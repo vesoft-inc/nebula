@@ -74,7 +74,7 @@ JobManager::runJob(nebula::meta::cpp2::AdminJobOp op, std::vector<std::string>& 
             return showJobsWrapper();
         }
 
-        case nebula::meta::cpp2::AdminJobOp::SHOW_ONE:
+        case nebula::meta::cpp2::AdminJobOp::SHOW:
         {
             return showJobWrapper(paras);
         }

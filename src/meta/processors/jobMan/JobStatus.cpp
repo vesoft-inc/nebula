@@ -63,12 +63,6 @@ JobStatus::Status JobStatus::toStatus(const std::string& strStatus) {
     }
 }
 
-// const char* JobStatus::queue = "queue";
-// const char* JobStatus::running = "running";
-// const char* JobStatus::finished = "finished";
-// const char* JobStatus::failed = "failed";
-// const char* JobStatus::stopped = "stopped";
-
 }  // namespace meta
 }  // namespace nebula
 
