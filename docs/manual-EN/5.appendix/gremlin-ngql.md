@@ -114,7 +114,7 @@ gremlin> g.V(jesus).property('age', 6000);
     | saturn            |
     ---------------------
 
-    gremlin> g.V().hasLabel('character').has('name','hercules').out ('father').out('father').values('name');
+    gremlin> g.V().hasLabel('character').has('name','hercules').out('father').out('father').values('name');
     ==>saturn
     ```
 
@@ -128,7 +128,7 @@ gremlin> g.V(jesus).property('age', 6000);
     | jupiter           |
     ---------------------
 
-    gremlin> g.V().hasLabel('character').has('name','hercules').out ('father').values('name');
+    gremlin> g.V().hasLabel('character').has('name','hercules').out('father').values('name');
     ==>jupiter
     ```
 
@@ -148,8 +148,7 @@ gremlin> g.V(jesus).property('age', 6000);
     ```bash
     nebula> GO FROM hash("pluto") OVER lives \
             YIELD lives._dst AS place | \
-            GO FROM $-.place OVER lives REVERSELY YIELD \
-            $$.character.name AS cohabitants;
+            GO FROM $-.place OVER lives REVERSELY YIELD $$.character.name AS cohabitants;
     ===============
     | cohabitants |
     ===============
@@ -176,7 +175,7 @@ gremlin> g.V(jesus).property('age', 6000);
     | cerberus    |
     ---------------
 
-    gremlin> g.V(pluto).out('lives').in('lives').where(is(neq(pluto)))  .values('name');
+    gremlin> g.V(pluto).out('lives').in('lives').where(is(neq(pluto))).values('name');
     ==>cerberus
     ```
 
@@ -217,7 +216,7 @@ gremlin> g.V(jesus).property('age', 6000);
     | neptune | sea         |
     -------------------------
 
-    gremlin> g.V(pluto).out('brother').as('god').out('lives').as('place').select('god','place').by('name'),
+    gremlin> g.V(pluto).out('brother').as('god').out('lives').as('place').select('god','place').by('name');
     ==>[god:jupiter, place:sky]
     ==>[god:neptune, place:sea]
     ```
