@@ -1869,8 +1869,8 @@ void nebula::GraphParser::error(const nebula::GraphParser::location_type& loc,
     if ((loc.end.filename
         && (!loc.begin.filename
             || *loc.begin.filename != *loc.end.filename))
-            || loc.begin.line < loc.end.line
-            || loc.begin.column > query->size()) {
+        || loc.begin.line < loc.end.line
+        || begin >= query->size()) {
         os << " at " << loc;
     } else if (loc.begin.column < (loc.end.column ? loc.end.column - 1 : 0)) {
         os << " near `" << query->substr(begin, loc.end.column - loc.begin.column) << "'";

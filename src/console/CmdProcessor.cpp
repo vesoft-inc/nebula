@@ -431,8 +431,8 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
         }
         std::cout << std::endl;
    } else if (res == cpp2::ErrorCode::E_SYNTAX_ERROR) {
-        std::cout << "[ERROR (" << static_cast<int32_t>(res)
-                  << ")]: " << *resp.get_error_msg() << "\n";
+        std::cout << "[ERROR (" << static_cast<int32_t>(res) << ")]: "
+                  << (resp.get_error_msg() == nullptr ? "" : *resp.get_error_msg()) << "\n";
     } else if (res == cpp2::ErrorCode::E_STATEMENT_EMTPY) {
         return;
     } else {

@@ -846,7 +846,7 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcRe
     auto spaceId = ectx()->rctx()->session()->space();
     auto status = getDstProps();
     if (!status.ok()) {
-        doError(Status::Error("Get dest props failed"));
+        doError(std::move(status).status());
         return;
     }
     auto returns = status.value();
