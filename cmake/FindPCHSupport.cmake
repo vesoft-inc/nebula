@@ -68,7 +68,9 @@ MACRO(ADD_PRECOMPILED_HEADER _targetName _input)
 
     GET_DIRECTORY_PROPERTY(_directory_flags COMPILE_DEFINITIONS)
     FOREACH(item ${_directory_flags})
-        LIST(APPEND _compiler_FLAGS "-D${item}")
+        IF(NOT ${item} MATCHES "^GIT_INFO_SHA")
+            LIST(APPEND _compiler_FLAGS "-D${item}")
+        ENDIF()
     ENDFOREACH(item)
 
     SEPARATE_ARGUMENTS(_compiler_FLAGS)
