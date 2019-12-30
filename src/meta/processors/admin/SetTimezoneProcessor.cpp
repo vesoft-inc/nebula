@@ -18,6 +18,7 @@ void SetTimezoneProcessor::process(const cpp2::SetTimezoneReq& req) {
     data.emplace_back(std::move(timezoneKey), std::move(timezoneValue));
 
     doPut(std::move(data));
+    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     return;
 }
 

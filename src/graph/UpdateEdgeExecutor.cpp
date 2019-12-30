@@ -32,8 +32,8 @@ Status UpdateEdgeExecutor::prepare() {
     expCtx_ = std::make_unique<ExpressionContext>();
     expCtx_->setSpace(spaceId_);
     expCtx_->setStorageClient(ectx()->getStorageClient());
+    setTimezone(expCtx_.get());
     Getters getters;
-    setTimezone(&getters);
 
     do {
         status = checkIfGraphSpaceChosen();

@@ -715,7 +715,8 @@ public:
         }
     }
 
-    void setFunc(std::function<VariantType(const std::vector<VariantType>&)> func) {
+    void setFunc(std::function<OptVariantType(const std::vector<VariantType>&,
+                                              const Timezone*)> func) {
         function_ = func;
     }
 
