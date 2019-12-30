@@ -78,7 +78,7 @@ MACRO(ADD_PRECOMPILED_HEADER _targetName _input)
         COMMAND ${CMAKE_CXX_COMPILER}
                 ${_compiler_FLAGS}
                 -x c++-header
-                -std=c++14
+                -std=gnu++14
                 -o ${_output} ${_source}
         MAIN_DEPENDENCY ${_source})
     ADD_CUSTOM_TARGET(${_targetName}_gch DEPENDS ${_output})
