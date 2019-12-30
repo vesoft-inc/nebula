@@ -289,11 +289,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
                                                                         index.index_id,
                                                                         vId,
                                                                         oValues);
-                        std::string val;
-                        auto result = kvstore_->get(spaceId_, partId, oIndexKey, &val);
-                        if (result == kvstore::ResultCode::SUCCEEDED) {
-                            batchHolder->remove(std::move(oIndexKey));
-                        }
+                        batchHolder->remove(std::move(oIndexKey));
                     }
                 }
             }

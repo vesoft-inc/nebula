@@ -98,6 +98,7 @@ std::string DeleteVertexProcessor::deleteVertex(GraphSpaceID spaceId,
         return "";
     }
     std::vector<std::string> indexes;
+    TagID latestVVId = -1;
     while (iter->valid()) {
         auto key = iter->key();
         auto tagId = NebulaKeyUtils::getTagId(key);
@@ -108,37 +109,45 @@ std::string DeleteVertexProcessor::deleteVertex(GraphSpaceID spaceId,
             }
         }
         batchHolder->remove(key.str());
-        for (auto& index : indexes_) {
-            auto indexId = index.get_index_id();
-            if (index.get_tagOrEdge() == tagId) {
-                auto reader = RowReader::getTagPropReader(this->schemaMan_,
-                                                          iter->val(),
-                                                          spaceId,
-                                                          tagId);
-                const auto& cols = index.get_cols();
-                auto values = collectIndexValues(reader.get(), cols);
-                auto indexKey = NebulaKeyUtils::vertexIndexKey(partId,
-                                                               indexId,
-                                                               vId,
-                                                               values);
-                std::string val;
-                auto result = kvstore_->get(spaceId, partId, indexKey, &val);
-                if (result == kvstore::ResultCode::SUCCEEDED) {
+        /**
+         * example ,the prefix result as below :
+         *     V1_tag1_version3
+         *     V1_tag1_version2
+         *     V1_tag1_version1
+         *     V1_tag2_version3
+         *     V1_tag2_version2
+         *     V1_tag2_version1
+         *     V1_tag3_version3
+         *     V1_tag3_version2
+         *     V1_tag3_version1
+         * Because index depends on latest version of tag.
+         * So only V1_tag1_version3, V1_tag2_version3 and V1_tag3_version3 are needed,
+         * Using newlyVertexId to identify if it is the latest version
+         */
+        if (latestVVId != tagId) {
+            for (auto& index : indexes_) {
+                auto indexId = index.get_index_id();
+                if (index.get_tagOrEdge() == tagId) {
+                    auto reader = RowReader::getTagPropReader(this->schemaMan_,
+                                                              iter->val(),
+                                                              spaceId,
+                                                              tagId);
+                    const auto& cols = index.get_cols();
+                    auto values = collectIndexValues(reader.get(), cols);
+                    auto indexKey = NebulaKeyUtils::vertexIndexKey(partId,
+                                                                   indexId,
+                                                                   vId,
+                                                                   values);
                     indexes.emplace_back(std::move(indexKey));
                 }
             }
+            latestVVId = tagId;
         }
         iter->next();
     }
-    /**
-     * There may be different versions of the same vertex,
-     * so delete duplicate index keys is required.
-     **/
     if (!indexes.empty()) {
-        sort(indexes.begin(), indexes.end());
-        indexes.erase(unique(indexes.begin(), indexes.end()), indexes.end());
-        for (auto& key : indexes) {
-            batchHolder->remove(std::move(key));
+        for (auto& index : indexes) {
+            batchHolder->remove(std::move(index));
         }
     }
     return encodeBatchValue(batchHolder->getBatch());

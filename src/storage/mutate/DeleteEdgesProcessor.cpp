@@ -77,39 +77,36 @@ std::string DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
             return "";
         }
         std::vector<std::string> indexes;
+        bool isLatestVE = true;
         while (iter->valid()) {
             batchHolder->remove(iter->key().str());
-            for (auto& index : indexes_) {
-                auto indexId = index.get_index_id();
-                if (index.get_tagOrEdge() == type) {
-                    auto reader = RowReader::getEdgePropReader(this->schemaMan_,
-                                                               iter->val(),
-                                                               spaceId,
-                                                               type);
-                    auto values = collectIndexValues(reader.get(),
-                                                     index.get_cols());
-                    auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
-                                                                 indexId,
-                                                                 srcId,
-                                                                 rank,
-                                                                 dstId,
-                                                                 values);
-                    std::string val;
-                    auto result = kvstore_->get(spaceId, partId, indexKey, &val);
-                    if (result == kvstore::ResultCode::SUCCEEDED) {
+            /**
+             * just get the latest version edge for index.
+             */
+            if (isLatestVE) {
+                for (auto& index : indexes_) {
+                    auto indexId = index.get_index_id();
+                    if (index.get_tagOrEdge() == type) {
+                        auto reader = RowReader::getEdgePropReader(this->schemaMan_,
+                                                                   iter->val(),
+                                                                   spaceId,
+                                                                   type);
+                        auto values = collectIndexValues(reader.get(),
+                                                         index.get_cols());
+                        auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
+                                                                     indexId,
+                                                                     srcId,
+                                                                     rank,
+                                                                     dstId,
+                                                                     values);
                         indexes.emplace_back(std::move(indexKey));
                     }
                 }
+                isLatestVE = false;
             }
             iter->next();
         }
-        /**
-         * There may be different versions of the same vertex,
-         * so delete duplicate index keys is required.
-         **/
         if (!indexes.empty()) {
-            sort(indexes.begin(), indexes.end());
-            indexes.erase(unique(indexes.begin(), indexes.end()), indexes.end());
             for (auto& key : indexes) {
                 batchHolder->remove(std::move(key));
             }

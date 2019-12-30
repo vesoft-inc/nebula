@@ -296,11 +296,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
                                                                   edgeKey.ranking,
                                                                   edgeKey.dst,
                                                                   rValues);
-                    std::string val;
-                    auto result = kvstore_->get(spaceId_, partId, rIndexKey, &val);
-                    if (result == kvstore::ResultCode::SUCCEEDED) {
-                        batchHolder->remove(std::move(rIndexKey));
-                    }
+                    batchHolder->remove(std::move(rIndexKey));
                 }
             }
         }
