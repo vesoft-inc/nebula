@@ -7,9 +7,10 @@
 `FETCH PROP ON` 可返回节点的一系列属性，目前已支持一条语句返回多个节点属性。
 
 ```ngql
-FETCH PROP ON <tag_name> <vertex_id_list> [YIELD [DISTINCT] <return_list>]
+FETCH PROP ON { * | <tag_name> } <vertex_id_list> [YIELD [DISTINCT] <return_list>]
 ```
 
+`*` 返回点所有属性
 `<tag_name>` 为标签名称，与 return_list 中的标签相同。
 
 `<vertex_id_list>::=[vertex_id [, vertex_id]]` 是一组用 "," 分隔开的顶点 ID 列表
@@ -19,7 +20,9 @@ FETCH PROP ON <tag_name> <vertex_id_list> [YIELD [DISTINCT] <return_list>]
 ### 示例
 
 ```ngql
--- 如未指定 YIELD 字段，则返回节点 1 的所有属性
+-- 返回节点 1 的所有属性
+nebula> FETCH PROP ON * 1
+-- 如未指定 YIELD 字段，则返回节点 1 tag 为 player 的所有属性
 nebula> FETCH PROP ON player 1
 -- 返回节点 1 的姓名与年龄属性
 nebula> FETCH PROP ON player 1 YIELD player.name, player.age
@@ -38,14 +41,14 @@ nebula> FETCH PROP ON player 1,2,3 YIELD DISTINCT player.name, player.age
 使用 `FETCH` 获取边属性的用法与点属性大致相同，且可同时获取相同类型多条边的属性。
 
 ```ngql
-FETCH PROP ON <edge_type> <vid> -> <vid>@ranking [, <vid> -> <vid> ...] [YIELD [DISTINCT] <return_list>]
+FETCH PROP ON <edge_type> <vid> -> <vid>[@<ranking>] [, <vid> -> <vid> ...] [YIELD [DISTINCT] <return_list>]
 ```
 
 `<edge_type>` 指定边的类型，需与 `<return_list>` 相同。
 
 `<vid> -> <vid>` 从起始节点到终止节点。多条边需使用逗号隔开。
 
-`ranking` 指定相同类型边 ranking，可选。
+`<ranking>` 指定相同类型边 ranking，可选。
 
 `[YIELD [DISTINCT] <return_list>]` 为返回的属性列表。
 

@@ -7,7 +7,7 @@ The `FETCH` syntax is used to get vertex/edge's properties.
 Use `FETCH PROP ON` to return a (list of) vertex's properties. Currently, you can get multiple vertices' properties with the same tag in one sentence.
 
 ```ngql
-FETCH PROP ON <tag_name> <vertex_id_list> [YIELD [DISTINCT] <return_list>]
+FETCH PROP ON { * | <tag_name> } <vertex_id_list> [YIELD [DISTINCT] <return_list>]
 ```
 
 `<tag_name>` is the tag name. It should be the same tag within return_list
@@ -19,7 +19,9 @@ FETCH PROP ON <tag_name> <vertex_id_list> [YIELD [DISTINCT] <return_list>]
 ### Examples
 
 ```ngql
--- return all the properties of vertex id 1 if no yield field is given.
+-- return all the properties of vertex id 1
+nebula> FETCH PROP ON * 1
+-- return all the properties in tag player of vertex id 1 if no yield field is given.
 nebula> FETCH PROP ON player 1
 -- return property name and age of vertex id 1
 nebula> FETCH PROP ON player 1 YIELD player.name, player.age
@@ -39,14 +41,14 @@ The `FETCH` usage of an edge is almost the same with vertex.
 You can get properties from multiple edges with the same type.
 
 ```ngql
-FETCH PROP ON <edge_type> <vid> -> <vid>@ranking [, <vid> -> <vid> ...] [YIELD [DISTINCT] <return_list>]
+FETCH PROP ON <edge_type> <vid> -> <vid>[@<ranking>] [, <vid> -> <vid> ...] [YIELD [DISTINCT] <return_list>]
 ```
 
 `<edge_type>` specifies the edge's type. It must be the same as those in `<return_list>`
 
 `<vid> -> <vid>` denotes a starting vertex to (->) an ending vertex. Multiple edges are separated by comma(,).
 
-`ranking` specifies the edge weight of the same edge type, it's optional.
+`<ranking>` specifies the edge weight of the same edge type, it's optional.
 
 `[YIELD [DISTINCT] <return_list>]` is the property list returned.
 
