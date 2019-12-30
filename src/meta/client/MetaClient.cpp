@@ -651,7 +651,7 @@ MetaClient::runAdminJob(cpp2::AdminJobOp op, std::vector<std::string> paras) {
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_runAdminJob(request);
-                }, [this] (cpp2::AdminJobResp&& resp) -> decltype(auto) {
+                }, [] (cpp2::AdminJobResp&& resp) -> decltype(auto) {
                     return resp.get_result();
                 }, std::move(promise));
     return future;
