@@ -305,7 +305,6 @@ TEST(IndexScanTest, VertexScanTest) {
         nebula::cpp2::IndexHintItem hintItem;
         hintItem.set_first_str(std::move(braw));
         hintItem.set_second_str(std::move(eraw));
-        hintItem.set_type(nebula::cpp2::SupportedType::INT);
         items.emplace_back(std::move(hintItem));
         hint.set_hint_items(items);
 
@@ -351,7 +350,6 @@ TEST(IndexScanTest, VertexScanTest) {
         nebula::cpp2::IndexHintItem hintItem;
         hintItem.set_first_str(std::move(braw));
         hintItem.set_second_str(std::move(eraw));
-        hintItem.set_type(nebula::cpp2::SupportedType::INT);
         items.emplace_back(std::move(hintItem));
         hint.set_hint_items(items);
         req.set_space_id(spaceId);
@@ -445,7 +443,6 @@ TEST(IndexScanTest, VertexStringTypeTest) {
         nebula::cpp2::IndexHintItem hintItem;
         hintItem.set_first_str("AABB");
         hintItem.set_second_str("");
-        hintItem.set_type(nebula::cpp2::SupportedType::STRING);
         items.emplace_back(hintItem);
         hint.set_hint_items(items);
         req.set_space_id(spaceId);
@@ -479,7 +476,6 @@ TEST(IndexScanTest, VertexStringTypeTest) {
         nebula::cpp2::IndexHintItem hintItem;
         hintItem.set_first_str("AA");
         hintItem.set_second_str("");
-        hintItem.set_type(nebula::cpp2::SupportedType::STRING);
         items.emplace_back(std::move(hintItem));
         hint.set_hint_items(items);
         req.set_space_id(spaceId);

@@ -119,8 +119,7 @@ kvstore::ResultCode ScanIndexBaseProcessor<REQ, RESP>::getEdgeRow(PartitionID pa
     edgeKey.set_edge_type(edgeType);
     edgeKey.set_ranking(rank);
     edgeKey.set_dst(dst);
-
-    data->set_key(std::move(edgeKey));
+    data->set_key(edgeKey);
 
     auto prefix = NebulaKeyUtils::edgePrefix(partId, src, edgeType, rank, dst);
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -182,13 +181,17 @@ std::string ScanIndexBaseProcessor<REQ, RESP>::getRowFromReader(RowReader* reade
 template<typename REQ, typename RESP>
 bool ScanIndexBaseProcessor<REQ, RESP>::checkDataValidity(bool isEdge,
                                                           const folly::StringPiece& key) {
-    auto offset = (isEdge) ? key.size() - sizeof(VertexID) * 2 - sizeof(EdgeRanking) - vlColNum_ :
-                             key.size() - sizeof(VertexID) - vlColNum_ * sizeof(int32_t);
-    for (auto & col : hint_.hint_items) {
-        if (col.type == nebula::cpp2::SupportedType::STRING) {
-            auto len = static_cast<size_t >
-                       (*reinterpret_cast<const int32_t *>(key.begin() + offset));
-            if (len < col.get_first_str().size() || len < col.get_second_str().size()) {
+    auto vlSize = vlColNum_ * sizeof(int32_t);
+    auto offset = (isEdge) ? key.size() - sizeof(VertexID) * 2 - sizeof(EdgeRanking) - vlSize :
+                             key.size() - sizeof(VertexID) - vlSize;
+    auto& items = hint_.get_hint_items();
+    auto& indexCols = index_.get_cols();
+    for (size_t i = 0 ; i < items.size(); i++) {
+        if (indexCols[i].get_type().get_type() == nebula::cpp2::SupportedType::STRING) {
+            auto len = static_cast<size_t>
+            (*reinterpret_cast<const int32_t*>(key.begin() + offset));
+            if (len < items[i].get_first_str().size() ||
+                len < items[i].get_second_str().size()) {
                 return false;
             }
             offset += sizeof(int32_t);
