@@ -78,6 +78,7 @@ MACRO(ADD_PRECOMPILED_HEADER _targetName _input)
     ELSE()
         SET(_cxx_standard "c++${CMAKE_CXX_STANDARD}")
     ENDIF()
+    message(STATUS "Use C++ standard: ${_cxx_standard}")
     ADD_CUSTOM_COMMAND(
         OUTPUT ${_output}
         COMMAND ${CMAKE_CXX_COMPILER}
