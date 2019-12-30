@@ -39,6 +39,11 @@ Compared with other graph database solutions, **Nebula Graph** has the following
 
 See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki#roadmap) for what's coming soon in **Nebula Graph**.
 
+## Supported Clients
+* [Go](https://github.com/vesoft-inc/nebula-go)
+* [Python](https://github.com/vesoft-inc/nebula-python)
+* [Java](https://github.com/vesoft-inc/nebula-java)
+
 ## Quick start
 
 Read the [Getting started](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/1.overview/2.quick-start/1.get-started.md) article for a quick start.
@@ -76,7 +81,8 @@ In order to prevent cloud providers monetizing from the project without contribu
 
 ## Contact
 
-* Twitter: <a href="https://twitter.com/NebulaGraph">@NebulaGraph</a>
-* <a href="https://www.linkedin.com/company/vesoft-nebula-graph/">LinkedIn page</a>
-* <a href="https://join.slack.com/t/nebulagraph/shared_invite/enQtNjIzMjQ5MzE2OTQ2LTM0MjY0MWFlODg3ZTNjMjg3YWU5ZGY2NDM5MDhmOGU2OWI5ZWZjZDUwNTExMGIxZTk2ZmQxY2Q2MzM1OWJhMmY#">Slack channel</a>
+* Twitter: [@NebulaGraph](https://twitter.com/NebulaGraph)
+* [Facebook page](https://www.facebook.com/NebulaGraph/)
+* [LinkedIn page](https://www.linkedin.com/company/vesoft-nebula-graph/)
+* [Slack channel](https://join.slack.com/t/nebulagraph/shared_invite/enQtNjIzMjQ5MzE2OTQ2LTM0MjY0MWFlODg3ZTNjMjg3YWU5ZGY2NDM5MDhmOGU2OWI5ZWZjZDUwNTExMGIxZTk2ZmQxY2Q2MzM1OWJhMmY#)
 * email: info@vesoft.com
