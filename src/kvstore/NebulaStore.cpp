@@ -582,22 +582,29 @@ ResultCode NebulaStore::compact(GraphSpaceID spaceId) {
     }
     auto space = nebula::value(spaceRet);
 
-    auto code = ResultCode::SUCCEEDED;
-    std::vector<std::thread> threads;
+    // Dispatch to workers for parallel speed up
+    std::vector<folly::Future<ResultCode>> fResults;
+    fResults.reserve(space->engines_.size());
     for (auto& engine : space->engines_) {
-        threads.emplace_back(std::thread([&engine, &code] {
-            auto ret = engine->compact();
-            if (ret != ResultCode::SUCCEEDED) {
-                code = ret;
+        folly::Promise<ResultCode> p;
+        fResults.emplace_back(p.getFuture());
+        auto task = [p = std::move(p), &engine] () mutable {
+            p.setValue(engine->compact());
+        };
+        DCHECK_NOTNULL(workers_)->add(std::move(task));
+    }
+    auto ret = folly::collect(fResults).thenValue([](auto&& results) {
+        for (auto r : results) {
+            if (r != ResultCode::SUCCEEDED) {
+                return r;
             }
-        }));
-    }
-
-    // Wait for all threads to finish
-    for (auto& t : threads) {
-        t.join();
-    }
-    return code;
+        }
+        return ResultCode::SUCCEEDED;
+    }).thenError([](auto&& e) {
+        LOG(ERROR) << e.what();
+        return ResultCode::ERR_UNKNOWN;
+    }).get();
+    return ret;
 }
 
 ResultCode NebulaStore::flush(GraphSpaceID spaceId) {
