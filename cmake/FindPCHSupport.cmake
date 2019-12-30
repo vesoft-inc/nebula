@@ -73,12 +73,11 @@ MACRO(ADD_PRECOMPILED_HEADER _targetName _input)
 
     SEPARATE_ARGUMENTS(_compiler_FLAGS)
     MESSAGE("Precompile header file " ${_source} " into " ${_output})
-    IF(CMAKE_CXX_EXTENSIONS)
+    IF(CMAKE_CXX_EXTENSIONS OR NOT DEFINED CMAKE_CXX_EXTENSIONS)
         SET(_cxx_standard "gnu++${CMAKE_CXX_STANDARD}")
     ELSE()
         SET(_cxx_standard "c++${CMAKE_CXX_STANDARD}")
     ENDIF()
-    message(STATUS "Use C++ standard: ${_cxx_standard}")
     ADD_CUSTOM_COMMAND(
         OUTPUT ${_output}
         COMMAND ${CMAKE_CXX_COMPILER}
