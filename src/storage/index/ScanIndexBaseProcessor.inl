@@ -33,25 +33,23 @@ cpp2::ErrorCode ScanIndexBaseProcessor<REQ, RESP>::buildIndexHint() {
 }
 
 template<typename REQ, typename RESP>
-cpp2::ErrorCode ScanIndexBaseProcessor<REQ, RESP>::createResultSchema(
-        bool isEdge, int32_t id, const std::vector<std::string> &returnCols) {
-    if (schema_ == nullptr) {
-        schema_ = std::make_shared<SchemaWriter>();
-        auto schema = (isEdge) ? this->schemaMan_->getEdgeSchema(spaceId_, id) :
-                                 this->schemaMan_->getTagSchema(spaceId_, id);
-        if (!schema) {
-            VLOG(3) << "Can't find spaceId " << spaceId_ << ", id " << id;
-            return (isEdge) ? cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND :
-                              cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
+cpp2::ErrorCode ScanIndexBaseProcessor<REQ, RESP>::createResultSchema(bool isEdge, int32_t id,
+    const std::vector<std::string> &returnCols) {
+    schema_ = std::make_shared<SchemaWriter>();
+    auto schema = (isEdge) ? this->schemaMan_->getEdgeSchema(spaceId_, id) :
+                             this->schemaMan_->getTagSchema(spaceId_, id);
+    if (!schema) {
+        VLOG(3) << "Can't find tag or edgeType , ID : " << id;
+        return (isEdge) ? cpp2::ErrorCode::E_EDGE_NOT_FOUND :
+                          cpp2::ErrorCode::E_TAG_NOT_FOUND;
+    }
+    for (auto& col : returnCols) {
+        const auto& ftype = schema->getFieldType(col);
+        if (UNLIKELY(ftype == CommonConstants::kInvalidValueType())) {
+            return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
         }
-        for (auto& col : returnCols) {
-            const auto& ftype = schema->getFieldType(col);
-            if (UNLIKELY(ftype == CommonConstants::kInvalidValueType())) {
-                return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
-            }
-            schema_->appendCol(col, std::move(ftype).get_type());
-        }   // end for
-    }   // end if
+        schema_->appendCol(col, std::move(ftype).get_type());
+    }
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -69,10 +67,10 @@ kvstore::ResultCode ScanIndexBaseProcessor<REQ, RESP>::getVertexRow(PartitionID 
             auto v = std::move(result).value();
             auto reader = RowReader::getTagPropReader(this->schemaMan_, v, spaceId_, tagId);
             auto row = getRowFromReader(reader.get());
-            if (row.empty()) {
-                return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
+            if (!row.ok()) {
+                return kvstore::ResultCode::ERR_CONSENSUS_ERROR;
             }
-            data->set_props(std::move(row));
+            data->set_props(std::move(row).value());
             VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagId;
             return kvstore::ResultCode::SUCCEEDED;
         } else {
@@ -89,10 +87,10 @@ kvstore::ResultCode ScanIndexBaseProcessor<REQ, RESP>::getVertexRow(PartitionID 
     if (iter && iter->valid()) {
         auto reader = RowReader::getTagPropReader(this->schemaMan_, iter->val(), spaceId_, tagId);
         auto row = getRowFromReader(reader.get());
-        if (row.empty()) {
-            return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
+        if (!row.ok()) {
+            return kvstore::ResultCode::ERR_CONSENSUS_ERROR;
         }
-        data->set_props(std::move(row));
+        data->set_props(std::move(row).value());
         if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
             vertexCache_->insert(std::make_pair(vId, tagId),
                                  iter->val().str(), partId);
@@ -134,10 +132,10 @@ kvstore::ResultCode ScanIndexBaseProcessor<REQ, RESP>::getEdgeRow(PartitionID pa
                                                    spaceId_,
                                                    edgeType);
         auto row = getRowFromReader(reader.get());
-        if (row.empty()) {
-            return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
+        if (!row.ok()) {
+            return kvstore::ResultCode::ERR_CONSENSUS_ERROR;
         }
-        data->set_props(std::move(row));
+        data->set_props(std::move(row).value());
     } else {
         VLOG(3) << "Missed partId " << partId << ", src " << src << ", edgeType " << edgeType
                 << ", Rank " << rank << ", dst " << dst;
@@ -147,15 +145,14 @@ kvstore::ResultCode ScanIndexBaseProcessor<REQ, RESP>::getEdgeRow(PartitionID pa
 }
 
 template<typename REQ, typename RESP>
-std::string ScanIndexBaseProcessor<REQ, RESP>::getRowFromReader(RowReader* reader) {
+StatusOr<std::string> ScanIndexBaseProcessor<REQ, RESP>::getRowFromReader(RowReader* reader) {
     std::string encode;
     RowWriter writer(schema_);
     for (auto i = 0; i < static_cast<int64_t>(schema_->getNumFields()); i++) {
         const auto& name = schema_->getFieldName(i);
         auto res = RowReader::getPropByName(reader, name);
         if (!ok(res)) {
-            VLOG(1) << "Skip the bad value for prop " << name;
-            continue;
+            return Status::Error("Invalid Prop");
         }
         auto&& v = value(std::move(res));
         switch (v.which()) {
@@ -172,7 +169,7 @@ std::string ScanIndexBaseProcessor<REQ, RESP>::getRowFromReader(RowReader* reade
                 writer << boost::get<std::string>(v);
                 break;
             default:
-                LOG(FATAL) << "Unknown VariantType: " << v.which();
+                return Status::Error("Unknown VariantType: %d", v.which());
         }  // switch
     }
     return writer.encode();

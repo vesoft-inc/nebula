@@ -3,40 +3,42 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-set(name rocksdb)
+set(name capstone)
 set(source_dir ${CMAKE_CURRENT_BINARY_DIR}/${name}/source)
-set(ROCKSDB_CXX_FLAGS "-Wno-pessimizing-move -Wno-redundant-move -Wno-deprecated-copy -Wno-error=shadow -Wno-error=sign-compare")
 ExternalProject_Add(
     ${name}
-    URL https://github.com/facebook/rocksdb/archive/v5.15.10.tar.gz
-    URL_HASH MD5=5b1c1fa7ff4756218514205238d8900d
-    DOWNLOAD_NAME rocksdb-5.15.10.tar.gz
+    URL https://github.com/aquynh/capstone/archive/4.0.1.tar.gz
+    URL_HASH MD5=1b0a9a0d50d9515dcf7684ce0a2270a4
+    DOWNLOAD_NAME capstone-4.0.1.tar.gz
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/${name}
     TMP_DIR ${BUILD_INFO_DIR}
     STAMP_DIR ${BUILD_INFO_DIR}
     DOWNLOAD_DIR ${DOWNLOAD_DIR}
     SOURCE_DIR ${source_dir}
-    UPDATE_COMMAND ""
     CMAKE_ARGS
         ${common_cmake_args}
-        -DPORTABLE=ON
-        -DWITH_SNAPPY=ON
-        -DWITH_ZSTD=ON
-        -DWITH_ZLIB=ON
-        -DWITH_JEMALLOC=OFF
-        -DWITH_GFLAGS=OFF
-        -DWITH_TESTS=OFF
-        -DWITH_TOOLS=OFF
-<<<<<<< HEAD
-        -DUSE_RTTI=ON
-=======
->>>>>>> Resolve conflict
-        -DFAIL_ON_WARNINGS=OFF
+        -DCAPSTONE_X86_SUPPORT=ON
+        -DCAPSTONE_ARM_SUPPORT=OFF
+        -DCAPSTONE_ARM64_SUPPORT=OFF
+        -DCAPSTONE_M680X_SUPPORT=OFF
+        -DCAPSTONE_M68K_SUPPORT=OFF
+        -DCAPSTONE_MIPS_SUPPORT=OFF
+        -DCAPSTONE_MOS65XX_SUPPORT=OFF
+        -DCAPSTONE_PPC_SUPPORT=OFF
+        -DCAPSTONE_SPARC_SUPPORT=OFF
+        -DCAPSTONE_SYSZ_SUPPORT=OFF
+        -DCAPSTONE_XCORE_SUPPORT=OFF
+        -DCAPSTONE_TMS320C64X_SUPPORT=OFF
+        -DCAPSTONE_M680X_SUPPORT=OFF
+        -DCAPSTONE_EVM_SUPPORT=OFF
+        -DCAPSTONE_BUILD_DIET=OFF
+        -DCAPSTONE_X86_REDUCE=OFF
+        -DCAPSTONE_BUILD_TESTS=OFF
+        -DCAPSTONE_BUILD_STATIC=ON
+        -DCAPSTONE_BUILD_SHARED=OFF
         -DCMAKE_BUILD_TYPE=Release
-#-DCMAKE_CXX_FLAGS:STRING=${ROCKSDB_CXX_FLAGS}
-    PATCH_COMMAND patch CMakeLists.txt ${CMAKE_SOURCE_DIR}/patches/rocksdb-5.15.10.patch
+    BUILD_COMMAND make -s -j${BUILDING_JOBS_NUM}
     BUILD_IN_SOURCE 1
-    BUILD_COMMAND make -s -j${BUILDING_JOBS_NUM} VERBOSE=1
     INSTALL_COMMAND make -s install -j${BUILDING_JOBS_NUM}
     LOG_CONFIGURE TRUE
     LOG_BUILD TRUE

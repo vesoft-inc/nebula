@@ -13,9 +13,6 @@
 namespace nebula {
 using IndexValues = std::vector<std::pair<nebula::cpp2::SupportedType, std::string>>;
 
-
-using IndexValues = std::vector<std::pair<nebula::cpp2::SupportedType, std::string>>;
-
 /**
  * VertexKeyUtils:
  * type(1) + partId(3) + vertexId(8) + tagId(4) + version(8)
@@ -122,7 +119,8 @@ public:
 
     static VertexID getVertexId(const folly::StringPiece& rawKey) {
         CHECK_EQ(rawKey.size(), kVertexLen);
-        return readInt<VertexID>(rawKey.data() + sizeof(PartitionID), sizeof(VertexID));
+        auto offset = sizeof(PartitionID);
+        return readInt<VertexID>(rawKey.data() + offset, sizeof(VertexID));
     }
 
     static TagID getTagId(const folly::StringPiece& rawKey) {
@@ -270,6 +268,7 @@ public:
      *    -1                      -> "\177\377\377\377\377\377\377\377"
      *    -9223372036854775808    -> "\000\000\000\000\000\000\000\000"
      */
+
     static std::string encodeInt64(int64_t v) {
         v ^= folly::to<int64_t>(1) << 63;
         auto val = folly::Endian::big(v);
@@ -298,11 +297,11 @@ public:
         raw.append(c, sizeof(double));
         return raw;
     }
-    
-    static VertexID getVertexID(const folly::StringPiece& rawKey) {
-        auto offset = rawKey.size() - sizeof(VertexID);
-        return *reinterpret_cast<const VertexID*>(rawKey.data() + offset);
-    }
+
+    static VertexID getIndexVertexID(const folly::StringPiece& rawKey) {
+         auto offset = rawKey.size() - sizeof(VertexID);
+         return *reinterpret_cast<const VertexID*>(rawKey.data() + offset);
+     }
 
     static VertexID getIndexSrcId(const folly::StringPiece& rawKey) {
         auto offset = rawKey.size() -
@@ -332,12 +331,6 @@ private:
                                       + sizeof(EdgeRanking) + sizeof(EdgeVersion);
 
     static constexpr int32_t kSystemLen = sizeof(PartitionID) + sizeof(NebulaSystemKeyType);
-
-    static constexpr int32_t kEdgeIndexLen = sizeof(PartitionID) + sizeof(IndexID)
-                                             + sizeof(VertexID) *2 + sizeof(EdgeRanking);
-
-    static constexpr int32_t kVertexIndexLen = sizeof(PartitionID) + sizeof(IndexID)
-                                               + sizeof(VertexID);
 
     // The partition id offset in 4 Bytes
     static constexpr uint8_t kPartitionOffset = 8;
