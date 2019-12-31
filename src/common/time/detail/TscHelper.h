@@ -4,10 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-
 #ifndef COMMON_TIME_DETAIL_TSCHELPER_H_
 #define COMMON_TIME_DETAIL_TSCHELPER_H_
+
+#include "base/Base.h"
 
 namespace nebula {
 namespace time {
