@@ -92,7 +92,7 @@ jobs:
           LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
         run: |
           cd _build
-          ${NEBULA_DEP_BIN}/ctest -j $(nproc) --output-on-failure
+          GTEST_FILTER=-meta_client_test ${NEBULA_DEP_BIN}/ctest -j $(nproc) --output-on-failure
         shell: bash
       - name: test in singlethread
         if: failure()
@@ -102,6 +102,6 @@ jobs:
           LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
         run: |
           cd _build
-          ${NEBULA_DEP_BIN}/ctest --output-on-failure
+          GTEST_FILTER=-meta_client_test ${NEBULA_DEP_BIN}/ctest --output-on-failure
         shell: bash
 
