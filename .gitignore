@@ -1,6 +1,7 @@
 *.swp
 *.so
 *.DS_Store
+*.pyc
 
 # build
 build
@@ -37,3 +38,6 @@ pids/
 cmake-build-debug/
 cmake-build-release/
 .vscode/
+
+#pytest
+tests/.pytest_cache/
