@@ -339,16 +339,25 @@ void FetchVerticesExecutor::processAllPropsResult(RpcResponse &&result) {
                 auto ver = RowReader::getSchemaVer(tdata.data);
                 if (ver < 0) {
                     LOG(ERROR) << "Found schema version negative " << ver;
-                    continue;
+                    doError(Status::Error("Found schema version negative: %d", ver));
+                    return;
                 }
                 auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tdata.tag_id, ver);
                 rsWriter = std::make_unique<RowSetWriter>(schema);
                 rsWriter->addRow(tdata.data);
 
+                auto tagFound = ectx()->schemaManager()->toTagName(spaceId_, tdata.tag_id);
+                if (!tagFound.ok()) {
+                    LOG(ERROR) << "Tag not found for id: " << tdata.tag_id;
+                    doError(Status::Error("Tag not found for id: %d", tdata.tag_id));
+                    return;
+                }
+                auto tagName = std::move(tagFound).value();
                 auto iter = schema->begin();
                 while (iter) {
-                    auto name = iter->getName();
-                    resultColNames_.emplace_back(std::move(name));
+                    auto *field = iter->getName();
+                    auto colName = folly::stringPrintf("%s.%s", tagName.c_str(), field);
+                    resultColNames_.emplace_back(std::move(colName));
                     ++iter;
                 }
             }
