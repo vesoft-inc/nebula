@@ -9,7 +9,7 @@
 #include "graph/test/TestBase.h"
 #include "meta/test/TestUtils.h"
 
-DECLARE_int32(load_data_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace graph {
@@ -58,7 +58,7 @@ AssertionResult DeleteEdgesTest::prepareSchema() {
             return TestError() << "Do cmd:" << cmd << " failed, code:" << static_cast<int>(code);
         }
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "USE mySpace";
@@ -99,7 +99,7 @@ AssertionResult DeleteEdgesTest::prepareSchema() {
             return TestError() << "Do cmd:" << cmd << " failed, code:" << static_cast<int>(code);
         }
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     return TestOK();
 }
 

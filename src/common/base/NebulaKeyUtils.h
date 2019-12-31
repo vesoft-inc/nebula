@@ -85,16 +85,14 @@ public:
     }
 
     static bool isVertex(const folly::StringPiece& rawKey) {
-        constexpr uint32_t tagMask  = 0x40000000;
-        constexpr uint32_t typeMask = 0x000000FF;
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
-        auto type = readInt<uint32_t>(rawKey.data(), len) & typeMask;
+        auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMask;
         if (static_cast<uint32_t>(NebulaKeyType::kData) != type) {
             return false;
         }
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
         TagID tagId =  readInt<TagID>(rawKey.data() + offset, sizeof(TagID));
-        return !(tagId & tagMask);
+        return !(tagId & kTagEdgeMask);
     }
 
     static VertexID getVertexId(const folly::StringPiece& rawKey) {
@@ -110,16 +108,14 @@ public:
     }
 
     static bool isEdge(const folly::StringPiece& rawKey) {
-        constexpr uint32_t edgeMask = 0x40000000;
-        constexpr uint32_t typeMask = 0x000000FF;
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
-        auto type = readInt<uint32_t>(rawKey.data(), len) & typeMask;
+        auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMask;
         if (static_cast<uint32_t>(NebulaKeyType::kData) != type) {
             return false;
         }
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
         EdgeType etype = readInt<EdgeType>(rawKey.data() + offset, sizeof(EdgeType));
-        return etype & edgeMask;
+        return etype & kTagEdgeMask;
     }
 
     static bool isSystemCommit(const folly::StringPiece& rawKey) {
@@ -156,10 +152,9 @@ public:
 
     static EdgeType getEdgeType(const folly::StringPiece& rawKey) {
         CHECK_EQ(rawKey.size(), kEdgeLen);
-        constexpr int32_t edgeMask = 0xBFFFFFFF;
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
         EdgeType type = readInt<EdgeType>(rawKey.data() + offset, sizeof(EdgeType));
-        return type > 0 ? type & edgeMask : type;
+        return type > 0 ? type & kTagEdgeValueMask : type;
     }
 
     static EdgeRanking getRank(const folly::StringPiece& rawKey) {
@@ -176,22 +171,19 @@ public:
     }
 
     static bool isDataKey(const folly::StringPiece& key) {
-        constexpr uint32_t typeMask = 0x000000FF;
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
-        auto type = readInt<int32_t>(key.data(), len) & typeMask;
+        auto type = readInt<int32_t>(key.data(), len) & kTypeMask;
         return static_cast<uint32_t>(NebulaKeyType::kData) == type;
     }
 
     static bool isIndexKey(const folly::StringPiece& key) {
-        constexpr uint32_t typeMask = 0x000000FF;
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
-        auto type = readInt<int32_t>(key.data(), len) & typeMask;
+        auto type = readInt<int32_t>(key.data(), len) & kTypeMask;
         return static_cast<uint32_t>(NebulaKeyType::kIndex) == type;
     }
 
     static bool isUUIDKey(const folly::StringPiece& key) {
-        constexpr uint32_t typeMask = 0x000000FF;
-        auto type = readInt<int32_t>(key.data(), sizeof(int32_t)) & typeMask;
+        auto type = readInt<int32_t>(key.data(), sizeof(int32_t)) & kTypeMask;
         return static_cast<uint32_t>(NebulaKeyType::kUUID) == type;
     }
 
@@ -212,6 +204,24 @@ private:
                                       + sizeof(EdgeRanking) + sizeof(EdgeVersion);
 
     static constexpr int32_t kSystemLen = sizeof(PartitionID) + sizeof(NebulaSystemKeyType);
+
+    // The partition id offset in 4 Bytes
+    static constexpr uint8_t kPartitionOffset = 8;
+
+    // The key type bits Mask
+    // See KeyType enum
+    static constexpr uint32_t kTypeMask     = 0x000000FF;
+
+    // The Tag/Edge type bit Mask
+    // 0 for Tag, 1 for Edge
+    // 0x40 - 0b0100,0000
+    static constexpr uint32_t kTagEdgeMask      = 0x40000000;
+    // For extract Tag/Edge value
+    static constexpr uint32_t kTagEdgeValueMask = ~kTagEdgeMask;
+    // Write edge by &=
+    static constexpr uint32_t kEdgeMaskSet      = kTagEdgeMask;
+    // Write Tag by |=
+    static constexpr uint32_t kTagMaskSet       = ~kTagEdgeMask;
 };
 
 }  // namespace nebula

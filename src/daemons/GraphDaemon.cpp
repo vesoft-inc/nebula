@@ -103,6 +103,9 @@ int main(int argc, char *argv[]) {
     if (!status.ok()) {
         return EXIT_FAILURE;
     }
+    SCOPE_EXIT {
+        nebula::WebService::stop();
+    };
 
     if (FLAGS_num_netio_threads == 0) {
         FLAGS_num_netio_threads = std::thread::hardware_concurrency();
@@ -149,7 +152,6 @@ int main(int argc, char *argv[]) {
     status = setupSignalHandler();
     if (!status.ok()) {
         LOG(ERROR) << status;
-        nebula::WebService::stop();
         return EXIT_FAILURE;
     }
 
@@ -157,12 +159,10 @@ int main(int argc, char *argv[]) {
     try {
         gServer->serve();  // Blocking wait until shut down via gServer->stop()
     } catch (const std::exception &e) {
-        nebula::WebService::stop();
         FLOG_ERROR("Exception thrown while starting the RPC server: %s", e.what());
         return EXIT_FAILURE;
     }
 
-    nebula::WebService::stop();
     FLOG_INFO("nebula-graphd on %s:%d has been stopped", localIP.c_str(), FLAGS_port);
 
     return EXIT_SUCCESS;
