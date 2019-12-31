@@ -11,22 +11,37 @@
 namespace nebula {
 namespace meta {
 
-const std::string kSpacesTable      = "__spaces__";         // NOLINT
-const std::string kPartsTable       = "__parts__";          // NOLINT
-const std::string kHostsTable       = "__hosts__";          // NOLINT
-const std::string kTagsTable        = "__tags__";           // NOLINT
-const std::string kEdgesTable       = "__edges__";          // NOLINT
-const std::string kTagIndexesTable  = "__tag_indexes__";    // NOLINT
-const std::string kEdgeIndexesTable = "__edge_indexes__";   // NOLINT
-const std::string kIndexTable       = "__index__";          // NOLINT
-const std::string kUsersTable       = "__users__";          // NOLINT
-const std::string kRolesTable       = "__roles__";          // NOLINT
-const std::string kConfigsTable     = "__configs__";        // NOLINT
-const std::string kDefaultTable     = "__default__";        // NOLINT
-const std::string kSnapshotsTable   = "__snapshots__";      // NOLINT
+const std::string kSpacesTable         = "__spaces__";         // NOLINT
+const std::string kPartsTable          = "__parts__";          // NOLINT
+const std::string kHostsTable          = "__hosts__";          // NOLINT
+const std::string kTagsTable           = "__tags__";           // NOLINT
+const std::string kEdgesTable          = "__edges__";          // NOLINT
+const std::string kTagIndexesTable     = "__tag_indexes__";    // NOLINT
+const std::string kEdgeIndexesTable    = "__edge_indexes__";   // NOLINT
+const std::string kIndexTable          = "__index__";          // NOLINT
+const std::string kUsersTable          = "__users__";          // NOLINT
+const std::string kRolesTable          = "__roles__";          // NOLINT
+const std::string kConfigsTable        = "__configs__";        // NOLINT
+const std::string kDefaultTable        = "__default__";        // NOLINT
+const std::string kSnapshotsTable      = "__snapshots__";      // NOLINT
+const std::string kLastUpdateTimeTable = "__last_update_time__"; // NOLINT
 
 const std::string kHostOnline  = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";      // NOLINT
+
+std::string MetaServiceUtils::lastUpdateTimeKey() {
+    std::string key;
+    key.reserve(128);
+    key.append(kLastUpdateTimeTable.data(), kLastUpdateTimeTable.size());
+    return key;
+}
+
+std::string MetaServiceUtils::lastUpdateTimeVal(const int64_t timeInMilliSec) {
+    std::string val;
+    val.reserve(sizeof(int64_t));
+    val.append(reinterpret_cast<const char*>(&timeInMilliSec), sizeof(int64_t));
+    return val;
+}
 
 std::string MetaServiceUtils::spaceKey(GraphSpaceID spaceId) {
     std::string key;
@@ -42,7 +57,7 @@ std::string MetaServiceUtils::spaceVal(const cpp2::SpaceProperties &properties) 
     return val;
 }
 
-cpp2::SpaceProperties  MetaServiceUtils::parseSpace(folly::StringPiece rawData) {
+cpp2::SpaceProperties MetaServiceUtils::parseSpace(folly::StringPiece rawData) {
     cpp2::SpaceProperties properties;
     apache::thrift::CompactSerializer::deserialize(rawData, properties);
     return properties;
@@ -67,6 +82,16 @@ std::string MetaServiceUtils::partKey(GraphSpaceID spaceId, PartitionID partId) 
        .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
        .append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID));
     return key;
+}
+
+GraphSpaceID MetaServiceUtils::parsePartKeySpaceId(folly::StringPiece key) {
+    return *reinterpret_cast<const GraphSpaceID*>(key.data() + kPartsTable.size());
+}
+
+PartitionID MetaServiceUtils::parsePartKeyPartId(folly::StringPiece key) {
+    return *reinterpret_cast<const PartitionID*>(key.data()
+                                                 + kPartsTable.size()
+                                                 + sizeof(GraphSpaceID));
 }
 
 std::string MetaServiceUtils::partVal(const std::vector<nebula::cpp2::HostAddr>& hosts) {

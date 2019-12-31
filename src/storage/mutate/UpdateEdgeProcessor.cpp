@@ -17,8 +17,34 @@ void UpdateEdgeProcessor::onProcessFinished(int32_t retNum) {
         nebula::cpp2::Schema respScheam;
         respScheam.columns.reserve(retNum);
         RowWriter writer(nullptr);
+        Getters getters;
+        getters.getSrcTagProp = [&, this] (const std::string& tagName,
+                                        const std::string& prop) -> OptVariantType {
+            auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
+            if (!tagRet.ok()) {
+                VLOG(1) << "Can't find tag " << tagName << ", in space " << this->spaceId_;
+                return Status::Error("Invalid Filter Tag: " + tagName);
+            }
+            auto tagId = tagRet.value();
+            auto it = tagFilters_.find(std::make_pair(tagId, prop));
+            if (it == tagFilters_.end()) {
+                return Status::Error("Invalid Tag Filter");
+            }
+            VLOG(1) << "Hit srcProp filter for tag: " << tagName
+                    << ", prop: " << prop << ", value: " << it->second;
+            return it->second;
+        };
+        getters.getAliasProp = [&, this] (const std::string&,
+                                        const std::string& prop) -> OptVariantType {
+            auto it = this->edgeFilters_.find(prop);
+            if (it == this->edgeFilters_.end()) {
+                return Status::Error("Invalid Edge Filter");
+            }
+            VLOG(1) << "Hit edgeProp for prop: " << prop << ", value: " << it->second;
+            return it->second;
+        };
         for (auto& exp : returnColumnsExp_) {
-            auto value = exp->eval();
+            auto value = exp->eval(getters);
             if (!value.ok()) {
                 LOG(ERROR) << value.status();
                 return;
@@ -166,6 +192,32 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
 
 
 std::string UpdateEdgeProcessor::updateAndWriteBack() {
+    Getters getters;
+    getters.getSrcTagProp = [&, this] (const std::string& tagName,
+                                       const std::string& prop) -> OptVariantType {
+        auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
+        if (!tagRet.ok()) {
+            VLOG(1) << "Can't find tag " << tagName << ", in space " << this->spaceId_;
+            return Status::Error("Invalid Filter Tag: " + tagName);
+        }
+        auto tagId = tagRet.value();
+        auto it = tagFilters_.find(std::make_pair(tagId, prop));
+        if (it == tagFilters_.end()) {
+            return Status::Error("Invalid Tag Filter");
+        }
+        VLOG(1) << "Hit srcProp filter for tag: " << tagName
+                << ", prop: " << prop << ", value: " << it->second;
+        return it->second;
+    };
+    getters.getAliasProp = [&, this] (const std::string&,
+                                      const std::string& prop) -> OptVariantType {
+        auto it = this->edgeFilters_.find(prop);
+        if (it == this->edgeFilters_.end()) {
+            return Status::Error("Invalid Edge Filter");
+        }
+        VLOG(1) << "Hit edgeProp for prop: " << prop << ", value: " << it->second;
+        return it->second;
+    };
     for (auto& item : updateItems_) {
         auto prop = item.get_prop();
         auto exp = Expression::decode(item.get_value());
@@ -174,7 +226,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack() {
         }
         auto vexp = std::move(exp).value();
         vexp->setContext(this->expCtx_.get());
-        auto value = vexp->eval();
+        auto value = vexp->eval(getters);
         if (!value.ok()) {
             return std::string("");
         }
@@ -231,7 +283,7 @@ bool UpdateEdgeProcessor::checkFilter(const PartitionID partId,
         }
     }
 
-    auto& getters = this->expCtx_->getters();
+    Getters getters;
     getters.getSrcTagProp = [&, this] (const std::string& tagName,
                                        const std::string& prop) -> OptVariantType {
         auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
@@ -259,7 +311,7 @@ bool UpdateEdgeProcessor::checkFilter(const PartitionID partId,
     };
 
     if (this->exp_ != nullptr) {
-        auto filterResult = this->exp_->eval();
+        auto filterResult = this->exp_->eval(getters);
         if (!filterResult.ok() || !Expression::asBool(filterResult.value())) {
             VLOG(1) << "Filter skips the update";
             return false;
@@ -339,7 +391,7 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
     this->spaceId_ = req.get_space_id();
     insertable_ = req.get_insertable();
     auto partId = req.get_part_id();
-    auto edgeKey = std::move(req).get_edge_key();
+    auto edgeKey = req.get_edge_key();
     std::vector<EdgeType> eTypes;
     eTypes.emplace_back(edgeKey.get_edge_type());
     this->initEdgeContext(eTypes);
@@ -350,7 +402,7 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
         this->onFinished();
         return;
     }
-    updateItems_ = std::move(req).get_update_items();
+    updateItems_ = req.get_update_items();
 
     VLOG(3) << "Update edge, spaceId: " << this->spaceId_ << ", partId:  " << partId
             << ", src: " << edgeKey.get_src() << ", edge_type: " << edgeKey.get_edge_type()

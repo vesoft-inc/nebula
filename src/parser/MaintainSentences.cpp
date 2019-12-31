@@ -211,6 +211,9 @@ std::string CreateTagIndexSentence::toString() const {
     buf += " ON ";
     buf += *tagName_;
     buf += " (";
+    std::string columns;
+    folly::join(", ", this->names(), columns);
+    buf += columns;
     buf += ")";
     return buf;
 }
@@ -224,6 +227,9 @@ std::string CreateEdgeIndexSentence::toString() const {
     buf += " ON ";
     buf += *edgeName_;
     buf += " (";
+    std::string columns;
+    folly::join(", ", this->names(), columns);
+    buf += columns;
     buf += ")";
     return buf;
 }

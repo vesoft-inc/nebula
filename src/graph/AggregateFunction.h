@@ -71,7 +71,8 @@ public:
                 return 0;
             }
             default: {
-                LOG(FATAL) << "Untreated value type: " << static_cast<int32_t>(col.getType());
+                LOG(ERROR) << "Untreated value type: " << static_cast<int32_t>(col.getType());
+                return 0;
             }
         }
         return 0;

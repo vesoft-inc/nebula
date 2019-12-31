@@ -103,6 +103,16 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
                     }
                     defaultValue = folly::to<std::string>(value->get_string_value());
                     break;
+                case nebula::cpp2::SupportedType::TIMESTAMP:
+                    if (value->getType() != nebula::cpp2::Value::Type::timestamp) {
+                        LOG(ERROR) << "Create Tag Failed: " << name
+                                   << " type mismatch";
+                        resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+                        onFinished();
+                        return;
+                    }
+                    defaultValue = folly::to<std::string>(value->get_timestamp());
+                    break;
                 default:
                     LOG(ERROR) << "Unsupported type";
                     return;
@@ -120,6 +130,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     LOG(INFO) << "Create Tag " << tagName << ", TagID " << tagId;
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(tagId, EntryType::TAG));
+    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     doPut(std::move(data));
 }
 

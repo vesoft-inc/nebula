@@ -36,7 +36,10 @@ public:
         hasDefault_ = true;
     }
 
-    int64_t getIntValue() {
+    StatusOr<int64_t> getIntValue() {
+        if (defaultValue_.which() != VAR_INT64) {
+            return Status::Error("Wrong type");
+        }
         int64_t v = boost::get<int64_t>(defaultValue_);
         return v;
     }
@@ -46,7 +49,10 @@ public:
         hasDefault_ = true;
     }
 
-    bool getBoolValue() {
+    StatusOr<bool> getBoolValue() {
+        if (defaultValue_.which() != VAR_BOOL) {
+            return Status::Error("Wrong type");
+        }
         return boost::get<bool>(defaultValue_);
     }
 
@@ -55,7 +61,10 @@ public:
         hasDefault_ = true;
     }
 
-    double getDoubleValue() {
+    StatusOr<double> getDoubleValue() {
+        if (defaultValue_.which() != VAR_DOUBLE) {
+            return Status::Error("Wrong type");
+        }
         return boost::get<double>(defaultValue_);
     }
 
@@ -65,7 +74,10 @@ public:
         delete v;
     }
 
-    std::string getStringValue() {
+    StatusOr<std::string> getStringValue() {
+        if (defaultValue_.which() != VAR_STR) {
+            return Status::Error("Wrong type");
+        }
         return boost::get<std::string>(defaultValue_);
     }
 
@@ -77,7 +89,7 @@ private:
     ColumnType                                  type_;
     std::unique_ptr<std::string>                name_;
     bool                                        hasDefault_{false};
-    Value                                       defaultValue_;
+    VariantType                                 defaultValue_;
 };
 
 
@@ -522,11 +534,7 @@ public:
         return tagName_.get();
     }
 
-    const ColumnNameList* columnNames() const {
-        return columns_.get();
-    }
-
-    std::vector<std::string> names() {
+    std::vector<std::string> names() const {
         std::vector<std::string> result;
         auto columnNames = columns_->columnNames();
         result.resize(columnNames.size());
@@ -565,11 +573,7 @@ public:
         return edgeName_.get();
     }
 
-    const ColumnNameList* columnNames() const {
-        return columns_.get();
-    }
-
-    std::vector<std::string> names() {
+    std::vector<std::string> names() const {
         std::vector<std::string> result;
         auto columnNames = columns_->columnNames();
         result.resize(columnNames.size());

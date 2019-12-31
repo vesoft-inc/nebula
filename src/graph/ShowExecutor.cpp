@@ -13,7 +13,7 @@ namespace graph {
 using nebula::network::NetworkUtils;
 
 ShowExecutor::ShowExecutor(Sentence *sentence,
-                           ExecutionContext *ectx) : Executor(ectx) {
+                           ExecutionContext *ectx) : Executor(ectx, "show") {
     sentence_ = static_cast<ShowSentence*>(sentence);
 }
 
@@ -29,8 +29,7 @@ void ShowExecutor::execute() {
         sentence_->showType() == ShowSentence::ShowType::kShowCreateEdge) {
         auto status = checkIfGraphSpaceChosen();
         if (!status.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(status));
+            doError(std::move(status));
             return;
         }
     }
@@ -81,7 +80,7 @@ void ShowExecutor::execute() {
             showSnapshots();
             break;
         case ShowSentence::ShowType::kUnknown:
-            onError_(Status::Error("Type unknown"));
+            doError(Status::Error("Type unknown"));
             break;
         // intentionally no `default'
     }
@@ -94,8 +93,7 @@ void ShowExecutor::showHosts() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status());
             return;
         }
 
@@ -113,6 +111,8 @@ void ShowExecutor::showHosts() {
             return a.get_status() < b.get_status();
         });
 
+        std::unordered_map<std::string, int32_t> allPartsCount;
+        std::unordered_map<std::string, int32_t> leaderPartsCount;
         for (auto& item : hostItems) {
             std::vector<cpp2::ColumnValue> row;
             row.resize(6);
@@ -135,6 +135,7 @@ void ShowExecutor::showHosts() {
                 leaderCount += spaceEntry.second.size();
                 leaders += spaceEntry.first + ": " +
                            folly::to<std::string>(spaceEntry.second.size()) + ", ";
+                leaderPartsCount[spaceEntry.first] += spaceEntry.second.size();
             }
             if (!leaders.empty()) {
                 leaders.resize(leaders.size() - 2);
@@ -146,6 +147,7 @@ void ShowExecutor::showHosts() {
             for (auto& spaceEntry : item.get_all_parts()) {
                 parts += spaceEntry.first + ": " +
                          folly::to<std::string>(spaceEntry.second.size()) + ", ";
+                allPartsCount[spaceEntry.first] += spaceEntry.second.size();
             }
             if (!parts.empty()) {
                 parts.resize(parts.size() - 2);
@@ -160,16 +162,49 @@ void ShowExecutor::showHosts() {
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }
+        {
+            // set sum of leader/partitions of all hosts
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(6);
+
+            int32_t leaderCount = 0;
+            std::string leaders;
+            for (const auto& spaceEntry : leaderPartsCount) {
+                leaders.append(spaceEntry.first + ": " +
+                               folly::to<std::string>(spaceEntry.second) + ", ");
+                leaderCount += spaceEntry.second;
+            }
+            if (!leaders.empty()) {
+                leaders.resize(leaders.size() - 2);
+            }
+
+            std::string parts;
+            for (const auto& spaceEntry : allPartsCount) {
+                parts.append(spaceEntry.first + ": " +
+                             folly::to<std::string>(spaceEntry.second) + ", ");
+            }
+            if (!parts.empty()) {
+                parts.resize(parts.size() - 2);
+            }
+
+            row[0].set_str("Total");
+            row[1].set_str("");
+            row[2].set_str("");
+            row[3].set_integer(leaderCount);
+            row[4].set_str(leaders);
+            row[5].set_str(parts);
+
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
         resp_->set_rows(std::move(rows));
 
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+        doError(Status::Error(folly::stringPrintf("Internal error : %s",
                                                    e.what().c_str())));
         return;
     };
@@ -182,8 +217,7 @@ void ShowExecutor::showSpaces() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status());
             return;
         }
 
@@ -202,14 +236,12 @@ void ShowExecutor::showSpaces() {
         }
         resp_->set_rows(std::move(rows));
 
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+        doError(Status::Error(folly::stringPrintf("Internal error : %s",
                                                    e.what().c_str())));
         return;
     };
@@ -219,13 +251,17 @@ void ShowExecutor::showSpaces() {
 
 void ShowExecutor::showParts() {
     auto spaceId = ectx()->rctx()->session()->space();
-    auto future = ectx()->getMetaClient()->listParts(spaceId);
+    std::vector<PartitionID> partIds;
+    auto *list = sentence_->getList();
+    if (list != nullptr) {
+        partIds = *list;
+    }
+    auto future = ectx()->getMetaClient()->listParts(spaceId, partIds);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status());
             return;
         }
 
@@ -273,14 +309,12 @@ void ShowExecutor::showParts() {
         }
         resp_->set_rows(std::move(rows));
 
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+        doError(Status::Error(folly::stringPrintf("Internal error : %s",
                                                    e.what().c_str())));
         return;
     };
@@ -295,8 +329,7 @@ void ShowExecutor::showTags() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status());
             return;
         }
 
@@ -321,14 +354,12 @@ void ShowExecutor::showTags() {
         }
 
         resp_->set_rows(std::move(rows));
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+        doError(Status::Error(folly::stringPrintf("Internal error : %s",
                                                    e.what().c_str())));
         return;
     };
@@ -342,8 +373,7 @@ void ShowExecutor::showEdges() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status());
             return;
         }
 
@@ -367,14 +397,12 @@ void ShowExecutor::showEdges() {
             rows.back().set_columns(std::move(row));
         }
         resp_->set_rows(std::move(rows));
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+        doError(Status::Error(folly::stringPrintf("Internal error : %s",
                                                    e.what().c_str())));
         return;
     };
@@ -473,8 +501,7 @@ void ShowExecutor::showCreateSpace() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status());
             return;
         }
 
@@ -503,14 +530,12 @@ void ShowExecutor::showCreateSpace() {
         rows.back().set_columns(std::move(row));
         resp_->set_rows(std::move(rows));
 
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+        doError(Status::Error(folly::stringPrintf("Internal error : %s",
                                                    e.what().c_str())));
         return;
     };
@@ -530,8 +555,7 @@ void ShowExecutor::showCreateTag() {
     auto cb = [this] (auto &&resp) {
         auto *tagName =  sentence_->getName();
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status());
             return;
         }
 
@@ -581,14 +605,12 @@ void ShowExecutor::showCreateTag() {
         rows.back().set_columns(std::move(row));
         resp_->set_rows(std::move(rows));
 
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+        doError(Status::Error(folly::stringPrintf("Internal error : %s",
                                                    e.what().c_str())));
     };
 
@@ -606,8 +628,7 @@ void ShowExecutor::showCreateEdge() {
     auto cb = [this] (auto &&resp) {
         auto *edgeName =  sentence_->getName();
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status());
             return;
         }
 
@@ -657,14 +678,12 @@ void ShowExecutor::showCreateEdge() {
         rows.back().set_columns(std::move(row));
         resp_->set_rows(std::move(rows));
 
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+        doError(Status::Error(folly::stringPrintf("Internal error : %s",
                                                    e.what().c_str())));
     };
 
@@ -803,8 +822,7 @@ void ShowExecutor::showSnapshots() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status());
             return;
         }
 
@@ -837,14 +855,12 @@ void ShowExecutor::showSnapshots() {
         }
         resp_->set_rows(std::move(rows));
 
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+        doError(Status::Error(folly::stringPrintf("Internal error : %s",
                                                    e.what().c_str())));
         return;
     };

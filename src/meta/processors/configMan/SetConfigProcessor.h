@@ -22,7 +22,7 @@ public:
 
     cpp2::ErrorCode setOneConfig(const cpp2::ConfigModule& module, const std::string& name,
                                  const cpp2::ConfigType& type, const std::string& value,
-                                 const bool isForce, std::vector<kvstore::KV>& data);
+                                 std::vector<kvstore::KV>& data);
 
     cpp2::ErrorCode setNestedConfig(const cpp2::ConfigModule& module, const std::string& name,
                                     const cpp2::ConfigType& type, const std::string& value,

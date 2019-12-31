@@ -12,13 +12,16 @@
 #include "dataman/ResultSchemaProvider.h"
 
 
+DEFINE_bool(filter_pushdown, true, "If pushdown the filter to storage.");
+
 namespace nebula {
 namespace graph {
 
 using SchemaProps = std::unordered_map<std::string, std::vector<std::string>>;
 using nebula::cpp2::SupportedType;
 
-GoExecutor::GoExecutor(Sentence *sentence, ExecutionContext *ectx) : TraverseExecutor(ectx) {
+GoExecutor::GoExecutor(Sentence *sentence, ExecutionContext *ectx)
+    : TraverseExecutor(ectx, "go") {
     // The RTTI is guaranteed by Sentence::Kind,
     // so we use `static_cast' instead of `dynamic_cast' for the sake of efficiency.
     sentence_ = static_cast<GoSentence*>(sentence);
@@ -84,13 +87,13 @@ void GoExecutor::execute() {
     FLOG_INFO("Executing Go: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getGoStats());
+        doError(std::move(status));
         return;
     }
 
     status = setupStarts();
     if (!status.ok()) {
-        doError(std::move(status), ectx()->getGraphStats()->getGoStats());
+        doError(std::move(status));
         return;
     }
     if (starts_.empty()) {
@@ -137,7 +140,8 @@ Status GoExecutor::prepareFrom() {
     auto *clause = sentence_->fromClause();
     do {
         if (clause == nullptr) {
-            LOG(FATAL) << "From clause shall never be null";
+            LOG(ERROR) << "From clause shall never be null";
+            return Status::Error("From clause shall never be null");
         }
 
         if (clause->isRef()) {
@@ -153,7 +157,8 @@ Status GoExecutor::prepareFrom() {
                 colname_ = vexpr->prop();
             } else {
                 // No way to happen except memory corruption
-                LOG(FATAL) << "Unknown kind of expression";
+                LOG(ERROR) << "Unknown kind of expression";
+                return Status::Error("Unknown kind of expression");
             }
 
             if (colname_ != nullptr && *colname_ == "*") {
@@ -166,6 +171,7 @@ Status GoExecutor::prepareFrom() {
         auto space = ectx()->rctx()->session()->space();
         expCtx_->setSpace(space);
         auto vidList = clause->vidList();
+        Getters getters;
         for (auto *expr : vidList) {
             expr->setContext(expCtx_.get());
 
@@ -173,7 +179,7 @@ Status GoExecutor::prepareFrom() {
             if (!status.ok()) {
                 break;
             }
-            auto value = expr->eval();
+            auto value = expr->eval(getters);
             if (!value.ok()) {
                 status = Status::Error();
                 break;
@@ -239,7 +245,8 @@ Status GoExecutor::prepareOver() {
     Status status = Status::OK();
     auto *clause = sentence_->overClause();
     if (clause == nullptr) {
-        LOG(FATAL) << "Over clause shall never be null";
+        LOG(ERROR) << "Over clause shall never be null";
+        return Status::Error("Over clause shall never be null");
     }
 
     isReversely_ = clause->isReversely();
@@ -284,10 +291,9 @@ Status GoExecutor::prepareOver() {
 
 Status GoExecutor::prepareWhere() {
     auto *clause = sentence_->whereClause();
-    if (clause != nullptr) {
-        filter_ = clause->filter();
-    }
-    return Status::OK();
+    whereWrapper_ = std::make_unique<WhereWrapper>(clause);
+    auto status = whereWrapper_->prepare(expCtx_.get());
+    return status;
 }
 
 
@@ -318,14 +324,6 @@ Status GoExecutor::prepareYield() {
 Status GoExecutor::prepareNeededProps() {
     auto status = Status::OK();
     do {
-        if (filter_ != nullptr) {
-            filter_->setContext(expCtx_.get());
-            status = filter_->prepare();
-            if (!status.ok()) {
-                break;
-            }
-        }
-
         for (auto *col : yields_) {
             col->expr()->setContext(expCtx_.get());
             status = col->expr()->prepare();
@@ -369,7 +367,7 @@ Status GoExecutor::prepareNeededProps() {
         for (auto &entry : tagMap) {
             auto tagId = ectx()->schemaManager()->toTagID(spaceId, entry.first);
             if (!tagId.ok()) {
-                status == Status::Error("Tag `%s' not found.", entry.first.c_str());
+                status = Status::Error("Tag `%s' not found.", entry.first.c_str());
                 break;
             }
             entry.second = tagId.value();
@@ -441,21 +439,25 @@ void GoExecutor::stepOut() {
     auto spaceId = ectx()->rctx()->session()->space();
     auto status = getStepOutProps();
     if (!status.ok()) {
-        doError(Status::Error("Get step out props failed"),
-                ectx()->getGraphStats()->getGoStats());
+        doError(Status::Error("Get step out props failed"));
         return;
     }
     auto returns = status.value();
+    std::string filterPushdown = "";
+    if (FLAGS_filter_pushdown && isFinalStep() && !isReversely()) {
+        // TODO: not support filter pushdown in reversely traversal now.
+        filterPushdown = whereWrapper_->filterPushdown_;
+    }
     auto future  = ectx()->getStorageClient()->getNeighbors(spaceId,
-                                                            starts_,
-                                                            edgeTypes_,
-                                                            "",
-                                                            std::move(returns));
+                                                   starts_,
+                                                   edgeTypes_,
+                                                   filterPushdown,
+                                                   std::move(returns));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            doError(Status::Error("Get neighbors failed"), ectx()->getGraphStats()->getGoStats());
+            doError(Status::Error("Get neighbors failed"));
             return;
         } else if (completeness != 100) {
             // TODO(dutor) We ought to let the user know that the execution was partially
@@ -472,8 +474,7 @@ void GoExecutor::stepOut() {
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Exeception when handle out-bounds/in-bounds."),
-                ectx()->getGraphStats()->getGoStats());
+        doError(Status::Error("Exeception when handle out-bounds/in-bounds."));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -484,7 +485,12 @@ void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
         maybeFinishExecution(std::move(rpcResp));
         return;
     } else {
-        starts_ = getDstIdsFromResp(rpcResp);
+        auto status = getDstIdsFromResp(rpcResp);
+        if (!status.ok()) {
+            doError(std::move(status).status());
+            return;
+        }
+        starts_ = std::move(status).value();
         if (starts_.empty()) {
             onEmptyInputs();
             return;
@@ -509,7 +515,14 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
         return;
     }
 
-    auto dstids = getDstIdsFromResp(rpcResp);
+    auto dstIdStatus = getDstIdsFromResp(rpcResp);
+
+    if (!dstIdStatus.ok()) {
+        doError(std::move(dstIdStatus).status());
+        return;
+    }
+
+    auto dstids = std::move(dstIdStatus).value();
 
     // Reaching the dead end
     if (dstids.empty()) {
@@ -555,14 +568,12 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
                     EdgeRanking rank;
                     auto rc = iter->getVid(_DST, dst);
                     if (rc != ResultType::SUCCEEDED) {
-                        doError(Status::Error("Get dst error when go reversely."),
-                                ectx()->getGraphStats()->getGoStats());
+                        doError(Status::Error("Get dst error when go reversely."));
                         return;
                     }
                     rc = iter->getVid(_RANK, rank);
                     if (rc != ResultType::SUCCEEDED) {
-                        doError(Status::Error("Get rank error when go reversely."),
-                                ectx()->getGraphStats()->getGoStats());
+                        doError(Status::Error("Get rank error when go reversely."));
                         return;
                     }
                     auto type = std::abs(edge.type);
@@ -581,8 +592,7 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
     for (auto &prop : expCtx_->aliasProps()) {
         EdgeType edgeType;
         if (!expCtx_->getEdgeType(prop.first, edgeType)) {
-            doError(Status::Error("No schema found for `%s'", prop.first.c_str()),
-                    ectx()->getGraphStats()->getGoStats());
+            doError(Status::Error("No schema found for `%s'", prop.first.c_str()));
             return;
         }
 
@@ -613,8 +623,7 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
         for (auto &t : result) {
             if (t.hasException()) {
                 LOG(ERROR) << "Exception caught: " << t.exception().what();
-                doError(Status::Error("Exeception when get edge props in reversely traversal."),
-                        ectx()->getGraphStats()->getGoStats());
+                doError(Status::Error("Exeception when get edge props in reversely traversal."));
                 return;
             }
             auto resp = std::move(t).value();
@@ -622,7 +631,7 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
                 auto status = edgeHolder_->add(edgePropResp);
                 if (!status.ok()) {
                     LOG(ERROR) << "Error when handle edges: " << status;
-                    doError(std::move(status), ectx()->getGraphStats()->getGoStats());
+                    doError(std::move(status));
                     return;
                 }
             }
@@ -638,8 +647,7 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Exception when handle edges."),
-                ectx()->getGraphStats()->getGoStats());
+        doError(Status::Error("Exception when handle edges."));
     };
 
     folly::collectAll(std::move(futures)).via(runner).thenValue(cb).thenError(error);
@@ -669,7 +677,7 @@ std::vector<std::string> GoExecutor::getEdgeNamesFromResp(RpcResponse &rpcResp) 
     return names;
 }
 
-std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const {
+StatusOr<std::vector<VertexID>> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const {
     std::unordered_set<VertexID> set;
     for (auto &resp : rpcResp.responses()) {
         auto *vertices = resp.get_vertices();
@@ -698,7 +706,10 @@ std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const 
                 while (iter) {
                     VertexID dst;
                     auto rc = iter->getVid(_DST, dst);
-                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (rc != ResultType::SUCCEEDED) {
+                        LOG(ERROR) << "Get dst id failed";
+                        return Status::Error("Get dst id failed");
+                    }
                     if (!isFinalStep() && backTracker_ != nullptr) {
                         backTracker_->add(vdata.get_vertex_id(), dst);
                     }
@@ -717,7 +728,7 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
     if (expCtx_->isOverAllEdge() && yields_.empty()) {
         auto edgeNames = getEdgeNamesFromResp(rpcResp);
         if (edgeNames.empty()) {
-            doError(Status::Error("get edge name failed"), ectx()->getGraphStats()->getGoStats());
+            doError(Status::Error("get edge name failed"));
             return;
         }
         for (const auto &name : edgeNames) {
@@ -744,13 +755,13 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
             auto ret = outputs->getRows();
             if (!ret.ok()) {
                 LOG(ERROR) << "Get rows failed: " << ret.status();
-                doError(std::move(ret).status(), ectx()->getGraphStats()->getGoStats());
+                doError(std::move(ret).status());
                 return;
             }
             resp_->set_rows(std::move(ret).value());
         }
     }
-    doFinish(Executor::ProcessControl::kNext, ectx()->getGraphStats()->getGoStats());
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
@@ -835,7 +846,7 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcRe
     auto spaceId = ectx()->rctx()->session()->space();
     auto status = getDstProps();
     if (!status.ok()) {
-        doError(Status::Error("Get dest props failed"), ectx()->getGraphStats()->getGoStats());
+        doError(Status::Error("Get dest props failed"));
         return;
     }
     auto returns = status.value();
@@ -844,7 +855,7 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcRe
     auto cb = [this, stepOutResp = std::move(rpcResp)] (auto &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            doError(Status::Error("Get dest props failed"), ectx()->getGraphStats()->getGoStats());
+            doError(Status::Error("Get dest props failed"));
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get neighbors partially failed: "  << completeness << "%";
@@ -864,8 +875,7 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcRe
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Exception when handle vertex props."),
-                ectx()->getGraphStats()->getGoStats());
+        doError(Status::Error("Exception when handle vertex props."));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -892,13 +902,15 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
     std::unique_ptr<RowSetWriter> rsWriter;
     auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
     auto cb = [&] (std::vector<VariantType> record,
-                       std::vector<nebula::cpp2::SupportedType> colTypes) {
+                       std::vector<nebula::cpp2::SupportedType> colTypes) -> Status {
         if (schema == nullptr) {
             schema = std::make_shared<SchemaWriter>();
             auto colnames = getResultColumnNames();
             if (record.size() != colTypes.size()) {
-                LOG(FATAL) << "data nums: " << record.size()
-                           << " != type nums: " << colTypes.size();
+                LOG(ERROR) << "Record size: " << record.size()
+                           << " != column type size: " << colTypes.size();
+                return Status::Error("Record size is not equal to column type size, [%d != %d]",
+                                      record.size(), colTypes.size());
             }
             for (auto i = 0u; i < record.size(); i++) {
                 SupportedType type;
@@ -918,7 +930,8 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
                             type = SupportedType::STRING;
                             break;
                         default:
-                            LOG(FATAL) << "Unknown VariantType: " << record[i].which();
+                            LOG(ERROR) << "Unknown VariantType: " << record[i].which();
+                            return Status::Error("Unknown VariantType: %d", record[i].which());
                     }
                 } else {
                     type = colTypes[i];
@@ -944,7 +957,8 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
                     writer << boost::get<std::string>(column);
                     break;
                 default:
-                    LOG(FATAL) << "Unknown VariantType: " << column.which();
+                    LOG(ERROR) << "Unknown VariantType: " << column.which();
+                    return Status::Error("Unknown VariantType: %d", column.which());
             }
         }
         // TODO Consider float/double, and need to reduce mem copy.
@@ -957,6 +971,7 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
         } else {
             rsWriter->addRow(std::move(encode));
         }
+        return Status::OK();
     };  // cb
     if (!processFinalResult(rpcResp, cb)) {
         return false;
@@ -977,13 +992,12 @@ void GoExecutor::onEmptyInputs() {
     } else if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
     }
-    doFinish(Executor::ProcessControl::kNext, ectx()->getGraphStats()->getGoStats());
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 
 bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
     auto all = rpcResp.responses();
-    auto spaceId = ectx()->rctx()->session()->space();
     for (auto &resp : all) {
         if (resp.get_vertices() == nullptr) {
             continue;
@@ -1027,9 +1041,8 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                 while (iter) {
                     std::vector<SupportedType> colTypes;
                     bool saveTypeFlag = false;
-                    auto &getters = expCtx_->getters();
+                    Getters getters;
                     getters.getAliasProp = [&iter,
-                                            &spaceId,
                                             &edgeType,
                                             &saveTypeFlag,
                                             &colTypes,
@@ -1047,10 +1060,14 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         if (isReversely()) {
                             auto dst = RowReader::getPropByName(&*iter, _DST);
                             if (saveTypeFlag) {
-                                colTypes.back() = edgeHolder_->getType(
+                                auto typeStatus = edgeHolder_->getType(
                                                     boost::get<VertexID>(value(dst)),
                                                     srcid,
                                                     std::abs(edgeType), prop);
+                                if (!typeStatus.ok()) {
+                                    return typeStatus.status();
+                                }
+                                colTypes.back() = typeStatus.value();
                             }
                             if (std::abs(edgeType) != std::abs(type)) {
                                 return edgeHolder_->getDefaultProp(std::abs(type), prop);
@@ -1080,7 +1097,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         }
                     };
                     getters.getSrcTagProp =
-                        [&iter, &spaceId, &tagData, &tagSchema, &saveTypeFlag, &colTypes, this](
+                        [&iter, &tagData, &tagSchema, &saveTypeFlag, &colTypes, this](
                             const std::string &tag, const std::string &prop) -> OptVariantType {
                         TagID tagId;
                         auto found = expCtx_->getTagId(tag, tagId);
@@ -1114,7 +1131,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         }
                         return value(res);
                     };
-                    getters.getDstTagProp = [&iter, &spaceId, &saveTypeFlag, &colTypes, this](
+                    getters.getDstTagProp = [&iter, &saveTypeFlag, &colTypes, this](
                                                 const std::string &tag,
                                                 const std::string &prop) -> OptVariantType {
                         auto dst = RowReader::getPropByName(&*iter, "_dst");
@@ -1153,11 +1170,10 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     };
 
                     // Evaluate filter
-                    if (filter_ != nullptr) {
-                        auto value = filter_->eval();
+                    if (whereWrapper_->filter_ != nullptr) {
+                        auto value = whereWrapper_->filter_->eval(getters);
                         if (!value.ok()) {
-                            doError(std::move(value).status(),
-                                    ectx()->getGraphStats()->getGoStats());
+                            doError(std::move(value).status());
                             return false;
                         }
                         if (!Expression::asBool(value.value())) {
@@ -1171,10 +1187,9 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     for (auto *column : yields_) {
                         colTypes.emplace_back(SupportedType::UNKNOWN);
                         auto *expr = column->expr();
-                        auto value = expr->eval();
+                        auto value = expr->eval(getters);
                         if (!value.ok()) {
-                            doError(std::move(value).status(),
-                                    ectx()->getGraphStats()->getGoStats());
+                            doError(std::move(value).status());
                             return false;
                         }
                         if (column->expr()->isTypeCastingExpression()) {
@@ -1184,7 +1199,12 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         }
                         record.emplace_back(std::move(value.value()));
                     }
-                    cb(std::move(record), std::move(colTypes));
+                    auto cbStatus = cb(std::move(record), std::move(colTypes));
+                    if (!cbStatus.ok()) {
+                        LOG(ERROR) << cbStatus;
+                        doError(std::move(cbStatus));
+                        return false;
+                    }
                     ++iter;
                 }  // while `iter'
             }
@@ -1323,7 +1343,12 @@ OptVariantType GoExecutor::EdgeHolder::get(VertexID src,
                                            EdgeType type,
                                            const std::string &prop) const {
     auto iter = edges_.find(std::make_tuple(src, dst, type));
-    CHECK(iter != edges_.end());
+    if (iter == edges_.end()) {
+        LOG(ERROR) << "EdgeHolder couldn't find src: "
+                   << src << ", dst: " << dst << ", edge type: " << type;
+        return Status::Error("EdgeHolder couldn't find src: %ld, dst: %ld, type: %d",
+                             src, dst, type);
+    }
     auto reader = RowReader::getRowReader(iter->second.second, iter->second.first);
     auto result = RowReader::getPropByName(reader.get(), prop);
     if (!ok(result)) {
@@ -1333,12 +1358,17 @@ OptVariantType GoExecutor::EdgeHolder::get(VertexID src,
 }
 
 
-SupportedType GoExecutor::EdgeHolder::getType(VertexID src,
-                                              VertexID dst,
-                                              EdgeType type,
-                                              const std::string &prop) const {
+StatusOr<SupportedType> GoExecutor::EdgeHolder::getType(VertexID src,
+                                                        VertexID dst,
+                                                        EdgeType type,
+                                                        const std::string &prop) const {
     auto iter = edges_.find(std::make_tuple(src, dst, type));
-    CHECK(iter != edges_.end());
+    if (iter == edges_.end()) {
+        LOG(ERROR) << "EdgeHolder couldn't find src: "
+                   << src << ", dst: " << dst << ", edge type: " << type;
+        return Status::Error("EdgeHolder couldn't find src: %ld, dst: %ld, type: %d",
+                             src, dst, type);
+    }
     return iter->second.first->getFieldType(prop).type;
 }
 

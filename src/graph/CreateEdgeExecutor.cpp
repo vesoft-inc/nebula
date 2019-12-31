@@ -13,7 +13,8 @@ namespace nebula {
 namespace graph {
 
 CreateEdgeExecutor::CreateEdgeExecutor(Sentence *sentence,
-                                       ExecutionContext *ectx) : Executor(ectx) {
+                                       ExecutionContext *ectx)
+    : Executor(ectx, "create_edge") {
     sentence_ = static_cast<CreateEdgeSentence*>(sentence);
 }
 
@@ -38,8 +39,7 @@ Status CreateEdgeExecutor::getSchema() {
 void CreateEdgeExecutor::execute() {
     auto status = getSchema();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
@@ -51,18 +51,16 @@ void CreateEdgeExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(resp.status());
+            doError(resp.status());
             return;
         }
 
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal error"));
     };
 
     std::move(future).via(runner).thenValue(cb).thenError(error);

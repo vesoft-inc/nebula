@@ -92,6 +92,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
                       std::string(reinterpret_cast<const char*>(&edgeIndex), sizeof(EdgeIndexID)));
     data.emplace_back(MetaServiceUtils::edgeIndexKey(space, edgeIndex),
                       MetaServiceUtils::edgeIndexVal(indexName, indexFields));
+    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     LOG(INFO) << "Create Edge Index " << indexName << ", edgeIndex " << edgeIndex;
     resp_.set_id(to(edgeIndex, EntryType::EDGE_INDEX));
     doPut(std::move(data));

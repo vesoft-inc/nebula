@@ -87,20 +87,21 @@ class GraphScanner;
     nebula::GroupClause                    *group_clause;
     nebula::HostList                       *host_list;
     nebula::HostAddr                       *host_item;
+    std::vector<int32_t>                   *integer_list;
 }
 
 /* destructors */
 %destructor {} <sentences>
-%destructor {} <boolval> <intval> <doubleval> <type> <config_module>
+%destructor {} <boolval> <intval> <doubleval> <type> <config_module> <integer_list>
 %destructor { delete $$; } <*>
 
 /* keywords */
 %token KW_GO KW_AS KW_TO KW_OR KW_AND KW_XOR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
-%token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
+%token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND KW_BUILD
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
-%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD KW_INDEX KW_INDEXES
-%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_BUILD KW_PARTS 
+%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PART KW_PARTS KW_TIMESTAMP KW_ADD
+%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN KW_STD KW_BIT_AND KW_BIT_OR KW_BIT_XOR
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
@@ -183,6 +184,7 @@ class GraphScanner;
 %type <group_clause> group_clause
 %type <host_list> host_list
 %type <host_item> host_item
+%type <integer_list> integer_list
 
 %type <intval> unary_integer rank port
 
@@ -1498,6 +1500,12 @@ show_sentence
     | KW_SHOW KW_PARTS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowParts);
     }
+    | KW_SHOW KW_PART integer_list {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowParts, $3);
+    }
+    | KW_SHOW KW_PARTS integer_list {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowParts, $3);
+    }
     | KW_SHOW KW_TAGS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowTags);
     }
@@ -1785,6 +1793,20 @@ host_item
     }
 
 port : INTEGER { $$ = $1; }
+
+integer_list
+    : INTEGER {
+        $$ = new std::vector<int32_t>();
+        $$->emplace_back($1);
+    }
+    | integer_list COMMA INTEGER {
+        $$ = $1;
+        $$->emplace_back($3);
+    }
+    | integer_list COMMA {
+        $$ = $1;
+    }
+    ;
 
 balance_sentence
     : KW_BALANCE KW_LEADER {

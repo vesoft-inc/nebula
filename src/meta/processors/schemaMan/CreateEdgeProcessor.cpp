@@ -117,6 +117,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     LOG(INFO) << "Create Edge " << edgeName << ", edgeType " << edgeType;
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(edgeType, EntryType::EDGE));
+    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     doPut(std::move(data));
 }
 
