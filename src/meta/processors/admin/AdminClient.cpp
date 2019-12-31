@@ -568,6 +568,10 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
 }
 
 folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId, const std::string& name) {
+    if (injector_) {
+        return injector_->createSnapshot();
+    }
+
     auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
     storage::cpp2::CreateCPRequest req;
     req.set_space_id(spaceId);
@@ -589,6 +593,10 @@ folly::Future<Status> AdminClient::createSnapshot(GraphSpaceID spaceId, const st
 folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
                                                 const std::string& name,
                                                 const std::vector<HostAddr>& hosts) {
+    if (injector_) {
+        return injector_->dropSnapshot();
+    }
+
     storage::cpp2::DropCPRequest req;
     req.set_space_id(spaceId);
     req.set_name(name);
@@ -612,6 +620,54 @@ folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
     getResponse(allHosts, 0, std::move(req), [] (auto client, auto request) {
         return client->future_blockingWrites(request);
     }, 0, std::move(pro), 1 /*The blocking needs to be retried twice*/);
+    return f;
+}
+
+folly::Future<Status> AdminClient::buildTagIndex(GraphSpaceID spaceId,
+                                                 TagID tagID,
+                                                 TagIndexID indexID,
+                                                 TagVersion version,
+                                                 int32_t parts) {
+    if (injector_) {
+        return injector_->buildTagIndex();
+    }
+
+    auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
+    storage::cpp2::BuildTagIndexRequest req;
+    req.set_space_id(spaceId);
+    req.set_tag_id(tagID);
+    req.set_index_id(indexID);
+    req.set_tag_version(version);
+    req.set_parts(parts);
+    folly::Promise<Status> pro;
+    auto f = pro.getFuture();
+    getResponse(allHosts, 0, std::move(req), [] (auto client, auto request) {
+        return client->future_buildTagIndex(request);
+    }, 0, std::move(pro), 0);
+    return f;
+}
+
+folly::Future<Status> AdminClient::buildEdgeIndex(GraphSpaceID spaceId,
+                                                  EdgeType edgeType,
+                                                  EdgeIndexID indexID,
+                                                  EdgeVersion version,
+                                                  int32_t parts) {
+    if (injector_) {
+        return injector_->buildEdgeIndex();
+    }
+
+    auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
+    storage::cpp2::BuildEdgeIndexRequest req;
+    req.set_space_id(spaceId);
+    req.set_edge_type(edgeType);
+    req.set_index_id(indexID);
+    req.set_edge_version(version);
+    req.set_parts(parts);
+    folly::Promise<Status> pro;
+    auto f = pro.getFuture();
+    getResponse(allHosts, 0, std::move(req), [] (auto client, auto request) {
+        return client->future_buildEdgeIndex(request);
+    }, 0, std::move(pro), 0);
     return f;
 }
 

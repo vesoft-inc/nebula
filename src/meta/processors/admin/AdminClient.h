@@ -36,6 +36,8 @@ public:
     virtual folly::Future<Status> createSnapshot() = 0;
     virtual folly::Future<Status> dropSnapshot() = 0;
     virtual folly::Future<Status> blockingWrites() = 0;
+    virtual folly::Future<Status> buildTagIndex() = 0;
+    virtual folly::Future<Status> buildEdgeIndex() = 0;
 };
 
 static const HostAddr kRandomPeer(0, 0);
@@ -107,6 +109,18 @@ public:
 
     folly::Future<Status> blockingWrites(GraphSpaceID spaceId,
                                          storage::cpp2::EngineSignType sign);
+
+    folly::Future<Status> buildTagIndex(GraphSpaceID spaceId,
+                                        TagID tagID,
+                                        TagIndexID indexID,
+                                        TagVersion version,
+                                        int32_t parts);
+
+    folly::Future<Status> buildEdgeIndex(GraphSpaceID spaceId,
+                                         EdgeType edgeType,
+                                         EdgeIndexID indexID,
+                                         EdgeVersion version,
+                                         int32_t parts);
 
     FaultInjector* faultInjector() {
         return injector_.get();

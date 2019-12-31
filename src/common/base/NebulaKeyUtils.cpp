@@ -86,6 +86,52 @@ std::string NebulaKeyUtils::kvKey(PartitionID partId, const folly::StringPiece& 
     return key;
 }
 
+// rely on #1360 this will remove when #1360 merged
+// static
+void NebulaKeyUtils::indexRaw(const IndexValues &values, std::string& raw) {
+    std::vector<int32_t> colsLen;
+    for (auto& col : values) {
+        if (col.first == cpp2::SupportedType::STRING) {
+            colsLen.emplace_back(col.second.size());
+        }
+        raw.append(col.second.data(), col.second.size());
+    }
+    for (auto len : colsLen) {
+        raw.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
+    }
+}
+
+// rely on #1360 this will remove when #1360 merged
+// static
+std::string NebulaKeyUtils::vertexIndexKey(PartitionID partId, TagIndexID indexId, VertexID vId,
+                                           const IndexValues& values) {
+    int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
+    std::string key;
+    key.reserve(256);
+    key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
+       .append(reinterpret_cast<const char*>(&indexId), sizeof(TagIndexID));
+    indexRaw(values, key);
+    key.append(reinterpret_cast<const char*>(&vId), sizeof(VertexID));
+    return key;
+}
+
+// rely on #1360 this will remove when #1360 merged
+// static
+std::string NebulaKeyUtils::edgeIndexKey(PartitionID partId, EdgeIndexID indexId,
+                                         VertexID srcId, EdgeRanking rank,
+                                         VertexID dstId, const IndexValues& values) {
+    int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
+    std::string key;
+    key.reserve(256);
+    key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
+       .append(reinterpret_cast<const char*>(&indexId), sizeof(EdgeIndexID));
+    indexRaw(values, key);
+    key.append(reinterpret_cast<const char*>(&srcId), sizeof(VertexID))
+       .append(reinterpret_cast<const char*>(&rank), sizeof(EdgeRanking))
+       .append(reinterpret_cast<const char*>(&dstId), sizeof(VertexID));
+    return key;
+}
+
 // static
 std::string NebulaKeyUtils::vertexPrefix(PartitionID partId, VertexID vId, TagID tagId) {
     tagId &= kTagMaskSet;

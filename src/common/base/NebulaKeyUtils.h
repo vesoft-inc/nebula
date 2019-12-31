@@ -8,6 +8,9 @@
 #define COMMON_BASE_NEBULAKEYUTILS_H_
 
 #include "base/Base.h"
+#include "interface/gen-cpp2/common_types.h"
+
+using IndexValues = std::vector<std::pair<nebula::cpp2::SupportedType, std::string>>;
 
 namespace nebula {
 
@@ -59,6 +62,15 @@ public:
 
     static std::string kvKey(PartitionID partId, const folly::StringPiece& name);
 
+    static void indexRaw(const IndexValues &values, std::string& raw);
+
+    static std::string vertexIndexKey(PartitionID partId, TagIndexID indexId, VertexID vId,
+                                      const IndexValues& values);
+
+    static std::string edgeIndexKey(PartitionID partId, EdgeIndexID indexId,
+                                    VertexID srcId, EdgeRanking rank,
+                                    VertexID dstId, const IndexValues& values);
+
     /**
      * Prefix for
      * */
@@ -105,6 +117,12 @@ public:
         CHECK_EQ(rawKey.size(), kVertexLen);
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
         return readInt<TagID>(rawKey.data() + offset, sizeof(TagID));
+    }
+
+    static TagVersion getTagVersion(const folly::StringPiece& rawKey) {
+        CHECK_EQ(rawKey.size(), kVertexLen);
+        auto offset = sizeof(PartitionID) + sizeof(VertexID) + sizeof(TagID);
+        return readInt<TagVersion>(rawKey.data() + offset, sizeof(TagVersion));
     }
 
     static bool isEdge(const folly::StringPiece& rawKey) {
@@ -161,6 +179,13 @@ public:
         CHECK_EQ(rawKey.size(), kEdgeLen);
         auto offset = sizeof(PartitionID) + sizeof(VertexID) + sizeof(EdgeType);
         return readInt<EdgeRanking>(rawKey.data() + offset, sizeof(EdgeRanking));
+    }
+
+    static EdgeVersion getEdgeVersion(const folly::StringPiece& rawKey) {
+        CHECK_EQ(rawKey.size(), kEdgeLen);
+        auto offset = sizeof(PartitionID) + sizeof(VertexID) + sizeof(EdgeType) +
+                      sizeof(EdgeRanking) + sizeof(VertexID);
+        return readInt<EdgeVersion>(rawKey.data() + offset, sizeof(EdgeVersion));
     }
 
     template<typename T>

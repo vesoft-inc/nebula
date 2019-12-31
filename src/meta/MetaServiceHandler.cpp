@@ -27,10 +27,12 @@
 #include "meta/processors/indexMan/DropTagIndexProcessor.h"
 #include "meta/processors/indexMan/GetTagIndexProcessor.h"
 #include "meta/processors/indexMan/ListTagIndexesProcessor.h"
+#include "meta/processors/indexMan/BuildTagIndexProcessor.h"
 #include "meta/processors/indexMan/CreateEdgeIndexProcessor.h"
 #include "meta/processors/indexMan/DropEdgeIndexProcessor.h"
 #include "meta/processors/indexMan/GetEdgeIndexProcessor.h"
 #include "meta/processors/indexMan/ListEdgeIndexesProcessor.h"
+#include "meta/processors/indexMan/BuildEdgeIndexProcessor.h"
 #include "meta/processors/customKV/MultiPutProcessor.h"
 #include "meta/processors/customKV/GetProcessor.h"
 #include "meta/processors/customKV/MultiGetProcessor.h"
@@ -220,6 +222,12 @@ MetaServiceHandler::future_listTagIndexes(const cpp2::ListTagIndexesReq& req) {
 }
 
 folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_buildTagIndex(const cpp2::BuildTagIndexReq& req) {
+    auto* processor = BuildTagIndexProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_createEdgeIndex(const cpp2::CreateEdgeIndexReq& req) {
     auto* processor = CreateEdgeIndexProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
@@ -240,6 +248,12 @@ MetaServiceHandler::future_getEdgeIndex(const cpp2::GetEdgeIndexReq& req) {
 folly::Future<cpp2::ListEdgeIndexesResp>
 MetaServiceHandler::future_listEdgeIndexes(const cpp2::ListEdgeIndexesReq& req) {
     auto* processor = ListEdgeIndexesProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_buildEdgeIndex(const cpp2::BuildEdgeIndexReq& req) {
+    auto* processor = BuildEdgeIndexProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

@@ -20,12 +20,14 @@
 #include "meta/processors/Common.h"
 #include "meta/ActiveHostsMan.h"
 #include "stats/Stats.h"
+#include "gen-cpp2/StorageServiceAsyncClient.h"
 
 namespace nebula {
 namespace meta {
 
 using nebula::network::NetworkUtils;
 using FieldType = std::pair<std::string, nebula::cpp2::ValueType>;
+using SignType = storage::cpp2::EngineSignType;
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID) \
     if (spaceExist(spaceID) == Status::SpaceNotFound()) { \
@@ -218,6 +220,12 @@ protected:
     getLatestTagFields(GraphSpaceID spaceId, const std::string& name);
 
     /**
+     * Fetch the latest tag version.
+     */
+    StatusOr<TagVersion>
+    getLatestTagVersion(GraphSpaceID spaceId, const std::string& name);
+
+    /**
      * Return the edgeType for name.
      */
     StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
@@ -227,6 +235,12 @@ protected:
      */
     StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
     getLatestEdgeFields(GraphSpaceID spaceId, const std::string& name);
+
+    /**
+     * Fetch the latest edge type.
+     */
+    StatusOr<EdgeVersion>
+    getLatestEdgeVersion(GraphSpaceID spaceId, const std::string& name);
 
     StatusOr<TagIndexID> getTagIndexID(GraphSpaceID spaceId, const std::string& indexName);
 

@@ -371,6 +371,22 @@ struct DropCPRequest {
     2: string                       name,
 }
 
+struct BuildTagIndexRequest {
+    1: common.GraphSpaceID          space_id,
+    2: i32                          parts,
+    3: common.TagID                 tag_id,
+    4: common.SchemaVer             tag_version,
+    5: common.TagIndexID            index_id,
+}
+
+struct BuildEdgeIndexRequest {
+    1: common.GraphSpaceID          space_id,
+    2: i32                          parts,
+    3: common.EdgeType              edge_type,
+    4: common.SchemaVer             edge_version,
+    5: common.EdgeIndexID           index_id,
+}
+
 service StorageService {
     QueryResponse getBound(1: GetNeighborsRequest req)
 
@@ -400,10 +416,14 @@ service StorageService {
     AdminExecResp checkPeers(1: CheckPeersReq req);
     GetLeaderResp getLeaderPart(1: GetLeaderReq req);
 
-    // Interfaces for nebula cluster checkpoint
+    // Interfaces for manage checkpoint
     AdminExecResp createCheckpoint(1: CreateCPRequest req);
     AdminExecResp dropCheckpoint(1: DropCPRequest req);
     AdminExecResp blockingWrites(1: BlockingSignRequest req);
+
+    // Interfaces for rebuild index
+    AdminExecResp buildTagIndex(1: BuildTagIndexRequest req);
+    AdminExecResp buildEdgeIndex(1: BuildEdgeIndexRequest req);
 
     // Interfaces for key-value storage
     ExecResponse      put(1: PutRequest req);

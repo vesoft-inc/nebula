@@ -104,6 +104,14 @@ public:
         return response(8);
     }
 
+    folly::Future<Status> buildTagIndex() override {
+        return response(11);
+    }
+
+    folly::Future<Status> buildEdgeIndex() override {
+        return response(12);
+    }
+
     void reset(std::vector<Status> sts) {
         statusArray_ = std::move(sts);
     }

@@ -31,10 +31,12 @@ nebula_add_library(
     processors/indexMan/DropTagIndexProcessor.cpp
     processors/indexMan/GetTagIndexProcessor.cpp
     processors/indexMan/ListTagIndexesProcessor.cpp
+    processors/indexMan/BuildTagIndexProcessor.cpp
     processors/indexMan/CreateEdgeIndexProcessor.cpp
     processors/indexMan/DropEdgeIndexProcessor.cpp
     processors/indexMan/GetEdgeIndexProcessor.cpp
     processors/indexMan/ListEdgeIndexesProcessor.cpp
+    processors/indexMan/BuildEdgeIndexProcessor.cpp
     processors/customKV/GetProcessor.cpp
     processors/customKV/MultiGetProcessor.cpp
     processors/customKV/MultiPutProcessor.cpp

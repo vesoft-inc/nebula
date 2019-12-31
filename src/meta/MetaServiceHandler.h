@@ -119,6 +119,9 @@ public:
     future_listTagIndexes(const cpp2::ListTagIndexesReq& req) override;
 
     folly::Future<cpp2::ExecResp>
+    future_buildTagIndex(const cpp2::BuildTagIndexReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
     future_createEdgeIndex(const cpp2::CreateEdgeIndexReq& req) override;
 
     folly::Future<cpp2::ExecResp>
@@ -129,6 +132,9 @@ public:
 
     folly::Future<cpp2::ListEdgeIndexesResp>
     future_listEdgeIndexes(const cpp2::ListEdgeIndexesReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_buildEdgeIndex(const cpp2::BuildEdgeIndexReq& req) override;
 
     /**
      * User manager

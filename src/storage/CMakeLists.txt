@@ -19,6 +19,8 @@ nebula_add_library(
     admin/CreateCheckpointProcessor.cpp
     admin/DropCheckpointProcessor.cpp
     admin/SendBlockSignProcessor.cpp
+    admin/BuildTagIndexProcessor.cpp
+    admin/BuildEdgeIndexProcessor.cpp
 )
 
 nebula_add_library(
