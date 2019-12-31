@@ -4,13 +4,15 @@
 #
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
-import pytest
-import sys
 import math
-from graph import ttypes
-from nebula.ConnectionPool import ConnectionPool
-from nebula.Client import GraphClient, AuthException, ExecutionException
+import sys
 from typing import Pattern
+
+import pytest
+from graph import ttypes
+from nebula.Client import AuthException, ExecutionException, GraphClient
+from nebula.ConnectionPool import ConnectionPool
+
 
 class NebulaTestSuite(object):
     @classmethod
@@ -36,6 +38,14 @@ class NebulaTestSuite(object):
             self.cleanup()
             self.client.sign_out()
             self.client_pool.close()
+
+    @classmethod
+    def execute(self, ngql):
+        return self.client.execute(ngql)
+
+    @classmethod
+    def execute_query(self, ngql):
+        return self.client.execute_query(ngql)
 
     @classmethod
     def prepare(self):
