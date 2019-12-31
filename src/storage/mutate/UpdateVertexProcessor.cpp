@@ -363,7 +363,7 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
         return;
     }
     auto vId = req.get_vertex_id();
-    updateItems_ = std::move(req).get_update_items();
+    updateItems_ = req.get_update_items();
 
     VLOG(3) << "Update vertex, spaceId: " << this->spaceId_
             << ", partId: " << partId << ", vId: " << vId;
