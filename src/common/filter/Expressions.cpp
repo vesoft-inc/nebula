@@ -765,8 +765,7 @@ OptVariantType ArithmeticExpression::eval(Getters &getters) const {
                 int64_t lValue = asInt(l);
                 int64_t rValue = asInt(r);
                 if (isMulOverflow(lValue, rValue)) {
-                    return Status::Error(folly::stringPrintf("Out of range %ld * %ld",
-                                lValue, rValue));
+                    return Status::Error("Out of range %ld * %ld", lValue, rValue);
                 }
                 return OptVariantType(lValue * rValue);
             }
@@ -776,14 +775,14 @@ OptVariantType ArithmeticExpression::eval(Getters &getters) const {
                 if (isDouble(l) || isDouble(r)) {
                     if (abs(asDouble(r)) < 1e-8) {
                         // When Null is supported, should be return NULL
-                        return Status::Error(folly::stringPrintf("Wrong divisor %lf", asDouble(r)));
+                        return Status::Error("Division by zero");
                     }
                     return OptVariantType(asDouble(l) / asDouble(r));
                 }
 
                 if (abs(asInt(r)) == 0) {
                     // When Null is supported, should be return NULL
-                    return Status::Error(folly::stringPrintf("Wrong divisor %ld", asInt(r)));
+                    return Status::Error("Division by zero");
                 }
                 return OptVariantType(asInt(l) / asInt(r));
             }
@@ -793,13 +792,13 @@ OptVariantType ArithmeticExpression::eval(Getters &getters) const {
                 if (isDouble(l) || isDouble(r)) {
                     if (abs(asDouble(r)) < 1e-8) {
                         // When Null is supported, should be return NULL
-                        return Status::Error(folly::stringPrintf("Wrong divisor %lf", asDouble(r)));
+                        return Status::Error("Division by zero");
                     }
                     return fmod(asDouble(l), asDouble(r));
                 }
                 if (abs(asInt(r)) == 0) {
                     // When Null is supported, should be return NULL
-                    return Status::Error(folly::stringPrintf("Wrong divisor %ld", asInt(r)));
+                    return Status::Error("Division by zero");
                 }
                 return OptVariantType(asInt(l) % asInt(r));
             }
