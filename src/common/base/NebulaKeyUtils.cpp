@@ -205,26 +205,6 @@ std::string NebulaKeyUtils::vertexPrefix(PartitionID partId, VertexID vId) {
 }
 
 // static
-std::string NebulaKeyUtils::edgePrefix(PartitionID partId,
-                                       VertexID srcId,
-                                       EdgeType type,
-                                       EdgeRanking rank,
-                                       VertexID dstId) {
-    type |= kEdgeMaskSet;
-    int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kData);
-    std::string key;
-    key.reserve(sizeof(PartitionID) + sizeof(VertexID)
-                + sizeof(EdgeType) + sizeof(VertexID)
-                + sizeof(EdgeRanking));
-    key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID))
-            .append(reinterpret_cast<const char*>(&srcId), sizeof(VertexID))
-            .append(reinterpret_cast<const char*>(&type), sizeof(EdgeType))
-            .append(reinterpret_cast<const char*>(&rank), sizeof(EdgeRanking))
-            .append(reinterpret_cast<const char*>(&dstId), sizeof(VertexID));
-    return key;
-}
-
-// static
 std::string NebulaKeyUtils::edgePrefix(PartitionID partId, VertexID vId) {
     PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kData);
     std::string key;

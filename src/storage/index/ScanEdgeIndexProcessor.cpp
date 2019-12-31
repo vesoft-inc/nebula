@@ -34,7 +34,7 @@ void ScanEdgeIndexProcessor::process(const cpp2::IndexScanRequest& req) {
         }
     }
 
-    for (const auto & col : index_.get_cols()) {
+    for (const auto& col : index_.get_cols()) {
         if (col.get_type().get_type() == nebula::cpp2::SupportedType::STRING) {
             vlColNum_ += 1;
         }
@@ -113,14 +113,11 @@ ScanEdgeIndexProcessor::processEdges(PartitionID part, IndexID indexId, EdgeType
                         return rowRet;
                     }
                 } else {
-                    auto src = NebulaKeyUtils::getIndexSrcId(key);
-                    auto rank = NebulaKeyUtils::getIndexRank(key);
-                    auto dst = NebulaKeyUtils::getIndexDstId(key);
                     cpp2::EdgeKey edgeKey;
-                    edgeKey.set_src(src);
+                    edgeKey.set_src(NebulaKeyUtils::getIndexSrcId(key));
                     edgeKey.set_edge_type(edgeType);
-                    edgeKey.set_ranking(rank);
-                    edgeKey.set_dst(dst);
+                    edgeKey.set_ranking(NebulaKeyUtils::getIndexRank(key));
+                    edgeKey.set_dst(NebulaKeyUtils::getIndexDstId(key));
                     data.set_key(edgeKey);
                 }
                 std::lock_guard<std::mutex> lg(lock_);
@@ -150,14 +147,11 @@ ScanEdgeIndexProcessor::processEdges(PartitionID part, IndexID indexId, EdgeType
                         return rowRet;
                     }
                 } else {
-                    auto src = NebulaKeyUtils::getIndexSrcId(key);
-                    auto rank = NebulaKeyUtils::getIndexRank(key);
-                    auto dst = NebulaKeyUtils::getIndexDstId(key);
                     cpp2::EdgeKey edgeKey;
-                    edgeKey.set_src(src);
+                    edgeKey.set_src(NebulaKeyUtils::getIndexSrcId(key));
                     edgeKey.set_edge_type(edgeType);
-                    edgeKey.set_ranking(rank);
-                    edgeKey.set_dst(dst);
+                    edgeKey.set_ranking(NebulaKeyUtils::getIndexRank(key));
+                    edgeKey.set_dst(NebulaKeyUtils::getIndexDstId(key));
                     data.set_key(edgeKey);
                 }
                 std::lock_guard<std::mutex> lg(lock_);

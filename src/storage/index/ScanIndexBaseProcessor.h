@@ -44,7 +44,7 @@ protected:
                                    const folly::StringPiece& key,
                                    cpp2::Edge* data);
 
-    std::string getRowFromReader(RowReader* reader);
+    StatusOr<std::string> getRowFromReader(RowReader* reader);
 
     bool checkDataValidity(bool isEdge, const folly::StringPiece& key);
 
