@@ -39,6 +39,8 @@ public:
 
     virtual StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) = 0;
 
+    virtual StatusOr<std::string> toTagName(GraphSpaceID space, TagID tagId) = 0;
+
     virtual StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) = 0;
 
     virtual StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) = 0;
