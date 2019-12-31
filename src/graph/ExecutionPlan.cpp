@@ -20,7 +20,7 @@ void ExecutionPlan::execute() {
         auto result = GQLParser().parse(rctx->query());
         if (!result.ok()) {
             status = std::move(result).status();
-            LOG(ERROR) << status;
+            LOG(ERROR) << "Do cmd `" << rctx->query() << "' failed: " << status;
             stats::Stats::addStatsValue(parseStats_.get(), false);
             break;
         }

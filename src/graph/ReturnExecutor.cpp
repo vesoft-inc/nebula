@@ -33,14 +33,15 @@ void ReturnExecutor::execute() {
 
     if ((condition != nullptr) && (*condition != *var)) {
         doError(Status::SyntaxError(
-                    "Variable(%s) to be returned is not euqal to condition(%s)", var, condition));
+                    "Variable(%s) to be returned is not euqal to condition(%s)",
+                    var->c_str(), condition->c_str()));
         return;
     }
 
     bool existing = false;
     auto *varInputs = ectx()->variableHolder()->get(*var, &existing);
     if (varInputs == nullptr && !existing) {
-        doError(Status::Error("Variable(%s) not declared.", var));
+        doError(Status::Error("Variable(%s) not declared.", var->c_str()));
         return;
     }
 
