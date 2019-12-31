@@ -135,7 +135,7 @@ gremlin> g.V(jesus).property('age', 6000);
 - 查询年龄大于 100 的人物
 
     ```bash
-    nebula> XXX # not supported yet
+    nebula> XXX # coming soon
     gremlin> g.V().hasLabel('character').has('age',gt(100)).values('name');
     ==>saturn
     ==>jupiter
@@ -146,10 +146,8 @@ gremlin> g.V(jesus).property('age', 6000);
 - 查询和 pluto 一起居住的人物
 
     ```bash
-    nebula> GO FROM hash("pluto") OVER lives \
-            YIELD lives._dst AS place | \
-            GO FROM $-.place OVER lives REVERSELY YIELD \
-            $$.character.name AS cohabitants;
+    nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | \
+    GO FROM $-.place OVER lives REVERSELY YIELD $$.character.name AS cohabitants;
     ===============
     | cohabitants |
     ===============
@@ -166,9 +164,8 @@ gremlin> g.V(jesus).property('age', 6000);
 - 从一起居住的人物中排除 pluto 本人
 
     ```bash
-    nebula>  GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | \
-                        GO FROM $-.place OVER lives REVERSELY WHERE \
-                        $$.character.name != "pluto" YIELD $$.character.name AS cohabitants;
+    nebula>  GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | GO FROM $-.place OVER lives REVERSELY WHERE \
+    $$.character.name != "pluto" YIELD $$.character.name AS cohabitants;
     ===============
     | cohabitants |
     ===============
@@ -184,10 +181,8 @@ gremlin> g.V(jesus).property('age', 6000);
     ```bash
     # where do pluto's brothers live?
 
-    nebula> GO FROM hash("pluto") OVER brother \
-                        YIELD brother._dst AS brother | \
-                        GO FROM $-.brother OVER lives \
-                        YIELD $$.location.name;
+    nebula> GO FROM hash("pluto") OVER brother YIELD brother._dst AS brother | \
+    GO FROM $-.brother OVER lives YIELD $$.location.name;
     ====================
     | $$.location.name |
     ====================
@@ -202,12 +197,8 @@ gremlin> g.V(jesus).property('age', 6000);
 
     # which brother lives in which place?
 
-    nebula> GO FROM hash("pluto") OVER brother \
-            YIELD brother._dst AS god | \
-            GO FROM $-.god OVER lives YIELD \
-            $^.character.name AS \
-            Brother, $$.location.name AS \
-            Habitations;
+    nebula> GO FROM hash("pluto") OVER brother YIELD brother._dst AS god | \
+    GO FROM $-.god OVER lives YIELD $^.character.name AS Brother, $$.location.name AS Habitations;
     =========================
     | Brother | Habitations |
     =========================
