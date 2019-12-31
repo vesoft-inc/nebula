@@ -37,7 +37,7 @@ Compared with other graph database solutions, **Nebula Graph** has the following
 
 ## Roadmap
 
-See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki#roadmap) for what's coming soon in **Nebula Graph**.
+See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap-2019) for what's coming soon in **Nebula Graph**.
 
 ## Supported Clients
 * [Go](https://github.com/vesoft-inc/nebula-go)
@@ -48,14 +48,14 @@ See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki#roadmap) for what's 
 
 Read the [Getting started](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/1.overview/2.quick-start/1.get-started.md) article for a quick start.
 
-Please note that you must install **Nebula Graph** by [installing source code](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code.md), [rpm/deb packages](https://github.com/vesoft-inc/nebula/tree/master/docs/manual-EN/3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb.md) or [docker compose](https://github.com/vesoft-inc/nebula-docker-compose), before you can actually start using it. If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/playlist?list=PL4ArMmsAnb84uB2d9L46eXpIi7Epz2cfp).
+Please note that you must install **Nebula Graph** by [installing source code](https://github.com/vesoft-inc/nebula/blob/master/docs/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code.md), [rpm/deb packages](https://github.com/vesoft-inc/nebula/tree/master/docs/manual-EN/3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb.md) or [docker compose](https://github.com/vesoft-inc/nebula-docker-compose), before you can actually start using it. If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw).
 
 ## Getting help
 
 In case you encounter any problems playing around **Nebula Graph**, please reach out for help:
 
 * [Slack channel](https://join.slack.com/t/nebulagraph/shared_invite/enQtNjIzMjQ5MzE2OTQ2LTM0MjY0MWFlODg3ZTNjMjg3YWU5ZGY2NDM5MDhmOGU2OWI5ZWZjZDUwNTExMGIxZTk2ZmQxY2Q2MzM1OWJhMmY#)
-* [Stack Overflow](https://stackoverflow.com/questions/tagged/nebulagraph)
+* [Stack Overflow](https://stackoverflow.com/search?q=%E2%80%9CNebula+Graph%E2%80%9D&mixed=0)
 
 ## Documentation
 
