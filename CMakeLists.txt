@@ -65,7 +65,7 @@ if(ENABLE_TESTING AND ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Cla
   # Add required flags (GCC & LLVM/Clang)
   add_compile_options(
 #    -O0        # no optimization
-    -g         # generate debug info
+#    -g         # generate debug info
     --coverage # sets all required flags
   )
 endif()
