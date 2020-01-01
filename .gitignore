@@ -28,6 +28,8 @@ Testing/
 target/
 cluster.id
 pids/
+bin/
+third-party/install/
 
 # IDE
 .idea/
