@@ -10,6 +10,13 @@ namespace go nebula.storage
 
 include "common.thrift"
 
+/*
+ *
+ *  Note: In order to support multiple languages, all strings
+ *        have to be defined as **binary** in the thrift file
+ *
+ */
+
 enum ErrorCode {
     SUCCEEDED = 0,
 
@@ -68,22 +75,22 @@ struct ResponseCommon {
 }
 
 
-/**********************************************************
+/*
  *
  * Common types used by all services
  *
- *********************************************************/
+ */
 // Define a vertex property
 struct VertexProp {
     1: common.TagID tag,    // Tag ID
-    2: string name,         // Property name
+    2: binary       name,   // Property name
 }
 
 
 // Define an edge property
 struct EdgeProp {
     1: common.EdgeType  type,   // Edge type
-    2: string           name,   // Property name
+    2: binary           name,   // Property name
 }
 
 
@@ -98,28 +105,37 @@ enum StatType {
 // Define a statistic properties
 struct StatProp {
     1: common.EdgeType  type,   // Edge type
-    2: string           name,   // Property name
+    2: binary           name,   // Property name
     3: StatType         stat,   // Stats method
 }
 
 
-// A list of property values to return
-struct PropData {
+// A row of property values to return
+struct PropDataByRow {
     // The order of the props follows the order to the corresponding prop list,
     // so no need to return prop names
     1: list<common.Value>   props,
 }
 
 
-/**********************************************************
- *
- * Requests, responses for the GraphStorageService
- *
- *********************************************************/
-/*********************************************************
- *                                                       *
- * GetNeighbors                                          *
- *                                                       */
+// Column based property values, usually used to return edge properties
+struct PropDataByColumn {
+    // The order of the props follows the order to the corresponding prop list,
+    // for instance, props[0][] contains the list of values for the first property,
+    // props[1][] for the second property, and so on
+    1: list<list<common.Value>> props,
+}
+
+
+///////////////////////////////////////////////////////////
+//
+//  Requests, responses for the GraphStorageService
+//
+///////////////////////////////////////////////////////////
+
+/*
+ * Start of GetNeighbors section
+ */
 struct GetNeighborsRequest {
     1: common.GraphSpaceID space_id,
     // partId => ids
@@ -139,10 +155,10 @@ struct GetNeighborsRequest {
 // Data returned for a given vertex, includintg the vertex properties,
 // statistic properties, and edges
 struct Vertex {
-    1: common.VertexID          id,  // Source vertex id
-    2: optional PropData        vertex_data,
-    3: optional PropData        stat_data,
-    4: optional list<PropData>  edge_data,
+    1: common.VertexID              id,  // Source vertex id
+    2: optional PropDataByRow       vertex_data,
+    3: optional PropDataByRow       stat_data,
+    4: optional PropDataByColumn    edge_data,
 }
 
 
@@ -150,10 +166,9 @@ struct GetNeighborsResponse {
     1: required ResponseCommon result,
     2: optional list<Vertex> vertices,
 }
-/*                                                       *
- * GetNeighbors                                          *
- *                                                       *
- *********************************************************/
+/*
+ * End of GetNeighbors section
+ */
 
 
 //
@@ -164,17 +179,16 @@ struct ExecResponse {
 }
 
 
-/*********************************************************
- *                                                       *
- * GetVertexProp                                         *
- *                                                       */
+/*
+ * Start of GetVertexProp section
+ */
 // Return properties for a given vertex
 struct VertexPropData {
-    1: required common.VertexID     id,
-    2: optional list<PropData>      props,
+    1: required common.VertexID id,
+    2: optional PropDataByRow   props,
     // When the get prop request does not provide property name list (ask for
     // all properties), this will return all property names
-    3: optional list<VertexProp>    names,
+    3: optional list<binary>    names,
 }
 
 
@@ -186,6 +200,8 @@ struct VertexPropRequest {
     // If the property list is not set, no property but the vertex ID
     // will be returned
     3: optional list<VertexProp>                vertex_props,
+    // If a filter is provided, only vertices that are satisfied the filter
+    // will be returned
     4: optional binary                          filter,
 }
 
@@ -194,16 +210,14 @@ struct VertexPropResponse {
     1: ResponseCommon       result,
     2: list<VertexPropData> data,
 }
-/*                                                       *
- * GetVertexProp                                         *
- *                                                       *
- *********************************************************/
+/*
+ * End of GetVertexProp section
+ */
 
 
-/*********************************************************
- *                                                       *
- * GetEdgeProp                                           *
- *                                                       */
+/*
+ * Start of GetEdgeProp section
+ */
 struct EdgeKey {
     1: common.VertexID      src,
     // When edge_type > 0, it's an out-edge, otherwise, it's an in-edge
@@ -217,10 +231,10 @@ struct EdgeKey {
 // Return properties for a given edge
 struct EdgePropData {
     1: required EdgeKey         key,
-    2: optional list<PropData>  props,
+    2: optional PropDataByRow   props,
     // When the get prop request does not provide property name list (ask for
     //   all properties), this will return all property names
-    3: optional list<string>    names,
+    3: optional list<binary>    names,
 }
 
 
@@ -233,6 +247,8 @@ struct EdgePropRequest {
     // If the property list is not set, no property but the edge key
     // will be returned
     3: optional list<EdgeProp>                  edge_props,
+    // If a filter is provided, only edges that are satisfied the filter
+    // will be returned
     4: optional binary                          filter,
 }
 
@@ -241,22 +257,20 @@ struct EdgePropResponse {
     1: ResponseCommon       result,
     2: list<EdgePropData>   data,
 }
-/*                                                       *
- * GetEdgeProp                                           *
- *                                                       *
- *********************************************************/
+/*
+ * End of GetEdgeProp section
+ */
 
 
-/*********************************************************
- *                                                       *
- * AddVertices                                           *
- *                                                       */
+/*
+ * Start of AddVertices section
+ */
 struct NewTag {
-    1: common.TagID tag_id,
-    2: list<PropData> props,
+    1: common.TagID             tag_id,
+    2: PropDataByRow            props,
     // If the name list is empty, the order of the properties has to be
     // exactly same as that the schema defines
-    3: optional list<string> names,
+    3: optional list<binary>    names,
 }
 
 
@@ -267,11 +281,11 @@ struct NewVertex {
 
 
 struct NewEdge {
-    1: EdgeKey key,
-    2: list<PropData> props,
+    1: EdgeKey                  key,
+    2: PropDataByRow            props,
     // If the name list is empty, the order of the properties has to be
     // exactly same as that the schema defines
-    3: optional list<string> names,
+    3: optional list<binary>    names,
 }
 
 
@@ -292,16 +306,14 @@ struct AddEdgesRequest {
     // If true, it equals an upsert operation.
     3: bool overwritable = true,
 }
-/*                                                       *
- * AddVertices                                           *
- *                                                       *
- *********************************************************/
+/*
+ * End of AddVertices section
+ */
 
 
-/*********************************************************
- *                                                       *
- * DeleteVertex                                          *
- *                                                       */
+/*
+ * Start of DeleteVertex section
+ */
 struct DeleteVertexRequest {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
@@ -315,28 +327,26 @@ struct DeleteEdgesRequest {
     2: map<common.PartitionID, list<EdgeKey>>(
         cpp.template = "std::unordered_map") parts,
 }
-/*                                                       *
- * DeleteVertex                                          *
- *                                                       *
- *********************************************************/
+/*
+ * End of DeleteVertex section
+ */
 
 
 // Response for update requests
 struct UpdateResponse {
-    1: required ResponseCommon result,
+    1: required ResponseCommon  result,
     // it's true when the vertex or the edge is inserted
-    2: optional bool inserted = false,
-    3: optional list<PropData> data,
+    2: optional bool            inserted = false,
+    3: optional PropDataByRow   data,
 }
 
 
-/*********************************************************
- *                                                       *
- * UpdateVertex                                          *
- *                                                       */
+/*
+ * Start of UpdateVertex section
+ */
 struct UpdatedVertexProp {
     1: required common.TagID    tag_id,     // the Tag ID
-    2: required string          name,       // property name
+    2: required binary          name,       // property name
     3: required common.Value    value,      // new value
 }
 
@@ -351,26 +361,17 @@ struct UpdateVertexRequest {
     // If provided, the update happens only when the condition evaluates true
     7: optional binary              condition,
 }
-/*                                                       *
- * UpdateVertex                                          *
- *                                                       *
- *********************************************************/
+/*
+ * End of UpdateVertex section
+ */
 
 
-/*********************************************************
- *                                                       *
- * UpdateEdge                                            *
- *                                                       */
+/*
+ * Start of UpdateEdge section
+ */
 struct UpdatedEdgeProp {
-    1: required string          name,       // property name
+    1: required binary          name,       // property name
     2: required common.Value    value,      // new value
-}
-
-
-struct CheckPeersReq {
-    1: common.GraphSpaceID space_id,
-    2: common.PartitionID  part_id,
-    3: list<common.HostAddr> peers,
 }
 
 
@@ -384,20 +385,18 @@ struct UpdateEdgeRequest {
     // If provided, the update happens only when the condition evaluates true
     7: optional binary          condition,
 }
-/*                                                       *
- * UpdateEdge                                            *
- *                                                       *
- *********************************************************/
+/*
+ * End of UpdateEdge section
+ */
 
 
-/*********************************************************
- *                                                       *
- * GetUUID                                               *
- *                                                       */
+/*
+ * Start of GetUUID section
+ */
 struct GetUUIDReq {
     1: common.GraphSpaceID  space_id,
     2: common.PartitionID   part_id,
-    3: string               name,
+    3: binary               name,
 }
 
 
@@ -405,16 +404,17 @@ struct GetUUIDResp {
     1: required ResponseCommon result,
     2: common.VertexID id,
 }
-/*                                                       *
- * GetUUID                                               *
- *                                                       *
- *********************************************************/
+/*
+ * End of GetUUID section
+ */
 
 
 service GraphStorageService {
     GetNeighborsResponse getNeighbors(1: GetNeighborsRequest req)
 
+    // Get vertex properties, can also filter out the vertices
     VertexPropResponse getVertexProps(1: VertexPropRequest req);
+    // Get edge properties, can also filter out the edges
     EdgePropResponse getEdgeProps(1: EdgePropRequest req)
 
     ExecResponse addVertices(1: AddVerticesRequest req);
@@ -430,11 +430,11 @@ service GraphStorageService {
 }
 
 
-/**********************************************************
- *
- * Requests, responses for the StorageAdminService
- *
- *********************************************************/
+//////////////////////////////////////////////////////////
+//
+//  Requests, responses for the StorageAdminService
+//
+//////////////////////////////////////////////////////////
 // Common response for admin methods
 struct AdminExecResp {
     1: required ResponseCommon result,
@@ -486,13 +486,13 @@ struct CatchUpDataReq {
 
 struct CreateCPRequest {
     1: common.GraphSpaceID  space_id,
-    2: string               name,
+    2: binary               name,
 }
 
 
 struct DropCPRequest {
     1: common.GraphSpaceID  space_id,
-    2: string               name,
+    2: binary               name,
 }
 
 
@@ -512,6 +512,13 @@ struct GetLeaderPartsResp {
     1: required ResponseCommon result,
     2: map<common.GraphSpaceID, list<common.PartitionID>> (
         cpp.template = "std::unordered_map") leader_parts;
+}
+
+
+struct CheckPeersReq {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID  part_id,
+    3: list<common.HostAddr> peers,
 }
 
 
@@ -536,11 +543,11 @@ service StorageAdminService {
 }
 
 
-/**********************************************************
- *
- * Requests, responses for the GeneralStorageService
- *
- *********************************************************/
+//////////////////////////////////////////////////////////
+//
+//  Requests, responses for the GeneralStorageService
+//
+//////////////////////////////////////////////////////////
 struct KVGetRequest {
     1: common.GraphSpaceID space_id,
     2: map<common.PartitionID, list<binary>>(

@@ -4,11 +4,18 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-include "common.thrift"
-
 namespace cpp nebula.graph
 namespace java com.vesoft.nebula.graph
 namespace go nebula.graph
+
+include "common.thrift"
+
+/*
+ *
+ *  Note: In order to support multiple languages, all string
+ *        have to be defined as **binary** in the thrift file
+ *
+ */
 
 enum ErrorCode {
     SUCCEEDED = 0,
@@ -38,26 +45,24 @@ struct Row {
 
 
 struct ExecutionResponse {
-    1: required ErrorCode error_code;
-    2: required i32 latency_in_us;          // Execution time on server
-    3: optional string error_msg;
-    4: optional list<binary> column_names;  // Column names
-    5: optional list<Row> rows;
-    6: optional string space_name;
+    1: required ErrorCode       error_code;
+    2: required i32             latency_in_us;  // Execution time on server
+    3: optional list<binary>    column_names;   // Column names
+    4: optional list<Row>       rows;
+    5: optional binary          space_name;
 }
 
 
 struct AuthResponse {
-    1: required ErrorCode error_code;
-    2: optional i64 session_id;
-    3: optional string error_msg;
+    1: required ErrorCode   error_code;
+    2: optional i64         session_id;
 }
 
 
 service GraphService {
-    AuthResponse authenticate(1: string username, 2: string password)
+    AuthResponse authenticate(1: binary username, 2: binary password)
 
     oneway void signout(1: i64 sessionId)
 
-    ExecutionResponse execute(1: i64 sessionId, 2: string stmt)
+    ExecutionResponse execute(1: i64 sessionId, 2: binary stmt)
 }

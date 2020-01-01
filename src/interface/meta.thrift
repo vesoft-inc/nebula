@@ -10,6 +10,13 @@ namespace go nebula.meta
 
 include "common.thrift"
 
+/*
+ *
+ *  Note: In order to support multiple languages, all strings
+ *        have to be defined as **binary** in the thrift file
+ *
+ */
+
 typedef i64 (cpp.type = "nebula::SchemaVer") SchemaVer
 
 typedef i32 (cpp.type = "nebula::UserID") UserID
@@ -65,13 +72,16 @@ enum AlterSchemaOp {
     UNKNOWN = 0x04,
 } (cpp.enum_strict)
 
-/**
-** GOD is A global senior administrator.like root of Linux systems.
-** ADMIN is an administrator for a given Graph Space.
-** USER is a normal user for a given Graph Space. A User can access (read and write) the data in the Graph Space.
-** GUEST is a read-only role for a given Graph Space. A Guest cannot modify the data in the Graph Space.
-** Refer to header file src/graph/PermissionManager.h for details.
-**/
+/*
+ * GOD is A global senior administrator.like root of Linux systems.
+ * ADMIN is an administrator for a given Graph Space.
+ * USER is a normal user for a given Graph Space. A User can access (read and write)
+ *      the data in the Graph Space.
+ * GUEST is a read-only role for a given Graph Space. A Guest cannot modify the data
+ *       in the Graph Space.
+ *
+ * Refer to header file src/graph/PermissionManager.h for details.
+ */
 
 enum RoleType {
     GOD    = 0x01,
@@ -112,9 +122,9 @@ enum PropertyType {
 } (cpp.enum_strict)
 
 struct ColumnDef {
-    1: required string name,
-    2: required PropertyType type,
-    3: required i16 type_length,
+    1: required binary          name,
+    2: required PropertyType    type,
+    3: required i16             type_length,
 //    3: optional union {
 //        1: bool bVal;
 //        2: i64 iVal;
@@ -125,7 +135,7 @@ struct ColumnDef {
 
 struct SchemaProp {
     1: optional i64      ttl_duration,
-    2: optional string   ttl_col,
+    2: optional binary   ttl_col,
 }
 
 struct Schema {
@@ -135,11 +145,11 @@ struct Schema {
 
 struct IdName {
     1: ID     id,
-    2: string name,
+    2: binary name,
 }
 
 struct SpaceProperties {
-    1: string   space_name,
+    1: binary   space_name,
     2: i32      partition_num,
     3: i32      replica_factor,
 }
@@ -151,7 +161,7 @@ struct SpaceItem {
 
 struct TagItem {
     1: common.TagID     tag_id,
-    2: string           tag_name,
+    2: binary           tag_name,
     3: SchemaVer        version,
     4: Schema           schema,
 }
@@ -163,28 +173,28 @@ struct AlterSchemaItem {
 
 struct EdgeItem {
     1: common.EdgeType  edge_type,
-    2: string           edge_name,
+    2: binary           edge_name,
     3: SchemaVer        version,
     4: Schema           schema,
 }
 
 struct IndexProperties {
-    1: map<string, list<string>>(cpp.template = "std::map")  fields,
+    1: map<binary, list<binary>>(cpp.template = "std::map")  fields,
 }
 
 struct IndexFields {
-    1: map<string, list<ColumnDef>>(cpp.template = "std::map")  fields,
+    1: map<binary, list<ColumnDef>>(cpp.template = "std::map")  fields,
 }
 
 struct TagIndexItem {
     1: TagIndexID   index_id,
-    2: string       index_name,
+    2: binary       index_name,
     3: IndexFields  fields,
 }
 
 struct EdgeIndexItem {
     1: EdgeIndexID  index_id,
-    2: string       index_name,
+    2: binary       index_name,
     3: IndexFields  fields ,
 }
 
@@ -202,12 +212,14 @@ enum SnapshotStatus {
 struct HostItem {
     1: common.HostAddr      hostAddr,
     2: HostStatus           status,
-    3: map<string, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts,
-    4: map<string, list<common.PartitionID>> (cpp.template = "std::unordered_map") all_parts,
+    3: map<binary, list<common.PartitionID>>
+        (cpp.template = "std::unordered_map") leader_parts,
+    4: map<binary, list<common.PartitionID>>
+        (cpp.template = "std::unordered_map") all_parts,
 }
 
 struct UserItem {
-    1: string account;
+    1: binary account;
     // Disable user if lock status is true.
     2: bool   is_lock,
     // The number of queries an account can issue per hour
@@ -241,7 +253,7 @@ struct CreateSpaceReq {
 }
 
 struct DropSpaceReq {
-    1: string space_name
+    1: binary space_name
 }
 
 struct ListSpacesReq {
@@ -255,7 +267,7 @@ struct ListSpacesResp {
 }
 
 struct GetSpaceReq {
-    1: string     space_name,
+    1: binary   space_name,
 }
 
 struct GetSpaceResp {
@@ -267,21 +279,21 @@ struct GetSpaceResp {
 // Tags related operations
 struct CreateTagReq {
     1: common.GraphSpaceID  space_id,
-    2: string               tag_name,
+    2: binary               tag_name,
     3: Schema               schema,
     4: bool                 if_not_exists,
 }
 
 struct AlterTagReq {
     1: common.GraphSpaceID      space_id,
-    2: string                   tag_name,
+    2: binary                   tag_name,
     3: list<AlterSchemaItem>    tag_items,
     4: SchemaProp               schema_prop,
 }
 
 struct DropTagReq {
     1: common.GraphSpaceID space_id,
-    2: string              tag_name,
+    2: binary              tag_name,
 }
 
 struct ListTagsReq {
@@ -297,7 +309,7 @@ struct ListTagsResp {
 
 struct GetTagReq {
     1: common.GraphSpaceID  space_id,
-    2: string               tag_name,
+    2: binary               tag_name,
     3: SchemaVer            version,
 }
 
@@ -310,21 +322,21 @@ struct GetTagResp {
 // Edge related operations.
 struct CreateEdgeReq {
     1: common.GraphSpaceID  space_id,
-    2: string               edge_name,
+    2: binary               edge_name,
     3: Schema               schema,
-    4: bool                if_not_exists,
+    4: bool                 if_not_exists,
 }
 
 struct AlterEdgeReq {
     1: common.GraphSpaceID      space_id,
-    2: string                   edge_name,
+    2: binary                   edge_name,
     3: list<AlterSchemaItem>    edge_items,
     4: SchemaProp               schema_prop,
 }
 
 struct GetEdgeReq {
     1: common.GraphSpaceID  space_id,
-    2: string               edge_name,
+    2: binary               edge_name,
     3: SchemaVer            version,
 }
 
@@ -336,7 +348,7 @@ struct GetEdgeResp {
 
 struct DropEdgeReq {
     1: common.GraphSpaceID space_id,
-    2: string              edge_name,
+    2: binary              edge_name,
 }
 
 struct ListEdgesReq {
@@ -391,53 +403,53 @@ struct GetPartsAllocResp {
 struct MultiPutReq {
     // segment is used to avoid conflict with system data.
     // it should be comprised of numbers and letters.
-    1: string     segment,
-    2: list<common.KeyValue> pairs,
+    1: binary                   segment,
+    2: list<common.KeyValue>    pairs,
 }
 
 struct GetReq {
-    1: string segment,
-    2: string key,
+    1: binary segment,
+    2: binary key,
 }
 
 struct GetResp {
-    1: ErrorCode code,
+    1: ErrorCode        code,
     2: common.HostAddr  leader,
-    3: string    value,
+    3: binary           value,
 }
 
 struct MultiGetReq {
-    1: string       segment,
-    2: list<string> keys,
+    1: binary       segment,
+    2: list<binary> keys,
 }
 
 struct MultiGetResp {
-    1: ErrorCode    code,
+    1: ErrorCode        code,
     2: common.HostAddr  leader,
-    3: list<string> values,
+    3: list<binary>     values,
 }
 
 struct RemoveReq {
-    1: string segment,
-    2: string key,
+    1: binary segment,
+    2: binary key,
 }
 
 struct RemoveRangeReq {
-    1: string segment,
-    2: string start,
-    3: string end,
+    1: binary segment,
+    2: binary start,
+    3: binary end,
 }
 
 struct ScanReq {
-    1: string segment,
-    2: string start,
-    3: string end,
+    1: binary segment,
+    2: binary start,
+    3: binary end,
 }
 
 struct ScanResp {
-    1: ErrorCode code,
+    1: ErrorCode        code,
     2: common.HostAddr  leader,
-    3: list<string> values,
+    3: list<binary>     values,
 }
 
 struct HBResp {
@@ -453,18 +465,18 @@ struct HBReq {
 
 struct CreateTagIndexReq {
     1: common.GraphSpaceID space_id,
-    2: string              index_name,
+    2: binary              index_name,
     3: IndexProperties     properties,
 }
 
 struct DropTagIndexReq {
     1: common.GraphSpaceID space_id,
-    2: string              index_name,
+    2: binary              index_name,
 }
 
 struct GetTagIndexReq {
     1: common.GraphSpaceID space_id,
-    2: string              index_name,
+    2: binary              index_name,
 }
 
 struct GetTagIndexResp {
@@ -485,18 +497,18 @@ struct ListTagIndexesResp {
 
 struct CreateEdgeIndexReq {
     1: common.GraphSpaceID space_id,
-    2: string              index_name,
+    2: binary              index_name,
     3: IndexProperties     properties,
 }
 
 struct DropEdgeIndexReq {
     1: common.GraphSpaceID space_id,
-    2: string              index_name,
+    2: binary              index_name,
 }
 
 struct GetEdgeIndexReq {
     1: common.GraphSpaceID space_id,
-    2: string              index_name,
+    2: binary              index_name,
 }
 
 struct GetEdgeIndexResp {
@@ -517,12 +529,12 @@ struct ListEdgeIndexesResp {
 
 struct CreateUserReq {
     1: UserItem user,
-    2: string encoded_pwd,
-    3: bool missing_ok,
+    2: binary   encoded_pwd,
+    3: bool     missing_ok,
 }
 
 struct DropUserReq {
-    1: string account,
+    1: binary account,
     2: bool missing_ok,
 }
 
@@ -539,7 +551,7 @@ struct RevokeRoleReq {
 }
 
 struct GetUserReq {
-    1: string account,
+    1: binary account,
 }
 
 struct GetUserResp {
@@ -571,22 +583,22 @@ struct ListRolesResp {
 }
 
 struct ChangePasswordReq {
-    1: string account,
-    2: string new_encoded_pwd,
-    3: string old_encoded_pwd,
+    1: binary account,
+    2: binary new_encoded_pwd,
+    3: binary old_encoded_pwd,
 }
 
 struct CheckPasswordReq {
-    1: string account,
-    2: string encoded_pwd,
+    1: binary account,
+    2: binary encoded_pwd,
 }
 
 struct BalanceReq {
-    1: optional common.GraphSpaceID space_id,
+    1: optional common.GraphSpaceID     space_id,
     // Specify the balance id to check the status of the related balance plan
-    2: optional i64 id,
-    3: optional list<common.HostAddr> host_del,
-    4: optional bool stop,
+    2: optional i64                     id,
+    3: optional list<common.HostAddr>   host_del,
+    4: optional bool                    stop,
 }
 
 enum TaskResult {
@@ -598,7 +610,7 @@ enum TaskResult {
 
 
 struct BalanceTask {
-    1: string id,
+    1: binary id,
     2: TaskResult result,
 }
 
@@ -638,7 +650,7 @@ enum ConfigMode {
 
 struct ConfigItem {
     1: ConfigModule         module,
-    2: string               name,
+    2: binary               name,
     3: ConfigType           type,
     4: ConfigMode           mode,
     5: binary               value,
@@ -664,7 +676,7 @@ struct SetConfigReq {
 }
 
 struct ListConfigsReq {
-    1: string               space,
+    1: binary               space,
     2: ConfigModule         module,
 }
 
@@ -678,16 +690,16 @@ struct CreateSnapshotReq {
 }
 
 struct DropSnapshotReq {
-    1: string       name,
+    1: binary   name,
 }
 
 struct ListSnapshotsReq {
 }
 
 struct Snapshot {
-    1: string         name,
+    1: binary         name,
     2: SnapshotStatus status,
-    3: string         hosts,
+    3: binary         hosts,
 }
 
 struct ListSnapshotsResp {

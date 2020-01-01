@@ -100,9 +100,9 @@ target_compile_options(${file_name}_thrift_obj PRIVATE "-Wno-pedantic")
 target_compile_options(${file_name}_thrift_obj PRIVATE "-Wno-extra")
 add_custom_target(${file_name}_thrift_headers DEPENDS ${${file_name}-cpp2-HEADERS})
 if(NOT "${file_name}" STREQUAL "common")
-add_dependencies(
-  "${file_name}_thrift_obj"
-  common_thrift_headers
-)
+    add_dependencies(
+        "${file_name}_thrift_obj"
+        "common_thrift_headers"
+    )
 endif()
 endmacro()

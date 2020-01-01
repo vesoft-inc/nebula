@@ -11,6 +11,13 @@ namespace go nebula
 
 cpp_include "base/ThriftTypes.h"
 
+/*
+ *
+ *  Note: In order to support multiple languages, all strings
+ *        have to be defined as **binary** in the thrift file
+ *
+ */
+
 typedef i32 (cpp.type = "nebula::GraphSpaceID") GraphSpaceID
 typedef i32 (cpp.type = "nebula::PartitionID") PartitionID
 typedef i32 (cpp.type = "nebula::TagID") TagID
@@ -22,7 +29,6 @@ typedef i64 (cpp.type = "nebula::Timestamp") Timestamp
 
 typedef i32 (cpp.type = "nebula::IPv4") IPv4
 typedef i32 (cpp.type = "nebula::Port") Port
-
 
 // !! Struct Date has a shadow data type defined in the ThriftTypes.h
 // So any change here needs to be reflected to the shadow type there
@@ -67,7 +73,7 @@ union Value {
     2: bool         bVal;
     3: i64          iVal;
     4: double       fVal;
-    5: string       sVal;
+    5: binary       sVal;
     6: Timestamp    tVal;
     7: Date         dVal;
     8: DateTime     dtVal;
@@ -83,7 +89,7 @@ struct List {
 
 
 struct Map {
-    1: map<string, Value> (cpp.template = "std::unordered_map") kvs;
+    1: map<binary, Value> (cpp.template = "std::unordered_map") kvs;
 }
 
 
@@ -97,4 +103,3 @@ struct KeyValue {
     1: binary key,
     2: binary value,
 }
-
