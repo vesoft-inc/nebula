@@ -10,7 +10,8 @@ namespace nebula {
 namespace graph {
 
 DropSpaceExecutor::DropSpaceExecutor(Sentence *sentence,
-                                     ExecutionContext *ectx) : Executor(ectx) {
+                                     ExecutionContext *ectx)
+    : Executor(ectx, "drop_space") {
     sentence_ = static_cast<DropSpaceSentence*>(sentence);
 }
 
@@ -27,28 +28,24 @@ void DropSpaceExecutor::execute() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status());
             return;
         }
         auto  ret = std::move(resp).value();
         if (!ret) {
-            DCHECK(onError_);
-            onError_(Status::Error("Drop space failed"));
+            doError(Status::Error("Drop space failed"));
             return;
         }
 
         if (*spaceName_ == ectx()->rctx()->session()->spaceName()) {
             ectx()->rctx()->session()->setSpace("", -1);
         }
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal error"));
         return;
     };
 

@@ -8,8 +8,8 @@ on:
       - 'docs/**'
 
 jobs:
-  build:
-    name: build
+  build-gcc:
+    name: build-gcc
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -65,3 +65,51 @@ jobs:
         shell: bash
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  build-clang:
+    name: build-clang
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        tag:
+          - ubuntu1604
+          - ubuntu1804
+    container:
+      image: vesoft/nebula-dev:${{ matrix.tag }}
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: cmake
+        env:
+          NEBULA_DEP_BIN: /opt/nebula/third-party/bin
+          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
+        run: |
+          mkdir _build && cd _build
+          ${NEBULA_DEP_BIN}/cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DENABLE_UBSAN=on ..
+        shell: bash
+      - name: make
+        env:
+          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
+        run: |
+          cd _build && make -j $(nproc)
+        shell: bash
+      - name: test in multithreads
+        timeout-minutes: 20
+        env:
+          NEBULA_DEP_BIN: /opt/nebula/third-party/bin
+          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
+        run: |
+          cd _build
+          ${NEBULA_DEP_BIN}/ctest -j $(nproc) --output-on-failure
+        shell: bash
+      - name: test in singlethread
+        if: failure()
+        timeout-minutes: 40
+        env:
+          NEBULA_DEP_BIN: /opt/nebula/third-party/bin
+          LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
+        run: |
+          cd _build
+          ${NEBULA_DEP_BIN}/ctest --output-on-failure
+        shell: bash
+

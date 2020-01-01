@@ -22,7 +22,7 @@ TEST(Status, Basic) {
 TEST(Status, toString) {
     ASSERT_EQ("OK", Status().toString());
     ASSERT_EQ("OK", Status::OK().toString());
-    ASSERT_EQ("", Status::Error("").toString());
+    ASSERT_EQ("Error", Status::Error("Error").toString());
     ASSERT_EQ("SomeError", Status::Error("SomeError").toString());
     ASSERT_EQ("SomeError(-1)", Status::Error("%s(%d)", "SomeError", -1).toString());
 }

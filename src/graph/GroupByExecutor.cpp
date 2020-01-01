@@ -12,7 +12,7 @@ namespace nebula {
 namespace graph {
 
 GroupByExecutor::GroupByExecutor(Sentence *sentence, ExecutionContext *ectx)
-    : TraverseExecutor(ectx) {
+    : TraverseExecutor(ectx, "group_by") {
     sentence_ = static_cast<GroupBySentence*>(sentence);
 }
 
@@ -180,8 +180,6 @@ Status GroupByExecutor::checkAll() {
 
 void GroupByExecutor::execute() {
     FLOG_INFO("Executing Group by: %s", sentence_->toString().c_str());
-    DCHECK(onError_);
-    DCHECK(onFinish_);
 
     if (rows_.empty()) {
         onEmptyInputs();
@@ -190,36 +188,32 @@ void GroupByExecutor::execute() {
 
     auto status = checkAll();
     if (!status.ok()) {
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
     status = groupingData();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
     status = generateOutputSchema();
     if (!status.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(status));
+        doError(std::move(status));
         return;
     }
 
     if (onResult_) {
         auto ret = setupInterimResult();
         if (!ret.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(ret).status());
+            doError(std::move(ret).status());
             return;
         }
         onResult_(std::move(ret).value());
     }
 
-    DCHECK(onFinish_);
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 
@@ -229,13 +223,13 @@ Status GroupByExecutor::groupingData() {
     using GroupData = std::unordered_map<ColVals, FunCols, ColsHasher>;
 
     GroupData data;
+    Getters getters;
     for (auto& it : rows_) {
         ColVals groupVals;
         FunCols calVals;
 
         // Firstly: group the cols
         for (auto &col : groupCols_) {
-            auto &getters = expCtx_->getters();
             cpp2::ColumnValue::Type valType = cpp2::ColumnValue::Type::__EMPTY__;
             getters.getInputProp = [&] (const std::string & prop) -> OptVariantType {
                 auto indexIt = schemaMap_.find(prop);
@@ -248,7 +242,7 @@ Status GroupByExecutor::groupingData() {
                 return toVariantType(val);
             };
 
-            auto eval = col->expr()->eval();
+            auto eval = col->expr()->eval(getters);
             if (!eval.ok()) {
                 return eval.status();
             }
@@ -277,7 +271,6 @@ Status GroupByExecutor::groupingData() {
         // Apply value
         auto i = 0u;
         for (auto &col : calVals) {
-            auto &getters = expCtx_->getters();
             cpp2::ColumnValue::Type valType = cpp2::ColumnValue::Type::__EMPTY__;
             getters.getInputProp = [&] (const std::string &prop) -> OptVariantType{
                 auto indexIt = schemaMap_.find(prop);
@@ -289,7 +282,7 @@ Status GroupByExecutor::groupingData() {
                 valType = val.getType();
                 return toVariantType(val);
             };
-            auto eval = yieldCols_[i]->expr()->eval();
+            auto eval = yieldCols_[i]->expr()->eval(getters);
             if (!eval.ok()) {
                 return eval.status();
             }
@@ -361,7 +354,6 @@ Status GroupByExecutor::generateOutputSchema() {
     if (resultSchema_ == nullptr) {
         resultSchema_ = std::make_shared<SchemaWriter>();
         auto colnames = getResultColumnNames();
-        CHECK(!rows_.empty());
         for (auto i = 0u; i < rows_[0].columns.size(); i++) {
             SupportedType type;
             switch (rows_[0].columns[i].getType()) {
@@ -398,7 +390,7 @@ Status GroupByExecutor::generateOutputSchema() {
 StatusOr<std::unique_ptr<InterimResult>> GroupByExecutor::setupInterimResult() {
     auto result = std::make_unique<InterimResult>(getResultColumnNames());
     if (rows_.empty() || resultSchema_ == nullptr) {
-        return result;
+        return std::move(result);
     }
     // Generate results
     std::unique_ptr<RowSetWriter> rsWriter = std::make_unique<RowSetWriter>(resultSchema_);
@@ -407,7 +399,7 @@ StatusOr<std::unique_ptr<InterimResult>> GroupByExecutor::setupInterimResult() {
     if (rsWriter != nullptr) {
         result->setInterim(std::move(rsWriter));
     }
-    return result;
+    return std::move(result);
 }
 
 
@@ -416,7 +408,7 @@ void GroupByExecutor::onEmptyInputs() {
         auto result = std::make_unique<InterimResult>(getResultColumnNames());
         onResult_(std::move(result));
     }
-    onFinish_(Executor::ProcessControl::kNext);
+    doFinish(Executor::ProcessControl::kNext);
 }
 
 

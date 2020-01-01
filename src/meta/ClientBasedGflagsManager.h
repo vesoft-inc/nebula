@@ -23,8 +23,7 @@ public:
     folly::Future<StatusOr<bool>> setConfig(const cpp2::ConfigModule& module,
                                             const std::string& name,
                                             const cpp2::ConfigType& type,
-                                            const VariantType& value,
-                                            const bool isForce = false) override;
+                                            const VariantType& value) override;
 
     folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     getConfig(const cpp2::ConfigModule& module, const std::string& name) override;
@@ -37,8 +36,7 @@ public:
 private:
     template<typename ValueType>
     folly::Future<StatusOr<bool>> set(const cpp2::ConfigModule& module, const std::string& name,
-                                      const cpp2::ConfigType& type, const ValueType& value,
-                                      const bool isForce);
+                                      const cpp2::ConfigType& type, const ValueType& value);
 
     MetaClient                          *metaClient_{nullptr};
 };

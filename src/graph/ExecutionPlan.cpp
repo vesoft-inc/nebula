@@ -20,8 +20,8 @@ void ExecutionPlan::execute() {
         auto result = GQLParser().parse(rctx->query());
         if (!result.ok()) {
             status = std::move(result).status();
-            LOG(ERROR) << status;
-            stats::Stats::addStatsValue(ectx()->getGraphStats()->getParseErrorStats(), false);
+            LOG(ERROR) << "Do cmd `" << rctx->query() << "' failed: " << status;
+            stats::Stats::addStatsValue(parseStats_.get(), false);
             break;
         }
 
@@ -58,7 +58,7 @@ void ExecutionPlan::onFinish() {
     auto *rctx = ectx()->rctx();
     executor_->setupResponse(rctx->resp());
     auto latency = rctx->duration().elapsedInUSec();
-    stats::Stats::addStatsValue(ectx()->getGraphStats()->getGraphAllStats(), true, latency);
+    stats::Stats::addStatsValue(allStats_.get(), true, latency);
     rctx->resp().set_latency_in_us(latency);
     auto &spaceName = rctx->session()->spaceName();
     rctx->resp().set_space_name(spaceName);
@@ -83,7 +83,7 @@ void ExecutionPlan::onError(Status status) {
     }
     rctx->resp().set_error_msg(status.toString());
     auto latency = rctx->duration().elapsedInUSec();
-    stats::Stats::addStatsValue(ectx()->getGraphStats()->getGraphAllStats(), false, latency);
+    stats::Stats::addStatsValue(allStats_.get(), false, latency);
     rctx->resp().set_latency_in_us(latency);
     rctx->finish();
     delete this;

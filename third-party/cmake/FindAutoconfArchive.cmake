@@ -1,0 +1,3 @@
+find_path(AutoconfArchive_DIR NAMES aclocal/ax_prefix_config_h.m4 PATHS /usr/share)
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(AutoconfArchive REQUIRED_VARS  AutoconfArchive_DIR)
