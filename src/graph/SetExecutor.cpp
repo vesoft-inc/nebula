@@ -204,7 +204,7 @@ void SetExecutor::doUnion() {
     if (!castingMap_.empty()) {
         auto stat = doCasting(rightRows);
         if (!stat.ok()) {
-            doError(status);
+            doError(std::move(stat));
             return;
         }
     }
@@ -303,7 +303,7 @@ void SetExecutor::doIntersect() {
     if (!castingMap_.empty()) {
         Status stat = doCasting(rightRows);
         if (!stat.ok()) {
-            doError(status);
+            doError(std::move(stat));
             return;
         }
     }
