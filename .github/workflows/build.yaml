@@ -2,8 +2,6 @@ name: build
 
 on:
   push:
-    branches:
-      - master
     paths-ignore:
       - 'docs/**'
 
