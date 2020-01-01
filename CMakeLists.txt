@@ -473,7 +473,7 @@ macro(nebula_link_libraries target)
         dl
         ${GETTIME_LIB}
         -pthread
-        $<$<BOOL:${ENABLE_COVERAGE}>:--coverage>
+        --coverage
     )
 endmacro(nebula_link_libraries)
 
