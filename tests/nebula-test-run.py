@@ -18,11 +18,14 @@ NEBULA_HOME = os.environ['NEBULA_HOME']
 TEST_DIR = os.path.join(os.environ['NEBULA_HOME'], 'tests')
 sys.path.insert(0, NEBULA_HOME)
 RESULT_DIR = os.path.join(os.environ['NEBULA_TEST_LOGS_DIR'], 'results')
-LOGGING_ARGS = {'--junit-xml': 'TEST-nebula-{0}.xml',
-                '--report-log': 'TEST-nebula-{0}.log',
-                '--html': 'TEST-nebula-{0}.html'}
+LOGGING_ARGS = {
+    '--junit-xml': 'TEST-nebula-{0}.xml',
+    '--report-log': 'TEST-nebula-{0}.log',
+    '--html': 'TEST-nebula-{0}.html'
+}
 
 LOG_FORMAT = "-- %(asctime)s %(levelname)-8s %(threadName)s: %(message)s"
+
 
 def configure_logging():
     logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
@@ -97,6 +100,7 @@ class TestExecutor(object):
         if self._exit_on_error:
             sys.exit(pytest_exit_code)
 
+
 if __name__ == "__main__":
     executor = TestExecutor()
     # If the user is just asking for --help, just print the help test and then exit.
@@ -104,7 +108,7 @@ if __name__ == "__main__":
         executor.run_tests(sys.argv[1:])
         sys.exit(0)
     os.chdir(TEST_DIR)
-      # Create the test result directory if it doesn't already exist.
+    # Create the test result directory if it doesn't already exist.
     if not os.path.exists(RESULT_DIR):
         os.makedirs(RESULT_DIR)
 
@@ -113,7 +117,8 @@ if __name__ == "__main__":
     current_time = strftime("%Y-%m-%d-%H:%M:%S", gmtime())
     logging_args = []
     for arg, log in LOGGING_ARGS.items():
-        logging_args.extend([arg, os.path.join(RESULT_DIR, log.format(current_time))])
+        logging_args.extend(
+            [arg, os.path.join(RESULT_DIR, log.format(current_time))])
 
     args = logging_args + list(commandline_args)
     print("Running TestExecutor with args: {} ".format(args))

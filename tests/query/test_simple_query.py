@@ -100,7 +100,7 @@ class TestNebula(NebulaTestSuite):
         pathEntry3 = ttypes.PathEntry()
         pathEntry3.set_vertex(vertex2)
         path.entry_list = [pathEntry1, pathEntry2, pathEntry3]
-        
+
         expect_result = [[path]]
         self.check_result(resp.rows, expect_result)
 
