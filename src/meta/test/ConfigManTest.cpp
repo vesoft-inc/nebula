@@ -544,7 +544,7 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
     meta::MetaClientOptions options;
     options.localHost_ = HostAddr(localIp, storagePort);
     options.clusterId_ = kClusterId;
-    options.inStoraged_ = kClusterId;
+    options.inStoraged_ = true;
     options.skipConfig_ = false;
     auto mClient = std::make_unique<meta::MetaClient>(threadPool,
                                                       metaAddr,
