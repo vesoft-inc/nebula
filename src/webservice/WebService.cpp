@@ -94,6 +94,7 @@ Status WebService::start() {
     });
     registerHandler("/metrics", [] {
         return new GetMetricsHandler();
+    });
     registerHandler("/", [] {
         return new StatusHandler();
     });
