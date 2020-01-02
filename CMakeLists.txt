@@ -31,7 +31,9 @@ set(NEBULA_HOME ${CMAKE_CURRENT_SOURCE_DIR})
 # To include customized FindXXX.cmake modules
 set(CMAKE_MODULE_PATH "${NEBULA_HOME}/cmake" ${CMAKE_MODULE_PATH})
 include(LinkerConfig)
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -no-pie")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -no-pie")
 
 set(CMAKE_SKIP_RPATH TRUE)
 
@@ -42,6 +44,7 @@ option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
 option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
 option(ENABLE_UBSAN "Whether to turn Undefined Behavior Sanitizer ON or OFF" OFF)
 option(ENABLE_FUZZ_TEST "Whether to turn Fuzz Test ON or OFF" OFF)
+option(ENABLE_WERROR "Whether to error on warnings" ON)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
@@ -237,9 +240,11 @@ if(NOT ENABLE_ASAN AND NOT ENABLE_NATIVE)
 endif()
 
 add_compile_options(-Wall)
-add_compile_options(-Werror)
 add_compile_options(-Wunused-parameter)
 add_compile_options(-Wshadow)
+if(ENABLE_WERROR)
+    add_compile_options(-Werror)
+endif()
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # This requries GCC 5.1+

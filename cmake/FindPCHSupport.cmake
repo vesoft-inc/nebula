@@ -87,7 +87,8 @@ MACRO(ADD_PRECOMPILED_HEADER _targetName _input)
                 -x c++-header
                 -std=${_cxx_standard}
                 -o ${_output} ${_source}
-        MAIN_DEPENDENCY ${_source})
+        MAIN_DEPENDENCY ${_source}
+        DEPENDS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
     ADD_CUSTOM_TARGET(${_targetName}_gch DEPENDS ${_output})
     ADD_DEPENDENCIES(${_targetName} ${_targetName}_gch)
 

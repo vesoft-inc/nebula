@@ -34,9 +34,7 @@ public:
     }
 
     ~GQLParser() {
-        if (sentences_ != nullptr) {
-            delete sentences_;
-        }
+        delete sentences_;
     }
 
     StatusOr<std::unique_ptr<SequentialSentences>> parse(std::string query) {
