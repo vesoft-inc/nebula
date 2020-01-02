@@ -87,6 +87,11 @@ StatusOr<TagID> ServerBasedSchemaManager::toTagID(GraphSpaceID space,
     return metaClient_->getTagIDByNameFromCache(space, tagName.str());
 }
 
+StatusOr<std::string> ServerBasedSchemaManager::toTagName(GraphSpaceID space, TagID tagId) {
+    CHECK(metaClient_);
+    return metaClient_->getTagNameByIdFromCache(space, tagId);
+}
+
 StatusOr<EdgeType> ServerBasedSchemaManager::toEdgeType(GraphSpaceID space,
                                                         folly::StringPiece typeName) {
     CHECK(metaClient_);
