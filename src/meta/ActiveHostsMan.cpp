@@ -7,7 +7,7 @@
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/Common.h"
 
-DEFINE_int32(expired_threshold_sec, 30,
+DEFINE_int32(expired_threshold_sec, 10 * 60,
                      "Hosts will be expired in this time if no heartbeat received");
 
 namespace nebula {

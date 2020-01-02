@@ -27,8 +27,6 @@ void HBProcessor::process(const cpp2::HBReq& req) {
     }
 
     auto ret = kvstore::ResultCode::SUCCEEDED;
-    bool updateLeader = false;
-    int64_t lastUpdateTime;
     if (req.get_in_storaged()) {
         LOG(INFO) << "Receive heartbeat from " << host;
         ClusterID peerCluserId = req.get_cluster_id();
@@ -45,9 +43,6 @@ void HBProcessor::process(const cpp2::HBReq& req) {
         if (req.__isset.leader_partIds) {
             ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info,
                                                  req.get_leader_partIds());
-            updateLeader = true;
-            lastUpdateTime = time::WallClock::fastNowInMilliSec();
-            LastUpdateTimeMan::update(kvstore_, lastUpdateTime);
         } else {
             ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info);
         }
@@ -59,9 +54,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
         }
     }
     resp_.set_code(to(ret));
-    if (!updateLeader) {
-        lastUpdateTime = LastUpdateTimeMan::get(this->kvstore_);
-    }
+    int64_t lastUpdateTime = LastUpdateTimeMan::get(this->kvstore_);
     resp_.set_last_update_time_in_ms(lastUpdateTime);
     onFinished();
 }

@@ -9,6 +9,7 @@
 #include "meta/processors/admin/AdminClient.h"
 
 DECLARE_int32(expired_threshold_sec);
+DECLARE_int32(heartbeat_interval_secs);
 DEFINE_int32(removed_threshold_sec, 24 * 60 * 60,
                      "Hosts will be removed in this time if no heartbeat received");
 
@@ -46,7 +47,6 @@ Status ListHostsProcessor::allHostsWithStatus() {
 
     auto now = time::WallClock::fastNowInMilliSec();
     std::vector<std::string> removeHostsKey;
-    std::vector<nebula::cpp2::HostAddr> activeHosts;
     while (iter->valid()) {
         cpp2::HostItem item;
         auto host = MetaServiceUtils::parseHostKey(iter->key());
@@ -55,7 +55,6 @@ Status ListHostsProcessor::allHostsWithStatus() {
         if (now - info.lastHBTimeInMilliSec_ < FLAGS_removed_threshold_sec * 1000) {
             if (now - info.lastHBTimeInMilliSec_ < FLAGS_expired_threshold_sec * 1000) {
                 item.set_status(cpp2::HostStatus::ONLINE);
-                activeHosts.emplace_back(host);
             } else {
                 item.set_status(cpp2::HostStatus::OFFLINE);
             }
@@ -74,9 +73,12 @@ Status ListHostsProcessor::allHostsWithStatus() {
         return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(kvRet));
     }
 
+    // get hosts which have send heartbeat recently
+    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_, FLAGS_heartbeat_interval_secs + 1);
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseLeaderKey(iter->key());
-        if (std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end()) {
+        if (std::find(activeHosts.begin(), activeHosts.end(),
+                      HostAddr(host.ip, host.port)) != activeHosts.end()) {
             auto hostIt = std::find_if(hostItems_.begin(), hostItems_.end(), [&](const auto& item) {
                 return item.get_hostAddr() == host;
             });
@@ -92,7 +94,7 @@ Status ListHostsProcessor::allHostsWithStatus() {
                        std::unordered_map<std::string, std::vector<PartitionID>>> allParts;
     for (const auto& spaceId : spaceIds_) {
         // get space name by space id
-        auto spaceName = spaceIdNameMap_[spaceId];
+        const auto& spaceName = spaceIdNameMap_[spaceId];
 
         std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
         const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);

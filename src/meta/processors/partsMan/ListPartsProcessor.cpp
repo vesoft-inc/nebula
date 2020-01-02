@@ -9,6 +9,7 @@
 #include "meta/processors/admin/AdminClient.h"
 
 DECLARE_int32(expired_threshold_sec);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace meta {
@@ -103,13 +104,14 @@ void ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& partItems) {
         return;
     }
 
-    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_);
+    // get hosts which have send heartbeat recently
+    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_, FLAGS_heartbeat_interval_secs + 1);
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseLeaderKey(iter->key());
         if (std::find(activeHosts.begin(), activeHosts.end(),
                       HostAddr(host.ip, host.port)) != activeHosts.end()) {
             LeaderParts leaderParts = MetaServiceUtils::parseLeaderVal(iter->val());
-            auto partIds = leaderParts[spaceId_];
+            const auto& partIds = leaderParts[spaceId_];
             for (const auto& partId : partIds) {
                 auto partIt = partIdIndex_.find(partId);
                 if (partIt != partIdIndex_.end()) {
