@@ -110,7 +110,7 @@ void checkResponse(cpp2::EdgePropResponse& resp, uint32_t expectedColSize) {
             CHECK_EQ(10001 + rowNum % 7, v);
         }
         {
-            // _dst
+            // _type
             int64_t v;
             EXPECT_EQ(ResultType::SUCCEEDED, it->getVid(3, v));
             CHECK_EQ(101, v);
@@ -174,6 +174,25 @@ void checkAlteredProp(cpp2::EdgePropResponse& resp,
         }
         ++it;
     }
+}
+
+
+void checkTTLResponse(cpp2::EdgePropResponse& resp) {
+    EXPECT_EQ(0, resp.result.failed_codes.size());
+    EXPECT_EQ(14, resp.schema.columns.size());
+    auto provider = std::make_shared<ResultSchemaProvider>(resp.schema);
+    LOG(INFO) << "Check edge props...";
+    RowSetReader rsReader(provider, resp.data);
+    EXPECT_EQ(0, rsReader.getData().size());
+
+    auto it = rsReader.begin();
+    int32_t rowNum = 0;
+    while (static_cast<bool>(it)) {
+        ++it;
+        rowNum++;
+    }
+    EXPECT_EQ(it, rsReader.end());
+    EXPECT_EQ(0, rowNum);
 }
 
 
@@ -344,6 +363,28 @@ TEST(QueryEdgePropsTest, QueryAfterEdgeAltered) {
         int64_t val = 0;
         checkAlteredProp(resp, prop, val);
     }
+}
+
+
+TEST(QueryEdgePropsTest, TTLTest) {
+    fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    LOG(INFO) << "Prepare meta...";
+    auto schemaMan = TestUtils::mockSchemaWithTTLMan();
+    LOG(INFO) << "Prepare data...";
+    mockData(kv.get());
+    LOG(INFO) << "Build EdgePropRequest...";
+    cpp2::EdgePropRequest req;
+    buildRequest(req);
+
+    LOG(INFO) << "Test QueryEdgePropsRequest...";
+    auto* processor = QueryEdgePropsProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    checkTTLResponse(resp);
 }
 
 }  // namespace storage

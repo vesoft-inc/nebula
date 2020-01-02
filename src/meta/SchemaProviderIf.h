@@ -103,6 +103,8 @@ public:
 
     virtual nebula::cpp2::Schema toSchema() const = 0;
 
+    virtual const nebula::cpp2::SchemaProp getProp() const = 0;
+
     /******************************************
      *
      * Iterator implementation

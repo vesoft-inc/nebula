@@ -118,6 +118,8 @@ protected:
 
     void buildRespSchema();
 
+    bool checkDataExpiredForTTL(RowReader* reader);
+
 protected:
     GraphSpaceID  spaceId_;
     std::unique_ptr<ExpressionContext> expCtx_;

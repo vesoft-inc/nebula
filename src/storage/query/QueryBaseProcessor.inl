@@ -9,6 +9,7 @@
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 #include "filter/FunctionManager.h"
+#include "time/WallClock.h"
 
 DECLARE_int32(max_handlers_per_req);
 DECLARE_int32(min_vertices_per_bucket);
@@ -165,6 +166,53 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
 
     buildRespSchema();
     return cpp2::ErrorCode::SUCCEEDED;
+}
+
+template<typename REQ, typename RESP>
+bool QueryBaseProcessor<REQ, RESP>::checkDataExpiredForTTL(RowReader* reader) {
+    auto schema = reader->getSchema();
+    const nebula::cpp2::SchemaProp schemaProp = schema->getProp();
+    int ttlDuration = 0;
+    if (schemaProp.get_ttl_duration()) {
+        ttlDuration = *schemaProp.get_ttl_duration();
+    }
+    std::string ttlCol;
+    if (schemaProp.get_ttl_col()) {
+        ttlCol = *schemaProp.get_ttl_col();
+    }
+
+    // Only support the specified ttl_col mode
+    // Not specifying or non-positive ttl_duration behaves like ttl_duration = infinity
+    if (ttlCol.empty() ||  ttlDuration <= 0) {
+        return false;
+    }
+
+    auto now = time::WallClock::slowNowInSec();
+    const auto& ftype = schema->getFieldType(ttlCol);
+
+    int64_t v;
+    switch (ftype.type) {
+        case nebula::cpp2::SupportedType::TIMESTAMP:
+        case nebula::cpp2::SupportedType::INT: {
+            auto ret = reader->getInt<int64_t>(ttlCol, v);
+            CHECK(ret == ResultType::SUCCEEDED);
+            break;
+        }
+        case nebula::cpp2::SupportedType::VID: {
+            auto ret = reader->getVid(ttlCol, v);
+            CHECK(ret == ResultType::SUCCEEDED);
+            break;
+        }
+        default: {
+            VLOG(1) << "Unsupport TTL column type";
+            break;
+        }
+    }
+
+    if (now > (v + ttlDuration)) {
+        return true;
+    }
+    return false;
 }
 
 template<typename REQ, typename RESP>
@@ -387,9 +435,16 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
         if (result.ok()) {
             auto v = std::move(result).value();
             auto reader = RowReader::getTagPropReader(this->schemaMan_, v, spaceId_, tagId);
-            this->collectProps(reader.get(), "", props, fcontext, collector);
-            VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagId;
-            return kvstore::ResultCode::SUCCEEDED;
+
+            // Check if the schema has TTL
+            if (!checkDataExpiredForTTL(reader.get())) {
+                this->collectProps(reader.get(), "", props, fcontext, collector);
+                VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagId;
+                return kvstore::ResultCode::SUCCEEDED;
+            } else {
+                VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagId
+                        << " but data expired";
+            }
         } else {
             VLOG(3) << "Miss cache for vId " << vId << ", tagId " << tagId;
         }
@@ -405,11 +460,15 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
     // stored along with the properties
     if (iter && iter->valid()) {
         auto reader = RowReader::getTagPropReader(this->schemaMan_, iter->val(), spaceId_, tagId);
-        this->collectProps(reader.get(), iter->key(), props, fcontext, collector);
-        if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
-            vertexCache_->insert(std::make_pair(vId, tagId),
-                                 iter->val().str(), partId);
-            VLOG(3) << "Insert cache for vId " << vId << ", tagId " << tagId;
+
+        // Check if the schema has TTL
+        if (!checkDataExpiredForTTL(reader.get())) {
+            this->collectProps(reader.get(), iter->key(), props, fcontext, collector);
+            if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
+                vertexCache_->insert(std::make_pair(vId, tagId),
+                                     iter->val().str(), partId);
+                VLOG(3) << "Insert cache for vId " << vId << ", tagId " << tagId;
+            }
         }
     } else {
         VLOG(3) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagId;
@@ -517,9 +576,16 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                     continue;
                 }
             }
+
+            // Check if the schema has TTL
+            if (!checkDataExpiredForTTL(reader.get())) {
+                proc(reader.get(), key, props);
+                ++cnt;
+            }
+        } else {
+            proc(reader.get(), key, props);
+            ++cnt;
         }
-        proc(reader.get(), key, props);
-        ++cnt;
         if (firstLoop) {
             firstLoop = false;
         }
