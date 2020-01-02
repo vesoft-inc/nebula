@@ -75,7 +75,7 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
     /*
      * Define the map newIndexes to avoid inserting duplicate vertex.
      * This map means :
-     * map<vertex_unique_key, pair<vertex_prop, IndexItem>> ,
+     * map<vertex_unique_key, prop_value> ,
      * -- vertex_unique_key is only used as the unique key , for example:
      * insert below vertices in the same request:
      *     kv(part1_vid1_tag1 , v1)
@@ -85,7 +85,7 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
      *
      * Ultimately, kv(part1_vid1_tag1 , v4) . It's just what I need.
      */
-    std::map<std::string, std::pair<std::string, nebula::cpp2::IndexItem>> newIndexes;
+    std::map<std::string, std::string> newVertices;
     std::for_each(vertices.begin(), vertices.end(), [&](auto& v) {
         auto vId = v.get_id();
             const auto& tags = v.get_tags();
@@ -95,43 +95,42 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
                 VLOG(3) << "PartitionID: " << partId << ", VertexID: " << vId
                         << ", TagID: " << tagId << ", TagVersion: " << version;
                 auto key = NebulaKeyUtils::vertexKey(partId, vId, tagId, version);
-                batchHolder->put(std::move(key), std::move(prop));
+                newVertices[key] = std::move(prop);
                 if (FLAGS_enable_vertex_cache && this->vertexCache_ != nullptr) {
                     this->vertexCache_->evict(std::make_pair(vId, tagId), partId);
                     VLOG(3) << "Evict cache for vId " << vId << ", tagId " << tagId;
                 }
-                for (auto& index : indexes_) {
-                    if (index.get_tagOrEdge() == tagId) {
-                        auto vkVal = NebulaKeyUtils::vertexKey(partId, vId, tagId, version);
-                        newIndexes[vkVal] = std::make_pair(tag.get_props(), index);
-                    }
-                }
             });
         });
 
-    for (auto& index : newIndexes) {
-        /*
-         * step 1 , Delete old version index if exists.
-         */
-        auto oi = obsoleteIndex(partId,
-                                NebulaKeyUtils::getVertexId(index.first),
-                                index.second.second);
-        if (!oi.c_str()) {
-            batchHolder->remove(std::move(oi));
+    for (auto& v : newVertices) {
+        for (auto& index : indexes_) {
+            if (NebulaKeyUtils::getTagId(v.first) == index.get_tagOrEdge()) {
+                /*
+                 * step 1 , Delete old version index if exists.
+                 */
+                auto oi = obsoleteIndex(partId,
+                                        NebulaKeyUtils::getVertexId(v.first),
+                                        index);
+                if (!oi.empty()) {
+                    batchHolder->remove(std::move(oi));
+                }
+                /*
+                 * step 2 , Insert new vertex index
+                 */
+                auto ni = newIndex(partId,
+                                   NebulaKeyUtils::getVertexId(v.first),
+                                   v.second,
+                                   index);
+                batchHolder->put(std::move(ni), "");
+            }
         }
         /*
-         * step 2 , Insert new vertex data
+         * step 3 , Insert new vertex data
          */
-        auto key = index.first;
-        auto prop = index.second.first;
+        auto key = v.first;
+        auto prop = v.second;
         batchHolder->put(std::move(key), std::move(prop));
-        /*
-         * step 3 , Insert new vertex index
-         */
-        auto ni = newIndex(partId,
-                           NebulaKeyUtils::getVertexId(index.first),
-                           index.second);
-        batchHolder->put(std::move(ni), "");
     }
     return encodeBatchValue(batchHolder->getBatch());
 }
@@ -165,15 +164,15 @@ std::string AddVerticesProcessor::obsoleteIndex(PartitionID partId,
 
 std::string AddVerticesProcessor::newIndex(PartitionID partId,
                                            VertexID vId,
-                                           const std::pair<std::string,
-                                                           nebula::cpp2::IndexItem>& index) {
+                                           const folly::StringPiece& prop,
+                                           const nebula::cpp2::IndexItem& index) {
     auto reader = RowReader::getTagPropReader(this->schemaMan_,
-                                              index.first,
+                                              prop,
                                               spaceId_,
-                                              index.second.get_tagOrEdge());
-    auto values = collectIndexValues(reader.get(), index.second.get_cols());
+                                              index.get_tagOrEdge());
+    auto values = collectIndexValues(reader.get(), index.get_cols());
     return NebulaKeyUtils::vertexIndexKey(partId,
-                                          index.second.get_index_id(),
+                                          index.get_index_id(),
                                           vId, values);
 }
 

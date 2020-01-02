@@ -44,8 +44,8 @@ private:
 
     std::string newIndex(PartitionID partId,
                          VertexID vId,
-                         const std::pair<std::string,
-                                         nebula::cpp2::IndexItem>& index);
+                         const folly::StringPiece& prop,
+                         const nebula::cpp2::IndexItem& index);
 
 private:
     GraphSpaceID  spaceId_;

@@ -64,7 +64,7 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
     /*
      * Define the map newIndexes to avoid inserting duplicate edge.
      * This map means :
-     * map<edge_unique_key, pair<edge_prop, IndexItem>> ,
+     * map<edge_unique_key, prop_value> ,
      * -- edge_unique_key is only used as the unique key , for example:
      * insert below edges in the same request:
      *     kv(part1_src1_edgeType1_rank1_dst1 , v1)
@@ -74,7 +74,7 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
      *
      * Ultimately, kv(part1_src1_edgeType1_rank1_dst1 , v4) . It's just what I need.
      */
-    std::map<std::string, std::pair<std::string, nebula::cpp2::IndexItem>> newIndexes;
+    std::map<std::string, std::string> newIEdges;
     std::for_each(edges.begin(), edges.end(), [&](auto& edge){
         auto prop = edge.get_props();
         auto type = edge.key.edge_type;
@@ -84,35 +84,32 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
         VLOG(3) << "PartitionID: " << partId << ", VertexID: " << srcId
                 << ", EdgeType: " << type << ", EdgeRanking: " << rank
                 << ", VertexID: " << dstId << ", EdgeVersion: " << version;
+        auto key = NebulaKeyUtils::edgeKey(partId, srcId, type, rank, dstId, version);
+        newIEdges[key] = std::move(prop);
+    });
+    for (auto& e : newIEdges) {
         for (auto& index : indexes_) {
-            /**
-             * skip the in-edge.
-             **/
-            if (index.get_tagOrEdge() == type) {
-                auto ekVal = NebulaKeyUtils::edgeKey(partId, srcId, type, rank, dstId, version);
-                newIndexes[ekVal] = std::make_pair(edge.get_props(), index);
+            if (NebulaKeyUtils::getEdgeType(e.first) == index.get_tagOrEdge()) {
+                /*
+                 * step 1 , Delete old version index if exists.
+                 */
+                auto oi = obsoleteIndex(partId, e.first, index);
+                if (!oi.empty()) {
+                    batchHolder->remove(std::move(oi));
+                }
+                /*
+                 * step 2 , Insert new edge index
+                 */
+                auto ni = newIndex(partId, e.first, e.second, index);
+                batchHolder->put(std::move(ni), "");
             }
         }
-    });
-    for (auto& index : newIndexes) {
         /*
-         * step 1 , Delete old version index if exists.
+         * step 3 , Insert new vertex data
          */
-        auto oi = obsoleteIndex(partId, index.first, index.second.second);
-        if (!oi.empty()) {
-            batchHolder->remove(std::move(oi));
-        }
-        /*
-         * step 2 , Insert new edge data
-         */
-        auto key = index.first;
-        auto prop = index.second.first;
+        auto key = e.first;
+        auto prop = e.second;
         batchHolder->put(std::move(key), std::move(prop));
-        /*
-         * step 3 , Insert new edge index
-         */
-        auto ni = newIndex(partId, index.first, index.second);
-        batchHolder->put(std::move(ni), "");
     }
 
     return encodeBatchValue(batchHolder->getBatch());
@@ -153,15 +150,15 @@ std::string AddEdgesProcessor::obsoleteIndex(PartitionID partId,
 
 std::string AddEdgesProcessor::newIndex(PartitionID partId,
                                         const folly::StringPiece& rawKey,
-                                        const std::pair<std::string,
-                                                        nebula::cpp2::IndexItem>& index) {
+                                        const folly::StringPiece& prop,
+                                        const nebula::cpp2::IndexItem& index) {
     auto reader = RowReader::getEdgePropReader(this->schemaMan_,
-                                               index.first,
+                                               prop,
                                                spaceId_,
-                                               index.second.get_tagOrEdge());
-    auto values = collectIndexValues(reader.get(), index.second.get_cols());
+                                               index.get_tagOrEdge());
+    auto values = collectIndexValues(reader.get(), index.get_cols());
     return NebulaKeyUtils::edgeIndexKey(partId,
-                                        index.second.get_index_id(),
+                                        index.get_index_id(),
                                         NebulaKeyUtils::getSrcId(rawKey),
                                         NebulaKeyUtils::getRank(rawKey),
                                         NebulaKeyUtils::getDstId(rawKey),
