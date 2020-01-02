@@ -11,7 +11,7 @@ SHOW CONFIGS [graph|meta|storage]
 
 `SHOW TAGS` and `SHOW EDGES` return the defined tags and edge types in a given space, respectively.
 
-`SHOW CREATE TAG` and `SHOW CREATE EDGE` return the specified tag or edge type and their creation syntax in a given space. If the tag or edge type contains a default value, the default value is also returned. 
+`SHOW CREATE TAG` and `SHOW CREATE EDGE` return the specified tag or edge type and their creation syntax in a given space. If the tag or edge type contains a default value, the default value is also returned.
 
 `SHOW HOSTS` is to list storage hosts registered by the meta server. There are 6 columns: ip, port, status (online/offline), leader partitions count in all spaces, leader partitions count in each space, total partitions count in all spaces.
 
