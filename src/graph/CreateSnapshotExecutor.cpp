@@ -30,7 +30,7 @@ void CreateSnapshotExecutor::execute() {
         }
         auto ret = std::move(resp).value();
         if (!ret) {
-            doError(Status::Error("Balance leader failed"));
+            doError(Status::Error("Create snapshot failed"));
             return;
         }
         doFinish(Executor::ProcessControl::kNext);

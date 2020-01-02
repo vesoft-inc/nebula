@@ -18,9 +18,18 @@
 #   ENABLE_NATIVE                  -- Build native client
 #   ENABLE_TESTING                 -- Build unit test
 #
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.5.0)
 
 project("Nebula Graph" C CXX)
+
+# Set the project home dir
+set(NEBULA_HOME ${CMAKE_CURRENT_SOURCE_DIR})
+# To include customized FindXXX.cmake modules
+set(CMAKE_MODULE_PATH "${NEBULA_HOME}/cmake" ${CMAKE_MODULE_PATH})
+include(LinkerConfig)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -no-pie")
 
 set(CMAKE_SKIP_RPATH TRUE)
 
@@ -31,6 +40,7 @@ option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
 option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
 option(ENABLE_UBSAN "Whether to turn Undefined Behavior Sanitizer ON or OFF" OFF)
 option(ENABLE_FUZZ_TEST "Whether to turn Fuzz Test ON or OFF" OFF)
+option(ENABLE_WERROR "Whether to error on warnings" ON)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
@@ -53,8 +63,7 @@ endif()
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++ -no-pie")
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # To detect if ccache available
 find_program(ccache_program_found "ccache")
@@ -84,15 +93,31 @@ if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     add_definitions(-D_FORTIFY_SOURCE=2)
 endif()
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--compress-debug-sections=zlib")
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    if (NOT ${NEBULA_USE_LINKER} STREQUAL "gold")
+        # gold linker is buggy for `--gc-sections', disabled for now
+        add_compile_options(-ffunction-sections)
+        add_compile_options(-fdata-sections)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gc-sections")
+    endif()
+endif()
+
 message(STATUS "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE} "
                "(Options are: Debug, Release, RelWithDebInfo, MinSizeRel)")
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "_build")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "_build")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "_build")
+# By default, all dynamic and static libraries will be placed at ${CMAKE_BINARY_DIR}/lib,
+# while all executables at ${CMAKE_BINARY_DIR}/bin.
+# But for the sake of cleanliness, all executables ending with `_test' will be placed
+# at ${CMAKE_BINARY_DIR}/bin/test, while those ending with `_bm' at ${CMAKE_BINARY_DIR}/bin/bench.
+# Please see `nebula_add_executable' for this rule.
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
-# Set the project home dir
-set(NEBULA_HOME ${CMAKE_CURRENT_SOURCE_DIR})
 add_definitions(-DNEBULA_HOME=${NEBULA_HOME})
 
 # Let s2 use glog
@@ -121,12 +146,22 @@ if (GIT_INFO_SHA)
     add_definitions(-DGIT_INFO_SHA=${GIT_INFO_SHA})
 endif()
 
-# To include customized FindXXX.cmake modules
-set(CMAKE_MODULE_PATH "${NEBULA_HOME}/cmake" ${CMAKE_MODULE_PATH})
-
-# When NEBULA_THIRDPARTY_ROOT is null, set default value as /opt/nebula/third-party
+# The precedence to decide NEBULA_THIRDPARTY_ROOT is:
+#   1. The path defined with CMake argument, i.e -DNEBULA_THIRDPARTY_ROOT=path
+#   2. ${CMAKE_BINARY_DIR}/third-party/install, if exists
+#   3. The path specified with environment variable NEBULA_THIRDPARTY_ROOT=path
+#   4. /opt/vesoft/third-party, if exists
+#   5. At last, one copy will be downloaded and installed to ${CMAKE_BINARY_DIR}/third-party/install
 if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
-    SET(NEBULA_THIRDPARTY_ROOT "/opt/nebula/third-party")
+    if(EXISTS ${CMAKE_BINARY_DIR}/third-party/install)
+        SET(NEBULA_THIRDPARTY_ROOT ${CMAKE_BINARY_DIR}/third-party/install)
+    elseif(NOT $ENV{NEBULA_THIRDPARTY_ROOT} STREQUAL "")
+        SET(NEBULA_THIRDPARTY_ROOT $ENV{NEBULA_THIRDPARTY_ROOT})
+    elseif(EXISTS /opt/vesoft/third-party)
+        SET(NEBULA_THIRDPARTY_ROOT "/opt/vesoft/third-party")
+    else()
+        include(InstallThirdParty)
+    endif()
 endif()
 
 if ("${NEBULA_CLANG_USED_GCC_TOOLCHAIN}" STREQUAL "")
@@ -190,6 +225,7 @@ find_package(Krb5 REQUIRED gssapi)
 find_package(GPERF 2.8 REQUIRED)
 find_package(Libunwind REQUIRED)
 find_package(BISON 3.0.5 REQUIRED)
+include(MakeBisonRelocatable)
 find_package(FLEX REQUIRED)
 find_package(Readline REQUIRED)
 find_package(NCURSES REQUIRED)
@@ -200,9 +236,11 @@ if(NOT ENABLE_ASAN AND NOT ENABLE_NATIVE)
 endif()
 
 add_compile_options(-Wall)
-add_compile_options(-Werror)
 add_compile_options(-Wunused-parameter)
 add_compile_options(-Wshadow)
+if(ENABLE_WERROR)
+    add_compile_options(-Werror)
+endif()
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # This requries GCC 5.1+
@@ -274,6 +312,18 @@ macro(nebula_add_executable)
         ${nebula_exec_NAME}
         ${nebula_exec_LIBRARIES}
     )
+
+    if(${nebula_exec_NAME} MATCHES "_test$")
+        set_target_properties(
+            ${nebula_exec_NAME}
+            PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test
+        )
+    elseif(${nebula_exec_NAME} MATCHES "_bm$")
+        set_target_properties(
+            ${nebula_exec_NAME}
+            PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/bench
+        )
+    endif()
 endmacro()
 
 macro(nebula_add_test)
@@ -364,7 +414,7 @@ set(THRIFT_LIBRARIES
 set(ROCKSDB_LIBRARIES ${Rocksdb_LIBRARY})
 
 # All compression libraries
-set(COMPRESSION_LIBRARIES bz2 snappy zstd z)
+set(COMPRESSION_LIBRARIES bz2 snappy zstd z lz4)
 if (LIBLZMA_FOUND)
     include_directories(SYSTEM ${LIBLZMA_INCLUDE_DIRS})
     list(APPEND COMPRESSION_LIBRARIES ${LIBLZMA_LIBRARIES})
@@ -404,7 +454,6 @@ macro(nebula_link_libraries target)
         boost_system
         event
         double-conversion
-        resolv
         s2
         ${OPENSSL_SSL_LIBRARY}
         ${OPENSSL_CRYPTO_LIBRARY}
@@ -412,6 +461,8 @@ macro(nebula_link_libraries target)
         ${COMPRESSION_LIBRARIES}
         ${JEMALLOC_LIB}
         ${LIBUNWIND_LIBRARIES}
+        keyutils
+        resolv
         dl
         ${GETTIME_LIB}
         -pthread

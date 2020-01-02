@@ -12,6 +12,7 @@
 #include "webservice/SetFlagsHandler.h"
 #include "webservice/GetStatsHandler.h"
 #include "webservice/GetMetricsHandler.h"
+#include "webservice/StatusHandler.h"
 
 DEFINE_int32(ws_http_port, 11000, "Port to listen on with HTTP protocol");
 DEFINE_int32(ws_h2_port, 11002, "Port to listen on with HTTP/2 protocol");
@@ -93,6 +94,11 @@ Status WebService::start() {
     });
     registerHandler("/metrics", [] {
         return new GetMetricsHandler();
+    registerHandler("/", [] {
+        return new StatusHandler();
+    });
+    registerHandler("/status", [] {
+        return new StatusHandler();
     });
 
     std::vector<HTTPServer::IPConfig> ips = {
