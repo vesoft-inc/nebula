@@ -87,11 +87,12 @@ class GraphScanner;
     nebula::GroupClause                    *group_clause;
     nebula::HostList                       *host_list;
     nebula::HostAddr                       *host_item;
+    std::vector<int32_t>                   *integer_list;
 }
 
 /* destructors */
 %destructor {} <sentences>
-%destructor {} <boolval> <intval> <doubleval> <type> <config_module>
+%destructor {} <boolval> <intval> <doubleval> <type> <config_module> <integer_list>
 %destructor { delete $$; } <*>
 
 /* keywords */
@@ -99,12 +100,12 @@ class GraphScanner;
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
-%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PARTS KW_TIMESTAMP KW_ADD
+%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_PART KW_PARTS KW_TIMESTAMP KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_UUID
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
-%token KW_CONFIGS KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
+%token KW_CONFIGS KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE KW_FORCE
 %token KW_TTL_DURATION KW_TTL_COL KW_DEFAULT
 %token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET KW_GROUP
 %token KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN KW_STD KW_BIT_AND KW_BIT_OR KW_BIT_XOR
@@ -183,6 +184,7 @@ class GraphScanner;
 %type <group_clause> group_clause
 %type <host_list> host_list
 %type <host_item> host_item
+%type <integer_list> integer_list
 
 %type <intval> unary_integer rank port
 
@@ -1438,6 +1440,12 @@ show_sentence
     | KW_SHOW KW_PARTS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowParts);
     }
+    | KW_SHOW KW_PART integer_list {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowParts, $3);
+    }
+    | KW_SHOW KW_PARTS integer_list {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowParts, $3);
+    }
     | KW_SHOW KW_TAGS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowTags);
     }
@@ -1683,8 +1691,11 @@ get_config_sentence
     ;
 
 set_config_sentence
-    : KW_UPDATE KW_CONFIGS set_config_item  {
+    : KW_UPDATE KW_CONFIGS set_config_item {
         $$ = new ConfigSentence(ConfigSentence::SubType::kSet, $3);
+    }
+    | KW_UPDATE KW_CONFIGS set_config_item KW_FORCE {
+        $$ = new ConfigSentence(ConfigSentence::SubType::kSet, $3, true);
     }
     ;
 
@@ -1710,6 +1721,20 @@ host_item
     }
 
 port : INTEGER { $$ = $1; }
+
+integer_list
+    : INTEGER {
+        $$ = new std::vector<int32_t>();
+        $$->emplace_back($1);
+    }
+    | integer_list COMMA INTEGER {
+        $$ = $1;
+        $$->emplace_back($3);
+    }
+    | integer_list COMMA {
+        $$ = $1;
+    }
+    ;
 
 balance_sentence
     : KW_BALANCE KW_LEADER {
@@ -1823,15 +1848,40 @@ sentences
 
 %%
 
+#include "GraphScanner.h"
 void nebula::GraphParser::error(const nebula::GraphParser::location_type& loc,
                                 const std::string &msg) {
     std::ostringstream os;
-    os << msg << " at " << loc;
+    if (msg.empty()) {
+        os << "syntax error";
+    } else {
+        os << msg;
+    }
+
+    auto *query = scanner.query();
+    if (query == nullptr) {
+        os << " at " << loc;
+        errmsg = os.str();
+        return;
+    }
+
+    auto begin = loc.begin.column > 0 ? loc.begin.column - 1 : 0;
+    if ((loc.end.filename
+        && (!loc.begin.filename
+            || *loc.begin.filename != *loc.end.filename))
+        || loc.begin.line < loc.end.line
+        || begin >= query->size()) {
+        os << " at " << loc;
+    } else if (loc.begin.column < (loc.end.column ? loc.end.column - 1 : 0)) {
+        os << " near `" << query->substr(begin, loc.end.column - loc.begin.column) << "'";
+    } else {
+        os << " near `" << query->substr(begin, 8) << "'";
+    }
+
     errmsg = os.str();
 }
 
 
-#include "GraphScanner.h"
 static int yylex(nebula::GraphParser::semantic_type* yylval,
                  nebula::GraphParser::location_type *yylloc,
                  nebula::GraphScanner& scanner) {

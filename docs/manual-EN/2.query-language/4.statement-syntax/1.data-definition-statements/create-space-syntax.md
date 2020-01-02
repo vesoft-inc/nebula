@@ -1,14 +1,17 @@
 # Create Space Syntax
 
 ```ngql
-CREATE SPACE space_name
-    (space_option,...)
-
-space_option:
-    option_name = value
+CREATE SPACE [IF NOT EXISTS] <space_name>
+   [(partition_num = <part_num>, replica_factor = <raft_copy>)]
 ```
 
 This statement creates a new space with the given name. SPACE is a region that provides physically isolated graphs in **Nebula Graph**. An error occurs if the database exists.
+
+## IF NOT EXISTS
+
+You can use the `If NOT EXISTS` keywords when creating spaces. This keyword automatically detects if the corresponding space exists. If it does not exist, a new one is created. Otherwise, no space is created.
+
+**Note:** The space existence detection here only compares the space name (excluding properties).
 
 ## Space Name
 
@@ -16,9 +19,9 @@ This statement creates a new space with the given name. SPACE is a region that p
 
     The name uniquely identifies the space in a cluster. The rules for the naming are given in [Schema Object Names](../../3.language-structure/schema-object-names.md)
 
-### Space Options
+## Customized Space Options
 
-When creating a space, options can be given. An _option_name_ can be any of the following:
+When creating a space, the following two customized options can be given:
 
 * _partition_num_
 
@@ -30,7 +33,7 @@ When creating a space, options can be given. An _option_name_ can be any of the 
 
 However, if no option is given, **Nebula Graph** will create the space with the default partition number and replica factor.
 
-### Example
+## Example
 
 ```ngql
 nebula> CREATE SPACE my_space_1; -- create space with default partition number and replica factor

@@ -43,6 +43,7 @@ public:
         pos_ = &buffer_[0];
         end_ = pos_ + buffer_.size();
 
+        scanner_.setQuery(&buffer_);
         auto ok = parser_.parse() == 0;
         if (!ok) {
             pos_ = nullptr;
@@ -53,6 +54,7 @@ public:
                 delete sentences_;
                 sentences_ = nullptr;
             }
+            scanner_.setQuery(nullptr);
             return Status::SyntaxError(error_);
         }
 
@@ -61,6 +63,7 @@ public:
         }
         auto *sentences = sentences_;
         sentences_ = nullptr;
+        scanner_.setQuery(nullptr);
         return sentences;
     }
 

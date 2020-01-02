@@ -1,8 +1,8 @@
 # Welcome to the Official Nebula Graph Documentation
 
-**Nebula Graph** is a distributed, scalable, lightning-fast graph database.
+**Nebula Graph** is a distributed, scalable, and lightning-fast graph database.
 
-It is the optimal solution in the world capable to host graphs with dozens of billions of vertices (nodes) and trillions of edges, while still provides millisecond latency.
+It is the optimal solution in the world capable of hosting graphs with dozens of billions of vertices (nodes) and trillions of edges with millisecond latency.
 
 ## Prefix
 
@@ -17,15 +17,18 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
   * [Query Language Overview](1.overview/1.concepts/2.nGQL-overview.md)
 * Quick Start and Useful Links
   * [Get Started](1.overview/2.quick-start/1.get-started.md)
+  * [FAQ](1.overview/2.quick-start/2.FAQ.md)
   * [Build Source Code](3.build-develop-and-administration/1.build/1.build-source-code.md)
   * [Deploy Cluster](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
   * [Import .csv File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
   * [Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
   * [Nebula Graph Clients](1.overview/2.quick-start/3.supported-clients.md)
 
+
 * Design and Architecture
   * [Design Overview](1.overview/3.design-and-architecture/1.design-and-architecture.md)
   * [Storage Architecture](1.overview/3.design-and-architecture/2.storage-design.md)
+  * [Query Engine](1.overview/3.design-and-architecture/3.query-engine.md)
 
 ## Query Language (for All Users)
 
@@ -53,6 +56,7 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
   * [Property Reference](2.query-language/3.language-structure/property-reference.md)
   * [Schema Object Names](2.query-language/3.language-structure/schema-object-names.md)
   * [Statement Composition](2.query-language/3.language-structure/statement-composition.md)
+  * [User-Defined Variables](2.query-language/3.language-structure/user-defined-variables.md)
 * Statement Syntax
   * Data Definition Statements
     * [Alter Tag/Edge Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/alter-tag-edge-syntax.md)
@@ -90,6 +94,7 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
 
 * Deploy and Administrations
   * Deployment
+    * [Configuration Description](3.build-develop-and-administration/3.deploy-and-administrations/deployment/configuration-description.md)
     * [Deploy Cluster On Docker](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster-on-docker.md)
     * [Deploy Cluster](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
     * [Connect Prometheus](3.build-develop-and-administration/3.deploy-and-administrations/deployment/connect-prometheus.md)
@@ -101,6 +106,10 @@ It is the optimal solution in the world capable to host graphs with dozens of bi
       * [Configs Syntax](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/configs-syntax.md)
       * [RocksDB Compaction and Flush](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/rocksdb-compaction-flush.md)
       * [Logs](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/configuration-statements/log.md)
+    * Graph Service Administration
+      * [Graph Metrics](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/graph-service-administration/graph-metrics.md)
+    * Meta Service Administration
+      * [Meta Metrics](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/meta-service-administration/meta-metrics.md)
     * Storage Service Administration
       * Data Import
         * [Download And Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)

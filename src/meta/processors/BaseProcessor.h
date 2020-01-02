@@ -18,12 +18,14 @@
 #include "meta/common/MetaCommon.h"
 #include "network/NetworkUtils.h"
 #include "meta/processors/Common.h"
+#include "meta/ActiveHostsMan.h"
 #include "stats/Stats.h"
 
 namespace nebula {
 namespace meta {
 
 using nebula::network::NetworkUtils;
+using FieldType = std::pair<std::string, nebula::cpp2::ValueType>;
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID) \
     if (spaceExist(spaceID) == Status::SpaceNotFound()) { \
@@ -120,6 +122,12 @@ protected:
             thriftID.set_user_id(static_cast<UserID>(id));
         case EntryType::CONFIG:
             break;
+        case EntryType::TAG_INDEX:
+            thriftID.set_tag_index_id(static_cast<TagIndexID>(id));
+            break;
+        case EntryType::EDGE_INDEX:
+            thriftID.set_edge_index_id(static_cast<EdgeIndexID>(id));
+            break;
         }
         return thriftID;
     }
@@ -156,8 +164,7 @@ protected:
     /**
      * Remove keys from start to end, doesn't contain end.
      * */
-    void doRemoveRange(const std::string& start,
-                       const std::string& end);
+    void doRemoveRange(const std::string& start, const std::string& end);
 
     /**
      * Scan keys from start to end, doesn't contain end.
@@ -205,9 +212,25 @@ protected:
     StatusOr<TagID> getTagId(GraphSpaceID spaceId, const std::string& name);
 
     /**
+     * Fetch the latest version tag's fields.
+     */
+    StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
+    getLatestTagFields(GraphSpaceID spaceId, const std::string& name);
+
+    /**
      * Return the edgeType for name.
      */
     StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
+
+    /**
+     * Fetch the latest version edge's fields.
+     */
+    StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
+    getLatestEdgeFields(GraphSpaceID spaceId, const std::string& name);
+
+    StatusOr<TagIndexID> getTagIndexID(GraphSpaceID spaceId, const std::string& indexName);
+
+    StatusOr<EdgeIndexID> getEdgeIndexID(GraphSpaceID spaceId, const std::string& indexName);
 
     StatusOr<UserID> getUserId(const std::string& account);
 

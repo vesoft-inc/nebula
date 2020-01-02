@@ -40,6 +40,12 @@ public:
         showType_ = std::move(sType);
     }
 
+    ShowSentence(ShowType sType, std::vector<int32_t>* list) {
+        kind_ = Kind::kShow;
+        list_.reset(list);
+        showType_ = std::move(sType);
+    }
+
     ShowSentence(ShowType sType, std::string *name) {
         kind_ = Kind::kShow;
         name_.reset(name);
@@ -52,12 +58,17 @@ public:
         return showType_;
     }
 
+    std::vector<int32_t>* getList() {
+        return list_.get();
+    }
+
     std::string* getName() {
         return name_.get();
     }
 
 private:
     ShowType                        showType_{ShowType::kUnknown};
+    std::unique_ptr<std::vector<int32_t>> list_;
     std::unique_ptr<std::string>    name_;
 };
 
@@ -284,10 +295,11 @@ public:
         subType_ = std::move(subType);
     }
 
-    ConfigSentence(SubType subType, ConfigRowItem* item) {
+    ConfigSentence(SubType subType, ConfigRowItem* item, bool force = false) {
         kind_ = Kind::kConfig;
         subType_ = std::move(subType);
         configItem_.reset(item);
+        isForce_ = force;
     }
 
     std::string toString() const override;
@@ -300,8 +312,13 @@ public:
         return configItem_.get();
     }
 
+    bool isForce() {
+        return isForce_;
+    }
+
 private:
     SubType                         subType_{SubType::kUnknown};
+    bool                            isForce_{false};
     std::unique_ptr<ConfigRowItem>  configItem_;
 };
 
@@ -311,9 +328,9 @@ public:
         hosts_.emplace_back(addr);
     }
 
-     std::string toString() const;
+    std::string toString() const;
 
-     std::vector<HostAddr> hosts() const {
+    std::vector<HostAddr> hosts() const {
         std::vector<HostAddr> result;
         result.reserve(hosts_.size());
         for (auto &host : hosts_) {

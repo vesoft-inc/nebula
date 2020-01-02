@@ -32,8 +32,7 @@
 # Root data path, multiple paths should be splitted by comma.
 # One path per instance, if --engine_type is `rocksdb'
 --data_path=data/storage
-# The type of part manager, [memory | meta]
---part_man_type=memory
+
 # The default reserved bytes for one batch operation
 --rocksdb_batch_size=4096
 # The default block cache size used in BlockBasedTable.
@@ -41,8 +40,6 @@
 --rocksdb_block_cache=4
 # The type of storage engine, `rocksdb', `memory', etc.
 --engine_type=rocksdb
-# The type of part, `simple', `consensus'...
---part_type=simple
 
 ############## rocksdb Options ##############
 --rocksdb_disable_wal=true

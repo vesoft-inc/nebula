@@ -11,20 +11,37 @@
 namespace nebula {
 namespace meta {
 
-const std::string kSpacesTable      = "__spaces__";    // NOLINT
-const std::string kPartsTable       = "__parts__";     // NOLINT
-const std::string kHostsTable       = "__hosts__";     // NOLINT
-const std::string kTagsTable        = "__tags__";      // NOLINT
-const std::string kEdgesTable       = "__edges__";     // NOLINT
-const std::string kIndexTable       = "__index__";     // NOLINT
-const std::string kUsersTable       = "__users__";     // NOLINT
-const std::string kRolesTable       = "__roles__";     // NOLINT
-const std::string kConfigsTable     = "__configs__";   // NOLINT
-const std::string kDefaultTable     = "__default__";   // NOLINT
-const std::string kSnapshotsTable   = "__snapshots__"; // NOLINT
+const std::string kSpacesTable         = "__spaces__";         // NOLINT
+const std::string kPartsTable          = "__parts__";          // NOLINT
+const std::string kHostsTable          = "__hosts__";          // NOLINT
+const std::string kTagsTable           = "__tags__";           // NOLINT
+const std::string kEdgesTable          = "__edges__";          // NOLINT
+const std::string kTagIndexesTable     = "__tag_indexes__";    // NOLINT
+const std::string kEdgeIndexesTable    = "__edge_indexes__";   // NOLINT
+const std::string kIndexTable          = "__index__";          // NOLINT
+const std::string kUsersTable          = "__users__";          // NOLINT
+const std::string kRolesTable          = "__roles__";          // NOLINT
+const std::string kConfigsTable        = "__configs__";        // NOLINT
+const std::string kDefaultTable        = "__default__";        // NOLINT
+const std::string kSnapshotsTable      = "__snapshots__";      // NOLINT
+const std::string kLastUpdateTimeTable = "__last_update_time__"; // NOLINT
 
 const std::string kHostOnline  = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";      // NOLINT
+
+std::string MetaServiceUtils::lastUpdateTimeKey() {
+    std::string key;
+    key.reserve(128);
+    key.append(kLastUpdateTimeTable.data(), kLastUpdateTimeTable.size());
+    return key;
+}
+
+std::string MetaServiceUtils::lastUpdateTimeVal(const int64_t timeInMilliSec) {
+    std::string val;
+    val.reserve(sizeof(int64_t));
+    val.append(reinterpret_cast<const char*>(&timeInMilliSec), sizeof(int64_t));
+    return val;
+}
 
 std::string MetaServiceUtils::spaceKey(GraphSpaceID spaceId) {
     std::string key;
@@ -40,7 +57,7 @@ std::string MetaServiceUtils::spaceVal(const cpp2::SpaceProperties &properties) 
     return val;
 }
 
-cpp2::SpaceProperties  MetaServiceUtils::parseSpace(folly::StringPiece rawData) {
+cpp2::SpaceProperties MetaServiceUtils::parseSpace(folly::StringPiece rawData) {
     cpp2::SpaceProperties properties;
     apache::thrift::CompactSerializer::deserialize(rawData, properties);
     return properties;
@@ -65,6 +82,16 @@ std::string MetaServiceUtils::partKey(GraphSpaceID spaceId, PartitionID partId) 
     key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
     key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID));
     return key;
+}
+
+GraphSpaceID MetaServiceUtils::parsePartKeySpaceId(folly::StringPiece key) {
+    return *reinterpret_cast<const GraphSpaceID*>(key.data() + kPartsTable.size());
+}
+
+PartitionID MetaServiceUtils::parsePartKeyPartId(folly::StringPiece key) {
+    return *reinterpret_cast<const PartitionID*>(key.data()
+                                                 + kPartsTable.size()
+                                                 + sizeof(GraphSpaceID));
 }
 
 std::string MetaServiceUtils::partVal(const std::vector<nebula::cpp2::HostAddr>& hosts) {
@@ -159,7 +186,8 @@ std::string MetaServiceUtils::schemaEdgeKey(GraphSpaceID spaceId,
     return key;
 }
 
-std::string MetaServiceUtils::schemaEdgeVal(const std::string& name, nebula::cpp2::Schema schema) {
+std::string MetaServiceUtils::schemaEdgeVal(const std::string& name,
+                                            const nebula::cpp2::Schema& schema) {
     auto len = name.size();
     std::string val, sval;
     apache::thrift::CompactSerializer::serialize(schema, &sval);
@@ -187,6 +215,18 @@ std::string MetaServiceUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, Sc
     return key;
 }
 
+std::string MetaServiceUtils::schemaTagVal(const std::string& name,
+                                           const nebula::cpp2::Schema& schema) {
+    int32_t len = name.size();
+    std::string val, sval;
+    apache::thrift::CompactSerializer::serialize(schema, &sval);
+    val.reserve(sizeof(int32_t) + name.size() + sval.size());
+    val.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
+    val.append(name);
+    val.append(sval);
+    return val;
+}
+
 SchemaVer MetaServiceUtils::parseTagVersion(folly::StringPiece key) {
     auto offset = kTagsTable.size() + sizeof(GraphSpaceID) + sizeof(TagID);
     return std::numeric_limits<SchemaVer>::max() -
@@ -210,23 +250,86 @@ std::string MetaServiceUtils::schemaTagsPrefix(GraphSpaceID spaceId) {
     return key;
 }
 
-std::string MetaServiceUtils::schemaTagVal(const std::string& name, nebula::cpp2::Schema schema) {
-    int32_t len = name.size();
-    std::string val, sval;
-    apache::thrift::CompactSerializer::serialize(schema, &sval);
-    val.reserve(sizeof(int32_t) + name.size() + sval.size());
-    val.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
-    val.append(name);
-    val.append(sval);
-    return val;
-}
-
 nebula::cpp2::Schema MetaServiceUtils::parseSchema(folly::StringPiece rawData) {
     nebula::cpp2::Schema schema;
     int32_t offset = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(rawData.begin());
     auto schval = rawData.subpiece(offset, rawData.size() - offset);
     apache::thrift::CompactSerializer::deserialize(schval, schema);
     return schema;
+}
+
+std::string MetaServiceUtils::tagIndexKey(GraphSpaceID spaceID, TagIndexID indexID) {
+    std::string key;
+    key.reserve(sizeof(GraphSpaceID) + sizeof(TagIndexID));
+    key.append(kTagIndexesTable.data(), kTagIndexesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&indexID), sizeof(TagIndexID));
+    return key;
+}
+
+std::string MetaServiceUtils::tagIndexVal(const std::string& name,
+                                          const nebula::meta::cpp2::IndexFields& fields) {
+    std::string key;
+    key.reserve(128);
+
+    int32_t length = name.size();
+    key.append(reinterpret_cast<const char*>(&length), sizeof(int32_t));
+    key.append(name);
+
+    std::string value;
+    apache::thrift::CompactSerializer::serialize(fields, &value);
+    return value;
+}
+
+std::string MetaServiceUtils::tagIndexPrefix(GraphSpaceID spaceId) {
+    std::string key;
+    key.reserve(kTagIndexesTable.size() + sizeof(GraphSpaceID));
+    key.append(kTagIndexesTable.data(), kTagIndexesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    return key;
+}
+
+std::string MetaServiceUtils::edgeIndexKey(GraphSpaceID spaceID, EdgeIndexID indexID) {
+    std::string key;
+    key.reserve(64);
+    key.append(kEdgeIndexesTable.data(), kEdgeIndexesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&indexID), sizeof(EdgeIndexID));
+    return key;
+}
+
+std::string MetaServiceUtils::edgeIndexVal(const std::string& name,
+                                           const nebula::meta::cpp2::IndexFields& fields) {
+    std::string key;
+    key.reserve(128);
+
+    int32_t length = name.size();
+    key.append(reinterpret_cast<const char*>(&length), sizeof(int32_t));
+    key.append(name);
+
+    std::string value;
+    apache::thrift::CompactSerializer::serialize(fields, &value);
+    return value;
+}
+
+std::string MetaServiceUtils::edgeIndexPrefix(GraphSpaceID spaceId) {
+    std::string key;
+    key.reserve(kEdgeIndexesTable.size() + sizeof(GraphSpaceID));
+    key.append(kEdgeIndexesTable.data(), kEdgeIndexesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
+    return key;
+}
+
+cpp2::IndexFields MetaServiceUtils::parseTagIndex(const folly::StringPiece& rawData) {
+    cpp2::IndexFields fields;
+    apache::thrift::CompactSerializer::deserialize(rawData, fields);
+    return fields;
+}
+
+cpp2::IndexFields MetaServiceUtils::parseEdgeIndex(const folly::StringPiece& rawData) {
+    cpp2::IndexFields fields;
+    apache::thrift::CompactSerializer::deserialize(rawData, fields);
+    return fields;
 }
 
 std::string MetaServiceUtils::indexSpaceKey(const std::string& name) {
@@ -263,6 +366,30 @@ std::string MetaServiceUtils::indexEdgeKey(GraphSpaceID spaceId,
     return key;
 }
 
+std::string MetaServiceUtils::indexTagIndexKey(GraphSpaceID spaceID,
+                                               const std::string& indexName) {
+    std::string key;
+    key.reserve(128);
+    key.append(kIndexTable.data(), kIndexTable.size());
+    EntryType type = EntryType::TAG_INDEX;
+    key.append(reinterpret_cast<const char*>(&type), sizeof(type));
+    key.append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID));
+    key.append(indexName);
+    return key;
+}
+
+std::string MetaServiceUtils::indexEdgeIndexKey(GraphSpaceID spaceID,
+                                                const std::string& indexName) {
+    std::string key;
+    key.reserve(128);
+    key.append(kIndexTable.data(), kIndexTable.size());
+    EntryType type = EntryType::EDGE_INDEX;
+    key.append(reinterpret_cast<const char*>(&type), sizeof(type));
+    key.append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID));
+    key.append(indexName);
+    return key;
+}
+
 std::string MetaServiceUtils::assembleSegmentKey(const std::string& segment,
                                                  const std::string& key) {
     std::string segmentKey;
@@ -278,50 +405,44 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
                                                   const cpp2::AlterSchemaOp op) {
     switch (op) {
         case cpp2::AlterSchemaOp::ADD:
-        {
             for (auto it = cols.begin(); it != cols.end(); ++it) {
                 if (it->get_name() == col.get_name()) {
-                    LOG(WARNING) << "Column existing : " << col.get_name();
+                    LOG(ERROR) << "Column existing: " << col.get_name();
                     return cpp2::ErrorCode::E_EXISTED;
                 }
             }
             cols.emplace_back(std::move(col));
             return cpp2::ErrorCode::SUCCEEDED;
-        }
         case cpp2::AlterSchemaOp::CHANGE:
-        {
             for (auto it = cols.begin(); it != cols.end(); ++it) {
                 if (col.get_name() == it->get_name()) {
                     *it = col;
                     return cpp2::ErrorCode::SUCCEEDED;
                 }
             }
-            break;
-        }
+            LOG(ERROR) << "Column not found: " << col.get_name();
+            return cpp2::ErrorCode::E_NOT_FOUND;
         case cpp2::AlterSchemaOp::DROP:
-        {
-            auto colName = col.get_name();
             for (auto it = cols.begin(); it != cols.end(); ++it) {
-                if (colName == it->get_name()) {
+                if (col.get_name() == it->get_name()) {
                     // Check if there is a TTL on the column to be deleted
                     if (!prop.get_ttl_col() ||
-                        (prop.get_ttl_col() && (*prop.get_ttl_col() != colName))) {
+                        (prop.get_ttl_col() && (*prop.get_ttl_col() != col.get_name()))) {
                         cols.erase(it);
                         return cpp2::ErrorCode::SUCCEEDED;
                     } else {
-                        LOG(WARNING) << "Column can't be dropped, a TTL attribute on it : "
-                                     << colName;
+                        LOG(ERROR) << "Column can't be dropped, a TTL attribute on it: "
+                                   << col.get_name();
                         return cpp2::ErrorCode::E_NOT_DROP;
                     }
                 }
             }
-            break;
-        }
-        default :
-            return cpp2::ErrorCode::E_UNKNOWN;
+            LOG(ERROR) << "Column not found: " << col.get_name();
+            return cpp2::ErrorCode::E_NOT_FOUND;
+        default:
+            LOG(ERROR) << "Alter schema operator not supported";
+            return cpp2::ErrorCode::E_UNSUPPORTED;
     }
-    LOG(WARNING) << "Column not found : " << col.get_name();
-    return cpp2::ErrorCode::E_NOT_FOUND;
 }
 
 cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
@@ -349,7 +470,7 @@ cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::Colu
         }
 
         if (!existed) {
-            LOG(WARNING) << "TTL column not found : " << ttlCol;
+            LOG(WARNING) << "TTL column not found: " << ttlCol;
             return cpp2::ErrorCode::E_NOT_FOUND;
         }
     }
@@ -457,7 +578,7 @@ std::string MetaServiceUtils::changePassword(folly::StringPiece val, folly::Stri
 }
 
 cpp2::UserItem MetaServiceUtils::parseUserItem(folly::StringPiece val) {
-    cpp2:: UserItem user;
+    cpp2::UserItem user;
     apache::thrift::CompactSerializer::deserialize(userItemVal(val), user);
     return user;
 }

@@ -4,7 +4,7 @@ Similar with SQL, `ORDER BY` can be used to sort in ascending (`ASC`) or descend
 And it can only be used in the `PIPE`-syntax (`|`).
 
 ```ngql
-| ORDER BY <prop> ASC | DESC [, <prop> ASC | DESC ...]
+ORDER BY <expression> [ASC | DESC] [, <expression> [ASC | DESC] ...]
 ```
 
 By default, `ORDER BY` sorts the records in ascending order if no `ASC` or `DESC` is given.
