@@ -7,7 +7,7 @@
 // 1. Gauge, the time serial value
 // 2. Histogram, the time serial value distribution
 // The raw data can be transformed to multiple specified formats (various user-defined metric formats)
-// e.g.
+// E.G.
 // {
 //     "name": "meta",
 //     "gauges": [...],
@@ -42,7 +42,7 @@
 
 ### 接入方式
 
-Prometheus 支持 push/pull 两种 metrics 获取方式，**Nebula Graph** 支持 pull 方式，在 pull 方式下，需要 Prometheus 周期性地通过 HTTP 请求到特定的端口拉取 metrics 数据。
+Prometheus 支持 push/pull 两种 metrics 获取方式，**Nebula Graph** 支持 pull 方式，在 pull 方式下，需要 Prometheus 周期性地通过 HTTP 请求到特定的端点拉取 metrics 数据。
 
 ### 启动 Nebula Graph
 
@@ -52,9 +52,11 @@ Prometheus 支持 push/pull 两种 metrics 获取方式，**Nebula Graph** 支�
 
 nebula-prom-transformer 是一个将 **Nebula Graph** metrics 转换成 Prometheus 可以解读的格式的工具，它从 **Nebula Graph** 拉取数据抓换格式并暴露出数据端点，用户可以配置 Prometheus 到对应的端点拉取数据，具体用法请参考 [README](https://github.com/Shylock-Hg/nebula-prom-transformer)。
 
+此处需要配置启动三个 nebula-prom-transformer 从 11000、12000、13000 端口拉取数据，并分别暴露到 11001、12001、13001 端口，方便 Prometheus 读取。
+
 ### 配置启动 Prometheus
 
-本节介绍 Prometheus 配置，让 Prometheus 到配置好的端口拉取 metrics 数据。Prometheus 安装配置详情请参考 Prometheus [官方文档](https://prometheus.io/docs/prometheus/latest/getting_started/)。本节只修改拉取 metrics 数据的端口。示例配置文件 `prometheus.yml` 如下。
+本节介绍 Prometheus 配置，让 Prometheus 到配置好的端口拉取 metrics 数据。Prometheus 安装配置详情请参考 Prometheus [官方文档](https://prometheus.io/docs/prometheus/latest/getting_started/)。本节只修改拉取 metrics 数据的端点。示例配置文件 `prometheus.yml` 如下。
 
 ```yaml
 # my global config
@@ -88,16 +90,16 @@ scrape_configs:
     - targets: ['localhost:11001', 'localhost:12001', 'localhost:13001']
 ```
 
-如上所示，对于默认配置单机启动的 **Nebula Graph** 来说，只需要启动三个 nebula-prom-transformer 拉取 **Nebula Graph** metrics 数据并监听 11000、12000、13000 三个端口的数据即可。如果是集群或者非默认配置启动，需要将所有服务的 HTTP 端口暴露给 Prometheus。
+如上所示，对于默认配置单机启动的 **Nebula Graph** 来说，需要启动三个 nebula-prom-transformer 拉取 **Nebula Graph** metrics 数据并暴露到 11001、12001、13001 三个端口。如果是集群或者非默认配置启动，需要拉取所有服务的 metrics 数据并暴露给 Prometheus。
 
 ### 通过 Prometheus 查看 metrics
 
-成功执行以上三个步骤后，**Nebula Graph** 和 Prometheus 已启动配置连接完成，此时可以通过浏览器访问 Prometheus 提供的图形化操作界面，在浏览器中输入 `http://localhost:9090`，并在 Prometheus 的查询框内输入 `add_edges_latency_bucket`，并点击 `execute` 按钮，就可以查询到对应 metrics 值，如下图所示：
-![image](https://user-images.githubusercontent.com/42762957/69702038-465c3200-1129-11ea-8641-2ece295390a1.png)
+成功执行以上三个步骤后，**Nebula Graph** 和 Prometheus 已启动配置连接完成，此时可以通过浏览器访问 Prometheus 提供的图形化操作界面，在浏览器中输入 `http://localhost:9090`，并在 Prometheus 的查询框内输入 `graph_metaClient_qps`，并点击 `execute` 按钮，就可以查询到对应 metrics 值，如下图所示：
+![image](https://user-images.githubusercontent.com/42762957/71650958-de66c000-2d54-11ea-8474-e24b13e75a69.png)
 
 ### OpenTSDB 接入(可选，不推荐）
 
-除了 Prometheus 存储引擎外，**Nebula Graph** 还支持多种第三方存储引擎（没有特殊需求，优先使用 Prometheus）。例如 OpenTSDB。Prometheus 支持将数据写入 OpenTSDB，但是不支持从 OpenTSDB 读取查询。
+除了 Prometheus 的存储引擎外，**Nebula Graph** 还支持多种第三方存储引擎（没有特殊需求，优先使用 Prometheus）。例如 OpenTSDB。Prometheus 支持将数据写入 OpenTSDB，但是不支持从 OpenTSDB 读取查询。
 
 接入 OpenTSDB 的拓扑图如下所示：
 
@@ -109,7 +111,7 @@ Prometheus 提供了一个第三方存储的适配器，可以将 Prometheus 的
 
 接入步骤：
 
-1. 按照前言启动 Prometheus
+1. 启动 Prometheus
 2. 启动 OpenTSDB，参考[安装文档](http://opentsdb.net/docs/build/html/installation.html)或 [Docker 安装](https://hub.docker.com/r/opentsdb/opentsdb)
 3. 安装 Go 语言环境，参考 [Go 安装](https://golang.org/doc/install)
 4. Prometheus [编译启动](https://github.com/prometheus/prometheus/tree/master/documentation/examples/remote_storage/remote_storage_adapter)

@@ -7,7 +7,7 @@
 // 1. Gauge, the time serial value
 // 2. Histogram, the time serial value distribution
 // The raw data can be transformed to multiple specified formats (various user-defined metric formats)
-// e.g.
+// E.G.
 // {
 //     "name": "meta",
 //     "gauges": [...],
@@ -52,7 +52,9 @@ Refer to [Get Started](https://github.com/vesoft-inc/nebula/blob/master/docs/man
 
 nebula-prom-transformer is a tool that converts **Nebula Graph** metrics into Prometheus interpretable format. It pulls data from **Nebula Graph** and exposes the data endpoints. You can configure Prometheus to pull data from the specified endpoints by referring to the [README](https://github.com/Shylock-Hg/nebula-prom-transformer) documentation.
 
-### Configuring and Start Prometheus
+Here you need to configure and start three nebula-prom-transformers to pull data from ports 11000, 12000, and 13000 and expose them to ports 11001, 12001, and 13001, respectively so that Prometheus can read the data.
+
+### Configuring and Starting Prometheus
 
 This section introduces how to configure Prometheus and make it pull metrics data from the configured endpoints. For details on Prometheus installation and configuration, please refer to Prometheus [Official Documentation](https://prometheus.io/docs/prometheus/latest/getting_started/). In this section, we only modify the endpoints that pull the metrics data. An example configuration file `prometheus.yml` is as follows.
 
@@ -88,17 +90,17 @@ scrape_configs:
     - targets: ['localhost:11001', 'localhost:12001', 'localhost:13001']
 ```
 
-As shown above, for default configuration **Nebula Graph**, i.e. the single node, we only need to start three nebula-prom-transformer services to pull **Nebula Graph** metrics data and monitor the 11000, 12000, and 13000 endpoints data. For non-default configuration or clusters, you need to expose all the HTTP endpoints of all services to Prometheus.
+As shown above, for default configuration **Nebula Graph**, i.e. the single node, we need to start three nebula-prom-transformer services to pull **Nebula Graph** metrics data and expose the data to endpoints 11001, 12001, and 13000. For non-default configuration or clusters, you need to pull all the metrics data and expose them to Prometheus.
 
 ### Checking Metrics via Prometheus
 
-After executing the above three steps successfully, all the configurations are completed and **Nebula Graph** and Prometheus are connected. Now you can access the graphical operation interface provided by Prometheus through a browser, input `http: // localhost: 9090` in the browser, then input `add_edges_latency_bucket` in the query box of Prometheus, click the `execute` button to check the corresponding metrics values. Consider the following example:
+After executing the above three steps successfully, all the configurations are completed and **Nebula Graph** and Prometheus are connected. Now you can access the graphical operation interface provided by Prometheus through a browser, input `http: // localhost: 9090` in the browser, then input `graph_metaClient_qps` in the query box of Prometheus, click the `execute` button to check the corresponding metrics values. Consider the following example:
 
-![image](https://user-images.githubusercontent.com/42762957/69702038-465c3200-1129-11ea-8641-2ece295390a1.png)
+![image](https://user-images.githubusercontent.com/42762957/71650958-de66c000-2d54-11ea-8474-e24b13e75a69.png)
 
 ### Accessing to OpenTSDB (Optional, not recommend)
 
-In addition to the Prometheus storage engine, **Nebula Graph** also supports a variety of third-party storage engines (Prometheus is preferred if there is no special requirements). One example is OpenTSDB. Prometheus supports writing data to OpenTSDB, but does not support reading queries from OpenTSDB.
+In addition to the storage engine of Prometheus, **Nebula Graph** also supports a variety of third-party storage engines (Prometheus is preferred if there is no special requirements). One example is OpenTSDB. Prometheus supports writing data to OpenTSDB, but does not support reading queries from OpenTSDB.
 
 The topology of access to OpenTSDB is shown below:
 
