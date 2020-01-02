@@ -354,7 +354,6 @@ Status GroupByExecutor::generateOutputSchema() {
     if (resultSchema_ == nullptr) {
         resultSchema_ = std::make_shared<SchemaWriter>();
         auto colnames = getResultColumnNames();
-        CHECK(!rows_.empty());
         for (auto i = 0u; i < rows_[0].columns.size(); i++) {
             SupportedType type;
             switch (rows_[0].columns[i].getType()) {
@@ -391,7 +390,7 @@ Status GroupByExecutor::generateOutputSchema() {
 StatusOr<std::unique_ptr<InterimResult>> GroupByExecutor::setupInterimResult() {
     auto result = std::make_unique<InterimResult>(getResultColumnNames());
     if (rows_.empty() || resultSchema_ == nullptr) {
-        return result;
+        return std::move(result);
     }
     // Generate results
     std::unique_ptr<RowSetWriter> rsWriter = std::make_unique<RowSetWriter>(resultSchema_);
@@ -400,7 +399,7 @@ StatusOr<std::unique_ptr<InterimResult>> GroupByExecutor::setupInterimResult() {
     if (rsWriter != nullptr) {
         result->setInterim(std::move(rsWriter));
     }
-    return result;
+    return std::move(result);
 }
 
 

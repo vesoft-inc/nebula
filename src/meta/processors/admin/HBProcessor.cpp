@@ -15,7 +15,6 @@ DEFINE_bool(hosts_whitelist_enabled, false, "Check host whether in whitelist whe
 namespace nebula {
 namespace meta {
 
-
 void HBProcessor::process(const cpp2::HBReq& req) {
     HostAddr host(req.host.ip, req.host.port);
     if (FLAGS_hosts_whitelist_enabled
@@ -39,8 +38,16 @@ void HBProcessor::process(const cpp2::HBReq& req) {
     }
 
     LOG(INFO) << "Receive heartbeat from " << host;
-    HostInfo info(time::WallClock::fastNowInMilliSec());
-    auto ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info);
+    auto ret = kvstore::ResultCode::SUCCEEDED;
+    if (req.get_in_storaged()) {
+        HostInfo info(time::WallClock::fastNowInMilliSec());
+        ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info);
+        if (req.__isset.leader_partIds) {
+            const auto& leaderIds = req.get_leader_partIds();
+            UNUSED(leaderIds);
+            // TODO(zhangguoqing) put the leader parts information into kvstore
+        }
+    }
     resp_.set_code(to(ret));
     if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
         auto leaderRet = kvstore_->partLeader(kDefaultSpaceId, kDefaultPartId);
@@ -48,6 +55,8 @@ void HBProcessor::process(const cpp2::HBReq& req) {
             resp_.set_leader(toThriftHost(nebula::value(leaderRet)));
         }
     }
+    int64_t lastUpdateTime = LastUpdateTimeMan::get(this->kvstore_);
+    resp_.set_last_update_time_in_ms(lastUpdateTime);
     onFinished();
 }
 

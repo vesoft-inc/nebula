@@ -173,10 +173,9 @@ public:
 
     ResultCode setWriteBlocking(GraphSpaceID spaceId, bool sign) override;
 
-    int32_t allLeader(std::unordered_map<GraphSpaceID,
-                                         std::vector<PartitionID>>& leaderIds) override;
-
     bool isLeader(GraphSpaceID spaceId, PartitionID partId);
+
+    ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
 
     /**
      * Implement four interfaces in Handler.
@@ -189,7 +188,8 @@ public:
 
     void removePart(GraphSpaceID spaceId, PartitionID partId) override;
 
-    ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
+    int32_t allLeader(std::unordered_map<GraphSpaceID,
+                                         std::vector<PartitionID>>& leaderIds) override;
 
 private:
     void updateSpaceOption(GraphSpaceID spaceId,

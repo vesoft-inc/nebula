@@ -266,7 +266,8 @@ void FetchEdgesExecutor::fetchEdges() {
     }
 
     if (props.empty()) {
-        doError(Status::Error("No props declared."));
+        LOG(WARNING) << "Empty props of tag " << labelName_;
+        doEmptyResp();
         return;
     }
 
