@@ -14,7 +14,9 @@ import logging
 from _pytest.main import ExitCode
 from time import gmtime, strftime
 
-TEST_DIR = os.environ['NEBULA_TEST_HOME']
+NEBULA_HOME = os.environ['NEBULA_HOME']
+TEST_DIR = os.path.join(os.environ['NEBULA_HOME'], 'tests')
+sys.path.insert(0, NEBULA_HOME)
 RESULT_DIR = os.path.join(os.environ['NEBULA_TEST_LOGS_DIR'], 'results')
 LOGGING_ARGS = {'--junit-xml': 'TEST-nebula-{0}.xml',
                 '--report-log': 'TEST-nebula-{0}.log',

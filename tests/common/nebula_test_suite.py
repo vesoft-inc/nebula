@@ -130,6 +130,13 @@ class NebulaTestSuite(object):
                 if col.get_timestamp() != expect:
                     return False, msg
             return True, ''
+
+        if col.getType() == ttypes.ColumnValue.PATH:
+            msg = self.check_format_str.format(col.get_path(), expect)
+            if col.get_path() != expect:
+                return False, msg
+            return True, ''
+
         return False, 'ERROR: Type unsupported'
 
     @classmethod

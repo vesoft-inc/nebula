@@ -9,6 +9,7 @@ import re
 import sys
 import time
 
+from graph import ttypes
 from tests.common.nebula_test_suite import NebulaTestSuite
 
 
@@ -59,6 +60,9 @@ class TestNebula(NebulaTestSuite):
         resp = self.execute('INSERT EDGE like(likeness) VALUES 1->3:(90.0)')
         self.check_resp_successed(resp)
 
+        resp = self.execute('INSERT EDGE like(likeness) VALUES 2->3:(100.0)')
+        self.check_resp_successed(resp)
+
     def test_query(self):
         time.sleep(3)
         resp = self.execute('USE space1')
@@ -69,6 +73,35 @@ class TestNebula(NebulaTestSuite):
         assert resp.error_code == 0
 
         expect_result = [['Lily', 9, 80.0], ['Tom', 10, 90.0]]
+        self.check_result(resp.rows, expect_result)
+        expect_result_OO = [['Tom', 10, 90.0], ['Lily', 9, 80.0]]
+        self.search_result(resp.rows, expect_result_OO)
+
+    def test_path(self):
+        time.sleep(3)
+        resp = self.execute('USE space1')
+        assert resp.error_code == 0
+
+        resp = self.execute_query('FIND SHORTEST PATH FROM 1 to 3 OVER *')
+        assert resp.error_code == 0
+
+        path = ttypes.Path()
+        pathEntry1 = ttypes.PathEntry()
+        vertex1 = ttypes.Vertex()
+        vertex1.id = 1
+        pathEntry1.set_vertex(vertex1)
+        pathEntry2 = ttypes.PathEntry()
+        edge = ttypes.Edge()
+        edge.type = b"like"
+        edge.ranking = 0
+        pathEntry2.set_edge(edge)
+        vertex2 = ttypes.Vertex()
+        vertex2.id = 3
+        pathEntry3 = ttypes.PathEntry()
+        pathEntry3.set_vertex(vertex2)
+        path.entry_list = [pathEntry1, pathEntry2, pathEntry3]
+        
+        expect_result = [[path]]
         self.check_result(resp.rows, expect_result)
 
     @classmethod
