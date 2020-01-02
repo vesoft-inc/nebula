@@ -10,8 +10,6 @@
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 
-DECLARE_int32(load_data_interval_secs);
-
 namespace nebula {
 namespace graph {
 
@@ -87,6 +85,7 @@ TEST_F(SchemaTest, metaCommunication) {
                                int, std::string, std::string>> expected {
             {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online", 0,
              "No valid partition", "No valid partition"},
+            {"Total", "", "", 0, "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -759,10 +758,9 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW HOSTS";
         client->execute(query, resp);
-        ASSERT_EQ(1, (*(resp.get_rows())).size());
+        ASSERT_EQ(2, (*(resp.get_rows())).size());
     }
 
-    sleep(FLAGS_load_data_interval_secs + 1);
     int retry = 60;
     while (retry-- > 0) {
         auto spaceResult = gEnv->metaClient()->getSpaceIdByNameFromCache("default_space");
@@ -786,6 +784,7 @@ TEST_F(SchemaTest, TTLtest) {
                                int, std::string, std::string>> expected {
             {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online", 0,
              "No valid partition", "No valid partition"},
+            {"Total", "", "", 0, "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

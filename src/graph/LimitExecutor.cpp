@@ -82,7 +82,7 @@ void LimitExecutor::feedResult(std::unique_ptr<InterimResult> result) {
 StatusOr<std::unique_ptr<InterimResult>> LimitExecutor::setupInterimResult() {
     auto result = std::make_unique<InterimResult>(std::move(colNames_));
     if (rows_.empty()) {
-        return result;
+        return std::move(result);
     }
 
     auto rsWriter = std::make_unique<RowSetWriter>(inputs_->schema());
@@ -121,7 +121,7 @@ StatusOr<std::unique_ptr<InterimResult>> LimitExecutor::setupInterimResult() {
     if (rsWriter != nullptr) {
         result->setInterim(std::move(rsWriter));
     }
-    return result;
+    return std::move(result);
 }
 
 

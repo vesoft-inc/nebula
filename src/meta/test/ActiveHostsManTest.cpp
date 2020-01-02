@@ -52,6 +52,29 @@ TEST(ActiveHostsManTest, NormalTest) {
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
 }
 
+TEST(LastUpdateTimeManTest, NormalTest) {
+    fs::TempDir rootPath("/tmp/LastUpdateTimeManTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+
+    ASSERT_EQ(0, LastUpdateTimeMan::get(kv.get()));
+    int64_t now = time::WallClock::fastNowInMilliSec();
+
+    LastUpdateTimeMan::update(kv.get(), now);
+    ASSERT_EQ(now, LastUpdateTimeMan::get(kv.get()));
+    LastUpdateTimeMan::update(kv.get(), now + 100);
+    ASSERT_EQ(now + 100, LastUpdateTimeMan::get(kv.get()));
+
+    LastUpdateTimeMan::update(kv.get(), now - 100);
+    {
+        auto key = MetaServiceUtils::lastUpdateTimeKey();
+        std::string val;
+        auto ret = kv->get(kDefaultSpaceId, kDefaultPartId, key, &val);
+        ASSERT_EQ(ret, kvstore::ResultCode::SUCCEEDED);
+        int64_t lastUpdateTime = *reinterpret_cast<const int64_t*>(val.data());
+        ASSERT_EQ(now - 100, lastUpdateTime);
+    }
+}
+
 }  // namespace meta
 }  // namespace nebula
 
@@ -62,5 +85,4 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
 
