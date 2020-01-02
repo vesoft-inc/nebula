@@ -54,6 +54,8 @@ class NebulaTestPlugin(object):
         if report.passed:
             self.tests_executed.add(report.nodeid)
 
+    # link to pytest_addoption
+    # https://docs.pytest.org/en/latest/reference.html#_pytest.hookspec.pytest_addoption
     def pytest_addoption(self, parser, pluginmanager):
         parser.addoption('--address',
                          dest='address',
@@ -68,6 +70,8 @@ class NebulaTestPlugin(object):
                          default='password',
                          help='the password of Nebula')
 
+    # link to pytest_configure
+    # https://docs.pytest.org/en/latest/reference.html#_pytest.hookspec.pytest_configure
     def pytest_configure(self, config):
         configure_logging()
         pytest.cmdline.address = config.getoption("address")
