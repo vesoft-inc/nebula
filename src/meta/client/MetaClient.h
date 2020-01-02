@@ -358,8 +358,16 @@ public:
     StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>>
     getTagIndexFromCache(GraphSpaceID spaceId, IndexID indexID);
 
+    StatusOr<TagID>
+    getRelatedTagIDByIndexNameFromCache(const GraphSpaceID space,
+                                        const std::string& indexName);
+
     StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>>
     getEdgeIndexFromCache(GraphSpaceID spaceId, IndexID indexID);
+
+    StatusOr<EdgeType>
+    getRelatedEdgeTypeByIndexNameFromCache(const GraphSpaceID space,
+                                           const std::string& indexName);
 
     StatusOr<std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>>
     getTagIndexesFromCache(GraphSpaceID spaceId);

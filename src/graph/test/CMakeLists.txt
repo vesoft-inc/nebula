@@ -93,29 +93,6 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        graph_http_test
-    SOURCES
-        GraphHttpHandlerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:graph_http_handler>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:client_cpp_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
-        ${GRAPH_TEST_LIBS}
-    LIBRARIES
-        proxygenhttpserver
-        proxygenlib
-        ${THRIFT_LIBRARIES}
-        ${ROCKSDB_LIBRARIES}
-        wangle
-        gtest
-)
-
-nebula_add_test(
-    NAME
         data_test
     SOURCES
         DataTest.cpp

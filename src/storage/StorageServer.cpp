@@ -8,7 +8,6 @@
 #include "network/NetworkUtils.h"
 #include "storage/StorageFlags.h"
 #include "storage/StorageServiceHandler.h"
-#include "storage/http/StorageHttpStatusHandler.h"
 #include "storage/http/StorageHttpDownloadHandler.h"
 #include "storage/http/StorageHttpIngestHandler.h"
 #include "storage/http/StorageHttpAdminHandler.h"
@@ -61,9 +60,6 @@ bool StorageServer::initWebService() {
     webWorkers_->start(FLAGS_storage_http_thread_num, "http thread pool");
     LOG(INFO) << "Http Thread Pool started";
 
-    WebService::registerHandler("/status", [] {
-        return new StorageHttpStatusHandler();
-    });
     WebService::registerHandler("/download", [this] {
         auto* handler = new storage::StorageHttpDownloadHandler();
         handler->init(hdfsHelper_.get(), webWorkers_.get(), kvstore_.get(), dataPaths_);

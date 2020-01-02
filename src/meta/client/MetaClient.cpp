@@ -1421,6 +1421,22 @@ MetaClient::getTagIndexFromCache(GraphSpaceID spaceId, IndexID indexID) {
     }
 }
 
+StatusOr<TagID>
+MetaClient::getRelatedTagIDByIndexNameFromCache(const GraphSpaceID space,
+                                                const std::string& indexName) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    auto indexRet = getTagIndexByNameFromCache(space, indexName);
+    if (!indexRet.ok()) {
+        LOG(ERROR) << "Index " << indexName << " Not Found";
+        return indexRet.status();
+    }
+
+    return indexRet.value()->get_schema_id().get_tag_id();
+}
+
 StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>>
 MetaClient::getEdgeIndexFromCache(GraphSpaceID spaceId, IndexID indexID) {
     if (!ready_) {
@@ -1441,6 +1457,22 @@ MetaClient::getEdgeIndexFromCache(GraphSpaceID spaceId, IndexID indexID) {
             return iter->second;
         }
     }
+}
+
+StatusOr<EdgeType>
+MetaClient::getRelatedEdgeTypeByIndexNameFromCache(const GraphSpaceID space,
+                                                   const std::string& indexName) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    auto indexRet = getEdgeIndexByNameFromCache(space, indexName);
+    if (!indexRet.ok()) {
+        LOG(ERROR) << "Index " << indexName << " Not Found";
+        return indexRet.status();
+    }
+
+    return indexRet.value()->get_schema_id().get_edge_type();
 }
 
 StatusOr<std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>>
