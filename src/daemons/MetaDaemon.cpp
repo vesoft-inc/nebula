@@ -9,7 +9,6 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "meta/MetaServiceHandler.h"
 #include "meta/MetaHttpIngestHandler.h"
-#include "meta/MetaHttpStatusHandler.h"
 #include "meta/MetaHttpDownloadHandler.h"
 #include "meta/MetaHttpReplaceHostHandler.h"
 #include "webservice/WebService.h"
@@ -134,9 +133,6 @@ bool initWebService(nebula::kvstore::KVStore* kvstore,
                     nebula::hdfs::HdfsCommandHelper* helper,
                     nebula::thread::GenericThreadPool* pool) {
     LOG(INFO) << "Starting Meta HTTP Service";
-    nebula::WebService::registerHandler("/status", [] {
-        return new nebula::meta::MetaHttpStatusHandler();
-    });
     nebula::WebService::registerHandler("/download-dispatch", [kvstore, helper, pool] {
         auto handler = new nebula::meta::MetaHttpDownloadHandler();
         handler->init(kvstore, helper, pool);
