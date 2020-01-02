@@ -1169,6 +1169,9 @@ assignment_sentence
     : VARIABLE ASSIGN piped_sentence {
         $$ = new AssignmentSentence($1, $3);
     }
+    | VARIABLE ASSIGN set_sentence {
+        $$ = new AssignmentSentence($1, $3);
+    }
     ;
 
 insert_vertex_sentence
