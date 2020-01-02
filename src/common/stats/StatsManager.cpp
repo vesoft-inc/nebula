@@ -40,9 +40,10 @@ int32_t StatsManager::registerStats(folly::StringPiece counterName) {
     auto& sm = get();
 
     std::string name = counterName.toString();
+    folly::RWSpinLock::WriteHolder wh(sm.nameMapLock_);
     auto it = sm.nameMap_.find(name);
     if (it != sm.nameMap_.end()) {
-        LOG(INFO) << "The counter \"" << name << "\" already exists";
+        VLOG(2) << "The counter \"" << name << "\" already exists";
         return it->second;
     }
 
@@ -66,15 +67,14 @@ int32_t StatsManager::registerHisto(folly::StringPiece counterName,
                                     StatsManager::VT bucketSize,
                                     StatsManager::VT min,
                                     StatsManager::VT max) {
-    LOG(INFO) << "registerHisto, bucketSize: " << bucketSize
-              << ", min: " << min << ", max: " << max;
     using std::chrono::seconds;
 
     auto& sm = get();
     std::string name = counterName.toString();
+    folly::RWSpinLock::WriteHolder wh(sm.nameMapLock_);
     auto it = sm.nameMap_.find(name);
     if (it != sm.nameMap_.end()) {
-        LOG(ERROR) << "The counter \"" << name << "\" already exists";
+        VLOG(2) << "The counter \"" << name << "\" already exists";
         return it->second;
     }
 
@@ -89,6 +89,9 @@ int32_t StatsManager::registerHisto(folly::StringPiece counterName,
                 StatsType(60, {seconds(60), seconds(600), seconds(3600)}))));
     int32_t index = - sm.histograms_.size();
     sm.nameMap_[name] = index;
+
+    LOG(INFO) << "registerHisto, bucketSize: " << bucketSize
+              << ", min: " << min << ", max: " << max;
     return index;
 }
 

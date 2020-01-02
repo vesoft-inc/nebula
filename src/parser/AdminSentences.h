@@ -40,6 +40,12 @@ public:
         showType_ = std::move(sType);
     }
 
+    ShowSentence(ShowType sType, std::vector<int32_t>* list) {
+        kind_ = Kind::kShow;
+        list_.reset(list);
+        showType_ = std::move(sType);
+    }
+
     ShowSentence(ShowType sType, std::string *name) {
         kind_ = Kind::kShow;
         name_.reset(name);
@@ -52,12 +58,17 @@ public:
         return showType_;
     }
 
+    std::vector<int32_t>* getList() {
+        return list_.get();
+    }
+
     std::string* getName() {
         return name_.get();
     }
 
 private:
     ShowType                        showType_{ShowType::kUnknown};
+    std::unique_ptr<std::vector<int32_t>> list_;
     std::unique_ptr<std::string>    name_;
 };
 
@@ -317,9 +328,9 @@ public:
         hosts_.emplace_back(addr);
     }
 
-     std::string toString() const;
+    std::string toString() const;
 
-     std::vector<HostAddr> hosts() const {
+    std::vector<HostAddr> hosts() const {
         std::vector<HostAddr> result;
         result.reserve(hosts_.size());
         for (auto &host : hosts_) {
