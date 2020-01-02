@@ -21,15 +21,13 @@ public:
         FINISHED        = 0x03,
         FAILED          = 0x04,
         STOPPED         = 0x05,
-        INVALID         = 0x06,
+        INVALID         = 0x99,
     };
 
     static std::string toString(Status st);
     static Status toStatus(const std::string& strStatus);
-    // static bool laterThan(const std::string& lhs, const std::string& rhs);
     static bool laterThan(Status lhs, Status rhs);
 private:
-    // static int phaseNumber(const std::string& phase);
     static int phaseNumber(Status st);
 };
 
