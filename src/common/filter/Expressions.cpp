@@ -161,7 +161,7 @@ const char* AliasPropertyExpression::decode(const char *pos, const char *end) {
         auto size = *reinterpret_cast<const uint16_t*>(pos);
         pos += 2;
 
-        THROW_IF_NO_SPACE(pos, end, size);
+        THROW_IF_NO_SPACE(pos, end, static_cast<uint64_t>(size));
         ref_ = std::make_unique<std::string>(pos, size);
         pos += size;
     }
@@ -170,7 +170,7 @@ const char* AliasPropertyExpression::decode(const char *pos, const char *end) {
         auto size = *reinterpret_cast<const uint16_t*>(pos);
         pos += 2;
 
-        THROW_IF_NO_SPACE(pos, end, size);
+        THROW_IF_NO_SPACE(pos, end, static_cast<uint64_t>(size));
         alias_ = std::make_unique<std::string>(pos, size);
         pos += size;
     }
@@ -179,7 +179,7 @@ const char* AliasPropertyExpression::decode(const char *pos, const char *end) {
         auto size = *reinterpret_cast<const uint16_t*>(pos);
         pos += 2;
 
-        THROW_IF_NO_SPACE(pos, end, size);
+        THROW_IF_NO_SPACE(pos, end, static_cast<uint64_t>(size));
         prop_ = std::make_unique<std::string>(pos, size);
         pos += size;
     }
@@ -370,7 +370,7 @@ void PrimaryExpression::encode(Cord &cord) const {
 
 
 const char* PrimaryExpression::decode(const char *pos, const char *end) {
-    THROW_IF_NO_SPACE(pos, end, 1);
+    THROW_IF_NO_SPACE(pos, end, 1UL);
     auto which = *reinterpret_cast<const uint8_t*>(pos++);
     switch (which) {
         case VAR_INT64:
@@ -391,7 +391,7 @@ const char* PrimaryExpression::decode(const char *pos, const char *end) {
             THROW_IF_NO_SPACE(pos, end, 2UL);
             auto size = *reinterpret_cast<const uint16_t*>(pos);
             pos += 2;
-            THROW_IF_NO_SPACE(pos, end, size);
+            THROW_IF_NO_SPACE(pos, end, static_cast<uint64_t>(size));
             operand_ = std::string(pos, size);
             pos += size;
             break;
@@ -472,7 +472,7 @@ const char* FunctionCallExpression::decode(const char *pos, const char *end) {
     auto size = *reinterpret_cast<const uint16_t*>(pos);
     pos += 2;
 
-    THROW_IF_NO_SPACE(pos, end, size);
+    THROW_IF_NO_SPACE(pos, end, static_cast<uint64_t>(size));
     name_ = std::make_unique<std::string>(pos, size);
     pos += size;
 

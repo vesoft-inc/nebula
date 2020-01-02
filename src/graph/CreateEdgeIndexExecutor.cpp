@@ -28,13 +28,14 @@ void CreateEdgeIndexExecutor::execute() {
 
     auto *mc = ectx()->getMetaClient();
     const auto *name = sentence_->indexName();
+    auto *edgeName = sentence_->edgeName();
+    auto columns = sentence_->names();
     auto spaceId = ectx()->rctx()->session()->space();
 
-    std::map<std::string, std::vector<std::string>> indexProperties;
-    indexProperties.emplace(*(sentence_->edgeName()), std::move(sentence_->names()));
     auto future = mc->createEdgeIndex(spaceId,
                                       *name,
-                                      std::move(indexProperties),
+                                      *edgeName,
+                                      columns,
                                       sentence_->isIfNotExist());
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {

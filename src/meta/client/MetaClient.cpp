@@ -1124,7 +1124,7 @@ MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name) {
 folly::Future<StatusOr<TagIndexID>>
 MetaClient::createTagIndex(GraphSpaceID spaceID,
                            std::string name,
-                           std::map<std::string, std::vector<std::string>>&& properties,
+                           std::map<std::string, std::vector<std::string>> properties,
                            bool ifNotExists) {
     cpp2::CreateTagIndexReq req;
     req.set_space_id(std::move(spaceID));
@@ -1149,7 +1149,7 @@ folly::Future<StatusOr<TagIndexID>>
 MetaClient::createTagIndex(GraphSpaceID spaceID,
                            std::string indexName,
                            std::string tagName,
-                           std::vector<std::string>&& fields,
+                           std::vector<std::string> fields,
                            bool ifNotExists) {
     std::map<std::string, std::vector<std::string>> properties;
     properties.emplace(std::move(tagName), std::move(fields));
@@ -1207,14 +1207,14 @@ MetaClient::listTagIndexes(GraphSpaceID spaceID) {
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::rebuildTagIndex(GraphSpaceID, std::string) {
+MetaClient::buildTagIndex(GraphSpaceID, std::string) {
     return Status::Error("unsupported");
 }
 
 folly::Future<StatusOr<EdgeIndexID>>
 MetaClient::createEdgeIndex(GraphSpaceID spaceID,
                             std::string name,
-                            std::map<std::string, std::vector<std::string>>&& properties,
+                            std::map<std::string, std::vector<std::string>> properties,
                             bool ifNotExists) {
     cpp2::CreateEdgeIndexReq req;
     req.set_space_id(std::move(spaceID));
@@ -1240,7 +1240,7 @@ folly::Future<StatusOr<EdgeIndexID>>
 MetaClient::createEdgeIndex(GraphSpaceID spaceID,
                             std::string indexName,
                             std::string edgeName,
-                            std::vector<std::string>&& fields,
+                            std::vector<std::string> fields,
                             bool ifNotExists) {
     std::map<std::string, std::vector<std::string>> properties;
     properties.emplace(std::move(edgeName), std::move(fields));
@@ -1298,7 +1298,7 @@ MetaClient::listEdgeIndexes(GraphSpaceID spaceID) {
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::rebuildEdgeIndex(GraphSpaceID, std::string) {
+MetaClient::buildEdgeIndex(GraphSpaceID, std::string) {
     return Status::Error("unsupported");
 }
 

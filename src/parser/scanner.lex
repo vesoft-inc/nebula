@@ -60,7 +60,6 @@ SPACES                      ([Ss][Pp][Aa][Cc][Ee][Ss])
 INDEX                       ([Ii][Nn][Dd][Ee][Xx])
 INDEXES                     ([Ii][Nn][Dd][Ee][Xx][Ee][Ss])
 BUILD                       ([Bb][Uu][Ii][Ll][Dd])
-TTL                         ([Tt][Tt][Ll])
 INT                         ([Ii][Nn][Tt])
 BIGINT                      ([Bb][Ii][Gg][Ii][Nn][Tt])
 DOUBLE                      ([Dd][Oo][Uu][Bb][Ll][Ee])
@@ -195,7 +194,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {INDEX}                     { return TokenType::KW_INDEX; }
 {INDEXES}                   { return TokenType::KW_INDEXES; }
 {BUILD}                     { return TokenType::KW_BUILD; }
-{TTL}                       { return TokenType::KW_TTL; }
 {INT}                       { return TokenType::KW_INT; }
 {BIGINT}                    { return TokenType::KW_BIGINT; }
 {DOUBLE}                    { return TokenType::KW_DOUBLE; }

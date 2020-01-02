@@ -214,14 +214,14 @@ public:
     folly::Future<StatusOr<TagIndexID>>
     createTagIndex(GraphSpaceID spaceID,
                    std::string name,
-                   std::map<std::string, std::vector<std::string>>&& fields,
+                   std::map<std::string, std::vector<std::string>> fields,
                    bool ifNotExists = false);
 
     folly::Future<StatusOr<TagIndexID>>
     createTagIndex(GraphSpaceID spaceID,
                    std::string indexName,
                    std::string tagName,
-                   std::vector<std::string>&& fields,
+                   std::vector<std::string> fields,
                    bool ifNotExists = false);
 
     // Remove the define of tag index
@@ -235,19 +235,19 @@ public:
     listTagIndexes(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    rebuildTagIndex(GraphSpaceID spaceID, std::string name);
+    buildTagIndex(GraphSpaceID spaceID, std::string name);
 
     folly::Future<StatusOr<EdgeIndexID>>
     createEdgeIndex(GraphSpaceID spaceID,
                     std::string name,
-                    std::map<std::string, std::vector<std::string>>&& fields,
+                    std::map<std::string, std::vector<std::string>> fields,
                     bool ifNotExists = false);
 
     folly::Future<StatusOr<EdgeIndexID>>
     createEdgeIndex(GraphSpaceID spaceID,
                     std::string indexName,
                     std::string edgeName,
-                    std::vector<std::string>&& fields,
+                    std::vector<std::string> fields,
                     bool ifNotExists = false);
 
     // Remove the define of edge index
@@ -261,7 +261,7 @@ public:
     listEdgeIndexes(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    rebuildEdgeIndex(GraphSpaceID spaceId, std::string name);
+    buildEdgeIndex(GraphSpaceID spaceId, std::string name);
 
     // Operations for custom kv
     folly::Future<StatusOr<bool>>

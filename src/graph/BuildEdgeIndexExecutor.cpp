@@ -30,7 +30,7 @@ void BuildEdgeIndexExecutor::execute() {
     auto *name = sentence_->indexName();
     auto spaceId = ectx()->rctx()->session()->space();
 
-    auto future = mc->rebuildEdgeIndex(spaceId, *name);
+    auto future = mc->buildEdgeIndex(spaceId, *name);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {

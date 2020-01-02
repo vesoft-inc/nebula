@@ -28,13 +28,14 @@ void CreateTagIndexExecutor::execute() {
 
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->indexName();
+    auto *tagName = sentence_->tagName();
+    auto columns = sentence_->names();
     auto spaceId = ectx()->rctx()->session()->space();
 
-    std::map<std::string, std::vector<std::string>> indexProperties;
-    indexProperties.emplace(*(sentence_->tagName()), std::move(sentence_->names()));
     auto future = mc->createTagIndex(spaceId,
                                      *name,
-                                     std::move(indexProperties),
+                                     *tagName,
+                                     columns,
                                      sentence_->isIfNotExist());
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {

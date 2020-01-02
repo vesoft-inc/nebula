@@ -30,7 +30,7 @@ void BuildTagIndexExecutor::execute() {
     auto *name = sentence_->indexName();
     auto spaceId = ectx()->rctx()->session()->space();
 
-    auto future = mc->rebuildTagIndex(spaceId, *name);
+    auto future = mc->buildTagIndex(spaceId, *name);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
