@@ -3,14 +3,16 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 #
-# The build can be controlled by defining following variables on the
-# <cmake> command line
+# CMakeLists.txt file contains a set of directives and instructions describing the project's source files and targets (executable, library, or both).
+#
+# The building can be controlled by defining the following variables on the
+# <cmake> command line.
 #
 #   CMAKE_C_COMPILER                -- Specify the compiler for C language
 #   CMAKE_CXX_COMPILER              -- Specify the compiler for C++ language
 #
 #   NEBULA_THIRDPARTY_ROOT          -- Specify the root directory for third-party
-#   NEBULA_OTHER_ROOT               -- Specify the root directory for user build
+#   NEBULA_OTHER_ROOT               -- Specify the root directory for user building
 #                                   -- Split with ":", exp: DIR:DIR
 #   NEBULA_CLANG_USE_GCC_TOOLCHAIN  -- Specify the root of GCC's toolchain, used by Clang
 #   NEBULA_USE_LINKER               -- Set linker to use, options are: bfd, gold
@@ -19,8 +21,10 @@
 #   ENABLE_NATIVE                   -- Build native client
 #   ENABLE_TESTING                  -- Build unit test
 #
+# CMake version check
 cmake_minimum_required(VERSION 3.5.0)
 
+# Set the project name
 project("Nebula Graph" C CXX)
 
 # Set the project home dir
@@ -62,11 +66,11 @@ if (!CMAKE_CXX_COMPILER)
     message(FATAL_ERROR "No C++ compiler found")
 endif()
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 14)  # specify the C++ standard
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# To detect if ccache available
+# To detect if ccache is available
 find_program(ccache_program_found "ccache")
 if (ENABLE_CCACHE AND ccache_program_found)
     message(STATUS "ENABLE_CCACHE: ON")
