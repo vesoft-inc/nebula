@@ -20,9 +20,11 @@
 #   ENABLE_NATIVE                  -- Build native client
 #   ENABLE_TESTING                 -- Build unit test
 #
-cmake_minimum_required(VERSION 3.0.0)  # CMake version check
+# CMake version check
+cmake_minimum_required(VERSION 3.5.0)  
 
-project("Nebula Graph" C CXX)          # Set the project name
+# Set the project name
+project("Nebula Graph" C CXX)          
 
 # Set the project home dir
 set(NEBULA_HOME ${CMAKE_CURRENT_SOURCE_DIR})
