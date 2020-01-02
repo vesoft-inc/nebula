@@ -21,10 +21,13 @@ TEST(NebulaKeyUtilsTest, SimpleTest) {
 
     auto vertexKey = NebulaKeyUtils::vertexKey(partId, srcId, tagId, tagVersion);
     ASSERT_TRUE(NebulaKeyUtils::isVertex(vertexKey));
+    ASSERT_EQ(partId, NebulaKeyUtils::getPart(vertexKey));
     ASSERT_EQ(tagId, NebulaKeyUtils::getTagId(vertexKey));
+    ASSERT_EQ(srcId, NebulaKeyUtils::getVertexId(vertexKey));
 
     auto edgeKey = NebulaKeyUtils::edgeKey(partId, srcId, type, rank, dstId, edgeVersion);
     ASSERT_TRUE(NebulaKeyUtils::isEdge(edgeKey));
+    ASSERT_EQ(partId, NebulaKeyUtils::getPart(edgeKey));
     ASSERT_EQ(srcId, NebulaKeyUtils::getSrcId(edgeKey));
     ASSERT_EQ(dstId, NebulaKeyUtils::getDstId(edgeKey));
     ASSERT_EQ(type, NebulaKeyUtils::getEdgeType(edgeKey));

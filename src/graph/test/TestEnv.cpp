@@ -9,7 +9,7 @@
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 
-DECLARE_int32(load_data_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 DECLARE_string(meta_server_addrs);
 
 namespace nebula {
@@ -27,7 +27,7 @@ TestEnv::~TestEnv() {
 
 
 void TestEnv::SetUp() {
-    FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
     const nebula::ClusterID kClusterId = 10;
     // Create metaServer
     metaServer_ = nebula::meta::TestUtils::mockMetaServer(
@@ -72,7 +72,7 @@ void TestEnv::SetUp() {
 
 void TestEnv::TearDown() {
     // TO make sure the drop space be invoked on storage server
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     graphServer_.reset();
     storageServer_.reset();
     mClient_.reset();

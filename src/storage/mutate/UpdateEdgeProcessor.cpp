@@ -391,7 +391,7 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
     this->spaceId_ = req.get_space_id();
     insertable_ = req.get_insertable();
     auto partId = req.get_part_id();
-    auto edgeKey = std::move(req).get_edge_key();
+    auto edgeKey = req.get_edge_key();
     std::vector<EdgeType> eTypes;
     eTypes.emplace_back(edgeKey.get_edge_type());
     this->initEdgeContext(eTypes);
@@ -402,7 +402,7 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
         this->onFinished();
         return;
     }
-    updateItems_ = std::move(req).get_update_items();
+    updateItems_ = req.get_update_items();
 
     VLOG(3) << "Update edge, spaceId: " << this->spaceId_ << ", partId:  " << partId
             << ", src: " << edgeKey.get_src() << ", edge_type: " << edgeKey.get_edge_type()

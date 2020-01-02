@@ -125,7 +125,7 @@ object SparkClientGenerator {
     LOG.info(s"Nebula Addresses ${addresses} for ${user}:${pswd}")
     LOG.info(s"Connection Timeout ${connectionTimeout} Retry ${connectionRetry}")
     LOG.info(s"Execution Retry ${executionRetry} Interval Base ${executionInterval}")
-    LOG.info(s"Error Path ${errorPath}")
+    LOG.info(s"Error Path ${errorPath} Max Size ${errorMaxSize}")
     LOG.info(s"Switch to ${space}")
 
     if (config.hasPath("spark.cores.max") &&
@@ -281,13 +281,13 @@ object SparkClientGenerator {
                       }
                     }
                   }
+
                   spark
                     .createDataset(errorBuffer)(Encoders.STRING)
                     .repartition(1)
                     .write
                     .mode(SaveMode.Append)
                     .text(s"${errorPath}/${tagName}")
-
                 } else {
                   LOG.error(s"Switch ${space} Failed")
                 }
