@@ -144,7 +144,7 @@ Status WebService::start() {
                     try {
                         std::rethrow_exception(eptr);
                     } catch (const std::exception &e) {
-                        status = Status::Error(e.what());
+                        status = Status::Error("%s", e.what());
                     }
                     {
                         std::lock_guard<std::mutex> g(mut);

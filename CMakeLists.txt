@@ -154,8 +154,8 @@ if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
         SET(NEBULA_THIRDPARTY_ROOT ${CMAKE_BINARY_DIR}/third-party/install)
     elseif(NOT $ENV{NEBULA_THIRDPARTY_ROOT} STREQUAL "")
         SET(NEBULA_THIRDPARTY_ROOT $ENV{NEBULA_THIRDPARTY_ROOT})
-    elseif(EXISTS /opt/vesoft/third-party)
-        SET(NEBULA_THIRDPARTY_ROOT "/opt/vesoft/third-party")
+    elseif(EXISTS /opt/nebula/third-party)
+        SET(NEBULA_THIRDPARTY_ROOT "/opt/nebula/third-party")
     else()
         include(InstallThirdParty)
     endif()
@@ -409,7 +409,7 @@ set(THRIFT_LIBRARIES
 set(ROCKSDB_LIBRARIES ${Rocksdb_LIBRARY})
 
 # All compression libraries
-set(COMPRESSION_LIBRARIES bz2 snappy zstd z lz4)
+set(COMPRESSION_LIBRARIES bz2 snappy zstd z)
 if (LIBLZMA_FOUND)
     include_directories(SYSTEM ${LIBLZMA_INCLUDE_DIRS})
     list(APPEND COMPRESSION_LIBRARIES ${LIBLZMA_LIBRARIES})
@@ -456,7 +456,6 @@ macro(nebula_link_libraries target)
         ${COMPRESSION_LIBRARIES}
         ${JEMALLOC_LIB}
         ${LIBUNWIND_LIBRARIES}
-        keyutils
         resolv
         dl
         ${GETTIME_LIB}
