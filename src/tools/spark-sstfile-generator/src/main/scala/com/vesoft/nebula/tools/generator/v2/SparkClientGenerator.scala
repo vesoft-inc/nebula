@@ -11,24 +11,28 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.functions.udf
 import java.io.File
+import java.util.concurrent.TimeUnit
 
+import com.google.common.base.Optional
 import com.google.common.geometry.{S2CellId, S2LatLng}
 import com.google.common.net.HostAndPort
+import com.google.common.util.concurrent.{FutureCallback, Futures, RateLimiter}
+import com.vesoft.nebula.client.graph.async.AsyncGraphClientImpl
 import com.vesoft.nebula.graph.ErrorCode
-import com.vesoft.nebula.graph.client.GraphClientImpl
 import org.apache.log4j.Logger
 import org.apache.spark.sql.types._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
-import scala.util.Random
 import util.control.Breaks._
 
-final case class Argument(config: File = new File("application.conf"),
-                          hive: Boolean = false,
-                          directly: Boolean = false,
-                          dry: Boolean = false,
-                          reload: String = "/tmp/nebula.writer.errors/")
+final case class Argument(
+    config: File = new File("application.conf"),
+    hive: Boolean = false,
+    directly: Boolean = false,
+    dry: Boolean = false,
+    reload: String = "/tmp/nebula.writer.errors/"
+)
 
 final case class TooManyErrorException(private val message: String) extends Exception(message)
 
@@ -39,11 +43,17 @@ object SparkClientGenerator {
 
   private[this] val LOG = Logger.getLogger(this.getClass)
 
-  private[this] val BATCH_INSERT_TEMPLATE               = "INSERT %s %s(%s) VALUES %s"
-  private[this] val INSERT_VALUE_TEMPLATE               = "%d: (%s)"
-  private[this] val EDGE_VALUE_WITHOUT_RANKING_TEMPLATE = "%d->%d: (%s)"
-  private[this] val EDGE_VALUE_TEMPLATE                 = "%d->%d@%d: (%s)"
-  private[this] val USE_TEMPLATE                        = "USE %s"
+  private[this] val HASH_POLICY                                     = "hash"
+  private[this] val UUID_POLICY                                     = "uuid"
+  private[this] val BATCH_INSERT_TEMPLATE                           = "INSERT %s %s(%s) VALUES %s"
+  private[this] val INSERT_VALUE_TEMPLATE                           = "%d: (%s)"
+  private[this] val INSERT_VALUE_TEMPLATE_WITH_POLICY               = "%s(%d): (%s)"
+  private[this] val ENDPOINT_TEMPLATE                               = "%s(%d)"
+  private[this] val EDGE_VALUE_WITHOUT_RANKING_TEMPLATE             = "%d->%d: (%s)"
+  private[this] val EDGE_VALUE_WITHOUT_RANKING_TEMPLATE_WITH_POLICY = "%s->%s: (%s)"
+  private[this] val EDGE_VALUE_TEMPLATE                             = "%d->%d@%d: (%s)"
+  private[this] val EDGE_VALUE_TEMPLATE_WITH_POLICY                 = "%s->%s@%d: (%s)"
+  private[this] val USE_TEMPLATE                                    = "USE %s"
 
   private[this] val DEFAULT_BATCH                = 2
   private[this] val DEFAULT_PARTITION            = -1
@@ -52,8 +62,11 @@ object SparkClientGenerator {
   private[this] val DEFAULT_EXECUTION_RETRY      = 3
   private[this] val DEFAULT_EXECUTION_INTERVAL   = 3000
   private[this] val DEFAULT_EDGE_RANKING         = 0L
+  private[this] val DEFAULT_ERROR_TIMES          = 16
   private[this] val DEFAULT_ERROR_OUTPUT_PATH    = "/tmp/nebula.writer.errors/"
   private[this] val DEFAULT_ERROR_MAX_BATCH_SIZE = Int.MaxValue
+  private[this] val DEFAULT_RATE_LIMIT           = 1024
+  private[this] val DEFAULT_RATE_TIMEOUT         = 100
 
   // GEO default config
   private[this] val DEFAULT_MIN_CELL_LEVEL = 5
@@ -111,21 +124,26 @@ object SparkClientGenerator {
     val pswd         = nebulaConfig.getString("pswd")
     val space        = nebulaConfig.getString("space")
 
-    val connectionTimeout =
-      getOrElse(nebulaConfig, "connection.timeout", DEFAULT_CONNECTION_TIMEOUT)
-    val connectionRetry = getOrElse(nebulaConfig, "connection.retry", DEFAULT_CONNECTION_RETRY)
+    val connectionConfig  = nebulaConfig.getConfig("connection")
+    val connectionTimeout = getOrElse(connectionConfig, "timeout", DEFAULT_CONNECTION_TIMEOUT)
+    val connectionRetry   = getOrElse(connectionConfig, "retry", DEFAULT_CONNECTION_RETRY)
 
-    val executionRetry = getOrElse(nebulaConfig, "execution.retry", DEFAULT_EXECUTION_RETRY)
-    val executionInterval =
-      getOrElse(nebulaConfig, "execution.interval", DEFAULT_EXECUTION_INTERVAL)
+    val executionConfig   = nebulaConfig.getConfig("execution")
+    val executionRetry    = getOrElse(executionConfig, "retry", DEFAULT_EXECUTION_RETRY)
+    val executionInterval = getOrElse(executionConfig, "interval", DEFAULT_EXECUTION_INTERVAL)
 
-    val errorPath    = getOrElse(nebulaConfig, "error.output", DEFAULT_ERROR_OUTPUT_PATH)
-    val errorMaxSize = getOrElse(nebulaConfig, "error.max", DEFAULT_ERROR_MAX_BATCH_SIZE)
+    val errorConfig  = nebulaConfig.getConfig("error")
+    val errorPath    = getOrElse(errorConfig, "output", DEFAULT_ERROR_OUTPUT_PATH)
+    val errorMaxSize = getOrElse(errorConfig, "max", DEFAULT_ERROR_MAX_BATCH_SIZE)
+
+    val rateConfig  = nebulaConfig.getConfig("rate")
+    val rateLimit   = getOrElse(rateConfig, "limit", DEFAULT_RATE_LIMIT)
+    val rateTimeout = getOrElse(rateConfig, "timeout", DEFAULT_RATE_TIMEOUT)
 
     LOG.info(s"Nebula Addresses ${addresses} for ${user}:${pswd}")
     LOG.info(s"Connection Timeout ${connectionTimeout} Retry ${connectionRetry}")
     LOG.info(s"Execution Retry ${executionRetry} Interval Base ${executionInterval}")
-    LOG.info(s"Error Path ${errorPath}")
+    LOG.info(s"Error Path ${errorPath} Max Size ${errorMaxSize}")
     LOG.info(s"Switch to ${space}")
 
     if (config.hasPath("spark.cores.max") &&
@@ -155,25 +173,46 @@ object SparkClientGenerator {
     }
 
     if (!c.reload.isEmpty) {
-      session
-        .getOrCreate()
-        .read
+      val spark        = session.getOrCreate()
+      val batchSuccess = spark.sparkContext.longAccumulator(s"batchSuccess.reload")
+      val batchFailure = spark.sparkContext.longAccumulator(s"batchFailure.reload")
+
+      spark.read
         .text(c.reload)
         .foreachPartition { records =>
           val hostAndPorts = addresses.map(HostAndPort.fromString).asJava
-          val client =
-            new GraphClientImpl(hostAndPorts, connectionTimeout, connectionRetry, executionRetry)
+          val client = new AsyncGraphClientImpl(
+            hostAndPorts,
+            connectionTimeout,
+            connectionRetry,
+            executionRetry
+          )
+          client.setUser(user)
+          client.setPassword(pswd)
 
-          if (isSuccessfully(client.connect(user, pswd))) {
+          if (isSuccessfully(client.connect())) {
+            val rateLimiter = RateLimiter.create(rateLimit)
             records.foreach { row =>
               val exec = row.getString(0)
-              breakable {
-                for (time <- 1 to executionRetry
-                     if isSuccessfullyWithSleep(
-                       client.execute(exec),
-                       time * executionInterval + Random.nextInt(10) * 100L)(exec)) {
-                  break
-                }
+              if (rateLimiter.tryAcquire(rateTimeout, TimeUnit.MILLISECONDS)) {
+                val future = client.execute(exec)
+                Futures.addCallback(
+                  future,
+                  new FutureCallback[Optional[Integer]] {
+                    override def onSuccess(result: Optional[Integer]): Unit = {
+                      batchSuccess.add(1)
+                    }
+
+                    override def onFailure(t: Throwable): Unit = {
+                      if (batchFailure.value > DEFAULT_ERROR_TIMES) {
+                        throw new TooManyErrorException("too many error")
+                      }
+                      batchFailure.add(1)
+                    }
+                  }
+                )
+              } else {
+                batchFailure.add(1)
               }
             }
             client.close()
@@ -211,8 +250,18 @@ object SparkClientGenerator {
         }
 
         val fields = tagConfig.getObject("fields").unwrapped
+        val vertex = if (tagConfig.hasPath("vertex")) {
+          tagConfig.getString("vertex")
+        } else {
+          tagConfig.getString("vertex.field")
+        }
 
-        val vertex    = tagConfig.getString("vertex")
+        val policyOpt = if (tagConfig.hasPath("vertex.policy")) {
+          Some(tagConfig.getString("vertex.policy").toLowerCase)
+        } else {
+          None
+        }
+
         val batch     = getOrElse(tagConfig, "batch", DEFAULT_BATCH)
         val partition = getOrElse(tagConfig, "partition", DEFAULT_PARTITION)
 
@@ -225,6 +274,14 @@ object SparkClientGenerator {
           fields.asScala.keys.toList
         }
 
+        val sourceColumn = sourceProperties.map { property =>
+          if (property == vertex) {
+            col(property).cast(LongType)
+          } else {
+            col(property)
+          }
+        }
+
         val vertexIndex      = sourceProperties.indexOf(vertex)
         val nebulaProperties = properties.mkString(",")
 
@@ -233,26 +290,35 @@ object SparkClientGenerator {
         val data                     = createDataSource(spark, pathOpt, tagConfig)
 
         if (data.isDefined && !c.dry) {
+          val batchSuccess = spark.sparkContext.longAccumulator(s"batchSuccess.${tagName}")
+          val batchFailure = spark.sparkContext.longAccumulator(s"batchFailure.${tagName}")
+
           repartition(data.get, partition)
-            .select(sourceProperties.map(col): _*)
+            .select(sourceColumn: _*)
             .withColumn(vertex, toVertexUDF(col(vertex)))
             .map { row =>
-              (row.getLong(vertexIndex),
-               (for { property <- valueProperties if property.trim.length != 0 } yield
-                 extraValue(row, property))
-                 .mkString(","))
+              val values = for { property <- valueProperties if property.trim.length != 0 } yield extraValue(
+                row,
+                property
+              )
+              (row.getLong(vertexIndex), values.mkString(","))
             }(Encoders.tuple(Encoders.scalaLong, Encoders.STRING))
             .foreachPartition { iterator: Iterator[(Long, String)] =>
               val hostAndPorts = addresses.map(HostAndPort.fromString).asJava
-              val client =
-                new GraphClientImpl(hostAndPorts,
-                                    connectionTimeout,
-                                    connectionRetry,
-                                    executionRetry)
+              val client = new AsyncGraphClientImpl(
+                hostAndPorts,
+                connectionTimeout,
+                connectionRetry,
+                executionRetry
+              )
+              client.setUser(user)
+              client.setPassword(pswd)
 
-              if (isSuccessfully(client.connect(user, pswd))) {
-                val errorBuffer = ArrayBuffer[String]()
-                if (isSuccessfully(client.execute(USE_TEMPLATE.format(space)))) {
+              if (isSuccessfully(client.connect())) {
+                val errorBuffer     = ArrayBuffer[String]()
+                val switchSpaceCode = client.execute(USE_TEMPLATE.format(space)).get().get()
+                if (isSuccessfully(switchSpaceCode)) {
+                  val rateLimiter = RateLimiter.create(rateLimit)
                   iterator.grouped(batch).foreach { tags =>
                     val exec = BATCH_INSERT_TEMPLATE.format(
                       Type.Vertex.toString,
@@ -260,25 +326,49 @@ object SparkClientGenerator {
                       nebulaProperties,
                       tags
                         .map { tag =>
-                          INSERT_VALUE_TEMPLATE.format(tag._1, tag._2)
+                          if (policyOpt.isEmpty) {
+                            INSERT_VALUE_TEMPLATE.format(tag._1, tag._2)
+                          } else {
+                            policyOpt.get match {
+                              case HASH_POLICY =>
+                                INSERT_VALUE_TEMPLATE_WITH_POLICY
+                                  .format(HASH_POLICY, tag._1, tag._2)
+                              case UUID_POLICY =>
+                                INSERT_VALUE_TEMPLATE_WITH_POLICY
+                                  .format(UUID_POLICY, tag._1, tag._2)
+                              case _ => throw new IllegalArgumentException
+                            }
+                          }
                         }
                         .mkString(", ")
                     )
 
                     LOG.debug(s"Exec : ${exec}")
-                    breakable {
-                      for (time <- 1 to executionRetry
-                           if isSuccessfullyWithSleep(
-                             client.execute(exec),
-                             time * executionInterval + Random.nextInt(10) * 100L)(exec)) {
-                        break
-                      }
-                      LOG.debug("Save the error execution sentence into buffer")
-                      errorBuffer += exec
+                    if (rateLimiter.tryAcquire(rateTimeout, TimeUnit.MILLISECONDS)) {
+                      val future = client.execute(exec)
+                      Futures.addCallback(
+                        future,
+                        new FutureCallback[Optional[Integer]] {
+                          override def onSuccess(result: Optional[Integer]): Unit = {
+                            batchSuccess.add(1)
+                          }
 
-                      if (errorBuffer.size == errorMaxSize) {
-                        throw TooManyErrorException(s"Too Many Error ${errorMaxSize}")
-                      }
+                          override def onFailure(t: Throwable): Unit = {
+                            if (batchFailure.value > DEFAULT_ERROR_TIMES) {
+                              throw new TooManyErrorException("too many error")
+                            }
+                            batchFailure.add(1)
+                          }
+                        }
+                      )
+                    } else {
+                      batchFailure.add(1)
+                    }
+                    LOG.debug("Save the error execution sentence into buffer")
+                    errorBuffer += exec
+
+                    if (errorBuffer.size == errorMaxSize) {
+                      throw TooManyErrorException(s"Too Many Error ${errorMaxSize}")
                     }
                   }
                   spark
@@ -324,7 +414,18 @@ object SparkClientGenerator {
 
         val fields = edgeConfig.getObject("fields").unwrapped
         val isGeo  = checkGeoSupported(edgeConfig)
-        val target = edgeConfig.getString("target")
+        val target = if (edgeConfig.hasPath("target")) {
+          edgeConfig.getString("target")
+        } else {
+          edgeConfig.getString("target.field")
+        }
+
+        val targetPolicyOpt = if (edgeConfig.hasPath("target.policy")) {
+          Some(edgeConfig.getString("target.policy").toLowerCase)
+        } else {
+          None
+        }
+
         val rankingOpt = if (edgeConfig.hasPath("ranking")) {
           Some(edgeConfig.getString("ranking"))
         } else {
@@ -337,7 +438,12 @@ object SparkClientGenerator {
         val valueProperties = fields.asScala.keys.toList
 
         val sourceProperties = if (!isGeo) {
-          val source = edgeConfig.getString("source")
+          val source = if (edgeConfig.hasPath("source")) {
+            edgeConfig.getString("source")
+          } else {
+            edgeConfig.getString("source.field")
+          }
+
           if (!fields.containsKey(source) ||
               !fields.containsKey(target)) {
             (fields.asScala.keySet + source + target).toList
@@ -356,15 +462,42 @@ object SparkClientGenerator {
           }
         }
 
+        val sourcePolicyOpt = if (edgeConfig.hasPath("source.policy")) {
+          Some(edgeConfig.getString("source.policy").toLowerCase)
+        } else {
+          None
+        }
+
+        val sourceColumn = if (!isGeo) {
+          val source = edgeConfig.getString("source")
+          sourceProperties.map { property =>
+            if (property == source || property == target) {
+              col(property).cast(LongType)
+            } else {
+              col(property)
+            }
+          }
+        } else {
+          val latitude  = edgeConfig.getString("latitude")
+          val longitude = edgeConfig.getString("longitude")
+          sourceProperties.map { property =>
+            if (property == latitude || property == longitude) {
+              col(property).cast(DoubleType)
+            } else {
+              col(property)
+            }
+          }
+        }
+
         val nebulaProperties = properties.mkString(",")
 
         val data = createDataSource(spark, pathOpt, edgeConfig)
-        val encoder =
-          Encoders.tuple(Encoders.STRING, Encoders.scalaLong, Encoders.scalaLong, Encoders.STRING)
-
         if (data.isDefined && !c.dry) {
+          val batchSuccess = spark.sparkContext.longAccumulator(s"batchSuccess.${edgeName}")
+          val batchFailure = spark.sparkContext.longAccumulator(s"batchFailure.${edgeName}")
+
           repartition(data.get, partition)
-            .select(sourceProperties.map(col): _*)
+            .select(sourceColumn: _*)
             .map { row =>
               val sourceField = if (!isGeo) {
                 val source = edgeConfig.getString("source")
@@ -378,11 +511,11 @@ object SparkClientGenerator {
               }
 
               val targetField = row.getLong(row.schema.fieldIndex(target))
-
               val values =
-                (for { property <- valueProperties if property.trim.length != 0 } yield
-                  extraValue(row, property))
-                  .mkString(",")
+                (for { property <- valueProperties if property.trim.length != 0 } yield extraValue(
+                  row,
+                  property
+                )).mkString(",")
 
               if (rankingOpt.isDefined) {
                 val ranking = row.getLong(row.schema.fieldIndex(rankingOpt.get))
@@ -390,17 +523,26 @@ object SparkClientGenerator {
               } else {
                 (sourceField, targetField, DEFAULT_EDGE_RANKING, values)
               }
-            }(encoder)
+            }(
+              Encoders
+                .tuple(Encoders.STRING, Encoders.scalaLong, Encoders.scalaLong, Encoders.STRING)
+            )
             .foreachPartition { iterator: Iterator[(String, Long, Long, String)] =>
               val hostAndPorts = addresses.map(HostAndPort.fromString).asJava
-              val client =
-                new GraphClientImpl(hostAndPorts,
-                                    connectionTimeout,
-                                    connectionRetry,
-                                    executionRetry)
-              if (isSuccessfully(client.connect(user, pswd))) {
-                val errorBuffer = ArrayBuffer[String]()
-                if (isSuccessfully(client.execute(USE_TEMPLATE.format(space)))) {
+              val client = new AsyncGraphClientImpl(
+                hostAndPorts,
+                connectionTimeout,
+                connectionRetry,
+                executionRetry
+              )
+
+              client.setUser(user)
+              client.setPassword(pswd)
+              if (isSuccessfully(client.connect())) {
+                val errorBuffer     = ArrayBuffer[String]()
+                val switchSpaceCode = client.switchSpace(space).get().get()
+                if (isSuccessfully(switchSpaceCode)) {
+                  val rateLimiter = RateLimiter.create(rateLimit)
                   iterator.grouped(batch).foreach { edges =>
                     val values =
                       if (rankingOpt.isEmpty)
@@ -409,8 +551,29 @@ object SparkClientGenerator {
                             // TODO: (darion.yaphet) dataframe.explode() would be better ?
                             (for (source <- edge._1.split(","))
                               yield
-                                EDGE_VALUE_WITHOUT_RANKING_TEMPLATE
-                                  .format(source.toLong, edge._2, edge._4)).mkString(", ")
+                                if (sourcePolicyOpt.isEmpty && targetPolicyOpt.isEmpty) {
+                                  EDGE_VALUE_WITHOUT_RANKING_TEMPLATE
+                                    .format(source.toLong, edge._2, edge._4)
+                                } else {
+                                  val source = sourcePolicyOpt.get match {
+                                    case HASH_POLICY =>
+                                      ENDPOINT_TEMPLATE.format(HASH_POLICY, edge._1)
+                                    case UUID_POLICY =>
+                                      ENDPOINT_TEMPLATE.format(UUID_POLICY, edge._1)
+                                    case _ => throw new IllegalArgumentException
+                                  }
+
+                                  val target = targetPolicyOpt.get match {
+                                    case HASH_POLICY =>
+                                      ENDPOINT_TEMPLATE.format(HASH_POLICY, edge._2)
+                                    case UUID_POLICY =>
+                                      ENDPOINT_TEMPLATE.format(UUID_POLICY, edge._2)
+                                    case _ => throw new IllegalArgumentException
+                                  }
+
+                                  EDGE_VALUE_WITHOUT_RANKING_TEMPLATE_WITH_POLICY
+                                    .format(source, target, edge._4)
+                                }).mkString(", ")
                           }
                           .toList
                           .mkString(", ")
@@ -420,8 +583,29 @@ object SparkClientGenerator {
                             // TODO: (darion.yaphet) dataframe.explode() would be better ?
                             (for (source <- edge._1.split(","))
                               yield
-                                EDGE_VALUE_TEMPLATE
-                                  .format(source.toLong, edge._2, edge._3, edge._4))
+                                if (sourcePolicyOpt.isEmpty && targetPolicyOpt.isEmpty) {
+                                  EDGE_VALUE_TEMPLATE
+                                    .format(source.toLong, edge._2, edge._3, edge._4)
+                                } else {
+                                  val source = sourcePolicyOpt.get match {
+                                    case HASH_POLICY =>
+                                      ENDPOINT_TEMPLATE.format(HASH_POLICY, edge._1)
+                                    case UUID_POLICY =>
+                                      ENDPOINT_TEMPLATE.format(UUID_POLICY, edge._1)
+                                    case _ => throw new IllegalArgumentException
+                                  }
+
+                                  val target = targetPolicyOpt.get match {
+                                    case HASH_POLICY =>
+                                      ENDPOINT_TEMPLATE.format(HASH_POLICY, edge._2)
+                                    case UUID_POLICY =>
+                                      ENDPOINT_TEMPLATE.format(UUID_POLICY, edge._2)
+                                    case _ => throw new IllegalArgumentException
+                                  }
+
+                                  EDGE_VALUE_TEMPLATE_WITH_POLICY
+                                    .format(source, target, edge._3, edge._4)
+                                })
                               .mkString(", ")
                           }
                           .toList
@@ -430,19 +614,31 @@ object SparkClientGenerator {
                     val exec = BATCH_INSERT_TEMPLATE
                       .format(Type.Edge.toString, edgeName, nebulaProperties, values)
                     LOG.debug(s"Exec : ${exec}")
-                    breakable {
-                      for (time <- 1 to executionRetry
-                           if isSuccessfullyWithSleep(
-                             client.execute(exec),
-                             time * executionInterval + Random.nextInt(10) * 100L)(exec)) {
-                        break
-                      }
-                      LOG.debug("Save the error execution sentence into buffer")
-                      errorBuffer += exec
+                    if (rateLimiter.tryAcquire(rateTimeout, TimeUnit.MILLISECONDS)) {
+                      val future = client.execute(exec)
+                      Futures.addCallback(
+                        future,
+                        new FutureCallback[Optional[Integer]] {
+                          override def onSuccess(result: Optional[Integer]): Unit = {
+                            batchSuccess.add(1)
+                          }
 
-                      if (errorBuffer.size == errorMaxSize) {
-                        throw TooManyErrorException(s"Too Many Error ${errorMaxSize}")
-                      }
+                          override def onFailure(t: Throwable): Unit = {
+                            if (batchFailure.value > DEFAULT_ERROR_TIMES) {
+                              throw new TooManyErrorException("too many error")
+                            }
+                            batchFailure.add(1)
+                          }
+                        }
+                      )
+                    } else {
+                      batchFailure.add(1)
+                    }
+                    LOG.debug("Save the error execution sentence into buffer")
+                    errorBuffer += exec
+
+                    if (errorBuffer.size == errorMaxSize) {
+                      throw TooManyErrorException(s"Too Many Error ${errorMaxSize}")
                     }
                   }
 
@@ -455,29 +651,31 @@ object SparkClientGenerator {
                 } else {
                   LOG.error(s"Switch ${space} Failed")
                 }
-                client.close()
               } else {
                 LOG.error(s"Client connection failed. ${user}:${pswd}")
               }
+              client.close()
             }
+        } else {
+          LOG.warn("Edge is not defined")
         }
       }
-    } else {
-      LOG.warn("Edge is not defined")
     }
   }
 
   /**
     * Create data source for different data type.
     *
-    * @param session    The Spark Session.
-    * @param pathOpt    The path for config.
-    * @param config     The config.
+    * @param session The Spark Session.
+    * @param pathOpt The path for config.
+    * @param config  The config.
     * @return
     */
-  private[this] def createDataSource(session: SparkSession,
-                                     pathOpt: Option[String],
-                                     config: Config) = {
+  private[this] def createDataSource(
+      session: SparkSession,
+      pathOpt: Option[String],
+      config: Config
+  ): Option[DataFrame] = {
     val `type` = config.getString("type")
 
     pathOpt match {
@@ -521,9 +719,9 @@ object SparkClientGenerator {
                 .format("socket")
                 .option("host", host)
                 .option("port", port)
-                .load())
+                .load()
+            )
           }
-
           case "kafka" => {
             if (!config.hasPath("servers") || !config.hasPath("topic")) {
               LOG.error("Reading kafka source should specify servers and topic")
@@ -538,7 +736,8 @@ object SparkClientGenerator {
                 .format("kafka")
                 .option("kafka.bootstrap.servers", server)
                 .option("subscribe", topic)
-                .load())
+                .load()
+            )
           }
           case _ => {
             LOG.error(s"Data source ${`type`} not supported")
@@ -553,11 +752,11 @@ object SparkClientGenerator {
     * Extra value from the row by field name.
     * When the field is null, we will fill it with default value.
     *
-    * @param row      The row value.
-    * @param field    The field name.
+    * @param row   The row value.
+    * @param field The field name.
     * @return
     */
-  private[this] def extraValue(row: Row, field: String) = {
+  private[this] def extraValue(row: Row, field: String): Any = {
     val index = row.schema.fieldIndex(field)
     row.schema.fields(index).dataType match {
       case StringType =>
@@ -653,7 +852,7 @@ object SparkClientGenerator {
   /**
     * Check the statement execution result.
     *
-    * @param code     The statement's execution result code.
+    * @param code The statement's execution result code.
     * @return
     */
   private[this] def isSuccessfully(code: Int) = code == ErrorCode.SUCCEEDED
@@ -662,12 +861,13 @@ object SparkClientGenerator {
     * Check the statement execution result.
     * If the result code is not SUCCEEDED, will sleep a little while.
     *
-    * @param code       The sentence execute's result code.
-    * @param interval   The sleep interval.
+    * @param code     The sentence execute's result code.
+    * @param interval The sleep interval.
     * @return
     */
   private[this] def isSuccessfullyWithSleep(code: Int, interval: Long)(
-      implicit exec: String): Boolean = {
+      implicit exec: String
+  ): Boolean = {
     val result = isSuccessfully(code)
     if (!result) {
       LOG.error(s"Exec Failed: ${exec} retry interval ${interval}")
@@ -679,10 +879,10 @@ object SparkClientGenerator {
   /**
     * Whether the edge is Geo supported.
     *
-    * @param edgeConfig  The config of edge.
+    * @param edgeConfig The config of edge.
     * @return
     */
-  private[this] def checkGeoSupported(edgeConfig: Config) = {
+  private[this] def checkGeoSupported(edgeConfig: Config): Boolean = {
     !edgeConfig.hasPath("source") &&
     edgeConfig.hasPath("latitude") &&
     edgeConfig.hasPath("longitude")
@@ -691,8 +891,8 @@ object SparkClientGenerator {
   /**
     * Get the config by the path.
     *
-    * @param config   The config.
-    * @param path     The path of the config.
+    * @param config The config.
+    * @param path   The path of the config.
     * @return
     */
   private[this] def getConfigOrNone(config: Config, path: String) = {
@@ -706,12 +906,12 @@ object SparkClientGenerator {
   /**
     * Get the value from config by the path. If the path not exist, return the default value.
     *
-    * @param config         The config.
-    * @param path           The path of the config.
-    * @param defaultValue   The default value for the path.
+    * @param config       The config.
+    * @param path         The path of the config.
+    * @param defaultValue The default value for the path.
     * @return
     */
-  private[this] def getOrElse[T](config: Config, path: String, defaultValue: T) = {
+  private[this] def getOrElse[T](config: Config, path: String, defaultValue: T): T = {
     if (config.hasPath(path)) {
       config.getAnyRef(path).asInstanceOf[T]
     } else {
@@ -722,11 +922,11 @@ object SparkClientGenerator {
   /**
     * Calculate the coordinate's correlation id list.
     *
-    * @param lat  The latitude of coordinate.
-    * @param lng  The longitude of coordinate.
+    * @param lat The latitude of coordinate.
+    * @param lng The longitude of coordinate.
     * @return
     */
-  private[this] def indexCells(lat: Double, lng: Double) = {
+  private[this] def indexCells(lat: Double, lng: Double): IndexedSeq[Long] = {
     val coordinate = S2LatLng.fromDegrees(lat, lng)
     val s2CellId   = S2CellId.fromLatLng(coordinate)
     for (index <- DEFAULT_MIN_CELL_LEVEL to DEFAULT_MAX_CELL_LEVEL)

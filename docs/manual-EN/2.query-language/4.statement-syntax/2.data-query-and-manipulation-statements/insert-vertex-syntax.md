@@ -17,8 +17,6 @@ INSERT VERTEX statement inserts one vertex into **Nebula Graph**.
 * `prop_name_list` is the property name list in the given `tag_name`.
 * `prop_value_list` must provide the value list according to the `prop_name_list`. If no value matches the type, an error will be returned.
 
-> No default value is given in this release.
-
 ## Examples
 
 ```ngql

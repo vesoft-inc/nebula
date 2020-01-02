@@ -79,7 +79,7 @@ TEST_F(FindPathTest, SingleEdgeShortest) {
         std::vector<std::string> expected = {
             "5662213458193308137<like,0>3394245602834314645",
             "5662213458193308137<like,0>-7579316172763586624",
-            "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239"
+            "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239",
         };
         ASSERT_TRUE(verifyPath(resp, expected));
     }
@@ -99,7 +99,6 @@ TEST_F(FindPathTest, SingleEdgeShortest) {
     }
     {
         // we only find the shortest path to the dest,
-        // so -8160811731890648949 to -1782445125509592239 is not in result
         cpp2::ExecutionResponse resp;
         auto *fmt = "FIND SHORTEST PATH FROM %ld,%ld TO %ld,%ld,%ld OVER like UPTO 5 STEPS";
         auto &tim = players_["Tim Duncan"];
@@ -114,7 +113,8 @@ TEST_F(FindPathTest, SingleEdgeShortest) {
         std::vector<std::string> expected = {
             "5662213458193308137<like,0>3394245602834314645",
             "5662213458193308137<like,0>-7579316172763586624",
-            "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239"
+            "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239",
+            "-8160811731890648949<like,0>3394245602834314645"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
     }
