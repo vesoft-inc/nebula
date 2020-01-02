@@ -35,7 +35,8 @@ function yum_install {
         readline-devel \
         maven \
         java-1.8.0-openjdk \
-        unzip
+        unzip \
+        curl
 
     # feroda and centos7 has it
     if [[ $1 == 1 || $1 == 2 ]]; then
@@ -71,7 +72,8 @@ function aptget_install {
         python \
         maven \
         openjdk-8-jdk \
-        unzip
+        unzip \
+        curl
 
     installPackage $1
     addAlias $1
