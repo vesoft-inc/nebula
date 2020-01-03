@@ -21,6 +21,7 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
         return;
     }
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     LOG(INFO) << "Drop Tag " << req.get_tag_name();
     doMultiRemove(std::move(ret.value()));
 }

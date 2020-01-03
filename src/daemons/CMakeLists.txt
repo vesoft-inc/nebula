@@ -5,7 +5,6 @@ nebula_add_executable(
         GraphDaemon.cpp
     OBJECTS
         $<TARGET_OBJECTS:filter_obj>
-        $<TARGET_OBJECTS:graph_http_handler>
         $<TARGET_OBJECTS:graph_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:parser_obj>
