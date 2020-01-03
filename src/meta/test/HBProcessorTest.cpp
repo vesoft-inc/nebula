@@ -30,6 +30,7 @@ TEST(HBProcessorTest, HBTest) {
             thriftHost.set_port(i);
             req.set_host(std::move(thriftHost));
             req.set_cluster_id(kClusterId);
+            req.set_in_storaged(true);
             auto* processor = HBProcessor::instance(kv.get(), kClusterId);
             auto f = processor->getFuture();
             processor->process(req);
@@ -48,6 +49,7 @@ TEST(HBProcessorTest, HBTest) {
         thriftHost.set_port(11);
         req.set_host(std::move(thriftHost));
         req.set_cluster_id(1);
+        req.set_in_storaged(true);
         auto* processor = HBProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);

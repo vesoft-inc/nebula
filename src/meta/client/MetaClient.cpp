@@ -1339,37 +1339,37 @@ StatusOr<SchemaVer> MetaClient::getNewestEdgeVerFromCache(const GraphSpaceID& sp
 }
 
 folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
-    if (options_.clusterId_.load() == 0) {
-        options_.clusterId_ = ClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
-    }
     cpp2::HBReq req;
     req.set_in_storaged(options_.inStoraged_);
-    nebula::cpp2::HostAddr thriftHost;
-    thriftHost.set_ip(options_.localHost_.first);
-    thriftHost.set_port(options_.localHost_.second);
-    req.set_host(std::move(thriftHost));
-    req.set_cluster_id(options_.clusterId_.load());
-
-    if (options_.inStoraged_ && listener_ != nullptr) {
-        std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
-        listener_->fetchLeaderInfo(leaderIds);
-        if (leaderIds_ != leaderIds) {
-            {
-                folly::RWSpinLock::WriteHolder holder(leaderIdsLock_);
-                leaderIds_.clear();
-                leaderIds_ = leaderIds;
+    if (options_.inStoraged_) {
+        nebula::cpp2::HostAddr thriftHost;
+        thriftHost.set_ip(options_.localHost_.first);
+        thriftHost.set_port(options_.localHost_.second);
+        req.set_host(std::move(thriftHost));
+        if (options_.clusterId_.load() == 0) {
+            options_.clusterId_ = ClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
+        }
+        req.set_cluster_id(options_.clusterId_.load());
+        if (listener_ != nullptr) {
+            std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+            listener_->fetchLeaderInfo(leaderIds);
+            if (leaderIds_ != leaderIds) {
+                {
+                    folly::RWSpinLock::WriteHolder holder(leaderIdsLock_);
+                    leaderIds_.clear();
+                    leaderIds_ = leaderIds;
+                }
+                req.set_leader_partIds(std::move(leaderIds));
             }
-            req.set_leader_partIds(std::move(leaderIds));
         }
     }
-
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
     VLOG(1) << "Send heartbeat to " << leader_ << ", clusterId " << req.get_cluster_id();
     getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_heartBeat(request);
                 }, [this] (cpp2::HBResp&& resp) -> bool {
-                    if (options_.clusterId_.load() == 0) {
+                    if (options_.inStoraged_ && options_.clusterId_.load() == 0) {
                         LOG(INFO) << "Persisit the cluster Id from metad " << resp.get_cluster_id();
                         if (ClusterIdMan::persistInFile(resp.get_cluster_id(),
                                                         FLAGS_cluster_id_path)) {
