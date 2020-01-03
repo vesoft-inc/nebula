@@ -80,8 +80,8 @@ void ConfigExecutor::showVariables() {
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error(folly::stringPrintf("Internal error : %s", e.what().c_str())));
+        LOG(ERROR) << "Show config exception: " << e.what();
+        doError(Status::Error("Show config exception : %s", e.what().c_str()));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -144,9 +144,10 @@ void ConfigExecutor::setVariables() {
     auto future = ectx()->gflagsManager()->setConfig(module, name, type, value);
     auto *runner = ectx()->rctx()->runner();
 
-    auto cb = [this] (auto && resp) {
+    auto cb = [this, name] (auto && resp) {
         if (!resp.ok()) {
-            doError(std::move(resp.status()));
+            doError(Status::Error("Set config `%s' failed: %s.",
+                                    name.c_str(), resp.status().toString().c_str()));
             return;
         }
 
@@ -154,10 +155,11 @@ void ConfigExecutor::setVariables() {
         doFinish(Executor::ProcessControl::kNext);
     };
 
-    auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error(folly::stringPrintf("Internal error : %s",
-                                                   e.what().c_str())));
+    auto error = [this, name] (auto &&e) {
+        auto msg = folly::stringPrintf("Set congfig `%s' exception: %s",
+                                        name.c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -183,9 +185,10 @@ void ConfigExecutor::getVariables() {
     auto future = ectx()->gflagsManager()->getConfig(module, name);
     auto *runner = ectx()->rctx()->runner();
 
-    auto cb = [this] (auto && resp) {
+    auto cb = [this, name] (auto && resp) {
         if (!resp.ok()) {
-            doError(std::move(resp.status()));
+            doError(Status::Error("Get config `%s' failed: %s.",
+                                    name.c_str(), resp.status().toString().c_str()));
             return;
         }
 
@@ -204,9 +207,11 @@ void ConfigExecutor::getVariables() {
         doFinish(Executor::ProcessControl::kNext);
     };
 
-    auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error(folly::stringPrintf("Internal error : %s", e.what().c_str())));
+    auto error = [this, name] (auto &&e) {
+        auto msg = folly::stringPrintf("Get config `%s' exception: %s",
+                                        name.c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);

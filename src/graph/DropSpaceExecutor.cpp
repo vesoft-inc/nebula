@@ -33,7 +33,7 @@ void DropSpaceExecutor::execute() {
         }
         auto  ret = std::move(resp).value();
         if (!ret) {
-            doError(Status::Error("Drop space failed"));
+            doError(Status::Error("Drop space `%s' failed.", spaceName_->c_str()));
             return;
         }
 
@@ -44,8 +44,10 @@ void DropSpaceExecutor::execute() {
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        auto msg = folly::stringPrintf("Drop space `%s' exception: %s",
+                spaceName_->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
         return;
     };
 

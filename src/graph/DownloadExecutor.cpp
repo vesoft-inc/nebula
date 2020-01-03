@@ -76,8 +76,8 @@ void DownloadExecutor::execute() {
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        LOG(ERROR) << "Download exception: " << e.what();
+        doError(Status::Error("Download exception: %s", e.what().c_str()));
         return;
     };
 
