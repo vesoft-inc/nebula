@@ -74,7 +74,7 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
      *
      * Ultimately, kv(part1_src1_edgeType1_rank1_dst1 , v4) . It's just what I need.
      */
-    std::map<std::string, std::string> newIEdges;
+    std::map<std::string, std::string> newEdges;
     std::for_each(edges.begin(), edges.end(), [&](auto& edge){
         auto prop = edge.get_props();
         auto type = edge.key.edge_type;
@@ -85,22 +85,40 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
                 << ", EdgeType: " << type << ", EdgeRanking: " << rank
                 << ", VertexID: " << dstId << ", EdgeVersion: " << version;
         auto key = NebulaKeyUtils::edgeKey(partId, srcId, type, rank, dstId, version);
-        newIEdges[key] = std::move(prop);
+        newEdges[key] = std::move(prop);
     });
-    for (auto& e : newIEdges) {
+    for (auto& e : newEdges) {
+        std::string val;
+        std::unique_ptr<RowReader> nReader;
+        auto edgeType = NebulaKeyUtils::getEdgeType(e.first);
         for (auto& index : indexes_) {
-            if (NebulaKeyUtils::getEdgeType(e.first) == index.get_tagOrEdge()) {
+            if (edgeType == index.get_tagOrEdge()) {
                 /*
                  * step 1 , Delete old version index if exists.
                  */
-                auto oi = obsoleteIndex(partId, e.first, index);
-                if (!oi.empty()) {
-                    batchHolder->remove(std::move(oi));
+                if (val.empty() && !FLAGS_ignore_index_check_pre_insert) {
+                    val = findObsoleteIndex(partId, e.first);
+                }
+                if (!val.empty()) {
+                    auto reader = RowReader::getEdgePropReader(this->schemaMan_,
+                                                               val,
+                                                               spaceId_,
+                                                               edgeType);
+                    auto oi = indexKey(partId, reader.get(), e.first, index);
+                    if (!oi.empty()) {
+                        batchHolder->remove(std::move(oi));
+                    }
                 }
                 /*
                  * step 2 , Insert new edge index
                  */
-                auto ni = newIndex(partId, e.first, e.second, index);
+                if (nReader == nullptr) {
+                    nReader = RowReader::getEdgePropReader(this->schemaMan_,
+                                                           e.second,
+                                                           spaceId_,
+                                                           edgeType);
+                }
+                auto ni = indexKey(partId, nReader.get(), e.first, index);
                 batchHolder->put(std::move(ni), "");
             }
         }
@@ -115,9 +133,8 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
     return encodeBatchValue(batchHolder->getBatch());
 }
 
-std::string AddEdgesProcessor::obsoleteIndex(PartitionID partId,
-                                             const folly::StringPiece& rawKey,
-                                             const nebula::cpp2::IndexItem& index) {
+std::string AddEdgesProcessor::findObsoleteIndex(PartitionID partId,
+                                                 const folly::StringPiece& rawKey) {
     auto prefix = NebulaKeyUtils::edgePrefix(partId,
                                              NebulaKeyUtils::getSrcId(rawKey),
                                              NebulaKeyUtils::getEdgeType(rawKey),
@@ -131,32 +148,16 @@ std::string AddEdgesProcessor::obsoleteIndex(PartitionID partId,
         return "";
     }
     if (iter && iter->valid()) {
-        auto reader = RowReader::getEdgePropReader(this->schemaMan_,
-                                                  iter->val(),
-                                                  spaceId_,
-                                                  index.get_tagOrEdge());
-        const auto& cols = index.get_cols();
-        auto values = collectIndexValues(reader.get(), cols);
-        auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
-                                                     index.get_index_id(),
-                                                     NebulaKeyUtils::getSrcId(rawKey),
-                                                     NebulaKeyUtils::getRank(rawKey),
-                                                     NebulaKeyUtils::getDstId(rawKey),
-                                                     values);
-        return indexKey;
+        return iter->val().str();
     }
     return "";
 }
 
-std::string AddEdgesProcessor::newIndex(PartitionID partId,
+std::string AddEdgesProcessor::indexKey(PartitionID partId,
+                                        RowReader* reader,
                                         const folly::StringPiece& rawKey,
-                                        const folly::StringPiece& prop,
                                         const nebula::cpp2::IndexItem& index) {
-    auto reader = RowReader::getEdgePropReader(this->schemaMan_,
-                                               prop,
-                                               spaceId_,
-                                               index.get_tagOrEdge());
-    auto values = collectIndexValues(reader.get(), index.get_cols());
+    auto values = collectIndexValues(reader, index.get_cols());
     return NebulaKeyUtils::edgeIndexKey(partId,
                                         index.get_index_id(),
                                         NebulaKeyUtils::getSrcId(rawKey),

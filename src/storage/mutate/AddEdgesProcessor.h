@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include "storage/BaseProcessor.h"
 #include "kvstore/LogEncoder.h"
+#include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace storage {
@@ -33,13 +34,12 @@ private:
     std::string addEdges(int64_t version, PartitionID partId,
                          const std::vector<cpp2::Edge>& edges);
 
-    std::string obsoleteIndex(PartitionID partId,
-                              const folly::StringPiece& rawKey,
-                              const nebula::cpp2::IndexItem& index);
+    std::string findObsoleteIndex(PartitionID partId,
+                                  const folly::StringPiece& rawKey);
 
-    std::string newIndex(PartitionID partId,
+    std::string indexKey(PartitionID partId,
+                         RowReader* reader,
                          const folly::StringPiece& rawKey,
-                         const folly::StringPiece& prop,
                          const nebula::cpp2::IndexItem& index);
 
 private:

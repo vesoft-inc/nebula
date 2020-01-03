@@ -104,23 +104,40 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
         });
 
     for (auto& v : newVertices) {
+        std::string val;
+        std::unique_ptr<RowReader> nReader;
+        auto tagId = NebulaKeyUtils::getTagId(v.first);
+        auto vId = NebulaKeyUtils::getVertexId(v.first);
         for (auto& index : indexes_) {
-            if (NebulaKeyUtils::getTagId(v.first) == index.get_tagOrEdge()) {
+            if (tagId == index.get_tagOrEdge()) {
                 /*
                  * step 1 , Delete old version index if exists.
                  */
-                auto oi = obsoleteIndex(partId,
-                                        NebulaKeyUtils::getVertexId(v.first),
-                                        index);
-                if (!oi.empty()) {
-                    batchHolder->remove(std::move(oi));
+                if (val.empty() && !FLAGS_ignore_index_check_pre_insert) {
+                    val = findObsoleteIndex(partId, vId, tagId);
+                }
+                if (!val.empty()) {
+                    auto reader = RowReader::getTagPropReader(this->schemaMan_,
+                                                              val,
+                                                              spaceId_,
+                                                              tagId);
+                    auto oi = indexKey(partId, vId, reader.get(), index);
+                    if (!oi.empty()) {
+                        batchHolder->remove(std::move(oi));
+                    }
                 }
                 /*
                  * step 2 , Insert new vertex index
                  */
-                auto ni = newIndex(partId,
-                                   NebulaKeyUtils::getVertexId(v.first),
-                                   v.second,
+                if (nReader == nullptr) {
+                    nReader = RowReader::getTagPropReader(this->schemaMan_,
+                                                          v.second,
+                                                          spaceId_,
+                                                          tagId);
+                }
+                auto ni = indexKey(partId,
+                                   vId,
+                                   nReader.get(),
                                    index);
                 batchHolder->put(std::move(ni), "");
             }
@@ -135,10 +152,10 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
     return encodeBatchValue(batchHolder->getBatch());
 }
 
-std::string AddVerticesProcessor::obsoleteIndex(PartitionID partId,
-                                                VertexID vId,
-                                                const nebula::cpp2::IndexItem& index) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId, index.get_tagOrEdge());
+std::string AddVerticesProcessor::findObsoleteIndex(PartitionID partId,
+                                                    VertexID vId,
+                                                    TagID tagId) {
+    auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId, tagId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(this->spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -147,30 +164,16 @@ std::string AddVerticesProcessor::obsoleteIndex(PartitionID partId,
         return "";
     }
     if (iter && iter->valid()) {
-        auto reader = RowReader::getTagPropReader(this->schemaMan_,
-                                                  iter->val(),
-                                                  spaceId_,
-                                                  index.get_tagOrEdge());
-        const auto& cols = index.get_cols();
-        auto values = collectIndexValues(reader.get(), cols);
-        auto indexKey = NebulaKeyUtils::vertexIndexKey(partId,
-                                                       index.get_index_id(),
-                                                       vId,
-                                                       values);
-        return indexKey;
+        return iter->val().str();
     }
     return "";
 }
 
-std::string AddVerticesProcessor::newIndex(PartitionID partId,
+std::string AddVerticesProcessor::indexKey(PartitionID partId,
                                            VertexID vId,
-                                           const folly::StringPiece& prop,
+                                           RowReader* reader,
                                            const nebula::cpp2::IndexItem& index) {
-    auto reader = RowReader::getTagPropReader(this->schemaMan_,
-                                              prop,
-                                              spaceId_,
-                                              index.get_tagOrEdge());
-    auto values = collectIndexValues(reader.get(), index.get_cols());
+    auto values = collectIndexValues(reader, index.get_cols());
     return NebulaKeyUtils::vertexIndexKey(partId,
                                           index.get_index_id(),
                                           vId, values);
