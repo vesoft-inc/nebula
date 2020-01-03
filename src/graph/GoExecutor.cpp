@@ -848,7 +848,7 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcRe
     auto spaceId = ectx()->rctx()->session()->space();
     auto status = getDstProps();
     if (!status.ok()) {
-        doError(Status::Error("Get dest props failed"));
+        doError(std::move(status).status());
         return;
     }
     auto returns = status.value();
@@ -912,7 +912,7 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
             if (record.size() != colTypes.size()) {
                 LOG(ERROR) << "Record size: " << record.size()
                            << " != column type size: " << colTypes.size();
-                return Status::Error("Record size is not equal to column type size, [%d != %d]",
+                return Status::Error("Record size is not equal to column type size, [%lu != %lu]",
                                       record.size(), colTypes.size());
             }
             for (auto i = 0u; i < record.size(); i++) {
