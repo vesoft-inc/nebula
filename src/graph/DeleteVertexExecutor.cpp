@@ -40,7 +40,7 @@ void DeleteVertexExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(Status::Error("Internal Error"));
+            doError(Status::Error("Get edge key failed when delete vertex `%ld'.", vid_));
             return;
         }
         auto rpcResp = std::move(resp).value();
@@ -63,8 +63,10 @@ void DeleteVertexExecutor::execute() {
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal Error"));
+        auto msg = folly::stringPrintf("Get edge key exception when delete vertex `%ld': %s.",
+                vid_, e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -76,7 +78,9 @@ void DeleteVertexExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>* edge
     auto cb = [this] (auto &&resp) {
         auto completeness = resp.completeness();
         if (completeness != 100) {
-            doError(Status::Error("Internal Error"));
+            doError(Status::Error(
+                        "Delete edge not complete when delete vertex `%ld', completeness: %d",
+                        vid_, completeness));
             return;
         }
         deleteVertex();
@@ -84,8 +88,10 @@ void DeleteVertexExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>* edge
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal Error"));
+        auto msg = folly::stringPrintf("Delete edge exception when delete vertex `%ld': %s",
+                vid_, e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(msg));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -96,7 +102,7 @@ void DeleteVertexExecutor::deleteVertex() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(Status::Error("Internal Error"));
+            doError(Status::Error("Delete vertex `%ld' failed.", vid_));
             return;
         }
         doFinish(Executor::ProcessControl::kNext);
@@ -104,8 +110,10 @@ void DeleteVertexExecutor::deleteVertex() {
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal Error"));
+        auto msg = folly::stringPrintf("Delete vertex `%ld' exception: %s",
+                vid_, e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(msg));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
