@@ -24,6 +24,8 @@ class JobDescription {
     FRIEND_TEST(JobManagerTest, loadJobDescription);
     FRIEND_TEST(JobManagerTest, showJobs);
     FRIEND_TEST(JobManagerTest, showJob);
+    FRIEND_TEST(JobManagerTest, backupJob);
+    FRIEND_TEST(JobManagerTest, recoverJob);
 
 public:
     JobDescription() {}
@@ -51,8 +53,8 @@ public:
     static std::tuple<std::string,
                       std::vector<std::string>,
                       JobStatus::Status,
-                      std::time_t,
-                      std::time_t>
+                      folly::Optional<std::time_t>,
+                      folly::Optional<std::time_t>>
     parseVal(const folly::StringPiece& rawVal);
 
     static bool isJobKey(const folly::StringPiece& rawKey);
@@ -62,8 +64,8 @@ private:
     std::string                     cmd_;
     std::vector<std::string>        paras_;
     JobStatus::Status               status_;
-    std::time_t                     startTime_;
-    std::time_t                     stopTime_;
+    folly::Optional<std::time_t>    startTime_;
+    folly::Optional<std::time_t>    stopTime_;
 };
 
 }  // namespace meta

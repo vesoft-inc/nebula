@@ -1558,9 +1558,8 @@ admin_sentence
         sentence->addPara(std::to_string($4));
         $$ = sentence;
     }
-    | KW_RECOVER KW_JOB INTEGER {
+    | KW_RECOVER KW_JOB {
         auto sentence = new AdminSentence("recover_job");
-        sentence->addPara(std::to_string($3));
         $$ = sentence;
     }
     ;

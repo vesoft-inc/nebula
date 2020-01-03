@@ -9,6 +9,7 @@
 
 #include <ctime>
 #include <string>
+#include <folly/Optional.h>
 
 namespace nebula {
 namespace meta {
@@ -19,6 +20,7 @@ public:
     static const std::string& currJobKey();
     static const std::string& archivePrefix();
     static std::string strTimeT(std::time_t t);
+    static std::string strTimeT(const folly::Optional<std::time_t>& t);
 };
 
 }  // namespace meta

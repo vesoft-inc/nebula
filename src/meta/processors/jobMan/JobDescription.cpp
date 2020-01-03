@@ -11,13 +11,15 @@
 namespace nebula {
 namespace meta {
 
-JobDescription::JobDescription(int32_t id, const std::string& cmd,
-                               std::vector<std::string>& paras) {
-    id_ = id;
-    cmd_ = cmd;
-    paras_ = paras;
-    status_ = JobStatus::Status::QUEUE;
-}
+JobDescription::JobDescription(int32_t id,
+                               const std::string& cmd,
+                               std::vector<std::string>& paras)
+                               : id_(id),
+                                 cmd_(cmd),
+                                 paras_(paras),
+                                 status_(JobStatus::Status::QUEUE),
+                                 startTime_(folly::none),
+                                 stopTime_(folly::none) {}
 
 JobDescription::JobDescription(const folly::StringPiece& key,
                                const folly::StringPiece& val) {
@@ -50,6 +52,7 @@ int32_t JobDescription::parseKey(const folly::StringPiece& rawKey) {
 }
 
 std::string JobDescription::jobVal() const {
+    using typeT = folly::Optional<std::time_t>;
     std::string str;
     auto cmdLen = cmd_.length();
     auto paraSize = paras_.size();
@@ -63,17 +66,18 @@ std::string JobDescription::jobVal() const {
         str.append(reinterpret_cast<const char*>(&para[0]), len);
     }
     str.append(reinterpret_cast<const char*>(&status_), sizeof(JobStatus::Status));
-    str.append(reinterpret_cast<const char*>(&startTime_), sizeof(std::time_t));
-    str.append(reinterpret_cast<const char*>(&stopTime_), sizeof(std::time_t));
+    str.append(reinterpret_cast<const char*>(&startTime_), sizeof(typeT));
+    str.append(reinterpret_cast<const char*>(&stopTime_), sizeof(typeT));
     return str;
 }
 
 std::tuple<std::string,
            std::vector<std::string>,
            JobStatus::Status,
-           std::time_t,
-           std::time_t>
+           folly::Optional<std::time_t>,
+           folly::Optional<std::time_t>>
 JobDescription::parseVal(const folly::StringPiece& rawVal) {
+    using typeT = folly::Optional<std::time_t>;
     int32_t offset = 0;
     size_t cmdLen = *reinterpret_cast<const size_t*>(rawVal.begin() + offset);
     offset += sizeof(size_t);
@@ -90,16 +94,21 @@ JobDescription::parseVal(const folly::StringPiece& rawVal) {
     }
     JobStatus::Status status = *reinterpret_cast<const JobStatus::Status*>(rawVal.begin() + offset);
     offset += sizeof(JobStatus::Status);
-    std::time_t tStart = *reinterpret_cast<const std::time_t*>(rawVal.begin() + offset);
-    offset += sizeof(std::time_t);
-    std::time_t tStop = *reinterpret_cast<const std::time_t*>(rawVal.begin() + offset);
+    typeT tStart = *reinterpret_cast<const typeT*>(rawVal.begin() + offset);
+    offset += sizeof(typeT);
+    typeT tStop = *reinterpret_cast<const typeT*>(rawVal.begin() + offset);
     return std::make_tuple(cmd, paras, status, tStart, tStop);
 }
 
 std::vector<std::string> JobDescription::dump() {
     std::vector<std::string> ret;
-    ret.emplace_back(cmd_);
-    ret.insert(ret.end(), paras_.begin(), paras_.end());
+    ret.emplace_back(std::to_string(id_));
+    std::stringstream oss;
+    oss << cmd_ << " ";
+    for (auto& p : paras_) {
+        oss << p << " ";
+    }
+    ret.emplace_back(oss.str());
     ret.emplace_back(JobStatus::toString(status_));
     ret.emplace_back(JobUtil::strTimeT(startTime_));
     ret.emplace_back(JobUtil::strTimeT(stopTime_));

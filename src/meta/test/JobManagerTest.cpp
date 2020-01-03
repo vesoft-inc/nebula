@@ -86,8 +86,6 @@ TEST_F(JobManagerTest, loadJobDescription) {
     jd1.value().setStatus(JobStatus::Status::FINISHED);
     int32_t jobId = jobMgr->addJob(jd1.value());
 
-    // jobMgr->save(jd1.value().jobKey(), jd1.value().jobVal());
-
     auto optJd2 = jobMgr->loadJobDescription(jobId);
     ASSERT_TRUE(optJd2);
     ASSERT_EQ(jd1.value().id_, optJd2->id_);
@@ -97,7 +95,6 @@ TEST_F(JobManagerTest, loadJobDescription) {
     ASSERT_EQ(jd1.value().startTime_, optJd2->startTime_);
     ASSERT_EQ(jd1.value().stopTime_, optJd2->stopTime_);
 }
-
 
 TEST(JobUtilTest, dummy) {
     ASSERT_TRUE(JobUtil::jobPrefix().length() + sizeof(size_t) !=
@@ -126,13 +123,14 @@ TEST_F(JobManagerTest, showJobs) {
     ASSERT_TRUE(statusOrShowResult.ok());
 
     auto& tbl = statusOrShowResult.value();
-    ASSERT_EQ(tbl[0], cmd1);
-    ASSERT_EQ(tbl[1], para1);
+    ASSERT_EQ(tbl[0], std::to_string(jd1.value().id_));
+    ASSERT_EQ(tbl[1], cmd1 + " " + para1 + " ");
     ASSERT_EQ(tbl[2], JobStatus::toString(JobStatus::Status::FINISHED));
     ASSERT_EQ(tbl[3], JobUtil::strTimeT(jd1.value().startTime_));
     ASSERT_EQ(tbl[4], JobUtil::strTimeT(jd1.value().stopTime_));
-    ASSERT_EQ(tbl[5], cmd2);
-    ASSERT_EQ(tbl[6], para2);
+
+    ASSERT_EQ(tbl[5], std::to_string(jd2.value().id_));
+    ASSERT_EQ(tbl[6], cmd2 + " " + para2 + " ");
     ASSERT_EQ(tbl[7], JobStatus::toString(JobStatus::Status::FAILED));
     ASSERT_EQ(tbl[8], JobUtil::strTimeT(jd2.value().startTime_));
     ASSERT_EQ(tbl[9], JobUtil::strTimeT(jd2.value().stopTime_));
@@ -168,31 +166,58 @@ TEST_F(JobManagerTest, showJob) {
     LOG(INFO) << "after jobMgr->showJob";
     ASSERT_TRUE(statusOrResult.ok());
     auto& result = statusOrResult.value();
-    for (auto& row : result) {
-        LOG(INFO) << row;
-    }
-    ASSERT_EQ(result[0], cmd);
-    ASSERT_EQ(result[1], para);
+    ASSERT_EQ(result[0], std::to_string(iJob));
+    ASSERT_EQ(result[1], cmd + " " + para + " ");
     ASSERT_EQ(result[2], JobStatus::toString(JobStatus::Status::FINISHED));
     ASSERT_EQ(result[3], JobUtil::strTimeT(jd.value().startTime_));
     ASSERT_EQ(result[4], JobUtil::strTimeT(jd.value().stopTime_));
     ASSERT_EQ(result[5], folly::stringPrintf("%d-%d", iJob, task1));
+
     ASSERT_EQ(result[6], dest1);
     ASSERT_EQ(result[7], JobStatus::toString(JobStatus::Status::FINISHED));
     ASSERT_EQ(result[8], JobUtil::strTimeT(*td1.startTime_));
     ASSERT_EQ(result[9], JobUtil::strTimeT(*td1.stopTime_));
     ASSERT_EQ(result[10], folly::stringPrintf("%d-%d", iJob, task2));
+
     ASSERT_EQ(result[11], dest2);
     ASSERT_EQ(result[12], JobStatus::toString(JobStatus::Status::FAILED));
     ASSERT_EQ(result[13], JobUtil::strTimeT(*td2.startTime_));
     ASSERT_EQ(result[14], JobUtil::strTimeT(*td2.stopTime_));
 }
 
-// TEST_F(JobManagerTest, backupJob) {
-// }
+TEST_F(JobManagerTest, backupJob) {
+    int32_t nJob = 2;
+    int32_t nTask = 5;
+    for (auto j = 0; j != nJob; ++j) {
+        auto statusOrDesc = jobMgr->buildJobDescription({"compact", "test"});
+        auto& jd = statusOrDesc.value();
+        jd.setStatus(JobStatus::Status::RUNNING);
+        jd.setStatus(JobStatus::Status::FINISHED);
+        jobMgr->save(jd.jobKey(), jd.jobVal());
+        for (auto i = 0; i != nTask; ++i) {
+            auto dst = folly::stringPrintf("192.168.8.%d", i);
+            TaskDescription td(jd.id_, i, dst);
+            td.setStatus(JobStatus::Status::FINISHED);
+            jobMgr->save(td.taskKey(), td.taskVal());
+        }
+    }
 
-// TEST_F(JobManagerTest, recoverJob) {
-// }
+    auto result = jobMgr->backupJob(0, nJob);
+    auto showJobsRes = jobMgr->showJobs();
+    ASSERT_TRUE(showJobsRes.value().empty());
+}
+
+TEST_F(JobManagerTest, recoverJob) {
+    int32_t nJob = 3;
+    for (auto i = 0; i != nJob; ++i) {
+        auto statusOrDesc = jobMgr->buildJobDescription({"flush", "test"});
+        auto& jd = statusOrDesc.value();
+        jobMgr->save(jd.jobKey(), jd.jobVal());
+    }
+
+    auto nJobRecovered = jobMgr->recoverJob();
+    ASSERT_EQ(nJobRecovered, nJob);
+}
 
 TEST(JobDescriptionTest, ctor) {
     std::string cmd1("compact");
@@ -280,8 +305,8 @@ TEST(JobDescriptionTest, dump) {
     jd.setStatus(status);
 
     auto table = jd.dump();
-    ASSERT_EQ(table[0], cmd);
-    ASSERT_EQ(table[1], paras[0]);
+    ASSERT_EQ(table[0], std::to_string(iJob));
+    ASSERT_EQ(table[1], cmd + " " + paras[0] + " ");
     ASSERT_EQ(table[2], JobStatus::toString(status));
 }
 

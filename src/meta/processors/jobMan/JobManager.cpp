@@ -282,7 +282,7 @@ int32_t JobManager::recoverJob() {
     int32_t recoveredJobNum = 0;
     std::unique_ptr<kvstore::KVIterator> iter;
     kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, JobDescription::jobPrefix(), &iter);
-    while (iter->valid()) {
+    for (; iter->valid(); iter->next()) {
         if (!JobDescription::isJobKey(iter->key())) {
             continue;
         }

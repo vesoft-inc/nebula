@@ -19,7 +19,7 @@ TaskDescription::TaskDescription(int32_t iJob,
                                    iTask_(iTask),
                                    dest_(dest),
                                    status_(JobStatus::Status::RUNNING),
-                                   startTime_(folly::none),
+                                   startTime_(std::time(nullptr)),
                                    stopTime_(folly::none) {}
 
 
@@ -120,16 +120,8 @@ std::vector<std::string> TaskDescription::dump() {
     ret.emplace_back(folly::stringPrintf("%d-%d", iJob_, iTask_));
     ret.emplace_back(dest_);
     ret.emplace_back(JobStatus::toString(status_));
-    if (startTime_) {
-        ret.emplace_back(JobUtil::strTimeT(*startTime_));
-    } else {
-        ret.emplace_back("");
-    }
-    if (startTime_) {
-        ret.emplace_back(JobUtil::strTimeT(*stopTime_));
-    } else {
-        ret.emplace_back("");
-    }
+    ret.emplace_back(JobUtil::strTimeT(startTime_));
+    ret.emplace_back(JobUtil::strTimeT(stopTime_));
     return ret;
 }
 

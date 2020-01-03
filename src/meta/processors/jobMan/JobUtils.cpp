@@ -44,6 +44,10 @@ std::string JobUtil::strTimeT(std::time_t t) {
     return ret;
 }
 
+std::string JobUtil::strTimeT(const folly::Optional<std::time_t>& t) {
+    return t ? strTimeT(*t) : "";
+}
+
 }  // namespace meta
 }  // namespace nebula
 

@@ -15,8 +15,8 @@ namespace nebula {
 namespace meta {
 
 void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
-    using vType = std::vector<std::string>;
-    StatusOr<vType> result;
+    Status status;
+    std::vector<std::string> result;
     std::stringstream oss;
     for (auto& p : req.get_paras()) { oss << p << " "; }
     LOG(INFO) << __PRETTY_FUNCTION__ << " paras=" << oss.str();
@@ -26,34 +26,44 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         case nebula::meta::cpp2::AdminJobOp::ADD:
         {
             auto jobDesc = jobMgr->buildJobDescription(req.get_paras());
-            if (!jobDesc.ok()) {
-                result.value().emplace_back(jobDesc.status().toString());
-                break;
+            if (jobDesc.ok()) {
+                result.emplace_back(std::to_string(jobMgr->addJob(jobDesc.value())));
+            } else {
+                status = jobDesc.status();
             }
-            auto iJob = jobMgr->addJob(jobDesc.value());
-            result.value().emplace_back(std::to_string(iJob));
             break;
         }
         case nebula::meta::cpp2::AdminJobOp::SHOW_All:
         {
-            result = jobMgr->showJobs();
+            auto r = jobMgr->showJobs();
+            if (r.ok()) {
+                result.swap(r.value());
+            } else {
+                status = r.status();
+            }
             break;
         }
         case nebula::meta::cpp2::AdminJobOp::SHOW:
         {
             int iJob = atoi(req.get_paras()[0].c_str());
             if (iJob == 0) { break; }
-            result = jobMgr->showJob(iJob);
+            auto r = jobMgr->showJob(iJob);
+            if (r.ok()) {
+                result.swap(r.value());
+            } else {
+                status = r.status();
+            }
             break;
         }
         case nebula::meta::cpp2::AdminJobOp::STOP:
         {
             int iJob = atoi(req.get_paras()[0].c_str());
-            if (iJob == 0) { break; }
-            if (jobMgr->stopJob(iJob) == Status::OK()) {
-                result.value().emplace_back("job " + std::to_string(iJob) + " stopped");
-            } else {
-                result.value().emplace_back("invalid job id " + std::to_string(iJob));
+            if (iJob == 0) {
+                break;
+            }
+            status = jobMgr->stopJob(iJob);
+            if (status.ok()) {
+                result.emplace_back("job " + std::to_string(iJob) + " stopped");
             }
             break;
         }
@@ -61,30 +71,31 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         {
             int32_t iStart = atoi(req.get_paras()[0].c_str());
             int32_t iStop = atoi(req.get_paras()[1].c_str());
-            auto nJobTask =  jobMgr->backupJob(iStart, iStop);
+            auto nJobTask = jobMgr->backupJob(iStart, iStop);
             std::string msg = folly::stringPrintf("backup %d job%s %d task%s",
                                                   nJobTask.first,
                                                   nJobTask.first > 0 ? "s" : "",
                                                   nJobTask.second,
                                                   nJobTask.second > 0 ? "s" : "");
-            result.value().emplace_back(msg);
+            result.emplace_back(msg);
             break;
         }
         case nebula::meta::cpp2::AdminJobOp::RECOVER:
         {
-            result =  jobMgr->recoverJob();
+            int32_t jobRecovered = jobMgr->recoverJob();
+            result.emplace_back(folly::stringPrintf("%d job recovered", jobRecovered));
             break;
         }
         default:
             break;
     }
 
-    if (!result.ok()) {
-        resp_.set_code(to(result.status()));
+    if (!status.ok()) {
+        resp_.set_code(to(status));
         onFinished();
         return;
     }
-    resp_.set_result(std::move(result.value()));
+    resp_.set_result(std::move(result));
     onFinished();
 }
 

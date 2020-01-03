@@ -45,25 +45,22 @@ void AdminJobExecutor::execute() {
         }
 
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        std::vector<std::string> header = getHeader(opEnum);
+        auto header = getHeader(opEnum);
+        auto nCols = header.size();
         resp_->set_column_names(std::move(header));
 
-        auto resultSet = std::forward<std::vector<std::string>>(resp.value());
-        std::vector<cpp2::RowValue> table;
-        for (auto& result : resultSet) {
-            std::vector<std::string> ret_cols;
-            folly::split(",", result, ret_cols, true);
+        std::vector<cpp2::RowValue> result;
+        std::vector<cpp2::ColumnValue> newRow;
+        for (auto& item : resp.value()) {
+            newRow.emplace_back();
+            newRow.back().set_str(std::move(item));
 
-            std::vector<cpp2::ColumnValue> row;
-            for (auto& col : ret_cols) {
-                row.emplace_back();
-                row.back().set_str(col);
+            if (newRow.size() == nCols) {
+                result.emplace_back();
+                result.back().set_columns(std::move(newRow));
             }
-
-            table.emplace_back();
-            table.back().set_columns(std::move(row));
         }
-        resp_->set_rows(std::move(table));
+        resp_->set_rows(std::move(result));
 
         DCHECK(onFinish_);
         onFinish_(Executor::ProcessControl::kNext);
