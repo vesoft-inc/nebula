@@ -131,12 +131,6 @@ class NebulaTestSuite(object):
                     return False, msg
             return True, ''
 
-        if col.getType() == ttypes.ColumnValue.PATH:
-            msg = self.check_format_str.format(col.get_path(), expect)
-            if col.get_path() != expect:
-                return False, msg
-            return True, ''
-
         return False, 'ERROR: Type unsupported'
 
     @classmethod
@@ -164,3 +158,29 @@ class NebulaTestSuite(object):
             for col, j in zip(row.columns, range(0, len(expect[i]))):
                 ok, msg = self.check_value(col, expect[i][j])
                 assert ok, msg
+
+    @classmethod
+    def check_path_result(self, rows, expect):
+        for row, i in zip(rows, range(0, len(expect))):
+            path = ttypes.Path()
+            path.entry_list = []
+            assert len(row.columns) == 1, "invalid columns size in rows"
+            col = row.columns[0]
+            for ecol, j in zip(expect[i], range(len(expect[i]))):
+                if j % 2 == 0 or j == len(expect[i]):
+                    pathEntry = ttypes.PathEntry()
+                    vertex = ttypes.Vertex()
+                    vertex.id = ecol
+                    pathEntry.set_vertex(vertex)
+                    path.entry_list.append(pathEntry)
+                else:
+                    assert len(
+                        ecol) == 2, "invalid columns size in expect result"
+                    pathEntry = ttypes.PathEntry()
+                    edge = ttypes.Edge()
+                    edge.type = ecol[0]
+                    edge.ranking = ecol[1]
+                    pathEntry.set_edge(edge)
+                    path.entry_list.append(pathEntry)
+            msg = self.check_format_str.format(col.get_path(), path)
+            assert col.get_path() == path, msg

@@ -84,25 +84,8 @@ class TestNebula(NebulaTestSuite):
 
         resp = self.execute_query('FIND SHORTEST PATH FROM 1 to 3 OVER *')
         assert resp.error_code == 0
-
-        path = ttypes.Path()
-        pathEntry1 = ttypes.PathEntry()
-        vertex1 = ttypes.Vertex()
-        vertex1.id = 1
-        pathEntry1.set_vertex(vertex1)
-        pathEntry2 = ttypes.PathEntry()
-        edge = ttypes.Edge()
-        edge.type = b"like"
-        edge.ranking = 0
-        pathEntry2.set_edge(edge)
-        vertex2 = ttypes.Vertex()
-        vertex2.id = 3
-        pathEntry3 = ttypes.PathEntry()
-        pathEntry3.set_vertex(vertex2)
-        path.entry_list = [pathEntry1, pathEntry2, pathEntry3]
-
-        expect_result = [[path]]
-        self.check_result(resp.rows, expect_result)
+        expect_result = [[1, (b"like", 0), 3]]
+        self.check_path_result(resp.rows, expect_result)
 
     @classmethod
     def cleanup(self):

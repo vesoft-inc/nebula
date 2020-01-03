@@ -17,6 +17,7 @@ from time import gmtime, strftime
 NEBULA_HOME = os.environ['NEBULA_HOME']
 TEST_DIR = os.path.join(os.environ['NEBULA_HOME'], 'tests')
 sys.path.insert(0, NEBULA_HOME)
+sys.path.insert(0, '/usr/local/lib/python3.7/site-packages/')
 RESULT_DIR = os.path.join(os.environ['NEBULA_TEST_LOGS_DIR'], 'results')
 LOGGING_ARGS = {
     '--junit-xml': 'TEST-nebula-{0}.xml',
