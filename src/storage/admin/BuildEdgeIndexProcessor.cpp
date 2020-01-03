@@ -36,7 +36,8 @@ void BuildEdgeIndexProcessor::process(const cpp2::BuildEdgeIndexRequest& req) {
 
             auto key = iter->key();
             if (!NebulaKeyUtils::isEdge(key) ||
-                NebulaKeyUtils::getEdgeType(key) != edgeType) {
+                NebulaKeyUtils::getEdgeType(key) != edgeType ||
+                NebulaKeyUtils::getEdgeVersion(key) != edgeVersion) {
                 continue;
             }
 

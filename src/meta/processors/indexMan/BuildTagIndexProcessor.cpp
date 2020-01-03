@@ -14,6 +14,8 @@ namespace meta {
 void BuildTagIndexProcessor::process(const cpp2::BuildTagIndexReq& req) {
     auto space = req.get_space_id();
     const auto &indexName = req.get_index_name();
+    auto tagID = req.get_tag_id();
+    auto version = req.get_tag_version();
 
     LOG(INFO) << "Build Tag Index Space " << space << ", Index Name " << indexName;
     std::unique_ptr<AdminClient> client(new AdminClient(kvstore_));
@@ -46,19 +48,18 @@ void BuildTagIndexProcessor::process(const cpp2::BuildTagIndexReq& req) {
         return;
     }
 
-    // fetch tag ID
-    // auto fields = MetaServiceUtils::parseTagIndex(tagResult.value());
-    TagID tagID = 0;
-
     auto blockingStatus = client->blockingWrites(space, SignType::BLOCK_ON).get();
     if (!blockingStatus.ok()) {
+        LOG(ERROR) << "Block Write Open Failed";
         resp_.set_code(cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE);
         onFinished();
         return;
     }
 
-    auto buildIndexStatus = client->buildTagIndex(space, tagID, tagIndexID, parts).get();
+    auto buildIndexStatus = client->buildTagIndex(space, tagID, tagIndexID,
+                                                  version, parts).get();
     if (!blockingStatus.ok()) {
+        LOG(ERROR) << "Build Tag Index Failed";
         resp_.set_code(cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE);
         onFinished();
         return;
@@ -66,6 +67,7 @@ void BuildTagIndexProcessor::process(const cpp2::BuildTagIndexReq& req) {
 
     auto unblockStatus = client->blockingWrites(space, SignType::BLOCK_OFF).get();
     if (!unblockStatus.ok()) {
+        LOG(ERROR) << "Block Write Close Failed";
         resp_.set_code(cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE);
         onFinished();
         return;

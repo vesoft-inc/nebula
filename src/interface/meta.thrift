@@ -442,6 +442,8 @@ struct ListTagIndexesResp {
 struct BuildTagIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
+    3: common.TagID        tag_id,
+    4: common.SchemaVer    tag_version,
 }
 
 struct CreateEdgeIndexReq {
@@ -479,6 +481,8 @@ struct ListEdgeIndexesResp {
 struct BuildEdgeIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
+    3: common.EdgeType     edge_type,
+    4: common.SchemaVer    edge_version,
 }
 
 struct CreateUserReq {

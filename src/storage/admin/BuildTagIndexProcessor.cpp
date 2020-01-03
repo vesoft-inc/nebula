@@ -35,7 +35,8 @@ void BuildTagIndexProcessor::process(const cpp2::BuildTagIndexRequest& req) {
 
             auto key = iter->key();
             if (!NebulaKeyUtils::isVertex(key) ||
-                NebulaKeyUtils::getTagId(key) != tagID) {
+                NebulaKeyUtils::getTagId(key) != tagID ||
+                NebulaKeyUtils::getTagVersion(key) != tagVersion) {
                 continue;
             }
 

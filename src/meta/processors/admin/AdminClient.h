@@ -101,6 +101,8 @@ public:
 
     folly::Future<Status> getLeaderDist(HostLeaderMap* result);
 
+    folly::Future<std::vector<HostAddr>> getLeaders(GraphSpaceID spaceId);
+
     folly::Future<Status> createSnapshot(GraphSpaceID spaceId, const std::string& name);
 
     folly::Future<Status> dropSnapshot(GraphSpaceID spaceId,

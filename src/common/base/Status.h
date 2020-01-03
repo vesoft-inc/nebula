@@ -81,7 +81,8 @@ public:
         return Status(k##ERROR, msg);                   \
     }                                                   \
                                                         \
-    static Status ERROR(const char *fmt, ...) {         \
+    static Status ERROR(const char *fmt, ...)           \
+        __attribute__((format(printf, 1, 2))) {         \
         va_list args;                                   \
         va_start(args, fmt);                            \
         auto msg = format(fmt, args);                   \

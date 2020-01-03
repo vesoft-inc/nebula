@@ -58,8 +58,8 @@ void BalanceExecutor::balanceLeader() {
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        LOG(ERROR) << "Balance leader exception: " << e.what();
+        doError(Status::Error("Balance leader exception: %s", e.what().c_str()));
         return;
     };
 
@@ -100,8 +100,8 @@ void BalanceExecutor::balanceData(bool isStop) {
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        LOG(ERROR) << "Balance data exception: " << e.what();
+        doError(Status::Error("Balance data exception: %s", e.what().c_str()));
         return;
     };
 
@@ -168,8 +168,8 @@ void BalanceExecutor::showBalancePlan() {
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        LOG(ERROR) << "Show balance plan exception: " << e.what();
+        doError(Status::Error("Show balance plan exception: %s", e.what().c_str()));
         return;
     };
 
