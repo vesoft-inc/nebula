@@ -164,7 +164,7 @@ gremlin> g.V(jesus).property('age', 6000);
 - pluto can't be his own cohabitant
 
     ```bash
-    nebula>  GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | GO FROM $-.place OVER lives REVERSELY WHERE \
+    nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | GO FROM $-.place OVER lives REVERSELY WHERE \
     $$.character.name != "pluto" YIELD $$.character.name AS cohabitants;
     ===============
     | cohabitants |
