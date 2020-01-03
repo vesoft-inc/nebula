@@ -161,11 +161,17 @@ class NebulaTestSuite(object):
 
     @classmethod
     def check_path_result(self, rows, expect):
+        msg = 'len(rows)[%d] != len(expect)[%d]' % (len(rows), len(expect))
+        assert len(rows) == len(expect), msg
         for row, i in zip(rows, range(0, len(expect))):
             path = ttypes.Path()
             path.entry_list = []
             assert len(row.columns) == 1, "invalid columns size in rows"
             col = row.columns[0]
+            assert len(col.get_path().entry_list) == len(
+                expect[i]
+            ), "Path lengths do not match, Result value: {}, Expected value: {}".format(
+                len(col.get_path().entry_list), len(expect[i]))
             for ecol, j in zip(expect[i], range(len(expect[i]))):
                 if j % 2 == 0 or j == len(expect[i]):
                     pathEntry = ttypes.PathEntry()
