@@ -23,7 +23,7 @@ Status DropSpaceExecutor::prepare() {
 
 
 void DropSpaceExecutor::execute() {
-    auto future = ectx()->getMetaClient()->dropSpace(*spaceName_, sentence_->isIfExist());
+    auto future = ectx()->getMetaClient()->dropSpace(*spaceName_, sentence_->isIfExists());
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {

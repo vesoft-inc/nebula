@@ -88,14 +88,14 @@ private:
 
 class DropSentence : public Sentence {
 public:
-    explicit  DropSentence(bool ifExist) : ifExist_{ifExist} {}
+    explicit  DropSentence(bool ifExists) : ifExists_{ifExists} {}
     virtual ~DropSentence() = default;
 
-    bool isIfExist() {
-        return ifExist_;
+    bool isIfExists() {
+        return ifExists_;
     }
 private:
-    bool ifExist_{false};
+    bool ifExists_{false};
 };
 
 inline std::ostream& operator<<(std::ostream &os, Sentence::Kind kind) {
