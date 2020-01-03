@@ -254,15 +254,15 @@ void InsertVertexExecutor::execute() {
                 LOG(ERROR) << "Insert vertices failed, error " << static_cast<int32_t>(it->second)
                            << ", part " << it->first;
             }
-            doError(Status::Error("Internal Error"));
+            doError(Status::Error("Insert vertex not complete, completeness: %d", completeness));
             return;
         }
         doFinish(Executor::ProcessControl::kNext, rows_.size());
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal Error"));
+        LOG(ERROR) << "Insert vertex exception: " << e.what();
+        doError(Status::Error("Insert vertex exception: %s", e.what().c_str()));
         return;
     };
 
