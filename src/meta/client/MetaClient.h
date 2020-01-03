@@ -384,9 +384,14 @@ protected:
         active_ = addrs_[folly::Random::rand64(addrs_.size())];
     }
 
-    void updateLeader() {
-        folly::RWSpinLock::WriteHolder holder(hostLock_);
-        leader_ = addrs_[folly::Random::rand64(addrs_.size())];
+    void updateLeader(HostAddr leader = {0, 0}) {
+        if (leader != HostAddr(0, 0)) {
+            folly::RWSpinLock::WriteHolder holder(hostLock_);
+            leader_ = leader;
+        } else {
+            folly::RWSpinLock::WriteHolder holder(hostLock_);
+            leader_ = addrs_[folly::Random::rand64(addrs_.size())];
+        }
     }
 
     void diff(const LocalCache& oldCache, const LocalCache& newCache);
