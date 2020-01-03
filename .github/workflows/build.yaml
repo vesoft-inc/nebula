@@ -35,8 +35,6 @@ jobs:
       image: vesoft/nebula-dev:${{ matrix.tag }}
       env:
         CCACHE_DIR: /tmp/ccache/${{ matrix.tag }}-${{ matrix.compiler }}
-        NEBULA_DEP_BIN: /opt/nebula/third-party/bin
-        LIBRARY_PATH: /usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:${LIBRARY_PATH}
       options: --mount type=tmpfs,destination=/tmp/ccache,tmpfs-size=1073741824 -v /tmp/ccache/${{ matrix.tag }}-${{ matrix.compiler }}:/tmp/ccache/${{ matrix.tag }}-${{ matrix.compiler }}
     steps:
       - uses: actions/checkout@v1
@@ -53,11 +51,11 @@ jobs:
         run: cd build && make -j $(nproc)
       - name: CTest with multiple threads
         timeout-minutes: 15
-        run: cd build && ${NEBULA_DEP_BIN}/ctest -j $(nproc) --timeout 300 --output-on-failure
+        run: cd build && ctest -j $(nproc) --timeout 300 --output-on-failure
       - name: CTest with single thread
         if: failure()
         timeout-minutes: 30
-        run: cd build && ${NEBULA_DEP_BIN}/ctest --timeout 300 --output-on-failure
+        run: cd build && ctest --timeout 300 --output-on-failure
       - name: Cleanup
         if: always()
         run: rm -rf build
