@@ -3,23 +3,28 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 #
-# The build can be controlled by defining following variables on the
-# <cmake> command line
+# CMakeLists.txt file contains a set of directives and instructions describing the project's source files and targets (executable, library, or both).
 #
-#   CMAKE_C_COMPILER               -- Specify the compiler for C language
-#   CMAKE_CXX_COMPILER             -- Specify the compiler for C++ language
+# The building can be controlled by defining the following variables on the
+# <cmake> command line.
 #
-#   NEBULA_THIRDPARTY_ROOT         -- Specify the root directory for third-party
-#   NEBULA_OTHER_ROOT              -- Specify the root directory for user build
-#                                  -- Split with ":", exp: DIR:DIR
-#   NEBULA_CLANG_USED_GCC_TOOLCHAIN           -- Set the gcc installation directory used by Clang(libstdc++)
+#   CMAKE_C_COMPILER                -- Specify the compiler for C language
+#   CMAKE_CXX_COMPILER              -- Specify the compiler for C++ language
 #
-#   ENABLE_JEMALLOC                -- Link jemalloc into all executables
-#   ENABLE_NATIVE                  -- Build native client
-#   ENABLE_TESTING                 -- Build unit test
+#   NEBULA_THIRDPARTY_ROOT          -- Specify the root directory for third-party
+#   NEBULA_OTHER_ROOT               -- Specify the root directory for user building
+#                                   -- Split with ":", exp: DIR:DIR
+#   NEBULA_CLANG_USE_GCC_TOOLCHAIN  -- Specify the root of GCC's toolchain, used by Clang
+#   NEBULA_USE_LINKER               -- Set linker to use, options are: bfd, gold
 #
+#   ENABLE_JEMALLOC                 -- Link jemalloc into all executables
+#   ENABLE_NATIVE                   -- Build native client
+#   ENABLE_TESTING                  -- Build unit test
+#
+# CMake version check
 cmake_minimum_required(VERSION 3.5.0)
 
+# Set the project name
 project("Nebula Graph" C CXX)
 
 # Set the project home dir
@@ -27,7 +32,9 @@ set(NEBULA_HOME ${CMAKE_CURRENT_SOURCE_DIR})
 # To include customized FindXXX.cmake modules
 set(CMAKE_MODULE_PATH "${NEBULA_HOME}/cmake" ${CMAKE_MODULE_PATH})
 include(LinkerConfig)
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -no-pie")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -no-pie")
 
 set(CMAKE_SKIP_RPATH TRUE)
 
@@ -39,6 +46,7 @@ option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
 option(ENABLE_UBSAN "Whether to turn Undefined Behavior Sanitizer ON or OFF" OFF)
 option(ENABLE_COVERAGE "Enable testing coverage reporting" OFF)
 option(ENABLE_FUZZ_TEST "Whether to turn Fuzz Test ON or OFF" OFF)
+option(ENABLE_WERROR "Whether to error on warnings" ON)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
@@ -70,11 +78,11 @@ if(ENABLE_TESTING AND ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Cla
   )
 endif()
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 14)  # specify the C++ standard
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# To detect if ccache available
+# To detect if ccache is available
 find_program(ccache_program_found "ccache")
 if (ENABLE_CCACHE AND ccache_program_found)
     message(STATUS "ENABLE_CCACHE: ON")
@@ -173,10 +181,6 @@ if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
     endif()
 endif()
 
-if ("${NEBULA_CLANG_USED_GCC_TOOLCHAIN}" STREQUAL "")
-    SET(NEBULA_CLANG_USED_GCC_TOOLCHAIN "${NEBULA_THIRDPARTY_ROOT}")
-endif()
-
 # third-party
 if(NOT ${NEBULA_THIRDPARTY_ROOT} STREQUAL "")
     message(STATUS "Specified NEBULA_THIRDPARTY_ROOT: " ${NEBULA_THIRDPARTY_ROOT})
@@ -245,21 +249,33 @@ if(NOT ENABLE_ASAN AND NOT ENABLE_NATIVE)
 endif()
 
 add_compile_options(-Wall)
-add_compile_options(-Werror)
 add_compile_options(-Wunused-parameter)
 add_compile_options(-Wshadow)
+if(ENABLE_WERROR)
+    add_compile_options(-Werror)
+endif()
 
+# TODO(dutor) Move all compiler-config-related operations to a separate file
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # This requries GCC 5.1+
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.1)
         add_compile_options(-Wsuggest-override)
     endif()
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    MESSAGE(STATUS "NEBULA_CLANG_USED_GCC_TOOLCHAIN: ${NEBULA_CLANG_USED_GCC_TOOLCHAIN}")
+    MESSAGE(STATUS "NEBULA_CLANG_USE_GCC_TOOLCHAIN: ${NEBULA_CLANG_USE_GCC_TOOLCHAIN}")
     # Here we need to specify the path of libstdc++ used by Clang
-    if(NOT ${NEBULA_CLANG_USED_GCC_TOOLCHAIN} STREQUAL "")
-        add_compile_options("--gcc-toolchain=${NEBULA_CLANG_USED_GCC_TOOLCHAIN}")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --gcc-toolchain=${NEBULA_CLANG_USED_GCC_TOOLCHAIN}")
+    if(NOT ${NEBULA_CLANG_USE_GCC_TOOLCHAIN} STREQUAL "")
+        execute_process(
+            COMMAND ${NEBULA_CLANG_USE_GCC_TOOLCHAIN}/bin/gcc -dumpmachine
+            OUTPUT_VARIABLE gcc_target_triplet
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        add_compile_options("--gcc-toolchain=${NEBULA_CLANG_USE_GCC_TOOLCHAIN}")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --gcc-toolchain=${NEBULA_CLANG_USE_GCC_TOOLCHAIN}")
+        if(NOT "${gcc_target_triplet}" STREQUAL "")
+            add_compile_options(--target=${gcc_target_triplet})
+            set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --target=${gcc_target_triplet}")
+        endif()
     endif()
     add_compile_options(-Wno-overloaded-virtual)
     add_compile_options(-Wno-self-assign-overloaded)
