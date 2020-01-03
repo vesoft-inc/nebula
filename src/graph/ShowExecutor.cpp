@@ -195,7 +195,7 @@ void ShowExecutor::showHosts() {
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error(folly::stringPrintf("Internal error : %s",
+        doError(Status::Error(folly::stringPrintf("Show host exception : %s",
                                                    e.what().c_str())));
         return;
     };
@@ -233,7 +233,7 @@ void ShowExecutor::showSpaces() {
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error(folly::stringPrintf("Internal error : %s",
+        doError(Status::Error(folly::stringPrintf("Show spaces exception: %s",
                                                    e.what().c_str())));
         return;
     };
@@ -306,7 +306,7 @@ void ShowExecutor::showParts() {
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error(folly::stringPrintf("Internal error : %s",
+        doError(Status::Error(folly::stringPrintf("Show parts exception: %s",
                                                    e.what().c_str())));
         return;
     };
@@ -352,7 +352,7 @@ void ShowExecutor::showTags() {
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error(folly::stringPrintf("Internal error : %s",
+        doError(Status::Error(folly::stringPrintf("Show tags exception: %s",
                                                    e.what().c_str())));
         return;
     };
@@ -396,7 +396,7 @@ void ShowExecutor::showEdges() {
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error(folly::stringPrintf("Internal error : %s",
+        doError(Status::Error(folly::stringPrintf("Show edges exception : %s",
                                                    e.what().c_str())));
         return;
     };
@@ -411,7 +411,8 @@ void ShowExecutor::showCreateSpace() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(std::move(resp).status());
+            doError(Status::Error("Get space `%s' failed when show create: %s",
+                        sentence_->getName()->c_str(), resp.status().toString().c_str()));
             return;
         }
 
@@ -444,9 +445,10 @@ void ShowExecutor::showCreateSpace() {
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error(folly::stringPrintf("Internal error : %s",
-                                                   e.what().c_str())));
+        auto msg = folly::stringPrintf("Show create space `%s' exception: %s",
+                sentence_->getName()->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
         return;
     };
 
@@ -466,7 +468,8 @@ void ShowExecutor::showCreateTag() {
     auto cb = [this] (auto &&resp) {
         auto *tagName =  sentence_->getName();
         if (!resp.ok()) {
-            doError(std::move(resp).status());
+            doError(Status::Error("Get tag(`%s') failed when show create: %s",
+                        tagName->c_str(), resp.status().toString().c_str()));
             return;
         }
 
@@ -543,9 +546,10 @@ void ShowExecutor::showCreateTag() {
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error(folly::stringPrintf("Internal error : %s",
-                                                   e.what().c_str())));
+        auto msg = folly::stringPrintf("Show create tag `%s' exception: %s",
+                sentence_->getName()->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(msg));
     };
 
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -563,7 +567,8 @@ void ShowExecutor::showCreateEdge() {
     auto cb = [this] (auto &&resp) {
         auto *edgeName =  sentence_->getName();
         if (!resp.ok()) {
-            doError(std::move(resp).status());
+            doError(Status::Error("Get edge `%s' failed when show create: %s",
+                        edgeName->c_str(), resp.status().toString().c_str()));
             return;
         }
 
@@ -640,9 +645,10 @@ void ShowExecutor::showCreateEdge() {
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error(folly::stringPrintf("Internal error : %s",
-                                                   e.what().c_str())));
+        auto msg = folly::stringPrintf("Show create edge `%s' exception: %s",
+                sentence_->getName()->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(msg));
     };
 
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -692,7 +698,7 @@ void ShowExecutor::showSnapshots() {
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error(folly::stringPrintf("Internal error : %s",
+        doError(Status::Error(folly::stringPrintf("Show snapshots exception : %s",
                                                    e.what().c_str())));
         return;
     };

@@ -37,8 +37,8 @@ void DropSnapshotExecutor::execute() {
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        LOG(ERROR) << "Drop snapshot exception: " << e.what();
+        doError(Status::Error("Drop snapshot exception: %s", e.what().c_str()));
         return;
     };
 
