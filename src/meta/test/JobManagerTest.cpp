@@ -203,6 +203,8 @@ TEST_F(JobManagerTest, backupJob) {
     }
 
     auto result = jobMgr->backupJob(0, nJob);
+    ASSERT_EQ(result.first, 2);
+    ASSERT_EQ(result.second, 10);
     auto showJobsRes = jobMgr->showJobs();
     ASSERT_TRUE(showJobsRes.value().empty());
 }
