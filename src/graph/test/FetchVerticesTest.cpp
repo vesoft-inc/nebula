@@ -345,6 +345,39 @@ TEST_F(FetchVerticesTest, FetchAll) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tim Duncan"];
+        auto *fmt = "FETCH PROP ON bachelor %ld ";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::string> expectedColNames{
+            {"bachelor.name"}, {"bachelor.major"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+        std::vector<std::tuple<std::string, std::string>> expected = {
+            {bachelors_["Tim Duncan"].name(), bachelors_["Tim Duncan"].major()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tim Duncan"];
+        auto *fmt = "FETCH PROP ON * %ld ";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::string> expectedColNames{
+            {"player.name"}, {"player.age"}, {"bachelor.name"}, {"bachelor.major"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+        std::vector<std::tuple<std::string, int64_t, std::string, std::string>> expected = {
+            {player.name(), player.age(),
+                bachelors_["Tim Duncan"].name(), bachelors_["Tim Duncan"].major()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 }  // namespace graph
 }  // namespace nebula
