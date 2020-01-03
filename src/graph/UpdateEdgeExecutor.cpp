@@ -233,7 +233,7 @@ void UpdateEdgeExecutor::insertReverselyEdge(storage::cpp2::UpdateResponse &&rpc
                 e.what().c_str());
         LOG(ERROR) << msg;
         // Very bad, it should delete the upsert positive edge!!!
-        doError(Status::Error(msg));
+        doError(Status::Error(std::move(msg)));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -291,7 +291,7 @@ void UpdateEdgeExecutor::execute() {
                         edge_.src, edge_.dst, edge_.ranking,
                         e.what().c_str());
         LOG(ERROR) << msg;
-        doError(Status::Error(msg));
+        doError(Status::Error(std::move(msg)));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }

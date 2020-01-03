@@ -225,7 +225,7 @@ void UpdateVertexExecutor::execute() {
         auto msg = folly::stringPrintf("Insert vertex `%ld' exception: %s",
                 vertex_, e.what().c_str());
         LOG(ERROR) << msg;
-        doError(Status::Error(msg));
+        doError(Status::Error(std::move(msg)));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }

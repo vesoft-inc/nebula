@@ -159,7 +159,7 @@ void ConfigExecutor::setVariables() {
         auto msg = folly::stringPrintf("Set congfig `%s' exception: %s",
                                         name.c_str(), e.what().c_str());
         LOG(ERROR) << msg;
-        doError(Status::Error(msg));
+        doError(Status::Error(std::move(msg)));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -211,7 +211,7 @@ void ConfigExecutor::getVariables() {
         auto msg = folly::stringPrintf("Get config `%s' exception: %s",
                                         name.c_str(), e.what().c_str());
         LOG(ERROR) << msg;
-        doError(Status::Error(msg));
+        doError(Status::Error(std::move(msg)));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);

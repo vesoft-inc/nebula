@@ -44,7 +44,7 @@ void DropEdgeExecutor::execute() {
         auto msg = folly::stringPrintf("Drop edge `%s' exception: %s.",
                 sentence_->name()->c_str(), e.what().c_str());
         LOG(ERROR) << msg;
-        doError(Status::Error(msg));
+        doError(Status::Error(std::move(msg)));
         return;
     };
 

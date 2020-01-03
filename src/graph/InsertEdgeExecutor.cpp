@@ -273,7 +273,7 @@ void InsertEdgeExecutor::execute() {
         auto msg = folly::stringPrintf("Insert edge `%s' exception: %s",
                 sentence_->edge()->c_str(), e.what().c_str());
         LOG(ERROR) << msg;
-        doError(Status::Error(msg));
+        doError(Status::Error(std::move(msg)));
         return;
     };
 

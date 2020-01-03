@@ -404,7 +404,7 @@ void ShowExecutor::showCreateSpace() {
         auto msg = folly::stringPrintf("Show create space `%s' exception: %s",
                 sentence_->getName()->c_str(), e.what().c_str());
         LOG(ERROR) << msg;
-        doError(Status::Error(msg));
+        doError(Status::Error(std::move(msg)));
         return;
     };
 

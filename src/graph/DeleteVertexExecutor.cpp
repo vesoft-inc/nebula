@@ -66,7 +66,7 @@ void DeleteVertexExecutor::execute() {
         auto msg = folly::stringPrintf("Get edge key exception when delete vertex `%ld': %s.",
                 vid_, e.what().c_str());
         LOG(ERROR) << msg;
-        doError(Status::Error(msg));
+        doError(Status::Error(std::move(msg)));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);

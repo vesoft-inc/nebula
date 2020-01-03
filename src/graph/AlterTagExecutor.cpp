@@ -64,7 +64,7 @@ void AlterTagExecutor::execute() {
         auto msg = folly::stringPrintf("Alter tag `%s' exception: %s.",
                 sentence_->name()->c_str(), e.what().c_str());
         LOG(ERROR) << msg;
-        doError(Status::Error(msg));
+        doError(Status::Error(std::move(msg)));
     };
 
     std::move(future).via(runner).thenValue(cb).thenError(error);
