@@ -128,6 +128,27 @@ if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
     SET(NEBULA_THIRDPARTY_ROOT "/opt/nebula/third-party")
 endif()
 
+# Submodules
+include(ExternalProject)
+ExternalProject_Add(
+    common
+    PREFIX modules
+    SOURCE_DIR modules/common
+    GIT_REPOSITORY git@github.com:vesoft-inc-private/nebula-common.git
+    GIT_SHALLOW true
+    GIT_PROGRESS true
+    GIT_TAG HEAD
+    CMAKE_ARGS
+        -DNEBULA_THIRDPARTY_ROOT=${NEBULA_THIRDPARTY_ROOT}
+        -DNEBULA_OTHER_ROOT=${NEBULA_OTHER_ROOT}
+        -DENABLE_JEMALLOC=${ENABLE_JEMALLOC}
+        -DENABLE_NATIVE=${ENABLE_NATIVE}
+        -DENABLE_CCACHE=${ENABLE_CCACHE}
+        -DENABLE_TESTING=false
+    INSTALL_COMMAND ""
+    BUILD_IN_SOURCE true
+)
+
 # third-party
 if(NOT ${NEBULA_THIRDPARTY_ROOT} STREQUAL "")
     message(STATUS "Specified NEBULA_THIRDPARTY_ROOT: " ${NEBULA_THIRDPARTY_ROOT})
@@ -162,37 +183,10 @@ message(STATUS "CMAKE_INCLUDE_PATH: " ${INCLUDE_PATH_STR})
 message(STATUS "CMAKE_LIBRARY_PATH: " ${LIBRARY_PATH_STR})
 message(STATUS "CMAKE_PROGRAM_PATH: " ${PROGRAM_PATH_STR})
 
-find_package(Bzip2 REQUIRED)
-find_package(DoubleConversion REQUIRED)
-find_package(Fatal REQUIRED)
-find_package(Fbthrift REQUIRED)
-find_package(Folly REQUIRED)
-find_package(Gflags REQUIRED)
-find_package(Glog REQUIRED)
-find_package(Googletest REQUIRED)
-find_package(Jemalloc REQUIRED)
-find_package(Libevent REQUIRED)
-find_package(Mstch REQUIRED)
-find_package(Proxygen REQUIRED)
-find_package(Rocksdb REQUIRED)
-find_package(Snappy REQUIRED)
-find_package(Wangle REQUIRED)
-find_package(ZLIB REQUIRED)
-find_package(Zstd REQUIRED)
-find_package(Boost REQUIRED)
-find_package(OpenSSL REQUIRED)
-find_package(Krb5 REQUIRED gssapi)
-find_package(GPERF 2.8 REQUIRED)
-find_package(Libunwind REQUIRED)
 find_package(BISON 3.0.5 REQUIRED)
 find_package(FLEX REQUIRED)
 find_package(Readline REQUIRED)
 find_package(NCURSES REQUIRED)
-find_package(LibLZMA MODULE)
-if(NOT ENABLE_ASAN AND NOT ENABLE_NATIVE)
-    find_package(PCHSupport)
-    add_compile_options(-Winvalid-pch)
-endif()
 
 add_compile_options(-Wall)
 add_compile_options(-Werror)
@@ -314,23 +308,14 @@ macro(nebula_add_library name type)
     endif()
     add_dependencies(
         ${name}
-        common_thrift_headers
-        graph_thrift_headers
-        storage_thrift_headers
-        meta_thrift_headers
-        raftex_thrift_headers
-        hbase_thrift_headers
         parser_target
     )
 endmacro()
 
 include_directories(AFTER ${NEBULA_HOME}/src)
-include_directories(AFTER src/common)
-include_directories(AFTER src/interface)
+include_directories(AFTER modules/common/src)
+include_directories(AFTER modules/common/src/interface)
 include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src)
-include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/interface)
-include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/kvstore/plugins)
-include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/kvstore/plugins/hbase)
 include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/parser)
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib")
@@ -349,8 +334,6 @@ set(THRIFT_LIBRARIES
     thriftfrozen2
     thrift-core
 )
-
-set(ROCKSDB_LIBRARIES ${Rocksdb_LIBRARY})
 
 # All compression libraries
 set(COMPRESSION_LIBRARIES bz2 snappy zstd z)
@@ -414,25 +397,21 @@ function(nebula_add_subdirectory dir_name)
     add_subdirectory(${dir_name})
 endfunction()
 
-set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-hbase)
-
-add_subdirectory(src)
-add_subdirectory(etc)
-add_subdirectory(scripts)
-add_subdirectory(share)
+nebula_add_subdirectory(src)
+nebula_add_subdirectory(conf)
+nebula_add_subdirectory(resources)
 
 add_custom_target(
     clean-build
     COMMAND ${CMAKE_MAKE_PROGRAM} clean
     COMMAND "find" "." "-name" "Testing" "|" "xargs" "rm" "-fr"
-    DEPENDS clean-interface clean-pch clean-hbase
 )
 
 add_custom_target(
     clean-all
     COMMAND ${CMAKE_MAKE_PROGRAM} clean
     COMMAND "find" "." "-name" "Testing" "|" "xargs" "rm" "-fr"
-    DEPENDS ${NEBULA_CLEAN_ALL_DEPS}
+    COMMAND "rm" "-fr" "modules/*"
 )
 
 add_custom_target(
@@ -441,6 +420,8 @@ add_custom_target(
     COMMAND "find" "." "-name" "CMakeCache.txt" "|" "xargs" "rm" "-f"
     COMMAND "find" "." "-name" "cmake_install.cmake" "|" "xargs" "rm" "-f"
     COMMAND "find" "." "-name" "CTestTestfile.cmake" "|" "xargs" "rm" "-f"
+    COMMAND "find" "." "-name" "CPackConfig.cmake" "|" "xargs" "rm" "-f"
+    COMMAND "find" "." "-name" "CPackSourceConfig.cmake" "|" "xargs" "rm" "-f"
     COMMAND "find" "." "-name" "Makefile" "|" "xargs" "rm" "-f"
     DEPENDS clean-all
 )
