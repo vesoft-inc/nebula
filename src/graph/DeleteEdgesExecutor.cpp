@@ -62,15 +62,15 @@ void DeleteEdgesExecutor::execute() {
         auto completeness = resp.completeness();
         if (completeness != 100) {
             // TODO Need to consider atomic issues
-            doError(Status::Error("Internal Error"));
+            doError(Status::Error("Delete edge not complete, completeness: %d", completeness));
             return;
         }
         doFinish(Executor::ProcessControl::kNext, edgeKeys_.size());
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        LOG(ERROR) << "Delete edge exception: " << e.what();
+        doError(Status::Error("Delete edge exception: %s", e.what().c_str()));
         return;
     };
 

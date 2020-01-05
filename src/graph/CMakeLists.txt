@@ -62,11 +62,5 @@ nebula_add_library(
     CreateSnapshotExecutor.cpp
     DropSnapshotExecutor.cpp
 )
-
-nebula_add_library(
-    graph_http_handler OBJECT
-    GraphHttpHandler.cpp
-)
-
 nebula_add_subdirectory(test)
 
