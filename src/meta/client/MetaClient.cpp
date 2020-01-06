@@ -388,10 +388,7 @@ void MetaClient::getResponse(Request req,
                 return;
             } else if (resp.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
                 HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
-                {
-                    folly::RWSpinLock::WriteHolder holder(hostLock_);
-                    leader_ = leader;
-                }
+                updateLeader(leader);
                 if (retry < retryLimit) {
                     evb->runAfterDelay([req = std::move(req), remoteFunc = std::move(remoteFunc),
                                         respGen = std::move(respGen), pro = std::move(pro),
@@ -608,9 +605,10 @@ MetaClient::getSpace(std::string name) {
     return future;
 }
 
-folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name) {
+folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name, const bool ifExists) {
     cpp2::DropSpaceReq req;
     req.set_space_name(std::move(name));
+    req.set_if_exists(ifExists);
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
@@ -1001,10 +999,11 @@ MetaClient::listTagSchemas(GraphSpaceID spaceId) {
 
 
 folly::Future<StatusOr<bool>>
-MetaClient::dropTagSchema(int32_t spaceId, std::string tagName) {
+MetaClient::dropTagSchema(int32_t spaceId, std::string tagName, const bool ifExists) {
     cpp2::DropTagReq req;
     req.set_space_id(spaceId);
     req.set_tag_name(std::move(tagName));
+    req.set_if_exists(ifExists);
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
@@ -1107,10 +1106,11 @@ MetaClient::getEdgeSchema(GraphSpaceID spaceId, std::string name, SchemaVer vers
 
 
 folly::Future<StatusOr<bool>>
-MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name) {
+MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name, const bool ifExists) {
     cpp2::DropEdgeReq req;
     req.set_space_id(std::move(spaceId));
     req.set_edge_name(std::move(name));
+    req.set_if_exists(ifExists);
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
