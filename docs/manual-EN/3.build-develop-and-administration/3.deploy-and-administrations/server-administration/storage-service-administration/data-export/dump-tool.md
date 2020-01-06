@@ -1,10 +1,12 @@
 # Dump Tool
 
-Dump Tool is an off-line data dumping tool that can be used to dump or count data with specified conditions.
+Dump Tool is a single-machine off-line data dumping tool that can be used to dump or count data with specified conditions.
 
 ## How to Get
 
-The source code of the dump tool is under `nebula/src/tools/db_dump`. You can use command `make db_dump` to compile it. Since the tool dumps data by opening the RockDB, you need to use it on the machines that have the storage service deployed and make sure the meta_server is started. Please refer to the following section on detailed usage.
+The source code of the dump tool is under `nebula/src/tools/db_dump`. You can use command `make db_dump` to compile it. Before using this tool, you can use the [SHOW HOSTS](../../../../../2.query-language/4.statement-syntax/3.utility-statements/show-syntax.md) statement in the **Nebula Graph** CLI to check the distribution of the partitions. Also, you can use the `vertex_id % partition_num` statement to calculate which partition the vertex's corresponding [key](../../../../../1.overview/3.design-and-architecture/2.storage-design.md) is located.
+
+**Note:** Since the tool dumps data by opening the RockDB, you need to use it on the machines that have the storage service deployed and make sure the meta_server is started. Please refer to the following section on detailed usage.
 
 ## How to Use
 

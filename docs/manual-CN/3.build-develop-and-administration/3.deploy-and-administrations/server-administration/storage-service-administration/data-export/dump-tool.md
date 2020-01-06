@@ -1,14 +1,16 @@
 # Dump Tool
 
-Dump Tool 是一个离线数据导出工具，可以用于导出或统计指定条件的数据。
+Dump Tool 是一个单机离线数据导出工具，可以用于导出或统计指定条件的数据。
 
 ## 如何获得
 
-Dump Tool 源码位于 `nebula/src/tools/db_dump` 下，用户可以执行 `make db_dump` 命令来编译生成该工具。该工具通过直接打开 RocksDB 转储数据，因此需要在部署 storage 服务的机器上使用，同时需要保证 meta_server 已启动。具体用法请参考下方说明。
+Dump Tool 源码位于 `nebula/src/tools/db_dump` 下，用户可以执行 `make db_dump` 命令来编译生成该工具。在使用本工具前，你可以使用 **Nebula Graph** CLI 的 [SHOW HOSTS](../../../../../2.query-language/4.statement-syntax/3.utility-statements/show-syntax.md) 命令查看分区的分布。使用 `vertex_id % partition_num` 来计算点对应的 [key](../../../../../1.overview/3.design-and-architecture/2.storage-design.md) 位于哪个分区。
+
+**注意：** 该工具通过直接打开 RocksDB 转储数据，因此需要离线使用——拷贝本工具到对应 storaged 所在机器，关闭该 storaged 进程，并同时保持 meta_server 已启动。具体用法请参考下方说明。
 
 ## 如何使用
 
-具体用法如下所示，用户可以通过执行不带参数的 `db_dump` 命令获得帮助。其中 `space` 参数是必须的，而 `db_pat`h 以及 `meta_server` 具有默认值，用户可以按照实际配置。`vids`、`parts`、`tags`、`edges` 可以任意组合，导出你需要的数据。
+具体用法如下所示，用户可以通过执行不带参数的 `db_dump` 命令获得帮助。其中 `space` 参数是必须的，而 `db_path` 以及 `meta_server` 具有默认值，用户可以按照实际配置。`vids`、`parts`、`tags`、`edges` 可以任意组合，导出你需要的数据。
 
 ```bash
   ./db_dump --space=<space name>
