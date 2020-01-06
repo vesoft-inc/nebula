@@ -59,7 +59,7 @@ void CreateEdgeExecutor::execute() {
         doFinish(Executor::ProcessControl::kNext);
     };
 
-    auto error = [this, name] (auto &&e) {
+    auto error = [this] (auto &&e) {
         auto msg = folly::stringPrintf("Create edge `%s' exception: %s",
                 sentence_->name()->c_str(), e.what().c_str());
         LOG(ERROR) << msg;
