@@ -22,7 +22,7 @@ DEFINE_int64(first_vertex_id, 1, "The smallest vertex id");
 DEFINE_uint64(width, 100, "width of matrix");
 DEFINE_uint64(height, 1000, "height of matrix");
 
-DECLARE_int32(load_data_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace storage {
@@ -38,7 +38,7 @@ namespace storage {
  *    update it after we suppport preheat. The tag must have only one int property,
  *    which is prop_name. 
  * 2. If the space and tag doesn't exists, it will try to create one, maybe you need to set
- *    load_data_interval_secs to make sure the storage service has load meta.
+ *    heartbeat_interval_secs to make sure the storage service has load meta.
  * 3. The width and height is the size of the big linked list, you can refer to the graph below.
  *    As expected, we can traverse the big linked list after width * height steps starting 
  *    from any node in the list.
@@ -66,7 +66,7 @@ public:
 
 private:
     bool init() {
-        FLAGS_load_data_interval_secs = 10;
+        FLAGS_heartbeat_interval_secs = 10;
         auto metaAddrsRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
         if (!metaAddrsRet.ok() || metaAddrsRet.value().empty()) {
             LOG(ERROR) << "Can't get metaServer address, status: " << metaAddrsRet.status()
@@ -95,7 +95,7 @@ private:
 
         auto tagResult = mClient_->getTagIDByNameFromCache(spaceId_, FLAGS_tag_name);
         if (!tagResult.ok()) {
-            sleep(FLAGS_load_data_interval_secs + 1);
+            sleep(FLAGS_heartbeat_interval_secs + 1);
             LOG(ERROR) << "Get tagId failed, try to create one: " << tagResult.status();
             nebula::cpp2::Schema schema;
             nebula::cpp2::ColumnDef column;

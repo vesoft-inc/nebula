@@ -262,15 +262,18 @@ void InsertEdgeExecutor::execute() {
                 LOG(ERROR) << "Insert edge failed, error " << static_cast<int32_t>(it->second)
                            << ", part " << it->first;
             }
-            doError(Status::Error("Internal Error"));
+            doError(Status::Error("Insert edge `%s' not complete, completeness: %d",
+                        sentence_->edge()->c_str(), completeness));
             return;
         }
         doFinish(Executor::ProcessControl::kNext, rows_.size());
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        auto msg = folly::stringPrintf("Insert edge `%s' exception: %s",
+                sentence_->edge()->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
         return;
     };
 
