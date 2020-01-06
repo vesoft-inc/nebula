@@ -35,7 +35,7 @@ void AdminJobExecutor::execute() {
         paras.emplace_back(ectx()->rctx()->session()->spaceName());
     }
 
-    auto future = ectx()->getMetaClient()->runAdminJob(opEnum, paras);
+    auto future = ectx()->getMetaClient()->submitJob(opEnum, paras);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this, opEnum] (auto &&resp) {
         if (!resp.ok()) {

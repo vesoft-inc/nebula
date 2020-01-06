@@ -16,12 +16,15 @@
 #include "kvstore/KVIterator.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/jobMan/JobManager.h"
+#include "meta/processors/jobMan/JobUtils.h"
 #include "meta/processors/jobMan/TaskDescription.h"
 #include "meta/processors/jobMan/JobStatus.h"
 #include "meta/MetaServiceUtils.h"
 #include "webservice/Common.h"
 
 #define JOB_PREFIX "JobManager::" << __func__ << " "
+
+DEFINE_int32(dispatch_thread_num, 3, "Number of job dispatch http thread");
 
 using nebula::kvstore::ResultCode;
 using nebula::kvstore::KVIterator;
@@ -34,12 +37,11 @@ JobManager* JobManager::getInstance() {
     return &inst;
 }
 
-bool JobManager::init(nebula::kvstore::KVStore* store,
-                        nebula::thread::GenericThreadPool *pool) {
-    if (!store || !pool) return false;
-    JobManager* inst = JobManager::getInstance();
-    inst->kvStore_ = store;
-    inst->pool_ = pool;
+bool JobManager::init(nebula::kvstore::KVStore* store) {
+    if (!store) return false;
+    kvStore_ = store;
+    pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
+    pool_->start(FLAGS_dispatch_thread_num);
 
     queue_ = std::make_unique<folly::UMPSCQueue<int32_t, true>>();
     bgThread_ = std::make_unique<thread::GenericWorker>();
@@ -55,6 +57,7 @@ JobManager::~JobManager() {
 void JobManager::shutDown() {
     LOG(INFO) << JOB_PREFIX << "enter";
     shutDown_ = true;
+    pool_->stop();
     bgThread_->stop();
     bgThread_->wait();
     LOG(INFO) << JOB_PREFIX << "exit";
@@ -69,10 +72,10 @@ void JobManager::runJobBackground() {
                 LOG(INFO) << JOB_PREFIX << "detect shutdown called, exit";
                 break;
             }
-            sleep(0.5);
+            usleep(5000);
         }
 
-        auto jobDesc = loadJobDescription(iJob);
+        auto jobDesc = JobDescription::loadJobDescription(iJob, kvStore_);
         if (jobDesc == folly::none) {
             LOG(INFO) << JOB_PREFIX << "load a invalid job from queue " << iJob;
             continue;   // leader change or archive happend
@@ -93,20 +96,13 @@ void JobManager::runJobBackground() {
     LOG(INFO) << JOB_PREFIX << "exit";
 }
 
-folly::Optional<JobDescription> JobManager::loadJobDescription(int32_t iJob) {
-    auto jobKey = JobDescription::makeJobKey(iJob);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    kvStore_->prefix(kDefaultPartId, kDefaultSpaceId, jobKey, &iter);
-    if (!iter->valid()) {
-        return folly::none;
-    }
-    return JobDescription(iter->key(), iter->val());
-}
-
 bool JobManager::runJobInternal(JobDescription& jobDesc) {
     std::unique_ptr<kvstore::KVIterator> iter;
     std::string spaceName = jobDesc.getParas().back();
     int spaceId = getSpaceId(spaceName);
+    if (spaceId == -1) {
+        return false;
+    }
     auto prefix = MetaServiceUtils::partPrefix(spaceId);
     auto ret = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -191,7 +187,7 @@ StatusOr<std::vector<std::string>> JobManager::showJobs() {
     std::vector<std::string> ret;
     std::unique_ptr<kvstore::KVIterator> iter;
     ResultCode rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId,
-                                     JobDescription::jobPrefix(), &iter);
+                                     JobUtil::jobPrefix(), &iter);
     if (rc != nebula::kvstore::SUCCEEDED) {
         return Status::Error("kvstore err code = %d", rc);
     }
@@ -230,7 +226,7 @@ StatusOr<std::vector<std::string>> JobManager::showJob(int iJob) {
 }
 
 nebula::Status JobManager::stopJob(int32_t iJob) {
-    auto jobDesc = loadJobDescription(iJob);
+    auto jobDesc = JobDescription::loadJobDescription(iJob, kvStore_);
     if (jobDesc == folly::none) {
         return Status::Error("kvstore err %d", nebula::kvstore::ResultCode::ERR_KEY_NOT_FOUND);
     }
@@ -281,7 +277,7 @@ std::pair<int, int> JobManager::backupJob(int iBegin, int iEnd) {
 int32_t JobManager::recoverJob() {
     int32_t recoveredJobNum = 0;
     std::unique_ptr<kvstore::KVIterator> iter;
-    kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, JobDescription::jobPrefix(), &iter);
+    kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
     for (; iter->valid(); iter->next()) {
         if (!JobDescription::isJobKey(iter->key())) {
             continue;
@@ -299,7 +295,7 @@ int32_t JobManager::recoverJob() {
 StatusOr<int32_t> JobManager::reserveJobId() {
     folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
 
-    auto currId = JobDescription::currJobKey();
+    auto currId = JobUtil::currJobKey();
     std::string val;
     ResultCode rc = kvStore_->get(kDefaultPartId, kDefaultSpaceId, currId, &val);
     if (rc == nebula::kvstore::ERR_KEY_NOT_FOUND) {
@@ -341,6 +337,7 @@ int JobManager::getSpaceId(const std::string& name) {
     std::string val;
     auto ret = kvStore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &val);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "KVStore error: " << ret;;
         return -1;
     }
     return *reinterpret_cast<const int*>(val.c_str());

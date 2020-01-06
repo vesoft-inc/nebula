@@ -30,10 +30,8 @@ protected:
         kv_ = TestUtils::initKV(rootPath_->path());
         TestUtils::createSomeHosts(kv_.get());
         TestUtils::assembleSpace(kv_.get(), 1, 1);
-        pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
-        pool_->start(1);
         jobMgr = JobManager::getInstance();
-        jobMgr->init(kv_.get(), pool_.get());
+        jobMgr->init(kv_.get());
         LOG(INFO) << "exit" << __func__;
     }
     void TearDown() override {
@@ -41,7 +39,6 @@ protected:
         jobMgr->shutDown();
         kv_.reset();
         rootPath_.reset();
-        pool_->stop();
         LOG(INFO) << "exit" << __func__;
     }
 
@@ -86,7 +83,7 @@ TEST_F(JobManagerTest, loadJobDescription) {
     jd1.value().setStatus(JobStatus::Status::FINISHED);
     int32_t jobId = jobMgr->addJob(jd1.value());
 
-    auto optJd2 = jobMgr->loadJobDescription(jobId);
+    auto optJd2 = JobDescription::loadJobDescription(jobId, kv_.get());
     ASSERT_TRUE(optJd2);
     ASSERT_EQ(jd1.value().id_, optJd2->id_);
     ASSERT_EQ(jd1.value().cmd_, optJd2->cmd_);

@@ -45,8 +45,13 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         }
         case nebula::meta::cpp2::AdminJobOp::SHOW:
         {
+            if (req.get_paras().empty()) {
+                status = Status::SyntaxError("show job needs para");
+            }
             int iJob = atoi(req.get_paras()[0].c_str());
-            if (iJob == 0) { break; }
+            if (iJob == 0) {
+                break;
+            }
             auto r = jobMgr->showJob(iJob);
             if (r.ok()) {
                 result.swap(r.value());
@@ -57,6 +62,9 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         }
         case nebula::meta::cpp2::AdminJobOp::STOP:
         {
+            if (req.get_paras().empty()) {
+                status = Status::SyntaxError("stop job needs para");
+            }
             int iJob = atoi(req.get_paras()[0].c_str());
             if (iJob == 0) {
                 break;
@@ -69,6 +77,9 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         }
         case nebula::meta::cpp2::AdminJobOp::BACKUP:
         {
+            if (req.get_paras().size() < 2) {
+                status = Status::SyntaxError("invalid paras for backup job");
+            }
             int32_t iStart = atoi(req.get_paras()[0].c_str());
             int32_t iStop = atoi(req.get_paras()[1].c_str());
             auto nJobTask = jobMgr->backupJob(iStart, iStop);

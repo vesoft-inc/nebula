@@ -233,9 +233,12 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    if (!initJobManager(kvstore.get(), pool.get())) {
-        LOG(ERROR) << "Init job manager failed";
-        return EXIT_FAILURE;
+    {
+        nebula::meta::JobManager* jobMgr = nebula::meta::JobManager::getInstance();
+        if (!jobMgr->init(kvstore.get())) {
+            LOG(ERROR) << "Init job manager failed";
+            return EXIT_FAILURE;
+        }
     }
 
     // Setup the signal handlers

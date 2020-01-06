@@ -8,6 +8,7 @@
 #include "meta/processors/jobMan/JobUtils.h"
 #include "meta/processors/jobMan/JobDescription.h"
 
+#include "kvstore/KVIterator.h"
 namespace nebula {
 namespace meta {
 
@@ -115,14 +116,6 @@ std::vector<std::string> JobDescription::dump() {
     return ret;
 }
 
-const std::string& JobDescription::jobPrefix() {
-    return JobUtil::jobPrefix();
-}
-
-const std::string& JobDescription::currJobKey() {
-    return JobUtil::currJobKey();
-}
-
 std::string JobDescription::archiveKey() {
     std::string str;
     str.reserve(32);
@@ -148,6 +141,17 @@ bool JobDescription::setStatus(JobStatus::Status newStatus) {
 
 bool JobDescription::isJobKey(const folly::StringPiece& rawKey) {
     return rawKey.size() == JobUtil::jobPrefix().length() + sizeof(int32_t);
+}
+
+folly::Optional<JobDescription>
+JobDescription::loadJobDescription(int32_t iJob, nebula::kvstore::KVStore* kv) {
+    auto jobKey = makeJobKey(iJob);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    kv->prefix(0, 0, jobKey, &iter);
+    if (!iter->valid()) {
+        return folly::none;
+    }
+    return JobDescription(iter->key(), iter->val());
 }
 
 }  // namespace meta

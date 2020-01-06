@@ -35,7 +35,7 @@ public:
     ~JobManager();
     static JobManager* getInstance();
 
-    bool init(nebula::kvstore::KVStore* store, nebula::thread::GenericThreadPool *pool);
+    bool init(nebula::kvstore::KVStore* store);
 
     void shutDown();
 
@@ -46,7 +46,6 @@ public:
     /*
      * Load job description from kvstore
      * */
-    folly::Optional<JobDescription> loadJobDescription(int32_t iJob);
     int32_t addJob(JobDescription& jobDesc);
     StatusOr<std::vector<std::string>> showJobs();
     StatusOr<std::vector<std::string>> showJob(int iJob);
@@ -68,7 +67,7 @@ private:
     std::unique_ptr<thread::GenericWorker> bgThread_;
 
     nebula::kvstore::KVStore* kvStore_;
-    nebula::thread::GenericThreadPool *pool_;
+    std::unique_ptr<nebula::thread::GenericThreadPool> pool_{nullptr};
 };
 
 }  // namespace meta

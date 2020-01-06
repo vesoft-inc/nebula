@@ -643,7 +643,7 @@ folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
 }
 
 folly::Future<StatusOr<std::vector<std::string>>>
-MetaClient::runAdminJob(cpp2::AdminJobOp op, std::vector<std::string> paras) {
+MetaClient::submitJob(cpp2::AdminJobOp op, std::vector<std::string> paras) {
     cpp2::AdminJobReq req;
     req.set_op(op);
     req.set_paras(paras);
