@@ -154,7 +154,7 @@ std::vector<std::string> dumpKVStore(kvstore::KVStore* kvstore) {
     const auto& spacePrefix = MetaServiceUtils::spacePrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto kvRet = kvstore->prefix(kDefaultSpaceId, kDefaultPartId, spacePrefix, &iter);
-    assert(kvRet == kvstore::ResultCode::SUCCEEDED);
+    EXPECT_EQ(kvRet, kvstore::ResultCode::SUCCEEDED);
     while (iter->valid()) {
         auto spaceId = MetaServiceUtils::spaceId(iter->key());
         allSpaceId.emplace_back(spaceId);
@@ -165,6 +165,7 @@ std::vector<std::string> dumpKVStore(kvstore::KVStore* kvstore) {
     for (const auto& spaceId : allSpaceId) {
         const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);
         kvRet = kvstore->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
+        EXPECT_EQ(kvRet, kvstore::ResultCode::SUCCEEDED);
         while (iter->valid()) {
             auto hostAddrs = MetaServiceUtils::parsePartVal(iter->val());
             LOG(INFO) << "hostAddrs.size()=" << hostAddrs.size();

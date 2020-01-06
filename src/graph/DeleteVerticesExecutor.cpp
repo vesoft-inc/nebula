@@ -11,33 +11,42 @@ namespace nebula {
 namespace graph {
 
 DeleteVerticesExecutor::DeleteVerticesExecutor(Sentence *sentence,
-                                               ExecutionContext *ectx) : Executor(ectx) {
+                                               ExecutionContext *ectx)
+    : Executor(ectx, "delete_vertices") {
     sentence_ = static_cast<DeleteVerticesSentence*>(sentence);
 }
 
 Status DeleteVerticesExecutor::prepare() {
-    space_ = ectx()->rctx()->session()->space();
-    expCtx_ = std::make_unique<ExpressionContext>();
-    expCtx_->setSpace(space_);
-    expCtx_->setStorageClient(ectx()->getStorageClient());
-
-    auto vidList = sentence_->vidList();
-    vidList->setContext(expCtx_.get());
-    auto status = vidList->prepare();
-    if (!status.ok()) {
-        return status;
-    }
-
-    auto values = vidList->eval();
-    for (auto value : values) {
-        auto v = value.value();
-        if (!Expression::isInt(v)) {
-            return Status::Error("Vertex ID should be of type integer");
+    Status status;
+    do {
+        status = checkIfGraphSpaceChosen();
+        if (!status.ok()) {
+            break;
         }
-        auto vid = Expression::asInt(v);
-        vids_.emplace_back(vid);
-    }
-    return Status::OK();
+
+        space_ = ectx()->rctx()->session()->space();
+        expCtx_ = std::make_unique<ExpressionContext>();
+        expCtx_->setSpace(space_);
+        expCtx_->setStorageClient(ectx()->getStorageClient());
+
+        auto vidList = sentence_->vidList();
+        vidList->setContext(expCtx_.get());
+        status = vidList->prepare();
+        if (!status.ok()) {
+            break;
+        }
+
+        auto values = vidList->eval();
+        for (auto value : values) {
+            auto v = value.value();
+            if (!Expression::isInt(v)) {
+                status = Status::Error("Vertex ID should be of type integer");
+            }
+            auto vid = Expression::asInt(v);
+            vids_.emplace_back(vid);
+        }
+    } while (false);
+    return status;
 }
 
 void DeleteVerticesExecutor::execute() {

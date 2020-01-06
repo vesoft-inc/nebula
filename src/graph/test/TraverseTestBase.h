@@ -37,6 +37,8 @@ public:
 
         ASSERT_TRUE(prepareSchema());
 
+        ASSERT_TRUE(initData());
+
         ASSERT_TRUE(prepareData());
     }
 
@@ -103,6 +105,8 @@ public:
 
 
     static AssertionResult prepareSchema();
+
+    static AssertionResult initData();
 
     static AssertionResult prepareData();
 
@@ -437,8 +441,7 @@ AssertionResult TraverseTestBase::prepareSchema() {
     return TestOK();
 }
 
-
-AssertionResult TraverseTestBase::prepareData() {
+AssertionResult TraverseTestBase::initData() {
     // TODO(dutor) Maybe we should move these data into some kind of testing resources, later.
     players_["Tim Duncan"].serve("Spurs", 1997, 2016)
                           .like("Tony Parker", 95)
@@ -734,7 +737,10 @@ AssertionResult TraverseTestBase::prepareData() {
                            .like("Dirk Nowitzki", 90)
                            .like("Kristaps Porzingis", 90)
                            .like("James Harden", 80);
+    return TestOK();
+}
 
+AssertionResult TraverseTestBase::prepareData() {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "USE nba";
@@ -753,6 +759,31 @@ AssertionResult TraverseTestBase::prepareData() {
         for (auto &player : players_) {
             query += std::to_string(player.vid());
             query += ": ";
+            query += "(";
+            query += "\"";
+            query += player.name();
+            query += "\"";
+            query += ",";
+            query += std::to_string(player.age());
+            query += "),\n\t";
+        }
+        query.resize(query.size() - 3);
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert `players' failed: "
+                               << static_cast<int32_t>(code);
+        }
+    }
+    {
+        // Insert vertices `player' with hash
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query += "INSERT VERTEX player(name, age) VALUES ";
+        for (auto &player : players_) {
+            query += "hash(\"";
+            query += player.name();
+            query += "\"): ";
             query += "(";
             query += "\"";
             query += player.name();
@@ -816,6 +847,29 @@ AssertionResult TraverseTestBase::prepareData() {
         }
     }
     {
+        // Insert vertices `team' with hash
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query += "INSERT VERTEX team(name) VALUES ";
+        for (auto &team : teams_) {
+            query += "hash(\"";
+            query += team.name();
+            query += "\"): ";
+            query += "(";
+            query += "\"";
+            query += team.name();
+            query += "\"";
+            query += "),\n\t";
+        }
+        query.resize(query.size() - 3);
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert `teams' failed: "
+                               << static_cast<int32_t>(code);
+        }
+    }
+    {
         // Insert vertices `team' with uuid
         cpp2::ExecutionResponse resp;
         std::string query;
@@ -853,6 +907,36 @@ AssertionResult TraverseTestBase::prepareData() {
                 query += " -> ";
                 query += std::to_string(teams_[team].vid());
                 query += ": ";
+                query += "(";
+                query += std::to_string(startYear);
+                query += ", ";
+                query += std::to_string(endYear);
+                query += "),\n\t";
+            }
+        }
+        query.resize(query.size() - 3);
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert `serve' failed: "
+                               << static_cast<int32_t>(code);
+        }
+    }
+    {
+        // Insert edges `serve' with hash
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query += "INSERT EDGE serve(start_year, end_year) VALUES ";
+        for (auto &player : players_) {
+            for (auto &serve : player.serves()) {
+                auto &team = std::get<0>(serve);
+                auto startYear = std::get<1>(serve);
+                auto endYear = std::get<2>(serve);
+                query += "hash(\"";
+                query += player.name();
+                query += "\") -> hash(\"";
+                query += teams_[team].name();
+                query += "\"): ";
                 query += "(";
                 query += std::to_string(startYear);
                 query += ", ";
@@ -924,6 +1008,33 @@ AssertionResult TraverseTestBase::prepareData() {
         }
     }
     {
+        // Insert edges `like' with hash
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query += "INSERT EDGE like(likeness) VALUES ";
+        for (auto &player : players_) {
+            for (auto &like : player.likes()) {
+                auto &other = std::get<0>(like);
+                auto likeness = std::get<1>(like);
+                query += "hash(\"";
+                query += player.name();
+                query += "\") -> hash(\"";
+                query += players_[other].name();
+                query += "\"): ";
+                query += "(";
+                query += std::to_string(likeness);
+                query += "),\n\t";
+            }
+        }
+        query.resize(query.size() - 3);
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert `like' failed: "
+                               << static_cast<int32_t>(code);
+        }
+    }
+    {
         // Insert edges `like' with uuid
         cpp2::ExecutionResponse resp;
         std::string query;
@@ -950,7 +1061,6 @@ AssertionResult TraverseTestBase::prepareData() {
                                << static_cast<int32_t>(code);
         }
     }
-
     {
         // Insert edges `teammate'
         cpp2::ExecutionResponse resp;
@@ -966,6 +1076,33 @@ AssertionResult TraverseTestBase::prepareData() {
                 query += std::to_string(players_[other].vid()) + ": (";
                 query += std::to_string(startYear) + ", ";
                 query += std::to_string(endYear) + "),\n\t";
+            }
+        }
+        query.resize(query.size() - 3);
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert `teammate' failed: " << static_cast<int32_t>(code);
+        }
+    }
+    {
+        // Insert edges `teammate' with hash
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query += "INSERT EDGE teammate(start_year, end_year) VALUES ";
+        for (auto &player : players_) {
+            for (auto &tm : player.teammates()) {
+                auto &other = std::get<0>(tm);
+                auto startYear = std::get<1>(tm);
+                auto endYear = std::get<2>(tm);
+                query += "hash(\"";
+                query += player.name();
+                query += "\") -> hash(\"";
+                query += players_[other].name();
+                query += "\"): (";
+                query += std::to_string(startYear) + ", ";
+                query += std::to_string(endYear);
+                query += "),\n\t";
             }
         }
         query.resize(query.size() - 3);
@@ -1019,3 +1156,4 @@ AssertionResult TraverseTestBase::removeData() {
 }  // namespace nebula
 
 #endif  // GRAPH_TEST_TRAVERSETESTBASE_H
+

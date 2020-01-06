@@ -61,6 +61,8 @@ using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, 
 using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
 // get edgeName via spaceId and edgeType
 using SpaceEdgeTypeNameMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, std::string>;
+// get tagName via spaceId and tagId
+using SpaceTagIdNameMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, std::string>;
 // get all edgeType edgeName via spaceId
 using SpaceAllEdgeMap = std::unordered_map<GraphSpaceID, std::vector<std::string>>;
 
@@ -292,6 +294,8 @@ public:
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
     StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& space, const std::string& name);
+    StatusOr<std::string> getTagNameByIdFromCache(const GraphSpaceID& space,
+                                                  const TagID& tagId);
 
     StatusOr<EdgeType> getEdgeTypeByNameFromCache(const GraphSpaceID& space,
                                                   const std::string& name);
@@ -361,6 +365,7 @@ protected:
     bool loadSchemas(GraphSpaceID spaceId,
                      std::shared_ptr<SpaceInfoCache> spaceInfoCache,
                      SpaceTagNameIdMap &tagNameIdMap,
+                     SpaceTagIdNameMap &tagIdNameMap,
                      SpaceEdgeNameTypeMap &edgeNameTypeMap,
                      SpaceEdgeTypeNameMap &edgeTypeNamemap,
                      SpaceNewestTagVerMap &newestTagVerMap,
@@ -379,9 +384,14 @@ protected:
         active_ = addrs_[folly::Random::rand64(addrs_.size())];
     }
 
-    void updateLeader() {
-        folly::RWSpinLock::WriteHolder holder(hostLock_);
-        leader_ = addrs_[folly::Random::rand64(addrs_.size())];
+    void updateLeader(HostAddr leader = {0, 0}) {
+        if (leader != HostAddr(0, 0)) {
+            folly::RWSpinLock::WriteHolder holder(hostLock_);
+            leader_ = leader;
+        } else {
+            folly::RWSpinLock::WriteHolder holder(hostLock_);
+            leader_ = addrs_[folly::Random::rand64(addrs_.size())];
+        }
     }
 
     void diff(const LocalCache& oldCache, const LocalCache& newCache);
@@ -438,6 +448,7 @@ private:
     SpaceTagNameIdMap     spaceTagIndexByName_;
     SpaceEdgeNameTypeMap  spaceEdgeIndexByName_;
     SpaceEdgeTypeNameMap  spaceEdgeIndexByType_;
+    SpaceTagIdNameMap     spaceTagIndexById_;
     SpaceNewestTagVerMap  spaceNewestTagVerMap_;
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
     SpaceAllEdgeMap       spaceAllEdgeMap_;

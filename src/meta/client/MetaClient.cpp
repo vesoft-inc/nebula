@@ -153,6 +153,7 @@ bool MetaClient::loadData() {
     decltype(spaceNewestTagVerMap_) spaceNewestTagVerMap;
     decltype(spaceNewestEdgeVerMap_) spaceNewestEdgeVerMap;
     decltype(spaceEdgeIndexByType_)  spaceEdgeIndexByType;
+    decltype(spaceTagIndexById_)    spaceTagIndexById;
     decltype(spaceAllEdgeMap_)      spaceAllEdgeMap;
 
     for (auto space : ret.value()) {
@@ -176,6 +177,7 @@ bool MetaClient::loadData() {
         if (!loadSchemas(spaceId,
                          spaceCache,
                          spaceTagIndexByName,
+                         spaceTagIndexById,
                          spaceEdgeIndexByName,
                          spaceEdgeIndexByType,
                          spaceNewestTagVerMap,
@@ -198,6 +200,7 @@ bool MetaClient::loadData() {
         spaceNewestTagVerMap_ = std::move(spaceNewestTagVerMap);
         spaceNewestEdgeVerMap_ = std::move(spaceNewestEdgeVerMap);
         spaceEdgeIndexByType_  = std::move(spaceEdgeIndexByType);
+        spaceTagIndexById_ = std::move(spaceTagIndexById);
         spaceAllEdgeMap_ = std::move(spaceAllEdgeMap);
     }
     diff(oldCache, localCache_);
@@ -208,6 +211,7 @@ bool MetaClient::loadData() {
 bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                              std::shared_ptr<SpaceInfoCache> spaceInfoCache,
                              SpaceTagNameIdMap &tagNameIdMap,
+                             SpaceTagIdNameMap &tagIdNameMap,
                              SpaceEdgeNameTypeMap &edgeNameTypeMap,
                              SpaceEdgeTypeNameMap &edgeTypeNameMap,
                              SpaceNewestTagVerMap &newestTagVerMap,
@@ -238,6 +242,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         schema->setProp(tagIt.schema.get_schema_prop());
         tagSchemas.emplace(std::make_pair(tagIt.tag_id, tagIt.version), schema);
         tagNameIdMap.emplace(std::make_pair(spaceId, tagIt.tag_name), tagIt.tag_id);
+        tagIdNameMap.emplace(std::make_pair(spaceId, tagIt.tag_id), tagIt.tag_name);
         // get the latest tag version
         auto it = newestTagVerMap.find(std::make_pair(spaceId, tagIt.tag_id));
         if (it != newestTagVerMap.end()) {
@@ -383,10 +388,7 @@ void MetaClient::getResponse(Request req,
                 return;
             } else if (resp.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
                 HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
-                {
-                    folly::RWSpinLock::WriteHolder holder(hostLock_);
-                    leader_ = leader;
-                }
+                updateLeader(leader);
                 if (retry < retryLimit) {
                     evb->runAfterDelay([req = std::move(req), remoteFunc = std::move(remoteFunc),
                                         respGen = std::move(respGen), pro = std::move(pro),
@@ -685,6 +687,20 @@ StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
     auto it = spaceTagIndexByName_.find(std::make_pair(space, name));
     if (it == spaceTagIndexByName_.end()) {
         std::string error = folly::stringPrintf("TagName `%s'  is nonexistent", name.c_str());
+        return Status::Error(std::move(error));
+    }
+    return it->second;
+}
+
+StatusOr<std::string> MetaClient::getTagNameByIdFromCache(const GraphSpaceID& space,
+                                                          const TagID& tagId) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = spaceTagIndexById_.find(std::make_pair(space, tagId));
+    if (it == spaceTagIndexById_.end()) {
+        std::string error = folly::stringPrintf("TagID `%d'  is nonexistent", tagId);
         return Status::Error(std::move(error));
     }
     return it->second;

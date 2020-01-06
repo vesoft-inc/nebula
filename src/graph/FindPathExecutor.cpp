@@ -206,7 +206,7 @@ void FindPathExecutor::getNeighborsAndFindPath() {
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error."));
+        doError(Status::Error("Find path exception: %s", e.what().c_str()));
     };
     folly::collectAll(futures).via(runner).thenValue(cb).thenError(error);
 }
@@ -311,19 +311,20 @@ inline void FindPathExecutor::meetOddPath(VertexID src, VertexID dst, Neighbor &
             VLOG(2) << "PathT: " << buildPathString(j->second);
 
             auto target = std::get<0>(*(path.back()));
-            auto pathTarget = std::get<0>(*(path.back())) + std::get<1>(*(path.back()));
             if (shortest_) {
                 targetNotFound_.erase(target);
-                if (finalPath_.count(pathTarget) > 0) {
+                auto pathFound = finalPath_.find(target);
+                if (pathFound != finalPath_.end()
+                        && pathFound->second.size() < path.size()) {
                     // already found a shorter path
                     continue;
                 } else {
                     VLOG(2) << "Found path: " << buildPathString(path);
-                    finalPath_.emplace(std::move(pathTarget), std::move(path));
+                    finalPath_.emplace(std::move(target), std::move(path));
                 }
             } else {
                 VLOG(2) << "Found path: " << buildPathString(path);
-                finalPath_.emplace(std::move(pathTarget), std::move(path));
+                finalPath_.emplace(std::move(target), std::move(path));
             }
         }  // for `j'
     }  // for `i'
@@ -361,19 +362,20 @@ inline void FindPathExecutor::meetEvenPath(VertexID intersectId) {
             VLOG(2) << "PathT: " << buildPathString(j->second);
             path.insert(path.end(), j->second.begin(), j->second.end());
             auto target = std::get<0>(*(path.back()));
-            auto pathTarget = std::get<0>(*(path.back())) + std::get<1>(*(path.back()));
             if (shortest_) {
-                if (finalPath_.count(pathTarget) > 0) {
+                auto pathFound = finalPath_.find(target);
+                if (pathFound != finalPath_.end()
+                        && pathFound->second.size() < path.size()) {
                     // already found a shorter path
                     continue;
                 } else {
                     targetNotFound_.erase(target);
                     VLOG(2) << "Found path: " << buildPathString(path);
-                    finalPath_.emplace(std::move(pathTarget), std::move(path));
+                    finalPath_.emplace(std::move(target), std::move(path));
                 }
             } else {
                 VLOG(2) << "Found path: " << buildPathString(path);
-                finalPath_.emplace(std::move(pathTarget), std::move(path));
+                finalPath_.emplace(std::move(target), std::move(path));
             }
         }
     }
@@ -484,7 +486,7 @@ void FindPathExecutor::getFromFrontiers(
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        fStatus_ = Status::Error("Get neighbors failed.");
+        fStatus_ = Status::Error("Get neighbors exception: %s.", e.what().c_str());
     };
     std::move(future).via(runner, folly::Executor::HI_PRI).thenValue(cb).thenError(error);
 }
@@ -522,7 +524,7 @@ void FindPathExecutor::getToFrontiers(
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        tStatus_ = Status::Error("Get neighbors failed.");
+        tStatus_ = Status::Error("Get neighbors exception: %s.", e.what().c_str());
     };
     std::move(future).via(runner, folly::Executor::HI_PRI).thenValue(cb).thenError(error);
 }

@@ -1848,15 +1848,40 @@ sentences
 
 %%
 
+#include "GraphScanner.h"
 void nebula::GraphParser::error(const nebula::GraphParser::location_type& loc,
                                 const std::string &msg) {
     std::ostringstream os;
-    os << msg << " at " << loc;
+    if (msg.empty()) {
+        os << "syntax error";
+    } else {
+        os << msg;
+    }
+
+    auto *query = scanner.query();
+    if (query == nullptr) {
+        os << " at " << loc;
+        errmsg = os.str();
+        return;
+    }
+
+    auto begin = loc.begin.column > 0 ? loc.begin.column - 1 : 0;
+    if ((loc.end.filename
+        && (!loc.begin.filename
+            || *loc.begin.filename != *loc.end.filename))
+        || loc.begin.line < loc.end.line
+        || begin >= query->size()) {
+        os << " at " << loc;
+    } else if (loc.begin.column < (loc.end.column ? loc.end.column - 1 : 0)) {
+        os << " near `" << query->substr(begin, loc.end.column - loc.begin.column) << "'";
+    } else {
+        os << " near `" << query->substr(begin, 8) << "'";
+    }
+
     errmsg = os.str();
 }
 
 
-#include "GraphScanner.h"
 static int yylex(nebula::GraphParser::semantic_type* yylval,
                  nebula::GraphParser::location_type *yylloc,
                  nebula::GraphScanner& scanner) {
