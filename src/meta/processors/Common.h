@@ -26,6 +26,7 @@ public:
         return l; \
     }
 
+GENERATE_LOCK(lastUpdateTime);
 GENERATE_LOCK(space);
 GENERATE_LOCK(id);
 GENERATE_LOCK(tag);

@@ -950,6 +950,12 @@ TEST(Parser, AdminOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "SHOW PARTS 666";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "SHOW TAGS";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();

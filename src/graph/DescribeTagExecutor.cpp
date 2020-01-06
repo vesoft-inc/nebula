@@ -37,7 +37,8 @@ void DescribeTagExecutor::execute() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(Status::Error("Schema not found for tag '%s'", sentence_->name()->c_str()));
+            doError(Status::Error("Describe tag `%s' failed.",
+                        sentence_->name()->c_str()));
             return;
         }
 
@@ -59,8 +60,10 @@ void DescribeTagExecutor::execute() {
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        auto msg = folly::stringPrintf("Describe tag `%s' exception: %s",
+                sentence_->name()->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
     };
 
     std::move(future).via(runner).thenValue(cb).thenError(error);
