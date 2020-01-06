@@ -151,6 +151,10 @@ fi
 %files simple_kv_verify
 %attr(0755,root,root) %{_bindir}/simple_kv_verify
 
+# db_dump rpm
+%files db_dump
+%attr(0755,root,root) %{_bindir}/db_dump
+
 %debug_package
 
 # missing not found ids
