@@ -25,7 +25,11 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     auto ret = getEdgeIndexID(space, indexName);
     if (ret.ok()) {
         LOG(ERROR) << "Create Edge Index Failed: " << indexName << " have existed";
-        resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+        if (req.get_if_not_exists()) {
+            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+        } else {
+            resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+        }
         onFinished();
         return;
     }
