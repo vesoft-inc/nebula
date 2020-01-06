@@ -35,7 +35,13 @@ Status DeleteVertexExecutor::prepare() {
 }
 
 void DeleteVertexExecutor::execute() {
-    // TODO(zlcook) Get edgeKeys of a vertex by Go
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+
     auto future = ectx()->getStorageClient()->getEdgeKeys(spaceId_, vid_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
