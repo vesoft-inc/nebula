@@ -8,6 +8,7 @@
 #include <algorithm>
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
+#include "filter/FunctionManager.h"
 
 DECLARE_int32(max_handlers_per_req);
 DECLARE_int32(min_vertices_per_bucket);
@@ -101,6 +102,13 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
             }
             case cpp2::PropOwner::EDGE: {
                 EdgeType edgeType = col.id.get_edge_type();
+                auto edgeName = this->schemaMan_->toEdgeName(spaceId_, std::abs(edgeType));
+                if (!edgeName.ok()) {
+                    VLOG(3) << "Can't find spaceId " << spaceId_ << ", edgeType " << edgeType;
+                    return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+                }
+                this->edgeMap_.emplace(edgeName.value(), edgeType);
+
                 auto it = kPropsInKey_.find(col.name);
                 if (it != kPropsInKey_.end()) {
                     prop.pikType_ = it->second;
@@ -111,13 +119,6 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                         prop.type_.type = nebula::cpp2::SupportedType::INT;
                     }
                 } else if (edgeType > 0) {
-                    auto edgeName = this->schemaMan_->toEdgeName(spaceId_, edgeType);
-                    if (!edgeName.ok()) {
-                        VLOG(3) << "Can't find spaceId " << spaceId_ << ", edgeType " << edgeType;
-                        return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
-                    }
-                    this->edgeMap_.emplace(edgeName.value(), edgeType);
-
                     // Only outBound have properties on edge.
                     auto schema = this->schemaMan_->getEdgeSchema(spaceId_,
                                                                   edgeType);
@@ -163,16 +164,6 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
         }
         expCtx_ = std::make_unique<ExpressionContext>();
         exp_->setContext(expCtx_.get());
-        auto& getters = expCtx_->getters();
-        getters.getDstTagProp = [] (const std::string& alias,
-                                    const std::string& prop) -> VariantType {
-            LOG(FATAL) << "Unsupport get dst tag " << alias << " prop " << prop;
-            return false;
-        };
-        getters.getInputProp = [] (const std::string& prop) -> VariantType {
-            LOG(FATAL) << "Unsupport get input prop " << prop;
-            return false;
-        };
     }
     return cpp2::ErrorCode::SUCCEEDED;
 }
@@ -182,9 +173,23 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
     switch (exp->kind()) {
         case Expression::kPrimary:
             return true;
-        case Expression::kFunctionCall:
-            // TODO(heng): we should support it in the future.
-            return false;
+        case Expression::kFunctionCall: {
+            auto* funcExp = static_cast<FunctionCallExpression*>(
+                              const_cast<Expression*>(exp));
+            auto* name = funcExp->name();
+            auto args = funcExp->args();
+            auto func = FunctionManager::get(*name, args.size());
+            if (!func.ok()) {
+                return false;
+            }
+            for (auto& arg : args) {
+                if (!checkExp(arg)) {
+                    return false;
+                }
+            }
+            funcExp->setFunc(std::move(func).value());
+            return true;
+        }
         case Expression::kUnary: {
             auto* unaExp = static_cast<const UnaryExpression*>(exp);
             return checkExp(unaExp->operand());
@@ -423,6 +428,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
     VertexID    lastDstId = 0;
     bool        firstLoop = true;
     int         cnt = 0;
+    Getters getters;
     for (; iter->valid() && cnt < FLAGS_max_edge_returned_per_vertex; iter->next()) {
         auto key = iter->key();
         auto val = iter->val();
@@ -438,10 +444,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
         if (edgeType > 0 && !val.empty()) {
             reader = RowReader::getEdgePropReader(this->schemaMan_, val, spaceId_, edgeType);
             if (exp_ != nullptr) {
-                // TODO(heng): We could remove the lock with one filter one bucket.
-                std::lock_guard<std::mutex> lg(this->lock_);
-                auto& getters = expCtx_->getters();
-                getters.getAliasProp = [this, edgeType, &reader](const std::string& edgeName,
+                getters.getAliasProp = [this, edgeType, &reader, &key](const std::string& edgeName,
                                            const std::string& prop) -> OptVariantType {
                     auto edgeFound = this->edgeMap_.find(edgeName);
                     if (edgeFound == edgeMap_.end()) {
@@ -450,6 +453,16 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                     }
                     if (edgeType != edgeFound->second) {
                         return Status::Error("Ignore this edge");
+                    }
+
+                    if (prop == _SRC) {
+                        return NebulaKeyUtils::getSrcId(key);
+                    } else if (prop == _DST) {
+                        return NebulaKeyUtils::getDstId(key);
+                    } else if (prop == _RANK) {
+                        return NebulaKeyUtils::getRank(key);
+                    } else if (prop == _TYPE) {
+                        return static_cast<int64_t>(NebulaKeyUtils::getEdgeType(key));
                     }
 
                     auto res = RowReader::getPropByName(reader.get(), prop);
@@ -471,7 +484,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                             << prop << ", value " << it->second;
                     return it->second;
                 };
-                auto value = exp_->eval();
+                auto value = exp_->eval(getters);
                 if (value.ok() && !Expression::asBool(value.value())) {
                     VLOG(1) << "Filter the edge "
                             << vId << "-> " << dstId << "@" << rank << ":" << edgeType;

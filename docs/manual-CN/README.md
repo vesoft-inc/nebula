@@ -17,13 +17,12 @@
   * [查询语言概览](1.overview/1.concepts/2.nGQL-overview.md)
 * 快速开始和常用链接
   * [开始试用](1.overview/2.quick-start/1.get-started.md)
-  * [常见问题](1.overview/2.quick-start/2.trouble-shooting.md)
+  * [常见问题 FAQ](1.overview/2.quick-start/2.FAQ.md)
   * [编译源代码](3.build-develop-and-administration/1.build/1.build-source-code.md)
   * [部署集群](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
   * [导入 .csv 文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
   * [加载 .sst 文件](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
   * [Nebula Graph 客户端](1.overview/2.quick-start/3.supported-clients.md)
-  * [常见问题 FAQ](1.overview/2.quick-start/2.FAQ.md)
 * 系统设计与架构
   * [设计总览](1.overview/3.design-and-architecture/1.design-and-architecture.md)
   * [存储层架构](1.overview/3.design-and-architecture/2.storage-design.md)
@@ -55,6 +54,7 @@
   * [属性引用](2.query-language/3.language-structure/property-reference.md)
   * [标识符命名规则](2.query-language/3.language-structure/schema-object-names.md)
   * [语句组合](2.query-language/3.language-structure/statement-composition.md)
+  * [用户自定义变量](2.query-language/3.language-structure/user-defined-variables.md)
 * 语句语法
   * 数据定义语句 (DDL)
     * [新建图空间](2.query-language/4.statement-syntax/1.data-definition-statements/create-space-syntax.md)
@@ -96,6 +96,7 @@
     * [用 Docker 部署](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster-on-docker.md)
     * [部署集群](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
     * [接入 Prometheus](3.build-develop-and-administration/3.deploy-and-administrations/deployment/connect-prometheus.md)
+    * [rpm 安装](3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb.md)
   * 服务器管理操作
     * 账号管理
       * [Drop User](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/drop-user-syntax.md)
@@ -122,6 +123,10 @@
 * [C++ 编程风格](4.contributions/cpp-coding-style.md)
 * [开发者文档风格](4.contributions/developer-documentation-style-guide.md)
 * [如何贡献](4.contributions/how-to-contribute.md)
+
+## 附录
+
+* [Gremlin VS nGQL](5.appendix/gremlin-ngql.md)
 
 ## 其他
 

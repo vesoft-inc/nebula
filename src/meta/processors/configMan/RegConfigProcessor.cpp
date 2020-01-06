@@ -30,6 +30,7 @@ void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
         }
 
         if (!data.empty()) {
+            LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
             doPut(std::move(data));
             return;
         }

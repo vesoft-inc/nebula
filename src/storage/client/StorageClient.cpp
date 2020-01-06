@@ -7,10 +7,6 @@
 #include "base/Base.h"
 #include "storage/client/StorageClient.h"
 
-#define ID_HASH(id, numShards) \
-    ((static_cast<uint64_t>(id)) % numShards + 1)
-
-
 DEFINE_int32(storage_client_timeout_ms, 60 * 1000, "storage client timeout");
 
 namespace nebula {
@@ -18,12 +14,12 @@ namespace storage {
 
 StorageClient::StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> threadPool,
                              meta::MetaClient *client,
-                             stats::Stats* stats)
+                             const std::string &serviceName)
         : ioThreadPool_(threadPool)
-        , client_(client)
-        , stats_(stats) {
+        , client_(client) {
     clientsMan_
         = std::make_unique<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>();
+    stats_ = std::make_unique<stats::Stats>(serviceName, "storageClient");
 }
 
 

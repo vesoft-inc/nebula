@@ -10,7 +10,8 @@ namespace nebula {
 namespace graph {
 
 CreateSnapshotExecutor::CreateSnapshotExecutor(Sentence *sentence,
-                                 ExecutionContext *ectx) : Executor(ectx) {
+                                               ExecutionContext *ectx)
+    : Executor(ectx, "create_snapshot") {
     sentence_ = static_cast<CreateSnapshotSentence*>(sentence);
 }
 
@@ -24,24 +25,20 @@ void CreateSnapshotExecutor::execute() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(std::move(resp).status());
             return;
         }
         auto ret = std::move(resp).value();
         if (!ret) {
-            DCHECK(onError_);
-            onError_(Status::Error("Balance leader failed"));
+            doError(Status::Error("Create snapshot failed"));
             return;
         }
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        LOG(ERROR) << "Create snapshot exception: " << e.what();
+        doError(Status::Error("Create snapshot exception: %s", e.what().c_str()));
         return;
     };
 

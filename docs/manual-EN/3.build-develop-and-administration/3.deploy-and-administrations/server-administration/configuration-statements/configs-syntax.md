@@ -82,26 +82,23 @@ GET CONFIGS [graph|meta|storage :] var
 For example
 
 ```ngql
-nebula> GET CONFIGS storage:load_data_interval_secs
-=================================================================
-| module  | name                      | type  | mode    | value |
-=================================================================
-| STORAGE | load_data_interval_secs   | INT64 | MUTABLE | 120   |
------------------------------------------------------------------
+nebula> GET CONFIGS storage:local_ip
+=======================================================
+| module  | name     | type   | mode      | value     |
+=======================================================
+| STORAGE | local_ip | STRING | IMMUTABLE | 127.0.0.1 |
+-------------------------------------------------------
 ```
 
 ```ngql
-nebula> GET CONFIGS load_data_interval_secs
+nebula> GET CONFIGS heartbeat_interval_secs
 =================================================================
 | module  | name                    | type  | mode      | value |
 =================================================================
-| GRAPH   | load_data_interval_secs | INT64 | MUTABLE   | 120   |
+| GRAPH   | heartbeat_interval_secs | INT64 | MUTABLE | 10    |
 -----------------------------------------------------------------
-| META    | load_data_interval_secs | INT64 | IMMUTABLE | 120   |
+| STORAGE | heartbeat_interval_secs | INT64 | MUTABLE | 10    |
 -----------------------------------------------------------------
-| STORAGE | load_data_interval_secs | INT64 | MUTABLE   | 120   |
------------------------------------------------------------------
-Got 3 rows (Time spent: 1449/2339 us)
 ```
 
 ## Update CONFIGS
@@ -116,13 +113,11 @@ UPDATE CONFIGS [graph|meta|storage :] var = value
 For example
 
 ```ngql
-nebula> UPDATE CONFIGS storage:load_data_interval_secs=1
-Execution succeeded (Time spent: 1750/2484 us)
-nebula> GET CONFIGS storage:load_data_interval_secs
+nebula> UPDATE CONFIGS storage:heartbeat_interval_secs=1
+nebula> GET CONFIGS storage:heartbeat_interval_secs
 ===============================================================
 | module  | name                    | type  | mode    | value |
 ===============================================================
-| STORAGE | load_data_interval_secs | INT64 | MUTABLE | 1     |
+| STORAGE | heartbeat_interval_secs | INT64 | MUTABLE | 1     |
 ---------------------------------------------------------------
-Got 1 rows (Time spent: 1678/3420 us)
 ```

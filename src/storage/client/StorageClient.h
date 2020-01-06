@@ -51,7 +51,8 @@ public:
 
     // A value between [0, 100], representing a precentage
     int32_t completeness() const {
-        return (totalReqsSent_ - failedReqs_) * 100 / totalReqsSent_;
+        DCHECK_NE(totalReqsSent_, 0);
+        return totalReqsSent_ == 0 ? 0 : (totalReqsSent_ - failedReqs_) * 100 / totalReqsSent_;
     }
 
     std::unordered_map<PartitionID, storage::cpp2::ErrorCode>& failedParts() {
@@ -84,7 +85,7 @@ class StorageClient {
 public:
     StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                   meta::MetaClient *client,
-                  stats::Stats *stats = nullptr);
+                  const std::string &serviceName = "");
     virtual ~StorageClient();
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> put(
@@ -288,7 +289,7 @@ private:
                         storage::cpp2::StorageServiceAsyncClient>> clientsMan_;
     mutable folly::RWSpinLock leadersLock_;
     mutable std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> leaders_;
-    stats::Stats         *stats_{nullptr};
+    std::unique_ptr<stats::Stats> stats_;
 };
 
 }   // namespace storage
