@@ -1,6 +1,6 @@
 # Dump Tool
 
-Dump Tool is an off-line data dump tool that can be used to dump or count data with specified conditions.
+Dump Tool is an off-line data dumping tool that can be used to dump or count data with specified conditions.
 
 ## How to Get
 
