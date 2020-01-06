@@ -48,7 +48,7 @@ jobs:
           mkdir -p build
       - name: CMake with gcc
         if: matrix.compiler == 'gcc'
-        run: cd build && cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_COVERAGE ..
+        run: cd build && cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_COVERAGE=ON ..
       - name: CMake with clang
         if: matrix.compiler == 'clang'
         run: cd build && cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DENABLE_UBSAN=on ..
