@@ -1161,7 +1161,7 @@ MetaClient::createTagIndex(GraphSpaceID spaceID,
 
 folly::Future<StatusOr<bool>>
 MetaClient::dropTagIndex(GraphSpaceID spaceID,
-                         std::string name
+                         std::string name,
                          bool ifExists) {
     cpp2::DropTagIndexReq req;
     req.set_space_id(std::move(spaceID));
