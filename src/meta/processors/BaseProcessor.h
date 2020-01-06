@@ -217,6 +217,10 @@ protected:
     StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
     getLatestTagFields(GraphSpaceID spaceId, const std::string& name);
 
+    // \brief Get Tag schema by TagId
+    StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
+    getLatestTagFields(GraphSpaceID spaceId, TagID tagId);
+
     /**
      * Return the edgeType for name.
      */
@@ -227,6 +231,10 @@ protected:
      */
     StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
     getLatestEdgeFields(GraphSpaceID spaceId, const std::string& name);
+
+    // \brief Get Edge schema by EdgeType
+    StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
+    getLatestEdgeFields(GraphSpaceID spaceId, EdgeType edgeType);
 
     StatusOr<TagIndexID> getTagIndexID(GraphSpaceID spaceId, const std::string& indexName);
 
