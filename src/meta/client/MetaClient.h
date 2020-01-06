@@ -174,7 +174,7 @@ public:
     getSpace(std::string name);
 
     folly::Future<StatusOr<bool>>
-    dropSpace(std::string name);
+    dropSpace(std::string name, bool ifExists = false);
 
     folly::Future<StatusOr<std::vector<cpp2::HostItem>>>
     listHosts();
@@ -201,7 +201,7 @@ public:
     listTagSchemas(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    dropTagSchema(int32_t spaceId, std::string name);
+    dropTagSchema(int32_t spaceId, std::string name, bool ifExists = false);
 
     // Return the latest schema when ver = -1
     folly::Future<StatusOr<nebula::cpp2::Schema>>
@@ -226,13 +226,21 @@ public:
     getEdgeSchema(GraphSpaceID spaceId, std::string name, SchemaVer version = -1);
 
     folly::Future<StatusOr<bool>>
-    dropEdgeSchema(GraphSpaceID spaceId, std::string name);
+    dropEdgeSchema(GraphSpaceID spaceId, std::string name, bool ifExists = false);
 
     // Operations for index
     folly::Future<StatusOr<TagIndexID>>
     createTagIndex(GraphSpaceID spaceID,
                    std::string name,
-                   std::map<std::string, std::vector<std::string>>&& fields);
+                   std::map<std::string, std::vector<std::string>> fields,
+                   bool ifNotExists = false);
+
+    folly::Future<StatusOr<TagIndexID>>
+    createTagIndex(GraphSpaceID spaceID,
+                   std::string indexName,
+                   std::string tagName,
+                   std::vector<std::string> fields,
+                   bool ifNotExists = false);
 
     // Remove the define of tag index
     folly::Future<StatusOr<bool>>
@@ -244,10 +252,21 @@ public:
     folly::Future<StatusOr<std::vector<cpp2::TagIndexItem>>>
     listTagIndexes(GraphSpaceID spaceId);
 
+    folly::Future<StatusOr<bool>>
+    buildTagIndex(GraphSpaceID spaceID, std::string name);
+
     folly::Future<StatusOr<EdgeIndexID>>
     createEdgeIndex(GraphSpaceID spaceID,
                     std::string name,
-                    std::map<std::string, std::vector<std::string>>&& fields);
+                    std::map<std::string, std::vector<std::string>> fields,
+                    bool ifNotExists = false);
+
+    folly::Future<StatusOr<EdgeIndexID>>
+    createEdgeIndex(GraphSpaceID spaceID,
+                    std::string indexName,
+                    std::string edgeName,
+                    std::vector<std::string> fields,
+                    bool ifNotExists = false);
 
     // Remove the define of edge index
     folly::Future<StatusOr<bool>>
@@ -258,6 +277,9 @@ public:
 
     folly::Future<StatusOr<std::vector<cpp2::EdgeIndexItem>>>
     listEdgeIndexes(GraphSpaceID spaceId);
+
+    folly::Future<StatusOr<bool>>
+    buildEdgeIndex(GraphSpaceID spaceId, std::string name);
 
     // Operations for custom kv
     folly::Future<StatusOr<bool>>
@@ -402,9 +424,14 @@ protected:
         active_ = addrs_[folly::Random::rand64(addrs_.size())];
     }
 
-    void updateLeader() {
-        folly::RWSpinLock::WriteHolder holder(hostLock_);
-        leader_ = addrs_[folly::Random::rand64(addrs_.size())];
+    void updateLeader(HostAddr leader = {0, 0}) {
+        if (leader != HostAddr(0, 0)) {
+            folly::RWSpinLock::WriteHolder holder(hostLock_);
+            leader_ = leader;
+        } else {
+            folly::RWSpinLock::WriteHolder holder(hostLock_);
+            leader_ = addrs_[folly::Random::rand64(addrs_.size())];
+        }
     }
 
     void diff(const LocalCache& oldCache, const LocalCache& newCache);

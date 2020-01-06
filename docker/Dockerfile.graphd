@@ -19,8 +19,4 @@ RUN rpm -ivh *.rpm \
 
 EXPOSE 3699 13000 13002
 
-ENTRYPOINT ["./bin/nebula-graphd", \
-  "--flagfile=./etc/nebula-graphd.conf", \
-  "--daemonize=false", \
-  "--v=0", \
-  "--minloglevel=2"]
+ENTRYPOINT ["./bin/nebula-graphd", "--flagfile=./etc/nebula-graphd.conf", "--daemonize=false"]

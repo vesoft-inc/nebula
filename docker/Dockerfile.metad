@@ -19,8 +19,4 @@ RUN rpm -ivh *.rpm \
 
 EXPOSE 45500 45501 11000 11002
 
-ENTRYPOINT ["./bin/nebula-metad", \
-  "--flagfile=./etc/nebula-metad.conf", \
-  "--daemonize=false", \
-  "--v=0", \
-  "--minloglevel=2"]
+ENTRYPOINT ["./bin/nebula-metad", "--flagfile=./etc/nebula-metad.conf", "--daemonize=false"]
