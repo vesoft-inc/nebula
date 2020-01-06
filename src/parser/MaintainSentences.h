@@ -625,7 +625,7 @@ private:
 };
 
 
-class DropTagIndexSentence final : public Sentence {
+class DropTagIndexSentence final : public DropSentence {
 public:
     explicit DropTagIndexSentence(std::string *indexName, bool ifExists) : DropSentence(ifExists) {
         indexName_.reset(indexName);
@@ -643,7 +643,7 @@ private:
 };
 
 
-class DropEdgeIndexSentence final : public Sentence {
+class DropEdgeIndexSentence final : public DropSentence {
 public:
     explicit DropEdgeIndexSentence(std::string *indexName, bool ifExists) : DropSentence(ifExists) {
         indexName_.reset(indexName);
