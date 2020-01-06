@@ -57,11 +57,11 @@ jobs:
         run: cd build && make -j $(nproc)
       - name: CTest with multiple threads
         timeout-minutes: 15
-        run: cd build && ctest -j $(nproc) --timeout 300 --output-on-failure
+        run: cd build && ctest -j 6 --timeout 300 --output-on-failure --rerun-failed
       - name: CTest with single thread
         if: failure()
         timeout-minutes: 30
-        run: cd build && ctest --timeout 300 --output-on-failure
+        run: cd build && ctest --timeout 300 --output-on-failure --rerun-failed
       - name: Cleanup
         if: always()
         run: rm -rf build
