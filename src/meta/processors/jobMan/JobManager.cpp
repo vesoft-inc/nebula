@@ -264,7 +264,9 @@ std::pair<int, int> JobManager::backupJob(int iBegin, int iEnd) {
     folly::Baton<true, std::atomic> baton;
     kvStore_->asyncRemoveRange(kDefaultSpaceId, kDefaultPartId, keyBegin, keyEnd,
         [&](nebula::kvstore::ResultCode code){
-            assert(code == kvstore::ResultCode::SUCCEEDED);
+            if (code != kvstore::ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "kvstore asyncRemoveRange failed: " << code;
+            }
             baton.post();
         });
     baton.wait();

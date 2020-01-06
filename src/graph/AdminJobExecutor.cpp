@@ -105,7 +105,7 @@ AdminJobExecutor::getHeader(nebula::meta::cpp2::AdminJobOp op, bool succeed) {
     case nebula::meta::cpp2::AdminJobOp::BACKUP:
         return {"BACKUP Result"};
     case nebula::meta::cpp2::AdminJobOp::RECOVER:
-        return {"New Job Id"};
+        return {"Recovered job num"};
     default:
         return {"Result"};
     }
