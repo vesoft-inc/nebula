@@ -1160,10 +1160,13 @@ MetaClient::createTagIndex(GraphSpaceID spaceID,
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::dropTagIndex(GraphSpaceID spaceID, std::string name) {
+MetaClient::dropTagIndex(GraphSpaceID spaceID,
+                         std::string name
+                         bool ifExists) {
     cpp2::DropTagIndexReq req;
     req.set_space_id(std::move(spaceID));
     req.set_index_name(std::move(name));
+    req.set_if_exists(ifExists);
 
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
@@ -1251,10 +1254,13 @@ MetaClient::createEdgeIndex(GraphSpaceID spaceID,
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::dropEdgeIndex(GraphSpaceID spaceID, std::string name) {
+MetaClient::dropEdgeIndex(GraphSpaceID spaceID,
+                          std::string name,
+                          bool ifExists) {
     cpp2::DropEdgeIndexReq req;
     req.set_space_id(std::move(spaceID));
     req.set_index_name(std::move(name));
+    req.set_if_exists(ifExists);
 
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
