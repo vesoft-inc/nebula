@@ -66,7 +66,7 @@ jobs:
         if: success() && matrix.compiler == 'gcc' && matrix.tag == 'centos7'
         run: |
           cd build
-          bash <(curl -s https://codecov.io/bash)
+          bash <(curl -s https://codecov.io/bash) > /dev/null 2>&1
         shell: bash
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
