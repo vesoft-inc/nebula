@@ -56,7 +56,6 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
                         return Status::Error(folly::stringPrintf(error, column.name.c_str()));
                     }
                     v.set_bool_value(ret.value());
-                    column.set_default_value(std::move(v));
                     break;
                 }
                 case nebula::ColumnType::INT:
@@ -68,7 +67,6 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
                         return Status::Error(folly::stringPrintf(error, column.name.c_str()));
                     }
                     v.set_int_value(ret.value());
-                    column.set_default_value(std::move(v));
                     break;
                 }
                 case nebula::ColumnType::DOUBLE:
@@ -80,7 +78,6 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
                         return Status::Error(folly::stringPrintf(error, column.name.c_str()));
                     }
                     v.set_double_value(ret.value());
-                    column.set_default_value(std::move(v));
                     break;
                 }
                 case nebula::ColumnType::STRING:
@@ -92,7 +89,6 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
                         return Status::Error(folly::stringPrintf(error, column.name.c_str()));
                     }
                     v.set_string_value(std::move(ret).value());
-                    column.set_default_value(std::move(v));
                     break;
                 }
                 case nebula::ColumnType::TIMESTAMP:
@@ -104,13 +100,13 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
                         return Status::Error(folly::stringPrintf(error, column.name.c_str()));
                     }
                     v.set_timestamp(ret.value());
-                    column.set_default_value(std::move(v));
                     break;
                 }
                 default:
                     LOG(ERROR) << "Unsupport Type";
                     return Status::Error("Unsupport Type");
             }
+            column.set_default_value(std::move(v));
         }
         schema.columns.emplace_back(std::move(column));
     }

@@ -410,6 +410,7 @@ struct CreateTagIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
     3: IndexProperties     properties,
+    4: bool                if_not_exists,
 }
 
 struct DropTagIndexReq {
@@ -442,6 +443,7 @@ struct CreateEdgeIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
     3: IndexProperties     properties,
+    4: bool                if_not_exists,
 }
 
 struct DropEdgeIndexReq {
