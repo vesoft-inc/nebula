@@ -62,8 +62,8 @@ jobs:
         if: failure()
         timeout-minutes: 30
         run: cd build && ctest --timeout 300 --output-on-failure --rerun-failed
-      - name: Testing Coverage
-        if: success() && matrix.compiler == 'gcc'
+      - name: Testing Coverage Report
+        if: success() && matrix.compiler == 'gcc' && matrix.tag == 'centos7'
         run: |
           cd build
           bash <(curl -s https://codecov.io/bash)
