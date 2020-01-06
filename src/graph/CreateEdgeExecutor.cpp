@@ -32,7 +32,6 @@ Status CreateEdgeExecutor::getSchema() {
 
     const auto& specs = sentence_->columnSpecs();
     const auto& schemaProps = sentence_->getSchemaProps();
-
     return SchemaHelper::createSchema(specs, schemaProps, schema_);
 }
 
