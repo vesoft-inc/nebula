@@ -156,7 +156,7 @@ public:
     getSpace(std::string name);
 
     folly::Future<StatusOr<bool>>
-    dropSpace(std::string name);
+    dropSpace(std::string name, bool ifExists = false);
 
     folly::Future<StatusOr<std::vector<cpp2::HostItem>>>
     listHosts();
@@ -183,7 +183,7 @@ public:
     listTagSchemas(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    dropTagSchema(int32_t spaceId, std::string name);
+    dropTagSchema(int32_t spaceId, std::string name, bool ifExists = false);
 
     // Return the latest schema when ver = -1
     folly::Future<StatusOr<nebula::cpp2::Schema>>
@@ -208,7 +208,7 @@ public:
     getEdgeSchema(GraphSpaceID spaceId, std::string name, SchemaVer version = -1);
 
     folly::Future<StatusOr<bool>>
-    dropEdgeSchema(GraphSpaceID spaceId, std::string name);
+    dropEdgeSchema(GraphSpaceID spaceId, std::string name, bool ifExists = false);
 
     // Operations for index
     folly::Future<StatusOr<TagIndexID>>

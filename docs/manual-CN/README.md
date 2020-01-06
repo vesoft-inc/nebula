@@ -96,6 +96,7 @@
     * [用 Docker 部署](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster-on-docker.md)
     * [部署集群](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
     * [接入 Prometheus](3.build-develop-and-administration/3.deploy-and-administrations/deployment/connect-prometheus.md)
+    * [rpm 安装](3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb.md)
   * 服务器管理操作
     * 账号管理
       * [Drop User](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/account-management-statements/drop-user-syntax.md)
@@ -122,6 +123,10 @@
 * [C++ 编程风格](4.contributions/cpp-coding-style.md)
 * [开发者文档风格](4.contributions/developer-documentation-style-guide.md)
 * [如何贡献](4.contributions/how-to-contribute.md)
+
+## 附录
+
+* [Gremlin VS nGQL](5.appendix/gremlin-ngql.md)
 
 ## 其他
 

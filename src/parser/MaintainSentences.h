@@ -475,9 +475,9 @@ private:
 };
 
 
-class DropTagSentence final : public Sentence {
+class DropTagSentence final : public DropSentence {
 public:
-    explicit DropTagSentence(std::string *name) {
+    explicit DropTagSentence(std::string *name, bool ifExist) : DropSentence(ifExist) {
         name_.reset(name);
         kind_ = Kind::kDropTag;
     }
@@ -493,9 +493,9 @@ private:
 };
 
 
-class DropEdgeSentence final : public Sentence {
+class DropEdgeSentence final : public DropSentence {
 public:
-    explicit DropEdgeSentence(std::string *name) {
+    explicit DropEdgeSentence(std::string *name, bool ifExist) : DropSentence(ifExist) {
         name_.reset(name);
         kind_ = Kind::kDropEdge;
     }

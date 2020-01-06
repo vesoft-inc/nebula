@@ -227,6 +227,7 @@ class GraphScanner;
 %type <sentences> sentences
 
 %type <boolval> opt_if_not_exists
+%type <boolval> opt_if_exists
 
 
 %start sentences
@@ -903,6 +904,11 @@ opt_if_not_exists
     | KW_IF KW_NOT KW_EXISTS { $$=true; }
     ;
 
+opt_if_exists
+    : %empty { $$=false; }
+    | KW_IF KW_EXISTS { $$=true; }
+    ;
+
 opt_create_schema_prop_list
     : %empty {
         $$ = nullptr;
@@ -1112,14 +1118,14 @@ describe_edge_sentence
     ;
 
 drop_tag_sentence
-    : KW_DROP KW_TAG name_label {
-        $$ = new DropTagSentence($3);
+    : KW_DROP KW_TAG opt_if_exists name_label {
+        $$ = new DropTagSentence($4, $3);
     }
     ;
 
 drop_edge_sentence
-    : KW_DROP KW_EDGE name_label {
-        $$ = new DropEdgeSentence($3);
+    : KW_DROP KW_EDGE opt_if_exists name_label {
+        $$ = new DropEdgeSentence($4, $3);
     }
     ;
 
@@ -1636,8 +1642,8 @@ space_opt_item
     ;
 
 drop_space_sentence
-    : KW_DROP KW_SPACE name_label {
-        $$ = new DropSpaceSentence($3);
+    : KW_DROP KW_SPACE opt_if_exists name_label {
+        $$ = new DropSpaceSentence($4, $3);
     }
     ;
 
