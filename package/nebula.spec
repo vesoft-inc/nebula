@@ -84,6 +84,11 @@ Summary: kv verify tool
 Group: Applications/Databases
 %description simple_kv_verify
 
+%package db_dump
+Summary: nebula db dump tool
+Group: Applications/Databases
+%description db_dump
+
 # the files include exe, config file, scripts
 # base rpm include files
 %files base
