@@ -26,20 +26,19 @@ void HBProcessor::process(const cpp2::HBReq& req) {
         return;
     }
 
-    ClusterID peerCluserId = req.get_cluster_id();
-    if (peerCluserId == 0) {
-        LOG(INFO) << "Set clusterId for new host " << host << "!";
-        resp_.set_cluster_id(clusterId_);
-    } else if (peerCluserId != clusterId_) {
-        LOG(ERROR) << "Reject wrong cluster host " << host << "!";
-        resp_.set_code(cpp2::ErrorCode::E_WRONGCLUSTER);
-        onFinished();
-        return;
-    }
-
-    LOG(INFO) << "Receive heartbeat from " << host;
     auto ret = kvstore::ResultCode::SUCCEEDED;
     if (req.get_in_storaged()) {
+        LOG(INFO) << "Receive heartbeat from " << host;
+        ClusterID peerCluserId = req.get_cluster_id();
+        if (peerCluserId == 0) {
+            LOG(INFO) << "Set clusterId for new host " << host << "!";
+            resp_.set_cluster_id(clusterId_);
+        } else if (peerCluserId != clusterId_) {
+            LOG(ERROR) << "Reject wrong cluster host " << host << "!";
+            resp_.set_code(cpp2::ErrorCode::E_WRONGCLUSTER);
+            onFinished();
+            return;
+        }
         HostInfo info(time::WallClock::fastNowInMilliSec());
         ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info);
         if (req.__isset.leader_partIds) {

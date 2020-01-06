@@ -74,7 +74,12 @@ private:
             return false;
         }
         threadPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_io_threads);
-        mClient_ = std::make_unique<meta::MetaClient>(threadPool_, metaAddrsRet.value());
+
+        meta::MetaClientOptions options;
+        options.skipConfig_ = true;
+        mClient_ = std::make_unique<meta::MetaClient>(threadPool_,
+                                                      metaAddrsRet.value(),
+                                                      options);
         if (!mClient_->waitForMetadReady()) {
             LOG(ERROR) << "Init meta client failed";
             return false;
