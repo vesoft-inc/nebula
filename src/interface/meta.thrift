@@ -189,7 +189,8 @@ struct CreateSpaceReq {
 }
 
 struct DropSpaceReq {
-    1: string space_name
+    1: string space_name,
+    2: bool if_exists,
 }
 
 struct ListSpacesReq {
@@ -230,6 +231,7 @@ struct AlterTagReq {
 struct DropTagReq {
     1: common.GraphSpaceID space_id,
     2: string              tag_name,
+    3: bool                if_exists,
 }
 
 struct ListTagsReq {
@@ -285,6 +287,7 @@ struct GetEdgeResp {
 struct DropEdgeReq {
     1: common.GraphSpaceID space_id,
     2: string              edge_name,
+    3: bool                if_exists,
 }
 
 struct ListEdgesReq {
