@@ -21,7 +21,6 @@ DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no re
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
 DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
-DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
 DECLARE_string(gflags_mode_json);
 
 
@@ -30,15 +29,10 @@ namespace meta {
 
 MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                        std::vector<HostAddr> addrs,
-                       HostAddr localHost,
-                       ClusterID clusterId,
-                       bool inStoraged,
-                       const std::string &serviceName)
+                       const MetaClientOptions& options)
     : ioThreadPool_(ioThreadPool)
     , addrs_(std::move(addrs))
-    , localHost_(localHost)
-    , clusterId_(clusterId)
-    , inStoraged_(inStoraged) {
+    , options_(options) {
     CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
     CHECK(!addrs_.empty())
         << "No meta server address is specified. Meta server is required";
@@ -49,7 +43,7 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
     updateLeader();
     bgThread_ = std::make_unique<thread::GenericWorker>();
     LOG(INFO) << "Create meta client to " << active_;
-    stats_ = std::make_unique<stats::Stats>(serviceName, "metaClient");
+    stats_ = std::make_unique<stats::Stats>(options_.serviceName_, "metaClient");
 }
 
 
@@ -69,7 +63,7 @@ bool MetaClient::isMetadReady() {
 
     bool ldRet = loadData();
     bool lcRet = true;
-    if (!FLAGS_local_config) {
+    if (!options_.skipConfig_) {
         lcRet = loadCfg();
     }
     if (ldRet && lcRet) {
@@ -79,9 +73,11 @@ bool MetaClient::isMetadReady() {
 }
 
 bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
-    std::string gflagsJsonPath;
-    GflagsManager::getGflagsModule(gflagsModule_);
-    gflagsDeclared_ = GflagsManager::declareGflags(gflagsModule_);
+    if (!options_.skipConfig_) {
+        std::string gflagsJsonPath;
+        GflagsManager::getGflagsModule(gflagsModule_);
+        gflagsDeclared_ = GflagsManager::declareGflags(gflagsModule_);
+    }
     isRunning_ = true;
     int tryCount = count;
     while (!isMetadReady() && ((count == -1) || (tryCount > 0)) && isRunning_) {
@@ -127,7 +123,7 @@ void MetaClient::heartBeatThreadFunc() {
     if (localLastUpdateTime_ < metadLastUpdateTime_) {
         bool ldRet = loadData();
         bool lcRet = true;
-        if (!FLAGS_local_config) {
+        if (!options_.skipConfig_) {
             lcRet = loadCfg();
         }
         if (ldRet && lcRet) {
@@ -497,9 +493,9 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
         VLOG(3) << "Listener is null!";
         return;
     }
-    auto newPartsMap = doGetPartsMap(localHost_, newCache);
-    auto oldPartsMap = doGetPartsMap(localHost_, oldCache);
-    VLOG(1) << "Let's check if any new parts added/updated for " << localHost_;
+    auto newPartsMap = doGetPartsMap(options_.localHost_, newCache);
+    auto oldPartsMap = doGetPartsMap(options_.localHost_, oldCache);
+    VLOG(1) << "Let's check if any new parts added/updated for " << options_.localHost_;
     for (auto it = newPartsMap.begin(); it != newPartsMap.end(); it++) {
         auto spaceId = it->first;
         const auto& newParts = it->second;
@@ -1387,48 +1383,48 @@ StatusOr<SchemaVer> MetaClient::getNewestEdgeVerFromCache(const GraphSpaceID& sp
 }
 
 folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
-    if (clusterId_.load() == 0) {
-        clusterId_ = ClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
-    }
     cpp2::HBReq req;
-    req.set_in_storaged(inStoraged_);
-    nebula::cpp2::HostAddr thriftHost;
-    thriftHost.set_ip(localHost_.first);
-    thriftHost.set_port(localHost_.second);
-    req.set_host(std::move(thriftHost));
-    req.set_cluster_id(clusterId_.load());
-
-    if (inStoraged_ && listener_ != nullptr) {
-        std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
-        listener_->fetchLeaderInfo(leaderIds);
-        if (leaderIds_ != leaderIds) {
-            {
-                folly::RWSpinLock::WriteHolder holder(leaderIdsLock_);
-                leaderIds_.clear();
-                leaderIds_ = leaderIds;
+    req.set_in_storaged(options_.inStoraged_);
+    if (options_.inStoraged_) {
+        nebula::cpp2::HostAddr thriftHost;
+        thriftHost.set_ip(options_.localHost_.first);
+        thriftHost.set_port(options_.localHost_.second);
+        req.set_host(std::move(thriftHost));
+        if (options_.clusterId_.load() == 0) {
+            options_.clusterId_ = ClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
+        }
+        req.set_cluster_id(options_.clusterId_.load());
+        if (listener_ != nullptr) {
+            std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+            listener_->fetchLeaderInfo(leaderIds);
+            if (leaderIds_ != leaderIds) {
+                {
+                    folly::RWSpinLock::WriteHolder holder(leaderIdsLock_);
+                    leaderIds_.clear();
+                    leaderIds_ = leaderIds;
+                }
+                req.set_leader_partIds(std::move(leaderIds));
             }
-            req.set_leader_partIds(std::move(leaderIds));
         }
     }
-
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
     VLOG(1) << "Send heartbeat to " << leader_ << ", clusterId " << req.get_cluster_id();
     getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_heartBeat(request);
                 }, [this] (cpp2::HBResp&& resp) -> bool {
-                    if (clusterId_.load() == 0) {
+                    if (options_.inStoraged_ && options_.clusterId_.load() == 0) {
                         LOG(INFO) << "Persisit the cluster Id from metad " << resp.get_cluster_id();
                         if (ClusterIdMan::persistInFile(resp.get_cluster_id(),
                                                         FLAGS_cluster_id_path)) {
-                            clusterId_.store(resp.get_cluster_id());
+                            options_.clusterId_.store(resp.get_cluster_id());
                         } else {
                             LOG(FATAL) << "Can't persist the clusterId in file "
                                        << FLAGS_cluster_id_path;
                         }
                     }
                     metadLastUpdateTime_ = resp.get_last_update_time_in_ms();
-                    LOG(INFO) << "Metad last update time: " << metadLastUpdateTime_;
+                    VLOG(1) << "Metad last update time: " << metadLastUpdateTime_;
                     return true;  // resp.code == cpp2::ErrorCode::SUCCEEDED
                 }, std::move(promise), true);
     return future;
