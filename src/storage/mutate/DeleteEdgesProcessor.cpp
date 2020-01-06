@@ -76,21 +76,22 @@ std::string DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
                     << ", spaceId " << spaceId;
             return "";
         }
-        std::vector<std::string> indexes;
         bool isLatestVE = true;
         while (iter->valid()) {
-            batchHolder->remove(iter->key().str());
             /**
              * just get the latest version edge for index.
              */
             if (isLatestVE) {
+                std::unique_ptr<RowReader> reader;
                 for (auto& index : indexes_) {
                     auto indexId = index.get_index_id();
                     if (index.get_tagOrEdge() == type) {
-                        auto reader = RowReader::getEdgePropReader(this->schemaMan_,
-                                                                   iter->val(),
-                                                                   spaceId,
-                                                                   type);
+                        if (reader == nullptr) {
+                            reader = RowReader::getEdgePropReader(this->schemaMan_,
+                                                                  iter->val(),
+                                                                  spaceId,
+                                                                  type);
+                        }
                         auto values = collectIndexValues(reader.get(),
                                                          index.get_cols());
                         auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
@@ -99,17 +100,13 @@ std::string DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
                                                                      rank,
                                                                      dstId,
                                                                      values);
-                        indexes.emplace_back(std::move(indexKey));
+                        batchHolder->remove(std::move(indexKey));
                     }
                 }
                 isLatestVE = false;
             }
+            batchHolder->remove(iter->key().str());
             iter->next();
-        }
-        if (!indexes.empty()) {
-            for (auto& key : indexes) {
-                batchHolder->remove(std::move(key));
-            }
         }
     }
     return encodeBatchValue(batchHolder->getBatch());

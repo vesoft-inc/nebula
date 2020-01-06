@@ -264,30 +264,18 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
     }
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     auto nVal = updater_->encode();
-    batchHolder->put(std::move(key_), std::move(nVal));
     if (!indexes_.empty()) {
+        std::unique_ptr<RowReader> reader, rReader;
         for (auto& index : indexes_) {
             auto indexId = index.get_index_id();
             if (index.get_tagOrEdge() == edgeKey.edge_type) {
-                auto prop = updater_->encode();
-                auto reader = RowReader::getEdgePropReader(this->schemaMan_,
-                                                           std::move(prop),
-                                                           this->spaceId_,
-                                                           edgeKey.edge_type);
-                auto values = collectIndexValues(reader.get(),
-                                                 index.get_cols());
-                auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
-                                                             indexId,
-                                                             edgeKey.src,
-                                                             edgeKey.ranking,
-                                                             edgeKey.dst,
-                                                             values);
-                batchHolder->put(std::move(indexKey), "");
                 if (!val_.empty()) {
-                    auto rReader = RowReader::getEdgePropReader(this->schemaMan_,
-                                                                val_,
-                                                                spaceId_,
-                                                                edgeKey.edge_type);
+                    if (rReader == nullptr) {
+                        rReader = RowReader::getEdgePropReader(this->schemaMan_,
+                                                               val_,
+                                                               spaceId_,
+                                                               edgeKey.edge_type);
+                    }
                     auto rValues = collectIndexValues(rReader.get(),
                                                       index.get_cols());
                     auto rIndexKey = NebulaKeyUtils::edgeIndexKey(partId,
@@ -298,9 +286,26 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
                                                                   rValues);
                     batchHolder->remove(std::move(rIndexKey));
                 }
+                if (reader == nullptr) {
+                    reader = RowReader::getEdgePropReader(this->schemaMan_,
+                                                          nVal,
+                                                          this->spaceId_,
+                                                          edgeKey.edge_type);
+                }
+
+                auto values = collectIndexValues(reader.get(),
+                                                 index.get_cols());
+                auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
+                                                             indexId,
+                                                             edgeKey.src,
+                                                             edgeKey.ranking,
+                                                             edgeKey.dst,
+                                                             values);
+                batchHolder->put(std::move(indexKey), "");
             }
         }
     }
+    batchHolder->put(std::move(key_), std::move(nVal));
     return encodeBatchValue(batchHolder->getBatch());
 }
 

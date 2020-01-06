@@ -97,7 +97,6 @@ std::string DeleteVertexProcessor::deleteVertex(GraphSpaceID spaceId,
                 << ", spaceId " << spaceId;
         return "";
     }
-    std::vector<std::string> indexes;
     TagID latestVVId = -1;
     while (iter->valid()) {
         auto key = iter->key();
@@ -108,7 +107,6 @@ std::string DeleteVertexProcessor::deleteVertex(GraphSpaceID spaceId,
                 vertexCache_->evict(std::make_pair(vId, tagId), partId);
             }
         }
-        batchHolder->remove(key.str());
         /**
          * example ,the prefix result as below :
          *     V1_tag1_version3
@@ -125,30 +123,29 @@ std::string DeleteVertexProcessor::deleteVertex(GraphSpaceID spaceId,
          * Using newlyVertexId to identify if it is the latest version
          */
         if (latestVVId != tagId) {
+            std::unique_ptr<RowReader> reader;
             for (auto& index : indexes_) {
                 auto indexId = index.get_index_id();
                 if (index.get_tagOrEdge() == tagId) {
-                    auto reader = RowReader::getTagPropReader(this->schemaMan_,
-                                                              iter->val(),
-                                                              spaceId,
-                                                              tagId);
+                    if (reader == nullptr) {
+                        reader = RowReader::getTagPropReader(this->schemaMan_,
+                                                             iter->val(),
+                                                             spaceId,
+                                                             tagId);
+                    }
                     const auto& cols = index.get_cols();
                     auto values = collectIndexValues(reader.get(), cols);
                     auto indexKey = NebulaKeyUtils::vertexIndexKey(partId,
                                                                    indexId,
                                                                    vId,
                                                                    values);
-                    indexes.emplace_back(std::move(indexKey));
+                    batchHolder->remove(std::move(indexKey));
                 }
             }
             latestVVId = tagId;
         }
+        batchHolder->remove(key.str());
         iter->next();
-    }
-    if (!indexes.empty()) {
-        for (auto& index : indexes) {
-            batchHolder->remove(std::move(index));
-        }
     }
     return encodeBatchValue(batchHolder->getBatch());
 }

@@ -102,8 +102,11 @@ static std::vector<nebula::cpp2::IndexItem> mockIndexes(bool isEdge,
                 cols.emplace_back(std::move(column));
             }
             // indexId can be same with edgeType
-            indexes.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                 edgeType, edgeType, std::move(cols));
+            nebula::cpp2::IndexItem index;
+            index.set_index_id(edgeType);
+            index.set_tagOrEdge(edgeType);
+            index.set_cols(std::move(cols));
+            indexes.emplace_back(std::move(index));
         }
     } else {
         for (auto tagId = 3001; tagId < 3010; tagId++) {
@@ -121,8 +124,11 @@ static std::vector<nebula::cpp2::IndexItem> mockIndexes(bool isEdge,
                 cols.emplace_back(std::move(column));
             }
             // indexId can be same with tagId
-            indexes.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                 tagId, tagId, std::move(cols));
+            nebula::cpp2::IndexItem index;
+            index.set_index_id(tagId);
+            index.set_tagOrEdge(tagId);
+            index.set_cols(std::move(cols));
+            indexes.emplace_back(std::move(index));
         }
     }
     return indexes;
@@ -150,14 +156,15 @@ TEST(IndexTest, InsertVerticesTest) {
                     writer << folly::stringPrintf("tag_string_col_%d", numString);
                 }
                 auto val = writer.encode();
-
-                tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                  tagId,
-                                  std::move(val));
+                cpp2::Tag tag;
+                tag.set_tag_id(tagId);
+                tag.set_props(std::move(val));
+                tags.emplace_back(std::move(tag));
             }
-            vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                  vertexId,
-                                  std::move(tags));
+            cpp2::Vertex vertex;
+            vertex.set_id(vertexId);
+            vertex.set_tags(std::move(tags));
+            vertices.emplace_back(std::move(vertex));
         }
         req.parts.emplace(partId, std::move(vertices));
     }
@@ -298,13 +305,15 @@ TEST(IndexTest, DeleteVertexTest) {
                     writer << folly::stringPrintf("tag_string_col_%d", numString);
                 }
                 auto val = writer.encode();
-                tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                  tagId,
-                                  std::move(val));
+                cpp2::Tag tag;
+                tag.set_tag_id(tagId);
+                tag.set_props(std::move(val));
+                tags.emplace_back(std::move(tag));
             }
-            vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                  10,
-                                  std::move(tags));
+            cpp2::Vertex vertex;
+            vertex.set_id(10);
+            vertex.set_tags(std::move(tags));
+            vertices.emplace_back(std::move(vertex));
             req.parts.emplace(1, std::move(vertices));
         }
         auto* processor = AddVerticesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
@@ -440,13 +449,15 @@ TEST(IndexTest, UpdateVertexTest) {
                     writer << folly::stringPrintf("tag_string_col_%d", numString);
                 }
                 auto val = writer.encode();
-                tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                  tagId,
-                                  std::move(val));
+                cpp2::Tag tag;
+                tag.set_tag_id(tagId);
+                tag.set_props(std::move(val));
+                tags.emplace_back(std::move(tag));
             }
-            vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                  10,
-                                  std::move(tags));
+            cpp2::Vertex vertex;
+            vertex.set_id(10);
+            vertex.set_tags(std::move(tags));
+            vertices.emplace_back(std::move(vertex));
             req.parts.emplace(1, std::move(vertices));
         }
 

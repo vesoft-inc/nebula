@@ -286,7 +286,7 @@ nebula_add_test(
 )
 
 nebula_add_test(
-    NAME index_test
+    NAME index_write_test
     SOURCES IndexTest.cpp
     OBJECTS ${storage_test_deps} $<TARGET_OBJECTS:adHocSchema_obj>
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
