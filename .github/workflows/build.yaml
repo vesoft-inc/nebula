@@ -65,7 +65,7 @@ jobs:
       - name: Testing Coverage
         if: success() && matrix.compiler == 'gcc'
         run: |
-          cd _build
+          cd build
           bash <(curl -s https://codecov.io/bash)
         shell: bash
         env:
