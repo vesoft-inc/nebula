@@ -388,10 +388,7 @@ void MetaClient::getResponse(Request req,
                 return;
             } else if (resp.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
                 HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
-                {
-                    folly::RWSpinLock::WriteHolder holder(hostLock_);
-                    leader_ = leader;
-                }
+                updateLeader(leader);
                 if (retry < retryLimit) {
                     evb->runAfterDelay([req = std::move(req), remoteFunc = std::move(remoteFunc),
                                         respGen = std::move(respGen), pro = std::move(pro),

@@ -381,6 +381,12 @@ void CmdProcessor::printData(const cpp2::ExecutionResponse& resp,
 }
 #undef PRINT_FIELD_VALUE
 
+void CmdProcessor::printTime() const {
+    auto now = std::chrono::system_clock::now();
+    std::time_t nowTime = std::chrono::system_clock::to_time_t(now);
+    std::cout << std::ctime(&nowTime) << std::endl;
+}
+
 
 bool CmdProcessor::processClientCmd(folly::StringPiece cmd,
                                     bool& readyToExit) {
@@ -446,6 +452,9 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
 
 
 bool CmdProcessor::process(folly::StringPiece cmd) {
+    SCOPE_EXIT {
+        printTime();
+    };
     bool exit;
     if (processClientCmd(cmd, exit)) {
         return !exit;
