@@ -25,7 +25,9 @@ jobs:
           - centos7
           - ubuntu1604
           - ubuntu1804
-        compiler: [gcc, clang]
+        compiler:
+          - gcc
+          # - clang
         exclude:
           - tag: centos6
             compiler: clang
