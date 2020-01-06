@@ -46,8 +46,12 @@ jobs:
         run: |
           [ -f "$CCACHE_DIR/ccache.conf" ] || cp ci/ccache.conf "$CCACHE_DIR"
           mkdir -p build
-      - name: CMake
-        run: ./ci/scripts/cmake-${{ matrix.compiler }}.sh
+      - name: CMake with gcc
+        if: matrix.compiler == 'gcc'
+        run: cd build && cmake -DCMAKE_BUILD_TYPE=Release ..
+      - name: CMake with clang
+        if: matrix.compiler == 'clang'
+        run: cd build && cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DENABLE_UBSAN=on ..
         shell: bash
       - name: Make
         run: cd build && make -j $(nproc)
