@@ -70,13 +70,13 @@ nebula> BACKUP JOB 0 22
 
 ### RECOVER JOB
 
-命令 `RECOVER JOB <job_id>` 用于重新执行指定作业，并返回新的作业 ID。
+命令 `RECOVER JOB` 用于重新执行作业，并返回 recover 的作业数目。
 
 ```ngql
-nebula> RECOVER JOB 40
-==============
-| New Job Id |
-==============
-| 41         |
---------------
+nebula> RECOVER JOB
+=====================
+| Recovered job num |
+=====================
+| 5 job recovered   |
+---------------------
 ```

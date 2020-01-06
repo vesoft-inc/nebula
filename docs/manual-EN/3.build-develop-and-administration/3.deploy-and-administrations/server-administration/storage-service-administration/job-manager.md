@@ -69,13 +69,13 @@ nebula> BACKUP JOB 0 22
 
 ### RECOVER JOB
 
-The `RECOVER JOB <job_id>` statement reruns the given job and returns a new job ID.
+The `RECOVER JOB` statement re-execute the jobs and returns the number of the recovered jobs.
 
 ```ngql
-nebula> RECOVER JOB 40
-==============
-| New Job Id |
-==============
-| 41         |
---------------
+nebula> RECOVER JOB
+=====================
+| Recovered job num |
+=====================
+| 5 job recovered   |
+---------------------
 ```
