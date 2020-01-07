@@ -45,7 +45,8 @@ void CreateSpaceExecutor::execute() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(std::move(resp).status());
+            doError(Status::Error("Create space `%s' failed: %s.",
+                                    spaceName_->c_str(), resp.status().toString().c_str()));
             return;
         }
         auto spaceId = std::move(resp).value();
@@ -57,8 +58,10 @@ void CreateSpaceExecutor::execute() {
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        auto msg = folly::stringPrintf("Create space `%s' exception: %s.",
+                                        spaceName_->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
         return;
     };
 

@@ -8,7 +8,6 @@
 #include "network/NetworkUtils.h"
 #include "storage/StorageFlags.h"
 #include "storage/StorageServiceHandler.h"
-#include "storage/http/StorageHttpStatusHandler.h"
 #include "storage/http/StorageHttpDownloadHandler.h"
 #include "storage/http/StorageHttpIngestHandler.h"
 #include "storage/http/StorageHttpAdminHandler.h"
@@ -25,6 +24,7 @@ DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
 DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");
+DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
 
 namespace nebula {
 namespace storage {
@@ -61,9 +61,6 @@ bool StorageServer::initWebService() {
     webWorkers_->start(FLAGS_storage_http_thread_num, "http thread pool");
     LOG(INFO) << "Http Thread Pool started";
 
-    WebService::registerHandler("/status", [] {
-        return new StorageHttpStatusHandler();
-    });
     WebService::registerHandler("/download", [this] {
         auto* handler = new storage::StorageHttpDownloadHandler();
         handler->init(hdfsHelper_.get(), webWorkers_.get(), kvstore_.get(), dataPaths_);
@@ -93,11 +90,14 @@ bool StorageServer::start() {
     workers_->start();
 
     // Meta client
+    meta::MetaClientOptions options;
+    options.localHost_ = localHost_;
+    options.inStoraged_ = true;
+    options.serviceName_ = "";
+    options.skipConfig_ = FLAGS_local_config;
     metaClient_ = std::make_unique<meta::MetaClient>(ioThreadPool_,
                                                      metaAddrs_,
-                                                     localHost_,
-                                                     0,
-                                                     true);
+                                                     options);
     if (!metaClient_->waitForMetadReady()) {
         LOG(ERROR) << "waitForMetadReady error!";
         return false;

@@ -20,9 +20,10 @@ namespace storage {
 TEST(DeleteVertexTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/DeleteVertexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto schemaMan = TestUtils::mockSchemaMan();
     // Add vertices
     {
-        auto* processor = AddVerticesProcessor::instance(kv.get(), nullptr, nullptr);
+        auto* processor = AddVerticesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
         req.overwritable = false;
@@ -69,7 +70,9 @@ TEST(DeleteVertexTest, SimpleTest) {
     {
         for (auto partId = 0; partId < 3; partId++) {
             for (auto vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
-                auto* processor = DeleteVertexProcessor::instance(kv.get(), nullptr, nullptr);
+                auto* processor = DeleteVertexProcessor::instance(kv.get(),
+                                                                  schemaMan.get(),
+                                                                  nullptr);
                 cpp2::DeleteVertexRequest req;
                 req.set_space_id(0);
                 req.set_part_id(partId);

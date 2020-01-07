@@ -45,13 +45,8 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     std::vector<HostAddr> metaAddr = {HostAddr(localIp, localMetaPort)};
 
     LOG(INFO) << "Create meta client...";
-    uint32_t tempDataPort = network::NetworkUtils::getAvailablePort();
-    HostAddr tempDataAddr(localIp, tempDataPort);
     auto mClient = std::make_unique<meta::MetaClient>(threadPool,
-                                                      metaAddr,
-                                                      tempDataAddr,
-                                                      kClusterId,
-                                                      false);
+                                                      metaAddr);
 
     mClient->waitForMetadReady();
 
@@ -70,11 +65,13 @@ TEST(BalanceIntegrationTest, BalanceTest) {
 
         VLOG(1) << "The storage server has been added to the meta service";
 
+        meta::MetaClientOptions options;
+        options.localHost_ = storageAddr;
+        options.clusterId_ = kClusterId;
+        options.inStoraged_ = true;
         auto metaClient = std::make_shared<meta::MetaClient>(threadPool,
                                                              metaAddr,
-                                                             storageAddr,
-                                                             kClusterId,
-                                                             true);
+                                                             options);
         metaClient->waitForMetadReady();
         metaClients.emplace_back(metaClient);
     }
@@ -177,11 +174,13 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     uint32_t storagePort = network::NetworkUtils::getAvailablePort();
     HostAddr storageAddr(localIp, storagePort);
     {
+        MetaClientOptions options;
+        options.localHost_ = storageAddr;
+        options.clusterId_ = kClusterId;
+        options.inStoraged_ = true;
         newMetaClient = std::make_unique<meta::MetaClient>(threadPool,
                                                            metaAddr,
-                                                           storageAddr,
-                                                           kClusterId,
-                                                           true);
+                                                           options);
         newMetaClient->waitForMetadReady();
         std::string dataPath = folly::stringPrintf("%s/%d/data", rootPath.path(), replica + 1);
         newServer = storage::TestUtils::mockStorageServer(newMetaClient.get(),
@@ -275,13 +274,8 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
     std::vector<HostAddr> metaAddr = {HostAddr(localIp, localMetaPort)};
 
     LOG(INFO) << "Create meta client...";
-    uint32_t tempDataPort = network::NetworkUtils::getAvailablePort();
-    HostAddr tempDataAddr(localIp, tempDataPort);
     auto mClient = std::make_unique<meta::MetaClient>(threadPool,
-                                                      metaAddr,
-                                                      tempDataAddr,
-                                                      kClusterId,
-                                                      false);
+                                                      metaAddr);
 
     mClient->waitForMetadReady();
 
@@ -299,12 +293,13 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
         peers.emplace_back(storageAddr);
 
         VLOG(1) << "The storage server has been added to the meta service";
-
+        MetaClientOptions options;
+        options.localHost_ = storageAddr;
+        options.clusterId_ = kClusterId;
+        options.inStoraged_ = true;
         auto metaClient = std::make_shared<meta::MetaClient>(threadPool,
                                                              metaAddr,
-                                                             storageAddr,
-                                                             kClusterId,
-                                                             true);
+                                                             options);
         metaClient->waitForMetadReady();
         metaClients.emplace_back(metaClient);
     }

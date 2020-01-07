@@ -15,7 +15,6 @@
 #include "process/ProcessUtils.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "graph/GraphService.h"
-#include "graph/GraphHttpHandler.h"
 #include "graph/GraphFlags.h"
 #include "webservice/WebService.h"
 
@@ -95,10 +94,6 @@ int main(int argc, char *argv[]) {
     }
 
     LOG(INFO) << "Starting Graph HTTP Service";
-    // http://127.0.0.1:XXXX/status is equivalent to http://127.0.0.1:XXXX
-    nebula::WebService::registerHandler("/status", [] {
-        return new nebula::graph::GraphHttpHandler();
-    });
     status = nebula::WebService::start();
     if (!status.ok()) {
         return EXIT_FAILURE;

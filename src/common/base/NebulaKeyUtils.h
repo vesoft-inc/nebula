@@ -8,8 +8,10 @@
 #define COMMON_BASE_NEBULAKEYUTILS_H_
 
 #include "base/Base.h"
+#include "interface/gen-cpp2/common_types.h"
 
 namespace nebula {
+using IndexValues = std::vector<std::pair<nebula::cpp2::SupportedType, std::string>>;
 
 /**
  * VertexKeyUtils:
@@ -60,6 +62,20 @@ public:
     static std::string kvKey(PartitionID partId, const folly::StringPiece& name);
 
     /**
+     * Generate vertex|edge index key for kv store
+     **/
+    static void indexRaw(const IndexValues &values, std::string& raw);
+
+    static std::string vertexIndexKey(PartitionID partId, IndexID indexId, VertexID vId,
+                                      const IndexValues& values);
+
+    static std::string edgeIndexKey(PartitionID partId, IndexID indexId,
+                                    VertexID srcId, EdgeRanking rank,
+                                    VertexID dstId, const IndexValues& values);
+
+    static std::string indexPrefix(PartitionID partId, IndexID indexId);
+
+    /**
      * Prefix for
      * */
     static std::string vertexPrefix(PartitionID partId, VertexID vId, TagID tagId);
@@ -73,12 +89,22 @@ public:
 
     static std::string edgePrefix(PartitionID partId, VertexID vId);
 
+    static std::string edgePrefix(PartitionID partId,
+                                  VertexID srcId,
+                                  EdgeType type,
+                                  EdgeRanking rank,
+                                  VertexID dstId);
+
     static std::string systemPrefix();
 
     static std::string prefix(PartitionID partId, VertexID src, EdgeType type,
                               EdgeRanking ranking, VertexID dst);
 
     static std::string prefix(PartitionID partId);
+
+    static PartitionID getPart(const folly::StringPiece& rawKey) {
+        return readInt<PartitionID>(rawKey.data(), sizeof(PartitionID)) >> 8;
+    }
 
     static bool isVertex(const folly::StringPiece& rawKey) {
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
@@ -89,6 +115,12 @@ public:
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
         TagID tagId =  readInt<TagID>(rawKey.data() + offset, sizeof(TagID));
         return !(tagId & kTagEdgeMask);
+    }
+
+    static VertexID getVertexId(const folly::StringPiece& rawKey) {
+        CHECK_EQ(rawKey.size(), kVertexLen);
+        auto offset = sizeof(PartitionID);
+        return readInt<VertexID>(rawKey.data() + offset, sizeof(VertexID));
     }
 
     static TagID getTagId(const folly::StringPiece& rawKey) {
@@ -180,6 +212,68 @@ public:
     static folly::StringPiece keyWithNoVersion(const folly::StringPiece& rawKey) {
         // TODO(heng) We should change the method if varint data version supportted.
         return rawKey.subpiece(0, rawKey.size() - sizeof(int64_t));
+    }
+
+    static std::string encodeVariant(const VariantType& v)  {
+        switch (v.which()) {
+            case VAR_INT64:
+                return encodeInt64(boost::get<int64_t>(v));
+            case VAR_DOUBLE:
+                return encodeDouble(boost::get<double>(v));
+            case VAR_BOOL: {
+                auto val = boost::get<bool>(v);
+                std::string raw;
+                raw.reserve(sizeof(bool));
+                raw.append(reinterpret_cast<const char*>(&val), sizeof(bool));
+                return raw;
+            }
+            case VAR_STR:
+                return boost::get<std::string>(v);
+            default:
+                std::string errMsg = folly::stringPrintf("Unknown VariantType: %d", v.which());
+                LOG(ERROR) << errMsg;
+        }
+        return "";
+    }
+
+    /**
+     * Default, positive number first bit is 0, negative number is 1 .
+     * To keep the string in order, the first bit must to be inverse.
+     * for example as below :
+     *    9223372036854775807     -> "\377\377\377\377\377\377\377\377"
+     *    1                       -> "\200\000\000\000\000\000\000\001"
+     *    0                       -> "\200\000\000\000\000\000\000\000"
+     *    -1                      -> "\177\377\377\377\377\377\377\377"
+     *    -9223372036854775808    -> "\000\000\000\000\000\000\000\000"
+     */
+
+    static std::string encodeInt64(int64_t v) {
+        v ^= folly::to<int64_t>(1) << 63;
+        auto val = folly::Endian::big(v);
+        std::string raw;
+        raw.reserve(sizeof(int64_t));
+        raw.append(reinterpret_cast<const char*>(&val), sizeof(int64_t));
+        return raw;
+    }
+
+    /*
+     * Default, the double memory structure is :
+     *   sign bit（1bit）+  exponent bit(11bit) + float bit(52bit)
+     *   The first bit is the sign bit, 0 for positive and 1 for negative
+     *   To keep the string in order, the first bit must to be inverse,
+     *   then need to subtract from maximum.
+     */
+    static std::string encodeDouble(double v) {
+        if (v < 0) {
+            v = -(std::numeric_limits<double>::max() + v);
+        }
+        auto val = folly::Endian::big(v);
+        auto* c = reinterpret_cast<char*>(&val);
+        c[0] ^= 0x80;
+        std::string raw;
+        raw.reserve(sizeof(double));
+        raw.append(c, sizeof(double));
+        return raw;
     }
 
 private:
