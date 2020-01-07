@@ -37,6 +37,7 @@ Status FetchVerticesExecutor::prepareClauses() {
         labelName_ = sentence_->tag();
         auto result = ectx()->schemaManager()->toTagID(spaceId_, *labelName_);
         if (!result.ok()) {
+            LOG(ERROR) << "Get Tag Id failed: " << result.status();
             status = result.status();
             break;
         }
@@ -50,10 +51,12 @@ Status FetchVerticesExecutor::prepareClauses() {
 
         status = prepareVids();
         if (!status.ok()) {
+            LOG(ERROR) << "Prepare vertex id failed: " << status;
             break;
         }
         status = prepareYield();
         if (!status.ok()) {
+            LOG(ERROR) << "Prepare yield failed: " << status;
             break;
         }
     } while (false);
@@ -73,7 +76,8 @@ Status FetchVerticesExecutor::prepareVids() {
         } else {
             //  should never come to here.
             //  only support input and variable yet.
-            LOG(FATAL) << "Unknown kind of expression.";
+            LOG(ERROR) << "Unknown kind of expression.";
+            return Status::Error("Unknown kind of expression.");
         }
         if (colname_ != nullptr && *colname_ == "*") {
             return Status::Error("Cant not use `*' to reference a vertex id column.");
@@ -96,6 +100,7 @@ void FetchVerticesExecutor::execute() {
         return;
     }
     if (vids_.empty()) {
+        LOG(WARNING) << "Empty vids";
         onEmptyInputs();
         return;
     }
@@ -106,7 +111,8 @@ void FetchVerticesExecutor::execute() {
 void FetchVerticesExecutor::fetchVertices() {
     auto props = getPropNames();
     if (props.empty()) {
-        doError(Status::Error("No props declared."));
+        LOG(WARNING) << "Empty props";
+        doEmptyResp();
         return;
     }
 
@@ -115,7 +121,7 @@ void FetchVerticesExecutor::fetchVertices() {
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            doError(Status::Error("Get props failed"));
+            doError(Status::Error("Get tag `%s' props failed", sentence_->tag()->c_str()));
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get vertices partially failed: "  << completeness << "%";
@@ -128,8 +134,10 @@ void FetchVerticesExecutor::fetchVertices() {
         return;
     };
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        auto msg = folly::stringPrintf("Get tag `%s' props exception: %s.",
+                sentence_->tag()->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -182,8 +190,9 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                 outputSchema = std::make_shared<SchemaWriter>();
                 auto status = getOutputSchema(vschema.get(), vreader.get(), outputSchema.get());
                 if (!status.ok()) {
-                    LOG(ERROR) << "Get getOutputSchema failed: " << status;
-                    doError(Status::Error("Internal error."));
+                    LOG(ERROR) << "Get output schema failed: " << status;
+                    doError(Status::Error("Get output schema failed: %s.",
+                                status.toString().c_str()));
                     return;
                 }
                 rsWriter = std::make_unique<RowSetWriter>(outputSchema);

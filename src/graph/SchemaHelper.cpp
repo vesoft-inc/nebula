@@ -48,25 +48,65 @@ Status SchemaHelper::createSchema(const std::vector<ColumnSpecification*>& specs
         if (spec->hasDefault()) {
             switch (spec->type()) {
                 case nebula::ColumnType::BOOL:
-                    v.set_bool_value(spec->getBoolValue());
-                    column.set_default_value(std::move(v));
+                {
+                    auto ret = spec->getBoolValue();
+                    if (!ret.ok()) {
+                        auto error = "Column `%s' set wrong default value,"
+                                     " schema type is `bool'";
+                        return Status::Error(folly::stringPrintf(error, column.name.c_str()));
+                    }
+                    v.set_bool_value(ret.value());
                     break;
+                }
                 case nebula::ColumnType::INT:
-                    v.set_int_value(spec->getIntValue());
-                    column.set_default_value(std::move(v));
+                {
+                    auto ret = spec->getIntValue();
+                    if (!ret.ok()) {
+                        auto error = "Column `%s' set wrong default value,"
+                                     " schema type is `int'";
+                        return Status::Error(folly::stringPrintf(error, column.name.c_str()));
+                    }
+                    v.set_int_value(ret.value());
                     break;
+                }
                 case nebula::ColumnType::DOUBLE:
-                    v.set_double_value(spec->getDoubleValue());
-                    column.set_default_value(std::move(v));
+                {
+                    auto ret = spec->getDoubleValue();
+                    if (!ret.ok()) {
+                        auto error = "Column `%s' set wrong type default value,"
+                                     " schema type is `double'";
+                        return Status::Error(folly::stringPrintf(error, column.name.c_str()));
+                    }
+                    v.set_double_value(ret.value());
                     break;
+                }
                 case nebula::ColumnType::STRING:
-                    v.set_string_value(spec->getStringValue());
-                    column.set_default_value(std::move(v));
+                {
+                    auto ret = spec->getStringValue();
+                    if (!ret.ok()) {
+                        auto error = "Column `%s' set wrong type default value,"
+                                     " schema type is `string'";
+                        return Status::Error(folly::stringPrintf(error, column.name.c_str()));
+                    }
+                    v.set_string_value(std::move(ret).value());
                     break;
+                }
+                case nebula::ColumnType::TIMESTAMP:
+                {
+                    auto ret = spec->getIntValue();
+                    if (!ret.ok()) {
+                        auto error = "Column `%s' set wrong type default value,"
+                                     " schema type is `timestamp'";
+                        return Status::Error(folly::stringPrintf(error, column.name.c_str()));
+                    }
+                    v.set_timestamp(ret.value());
+                    break;
+                }
                 default:
                     LOG(ERROR) << "Unsupport Type";
                     return Status::Error("Unsupport Type");
             }
+            column.set_default_value(std::move(v));
         }
         schema.columns.emplace_back(std::move(column));
     }

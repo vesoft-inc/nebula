@@ -5,6 +5,7 @@ nebula_add_library(
     GetFlagsHandler.cpp
     SetFlagsHandler.cpp
     GetStatsHandler.cpp
+    StatusHandler.cpp
 )
 
 nebula_add_library(

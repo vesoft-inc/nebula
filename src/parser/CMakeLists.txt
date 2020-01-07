@@ -8,7 +8,7 @@ add_custom_target(parser_target DEPENDS ${FLEX_Scanner_OUTPUTS} ${BISON_Parser_O
 
 add_flex_bison_dependency(Scanner Parser)
 
-add_compile_options(-Wno-error=sign-compare)
+add_compile_options(-Wno-sign-compare)
 
 nebula_add_library(
     parser_obj OBJECT

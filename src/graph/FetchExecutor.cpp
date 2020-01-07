@@ -155,5 +155,13 @@ void FetchExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
     }
     doFinish(Executor::ProcessControl::kNext);
 }
+
+void FetchExecutor::doEmptyResp() {
+    resp_ = std::make_unique<cpp2::ExecutionResponse>();
+    resp_->set_column_names(std::vector<std::string>());
+    resp_->set_rows(std::vector<cpp2::RowValue>());
+    doFinish(Executor::ProcessControl::kNext);
+}
+
 }  // namespace graph
 }  // namespace nebula

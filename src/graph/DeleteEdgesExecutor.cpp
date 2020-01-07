@@ -15,39 +15,39 @@ namespace graph {
 
 DeleteEdgesExecutor::DeleteEdgesExecutor(Sentence *sentence,
                                          ExecutionContext *ectx)
-    : Executor(ectx, "delete_dege") {
+    : Executor(ectx, "delete_edge") {
     sentence_ = static_cast<DeleteEdgesSentence*>(sentence);
 }
 
 Status DeleteEdgesExecutor::prepare() {
-    Status status;
-    do {
-        status = checkIfGraphSpaceChosen();
-        if (!status.ok()) {
-            break;
-        }
-        spaceId_ = ectx()->rctx()->session()->space();
-        expCtx_ = std::make_unique<ExpressionContext>();
-        expCtx_->setSpace(spaceId_);
-        expCtx_->setStorageClient(ectx()->getStorageClient());
+    spaceId_ = ectx()->rctx()->session()->space();
+    expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setSpace(spaceId_);
+    expCtx_->setStorageClient(ectx()->getStorageClient());
 
-        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId_, *sentence_->edge());
-        if (!edgeStatus.ok()) {
-            status = edgeStatus.status();
-            break;
-        }
+    auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId_, *sentence_->edge());
+    if (!edgeStatus.ok()) {
+        return edgeStatus.status();
+    } else {
         edgeType_ = edgeStatus.value();
         auto schema = ectx()->schemaManager()->getEdgeSchema(spaceId_, edgeType_);
         if (schema == nullptr) {
-            status = Status::Error("No schema found for '%s'", sentence_->edge()->c_str());
-            break;
+            return Status::Error("No schema found for '%s'", sentence_->edge()->c_str());
         }
-    } while (false);
-    return status;
+    }
+
+    return Status::OK();
 }
 
 void DeleteEdgesExecutor::execute() {
-    auto status = setupEdgeKeys();
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+
+    status = setupEdgeKeys();
     if (!status.ok()) {
         doError(std::move(status));
         return;
@@ -62,15 +62,15 @@ void DeleteEdgesExecutor::execute() {
         auto completeness = resp.completeness();
         if (completeness != 100) {
             // TODO Need to consider atomic issues
-            doError(Status::Error("Internal Error"));
+            doError(Status::Error("Delete edge not complete, completeness: %d", completeness));
             return;
         }
         doFinish(Executor::ProcessControl::kNext, edgeKeys_.size());
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        LOG(ERROR) << "Delete edge exception: " << e.what();
+        doError(Status::Error("Delete edge exception: %s", e.what().c_str()));
         return;
     };
 

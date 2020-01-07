@@ -25,7 +25,11 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     auto ret = getTagIndexID(space, indexName);
     if (ret.ok()) {
         LOG(ERROR) << "Create Tag Index Failed: " << indexName << " have existed";
-        resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+        if (req.get_if_not_exists()) {
+            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+        } else {
+            resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+        }
         onFinished();
         return;
     }
@@ -89,6 +93,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
                       std::string(reinterpret_cast<const char*>(&tagIndex), sizeof(TagIndexID)));
     data.emplace_back(MetaServiceUtils::tagIndexKey(space, tagIndex),
                       MetaServiceUtils::tagIndexVal(indexName, std::move(indexFields)));
+    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     LOG(INFO) << "Create Tag Index " << indexName << ", tagIndex " << tagIndex;
     resp_.set_id(to(tagIndex, EntryType::TAG_INDEX));
     doPut(std::move(data));

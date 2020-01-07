@@ -25,7 +25,11 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     auto ret = getEdgeIndexID(space, indexName);
     if (ret.ok()) {
         LOG(ERROR) << "Create Edge Index Failed: " << indexName << " have existed";
-        resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+        if (req.get_if_not_exists()) {
+            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+        } else {
+            resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+        }
         onFinished();
         return;
     }
@@ -88,6 +92,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
                       std::string(reinterpret_cast<const char*>(&edgeIndex), sizeof(EdgeIndexID)));
     data.emplace_back(MetaServiceUtils::edgeIndexKey(space, edgeIndex),
                       MetaServiceUtils::edgeIndexVal(indexName, indexFields));
+    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     LOG(INFO) << "Create Edge Index " << indexName << ", edgeIndex " << edgeIndex;
     resp_.set_id(to(edgeIndex, EntryType::EDGE_INDEX));
     doPut(std::move(data));

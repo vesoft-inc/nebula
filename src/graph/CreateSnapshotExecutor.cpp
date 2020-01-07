@@ -30,15 +30,15 @@ void CreateSnapshotExecutor::execute() {
         }
         auto ret = std::move(resp).value();
         if (!ret) {
-            doError(Status::Error("Balance leader failed"));
+            doError(Status::Error("Create snapshot failed"));
             return;
         }
         doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        LOG(ERROR) << "Create snapshot exception: " << e.what();
+        doError(Status::Error("Create snapshot exception: %s", e.what().c_str()));
         return;
     };
 

@@ -1,6 +1,5 @@
 {
     "MUTABLE": [
-        "load_data_interval_secs",
         "max_edge_returned_per_vertex",
         "minloglevel",
         "v",

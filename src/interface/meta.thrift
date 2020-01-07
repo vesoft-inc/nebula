@@ -189,7 +189,8 @@ struct CreateSpaceReq {
 }
 
 struct DropSpaceReq {
-    1: string space_name
+    1: string space_name,
+    2: bool if_exists,
 }
 
 struct ListSpacesReq {
@@ -230,6 +231,7 @@ struct AlterTagReq {
 struct DropTagReq {
     1: common.GraphSpaceID space_id,
     2: string              tag_name,
+    3: bool                if_exists,
 }
 
 struct ListTagsReq {
@@ -285,6 +287,7 @@ struct GetEdgeResp {
 struct DropEdgeReq {
     1: common.GraphSpaceID space_id,
     2: string              edge_name,
+    3: bool                if_exists,
 }
 
 struct ListEdgesReq {
@@ -317,6 +320,7 @@ struct PartItem {
 
 struct ListPartsReq {
     1: common.GraphSpaceID space_id,
+    2: list<common.PartitionID> part_ids;
 }
 
 struct ListPartsResp {
@@ -392,17 +396,21 @@ struct HBResp {
     1: ErrorCode code,
     2: common.HostAddr  leader,
     3: common.ClusterID cluster_id,
+    4: i64 last_update_time_in_ms,
 }
 
 struct HBReq {
-    1: common.HostAddr host,
-    2: common.ClusterID cluster_id,
+    1: bool in_storaged,
+    2: common.HostAddr host,
+    3: common.ClusterID cluster_id,
+    4: optional map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_partIds;
 }
 
 struct CreateTagIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
     3: IndexProperties     properties,
+    4: bool                if_not_exists,
 }
 
 struct DropTagIndexReq {
@@ -435,6 +443,7 @@ struct CreateEdgeIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
     3: IndexProperties     properties,
+    4: bool                if_not_exists,
 }
 
 struct DropEdgeIndexReq {

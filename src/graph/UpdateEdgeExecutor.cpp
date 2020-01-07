@@ -177,7 +177,9 @@ void UpdateEdgeExecutor::finishExecution(storage::cpp2::UpdateResponse &&rpcResp
                         row[index].set_str(boost::get<std::string>(column));
                         break;
                     default:
-                        LOG(FATAL) << "Unknown VariantType: " << column.which();
+                        LOG(ERROR) << "Unknown VariantType: " << column.which();
+                        doError(Status::Error("Unknown VariantType: %d", column.which()));
+                        return;
                 }
             } else {
                 doError(Status::Error("get property failed"));
@@ -215,15 +217,23 @@ void UpdateEdgeExecutor::insertReverselyEdge(storage::cpp2::UpdateResponse &&rpc
         auto completeness = resp.completeness();
         if (completeness != 100) {
             // Very bad, it should delete the upsert positive edge!!!
-            doError(Status::Error("Insert the reversely edge failed."));
+            doError(Status::Error(
+                        "Insert the reversely edge(%s) `%ld->%ld@%ld' failed when update.",
+                        edgeTypeName_->c_str(),
+                        edge_.dst, edge_.src, edge_.ranking));
             return;
         }
         this->finishExecution(std::move(updateResp));
     };
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
+        auto msg = folly::stringPrintf(
+                "Insert reversely edge(%s) `%ld->%ld@%ld' exception when update: %s",
+                edgeTypeName_->c_str(),
+                edge_.dst, edge_.src, edge_.ranking,
+                e.what().c_str());
+        LOG(ERROR) << msg;
         // Very bad, it should delete the upsert positive edge!!!
-        doError(Status::Error("Internal error: insert reversely edge."));
+        doError(Status::Error(std::move(msg)));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -242,7 +252,10 @@ void UpdateEdgeExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(std::move(resp).status());
+            doError(Status::Error("Update edge(%s) `%ld->%ld@%ld' failed: %s",
+                        edgeTypeName_->c_str(),
+                        edge_.src, edge_.dst, edge_.ranking,
+                        resp.status().toString().c_str()));
             return;
         }
         auto rpcResp = std::move(resp).value();
@@ -273,8 +286,12 @@ void UpdateEdgeExecutor::execute() {
         }
     };
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error about updateEdge"));
+        auto msg = folly::stringPrintf("Update edge(%s) `%ld->%ld@%ld'  exception: %s",
+                        edgeTypeName_->c_str(),
+                        edge_.src, edge_.dst, edge_.ranking,
+                        e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }

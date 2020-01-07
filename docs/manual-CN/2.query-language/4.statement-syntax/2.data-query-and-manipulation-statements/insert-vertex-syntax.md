@@ -17,8 +17,6 @@ INSERT VERTEX 可向 **Nebula Graph** 插入节点。
 - `prop_name_list` 指定标签的属性列表。
 - `prop_value_list` 须根据 <prop_name_list> 列出属性，如无匹配类型，则返回错误。
 
-> 目前版本尚不支持默认属性值。
-
 ## 示例
 
 ```ngql
