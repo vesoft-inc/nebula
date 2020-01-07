@@ -1164,7 +1164,8 @@ TEST(Parser, UnreservedKeywords) {
     {
         GQLParser parser;
         std::string query = "CREATE TAG tag1(space string, spaces string, "
-                            "email string, password string, roles string)";
+                            "email string, password string, roles string, uuid int, "
+                            "path string, variables string, leader string, data string)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

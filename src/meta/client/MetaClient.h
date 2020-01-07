@@ -103,6 +103,27 @@ public:
                                                     std::vector<PartitionID>>& leaderIds) = 0;
 };
 
+struct MetaClientOptions {
+    MetaClientOptions() = default;
+    MetaClientOptions(const MetaClientOptions& opt)
+        : localHost_(opt.localHost_)
+        , clusterId_(opt.clusterId_.load())
+        , inStoraged_(opt.inStoraged_)
+        , serviceName_(opt.serviceName_)
+        , skipConfig_(opt.skipConfig_) {}
+
+    // Current host address
+    HostAddr localHost_{0, 0};
+    // Current cluster Id, it is requried by storaged only.
+    std::atomic<ClusterID> clusterId_{0};
+    // If current client being used in storaged.
+    bool inStoraged_ = false;
+    // Current service name, used in StatsManager
+    std::string serviceName_ = "";
+    // Whether to skip the config manager
+    bool skipConfig_ = false;
+};
+
 class MetaClient {
     FRIEND_TEST(ConfigManTest, MetaConfigManTest);
     FRIEND_TEST(ConfigManTest, MockConfigTest);
@@ -114,12 +135,9 @@ class MetaClient {
     FRIEND_TEST(MetaClientTest, RocksdbOptionsTest);
 
 public:
-    explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
-                        std::vector<HostAddr> addrs,
-                        HostAddr localHost = HostAddr(0, 0),
-                        ClusterID clusterId = 0,
-                        bool inStoraged = true,
-                        const std::string &serviceName = "");
+    MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
+               std::vector<HostAddr> addrs,
+               const MetaClientOptions& options = MetaClientOptions());
 
     virtual ~MetaClient();
 
@@ -487,6 +505,8 @@ private:
     std::atomic_bool      configReady_{false};
     std::vector<cpp2::ConfigItem> gflagsDeclared_;
     std::unique_ptr<stats::Stats> stats_;
+    bool                  skipConfig_ = false;
+    MetaClientOptions     options_;
 };
 
 }  // namespace meta
