@@ -39,8 +39,8 @@ private:
                                    stats::Stats* stats,
                                    VertexCache* cache)
         : QueryBaseProcessor<cpp2::UpdateVertexRequest,
-                             cpp2::UpdateResponse>(kvstore, schemaMan, indexMan,
-                                                   stats, nullptr, cache) {}
+                             cpp2::UpdateResponse>(kvstore, schemaMan, stats, nullptr, cache)
+        , indexMan_(indexMan) {}
 
     kvstore::ResultCode processVertex(PartitionID, VertexID) override {
         LOG(FATAL) << "Unimplement!";
@@ -68,6 +68,7 @@ private:
     std::set<TagID>                                                 updateTagIds_;
     std::unordered_map<std::pair<TagID, std::string>, VariantType>  tagFilters_;
     std::unordered_map<TagID, std::unique_ptr<KeyUpdaterPair>>      tagUpdaters_;
+    meta::IndexManager*                                             indexMan_{nullptr};
 };
 
 }  // namespace storage

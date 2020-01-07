@@ -37,7 +37,7 @@ private:
 
 private:
     meta::IndexManager* indexMan_{nullptr};
-    VertexCache* vertexCache_{nullptr};
+    VertexCache*        vertexCache_{nullptr};
 };
 
 

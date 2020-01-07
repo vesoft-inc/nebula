@@ -48,11 +48,13 @@ void TestEnv::SetUp() {
     }
     auto& localhost = hostRet.value();
 
+    meta::MetaClientOptions options;
+    options.localHost_ = localhost;
+    options.clusterId_ = kClusterId;
+    options.inStoraged_ = true;
     mClient_ = std::make_unique<meta::MetaClient>(threadPool,
                                                   std::move(addrsRet.value()),
-                                                  localhost,
-                                                  kClusterId,
-                                                  true);
+                                                  options);
     mClient_->waitForMetadReady();
     gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(mClient_.get());
 

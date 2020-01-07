@@ -15,7 +15,7 @@ void GetTagIndexProcessor::process(const cpp2::GetTagIndexReq& req) {
     CHECK_SPACE_ID_AND_RETURN(spaceID);
     folly::SharedMutex::ReadHolder rHolder(LockUtils::tagIndexLock());
 
-    auto tagIndexIDResult = getTagIndexID(spaceID, indexName);
+    auto tagIndexIDResult = getIndexID(spaceID, indexName);
     if (!tagIndexIDResult.ok()) {
         LOG(ERROR) << "Get Tag Index SpaceID: " << spaceID
                    << " Index Name: " << indexName << " not found";

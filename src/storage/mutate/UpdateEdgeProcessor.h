@@ -32,7 +32,8 @@ private:
                                  meta::IndexManager* indexMan,
                                  stats::Stats* stats)
         : QueryBaseProcessor<cpp2::UpdateEdgeRequest,
-                             cpp2::UpdateResponse>(kvstore, schemaMan, indexMan, stats) {}
+                             cpp2::UpdateResponse>(kvstore, schemaMan, stats)
+        , indexMan_(indexMan) {}
 
     kvstore::ResultCode processVertex(PartitionID, VertexID) override {
         LOG(FATAL) << "Unimplement!";
@@ -64,6 +65,7 @@ private:
     std::unordered_map<std::string, VariantType>                    edgeFilters_;
     std::string                                                     key_;
     std::unique_ptr<RowUpdater>                                     updater_;
+    meta::IndexManager*                                             indexMan_{nullptr};
 };
 
 }  // namespace storage

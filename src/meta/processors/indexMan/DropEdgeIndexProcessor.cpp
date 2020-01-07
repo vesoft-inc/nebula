@@ -15,7 +15,7 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
     CHECK_SPACE_ID_AND_RETURN(spaceID);
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeIndexLock());
 
-    auto edgeIndexID = getEdgeIndexID(spaceID, indexName);
+    auto edgeIndexID = getIndexID(spaceID, indexName);
     if (!edgeIndexID.ok()) {
         LOG(ERROR) << "Edge Index not exist Space: " << spaceID << " Index name: " << indexName;
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);

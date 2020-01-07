@@ -15,7 +15,7 @@ void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
     CHECK_SPACE_ID_AND_RETURN(spaceID);
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagIndexLock());
 
-    auto tagIndexID = getTagIndexID(spaceID, indexName);
+    auto tagIndexID = getIndexID(spaceID, indexName);
     if (!tagIndexID.ok()) {
         LOG(ERROR) << "Tag Index not exist Space: " << spaceID << " Index name: " << indexName;
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);

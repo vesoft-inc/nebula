@@ -225,9 +225,7 @@ protected:
     StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
     getLatestEdgeFields(GraphSpaceID spaceId, const std::string& name);
 
-    StatusOr<IndexID> getTagIndexID(GraphSpaceID spaceId, const std::string& indexName);
-
-    StatusOr<IndexID> getEdgeIndexID(GraphSpaceID spaceId, const std::string& indexName);
+    StatusOr<IndexID> getIndexID(GraphSpaceID spaceId, const std::string& indexName);
 
     StatusOr<UserID> getUserId(const std::string& account);
 

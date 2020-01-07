@@ -44,13 +44,11 @@ public:
 protected:
     explicit QueryBaseProcessor(kvstore::KVStore* kvstore,
                                 meta::SchemaManager* schemaMan,
-                                meta::IndexManager* indexMan,
                                 stats::Stats* stats,
                                 folly::Executor* executor = nullptr,
                                 VertexCache* cache = nullptr)
         : BaseProcessor<RESP>(kvstore, schemaMan, stats)
         , executor_(executor)
-        , indexMan_(indexMan)
         , vertexCache_(cache) {}
 
     /**
@@ -118,7 +116,6 @@ protected:
     std::vector<TagContext> tagContexts_;
     std::unordered_map<EdgeType, std::vector<PropContext>> edgeContexts_;
     folly::Executor* executor_{nullptr};
-    meta::IndexManager* indexMan_{nullptr};
     VertexCache* vertexCache_{nullptr};
     std::unordered_map<std::string, EdgeType> edgeMap_;
 };

@@ -96,7 +96,6 @@ void fetchVertices(kvstore::KVStore* kv,
     auto* processor = QueryVertexPropsProcessor::instance(kv,
                                                           schemaMan,
                                                           nullptr,
-                                                          nullptr,
                                                           executor,
                                                           cache);
     auto f = processor->getFuture();

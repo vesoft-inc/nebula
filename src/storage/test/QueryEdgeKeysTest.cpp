@@ -68,7 +68,7 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
     {
         for (auto partId = 0; partId < 3; partId++) {
             for (auto srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
-                auto* processor = QueryEdgeKeysProcessor::instance(kv.get(), nullptr, nullptr);
+                auto* processor = QueryEdgeKeysProcessor::instance(kv.get(), nullptr);
                 cpp2::EdgeKeyRequest req;
                 req.space_id = 0;
                 req.part_id = partId;

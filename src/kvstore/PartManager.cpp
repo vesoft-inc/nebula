@@ -69,7 +69,7 @@ Status MetaServerBasedPartManager::partExist(const HostAddr& host,
 }
 
 Status MetaServerBasedPartManager::spaceExist(const HostAddr& host,
-                                            GraphSpaceID spaceId) {
+                                              GraphSpaceID spaceId) {
     return client_->checkSpaceExistInCache(host, spaceId);
 }
 

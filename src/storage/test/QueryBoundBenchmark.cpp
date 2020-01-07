@@ -143,7 +143,6 @@ void run(int32_t iters, int32_t handlerNum) {
                 = nebula::storage::QueryBoundProcessor::instance(gKV.get(),
                                                                  schema.get(),
                                                                  nullptr,
-                                                                 nullptr,
                                                                  executor.get());
         auto f = processor->getFuture();
         processor->process(req);

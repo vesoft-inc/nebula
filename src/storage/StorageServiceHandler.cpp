@@ -40,7 +40,6 @@ folly::Future<cpp2::QueryResponse>
 StorageServiceHandler::future_getBound(const cpp2::GetNeighborsRequest& req) {
     auto* processor = QueryBoundProcessor::instance(kvstore_,
                                                     schemaMan_,
-                                                    indexMan_,
                                                     &getBoundQpsStat_,
                                                     getThreadManager(),
                                                     &vertexCache_);
@@ -61,7 +60,6 @@ folly::Future<cpp2::QueryResponse>
 StorageServiceHandler::future_getProps(const cpp2::VertexPropRequest& req) {
     auto* processor = QueryVertexPropsProcessor::instance(kvstore_,
                                                           schemaMan_,
-                                                          indexMan_,
                                                           &vertexPropsQpsStat_,
                                                           getThreadManager(),
                                                           &vertexCache_);
@@ -72,7 +70,6 @@ folly::Future<cpp2::EdgePropResponse>
 StorageServiceHandler::future_getEdgeProps(const cpp2::EdgePropRequest& req) {
     auto* processor = QueryEdgePropsProcessor::instance(kvstore_,
                                                         schemaMan_,
-                                                        indexMan_,
                                                         &edgePropsQpsStat_);
     RETURN_FUTURE(processor);
 }
@@ -98,7 +95,7 @@ StorageServiceHandler::future_addEdges(const cpp2::AddEdgesRequest& req) {
 
 folly::Future<cpp2::EdgeKeyResponse>
 StorageServiceHandler::future_getEdgeKeys(const cpp2::EdgeKeyRequest& req) {
-    auto* processor = QueryEdgeKeysProcessor::instance(kvstore_, schemaMan_, indexMan_);
+    auto* processor = QueryEdgeKeysProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
 

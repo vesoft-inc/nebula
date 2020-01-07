@@ -101,7 +101,6 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     if (FileUtils::fileType(path.c_str()) == FileType::NOTEXIST) {
         FileUtils::makeDir(path);
     }
-    LOG(INFO) << "open rocksdb on " << path;
 
     rocksdb::Options options;
     rocksdb::DB* db = nullptr;
@@ -117,6 +116,7 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     CHECK(status.ok()) << status.ToString();
     db_.reset(db);
     partsNum_ = allParts().size();
+    LOG(INFO) << "open rocksdb on " << path;
 }
 
 

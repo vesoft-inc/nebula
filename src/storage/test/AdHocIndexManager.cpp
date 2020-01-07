@@ -70,7 +70,7 @@ AdHocIndexManager::getTagIndex(GraphSpaceID space, IndexID index) {
             return item;
         }
     }
-    return Status::TagIndexNotFound();
+    return Status::IndexNotFound();
 }
 
 StatusOr<std::shared_ptr<IndexItem>>
@@ -86,7 +86,7 @@ AdHocIndexManager::getEdgeIndex(GraphSpaceID space, IndexID index) {
             return item;
         }
     }
-    return Status::EdgeIndexNotFound();
+    return Status::IndexNotFound();
 }
 
 StatusOr<std::vector<std::shared_ptr<IndexItem>>>

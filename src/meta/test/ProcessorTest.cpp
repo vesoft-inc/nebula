@@ -247,6 +247,38 @@ TEST(ProcessorTest, SpaceTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(0, resp.spaces.size());
     }
+    // With IF EXISTS
+    {
+        cpp2::DropSpaceReq req;
+        req.set_space_name("not_exist_space");
+        req.set_if_exists(true);
+        auto* processor = DropSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+    }
+    {
+        constexpr char spaceName[] = "exist_space";
+        cpp2::CreateSpaceReq req;
+        cpp2::SpaceProperties properties;
+        properties.set_space_name(spaceName);
+        req.set_properties(std::move(properties));
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+
+        cpp2::DropSpaceReq req1;
+        req1.set_space_name(spaceName);
+        req1.set_if_exists(true);
+        auto* processor1 = DropSpaceProcessor::instance(kv.get());
+        auto f1 = processor1->getFuture();
+        processor1->process(req1);
+        auto resp1 = std::move(f1).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp1.code);
+    }
 }
 
 TEST(ProcessorTest, CreateTagTest) {
@@ -923,6 +955,40 @@ TEST(ProcessorTest, DropTagTest) {
         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
         ASSERT_FALSE(iter->valid());
     }
+    // With IF EXISTS
+    {
+        cpp2::DropTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("not_exist_tag");
+        req.set_if_exists(true);
+        auto* processor = DropTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        constexpr GraphSpaceID spaceId = 1;
+        constexpr char tagName[] = "exist_tag";
+        cpp2::CreateTagReq req;
+        req.set_space_id(spaceId);
+        req.set_tag_name(tagName);
+        auto* processor = CreateTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+
+        cpp2::DropTagReq req1;
+        req1.set_space_id(spaceId);
+        req1.set_tag_name(tagName);
+        req1.set_if_exists(true);
+        auto* processor1 = DropTagProcessor::instance(kv.get());
+        auto f1 = processor1->getFuture();
+        processor1->process(req1);
+        auto resp1 = std::move(f1).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp1.get_code());
+    }
 }
 
 
@@ -978,6 +1044,40 @@ TEST(ProcessorTest, DropEdgeTest) {
         ret = kv.get()->prefix(kDefaultSpaceId, kDefaultPartId, edgePrefix, &iter);
         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
         ASSERT_FALSE(iter->valid());
+    }
+    // With IF EXISTS
+    {
+        cpp2::DropEdgeReq req;
+        req.set_space_id(1);
+        req.set_edge_name("not_exist_edge");
+        req.set_if_exists(true);
+        auto* processor = DropEdgeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        constexpr GraphSpaceID spaceId = 1;
+        constexpr char edgeName[] = "exist_edge";
+        cpp2::CreateTagReq req;
+        req.set_space_id(spaceId);
+        req.set_tag_name(edgeName);
+        auto* processor = CreateTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+
+        cpp2::DropEdgeReq req1;
+        req1.set_space_id(spaceId);
+        req1.set_edge_name(edgeName);
+        req1.set_if_exists(true);
+        auto* processor1 = DropEdgeProcessor::instance(kv.get());
+        auto f1 = processor1->getFuture();
+        processor1->process(req1);
+        auto resp1 = std::move(f1).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp1.get_code());
     }
 }
 

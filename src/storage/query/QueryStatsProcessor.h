@@ -33,7 +33,6 @@ private:
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
                              cpp2::QueryStatsResponse>(kvstore,
                                                        schemaMan,
-                                                       nullptr,
                                                        stats,
                                                        executor,
                                                        cache) {}

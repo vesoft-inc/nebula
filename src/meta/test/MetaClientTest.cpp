@@ -43,10 +43,7 @@ TEST(MetaClientTest, InterfacesTest) {
     auto clientPort = network::NetworkUtils::getAvailablePort();
     HostAddr localHost{localIp, clientPort};
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, sc->port_)},
-                                               localHost,
-                                               0,
-                                               false);
+                                               std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
     client->waitForMetadReady();
     {
         // Add hosts automatically, then testing listHosts interface.
@@ -343,7 +340,7 @@ TEST(MetaClientTest, TagTest) {
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
-    auto client = std::make_shared<MetaClient>(threadPool, localhosts, HostAddr(0, 0), 0, false);
+    auto client = std::make_shared<MetaClient>(threadPool, localhosts);
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     client->waitForMetadReady();
     TestUtils::registerHB(sc->kvStore_.get(), hosts);
@@ -703,7 +700,7 @@ TEST(MetaClientTest, TagIndexTest) {
         GraphSpaceID spaceNotExist = 99;
         IndexID tagIndexNotExist = 99;
         auto checkTagIndexNotExist = client->checkTagIndexed(space, tagIndexNotExist);
-        ASSERT_EQ(Status::TagIndexNotFound(), checkTagIndexNotExist);
+        ASSERT_EQ(Status::IndexNotFound(), checkTagIndexNotExist);
 
         auto checkSpaceNotExist = client->checkTagIndexed(spaceNotExist, singleFieldIndexID);
         ASSERT_EQ(Status::SpaceNotFound(), checkSpaceNotExist);
@@ -870,7 +867,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
         GraphSpaceID spaceNotExist = 99;
         IndexID edgeIndexNotExist = 99;
         auto checkEdgeIndexNotExist = client->checkEdgeIndexed(space, edgeIndexNotExist);
-        ASSERT_EQ(Status::EdgeIndexNotFound(), checkEdgeIndexNotExist);
+        ASSERT_EQ(Status::IndexNotFound(), checkEdgeIndexNotExist);
 
         auto checkSpaceNotExist = client->checkEdgeIndexed(spaceNotExist, singleFieldIndexID);
         ASSERT_EQ(Status::SpaceNotFound(), checkSpaceNotExist);
@@ -970,10 +967,8 @@ TEST(MetaClientTest, DiffTest) {
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto listener = std::make_unique<TestListener>();
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, sc->port_)},
-                                               HostAddr(0, 0),
-                                               0,
-                                               false);
+                                               std::vector<HostAddr>{
+                                                    HostAddr(localIp, sc->port_)});
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {
@@ -1026,11 +1021,13 @@ TEST(MetaClientTest, HeartbeatTest) {
     auto clientPort = network::NetworkUtils::getAvailablePort();
     HostAddr localHost{localIp, clientPort};
 
+    MetaClientOptions options;
+    options.localHost_ = localHost;
+    options.clusterId_ = kClusterId;
+    options.inStoraged_ = true;
     auto client = std::make_shared<MetaClient>(threadPool,
                                                std::vector<HostAddr>{HostAddr(localIp, 10001)},
-                                               localHost,
-                                               kClusterId,
-                                               true);
+                                               options);
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {
@@ -1109,8 +1106,8 @@ TEST(MetaClientTest, SimpleTest) {
     auto clientPort = network::NetworkUtils::getAvailablePort();
     HostAddr localHost{localIp, clientPort};
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, sc->port_)},
-                                               localHost);
+                                               std::vector<HostAddr>{
+                                                   HostAddr(localIp, sc->port_)});
     {
         LOG(INFO) << "Test heart beat...";
         folly::Baton<true, std::atomic> baton;
@@ -1131,8 +1128,7 @@ TEST(MetaClientTest, RetryWithExceptionTest) {
     auto clientPort = network::NetworkUtils::getAvailablePort();
     HostAddr localHost{localIp, clientPort};
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(0, 0)},
-                                               localHost);
+                                               std::vector<HostAddr>{HostAddr(0, 0)});
     // Retry with exception, then failed
     {
         LOG(INFO) << "Test heart beat...";
@@ -1171,8 +1167,7 @@ TEST(MetaClientTest, RetryOnceTest) {
     auto clientPort = network::NetworkUtils::getAvailablePort();
     HostAddr localHost{localIp, clientPort};
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{addrs[1]},
-                                               localHost);
+                                               std::vector<HostAddr>{addrs[1]});
     // First get leader changed and then succeeded
     {
         LOG(INFO) << "Test heart beat...";
@@ -1210,8 +1205,7 @@ TEST(MetaClientTest, RetryUntilLimitTest) {
     auto clientPort = network::NetworkUtils::getAvailablePort();
     HostAddr localHost{localIp, clientPort};
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{addrs[1]},
-                                               localHost);
+                                               std::vector<HostAddr>{addrs[1]});
     // always get response of leader changed, then failed
     {
         LOG(INFO) << "Test heart beat...";

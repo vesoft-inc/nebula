@@ -14,7 +14,7 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
     CHECK_SPACE_ID_AND_RETURN(spaceID);
     auto indexName = req.get_index_name();
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeIndexLock());
-    auto edgeIndexIDResult = getEdgeIndexID(spaceID, indexName);
+    auto edgeIndexIDResult = getIndexID(spaceID, indexName);
     if (!edgeIndexIDResult.ok()) {
         LOG(ERROR) << "Get Edge Index SpaceID: " << spaceID
                    << " Index Name: " << indexName << " not found";

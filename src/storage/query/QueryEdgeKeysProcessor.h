@@ -16,22 +16,16 @@ namespace storage {
 class QueryEdgeKeysProcessor : public BaseProcessor<cpp2::EdgeKeyResponse> {
 public:
     static QueryEdgeKeysProcessor* instance(kvstore::KVStore* kvstore,
-                                            meta::SchemaManager* schemaMan,
-                                            meta::IndexManager* indexMan) {
-        return new QueryEdgeKeysProcessor(kvstore, schemaMan, indexMan);
+                                            meta::SchemaManager* schemaMan) {
+        return new QueryEdgeKeysProcessor(kvstore, schemaMan);
     }
 
      void process(const cpp2::EdgeKeyRequest& req);
 
 private:
     explicit QueryEdgeKeysProcessor(kvstore::KVStore* kvstore,
-                                    meta::SchemaManager* schemaMan,
-                                    meta::IndexManager* indexMan)
-            : BaseProcessor<cpp2::EdgeKeyResponse>(kvstore, schemaMan)
-            , indexMan_(indexMan) {}
-
-private:
-    meta::IndexManager* indexMan_{nullptr};
+                                    meta::SchemaManager* schemaMan)
+            : BaseProcessor<cpp2::EdgeKeyResponse>(kvstore, schemaMan) {}
 };
 
 }  // namespace storage

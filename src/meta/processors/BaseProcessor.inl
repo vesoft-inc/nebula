@@ -309,26 +309,13 @@ BaseProcessor<RESP>::getLatestEdgeFields(GraphSpaceID spaceId,
 
 template<typename RESP>
 StatusOr<IndexID>
-BaseProcessor<RESP>::getTagIndexID(GraphSpaceID spaceId, const std::string& indexName) {
+BaseProcessor<RESP>::getIndexID(GraphSpaceID spaceId, const std::string& indexName) {
     auto indexKey = MetaServiceUtils::indexIndexKey(spaceId, indexName);
     auto ret = doGet(indexKey);
     if (ret.ok()) {
         return *reinterpret_cast<const IndexID*>(ret.value().c_str());
     }
-    return Status::TagIndexNotFound(folly::stringPrintf("Tag Index %s not found",
-                                                        indexName.c_str()));
-}
-
-template<typename RESP>
-StatusOr<IndexID>
-BaseProcessor<RESP>::getEdgeIndexID(GraphSpaceID spaceId, const std::string& indexName) {
-    auto indexKey = MetaServiceUtils::indexIndexKey(spaceId, indexName);
-    auto ret = doGet(indexKey);
-    if (ret.ok()) {
-        return *reinterpret_cast<const IndexID*>(ret.value().c_str());
-    }
-    return Status::EdgeIndexNotFound(folly::stringPrintf("Edge Index %s not found",
-                                                         indexName.c_str()));
+    return Status::IndexNotFound(folly::stringPrintf("Index %s not found", indexName.c_str()));
 }
 
 template<typename RESP>
