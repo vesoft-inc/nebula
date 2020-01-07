@@ -30,6 +30,14 @@ public:
         kAlterEdge,
         kDescribeTag,
         kDescribeEdge,
+        kCreateTagIndex,
+        kCreateEdgeIndex,
+        kDropTagIndex,
+        kDropEdgeIndex,
+        kDescribeTagIndex,
+        kDescribeEdgeIndex,
+        kBuildTagIndex,
+        kBuildEdgeIndex,
         kDropTag,
         kDropEdge,
         kInsertVertex,
@@ -84,6 +92,18 @@ public:
 
 private:
     bool ifNotExist_{false};
+};
+
+class DropSentence : public Sentence {
+public:
+    explicit  DropSentence(bool ifExists) : ifExists_{ifExists} {}
+    virtual ~DropSentence() = default;
+
+    bool isIfExists() {
+        return ifExists_;
+    }
+private:
+    bool ifExists_{false};
 };
 
 inline std::ostream& operator<<(std::ostream &os, Sentence::Kind kind) {
