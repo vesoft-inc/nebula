@@ -49,7 +49,7 @@ jobs:
         timeout-minutes: 40
         run: cd build && ctest --timeout 500 --output-on-failure
       - name: Coverage Report
-        if:  success() && matrix.compiler == 'gcc' && matrix.tag == 'centos7'
+        if: success() && matrix.compiler == 'gcc' && matrix.tag == 'centos7'
         run: cd build && lcov --gcov-tool $GCOV --capture --directory . --output-file coverage.info
       - name: Coveralls
         if: success() && matrix.compiler == 'gcc' && matrix.tag == 'centos7'

@@ -57,6 +57,15 @@ jobs:
         if: failure() && steps.ignore_docs.outputs.ignore != '0'
         timeout-minutes: 30
         run: cd build && ctest --timeout 300 --output-on-failure --rerun-failed
+      - name: Coverage Report
+        if: success() && matrix.compiler == 'gcc' && matrix.tag == 'centos7'
+        run: cd build && lcov --gcov-tool $GCOV --capture --directory . --output-file coverage.info
+      - name: Coveralls
+        if: success() && matrix.compiler == 'gcc' && matrix.tag == 'centos7'
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: build/coverage.info
       - name: Cleanup
         if: always()
         run: rm -rf build
