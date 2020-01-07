@@ -1,18 +1,18 @@
 # Schema Index
 
 ```ngql
-CREATE {TAG | EDGE} INDEX <index_name> ON {<tag_name> | <edge_name>} (prop_name_list)
+CREATE {TAG | EDGE} INDEX [IF NOT EXISTS] <index_name> ON {<tag_name> | <edge_name>} (prop_name_list)
 ```
 
-Schema indexes are built to fast process graph queries. **Nebula Graph** supports two different kinds of indexing to speed up query processing: **tag indexes** and **edge indexes**.
+Schema indexes are built to fast process graph queries. **Nebula Graph** supports two different kinds of indexing to speed up query processing: **tag indexes** and **edge type indexes**.
 
 Most graph queries start the traversal from a list of vertices or edges that are identified by their properties. Schema indexes make these global retrieval operations efficient on large graphs.
 
-Normally, you create indexes on a tag/edge at the time the tag/edge itself is created with `CREATE TAG/EDGE`.
+Normally, you create indexes on a tag/edge-type at the time the tag/edge-type itself is created with `CREATE TAG/EDGE` statement.
 
 ## Create Index
 
-CREATE INDEX enables you to add indexes to existing tag/edge.
+`CREATE INDEX` enables you to add indexes to existing tag/edge-type.
 
 ### Create Single-Property Index
 
@@ -52,7 +52,7 @@ In case of no index being set up this will look up all Person nodes and check if
 SHOW {TAG | EDGE} INDEXES
 ```
 
-SHOW INDEXES returns the defined tag/edge index information. For example, list the indexes with the following command:
+`SHOW INDEXES` returns the defined tag/edg-type index information. For example, list the indexes with the following command:
 
 ```ngql
 nebula> SHOW TAG INDEXES;
@@ -79,7 +79,7 @@ nebula> SHOW EDGE INDEXES;
 DESCRIBE {TAG | EDGE} INDEX <index_name>
 ```
 
-DESCRIBE INDEX is used to obtain information about the index. For example, list the index information with the following command:
+`DESCRIBE INDEX` is used to obtain information about the index. For example, list the index information with the following command:
 
 ```ngql
 nebula> DESCRIBE TAG INDEX player_index_0;
@@ -105,10 +105,8 @@ nebula> DESCRIBE TAG INDEX player_index_1;
 DROP {TAG | EDGE} INDEX <index_name>
 ```
 
-DROP INDEX drops the index named _index_name_ from the tag/edge. For example, drop the index player_index_0 with the following command:
+`DROP INDEX` drops the index named _index_name_ from the tag/edge-type. For example, drop the index _player_index_0_ with the following command:
 
 ```ngql
 nebula> DROP TAG INDEX player_index_0;
 ```
-
-legacy indexes
