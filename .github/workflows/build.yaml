@@ -48,7 +48,7 @@ jobs:
           mkdir -p build
       - name: CMake with gcc
         if: matrix.compiler == 'gcc'
-        run: cd build && cmake -DCMAKE_BUILD_TYPE=Release ..
+        run: cd build && cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_COVERAGE=ON ..
       - name: CMake with clang
         if: matrix.compiler == 'clang'
         run: cd build && cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DENABLE_UBSAN=on ..
@@ -62,6 +62,15 @@ jobs:
         if: failure()
         timeout-minutes: 30
         run: cd build && ctest --timeout 300 --output-on-failure --rerun-failed
+      - name: Coverage Report
+        if:  success() && matrix.compiler == 'gcc' && matrix.tag == 'centos7'
+        run: cd build && lcov --gcov-tool $GCOV --capture --directory . --output-file coverage.info
+      - name: Coveralls
+        if: success() && matrix.compiler == 'gcc' && matrix.tag == 'centos7'
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: build/coverage.info
       - name: Cleanup
         if: always()
         run: rm -rf build

@@ -43,6 +43,7 @@ option(ENABLE_NATIVE "Whether to build native client" OFF)
 option(ENABLE_CCACHE "Whether to use ccache to speed up compiling" ON)
 option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
 option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
+option(ENABLE_COVERAGE "Enable testing coverage reporting" OFF)
 option(ENABLE_UBSAN "Whether to turn Undefined Behavior Sanitizer ON or OFF" OFF)
 option(ENABLE_FUZZ_TEST "Whether to turn Fuzz Test ON or OFF" OFF)
 option(ENABLE_WERROR "Whether to error on warnings" ON)
@@ -64,6 +65,13 @@ endif()
 
 if (!CMAKE_CXX_COMPILER)
     message(FATAL_ERROR "No C++ compiler found")
+endif()
+
+if(ENABLE_TESTING AND ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  # Add required flags (GCC & LLVM/Clang)
+  add_compile_options(
+    --coverage # sets all required flags
+  )
 endif()
 
 set(CMAKE_CXX_STANDARD 14)  # specify the C++ standard
@@ -453,6 +461,12 @@ else()
     set(GETTIME_LIB)
 endif()
 
+if (ENABLE_TESTING AND ENABLE_COVERAGE)
+    set(COVERAGE --coverage)
+else()
+    set(COVERAGE)
+endif()
+
 # A wrapper for target_link_libraries()
 macro(nebula_link_libraries target)
     target_link_libraries(
@@ -477,6 +491,7 @@ macro(nebula_link_libraries target)
         dl
         ${GETTIME_LIB}
         -pthread
+        ${COVERAGE}
     )
 endmacro(nebula_link_libraries)
 
