@@ -169,5 +169,34 @@ StatusOr<std::string> AdHocSchemaManager::toEdgeName(GraphSpaceID space, EdgeTyp
     }
     return "";
 }
+
+StatusOr<std::vector<nebula::cpp2::IndexItem>>
+AdHocSchemaManager::getTagIndexes(GraphSpaceID space) {
+    auto indexes = tagIndexes_.find(space);
+    if (indexes == tagIndexes_.end()) {
+        return Status::TagIndexNotFound();
+    }
+    return indexes->second;
+}
+
+StatusOr<std::vector<nebula::cpp2::IndexItem>>
+AdHocSchemaManager::getEdgeIndexes(GraphSpaceID space) {
+    auto indexes = edgeIndexes_.find(space);
+    if (indexes == edgeIndexes_.end()) {
+        return Status::EdgeIndexNotFound();
+    }
+    return indexes->second;
+}
+
+void AdHocSchemaManager::addTagIndex(GraphSpaceID space,
+                                     const nebula::cpp2::IndexItem& index) {
+    tagIndexes_[space].emplace_back(index);
+}
+
+void AdHocSchemaManager::addEdgeIndex(GraphSpaceID space,
+                                      const nebula::cpp2::IndexItem& index) {
+    edgeIndexes_[space].emplace_back(index);
+}
+
 }  // namespace storage
 }  // namespace nebula
