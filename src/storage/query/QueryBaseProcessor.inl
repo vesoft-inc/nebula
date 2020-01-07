@@ -423,25 +423,27 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
 
     bool missedKey = true;
     for (; iter && iter->valid(); iter->next()) {
-        if (!NebulaKeyUtils::isVertex(iter->key())) {
+        auto key = iter->key();
+        auto val = iter->val();
+        if (!NebulaKeyUtils::isVertex(key)) {
             continue;
         }
         missedKey = false;
-        auto val = iter->val().toString();
         auto ver = RowReader::getSchemaVer(val);
         if (ver < 0) {
             LOG(ERROR) << "Found schema version negative " << ver;
             continue;
         }
-        auto tagId = NebulaKeyUtils::getTagId(iter->key());
+        auto tagId = NebulaKeyUtils::getTagId(key);
+        auto valStr = val.str();
         if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
             vertexCache_->insert(std::make_pair(vId, tagId),
-                                 iter->val().str(), partId);
+                                 valStr, partId);
             VLOG(3) << "Insert cache for vId " << vId << ", tagId " << tagId;
         }
         cpp2::TagData td;
         td.set_tag_id(tagId);
-        td.set_data(iter->val().toString());
+        td.set_data(std::move(valStr));
         tds.emplace_back(std::move(td));
     }
     if (missedKey) {
