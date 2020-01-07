@@ -1172,8 +1172,8 @@ MetaClient::dropTagIndex(GraphSpaceID spaceID,
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_dropTagIndex(request);
-    }, [] (cpp2::ExecResp&& resp) -> TagIndexID {
-        return resp.get_id().get_tag_index_id();
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, std::move(promise), true);
     return future;
 }
@@ -1266,8 +1266,8 @@ MetaClient::dropEdgeIndex(GraphSpaceID spaceID,
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_dropEdgeIndex(request);
-    }, [] (cpp2::ExecResp&& resp) -> EdgeIndexID {
-        return resp.get_id().get_edge_index_id();
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, std::move(promise), true);
     return future;
 }
