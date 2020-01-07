@@ -102,7 +102,7 @@ nebula> DESCRIBE TAG INDEX player_index_1;
 ## DROP INDEX
 
 ```ngql
-DROP {TAG | EDGE} INDEX <index_name>
+DROP {TAG | EDGE} INDEX [IF EXISTS] <index_name>
 ```
 
 `DROP INDEX` drops the index named _index_name_ from the tag/edge-type. For example, drop the index _player_index_0_ with the following command:

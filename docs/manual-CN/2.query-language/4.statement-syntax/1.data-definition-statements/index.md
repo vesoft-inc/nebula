@@ -94,7 +94,7 @@ nebula> DESCRIBE TAG INDEX player_index_1;
 ## 删除索引
 
 ```ngql
-DROP {TAG | EDGE} INDEX <index_name>
+DROP {TAG | EDGE} INDEX [IF EXISTS] <index_name>
 ```
 
 `DROP INDEX` 用于删除指定名称的标签或边类型索引。例如，使用以下命令删除名为 _player_index_0_ 的索引：
