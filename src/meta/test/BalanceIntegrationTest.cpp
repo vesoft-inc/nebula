@@ -69,6 +69,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         options.localHost_ = storageAddr;
         options.clusterId_ = kClusterId;
         options.inStoraged_ = true;
+        options.skipConfig_ = true;
         auto metaClient = std::make_shared<meta::MetaClient>(threadPool,
                                                              metaAddr,
                                                              options);
@@ -178,6 +179,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         options.localHost_ = storageAddr;
         options.clusterId_ = kClusterId;
         options.inStoraged_ = true;
+        options.skipConfig_ = true;
         newMetaClient = std::make_unique<meta::MetaClient>(threadPool,
                                                            metaAddr,
                                                            options);
@@ -297,6 +299,7 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
         options.localHost_ = storageAddr;
         options.clusterId_ = kClusterId;
         options.inStoraged_ = true;
+        options.skipConfig_ = true;
         auto metaClient = std::make_shared<meta::MetaClient>(threadPool,
                                                              metaAddr,
                                                              options);

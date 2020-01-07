@@ -66,7 +66,7 @@ volatile std::atomic<double> ticksPerMSecFactor{0.0};
 volatile std::atomic<double> ticksPerUSecFactor{[] {
     launchTickTockThread();
     // re-launch tick-tock thread after forking
-    ::pthread_atfork(nullptr, nullptr, &launchTickTockThread);
+    // ::pthread_atfork(nullptr, nullptr, &launchTickTockThread);
 
     usleep(10000);
 

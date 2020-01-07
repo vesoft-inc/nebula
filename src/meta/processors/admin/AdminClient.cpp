@@ -561,6 +561,7 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
 
         p.setValue(Status::OK());
     }).thenError([p = std::move(promise)] (auto&& e) mutable {
+        LOG(ERROR) << "Get leader failed, " << e.what().c_str();
         p.setValue(Status::Error("Get leader failed, %s", e.what().c_str()));
     });
 
