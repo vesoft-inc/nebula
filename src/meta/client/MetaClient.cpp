@@ -369,17 +369,17 @@ void MetaClient::getResponse(Request req,
                     return;
                 } else {
                     LOG(ERROR) << "Send request to " << host << ", exceed retry limit";
+                    stats::Stats::addStatsValue(stats_.get(), false, duration.elapsedInUSec());
                     pro.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
                                                                    t.exception().what().c_str())));
-                    stats::Stats::addStatsValue(stats_.get(), false, duration.elapsedInUSec());
                 }
                 return;
             }
             auto&& resp = t.value();
             if (resp.code == cpp2::ErrorCode::SUCCEEDED) {
                 // succeeded
-                pro.setValue(respGen(std::move(resp)));
                 stats::Stats::addStatsValue(stats_.get(), true, duration.elapsedInUSec());
+                pro.setValue(respGen(std::move(resp)));
 
                 return;
             } else if (resp.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
@@ -400,10 +400,10 @@ void MetaClient::getResponse(Request req,
                     return;
                 }
             }
-            pro.setValue(this->handleResponse(resp));
             stats::Stats::addStatsValue(stats_.get(),
                                         resp.code == cpp2::ErrorCode::SUCCEEDED,
                                         duration.elapsedInUSec());
+            pro.setValue(this->handleResponse(resp));
         });  // then
     });  // via
 }
