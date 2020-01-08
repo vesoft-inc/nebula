@@ -32,13 +32,13 @@ private:
     void calibrate();
 
 private:
-    std::chrono::steady_clock::time_point kUptime;
-    uint64_t kFirstTick{0};
-    struct timespec kStartTime;
+    std::chrono::steady_clock::time_point startMonoTime_;
+    uint64_t firstTick_{0};
+    struct timespec startRealTime_;
 
-    std::atomic<double> ticksPerSecFactor{0.0};
-    std::atomic<double> ticksPerMSecFactor{0.0};
-    std::atomic<double> ticksPerUSecFactor{0.0};
+    std::atomic<double> ticksPerSecFactor_{0.0};
+    std::atomic<double> ticksPerMSecFactor_{0.0};
+    std::atomic<double> ticksPerUSecFactor_{0.0};
 };
 
 }  // namespace time
