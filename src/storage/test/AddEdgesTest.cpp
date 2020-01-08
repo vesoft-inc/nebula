@@ -18,7 +18,12 @@ namespace storage {
 TEST(AddEdgesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/AddEdgesTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
-    auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr, nullptr);
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
+    auto* processor = AddEdgesProcessor::instance(kv.get(),
+                                                  schemaMan.get(),
+                                                  indexMan.get(),
+                                                  nullptr);
 
     LOG(INFO) << "Build AddEdgesRequest...";
     cpp2::AddEdgesRequest req;
@@ -26,7 +31,7 @@ TEST(AddEdgesTest, SimpleTest) {
     req.overwritable = true;
     // partId => List<Edge>
     // Edge => {EdgeKey, props}
-    for (auto partId = 0; partId < 3; partId++) {
+    for (auto partId = 1; partId <= 3; partId++) {
         std::vector<cpp2::Edge> edges;
         for (auto srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
             cpp2::EdgeKey key;
@@ -48,7 +53,7 @@ TEST(AddEdgesTest, SimpleTest) {
     EXPECT_EQ(0, resp.result.failed_codes.size());
 
     LOG(INFO) << "Check data in kv store...";
-    for (auto partId = 0; partId < 3; partId++) {
+    for (auto partId = 1; partId <= 3; partId++) {
         for (auto srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
             auto prefix = NebulaKeyUtils::edgePrefix(partId, srcId, srcId*100 + 1);
             std::unique_ptr<kvstore::KVIterator> iter;

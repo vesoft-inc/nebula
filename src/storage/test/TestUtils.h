@@ -93,8 +93,42 @@ public:
         return sm;
     }
 
-    static std::unique_ptr<meta::IndexManager> mockIndexMan() {
+    static std::unique_ptr<meta::IndexManager> mockIndexMan(GraphSpaceID spaceId = 0) {
         auto* indexMan = new AdHocIndexManager();
+        for (auto edgeType = 101; edgeType < 110; edgeType++) {
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            for (auto i = 0; i < 10; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = folly::stringPrintf("col_%d", i);
+                column.type.type = nebula::cpp2::SupportedType::INT;
+                columns.emplace_back(std::move(column));
+            }
+            for (auto i = 10; i < 20; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = folly::stringPrintf("col_%d", i);
+                column.type.type = nebula::cpp2::SupportedType::STRING;
+                columns.emplace_back(std::move(column));
+            }
+            indexMan->addEdgeIndex(spaceId, edgeType + 100, edgeType, std::move(columns));
+        }
+
+        for (auto tagId = 3001; tagId < 3010; tagId++) {
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            for (auto i = 0; i < 3; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
+                column.type.type = nebula::cpp2::SupportedType::INT;
+                columns.emplace_back(std::move(column));
+            }
+            for (auto i = 3; i < 6; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
+                column.type.type = nebula::cpp2::SupportedType::STRING;
+                columns.emplace_back(std::move(column));
+            }
+            indexMan->addTagIndex(spaceId, tagId + 1000, tagId, std::move(columns));
+        }
+
         std::unique_ptr<meta::IndexManager> im(indexMan);
         return im;
     }
@@ -212,17 +246,19 @@ public:
 
         if (!useMetaServer) {
             sc->schemaMan_ = TestUtils::mockSchemaMan(1);
+            sc->indexMan_ = TestUtils::mockIndexMan(1);
         } else {
-            LOG(INFO) << "Create real schemaManager";
+            LOG(INFO) << "Create real SchemaManager and IndexManager";
             sc->schemaMan_ = meta::SchemaManager::create();
             sc->schemaMan_->init(mClient);
+
+            sc->indexMan_ = meta::IndexManager::create();
+            sc->indexMan_->init(mClient);
         }
 
-        auto indexMan = meta::IndexManager::create();
-        indexMan->init(mClient);
 
         auto handler = std::make_shared<nebula::storage::StorageServiceHandler>(
-            sc->kvStore_.get(), sc->schemaMan_.get(), indexMan.get(), mClient);
+            sc->kvStore_.get(), sc->schemaMan_.get(), sc->indexMan_.get(), mClient);
         sc->mockCommon("storage", port, handler);
         auto ptr = dynamic_cast<kvstore::MetaServerBasedPartManager*>(
             sc->kvStore_->partManager());

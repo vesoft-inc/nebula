@@ -109,6 +109,7 @@ bool StorageServer::start() {
     schemaMan_ = meta::SchemaManager::create();
     schemaMan_->init(metaClient_.get());
 
+    LOG(INFO) << "Init index manager";
     auto indexMan = meta::IndexManager::create();
     indexMan->init(metaClient_.get());
 

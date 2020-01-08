@@ -15,7 +15,7 @@ namespace nebula {
 namespace storage {
 
 struct KeyUpdaterPair {
-    std::string key;
+    std::pair<std::string, std::string> kv;
     std::unique_ptr<RowUpdater> updater;
 };
 
@@ -59,7 +59,7 @@ private:
 
     bool checkFilter(const PartitionID partId, const VertexID vId);
 
-    std::string updateAndWriteBack();
+    std::string updateAndWriteBack(const PartitionID partId, const VertexID vId);
 
 private:
     bool                                                            insertable_{false};
@@ -69,6 +69,7 @@ private:
     std::unordered_map<std::pair<TagID, std::string>, VariantType>  tagFilters_;
     std::unordered_map<TagID, std::unique_ptr<KeyUpdaterPair>>      tagUpdaters_;
     meta::IndexManager*                                             indexMan_{nullptr};
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>                            indexes_;
 };
 
 }  // namespace storage

@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "storage/BaseProcessor.h"
+#include "kvstore/LogEncoder.h"
 
 namespace nebula {
 namespace storage {
@@ -35,9 +36,12 @@ private:
             , indexMan_(indexMan)
             , vertexCache_(cache) {}
 
+    std::string deleteVertex(GraphSpaceID spaceId, PartitionID partId, VertexID vId);
+
 private:
-    meta::IndexManager* indexMan_{nullptr};
-    VertexCache*        vertexCache_{nullptr};
+    meta::IndexManager*                  indexMan_{nullptr};
+    VertexCache*                         vertexCache_{nullptr};
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> indexes_;
 };
 
 

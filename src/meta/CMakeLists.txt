@@ -8,6 +8,7 @@ nebula_add_library(
 nebula_add_library(
     index_obj OBJECT
     IndexManager.cpp
+    ServerBasedIndexManager.cpp
 )
 
 nebula_add_library(

@@ -16,35 +16,36 @@ namespace meta {
 
 class IndexManager {
 public:
-    IndexManager() = default;
-
     ~IndexManager() = default;
 
     static std::unique_ptr<IndexManager> create();
 
-    void init(MetaClient *client);
+    virtual void init(MetaClient *client) = 0;
 
-    StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>>
-    getTagIndex(GraphSpaceID space, IndexID index);
+    virtual StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>>
+    getTagIndex(GraphSpaceID space, IndexID index) = 0;
 
-    StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>>
-    getEdgeIndex(GraphSpaceID space, IndexID index);
+    virtual StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>>
+    getEdgeIndex(GraphSpaceID space, IndexID index) = 0;
 
-    StatusOr<std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>>
-    getTagIndexes(GraphSpaceID space);
+    virtual StatusOr<std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>>
+    getTagIndexes(GraphSpaceID space) = 0;
 
-    StatusOr<std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>>
-    getEdgeIndexes(GraphSpaceID space);
+    virtual StatusOr<std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>>
+    getEdgeIndexes(GraphSpaceID space) = 0;
 
-    StatusOr<IndexID>
-    toTagIndexID(GraphSpaceID space, std::string tagName);
+    virtual StatusOr<IndexID>
+    toTagIndexID(GraphSpaceID space, std::string tagName) = 0;
 
-    StatusOr<IndexID>
-    toEdgeIndexID(GraphSpaceID space, std::string edgeName);
+    virtual StatusOr<IndexID>
+    toEdgeIndexID(GraphSpaceID space, std::string edgeName) = 0;
 
-    Status checkTagIndexed(GraphSpaceID space, TagID tagID);
+    virtual Status checkTagIndexed(GraphSpaceID space, TagID tagID) = 0;
 
-    Status checkEdgeIndexed(GraphSpaceID space, EdgeType edgeType);
+    virtual Status checkEdgeIndexed(GraphSpaceID space, EdgeType edgeType) = 0;
+
+protected:
+    IndexManager() = default;
 
 private:
     MetaClient             *metaClient_{nullptr};

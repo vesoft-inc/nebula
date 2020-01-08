@@ -11,6 +11,7 @@
 #include <folly/RWSpinLock.h>
 #include "meta/SchemaProviderIf.h"
 #include "meta/client/MetaClient.h"
+#include "interface/gen-cpp2/storage_types.h"
 
 namespace nebula {
 namespace meta {

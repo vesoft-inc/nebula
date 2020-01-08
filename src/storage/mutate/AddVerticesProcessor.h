@@ -11,6 +11,8 @@
 #include "base/ConcurrentLRUCache.h"
 #include "storage/BaseProcessor.h"
 #include "storage/CommonUtils.h"
+#include "kvstore/LogEncoder.h"
+#include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace storage {
@@ -37,11 +39,24 @@ private:
             , indexMan_(indexMan)
             , vertexCache_(cache) {}
 
-private:
-    meta::IndexManager* indexMan_{nullptr};
-    VertexCache*        vertexCache_{nullptr};
-};
+    std::string addVertices(int64_t version, PartitionID partId,
+                            const std::vector<cpp2::Vertex>& vertices);
 
+    std::string findObsoleteIndex(PartitionID partId,
+                                  VertexID vId,
+                                  TagID tagId);
+
+    std::string indexKey(PartitionID partId,
+                         VertexID vId,
+                         RowReader* reader,
+                         std::shared_ptr<nebula::cpp2::IndexItem> index);
+
+private:
+    GraphSpaceID                                          spaceId_;
+    meta::IndexManager*                                   indexMan_{nullptr};
+    VertexCache*                                          vertexCache_{nullptr};
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> indexes_;
+};
 
 }  // namespace storage
 }  // namespace nebula

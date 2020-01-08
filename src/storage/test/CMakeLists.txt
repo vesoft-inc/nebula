@@ -23,6 +23,8 @@ set(storage_test_deps
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:gflags_man_obj>
     $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:adHocSchema_obj>
+    $<TARGET_OBJECTS:adHocIndex_obj>
 )
 
 
@@ -87,7 +89,7 @@ nebula_add_test(
 nebula_add_test(
     NAME query_bound_test
     SOURCES QueryBoundTest.cpp
-    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
+    OBJECTS ${storage_test_deps}
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 
@@ -95,7 +97,7 @@ nebula_add_test(
 nebula_add_test(
     NAME vertex_props_test
     SOURCES QueryVertexPropsTest.cpp
-    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
+    OBJECTS ${storage_test_deps}
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 
@@ -103,7 +105,7 @@ nebula_add_test(
 nebula_add_test(
     NAME edge_props_test
     SOURCES QueryEdgePropsTest.cpp
-    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
+    OBJECTS ${storage_test_deps}
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 
@@ -112,7 +114,6 @@ nebula_add_test(
     NAME query_stats_test
     SOURCES QueryStatsTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:adHocSchema_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:process_obj>
         ${storage_test_deps}
@@ -287,7 +288,13 @@ nebula_add_test(
 nebula_add_test(
     NAME checkpoint_test
     SOURCES CheckpointTest.cpp
-    OBJECTS ${storage_test_deps}
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 
+nebula_add_test(
+    NAME index_write_test
+    SOURCES IndexTest.cpp
+    OBJECTS ${storage_test_deps} $<TARGET_OBJECTS:adHocSchema_obj>
+    LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
+)

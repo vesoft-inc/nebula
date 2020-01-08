@@ -31,20 +31,29 @@ public:
                       std::vector<nebula::cpp2::ColumnDef>&& fields);
 
     StatusOr<std::shared_ptr<IndexItem>>
-    getTagIndex(GraphSpaceID space, IndexID index);
+    getTagIndex(GraphSpaceID space, IndexID index) override;
 
     StatusOr<std::shared_ptr<IndexItem>>
-    getEdgeIndex(GraphSpaceID space, IndexID index);
+    getEdgeIndex(GraphSpaceID space, IndexID index) override;
 
     StatusOr<std::vector<std::shared_ptr<IndexItem>>>
-    getTagIndexes(GraphSpaceID space);
+    getTagIndexes(GraphSpaceID space) override;
 
     StatusOr<std::vector<std::shared_ptr<IndexItem>>>
-    getEdgeIndexes(GraphSpaceID space);
+    getEdgeIndexes(GraphSpaceID space) override;
 
-    Status checkTagIndexed(GraphSpaceID space, TagID tagID);
+    StatusOr<IndexID>
+    toTagIndexID(GraphSpaceID space, std::string tagName) override;
 
-    Status checkEdgeIndexed(GraphSpaceID space, EdgeType edgeType);
+    StatusOr<IndexID>
+    toEdgeIndexID(GraphSpaceID space, std::string edgeName) override;
+
+    Status checkTagIndexed(GraphSpaceID space, TagID tagID) override;
+
+    Status checkEdgeIndexed(GraphSpaceID space, EdgeType edgeType) override;
+
+    void init(nebula::meta::MetaClient *) override {
+    }
 
 protected:
     folly::RWSpinLock tagIndexLock_;

@@ -109,6 +109,40 @@ AdHocIndexManager::getEdgeIndexes(GraphSpaceID space) {
     return iter->second;
 }
 
+StatusOr<IndexID>
+AdHocIndexManager::toTagIndexID(GraphSpaceID space, std::string indexName) {
+    folly::RWSpinLock::ReadHolder rh(tagIndexLock_);
+    auto iter = tagIndexes_.find(space);
+    if (iter == tagIndexes_.end()) {
+        return Status::SpaceNotFound();
+    }
+
+    auto items = iter->second;
+    for (auto &item : items) {
+        if (item->get_index_name() == indexName) {
+            return item->get_index_id();
+        }
+    }
+    return Status::TagNotFound();
+}
+
+StatusOr<IndexID>
+AdHocIndexManager::toEdgeIndexID(GraphSpaceID space, std::string indexName) {
+    folly::RWSpinLock::ReadHolder rh(edgeIndexLock_);
+    auto iter = edgeIndexes_.find(space);
+    if (iter == edgeIndexes_.end()) {
+        return Status::SpaceNotFound();
+    }
+
+    auto items = iter->second;
+    for (auto &item : items) {
+        if (item->get_index_name() == indexName) {
+            return item->get_index_id();
+        }
+    }
+    return Status::EdgeNotFound();
+}
+
 Status AdHocIndexManager::checkTagIndexed(GraphSpaceID space, TagID tagID) {
     folly::RWSpinLock::ReadHolder rh(tagIndexLock_);
     auto iter = tagIndexes_.find(space);

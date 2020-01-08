@@ -9,6 +9,8 @@
 
 #include "base/Base.h"
 #include "storage/BaseProcessor.h"
+#include "kvstore/LogEncoder.h"
+#include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace storage {
@@ -32,8 +34,21 @@ private:
             : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats)
             , indexMan_(indexMan) {}
 
+    std::string addEdges(int64_t version, PartitionID partId,
+                         const std::vector<cpp2::Edge>& edges);
+
+    std::string findObsoleteIndex(PartitionID partId,
+                                  const folly::StringPiece& rawKey);
+
+    std::string indexKey(PartitionID partId,
+                         RowReader* reader,
+                         const folly::StringPiece& rawKey,
+                         std::shared_ptr<nebula::cpp2::IndexItem> index);
+
 private:
-    meta::IndexManager* indexMan_{nullptr};
+    GraphSpaceID                                          spaceId_;
+    meta::IndexManager*                                   indexMan_{nullptr};
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> indexes_;
 };
 
 }  // namespace storage
