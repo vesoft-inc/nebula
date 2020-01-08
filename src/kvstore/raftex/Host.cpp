@@ -356,6 +356,15 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                         cpp2::AppendLogResponse r;
                         r.set_error_code(res);
                         self->setResponse(r);
+                    } else if (self->logIdToSend_ == resp.get_last_log_id()) {
+                        VLOG(1) << self->idStr_
+                                << "It means the request has been received by follower";
+                        self->lastLogIdSent_ = resp.get_last_log_id();
+                        self->lastLogTermSent_ = resp.get_last_log_term();
+                        self->followerCommittedLogId_ = resp.get_committed_log_id();
+                        cpp2::AppendLogResponse r;
+                        r.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+                        self->setResponse(r);
                     } else {
                         self->lastLogIdSent_ = resp.get_last_log_id();
                         self->lastLogTermSent_ = resp.get_last_log_term();
@@ -405,6 +414,12 @@ Host::prepareAppendLogRequest() {
 
     VLOG(2) << idStr_ << "Prepare AppendLogs request from Log "
                       << lastLogIdSent_ + 1 << " to " << logIdToSend_;
+    if (lastLogIdSent_ + 1 > part_->wal()->lastLogId()) {
+        LOG(INFO) << idStr_ << "My lastLogId in wal is " << part_->wal()->lastLogId()
+                  << ", but you are seeking " << lastLogIdSent_ + 1
+                  << ", so i have nothing to send.";
+        return req;
+    }
     auto it = part_->wal()->iterator(lastLogIdSent_ + 1, logIdToSend_);
     if (it->valid()) {
         VLOG(2) << idStr_ << "Prepare the list of log entries to send";
