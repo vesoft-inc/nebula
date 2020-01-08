@@ -24,6 +24,8 @@ double calibrateTicksPerUSecFactor() {
     return 1.0 / ticksPerUSec;
 }
 
+}  // Anonymous namespace
+
 
 void launchTickTockThread() {
     thread::NamedThread t(
@@ -36,8 +38,6 @@ void launchTickTockThread() {
         });
     t.detach();
 }
-
-}  // Anonymous namespace
 
 
 volatile uint64_t readTsc() {
@@ -64,15 +64,9 @@ const uint64_t kFirstTick = readTsc();
 volatile std::atomic<double> ticksPerSecFactor{0.0};
 volatile std::atomic<double> ticksPerMSecFactor{0.0};
 volatile std::atomic<double> ticksPerUSecFactor{[] {
-    launchTickTockThread();
-    // re-launch tick-tock thread after forking
-    ::pthread_atfork(nullptr, nullptr, &launchTickTockThread);
-
     usleep(10000);
-
     return calibrateTicksPerUSecFactor();
 }()};
 
 }  // namespace time
 }  // namespace nebula
-

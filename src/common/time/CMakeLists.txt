@@ -5,4 +5,9 @@ nebula_add_library(
     WallClock.cpp
 )
 
+nebula_add_library(
+    tsc_calibrator_obj OBJECT
+    detail/TscCalibrator.cpp
+)
+
 nebula_add_subdirectory(test)
