@@ -33,7 +33,30 @@ nebula> SHOW JOB 40
 -------------------------------------------------------------------------------------
 ```
 
-The above statement returns one to multiple rows, which is determined by the storage number where the space is located. The `flush nba` is the job's logical information. The `192.168.8.5` is the node IP that the job is running at.
+The above statement returns one to multiple rows, which is determined by the storage number where the space is located.
+
+What's in the returned results:
+
+- `40` is the job ID
+- `flush nba` indicates that a flush operation is performed on space nba
+- `finished` is the job status, which indicates that the job execution is finished and successful. Other job statuses are Queue, running, failed and stopped
+- `12/17/19 17:21:30` is the start time, which is initially empty(Queue). The value is set if and only if the job status is running.
+- `12/17/19 17:21:30` is the stop time, which is empty when the job status is Queue or running. The value is set when the job status is finished, failed and stopped
+- `40-0` indicated that the job ID is 40, the task ID is 0
+- `192.168.8.5` shows which machine the job is running on
+- `finished` is the job status, which indicates that the job execution is finished and successful. Other job statuses are Queue, running, failed and stopped
+- `12/17/19 17:21:30` is the start time, which can never be empty because the initial status is running
+- `12/17/19 17:21:30` is the stop time, which is empty when the job status is running. The value is set when the job status is finished, failed and stopped
+
+**Note:** There are five job statuses, i.e. QUEUE, RUNNING, FINISHED, FAILED, STOPPED. Status switching is described below:
+
+```ngql
+Queue -- running -- finished -- backuped
+     \          \                /
+      \          \ -- failed -- /
+       \          \            /
+        \ --------- - stopped -/
+```
 
 #### List All Jobs
 
@@ -53,6 +76,8 @@ nebula> SHOW JOBS
 | 25     | compact test2 | stopped  | 12/06/19 15:07:13 | 12/06/19 15:07:24 |
 -----------------------------------------------------------------------------
 ```
+
+For explanations on the returned results, please refer to the previous section [List Single Job Information](#list-single-job-information).
 
 ### BACKUP JOB
 
