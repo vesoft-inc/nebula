@@ -16,7 +16,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:meta_client>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:tsc_calibrator_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:thrift_obj>
@@ -62,7 +61,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:meta_client>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:tsc_calibrator_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:thrift_obj>
@@ -103,7 +101,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:meta_client>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:tsc_calibrator_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:raftex_obj>
         $<TARGET_OBJECTS:raftex_thrift_obj>

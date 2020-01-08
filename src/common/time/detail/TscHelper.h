@@ -12,15 +12,34 @@
 namespace nebula {
 namespace time {
 
-volatile uint64_t readTsc();
+class TscHelper final {
+public:
+    static uint64_t readTsc();
+    // Interfaces to convert ticks to duration
+    static uint64_t ticksToDurationInSec(uint64_t ticks);
+    static uint64_t ticksToDurationInMSec(uint64_t ticks);
+    static uint64_t ticksToDurationInUSec(uint64_t ticks);
+    // Interface to convert tick to time point
+    static uint64_t tickToTimePointInSec(uint64_t tick);
+    static uint64_t tickToTimePointInMSec(uint64_t tick);
+    static uint64_t tickToTimePointInUSec(uint64_t tick);
 
-extern const std::chrono::steady_clock::time_point kUptime;
-extern const uint64_t kFirstTick;
-extern const struct timespec kStartTime;
+private:
+    TscHelper();
+    ~TscHelper() = default;
+    static TscHelper& get();
+    uint64_t readTscImpl();
+    void calibrate();
 
-extern volatile std::atomic<double> ticksPerSecFactor;
-extern volatile std::atomic<double> ticksPerMSecFactor;
-extern volatile std::atomic<double> ticksPerUSecFactor;
+private:
+    std::chrono::steady_clock::time_point kUptime;
+    uint64_t kFirstTick{0};
+    struct timespec kStartTime;
+
+    std::atomic<double> ticksPerSecFactor{0.0};
+    std::atomic<double> ticksPerMSecFactor{0.0};
+    std::atomic<double> ticksPerUSecFactor{0.0};
+};
 
 }  // namespace time
 }  // namespace nebula
