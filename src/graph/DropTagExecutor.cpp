@@ -28,7 +28,7 @@ void DropTagExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();
-    auto future = mc->dropTagSchema(spaceId, *name);
+    auto future = mc->dropTagSchema(spaceId, *name, sentence_->isIfExists());
 
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {

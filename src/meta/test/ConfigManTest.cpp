@@ -541,11 +541,14 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
     LOG(INFO) << "Create meta client...";
     uint32_t storagePort = network::NetworkUtils::getAvailablePort();
     HostAddr storageAddr(localIp, storagePort);
+    meta::MetaClientOptions options;
+    options.localHost_ = HostAddr(localIp, storagePort);
+    options.clusterId_ = kClusterId;
+    options.inStoraged_ = true;
+    options.skipConfig_ = false;
     auto mClient = std::make_unique<meta::MetaClient>(threadPool,
                                                       metaAddr,
-                                                      storageAddr,
-                                                      kClusterId,
-                                                      true);
+                                                      options);
     mClient->waitForMetadReady();
     mClient->gflagsModule_ = module;
 

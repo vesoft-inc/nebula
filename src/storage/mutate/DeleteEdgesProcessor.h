@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "storage/BaseProcessor.h"
+#include "kvstore/LogEncoder.h"
 
 namespace nebula {
 namespace storage {
@@ -26,6 +27,13 @@ private:
     explicit DeleteEdgesProcessor(kvstore::KVStore* kvstore,
                                   meta::SchemaManager* schemaMan)
             : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan) {}
+
+    std::string deleteEdges(GraphSpaceID spaceId,
+                            PartitionID partId,
+                            const std::vector<cpp2::EdgeKey>& edges);
+
+private:
+    std::vector<nebula::cpp2::IndexItem> indexes_;
 };
 
 }  // namespace storage

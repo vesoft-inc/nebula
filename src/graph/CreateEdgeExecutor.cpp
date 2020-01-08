@@ -32,7 +32,6 @@ Status CreateEdgeExecutor::getSchema() {
 
     const auto& specs = sentence_->columnSpecs();
     const auto& schemaProps = sentence_->getSchemaProps();
-
     return SchemaHelper::createSchema(specs, schemaProps, schema_);
 }
 
@@ -60,7 +59,7 @@ void CreateEdgeExecutor::execute() {
         doFinish(Executor::ProcessControl::kNext);
     };
 
-    auto error = [this, name] (auto &&e) {
+    auto error = [this] (auto &&e) {
         auto msg = folly::stringPrintf("Create edge `%s' exception: %s",
                 sentence_->name()->c_str(), e.what().c_str());
         LOG(ERROR) << msg;
