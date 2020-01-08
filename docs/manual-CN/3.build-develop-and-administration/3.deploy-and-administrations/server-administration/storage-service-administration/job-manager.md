@@ -6,7 +6,7 @@
 
 ### admin compact / flush
 
-执行 `admin flush` 命令后，如果成功，会返回这个作业的 ID。示例返回结果如下：
+`admin compact/flush` 命令在作业管理中新建作业并返回作业 ID，在存储层中执行 `compact/flush` 命令。示例返回结果如下：
 
 ```ngql
 ==============

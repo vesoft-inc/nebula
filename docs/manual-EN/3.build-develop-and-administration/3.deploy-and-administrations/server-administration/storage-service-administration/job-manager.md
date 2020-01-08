@@ -6,7 +6,7 @@ The job here refers to the two commands `compact` and `flush` running at the sto
 
 ### admin compact / flush
 
-If the `admin flush` statement runs successfully, the job ID is returned. The example is as follows:
+`admin compact/flush` statement creates a new job and returns the job ID in the job manager, and executes the `compact/flush` command in the storage. The example is as follows:
 
 ```ngql
 ==============
