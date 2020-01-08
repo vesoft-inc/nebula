@@ -335,12 +335,22 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
         }
         if (reader != nullptr) {
             const auto& name = prop.prop_.get_name();
+            VariantType v;
             auto res = RowReader::getPropByName(reader, name);
             if (!ok(res)) {
-                VLOG(1) << "Skip the bad value for prop " << name;
-                continue;
+                VLOG(1) << "Bad value for prop " << name;
+                // TODO: Should return NULL
+                auto defaultVal = RowReader::getDefaultProp(prop.type_.type);
+                if (!defaultVal.ok()) {
+                    // Should never reach here.
+                    LOG(ERROR) << "Get default value failed for " << name.;
+                    continue;
+                } else {
+                    v = std::move(defaultVal).value();
+                }
+            } else {
+                v = value(std::move(res));
             }
-            auto&& v = value(std::move(res));
             if (prop.fromTagFilter()) {
                 fcontext->tagFilters_.emplace(std::make_pair(prop.tagOrEdgeName(), name), v);
             }
