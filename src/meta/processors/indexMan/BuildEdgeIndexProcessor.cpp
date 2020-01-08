@@ -57,14 +57,21 @@ void BuildEdgeIndexProcessor::process(const cpp2::BuildEdgeIndexReq& req) {
         return;
     }
 
+    auto statusKey = MetaServiceUtils::buildIndexStatus(space, 'E', indexName);
+    std::vector<kvstore::KV> status{std::make_pair(statusKey, "RUNNING")};
+    doPut(status);
     auto buildIndexStatus = client->buildEdgeIndex(space, edgeType, edgeIndexID,
                                                    version, parts).get();
     if (!buildIndexStatus.ok()) {
+        std::vector<kvstore::KV> failedStatus{std::make_pair(statusKey, "FAILED")};
+        doPut(failedStatus);
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
 
+    std::vector<kvstore::KV> successedStatus{std::make_pair(statusKey, "SUCCESSED")};
+    doPut(successedStatus);
     auto unblockStatus = client->blockingWrites(space, SignType::BLOCK_OFF).get();
     if (!unblockStatus.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE);

@@ -11,6 +11,8 @@
 #include "base/ConcurrentLRUCache.h"
 #include "storage/BaseProcessor.h"
 #include "storage/CommonUtils.h"
+#include "kvstore/LogEncoder.h"
+#include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace storage {
@@ -34,8 +36,22 @@ private:
             : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats)
             , vertexCache_(cache) {}
 
+    std::string addVertices(int64_t version, PartitionID partId,
+                            const std::vector<cpp2::Vertex>& vertices);
+
+    std::string findObsoleteIndex(PartitionID partId,
+                                  VertexID vId,
+                                  TagID tagId);
+
+    std::string indexKey(PartitionID partId,
+                         VertexID vId,
+                         RowReader* reader,
+                         const nebula::cpp2::IndexItem& index);
+
 private:
+    GraphSpaceID  spaceId_;
     VertexCache* vertexCache_ = nullptr;
+    std::vector<nebula::cpp2::IndexItem> indexes_;
 };
 
 

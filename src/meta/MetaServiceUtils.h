@@ -113,6 +113,10 @@ public:
 
     static cpp2::IndexFields parseEdgeIndex(const folly::StringPiece& rawData);
 
+    static std::string buildIndexStatus(GraphSpaceID space,
+                                        char type,
+                                        const std::string& indexName);
+
     static std::string indexSpaceKey(const std::string& name);
 
     static std::string indexTagKey(GraphSpaceID spaceId, const std::string& name);

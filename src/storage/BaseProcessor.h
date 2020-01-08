@@ -125,13 +125,9 @@ protected:
         return "";
     }
 
-    IndexValues collectIndexValues(RowReader*,
-                                   const std::vector<nebula::cpp2::ColumnDef>&) {
-        std::vector<std::pair<nebula::cpp2::SupportedType, std::string>> v;
-        return v;
-    }
+    IndexValues collectIndexValues(RowReader* reader,
+                                   const std::vector<nebula::cpp2::ColumnDef>& cols);
 
-private:
     void handleAsync(GraphSpaceID spaceId, PartitionID partId, kvstore::ResultCode code);
 
 protected:

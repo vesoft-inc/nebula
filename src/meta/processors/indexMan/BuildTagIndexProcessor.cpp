@@ -56,14 +56,21 @@ void BuildTagIndexProcessor::process(const cpp2::BuildTagIndexReq& req) {
         return;
     }
 
+    auto statusKey = MetaServiceUtils::buildIndexStatus(space, 'T', indexName);
+    std::vector<kvstore::KV> status{std::make_pair(statusKey, "RUNNING")};
+    doPut(status);
     auto buildIndexStatus = client->buildTagIndex(space, tagID, tagIndexID,
                                                   version, parts).get();
-    if (!blockingStatus.ok()) {
+    if (!buildIndexStatus.ok()) {
         LOG(ERROR) << "Build Tag Index Failed";
+        std::vector<kvstore::KV> failedStatus{std::make_pair(statusKey, "FAILED")};
+        doPut(failedStatus);
         resp_.set_code(cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE);
         onFinished();
         return;
     }
+    std::vector<kvstore::KV> successedStatus{std::make_pair(statusKey, "SUCCESSED")};
+    doPut(successedStatus);
 
     auto unblockStatus = client->blockingWrites(space, SignType::BLOCK_OFF).get();
     if (!unblockStatus.ok()) {

@@ -26,12 +26,16 @@ public:
         kShowParts,
         kShowTags,
         kShowEdges,
+        kShowTagIndexes,
+        kShowEdgeIndexes,
         kShowUsers,
         kShowUser,
         kShowRoles,
         kShowCreateSpace,
         kShowCreateTag,
         kShowCreateEdge,
+        kShowCreateTagIndex,
+        kShowCreateEdgeIndex,
         kShowSnapshots
     };
 
@@ -194,9 +198,9 @@ private:
 };
 
 
-class DropSpaceSentence final : public Sentence {
+class DropSpaceSentence final : public DropSentence {
 public:
-    explicit DropSpaceSentence(std::string *spaceName) {
+    explicit DropSpaceSentence(std::string *spaceName, bool ifExist) : DropSentence(ifExist) {
         spaceName_.reset(spaceName);
         kind_ = Kind::kDropSpace;
     }

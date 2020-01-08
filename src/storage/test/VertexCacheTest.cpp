@@ -20,9 +20,10 @@ DECLARE_int32(max_handlers_per_req);
 namespace nebula {
 namespace storage {
 
-void addVertices(kvstore::KVStore* kv, VertexCache* cache, int nums) {
+void addVertices(kvstore::KVStore* kv,  meta::SchemaManager* schemaMan,
+                 VertexCache* cache, int nums) {
     LOG(INFO) << "Build AddVerticesRequest...";
-    auto* processor = AddVerticesProcessor::instance(kv, nullptr, nullptr, cache);
+    auto* processor = AddVerticesProcessor::instance(kv, schemaMan, nullptr, cache);
     cpp2::AddVerticesRequest req;
     req.space_id = 0;
     req.overwritable = true;
@@ -139,7 +140,7 @@ TEST(VertexCacheTest, SimpleTest) {
     checkCache(&cache, 500, 500, 2000);
 
     LOG(INFO) << "Insert vertices from 0 to 1000";
-    addVertices(kv.get(), &cache, 1000);
+    addVertices(kv.get(), schemaMan.get(), &cache, 1000);
     checkCache(&cache, 1000, 500, 2000);
 }
 

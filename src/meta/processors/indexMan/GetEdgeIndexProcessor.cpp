@@ -35,6 +35,7 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
     }
 
     cpp2::EdgeIndexItem item;
+    item.set_index_name(indexName);
     item.set_index_id(edgeIndexIDResult.value());
     item.set_fields(MetaServiceUtils::parseEdgeIndex(edgeResult.value()));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
