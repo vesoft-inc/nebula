@@ -28,7 +28,7 @@ void DropTagIndexExecutor::execute() {
 
     auto *name = sentence_->indexName();
     auto spaceId = ectx()->rctx()->session()->space();
-    auto future = ectx()->getMetaClient()->dropTagIndex(spaceId, *name);
+    auto future = ectx()->getMetaClient()->dropTagIndex(spaceId, *name, sentence_->isIfExists());
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
