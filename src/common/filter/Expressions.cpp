@@ -308,8 +308,12 @@ std::string PrimaryExpression::toString() const {
         case VAR_INT64:
             snprintf(buf, sizeof(buf), "%ld", boost::get<int64_t>(operand_));
             break;
-        case VAR_DOUBLE:
-            return std::to_string(boost::get<double>(operand_));
+        case VAR_DOUBLE: {
+            int digits10 = std::numeric_limits<double>::digits10;
+            char *fmt = folly::sformat("%.{}lf", digits10).c_str();
+            snprintf(buf, sizeof(buf), fmt, boost::get<double>(operand_));
+            break;
+        }
         case VAR_BOOL:
             snprintf(buf, sizeof(buf), "%s", boost::get<bool>(operand_) ? "true" : "false");
             break;
