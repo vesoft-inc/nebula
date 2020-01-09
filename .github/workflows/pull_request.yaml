@@ -67,6 +67,8 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: build/coverage.info
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
       - name: Cleanup
         if: always()
         run: rm -rf build
