@@ -18,7 +18,8 @@ namespace storage {
 TEST(AddEdgesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/AddEdgesTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
-    auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
 
     LOG(INFO) << "Build AddEdgesRequest...";
     cpp2::AddEdgesRequest req;

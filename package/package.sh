@@ -6,10 +6,6 @@
 
 set -ex
 
-export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:$LIBRARY_PATH
-
-NEBULA_DEP_BIN=/opt/nebula/third-party/bin
-
 version=""
 strip_enable="FALSE"
 usage="Usage: ${0} -v <version> -s <TRUE/FALSE>"
@@ -62,7 +58,7 @@ function build {
 
     pushd ${build_dir}
 
-    $NEBULA_DEP_BIN/cmake -DCMAKE_C_COMPILER=$NEBULA_DEP_BIN/gcc -DCMAKE_CXX_COMPILER=$NEBULA_DEP_BIN/g++ -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=${version} -DCMAKE_INSTALL_PREFIX=/usr/local/nebula -DENABLE_TESTING=OFF $PROJECT_DIR
+    cmake -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=${version} -DCMAKE_INSTALL_PREFIX=/usr/local/nebula -DENABLE_TESTING=OFF $PROJECT_DIR
 
     if !( make -j$(nproc) ); then
         echo ">>> build nebula failed <<<"
@@ -98,7 +94,7 @@ function package {
         exit -1
     fi
 
-    if !( $NEBULA_DEP_BIN/cpack -G ${pType} --verbose $args ); then
+    if !( cpack -G ${pType} --verbose $args ); then
         echo ">>> package nebula failed <<<"
         exit -1
     else
