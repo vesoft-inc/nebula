@@ -43,7 +43,7 @@ jobs:
           [ -d build/ ] && rm -rf build/* || mkdir -p build
       - name: CMake with gcc
         if: matrix.compiler == 'gcc' && steps.ignore_docs.outputs.num_source_files != 0
-        run: cd build && cmake ..
+        run: cd build && cmake -DENABLE_COVERAGE=ON ..
       - name: CMake with clang
         if: matrix.compiler == 'clang' && steps.ignore_docs.outputs.num_source_files != 0
         run: cd build && cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DNEBULA_CLANG_USE_GCC_TOOLCHAIN=/opt/vesoft/toolset/gcc/7.5.0 ..
