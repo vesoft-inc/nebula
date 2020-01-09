@@ -10,7 +10,7 @@ jobs:
   build:
     name: build
     if: contains(join(toJson(github.event.pull_request.labels.*.name)), 'ready-for-testing')
-    runs-on: ubuntu-18.04
+    runs-on: self-hosted
     strategy:
       matrix:
         tag:
