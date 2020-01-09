@@ -164,13 +164,8 @@ private:
     stats::Stats scanVertexQpsStat_;
     stats::Stats getKvQpsStat_;
     stats::Stats putKvQpsStat_;
-<<<<<<< HEAD
     stats::Stats lookupVerticesQpsStat_;
     stats::Stats lookupEdgesQpsStat_;
-=======
-    stats::Stats scanVertexIndexQpsStat_;
-    stats::Stats scanEdgeIndexQpsStat_;
->>>>>>> online index scan
 };
 
 }  // namespace storage

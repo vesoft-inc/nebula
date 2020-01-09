@@ -10,6 +10,7 @@ namespace nebula {
 namespace storage {
 
 void LookUpEdgeIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
+<<<<<<< HEAD
     /**
      * step 1 : prepare index meta and structure of return columns.
      */
@@ -64,6 +65,10 @@ void LookUpEdgeIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
     this->onFinished();
 }
 
+=======
+    UNUSED(req);
+}
+>>>>>>> 1, Addressed comments. 2, Optimized index scan logic.
 }  // namespace storage
 }  // namespace nebula
 

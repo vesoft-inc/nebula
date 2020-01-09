@@ -4,38 +4,38 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef STORAGE_LOOKUPVERTEXINDEXPROCESSOR_H
-#define STORAGE_LOOKUPVERTEXINDEXPROCESSOR_H
+#ifndef STORAGE_SCANVERTEXINDEXPROCESSOR_H
+#define STORAGE_SCANVERTEXINDEXPROCESSOR_H
 
 #include "base/Base.h"
 #include "kvstore/NebulaStore.h"
-#include "IndexExecutor.h"
+#include "LookUpIndexBaseProcessor.h"
 
 namespace nebula {
 namespace storage {
-class LookUpVertexIndexProcessor:
-        public IndexExecutor<cpp2::LookUpVertexIndexResp> {
+class LookUpVertexIndexProcessor
+    : public LookUpIndexBaseProcessor<cpp2::LookUpIndexRequest, cpp2::LookUpVertexIndexResp> {
 public:
     static LookUpVertexIndexProcessor* instance(kvstore::KVStore* kvstore,
-                                                meta::SchemaManager* schemaMan,
-                                                meta::IndexManager* indexMan,
-                                                stats::Stats* stats,
-                                                VertexCache* cache = nullptr) {
-        return new LookUpVertexIndexProcessor(kvstore, schemaMan, indexMan, stats, cache);
+                                              meta::SchemaManager* schemaMan,
+                                              stats::Stats* stats,
+                                              folly::Executor* executor,
+                                              VertexCache* cache = nullptr) {
+        return new LookUpVertexIndexProcessor(kvstore, schemaMan, stats, executor, cache);
     }
 
     void process(const cpp2::LookUpIndexRequest& req);
 
 private:
     explicit LookUpVertexIndexProcessor(kvstore::KVStore* kvstore,
-                                        meta::SchemaManager* schemaMan,
-                                        meta::IndexManager* indexMan,
-                                        stats::Stats* stats,
-                                        VertexCache* cache = nullptr)
-        : IndexExecutor<cpp2::LookUpVertexIndexResp>
-                (kvstore, schemaMan, indexMan, stats, cache) {}
+                                      meta::SchemaManager* schemaMan,
+                                      stats::Stats* stats,
+                                      folly::Executor* executor,
+                                      VertexCache* cache = nullptr)
+            : LookUpIndexBaseProcessor<cpp2::LookUpIndexRequest, cpp2::LookUpVertexIndexResp>
+                (kvstore, schemaMan, stats, executor, cache) {}
 };
 }  // namespace storage
 }  // namespace nebula
-#endif  // STORAGE_LOOKUPVERTEXINDEXPROCESSOR_H
+#endif  // STORAGE_SCANVERTEXINDEXPROCESSOR_H
 

@@ -16,12 +16,12 @@ namespace nebula {
 namespace storage {
 
 template<typename REQ, typename RESP>
-class ScanIndexBaseProcessor : public BaseProcessor<RESP> {
+class LookUpIndexBaseProcessor : public BaseProcessor<RESP> {
 public:
-    virtual ~ScanIndexBaseProcessor() = default;
+    virtual ~LookUpIndexBaseProcessor() = default;
 
 protected:
-    explicit ScanIndexBaseProcessor(kvstore::KVStore* kvstore,
+    explicit LookUpIndexBaseProcessor(kvstore::KVStore* kvstore,
                                     meta::SchemaManager* schemaMan,
                                     stats::Stats* stats,
                                     folly::Executor* executor = nullptr,
@@ -30,24 +30,6 @@ protected:
             , executor_(executor)
             , vertexCache_(cache) {}
 
-    cpp2::ErrorCode buildIndexHint();
-
-    cpp2::ErrorCode createResultSchema(bool isEdge, int32_t id,
-                                       const std::vector<std::string> &returnCols);
-
-    kvstore::ResultCode getVertexRow(PartitionID partId, TagID tagId,
-                                     const folly::StringPiece& key,
-                                     cpp2::VertexIndexData* data);
-
-    kvstore::ResultCode getEdgeRow(PartitionID partId,
-                                   EdgeType edgeType,
-                                   const folly::StringPiece& key,
-                                   cpp2::Edge* data);
-
-    StatusOr<std::string> getRowFromReader(RowReader* reader);
-
-    bool checkDataValidity(bool isEdge, const folly::StringPiece& key);
-
     void putResultCodes(cpp2::ErrorCode code, const std::vector<PartitionID>& parts) {
         for (auto& p : parts) {
             this->pushResultCode(code, p);
@@ -55,14 +37,19 @@ protected:
         this->onFinished();
     }
 
+    cpp2::ErrorCode prepareLookUp(const REQ& req, bool isVertex);
+
+    cpp2::ErrorCode prepareExpr(const REQ& req);
+
 protected:
     GraphSpaceID                           spaceId_;
-    int64_t                                vlColNum_{0};
+    int32_t                                tagOrEdge_;
+    nebula::cpp2::IndexItem                index_;
+    std::unique_ptr<Expression>            exp_;
     bool                                   returnColsNeed_{false};
     std::string                            prefix_;
     std::pair<std::string, std::string>    range_;
-    nebula::cpp2::IndexItem                index_;
-    nebula::cpp2::IndexHint                hint_;
+
     std::shared_ptr<SchemaWriter>          schema_{nullptr};
     folly::Executor*                       executor_{nullptr};
     VertexCache*                           vertexCache_{nullptr};
@@ -73,7 +60,7 @@ protected:
 }  // namespace storage
 }  // namespace nebula
 
-#include "ScanIndexBaseProcessor.inl"
+#include "LookUpIndexBaseProcessor.inl"
 
 
 #endif  // STORAGE_SCANINDEXBASEPROCESSOR_H

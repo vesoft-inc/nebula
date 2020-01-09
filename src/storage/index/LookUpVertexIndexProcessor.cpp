@@ -10,23 +10,32 @@ namespace nebula {
 namespace storage {
 
 void LookUpVertexIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
+<<<<<<< HEAD
     /**
      * step 1 : prepare index meta and structure of return columns.
      */
     auto ret = prepareRequest(req);
+=======
+    auto ret = prepareLookUp(req, true);
+>>>>>>> 1, Addressed comments. 2, Optimized index scan logic.
     if (ret != cpp2::ErrorCode::SUCCEEDED) {
         putResultCodes(ret, req.get_parts());
         return;
     }
 
+<<<<<<< HEAD
     /**
      * step 2 : build execution plan
      */
     ret = buildExecutionPlan(req.get_filter());
+=======
+    ret = prepareExpr(req);
+>>>>>>> 1, Addressed comments. 2, Optimized index scan logic.
     if (ret != cpp2::ErrorCode::SUCCEEDED) {
         putResultCodes(ret, req.get_parts());
         return;
     }
+<<<<<<< HEAD
 
     /**
      * step 3 : execute index scan.
@@ -64,6 +73,9 @@ void LookUpVertexIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
     this->onFinished();
 }
 
+=======
+}
+>>>>>>> 1, Addressed comments. 2, Optimized index scan logic.
 }  // namespace storage
 }  // namespace nebula
 

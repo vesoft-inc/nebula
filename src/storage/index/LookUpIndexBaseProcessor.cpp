@@ -4,13 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "ScanIndexBaseProcessor.h"
+#include "LookUpIndexBaseProcessor.h"
 
 DEFINE_int32(max_row_returned_per_index_scan, INT_MAX, "Max row number returned scanning index");
 
 namespace nebula {
 namespace storage {
-
 }  // namespace storage
 }  // namespace nebula
 
