@@ -6,7 +6,7 @@ The job here refers to the two commands `compact` and `flush` running at the sto
 
 ### admin compact / flush
 
-`admin compact/flush` statement creates a new job and returns the job ID in the job manager, and executes the `compact/flush` command in the storage. The example is as follows:
+The `admin compact/flush` statement creates a new job and returns the job ID in the job manager, and executes the `compact/flush` command in the storage. The example is as follows:
 
 ```ngql
 ==============
@@ -39,16 +39,16 @@ What's in the returned results:
 
 - `40` is the job ID
 - `flush nba` indicates that a flush operation is performed on space nba
-- `finished` is the job status, which indicates that the job execution is finished and successful. Other job statuses are Queue, running, failed and stopped
+- `finished` is the job status, which indicates that the job execution is finished and successful. Other job status are Queue, running, failed and stopped
 - `12/17/19 17:21:30` is the start time, which is initially empty(Queue). The value is set if and only if the job status is running.
 - `12/17/19 17:21:30` is the stop time, which is empty when the job status is Queue or running. The value is set when the job status is finished, failed and stopped
 - `40-0` indicated that the job ID is 40, the task ID is 0
 - `192.168.8.5` shows which machine the job is running on
-- `finished` is the job status, which indicates that the job execution is finished and successful. Other job statuses are Queue, running, failed and stopped
+- `finished` is the job status, which indicates that the job execution is finished and successful. Other job status are Queue, running, failed and stopped
 - `12/17/19 17:21:30` is the start time, which can never be empty because the initial status is running
 - `12/17/19 17:21:30` is the stop time, which is empty when the job status is running. The value is set when the job status is finished, failed and stopped
 
-**Note:** There are five job statuses, i.e. QUEUE, RUNNING, FINISHED, FAILED, STOPPED. Status switching is described below:
+**Note:** There are five job status, i.e. QUEUE, RUNNING, FINISHED, FAILED, STOPPED. Status switching is described below:
 
 ```ngql
 Queue -- running -- finished -- backuped
@@ -60,7 +60,7 @@ Queue -- running -- finished -- backuped
 
 #### List All Jobs
 
-The `SHOW JOBS` statement lists all the jobs (all the jobs that are not backuped, please refer to the next section on how to backup job).
+The `SHOW JOBS` statement lists all the jobs (all the jobs that are not backuped. Please refer to the next section on how to backup job).
 
 ```ngql
 nebula> SHOW JOBS
@@ -77,11 +77,11 @@ nebula> SHOW JOBS
 -----------------------------------------------------------------------------
 ```
 
-For explanations on the returned results, please refer to the previous section [List Single Job Information](#list-single-job-information).
+For details on the returned results, please refer to the previous section [List Single Job Information](#list-single-job-information).
 
 ### BACKUP JOB
 
-The `BACKUP JOB <from_id> <to_id>`  statement archives a job when there are too many jobs. The archived jobs are no longer visible in the console. If you show an archived job, an error is thrown.
+The `BACKUP JOB <from_id> <to_id>`  statement archives jobs when there are too many jobs. The archived jobs are no longer visible in the console. If you use the `SHOW` command to display an archived job, an error is thrown.
 
 ```ngql
 nebula> BACKUP JOB 0 22
@@ -94,7 +94,7 @@ nebula> BACKUP JOB 0 22
 
 ### RECOVER JOB
 
-The `RECOVER JOB` statement re-execute the jobs and returns the number of the recovered jobs.
+The `RECOVER JOB` statement re-executes the jobs and returns the number of the recovered jobs.
 
 ```ngql
 nebula> RECOVER JOB

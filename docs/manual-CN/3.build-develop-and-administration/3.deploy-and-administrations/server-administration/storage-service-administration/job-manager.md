@@ -1,6 +1,6 @@
 # 作业管理（Job Manager）
 
-作业特指在存储层运行的两个命令 compact 和 flush。管理指对作业进行管理。比如让作业排队执行、查看作业状态、停止作业、恢复作业等。
+作业特指在存储层运行的两个命令 `compact` 和 `flush`。管理指对作业进行管理。比如让作业排队执行、查看作业状态、停止作业、恢复作业等。
 
 ## 命令列表
 
@@ -48,7 +48,7 @@ nebula> SHOW JOB 40
 - `12/17/19 17:21:30` 表示开始时间，因为任务初始即为 running 状态，所以这里永不为空
 - `12/17/19 17:21:30` 表示结束时间，如果为 running 状态，这里会为空，当状态变为 finished、failed、stopped 时会设置此值
 
-**注意：** 作业状态有 QUEUE、RUNNING、FINISHED、FAILED、STOPPED 5 种。状态机转换（backuped 状态不会显示）见以下说明：
+**注意：** 作业状态有五种，分为是 QUEUE、RUNNING、FINISHED、FAILED、STOPPED。状态机转换（backuped 状态不会显示）见以下说明：
 
 ```ngql
 Queue -- running -- finished -- backuped
