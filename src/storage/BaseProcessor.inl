@@ -83,5 +83,24 @@ void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
         });
 }
 
+template <typename RESP>
+IndexValues
+BaseProcessor<RESP>::collectIndexValues(RowReader* reader,
+                                        const std::vector<nebula::cpp2::ColumnDef>& cols) {
+    IndexValues values;
+    if (reader == nullptr) {
+        return values;
+    }
+    for (auto& col : cols) {
+        auto res = RowReader::getPropByName(reader, col.get_name());
+        if (!ok(res)) {
+            LOG(ERROR) << "Skip bad column prop " << col.get_name();
+        }
+        auto val = NebulaKeyUtils::encodeVariant(value(std::move(res)));
+        values.emplace_back(col.get_type().get_type(), std::move(val));
+    }
+    return values;
+}
+
 }  // namespace storage
 }  // namespace nebula

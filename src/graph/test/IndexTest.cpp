@@ -129,6 +129,18 @@ TEST_F(IndexTest, TagIndex) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP TAG INDEX not_exists_tag_index";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP TAG INDEX IF EXISTS not_exists_tag_index";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
 }
 
 TEST_F(IndexTest, EdgeIndex) {
@@ -236,6 +248,18 @@ TEST_F(IndexTest, EdgeIndex) {
         query = "DESCRIBE EDGE INDEX multi_friend_index";
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP EDGE INDEX not_exists_edge_index";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP EDGE INDEX IF EXISTS not_exists_edge_index";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
 }
 
