@@ -6,6 +6,7 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:fs_obj>
@@ -27,6 +28,28 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:time_obj>
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        router_test
+    SOURCES
+        RouterTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:http_client_obj>
+        $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:fs_obj>
@@ -47,6 +70,7 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:fs_obj>

@@ -4,13 +4,17 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
 #include "webservice/WebService.h"
+
+#include <proxygen/httpserver/HTTPServer.h>
+#include <proxygen/httpserver/HTTPServerOptions.h>
 #include <proxygen/httpserver/RequestHandlerFactory.h>
+
 #include "webservice/NotFoundHandler.h"
 #include "webservice/GetFlagsHandler.h"
 #include "webservice/SetFlagsHandler.h"
 #include "webservice/GetStatsHandler.h"
+#include "webservice/Router.h"
 #include "webservice/StatusHandler.h"
 
 DEFINE_int32(ws_http_port, 11000, "Port to listen on with HTTP protocol");
@@ -23,7 +27,7 @@ namespace {
 
 class WebServiceHandlerFactory : public proxygen::RequestHandlerFactory {
 public:
-    explicit WebServiceHandlerFactory(HandlerGen&& genMap) : handlerGenMap_(genMap) {}
+    explicit WebServiceHandlerFactory(const web::Router* router) : router_(router) {}
 
     void onServerStart(folly::EventBase*) noexcept override {
     }
@@ -33,22 +37,11 @@ public:
 
     proxygen::RequestHandler* onRequest(proxygen::RequestHandler*,
                                         proxygen::HTTPMessage* msg) noexcept override {
-        std::string path = msg->getPath();
-        if (path == "/") {
-            path = "/status";
-        }
-        VLOG(2) << "Got request \"" << path << "\"";
-        auto it = handlerGenMap_.find(path);
-        if (it != handlerGenMap_.end()) {
-            return it->second();
-        }
-
-        // Unknown url path
-        return new NotFoundHandler();
+        return router_->dispatch(msg);
     }
 
 private:
-    HandlerGen handlerGenMap_;
+    const web::Router* router_;
 };
 
 }  // anonymous namespace
@@ -58,45 +51,28 @@ using proxygen::HTTPServer;
 using proxygen::HTTPServerOptions;
 using folly::SocketAddress;
 
-std::unique_ptr<HTTPServer> WebService::server_;
-std::unique_ptr<thread::NamedThread> WebService::wsThread_;
-HandlerGen WebService::handlerGenMap_;
-
-
-// static
-void WebService::registerHandler(const std::string& path,
-                                 std::function<proxygen::RequestHandler*()>&& gen) {
-    handlerGenMap_.emplace(path, gen);
+WebService::WebService(const std::string& name) : router_(std::make_unique<web::Router>(name)) {
+    router().get("/get_flag").handler([](web::PathParams&&) { return new GetFlagsHandler(); });
+    router().get("/get_flags").handler([](web::PathParams&&) { return new GetFlagsHandler(); });
+    router().get("/set_flag").handler([](web::PathParams&&) { return new SetFlagsHandler(); });
+    router().get("/set_flags").handler([](web::PathParams&&) { return new SetFlagsHandler(); });
+    router().get("/get_stat").handler([](web::PathParams&&) { return new GetStatsHandler(); });
+    router().get("/get_stats").handler([](web::PathParams&&) { return new GetStatsHandler(); });
+    router().get("/status").handler([](web::PathParams&&) { return new StatusHandler(); });
+    router().get("/").handler([](web::PathParams&&) { return new StatusHandler(); });
 }
 
+WebService::~WebService() {
+    stop();
+}
 
-// static
 Status WebService::start() {
-    // Register the default handlers
-    registerHandler("/get_flag", [] {
-        return new GetFlagsHandler();
-    });
-    registerHandler("/get_flags", [] {
-        return new GetFlagsHandler();
-    });
-    registerHandler("/set_flag", [] {
-        return new SetFlagsHandler();
-    });
-    registerHandler("/set_flags", [] {
-        return new SetFlagsHandler();
-    });
-    registerHandler("/get_stat", [] {
-        return new GetStatsHandler();
-    });
-    registerHandler("/get_stats", [] {
-        return new GetStatsHandler();
-    });
-    registerHandler("/", [] {
-        return new StatusHandler();
-    });
-    registerHandler("/status", [] {
-        return new StatusHandler();
-    });
+    if (started_) {
+        LOG(INFO) << "Web service has been started.";
+        return Status::OK();
+    }
+
+    started_ = true;
 
     std::vector<HTTPServer::IPConfig> ips = {
         {SocketAddress(FLAGS_ws_ip, FLAGS_ws_http_port, true), HTTPServer::Protocol::HTTP},
@@ -110,9 +86,8 @@ Status WebService::start() {
     options.threads = static_cast<size_t>(FLAGS_ws_threads);
     options.idleTimeout = std::chrono::milliseconds(60000);
     options.enableContentCompression = false;
-    options.handlerFactories = proxygen::RequestHandlerChain()
-        .addThen<WebServiceHandlerFactory>(std::move(handlerGenMap_))
-        .build();
+    options.handlerFactories =
+        proxygen::RequestHandlerChain().addThen<WebServiceHandlerFactory>(router_.get()).build();
     options.h2cEnabled = true;
 
     server_ = std::make_unique<HTTPServer>(std::move(options));
@@ -175,12 +150,12 @@ Status WebService::start() {
     return status;
 }
 
-
-// static
 void WebService::stop() {
-    server_->stop();
-    wsThread_->join();
+    if (!stopped_) {
+        stopped_ = true;
+        server_->stop();
+        wsThread_->join();
+    }
 }
 
 }  // namespace nebula
-
