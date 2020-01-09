@@ -57,5 +57,57 @@ void QueryVertexPropsProcessor::process(const cpp2::VertexPropRequest& vertexReq
     }
 }
 
+kvstore::ResultCode QueryVertexPropsProcessor::collectVertexProps(
+                            PartitionID partId,
+                            VertexID vId,
+                            std::vector<cpp2::TagData> &tds) {
+    auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        return ret;
+    }
+
+    bool missedKey = true;
+    std::unordered_set<TagID> tagIds;
+    for (; iter && iter->valid(); iter->next()) {
+        auto key = iter->key();
+        auto val = iter->val();
+        if (!NebulaKeyUtils::isVertex(key)) {
+            continue;
+        }
+        missedKey = false;
+        auto ver = RowReader::getSchemaVer(val);
+        if (ver < 0) {
+            LOG(ERROR) << "Found schema version negative " << ver;
+            continue;
+        }
+        auto tagId = NebulaKeyUtils::getTagId(key);
+        auto result = tagIds.emplace(tagId);
+        if (!result.second) {
+            // Already found the latest version.
+            continue;
+        }
+        VLOG(3) << "Found tag " << tagId << " for vId" << vId;
+
+        auto valStr = val.str();
+        if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
+            vertexCache_->insert(std::make_pair(vId, tagId),
+                                 valStr, partId);
+            VLOG(3) << "Insert cache for vId " << vId << ", tagId " << tagId;
+        }
+        cpp2::TagData td;
+        td.set_tag_id(tagId);
+        td.set_data(std::move(valStr));
+        tds.emplace_back(std::move(td));
+    }
+    if (missedKey) {
+        VLOG(3) << "Missed partId " << partId << ", vId " << vId;
+        return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
+    }
+    return kvstore::ResultCode::SUCCEEDED;
+}
+
+
 }  // namespace storage
 }  // namespace nebula
