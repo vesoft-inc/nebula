@@ -14,20 +14,41 @@
 namespace nebula {
 namespace kvstore {
 
+#define X_ERROR \
+    X(SUCCEEDED               , 0) \
+    X(ERR_SPACE_NOT_FOUND     , -1) \
+    X(ERR_PART_NOT_FOUND      , -2) \
+    X(ERR_KEY_NOT_FOUND       , -3) \
+    X(ERR_CONSENSUS_ERROR     , -4) \
+    X(ERR_LEADER_CHANGED      , -5) \
+    X(ERR_INVALID_ARGUMENT    , -6) \
+    X(ERR_IO_ERROR            , -7) \
+    X(ERR_UNSUPPORTED         , -8) \
+    X(ERR_CHECKPOINT_ERROR    , -9) \
+    X(ERR_WRITE_BLOCK_ERROR   , -10) \
+    X(ERR_UNKNOWN             , -100) \
+
+
+
+/// X(enumerate, value)
+#define X(enumerate, ...) enumerate = __VA_ARGS__,
 enum ResultCode {
-    SUCCEEDED               = 0,
-    ERR_SPACE_NOT_FOUND     = -1,
-    ERR_PART_NOT_FOUND      = -2,
-    ERR_KEY_NOT_FOUND       = -3,
-    ERR_CONSENSUS_ERROR     = -4,
-    ERR_LEADER_CHANGED      = -5,
-    ERR_INVALID_ARGUMENT    = -6,
-    ERR_IO_ERROR            = -7,
-    ERR_UNSUPPORTED         = -8,
-    ERR_CHECKPOINT_ERROR    = -9,
-    ERR_WRITE_BLOCK_ERROR   = -10,
-    ERR_UNKNOWN             = -100,
+    X_ERROR
 };
+#undef X
+
+#define X(enumerate, ...) case ResultCode::enumerate : return #enumerate;
+static inline
+const char* errMsg(ResultCode code) {
+    switch (code) {
+        X_ERROR
+    }
+    return "INVALID ERROR";
+}
+#undef X
+
+#undef X_ERROR
+
 
 class KVFilter {
 public:

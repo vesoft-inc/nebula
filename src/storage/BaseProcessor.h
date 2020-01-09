@@ -109,7 +109,8 @@ protected:
             this->pushResultCode(cpp2::ErrorCode::E_LEADER_CHANGED, partId, leader);
         } else {
             LOG(ERROR) << "Fail to get part leader, spaceId: " << spaceId
-                       << ", partId: " << partId << ", ResultCode: " << error(addrRet);
+                       << ", partId: " << partId << ", ResultCode: "
+                       << kvstore::errMsg(error(addrRet));
             this->pushResultCode(to(error(addrRet)), partId);
         }
     }

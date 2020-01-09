@@ -44,10 +44,8 @@ StatusOr<std::string> BaseProcessor<RESP>::doGet(const std::string& key) {
     switch (code) {
         case kvstore::ResultCode::SUCCEEDED:
             return value;
-        case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
-            return Status::Error("Key Not Found");
         default:
-            return Status::Error("Get Failed");
+            return Status::Error("%s", kvstore::errMsg(code));
     }
 }
 
