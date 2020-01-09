@@ -53,7 +53,8 @@ int32_t StatsManager::registerStats(folly::StringPiece counterName) {
             std::make_unique<std::mutex>(),
             std::make_unique<StatsType>(
                 60,
-                std::initializer_list<StatsType::Duration>({seconds(60),
+                std::initializer_list<StatsType::Duration>({seconds(5),
+                                                            seconds(60),
                                                             seconds(600),
                                                             seconds(3600)}))));
     int32_t index = sm.stats_.size();
@@ -86,7 +87,7 @@ int32_t StatsManager::registerHisto(folly::StringPiece counterName,
                 bucketSize,
                 min,
                 max,
-                StatsType(60, {seconds(60), seconds(600), seconds(3600)}))));
+                StatsType(60, {seconds(5), seconds(60), seconds(600), seconds(3600)}))));
     int32_t index = - sm.histograms_.size();
     sm.nameMap_[name] = index;
 
@@ -128,7 +129,9 @@ StatusOr<StatsManager::VT> StatsManager::readValue(folly::StringPiece metricName
     }
 
     TimeRange range;
-    if (parts[2] == "60") {
+    if ( parts[2] == "5") {
+        range = TimeRange::FIVE_SECONDS;
+    } else if (parts[2] == "60") {
         range = TimeRange::ONE_MINUTE;
     } else if (parts[2] == "600") {
         range = TimeRange::TEN_MINUTES;
@@ -183,7 +186,7 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
     for (auto &statsName : sm.nameMap_) {
         for (auto method = StatsMethod::SUM; method <= StatsMethod::RATE;
              method = static_cast<StatsMethod>(static_cast<int>(method) + 1)) {
-            for (auto range = TimeRange::ONE_MINUTE; range <= TimeRange::ONE_HOUR;
+            for (auto range = TimeRange::FIVE_SECONDS; range <= TimeRange::ONE_HOUR;
                  range = static_cast<TimeRange>(static_cast<int>(range) + 1)) {
                 std::string metricName = statsName.first;
                 auto status = readStats(statsName.second, range, method);
@@ -208,6 +211,9 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
                 }
 
                 switch (range) {
+                    case TimeRange::FIVE_SECONDS:
+                        metricName += ".5";
+                        break;
                     case TimeRange::ONE_MINUTE:
                         metricName += ".60";
                         break;

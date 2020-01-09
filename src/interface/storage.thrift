@@ -211,9 +211,9 @@ struct EdgeKeyRequest {
 }
 
 struct DeleteVertexRequest {
-    1: common.GraphSpaceID space_id,
-    2: common.PartitionID  part_id,
-    3: common.VertexID     vid;
+    1: common.GraphSpaceID      space_id,
+    2: common.PartitionID       part_id,
+    3: common.VertexID          vid;
 }
 
 struct DeleteEdgesRequest {
@@ -291,23 +291,23 @@ struct UpdateItem {
 }
 
 struct UpdateVertexRequest {
-    1: common.GraphSpaceID space_id,
-    2: common.VertexID vertex_id,
-    3: common.PartitionID part_id,
-    4: binary filter,
-    5: list<UpdateItem> update_items,
-    6: list<binary> return_columns,
-    7: bool insertable,
+    1: common.GraphSpaceID      space_id,
+    2: common.VertexID          vertex_id,
+    3: common.PartitionID       part_id,
+    4: binary                   filter,
+    5: list<UpdateItem>         update_items,
+    6: list<binary>             return_columns,
+    7: bool                     insertable,
 }
 
 struct UpdateEdgeRequest {
-    1: common.GraphSpaceID space_id,
-    2: EdgeKey edge_key,
-    3: common.PartitionID part_id,
-    4: binary filter,
-    5: list<UpdateItem> update_items,
-    6: list<binary> return_columns,
-    7: bool insertable,
+    1: common.GraphSpaceID      space_id,
+    2: EdgeKey                  edge_key,
+    3: common.PartitionID       part_id,
+    4: binary                   filter,
+    5: list<UpdateItem>         update_items,
+    6: list<binary>             return_columns,
+    7: bool                     insertable,
 }
 
 struct PutRequest {
