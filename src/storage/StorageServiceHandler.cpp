@@ -32,6 +32,7 @@
 
 DEFINE_int32(vertex_cache_num, 16 * 1000 * 1000, "Total keys inside the cache");
 DEFINE_int32(vertex_cache_bucket_exp, 4, "Total buckets number is 1 << cache_bucket_exp");
+DEFINE_int32(reader_handlers, 32, "Total reader handlers");
 
 namespace nebula {
 namespace storage {
@@ -41,7 +42,7 @@ StorageServiceHandler::future_getBound(const cpp2::GetNeighborsRequest& req) {
     auto* processor = QueryBoundProcessor::instance(kvstore_,
                                                     schemaMan_,
                                                     &getBoundQpsStat_,
-                                                    getThreadManager(),
+                                                    readerPool_.get(),
                                                     &vertexCache_);
     RETURN_FUTURE(processor);
 }
@@ -51,7 +52,7 @@ StorageServiceHandler::future_boundStats(const cpp2::GetNeighborsRequest& req) {
     auto* processor = QueryStatsProcessor::instance(kvstore_,
                                                     schemaMan_,
                                                     &boundStatsQpsStat_,
-                                                    getThreadManager(),
+                                                    readerPool_.get(),
                                                     &vertexCache_);
     RETURN_FUTURE(processor);
 }
@@ -61,14 +62,17 @@ StorageServiceHandler::future_getProps(const cpp2::VertexPropRequest& req) {
     auto* processor = QueryVertexPropsProcessor::instance(kvstore_,
                                                           schemaMan_,
                                                           &vertexPropsQpsStat_,
-                                                          getThreadManager(),
+                                                          readerPool_.get(),
                                                           &vertexCache_);
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::EdgePropResponse>
 StorageServiceHandler::future_getEdgeProps(const cpp2::EdgePropRequest& req) {
-    auto* processor = QueryEdgePropsProcessor::instance(kvstore_, schemaMan_, &edgePropsQpsStat_);
+    auto* processor = QueryEdgePropsProcessor::instance(kvstore_,
+                                                        schemaMan_,
+                                                        &edgePropsQpsStat_,
+                                                        readerPool_.get());
     RETURN_FUTURE(processor);
 }
 

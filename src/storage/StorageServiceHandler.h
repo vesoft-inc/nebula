@@ -18,6 +18,7 @@
 
 DECLARE_int32(vertex_cache_num);
 DECLARE_int32(vertex_cache_bucket_exp);
+DECLARE_int32(reader_handlers);
 
 namespace nebula {
 namespace storage {
@@ -32,7 +33,8 @@ public:
         : kvstore_(kvstore)
         , schemaMan_(schemaMan)
         , metaClient_(client)
-        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp) {
+        , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp)
+        , readerPool_(std::make_unique<folly::IOThreadPoolExecutor>(FLAGS_reader_handlers)) {
         getBoundQpsStat_ = stats::Stats("storage", "get_bound");
         boundStatsQpsStat_ = stats::Stats("storage", "bound_stats");
         vertexPropsQpsStat_ = stats::Stats("storage", "vertex_props");
@@ -128,6 +130,7 @@ private:
     meta::SchemaManager* schemaMan_ = nullptr;
     meta::MetaClient* metaClient_ = nullptr;
     VertexCache vertexCache_;
+    std::unique_ptr<folly::IOThreadPoolExecutor> readerPool_;
 
     stats::Stats getBoundQpsStat_;
     stats::Stats boundStatsQpsStat_;
