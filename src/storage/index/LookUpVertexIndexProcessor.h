@@ -9,36 +9,31 @@
 
 #include "base/Base.h"
 #include "kvstore/NebulaStore.h"
-#include "ScanIndexBaseProcessor.h"
+#include "LookUpIndexBaseProcessor.h"
 
 namespace nebula {
 namespace storage {
-class ScanVertexIndexProcessor
-        : public ScanIndexBaseProcessor<cpp2::IndexScanRequest, cpp2::ScanVertexResponse> {
+class LookUpVertexIndexProcessor
+    : public LookUpIndexBaseProcessor<cpp2::LookUpIndexRequest, cpp2::LookUpVertexIndexResp> {
 public:
-    static ScanVertexIndexProcessor* instance(kvstore::KVStore* kvstore,
+    static LookUpVertexIndexProcessor* instance(kvstore::KVStore* kvstore,
                                               meta::SchemaManager* schemaMan,
                                               stats::Stats* stats,
                                               folly::Executor* executor,
                                               VertexCache* cache = nullptr) {
-        return new ScanVertexIndexProcessor(kvstore, schemaMan, stats, executor, cache);
+        return new LookUpVertexIndexProcessor(kvstore, schemaMan, stats, executor, cache);
     }
 
-    void process(const cpp2::IndexScanRequest& req);
+    void process(const cpp2::LookUpIndexRequest& req);
 
 private:
-    explicit ScanVertexIndexProcessor(kvstore::KVStore* kvstore,
+    explicit LookUpVertexIndexProcessor(kvstore::KVStore* kvstore,
                                       meta::SchemaManager* schemaMan,
                                       stats::Stats* stats,
                                       folly::Executor* executor,
                                       VertexCache* cache = nullptr)
-            : ScanIndexBaseProcessor<cpp2::IndexScanRequest, cpp2::ScanVertexResponse>
+            : LookUpIndexBaseProcessor<cpp2::LookUpIndexRequest, cpp2::LookUpVertexIndexResp>
                 (kvstore, schemaMan, stats, executor, cache) {}
-
-    folly::Future<std::pair<PartitionID, kvstore::ResultCode>>
-    asyncProcess(PartitionID part, IndexID indexId , TagID tagId);
-
-    kvstore::ResultCode processVertices(PartitionID part, IndexID indexId, TagID tagId);
 };
 }  // namespace storage
 }  // namespace nebula

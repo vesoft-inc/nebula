@@ -21,9 +21,9 @@ nebula_add_library(
     admin/CreateCheckpointProcessor.cpp
     admin/DropCheckpointProcessor.cpp
     admin/SendBlockSignProcessor.cpp
-    index/ScanIndexBaseProcessor.cpp
-    index/ScanEdgeIndexProcessor.cpp
-    index/ScanVertexIndexProcessor.cpp
+    index/LookUpIndexBaseProcessor.cpp
+    index/LookUpEdgeIndexProcessor.cpp
+    index/LookUpVertexIndexProcessor.cpp
 )
 
 nebula_add_library(

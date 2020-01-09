@@ -9,36 +9,31 @@
 
 #include "base/Base.h"
 #include "kvstore/NebulaStore.h"
-#include "ScanIndexBaseProcessor.h"
+#include "LookUpIndexBaseProcessor.h"
 
 namespace nebula {
 namespace storage {
-class ScanEdgeIndexProcessor
-        : public ScanIndexBaseProcessor<cpp2::IndexScanRequest, cpp2::ScanEdgeResponse> {
+class LookUpEdgeIndexProcessor
+    : public LookUpIndexBaseProcessor<cpp2::LookUpIndexRequest, cpp2::LookUpEdgeIndexResp> {
 public:
-    static ScanEdgeIndexProcessor* instance(kvstore::KVStore* kvstore,
+    static LookUpEdgeIndexProcessor* instance(kvstore::KVStore* kvstore,
                                             meta::SchemaManager* schemaMan,
                                             stats::Stats* stats,
                                             folly::Executor* executor,
                                             VertexCache* cache = nullptr) {
-        return new ScanEdgeIndexProcessor(kvstore, schemaMan, stats, executor, cache);
+        return new LookUpEdgeIndexProcessor(kvstore, schemaMan, stats, executor, cache);
     }
 
-    void process(const cpp2::IndexScanRequest& req);
+    void process(const cpp2::LookUpIndexRequest& req);
 
 private:
-    explicit ScanEdgeIndexProcessor(kvstore::KVStore* kvstore,
+    explicit LookUpEdgeIndexProcessor(kvstore::KVStore* kvstore,
                                     meta::SchemaManager* schemaMan,
                                     stats::Stats* stats,
                                     folly::Executor* executor,
                                     VertexCache* cache = nullptr)
-            : ScanIndexBaseProcessor<cpp2::IndexScanRequest, cpp2::ScanEdgeResponse>
+            : LookUpIndexBaseProcessor<cpp2::LookUpIndexRequest, cpp2::LookUpEdgeIndexResp>
                 (kvstore, schemaMan, stats, executor, cache) {}
-
-    folly::Future<std::pair<PartitionID, kvstore::ResultCode>>
-    asyncProcess(PartitionID part, IndexID indexId , EdgeType edgeType);
-
-    kvstore::ResultCode processEdges(PartitionID part, IndexID indexId, EdgeType edgeType);
 };
 }  // namespace storage
 }  // namespace nebula

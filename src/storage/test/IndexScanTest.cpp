@@ -11,8 +11,8 @@
 #include <limits>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/index/ScanVertexIndexProcessor.h"
-#include "storage/index/ScanEdgeIndexProcessor.h"
+#include "storage/index/LookUpVertexIndexProcessor.h"
+#include "storage/index/LookUpEdgeIndexProcessor.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 
@@ -283,9 +283,9 @@ TEST(IndexScanTest, VertexScanTest) {
     mockData(kv.get(), schemaMan.get(), type, tagId, spaceId, vindex, eindex);
     {
         auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-        auto* processor = ScanVertexIndexProcessor::instance(kv.get(), schemaMan.get(), nullptr,
+        auto* processor = LookUpVertexIndexProcessor::instance(kv.get(), schemaMan.get(), nullptr,
                                                              executor.get(), nullptr);
-        cpp2::IndexScanRequest req;
+        cpp2::LookUpIndexRequest req;
 
         decltype(req.parts) parts;
         parts.emplace_back(0);
@@ -296,22 +296,22 @@ TEST(IndexScanTest, VertexScanTest) {
         cols.emplace_back("tag_3001_col_1");
         cols.emplace_back("tag_3001_col_3");
         cols.emplace_back("tag_3001_col_4");
-        decltype(req.hint) hint;
-        auto braw = NebulaKeyUtils::encodeInt64(boost::get<int64_t>(1));
-        auto eraw = NebulaKeyUtils::encodeInt64(boost::get<int64_t>(2));
-        hint.set_index_id(tagId);
-        hint.set_is_range(false);
-        decltype(hint.hint_items) items;
-        nebula::cpp2::IndexHintItem hintItem;
-        hintItem.set_first_str(std::move(braw));
-        hintItem.set_second_str(std::move(eraw));
-        items.emplace_back(std::move(hintItem));
-        hint.set_hint_items(items);
+//        decltype(req.hint) hint;
+//        auto braw = NebulaKeyUtils::encodeInt64(boost::get<int64_t>(1));
+//        auto eraw = NebulaKeyUtils::encodeInt64(boost::get<int64_t>(2));
+//        hint.set_index_id(tagId);
+//        hint.set_is_range(false);
+//        decltype(hint.hint_items) items;
+//        nebula::cpp2::IndexHintItem hintItem;
+//        hintItem.set_first_str(std::move(braw));
+//        hintItem.set_second_str(std::move(eraw));
+//        items.emplace_back(std::move(hintItem));
+//        hint.set_hint_items(items);
 
         req.set_space_id(spaceId);
         req.set_parts(std::move(parts));
         req.set_return_columns(cols);
-        req.set_hint(hint);
+//        req.set_hint(hint);
 
         auto f = processor->getFuture();
         processor->process(req);
@@ -324,9 +324,9 @@ TEST(IndexScanTest, VertexScanTest) {
 
     {
         auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-        auto* processor = ScanEdgeIndexProcessor::instance(kv.get(), schemaMan.get(), nullptr,
+        auto* processor = LookUpEdgeIndexProcessor::instance(kv.get(), schemaMan.get(), nullptr,
                                                            executor.get(), nullptr);
-        cpp2::IndexScanRequest req;
+        cpp2::LookUpIndexRequest req;
 
         decltype(req.parts) parts;
         parts.emplace_back(0);
@@ -341,21 +341,21 @@ TEST(IndexScanTest, VertexScanTest) {
         cols.emplace_back("col_11");
         cols.emplace_back("col_13");
         cols.emplace_back("col_14");
-        decltype(req.hint) hint;
-        auto braw = NebulaKeyUtils::encodeInt64(boost::get<int64_t>(1));
-        auto eraw = NebulaKeyUtils::encodeInt64(boost::get<int64_t>(2));
-        hint.set_is_range(false);
-        hint.set_index_id(type);
-        decltype(hint.hint_items) items;
-        nebula::cpp2::IndexHintItem hintItem;
-        hintItem.set_first_str(std::move(braw));
-        hintItem.set_second_str(std::move(eraw));
-        items.emplace_back(std::move(hintItem));
-        hint.set_hint_items(items);
+//        decltype(req.hint) hint;
+//        auto braw = NebulaKeyUtils::encodeInt64(boost::get<int64_t>(1));
+//        auto eraw = NebulaKeyUtils::encodeInt64(boost::get<int64_t>(2));
+//        hint.set_is_range(false);
+//        hint.set_index_id(type);
+//        decltype(hint.hint_items) items;
+//        nebula::cpp2::IndexHintItem hintItem;
+//        hintItem.set_first_str(std::move(braw));
+//        hintItem.set_second_str(std::move(eraw));
+//        items.emplace_back(std::move(hintItem));
+//        hint.set_hint_items(items);
         req.set_space_id(spaceId);
         req.set_parts(std::move(parts));
         req.set_return_columns(cols);
-        req.set_hint(hint);
+//        req.set_hint(hint);
 
         auto f = processor->getFuture();
         processor->process(req);
@@ -428,27 +428,27 @@ TEST(IndexScanTest, VertexStringTypeTest) {
 
     {
         auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-        auto* processor = ScanVertexIndexProcessor::instance(kv.get(), schemaMan, nullptr,
+        auto* processor = LookUpVertexIndexProcessor::instance(kv.get(), schemaMan, nullptr,
                                                              executor.get(), nullptr);
-        cpp2::IndexScanRequest req;
+        cpp2::LookUpIndexRequest req;
         decltype(req.parts) parts;
         parts.emplace_back(partId);
         decltype(req.return_columns) retCols;
         retCols.emplace_back("tag_3001_col_0");
         retCols.emplace_back("tag_3001_col_1");
-        decltype(req.hint) hint;
-        hint.set_index_id(tagId);
-        hint.set_is_range(false);
-        decltype(hint.hint_items) items;
-        nebula::cpp2::IndexHintItem hintItem;
-        hintItem.set_first_str("AABB");
-        hintItem.set_second_str("");
-        items.emplace_back(hintItem);
-        hint.set_hint_items(items);
+//        decltype(req.hint) hint;
+//        hint.set_index_id(tagId);
+//        hint.set_is_range(false);
+//        decltype(hint.hint_items) items;
+//        nebula::cpp2::IndexHintItem hintItem;
+//        hintItem.set_first_str("AABB");
+//        hintItem.set_second_str("");
+//        items.emplace_back(hintItem);
+//        hint.set_hint_items(items);
         req.set_space_id(spaceId);
         req.set_parts(std::move(parts));
         req.set_return_columns(retCols);
-        req.set_hint(hint);
+//        req.set_hint(hint);
 
         auto f = processor->getFuture();
         processor->process(req);
@@ -461,27 +461,24 @@ TEST(IndexScanTest, VertexStringTypeTest) {
 
     {
         auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-        auto* processor = ScanVertexIndexProcessor::instance(kv.get(), schemaMan, nullptr,
+        auto* processor = LookUpVertexIndexProcessor::instance(kv.get(), schemaMan, nullptr,
                                                              executor.get(), nullptr);
-        cpp2::IndexScanRequest req;
+        cpp2::LookUpIndexRequest req;
         decltype(req.parts) parts;
         parts.emplace_back(partId);
         decltype(req.return_columns) retCols;
         retCols.emplace_back("tag_3001_col_0");
         retCols.emplace_back("tag_3001_col_1");
-        decltype(req.hint) hint;
-        hint.set_is_range(false);
-        hint.set_index_id(tagId);
-        decltype(hint.hint_items) items;
-        nebula::cpp2::IndexHintItem hintItem;
-        hintItem.set_first_str("AA");
-        hintItem.set_second_str("");
-        items.emplace_back(std::move(hintItem));
-        hint.set_hint_items(items);
+//        decltype(hint.hint_items) items;
+//        nebula::cpp2::IndexHintItem hintItem;
+//        hintItem.set_first_str("AA");
+//        hintItem.set_second_str("");
+//        items.emplace_back(std::move(hintItem));
+//        hint.set_hint_items(items);
         req.set_space_id(spaceId);
         req.set_parts(std::move(parts));
         req.set_return_columns(retCols);
-        req.set_hint(hint);
+//        req.set_hint(hint);
 
         auto f = processor->getFuture();
         processor->process(req);

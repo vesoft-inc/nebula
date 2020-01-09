@@ -299,22 +299,26 @@ public:
     }
 
     static VertexID getIndexVertexID(const folly::StringPiece& rawKey) {
+        CHECK_GE(rawKey.size(), kVertexIndexLen);
          auto offset = rawKey.size() - sizeof(VertexID);
          return *reinterpret_cast<const VertexID*>(rawKey.data() + offset);
      }
 
     static VertexID getIndexSrcId(const folly::StringPiece& rawKey) {
+        CHECK_GE(rawKey.size(), kEdgeIndexLen);
         auto offset = rawKey.size() -
                       sizeof(VertexID) * 2 - sizeof(EdgeRanking);
         return readInt<VertexID>(rawKey.data() + offset, sizeof(VertexID));
     }
 
     static VertexID getIndexDstId(const folly::StringPiece& rawKey) {
+        CHECK_GE(rawKey.size(), kEdgeIndexLen);
         auto offset = rawKey.size() - sizeof(VertexID);
         return readInt<VertexID>(rawKey.data() + offset, sizeof(VertexID));
     }
 
     static EdgeRanking getIndexRank(const folly::StringPiece& rawKey) {
+        CHECK_GE(rawKey.size(), kEdgeIndexLen);
         auto offset = rawKey.size() - sizeof(VertexID) - sizeof(EdgeRanking);
         return readInt<EdgeRanking>(rawKey.data() + offset, sizeof(EdgeRanking));
     }
@@ -329,6 +333,12 @@ private:
     static constexpr int32_t kEdgeLen = sizeof(PartitionID) + sizeof(VertexID)
                                       + sizeof(EdgeType) + sizeof(VertexID)
                                       + sizeof(EdgeRanking) + sizeof(EdgeVersion);
+
+    static constexpr int32_t kVertexIndexLen = sizeof(PartitionID) + sizeof(IndexID)
+                                               + sizeof(VertexID);
+
+    static constexpr int32_t kEdgeIndexLen = sizeof(PartitionID) + sizeof(IndexID)
+                                             + sizeof(VertexID) * 2 + sizeof(EdgeRanking);
 
     static constexpr int32_t kSystemLen = sizeof(PartitionID) + sizeof(NebulaSystemKeyType);
 

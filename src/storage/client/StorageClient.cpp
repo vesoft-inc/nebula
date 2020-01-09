@@ -526,57 +526,61 @@ StorageClient::get(GraphSpaceID space,
                               });
 }
 
-folly::SemiFuture<StorageRpcResponse<storage::cpp2::ScanVertexResponse>>
-StorageClient::scanVertexIndex(GraphSpaceID space,
-                               nebula::cpp2::IndexHint hint,
-                               std::vector<std::string> returnCols,
-                               folly::EventBase* evb) {
+folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpVertexIndexResp>>
+StorageClient::lookUpVertexIndex(GraphSpaceID space,
+                                 IndexID indexId,
+                                 std::string filter,
+                                 std::vector<std::string> returnCols,
+                                 folly::EventBase *evb) {
     auto status = getHostParts(space);
     if (!status.ok()) {
-        return folly::makeFuture<StorageRpcResponse<storage::cpp2::ScanVertexResponse>>(
+        return folly::makeFuture<StorageRpcResponse<storage::cpp2::LookUpVertexIndexResp>>(
             std::runtime_error(status.status().toString()));
     }
     auto& clusters = status.value();
-    std::unordered_map<HostAddr, cpp2::IndexScanRequest> requests;
+    std::unordered_map<HostAddr, cpp2::LookUpIndexRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];
         req.set_space_id(space);
         req.set_parts(std::move(c.second));
-        req.set_hint(hint);
+        req.set_index_id(indexId);
+        req.set_filter(filter);
         req.set_return_columns(returnCols);
     }
     return getResponse(evb, std::move(requests),
                        [](cpp2::StorageServiceAsyncClient* client,
-                          const cpp2::IndexScanRequest& r) {
-                              return client->future_scanVertexIndex(r);
+                          const cpp2::LookUpIndexRequest& r) {
+                              return client->future_lookUpVertexIndex(r);
                           });
 }
 
-folly::SemiFuture<StorageRpcResponse<storage::cpp2::ScanEdgeResponse>>
-StorageClient::scanEdgeIndex(GraphSpaceID space,
-                             nebula::cpp2::IndexHint hint,
-                             std::vector<std::string> returnCols,
-                             folly::EventBase* evb) {
+folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpEdgeIndexResp>>
+StorageClient::lookUpEdgeIndex(GraphSpaceID space,
+                               IndexID indexId,
+                               std::string filter,
+                               std::vector<std::string> returnCols,
+                               folly::EventBase *evb) {
     auto status = getHostParts(space);
     if (!status.ok()) {
-        return folly::makeFuture<StorageRpcResponse<storage::cpp2::ScanEdgeResponse>>(
+        return folly::makeFuture<StorageRpcResponse<storage::cpp2::LookUpEdgeIndexResp>>(
             std::runtime_error(status.status().toString()));
     }
     auto& clusters = status.value();
-    std::unordered_map<HostAddr, cpp2::IndexScanRequest> requests;
+    std::unordered_map<HostAddr, cpp2::LookUpIndexRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
         auto& req = requests[host];
         req.set_space_id(space);
         req.set_parts(std::move(c.second));
-        req.set_hint(hint);
+        req.set_index_id(indexId);
+        req.set_filter(filter);
         req.set_return_columns(returnCols);
     }
     return getResponse(evb, std::move(requests),
                        [](cpp2::StorageServiceAsyncClient* client,
-                          const cpp2::IndexScanRequest& r) {
-                              return client->future_scanEdgeIndex(r);
+                          const cpp2::LookUpIndexRequest& r) {
+                              return client->future_lookUpEdgeIndex(r);
                           });
 }
 

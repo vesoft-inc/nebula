@@ -137,11 +137,11 @@ public:
     folly::Future<cpp2::AdminExecResp>
     future_blockingWrites(const cpp2::BlockingSignRequest& req) override;
 
-    folly::Future<cpp2::ScanVertexResponse>
-    future_scanVertexIndex(const cpp2::IndexScanRequest& req) override;
+    folly::Future<cpp2::LookUpVertexIndexResp>
+    future_lookUpVertexIndex(const cpp2::LookUpIndexRequest& req) override;
 
-    folly::Future<cpp2::ScanEdgeResponse>
-    future_scanEdgeIndex(const cpp2::IndexScanRequest& req) override;
+    folly::Future<cpp2::LookUpEdgeIndexResp>
+    future_lookUpEdgeIndex(const cpp2::LookUpIndexRequest& req) override;
 
 private:
     kvstore::KVStore* kvstore_{nullptr};

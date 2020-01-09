@@ -49,7 +49,7 @@ enum ErrorCode {
     E_CHECKPOINT_BLOCKED = -51,
 
     // index failed
-    E_INVALID_INDEX_HINT = -60,
+    E_INDEX_NOT_FOUND = -60,
 
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
@@ -146,18 +146,6 @@ struct QueryResponse {
     5: optional i32 total_edges,
 }
 
-struct ScanVertexResponse {
-    1: required ResponseCommon             result,
-    2: optional common.Schema              schema,
-    3: optional list<VertexIndexData>      rows,
-}
-
-struct ScanEdgeResponse {
-    1: required ResponseCommon             result,
-    2: optional common.Schema              schema,
-    3: optional list<Edge>                 rows,
-}
-
 struct ExecResponse {
     1: required ResponseCommon result,
 }
@@ -217,22 +205,6 @@ struct VertexPropRequest {
     1: common.GraphSpaceID space_id,
     2: map<common.PartitionID, list<common.VertexID>>(cpp.template = "std::unordered_map") parts,
     3: list<PropDef> return_columns,
-}
-
-struct EdgePropRequest {
-    1: common.GraphSpaceID space_id,
-    // partId => edges
-    2: map<common.PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") parts,
-    3: common.EdgeType edge_type,
-    4: binary filter,
-    5: list<PropDef> return_columns,
-}
-
-struct IndexScanRequest {
-    1: common.GraphSpaceID       space_id,
-    2: list<common.PartitionID>  parts,
-    3: common.IndexHint          hint,
-    4: list<string>              return_columns,
 }
 
 struct AddVerticesRequest {
@@ -475,6 +447,35 @@ struct DropCPRequest {
     2: string                       name,
 }
 
+struct EdgePropRequest {
+    1: common.GraphSpaceID space_id,
+    // partId => edges
+    2: map<common.PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") parts,
+    3: common.EdgeType edge_type,
+    4: binary filter,
+    5: list<PropDef> return_columns,
+}
+
+struct LookUpVertexIndexResp {
+    1: required ResponseCommon             result,
+    2: optional common.Schema              schema,
+    3: optional list<VertexIndexData>      rows,
+}
+
+struct LookUpEdgeIndexResp {
+    1: required ResponseCommon             result,
+    2: optional common.Schema              schema,
+    3: optional list<Edge>                 rows,
+}
+
+struct LookUpIndexRequest {
+    1: common.GraphSpaceID       space_id,
+    2: list<common.PartitionID>  parts,
+    3: common.IndexID            index_id,
+    4: binary                    filter,
+    5: list<string>              return_columns,
+}
+
 service StorageService {
     QueryResponse getBound(1: GetNeighborsRequest req)
 
@@ -521,6 +522,6 @@ service StorageService {
     GetUUIDResp getUUID(1: GetUUIDReq req);
 
     // Interfaces for edge and vertex index scan
-    ScanVertexResponse scanVertexIndex(1: IndexScanRequest req);
-    ScanEdgeResponse   scanEdgeIndex(1: IndexScanRequest req);
+    LookUpVertexIndexResp lookUpVertexIndex(1: LookUpIndexRequest req);
+    LookUpEdgeIndexResp   lookUpEdgeIndex(1: LookUpIndexRequest req);
 }

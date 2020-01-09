@@ -26,8 +26,8 @@
 #include "storage/admin/CreateCheckpointProcessor.h"
 #include "storage/admin/DropCheckpointProcessor.h"
 #include "storage/admin/SendBlockSignProcessor.h"
-#include "storage/index/ScanVertexIndexProcessor.h"
-#include "storage/index/ScanEdgeIndexProcessor.h"
+#include "storage/index/LookUpVertexIndexProcessor.h"
+#include "storage/index/LookUpEdgeIndexProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -239,9 +239,9 @@ StorageServiceHandler::future_blockingWrites(const cpp2::BlockingSignRequest& re
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ScanVertexResponse>
-StorageServiceHandler::future_scanVertexIndex(const cpp2::IndexScanRequest& req) {
-    auto* processor = ScanVertexIndexProcessor::instance(kvstore_,
+folly::Future<cpp2::LookUpVertexIndexResp>
+StorageServiceHandler::future_lookUpVertexIndex(const cpp2::LookUpIndexRequest& req) {
+    auto* processor = LookUpVertexIndexProcessor::instance(kvstore_,
                                                          schemaMan_,
                                                          &scanVertexIndexQpsStat_,
                                                          getThreadManager(),
@@ -249,9 +249,9 @@ StorageServiceHandler::future_scanVertexIndex(const cpp2::IndexScanRequest& req)
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ScanEdgeResponse>
-StorageServiceHandler::future_scanEdgeIndex(const cpp2::IndexScanRequest& req) {
-    auto* processor = ScanEdgeIndexProcessor::instance(kvstore_,
+folly::Future<cpp2::LookUpEdgeIndexResp>
+StorageServiceHandler::future_lookUpEdgeIndex(const cpp2::LookUpIndexRequest& req) {
+    auto* processor = LookUpEdgeIndexProcessor::instance(kvstore_,
                                                        schemaMan_,
                                                        &scanEdgeIndexQpsStat_,
                                                        getThreadManager(),
