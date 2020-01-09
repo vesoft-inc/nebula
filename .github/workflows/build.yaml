@@ -50,7 +50,7 @@ jobs:
         run: cd build && ASAN_OPTIONS=fast_unwind_on_malloc=0 ctest --timeout 300 --output-on-failure
       - name: Coverage Report
         if: success() && matrix.compiler == 'gcc' && matrix.tag == 'centos7'
-        run: cd build && ASAN_OPTIONS=fast_unwind_on_malloc=0 ctest --timeout 600 --output-on-failure
+        run: cd build && lcov --gcov-tool $GCOV --capture --directory . --output-file coverage.info
       - name: Coveralls
         if: success() && matrix.compiler == 'gcc' && matrix.tag == 'centos7'
         uses: coverallsapp/github-action@master
