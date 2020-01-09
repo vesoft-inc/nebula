@@ -2,7 +2,7 @@ name: pull_request
 
 on:
   pull_request:
-    types: [synchronize, labeled]
+    types: [synchronize, reopened, labeled]
     branches:
       - master
 
