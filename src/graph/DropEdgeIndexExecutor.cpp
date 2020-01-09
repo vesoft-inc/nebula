@@ -28,7 +28,7 @@ void DropEdgeIndexExecutor::execute() {
 
     auto *name = sentence_->indexName();
     auto spaceId = ectx()->rctx()->session()->space();
-    auto future = ectx()->getMetaClient()->dropEdgeIndex(spaceId, *name);
+    auto future = ectx()->getMetaClient()->dropEdgeIndex(spaceId, *name, sentence_->isIfExists());
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
