@@ -1,4 +1,4 @@
-/* Copyright (c) 2019 vesoft inc. All rights reserved.
+/* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -35,6 +35,7 @@ void Route::setPath(const std::string &path) {
     }
 }
 
+// static
 std::unique_ptr<std::regex> Route::reToken_ =
     std::make_unique<std::regex>(":([A-Za-z][A-Za-z_0-9]*)");
 
@@ -52,7 +53,7 @@ void Route::createPattenRegex(const std::string &path) {
                            << " more than once in pattern string";
             }
         }
-        groups_.emplace_back(str);
+        groups_.emplace_back(std::move(str));
         ss << path.substr(pos, next->position() - pos) << "([^/]+)";
         pos = next->position() + next->str().length();
     }
@@ -66,7 +67,7 @@ bool Route::matches(proxygen::HTTPMethod method, const std::string &path) const 
     }
     std::string p = path;
     if (p.empty()) {
-      p = "/";
+        p = "/";
     } else if (p.size() > 1 && p.back() == '/') {
         p.pop_back();
     }
@@ -85,7 +86,7 @@ Router::~Router() {
     }
 }
 
-Route& Route::handler(ReqHandlerGenerator generator) {
+Route &Route::handler(ReqHandlerGenerator generator) {
     CHECK(generators_.empty()) << "Only allowed to register handler once for a route";
     generators_.push_back(generator);
     return *this;

@@ -1,4 +1,4 @@
-/* Copyright (c) 2019 vesoft inc. All rights reserved.
+/* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -90,7 +90,7 @@ public:
     Route &route(proxygen::HTTPMethod method, const std::string &path) {
         Route *next = nullptr;
         if (!prefix_.empty()) {
-          next = new Route(method, "/" + prefix_ + (path.empty() ? "/" : path));
+            next = new Route(method, "/" + prefix_ + (path.empty() ? "/" : path));
         } else {
             next = new Route(method, path.empty() ? "/" : path);
         }
