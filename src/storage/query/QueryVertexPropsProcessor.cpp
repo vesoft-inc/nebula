@@ -46,10 +46,12 @@ void QueryVertexPropsProcessor::process(const cpp2::VertexPropRequest& vertexReq
                     }
                     continue;
                 }
+                VLOG(3) << "Vid: " << vId << " found tag size: " << td.size();
                 vResp.set_tag_data(std::move(td));
                 vertices.emplace_back(std::move(vResp));
             }
         }
+        VLOG(3) << "Seek vertices num: " << vertices.size();
         resp_.set_vertices(std::move(vertices));
         onFinished();
     }

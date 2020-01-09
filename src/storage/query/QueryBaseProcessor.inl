@@ -422,6 +422,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
     }
 
     bool missedKey = true;
+    std::unordered_set<TagID> tagIds;
     for (; iter && iter->valid(); iter->next()) {
         auto key = iter->key();
         auto val = iter->val();
@@ -435,6 +436,13 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
             continue;
         }
         auto tagId = NebulaKeyUtils::getTagId(key);
+        auto result = tagIds.emplace(tagId);
+        if (!result.second) {
+            // Already found the latest version.
+            continue;
+        }
+        VLOG(3) << "Found tag " << tagId << " for vId" << vId;
+
         auto valStr = val.str();
         if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
             vertexCache_->insert(std::make_pair(vId, tagId),

@@ -17,25 +17,19 @@
 namespace nebula {
 namespace storage {
 
-TEST(QueryVertexPropsTest, SimpleTest) {
-    fs::TempDir rootPath("/tmp/QueryVertexPropsTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
-
-    LOG(INFO) << "Prepare meta...";
-    auto schemaMan = TestUtils::mockSchemaMan();
-
+void mockData(kvstore::KVStore* kv, TagVersion version) {
     LOG(INFO) << "Prepare data...";
     for (auto partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
         for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             for (auto tagId = 3001; tagId < 3010; tagId++) {
-                auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
+                auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, version);
                 RowWriter writer;
                 for (int64_t numInt = 0; numInt < 3; numInt++) {
-                    writer << numInt;
+                    writer << (numInt + version);
                 }
                 for (auto numString = 3; numString < 6; numString++) {
-                    writer << folly::stringPrintf("tag_string_col_%d", numString);
+                    writer << folly::stringPrintf("tag_string_col_%ld", numString + version);
                 }
                 auto val = writer.encode();
                 data.emplace_back(std::move(key), std::move(val));
@@ -52,16 +46,24 @@ TEST(QueryVertexPropsTest, SimpleTest) {
             });
         baton.wait();
     }
+}
+
+void testWithVersion(kvstore::KVStore* kv,
+                     meta::SchemaManager* schemaMng,
+                     folly::CPUThreadPoolExecutor* executor,
+                     TagVersion version) {
     {
         LOG(INFO) << "Build VertexPropsRequest...";
         cpp2::VertexPropRequest req;
         req.set_space_id(0);
         decltype(req.parts) tmpIds;
+        std::unordered_set<VertexID> vids;
         for (auto partId = 0; partId < 3; partId++) {
             for (auto vertexId =  partId * 10;
                 vertexId < (partId + 1) * 10;
                 vertexId++) {
                 tmpIds[partId].emplace_back(vertexId);
+                vids.emplace(vertexId);
             }
         }
         req.set_parts(std::move(tmpIds));
@@ -74,11 +76,10 @@ TEST(QueryVertexPropsTest, SimpleTest) {
         req.set_return_columns(std::move(tmpColumns));
 
         LOG(INFO) << "Test QueryVertexPropsRequest...";
-        auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-        auto* processor = QueryVertexPropsProcessor::instance(kv.get(),
-                                                            schemaMan.get(),
+        auto* processor = QueryVertexPropsProcessor::instance(kv,
+                                                            schemaMng,
                                                             nullptr,
-                                                            executor.get());
+                                                            executor);
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -92,6 +93,9 @@ TEST(QueryVertexPropsTest, SimpleTest) {
         DCHECK(vschema != nullptr);
 
         for (auto& vp : resp.vertices) {
+            auto vidFound = vids.find(vp.vertex_id);
+            ASSERT_TRUE(vidFound != vids.end()) << "Vid: " << vp.vertex_id;
+
             auto size = std::accumulate(vp.tag_data.cbegin(), vp.tag_data.cend(), 0,
                                         [vschema](int acc, auto& td) {
                                             auto it = vschema->find(td.tag_id);
@@ -101,10 +105,10 @@ TEST(QueryVertexPropsTest, SimpleTest) {
 
             EXPECT_EQ(3, size);
 
-            checkTagData<int64_t>(vp.tag_data, 3001, "tag_3001_col_0", vschema, 0);
-            checkTagData<int64_t>(vp.tag_data, 3003, "tag_3003_col_2", vschema, 2);
+            checkTagData<int64_t>(vp.tag_data, 3001, "tag_3001_col_0", vschema, 0 + version);
+            checkTagData<int64_t>(vp.tag_data, 3003, "tag_3003_col_2", vschema, 2 + version);
             checkTagData<std::string>(vp.tag_data, 3005, "tag_3005_col_4", vschema,
-                                    folly::stringPrintf("tag_string_col_4"));
+                                    folly::stringPrintf("tag_string_col_%ld", 4 + version));
         }
     }
     {
@@ -112,21 +116,22 @@ TEST(QueryVertexPropsTest, SimpleTest) {
         cpp2::VertexPropRequest req;
         req.set_space_id(0);
         decltype(req.parts) tmpIds;
+        std::unordered_set<VertexID> vids;
         for (auto partId = 0; partId < 3; partId++) {
             for (auto vertexId =  partId * 10;
                 vertexId < (partId + 1) * 10;
                 vertexId++) {
                 tmpIds[partId].emplace_back(vertexId);
+                vids.emplace(vertexId);
             }
         }
         req.set_parts(std::move(tmpIds));
 
         LOG(INFO) << "Test QueryVertexPropsRequest...";
-        auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-        auto* processor = QueryVertexPropsProcessor::instance(kv.get(),
-                                                            schemaMan.get(),
+        auto* processor = QueryVertexPropsProcessor::instance(kv,
+                                                            schemaMng,
                                                             nullptr,
-                                                            executor.get());
+                                                            executor);
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -137,22 +142,41 @@ TEST(QueryVertexPropsTest, SimpleTest) {
         EXPECT_EQ(30, resp.vertices.size());
 
         for (auto& vp : resp.vertices) {
-            auto schema = schemaMan->getTagSchema(0, 3001, 0);
-            ASSERT_NE(nullptr, schema);
-            checkTagData<int64_t>(vp.tag_data, 3001, "tag_3001_col_0", schema, 0);
+            auto vidFound = vids.find(vp.vertex_id);
+            ASSERT_TRUE(vidFound != vids.end()) << "Vid: " << vp.vertex_id;
 
-            schema = schemaMan->getTagSchema(0, 3003, 0);
+            auto schema = schemaMng->getTagSchema(0, 3001, 0);
             ASSERT_NE(nullptr, schema);
-            checkTagData<int64_t>(vp.tag_data, 3003, "tag_3003_col_2", schema, 2);
+            checkTagData<int64_t>(vp.tag_data, 3001, "tag_3001_col_0", schema, 0 + version);
 
-            schema = schemaMan->getTagSchema(0, 3005, 0);
+            schema = schemaMng->getTagSchema(0, 3003, 0);
+            ASSERT_NE(nullptr, schema);
+            checkTagData<int64_t>(vp.tag_data, 3003, "tag_3003_col_2", schema, 2 + version);
+
+            schema = schemaMng->getTagSchema(0, 3005, 0);
             ASSERT_NE(nullptr, schema);
             checkTagData<std::string>(vp.tag_data, 3005, "tag_3005_col_4", schema,
-                                    folly::stringPrintf("tag_string_col_4"));
+                                    folly::stringPrintf("tag_string_col_%ld", 4 + version));
         }
     }
 }
 
+TEST(QueryVertexPropsTest, SimpleTest) {
+    fs::TempDir rootPath("/tmp/QueryVertexPropsTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+
+    LOG(INFO) << "Prepare meta...";
+    auto schemaMan = TestUtils::mockSchemaMan();
+
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    TagVersion version = 1;
+    mockData(kv.get(), version);
+    testWithVersion(kv.get(), schemaMan.get(), executor.get(), version);
+
+    version = 0;
+    mockData(kv.get(), version);
+    testWithVersion(kv.get(), schemaMan.get(), executor.get(), version);
+}
 }  // namespace storage
 }  // namespace nebula
 

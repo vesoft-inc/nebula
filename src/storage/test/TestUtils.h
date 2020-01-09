@@ -287,7 +287,7 @@ void checkTagData(const std::vector<cpp2::TagData>& data,
         }
         return false;
     });
-    DCHECK(it != data.cend());
+    DCHECK(it != data.cend()) << "Tag ID: " << tid;
     auto tagReader   = RowReader::getRowReader(it->data, schema);
     auto r = RowReader::getPropByName(tagReader.get(), col_name);
     CHECK(ok(r));
