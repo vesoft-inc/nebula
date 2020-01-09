@@ -30,7 +30,7 @@ The above statement creates an index for the _degree_ property on all edges carr
 
 ### Create Composite Index
 
-The schema indexes also supports spawning over multiple properties. An index on multiple properties for all vertices that have a particular tag is called composite index. Consider the following example:
+The schema indexes also support spawning over multiple properties. An index on multiple properties for all vertices that have a particular tag is called a composite index. Consider the following example:
 
 ```ngql
 nebula> CREATE TAG INDEX player_index_1 on player(name,age);

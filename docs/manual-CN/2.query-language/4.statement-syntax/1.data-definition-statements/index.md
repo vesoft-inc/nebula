@@ -4,15 +4,15 @@
 CREATE {TAG | EDGE} INDEX [IF NOT EXISTS] <index_name> ON {<tag_name> | <edge_name>} (prop_name_list)
 ```
 
-schema 索引可用于快速处理图查询。**Nebula Graph** 支持两种类型的索引：**标签索引**和**边类型索引**。
+schema 索引可用于快速处理图查询。**Nebula Graph** 支持两种类型的索引：**Tag 索引**和 **Edge Type 索引**。
 
 多数图查询都从拥有共同属性的同一类型的点或边开始遍历。schema 索引使得这些全局检索操作在大型图上更为高效。
 
-一般地，在使用 `CREATE TAG/EDGE` 语句将标签或边类型创建好之后，即可为其创建索引。
+一般地，在使用 `CREATE TAG/EDGE` 语句将 Tag/Edge-type 创建好之后，即可为其创建索引。
 
 ## 创建索引
 
-`CREATE INDEX` 用于为已有标签或边类型创建索引。
+`CREATE INDEX` 用于为已有 Tag/Edge-type 创建索引。
 
 ### 创建单属性索引
 
@@ -44,7 +44,7 @@ nebula> CREATE TAG INDEX player_index_1 on player(name,age);
 SHOW {TAG | EDGE} INDEXES
 ```
 
-`SHOW INDEXES` 用于列出已创建完成的标签或边类型的索引信息。使用以下命令列出索引：
+`SHOW INDEXES` 用于列出已创建完成的 Tag/Edge-type 的索引信息。使用以下命令列出索引：
 
 ```ngql
 nebula> SHOW TAG INDEXES;
@@ -97,7 +97,7 @@ nebula> DESCRIBE TAG INDEX player_index_1;
 DROP {TAG | EDGE} INDEX [IF EXISTS] <index_name>
 ```
 
-`DROP INDEX` 用于删除指定名称的标签或边类型索引。例如，使用以下命令删除名为 _player_index_0_ 的索引：
+`DROP INDEX` 用于删除指定名称的 Tag/Edge-type 索引。例如，使用以下命令删除名为 _player_index_0_ 的索引：
 
 ```ngql
 nebula> DROP TAG INDEX player_index_0;
