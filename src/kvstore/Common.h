@@ -30,14 +30,13 @@ namespace kvstore {
 
 
 
-/// X(enumerate, value)
-#define X(enumerate, ...) enumerate = __VA_ARGS__,
+#define X(enumerate, value) enumerate = value,
 enum ResultCode {
     X_ERROR
 };
 #undef X
 
-#define X(enumerate, ...) case ResultCode::enumerate : return #enumerate;
+#define X(enumerate, value) case ResultCode::enumerate : return #enumerate;
 static inline
 const char* errMsg(ResultCode code) {
     switch (code) {
