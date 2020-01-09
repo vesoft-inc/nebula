@@ -295,6 +295,8 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                         VLOG(1) << self->idStr_
                                 << "We send nothing in the last request"
                                 << ", so we don't send the same logs again";
+                        self->lastLogIdSent_ = resp.get_last_log_id();
+                        self->lastLogTermSent_ = resp.get_last_log_term();
                         self->followerCommittedLogId_ = resp.get_committed_log_id();
                         cpp2::AppendLogResponse r;
                         r.set_error_code(cpp2::ErrorCode::SUCCEEDED);
@@ -356,7 +358,7 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                         cpp2::AppendLogResponse r;
                         r.set_error_code(res);
                         self->setResponse(r);
-                    } else if (self->logIdToSend_ == resp.get_last_log_id()) {
+                    } else if (self->logIdToSend_ <= resp.get_last_log_id()) {
                         VLOG(1) << self->idStr_
                                 << "It means the request has been received by follower";
                         self->lastLogIdSent_ = resp.get_last_log_id();

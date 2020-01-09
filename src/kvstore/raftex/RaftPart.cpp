@@ -1510,12 +1510,17 @@ void RaftPart::processAppendLogRequest(
         LOG(INFO) << idStr_ << "The local last log term is " << lastLogTerm_
                 << ", which is different from the leader's prevLogTerm "
                 << req.get_last_log_term_sent()
+                << ", the prevLogId is " << req.get_last_log_id_sent()
                 << ". So need to rollback to last committedLogId_ " << committedLogId_;
         if (wal_->rollbackToLog(committedLogId_)) {
             lastLogId_ = wal_->lastLogId();
             lastLogTerm_ = wal_->lastLogTerm();
             resp.set_last_log_id(lastLogId_);
             resp.set_last_log_term(lastLogTerm_);
+            LOG(INFO) << idStr_ << "Rollback succeeded! lastLogId is " << lastLogId_
+                      << ", logLogTerm is " << lastLogTerm_
+                      << ", committedLogId is " << committedLogId_
+                      << ", term is " << term_;
          }
          resp.set_error_code(cpp2::ErrorCode::E_LOG_GAP);
          return;
