@@ -8,12 +8,17 @@
 
 #include <folly/init/Init.h>
 #include <gtest/gtest.h>
+#include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/HTTPMessage.h>
 
 class RouterTest : public ::testing::Test {
 public:
     void SetUp() override {
         router_ = std::make_unique<nebula::web::Router>("test");
+    }
+
+    void TearDown() override {
+        router_.reset();
     }
 
 protected:
@@ -29,23 +34,23 @@ TEST_F(RouterTest, TestNoPathParams) {
     proxygen::HTTPMessage msg;
     msg.setMethod(proxygen::HTTPMethod::GET);
     msg.setURL("https://localhost/test/foo/bar");
-    ASSERT_EQ(router_->dispatch(&msg), nullptr);
+    ASSERT_FALSE(std::unique_ptr<proxygen::RequestHandler>(router_->dispatch(&msg)));
 
     msg.setURL("https://localhost/test/foo/bar/");
-    ASSERT_EQ(router_->dispatch(&msg), nullptr);
+    ASSERT_FALSE(std::unique_ptr<proxygen::RequestHandler>(router_->dispatch(&msg)));
 
     msg.setMethod(proxygen::HTTPMethod::PUT);
-    ASSERT_NE(router_->dispatch(&msg), nullptr);
+    ASSERT_TRUE(std::unique_ptr<proxygen::RequestHandler>(router_->dispatch(&msg)));
 
     msg.setMethod(proxygen::HTTPMethod::GET);
     msg.setURL("https://localhost/foo/bar");
-    ASSERT_NE(router_->dispatch(&msg), nullptr);
+    ASSERT_TRUE(std::unique_ptr<proxygen::RequestHandler>(router_->dispatch(&msg)));
 
     msg.setURL("https://localhost/test/foo");
-    ASSERT_NE(router_->dispatch(&msg), nullptr);
+    ASSERT_TRUE(std::unique_ptr<proxygen::RequestHandler>(router_->dispatch(&msg)));
 
     msg.setURL("https://localhost/test/");
-    ASSERT_NE(router_->dispatch(&msg), nullptr);
+    ASSERT_TRUE(std::unique_ptr<proxygen::RequestHandler>(router_->dispatch(&msg)));
 }
 
 TEST_F(RouterTest, TestPathParams) {
@@ -60,19 +65,19 @@ TEST_F(RouterTest, TestPathParams) {
     proxygen::HTTPMessage msg;
     msg.setMethod(proxygen::HTTPMethod::PUT);
     msg.setURL("https://localhost/test/foo/nebula/baz");
-    ASSERT_NE(router_->dispatch(&msg), nullptr);
+    ASSERT_TRUE(std::unique_ptr<proxygen::RequestHandler>(router_->dispatch(&msg)));
 
     msg.setMethod(proxygen::HTTPMethod::GET);
-    ASSERT_EQ(router_->dispatch(&msg), nullptr);
+    ASSERT_FALSE(std::unique_ptr<proxygen::RequestHandler>(router_->dispatch(&msg)));
 
     msg.setURL("https://localhost/test/foo/nebula");
-    ASSERT_NE(router_->dispatch(&msg), nullptr);
+    ASSERT_TRUE(std::unique_ptr<proxygen::RequestHandler>(router_->dispatch(&msg)));
 
     msg.setURL("https://localhost/foo/nebula");
-    ASSERT_NE(router_->dispatch(&msg), nullptr);
+    ASSERT_TRUE(std::unique_ptr<proxygen::RequestHandler>(router_->dispatch(&msg)));
 
     msg.setURL("https://localhost/foo/nebula/baz");
-    ASSERT_NE(router_->dispatch(&msg), nullptr);
+    ASSERT_TRUE(std::unique_ptr<proxygen::RequestHandler>(router_->dispatch(&msg)));
 }
 
 TEST_F(RouterTest, TestDiffHttpMethod) {
@@ -91,14 +96,14 @@ TEST_F(RouterTest, TestDiffHttpMethod) {
     proxygen::HTTPMessage msg;
     msg.setMethod(proxygen::HTTPMethod::PUT);
     msg.setURL("https://localhost/test/foo/nebula/baz");
-    ASSERT_EQ(router_->dispatch(&msg), nullptr);
+    ASSERT_FALSE(std::unique_ptr<proxygen::RequestHandler>(router_->dispatch(&msg)));
 
     msg.setURL("https://localhost/test/foo/graph/baz");
-    ASSERT_EQ(router_->dispatch(&msg), nullptr);
+    ASSERT_FALSE(std::unique_ptr<proxygen::RequestHandler>(router_->dispatch(&msg)));
 
     msg.setMethod(proxygen::HTTPMethod::GET);
     msg.setURL("https://localhost/test/foo/nebula/baz");
-    ASSERT_EQ(router_->dispatch(&msg), nullptr);
+    ASSERT_FALSE(std::unique_ptr<proxygen::RequestHandler>(router_->dispatch(&msg)));
 
     ASSERT_EQ(getCount, 1);
     ASSERT_EQ(putCount, 2);
@@ -119,16 +124,16 @@ TEST_F(RouterTest, TestNoPrefix) {
     proxygen::HTTPMessage msg;
     msg.setMethod(proxygen::HTTPMethod::GET);
     msg.setURL("https://localhost/foo/nebula/graph");
-    ASSERT_EQ(router.dispatch(&msg), nullptr);
+    ASSERT_FALSE(std::unique_ptr<proxygen::RequestHandler>(router.dispatch(&msg)));
 
     msg.setURL("https://localhost/foo/nebula/graph/");
-    ASSERT_EQ(router.dispatch(&msg), nullptr);
+    ASSERT_FALSE(std::unique_ptr<proxygen::RequestHandler>(router.dispatch(&msg)));
 
     msg.setURL("https://localhost/foo/nebula");
-    ASSERT_NE(router.dispatch(&msg), nullptr);
+    ASSERT_TRUE(std::unique_ptr<proxygen::RequestHandler>(router.dispatch(&msg)));
 
     msg.setURL("https://localhost/foo");
-    ASSERT_NE(router.dispatch(&msg), nullptr);
+    ASSERT_TRUE(std::unique_ptr<proxygen::RequestHandler>(router.dispatch(&msg)));
 }
 
 int main(int argc, char** argv) {
