@@ -10,8 +10,6 @@
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 
-DECLARE_int32(load_data_interval_secs);
-
 namespace nebula {
 namespace graph {
 
@@ -87,6 +85,7 @@ TEST_F(SchemaTest, metaCommunication) {
                                int, std::string, std::string>> expected {
             {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online", 0,
              "No valid partition", "No valid partition"},
+            {"Total", "", "", 0, "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -172,6 +171,30 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        std::string query = "DROP SPACE IF EXISTS not_exist_space";
+        cpp2::ExecutionResponse resp;
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        std::string query = "DROP SPACE not_exist_space";
+        cpp2::ExecutionResponse resp;
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        std::string query = "CREATE SPACE exist_space";
+        cpp2::ExecutionResponse resp;
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+
+        std::string query1 = "DROP SPACE IF EXISTS exist_space";
+        cpp2::ExecutionResponse resp1;
+        auto code1 = client->execute(query1, resp1);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code1);
     }
     // show parts of default_space
     {
@@ -404,10 +427,10 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected{
-            {3, "tag1"},
-            {4, "person"},
-            {5, "person_with_default"},
-            {6, "upper"},
+            {4, "tag1"},
+            {5, "person"},
+            {6, "person_with_default"},
+            {7, "upper"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -548,10 +571,10 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected{
-            {7,  "edge1"},
-            {8,  "buy"},
-            {9,  "buy_with_default"},
-            {10, "education"},
+            {8,  "edge1"},
+            {9,  "buy"},
+            {10,  "buy_with_default"},
+            {11, "education"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -611,12 +634,58 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP TAG not_exist_tag";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP TAG IF EXISTS not_exist_tag";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG exist_tag(id int)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        cpp2::ExecutionResponse resp1;
+        std::string query1 = "DROP TAG IF EXISTS exist_tag";
+        auto code1 = client->execute(query1, resp1);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code1);
+    }
     // Test drop edge
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP EDGE buy";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP EDGE not_exist_edge";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP EDGE IF EXISTS not_exist_edge";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE exist_edge(id int)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        cpp2::ExecutionResponse resp1;
+        std::string query1 = "DROP EDGE IF EXISTS exist_edge";
+        auto code1 = client->execute(query1, resp1);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code1);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -694,8 +763,8 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected{
-            {1012, "animal"},
-            {1013, "person"},
+            {1015, "animal"},
+            {1016, "person"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -710,7 +779,7 @@ TEST_F(SchemaTest, metaCommunication) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected1{
-            {1015, "test_tag"},
+            {1018, "test_tag"},
         };
         ASSERT_TRUE(verifyResult(resp, expected1));
 
@@ -718,8 +787,8 @@ TEST_F(SchemaTest, metaCommunication) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected2{
-            {1012, "animal"},
-            {1013, "person"},
+            {1015, "animal"},
+            {1016, "person"},
         };
         ASSERT_TRUE(verifyResult(resp, expected2));
 
@@ -759,10 +828,9 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW HOSTS";
         client->execute(query, resp);
-        ASSERT_EQ(1, (*(resp.get_rows())).size());
+        ASSERT_EQ(2, (*(resp.get_rows())).size());
     }
 
-    sleep(FLAGS_load_data_interval_secs + 1);
     int retry = 60;
     while (retry-- > 0) {
         auto spaceResult = gEnv->metaClient()->getSpaceIdByNameFromCache("default_space");
@@ -786,6 +854,7 @@ TEST_F(SchemaTest, TTLtest) {
                                int, std::string, std::string>> expected {
             {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online", 0,
              "No valid partition", "No valid partition"},
+            {"Total", "", "", 0, "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

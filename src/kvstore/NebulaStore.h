@@ -111,12 +111,38 @@ public:
                      const std::string& start,
                      const std::string& end,
                      std::unique_ptr<KVIterator>* iter) override;
+    // Delete the overloading with a rvalue `start' and `end'
+    ResultCode range(GraphSpaceID spaceId,
+                     PartitionID  partId,
+                     std::string&& start,
+                     std::string&& end,
+                     std::unique_ptr<KVIterator>* iter) override = delete;
 
     // Get all results with prefix.
     ResultCode prefix(GraphSpaceID spaceId,
                       PartitionID  partId,
                       const std::string& prefix,
                       std::unique_ptr<KVIterator>* iter) override;
+
+    // Delete the overloading with a rvalue `prefix'
+    ResultCode prefix(GraphSpaceID spaceId,
+                      PartitionID  partId,
+                      std::string&& prefix,
+                      std::unique_ptr<KVIterator>* iter) override = delete;
+
+    // Get all results with prefix starting from start
+    ResultCode rangeWithPrefix(GraphSpaceID spaceId,
+                               PartitionID  partId,
+                               const std::string& start,
+                               const std::string& prefix,
+                               std::unique_ptr<KVIterator>* iter) override;
+
+    // Delete the overloading with a rvalue `prefix'
+    ResultCode rangeWithPrefix(GraphSpaceID spaceId,
+                               PartitionID  partId,
+                               std::string&& start,
+                               std::string&& prefix,
+                               std::unique_ptr<KVIterator>* iter) override = delete;
 
     // async batch put.
     void asyncMultiPut(GraphSpaceID spaceId,
@@ -173,10 +199,9 @@ public:
 
     ResultCode setWriteBlocking(GraphSpaceID spaceId, bool sign) override;
 
-    int32_t allLeader(std::unordered_map<GraphSpaceID,
-                                         std::vector<PartitionID>>& leaderIds) override;
-
     bool isLeader(GraphSpaceID spaceId, PartitionID partId);
+
+    ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
 
     /**
      * Implement four interfaces in Handler.
@@ -189,7 +214,8 @@ public:
 
     void removePart(GraphSpaceID spaceId, PartitionID partId) override;
 
-    ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
+    int32_t allLeader(std::unordered_map<GraphSpaceID,
+                                         std::vector<PartitionID>>& leaderIds) override;
 
 private:
     void updateSpaceOption(GraphSpaceID spaceId,

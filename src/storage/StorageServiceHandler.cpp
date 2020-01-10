@@ -12,6 +12,8 @@
 #include "storage/query/QueryStatsProcessor.h"
 #include "storage/query/GetUUIDProcessor.h"
 #include "storage/query/QueryEdgeKeysProcessor.h"
+#include "storage/query/ScanEdgeProcessor.h"
+#include "storage/query/ScanVertexProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/mutate/AddEdgesProcessor.h"
 #include "storage/mutate/DeleteVertexProcessor.h"
@@ -120,6 +122,18 @@ StorageServiceHandler::future_updateVertex(const cpp2::UpdateVertexRequest& req)
 folly::Future<cpp2::UpdateResponse>
 StorageServiceHandler::future_updateEdge(const cpp2::UpdateEdgeRequest& req) {
     auto* processor = UpdateEdgeProcessor::instance(kvstore_, schemaMan_, &updateEdgeQpsStat_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ScanEdgeResponse>
+StorageServiceHandler::future_scanEdge(const cpp2::ScanEdgeRequest& req) {
+    auto* processor = ScanEdgeProcessor::instance(kvstore_, schemaMan_, &scanEdgeQpsStat_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ScanVertexResponse>
+StorageServiceHandler::future_scanVertex(const cpp2::ScanVertexRequest& req) {
+    auto* processor = ScanVertexProcessor::instance(kvstore_, schemaMan_, &scanVertexQpsStat_);
     RETURN_FUTURE(processor);
 }
 

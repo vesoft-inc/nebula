@@ -1,6 +1,6 @@
-### Introduction
+# Introduction
 
-`SparkClientGenerator` is a simple spark job used to write data into `Nebula Graph` parallel.
+`SparkClientGenerator` is a simple spark job used to write data into **Nebula Graph** concurrently.
 
 The insert statement is generated according to the configuration file and executed through thrift client.
 
@@ -8,52 +8,49 @@ Data Source could be `HDFS` or `Hive`.
 
 In the configuration file, the tag section is similar to the edge section, which is used to specify the generation rules.
 
-The `type` specified the data source type, and it should be `parquet`, `json`, `ORC`, `csv` or `hive`.
+The `type` specified the source data file type. The supported types are  `parquet`, `json`, `ORC`, `csv` and `hive`.
 
-If the `type` is a file, the `path` is use to point out the `HDFS` path, otherwise it use `exec` to execute SQL in `hive`.
+If the `type` is a file, the `path` is used to point to the `HDFS` path, otherwise it uses `exec` to execute SQL in `hive`.
 
-`fields` describe the mapping between the data field and the Nebula field.
+`fields` describes the mapping between the data field and the **Nebula Graph** field.
 
-In the tag section, use `vertex` to describe the vertex key, and in the edge section, `source` is the starting point, `target` is the ending point and `ranking` is the weight which is optional.
+In the tag section, use `vertex` to describe the vertex key. And in the edge section, `source` is the starting point, `target` is the ending point and `ranking` is the edge ranking which is optional.
 
 ***
-### Build
 
-Build command:
+## Building
 
-```
+Building command:
+
+```bash
 mvn compile package
 ```
 
+### Setting up
 
-### Setup
+To setup the Spark Writer, please specify some spark arguments as follows:
 
-To setup the Spark Writer, you should specified some spark arguments.
-
-As following:
-
-```
+```bash
 bin/spark-submit \
-	--class com.vesoft.nebula.tools.generator.v2.SparkClientGenerator
-	--master ${SPARK_MODE}
-	sst.generator-1.0.0-beta.jar -c conf/test.conf -h -d
+ --class com.vesoft.nebula.tools.generator.v2.SparkClientGenerator
+ --master ${SPARK_MODE}
+ sst.generator-1.0.0-beta.jar -c conf/test.conf -h -d
 ```
 
-The `--class` describe the main class for you application. The `--master` is the master URL for the cluster.
+The `--class` describes the main class for your application. The `--master` is the master URL for the cluster.
 
 *Command Line Argument*
 
 |Abbreviation  | Name               | Description    | Required       | Default        |
 |--------------|--------------------|----------------|----------------|----------------|
-|c             | config             | config file    | Yes            |                |
-|h             | hive               | hive supported | No             | false          |
+|c             | config             | configuration file    | Yes            |                |
+|h             | hive               | wether to support hive | No             | false          |
 |d             | directly           | directly mode  | No             | false          |
 |D             | dry                | dry run        | No             | false          |
 
-
 ### Data example
 
-Inserted data sample for `Get Start` is under `src/main/resources/data/json`.
+Sample insert data for `Get Start` is under `src/main/resources/data/json`.
 
 The **student** tag's JSON data example:
 
@@ -63,7 +60,7 @@ The **student** tag's JSON data example:
 {"id":202,"name":"Jane","age":17,"gender":"female"}
 ```
 
-The like edge's JSON date example:
+The edge like's JSON data example:
 
 ```JSON
 {"source":200,"target":201,"likeness":92.5}
@@ -71,7 +68,7 @@ The like edge's JSON date example:
 {"source":201,"target":202,"likeness":93.2}
 ```
 
-The Geo JSON data example, `latitude` and `longitude` use to  describe coordinate.
+The Geo JSON data example, `latitude` and `longitude` are used to describe coordinate.
 
 ```JSON
 {"latitude":30.2822095,"longitude":120.0298785,"target":0,"dp_poi_name":"0"}
@@ -80,12 +77,11 @@ The Geo JSON data example, `latitude` and `longitude` use to  describe coordina
 {"latitude":30.2812694,"longitude":120.0164896,"target":3,"dp_poi_name":"3"}
 ```
 
-
 ### Configuration
 
-```
+```bash
 {
-  # Spark relation config.
+  # Spark related configurations.
   # See also: http://spark.apache.org/docs/latest/configuration.html
   spark: {
     app: {
@@ -102,7 +98,7 @@ The Geo JSON data example, `latitude` and `longitude` use to  describe coordina
     }
   }
 
-  # Nebula Graph relation config.
+  # Nebula Graph related configurations.
   nebula: {
     # Query engine address list.
     addresses: ["127.0.0.1:3699"]
@@ -115,16 +111,16 @@ The Geo JSON data example, `latitude` and `longitude` use to  describe coordina
     space: test
 
     # The thrift connection timeout and retry times.
-    # If the timeout and retry no settings displayed,
-    # the default value is 3000 and 3.
+    # If the timeout and retry are not set,
+    # the default values are 3000 and 3.
     connection {
       timeout: 3000
       retry: 3
     }
 
-	 # The NGQL execution retry times
-	 # If the execution retry no settings displayed,
-    # the default value is 3.
+  # The NGQL execution retry times
+  # If the execution retry is not set,
+  # the default value is 3.
     execution {
       retry: 3
     }
@@ -147,10 +143,11 @@ The Geo JSON data example, `latitude` and `longitude` use to  describe coordina
       }
       vertex: vertex-key-field
       batch : 16
+      partition: 32   # Specifies the re-partition number.
     }
 
     # Similar to the above.
-    # Loading from Hive will execute command ${exec} as data set.
+    # Loading from Hive executes command ${exec} as data set.
     tag-name-1: {
       type: hive
       exec: "select hive-field-0, hive-field-1, hive-field-2 from database.table"
@@ -213,4 +210,3 @@ The Geo JSON data example, `latitude` and `longitude` use to  describe coordina
     }
 }
 ```
-

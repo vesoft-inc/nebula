@@ -30,14 +30,12 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
     auto ret = getEdgeType(req.get_space_id(), edgeName);
     if (ret.ok()) {
-        cpp2::ErrorCode ec;
         if (req.get_if_not_exists()) {
-            ec = cpp2::ErrorCode::SUCCEEDED;
+            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
         } else {
-            ec = cpp2::ErrorCode::E_EXISTED;
+            resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         }
         resp_.set_id(to(ret.value(), EntryType::EDGE));
-        resp_.set_code(ec);
         onFinished();
         return;
     }
@@ -119,6 +117,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     LOG(INFO) << "Create Edge " << edgeName << ", edgeType " << edgeType;
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(edgeType, EntryType::EDGE));
+    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     doPut(std::move(data));
 }
 

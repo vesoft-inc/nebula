@@ -9,7 +9,7 @@
 #include "graph/test/TestBase.h"
 #include "meta/test/TestUtils.h"
 
-DECLARE_int32(load_data_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace graph {
@@ -169,7 +169,7 @@ AssertionResult DataTest::prepareSchema() {
                                << " failed, error code "<< static_cast<int32_t>(code);
         }
     }
-    sleep(FLAGS_load_data_interval_secs + 3);
+    sleep(FLAGS_heartbeat_interval_secs + 3);
     return TestOK();
 }
 
@@ -1023,7 +1023,7 @@ private:
             execute(client_.get(), q);
         }
 
-        sleep(FLAGS_load_data_interval_secs + 3);
+        sleep(FLAGS_heartbeat_interval_secs + 3);
     }
 
     void prepareData() {

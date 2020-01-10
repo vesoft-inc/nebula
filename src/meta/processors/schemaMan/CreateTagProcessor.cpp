@@ -30,15 +30,13 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
     auto ret = getTagId(req.get_space_id(), tagName);
     if (ret.ok()) {
-        cpp2::ErrorCode ec;
         if (req.get_if_not_exists()) {
-            ec = cpp2::ErrorCode::SUCCEEDED;
+            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
         } else {
             LOG(ERROR) << "Create Tag Failed :" << tagName << " has existed";
-            ec = cpp2::ErrorCode::E_EXISTED;
+            resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         }
         resp_.set_id(to(ret.value(), EntryType::TAG));
-        resp_.set_code(ec);
         onFinished();
         return;
     }
@@ -132,6 +130,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     LOG(INFO) << "Create Tag " << tagName << ", TagID " << tagId;
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(tagId, EntryType::TAG));
+    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     doPut(std::move(data));
 }
 

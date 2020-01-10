@@ -59,6 +59,18 @@ protected:
     ActiveHostsMan() = default;
 };
 
+class LastUpdateTimeMan final {
+public:
+    ~LastUpdateTimeMan() = default;
+
+    static kvstore::ResultCode update(kvstore::KVStore* kv, const int64_t timeInMilliSec);
+
+    static int64_t get(kvstore::KVStore* kv);
+
+protected:
+    LastUpdateTimeMan() = default;
+};
+
 }  // namespace meta
 }  // namespace nebula
 

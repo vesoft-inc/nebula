@@ -928,6 +928,8 @@ void RaftPart::processAppendLogResponses(
         }
         if (!iter.empty()) {
            this->appendLogsInternal(std::move(iter), currTerm);
+        } else {
+            replicatingLogs_ = false;
         }
     } else {
         // Not enough hosts accepted the log, re-try

@@ -33,7 +33,7 @@ nebula_add_library(
 nebula_add_test(
     NAME add_vertices_test
     SOURCES AddVerticesTest.cpp
-    OBJECTS ${storage_test_deps}
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 
@@ -41,7 +41,7 @@ nebula_add_test(
 nebula_add_test(
     NAME delete_vertex_test
     SOURCES DeleteVertexTest.cpp
-    OBJECTS ${storage_test_deps}
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 
@@ -49,7 +49,7 @@ nebula_add_test(
 nebula_add_test(
     NAME delete_edges_test
     SOURCES DeleteEdgesTest.cpp
-    OBJECTS ${storage_test_deps}
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 
@@ -57,7 +57,7 @@ nebula_add_test(
 nebula_add_test(
     NAME query_edgekeys_test
     SOURCES QueryEdgeKeysTest.cpp
-    OBJECTS ${storage_test_deps}
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 
@@ -65,7 +65,7 @@ nebula_add_test(
 nebula_add_test(
     NAME storage_service_handler_test
     SOURCES StorageServiceHandlerTest.cpp
-    OBJECTS ${storage_test_deps}
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 
@@ -73,7 +73,7 @@ nebula_add_test(
 nebula_add_test(
     NAME add_edges_test
     SOURCES AddEdgesTest.cpp
-    OBJECTS ${storage_test_deps}
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 
@@ -130,29 +130,6 @@ nebula_add_test(
         gtest
 )
 
-
-nebula_add_test(
-    NAME
-        storage_http_status_test
-    SOURCES
-        StorageHttpStatusHandlerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:storage_http_handler>
-        $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
-        $<TARGET_OBJECTS:meta_service_handler>
-        ${storage_test_deps}
-    LIBRARIES
-        proxygenhttpserver
-        proxygenlib
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        wangle
-        gtest
-)
 
 nebula_add_test(
     NAME
@@ -300,11 +277,32 @@ nebula_add_test(
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 
-
 nebula_add_test(
     NAME checkpoint_test
     SOURCES CheckpointTest.cpp
-    OBJECTS ${storage_test_deps}
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
+    LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
+)
+
+nebula_add_test(
+    NAME index_write_test
+    SOURCES IndexTest.cpp
+    OBJECTS ${storage_test_deps} $<TARGET_OBJECTS:adHocSchema_obj>
+    LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
+)
+
+nebula_add_test(
+    NAME scan_edge_test
+    SOURCES ScanEdgeTest.cpp
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
+    LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
+)
+
+
+nebula_add_test(
+    NAME scan_vertex_test
+    SOURCES ScanVertexTest.cpp
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 

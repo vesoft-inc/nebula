@@ -26,17 +26,27 @@ public:
         kShowParts,
         kShowTags,
         kShowEdges,
+        kShowTagIndexes,
+        kShowEdgeIndexes,
         kShowUsers,
         kShowUser,
         kShowRoles,
         kShowCreateSpace,
         kShowCreateTag,
         kShowCreateEdge,
+        kShowCreateTagIndex,
+        kShowCreateEdgeIndex,
         kShowSnapshots
     };
 
     explicit ShowSentence(ShowType sType) {
         kind_ = Kind::kShow;
+        showType_ = std::move(sType);
+    }
+
+    ShowSentence(ShowType sType, std::vector<int32_t>* list) {
+        kind_ = Kind::kShow;
+        list_.reset(list);
         showType_ = std::move(sType);
     }
 
@@ -52,12 +62,17 @@ public:
         return showType_;
     }
 
+    std::vector<int32_t>* getList() {
+        return list_.get();
+    }
+
     std::string* getName() {
         return name_.get();
     }
 
 private:
     ShowType                        showType_{ShowType::kUnknown};
+    std::unique_ptr<std::vector<int32_t>> list_;
     std::unique_ptr<std::string>    name_;
 };
 
@@ -183,9 +198,9 @@ private:
 };
 
 
-class DropSpaceSentence final : public Sentence {
+class DropSpaceSentence final : public DropSentence {
 public:
-    explicit DropSpaceSentence(std::string *spaceName) {
+    explicit DropSpaceSentence(std::string *spaceName, bool ifExist) : DropSentence(ifExist) {
         spaceName_.reset(spaceName);
         kind_ = Kind::kDropSpace;
     }
@@ -317,9 +332,9 @@ public:
         hosts_.emplace_back(addr);
     }
 
-     std::string toString() const;
+    std::string toString() const;
 
-     std::vector<HostAddr> hosts() const {
+    std::vector<HostAddr> hosts() const {
         std::vector<HostAddr> result;
         result.reserve(hosts_.size());
         for (auto &host : hosts_) {

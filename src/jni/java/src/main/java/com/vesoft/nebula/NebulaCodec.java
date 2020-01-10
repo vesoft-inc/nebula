@@ -22,9 +22,9 @@ public class NebulaCodec {
         try {
             System.loadLibrary("nebula_codec");
         } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            LOGGER.error(e.getMessage());
         } catch (Error e) {
-            LOGGER.error(e.getMessage(), e);
+            LOGGER.error(e.getMessage());
         }
     }
 

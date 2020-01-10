@@ -18,6 +18,7 @@
 #include "meta/common/MetaCommon.h"
 #include "network/NetworkUtils.h"
 #include "meta/processors/Common.h"
+#include "meta/ActiveHostsMan.h"
 #include "stats/Stats.h"
 
 namespace nebula {
@@ -163,8 +164,7 @@ protected:
     /**
      * Remove keys from start to end, doesn't contain end.
      * */
-    void doRemoveRange(const std::string& start,
-                       const std::string& end);
+    void doRemoveRange(const std::string& start, const std::string& end);
 
     /**
      * Scan keys from start to end, doesn't contain end.
