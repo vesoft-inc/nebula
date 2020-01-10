@@ -43,6 +43,16 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
 }
 
 void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
+    if (executor_ != nullptr) {
+        executor_->add([req, this] () {
+            this->doProcess(req);
+        });
+    } else {
+        doProcess(req);
+    }
+}
+
+void QueryEdgePropsProcessor::doProcess(const cpp2::EdgePropRequest& req) {
     spaceId_ = req.get_space_id();
 
     std::vector<EdgeType> e = {req.edge_type};
