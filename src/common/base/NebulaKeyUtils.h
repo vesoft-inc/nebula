@@ -185,6 +185,12 @@ public:
         return readInt<EdgeRanking>(rawKey.data() + offset, sizeof(EdgeRanking));
     }
 
+    static int64_t getVersion(const folly::StringPiece& rawKey) {
+        CHECK(isVertex(rawKey) || isEdge(rawKey));
+        auto offset = rawKey.size() - sizeof(int64_t);
+        return readInt<int64_t>(rawKey.data() + offset, sizeof(int64_t));
+    }
+
     template<typename T>
     static typename std::enable_if<std::is_integral<T>::value, T>::type
     readInt(const char* data, int32_t len) {

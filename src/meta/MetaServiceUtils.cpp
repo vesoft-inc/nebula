@@ -25,6 +25,7 @@ const std::string kConfigsTable        = "__configs__";        // NOLINT
 const std::string kDefaultTable        = "__default__";        // NOLINT
 const std::string kSnapshotsTable      = "__snapshots__";      // NOLINT
 const std::string kLastUpdateTimeTable = "__last_update_time__"; // NOLINT
+const std::string kLeadersTable = "__leaders__"; // NOLINT
 
 const std::string kHostOnline  = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";      // NOLINT
@@ -154,6 +155,60 @@ nebula::cpp2::HostAddr MetaServiceUtils::parseHostKey(folly::StringPiece key) {
     nebula::cpp2::HostAddr host;
     memcpy(&host, key.data() + kHostsTable.size(), sizeof(host));
     return host;
+}
+
+std::string MetaServiceUtils::leaderKey(IPv4 ip, Port port) {
+    std::string key;
+    key.reserve(128);
+    key.append(kLeadersTable.data(), kLeadersTable.size());
+    key.append(reinterpret_cast<const char*>(&ip), sizeof(ip));
+    key.append(reinterpret_cast<const char*>(&port), sizeof(port));
+    return key;
+}
+
+std::string MetaServiceUtils::leaderVal(const LeaderParts& leaderParts) {
+    std::string value;
+    value.reserve(512);
+    for (const auto& spaceEntry : leaderParts) {
+        GraphSpaceID spaceId = spaceEntry.first;
+        value.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+        size_t leaderCount = spaceEntry.second.size();
+        value.append(reinterpret_cast<const char*>(&leaderCount), sizeof(size_t));
+        for (const auto& partId : spaceEntry.second) {
+            value.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID));
+        }
+    }
+    return value;
+}
+
+const std::string& MetaServiceUtils::leaderPrefix() {
+    return kLeadersTable;
+}
+
+nebula::cpp2::HostAddr MetaServiceUtils::parseLeaderKey(folly::StringPiece key) {
+    nebula::cpp2::HostAddr host;
+    memcpy(&host, key.data() + kLeadersTable.size(), sizeof(host));
+    return host;
+}
+
+LeaderParts MetaServiceUtils::parseLeaderVal(folly::StringPiece val) {
+    LeaderParts leaderParts;
+    size_t size = val.size();
+    // decode leader info
+    size_t offset = 0;
+    while (offset + sizeof(GraphSpaceID) + sizeof(size_t) < size) {
+        GraphSpaceID spaceId = *reinterpret_cast<const GraphSpaceID*>(val.data() + offset);
+        offset += sizeof(GraphSpaceID);
+        size_t leaderCount = *reinterpret_cast<const size_t*>(val.data() + offset);
+        offset += sizeof(size_t);
+        std::vector<PartitionID> partIds;
+        for (size_t i = 0; i < leaderCount && offset < size; i++) {
+            partIds.emplace_back(*reinterpret_cast<const PartitionID*>(val.data() + offset));
+            offset += sizeof(PartitionID);
+        }
+        leaderParts.emplace(spaceId, std::move(partIds));
+    }
+    return leaderParts;
 }
 
 std::string MetaServiceUtils::schemaEdgePrefix(GraphSpaceID spaceId, EdgeType edgeType) {

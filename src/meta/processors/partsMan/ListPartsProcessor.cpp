@@ -8,6 +8,9 @@
 #include "meta/processors/partsMan/ListPartsProcessor.h"
 #include "meta/processors/admin/AdminClient.h"
 
+DECLARE_int32(expired_threshold_sec);
+DECLARE_int32(heartbeat_interval_secs);
+
 namespace nebula {
 namespace meta {
 
@@ -39,19 +42,22 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
         partHostsMap = std::move(status.value());
     }
     std::vector<cpp2::PartItem> partItems;
+    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_);
     for (auto& partEntry : partHostsMap) {
         cpp2::PartItem partItem;
         partItem.set_part_id(partEntry.first);
         partItem.set_peers(std::move(partEntry.second));
         std::vector<nebula::cpp2::HostAddr> losts;
         for (auto& host : partItem.get_peers()) {
-            if (!ActiveHostsMan::isLived(this->kvstore_, HostAddr(host.ip, host.port))) {
+            if (std::find(activeHosts.begin(), activeHosts.end(),
+                          HostAddr(host.ip, host.port)) == activeHosts.end()) {
                 losts.emplace_back();
                 losts.back().set_ip(host.ip);
                 losts.back().set_port(host.port);
             }
         }
         partItem.set_losts(std::move(losts));
+        partIdIndex_.emplace(partEntry.first, partItems.size());
         partItems.emplace_back(std::move(partItem));
     }
     if (partItems.size() != partHostsMap.size()) {
@@ -91,34 +97,29 @@ ListPartsProcessor::getAllParts() {
 
 
 void ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& partItems) {
-    if (adminClient_ == nullptr) {
+    const auto& hostPrefix = MetaServiceUtils::leaderPrefix();
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &iter);
+    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
         return;
     }
 
-    HostLeaderMap hostLeaderMap;
-    auto ret = adminClient_->getLeaderDist(&hostLeaderMap).get();
-    if (!ret.ok() && !hostLeaderMap.empty()) {
-        LOG(ERROR) << "Get leader distribution failed";
-        return;
-    }
-
-    for (auto& hostEntry : hostLeaderMap) {
-        auto leader = hostEntry.first;
-        auto spaceIter = hostEntry.second.find(spaceId_);
-        if (spaceIter != hostEntry.second.end()) {
-            for (auto& partId : spaceIter->second) {
-                auto it = std::find_if(partItems.begin(), partItems.end(),
-                    [&] (const auto& partItem) {
-                        return partItem.part_id == partId;
-                    });
-                if (it != partItems.end()) {
-                    it->set_leader(this->toThriftHost(leader));
-                } else if (showAllParts_ || std::find(partIds_.begin(), partIds_.end(), partId) ==
-                                            partIds_.end()) {
-                    LOG(ERROR) << "Maybe not get the leader of partition " << partId;
+    // get hosts which have send heartbeat recently
+    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_, FLAGS_heartbeat_interval_secs + 1);
+    while (iter->valid()) {
+        auto host = MetaServiceUtils::parseLeaderKey(iter->key());
+        if (std::find(activeHosts.begin(), activeHosts.end(),
+                      HostAddr(host.ip, host.port)) != activeHosts.end()) {
+            LeaderParts leaderParts = MetaServiceUtils::parseLeaderVal(iter->val());
+            const auto& partIds = leaderParts[spaceId_];
+            for (const auto& partId : partIds) {
+                auto partIt = partIdIndex_.find(partId);
+                if (partIt != partIdIndex_.end()) {
+                    partItems[partIt->second].set_leader(host);
                 }
             }
         }
+        iter->next();
     }
 }
 
