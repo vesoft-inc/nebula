@@ -17,14 +17,8 @@ jobs:
           fetch-depth: 1
       - name: Cpplint
         run: |
-          set +e -x
-          src_files=$(git --no-pager diff --name-only $(git log --oneline -n 1 | cut -d ' ' -f 1,5) | egrep '.*\.cpp$|.*\.h$|.*\.inl$' | grep -v 'com_vesoft_client_NativeClient.h' | grep -v 'com_vesoft_nebula_NebulaCodec.h')
-          [[ -n "$src_files" ]] && python3 .linters/cpp/cpplint.py --quiet \
-              --extensions=cpp,h,inl \
-              --filter=-whitespace/indent,-build/include_what_you_use,-readability/todo,-build/include,-build/header_guard,-runtime/references,-build/c++11 \
-              --linelength=100 \
-              ${src_files} \
-              || echo "There is no source files changed."
+          cd .linters/cpp && ln -snf hooks/pre-commit.sh
+          ./pre-commit.sh $(git --no-pager diff --name-only $(git log --oneline -n 1 | cut -d ' ' -f 1,5) | sed -E 's/(.*)/..\/..\/\1/g')
 
   build:
     name: build
