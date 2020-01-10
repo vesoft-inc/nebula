@@ -7,9 +7,27 @@ on:
       - master
 
 jobs:
+  lint:
+    name: cpplint
+    if: contains(join(toJson(github.event.pull_request.labels.*.name)), 'ready-for-testing')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Cpplint
+        run: |
+          src_files=$(git --no-pager diff --name-only $(git log --oneline -n 1 | cut -d ' ' -f 1,5) | egrep '.*\.cpp$|.*\.h$|.*\.inl$' | grep -v 'com_vesoft_client_NativeClient.h' | grep -v 'com_vesoft_nebula_NebulaCodec.h')
+          [[ -n "$src_files" ]] && python3 .linters/cpp/cpplint.py --quiet \
+              --extensions=cpp,h,inl \
+              --filter=-whitespace/indent,-build/include_what_you_use,-readability/todo,-build/include,-build/header_guard,-runtime/references,-build/c++11 \
+              --linelength=100 \
+              ${src_files} \
+              || echo "There is no source files changed."
+
   build:
     name: build
-    if: contains(join(toJson(github.event.pull_request.labels.*.name)), 'ready-for-testing')
+    needs: lint
     runs-on: self-hosted
     strategy:
       matrix:
