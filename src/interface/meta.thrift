@@ -396,6 +396,7 @@ struct CreateTagIndexReq {
 struct DropTagIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
+    3: bool                if_exists,
 }
 
 struct GetTagIndexReq {
@@ -430,6 +431,7 @@ struct CreateEdgeIndexReq {
 struct DropEdgeIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
+    3: bool                if_exists,
 }
 
 struct GetEdgeIndexReq {

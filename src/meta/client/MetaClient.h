@@ -252,7 +252,7 @@ public:
 
     // Remove the define of tag index
     folly::Future<StatusOr<bool>>
-    dropTagIndex(GraphSpaceID spaceId, std::string name);
+    dropTagIndex(GraphSpaceID spaceId, std::string name, bool ifExists = false);
 
     folly::Future<StatusOr<nebula::cpp2::IndexItem>>
     getTagIndex(GraphSpaceID spaceId, std::string name);
@@ -272,7 +272,7 @@ public:
 
     // Remove the define of edge index
     folly::Future<StatusOr<bool>>
-    dropEdgeIndex(GraphSpaceID spaceId, std::string name);
+    dropEdgeIndex(GraphSpaceID spaceId, std::string name, bool ifExists = false);
 
     folly::Future<StatusOr<nebula::cpp2::IndexItem>>
     getEdgeIndex(GraphSpaceID spaceId, std::string name);

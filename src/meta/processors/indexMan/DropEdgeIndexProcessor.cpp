@@ -17,8 +17,12 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
 
     auto edgeIndexID = getIndexID(spaceID, indexName);
     if (!edgeIndexID.ok()) {
-        LOG(ERROR) << "Edge Index not exist Space: " << spaceID << " Index name: " << indexName;
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        LOG(ERROR) << "Edge Index not exists in Space: " << spaceID << " Index name: " << indexName;
+        if (req.get_if_exists()) {
+            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+        } else {
+            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        }
         onFinished();
         return;
     }
