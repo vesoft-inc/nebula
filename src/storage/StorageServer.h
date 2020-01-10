@@ -22,8 +22,10 @@ class StorageServer final {
 public:
     StorageServer(HostAddr localHost,
                   std::vector<HostAddr> metaAddrs,
+                  std::string hostname,
                   std::vector<std::string> dataPaths)
         : localHost_(localHost)
+        , hostname_(hostname),
         , metaAddrs_(std::move(metaAddrs))
         , dataPaths_(std::move(dataPaths)) {}
 
@@ -61,6 +63,7 @@ private:
 
     std::atomic_bool stopped_{false};
     HostAddr localHost_;
+    std::string hostname_;
     std::vector<HostAddr> metaAddrs_;
     std::vector<std::string> dataPaths_;
     std::atomic<Status> webStatus_{Status::STOPPED};

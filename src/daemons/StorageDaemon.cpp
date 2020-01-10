@@ -15,6 +15,7 @@ DEFINE_string(data_path, "", "Root data path, multi paths should be split by com
                              "For rocksdb engine, one path one instance.");
 DEFINE_string(local_ip, "", "IP address which is used to identify this server, "
                             "combined with the listen port");
+DEFINE_string(hostname, "", "Specify this instance Name");
 DEFINE_bool(daemonize, true, "Whether to run the process as a daemon");
 DEFINE_string(pid_file, "pids/nebula-storaged.pid", "File to hold the process id");
 DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
@@ -67,6 +68,13 @@ int main(int argc, char *argv[]) {
     if (FLAGS_data_path.empty()) {
         LOG(ERROR) << "Storage Data Path should not empty";
         return EXIT_FAILURE;
+    }
+    
+    auto hostname = FLAGS_hostname; 
+    if( hostname == "" ) {
+        hostname = FLAGS_local_ip + ":" + FLAGS_port; 
+    } else {
+        hostname = hostname + ":" + FLAGS_port; 
     }
 
     auto result = nebula::network::NetworkUtils::getLocalIP(FLAGS_local_ip);

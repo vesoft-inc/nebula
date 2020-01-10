@@ -403,8 +403,9 @@ struct HBResp {
 struct HBReq {
     1: bool in_storaged,
     2: common.HostAddr host,
-    3: common.ClusterID cluster_id,
-    4: optional map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_partIds;
+    3: string hostname,
+    4: common.ClusterID cluster_id,
+    5: optional map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_partIds;
 }
 
 struct CreateTagIndexReq {
