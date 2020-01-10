@@ -17,6 +17,7 @@ jobs:
           fetch-depth: 1
       - name: Cpplint
         run: |
+          set +e -x
           src_files=$(git --no-pager diff --name-only $(git log --oneline -n 1 | cut -d ' ' -f 1,5) | egrep '.*\.cpp$|.*\.h$|.*\.inl$' | grep -v 'com_vesoft_client_NativeClient.h' | grep -v 'com_vesoft_nebula_NebulaCodec.h')
           [[ -n "$src_files" ]] && python3 .linters/cpp/cpplint.py --quiet \
               --extensions=cpp,h,inl \
