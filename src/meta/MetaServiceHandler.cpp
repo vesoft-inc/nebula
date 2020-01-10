@@ -83,13 +83,13 @@ MetaServiceHandler::future_getSpace(const cpp2::GetSpaceReq& req) {
 
 folly::Future<cpp2::ListHostsResp>
 MetaServiceHandler::future_listHosts(const cpp2::ListHostsReq& req) {
-    auto* processor = ListHostsProcessor::instance(kvstore_, adminClient_.get());
+    auto* processor = ListHostsProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::ListPartsResp>
 MetaServiceHandler::future_listParts(const cpp2::ListPartsReq& req) {
-    auto* processor = ListPartsProcessor::instance(kvstore_, adminClient_.get());
+    auto* processor = ListPartsProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

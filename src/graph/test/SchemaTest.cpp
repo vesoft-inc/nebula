@@ -10,6 +10,8 @@
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 
+DECLARE_int32(heartbeat_interval_secs);
+
 namespace nebula {
 namespace graph {
 
@@ -75,6 +77,7 @@ TEST_F(SchemaTest, TestDefaultValue) {
     }
 }
 TEST_F(SchemaTest, metaCommunication) {
+    FLAGS_heartbeat_interval_secs = 1;
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
     {
@@ -707,6 +710,8 @@ TEST_F(SchemaTest, metaCommunication) {
         auto kvstore = gEnv->storageServer()->kvStore_.get();
         GraphSpaceID spaceId = 1;  // default_space id is 1
         nebula::storage::TestUtils::waitUntilAllElected(kvstore, spaceId, 9);
+        // sleep a bit to make sure leader info has been updated in meta
+        sleep(FLAGS_heartbeat_interval_secs + 1);
 
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW PARTS; # after leader election";
