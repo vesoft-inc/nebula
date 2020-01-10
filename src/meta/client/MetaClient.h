@@ -107,6 +107,7 @@ struct MetaClientOptions {
     MetaClientOptions() = default;
     MetaClientOptions(const MetaClientOptions& opt)
         : localHost_(opt.localHost_)
+        , hostname_(opt.hostname_), 
         , clusterId_(opt.clusterId_.load())
         , inStoraged_(opt.inStoraged_)
         , serviceName_(opt.serviceName_)
@@ -118,6 +119,8 @@ struct MetaClientOptions {
     std::atomic<ClusterID> clusterId_{0};
     // If current client being used in storaged.
     bool inStoraged_ = false;
+    // specify name 
+    std::string hostname_;
     // Current service name, used in StatsManager
     std::string serviceName_ = "";
     // Whether to skip the config manager
@@ -482,6 +485,7 @@ private:
     HostAddr active_;
     HostAddr leader_;
     HostAddr localHost_;
+    std::string hostname_;
 
     std::unique_ptr<thread::GenericWorker> bgThread_;
     SpaceNameIdMap        spaceIndexByName_;

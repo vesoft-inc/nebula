@@ -93,6 +93,7 @@ bool StorageServer::start() {
     meta::MetaClientOptions options;
     options.localHost_ = localHost_;
     options.inStoraged_ = true;
+    options.hostname_ = hostname_;
     options.serviceName_ = "";
     options.skipConfig_ = FLAGS_local_config;
     metaClient_ = std::make_unique<meta::MetaClient>(ioThreadPool_,

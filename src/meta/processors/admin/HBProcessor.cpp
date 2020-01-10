@@ -39,7 +39,11 @@ void HBProcessor::process(const cpp2::HBReq& req) {
             onFinished();
             return;
         }
+        std::string hostname = req.get_hostname();
         HostInfo info(time::WallClock::fastNowInMilliSec());
+
+        ActiveHostsMan::updateHostName(kvstore_, host, hostname); 
+        
         if (req.__isset.leader_partIds) {
             ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info,
                                                  req.get_leader_partIds());
