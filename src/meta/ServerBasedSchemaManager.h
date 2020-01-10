@@ -38,11 +38,19 @@ public:
 
     StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
+    StatusOr<std::string> toTagName(GraphSpaceID space, TagID tagId) override;
+
     StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
     StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) override;
 
     StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) override;
+
+    StatusOr<std::vector<nebula::cpp2::IndexItem>>
+    getTagIndexes(GraphSpaceID space) override;
+
+    StatusOr<std::vector<nebula::cpp2::IndexItem>>
+    getEdgeIndexes(GraphSpaceID space) override;
 
     void init(MetaClient *client) override;
 

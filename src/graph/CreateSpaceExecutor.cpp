@@ -10,7 +10,8 @@ namespace nebula {
 namespace graph {
 
 CreateSpaceExecutor::CreateSpaceExecutor(Sentence *sentence,
-                                         ExecutionContext *ectx) : Executor(ectx) {
+                                         ExecutionContext *ectx)
+    : Executor(ectx, "create_space") {
     sentence_ = static_cast<CreateSpaceSentence*>(sentence);
 }
 
@@ -44,24 +45,23 @@ void CreateSpaceExecutor::execute() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp).status());
+            doError(Status::Error("Create space `%s' failed: %s.",
+                                    spaceName_->c_str(), resp.status().toString().c_str()));
             return;
         }
         auto spaceId = std::move(resp).value();
         if (spaceId <= 0) {
-            DCHECK(onError_);
-            onError_(Status::Error("Create space failed"));
+            doError(Status::Error("Create space failed"));
             return;
         }
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        auto msg = folly::stringPrintf("Create space `%s' exception: %s.",
+                                        spaceName_->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
         return;
     };
 

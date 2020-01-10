@@ -30,8 +30,11 @@ public:
         auto threadFactory = std::make_shared<folly::NamedThreadFactory>("benchmark-netio");
         auto ioExecutor = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_io_threads,
                                                                         std::move(threadFactory));
+        meta::MetaClientOptions options;
+        options.skipConfig_ = true;
         metaClient_ = std::make_unique<nebula::meta::MetaClient>(ioExecutor,
-                                                                 std::move(addrs.value()));
+                                                                 std::move(addrs.value()),
+                                                                 options);
 
         // load data try 3 time
         bool loadDataOk = metaClient_->waitForMetadReady(3);

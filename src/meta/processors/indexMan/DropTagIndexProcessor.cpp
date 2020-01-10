@@ -17,8 +17,12 @@ void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
 
     auto tagIndexID = getTagIndexID(spaceID, indexName);
     if (!tagIndexID.ok()) {
-        LOG(ERROR) << "Tag Index not exist Space: " << spaceID << " Index name: " << indexName;
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        LOG(ERROR) << "Tag Index not exists in Space: " << spaceID << " Index name: " << indexName;
+        if (req.get_if_exists()) {
+            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+        } else {
+            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        }
         onFinished();
         return;
     }
@@ -27,6 +31,7 @@ void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
     keys.emplace_back(MetaServiceUtils::indexTagIndexKey(spaceID, indexName));
     keys.emplace_back(MetaServiceUtils::tagIndexKey(spaceID, tagIndexID.value()));
 
+    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     LOG(INFO) << "Drop Tag Index " << indexName;
     resp_.set_id(to(tagIndexID.value(), EntryType::TAG_INDEX));
     doMultiRemove(keys);

@@ -13,12 +13,12 @@
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 
-DECLARE_int32(load_data_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace graph {
 class TraverseTestBase : public TestBase {
-protected:
+public:
     void SetUp() override {
         TestBase::SetUp();
         // ...
@@ -433,7 +433,7 @@ AssertionResult TraverseTestBase::prepareSchema() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
-    sleep(FLAGS_load_data_interval_secs + 3);
+    sleep(FLAGS_heartbeat_interval_secs + 3);
     return TestOK();
 }
 

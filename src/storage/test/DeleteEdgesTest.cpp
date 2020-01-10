@@ -20,9 +20,10 @@ namespace storage {
 TEST(DeleteEdgesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/DeleteEdgesTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto schemaMan = TestUtils::mockSchemaMan();
     // Add edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
+        auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
@@ -50,7 +51,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
     }
     // Add multi version edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
+        auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
@@ -98,7 +99,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
 
     // Delete edges
     {
-        auto* processor = DeleteEdgesProcessor::instance(kv.get(), nullptr);
+        auto* processor = DeleteEdgesProcessor::instance(kv.get(), schemaMan.get());
         cpp2::DeleteEdgesRequest req;
         req.set_space_id(0);
         // partId => List<EdgeKey>

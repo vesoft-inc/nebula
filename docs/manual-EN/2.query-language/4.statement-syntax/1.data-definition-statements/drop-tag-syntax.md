@@ -1,12 +1,14 @@
 # Drop Tag Syntax
 
 ```ngql
-DROP TAG <tag_name>
+DROP TAG [IF EXISTS] <tag_name>
 ```
 
 You must have the DROP privilege for the tag.
 
 > Be careful with this statement.
+
+You can use the `If EXISTS` keywords when dropping tags. This keyword automatically detects if the corresponding tag exists. If it exists, it will be deleted. Otherwise, no tag is deleted.
 
 A vertex can have either only one tag (types) or multiple tags (types).
 

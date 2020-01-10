@@ -43,13 +43,12 @@ public:
         delVertexQpsStat_     = stats::Stats("storage", "del_vertex");
         updateVertexQpsStat_  = stats::Stats("storage", "update_vertex");
         updateEdgeQpsStat_    = stats::Stats("storage", "update_edge");
+        scanEdgeQpsStat_      = stats::Stats("storage", "scan_edge");
+        scanVertexQpsStat_    = stats::Stats("storage", "scan_vertex");
 
         getKVQpsStat_           = stats::Stats("storage", "get_kv");
         putKVQpsStat_           = stats::Stats("storage", "put_kv");
         removeKVQpsStat_        = stats::Stats("storage", "remove_kv");
-        removeRangeKVQpsStat_   = stats::Stats("storage", "remove_range_kv");
-        prefixKVQpsStat_        = stats::Stats("storage", "prefix_kv");
-        scanKVQpsStat_          = stats::Stats("storage", "scan_kv");
     }
 
     folly::Future<cpp2::QueryResponse>
@@ -85,6 +84,12 @@ public:
     folly::Future<cpp2::UpdateResponse>
     future_updateEdge(const cpp2::UpdateEdgeRequest& req) override;
 
+    folly::Future<cpp2::ScanEdgeResponse>
+    future_scanEdge(const cpp2::ScanEdgeRequest& req) override;
+
+    folly::Future<cpp2::ScanVertexResponse>
+    future_scanVertex(const cpp2::ScanVertexRequest& req) override;
+
     // Admin operations
     folly::Future<cpp2::AdminExecResp>
     future_transLeader(const cpp2::TransLeaderReq& req) override;
@@ -119,15 +124,6 @@ public:
     folly::Future<cpp2::ExecResponse>
     future_remove(const cpp2::RemoveRequest& req) override;
 
-    folly::Future<cpp2::ExecResponse>
-    future_removeRange(const cpp2::RemoveRangeRequest& req) override;
-
-    folly::Future<cpp2::GeneralResponse>
-    future_prefix(const cpp2::PrefixRequest& req) override;
-
-    folly::Future<cpp2::GeneralResponse>
-    future_scan(const cpp2::ScanRequest& req) override;
-
     folly::Future<cpp2::GetUUIDResp>
     future_getUUID(const cpp2::GetUUIDReq& req) override;
 
@@ -157,13 +153,12 @@ private:
     stats::Stats delVertexQpsStat_;
     stats::Stats updateVertexQpsStat_;
     stats::Stats updateEdgeQpsStat_;
+    stats::Stats scanEdgeQpsStat_;
+    stats::Stats scanVertexQpsStat_;
 
     stats::Stats getKVQpsStat_;
     stats::Stats putKVQpsStat_;
     stats::Stats removeKVQpsStat_;
-    stats::Stats removeRangeKVQpsStat_;
-    stats::Stats prefixKVQpsStat_;
-    stats::Stats scanKVQpsStat_;
 };
 
 }  // namespace storage

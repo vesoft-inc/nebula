@@ -28,6 +28,8 @@ typedef i64 (cpp.type = "nebula::SchemaVer") SchemaVer
 typedef i32 (cpp.type = "nebula::UserID") UserID
 typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
 
+typedef i32 (cpp.type = "nebula::IndexID") IndexID
+
 // These are all data types supported in the graph properties
 enum SupportedType {
     UNKNOWN = 0,
@@ -71,6 +73,7 @@ union Value {
     2: bool    bool_value;
     3: double  double_value;
     4: string  string_value;
+    5: i64     timestamp;
 }
 
 struct ColumnDef {
@@ -102,6 +105,12 @@ struct Pair {
 struct Range {
     1: string start,
     2: string end,
+}
+
+struct IndexItem {
+     1: required IndexID          index_id,
+     2: required i32              tagOrEdge,
+     3: required list<ColumnDef>  cols,
 }
 
 const ValueType kInvalidValueType = {"type" : UNKNOWN}

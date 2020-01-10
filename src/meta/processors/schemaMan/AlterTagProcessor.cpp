@@ -73,6 +73,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, version),
                       MetaServiceUtils::schemaTagVal(req.get_tag_name(), schema));
     resp_.set_id(to(tagId, EntryType::TAG));
+    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     doPut(std::move(data));
 }
 

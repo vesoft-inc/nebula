@@ -17,8 +17,34 @@ void UpdateEdgeProcessor::onProcessFinished(int32_t retNum) {
         nebula::cpp2::Schema respScheam;
         respScheam.columns.reserve(retNum);
         RowWriter writer(nullptr);
+        Getters getters;
+        getters.getSrcTagProp = [&, this] (const std::string& tagName,
+                                        const std::string& prop) -> OptVariantType {
+            auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
+            if (!tagRet.ok()) {
+                VLOG(1) << "Can't find tag " << tagName << ", in space " << this->spaceId_;
+                return Status::Error("Invalid Filter Tag: " + tagName);
+            }
+            auto tagId = tagRet.value();
+            auto it = tagFilters_.find(std::make_pair(tagId, prop));
+            if (it == tagFilters_.end()) {
+                return Status::Error("Invalid Tag Filter");
+            }
+            VLOG(1) << "Hit srcProp filter for tag: " << tagName
+                    << ", prop: " << prop << ", value: " << it->second;
+            return it->second;
+        };
+        getters.getAliasProp = [&, this] (const std::string&,
+                                        const std::string& prop) -> OptVariantType {
+            auto it = this->edgeFilters_.find(prop);
+            if (it == this->edgeFilters_.end()) {
+                return Status::Error("Invalid Edge Filter");
+            }
+            VLOG(1) << "Hit edgeProp for prop: " << prop << ", value: " << it->second;
+            return it->second;
+        };
         for (auto& exp : returnColumnsExp_) {
-            auto value = exp->eval();
+            auto value = exp->eval(getters);
             if (!value.ok()) {
                 LOG(ERROR) << value.status();
                 return;
@@ -115,9 +141,10 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
     }
     // Only use the latest version.
     if (iter && iter->valid()) {
-        key_ = iter->key().toString();
+        key_ = iter->key().str();
+        val_ = iter->val().str();
         auto reader = RowReader::getEdgePropReader(this->schemaMan_,
-                                                   iter->val(),
+                                                   val_,
                                                    this->spaceId_,
                                                    edgeKey.edge_type);
         const auto constSchema = reader->getSchema();
@@ -165,7 +192,34 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
 }
 
 
-std::string UpdateEdgeProcessor::updateAndWriteBack() {
+std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
+                                                    const cpp2::EdgeKey& edgeKey) {
+    Getters getters;
+    getters.getSrcTagProp = [&, this] (const std::string& tagName,
+                                       const std::string& prop) -> OptVariantType {
+        auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
+        if (!tagRet.ok()) {
+            VLOG(1) << "Can't find tag " << tagName << ", in space " << this->spaceId_;
+            return Status::Error("Invalid Filter Tag: " + tagName);
+        }
+        auto tagId = tagRet.value();
+        auto it = tagFilters_.find(std::make_pair(tagId, prop));
+        if (it == tagFilters_.end()) {
+            return Status::Error("Invalid Tag Filter");
+        }
+        VLOG(1) << "Hit srcProp filter for tag: " << tagName
+                << ", prop: " << prop << ", value: " << it->second;
+        return it->second;
+    };
+    getters.getAliasProp = [&, this] (const std::string&,
+                                      const std::string& prop) -> OptVariantType {
+        auto it = this->edgeFilters_.find(prop);
+        if (it == this->edgeFilters_.end()) {
+            return Status::Error("Invalid Edge Filter");
+        }
+        VLOG(1) << "Hit edgeProp for prop: " << prop << ", value: " << it->second;
+        return it->second;
+    };
     for (auto& item : updateItems_) {
         auto prop = item.get_prop();
         auto exp = Expression::decode(item.get_value());
@@ -174,7 +228,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack() {
         }
         auto vexp = std::move(exp).value();
         vexp->setContext(this->expCtx_.get());
-        auto value = vexp->eval();
+        auto value = vexp->eval(getters);
         if (!value.ok()) {
             return std::string("");
         }
@@ -208,11 +262,51 @@ std::string UpdateEdgeProcessor::updateAndWriteBack() {
             }
         }
     }
+    std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
+    auto nVal = updater_->encode();
+    if (!indexes_.empty()) {
+        std::unique_ptr<RowReader> reader, rReader;
+        for (auto& index : indexes_) {
+            auto indexId = index.get_index_id();
+            if (index.get_tagOrEdge() == edgeKey.edge_type) {
+                if (!val_.empty()) {
+                    if (rReader == nullptr) {
+                        rReader = RowReader::getEdgePropReader(this->schemaMan_,
+                                                               val_,
+                                                               spaceId_,
+                                                               edgeKey.edge_type);
+                    }
+                    auto rValues = collectIndexValues(rReader.get(),
+                                                      index.get_cols());
+                    auto rIndexKey = NebulaKeyUtils::edgeIndexKey(partId,
+                                                                  indexId,
+                                                                  edgeKey.src,
+                                                                  edgeKey.ranking,
+                                                                  edgeKey.dst,
+                                                                  rValues);
+                    batchHolder->remove(std::move(rIndexKey));
+                }
+                if (reader == nullptr) {
+                    reader = RowReader::getEdgePropReader(this->schemaMan_,
+                                                          nVal,
+                                                          this->spaceId_,
+                                                          edgeKey.edge_type);
+                }
 
-    std::vector<kvstore::KV> data;
-    data.emplace_back(key_, updater_->encode());
-    auto log = kvstore::encodeMultiValues(kvstore::OP_MULTI_PUT, data);
-    return log;
+                auto values = collectIndexValues(reader.get(),
+                                                 index.get_cols());
+                auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
+                                                             indexId,
+                                                             edgeKey.src,
+                                                             edgeKey.ranking,
+                                                             edgeKey.dst,
+                                                             values);
+                batchHolder->put(std::move(indexKey), "");
+            }
+        }
+    }
+    batchHolder->put(std::move(key_), std::move(nVal));
+    return encodeBatchValue(batchHolder->getBatch());
 }
 
 
@@ -231,7 +325,7 @@ bool UpdateEdgeProcessor::checkFilter(const PartitionID partId,
         }
     }
 
-    auto& getters = this->expCtx_->getters();
+    Getters getters;
     getters.getSrcTagProp = [&, this] (const std::string& tagName,
                                        const std::string& prop) -> OptVariantType {
         auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
@@ -259,7 +353,7 @@ bool UpdateEdgeProcessor::checkFilter(const PartitionID partId,
     };
 
     if (this->exp_ != nullptr) {
-        auto filterResult = this->exp_->eval();
+        auto filterResult = this->exp_->eval(getters);
         if (!filterResult.ok() || !Expression::asBool(filterResult.value())) {
             VLOG(1) << "Filter skips the update";
             return false;
@@ -339,7 +433,7 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
     this->spaceId_ = req.get_space_id();
     insertable_ = req.get_insertable();
     auto partId = req.get_part_id();
-    auto edgeKey = std::move(req).get_edge_key();
+    auto edgeKey = req.get_edge_key();
     std::vector<EdgeType> eTypes;
     eTypes.emplace_back(edgeKey.get_edge_type());
     this->initEdgeContext(eTypes);
@@ -350,16 +444,23 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
         this->onFinished();
         return;
     }
-    updateItems_ = std::move(req).get_update_items();
+    updateItems_ = req.get_update_items();
+
+    auto iRet = schemaMan_->getEdgeIndexes(spaceId_);
+    if (iRet.ok()) {
+        for (auto& index : iRet.value()) {
+            indexes_.emplace_back(index);
+        }
+    }
 
     VLOG(3) << "Update edge, spaceId: " << this->spaceId_ << ", partId:  " << partId
             << ", src: " << edgeKey.get_src() << ", edge_type: " << edgeKey.get_edge_type()
             << ", dst: " << edgeKey.get_dst() << ", ranking: " << edgeKey.get_ranking();
     CHECK_NOTNULL(kvstore_);
     this->kvstore_->asyncAtomicOp(this->spaceId_, partId,
-        [&, this] () -> std::string {
+        [partId, edgeKey, this] () -> std::string {
             if (checkFilter(partId, edgeKey)) {
-                return updateAndWriteBack();
+                return updateAndWriteBack(partId, edgeKey);
             }
             return std::string("");
         },

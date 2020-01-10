@@ -12,6 +12,8 @@
 #include "storage/query/QueryStatsProcessor.h"
 #include "storage/query/GetUUIDProcessor.h"
 #include "storage/query/QueryEdgeKeysProcessor.h"
+#include "storage/query/ScanEdgeProcessor.h"
+#include "storage/query/ScanVertexProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/mutate/AddEdgesProcessor.h"
 #include "storage/mutate/DeleteVertexProcessor.h"
@@ -21,9 +23,6 @@
 #include "storage/kv/PutProcessor.h"
 #include "storage/kv/GetProcessor.h"
 #include "storage/kv/RemoveProcessor.h"
-#include "storage/kv/RemoveRangeProcessor.h"
-#include "storage/kv/PrefixProcessor.h"
-#include "storage/kv/ScanProcessor.h"
 #include "storage/admin/AdminProcessor.h"
 #include "storage/admin/CreateCheckpointProcessor.h"
 #include "storage/admin/DropCheckpointProcessor.h"
@@ -128,6 +127,18 @@ StorageServiceHandler::future_updateEdge(const cpp2::UpdateEdgeRequest& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::ScanEdgeResponse>
+StorageServiceHandler::future_scanEdge(const cpp2::ScanEdgeRequest& req) {
+    auto* processor = ScanEdgeProcessor::instance(kvstore_, schemaMan_, &scanEdgeQpsStat_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ScanVertexResponse>
+StorageServiceHandler::future_scanVertex(const cpp2::ScanVertexRequest& req) {
+    auto* processor = ScanVertexProcessor::instance(kvstore_, schemaMan_, &scanVertexQpsStat_);
+    RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::AdminExecResp>
 StorageServiceHandler::future_transLeader(const cpp2::TransLeaderReq& req) {
     auto* processor = TransLeaderProcessor::instance(kvstore_);
@@ -200,33 +211,6 @@ StorageServiceHandler::future_remove(const cpp2::RemoveRequest& req) {
                                                 schemaMan_,
                                                 &removeKVQpsStat_,
                                                 getThreadManager());
-    RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ExecResponse>
-StorageServiceHandler::future_removeRange(const cpp2::RemoveRangeRequest& req) {
-    auto* processor = RemoveRangeProcessor::instance(kvstore_,
-                                                     schemaMan_,
-                                                     &removeRangeKVQpsStat_,
-                                                     getThreadManager());
-    RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::GeneralResponse>
-StorageServiceHandler::future_prefix(const cpp2::PrefixRequest& req) {
-    auto* processor = PrefixProcessor::instance(kvstore_,
-                                                schemaMan_,
-                                                &prefixKVQpsStat_,
-                                                getThreadManager());
-    RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::GeneralResponse>
-StorageServiceHandler::future_scan(const cpp2::ScanRequest& req) {
-    auto* processor = ScanProcessor::instance(kvstore_,
-                                              schemaMan_,
-                                              &scanKVQpsStat_,
-                                              getThreadManager());
     RETURN_FUTURE(processor);
 }
 

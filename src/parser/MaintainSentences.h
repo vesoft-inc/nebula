@@ -36,7 +36,10 @@ public:
         hasDefault_ = true;
     }
 
-    int64_t getIntValue() {
+    StatusOr<int64_t> getIntValue() {
+        if (defaultValue_.which() != VAR_INT64) {
+            return Status::Error("Wrong type");
+        }
         int64_t v = boost::get<int64_t>(defaultValue_);
         return v;
     }
@@ -46,7 +49,10 @@ public:
         hasDefault_ = true;
     }
 
-    bool getBoolValue() {
+    StatusOr<bool> getBoolValue() {
+        if (defaultValue_.which() != VAR_BOOL) {
+            return Status::Error("Wrong type");
+        }
         return boost::get<bool>(defaultValue_);
     }
 
@@ -55,7 +61,10 @@ public:
         hasDefault_ = true;
     }
 
-    double getDoubleValue() {
+    StatusOr<double> getDoubleValue() {
+        if (defaultValue_.which() != VAR_DOUBLE) {
+            return Status::Error("Wrong type");
+        }
         return boost::get<double>(defaultValue_);
     }
 
@@ -65,7 +74,10 @@ public:
         delete v;
     }
 
-    std::string getStringValue() {
+    StatusOr<std::string> getStringValue() {
+        if (defaultValue_.which() != VAR_STR) {
+            return Status::Error("Wrong type");
+        }
         return boost::get<std::string>(defaultValue_);
     }
 
@@ -77,7 +89,7 @@ private:
     ColumnType                                  type_;
     std::unique_ptr<std::string>                name_;
     bool                                        hasDefault_{false};
-    Value                                       defaultValue_;
+    VariantType                                 defaultValue_;
 };
 
 
@@ -99,6 +111,7 @@ public:
 private:
     std::vector<std::unique_ptr<ColumnSpecification>> columns_;
 };
+
 
 class ColumnNameList final {
 public:
@@ -462,9 +475,9 @@ private:
 };
 
 
-class DropTagSentence final : public Sentence {
+class DropTagSentence final : public DropSentence {
 public:
-    explicit DropTagSentence(std::string *name) {
+    explicit DropTagSentence(std::string *name, bool ifExists) : DropSentence(ifExists) {
         name_.reset(name);
         kind_ = Kind::kDropTag;
     }
@@ -480,9 +493,9 @@ private:
 };
 
 
-class DropEdgeSentence final : public Sentence {
+class DropEdgeSentence final : public DropSentence {
 public:
-    explicit DropEdgeSentence(std::string *name) {
+    explicit DropEdgeSentence(std::string *name, bool ifExists) : DropSentence(ifExists) {
         name_.reset(name);
         kind_ = Kind::kDropEdge;
     }
@@ -496,6 +509,193 @@ public:
 private:
     std::unique_ptr<std::string>                name_;
 };
+
+
+class CreateTagIndexSentence final : public CreateSentence {
+public:
+    CreateTagIndexSentence(std::string *indexName,
+                           std::string *tagName,
+                           ColumnNameList *columns,
+                           bool ifNotExists)
+        : CreateSentence(ifNotExists) {
+        indexName_.reset(indexName);
+        tagName_.reset(tagName);
+        columns_.reset(columns);
+        kind_ = Kind::kCreateTagIndex;
+    }
+
+    std::string toString() const override;
+
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
+    const std::string* tagName() const {
+        return tagName_.get();
+    }
+
+    std::vector<std::string> names() const {
+        std::vector<std::string> result;
+        auto columnNames = columns_->columnNames();
+        result.resize(columnNames.size());
+        auto get = [] (auto ptr) { return *ptr; };
+        std::transform(columnNames.begin(), columnNames.end(), result.begin(), get);
+        return result;
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+    std::unique_ptr<std::string>                tagName_;
+    std::unique_ptr<ColumnNameList>             columns_;
+};
+
+
+class CreateEdgeIndexSentence final : public CreateSentence {
+public:
+    CreateEdgeIndexSentence(std::string *indexName,
+                            std::string *edgeName,
+                            ColumnNameList *columns,
+                            bool ifNotExists)
+        : CreateSentence(ifNotExists) {
+        indexName_.reset(indexName);
+        edgeName_.reset(edgeName);
+        columns_.reset(columns);
+        kind_ = Kind::kCreateEdgeIndex;
+    }
+
+    std::string toString() const override;
+
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
+    const std::string* edgeName() const {
+        return edgeName_.get();
+    }
+
+    std::vector<std::string> names() const {
+        std::vector<std::string> result;
+        auto columnNames = columns_->columnNames();
+        result.resize(columnNames.size());
+        auto get = [] (auto ptr) { return *ptr; };
+        std::transform(columnNames.begin(), columnNames.end(), result.begin(), get);
+        return result;
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+    std::unique_ptr<std::string>                edgeName_;
+    std::unique_ptr<ColumnNameList>             columns_;
+};
+
+
+class DescribeTagIndexSentence final : public Sentence {
+public:
+    explicit DescribeTagIndexSentence(std::string *indexName) {
+        indexName_.reset(indexName);
+        kind_ = Kind::kDescribeTagIndex;
+    }
+
+    std::string toString() const override;
+
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+};
+
+
+class DescribeEdgeIndexSentence final : public Sentence {
+public:
+    explicit DescribeEdgeIndexSentence(std::string *indexName) {
+        indexName_.reset(indexName);
+        kind_ = Kind::kDescribeEdgeIndex;
+    }
+
+    std::string toString() const override;
+
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+};
+
+
+class DropTagIndexSentence final : public DropSentence {
+public:
+    explicit DropTagIndexSentence(std::string *indexName, bool ifExists) : DropSentence(ifExists) {
+        indexName_.reset(indexName);
+        kind_ = Kind::kDropTagIndex;
+    }
+
+    std::string toString() const override;
+
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+};
+
+
+class DropEdgeIndexSentence final : public DropSentence {
+public:
+    explicit DropEdgeIndexSentence(std::string *indexName, bool ifExists) : DropSentence(ifExists) {
+        indexName_.reset(indexName);
+        kind_ = Kind::kDropEdgeIndex;
+    }
+
+    std::string toString() const override;
+
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+};
+
+
+class BuildTagIndexSentence final : public Sentence {
+public:
+    explicit BuildTagIndexSentence(std::string *indexName) {
+        indexName_.reset(indexName);
+        kind_ = Kind::kBuildTagIndex;
+    }
+
+    std::string toString() const override;
+
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+};
+
+
+class BuildEdgeIndexSentence final : public Sentence {
+public:
+    explicit BuildEdgeIndexSentence(std::string *indexName) {
+        indexName_.reset(indexName);
+        kind_ = Kind::kBuildEdgeIndex;
+    }
+
+    std::string toString() const override;
+
+    const std::string* indexName() const {
+        return indexName_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                indexName_;
+};
+
 }   // namespace nebula
 
 #endif  // PARSER_MAINTAINSENTENCES_H_

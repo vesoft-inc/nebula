@@ -211,9 +211,9 @@ struct EdgeKeyRequest {
 }
 
 struct DeleteVertexRequest {
-    1: common.GraphSpaceID space_id,
-    2: common.PartitionID  part_id,
-    3: common.VertexID     vid;
+    1: common.GraphSpaceID      space_id,
+    2: common.PartitionID       part_id,
+    3: common.VertexID          vid;
 }
 
 struct DeleteEdgesRequest {
@@ -291,72 +291,105 @@ struct UpdateItem {
 }
 
 struct UpdateVertexRequest {
-    1: common.GraphSpaceID space_id,
-    2: common.VertexID vertex_id,
-    3: common.PartitionID part_id,
-    4: binary filter,
-    5: list<UpdateItem> update_items,
-    6: list<binary> return_columns,
-    7: bool insertable,
+    1: common.GraphSpaceID      space_id,
+    2: common.VertexID          vertex_id,
+    3: common.PartitionID       part_id,
+    4: binary                   filter,
+    5: list<UpdateItem>         update_items,
+    6: list<binary>             return_columns,
+    7: bool                     insertable,
 }
 
 struct UpdateEdgeRequest {
+    1: common.GraphSpaceID      space_id,
+    2: EdgeKey                  edge_key,
+    3: common.PartitionID       part_id,
+    4: binary                   filter,
+    5: list<UpdateItem>         update_items,
+    6: list<binary>             return_columns,
+    7: bool                     insertable,
+}
+
+struct ScanEdgeRequest {
     1: common.GraphSpaceID space_id,
-    2: EdgeKey edge_key,
-    3: common.PartitionID part_id,
-    4: binary filter,
-    5: list<UpdateItem> update_items,
-    6: list<binary> return_columns,
-    7: bool insertable,
+    2: common.PartitionID part_id,
+    // start key of this block
+    3: optional binary cursor,
+    // If specified, only return specified columns, if not, no columns are returned
+    4: map<common.EdgeType, list<PropDef>> (cpp.template = "std::unordered_map") return_columns,
+    5: bool all_columns,
+    // max row count of edge in this response
+    6: i32 limit,
+    7: i64 start_time,
+    8: i64 end_time,
+}
+
+struct ScanEdgeResponse {
+    1: required ResponseCommon result,
+    2: map<common.EdgeType, common.Schema> (cpp.template = "std::unordered_map") edge_schema,
+    3: list<ScanEdge> edge_data,
+    4: bool has_next,
+    5: binary next_cursor, // next start key of scan
+}
+
+struct ScanEdge {
+    1: common.VertexID src,
+    2: common.EdgeType type,
+    3: common.VertexID dst,
+    4: binary value, // decode according to edge_schema.
+}
+
+struct ScanVertexRequest {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID part_id,
+    // start key of this block
+    3: optional binary cursor,
+    // If specified, only return specified columns, if not, no columns are returned
+    4: map<common.TagID, list<PropDef>> (cpp.template = "std::unordered_map") return_columns,
+    5: bool all_columns,
+    // max row count of tag in this response
+    6: i32 limit,
+    7: i64 start_time,
+    8: i64 end_time,
+}
+
+struct ScanVertex {
+    1: common.VertexID  vertexId,
+    2: common.TagID     tagId,
+    3: binary           value,                  // decode according to vertex_schema.
+}
+
+struct ScanVertexResponse {
+    1: required ResponseCommon result,
+    2: map<common.TagID, common.Schema> (cpp.template = "std::unordered_map") vertex_schema,
+    3: list<ScanVertex> vertex_data,
+    4: bool has_next,
+    5: binary next_cursor,          // next start key of scan
 }
 
 struct PutRequest {
-    1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, list<common.Pair>>(cpp.template = "std::unordered_map") parts,
+    1: common.GraphSpaceID  space_id,
+    2: list<common.Pair>    pairs,
 }
 
 struct RemoveRequest {
-    1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") parts,
+    1: common.GraphSpaceID  space_id,
+    2: list<string>         keys,
 }
 
-struct RemoveRangeRequest {
-    1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, common.Range>(cpp.template = "std::unordered_map") parts,
+struct RemovePrefixRequest {
+    1: common.GraphSpaceID  space_id,
+    2: string               prefix,
 }
 
 struct GetRequest {
-    1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, list<string>>(cpp.template = "std::unordered_map") parts,
-}
-
-struct PrefixCoordinate {
-    1: string prefix,
-    2: optional string cursor = "",
-}
-
-struct PrefixRequest {
-    1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, PrefixCoordinate>(cpp.template = "std::unordered_map") parts,
-    3: optional i32 limit = 128,
-}
-
-struct ScanCoordinate {
-    1: string start,
-    2: string end,
-    3: optional string cursor = "",
-}
-
-struct ScanRequest {
-    1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, ScanCoordinate>(cpp.template = "std::unordered_map") parts,
-    3: optional i32 limit = 128,
+    1: common.GraphSpaceID  space_id,
+    2: list<string>         keys,
 }
 
 struct GeneralResponse {
     1: required ResponseCommon result,
     2: map<string, string>(cpp.template = "std::unordered_map") values,
-    3: optional map<common.PartitionID, string>(cpp.template = "std::unordered_map") seek_positions,
 }
 
 struct GetUUIDReq {
@@ -404,6 +437,9 @@ service StorageService {
     UpdateResponse updateVertex(1: UpdateVertexRequest req)
     UpdateResponse updateEdge(1: UpdateEdgeRequest req)
 
+    ScanEdgeResponse scanEdge(1: ScanEdgeRequest req)
+    ScanVertexResponse scanVertex(1: ScanVertexRequest req)
+
     // Interfaces for admin operations
     AdminExecResp transLeader(1: TransLeaderReq req);
     AdminExecResp addPart(1: AddPartReq req);
@@ -423,9 +459,7 @@ service StorageService {
     ExecResponse      put(1: PutRequest req);
     GeneralResponse   get(1: GetRequest req);
     ExecResponse      remove(1: RemoveRequest req);
-    ExecResponse      removeRange(1: RemoveRangeRequest req);
-    GeneralResponse   prefix(1: PrefixRequest req);
-    GeneralResponse   scan(1: ScanRequest req);
+    ExecResponse      removePrefix(1: RemovePrefixRequest req);
 
     GetUUIDResp getUUID(1: GetUUIDReq req);
 }
