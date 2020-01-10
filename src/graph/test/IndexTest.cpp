@@ -8,6 +8,8 @@
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
 
+DECLARE_int32(heartbeat_interval_secs);
+
 namespace nebula {
 namespace graph {
 
@@ -45,6 +47,7 @@ TEST_F(IndexTest, TagIndex) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     // Single Tag Single Field
     {
         cpp2::ExecutionResponse resp;
@@ -77,6 +80,20 @@ TEST_F(IndexTest, TagIndex) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG INDEX multi_person_index ON person(name, email)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Rebuild Tag Index
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "REBUILD TAG INDEX single_person_index";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Show Tag Index Status
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW TAG INDEX STATUA";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -129,6 +146,18 @@ TEST_F(IndexTest, TagIndex) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP TAG INDEX not_exists_tag_index";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP TAG INDEX IF EXISTS not_exists_tag_index";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
 }
 
 TEST_F(IndexTest, EdgeIndex) {
@@ -162,21 +191,21 @@ TEST_F(IndexTest, EdgeIndex) {
     // Edge not exist
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE INDEX single_person_index ON friendship(name)";
+        std::string query = "CREATE EDGE INDEX single_friend_index ON friendship(name)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     // Property not exist
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE INDEX single_person_index ON friend(startTime)";
+        std::string query = "CREATE EDGE INDEX single_friend_index ON friend(startTime)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     // Property is empty
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE INDEX single_person_index ON friend()";
+        std::string query = "CREATE EDGE INDEX single_friend_index ON friend()";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
@@ -184,6 +213,20 @@ TEST_F(IndexTest, EdgeIndex) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE INDEX multi_friend_index ON friend(degree, start_time)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Rebuild EDGE Index
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "REBUILD EDGE INDEX single_friend_index";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Show EDGE Index Status
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW EDGE INDEX STATUA";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -236,6 +279,18 @@ TEST_F(IndexTest, EdgeIndex) {
         query = "DESCRIBE EDGE INDEX multi_friend_index";
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP EDGE INDEX not_exists_edge_index";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP EDGE INDEX IF EXISTS not_exists_edge_index";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
 }
 

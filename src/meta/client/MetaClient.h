@@ -66,6 +66,8 @@ using SpaceTagIdNameMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, std
 // get all edgeType edgeName via spaceId
 using SpaceAllEdgeMap = std::unordered_map<GraphSpaceID, std::vector<std::string>>;
 
+using IndexStatus = std::tuple<std::string, std::string, std::string>;
+
 struct ConfigItem {
     ConfigItem() {}
 
@@ -244,7 +246,7 @@ public:
 
     // Remove the define of tag index
     folly::Future<StatusOr<bool>>
-    dropTagIndex(GraphSpaceID spaceId, std::string name);
+    dropTagIndex(GraphSpaceID spaceId, std::string name, bool ifExists = false);
 
     folly::Future<StatusOr<cpp2::TagIndexItem>>
     getTagIndex(GraphSpaceID spaceId, std::string name);
@@ -253,7 +255,10 @@ public:
     listTagIndexes(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    buildTagIndex(GraphSpaceID spaceID, std::string name);
+    rebuildTagIndex(GraphSpaceID spaceID, std::string name, TagID tagID);
+
+    folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
+    listTagIndexStatus(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<EdgeIndexID>>
     createEdgeIndex(GraphSpaceID spaceID,
@@ -270,7 +275,7 @@ public:
 
     // Remove the define of edge index
     folly::Future<StatusOr<bool>>
-    dropEdgeIndex(GraphSpaceID spaceId, std::string name);
+    dropEdgeIndex(GraphSpaceID spaceId, std::string name, bool ifExists = false);
 
     folly::Future<StatusOr<cpp2::EdgeIndexItem>>
     getEdgeIndex(GraphSpaceID spaceId, std::string name);
@@ -279,7 +284,10 @@ public:
     listEdgeIndexes(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    buildEdgeIndex(GraphSpaceID spaceId, std::string name);
+    rebuildEdgeIndex(GraphSpaceID spaceId, std::string name, EdgeType edgeType);
+
+    folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
+    listEdgeIndexStatus(GraphSpaceID spaceId);
 
     // Operations for custom kv
     folly::Future<StatusOr<bool>>
@@ -342,9 +350,9 @@ public:
     StatusOr<std::string> getEdgeNameByTypeFromCache(const GraphSpaceID& space,
                                                      const EdgeType edgeType);
 
-    StatusOr<SchemaVer> getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
+    StatusOr<SchemaVer> getLatestTagVersionFromCache(const GraphSpaceID& space, const TagID& tagId);
 
-    StatusOr<SchemaVer> getNewestEdgeVerFromCache(const GraphSpaceID& space,
+    StatusOr<SchemaVer> getLatestEdgeVersionFromCache(const GraphSpaceID& space,
                                                   const EdgeType& edgeType);
 
     StatusOr<std::vector<std::string>> getAllEdgeFromCache(const GraphSpaceID& space);

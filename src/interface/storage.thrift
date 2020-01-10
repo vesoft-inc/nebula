@@ -310,6 +310,63 @@ struct UpdateEdgeRequest {
     7: bool                     insertable,
 }
 
+struct ScanEdgeRequest {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID part_id,
+    // start key of this block
+    3: optional binary cursor,
+    // If specified, only return specified columns, if not, no columns are returned
+    4: map<common.EdgeType, list<PropDef>> (cpp.template = "std::unordered_map") return_columns,
+    5: bool all_columns,
+    // max row count of edge in this response
+    6: i32 limit,
+    7: i64 start_time,
+    8: i64 end_time,
+}
+
+struct ScanEdgeResponse {
+    1: required ResponseCommon result,
+    2: map<common.EdgeType, common.Schema> (cpp.template = "std::unordered_map") edge_schema,
+    3: list<ScanEdge> edge_data,
+    4: bool has_next,
+    5: binary next_cursor, // next start key of scan
+}
+
+struct ScanEdge {
+    1: common.VertexID src,
+    2: common.EdgeType type,
+    3: common.VertexID dst,
+    4: binary value, // decode according to edge_schema.
+}
+
+struct ScanVertexRequest {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID part_id,
+    // start key of this block
+    3: optional binary cursor,
+    // If specified, only return specified columns, if not, no columns are returned
+    4: map<common.TagID, list<PropDef>> (cpp.template = "std::unordered_map") return_columns,
+    5: bool all_columns,
+    // max row count of tag in this response
+    6: i32 limit,
+    7: i64 start_time,
+    8: i64 end_time,
+}
+
+struct ScanVertex {
+    1: common.VertexID  vertexId,
+    2: common.TagID     tagId,
+    3: binary           value,                  // decode according to vertex_schema.
+}
+
+struct ScanVertexResponse {
+    1: required ResponseCommon result,
+    2: map<common.TagID, common.Schema> (cpp.template = "std::unordered_map") vertex_schema,
+    3: list<ScanVertex> vertex_data,
+    4: bool has_next,
+    5: binary next_cursor,          // next start key of scan
+}
+
 struct PutRequest {
     1: common.GraphSpaceID space_id,
     2: map<common.PartitionID, list<common.Pair>>(cpp.template = "std::unordered_map") parts,
@@ -371,17 +428,17 @@ struct DropCPRequest {
     2: string                       name,
 }
 
-struct BuildTagIndexRequest {
+struct RebuildTagIndexRequest {
     1: common.GraphSpaceID          space_id,
-    2: i32                          parts,
+    2: list<common.PartitionID>     parts,
     3: common.TagID                 tag_id,
     4: common.SchemaVer             tag_version,
     5: common.TagIndexID            index_id,
 }
 
-struct BuildEdgeIndexRequest {
+struct RebuildEdgeIndexRequest {
     1: common.GraphSpaceID          space_id,
-    2: i32                          parts,
+    2: list<common.PartitionID>     parts,
     3: common.EdgeType              edge_type,
     4: common.SchemaVer             edge_version,
     5: common.EdgeIndexID           index_id,
@@ -406,6 +463,9 @@ service StorageService {
     UpdateResponse updateVertex(1: UpdateVertexRequest req)
     UpdateResponse updateEdge(1: UpdateEdgeRequest req)
 
+    ScanEdgeResponse scanEdge(1: ScanEdgeRequest req)
+    ScanVertexResponse scanVertex(1: ScanVertexRequest req)
+
     // Interfaces for admin operations
     AdminExecResp transLeader(1: TransLeaderReq req);
     AdminExecResp addPart(1: AddPartReq req);
@@ -422,8 +482,8 @@ service StorageService {
     AdminExecResp blockingWrites(1: BlockingSignRequest req);
 
     // Interfaces for rebuild index
-    AdminExecResp buildTagIndex(1: BuildTagIndexRequest req);
-    AdminExecResp buildEdgeIndex(1: BuildEdgeIndexRequest req);
+    AdminExecResp rebuildTagIndex(1: RebuildTagIndexRequest req);
+    AdminExecResp rebuildEdgeIndex(1: RebuildEdgeIndexRequest req);
 
     // Interfaces for key-value storage
     ExecResponse      put(1: PutRequest req);

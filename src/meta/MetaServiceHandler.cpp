@@ -27,12 +27,14 @@
 #include "meta/processors/indexMan/DropTagIndexProcessor.h"
 #include "meta/processors/indexMan/GetTagIndexProcessor.h"
 #include "meta/processors/indexMan/ListTagIndexesProcessor.h"
-#include "meta/processors/indexMan/BuildTagIndexProcessor.h"
+#include "meta/processors/indexMan/RebuildTagIndexProcessor.h"
+#include "meta/processors/indexMan/ListTagIndexStatusProcessor.h"
 #include "meta/processors/indexMan/CreateEdgeIndexProcessor.h"
 #include "meta/processors/indexMan/DropEdgeIndexProcessor.h"
 #include "meta/processors/indexMan/GetEdgeIndexProcessor.h"
 #include "meta/processors/indexMan/ListEdgeIndexesProcessor.h"
-#include "meta/processors/indexMan/BuildEdgeIndexProcessor.h"
+#include "meta/processors/indexMan/RebuildEdgeIndexProcessor.h"
+#include "meta/processors/indexMan/ListEdgeIndexStatusProcessor.h"
 #include "meta/processors/customKV/MultiPutProcessor.h"
 #include "meta/processors/customKV/GetProcessor.h"
 #include "meta/processors/customKV/MultiGetProcessor.h"
@@ -85,13 +87,13 @@ MetaServiceHandler::future_getSpace(const cpp2::GetSpaceReq& req) {
 
 folly::Future<cpp2::ListHostsResp>
 MetaServiceHandler::future_listHosts(const cpp2::ListHostsReq& req) {
-    auto* processor = ListHostsProcessor::instance(kvstore_, adminClient_.get());
+    auto* processor = ListHostsProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::ListPartsResp>
 MetaServiceHandler::future_listParts(const cpp2::ListPartsReq& req) {
-    auto* processor = ListPartsProcessor::instance(kvstore_, adminClient_.get());
+    auto* processor = ListPartsProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
@@ -222,8 +224,14 @@ MetaServiceHandler::future_listTagIndexes(const cpp2::ListTagIndexesReq& req) {
 }
 
 folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_buildTagIndex(const cpp2::BuildTagIndexReq& req) {
-    auto* processor = BuildTagIndexProcessor::instance(kvstore_);
+MetaServiceHandler::future_rebuildTagIndex(const cpp2::RebuildTagIndexReq& req) {
+    auto* processor = RebuildTagIndexProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListIndexStatusResp>
+MetaServiceHandler::future_listTagIndexStatus(const cpp2::ListIndexStatusReq& req) {
+    auto* processor = ListTagIndexStatusProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
@@ -252,8 +260,14 @@ MetaServiceHandler::future_listEdgeIndexes(const cpp2::ListEdgeIndexesReq& req) 
 }
 
 folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_buildEdgeIndex(const cpp2::BuildEdgeIndexReq& req) {
-    auto* processor = BuildEdgeIndexProcessor::instance(kvstore_);
+MetaServiceHandler::future_rebuildEdgeIndex(const cpp2::RebuildEdgeIndexReq& req) {
+    auto* processor = RebuildEdgeIndexProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListIndexStatusResp>
+MetaServiceHandler::future_listEdgeIndexStatus(const cpp2::ListIndexStatusReq& req) {
+    auto* processor = ListEdgeIndexStatusProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

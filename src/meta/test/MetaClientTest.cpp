@@ -158,8 +158,8 @@ TEST(MetaClientTest, InterfacesTest) {
 
             // getTagSchemaFromCache
             sleep(FLAGS_heartbeat_interval_secs + 1);
-            auto ret = client->getNewestTagVerFromCache(spaceId,
-                                                        ret1.value().begin()->tag_id);
+            auto ret = client->getLatestTagVersionFromCache(spaceId,
+                                                            ret1.value().begin()->tag_id);
             CHECK(ret.ok());
             auto ver = ret.value();
             auto ret2 = client->getTagSchemaFromCache(spaceId,
@@ -178,7 +178,7 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ(nullptr, outSchema->getFieldName(-1));
             ASSERT_EQ(nullptr, outSchema->getFieldName(5));
             ASSERT_EQ(nullptr, outSchema->getFieldName(6));
-            auto retVer = schemaMan->getNewestTagSchemaVer(spaceId, tagId);
+            auto retVer = schemaMan->getLatestTagSchemaVersion(spaceId, tagId);
             ASSERT_TRUE(retVer.ok());
             auto version = retVer.value();
             ASSERT_EQ(0, version);
@@ -198,8 +198,8 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_NE(ret1.value().begin()->edge_type, 0);
 
             // getEdgeSchemaFromCache
-            auto retVer = client->getNewestEdgeVerFromCache(spaceId,
-                                                            ret1.value().begin()->edge_type);
+            auto retVer = client->getLatestEdgeVersionFromCache(spaceId,
+                                                                ret1.value().begin()->edge_type);
             CHECK(retVer.ok());
             auto ver = retVer.value();
             auto ret2 = client->getEdgeSchemaFromCache(spaceId,
@@ -217,7 +217,7 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ(nullptr, outSchema->getFieldName(-1));
             ASSERT_EQ(nullptr, outSchema->getFieldName(5));
             ASSERT_EQ(nullptr, outSchema->getFieldName(6));
-            auto versionRet = schemaMan->getNewestEdgeSchemaVer(spaceId, edgeType);
+            auto versionRet = schemaMan->getLatestEdgeSchemaVersion(spaceId, edgeType);
             ASSERT_TRUE(versionRet.ok());
             auto version = versionRet.value();
             ASSERT_EQ(0, version);

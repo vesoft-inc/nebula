@@ -104,11 +104,11 @@ public:
         return response(8);
     }
 
-    folly::Future<Status> buildTagIndex() override {
+    folly::Future<Status> rebuildTagIndex() override {
         return response(11);
     }
 
-    folly::Future<Status> buildEdgeIndex() override {
+    folly::Future<Status> rebuildEdgeIndex() override {
         return response(12);
     }
 

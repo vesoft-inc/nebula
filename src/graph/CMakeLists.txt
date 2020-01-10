@@ -27,11 +27,11 @@ nebula_add_library(
     CreateEdgeIndexExecutor.cpp
     DropEdgeIndexExecutor.cpp
     DescribeEdgeIndexExecutor.cpp
-    BuildEdgeIndexExecutor.cpp
+    RebuildEdgeIndexExecutor.cpp
     CreateTagIndexExecutor.cpp
     DropTagIndexExecutor.cpp
     DescribeTagIndexExecutor.cpp
-    BuildTagIndexExecutor.cpp
+    RebuildTagIndexExecutor.cpp
     UpdateEdgeExecutor.cpp
     AssignmentExecutor.cpp
     InterimResult.cpp

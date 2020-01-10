@@ -52,13 +52,13 @@ std::shared_ptr<const meta::SchemaProviderIf> HBaseStore::getSchema(GraphSpaceID
     if (NebulaKeyUtils::isVertex(key)) {
         TagID tagId = NebulaKeyUtils::getTagId(rawKey);
         if (version == -1) {
-            version = schemaMan_->getNewestTagSchemaVer(spaceId, tagId).value();
+            version = schemaMan_->getLatestTagSchemaVersion(spaceId, tagId).value();
         }
         schema = schemaMan_->getTagSchema(spaceId, tagId, version);
     } else if (NebulaKeyUtils::isEdge(key)) {
         EdgeType edgeTypeId = NebulaKeyUtils::getEdgeType(rawKey);
         if (version == -1) {
-            version = schemaMan_->getNewestEdgeSchemaVer(spaceId, edgeTypeId).value();
+            version = schemaMan_->getLatestEdgeSchemaVersion(spaceId, edgeTypeId).value();
         }
         schema = schemaMan_->getEdgeSchema(spaceId, edgeTypeId, version);
     } else {
@@ -189,6 +189,27 @@ ResultCode HBaseStore::prefix(GraphSpaceID spaceId,
     endRowKey.append(prefix);
     for (size_t n = 0; n < kMaxRowKeyLength - prefix.size(); n++) {
         startRowKey.append(reinterpret_cast<const char*>(&kFillMin), sizeof(uint8_t));
+        endRowKey.append(reinterpret_cast<const char*>(&kFillMax), sizeof(uint8_t));
+    }
+    ResultCode code = this->range(spaceId, startRowKey, endRowKey, storageIter);
+    if (code == ResultCode::ERR_IO_ERROR) {
+        LOG(ERROR) << "Prefix " << prefix << " Failed: the HBase I/O error.";
+    }
+    return code;
+}
+
+
+ResultCode HBaseStore::rangeWithPrefix(GraphSpaceID spaceId,
+                                       PartitionID  partId,
+                                       const std::string& start,
+                                       const std::string& prefix,
+                                       std::unique_ptr<KVIterator>* storageIter) {
+    UNUSED(partId);
+    auto tableName = this->spaceIdToTableName(spaceId);
+    std::string startRowKey, endRowKey;
+    startRowKey = this->getRowKey(start);
+    endRowKey.reserve(kMaxRowKeyLength);
+    for (size_t n = 0; n < kMaxRowKeyLength - prefix.size(); n++) {
         endRowKey.append(reinterpret_cast<const char*>(&kFillMax), sizeof(uint8_t));
     }
     ResultCode code = this->range(spaceId, startRowKey, endRowKey, storageIter);

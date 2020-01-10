@@ -38,7 +38,7 @@ public:
 
 
     // Returns a negative number when the schema does not exist
-    StatusOr<SchemaVer> getNewestTagSchemaVer(GraphSpaceID space, TagID tag) override;
+    StatusOr<SchemaVer> getLatestTagSchemaVersion(GraphSpaceID space, TagID tag) override;
 
     std::shared_ptr<const nebula::meta::SchemaProviderIf>
     getEdgeSchema(GraphSpaceID space,
@@ -46,7 +46,7 @@ public:
                   SchemaVer version = -1) override;
 
     // Returns a negative number when the schema does not exist
-    StatusOr<SchemaVer> getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
+    StatusOr<SchemaVer> getLatestEdgeSchemaVersion(GraphSpaceID space, EdgeType edge) override;
 
     StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece spaceName) override;
 

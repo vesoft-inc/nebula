@@ -36,6 +36,8 @@ public:
     void showCreateEdge();
     void showCreateTagIndex();
     void showCreateEdgeIndex();
+    void showTagIndexStatus();
+    void showEdgeIndexStatus();
     void showSnapshots();
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;

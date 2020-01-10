@@ -6,18 +6,18 @@
 
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/admin/AdminClient.h"
-#include "meta/processors/indexMan/BuildTagIndexProcessor.h"
+#include "meta/processors/indexMan/RebuildTagIndexProcessor.h"
 
 namespace nebula {
 namespace meta {
 
-void BuildTagIndexProcessor::process(const cpp2::BuildTagIndexReq& req) {
+void RebuildTagIndexProcessor::process(const cpp2::RebuildTagIndexReq& req) {
     auto space = req.get_space_id();
     const auto &indexName = req.get_index_name();
     auto tagID = req.get_tag_id();
     auto version = req.get_tag_version();
 
-    LOG(INFO) << "Build Tag Index Space " << space << ", Index Name " << indexName;
+    LOG(INFO) << "Rebuild Tag Index Space " << space << ", Index Name " << indexName;
     std::unique_ptr<AdminClient> client(new AdminClient(kvstore_));
     auto spaceKey = MetaServiceUtils::spaceKey(space);
     auto spaceRet = doGet(spaceKey);
@@ -28,9 +28,15 @@ void BuildTagIndexProcessor::process(const cpp2::BuildTagIndexReq& req) {
         return;
     }
 
-    auto properties = MetaServiceUtils::parseSpace(spaceRet.value());
-    auto parts = properties.get_partition_num();
+    auto partsRet = client->getPartsDist(space).get();
+    if (!partsRet.ok()) {
+        LOG(ERROR) << "Get space " << space << "'s part failed";
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        onFinished();
+        return;
+    }
 
+    auto parts = partsRet.value();
     auto tagIndexIDResult = getTagIndexID(space, indexName);
     if (!tagIndexIDResult.ok()) {
         LOG(ERROR) << "Tag Index " << indexName << " Not Found";
@@ -56,19 +62,35 @@ void BuildTagIndexProcessor::process(const cpp2::BuildTagIndexReq& req) {
         return;
     }
 
-    auto statusKey = MetaServiceUtils::buildIndexStatus(space, 'T', indexName);
+    auto statusKey = MetaServiceUtils::rebuildIndexStatus(space, 'T', indexName);
     std::vector<kvstore::KV> status{std::make_pair(statusKey, "RUNNING")};
     doPut(status);
-    auto buildIndexStatus = client->buildTagIndex(space, tagID, tagIndexID,
-                                                  version, parts).get();
-    if (!buildIndexStatus.ok()) {
-        LOG(ERROR) << "Build Tag Index Failed";
-        std::vector<kvstore::KV> failedStatus{std::make_pair(statusKey, "FAILED")};
-        doPut(failedStatus);
-        resp_.set_code(cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE);
-        onFinished();
-        return;
+
+    std::vector<folly::Future<Status>> results;
+    for (auto iter = parts.begin(); iter != parts.end(); iter++) {
+        auto future = client->rebuildTagIndex(iter->first,
+                                              space,
+                                              tagID,
+                                              tagIndexID,
+                                              version,
+                                              iter->second);
+        results.emplace_back(std::move(future));
     }
+
+    folly::collectAll(results)
+        .thenValue([&] (const std::vector<folly::Try<Status>>& tries) mutable {
+            for (const auto& t : tries) {
+                if (!t.value().ok()) {
+                    LOG(ERROR) << "Build Tag Index Failed";
+                    std::vector<kvstore::KV> failedStatus{std::make_pair(statusKey, "FAILED")};
+                    doPut(failedStatus);
+                    resp_.set_code(cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE);
+                    onFinished();
+                    return;
+                }
+            }
+        });
+
     std::vector<kvstore::KV> successedStatus{std::make_pair(statusKey, "SUCCESSED")};
     doPut(successedStatus);
 

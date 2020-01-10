@@ -567,19 +567,22 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
     return future;
 }
 
-folly::Future<std::vector<HostAddr>> AdminClient::getLeaders(GraphSpaceID) {
+folly::Future<StatusOr<std::unordered_map<HostAddr, std::vector<PartitionID>>>>
+AdminClient::getPartsDist(GraphSpaceID space) {
     HostLeaderMap hostLeaderMap;
     auto ret = getLeaderDist(&hostLeaderMap).get();
-    std::vector<HostAddr> addresses;
+    std::unordered_map<HostAddr, std::vector<PartitionID>> addresses;
     if (!ret.ok()) {
         LOG(ERROR) << "Get leader distribution failed";
-        return addresses;
+        return Status::Error("Get leader distribution failed");
     }
 
     for (auto& hostEntry : hostLeaderMap) {
-        auto hostAddr = toThriftHost(hostEntry.first);
         auto spaceParts = hostEntry.second;
-        UNUSED(hostAddr); UNUSED(spaceParts);
+        auto iter = hostEntry.second.find(space);
+        if (iter != hostEntry.second.end()) {
+            addresses.emplace(hostEntry.first, iter->second);
+        }
     }
     return addresses;
 }
@@ -640,50 +643,52 @@ folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
     return f;
 }
 
-folly::Future<Status> AdminClient::buildTagIndex(GraphSpaceID spaceId,
-                                                 TagID tagID,
-                                                 TagIndexID indexID,
-                                                 TagVersion version,
-                                                 int32_t parts) {
+folly::Future<Status> AdminClient::rebuildTagIndex(HostAddr address,
+                                                   GraphSpaceID spaceId,
+                                                   TagID tagID,
+                                                   TagIndexID indexID,
+                                                   TagVersion version,
+                                                   std::vector<PartitionID> parts) {
     if (injector_) {
-        return injector_->buildTagIndex();
+        return injector_->rebuildTagIndex();
     }
 
-    auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
-    storage::cpp2::BuildTagIndexRequest req;
+    std::vector<HostAddr> hosts{address};
+    storage::cpp2::RebuildTagIndexRequest req;
     req.set_space_id(spaceId);
     req.set_tag_id(tagID);
     req.set_index_id(indexID);
     req.set_tag_version(version);
-    req.set_parts(parts);
+    req.set_parts(std::move(parts));
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(allHosts, 0, std::move(req), [] (auto client, auto request) {
-        return client->future_buildTagIndex(request);
+    getResponse(hosts, 0, std::move(req), [] (auto client, auto request) {
+        return client->future_rebuildTagIndex(request);
     }, 0, std::move(pro), 0);
     return f;
 }
 
-folly::Future<Status> AdminClient::buildEdgeIndex(GraphSpaceID spaceId,
-                                                  EdgeType edgeType,
-                                                  EdgeIndexID indexID,
-                                                  EdgeVersion version,
-                                                  int32_t parts) {
+folly::Future<Status> AdminClient::rebuildEdgeIndex(HostAddr address,
+                                                    GraphSpaceID spaceId,
+                                                    EdgeType edgeType,
+                                                    EdgeIndexID indexID,
+                                                    EdgeVersion version,
+                                                    std::vector<PartitionID> parts) {
     if (injector_) {
-        return injector_->buildEdgeIndex();
+        return injector_->rebuildEdgeIndex();
     }
 
-    auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
-    storage::cpp2::BuildEdgeIndexRequest req;
+    std::vector<HostAddr> hosts{address};
+    storage::cpp2::RebuildEdgeIndexRequest req;
     req.set_space_id(spaceId);
     req.set_edge_type(edgeType);
     req.set_index_id(indexID);
     req.set_edge_version(version);
-    req.set_parts(parts);
+    req.set_parts(std::move(parts));
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(allHosts, 0, std::move(req), [] (auto client, auto request) {
-        return client->future_buildEdgeIndex(request);
+    getResponse(hosts, 0, std::move(req), [] (auto client, auto request) {
+        return client->future_rebuildEdgeIndex(request);
     }, 0, std::move(pro), 0);
     return f;
 }

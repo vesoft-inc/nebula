@@ -10,7 +10,6 @@
 #include "base/Base.h"
 #include "base/Status.h"
 #include "interface/gen-cpp2/meta_types.h"
-#include "meta/ActiveHostsMan.h"
 
 namespace nebula {
 namespace meta {
@@ -26,6 +25,7 @@ enum class EntryType : int8_t {
 };
 
 using ConfigName = std::pair<cpp2::ConfigModule, std::string>;
+using LeaderParts = std::unordered_map<GraphSpaceID, std::vector<PartitionID>>;
 
 class MetaServiceUtils final {
 public:
@@ -71,6 +71,16 @@ public:
 
     static nebula::cpp2::HostAddr parseHostKey(folly::StringPiece key);
 
+    static std::string leaderKey(IPv4 ip, Port port);
+
+    static std::string leaderVal(const LeaderParts& leaderParts);
+
+    static const std::string& leaderPrefix();
+
+    static nebula::cpp2::HostAddr parseLeaderKey(folly::StringPiece key);
+
+    static LeaderParts parseLeaderVal(folly::StringPiece val);
+
     static std::string schemaEdgePrefix(GraphSpaceID spaceId, EdgeType edgeType);
 
     static std::string schemaEdgesPrefix(GraphSpaceID spaceId);
@@ -113,9 +123,19 @@ public:
 
     static cpp2::IndexFields parseEdgeIndex(const folly::StringPiece& rawData);
 
-    static std::string buildIndexStatus(GraphSpaceID space,
-                                        char type,
-                                        const std::string& indexName);
+    static std::string rebuildIndexStatus(GraphSpaceID space,
+                                          char type,
+                                          const std::string& indexName);
+
+    static std::string rebuildIndexStatusPrefix(GraphSpaceID spaceId, char type);
+
+    static std::string rebuildTagIndexStatusPrefix(GraphSpaceID spaceId) {
+        return rebuildIndexStatusPrefix(spaceId, 'T');
+    }
+
+    static std::string rebuildEdgeIndexStatusPrefix(GraphSpaceID spaceId) {
+        return rebuildIndexStatusPrefix(spaceId, 'E');
+    }
 
     static std::string indexSpaceKey(const std::string& name);
 

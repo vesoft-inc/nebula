@@ -36,8 +36,8 @@ public:
     virtual folly::Future<Status> createSnapshot() = 0;
     virtual folly::Future<Status> dropSnapshot() = 0;
     virtual folly::Future<Status> blockingWrites() = 0;
-    virtual folly::Future<Status> buildTagIndex() = 0;
-    virtual folly::Future<Status> buildEdgeIndex() = 0;
+    virtual folly::Future<Status> rebuildTagIndex() = 0;
+    virtual folly::Future<Status> rebuildEdgeIndex() = 0;
 };
 
 static const HostAddr kRandomPeer(0, 0);
@@ -101,7 +101,8 @@ public:
 
     folly::Future<Status> getLeaderDist(HostLeaderMap* result);
 
-    folly::Future<std::vector<HostAddr>> getLeaders(GraphSpaceID spaceId);
+    folly::Future<StatusOr<std::unordered_map<HostAddr, std::vector<PartitionID>>>>
+    getPartsDist(GraphSpaceID spaceId);
 
     folly::Future<Status> createSnapshot(GraphSpaceID spaceId, const std::string& name);
 
@@ -112,17 +113,19 @@ public:
     folly::Future<Status> blockingWrites(GraphSpaceID spaceId,
                                          storage::cpp2::EngineSignType sign);
 
-    folly::Future<Status> buildTagIndex(GraphSpaceID spaceId,
-                                        TagID tagID,
-                                        TagIndexID indexID,
-                                        TagVersion version,
-                                        int32_t parts);
+    folly::Future<Status> rebuildTagIndex(HostAddr address,
+                                          GraphSpaceID spaceId,
+                                          TagID tagID,
+                                          TagIndexID indexID,
+                                          TagVersion version,
+                                          std::vector<PartitionID> parts);
 
-    folly::Future<Status> buildEdgeIndex(GraphSpaceID spaceId,
-                                         EdgeType edgeType,
-                                         EdgeIndexID indexID,
-                                         EdgeVersion version,
-                                         int32_t parts);
+    folly::Future<Status> rebuildEdgeIndex(HostAddr address,
+                                           GraphSpaceID spaceId,
+                                           EdgeType edgeType,
+                                           EdgeIndexID indexID,
+                                           EdgeVersion version,
+                                           std::vector<PartitionID> parts);
 
     FaultInjector* faultInjector() {
         return injector_.get();

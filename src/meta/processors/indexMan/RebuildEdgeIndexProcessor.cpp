@@ -6,18 +6,18 @@
 
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/admin/AdminClient.h"
-#include "meta/processors/indexMan/BuildEdgeIndexProcessor.h"
+#include "meta/processors/indexMan/RebuildEdgeIndexProcessor.h"
 
 namespace nebula {
 namespace meta {
 
-void BuildEdgeIndexProcessor::process(const cpp2::BuildEdgeIndexReq& req) {
+void RebuildEdgeIndexProcessor::process(const cpp2::RebuildEdgeIndexReq& req) {
     auto space = req.get_space_id();
     const auto &indexName = req.get_index_name();
     auto edgeType = req.get_edge_type();
     auto version = req.get_edge_version();
 
-    LOG(INFO) << "Build Edge Index Space " << space << ", Index Name " << indexName;
+    LOG(INFO) << "Rebuild Edge Index Space " << space << ", Index Name " << indexName;
 
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeIndexLock());
     std::unique_ptr<AdminClient> client(new AdminClient(kvstore_));
@@ -30,9 +30,15 @@ void BuildEdgeIndexProcessor::process(const cpp2::BuildEdgeIndexReq& req) {
         return;
     }
 
-    auto properties = MetaServiceUtils::parseSpace(spaceRet.value());
-    auto parts = properties.get_partition_num();
+    auto partsRet = client->getPartsDist(space).get();
+    if (!partsRet.ok()) {
+        LOG(ERROR) << "Get space " << space << "'s part failed";
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        onFinished();
+        return;
+    }
 
+    auto parts = partsRet.value();
     auto edgeIndexIDResult = getEdgeIndexID(space, indexName);
     if (!edgeIndexIDResult.ok()) {
         LOG(ERROR) << "Edge Index " << indexName << " Not Found";
@@ -57,18 +63,34 @@ void BuildEdgeIndexProcessor::process(const cpp2::BuildEdgeIndexReq& req) {
         return;
     }
 
-    auto statusKey = MetaServiceUtils::buildIndexStatus(space, 'E', indexName);
+    auto statusKey = MetaServiceUtils::rebuildIndexStatus(space, 'E', indexName);
     std::vector<kvstore::KV> status{std::make_pair(statusKey, "RUNNING")};
     doPut(status);
-    auto buildIndexStatus = client->buildEdgeIndex(space, edgeType, edgeIndexID,
-                                                   version, parts).get();
-    if (!buildIndexStatus.ok()) {
-        std::vector<kvstore::KV> failedStatus{std::make_pair(statusKey, "FAILED")};
-        doPut(failedStatus);
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-        onFinished();
-        return;
+
+    std::vector<folly::Future<Status>> results;
+    for (auto iter = parts.begin(); iter != parts.end(); iter++) {
+        auto future = client->rebuildEdgeIndex(iter->first,
+                                               space,
+                                               edgeType,
+                                               edgeIndexID,
+                                               version,
+                                               iter->second);
+        results.emplace_back(std::move(future));
     }
+
+    folly::collectAll(results)
+        .thenValue([&] (const std::vector<folly::Try<Status>>& tries) mutable {
+            for (const auto& t : tries) {
+                if (!t.value().ok()) {
+                    LOG(ERROR) << "Build Edge Index Failed";
+                    std::vector<kvstore::KV> failedStatus{std::make_pair(statusKey, "FAILED")};
+                    doPut(failedStatus);
+                    resp_.set_code(cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE);
+                    onFinished();
+                    return;
+                }
+            }
+        });
 
     std::vector<kvstore::KV> successedStatus{std::make_pair(statusKey, "SUCCESSED")};
     doPut(successedStatus);

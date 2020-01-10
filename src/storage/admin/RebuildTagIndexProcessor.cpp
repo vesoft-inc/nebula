@@ -4,22 +4,22 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "storage/admin/BuildTagIndexProcessor.h"
+#include "storage/admin/RebuildTagIndexProcessor.h"
 
 namespace nebula {
 namespace storage {
 
-void BuildTagIndexProcessor::process(const cpp2::BuildTagIndexRequest& req) {
+void RebuildTagIndexProcessor::process(const cpp2::RebuildTagIndexRequest& req) {
     CHECK_NOTNULL(kvstore_);
     auto space = req.get_space_id();
     auto parts = req.get_parts();
     auto tagID = req.get_tag_id();
     auto tagVersion = req.get_tag_version();
     auto indexID = req.get_index_id();
-    LOG(INFO) << "Build Tag Index Space " << space << " Tag ID " << tagID
+    LOG(INFO) << "Rebuild Tag Index Space " << space << " Tag ID " << tagID
               << " Tag Index " << indexID << " Tag Version " << tagVersion;
 
-    for (int32_t part = 1; part <= parts; part++) {
+    for (PartitionID part : parts) {
         std::unique_ptr<kvstore::KVIterator> iter;
         auto prefix = NebulaKeyUtils::prefix(part);
         kvstore_->prefix(space, part, prefix, &iter);

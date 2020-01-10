@@ -1100,7 +1100,6 @@ MetaClient::getEdgeSchema(GraphSpaceID spaceId, std::string name, SchemaVer vers
     return future;
 }
 
-
 folly::Future<StatusOr<bool>>
 MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name, const bool ifExists) {
     cpp2::DropEdgeReq req;
@@ -1156,17 +1155,20 @@ MetaClient::createTagIndex(GraphSpaceID spaceID,
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::dropTagIndex(GraphSpaceID spaceID, std::string name) {
+MetaClient::dropTagIndex(GraphSpaceID spaceID,
+                         std::string name,
+                         bool ifExists) {
     cpp2::DropTagIndexReq req;
     req.set_space_id(std::move(spaceID));
     req.set_index_name(std::move(name));
+    req.set_if_exists(ifExists);
 
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_dropTagIndex(request);
-    }, [] (cpp2::ExecResp&& resp) -> TagIndexID {
-        return resp.get_id().get_tag_index_id();
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, std::move(promise), true);
     return future;
 }
@@ -1203,8 +1205,22 @@ MetaClient::listTagIndexes(GraphSpaceID spaceID) {
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::buildTagIndex(GraphSpaceID, std::string) {
-    return Status::Error("unsupported");
+MetaClient::rebuildTagIndex(GraphSpaceID spaceID,
+                            std::string name,
+                            TagID tagID) {
+    cpp2::RebuildTagIndexReq req;
+    req.set_space_id(std::move(spaceID));
+    req.set_index_name(std::move(name));
+    req.set_tag_id(tagID);
+
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_rebuildTagIndex(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise));
+    return future;
 }
 
 folly::Future<StatusOr<EdgeIndexID>>
@@ -1232,6 +1248,21 @@ MetaClient::createEdgeIndex(GraphSpaceID spaceID,
     return future;
 }
 
+folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
+MetaClient::listTagIndexStatus(GraphSpaceID spaceID) {
+    cpp2::ListIndexStatusReq req;
+    req.set_space_id(spaceID);
+
+    folly::Promise<StatusOr<std::vector<cpp2::IndexStatus>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listTagIndexStatus(request);
+    }, [] (cpp2::ListIndexStatusResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_status();
+    }, std::move(promise));
+    return future;
+}
+
 folly::Future<StatusOr<EdgeIndexID>>
 MetaClient::createEdgeIndex(GraphSpaceID spaceID,
                             std::string indexName,
@@ -1247,17 +1278,20 @@ MetaClient::createEdgeIndex(GraphSpaceID spaceID,
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::dropEdgeIndex(GraphSpaceID spaceID, std::string name) {
+MetaClient::dropEdgeIndex(GraphSpaceID spaceID,
+                          std::string name,
+                          bool ifExists) {
     cpp2::DropEdgeIndexReq req;
     req.set_space_id(std::move(spaceID));
     req.set_index_name(std::move(name));
+    req.set_if_exists(ifExists);
 
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_dropEdgeIndex(request);
-    }, [] (cpp2::ExecResp&& resp) -> EdgeIndexID {
-        return resp.get_id().get_edge_index_id();
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, std::move(promise), true);
     return future;
 }
@@ -1294,8 +1328,37 @@ MetaClient::listEdgeIndexes(GraphSpaceID spaceID) {
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::buildEdgeIndex(GraphSpaceID, std::string) {
-    return Status::Error("unsupported");
+MetaClient::rebuildEdgeIndex(GraphSpaceID spaceID,
+                             std::string name,
+                             EdgeType edgeType) {
+    cpp2::RebuildEdgeIndexReq req;
+    req.set_space_id(std::move(spaceID));
+    req.set_index_name(std::move(name));
+    req.set_edge_type(edgeType);
+
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_rebuildEdgeIndex(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
+MetaClient::listEdgeIndexStatus(GraphSpaceID spaceID) {
+    cpp2::ListIndexStatusReq req;
+    req.set_space_id(spaceID);
+
+    folly::Promise<StatusOr<std::vector<cpp2::IndexStatus>>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listEdgeIndexStatus(request);
+    }, [] (cpp2::ListIndexStatusResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_status();
+    }, std::move(promise));
+    return future;
 }
 
 StatusOr<std::shared_ptr<const SchemaProviderIf>>
@@ -1356,28 +1419,28 @@ const std::vector<HostAddr>& MetaClient::getAddresses() {
     return addrs_;
 }
 
-StatusOr<SchemaVer> MetaClient::getNewestTagVerFromCache(const GraphSpaceID& space,
-                                                         const TagID& tagId) {
+StatusOr<SchemaVer> MetaClient::getLatestTagVersionFromCache(const GraphSpaceID& space,
+                                                             const TagID& tagId) {
     if (!ready_) {
         return Status::Error("Not ready!");
     }
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceNewestTagVerMap_.find(std::make_pair(space, tagId));
     if (it == spaceNewestTagVerMap_.end()) {
-        return -1;
+        return Status::TagNotFound();
     }
     return it->second;
 }
 
-StatusOr<SchemaVer> MetaClient::getNewestEdgeVerFromCache(const GraphSpaceID& space,
-                                                          const EdgeType& edgeType) {
+StatusOr<SchemaVer> MetaClient::getLatestEdgeVersionFromCache(const GraphSpaceID& space,
+                                                              const EdgeType& edgeType) {
     if (!ready_) {
         return Status::Error("Not ready!");
     }
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceNewestEdgeVerMap_.find(std::make_pair(space, edgeType));
     if (it == spaceNewestEdgeVerMap_.end()) {
-        return -1;
+        return Status::EdgeNotFound();
     }
     return it->second;
 }
@@ -1394,8 +1457,8 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
             options_.clusterId_ = ClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
         }
         req.set_cluster_id(options_.clusterId_.load());
+        std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
         if (listener_ != nullptr) {
-            std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
             listener_->fetchLeaderInfo(leaderIds);
             if (leaderIds_ != leaderIds) {
                 {
@@ -1405,6 +1468,8 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
                 }
                 req.set_leader_partIds(std::move(leaderIds));
             }
+        } else {
+            req.set_leader_partIds(std::move(leaderIds));
         }
     }
     folly::Promise<StatusOr<bool>> promise;

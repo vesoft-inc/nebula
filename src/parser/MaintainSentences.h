@@ -477,7 +477,7 @@ private:
 
 class DropTagSentence final : public DropSentence {
 public:
-    explicit DropTagSentence(std::string *name, bool ifExist) : DropSentence(ifExist) {
+    explicit DropTagSentence(std::string *name, bool ifExists) : DropSentence(ifExists) {
         name_.reset(name);
         kind_ = Kind::kDropTag;
     }
@@ -495,7 +495,7 @@ private:
 
 class DropEdgeSentence final : public DropSentence {
 public:
-    explicit DropEdgeSentence(std::string *name, bool ifExist) : DropSentence(ifExist) {
+    explicit DropEdgeSentence(std::string *name, bool ifExists) : DropSentence(ifExists) {
         name_.reset(name);
         kind_ = Kind::kDropEdge;
     }
@@ -625,9 +625,9 @@ private:
 };
 
 
-class DropTagIndexSentence final : public Sentence {
+class DropTagIndexSentence final : public DropSentence {
 public:
-    explicit DropTagIndexSentence(std::string *indexName) {
+    explicit DropTagIndexSentence(std::string *indexName, bool ifExists) : DropSentence(ifExists) {
         indexName_.reset(indexName);
         kind_ = Kind::kDropTagIndex;
     }
@@ -643,9 +643,9 @@ private:
 };
 
 
-class DropEdgeIndexSentence final : public Sentence {
+class DropEdgeIndexSentence final : public DropSentence {
 public:
-    explicit DropEdgeIndexSentence(std::string *indexName) {
+    explicit DropEdgeIndexSentence(std::string *indexName, bool ifExists) : DropSentence(ifExists) {
         indexName_.reset(indexName);
         kind_ = Kind::kDropEdgeIndex;
     }
@@ -661,11 +661,11 @@ private:
 };
 
 
-class BuildTagIndexSentence final : public Sentence {
+class RebuildTagIndexSentence final : public Sentence {
 public:
-    explicit BuildTagIndexSentence(std::string *indexName) {
+    explicit RebuildTagIndexSentence(std::string *indexName) {
         indexName_.reset(indexName);
-        kind_ = Kind::kBuildTagIndex;
+        kind_ = Kind::kRebuildTagIndex;
     }
 
     std::string toString() const override;
@@ -679,11 +679,11 @@ private:
 };
 
 
-class BuildEdgeIndexSentence final : public Sentence {
+class RebuildEdgeIndexSentence final : public Sentence {
 public:
-    explicit BuildEdgeIndexSentence(std::string *indexName) {
+    explicit RebuildEdgeIndexSentence(std::string *indexName) {
         indexName_.reset(indexName);
-        kind_ = Kind::kBuildEdgeIndex;
+        kind_ = Kind::kRebuildEdgeIndex;
     }
 
     std::string toString() const override;

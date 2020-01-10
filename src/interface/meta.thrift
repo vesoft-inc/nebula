@@ -421,6 +421,7 @@ struct CreateTagIndexReq {
 struct DropTagIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
+    3: bool                if_exists,
 }
 
 struct GetTagIndexReq {
@@ -444,7 +445,7 @@ struct ListTagIndexesResp {
     3: list<TagIndexItem>     items,
 }
 
-struct BuildTagIndexReq {
+struct RebuildTagIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
     3: common.TagID        tag_id,
@@ -461,6 +462,7 @@ struct CreateEdgeIndexReq {
 struct DropEdgeIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
+    3: bool                if_exists,
 }
 
 struct GetEdgeIndexReq {
@@ -484,7 +486,7 @@ struct ListEdgeIndexesResp {
     3: list<EdgeIndexItem>    items,
 }
 
-struct BuildEdgeIndexReq {
+struct RebuildEdgeIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
     3: common.EdgeType     edge_type,
@@ -673,6 +675,20 @@ struct ListSnapshotsResp {
     3: list<Snapshot>       snapshots,
 }
 
+struct ListIndexStatusReq {
+    1: common.GraphSpaceID space_id,
+}
+
+struct IndexStatus {
+
+}
+
+struct ListIndexStatusResp {
+    1: ErrorCode            code,
+    2: common.HostAddr      leader,
+    3: list<IndexStatus>    status,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -707,12 +723,14 @@ service MetaService {
     ExecResp             dropTagIndex(1: DropTagIndexReq req );
     GetTagIndexResp      getTagIndex(1: GetTagIndexReq req);
     ListTagIndexesResp   listTagIndexes(1:ListTagIndexesReq req);
-    ExecResp             buildTagIndex(1: BuildTagIndexReq req);
+    ExecResp             rebuildTagIndex(1: RebuildTagIndexReq req);
     ExecResp             createEdgeIndex(1: CreateEdgeIndexReq req);
     ExecResp             dropEdgeIndex(1: DropEdgeIndexReq req );
     GetEdgeIndexResp     getEdgeIndex(1: GetEdgeIndexReq req);
     ListEdgeIndexesResp  listEdgeIndexes(1: ListEdgeIndexesReq req);
-    ExecResp             buildEdgeIndex(1: BuildEdgeIndexReq req);
+    ExecResp             rebuildEdgeIndex(1: RebuildEdgeIndexReq req);
+    ListIndexStatusResp  listTagIndexStatus(1: ListIndexStatusReq req);
+    ListIndexStatusResp  listEdgeIndexStatus(1: ListIndexStatusReq req);
 
     ExecResp createUser(1: CreateUserReq req);
     ExecResp dropUser(1: DropUserReq req);

@@ -407,6 +407,21 @@ ResultCode NebulaStore::prefix(GraphSpaceID spaceId,
     return part->engine()->prefix(prefix, iter);
 }
 
+
+ResultCode NebulaStore::rangeWithPrefix(GraphSpaceID spaceId,
+                                        PartitionID  partId,
+                                        const std::string& start,
+                                        const std::string& prefix,
+                                        std::unique_ptr<KVIterator>* iter) {
+    auto ret = engine(spaceId, partId);
+    if (!ok(ret)) {
+        return error(ret);
+    }
+    auto* e = nebula::value(ret);
+    return e->rangeWithPrefix(start, prefix, iter);
+}
+
+
 void NebulaStore::asyncMultiPut(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 std::vector<KV> keyValues,
@@ -674,6 +689,7 @@ ResultCode NebulaStore::dropCheckpoint(GraphSpaceID spaceId, const std::string& 
 ResultCode NebulaStore::setWriteBlocking(GraphSpaceID spaceId, bool sign) {
     auto spaceRet = space(spaceId);
     if (!ok(spaceRet)) {
+        LOG(ERROR) << "Get Space " << spaceId << " Failed";
         return error(spaceRet);
     }
     auto space = nebula::value(spaceRet);

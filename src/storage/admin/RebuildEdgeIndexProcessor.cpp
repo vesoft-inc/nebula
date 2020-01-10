@@ -4,22 +4,22 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "storage/admin/BuildEdgeIndexProcessor.h"
+#include "storage/admin/RebuildEdgeIndexProcessor.h"
 
 namespace nebula {
 namespace storage {
 
-void BuildEdgeIndexProcessor::process(const cpp2::BuildEdgeIndexRequest& req) {
+void RebuildEdgeIndexProcessor::process(const cpp2::RebuildEdgeIndexRequest& req) {
     CHECK_NOTNULL(kvstore_);
     auto space = req.get_space_id();
     auto parts = req.get_parts();
     auto edgeType = req.get_edge_type();
     auto edgeVersion = req.get_edge_version();
     auto indexID = req.get_index_id();
-    LOG(INFO) << "Build Edge Index Space " << space << " Edge Type " << edgeType
+    LOG(INFO) << "Rebuild Edge Index Space " << space << " Edge Type " << edgeType
               << " Edge Index " << indexID << " Edge Verison " << edgeVersion;
 
-    for (int32_t part = 1; part <= parts; part++) {
+    for (PartitionID part : parts) {
         std::unique_ptr<kvstore::KVIterator> iter;
         auto prefix = NebulaKeyUtils::prefix(part);
         kvstore_->prefix(space, part, prefix, &iter);
@@ -37,7 +37,7 @@ void BuildEdgeIndexProcessor::process(const cpp2::BuildEdgeIndexRequest& req) {
             auto key = iter->key();
             if (!NebulaKeyUtils::isEdge(key) ||
                 NebulaKeyUtils::getEdgeType(key) != edgeType ||
-                NebulaKeyUtils::getEdgeVersion(key) != edgeVersion) {
+                NebulaKeyUtils::getVersion(key) != edgeVersion) {
                 continue;
             }
 

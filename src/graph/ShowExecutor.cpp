@@ -76,6 +76,12 @@ void ShowExecutor::execute() {
         case ShowSentence::ShowType::kShowCreateEdgeIndex:
             showCreateEdgeIndex();
             break;
+        case ShowSentence::ShowType::kShowTagIndexStatus:
+            showTagIndexStatus();
+            break;
+        case ShowSentence::ShowType::kShowEdgeIndexStatus:
+            showEdgeIndexStatus();
+            break;
         case ShowSentence::ShowType::kShowSnapshots:
             showSnapshots();
             break;
@@ -868,6 +874,48 @@ auto *name = sentence_->getName();
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
+void ShowExecutor::showTagIndexStatus() {
+    auto spaceId = ectx()->rctx()->session()->space();
+    auto future = ectx()->getMetaClient()->listTagIndexStatus(spaceId);
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            doError(std::move(resp).status());
+            return;
+        }
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        doError(Status::Error(folly::stringPrintf("Show tag index status exception : %s",
+                                                  e.what().c_str())));
+        return;
+    };
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+void ShowExecutor::showEdgeIndexStatus() {
+    auto spaceId = ectx()->rctx()->session()->space();
+    auto future = ectx()->getMetaClient()->listEdgeIndexStatus(spaceId);
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            doError(std::move(resp).status());
+            return;
+        }
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        doError(Status::Error(folly::stringPrintf("Show edge index status exception : %s",
+                                                  e.what().c_str())));
+        return;
+    };
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
 void ShowExecutor::showSnapshots() {
     auto future = ectx()->getMetaClient()->listSnapshots();
     auto *runner = ectx()->rctx()->runner();
@@ -913,7 +961,7 @@ void ShowExecutor::showSnapshots() {
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
         doError(Status::Error(folly::stringPrintf("Show snapshots exception : %s",
-                                                   e.what().c_str())));
+                                                  e.what().c_str())));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
