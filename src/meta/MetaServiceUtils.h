@@ -63,6 +63,8 @@ public:
 
     static std::string hostKey(IPv4 ip, Port port);
 
+    static std::string hostnameKey(IPv4 ip, Port port);
+
     static std::string hostValOnline();
 
     static std::string hostValOffline();
@@ -76,6 +78,8 @@ public:
     static std::string leaderVal(const LeaderParts& leaderParts);
 
     static const std::string& leaderPrefix();
+
+    static const std::string& hostnamePrefix();
 
     static nebula::cpp2::HostAddr parseLeaderKey(folly::StringPiece key);
 

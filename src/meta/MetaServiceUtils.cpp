@@ -26,6 +26,7 @@ const std::string kDefaultTable        = "__default__";        // NOLINT
 const std::string kSnapshotsTable      = "__snapshots__";      // NOLINT
 const std::string kLastUpdateTimeTable = "__last_update_time__"; // NOLINT
 const std::string kLeadersTable = "__leaders__"; // NOLINT
+const std::string kHostNameTable = "__hostname__"; //NOLINT
 
 const std::string kHostOnline  = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";      // NOLINT
@@ -157,6 +158,21 @@ nebula::cpp2::HostAddr MetaServiceUtils::parseHostKey(folly::StringPiece key) {
     return host;
 }
 
+std::string MetaServiceUtils::hostnameKey(IPv4 ip, Port port) {
+    std::string key;
+    key.reserve(128);
+    key.append(kHostNameTable.data(), kHostNameTable.size());
+    key.append(reinterpret_cast<const char*>(&ip), sizeof(ip))
+    key.append(reinterpret_cast<const char*>(&port), sizeof(port));
+    return key;
+}
+
+nebula::cpp2::HostAddr MetaServiceUtils::parseHostNameKey(folly::StringPiece key) {
+    nebula::cpp2::HostAddr host;
+    memcpy(&host, key.data() + kHostsTable.size(), sizeof(host));
+    return host;
+}
+
 std::string MetaServiceUtils::leaderKey(IPv4 ip, Port port) {
     std::string key;
     key.reserve(128);
@@ -183,6 +199,10 @@ std::string MetaServiceUtils::leaderVal(const LeaderParts& leaderParts) {
 
 const std::string& MetaServiceUtils::leaderPrefix() {
     return kLeadersTable;
+}
+
+const std::string& hostnamePrefix() {
+    return kHostNameTable; 
 }
 
 nebula::cpp2::HostAddr MetaServiceUtils::parseLeaderKey(folly::StringPiece key) {

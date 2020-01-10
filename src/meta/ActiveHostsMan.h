@@ -53,6 +53,13 @@ public:
                                               const HostInfo& info,
                                               const LeaderParts* leaderParts = nullptr);
 
+    static kvstore::ResultCode updateHostName(kvstore::KVStore* kv,
+                                              const HostAddr& hostAddr,
+                                              const std::string& hostname);
+    
+    static std::string getHostName(kvstore::KVStore* kv,
+                                   const HostAddr& hostAddr);
+                                   
     static std::vector<HostAddr> getActiveHosts(kvstore::KVStore* kv, int32_t expiredTTL = 0);
 
     static bool isLived(kvstore::KVStore* kv, const HostAddr& host);

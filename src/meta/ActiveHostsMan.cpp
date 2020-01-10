@@ -37,6 +37,43 @@ kvstore::ResultCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
     return ret;
 }
 
+kvstore::ResultCode ActiveHostsMan::updateHostName(kvstore::KVStore* kv,
+                                                   const HostAddr& hostAddr,
+                                                   const std::string& hostname) {
+    CHECK_NOTNULL(kv);
+    std::vector<kvstore::KV> data;
+    data.emplace_back(MetaServiceUtils::hostnameKey(hostname),
+                      hostname);
+
+    folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+    folly::Baton<true, std::atomic> baton;
+    kvstore::ResultCode ret;
+    kv->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
+                            [&] (kvstore::ResultCode code) {
+        ret = code;
+        baton.post();
+    });
+    baton.wait();
+    return ret;
+}
+
+std::string ActiveHostsMan::getHostName(kvstore::KVStore* kv, const HostAddr& hostAddr){
+    const auto& prefix = MetaServiceUtils::hostnamePrefix();
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        return "";
+    }
+
+    if( iter.valid() ) {
+        auto host = MetaServiceUtils::parseHostNameKey(iter->key());
+        if( host.ip == hostAddr.ip && host.port == hostAddr.port ) {
+            return iter->val().data();
+        }
+    }
+    return "";
+}
+
 std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv, int32_t expiredTTL) {
     std::vector<HostAddr> hosts;
     const auto& prefix = MetaServiceUtils::hostPrefix();
