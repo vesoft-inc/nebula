@@ -57,6 +57,9 @@ Status FetchVerticesExecutor::prepareClauses() {
             LOG(ERROR) << "Prepare vertex id failed: " << status;
             break;
         }
+
+        // Add VertexID before prepareYield()
+        returnColNames_.emplace_back("VertexID");
         status = prepareYield();
         if (!status.ok()) {
             LOG(ERROR) << "Prepare yield failed: " << status;
@@ -169,7 +172,6 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
     auto all = result.responses();
     std::shared_ptr<SchemaWriter> outputSchema;
     std::unique_ptr<RowSetWriter> rsWriter;
-    auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
     Getters getters;
     for (auto &resp : all) {
         if (!resp.__isset.vertices) {
@@ -198,6 +200,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             vreader = RowReader::getRowReader(vdata.tag_data[0].data, vschema);
             if (outputSchema == nullptr) {
                 outputSchema = std::make_shared<SchemaWriter>();
+                outputSchema->appendCol("VertexID", nebula::cpp2::SupportedType::VID);
                 auto status = getOutputSchema(vschema.get(), vreader.get(), outputSchema.get());
                 if (!status.ok()) {
                     LOG(ERROR) << "Get output schema failed: " << status;
@@ -209,6 +212,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             }
 
             auto writer = std::make_unique<RowWriter>(outputSchema);
+            (*writer) << vdata.vertex_id;
             getters.getAliasProp =
                 [&vreader, &vschema] (const std::string&,
                                       const std::string &prop) -> OptVariantType {
@@ -230,14 +234,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             }
             // TODO Consider float/double, and need to reduce mem copy.
             std::string encode = writer->encode();
-            if (distinct_) {
-                auto ret = uniqResult->emplace(encode);
-                if (ret.second) {
-                    rsWriter->addRow(std::move(encode));
-                }
-            } else {
-                rsWriter->addRow(std::move(encode));
-            }
+            rsWriter->addRow(std::move(encode));
         }  // for `vdata'
     }      // for `resp'
 

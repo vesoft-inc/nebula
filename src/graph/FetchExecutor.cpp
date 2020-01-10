@@ -28,8 +28,10 @@ Status FetchExecutor::prepareYield() {
         }
         if (col->alias() == nullptr) {
             resultColNames_.emplace_back(col->expr()->toString());
+            returnColNames_.emplace_back(col->expr()->toString());
         } else {
             resultColNames_.emplace_back(*col->alias());
+            returnColNames_.emplace_back(*col->alias());
         }
 
         // such as YIELD 1+1, it has not type in schema, the type from the eval()
@@ -91,18 +93,18 @@ void FetchExecutor::setupColumns() {
 void FetchExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        resp_->set_column_names(std::move(resultColNames_));
+        resp_->set_column_names(std::move(returnColNames_));
     }
     resp = std::move(*resp_);
 }
 
 void FetchExecutor::onEmptyInputs() {
     if (onResult_) {
-        auto outputs = std::make_unique<InterimResult>(std::move(resultColNames_));
+        auto outputs = std::make_unique<InterimResult>(std::move(returnColNames_));
         onResult_(std::move(outputs));
     } else if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        resp_->set_column_names(std::move(resultColNames_));
+        resp_->set_column_names(std::move(returnColNames_));
     }
     doFinish(Executor::ProcessControl::kNext);
 }
@@ -132,7 +134,7 @@ Status FetchExecutor::getOutputSchema(
 }
 
 void FetchExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
-    auto outputs = std::make_unique<InterimResult>(std::move(resultColNames_));
+    auto outputs = std::make_unique<InterimResult>(std::move(returnColNames_));
     if (rsWriter != nullptr) {
         outputs->setInterim(std::move(rsWriter));
     }

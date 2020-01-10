@@ -346,7 +346,7 @@ Status InterimResult::castToInt(cpp2::ColumnValue *col) {
                 break;
             } else {
                 return Status::Error(
-                    "Casting from string %s to double failed.", col->get_str().c_str());
+                    "Casting from string `%s' to int failed.", col->get_str().c_str());
             }
         }
         default:
@@ -383,7 +383,7 @@ Status InterimResult::castToVid(cpp2::ColumnValue *col) {
                 break;
             } else {
                 return Status::Error(
-                    "Casting from string %s to double failed.", col->get_str().c_str());
+                    "Casting from string %s to vid failed.", col->get_str().c_str());
             }
         }
         default:
@@ -420,7 +420,7 @@ Status InterimResult::castToTimestamp(cpp2::ColumnValue *col) {
                 break;
             } else {
                 return Status::Error(
-                    "Casting from string %s to double failed.", col->get_str().c_str());
+                    "Casting from string %s to timestamp failed.", col->get_str().c_str());
             }
         }
         default:

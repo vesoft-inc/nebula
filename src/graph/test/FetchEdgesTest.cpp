@@ -37,12 +37,12 @@ TEST_F(FetchEdgesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"serve.start_year"}, {"serve.end_year"}
+            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {std::get<1>(serve), std::get<2>(serve)},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -58,12 +58,12 @@ TEST_F(FetchEdgesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"(serve.start_year>2001)"}, {"serve.end_year"}
+            {"SrcID"}, {"DstID"}, {"Rank"}, {"(serve.start_year>2001)"}, {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<bool, int64_t>> expected = {
-            {std::get<1>(serve) > 2001, std::get<2>(serve)},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, bool, int64_t>> expected = {
+            {player.vid(), team.vid(), 0, std::get<1>(serve) > 2001, std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -79,12 +79,12 @@ TEST_F(FetchEdgesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"serve.start_year"}, {"serve.end_year"}
+            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {std::get<1>(serve), std::get<2>(serve)},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -103,13 +103,13 @@ TEST_F(FetchEdgesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"serve.start_year"}, {"serve.end_year"}
+            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {std::get<1>(serve0), std::get<2>(serve0)},
-            {std::get<1>(serve1), std::get<2>(serve1)},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+            {player.vid(), team0.vid(), 0, std::get<1>(serve0), std::get<2>(serve0)},
+            {player.vid(), team1.vid(), 0, std::get<1>(serve1), std::get<2>(serve1)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -124,13 +124,14 @@ TEST_F(FetchEdgesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"serve.start_year"}, {"serve.end_year"}
+            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<int64_t, int64_t>> expected;
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected;
         for (auto &serve : player.serves()) {
-            std::tuple<int64_t, int64_t> result(std::get<1>(serve), std::get<2>(serve));
+            std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t> result(player.vid(),
+                    teams_[std::get<0>(serve)].vid(), 0, std::get<1>(serve), std::get<2>(serve));
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -147,13 +148,14 @@ TEST_F(FetchEdgesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"serve.start_year"}, {"serve.end_year"}
+            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<int64_t, int64_t>> expected;
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected;
         for (auto &serve : player.serves()) {
-            std::tuple<int64_t, int64_t> result(std::get<1>(serve), std::get<2>(serve));
+            std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t> result(player.vid(),
+                    teams_[std::get<0>(serve)].vid(), 0, std::get<1>(serve), std::get<2>(serve));
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -168,8 +170,8 @@ TEST_F(FetchEdgesTest, Base) {
         auto query = folly::stringPrintf(fmt, player.name().c_str(), team.name().c_str());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {std::get<1>(serve), std::get<2>(serve)},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -186,7 +188,7 @@ TEST_F(FetchEdgesTest, Base) {
         std::vector<std::tuple<int64_t, int64_t>> expected = {
             {std::get<1>(serve), std::get<2>(serve)},
         };
-        ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyResult(resp, expected, true, {0, 1, 2}));
     }
 }
 
@@ -202,12 +204,12 @@ TEST_F(FetchEdgesTest, NoYield) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"serve.start_year"}, {"serve.end_year"}
+            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {std::get<1>(serve), std::get<2>(serve)},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -222,12 +224,12 @@ TEST_F(FetchEdgesTest, NoYield) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"serve.start_year"}, {"serve.end_year"}
+            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {std::get<1>(serve), std::get<2>(serve)},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -242,12 +244,12 @@ TEST_F(FetchEdgesTest, NoYield) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"serve.start_year"}, {"serve.end_year"}
+            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {std::get<1>(serve), std::get<2>(serve)},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -263,7 +265,7 @@ TEST_F(FetchEdgesTest, NoYield) {
         std::vector<std::tuple<int64_t, int64_t>> expected = {
             {std::get<1>(serve), std::get<2>(serve)},
         };
-        ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyResult(resp, expected, true, {0, 1, 2}));
     }
 }
 
@@ -281,12 +283,12 @@ TEST_F(FetchEdgesTest, Distinct) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"serve.start_year"}, {"serve.end_year"}
+            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {std::get<1>(serve), std::get<2>(serve)},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -301,13 +303,14 @@ TEST_F(FetchEdgesTest, Distinct) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"serve.start_year"}, {"serve.end_year"}
+            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<int64_t, int64_t>> expected;
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected;
         for (auto &serve : player.serves()) {
-            std::tuple<int64_t, int64_t> result(std::get<1>(serve), std::get<2>(serve));
+            std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t> result(player.vid(),
+                    teams_[std::get<0>(serve)].vid(), 0, std::get<1>(serve), std::get<2>(serve));
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -324,13 +327,14 @@ TEST_F(FetchEdgesTest, Distinct) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"serve.start_year"}, {"serve.end_year"}
+            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<int64_t, int64_t>> expected;
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected;
         for (auto &serve : player.serves()) {
-            std::tuple<int64_t, int64_t> result(std::get<1>(serve), std::get<2>(serve));
+            std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t> result(player.vid(),
+                    teams_[std::get<0>(serve)].vid(), 0, std::get<1>(serve), std::get<2>(serve));
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -347,13 +351,14 @@ TEST_F(FetchEdgesTest, Distinct) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"serve._dst"}
+            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve._dst"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<int64_t>> expected = {
-            {teams_["Spurs"].vid()},
-            {teams_["Hornets"].vid()},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t>> expected = {
+            {tim.vid(), teams_["Spurs"].vid(), 0, teams_["Spurs"].vid()},
+            {tony.vid(), teams_["Hornets"].vid(), 0, teams_["Hornets"].vid()},
+            {tony.vid(), teams_["Spurs"].vid(), 0, teams_["Spurs"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -371,7 +376,7 @@ TEST_F(FetchEdgesTest, EmptyInput) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"serve.start_year"}, {"serve.end_year"}
+            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -412,7 +417,7 @@ TEST_F(FetchEdgesTest, NonExistEdge) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"serve.start_year"}
+            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -426,7 +431,7 @@ TEST_F(FetchEdgesTest, NonExistEdge) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"serve.start_year"}
+            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
