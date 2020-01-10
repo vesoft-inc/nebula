@@ -42,7 +42,7 @@ const char* errMsg(ResultCode code) {
     switch (code) {
         X_ERROR
     }
-    return "INVALID ERROR";
+    return "ERR_INVALID";
 }
 #undef X
 
