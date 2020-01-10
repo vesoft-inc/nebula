@@ -42,6 +42,8 @@ public:
         delVertexQpsStat_ = stats::Stats("storage", "del_vertex");
         updateVertexQpsStat_ = stats::Stats("storage", "update_vertex");
         updateEdgeQpsStat_ = stats::Stats("storage", "update_edge");
+        scanEdgeQpsStat_ = stats::Stats("storage", "scan_edge");
+        scanVertexQpsStat_ = stats::Stats("storage", "scan_vertex");
         getKvQpsStat_ = stats::Stats("storage", "get_kv");
         putKvQpsStat_ = stats::Stats("storage", "put_kv");
     }
@@ -78,6 +80,12 @@ public:
 
     folly::Future<cpp2::UpdateResponse>
     future_updateEdge(const cpp2::UpdateEdgeRequest& req) override;
+
+    folly::Future<cpp2::ScanEdgeResponse>
+    future_scanEdge(const cpp2::ScanEdgeRequest& req) override;
+
+    folly::Future<cpp2::ScanVertexResponse>
+    future_scanVertex(const cpp2::ScanVertexRequest& req) override;
 
     // Admin operations
     folly::Future<cpp2::AdminExecResp>
@@ -138,6 +146,8 @@ private:
     stats::Stats delVertexQpsStat_;
     stats::Stats updateVertexQpsStat_;
     stats::Stats updateEdgeQpsStat_;
+    stats::Stats scanEdgeQpsStat_;
+    stats::Stats scanVertexQpsStat_;
     stats::Stats getKvQpsStat_;
     stats::Stats putKvQpsStat_;
 };
