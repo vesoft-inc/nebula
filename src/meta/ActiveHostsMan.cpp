@@ -5,7 +5,6 @@
  */
 
 #include "meta/ActiveHostsMan.h"
-#include "meta/MetaServiceUtils.h"
 #include "meta/processors/Common.h"
 
 DEFINE_int32(expired_threshold_sec, 10 * 60,
@@ -16,11 +15,16 @@ namespace meta {
 
 kvstore::ResultCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
                                                    const HostAddr& hostAddr,
-                                                   const HostInfo& info) {
+                                                   const HostInfo& info,
+                                                   const LeaderParts* leaderParts) {
     CHECK_NOTNULL(kv);
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::hostKey(hostAddr.first, hostAddr.second),
                       HostInfo::encode(info));
+    if (leaderParts != nullptr) {
+        data.emplace_back(MetaServiceUtils::leaderKey(hostAddr.first, hostAddr.second),
+                          MetaServiceUtils::leaderVal(*leaderParts));
+    }
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
     folly::Baton<true, std::atomic> baton;
     kvstore::ResultCode ret;
