@@ -119,13 +119,29 @@ TEST(ProcessorTest, ListPartsTest) {
         }
     }
 
-    std::vector<Status> sts(8, Status::OK());
-    std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
-    auto client = std::make_unique<AdminClient>(std::move(injector));
+    // register HB with leader distribution
+    {
+        auto now = time::WallClock::fastNowInMilliSec();
+        HostInfo info(now);
+
+        LeaderParts leaderParts;
+        leaderParts[1] = {1, 2, 3, 4, 5};
+        auto ret = ActiveHostsMan::updateHostInfo(kv.get(), {0, 0}, info, &leaderParts);
+        CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
+
+        leaderParts[1] = {6, 7, 8};
+        ret = ActiveHostsMan::updateHostInfo(kv.get(), {1, 1}, info, &leaderParts);
+        CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
+
+        leaderParts[1] = {9};
+        ret = ActiveHostsMan::updateHostInfo(kv.get(), {2, 2}, info, &leaderParts);
+        CHECK_EQ(ret, kvstore::ResultCode::SUCCEEDED);
+    }
+
     {
         cpp2::ListPartsReq req;
         req.set_space_id(1);
-        auto* processor = ListPartsProcessor::instance(kv.get(), client.get());
+        auto* processor = ListPartsProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
