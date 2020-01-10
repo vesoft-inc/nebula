@@ -35,7 +35,7 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
                                                    iter->val(),
                                                    spaceId_,
                                                    edgeKey.edge_type);
-        this->collectProps(reader.get(), iter->key(), props, nullptr, &collector);
+        this->collectProps(reader.get(), iter->key(), props, nullptr, &collector, true);
         rsWriter.addRow(writer);
 
         iter->next();
@@ -74,7 +74,7 @@ void QueryEdgePropsProcessor::doProcess(const cpp2::EdgePropRequest& req) {
         this->onFinished();
         return;
     }
-    RowSetWriter rsWriter(std::move(schema)->second);
+    RowSetWriter rsWriter(schema->second);
     std::for_each(req.get_parts().begin(), req.get_parts().end(), [&](auto& partE) {
         auto partId = partE.first;
         kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;

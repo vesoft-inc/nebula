@@ -10,6 +10,8 @@
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 
+DEFINE_int32(reserved_edges_one_vertex, 1024, "reserve edges for one vertex");
+
 namespace nebula {
 namespace storage {
 
@@ -24,26 +26,34 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeImpl(const PartitionID partI
         LOG(ERROR) << "Not found the edge type: " << edgeType;
         return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
     }
-    RowSetWriter rsWriter(std::move(schema)->second);
+    std::vector<cpp2::IdAndProp> edges;
+    edges.reserve(FLAGS_reserved_edges_one_vertex);
     auto ret = collectEdgeProps(
         partId, vId, edgeType, props, &fcontext,
         [&, this](RowReader* reader, folly::StringPiece k, const std::vector<PropContext>& p) {
-            RowWriter writer(rsWriter.schema());
-            PropsCollector collector(&writer);
-            this->collectProps(reader, k, p, &fcontext, &collector);
-            rsWriter.addRow(writer);
+            cpp2::IdAndProp edge;
+            if (!onlyStructure_) {
+                RowWriter writer(schema->second);
+                PropsCollector collector(&writer);
+                this->collectProps(reader, k, p, &fcontext, &collector);
+                edge.set_dst(collector.getDstId());
+                edge.set_props(writer.encode());
+            } else {
+                PropsCollector collector(nullptr);
+                this->collectProps(reader, k, p, &fcontext, &collector);
+                edge.set_dst(collector.getDstId());
+            }
+            edges.emplace_back(std::move(edge));
         });
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         return ret;
     }
-
-    if (!rsWriter.data().empty()) {
+    if (!edges.empty()) {
         cpp2::EdgeData edgeData;
         edgeData.set_type(edgeType);
-        edgeData.set_data(std::move(rsWriter.data()));
+        edgeData.set_edges(std::move(edges));
         vdata.edge_data.emplace_back(std::move(edgeData));
     }
-
     return ret;
 }
 
@@ -104,8 +114,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
         return kvstore::ResultCode::SUCCEEDED;
     }
 
-    kvstore::ResultCode ret;
-    ret = processEdge(partId, vId, fcontext, vResp);
+    auto ret = processEdge(partId, vId, fcontext, vResp);
 
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         return ret;
@@ -114,6 +123,9 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
     if (!vResp.edge_data.empty()) {
         // Only return the vertex if edges existed.
         std::lock_guard<std::mutex> lg(this->lock_);
+        for (auto& edata : vResp.edge_data) {
+            totalEdges_ += edata.edges.size();
+        }
         vertices_.emplace_back(std::move(vResp));
     }
 
@@ -123,7 +135,6 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
 void QueryBoundProcessor::onProcessFinished(int32_t retNum) {
     (void)retNum;
     resp_.set_vertices(std::move(vertices_));
-
     if (!vertexSchemaResp_.empty()) {
         resp_.set_vertex_schema(std::move(vertexSchemaResp_));
     }

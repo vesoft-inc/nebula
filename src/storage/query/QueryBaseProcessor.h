@@ -74,7 +74,8 @@ protected:
                       folly::StringPiece key,
                       const std::vector<PropContext>& props,
                       FilterContext* fcontext,
-                      Collector* collector);
+                      Collector* collector,
+                      bool compactDstIdProps = false);
 
     virtual kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) = 0;
 
@@ -131,6 +132,7 @@ protected:
     folly::Executor* executor_{nullptr};
     VertexCache* vertexCache_{nullptr};
     std::unordered_map<std::string, EdgeType> edgeMap_;
+    bool onlyStructure_ = false;
 };
 
 }  // namespace storage
