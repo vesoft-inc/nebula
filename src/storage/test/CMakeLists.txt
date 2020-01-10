@@ -277,7 +277,6 @@ nebula_add_test(
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 
-
 nebula_add_test(
     NAME checkpoint_test
     SOURCES CheckpointTest.cpp
@@ -291,3 +290,19 @@ nebula_add_test(
     OBJECTS ${storage_test_deps} $<TARGET_OBJECTS:adHocSchema_obj>
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
+
+nebula_add_test(
+    NAME scan_edge_test
+    SOURCES ScanEdgeTest.cpp
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
+    LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
+)
+
+
+nebula_add_test(
+    NAME scan_vertex_test
+    SOURCES ScanVertexTest.cpp
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
+    LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
+)
+

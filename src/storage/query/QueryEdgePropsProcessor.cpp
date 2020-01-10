@@ -97,7 +97,7 @@ void QueryEdgePropsProcessor::doProcess(const cpp2::EdgePropRequest& req) {
 
     std::vector<PropContext> props;
     props.reserve(returnColumnsNum);
-     for (auto& ec : this->edgeContexts_) {
+    for (auto& ec : this->edgeContexts_) {
         auto p = ec.second;
         for (auto& prop : p) {
             props.emplace_back(std::move(prop));

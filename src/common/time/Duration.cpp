@@ -17,7 +17,7 @@ void Duration::reset(bool paused) {
     if (isPaused_) {
         startTick_ = 0;
     } else {
-        startTick_ = readTsc();
+        startTick_ = TscHelper::readTsc();
     }
 }
 
@@ -28,7 +28,7 @@ void Duration::pause() {
     }
 
     isPaused_ = true;
-    accumulated_ += (readTsc() - startTick_);
+    accumulated_ += (TscHelper::readTsc() - startTick_);
     startTick_ = 0;
 }
 
@@ -38,26 +38,29 @@ void Duration::resume() {
         return;
     }
 
-    startTick_ = readTsc();
+    startTick_ = TscHelper::readTsc();
     isPaused_ = false;
 }
 
 
 uint64_t Duration::elapsedInSec() const {
-    uint64_t ticks = isPaused_ ? accumulated_ : readTsc() - startTick_ + accumulated_;
-    return ticks * ticksPerSecFactor.load() + 0.5;
+    uint64_t ticks = isPaused_ ? accumulated_ :
+                                 TscHelper::readTsc() - startTick_ + accumulated_;
+    return TscHelper::ticksToDurationInSec(ticks);
 }
 
 
 uint64_t Duration::elapsedInMSec() const {
-    uint64_t ticks = isPaused_ ? accumulated_ : readTsc() - startTick_ + accumulated_;
-    return ticks * ticksPerMSecFactor.load() + 0.5;
+    uint64_t ticks = isPaused_ ? accumulated_ :
+                                 TscHelper::readTsc() - startTick_ + accumulated_;
+    return TscHelper::ticksToDurationInMSec(ticks);
 }
 
 
 uint64_t Duration::elapsedInUSec() const {
-    uint64_t ticks = isPaused_ ? accumulated_ : readTsc() - startTick_ + accumulated_;
-    return ticks * ticksPerUSecFactor.load();
+    uint64_t ticks = isPaused_ ? accumulated_ :
+                                 TscHelper::readTsc() - startTick_ + accumulated_;
+    return TscHelper::ticksToDurationInUSec(ticks);
 }
 
 }  // namespace time
