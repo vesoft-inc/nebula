@@ -458,7 +458,7 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
             << ", dst: " << edgeKey.get_dst() << ", ranking: " << edgeKey.get_ranking();
     CHECK_NOTNULL(kvstore_);
     this->kvstore_->asyncAtomicOp(this->spaceId_, partId,
-        [&, this] () -> std::string {
+        [partId, edgeKey, this] () -> std::string {
             if (checkFilter(partId, edgeKey)) {
                 return updateAndWriteBack(partId, edgeKey);
             }
