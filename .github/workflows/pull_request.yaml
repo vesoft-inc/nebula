@@ -2,7 +2,7 @@ name: pull_request
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
+    types: [synchronize, reopened, labeled]
     branches:
       - master
 
@@ -34,29 +34,29 @@ jobs:
       - name: Ignore only documents changes
         id: ignore_docs
         run: |
-          num_source_files=$(git show --name-only remotes/origin/master..HEAD | grep '^src\|^CMakeLists.txt\|^cmake' | wc -l)
-          echo "::set-output name=ignore::${num_source_files}"
+          num_source_files=$(git --no-pager diff --name-only $(git log --oneline -n 1 | cut -d' ' -f1,5) | grep '^src\|^CMakeLists.txt\|^cmake\|^.github/workflows' | wc -l)
+          echo "::set-output name=num_source_files::${num_source_files}"
       - name: Prepare environment
         run: |
           [ -f "$CCACHE_DIR/ccache.conf" ] || cp ci/ccache.conf "$CCACHE_DIR"
           [ -d build/ ] && rm -rf build/* || mkdir -p build
       - name: CMake with gcc
-        if: matrix.compiler == 'gcc' && steps.ignore_docs.outputs.ignore != '0'
+        if: matrix.compiler == 'gcc' && steps.ignore_docs.outputs.num_source_files != 0
         run: cd build && cmake ..
       - name: CMake with clang
-        if: matrix.compiler == 'clang' && steps.ignore_docs.outputs.ignore != '0'
+        if: matrix.compiler == 'clang' && steps.ignore_docs.outputs.num_source_files != 0
         run: cd build && cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DNEBULA_CLANG_USE_GCC_TOOLCHAIN=/opt/vesoft/toolset/gcc/7.5.0 ..
       - name: Make
-        if: success()
+        if: steps.ignore_docs.outputs.num_source_files != 0
         run: cd build && make -j $(nproc)
       - name: CTest with multiple threads
-        if: success()
+        if: steps.ignore_docs.outputs.num_source_files != 0
         timeout-minutes: 15
         run: cd build && ctest -j 6 --timeout 300 --output-on-failure --rerun-failed
       - name: CTest with single thread
-        if: failure() && steps.ignore_docs.outputs.ignore != '0'
+        if: failure() && steps.ignore_docs.outputs.num_source_files != 0
         timeout-minutes: 30
-        run: cd build && ctest --timeout 300 --output-on-failure --rerun-failed
+        run: cd build && ASAN_OPTIONS=fast_unwind_on_malloc=0 ctest --timeout 300 --output-on-failure --rerun-failed
       - name: Cleanup
         if: always()
         run: rm -rf build

@@ -32,6 +32,7 @@ namespace stats {
  *   <counter_name>.<statistic_type>.<time_range>
  *
  * Here are some examples:
+ *   query.rate.5       -- query per second in the five seconds 
  *   query.rate.60      -- query per second in the last minute
  *   latency.p99.600    -- The latency that slower than 99% of all queries
  *                           in the last ten minutes
@@ -53,9 +54,10 @@ public:
     };
 
     enum class TimeRange {
-        ONE_MINUTE = 0,
-        TEN_MINUTES = 1,
-        ONE_HOUR = 2
+        FIVE_SECONDS = 0,
+        ONE_MINUTE = 1,
+        TEN_MINUTES = 2,
+        ONE_HOUR = 3
     };
 
     static void setDomain(folly::StringPiece domain);
