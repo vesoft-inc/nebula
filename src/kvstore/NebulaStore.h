@@ -130,6 +130,20 @@ public:
                       std::string&& prefix,
                       std::unique_ptr<KVIterator>* iter) override = delete;
 
+    // Get all results with prefix starting from start
+    ResultCode rangeWithPrefix(GraphSpaceID spaceId,
+                               PartitionID  partId,
+                               const std::string& start,
+                               const std::string& prefix,
+                               std::unique_ptr<KVIterator>* iter) override;
+
+    // Delete the overloading with a rvalue `prefix'
+    ResultCode rangeWithPrefix(GraphSpaceID spaceId,
+                               PartitionID  partId,
+                               std::string&& start,
+                               std::string&& prefix,
+                               std::unique_ptr<KVIterator>* iter) override = delete;
+
     // async batch put.
     void asyncMultiPut(GraphSpaceID spaceId,
                        PartitionID  partId,

@@ -1181,14 +1181,14 @@ create_edge_index_sentence
     ;
 
 drop_tag_index_sentence
-    : KW_DROP KW_TAG KW_INDEX name_label {
-        $$ = new DropTagIndexSentence($4);
+    : KW_DROP KW_TAG KW_INDEX opt_if_exists name_label {
+        $$ = new DropTagIndexSentence($5, $4);
     }
     ;
 
 drop_edge_index_sentence
-    : KW_DROP KW_EDGE KW_INDEX name_label {
-        $$ = new DropEdgeIndexSentence($4);
+    : KW_DROP KW_EDGE KW_INDEX opt_if_exists name_label {
+        $$ = new DropEdgeIndexSentence($5, $4);
     }
     ;
 
