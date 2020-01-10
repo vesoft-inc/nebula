@@ -54,8 +54,12 @@ void buildRequest(cpp2::EdgePropRequest& req) {
     for (auto partId = 0; partId < 3; partId++) {
         for (auto vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             for (auto dstId = 10001; dstId <= 10007; dstId++) {
-                tmpEdges[partId].emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                              vertexId, 101, dstId - 10001, dstId);
+                cpp2::EdgeKey edgeKey;
+                edgeKey.set_src(vertexId);
+                edgeKey.set_edge_type(101);
+                edgeKey.set_ranking(dstId - 10001);
+                edgeKey.set_dst(dstId);
+                tmpEdges[partId].emplace_back(std::move(edgeKey));
             }
         }
     }

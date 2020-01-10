@@ -30,13 +30,15 @@ TEST(CheckpointTest, simpleTest) {
             for (auto vertexId = partId * 10; vertexId < 10 * (partId + 1); vertexId++) {
                 std::vector<cpp2::Tag> tags;
                 for (auto tagId = 0; tagId < 10; tagId++) {
-                    tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                      tagId,
-                                      folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId));
+                    cpp2::Tag tag;
+                    tag.set_tag_id(tagId);
+                    tag.set_props(folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId));
+                    tags.emplace_back(std::move(tag));
                 }
-                vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                      vertexId,
-                                      std::move(tags));
+                cpp2::Vertex vertex;
+                vertex.set_id(vertexId);
+                vertex.set_tags(std::move(tags));
+                vertices.emplace_back(std::move(vertex));
             }
             req.parts.emplace(partId, std::move(vertices));
         }

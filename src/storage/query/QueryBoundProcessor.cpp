@@ -33,8 +33,10 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeImpl(const PartitionID partI
     }
 
     if (!rsWriter.data().empty()) {
-        vdata.edge_data.emplace_back(apache::thrift::FragileConstructor::FRAGILE, edgeType,
-                                     std::move(rsWriter.data()));
+        cpp2::EdgeData edgeData;
+        edgeData.set_type(edgeType);
+        edgeData.set_data(std::move(rsWriter.data()));
+        vdata.edge_data.emplace_back(std::move(edgeData));
     }
 
     return ret;
@@ -80,9 +82,10 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
                 return ret;
             }
             if (writer.size() > 1) {
-                td.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                tc.tagId_,
-                                writer.encode());
+                cpp2::TagData tagData;
+                tagData.set_tag_id(tc.tagId_);
+                tagData.set_data(writer.encode());
+                td.emplace_back(std::move(tagData));
             }
         }
         vResp.set_tag_data(std::move(td));

@@ -134,7 +134,7 @@ struct TagIndexItem {
 struct EdgeIndexItem {
     1: common.EdgeIndexID   index_id,
     2: string               index_name,
-    3: IndexFields          fields ,
+    3: IndexFields          fields,
 }
 
 enum HostStatus {

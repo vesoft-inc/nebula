@@ -755,8 +755,10 @@ MetaClient::multiPut(std::string segment,
     cpp2::MultiPutReq req;
     std::vector<nebula::cpp2::Pair> data;
     for (auto& element : pairs) {
-        data.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                          std::move(element.first), std::move(element.second));
+        nebula::cpp2::Pair pair;
+        pair.set_key(std::move(element.first));
+        pair.set_value(std::move(element.second))
+        data.emplace_back(std::move(pair));
     }
     req.set_segment(std::move(segment));
     req.set_pairs(std::move(data));
