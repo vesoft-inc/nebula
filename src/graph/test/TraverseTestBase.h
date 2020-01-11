@@ -278,7 +278,7 @@ public:
             return name_;
         }
 
-        const std::string& major() const {
+        const std::string& speciality() const {
             return speciality_;
         }
 
