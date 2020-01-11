@@ -207,6 +207,15 @@ struct VertexPropRequest {
     3: list<PropDef> return_columns,
 }
 
+struct EdgePropRequest {
+    1: common.GraphSpaceID space_id,
+    // partId => edges
+    2: map<common.PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") parts,
+    3: common.EdgeType edge_type,
+    4: binary filter,
+    5: list<PropDef> return_columns,
+}
+
 struct AddVerticesRequest {
     1: common.GraphSpaceID space_id,
     // partId => vertices
@@ -445,15 +454,6 @@ struct CreateCPRequest {
 struct DropCPRequest {
     1: common.GraphSpaceID          space_id,
     2: string                       name,
-}
-
-struct EdgePropRequest {
-    1: common.GraphSpaceID space_id,
-    // partId => edges
-    2: map<common.PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") parts,
-    3: common.EdgeType edge_type,
-    4: binary filter,
-    5: list<PropDef> return_columns,
 }
 
 struct LookUpVertexIndexResp {

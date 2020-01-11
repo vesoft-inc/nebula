@@ -235,6 +235,7 @@ protected:
 
     template<class Request,
              class RemoteFunc,
+             class GetIdFunc,
              class Response =
                 typename std::result_of<
                     RemoteFunc(storage::cpp2::StorageServiceAsyncClient*, const Request&)
@@ -243,7 +244,8 @@ protected:
     folly::SemiFuture<StorageRpcResponse<Response>> collectResponse(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
-        RemoteFunc&& remoteFunc);
+        RemoteFunc&& remoteFunc,
+        GetIdFunc f);
 
     template<class Request,
              class RemoteFunc,
@@ -256,18 +258,6 @@ protected:
         folly::EventBase* evb,
         std::pair<HostAddr, Request> request,
         RemoteFunc remoteFunc);
-
-    template<class Request,
-            class RemoteFunc,
-            class Response =
-            typename std::result_of<
-                    RemoteFunc(storage::cpp2::StorageServiceAsyncClient*, const Request&)
-            >::type::value_type
-    >
-    folly::SemiFuture<StorageRpcResponse<Response>> getResponse(
-        folly::EventBase* evb,
-        std::unordered_map<HostAddr, Request> requests,
-        RemoteFunc&& remoteFunc);
 
     // Cluster given ids into the host they belong to
     // The method returns a map

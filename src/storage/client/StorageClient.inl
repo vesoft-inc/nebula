@@ -75,11 +75,12 @@ private:
 }  // Anonymous namespace
 
 
-template<class Request, class RemoteFunc, class Response>
+template<class Request, class RemoteFunc, class GetIdFunc, class Response>
 folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
-        RemoteFunc&& remoteFunc) {
+        RemoteFunc&& remoteFunc,
+        GetIdFunc f) {
     auto context = std::make_shared<ResponseContext<Request, RemoteFunc, Response>>(
         requests.size(), std::move(remoteFunc));
 
@@ -95,7 +96,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
         auto res = context->insertRequest(host, std::move(req.second));
         DCHECK(res.second);
         // Invoke the remote method
-        folly::via(evb, [this, evb, context, host, spaceId, res, duration] () mutable {
+        folly::via(evb, [this, evb, context, host, spaceId, res, duration, f] () mutable {
             auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
             // Result is a pair of <Request&, bool>
             auto start = time::WallClock::fastNowInMicroSec();
@@ -108,16 +109,18 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                             host,
                             spaceId,
                             duration,
+                            f,
                             start] (folly::Try<Response>&& val) {
                 auto& r = context->findRequest(host);
                 if (val.hasException()) {
                     LOG(ERROR) << "Request to " << host << " failed: " << val.exception().what();
                     for (auto& part : r.parts) {
-                        VLOG(3) << "Exception! Failed part " << part.first;
+                        auto partId = f(part);
+                        VLOG(3) << "Exception! Failed part " << partId;
                         context->resp.failedParts().emplace(
-                            part.first,
+                            partId,
                             storage::cpp2::ErrorCode::E_RPC_FAILURE);
-                        invalidLeader(spaceId, part.first);
+                        invalidLeader(spaceId, partId);
                     }
                     context->resp.markFailure();
                 } else {
@@ -241,88 +244,6 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
         });
     });  // via
     return f;
-}
-
-
-template<class Request, class RemoteFunc, class Response>
-folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::getResponse(
-        folly::EventBase* evb,
-        std::unordered_map<HostAddr, Request> requests,
-        RemoteFunc&& remoteFunc) {
-    auto context = std::make_shared<ResponseContext<Request, RemoteFunc, Response>>(
-            requests.size(), std::move(remoteFunc));
-    if (evb == nullptr) {
-        DCHECK(!!ioThreadPool_);
-        evb = ioThreadPool_->getEventBase();
-    }
-    time::Duration duration;
-    for (auto& req : requests) {
-        auto& host = req.first;
-        auto spaceId = req.second.get_space_id();
-        auto res = context->insertRequest(host, std::move(req.second));
-        DCHECK(res.second);
-        folly::via(evb, [this, evb, context, host, spaceId, res, duration] () mutable {
-            auto client = clientsMan_->client(host, evb);
-            context->serverMethod(client.get(), *res.first)
-            .via(evb).then([this, context, host, spaceId, duration] (folly::Try<Response>&& val) {
-                auto& r = context->findRequest(host);
-                if (val.hasException()) {
-                    LOG(ERROR) << "Request to " << host << " failed: " << val.exception().what();
-                    for (auto& part : r.parts) {
-                        VLOG(3) << "Exception! Failed part " << part;
-                        context->resp.failedParts().emplace(
-                                part,
-                                storage::cpp2::ErrorCode::E_RPC_FAILURE);
-                        invalidLeader(spaceId, part);
-                    }
-                    context->resp.markFailure();
-                } else {
-                    auto resp = std::move(val.value());
-                    auto& result = resp.get_result();
-                    bool hasFailure{false};
-                    for (auto& code : result.get_failed_codes()) {
-                        VLOG(3) << "Failure! Failed part " << code.get_part_id()
-                                << ", failed code " << static_cast<int32_t>(code.get_code());
-                        hasFailure = true;
-                        if (code.get_code() == storage::cpp2::ErrorCode::E_LEADER_CHANGED) {
-                            auto* leader = code.get_leader();
-                            if (leader != nullptr
-                                && leader->get_ip() != 0
-                                && leader->get_port() != 0) {
-                                    updateLeader(spaceId,
-                                                 code.get_part_id(),
-                                                 HostAddr(leader->get_ip(), leader->get_port()));
-                            }
-                        } else if (code.get_code() == storage::cpp2::ErrorCode::E_PART_NOT_FOUND) {
-                            invalidLeader(spaceId, code.get_part_id());
-                        } else {
-                            context->resp.failedParts().emplace(code.get_part_id(),
-                                                                code.get_code());
-                        }
-                    }
-                    if (hasFailure) {
-                        context->resp.markFailure();
-                    }
-                    auto latency = result.get_latency_in_us();
-                    context->resp.setLatency(latency);
-                    context->resp.responses().emplace_back(std::move(resp));
-                }
-                if (context->removeRequest(host)) {
-                    stats::Stats::addStatsValue(stats_.get(),
-                                                context->resp.succeeded(),
-                                                duration.elapsedInUSec());
-                    context->promise.setValue(std::move(context->resp));
-                }
-            });
-        });  // via
-    }  // for
-    if (context->finishSending()) {
-        context->promise.setValue(std::move(context->resp));
-        stats::Stats::addStatsValue(stats_.get(),
-                                    context->resp.succeeded(),
-                                    duration.elapsedInUSec());
-    }
-    return context->promise.getSemiFuture();
 }
 }   // namespace storage
 }   // namespace nebula
