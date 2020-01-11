@@ -268,9 +268,9 @@ public:
     class Bachelor final {
     public:
         Bachelor(std::string name,
-                 std::string major) {
+                 std::string speciality) {
             name_ = std::move(name);
-            major_ = std::move(major);
+            speciality_ = std::move(speciality);
             vid_ = std::hash<std::string>()(name_);
         }
 
@@ -279,7 +279,7 @@ public:
         }
 
         const std::string& major() const {
-            return major_;
+            return speciality_;
         }
 
         int64_t vid() const {
@@ -288,7 +288,7 @@ public:
 
     private:
         std::string     name_;
-        std::string     major_;
+        std::string     speciality_;
         int64_t         vid_{0};
     };
 
@@ -471,7 +471,7 @@ AssertionResult TraverseTestBase::prepareSchema() {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "CREATE TAG bachelor(name string, major string)";
+        std::string cmd = "CREATE TAG bachelor(name string, speciality string)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd << " failed";
@@ -821,7 +821,7 @@ AssertionResult TraverseTestBase::insertData() {
         cpp2::ExecutionResponse resp;
         std::string query;
         query.reserve(1024);
-        query += "INSERT VERTEX bachelor(name, major) VALUES ";
+        query += "INSERT VERTEX bachelor(name, speciality) VALUES ";
         for (auto &bachelor : bachelors_) {
             query += std::to_string(bachelor.vid());
             query += ": ";
@@ -830,7 +830,7 @@ AssertionResult TraverseTestBase::insertData() {
             query += bachelor.name();
             query += "\"";
             query += ",";
-            query += bachelor.major();
+            query += bachelor.speciality();
             query += "),\n\t";
         }
         query.resize(query.size() - 3);
