@@ -316,7 +316,6 @@ nebula_add_test(
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 
-<<<<<<< HEAD
 nebula_add_executable(
     NAME
         storage_index_write_bm

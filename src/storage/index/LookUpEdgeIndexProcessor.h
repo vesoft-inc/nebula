@@ -4,24 +4,22 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef STORAGE_SCANEDGEINDEXPROCESSOR_H
-#define STORAGE_SCANEDGEINDEXPROCESSOR_H
+#ifndef STORAGE_LOOKUPEDGEINDEXPROCESSOR_H
+#define STORAGE_LOOKUPEDGEINDEXPROCESSOR_H
 
 #include "base/Base.h"
 #include "kvstore/NebulaStore.h"
-#include "LookUpIndexBaseProcessor.h"
+#include "storage/index/IndexExecutor.h"
 
 namespace nebula {
 namespace storage {
 class LookUpEdgeIndexProcessor
-    : public LookUpIndexBaseProcessor<cpp2::LookUpIndexRequest, cpp2::LookUpEdgeIndexResp> {
+    : public IndexExecutor<cpp2::LookUpEdgeIndexResp> {
 public:
     static LookUpEdgeIndexProcessor* instance(kvstore::KVStore* kvstore,
                                             meta::SchemaManager* schemaMan,
-                                            stats::Stats* stats,
-                                            folly::Executor* executor,
-                                            VertexCache* cache = nullptr) {
-        return new LookUpEdgeIndexProcessor(kvstore, schemaMan, stats, executor, cache);
+                                            stats::Stats* stats) {
+        return new LookUpEdgeIndexProcessor(kvstore, schemaMan, stats);
     }
 
     void process(const cpp2::LookUpIndexRequest& req);
@@ -29,14 +27,12 @@ public:
 private:
     explicit LookUpEdgeIndexProcessor(kvstore::KVStore* kvstore,
                                     meta::SchemaManager* schemaMan,
-                                    stats::Stats* stats,
-                                    folly::Executor* executor,
-                                    VertexCache* cache = nullptr)
-            : LookUpIndexBaseProcessor<cpp2::LookUpIndexRequest, cpp2::LookUpEdgeIndexResp>
-                (kvstore, schemaMan, stats, executor, cache) {}
+                                    stats::Stats* stats)
+        : IndexExecutor<cpp2::LookUpEdgeIndexResp>
+            (kvstore, schemaMan, stats, nullptr, true) {}
 };
 }  // namespace storage
 }  // namespace nebula
 
-#endif  // STORAGE_SCANEDGEINDEXPROCESSOR_H
+#endif  // STORAGE_LOOKUPEDGEINDEXPROCESSOR_H
 

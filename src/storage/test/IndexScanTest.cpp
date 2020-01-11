@@ -325,7 +325,7 @@ TEST(IndexScanTest, VertexScanTest) {
     {
         auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
         auto* processor = LookUpEdgeIndexProcessor::instance(kv.get(), schemaMan.get(), nullptr,
-                                                           executor.get(), nullptr);
+                                                           executor.get());
         cpp2::LookUpIndexRequest req;
 
         decltype(req.parts) parts;

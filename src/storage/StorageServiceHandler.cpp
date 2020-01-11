@@ -244,7 +244,6 @@ StorageServiceHandler::future_lookUpVertexIndex(const cpp2::LookUpIndexRequest& 
     auto* processor = LookUpVertexIndexProcessor::instance(kvstore_,
                                                          schemaMan_,
                                                          &scanVertexIndexQpsStat_,
-                                                         getThreadManager(),
                                                          &vertexCache_);
     RETURN_FUTURE(processor);
 }
@@ -253,9 +252,7 @@ folly::Future<cpp2::LookUpEdgeIndexResp>
 StorageServiceHandler::future_lookUpEdgeIndex(const cpp2::LookUpIndexRequest& req) {
     auto* processor = LookUpEdgeIndexProcessor::instance(kvstore_,
                                                        schemaMan_,
-                                                       &scanEdgeIndexQpsStat_,
-                                                       getThreadManager(),
-                                                       &vertexCache_);
+                                                       &scanEdgeIndexQpsStat_);
     RETURN_FUTURE(processor);
 }
 

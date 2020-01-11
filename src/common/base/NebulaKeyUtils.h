@@ -262,6 +262,13 @@ public:
         return raw;
     }
 
+    static int64_t decodeInt64(const folly::StringPiece& raw) {
+        auto val = *reinterpret_cast<const int64_t*>(raw.data());
+        val = folly::Endian::little(val);
+        val ^= folly::to<int64_t>(1) << 63;
+        return val;
+    }
+
     /*
      * Default, the double memory structure is :
      *   sign bit（1bit）+  exponent bit(11bit) + float bit(52bit)
@@ -280,6 +287,39 @@ public:
         raw.reserve(sizeof(double));
         raw.append(c, sizeof(double));
         return raw;
+    }
+
+    static double decodeDouble(const folly::StringPiece& raw) {
+        char* v = const_cast<char*>(raw.data());
+        v[0] ^= 0x80;
+        auto val = *reinterpret_cast<const double*>(v);
+        val = folly::Endian::little(val);
+        if (val < 0) {
+            val = -(std::numeric_limits<double>::max() + val);
+        }
+        return val;
+    }
+
+    static VariantType decodeVariant(const folly::StringPiece& raw,
+                                     nebula::cpp2::SupportedType type) {
+        switch (type) {
+            case nebula::cpp2::SupportedType::BOOL : {
+                return *reinterpret_cast<const bool*>(raw.data());
+            }
+            case nebula::cpp2::SupportedType::INT :
+            case nebula::cpp2::SupportedType::TIMESTAMP : {
+                return decodeInt64(raw);
+            }
+            case nebula::cpp2::SupportedType::DOUBLE :
+            case nebula::cpp2::SupportedType::FLOAT : {
+                return decodeDouble(raw);
+            }
+            case nebula::cpp2::SupportedType::STRING : {
+                return raw.str();
+            }
+            default:
+                return "";
+        }
     }
 
     static VertexID getIndexVertexID(const folly::StringPiece& rawKey) {
