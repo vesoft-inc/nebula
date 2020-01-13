@@ -343,7 +343,7 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
                 auto defaultVal = RowReader::getDefaultProp(prop.type_.type);
                 if (!defaultVal.ok()) {
                     // Should never reach here.
-                    LOG(ERROR) << "Get default value failed for " << name.;
+                    LOG(FATAL) << "Get default value failed for " << name;
                     continue;
                 } else {
                     v = std::move(defaultVal).value();
@@ -351,6 +351,7 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
             } else {
                 v = value(std::move(res));
             }
+
             if (prop.fromTagFilter()) {
                 fcontext->tagFilters_.emplace(std::make_pair(prop.tagOrEdgeName(), name), v);
             }

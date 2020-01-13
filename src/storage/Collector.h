@@ -39,28 +39,65 @@ public:
                 : writer_(writer) {}
 
     void collectVid(int64_t v, const PropContext& prop) override {
-        UNUSED(prop);
+        switch (prop.type_.type) {
+            case nebula::cpp2::SupportedType::VID:
+                break;
+            default:
+                // Give a default value
+                // TODO: Should give null
+                v = 0;
+        }
         (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::VID) << v;
     }
 
     void collectBool(bool v, const PropContext& prop) override {
-        UNUSED(prop);
+        switch (prop.type_.type) {
+            case nebula::cpp2::SupportedType::BOOL:
+                break;
+            default:
+                // Give a default value
+                // TODO: Should give null
+                v = false;
+        }
         (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::BOOL) << v;
     }
 
     void collectInt64(int64_t v, const PropContext& prop) override {
-        UNUSED(prop);
+        switch (prop.type_.type) {
+            case nebula::cpp2::SupportedType::INT:
+            case nebula::cpp2::SupportedType::TIMESTAMP:
+                break;
+            default:
+                // Give a default value
+                // TODO: Should give null
+                v = 0;
+        }
         (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::INT) << v;
     }
 
     void collectDouble(double v, const PropContext& prop) override {
-        UNUSED(prop);
+        switch (prop.type_.type) {
+            case nebula::cpp2::SupportedType::DOUBLE:
+            case nebula::cpp2::SupportedType::FLOAT:
+                break;
+            default:
+                // Give a default value
+                // TODO: Should give null
+                v = 0;
+        }
         (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::DOUBLE) << v;
     }
 
     void collectString(const std::string& v, const PropContext& prop) override {
-        UNUSED(prop);
-        (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::STRING) << v;
+        switch (prop.type_.type) {
+            case nebula::cpp2::SupportedType::STRING:
+                (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::STRING) << v;
+                break;
+            default:
+                // Give a default value
+                // TODO: Should give null
+                (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::STRING) << "";
+        }
     }
 
     template<typename V>

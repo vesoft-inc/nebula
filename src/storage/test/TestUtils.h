@@ -77,8 +77,8 @@ public:
         return store;
     }
 
-    static std::unique_ptr<meta::SchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0) {
-        auto* schemaMan = new AdHocSchemaManager();
+    static std::unique_ptr<AdHocSchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0) {
+        auto schemaMan = std::make_unique<AdHocSchemaManager>();
         for (auto edgeType = 101; edgeType < 110; edgeType++) {
             schemaMan->addEdgeSchema(spaceId /*space id*/, edgeType /*edge type*/,
                                      TestUtils::genEdgeSchemaProvider(10, 10));
@@ -87,8 +87,7 @@ public:
             schemaMan->addTagSchema(
                 spaceId /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
         }
-        std::unique_ptr<meta::SchemaManager> sm(schemaMan);
-        return sm;
+        return schemaMan;
     }
 
     static std::vector<cpp2::Vertex> setupVertices(
