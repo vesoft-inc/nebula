@@ -90,11 +90,11 @@ void CmdProcessor::calColumnWidths(
                 }
                 case cpp2::ColumnValue::Type::single_precision: {
                     int digits10 = std::numeric_limits<float>::digits10;
-                    const char *fmtValue = folly::sformat("%.{}f", digits10).c_str();
-                    GET_VALUE_WIDTH(float, single_precision, fmtValue);
+                    std::string fmtValue = folly::sformat("%.{}f", digits10);
+                    GET_VALUE_WIDTH(float, single_precision, fmtValue.c_str());
                     if (genFmt) {
-                        const char *fmt = folly::sformat(" %%-%ld.{}f |", digits10).c_str();
-                        formats[idx] = folly::stringPrintf(fmt, widths[idx]);
+                        std::string fmt = folly::sformat(" %%-%ld.{}f |", digits10);
+                        formats[idx] = folly::stringPrintf(fmt.c_str(), widths[idx]);
                     }
                     break;
                 }
@@ -103,8 +103,8 @@ void CmdProcessor::calColumnWidths(
                     const char *fmtValue = folly::sformat("%.{}lf", digits10).c_str();
                     GET_VALUE_WIDTH(double, double_precision, fmtValue);
                     if (genFmt) {
-                        const char *fmt = folly::sformat(" %%-%ld.{}lf |", digits10).c_str();
-                        formats[idx] = folly::stringPrintf(fmt, widths[idx]);
+                        std::string fmt = folly::sformat(" %%-%ld.{}lf |", digits10);
+                        formats[idx] = folly::stringPrintf(fmt.c_str(), widths[idx]);
                     }
                     break;
                 }

@@ -310,8 +310,8 @@ std::string PrimaryExpression::toString() const {
             break;
         case VAR_DOUBLE: {
             int digits10 = std::numeric_limits<double>::digits10;
-            const char *fmt = folly::sformat("%.{}lf", digits10).c_str();
-            snprintf(buf, sizeof(buf), fmt, boost::get<double>(operand_));
+            std::string fmt = folly::sformat("%.{}lf", digits10);
+            snprintf(buf, sizeof(buf), fmt.c_str(), boost::get<double>(operand_));
             break;
         }
         case VAR_BOOL:
