@@ -896,11 +896,11 @@ void RaftPart::processAppendLogResponses(
         }
         // Step 5: Check whether need to continue
         // the log replication
+        std::lock_guard<std::mutex> lck(logsLock_);
         CHECK(replicatingLogs_);
         // Continue to process the original AppendLogsIterator if necessary
         iter.resume();
         if (iter.empty()) {
-            std::lock_guard<std::mutex> lck(logsLock_);
             VLOG(2) << idStr_ << "logs size " << logs_.size();
             if (logs_.size() > 0) {
                 // continue to replicate the logs
