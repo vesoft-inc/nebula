@@ -24,16 +24,22 @@ FETCH PROP ON * <vertex_id>
 ```ngql
 -- 返回节点 1 的所有属性
 nebula> FETCH PROP ON * 1
+
 -- 如未指定 YIELD 字段，则返回节点 1 tag 为 player 的所有属性
 nebula> FETCH PROP ON player 1
+
 -- 返回节点 1 的姓名与年龄属性
 nebula> FETCH PROP ON player 1 YIELD player.name, player.age
+
 -- 通过 hash 生成 int64 节点 ID，返回其姓名和年龄属性
 nebula> FETCH PROP ON player hash(\"nebula\")  YIELD player.name, player.age
+
 -- 沿边 e1 寻找节点 1 的所有近邻，返回其姓名和年龄属性
 nebula> GO FROM 1 over e1 YIELD e1._dst AS id | FETCH PROP ON player $-.id YIELD player.name, player.age
+
 -- 与上述语法相同
 nebula> $var = GO FROM 1 over e1 YIELD e1._dst AS id; FETCH PROP ON player $var.id YIELD player.name, player.age
+
 -- 获取 1，2，3 三个节点，返回姓名和年龄都不相同的记录
 nebula> FETCH PROP ON player 1,2,3 YIELD DISTINCT player.name, player.age
 ```
@@ -59,13 +65,17 @@ FETCH PROP ON <edge_type> <vid> -> <vid>[@<ranking>] [, <vid> -> <vid> ...] [YIE
 ```ngql
 -- 本语句未指定 YIELD，因此获取从节点 100 到节点 200 边 e1 的所有属性
 nebula> FETCH PROP ON e1 100 -> 200
+
 -- 仅返回属性 p1
 nebula> FETCH PROP ON e1 100 -> 200 YIELD e1.p1
+
 -- 获取节点 1 出边 e1 的 prop1 属性
 nebula> GO FROM 1 OVER e1 YIELD e1.prop1
+
 -- 同上述语句
 nebula> GO FROM 1 OVER e1 YIELD e1._src AS s, serve._dst AS d \
  | FETCH PROP ON e1 $-.s -> $-.d YIELD e1.prop1
+
 -- 同上述语句
 nebula> $var = GO FROM 1 OVER e1 YIELD e1._src AS s, e2._dst AS d;\
  FETCH PROP ON e3 $var.s -> $var.d YIELD e3.prop1
