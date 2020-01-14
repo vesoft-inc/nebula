@@ -158,9 +158,9 @@ void StorageServer::stop() {
         return;
     }
     stopped_ = true;
-    if (!webSvc_->stopped()) {
-        webSvc_->stop();
-    }
+
+    webSvc_.reset();
+
     if (metaClient_) {
         metaClient_->stop();
     }

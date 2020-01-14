@@ -43,9 +43,8 @@ public:
 
     bool matches(proxygen::HTTPMethod method, const std::string &path) const;
 
-    // Register handlers for the route
-    // TODO(yee): manage handlers chain later and now only allowed to register once
-    Route &handler(ReqHandlerGenerator generator);
+    // Register a handler generator for the route
+    void handler(ReqHandlerGenerator generator);
 
     proxygen::RequestHandler *generateHandler(const std::string &path) const;
 
@@ -60,7 +59,7 @@ private:
     proxygen::HTTPMethod method_;
     std::string path_;
     std::unique_ptr<std::regex> pattern_;
-    std::vector<ReqHandlerGenerator> generators_;
+    ReqHandlerGenerator generator_;
     std::vector<std::string> groups_;
 };
 

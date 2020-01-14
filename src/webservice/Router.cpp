@@ -48,10 +48,8 @@ void Route::createPattenRegex(const std::string &path) {
             str = str.substr(1);
         }
         for (auto &group : groups_) {
-            if (str == group) {
-                LOG(FATAL) << "Cannot use identifier " << group
-                           << " more than once in pattern string";
-            }
+            CHECK_NE(str, group) << "Cannot use identifier " << group
+                                 << " more than once in pattern string";
         }
         groups_.emplace_back(std::move(str));
         ss << path.substr(pos, next->position() - pos) << "([^/]+)";
@@ -86,15 +84,14 @@ Router::~Router() {
     }
 }
 
-Route &Route::handler(ReqHandlerGenerator generator) {
-    CHECK(generators_.empty()) << "Only allowed to register handler once for a route";
-    generators_.push_back(generator);
-    return *this;
+void Route::handler(ReqHandlerGenerator generator) {
+    CHECK(!generator_) << "Only allowed to register handler generator once for a route";
+    generator_ = generator;
 }
 
 proxygen::RequestHandler *Route::generateHandler(const std::string &path) const {
     if (!pattern_) {
-        return generators_.back()({});
+        return generator_({});
     }
     std::smatch m;
     std::regex_search(path, m, *pattern_);
@@ -103,7 +100,7 @@ proxygen::RequestHandler *Route::generateHandler(const std::string &path) const 
     for (std::size_t i = 0; i < groups_.size(); i++) {
         params.emplace(groups_[i], m[i + 1]);
     }
-    return generators_.back()(std::move(params));
+    return generator_(std::move(params));
 }
 
 proxygen::RequestHandler *Router::dispatch(const proxygen::HTTPMessage *msg) const {
