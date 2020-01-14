@@ -64,6 +64,16 @@ protected:
 
     void doRemovePrefix(GraphSpaceID spaceId, PartitionID partId, std::string prefix);
 
+    kvstore::ResultCode doRange(GraphSpaceID spaceId, PartitionID partId, std::string start,
+                                std::string end, std::unique_ptr<kvstore::KVIterator>* iter);
+
+    kvstore::ResultCode doPrefix(GraphSpaceID spaceId, PartitionID partId,
+                                 std::string prefix, std::unique_ptr<kvstore::KVIterator>* iter);
+
+    kvstore::ResultCode doRangeWithPrefix(GraphSpaceID spaceId, PartitionID partId,
+                                          std::string start, std::string prefix,
+                                          std::unique_ptr<kvstore::KVIterator>* iter);
+
     nebula::cpp2::ColumnDef columnDef(std::string name, nebula::cpp2::SupportedType type) {
         nebula::cpp2::ColumnDef column;
         column.set_name(std::move(name));
@@ -123,7 +133,12 @@ protected:
         return tHost;
     }
 
-private:
+    IndexValues collectIndexValues(RowReader* reader,
+                                   const std::vector<nebula::cpp2::ColumnDef>& cols);
+
+    void collectProps(RowReader* reader, const std::vector<PropContext>& props,
+                      Collector* collector);
+
     void handleAsync(GraphSpaceID spaceId, PartitionID partId, kvstore::ResultCode code);
 
 protected:

@@ -8,6 +8,7 @@
 #define STORAGE_MUTATE_DELETEVERTICESPROCESSOR_H_
 
 #include "base/Base.h"
+#include "kvstore/LogEncoder.h"
 #include "storage/BaseProcessor.h"
 
 namespace nebula {
@@ -32,8 +33,11 @@ private:
             : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats)
             , vertexCache_(cache) {}
 
+    std::string deleteVertex(GraphSpaceID spaceId, PartitionID partId, VertexID vId);
+
 private:
     VertexCache* vertexCache_ = nullptr;
+    std::vector<nebula::cpp2::IndexItem> indexes_;
 };
 
 

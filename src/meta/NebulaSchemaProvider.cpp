@@ -97,6 +97,20 @@ const nebula::cpp2::SchemaProp NebulaSchemaProvider::getProp() const {
     return schemaProp_;
 }
 
+nebula::cpp2::Schema NebulaSchemaProvider::toSchema() const {
+    nebula::cpp2::Schema schema;
+    std::vector<nebula::cpp2::ColumnDef> columns;
+    for (auto& field : fields_) {
+        nebula::cpp2::ColumnDef column;
+        column.set_name(field->getName());
+        column.set_type(field->getType());
+        columns.emplace_back(column);
+    }
+    schema.set_columns(std::move(columns));
+    schema.set_schema_prop(schemaProp_);
+    return schema;
+}
+
 }  // namespace meta
 }  // namespace nebula
 

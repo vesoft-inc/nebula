@@ -19,9 +19,10 @@ namespace storage {
 TEST(QueryEdgeKeysTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/QueryEdgeKeysTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto schemaMan = TestUtils::mockSchemaMan();
     // Add edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
+        auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
 
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
