@@ -44,7 +44,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     }
 
     auto tagID = tagIDRet.value();
-    auto fieldsResult = getLatestTagFields(space, tagName);
+    auto fieldsResult = getLatestTagFields(space, tagID);
     if (!fieldsResult.ok()) {
         LOG(ERROR) << "Get Latest Tag Fields Failed";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);

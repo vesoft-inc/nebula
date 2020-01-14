@@ -306,6 +306,17 @@ public:
         yieldClause_.reset(clause);
     }
 
+    explicit FetchVerticesSentence(Expression *vid) {
+        kind_ = Kind::kFetchVertices;
+        tag_ = std::make_unique<std::string>("*");
+        vidList_ = std::make_unique<VertexIDList>();
+        vidList_->add(vid);
+    }
+
+    bool isAllTagProps() {
+        return *tag_ == "*";
+    }
+
     auto tag() const {
         return tag_.get();
     }

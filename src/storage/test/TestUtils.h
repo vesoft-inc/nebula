@@ -322,6 +322,25 @@ void checkTagData(const std::vector<cpp2::TagData>& data,
     EXPECT_EQ(col, expected);
 }
 
+template <typename T>
+void checkTagData(const std::vector<cpp2::TagData>& data,
+                  TagID tid,
+                  const std::string col_name,
+                  const std::shared_ptr<const meta::SchemaProviderIf> schema,
+                  T expected) {
+    auto it = std::find_if(data.cbegin(), data.cend(), [tid](auto& td) {
+        if (td.tag_id == tid) {
+            return true;
+        }
+        return false;
+    });
+    DCHECK(it != data.cend()) << "Tag ID: " << tid;
+    auto tagReader   = RowReader::getRowReader(it->data, schema);
+    auto r = RowReader::getPropByName(tagReader.get(), col_name);
+    CHECK(ok(r));
+    auto col = boost::get<T>(value(r));
+    EXPECT_EQ(col, expected);
+}
 }  // namespace storage
 }  // namespace nebula
 

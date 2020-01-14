@@ -803,12 +803,13 @@ order_by_sentence
 
 fetch_vertices_sentence
     : KW_FETCH KW_PROP KW_ON name_label vid_list yield_clause {
-        auto fetch = new FetchVerticesSentence($4, $5, $6);
-        $$ = fetch;
+        $$ = new FetchVerticesSentence($4, $5, $6);
     }
     | KW_FETCH KW_PROP KW_ON name_label vid_ref_expression yield_clause {
-        auto fetch = new FetchVerticesSentence($4, $5, $6);
-        $$ = fetch;
+        $$ = new FetchVerticesSentence($4, $5, $6);
+    }
+    | KW_FETCH KW_PROP KW_ON MUL vid {
+        $$ = new FetchVerticesSentence($5);
     }
     ;
 

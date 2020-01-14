@@ -45,7 +45,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     }
 
     auto edgeType = edgeTypeRet.value();
-    auto fieldsResult = getLatestEdgeFields(space, edgeName);
+    auto fieldsResult = getLatestEdgeFields(space, edgeType);
     if (!fieldsResult.ok()) {
         LOG(ERROR) << "Get Latest Edge Property Name Failed";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);

@@ -113,7 +113,6 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
                  * step 2 , Insert new edge index
                  */
                 if (nReader == nullptr) {
-                    LOG(INFO) << "Edge Type " << edgeType;
                     nReader = RowReader::getEdgePropReader(this->schemaMan_,
                                                            e.second,
                                                            spaceId_,

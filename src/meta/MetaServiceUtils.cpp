@@ -24,13 +24,14 @@ const std::string kConfigsTable        = "__configs__";        // NOLINT
 const std::string kDefaultTable        = "__default__";        // NOLINT
 const std::string kSnapshotsTable      = "__snapshots__";      // NOLINT
 const std::string kLastUpdateTimeTable = "__last_update_time__"; // NOLINT
+const std::string kLeadersTable = "__leaders__"; // NOLINT
 
 const std::string kHostOnline  = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";      // NOLINT
 
 std::string MetaServiceUtils::lastUpdateTimeKey() {
     std::string key;
-    key.reserve(128);
+    key.reserve(kLastUpdateTimeTable.size());
     key.append(kLastUpdateTimeTable.data(), kLastUpdateTimeTable.size());
     return key;
 }
@@ -44,7 +45,7 @@ std::string MetaServiceUtils::lastUpdateTimeVal(const int64_t timeInMilliSec) {
 
 std::string MetaServiceUtils::spaceKey(GraphSpaceID spaceId) {
     std::string key;
-    key.reserve(128);
+    key.reserve(kSpacesTable.size() + sizeof(GraphSpaceID));
     key.append(kSpacesTable.data(), kSpacesTable.size())
        .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
     return key;
@@ -76,7 +77,7 @@ std::string MetaServiceUtils::spaceName(folly::StringPiece rawVal) {
 
 std::string MetaServiceUtils::partKey(GraphSpaceID spaceId, PartitionID partId) {
     std::string key;
-    key.reserve(128);
+    key.reserve(kPartsTable.size() + sizeof(GraphSpaceID) + sizeof(PartitionID));
     key.append(kPartsTable.data(), kPartsTable.size())
        .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
        .append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID));
@@ -95,7 +96,7 @@ PartitionID MetaServiceUtils::parsePartKeyPartId(folly::StringPiece key) {
 
 std::string MetaServiceUtils::partVal(const std::vector<nebula::cpp2::HostAddr>& hosts) {
     std::string val;
-    val.reserve(128);
+    val.reserve(hosts.size() * (sizeof(nebula::cpp2::IPv4) + sizeof(nebula::cpp2::Port)));
     for (auto& h : hosts) {
         val.append(reinterpret_cast<const char*>(&h.ip), sizeof(h.ip))
            .append(reinterpret_cast<const char*>(&h.port), sizeof(h.port));
@@ -105,7 +106,7 @@ std::string MetaServiceUtils::partVal(const std::vector<nebula::cpp2::HostAddr>&
 
 std::string MetaServiceUtils::partPrefix(GraphSpaceID spaceId) {
     std::string prefix;
-    prefix.reserve(128);
+    prefix.reserve(kPartsTable.size() + sizeof(GraphSpaceID));
     prefix.append(kPartsTable.data(), kPartsTable.size())
           .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
     return prefix;
@@ -130,7 +131,7 @@ std::vector<nebula::cpp2::HostAddr> MetaServiceUtils::parsePartVal(folly::String
 
 std::string MetaServiceUtils::hostKey(IPv4 ip, Port port) {
     std::string key;
-    key.reserve(128);
+    key.reserve(kHostsTable.size() + sizeof(nebula::cpp2::IPv4) + sizeof(nebula::cpp2::Port));
     key.append(kHostsTable.data(), kHostsTable.size())
        .append(reinterpret_cast<const char*>(&ip), sizeof(ip))
        .append(reinterpret_cast<const char*>(&port), sizeof(port));
@@ -155,9 +156,63 @@ nebula::cpp2::HostAddr MetaServiceUtils::parseHostKey(folly::StringPiece key) {
     return host;
 }
 
+std::string MetaServiceUtils::leaderKey(IPv4 ip, Port port) {
+    std::string key;
+    key.reserve(kLeadersTable.size() + sizeof(nebula::cpp2::IPv4) + sizeof(nebula::cpp2::Port));
+    key.append(kLeadersTable.data(), kLeadersTable.size());
+    key.append(reinterpret_cast<const char*>(&ip), sizeof(ip));
+    key.append(reinterpret_cast<const char*>(&port), sizeof(port));
+    return key;
+}
+
+std::string MetaServiceUtils::leaderVal(const LeaderParts& leaderParts) {
+    std::string value;
+    value.reserve(512);
+    for (const auto& spaceEntry : leaderParts) {
+        GraphSpaceID spaceId = spaceEntry.first;
+        value.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+        size_t leaderCount = spaceEntry.second.size();
+        value.append(reinterpret_cast<const char*>(&leaderCount), sizeof(size_t));
+        for (const auto& partId : spaceEntry.second) {
+            value.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID));
+        }
+    }
+    return value;
+}
+
+const std::string& MetaServiceUtils::leaderPrefix() {
+    return kLeadersTable;
+}
+
+nebula::cpp2::HostAddr MetaServiceUtils::parseLeaderKey(folly::StringPiece key) {
+    nebula::cpp2::HostAddr host;
+    memcpy(&host, key.data() + kLeadersTable.size(), sizeof(host));
+    return host;
+}
+
+LeaderParts MetaServiceUtils::parseLeaderVal(folly::StringPiece val) {
+    LeaderParts leaderParts;
+    size_t size = val.size();
+    // decode leader info
+    size_t offset = 0;
+    while (offset + sizeof(GraphSpaceID) + sizeof(size_t) < size) {
+        GraphSpaceID spaceId = *reinterpret_cast<const GraphSpaceID*>(val.data() + offset);
+        offset += sizeof(GraphSpaceID);
+        size_t leaderCount = *reinterpret_cast<const size_t*>(val.data() + offset);
+        offset += sizeof(size_t);
+        std::vector<PartitionID> partIds;
+        for (size_t i = 0; i < leaderCount && offset < size; i++) {
+            partIds.emplace_back(*reinterpret_cast<const PartitionID*>(val.data() + offset));
+            offset += sizeof(PartitionID);
+        }
+        leaderParts.emplace(spaceId, std::move(partIds));
+    }
+    return leaderParts;
+}
+
 std::string MetaServiceUtils::schemaEdgePrefix(GraphSpaceID spaceId, EdgeType edgeType) {
     std::string key;
-    key.reserve(128);
+    key.reserve(kEdgesTable.size() + sizeof(GraphSpaceID) + sizeof(edgeType));
     key.append(kEdgesTable.data(), kEdgesTable.size())
        .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
        .append(reinterpret_cast<const char*>(&edgeType), sizeof(edgeType));
@@ -177,11 +232,11 @@ std::string MetaServiceUtils::schemaEdgeKey(GraphSpaceID spaceId,
                                             SchemaVer version) {
     auto storageVer = std::numeric_limits<SchemaVer>::max() - version;
     std::string key;
-    key.reserve(128);
+    key.reserve(kEdgesTable.size() + sizeof(GraphSpaceID) + sizeof(EdgeType) + sizeof(SchemaVer));
     key.append(kEdgesTable.data(), kEdgesTable.size())
        .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
-       .append(reinterpret_cast<const char*>(&edgeType), sizeof(edgeType))
-       .append(reinterpret_cast<const char*>(&storageVer), sizeof(storageVer));
+       .append(reinterpret_cast<const char*>(&edgeType), sizeof(EdgeType))
+       .append(reinterpret_cast<const char*>(&storageVer), sizeof(SchemaVer));
     return key;
 }
 
@@ -206,11 +261,11 @@ SchemaVer MetaServiceUtils::parseEdgeVersion(folly::StringPiece key) {
 std::string MetaServiceUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, SchemaVer version) {
     auto storageVer = std::numeric_limits<SchemaVer>::max() - version;
     std::string key;
-    key.reserve(128);
+    key.reserve(kTagsTable.size() + sizeof(GraphSpaceID) + sizeof(TagID) + sizeof(SchemaVer));
     key.append(kTagsTable.data(), kTagsTable.size())
        .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
-       .append(reinterpret_cast<const char*>(&tagId), sizeof(tagId))
-       .append(reinterpret_cast<const char*>(&storageVer), sizeof(version));
+       .append(reinterpret_cast<const char*>(&tagId), sizeof(TagID))
+       .append(reinterpret_cast<const char*>(&storageVer), sizeof(SchemaVer));
     return key;
 }
 
@@ -234,10 +289,10 @@ SchemaVer MetaServiceUtils::parseTagVersion(folly::StringPiece key) {
 
 std::string MetaServiceUtils::schemaTagPrefix(GraphSpaceID spaceId, TagID tagId) {
     std::string key;
-    key.reserve(128);
+    key.reserve(kTagsTable.size() + sizeof(GraphSpaceID) + sizeof(TagID));
     key.append(kTagsTable.data(), kTagsTable.size())
        .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
-       .append(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
+       .append(reinterpret_cast<const char*>(&tagId), sizeof(TagID));
     return key;
 }
 
@@ -261,8 +316,8 @@ std::string MetaServiceUtils::indexKey(GraphSpaceID spaceID, IndexID indexID) {
     std::string key;
     key.reserve(sizeof(GraphSpaceID) + sizeof(IndexID));
     key.append(kIndexesTable.data(), kIndexesTable.size());
-    key.append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID));
-    key.append(reinterpret_cast<const char*>(&indexID), sizeof(IndexID));
+    key.append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID))
+       .append(reinterpret_cast<const char*>(&indexID), sizeof(IndexID));
     return key;
 }
 
@@ -275,8 +330,8 @@ std::string MetaServiceUtils::indexVal(const nebula::cpp2::IndexItem& item) {
 std::string MetaServiceUtils::indexPrefix(GraphSpaceID spaceId) {
     std::string key;
     key.reserve(kIndexesTable.size() + sizeof(GraphSpaceID));
-    key.append(kIndexesTable.data(), kIndexesTable.size());
-    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(kIndexesTable.data(), kIndexesTable.size())
+       .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
     return key;
 }
 
@@ -326,9 +381,9 @@ std::string MetaServiceUtils::indexIndexKey(GraphSpaceID spaceID,
     key.reserve(128);
     key.append(kIndexTable.data(), kIndexTable.size());
     EntryType type = EntryType::INDEX;
-    key.append(reinterpret_cast<const char*>(&type), sizeof(type));
-    key.append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID));
-    key.append(indexName);
+    key.append(reinterpret_cast<const char*>(&type), sizeof(type))
+       .append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID))
+       .append(indexName);
     return key;
 }
 
@@ -440,9 +495,9 @@ std::string MetaServiceUtils::indexUserKey(const std::string& account) {
 
 std::string MetaServiceUtils::userKey(UserID userId) {
     std::string key;
-    key.reserve(64);
+    key.reserve(kUsersTable.size() + sizeof(UserID));
     key.append(kUsersTable.data(), kUsersTable.size())
-       .append(reinterpret_cast<const char*>(&userId), sizeof(userId));
+       .append(reinterpret_cast<const char*>(&userId), sizeof(UserID));
     return key;
 }
 
@@ -493,7 +548,7 @@ std::string MetaServiceUtils::replaceUserVal(const cpp2::UserItem& user, folly::
 
 std::string MetaServiceUtils::roleKey(GraphSpaceID spaceId, UserID userId) {
     std::string key;
-    key.reserve(64);
+    key.reserve(kRolesTable.size() + sizeof(GraphSpaceID) + sizeof(UserID));
     key.append(kRolesTable.data(), kRolesTable.size())
        .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
        .append(reinterpret_cast<const char*>(&userId), sizeof(UserID));
@@ -502,8 +557,8 @@ std::string MetaServiceUtils::roleKey(GraphSpaceID spaceId, UserID userId) {
 
 std::string MetaServiceUtils::roleVal(cpp2::RoleType roleType) {
     std::string val;
-    val.reserve(64);
-    val.append(reinterpret_cast<const char*>(&roleType), sizeof(roleType));
+    val.reserve(sizeof(cpp2::RoleType));
+    val.append(reinterpret_cast<const char*>(&roleType), sizeof(cpp2::RoleType));
     return val;
 }
 
@@ -531,7 +586,7 @@ std::string MetaServiceUtils::rolesPrefix() {
 
 std::string MetaServiceUtils::roleSpacePrefix(GraphSpaceID spaceId) {
     std::string key;
-    key.reserve(64);
+    key.reserve(kRolesTable.size() + sizeof(GraphSpaceID));
     key.append(kRolesTable.data(), kRolesTable.size())
        .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
     return key;
@@ -552,7 +607,7 @@ std::string MetaServiceUtils::tagDefaultKey(GraphSpaceID spaceId,
                                             TagID tag,
                                             const std::string& field) {
     std::string key;
-    key.reserve(128);
+    key.reserve(kDefaultTable.size() + sizeof(GraphSpaceID) + sizeof(TagID));
     key.append(kDefaultTable.data(), kDefaultTable.size())
        .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
        .append(reinterpret_cast<const char*>(&tag), sizeof(TagID))
@@ -564,7 +619,7 @@ std::string MetaServiceUtils::edgeDefaultKey(GraphSpaceID spaceId,
                                              EdgeType edge,
                                              const std::string& field) {
     std::string key;
-    key.reserve(128);
+    key.reserve(kDefaultTable.size() + sizeof(GraphSpaceID) + sizeof(EdgeType));
     key.append(kDefaultTable.data(), kDefaultTable.size())
        .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
        .append(reinterpret_cast<const char*>(&edge), sizeof(EdgeType))
