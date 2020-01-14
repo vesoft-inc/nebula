@@ -120,7 +120,7 @@ StatusOr<std::vector<cpp2::RowValue>> InterimResult::getRows() const {
                 case SupportedType::STRING: {
                     auto rc = rowIter->getString(field, piece);
                     if (rc != ResultType::SUCCEEDED) {
-                        return Status::Error("Get bool from interim failed.");
+                        return Status::Error("Get string from interim failed.");
                     }
                     row.back().set_str(piece.toString());
                     break;
@@ -225,7 +225,7 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
                     folly::StringPiece piece;
                     auto rc = rowIter->getString(i, piece);
                     if (rc != ResultType::SUCCEEDED) {
-                        return Status::Error("Get bool from interim failed.");
+                        return Status::Error("Get string from interim failed.");
                     }
                     row.emplace_back(piece.toString());
                     break;

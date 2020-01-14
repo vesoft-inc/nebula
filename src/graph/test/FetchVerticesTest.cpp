@@ -338,11 +338,11 @@ TEST_F(FetchVerticesTest, FetchAll) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> expectedColNames{
-            {"player.name"}, {"player.age"}
+            {"VertexID"}, {"player.name"}, {"player.age"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-            {player.name(), player.age()},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+            {player.vid(), player.name(), player.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -354,11 +354,11 @@ TEST_F(FetchVerticesTest, FetchAll) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> expectedColNames{
-            {"bachelor.name"}, {"bachelor.speciality"}
+            {"VertexID"}, {"bachelor.name"}, {"bachelor.speciality"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
-        std::vector<std::tuple<std::string, std::string>> expected = {
-            {bachelors_["Tim Duncan"].name(), bachelors_["Tim Duncan"].speciality()},
+        std::vector<std::tuple<int64_t, std::string, std::string>> expected = {
+            {player.vid(), bachelors_["Tim Duncan"].name(), bachelors_["Tim Duncan"].speciality()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -370,11 +370,13 @@ TEST_F(FetchVerticesTest, FetchAll) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> expectedColNames{
-            {"player.name"}, {"player.age"}, {"bachelor.name"}, {"bachelor.speciality"}
+            {"VertexID"}, {"player.name"}, {"player.age"},
+            {"bachelor.name"}, {"bachelor.speciality"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
-        std::vector<std::tuple<std::string, int64_t, std::string, std::string>> expected = {
-            {player.name(), player.age(),
+        std::vector<std::tuple<int64_t, std::string, int64_t,
+                    std::string, std::string>> expected = {
+            {player.vid(), player.name(), player.age(),
                 bachelors_["Tim Duncan"].name(), bachelors_["Tim Duncan"].speciality()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));

@@ -334,6 +334,7 @@ void FetchVerticesExecutor::processAllPropsResult(RpcResponse &&result) {
                 continue;
             }
             RowWriter writer;
+            writer << RowWriter::ColType(nebula::cpp2::SupportedType::VID) << vdata.vertex_id;
             for (auto &tdata : vdata.tag_data) {
                 auto ver = RowReader::getSchemaVer(tdata.data);
                 if (ver < 0) {
@@ -344,6 +345,8 @@ void FetchVerticesExecutor::processAllPropsResult(RpcResponse &&result) {
                 auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tdata.tag_id, ver);
                 if (rsWriter == nullptr) {
                     outputSchema = std::make_shared<SchemaWriter>();
+                    outputSchema->appendCol("VertexID", nebula::cpp2::SupportedType::VID);
+                    returnColNames_.emplace_back("VertexID");
                     rsWriter = std::make_unique<RowSetWriter>(outputSchema);
                 }
                 // row.append(tdata.data);
@@ -358,6 +361,7 @@ void FetchVerticesExecutor::processAllPropsResult(RpcResponse &&result) {
                 auto tagName = std::move(tagFound).value();
                 auto iter = schema->begin();
                 auto index = 0;
+
                 while (iter) {
                     auto *field = iter->getName();
                     auto prop = RowReader::getPropByIndex(reader.get(), index);
@@ -369,6 +373,7 @@ void FetchVerticesExecutor::processAllPropsResult(RpcResponse &&result) {
                     Collector::collectWithoutSchema(value(prop), &writer);
                     auto colName = folly::stringPrintf("%s.%s", tagName.c_str(), field);
                     resultColNames_.emplace_back(colName);
+                    returnColNames_.emplace_back(colName);
                     auto fieldType = iter->getType();
                     outputSchema->appendCol(std::move(colName), std::move(fieldType));
                     ++index;
