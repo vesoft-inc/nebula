@@ -1,12 +1,6 @@
 name: build
 
 on:
-  pull_request:
-    branches:
-      - master
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
   push:
     branches:
       - master
@@ -17,7 +11,7 @@ on:
 jobs:
   build:
     name: build
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         tag:
@@ -27,41 +21,30 @@ jobs:
           - ubuntu1804
         compiler:
           - gcc
-          # - clang
+          - clang
         exclude:
           - tag: centos6
             compiler: clang
           - tag: centos7
             compiler: clang
+          - tag: ubuntu1604
+            compiler: clang
     container:
       image: vesoft/nebula-dev:${{ matrix.tag }}
-      env:
-        CCACHE_DIR: /tmp/ccache/${{ matrix.tag }}-${{ matrix.compiler }}
-      options: --mount type=tmpfs,destination=/tmp/ccache,tmpfs-size=1073741824 -v /tmp/ccache/${{ matrix.tag }}-${{ matrix.compiler }}:/tmp/ccache/${{ matrix.tag }}-${{ matrix.compiler }}
     steps:
       - uses: actions/checkout@v1
         with:
           fetch-depth: 1
       - name: Prepare environment
-        run: |
-          [ -f "$CCACHE_DIR/ccache.conf" ] || cp ci/ccache.conf "$CCACHE_DIR"
-          mkdir -p build
+        run: mkdir -p build
       - name: CMake with gcc
         if: matrix.compiler == 'gcc'
-        run: cd build && cmake -DCMAKE_BUILD_TYPE=Release ..
+        run: cd build && cmake ..
       - name: CMake with clang
         if: matrix.compiler == 'clang'
-        run: cd build && cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DENABLE_UBSAN=on ..
-        shell: bash
+        run: cd build && cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DNEBULA_CLANG_USE_GCC_TOOLCHAIN=/opt/vesoft/toolset/gcc/7.5.0 ..
       - name: Make
         run: cd build && make -j $(nproc)
-      - name: CTest with multiple threads
-        timeout-minutes: 15
-        run: cd build && ctest -j 6 --timeout 300 --output-on-failure --rerun-failed
       - name: CTest with single thread
-        if: failure()
-        timeout-minutes: 30
-        run: cd build && ctest --timeout 300 --output-on-failure --rerun-failed
-      - name: Cleanup
-        if: always()
-        run: rm -rf build
+        timeout-minutes: 40
+        run: cd build && ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-8 ASAN_OPTIONS=fast_unwind_on_malloc=0 ctest --timeout 300 --output-on-failure

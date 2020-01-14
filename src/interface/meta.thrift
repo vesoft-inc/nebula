@@ -79,6 +79,7 @@ union ID {
     5: common.EdgeIndexID   edge_index_id,
     6: common.UserID        user_id,
     7: common.ClusterID     cluster_id,
+    8: common.IndexID       index_id,
 }
 
 struct IdName {
@@ -416,6 +417,7 @@ struct CreateTagIndexReq {
 struct DropTagIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
+    3: bool                if_exists,
 }
 
 struct GetTagIndexReq {
@@ -449,6 +451,7 @@ struct CreateEdgeIndexReq {
 struct DropEdgeIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
+    3: bool                if_exists,
 }
 
 struct GetEdgeIndexReq {

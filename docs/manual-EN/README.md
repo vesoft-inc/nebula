@@ -118,6 +118,8 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
         * [Download And Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
         * [Import .csv File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
         * [Spark Writer](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/spark-writer.md)
+      * Data Export
+        * [Dump Tool](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-export/dump-tool.md)
       * [Storage Balance](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-balance.md)
       * [Storage Metrics](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-metrics.md)
       * [Cluster Snapshot](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/cluster-snapshot.md)

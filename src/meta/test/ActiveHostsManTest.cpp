@@ -52,6 +52,52 @@ TEST(ActiveHostsManTest, NormalTest) {
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
 }
 
+TEST(ActiveHostsManTest, LeaderTest) {
+    fs::TempDir rootPath("/tmp/ActiveHostsManTest.XXXXXX");
+    FLAGS_expired_threshold_sec = 2;
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto now = time::WallClock::fastNowInMilliSec();
+
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(0, 0), HostInfo(now));
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(0, 1), HostInfo(now));
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(0, 2), HostInfo(now));
+    ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
+
+    std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+    leaderIds.emplace(1, std::vector<PartitionID>{1, 2, 3});
+    ActiveHostsMan::updateHostInfo(kv.get(), HostAddr(0, 0), HostInfo(now + 2000), &leaderIds);
+    ASSERT_EQ(3, ActiveHostsMan::getActiveHosts(kv.get()).size());
+    {
+        const auto& prefix = MetaServiceUtils::leaderPrefix();
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        CHECK_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+        int i = 0;
+        while (iter->valid()) {
+            auto host = MetaServiceUtils::parseLeaderKey(iter->key());
+            LeaderParts leaderParts = MetaServiceUtils::parseLeaderVal(iter->val());
+            ASSERT_EQ(HostAddr(0, i), HostAddr(host.ip, host.port));
+            if (i == 0) {
+                ASSERT_EQ(1, leaderParts.size());
+                ASSERT_TRUE(leaderParts.find(1) != leaderParts.end());
+                ASSERT_EQ(3, leaderParts[1].size());
+                ASSERT_EQ(1, leaderParts[1][0]);
+                ASSERT_EQ(2, leaderParts[1][1]);
+                ASSERT_EQ(3, leaderParts[1][2]);
+            } else {
+                ASSERT_EQ(0, leaderParts.size());
+            }
+
+            iter->next();
+            i++;
+        }
+        ASSERT_EQ(1, i);
+    }
+
+    sleep(3);
+    ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(kv.get()).size());
+}
+
 TEST(LastUpdateTimeManTest, NormalTest) {
     fs::TempDir rootPath("/tmp/LastUpdateTimeManTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));

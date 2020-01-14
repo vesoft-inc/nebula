@@ -803,12 +803,13 @@ order_by_sentence
 
 fetch_vertices_sentence
     : KW_FETCH KW_PROP KW_ON name_label vid_list yield_clause {
-        auto fetch = new FetchVerticesSentence($4, $5, $6);
-        $$ = fetch;
+        $$ = new FetchVerticesSentence($4, $5, $6);
     }
     | KW_FETCH KW_PROP KW_ON name_label vid_ref_expression yield_clause {
-        auto fetch = new FetchVerticesSentence($4, $5, $6);
-        $$ = fetch;
+        $$ = new FetchVerticesSentence($4, $5, $6);
+    }
+    | KW_FETCH KW_PROP KW_ON MUL vid {
+        $$ = new FetchVerticesSentence($5);
     }
     ;
 
@@ -1180,14 +1181,14 @@ create_edge_index_sentence
     ;
 
 drop_tag_index_sentence
-    : KW_DROP KW_TAG KW_INDEX name_label {
-        $$ = new DropTagIndexSentence($4);
+    : KW_DROP KW_TAG KW_INDEX opt_if_exists name_label {
+        $$ = new DropTagIndexSentence($5, $4);
     }
     ;
 
 drop_edge_index_sentence
-    : KW_DROP KW_EDGE KW_INDEX name_label {
-        $$ = new DropEdgeIndexSentence($4);
+    : KW_DROP KW_EDGE KW_INDEX opt_if_exists name_label {
+        $$ = new DropEdgeIndexSentence($5, $4);
     }
     ;
 
