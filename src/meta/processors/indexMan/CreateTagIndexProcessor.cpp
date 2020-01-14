@@ -25,7 +25,11 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     auto ret = getTagIndexID(space, indexName);
     if (ret.ok()) {
         LOG(ERROR) << "Create Tag Index Failed: " << indexName << " have existed";
-        resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+        if (req.get_if_not_exists()) {
+            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+        } else {
+            resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+        }
         onFinished();
         return;
     }
@@ -41,7 +45,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
             return;
         }
 
-        auto fieldsResult = getLatestTagFields(space, tagName);
+        auto fieldsResult = getLatestTagFields(space, tagID.value());
         if (!fieldsResult.ok()) {
             LOG(ERROR) << "Get Latest Tag Fields Failed";
             resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);

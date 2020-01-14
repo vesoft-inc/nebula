@@ -473,8 +473,9 @@ void GoExecutor::stepOut() {
         onStepOutResponse(std::move(result));
     };
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Exeception when handle out-bounds/in-bounds."));
+        LOG(ERROR) << "Exception when handle out-bounds/in-bounds: " << e.what();
+        doError(Status::Error("Exeception when handle out-bounds/in-bounds: %s.",
+                    e.what().c_str()));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -623,7 +624,8 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
         for (auto &t : result) {
             if (t.hasException()) {
                 LOG(ERROR) << "Exception caught: " << t.exception().what();
-                doError(Status::Error("Exeception when get edge props in reversely traversal."));
+                doError(Status::Error("Exeception when get edge props in reversely traversal: %s.",
+                            t.exception().what().c_str()));
                 return;
             }
             auto resp = std::move(t).value();
@@ -647,7 +649,7 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Exception when handle edges."));
+        doError(Status::Error("Exception when get edges: %s.", e.what().c_str()));
     };
 
     folly::collectAll(std::move(futures)).via(runner).thenValue(cb).thenError(error);
@@ -846,7 +848,7 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcRe
     auto spaceId = ectx()->rctx()->session()->space();
     auto status = getDstProps();
     if (!status.ok()) {
-        doError(Status::Error("Get dest props failed"));
+        doError(std::move(status).status());
         return;
     }
     auto returns = status.value();
@@ -874,8 +876,9 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcRe
         return;
     };
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Exception when handle vertex props."));
+        LOG(ERROR) << "Exception when get vertex in go: " << e.what();
+        doError(Status::Error("Exception when get vertex in go: %s.",
+                    e.what().c_str()));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -909,7 +912,7 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
             if (record.size() != colTypes.size()) {
                 LOG(ERROR) << "Record size: " << record.size()
                            << " != column type size: " << colTypes.size();
-                return Status::Error("Record size is not equal to column type size, [%d != %d]",
+                return Status::Error("Record size is not equal to column type size, [%lu != %lu]",
                                       record.size(), colTypes.size());
             }
             for (auto i = 0u; i < record.size(); i++) {

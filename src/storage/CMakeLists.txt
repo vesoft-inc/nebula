@@ -8,6 +8,8 @@ nebula_add_library(
     query/QueryEdgePropsProcessor.cpp
     query/QueryStatsProcessor.cpp
     query/QueryEdgeKeysProcessor.cpp
+    query/ScanEdgeProcessor.cpp
+    query/ScanVertexProcessor.cpp
     mutate/AddVerticesProcessor.cpp
     mutate/AddEdgesProcessor.cpp
     mutate/DeleteEdgesProcessor.cpp
@@ -24,7 +26,6 @@ nebula_add_library(
 nebula_add_library(
     storage_http_handler OBJECT
     http/StorageHttpIngestHandler.cpp
-    http/StorageHttpStatusHandler.cpp
     http/StorageHttpDownloadHandler.cpp
     http/StorageHttpAdminHandler.cpp
 )

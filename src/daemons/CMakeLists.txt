@@ -5,7 +5,6 @@ nebula_add_executable(
         GraphDaemon.cpp
     OBJECTS
         $<TARGET_OBJECTS:filter_obj>
-        $<TARGET_OBJECTS:graph_http_handler>
         $<TARGET_OBJECTS:graph_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:parser_obj>
@@ -28,7 +27,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:gflags_man_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:concurrent_obj>
@@ -73,7 +71,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:base_obj>
@@ -116,7 +113,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:base_obj>
     LIBRARIES

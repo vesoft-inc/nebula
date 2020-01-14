@@ -52,7 +52,6 @@ private:
     rocksdb::Slice end_;
 };
 
-
 class RocksPrefixIter : public KVIterator {
 public:
     RocksPrefixIter(rocksdb::Iterator* iter, rocksdb::Slice prefix)
@@ -81,7 +80,7 @@ public:
         return folly::StringPiece(iter_->value().data(), iter_->value().size());
     }
 
-private:
+protected:
     std::unique_ptr<rocksdb::Iterator> iter_;
     rocksdb::Slice prefix_;
 };
@@ -126,6 +125,10 @@ public:
 
     ResultCode prefix(const std::string& prefix,
                       std::unique_ptr<KVIterator>* iter) override;
+
+    ResultCode rangeWithPrefix(const std::string& start,
+                               const std::string& prefix,
+                               std::unique_ptr<KVIterator>* iter) override;
 
     /*********************
      * Data modification
