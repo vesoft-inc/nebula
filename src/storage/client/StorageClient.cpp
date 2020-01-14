@@ -20,6 +20,9 @@ StorageClient::StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> thread
     clientsMan_
         = std::make_unique<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>();
     stats_ = std::make_unique<stats::Stats>(serviceName, "storageClient");
+    if (client_ != nullptr) {
+        leaders_ = client->getStorageLeader();
+    }
 }
 
 

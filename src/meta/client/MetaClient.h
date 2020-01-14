@@ -65,6 +65,8 @@ using SpaceEdgeTypeNameMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType
 using SpaceTagIdNameMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, std::string>;
 // get all edgeType edgeName via spaceId
 using SpaceAllEdgeMap = std::unordered_map<GraphSpaceID, std::vector<std::string>>;
+// get leader host via spaceId and partId
+using LeaderMap = std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>;
 
 struct ConfigItem {
     ConfigItem() {}
@@ -392,10 +394,15 @@ public:
 
     Status refreshCache();
 
+    LeaderMap getStorageLeader() {
+        return leaderMap_;
+    }
+
 protected:
     // Return true if load succeeded.
     bool loadData();
     bool loadCfg();
+    bool loadLeader();
     void heartBeatThreadFunc();
 
     bool registerCfg();
@@ -492,6 +499,7 @@ private:
     SpaceNewestTagVerMap  spaceNewestTagVerMap_;
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
     SpaceAllEdgeMap       spaceAllEdgeMap_;
+    LeaderMap             leaderMap_;
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
     folly::RWSpinLock     listenerLock_;

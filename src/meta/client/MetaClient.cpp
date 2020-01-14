@@ -66,7 +66,8 @@ bool MetaClient::isMetadReady() {
     if (!options_.skipConfig_) {
         lcRet = loadCfg();
     }
-    if (ldRet && lcRet) {
+    bool lhRet = loadLeader();
+    if (ldRet && lcRet && lhRet) {
         localLastUpdateTime_ = metadLastUpdateTime_;
     }
     return ready_;
@@ -1777,6 +1778,32 @@ ConfigItem MetaClient::toConfigItem(const cpp2::ConfigItem& item) {
 Status MetaClient::refreshCache() {
     auto ret = bgThread_->addTask(&MetaClient::loadData, this).get();
     return ret ? Status::OK() : Status::Error("Load data failed");
+}
+
+bool MetaClient::loadLeader() {
+    auto ret = listHosts().get();
+    if (!ret.ok()) {
+        return false;
+    }
+
+    auto hostItems = std::move(ret).value();
+    for (auto& item : hostItems) {
+        auto hostAddr = HostAddr(item.hostAddr.ip, item.hostAddr.port);
+        for (auto& spaceEntry : item.get_leader_parts()) {
+            auto spaceName = spaceEntry.first;
+            auto status = getSpaceIdByNameFromCache(spaceName);
+            if (!status.ok()) {
+                continue;
+            }
+            auto spaceId = status.value();
+            for (const auto& partId : spaceEntry.second) {
+                leaderMap_[{spaceId, partId}] = hostAddr;
+            }
+            LOG(INFO) << "Load leader of space " << spaceName;
+        }
+    }
+    LOG(INFO) << "Load leader ok";
+    return true;
 }
 
 }  // namespace meta
