@@ -4,9 +4,10 @@
 DESCRIBE SPACE <space_name>
 DESCRIBE TAG <tag_name>
 DESCRIBE EDGE <edge_name>
+DESCRIBE {TAG | EDGE} INDEX <index_name>
 ```
 
-The DESCRIBE keyword is used to obtain information about space, tag, edge structure.
+The DESCRIBE keyword is used to obtain information about space, tag and edge structure.
 
 Also notice that DESCRIBE is different from SHOW. Refer [SHOW](show-syntax.md).
 
@@ -47,4 +48,15 @@ nebula> DESCRIBE EDGE serve
 ---------------------
 |   end_year |  int |
 ---------------------
+```
+
+Obtain information about the index.
+
+```ngql
+nebula> DESCRIBE TAG INDEX player_index_0;
+==================
+| Field | Type   |
+==================
+| name  | string |
+------------------
 ```
