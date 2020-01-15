@@ -42,11 +42,10 @@ matrix:
 
 before_install:
     - eval "${MATRIX_EVAL}"
+    - export CC CXX
+    - ./third-party/install-third-party.sh
 
 script :
-    - echo $CC
-    - echo $CXX
-    - export CC CXX
     - mkdir -p _build && cd _build
     - cmake -DENABLE_COVERAGE=ON ..
     - make -j$(nproc)
