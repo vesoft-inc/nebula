@@ -1,0 +1,53 @@
+language : c++
+#compiler :
+#    - gcc
+#    - clang
+os : linux
+
+matrix:
+  include:
+    # works on Precise and Trusty
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+      env:
+        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+
+    # works on Precise and Trusty
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-8
+      env:
+        - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
+
+    # works on Trusty
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-7
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-7
+      env:
+        - MATRIX_EVAL="CC=clang-7 && CXX=clang++-7"
+
+before_install:
+    - eval "${MATRIX_EVAL}"
+
+script :
+    - mkdir -p _build && cd _build
+    - cmake -DENABLE_COVERAGE=ON ..
+    - make -j$(nproc)
+    - ctest -j$(nproc)
+
+after_success:
+    - cd _build && bash <(curl -s https://codecov.io/bash) -Z > /dev/null 2>&1
