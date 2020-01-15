@@ -990,7 +990,7 @@ TEST_F(DataTest, MatchTest) {
 }
 
 
-static inline void execute(GraphClient* client, const std::string& nGQL) {
+static inline void execute(NebulaClientImpl* client, const std::string& nGQL) {
     cpp2::ExecutionResponse resp;
     auto code = client->execute(nGQL, resp);
     ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << "Do cmd:" << nGQL << " failed";
@@ -1011,7 +1011,7 @@ protected:
         execute(client_.get(), "DROP SPACE empty");
     }
 
-    std::unique_ptr<GraphClient> client_ = nullptr;
+    std::unique_ptr<NebulaClientImpl> client_ = nullptr;
 
 private:
     void prepareSchema() {
@@ -1043,6 +1043,16 @@ private:
         }
     }
 };
+
+static inline void assertEmptyResult(NebulaClientImpl* client, const std::string& stmt) {
+    cpp2::ExecutionResponse resp;
+    auto code = DCHECK_NOTNULL(client)->execute(stmt, resp);
+    ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    ASSERT_NE(resp.get_column_names(), nullptr);
+    ASSERT_TRUE(resp.get_column_names()->empty());
+    ASSERT_NE(resp.get_rows(), nullptr);
+    ASSERT_TRUE(resp.get_rows()->empty());
+}
 
 // #1478
 // Fetch property from empty tag

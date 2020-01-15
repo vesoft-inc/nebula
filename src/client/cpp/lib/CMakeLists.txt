@@ -42,26 +42,29 @@ target_link_libraries(
     ${OPENSSL_SSL_LIBRARY}
     ${OPENSSL_CRYPTO_LIBRARY}
     ${THRIFT_LIBRARIES}
-    -lwangle
-    -lfolly
-    -lboost_context
-    -lboost_system
-    -lglog
-    -lgflags
-    -lsnappy
-    -lunwind
-    -lz
-    -lzstd
-    -levent
-    -ldouble-conversion
+    wangle
+    folly
+    boost_context
+    boost_system
+    glog
+    gflags
+    snappy
+    unwind
+    z
+    zstd
+    lz4
+    lzma
+    bz2
+    event
+    double-conversion
+    pthread
+    dl
+    ssl
+    crypto
+    bz2
     -static-libgcc
     -static-libstdc++
-    -lpthread
-    -ldl
-    -lssl
-    -lcrypto
-    #-lbz2
-    #-Wl,--no-undefined
+    -Wl,--no-undefined
 )
 
 install(

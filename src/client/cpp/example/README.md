@@ -101,5 +101,5 @@ Please refer to the [sample code](NebulaClientExample.cpp) on detail usage.
 build example code
 
 ```
-g++ -std=c++11 NebulaClientExample.cpp -lnebula_client -lbz2 -lpthread -lglog -o nebula_client_example
+g++ -std=c++11 NebulaClientExample.cpp -lnebula_client -lpthread -lglog -o nebula_client_example
 ```

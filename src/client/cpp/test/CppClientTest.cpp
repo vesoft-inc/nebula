@@ -15,7 +15,7 @@
 #include "client/cpp/lib/ConnectionPool.h"
 #include "thread/NamedThread.h"
 
-DECLARE_int32(load_data_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace graph {
@@ -61,7 +61,7 @@ TEST_F(CppClientTest, all) {
         code = client.execute(cmd, resp);
         ASSERT_EQ(code, kSucceed);
 
-        sleep(FLAGS_load_data_interval_secs + 3);
+        sleep(FLAGS_heartbeat_interval_secs + 3);
 
         cmd = "INSERT VERTEX person(name, age, birthday, isBoy) "
             "VALUES hash(\"Aero\"):(\"Aero\", 10, \"2009-10-01 10:00:00\", false)";
