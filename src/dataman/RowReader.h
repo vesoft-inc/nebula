@@ -272,6 +272,8 @@ public:
         return schema_;
     }
 
+    static int32_t getSchemaVer(folly::StringPiece row);
+
     // TODO getPath(const std::string& name) const noexcept;
     // TODO getPath(int64_t index) const noexcept;
     // TODO getList(const std::string& name) const noexcept;
@@ -294,8 +296,6 @@ private:
     mutable std::vector<int64_t> offsets_;
 
 private:
-    static int32_t getSchemaVer(folly::StringPiece row);
-
     RowReader(folly::StringPiece row,
               std::shared_ptr<const meta::SchemaProviderIf> schema);
 

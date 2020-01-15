@@ -155,6 +155,68 @@ TEST_F(LogCASTest, AllInvalidCAS) {
     }
 }
 
+TEST_F(LogCASTest, OnlyOneCasSucceed) {
+    // Append logs
+    LOG(INFO) << "=====> Start appending logs";
+    std::vector<std::string> msgs;
+    for (int i = 1; i <= 10; ++i) {
+        std::string log;
+        if (i == 1) {
+            log = "TCAS Log " + std::to_string(i);
+            msgs.emplace_back(log.substr(1));
+        } else {
+            log = "FCAS Log " + std::to_string(i);
+        }
+        auto fut = leader_->atomicOpAsync([log = std::move(log)] () mutable {
+            return test::compareAndSet(log);
+        });
+        if (i == 10) {
+            fut.wait();
+        }
+    }
+    LOG(INFO) << "<===== Finish appending logs";
+
+    // Sleep a while to make sure the last log has been committed on followers
+    sleep(FLAGS_raft_heartbeat_interval_secs);
+
+    // Check every copy
+    for (auto& c : copies_) {
+        ASSERT_EQ(1, c->getNumLogs());
+    }
+    checkConsensus(copies_, 0, 0, msgs);
+}
+
+TEST_F(LogCASTest, ZipCasTest) {
+    // Append logs
+    LOG(INFO) << "=====> Start appending logs";
+    std::vector<std::string> msgs;
+    for (int i = 1; i <= 10; ++i) {
+        std::string log;
+        if (i % 2) {
+            log = "TCAS Log " + std::to_string(i);
+            msgs.emplace_back(log.substr(1));
+        } else {
+            log = "FCAS Log " + std::to_string(i);
+        }
+        auto fut = leader_->atomicOpAsync([log = std::move(log)] () mutable {
+            return test::compareAndSet(log);
+        });
+        if (i == 10) {
+            fut.wait();
+        }
+    }
+    LOG(INFO) << "<===== Finish appending logs";
+
+    // Sleep a while to make sure the last log has been committed on followers
+    sleep(FLAGS_raft_heartbeat_interval_secs);
+
+    // Check every copy
+    for (auto& c : copies_) {
+        ASSERT_EQ(5, c->getNumLogs());
+    }
+    checkConsensus(copies_, 0, 4, msgs);
+}
+
 }  // namespace raftex
 }  // namespace nebula
 

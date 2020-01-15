@@ -409,7 +409,7 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
             << ", partId: " << partId << ", vId: " << vId;
     CHECK_NOTNULL(kvstore_);
     this->kvstore_->asyncAtomicOp(this->spaceId_, partId,
-        [&, this] () -> std::string {
+        [partId, vId, this] () -> std::string {
             if (checkFilter(partId, vId)) {
                 return updateAndWriteBack(partId, vId);
             }
