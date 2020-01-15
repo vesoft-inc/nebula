@@ -3,6 +3,7 @@ language : c++
 #    - gcc
 #    - clang
 os : linux
+cache: ccache
 
 matrix:
   include:
