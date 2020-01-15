@@ -482,10 +482,9 @@ TEST_F(ExpressionTest, LiteralConstantsLogical) {
 
 
 TEST_F(ExpressionTest, InputReference) {
-    GQLParser parser;
     {
         std::string query = "GO FROM 1 OVER follow WHERE $-.name";
-        auto parsed = parser.parse(query);
+        auto parsed = parser_->parse(query);
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
@@ -507,7 +506,7 @@ TEST_F(ExpressionTest, InputReference) {
     }
     {
         std::string query = "GO FROM 1 OVER follow WHERE $-.age >= 18";
-        auto parsed = parser.parse(query);
+        auto parsed = parser_->parse(query);
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
@@ -531,10 +530,9 @@ TEST_F(ExpressionTest, InputReference) {
 
 
 TEST_F(ExpressionTest, SourceTagReference) {
-    GQLParser parser;
     {
         std::string query = "GO FROM 1 OVER follow WHERE $^.person.name == \"dutor\"";
-        auto parsed = parser.parse(query);
+        auto parsed = parser_->parse(query);
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
@@ -557,12 +555,11 @@ TEST_F(ExpressionTest, SourceTagReference) {
 
 
 TEST_F(ExpressionTest, EdgeReference) {
-    GQLParser parser;
     {
         std::string query = "GO FROM 1 OVER follow WHERE follow._src == 1 "
                                                         "|| follow.cur_time < 1545798791"
                                                         "&& follow._dst == 2";
-        auto parsed = parser.parse(query);
+        auto parsed = parser_->parse(query);
         ASSERT_TRUE(parsed.ok());
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
@@ -717,21 +714,19 @@ TEST_F(ExpressionTest, StringLengthLimitTest) {
 
     // double quote
     {
-        GQLParser parser;
         auto *fmt = "GO FROM 1 OVER follow WHERE \"%s\"";
         {
             auto query = folly::stringPrintf(fmt, str.c_str());
-            auto parsed = parser.parse(query);
+            auto parsed = parser_->parse(query);
             ASSERT_TRUE(parsed.ok()) << parsed.status();
         }
     }
     // single quote
     {
-        GQLParser parser;
         auto *fmt = "GO FROM 1 OVER follow WHERE '%s'";
         {
             auto query = folly::stringPrintf(fmt, str.c_str());
-            auto parsed = parser.parse(query);
+            auto parsed = parser_->parse(query);
             ASSERT_TRUE(parsed.ok()) << parsed.status();
         }
     }
