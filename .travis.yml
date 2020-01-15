@@ -29,18 +29,6 @@ matrix:
       env:
         - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
 
-    # works on Trusty
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-trusty-7
-            - ubuntu-toolchain-r-test
-          packages:
-            - clang-7
-      env:
-        - MATRIX_EVAL="CC=clang-7 && CXX=clang++-7"
-
 before_install:
     - eval "${MATRIX_EVAL}"
     - export CC CXX
