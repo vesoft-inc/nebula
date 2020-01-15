@@ -1,11 +1,13 @@
 # DROP TAG 语法
 
 ```ngql
-DROP TAG <tag_name>
+DROP TAG [IF EXISTS] <tag_name>
 ```
 
 仅支持有 DROP 权限的用户进行此操作。
 > 请谨慎进行此操作。
+
+删除标签可使用 `IF EXISTS` 关键字，这个关键字会自动检测对应的标签是否存在，如果存在则删除，如果不存在则直接返回。
 
 一个节点可以有一个或多个标签（类型）。
 

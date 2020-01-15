@@ -11,6 +11,7 @@
 #include <folly/RWSpinLock.h>
 #include "meta/SchemaProviderIf.h"
 #include "meta/client/MetaClient.h"
+#include "interface/gen-cpp2/storage_types.h"
 
 namespace nebula {
 namespace meta {
@@ -46,6 +47,12 @@ public:
     virtual StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) = 0;
 
     virtual StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) = 0;
+
+    virtual StatusOr<std::vector<nebula::cpp2::IndexItem>>
+    getTagIndexes(GraphSpaceID space) = 0;
+
+    virtual StatusOr<std::vector<nebula::cpp2::IndexItem>>
+    getEdgeIndexes(GraphSpaceID space) = 0;
 
     virtual void init(MetaClient *client = nullptr) = 0;
 

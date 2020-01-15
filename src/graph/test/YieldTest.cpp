@@ -51,7 +51,7 @@ TEST_F(YieldTest, Base) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> expectedColNames{
-            {"(1+1)"}, {"1+1"}, {"(int)3.140000"}, {"(string)(1+1)"}, {"(string)true"}
+            {"(1+1)"}, {"1+1"}, {"(int)3.140000000000000"}, {"(string)(1+1)"}, {"(string)true"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
         std::vector<std::tuple<int64_t, std::string, int64_t, std::string, std::string>> expected{
@@ -126,7 +126,7 @@ TEST_F(YieldTest, HashCall) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> expectedColNames{
-            {"hash(123.000000)"}
+            {"hash(123.000000000000000)"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
         std::vector<std::tuple<int64_t>> expected{
@@ -501,6 +501,89 @@ TEST_F(YieldTest, Error) {
     }
 }
 
+TEST_F(YieldTest, calculateOverflow) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 9223372036854775807+1";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -9223372036854775807-2";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -9223372036854775807+-2";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 1-(-9223372036854775807)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 9223372036854775807*2";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -9223372036854775807*-2";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 9223372036854775807*-2";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -9223372036854775807*2";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 1/0";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 2%0";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD 9223372036854775807";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -9223372036854775808";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -9223372036854775809";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+}
+
 TEST_F(YieldTest, AggCall) {
     {
         cpp2::ExecutionResponse resp;
@@ -653,3 +736,4 @@ TEST_F(YieldTest, EmptyInput) {
 }
 }   // namespace graph
 }   // namespace nebula
+
