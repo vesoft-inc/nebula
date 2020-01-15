@@ -16,7 +16,7 @@ namespace meta {
 
 class IndexManager {
 public:
-    ~IndexManager() = default;
+    virtual ~IndexManager() = default;
 
     static std::unique_ptr<IndexManager> create();
 
