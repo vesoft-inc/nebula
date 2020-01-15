@@ -22,6 +22,7 @@ fi
 
 url_base=https://nebula-graph.oss-accelerate.aliyuncs.com/third-party
 this_dir=$(dirname $(readlink -f $0))
+echo $CXX
 cxx_cmd=${CXX:-g++}
 echo "CXX "$cxx_cmd
 
