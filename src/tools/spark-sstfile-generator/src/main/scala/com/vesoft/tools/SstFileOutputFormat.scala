@@ -170,7 +170,6 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
       val hdfsSubDirectory =
         s"${File.separator}${key.partitionId}${File.separator}"
 
-
       val localDir = s"${localSstFileOutput}${hdfsSubDirectory}"
       val sstFileName =
         s"${value.vertexOrEdgeEnum}-${key.`type`}-${DatatypeConverter
@@ -223,7 +222,6 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
             log.error("Error when closing a sst file", e)
           }
         }
-
 
         try {
           // There could be multiple containers on a single host, parent dir are shared between multiple containers,

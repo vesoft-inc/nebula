@@ -107,6 +107,37 @@ Status Collector::collect(VariantType &var, RowWriter *writer) {
     return Status::OK();
 }
 
+Status Collector::collectWithoutSchema(VariantType &var, RowWriter *writer) {
+    switch (var.which()) {
+        case VAR_INT64:
+            VLOG(3) << boost::get<int64_t>(var);
+            (*writer) << RowWriter::ColType(nebula::cpp2::SupportedType::INT)
+                << boost::get<int64_t>(var);
+            break;
+        case VAR_DOUBLE:
+            VLOG(3) << boost::get<double>(var);
+            (*writer) << RowWriter::ColType(nebula::cpp2::SupportedType::DOUBLE)
+                << boost::get<double>(var);
+            break;
+        case VAR_BOOL:
+            VLOG(3) << boost::get<bool>(var);
+            (*writer) << RowWriter::ColType(nebula::cpp2::SupportedType::BOOL)
+                << boost::get<bool>(var);
+            break;
+        case VAR_STR:
+            VLOG(3) << boost::get<std::string>(var);
+            (*writer) << RowWriter::ColType(nebula::cpp2::SupportedType::STRING)
+                << boost::get<std::string>(var);
+            break;
+        default:
+            std::string errMsg =
+                folly::stringPrintf("Unknown VariantType: %d", var.which());
+            LOG(ERROR) << errMsg;
+            return Status::Error(errMsg);
+    }
+    return Status::OK();
+}
+
 OptVariantType Collector::getProp(const meta::SchemaProviderIf *schema,
                                const std::string &prop,
                                const RowReader *reader) {

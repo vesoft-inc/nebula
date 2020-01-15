@@ -691,13 +691,56 @@ OptVariantType ArithmeticExpression::eval(Getters &getters) const {
     auto l = left.value();
     auto r = right.value();
 
+    static constexpr int64_t maxInt = std::numeric_limits<int64_t>::max();
+    static constexpr int64_t minInt = std::numeric_limits<int64_t>::min();
+
+    auto isAddOverflow = [] (int64_t lv, int64_t rv) -> bool {
+        if (lv >= 0 && rv >= 0) {
+            return maxInt - lv < rv;
+        } else if (lv < 0 && rv < 0) {
+            return minInt - lv > rv;
+        } else {
+            return false;
+        }
+    };
+
+    auto isSubOverflow = [] (int64_t lv, int64_t rv) -> bool {
+        if (lv > 0 && rv < 0) {
+            return maxInt - lv < -rv;
+        } else if (lv < 0 && rv > 0) {
+            return minInt - lv > -rv;
+        } else {
+            return false;
+        }
+    };
+
+    auto isMulOverflow = [] (int64_t lv, int64_t rv) -> bool {
+        if (lv > 0 && rv > 0) {
+            return maxInt / lv < rv;
+        } else if (lv < 0 && rv < 0) {
+            return maxInt / lv > rv;
+        } else if (lv > 0 && rv < 0) {
+            return maxInt / lv < -rv;
+        } else if (lv < 0 && rv > 0) {
+            return maxInt / lv > -rv;
+        } else {
+            return false;
+        }
+    };
+
     switch (op_) {
         case ADD:
             if (isArithmetic(l) && isArithmetic(r)) {
                 if (isDouble(l) || isDouble(r)) {
                     return OptVariantType(asDouble(l) + asDouble(r));
                 }
-                return OptVariantType(asInt(l) + asInt(r));
+                int64_t lValue = asInt(l);
+                int64_t rValue = asInt(r);
+                if (isAddOverflow(lValue, rValue)) {
+                    return Status::Error(folly::stringPrintf("Out of range %ld + %ld",
+                                lValue, rValue));
+                }
+                return OptVariantType(lValue + rValue);
             }
 
             if (isString(l) && isString(r)) {
@@ -709,7 +752,13 @@ OptVariantType ArithmeticExpression::eval(Getters &getters) const {
                 if (isDouble(l) || isDouble(r)) {
                     return OptVariantType(asDouble(l) - asDouble(r));
                 }
-                return OptVariantType(asInt(l) - asInt(r));
+                int64_t lValue = asInt(l);
+                int64_t rValue = asInt(r);
+                if (isSubOverflow(lValue, rValue)) {
+                    return Status::Error(folly::stringPrintf("Out of range %ld - %ld",
+                                lValue, rValue));
+                }
+                return OptVariantType(lValue - rValue);
             }
             break;
         case MUL:
@@ -717,13 +766,27 @@ OptVariantType ArithmeticExpression::eval(Getters &getters) const {
                 if (isDouble(l) || isDouble(r)) {
                     return OptVariantType(asDouble(l) * asDouble(r));
                 }
-                return OptVariantType(asInt(l) * asInt(r));
+                int64_t lValue = asInt(l);
+                int64_t rValue = asInt(r);
+                if (isMulOverflow(lValue, rValue)) {
+                    return Status::Error("Out of range %ld * %ld", lValue, rValue);
+                }
+                return OptVariantType(lValue * rValue);
             }
             break;
         case DIV:
             if (isArithmetic(l) && isArithmetic(r)) {
                 if (isDouble(l) || isDouble(r)) {
+                    if (abs(asDouble(r)) < 1e-8) {
+                        // When Null is supported, should be return NULL
+                        return Status::Error("Division by zero");
+                    }
                     return OptVariantType(asDouble(l) / asDouble(r));
+                }
+
+                if (abs(asInt(r)) == 0) {
+                    // When Null is supported, should be return NULL
+                    return Status::Error("Division by zero");
                 }
                 return OptVariantType(asInt(l) / asInt(r));
             }
@@ -731,7 +794,15 @@ OptVariantType ArithmeticExpression::eval(Getters &getters) const {
         case MOD:
             if (isArithmetic(l) && isArithmetic(r)) {
                 if (isDouble(l) || isDouble(r)) {
+                    if (abs(asDouble(r)) < 1e-8) {
+                        // When Null is supported, should be return NULL
+                        return Status::Error("Division by zero");
+                    }
                     return fmod(asDouble(l), asDouble(r));
+                }
+                if (abs(asInt(r)) == 0) {
+                    // When Null is supported, should be return NULL
+                    return Status::Error("Division by zero");
                 }
                 return OptVariantType(asInt(l) % asInt(r));
             }

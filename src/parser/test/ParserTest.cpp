@@ -930,6 +930,12 @@ TEST(Parser, FetchVertex) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON * 1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, FetchEdge) {
@@ -1164,7 +1170,8 @@ TEST(Parser, UnreservedKeywords) {
     {
         GQLParser parser;
         std::string query = "CREATE TAG tag1(space string, spaces string, "
-                            "email string, password string, roles string)";
+                            "email string, password string, roles string, uuid int, "
+                            "path string, variables string, leader string, data string)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
