@@ -46,9 +46,6 @@ public:
 
 protected:
     IndexManager() = default;
-
-private:
-    MetaClient             *metaClient_{nullptr};
 };
 
 }  // namespace meta

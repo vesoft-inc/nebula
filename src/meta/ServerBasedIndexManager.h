@@ -14,6 +14,7 @@ namespace meta {
 
 class ServerBasedIndexManager : public IndexManager {
 public:
+    ServerBasedIndexManager() = default;
     ~ServerBasedIndexManager();
 
     StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>>
