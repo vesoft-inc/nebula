@@ -79,8 +79,8 @@ public:
         return store;
     }
 
-    static std::unique_ptr<meta::SchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0) {
-        auto* schemaMan = new AdHocSchemaManager();
+    static std::unique_ptr<AdHocSchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0) {
+        auto schemaMan = std::make_unique<AdHocSchemaManager>();
         for (auto edgeType = 101; edgeType < 110; edgeType++) {
             schemaMan->addEdgeSchema(spaceId /*space id*/, edgeType /*edge type*/,
                                      TestUtils::genEdgeSchemaProvider(10, 10));
@@ -89,8 +89,7 @@ public:
             schemaMan->addTagSchema(
                 spaceId /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
         }
-        std::unique_ptr<meta::SchemaManager> sm(schemaMan);
-        return sm;
+        return schemaMan;
     }
 
     static std::unique_ptr<meta::IndexManager> mockIndexMan(GraphSpaceID spaceId = 0,
@@ -131,6 +130,45 @@ public:
                 columns.emplace_back(std::move(column));
             }
             indexMan->addEdgeIndex(spaceId, edgeType + 100, edgeType, std::move(columns));
+        }
+
+        std::unique_ptr<meta::IndexManager> im(indexMan);
+        return im;
+    }
+
+    static std::unique_ptr<meta::IndexManager> mockMultiIndexMan(GraphSpaceID spaceId = 0,
+                                                                 TagID startTag = 3001,
+                                                                 TagID endTag = 3010,
+                                                                 EdgeType startEdge = 101,
+                                                                 EdgeType endEdge = 110) {
+        auto* indexMan = new AdHocIndexManager();
+        for (auto tagId = startTag; tagId < endTag; tagId++) {
+            for (auto i = 0; i < 3; i++) {
+                std::vector<nebula::cpp2::ColumnDef> columns;
+                nebula::cpp2::ColumnDef column;
+                column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
+                column.type.type = nebula::cpp2::SupportedType::INT;
+                columns.emplace_back(std::move(column));
+
+                column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i + 3);
+                column.type.type = nebula::cpp2::SupportedType::STRING;
+                columns.emplace_back(std::move(column));
+                indexMan->addTagIndex(spaceId, tagId + 1000, tagId, std::move(columns));
+            }
+        }
+
+        for (auto edgeType = startEdge; edgeType < endEdge; edgeType++) {
+            for (auto i = 0; i < 10; i++) {
+                std::vector<nebula::cpp2::ColumnDef> columns;
+                nebula::cpp2::ColumnDef column;
+                column.name = folly::stringPrintf("col_%d", i);
+                column.type.type = nebula::cpp2::SupportedType::INT;
+                columns.emplace_back(std::move(column));
+                column.name = folly::stringPrintf("col_%d", i + 10);
+                column.type.type = nebula::cpp2::SupportedType::STRING;
+                columns.emplace_back(std::move(column));
+                indexMan->addEdgeIndex(spaceId, edgeType + 100, edgeType, std::move(columns));
+            }
         }
 
         std::unique_ptr<meta::IndexManager> im(indexMan);

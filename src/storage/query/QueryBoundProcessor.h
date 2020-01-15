@@ -51,7 +51,6 @@ private:
                                         const EdgeType edgeType,
                                         const std::vector<PropContext>& props,
                                         FilterContext& fcontext, cpp2::VertexData& vdata);
-
 protected:
     // Indicate the request only get vertex props.
     bool onlyVertexProps_ = false;

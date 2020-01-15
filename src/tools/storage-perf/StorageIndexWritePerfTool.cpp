@@ -108,7 +108,7 @@ void insertVertices(bool withoutIndex, bool skipIndexCheck = false) {
         if (withoutIndex) {
             schemaMan = TestUtils::mockSchemaMan(1);
         } else {
-            indexMan = TestUtils::mockIndexMan(1);
+            indexMan = TestUtils::mockIndexMan(1, 3001, 3002);
             schemaMan = TestUtils::mockSchemaMan(1);
         }
     };
@@ -196,7 +196,7 @@ void insertUnmatchIndex() {
     BENCHMARK_SUSPEND {
         auto rootPath = folly::stringPrintf("%s/%s", FLAGS_root_data_path.c_str(), "unmatchIndex");
         kv = TestUtils::initKV(std::move(rootPath).c_str());
-        indexMan = TestUtils::mockIndexMan(1);
+        indexMan = TestUtils::mockIndexMan(1, 2001, 2002);
         schemaMan = TestUtils::mockSchemaMan(1);
     };
     while (vId < FLAGS_total_vertices_size) {
@@ -351,7 +351,7 @@ void insertVerticesMultIndex(bool skipIndexCheck = false) {
         }
 
         kv = TestUtils::initKV(std::move(rootPath).c_str());
-        indexMan = TestUtils::mockIndexMan(1);
+        indexMan = TestUtils::mockMultiIndexMan(1, 3001, 3002);
         schemaMan = TestUtils::mockSchemaMan(1);
     };
     while (vId < FLAGS_total_vertices_size) {
