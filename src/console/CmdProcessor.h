@@ -7,11 +7,16 @@
 #ifndef CONSOLE_CMDPROCESSOR_H_
 #define CONSOLE_CMDPROCESSOR_H_
 
+#include <locale>
+#include <codecvt>
+
 #include "base/Base.h"
 #include "client/cpp/GraphClient.h"
 
 namespace nebula {
 namespace graph {
+
+static std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> utf8Conv;
 
 class CmdProcessor final {
 public:

@@ -11,6 +11,7 @@
 namespace nebula {
 namespace graph {
 
+
 #define GET_VALUE_WIDTH(VT, FN, FMT) \
     VT val = col.get_ ## FN(); \
     size_t len = folly::stringPrintf(FMT, val).size(); \
@@ -109,7 +110,9 @@ void CmdProcessor::calColumnWidths(
                     break;
                 }
                 case cpp2::ColumnValue::Type::str: {
-                    size_t len = col.get_str().size();
+                    size_t wlen = utf8Conv.from_bytes(col.get_str()).size();
+                    size_t diff = (col.get_str().size() - wlen) / 2;
+                    size_t len = col.get_str().size() - diff;
                     if (widths[idx] < len) {
                         widths[idx] = len;
                         genFmt = true;
@@ -313,7 +316,10 @@ void CmdProcessor::printData(const cpp2::ExecutionResponse& resp,
                     break;
                 }
                 case cpp2::ColumnValue::Type::str: {
-                    PRINT_FIELD_VALUE(col.get_str().c_str());
+                    size_t wlen = utf8Conv.from_bytes(col.get_str()).size();
+                    size_t diff = (col.get_str().size() - wlen) / 2;
+                    std::string fmt = folly::stringPrintf(" %%-%lds |", widths[cIdx] + diff);
+                    std::cout << folly::stringPrintf(fmt.c_str(), col.get_str().c_str());
                     break;
                 }
                 case cpp2::ColumnValue::Type::timestamp: {
