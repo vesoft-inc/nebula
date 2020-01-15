@@ -4,6 +4,7 @@
 SHOW {SPACES | TAGS | EDGES | HOSTS | PARTS }
 SHOW PARTS <part_id>
 SHOW CREATE {TAG | EDGE} {<tag_name> | <edge_name>}
+SHOW {TAG | EDGE} INDEXES
 SHOW CONFIGS [graph|meta|storage]
 ```
 
@@ -12,6 +13,8 @@ SHOW CONFIGS [graph|meta|storage]
 `SHOW TAGS` 和 `SHOW EDGES` 则返回当前图空间中被定义的 tag 和 edge type。
 
 `SHOW CREATE TAG` 和 `SHOW CREATE EDGE` 返回当前图空间中指定的 tag、edge type 及其创建语法。如果 tag 或 edge type 包含默认值，则同时返回默认值。
+
+`SHOW INDEXES` 用于列出已创建完成的标签或边类型的索引信息。
 
 `SHOW HOSTS` 列出元服务器注册的所有存储主机。
 
