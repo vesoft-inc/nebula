@@ -19,11 +19,11 @@ jobs:
   - script: mkdir _build && cd _build && cmake ..
     displayName: 'cmake'
 
-  - script: make -j$(nproc)
+  - script: cd _build && make -j$(nproc)
     displayName: 'make'
 
-  - script: ctest -j$(nproc)
+  - script: cd _build && ctest -j$(nproc)
     displayName: 'test'
 
-  - script: bash <(curl -s https://codecov.io/bash) -Z > /dev/null 2>&1
+  - script: cd _build && bash <(curl -s https://codecov.io/bash) -Z > /dev/null 2>&1
     displayName: 'coverage'
