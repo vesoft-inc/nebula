@@ -282,6 +282,19 @@ protected:
         return client_->getPartMetaFromCache(spaceId, partId);
     }
 
+    virtual bool loadLeader() {
+        CHECK(client_ != nullptr);
+        auto status = client_->loadLeader();
+        if (status.ok()) {
+            folly::RWSpinLock::WriteHolder wh(leadersLock_);
+            leaders_ = std::move(status).value();
+            loadLeaderBefore_ = true;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     meta::MetaClient *client_{nullptr};
@@ -289,6 +302,7 @@ private:
                         storage::cpp2::StorageServiceAsyncClient>> clientsMan_;
     mutable folly::RWSpinLock leadersLock_;
     mutable std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> leaders_;
+    std::atomic_bool loadLeaderBefore_{false};
     std::unique_ptr<stats::Stats> stats_;
 };
 

@@ -394,15 +394,12 @@ public:
 
     Status refreshCache();
 
-    LeaderMap getStorageLeader() {
-        return leaderMap_;
-    }
+    StatusOr<LeaderMap> loadLeader();
 
 protected:
     // Return true if load succeeded.
     bool loadData();
     bool loadCfg();
-    bool loadLeader();
     void heartBeatThreadFunc();
 
     bool registerCfg();
@@ -499,7 +496,6 @@ private:
     SpaceNewestTagVerMap  spaceNewestTagVerMap_;
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
     SpaceAllEdgeMap       spaceAllEdgeMap_;
-    LeaderMap             leaderMap_;
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
     folly::RWSpinLock     listenerLock_;

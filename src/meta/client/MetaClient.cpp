@@ -66,8 +66,7 @@ bool MetaClient::isMetadReady() {
     if (!options_.skipConfig_) {
         lcRet = loadCfg();
     }
-    bool lhRet = loadLeader();
-    if (ldRet && lcRet && lhRet) {
+    if (ldRet && lcRet) {
         localLastUpdateTime_ = metadLastUpdateTime_;
     }
     return ready_;
@@ -1780,12 +1779,18 @@ Status MetaClient::refreshCache() {
     return ret ? Status::OK() : Status::Error("Load data failed");
 }
 
-bool MetaClient::loadLeader() {
-    auto ret = listHosts().get();
-    if (!ret.ok()) {
-        return false;
+StatusOr<LeaderMap> MetaClient::loadLeader() {
+    // Return error if has not loadData before
+    if (!ready_) {
+        return Status::Error("Not ready!");
     }
 
+    auto ret = listHosts().get();
+    if (!ret.ok()) {
+        return Status::Error("List hosts failed");
+    }
+
+    LeaderMap leaderMap;
     auto hostItems = std::move(ret).value();
     for (auto& item : hostItems) {
         auto hostAddr = HostAddr(item.hostAddr.ip, item.hostAddr.port);
@@ -1797,13 +1802,13 @@ bool MetaClient::loadLeader() {
             }
             auto spaceId = status.value();
             for (const auto& partId : spaceEntry.second) {
-                leaderMap_[{spaceId, partId}] = hostAddr;
+                leaderMap[{spaceId, partId}] = hostAddr;
             }
-            LOG(INFO) << "Load leader of space " << spaceName;
+            LOG(INFO) << "Load leader of " << hostAddr << " in space " << spaceName;
         }
     }
     LOG(INFO) << "Load leader ok";
-    return true;
+    return leaderMap;
 }
 
 }  // namespace meta
