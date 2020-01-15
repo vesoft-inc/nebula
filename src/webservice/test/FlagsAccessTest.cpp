@@ -41,10 +41,10 @@ private:
 
 TEST(FlagsAccessTest, GetSetTest) {
     std::string resp;
-    ASSERT_TRUE(getUrl("/get_flags?flags=int32_test", resp));
+    ASSERT_TRUE(getUrl("/flags?names=int32_test", resp));
     EXPECT_EQ(folly::stringPrintf("int32_test=%d\n", FLAGS_int32_test), resp);
 
-    ASSERT_TRUE(getUrl("/get_flags?flags=int64_test,bool_test,string_test", resp));
+    ASSERT_TRUE(getUrl("/flags?names=int64_test,bool_test,string_test", resp));
     EXPECT_EQ(folly::stringPrintf("int64_test=%ld\nbool_test=%s\nstring_test=\"%s\"\n",
                                   FLAGS_int64_test,
                                   (FLAGS_bool_test ? "1" : "0"),
@@ -53,17 +53,17 @@ TEST(FlagsAccessTest, GetSetTest) {
 
     ASSERT_TRUE(getUrl("/set_flag?flag=int64_test&value=20", resp));
     ASSERT_EQ("true", resp);
-    ASSERT_TRUE(getUrl("/get_flags?flags=int64_test", resp));
+    ASSERT_TRUE(getUrl("/flags?names=int64_test", resp));
     EXPECT_EQ(std::string("int64_test=20\n"), resp);
 
-    ASSERT_TRUE(getUrl("/get_flags", resp));
+    ASSERT_TRUE(getUrl("/flags", resp));
     ASSERT_TRUE(resp.find("crash_test=nullptr") != std::string::npos);
 }
 
 TEST(FlagsAccessTest, JsonTest) {
     std::string resp;
-    ASSERT_TRUE(getUrl("/get_flags?flags=double_test&returnjson", resp));
-    auto json = folly::parseJson(resp);
+    ASSERT_TRUE(getUrl("/flags?names=double_test&return=json", resp));
+    auto json = folly::parseJson(resp)["flags"];
     ASSERT_TRUE(json.isArray());
     ASSERT_EQ(1UL, json.size());
     ASSERT_TRUE(json[0].isObject());
@@ -83,8 +83,8 @@ TEST(FlagsAccessTest, JsonTest) {
 
 TEST(FlagsAccessTest, VerboseTest) {
     std::string resp;
-    ASSERT_TRUE(getUrl("/get_flags?flags=int32_test&returnjson&verbose", resp));
-    auto json = folly::parseJson(resp);
+    ASSERT_TRUE(getUrl("/flags?names=int32_test&return=json&verbose=true", resp));
+    auto json = folly::parseJson(resp)["flags"];
     ASSERT_TRUE(json.isArray());
     ASSERT_EQ(1UL, json.size());
     ASSERT_TRUE(json[0].isObject());
@@ -119,7 +119,7 @@ TEST(FlagsAccessTest, VerboseTest) {
 
 TEST(FlagsAccessTest, ErrorTest) {
     std::string resp;
-    ASSERT_TRUE(getUrl("/get_flags123?flags=int32_test", resp));
+    ASSERT_TRUE(getUrl("/flags123?flags=int32_test", resp));
     EXPECT_TRUE(resp.empty());
 }
 

@@ -36,7 +36,7 @@ private:
     void addOneFlag(folly::dynamic& vals,
                     const std::string& flagname,
                     const gflags::CommandLineFlagInfo* info);
-    std::string toStr(folly::dynamic& vals);
+    std::string toStr(const folly::dynamic& vals);
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
