@@ -165,6 +165,8 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
         expCtx_ = std::make_unique<ExpressionContext>();
         exp_->setContext(expCtx_.get());
     }
+
+    buildRespSchema();
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -315,20 +317,16 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
                 case PropContext::PropInKeyType::NONE:
                     break;
                 case PropContext::PropInKeyType::SRC:
-                    VLOG(3) << "collect _src, value = " << NebulaKeyUtils::getSrcId(key);
                     collector->collectVid(NebulaKeyUtils::getSrcId(key), prop);
                     continue;
                 case PropContext::PropInKeyType::DST:
-                    VLOG(3) << "collect _dst, value = " << NebulaKeyUtils::getDstId(key);
                     collector->collectVid(NebulaKeyUtils::getDstId(key), prop);
                     continue;
                 case PropContext::PropInKeyType::TYPE:
-                    VLOG(3) << "collect _type, value = " << NebulaKeyUtils::getEdgeType(key);
                     collector->collectInt64(static_cast<int64_t>(NebulaKeyUtils::getEdgeType(key)),
                                             prop);
                     continue;
                 case PropContext::PropInKeyType::RANK:
-                    VLOG(3) << "collect _rank, value = " << NebulaKeyUtils::getRank(key);
                     collector->collectInt64(NebulaKeyUtils::getRank(key), prop);
                     continue;
             }
@@ -338,12 +336,12 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
             VariantType v;
             auto res = RowReader::getPropByName(reader, name);
             if (!ok(res)) {
-                VLOG(1) << "Bad value for prop " << name;
+                VLOG(1) << "Bad value for prop: " << name;
                 // TODO: Should return NULL
                 auto defaultVal = RowReader::getDefaultProp(prop.type_.type);
                 if (!defaultVal.ok()) {
                     // Should never reach here.
-                    LOG(FATAL) << "Get default value failed for " << name;
+                    LOG(ERROR) << "Get default value failed for " << name;
                     continue;
                 } else {
                     v = std::move(defaultVal).value();
@@ -568,6 +566,54 @@ std::vector<Bucket> QueryBaseProcessor<REQ, RESP>::genBuckets(
 }
 
 template<typename REQ, typename RESP>
+void QueryBaseProcessor<REQ, RESP>::buildRespSchema() {
+    if (!this->tagContexts_.empty()) {
+        for (auto& tc : this->tagContexts_) {
+            nebula::cpp2::Schema respTag;
+            for (auto& prop : tc.props_) {
+                if (prop.returned_) {
+                    VLOG(3) << "Build schema with prop: " << prop.prop_.name
+                            << " , type: " << static_cast<int32_t>(prop.type_.type);
+                    respTag.columns.emplace_back(
+                        this->columnDef(prop.prop_.name, prop.type_.type));
+                }
+            }
+
+            if (!respTag.columns.empty()) {
+                auto it = vertexSchemaResp_.find(tc.tagId_);
+                if (it == vertexSchemaResp_.end()) {
+                    auto schemaProvider = std::make_shared<ResultSchemaProvider>(respTag);
+                    vertexSchema_.emplace(tc.tagId_, std::move(schemaProvider));
+                    vertexSchemaResp_.emplace(tc.tagId_, std::move(respTag));
+                }
+            }
+        }
+    }
+
+    if (!edgeContexts_.empty()) {
+        for (const auto& ec : edgeContexts_) {
+            nebula::cpp2::Schema respEdge;
+            auto& props = ec.second;
+            for (auto& p : props) {
+                VLOG(3) << "Build schema with prop: " << p.prop_.name
+                        << " , type: " << static_cast<int32_t>(p.type_.type);
+                respEdge.columns.emplace_back(
+                        this->columnDef(p.prop_.name, p.type_.type));
+            }
+
+            if (!respEdge.columns.empty()) {
+                auto it = edgeSchemaResp_.find(ec.first);
+                if (it == edgeSchemaResp_.end()) {
+                    auto schemaProvider = std::make_shared<ResultSchemaProvider>(respEdge);
+                    edgeSchema_.emplace(ec.first, std::move(schemaProvider));
+                    edgeSchemaResp_.emplace(ec.first, std::move(respEdge));
+                }
+            }
+        }
+    }
+}
+
+template<typename REQ, typename RESP>
 void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req) {
     CHECK_NOTNULL(executor_);
     spaceId_ = req.get_space_id();
@@ -580,7 +626,6 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
     }
 
     auto retCode = checkAndBuildContexts(req);
-
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         for (auto& p : req.get_parts()) {
             this->pushResultCode(retCode, p.first);
@@ -588,6 +633,7 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
         this->onFinished();
         return;
     }
+
     // const auto& filter = req.get_filter();
     auto buckets = genBuckets(req);
     std::vector<folly::Future<std::vector<OneVertexResp>>> results;

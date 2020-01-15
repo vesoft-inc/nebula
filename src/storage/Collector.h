@@ -39,65 +39,28 @@ public:
                 : writer_(writer) {}
 
     void collectVid(int64_t v, const PropContext& prop) override {
-        switch (prop.type_.type) {
-            case nebula::cpp2::SupportedType::VID:
-                break;
-            default:
-                // Give a default value
-                // TODO: Should give null
-                v = 0;
-        }
-        (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::VID) << v;
+        (*writer_) << v;
+        VLOG(3) << "collect vid: " << prop.prop_.name << ", value = " << v;
     }
 
     void collectBool(bool v, const PropContext& prop) override {
-        switch (prop.type_.type) {
-            case nebula::cpp2::SupportedType::BOOL:
-                break;
-            default:
-                // Give a default value
-                // TODO: Should give null
-                v = false;
-        }
-        (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::BOOL) << v;
+        (*writer_) << v;
+        VLOG(3) << "collect bool: " << prop.prop_.name << ", value = " << v;
     }
 
     void collectInt64(int64_t v, const PropContext& prop) override {
-        switch (prop.type_.type) {
-            case nebula::cpp2::SupportedType::INT:
-            case nebula::cpp2::SupportedType::TIMESTAMP:
-                break;
-            default:
-                // Give a default value
-                // TODO: Should give null
-                v = 0;
-        }
-        (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::INT) << v;
+        (*writer_) << v;
+        VLOG(3) << "collect int: " << prop.prop_.name << ", value = " << v;
     }
 
     void collectDouble(double v, const PropContext& prop) override {
-        switch (prop.type_.type) {
-            case nebula::cpp2::SupportedType::DOUBLE:
-            case nebula::cpp2::SupportedType::FLOAT:
-                break;
-            default:
-                // Give a default value
-                // TODO: Should give null
-                v = 0;
-        }
-        (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::DOUBLE) << v;
+        (*writer_) << v;
+        VLOG(3) << "collect double: " << prop.prop_.name << ", value = " << v;
     }
 
     void collectString(const std::string& v, const PropContext& prop) override {
-        switch (prop.type_.type) {
-            case nebula::cpp2::SupportedType::STRING:
-                (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::STRING) << v;
-                break;
-            default:
-                // Give a default value
-                // TODO: Should give null
-                (*writer_) << RowWriter::ColType(nebula::cpp2::SupportedType::STRING) << "";
-        }
+        (*writer_) << v;
+        VLOG(3) << "collect string: " << prop.prop_.name << ", value = " << v;
     }
 
     template<typename V>

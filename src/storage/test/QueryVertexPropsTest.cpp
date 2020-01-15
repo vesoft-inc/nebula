@@ -272,7 +272,7 @@ TEST(QueryVertexPropsTest, QueryAfterTagAltered) {
         }
     }
 
-    version = std::numeric_limits<int64_t>::max() - 1;
+    version = std::numeric_limits<int64_t>::max() - 100;
     {
         LOG(INFO) << "Now update the data with new tag prop.";
         for (auto partId = 0; partId < 3; partId++) {
@@ -439,7 +439,6 @@ TEST(QueryVertexPropsTest, QueryAfterTagAltered) {
         }
     }
 }
-
 }  // namespace storage
 }  // namespace nebula
 
