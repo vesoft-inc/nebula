@@ -8,6 +8,7 @@
 #include "utils/NebulaKeyUtils.h"
 #include "dataman/RowWriter.h"
 #include "kvstore/LogEncoder.h"
+#include "meta/NebulaSchemaProvider.h"
 
 namespace nebula {
 namespace storage {
@@ -186,17 +187,46 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
         if (constSchema == nullptr) {
             return kvstore::ResultCode::ERR_UNKNOWN;
         }
+        auto schema = std::const_pointer_cast<meta::SchemaProviderIf>(constSchema);
+        auto updater = std::make_unique<RowUpdater>(schema);
+
         for (auto index = 0UL; index < constSchema->getNumFields(); index++) {
             auto propName = std::string(constSchema->getFieldName(index));
-            OptVariantType value = RowReader::getDefaultProp(constSchema.get(), propName);
+            auto findIter = std::find_if(updateItems_.cbegin(), updateItems_.cend(),
+                    [&propName](auto &item) { return item.prop == propName; });
+            OptVariantType value;
+            if (findIter == updateItems_.end()) {
+                value = std::dynamic_pointer_cast<const meta::NebulaSchemaProvider>(
+                        constSchema)->getDefaultValue(index);
+            } else {
+                value = RowReader::getDefaultProp(constSchema.get(), propName);
+            }
             if (!value.ok()) {
+                LOG(ERROR) << "EdgeType: " << edgeKey.edge_type
+                           << ", prop: " << propName << " without default value";
                 return kvstore::ResultCode::ERR_UNKNOWN;
             }
             auto v = std::move(value.value());
+            switch (v.which()) {
+                case VAR_INT64:
+                    updater->setInt(propName, boost::get<int64_t>(v));
+                    break;
+                case VAR_DOUBLE:
+                    updater->setDouble(propName, boost::get<double>(v));
+                    break;
+                case VAR_BOOL:
+                    updater->setBool(propName, boost::get<bool>(v));
+                    break;
+                case VAR_STR:
+                    updater->setString(propName, boost::get<std::string>(v));
+                    break;
+                default:
+                    LOG(ERROR) << "Unknown VariantType: " << v.which();
+                    return kvstore::ResultCode::ERR_UNKNOWN;
+            }
             edgeFilters_.emplace(propName, v);
         }
-        auto schema = std::const_pointer_cast<meta::SchemaProviderIf>(constSchema);
-        updater_ = std::unique_ptr<RowUpdater>(new RowUpdater(schema));
+        updater_ = std::unique_ptr<RowUpdater>(std::move(updater));
     } else {
         VLOG(3) << "Missed edge, spaceId: " << this->spaceId_ << ", partId: " << partId
                 << ", src: " << edgeKey.src << ", type: " << edgeKey.edge_type

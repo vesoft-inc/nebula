@@ -15,6 +15,7 @@
 #include "gen-cpp2/storage_types.h"
 #include "dataman/RowWriter.h"
 #include "meta/SchemaManager.h"
+#include "meta/NebulaSchemaProvider.h"
 #include "time/Duration.h"
 #include "stats/Stats.h"
 

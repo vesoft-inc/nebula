@@ -30,7 +30,7 @@ private:
     StatusOr<std::vector<storage::cpp2::Edge>> prepareEdges();
 
 private:
-    using EdgeSchema = std::shared_ptr<const meta::SchemaProviderIf>;
+    using EdgeSchema = std::shared_ptr<const meta::NebulaSchemaProvider>;
 
     InsertEdgeSentence                               *sentence_{nullptr};
     std::unique_ptr<ExpressionContext>                expCtx_;
@@ -40,7 +40,7 @@ private:
     std::vector<std::string*>                         props_;
     std::vector<EdgeRowItem*>                         rows_;
     GraphSpaceID                                      spaceId_{-1};
-    std::unordered_map<std::string, std::string>      defaultValues_;
+    std::unordered_map<std::string, VariantType>      defaultValues_;
     std::unordered_map<std::string, int32_t>          propsPosition_;
 };
 

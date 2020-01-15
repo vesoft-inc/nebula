@@ -40,12 +40,12 @@ bool ResultSchemaProvider::ResultSchemaField::isValid() const {
 }
 
 
-bool ResultSchemaProvider::ResultSchemaField::hasDefault() const {
+bool ResultSchemaProvider::ResultSchemaField::hasDefaultValue() const {
     LOG(FATAL) << "Not Supported";
 }
 
 
-std::string ResultSchemaProvider::ResultSchemaField::getDefaultValue() const {
+VariantType ResultSchemaProvider::ResultSchemaField::getDefaultValue() const {
     LOG(FATAL) << "Not Supported";
 }
 
