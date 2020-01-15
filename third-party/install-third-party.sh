@@ -23,6 +23,7 @@ fi
 url_base=https://nebula-graph.oss-accelerate.aliyuncs.com/third-party
 this_dir=$(dirname $(readlink -f $0))
 cxx_cmd=${CXX:-g++}
+echo "CXX "$cxx_cmd
 
 # We consider two derivatives: Red Hat and Debian
 # Place preset libc versions of each from newer to older
