@@ -56,6 +56,8 @@ class Collector final {
 public:
     static Status collect(VariantType &var, RowWriter *writer);
 
+    static Status collectWithoutSchema(VariantType &var, RowWriter *writer);
+
     static OptVariantType getProp(const meta::SchemaProviderIf *schema,
                                   const std::string &prop,
                                   const RowReader *reader);

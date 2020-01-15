@@ -7,9 +7,22 @@ on:
       - master
 
 jobs:
+  lint:
+    name: cpplint
+    if: contains(join(toJson(github.event.pull_request.labels.*.name)), 'ready-for-testing')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Cpplint
+        run: |
+          cd .linters/cpp && ln -snf hooks/pre-commit.sh
+          ./pre-commit.sh $(git --no-pager diff --name-only $(git log --oneline -n 1 | cut -d ' ' -f 1,5) | sed -E 's/(.*)/..\/..\/\1/g')
+
   build:
     name: build
-    if: contains(join(toJson(github.event.pull_request.labels.*.name)), 'ready-for-testing')
+    needs: lint
     runs-on: self-hosted
     strategy:
       matrix:
@@ -56,7 +69,7 @@ jobs:
       - name: CTest with single thread
         if: failure() && steps.ignore_docs.outputs.num_source_files != 0
         timeout-minutes: 30
-        run: cd build && ASAN_OPTIONS=fast_unwind_on_malloc=0 ctest --timeout 300 --output-on-failure --rerun-failed
+        run: cd build && ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer ASAN_OPTIONS=fast_unwind_on_malloc=0 ctest --timeout 300 --output-on-failure --rerun-failed
       - name: Coverage Report
         if: success() && matrix.compiler == 'gcc' && matrix.tag == 'centos7'
         run: cd build && lcov --gcov-tool $GCOV --capture --directory . --output-file coverage.info

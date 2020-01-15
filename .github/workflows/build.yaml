@@ -47,7 +47,7 @@ jobs:
         run: cd build && make -j $(nproc)
       - name: CTest with single thread
         timeout-minutes: 40
-        run: cd build && ASAN_OPTIONS=fast_unwind_on_malloc=0 ctest --timeout 300 --output-on-failure
+        run: cd build && ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer ASAN_OPTIONS=fast_unwind_on_malloc=0 ctest --timeout 300 --output-on-failure
       - name: Coverage Report
         if: success() && matrix.compiler == 'gcc' && matrix.tag == 'centos7'
         run: cd build && lcov --gcov-tool $GCOV --capture --directory . --output-file coverage.info

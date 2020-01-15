@@ -91,6 +91,13 @@ protected:
                             FilterContext* fcontext,
                             Collector* collector);
     /**
+     * Collect props for one vertex with vid.
+     * */
+    kvstore::ResultCode collectVertexProps(
+                            PartitionID partId,
+                            VertexID vId,
+                            std::vector<cpp2::TagData> &tds);
+    /**
      * Collect props for one vertex edge.
      * */
     kvstore::ResultCode collectEdgeProps(
