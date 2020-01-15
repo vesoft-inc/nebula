@@ -52,17 +52,14 @@ protected:
         TEST_EXPR_IMPL(EQ, exprSymbol, expected);
     }
 
-    template <>
     void testExpr(const std::string& exprSymbol, double expected) {
         TEST_EXPR_IMPL(DOUBLE_EQ, exprSymbol, expected);
     }
 
-    template <>
     void testExpr(const std::string& exprSymbol, int expected) {
         testExpr(exprSymbol, static_cast<int64_t>(expected));
     }
 
-    template <>
     void testExpr(const std::string& exprSymbol, const char* expected) {
         testExpr(exprSymbol, std::string(expected));
     }
@@ -72,7 +69,6 @@ protected:
         TEST_EXPR_IMPL(GT, exprSymbol, expected);
     }
 
-    template <>
     void testExprGT(const std::string& exprSymbol, int expected) {
         testExprGT(exprSymbol, static_cast<int64_t>(expected));
     }
@@ -82,7 +78,6 @@ protected:
         TEST_EXPR_IMPL(GE, exprSymbol, expected);
     }
 
-    template <>
     void testExprGE(const std::string& exprSymbol, int expected) {
         testExprGE(exprSymbol, static_cast<int64_t>(expected));
     }
@@ -92,7 +87,6 @@ protected:
         TEST_EXPR_IMPL(LT, exprSymbol, expected);
     }
 
-    template <>
     void testExprLT(const std::string& exprSymbol, int expected) {
         testExprLT(exprSymbol, static_cast<int64_t>(expected));
     }
@@ -102,7 +96,6 @@ protected:
         TEST_EXPR_IMPL(LE, exprSymbol, expected);
     }
 
-    template <>
     void testExprLE(const std::string& exprSymbol, int expected) {
         testExprLE(exprSymbol, static_cast<int64_t>(expected));
     }
