@@ -318,6 +318,66 @@ TEST_F(FetchVerticesTest, NonExistVertex) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FETCH PROP ON * %ld";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+}
+
+TEST_F(FetchVerticesTest, FetchAll) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "FETCH PROP ON * %ld ";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::string> expectedColNames{
+            {"player.name"}, {"player.age"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {player.name(), player.age()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tim Duncan"];
+        auto *fmt = "FETCH PROP ON bachelor %ld ";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::string> expectedColNames{
+            {"bachelor.name"}, {"bachelor.speciality"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+        std::vector<std::tuple<std::string, std::string>> expected = {
+            {bachelors_["Tim Duncan"].name(), bachelors_["Tim Duncan"].speciality()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tim Duncan"];
+        auto *fmt = "FETCH PROP ON * %ld ";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::string> expectedColNames{
+            {"player.name"}, {"player.age"}, {"bachelor.name"}, {"bachelor.speciality"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+        std::vector<std::tuple<std::string, int64_t, std::string, std::string>> expected = {
+            {player.name(), player.age(),
+                bachelors_["Tim Duncan"].name(), bachelors_["Tim Duncan"].speciality()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 }  // namespace graph
 }  // namespace nebula

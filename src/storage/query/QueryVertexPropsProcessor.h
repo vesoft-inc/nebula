@@ -32,6 +32,11 @@ private:
                                        folly::Executor* executor,
                                        VertexCache* cache)
         : QueryBoundProcessor(kvstore, schemaMan, stats, executor, cache) {}
+
+    kvstore::ResultCode collectVertexProps(
+                            PartitionID partId,
+                            VertexID vId,
+                            std::vector<cpp2::TagData> &tds);
 };
 
 }  // namespace storage
