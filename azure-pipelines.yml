@@ -13,6 +13,8 @@ jobs:
   pool:
     vmImage: $(vmImage)
 
+  container: vesoft/nebula-dev:centos7
+
   steps:
   - script: mkdir _build && cd _build && cmake ..
     displayName: 'cmake'
