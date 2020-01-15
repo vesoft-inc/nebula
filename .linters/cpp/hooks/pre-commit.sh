@@ -25,14 +25,15 @@ if [ $# -eq 0 ];then
         echo "You have unstaged changes, please stage or stash them first."
         exit 1
     fi
-    CHECK_FILES=$(git diff --name-only --diff-filter=ACMRTUXB HEAD | egrep '.*\.cpp$|.*\.h$|.*\.inl$' | grep -v 'com_vesoft_client_NativeClient.h' | grep -v 'com_vesoft_nebula_NebulaCodec.h')
+    CHECK_FILES=$(git diff --name-only --diff-filter=ACMRTUXB HEAD | egrep '.*\.cpp$|.*\.h$|.*\.inl$' | grep -v 'com_vesoft_client_NativeClient.h' | grep -v 'com_vesoft_nebula_NebulaCodec.h' | grep -v 'ExecutionResponse.cpp.cpp')
 else
     CHECK_FILES=$(find $@ -not \( -path src/CMakeFiles -prune \) \
                           -not \( -path src/interface/gen-cpp2 -prune \) \
                           -name "*.[h]" -o -name "*.cpp" -o -name '*.inl' \
                           | grep -v 'GraphScanner.*' | grep -v 'GraphParser.*' \
                           | grep -v 'com_vesoft_client_NativeClient.h' \
-                          | grep -v 'com_vesoft_nebula_NebulaCodec.h')
+                          | grep -v 'com_vesoft_nebula_NebulaCodec.h' \
+                          | grep -v 'ExecutionResponse.cpp')
 fi
 
 # No changes on interested files
