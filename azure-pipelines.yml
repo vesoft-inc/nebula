@@ -23,7 +23,7 @@ jobs:
   - script: mkdir _build && cd _build && cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_COVERAGE=ON -DNEBULA_CLANG_USE_GCC_TOOLCHAIN=/opt/vesoft/toolset/gcc/7.5.0 ..
     displayName: 'cmake'
 
-  - script: cd _build && echo -j$(nproc) && make -j$(nproc)
+  - script: cd _build && echo -j$(nproc) && make $(expr -j$(nproc) \* 2)
     displayName: 'make'
 
   - script: cd _build && ctest -j$(nproc)
