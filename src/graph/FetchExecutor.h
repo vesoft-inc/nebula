@@ -51,6 +51,7 @@ protected:
     bool                                            distinct_{false};
     std::unique_ptr<InterimResult>                  inputs_;
     std::vector<std::string>                        resultColNames_;
+    std::vector<std::string>                        returnColNames_;
     std::unique_ptr<cpp2::ExecutionResponse>        resp_;
     std::vector<nebula::cpp2::SupportedType>        colTypes_;
 };
