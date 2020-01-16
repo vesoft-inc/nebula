@@ -15,6 +15,7 @@
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/SchemaProviderIf.h"
+#include "meta/NebulaSchemaProvider.h"
 #include "dataman/ResultSchemaProvider.h"
 #include "meta/NebulaSchemaProvider.h"
 #include "storage/StorageServiceHandler.h"

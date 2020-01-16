@@ -182,6 +182,27 @@ TEST_P(UpdateUpsertTest, UpdateUpsertVertex) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {   // Insertable: vertex 110 ("Ann") --> ("Ann", "one"),
+        // 110 is nonexistent, gender with default value
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 110 "
+                     "SET student_default.name = \"Ann\", student_default.age = 10 "
+                     "YIELD $^.student_default.name AS Name, $^.student_default.gender AS Gender";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, std::string>> expected = {
+                {"Ann", "one"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {   // Insertable error, 111 is nonexistent, name without default value
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT VERTEX 111 "
+                     "SET student_default.gender = \"two\", student_default.age = 10 "
+                     "YIELD $^.student_default.name AS Name, $^.student_default.gender AS Gender";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
 }
 
 
@@ -337,6 +358,28 @@ TEST_P(UpdateUpsertTest, UpdateUpsertEdge) {
             {"Monica", 9, 2019},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // select_default's year with default value
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT EDGE 222 -> 333@0 OF select_default "
+                     "SET grade = 3 "
+                     "YIELD select_default.grade AS Grade, select_default.year AS Year";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+                {3, 2020},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // select_default's grade without default value
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "UPSERT EDGE 444 -> 555@0 OF select "
+                     "SET year = 2019 "
+                     "YIELD select.grade AS Grade, select.year AS Year";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
 }
 
