@@ -36,6 +36,42 @@ TEST(NebulaKeyUtilsTest, SimpleTest) {
     ASSERT_TRUE(NebulaKeyUtils::isUUIDKey(uuidKey));
 }
 
+template<class T>
+VariantType getVal(T v) {
+    return v;
+}
+
+bool evalInt64(int64_t val) {
+    auto v = getVal(val);
+    auto str = NebulaKeyUtils::encodeVariant(v);
+    auto res = NebulaKeyUtils::decodeVariant(str, nebula::cpp2::SupportedType::INT);
+    EXPECT_EQ(VAR_INT64, res.which());
+    EXPECT_EQ(v, res);
+    return val == boost::get<int64_t>(res);
+}
+
+bool evalDouble(double val) {
+    auto v = getVal(val);
+    auto str = NebulaKeyUtils::encodeVariant(v);
+    auto res = NebulaKeyUtils::decodeVariant(str, nebula::cpp2::SupportedType::DOUBLE);
+    EXPECT_EQ(VAR_DOUBLE, res.which());
+    EXPECT_EQ(v, res);
+    return val == boost::get<double>(res);
+}
+
+TEST(NebulaKeyUtilsTest, encodeVariant) {
+    EXPECT_TRUE(evalInt64(1));
+    EXPECT_TRUE(evalInt64(0));
+    EXPECT_TRUE(evalInt64(std::numeric_limits<int64_t>::max()));
+    EXPECT_TRUE(evalInt64(std::numeric_limits<int64_t>::min()));
+    EXPECT_TRUE(evalDouble(1.1));
+    EXPECT_TRUE(evalDouble(0.0));
+    EXPECT_TRUE(evalDouble(std::numeric_limits<double>::max()));
+    EXPECT_TRUE(evalDouble(std::numeric_limits<double>::min()));
+    EXPECT_TRUE(evalDouble(-std::numeric_limits<double>::max()));
+    EXPECT_TRUE(evalDouble(-(0.000000001 - std::numeric_limits<double>::min())));
+}
+
 }  // namespace nebula
 
 
