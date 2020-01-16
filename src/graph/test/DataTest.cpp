@@ -222,8 +222,8 @@ TEST_F(DataTest, InsertTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         cmd = "FETCH PROP ON person hash(\"Conan\")";
         code = client_->execute(cmd, resp);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-                {"Conan", 10},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+                {std::hash<std::string>()("Conan"), "Conan", 10},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -257,14 +257,14 @@ TEST_F(DataTest, InsertTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         cmd = "FETCH PROP ON person hash(\"Bob\")";
         code = client_->execute(cmd, resp);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-                {"Bob", 9},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+                {std::hash<std::string>()("Bob"), "Bob", 9},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
         cmd = "FETCH PROP ON student hash(\"Bob\")";
         code = client_->execute(cmd, resp);
-        std::vector<std::tuple<std::string, int64_t>> expected2 = {
-                {"four", 20191106001},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected2 = {
+                {std::hash<std::string>()("Bob"), "four", 20191106001},
         };
         ASSERT_TRUE(verifyResult(resp, expected2));
     }
@@ -323,8 +323,8 @@ TEST_F(DataTest, InsertTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         cmd = "FETCH PROP ON schoolmate hash(\"Tom\")->hash(\"Bob\")";
         code = client_->execute(cmd, resp);
-        std::vector<std::tuple<int64_t, std::string>> expected = {
-                {87, "Superman"},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, std::string>> expected = {
+            {std::hash<std::string>()("Tom"), std::hash<std::string>()("Bob"), 0,  87, "Superman"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -687,8 +687,8 @@ TEST_F(DataTest, InsertTest) {
         std::string cmd = "FETCH PROP ON school hash(\"sun_school\") ";;
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-                {"sun_school", 1262311200},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+                {std::hash<std::string>()("sun_school"), "sun_school", 1262311200},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -700,7 +700,7 @@ TEST_F(DataTest, InsertTest) {
         std::vector<std::tuple<std::string, int64_t>> expected = {
                 {"sun_school", 1262311200},
         };
-        ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyResult(resp, expected, true,  {0}));
     }
     // TODO: Test insert multi tags, and delete one of them then check other existent
 }
