@@ -29,18 +29,8 @@ TEST(DeleteEdgesTest, SimpleTest) {
         req.overwritable = true;
         // partId => List<Edge>
         // Edge => {EdgeKey, props}
-        for (auto partId = 0; partId < 3; partId++) {
-            std::vector<cpp2::Edge> edges;
-            for (auto srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
-                cpp2::EdgeKey key;
-                key.set_src(srcId);
-                key.set_edge_type(srcId * 100 + 1);
-                key.set_ranking(srcId * 100 + 2);
-                key.set_dst(srcId * 100 + 3);
-                edges.emplace_back();
-                edges.back().set_key(std::move(key));
-                edges.back().set_props(folly::stringPrintf("%d_%d", partId, srcId));
-            }
+        for (PartitionID partId = 0; partId < 3; partId++) {
+            auto edges = TestUtils::setupEdges(partId, partId * 10, 10 * (partId + 1));
             req.parts.emplace(partId, std::move(edges));
         }
 
@@ -57,18 +47,9 @@ TEST(DeleteEdgesTest, SimpleTest) {
         req.overwritable = true;
         // partId => List<Edge>
         // Edge => {EdgeKey, props}
-        for (auto partId = 0; partId < 3; partId++) {
-            std::vector<cpp2::Edge> edges;
-            for (auto srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
-                cpp2::EdgeKey key;
-                key.set_src(srcId);
-                key.set_edge_type(srcId * 100 + 1);
-                key.set_ranking(srcId * 100 + 2);
-                key.set_dst(srcId * 100 + 3);
-                edges.emplace_back();
-                edges.back().set_key(std::move(key));
-                edges.back().set_props(folly::stringPrintf("%d_%d_new", partId, srcId));
-            }
+        for (PartitionID partId = 0; partId < 3; partId++) {
+            auto edges = TestUtils::setupEdges(partId, partId * 10,
+                                               10 * (partId + 1), "%d_%ld_new");
             req.parts.emplace(partId, std::move(edges));
         }
 
@@ -78,17 +59,17 @@ TEST(DeleteEdgesTest, SimpleTest) {
         EXPECT_EQ(0, resp.result.failed_codes.size());
     }
 
-    for (auto partId = 0; partId < 3; partId++) {
-        for (auto srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
+    for (PartitionID partId = 0; partId < 3; partId++) {
+        for (VertexID srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
             auto prefix = NebulaKeyUtils::edgePrefix(partId, srcId, srcId * 100 + 1);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             int num = 0;
             while (iter->valid()) {
                 if (num == 0) {
-                    EXPECT_EQ(folly::stringPrintf("%d_%d_new", partId, srcId), iter->val());
+                    EXPECT_EQ(folly::stringPrintf("%d_%ld_new", partId, srcId), iter->val());
                 } else {
-                    EXPECT_EQ(folly::stringPrintf("%d_%d", partId, srcId), iter->val());
+                    EXPECT_EQ(folly::stringPrintf("%d_%ld", partId, srcId), iter->val());
                 }
                 num++;
                 iter->next();
@@ -103,9 +84,9 @@ TEST(DeleteEdgesTest, SimpleTest) {
         cpp2::DeleteEdgesRequest req;
         req.set_space_id(0);
         // partId => List<EdgeKey>
-        for (auto partId = 0; partId < 3; partId++) {
+        for (PartitionID partId = 0; partId < 3; partId++) {
             std::vector<cpp2::EdgeKey> keys;
-            for (auto srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
+            for (VertexID srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
                 cpp2::EdgeKey key;
                 key.set_src(srcId);
                 key.set_edge_type(srcId * 100 + 1);
@@ -122,8 +103,8 @@ TEST(DeleteEdgesTest, SimpleTest) {
         EXPECT_EQ(0, resp.result.failed_codes.size());
     }
 
-    for (auto partId = 0; partId < 3; partId++) {
-        for (auto srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
+    for (PartitionID partId = 0; partId < 3; partId++) {
+        for (VertexID srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
             auto prefix = NebulaKeyUtils::vertexPrefix(partId, srcId, srcId * 100 + 1);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));

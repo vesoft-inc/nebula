@@ -125,7 +125,6 @@ BaseProcessor<RESP>::collectIndexValues(RowReader* reader,
     }
     return values;
 }
-    
 
 template <typename RESP>
 void BaseProcessor<RESP>::collectProps(RowReader* reader,
@@ -161,7 +160,6 @@ void BaseProcessor<RESP>::collectProps(RowReader* reader,
         }
     }
 }
-    
 
 }  // namespace storage
 }  // namespace nebula
