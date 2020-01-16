@@ -7,7 +7,7 @@
 #ifndef STORAGE_TEST_TESTUTILS_H_
 #define STORAGE_TEST_TESTUTILS_H_
 
-#include "AdHocSchemaManager.h"
+#include "meta/AdHocSchemaManager.h"
 #include "test/ServerContext.h"
 #include "base/Base.h"
 #include "kvstore/KVStore.h"

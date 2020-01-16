@@ -11,7 +11,7 @@
 #include "storage/client/StorageClient.h"
 #include "meta/ServerBasedSchemaManager.h"
 #include "dataman/ResultSchemaProvider.h"
-#include "storage/test/AdHocSchemaManager.h"
+#include "meta/AdHocSchemaManager.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "dataman/RowWriter.h"
 #include <folly/Benchmark.h>

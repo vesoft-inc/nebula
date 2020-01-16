@@ -144,7 +144,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:meta_gflags_man_obj>
         $<TARGET_OBJECTS:gflags_man_obj>
         $<TARGET_OBJECTS:storage_service_handler>
-        $<TARGET_OBJECTS:adHocSchema_obj>
         $<TARGET_OBJECTS:dataman_obj>
         $<TARGET_OBJECTS:filter_obj>
         $<TARGET_OBJECTS:stats_obj>
@@ -328,7 +327,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:gflags_man_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:stats_obj>
     LIBRARIES

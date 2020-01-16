@@ -48,7 +48,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
-        $<TARGET_OBJECTS:adHocSchema_obj>
         $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}

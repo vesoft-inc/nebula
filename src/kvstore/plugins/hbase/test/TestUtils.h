@@ -8,7 +8,7 @@
 #include "meta/SchemaProviderIf.h"
 #include "meta/SchemaManager.h"
 #include "dataman/ResultSchemaProvider.h"
-#include "storage/test/AdHocSchemaManager.h"
+#include "meta/AdHocSchemaManager.h"
 
 namespace nebula {
 namespace kvstore {

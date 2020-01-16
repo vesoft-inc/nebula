@@ -1,6 +1,7 @@
 nebula_add_library(
     schema_obj OBJECT
     SchemaManager.cpp
+    AdHocSchemaManager.cpp
     ServerBasedSchemaManager.cpp
     NebulaSchemaProvider.cpp
 )

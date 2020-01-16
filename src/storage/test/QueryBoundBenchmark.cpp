@@ -16,7 +16,7 @@
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 #include "meta/SchemaManager.h"
-#include "storage/test/AdHocSchemaManager.h"
+#include "meta/AdHocSchemaManager.h"
 #include <folly/executors/CPUThreadPoolExecutor.h>
 
 DEFINE_int32(req_parts, 3, "parts requested");
