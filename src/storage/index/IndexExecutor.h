@@ -39,8 +39,18 @@ protected:
         this->onFinished();
     }
 
+    /**
+     * Details Prepare the index scan. logic as below :
+     *         1, Trigger policy generator
+     *         2, Build prefix string for first n columns of index.
+     *         3, Collect information needed for index scanning,
+     **/
     cpp2::ErrorCode prepareScan(const cpp2::LookUpIndexRequest& req);
 
+    /**
+     * Details Scan index by different PolicyScanType. Scan part as one by one.
+     *         All results will be collected in this method.
+     **/
     kvstore::ResultCode performScan(PartitionID part);
 
 private:

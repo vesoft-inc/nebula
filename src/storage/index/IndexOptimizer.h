@@ -20,11 +20,31 @@ public:
 protected:
     IndexOptimizer() {}
 
+    /**
+     * details Conditional expression optimization entry, The process logic as below:
+     *          1, Parse filter string to expression;
+     *          2, Optimize expression. For example, split expression node,
+     *             move expression node, merge expression node, etc.
+     *          3, Check the validity of optimized expression.
+     * param  filter : From encode string of where clause.
+     * return ErrorCode : Filter optimization and index scan operations
+     *                     terminated if processing errors occur.
+     **/
     cpp2::ErrorCode optimizeFilter(const std::string& filter);
 
 private:
+    /**
+     * Details Convert the filter string to expression.
+     * Param filter : From encode string of where clause.
+     * Return ErrorCode
+     **/
     cpp2::ErrorCode prepareExpr(const std::string& filter);
 
+    /**
+     * Details Optimizing operation of processing expression nodes.
+     *         In the future, priority selection of expression nodes
+     *         is based on cost information.
+     **/
     cpp2::ErrorCode optimizeExpr(Expression* exp);
 
     cpp2::ErrorCode checkExp(const Expression* exp);
