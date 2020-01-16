@@ -56,6 +56,12 @@ protected:
 
 class StepClause final : public Clause {
 public:
+    StepClause(const StepClause &clause) {
+        steps_ = clause.steps();
+        isUpto_ = clause.isUpto();
+        kind_ = Kind::kStepClause;
+    }
+
     explicit StepClause(uint64_t steps = 1, bool isUpto = false) {
         steps_ = steps;
         isUpto_ = isUpto;
@@ -125,6 +131,30 @@ private:
 
 class VerticesClause : public Clause {
 public:
+    VerticesClause(const VerticesClause &clause) {
+        if (clause.isRef()) {
+            auto ref = clause.ref();
+            CHECK(!!ref);
+            auto encode = Expression::encode(ref);
+            auto decode = Expression::decode(encode);
+           if (!decode.ok()) {
+                // TODO:
+           }
+           ref_ = std::move(decode).value();
+        } else {
+            vidList_ = std::make_unique<VertexIDList>();
+            for (auto vid : clause.vidList()) {
+                CHECK(!!vid);
+                auto encode = Expression::encode(vid);
+                auto decode = Expression::decode(encode);
+                if (!decode.ok()) {
+                    // TODO:
+                }
+                vidList_->add(decode.value().release());
+            }
+        }
+    }
+
     explicit VerticesClause(VertexIDList *vidList) {
         vidList_.reset(vidList);
     }
@@ -133,15 +163,15 @@ public:
         ref_.reset(ref);
     }
 
-    auto vidList() const {
+    std::vector<Expression*> vidList() const {
         return vidList_->vidList();
     }
 
-    auto isRef() const {
+    bool isRef() const {
         return ref_ != nullptr;
     }
 
-    auto ref() const {
+    Expression* ref() const {
         return ref_.get();
     }
 
@@ -219,10 +249,43 @@ private:
 
 class OverClause final : public Clause {
 public:
-    explicit OverClause(OverEdges *edges, bool isReversely = false) {
+    enum Direction : uint8_t {
+        kForward,
+        kBackward,
+        kBiDirect
+    };
+
+    OverClause(const OverClause &clause) {
+        overEdges_ = std::make_unique<OverEdges>();
+        for (auto edge : clause.edges()) {
+            auto edgeName = edge->edge();
+            CHECK(!!edgeName);
+            auto newEdgeName = new std::string(*edgeName);
+            auto alias = edge->alias();
+            std::string* newAlias = nullptr;
+            if (alias != nullptr) {
+                newAlias = new std::string(*alias);
+            }
+            auto overEdge = new OverEdge(newEdgeName, newAlias);
+            overEdges_->addEdge(overEdge);
+        }
+
+        if (clause.isReversely()) {
+            direction_ = kBackward;
+        } else {
+            direction_ = kForward;
+        }
+    }
+
+    explicit OverClause(OverEdges *edges,
+                        Direction direction = kForward) {
         kind_ = kOverClause;
         overEdges_.reset(edges);
-        isReversely_ = isReversely;
+        direction_ = direction;
+    }
+
+    void setDirection(Direction direction) {
+        direction_ = direction;
     }
 
     std::vector<OverEdge *> edges() const { return overEdges_->edges(); }
@@ -232,16 +295,27 @@ public:
     std::string toString() const;
 
     bool isReversely() const {
-        return isReversely_;
+        return direction_ == kBackward;
     }
 
 private:
-    bool isReversely_{false};
+    Direction  direction_;
     std::unique_ptr<OverEdges> overEdges_;
 };
 
 class WhereClause final : public Clause {
 public:
+    WhereClause(const WhereClause &clause) {
+        auto filter = clause.filter();
+        CHECK(!!filter);
+        auto encode = Expression::encode(filter);
+        auto decode = Expression::decode(encode);
+        if (!decode.ok()) {
+            // TODO:
+        }
+        filter_ = std::move(decode).value();
+    }
+
     explicit WhereClause(Expression *filter) {
         filter_.reset(filter);
     }
@@ -321,6 +395,29 @@ private:
 
 class YieldClause final {
 public:
+    YieldClause(const YieldClause &clause) {
+        distinct_ = clause.isDistinct();
+        yieldColumns_ = std::make_unique<YieldColumns>();
+        for (auto *col : clause.columns()) {
+            CHECK(!!col);
+            auto expr = col->expr();
+            CHECK(!!expr);
+            auto encode = Expression::encode(expr);
+            auto decode = Expression::decode(encode);
+            if (!decode.ok()) {
+                // TODO:
+            }
+            auto alias = col->alias();
+            std::string *newAlias = nullptr;
+            if (alias != nullptr) {
+                newAlias = new std::string(*alias);
+            }
+            auto newCol = new YieldColumn(decode.value().release(), newAlias);
+            newCol->setFunction(new std::string(col->getFunName()));
+            yieldColumns_->addColumn(newCol);
+        }
+    }
+
     explicit YieldClause(YieldColumns *fields, bool distinct = false) {
         yieldColumns_.reset(fields);
         distinct_ = distinct;

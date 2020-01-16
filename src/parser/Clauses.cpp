@@ -120,7 +120,7 @@ std::string ToClause::toString() const {
 
 Status OverClause::prepare(Over &over) const {
     over.edges_ = edges();
-    over.isReversely_ = isReversely_;
+    over.isReversely_ = (direction_ == kBackward);
     return Status::OK();
 }
 

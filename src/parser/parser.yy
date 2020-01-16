@@ -118,6 +118,7 @@ class GraphScanner;
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS
+%token KW_BIDIRECT
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -564,6 +565,85 @@ go_sentence
         go->setYieldClause($6);
         $$ = go;
     }
+    | KW_GO step_clause from_clause over_clause KW_REVERSELY where_clause yield_clause {
+        auto go = new GoSentence();
+        go->setStepClause($2);
+        go->setFromClause($3);
+        $4->setDirection(OverClause::Direction::kBackward);
+        go->setOverClause($4);
+        go->setWhereClause($6);
+        if ($7 == nullptr) {
+            auto *cols = new YieldColumns();
+            for (auto e : $4->edges()) {
+                if (e->isOverAll()) {
+                    continue;
+                }
+                auto *edge  = new std::string(*e->edge());
+                auto *expr  = new EdgeSrcIdExpression(edge);
+                auto *col   = new YieldColumn(expr);
+                cols->addColumn(col);
+            }
+            $7 = new YieldClause(cols);
+        }
+        go->setYieldClause($7);
+        $$ = go;
+    }
+    | KW_GO step_clause from_clause KW_OVER over_edges KW_BIDIRECT where_clause yield_clause {
+        auto goForward = new GoSentence();
+        goForward->setStepClause($2);
+        goForward->setFromClause($3);
+        auto over = new OverClause($5);
+        goForward->setOverClause(over);
+        goForward->setWhereClause($7);
+        if ($8 == nullptr) {
+            auto *cols = new YieldColumns();
+            for (auto e : over->edges()) {
+                if (e->isOverAll()) {
+                    continue;
+                }
+                auto *edge  = new std::string(*e->edge());
+                auto *expr  = new EdgeDstIdExpression(edge);
+                auto *col   = new YieldColumn(expr);
+                cols->addColumn(col);
+            }
+            auto yield = new YieldClause(cols);
+            goForward->setYieldClause(yield);
+        } else {
+            goForward->setYieldClause($8);
+        }
+
+        auto goBackward = new GoSentence();
+        auto step = new StepClause(*$2);
+        goBackward->setStepClause(step);
+        auto from = new FromClause(*$3);
+        goBackward->setFromClause(from);
+        auto overReverse = new OverClause(*over);
+        overReverse->setDirection(OverClause::Direction::kBackward);
+        goBackward->setOverClause(overReverse);
+        if ($7 != nullptr) {
+            auto where = new WhereClause(*$7);
+            goBackward->setWhereClause(where);
+        }
+        if ($8 == nullptr) {
+            auto *cols = new YieldColumns();
+            for (auto e : over->edges()) {
+                if (e->isOverAll()) {
+                    continue;
+                }
+                auto *edge  = new std::string(*e->edge());
+                auto *expr  = new EdgeSrcIdExpression(edge);
+                auto *col   = new YieldColumn(expr);
+                cols->addColumn(col);
+            }
+            auto yield = new YieldClause(cols);
+            goBackward->setYieldClause(yield);
+        } else {
+            auto yield = new YieldClause(*$8);
+            goBackward->setYieldClause(yield);
+        }
+
+        $$ = new SetSentence(goForward, SetSentence::UNION, goBackward);
+    }
     ;
 
 step_clause
@@ -662,18 +742,8 @@ over_clause
         edges->addEdge(edge);
         $$ = new OverClause(edges);
     }
-    | KW_OVER MUL KW_REVERSELY {
-        auto edges = new OverEdges();
-        auto s = new std::string("*");
-        auto edge = new OverEdge(s, nullptr);
-        edges->addEdge(edge);
-        $$ = new OverClause(edges, true);
-    }
     | KW_OVER over_edges {
         $$ = new OverClause($2);
-    }
-    | KW_OVER over_edges KW_REVERSELY {
-        $$ = new OverClause($2, true);
     }
     ;
 
