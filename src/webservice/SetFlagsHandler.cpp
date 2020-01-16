@@ -20,38 +20,21 @@ using proxygen::UpgradeProtocol;
 using proxygen::ResponseBuilder;
 
 void SetFlagsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
-    if (headers->getMethod().value() != HTTPMethod::GET) {
+    if (headers->getMethod().value() != HTTPMethod::PUT) {
         // Unsupported method
         err_ = HttpCode::E_UNSUPPORTED_METHOD;
         return;
     }
-
-    VLOG(1) << "SetFlagsHandler got query string \"" << headers->getQueryString();
-
-    if (headers->hasQueryParam("flag")) {
-        name_ = headers->getDecodedQueryParam("flag");
-    } else {
-        LOG(ERROR) << "There is no flag specified when setting the flag value";
-        err_ = HttpCode::E_UNPROCESSABLE;
-    }
-
-    if (headers->hasQueryParam("value")) {
-        value_ = headers->getDecodedQueryParam("value");
-    } else {
-        LOG(ERROR) << "There is no value specified when setting the flag value";
-        err_ = HttpCode::E_UNPROCESSABLE;
-    }
-
-    if (err_ == HttpCode::SUCCEEDED) {
-        VLOG(1) << "Set flag " << name_ << " = " << value_;
-    }
 }
 
-
-void SetFlagsHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
-    // Do nothing, we only support GET
+void SetFlagsHandler::onBody(std::unique_ptr<folly::IOBuf> body) noexcept {
+    try {
+        std::string str = body->moveToFbString().toStdString();
+        flags_ = folly::parseJson(str);
+    } catch (const std::exception &e) {
+        err_ = HttpCode::E_UNPROCESSABLE;
+    }
 }
-
 
 void SetFlagsHandler::onEOM() noexcept {
     switch (err_) {
@@ -71,22 +54,24 @@ void SetFlagsHandler::onEOM() noexcept {
             break;
     }
 
-    if (gflags::SetCommandLineOption(name_.c_str(), value_.c_str()).empty()) {
-        // Failed
-        ResponseBuilder(downstream_)
-            .status(WebServiceUtils::to(HttpStatusCode::OK),
-                    WebServiceUtils::toString(HttpStatusCode::OK))
-            .body("false")
-            .sendWithEOM();
-    } else {
-        ResponseBuilder(downstream_)
-            .status(WebServiceUtils::to(HttpStatusCode::OK),
-                    WebServiceUtils::toString(HttpStatusCode::OK))
-            .body("true")
-            .sendWithEOM();
+    folly::dynamic failedOptions = folly::dynamic::array();
+    for (auto &item : flags_.items()) {
+        const std::string &name = item.first.asString();
+        const std::string &value = item.second.asString();
+        const std::string &newValue = gflags::SetCommandLineOption(name.c_str(), value.c_str());
+        if (newValue.empty()) {
+            failedOptions.push_back(name);
+        }
     }
+    folly::dynamic body = failedOptions.empty()
+                              ? folly::dynamic::object("errCode", 0)
+                              : folly::dynamic::object("failedOptions", failedOptions);
+    ResponseBuilder(downstream_)
+        .status(WebServiceUtils::to(HttpStatusCode::OK),
+                WebServiceUtils::toString(HttpStatusCode::OK))
+        .body(folly::toPrettyJson(body))
+        .sendWithEOM();
 }
-
 
 void SetFlagsHandler::onUpgrade(UpgradeProtocol) noexcept {
     // Do nothing

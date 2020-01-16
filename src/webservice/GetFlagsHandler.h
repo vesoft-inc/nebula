@@ -38,6 +38,8 @@ private:
                     const gflags::CommandLineFlagInfo* info);
     std::string toStr(const folly::dynamic& vals);
 
+    static std::string valToString(const folly::dynamic& val);
+
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
     bool verbose_{false};
@@ -47,4 +49,3 @@ private:
 
 }  // namespace nebula
 #endif  // WEBSERVICE_GETFLAGSHANDLER_H_
-

@@ -51,13 +51,26 @@ TEST(FlagsAccessTest, GetSetTest) {
                                   FLAGS_string_test.c_str()),
               resp);
 
-    ASSERT_TRUE(getUrl("/set_flag?flag=int64_test&value=20", resp));
-    ASSERT_EQ("true", resp);
+    folly::dynamic data = folly::dynamic::object("int64_test", 20);
+    auto status = putUrl("/flags", data);
+    ASSERT_TRUE(status.ok());
+    folly::dynamic json = folly::parseJson(status.value());
+    ASSERT_EQ(0, json["errCode"].asInt());
     ASSERT_TRUE(getUrl("/flags?names=int64_test", resp));
     EXPECT_EQ(std::string("int64_test=20\n"), resp);
 
     ASSERT_TRUE(getUrl("/flags", resp));
     ASSERT_TRUE(resp.find("crash_test=nullptr") != std::string::npos);
+}
+
+TEST(FlagsAccessTest, SetFlagFailureTest) {
+    folly::dynamic data = folly::dynamic::object("int64_test", 20)("float_test", 10.0f);
+    auto status = putUrl("/flags", data);
+    ASSERT_TRUE(status.ok());
+    folly::dynamic json = folly::parseJson(status.value());
+    folly::dynamic failedOptions = json["failedOptions"];
+    ASSERT_TRUE(failedOptions.isArray());
+    ASSERT_EQ(failedOptions, folly::dynamic::array("float_test"));
 }
 
 TEST(FlagsAccessTest, JsonTest) {
@@ -135,4 +148,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-

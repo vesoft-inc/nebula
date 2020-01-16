@@ -169,7 +169,8 @@ folly::dynamic GetFlagsHandler::getFlags() {
     return flags;
 }
 
-static std::string valToString(const folly::dynamic& val) {
+// static
+std::string GetFlagsHandler::valToString(const folly::dynamic& val) {
     if (val.isNull()) {
         return "nullptr";
     }

@@ -21,5 +21,20 @@ StatusOr<std::string> HttpClient::get(const std::string& path) {
     }
 }
 
+// static
+StatusOr<std::string> HttpClient::put(const std::string& path, const folly::dynamic& data) {
+    auto command = folly::stringPrintf(
+        "/usr/bin/curl -X PUT -H \"Content-Type: application/json\" -d'%s' -s \"%s\"",
+        folly::toJson(data).c_str(),
+        path.c_str());
+    LOG(INFO) << "HTTP PUT Command: " << command;
+    auto result = nebula::ProcessUtils::runCommand(command.c_str());
+    if (result.ok()) {
+        return result.value();
+    } else {
+        return Status::Error(folly::stringPrintf("Http Get Failed: %s", path.c_str()));
+    }
+}
+
 }   // namespace http
 }   // namespace nebula

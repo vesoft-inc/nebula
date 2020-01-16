@@ -20,10 +20,10 @@ public:
     ~HttpClient() = default;
 
     static StatusOr<std::string> get(const std::string& path);
+    static StatusOr<std::string> put(const std::string& path, const folly::dynamic& data);
 };
 
 }   // namespace http
 }   // namespace nebula
 
 #endif  // COMMON_HTTPCLIENT_H
-

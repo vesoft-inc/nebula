@@ -32,10 +32,8 @@ public:
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
-    std::string name_;
-    std::string value_;
+    folly::dynamic flags_;
 };
 
 }  // namespace nebula
 #endif  // WEBSERVICE_SETFLAGSHANDLER_H_
-
