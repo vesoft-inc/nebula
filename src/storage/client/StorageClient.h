@@ -283,6 +283,9 @@ protected:
     }
 
     virtual bool loadLeader() {
+        if (loadLeaderBefore_) {
+            return true;
+        }
         CHECK(client_ != nullptr);
         auto status = client_->loadLeader();
         if (status.ok()) {
