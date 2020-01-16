@@ -94,10 +94,6 @@ Group: Applications/Databases
 %files base
 %attr(0755,root,root) %{_datadir}/nebula.service
 %attr(0755,root,root) %{_datadir}/utils.sh
-%attr(0755,root,root) %{_datadir}/services.sh
-%attr(0644,root,root) %{_datadir}/graph.hosts
-%attr(0644,root,root) %{_datadir}/meta.hosts
-%attr(0644,root,root) %{_datadir}/storage.hosts
 
 # metad rpm include files
 %files metad

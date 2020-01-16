@@ -28,14 +28,14 @@ Use `data_path` to set `Meta` and `Storage`'s underlying storage directory.
 
 ## Start Up Nebula Graph Cluster
 
-Currently, we use `scripts/services.sh` to manage the **Nebula Graph** cluster.
+Currently, we use `scripts/nebula.service` to manage the **Nebula Graph** cluster.
 
 You can `start`, `stop` and `restart` the cluster with this script.
 
 It looks like the following command:
 
 ```bash
-scripts/services.sh <start|stop|restart|status|kill>
+scripts/nebula.service <start|stop|restart|status|kill>
 ```
 
 The metas, storages and graphs contain the host of themselves.

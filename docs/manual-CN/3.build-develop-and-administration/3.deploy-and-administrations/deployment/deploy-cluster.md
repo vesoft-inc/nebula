@@ -28,12 +28,12 @@ dpkg -i nebula-{VERSION}.{SYSTEM_VERSION}.amd64.deb
 
 ### 启动 Nebula Graph 集群
 
-目前，**Nebula Graph** 集群由 `scripts/services.sh` 运维，可使用此脚本 `start`，`stop` 或 `restart` 重启集群。
+目前，**Nebula Graph** 集群由 `scripts/nebula.service.` 运维，可使用此脚本 `start`，`stop` 或 `restart` 重启集群。
 
 示例命令如下：
 
 ```bash
-scripts/services.sh <start|stop|restart|status|kill>
+scripts/nebula.service <start|stop|restart|status|kill>
 ```
 
 metas， storages 和 graphs 包含其自身的 hosts。
