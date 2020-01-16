@@ -37,7 +37,11 @@ TEST_F(FetchEdgesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"serve.start_year"},
+            {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -58,7 +62,11 @@ TEST_F(FetchEdgesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"SrcID"}, {"DstID"}, {"Rank"}, {"(serve.start_year>2001)"}, {"serve.end_year"}
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"(serve.start_year>2001)"},
+            {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -79,7 +87,11 @@ TEST_F(FetchEdgesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"serve.start_year"},
+            {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -103,7 +115,11 @@ TEST_F(FetchEdgesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"serve.start_year"},
+            {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -124,7 +140,11 @@ TEST_F(FetchEdgesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"serve.start_year"},
+            {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -148,7 +168,11 @@ TEST_F(FetchEdgesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"serve.start_year"},
+            {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -204,7 +228,11 @@ TEST_F(FetchEdgesTest, NoYield) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"serve.start_year"},
+            {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -224,7 +252,11 @@ TEST_F(FetchEdgesTest, NoYield) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"serve.start_year"},
+            {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -244,7 +276,11 @@ TEST_F(FetchEdgesTest, NoYield) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"serve.start_year"},
+            {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -283,7 +319,11 @@ TEST_F(FetchEdgesTest, Distinct) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"serve.start_year"},
+            {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -303,7 +343,11 @@ TEST_F(FetchEdgesTest, Distinct) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"serve.start_year"},
+            {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -327,7 +371,11 @@ TEST_F(FetchEdgesTest, Distinct) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"serve.start_year"},
+            {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -345,13 +393,13 @@ TEST_F(FetchEdgesTest, Distinct) {
         auto &tony = players_["Tony Parker"];
         auto *fmt = "GO FROM %ld,%ld OVER serve YIELD serve._src AS src, serve._dst AS dst"
                     "| FETCH PROP ON serve $-.src->$-.dst"
-                    " YIELD DISTINCT serve._dst";
+                    " YIELD DISTINCT serve._dst as dst";
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve._dst"}
+            {"serve._src"}, {"serve._dst"}, {"serve._rank"}, {"dst"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -376,7 +424,11 @@ TEST_F(FetchEdgesTest, EmptyInput) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}, {"serve.end_year"}
+            {"serve._src"},
+            {"serve._dst"},
+            {"serve._rank"},
+            {"serve.start_year"},
+            {"serve.end_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -417,7 +469,7 @@ TEST_F(FetchEdgesTest, NonExistEdge) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}
+            {"serve._src"}, {"serve._dst"}, {"serve._rank"}, {"serve.start_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
@@ -431,7 +483,7 @@ TEST_F(FetchEdgesTest, NonExistEdge) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"SrcID"}, {"DstID"}, {"Rank"}, {"serve.start_year"}
+            {"serve._src"}, {"serve._dst"}, {"serve._rank"}, {"serve.start_year"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 

@@ -51,9 +51,12 @@ Status FetchEdgesExecutor::prepareClauses() {
         }
 
         // Add SrcID, DstID, Rank before prepareYield()
-        returnColNames_.emplace_back("SrcID");
-        returnColNames_.emplace_back("DstID");
-        returnColNames_.emplace_back("Rank");
+        edgeSrcName_ = *labelName_ + "._src";
+        edgeDstName_ = *labelName_ + "._dst";
+        edgeRankName_ = *labelName_ + "._rank";
+        returnColNames_.emplace_back(edgeSrcName_);
+        returnColNames_.emplace_back(edgeDstName_);
+        returnColNames_.emplace_back(edgeRankName_);
         status = prepareYield();
         if (!status.ok()) {
             break;
@@ -336,9 +339,9 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
         auto iter = rsReader.begin();
         if (outputSchema == nullptr) {
             outputSchema = std::make_shared<SchemaWriter>();
-            outputSchema->appendCol("SrcID", nebula::cpp2::SupportedType::VID);
-            outputSchema->appendCol("DstID", nebula::cpp2::SupportedType::VID);
-            outputSchema->appendCol("Rank", nebula::cpp2::SupportedType::INT);
+            outputSchema->appendCol(edgeSrcName_, nebula::cpp2::SupportedType::VID);
+            outputSchema->appendCol(edgeDstName_, nebula::cpp2::SupportedType::VID);
+            outputSchema->appendCol(edgeRankName_, nebula::cpp2::SupportedType::INT);
             auto status = getOutputSchema(eschema.get(), &*iter, outputSchema.get());
             if (!status.ok()) {
                 LOG(ERROR) << "Get output schema failed: " << status;
@@ -381,7 +384,6 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
                 }
             }
 
-            // TODO Consider float/double, and need to reduce mem copy.
             std::string encode = writer->encode();
             rsWriter->addRow(std::move(encode));
             ++iter;
