@@ -140,6 +140,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:storage_http_handler>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
@@ -163,6 +164,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:storage_http_handler>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
@@ -186,6 +188,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:storage_http_handler>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
