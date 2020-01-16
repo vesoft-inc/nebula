@@ -22,7 +22,6 @@ protected:
 
 #define TEST_EXPR_IMPL(OP, exprSymbol, expected)                     \
     std::string query = "GO FROM 1 OVER follow WHERE " + exprSymbol; \
-    LOG(ERROR) << "Debug Point: " << query;                          \
     auto parsed = parser_->parse(query);                             \
     ASSERT_TRUE(parsed.ok()) << parsed.status();                     \
     Getters getters;                                                 \
