@@ -45,7 +45,7 @@ nebula> GET CONFIGS storage:rocksdb_column_family_options
 Use the following command to trigger compaction and flush manually through HTTP request.
 
 ```bash
-curl "${ws_ip}:${ws_http_port}/admin?space=${spaceName}&${op}"
+curl "${ws_ip}:${ws_http_port}/storage/admin?space=${spaceName}&${op}"
 ```
 
 - `ws_ip` is the HTTP service IP, which can be found in config file `etc/storage.conf`
@@ -55,8 +55,8 @@ curl "${ws_ip}:${ws_http_port}/admin?space=${spaceName}&${op}"
 For example:
 
 ```bash
-curl "http://127.0.0.1:12000/admin?space=test&op=compact"
-curl "http://127.0.0.1:12000/admin?space=test&op=flush"
+curl "http://127.0.0.1:12000/storage/admin?space=test&op=compact"
+curl "http://127.0.0.1:12000/storage/admin?space=test&op=flush"
 ```
 
 > Notice that you should create space test before the above curl command.

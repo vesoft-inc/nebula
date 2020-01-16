@@ -32,7 +32,7 @@ public:
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
-    folly::dynamic flags_;
+    std::unique_ptr<folly::IOBuf> body_;
 };
 
 }  // namespace nebula

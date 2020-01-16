@@ -24,7 +24,7 @@ The default severity level for the metad, graphd, storaged logs can be found in 
 Check all the flag values (log values included) of the current glags with the following command.
 
 ```bash
-> curl ${ws_ip}:${ws_port}/get_flags
+> curl ${ws_ip}:${ws_port}/<graph|storage|meta>/flags
 ```
 
 Parameters:
@@ -35,16 +35,15 @@ Parameters:
 For example, check the severity minloglevel of storaged:
 
 ```bash
-> curl 127.0.0.1:12000/get_flags | grep minloglevel  # storage
-> curl 127.0.0.1:13000/get_flags                     # metad
+> curl 127.0.0.1:12000/storage/flags?names=minloglevel  # storage
+> curl 127.0.0.1:13000/graph/flags                      # graphd
 
 ```
 
 Change the logs severity level to **most detailed** with the following command.
 
 ```bash
-> curl "http://127.0.0.1:12000/set_flags?flag=v&value=3"
-> curl "http://127.0.0.1:12000/set_flags?flag=minloglevel&value=0"
+> curl -X PUT -H "Content-Type:application/json" -d'{"v": 3, "minloglevel": 0}' "http://127.0.0.1:12000/storage/flags"
 ```
 
 In **Nebula Graph** console, check the severity minloglevel of graphd and set it to **most detailed** with the following commands.
@@ -59,5 +58,5 @@ To change the severity of the storage log, replace `graph` in the above command 
 Or **close** all logs print (FATAL only).
 
 ```bash
-> curl "http://127.0.0.1:12000/set_flags?flag=minloglevel&value=3"
+> curl -X PUT -H "Content-Type:application/json" -d'{"minloglevel": 3}' "http://127.0.0.1:12000/storage/flags"
 ```

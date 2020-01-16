@@ -54,56 +54,28 @@ protected:
     std::unique_ptr<meta::SchemaManager> schemaMan_;
 };
 
+static std::string request(const std::string& url) {
+    auto request =
+        folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(), FLAGS_ws_http_port, url.c_str());
+    auto resp = http::HttpClient::get(request);
+    EXPECT_TRUE(resp.ok());
+    return resp.value();
+}
 
-TEST(StoragehHttpAdminHandlerTest, AdminTest) {
-    {
-        auto url = "/admin";
-        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
-                                           FLAGS_ws_http_port, url);
-        auto resp = http::HttpClient::get(request);
-        ASSERT_TRUE(resp.ok());
-        ASSERT_EQ(0, resp.value().find("Space should not be empty"));
-    }
-    {
-        auto url = "/admin?space=xx";
-        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
-                                           FLAGS_ws_http_port, url);
-        auto resp = http::HttpClient::get(request);
-        ASSERT_TRUE(resp.ok());
-        ASSERT_EQ(0, resp.value().find("Op should not be empty"));
-    }
-    {
-        auto url = "/admin?space=xx&op=yy";
-        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
-                                           FLAGS_ws_http_port, url);
-        auto resp = http::HttpClient::get(request);
-        ASSERT_TRUE(resp.ok());
-        ASSERT_EQ(0, resp.value().find("Can't find space xx"));
-    }
-    {
-        auto url = "/admin?space=0&op=yy";
-        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
-                                           FLAGS_ws_http_port, url);
-        auto resp = http::HttpClient::get(request);
-        ASSERT_TRUE(resp.ok());
-        ASSERT_EQ(0, resp.value().find("Unknown operation yy"));
-    }
-    {
-        auto url = "/admin?space=0&op=flush";
-        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
-                                           FLAGS_ws_http_port, url);
-        auto resp = http::HttpClient::get(request);
-        ASSERT_TRUE(resp.ok());
-        ASSERT_EQ("ok", resp.value());
-    }
-    {
-        auto url = "/admin?space=0&op=compact";
-        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
-                                           FLAGS_ws_http_port, url);
-        auto resp = http::HttpClient::get(request);
-        ASSERT_TRUE(resp.ok());
-        ASSERT_EQ("ok", resp.value());
-    }
+static void checkInvalidRequest(const std::string& url, const std::string& errMsg) {
+    ASSERT_EQ(0, request(url).find(errMsg));
+}
+
+TEST(StoragehHttpAdminHandlerTest, TestInvalidRequest) {
+    checkInvalidRequest("/admin", "Space should not be empty");
+    checkInvalidRequest("/admin?space=xx", "Op should not be empty");
+    checkInvalidRequest("/admin?space=xx&op=yy", "Can't find space xx");
+    checkInvalidRequest("/admin?space=0&op=yy", "Unknown operation yy");
+}
+
+TEST(StoragehHttpAdminHandlerTest, TestSupportedOperations) {
+    ASSERT_EQ("ok", request("/admin?space=0&op=flush"));
+    ASSERT_EQ("ok", request("/admin?space=0&op=compact"));
 }
 
 }  // namespace storage

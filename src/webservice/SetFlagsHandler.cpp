@@ -28,15 +28,26 @@ void SetFlagsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
 }
 
 void SetFlagsHandler::onBody(std::unique_ptr<folly::IOBuf> body) noexcept {
-    try {
-        std::string str = body->moveToFbString().toStdString();
-        flags_ = folly::parseJson(str);
-    } catch (const std::exception &e) {
-        err_ = HttpCode::E_UNPROCESSABLE;
+    if (body_) {
+        body_->appendChain(std::move(body));
+    } else {
+        body_ = std::move(body);
     }
 }
 
 void SetFlagsHandler::onEOM() noexcept {
+    folly::dynamic flags;
+    try {
+        std::string body = body_->moveToFbString().toStdString();
+        flags = folly::parseJson(body);
+        if (flags.empty()) {
+            err_ = HttpCode::E_UNPROCESSABLE;
+        }
+    } catch (const std::exception &e) {
+        LOG(ERROR) << "Fail to update flags: " << e.what();
+        err_ = HttpCode::E_UNPROCESSABLE;
+    }
+
     switch (err_) {
         case HttpCode::E_UNSUPPORTED_METHOD:
             ResponseBuilder(downstream_)
@@ -55,7 +66,7 @@ void SetFlagsHandler::onEOM() noexcept {
     }
 
     folly::dynamic failedOptions = folly::dynamic::array();
-    for (auto &item : flags_.items()) {
+    for (auto &item : flags.items()) {
         const std::string &name = item.first.asString();
         const std::string &value = item.second.asString();
         const std::string &newValue = gflags::SetCommandLineOption(name.c_str(), value.c_str());

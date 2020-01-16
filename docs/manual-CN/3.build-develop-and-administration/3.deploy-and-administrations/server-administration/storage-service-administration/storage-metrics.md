@@ -63,20 +63,18 @@ storage_update_edge_error_qps.count.3600   // 最近一小时更新一条边发�
 
 ```bash
 # 获取一个指标
-curl -G "http://127.0.0.1:12000/get_stats?stats=storage_vertex_props_qps.rate.60"
+curl -G "http://127.0.0.1:12000/storage/stats?names=storage_vertex_props_qps.rate.60"
 # storage_vertex_props_qps.rate.60=2674
 
 # 同时获取多个指标
-curl -G "http://127.0.0.1:12000/get_stats?stats=storage_vertex_props_qps.rate.60,storage_vertex_props_latency.avg.60"
+curl -G "http://127.0.0.1:12000/storage/stats?names=storage_vertex_props_qps.rate.60,storage_vertex_props_latency.avg.60"
 # storage_vertex_props_qps.rate.60=2638
 # storage_vertex_props_latency.avg.60=812
 
 # 同时获取多个指标并以 json 格式返回
-curl -G "http://127.0.0.1:12000/get_stats?stats=storage_vertex_props_qps.rate.60,storage_vertex_props_latency.avg.60&returnjson"
+curl -G "http://127.0.0.1:12000/storage/stats?names=storage_vertex_props_qps.rate.60,storage_vertex_props_latency.avg.60&return=json"
 # [{"value":2723,"name":"storage_vertex_props_qps.rate.60"},{"value":804,"name":"storage_vertex_props_latency.avg.60"}]
 
 # 获取所有指标
-curl -G "http://127.0.0.1:12000/get_stats?stats"
-# 或
-curl -G "http://127.0.0.1:12000/get_stats"
+curl -G "http://127.0.0.1:12000/storage/stats"
 ```

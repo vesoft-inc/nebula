@@ -60,20 +60,18 @@ Assume that a graph service is started locally, and the `ws_http_port` port numb
 
 ```bash
 # obtain a metrics
-curl -G "http://127.0.0.1:13000/get_stats?stats=graph_insertVertex_qps.rate.60"
+curl -G "http://127.0.0.1:13000/graph/stats?names=graph_insertVertex_qps.rate.60"
 # graph_insertVertex_qps.rate.60=3069
 
 # obtain multiple metrics at the same time
-curl -G "http://127.0.0.1:13000/get_stats?stats=graph_insertVertex_qps.rate.60, graph_deleteVertex_latency.avg.60"
+curl -G "http://127.0.0.1:13000/graph/stats?names=graph_insertVertex_qps.rate.60,graph_deleteVertex_latency.avg.60"
 # graph_insertVertex_qps.rate.60=3069
 # graph_deleteVertex_latency.avg.60=837
 
 # obtain multiple metrics at the same time and return in json format
-curl -G "http://127.0.0.1:13000/get_stats?stats=graph_insertVertex_qps.rate.60, graph_deleteVertex_latency.avg.60&returnjson"
+curl -G "http://127.0.0.1:13000/graph/stats?names=graph_insertVertex_qps.rate.60, graph_deleteVertex_latency.avg.60&return=json"
 # [{"value":2373,"name":"graph_insertVertex_qps.rate.60"},{"value":760,"name":"graph_deleteVertex_latency.avg.60"}]
 
 # obtain all the metrics
-curl -G "http://127.0.0.1:13000/get_stats?stats"
-# or
-curl -G "http://127.0.0.1:13000/get_stats"
+curl -G "http://127.0.0.1:13000/graph/stats"
 ```

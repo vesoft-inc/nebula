@@ -24,7 +24,7 @@
 可以通过如下命令来查看当前的所有的 gflags 参数（包括日志参数）
 
 ```bash
-> curl ${ws_ip}:${ws_port}/get_flags
+> curl ${ws_ip}:${ws_port}/<graph|meta|storage>/flags
 ```
 
 其中，
@@ -35,15 +35,14 @@
 例如，查看 storaged 的 minloglevel 级别：
 
 ```bash
-> curl 127.0.0.1:12000/get_flags | grep minloglevel  # storage
-> curl 127.0.0.1:13000/get_flags                     # metad
+> curl 127.0.0.1:12000/storage/flags?names=minloglevel  # storage
+> curl 127.0.0.1:13000/graph/flags                      # graphd
 ```
 
 也可以通过如下命令将日志级别更改为**最详细**。
 
 ```bash
-> curl "http://127.0.0.1:12000/set_flags?flag=v&value=3"
-> curl "http://127.0.0.1:12000/set_flags?flag=minloglevel&value=0"
+> curl -X PUT -H "Content-Type: application/json" -d '{"v":3, "minloglevel":0}' "http://127.0.0.1:12000/storage/flags"
 ```
 
 在 console 中，使用如下命令获取当前日志级别并将日志级别设置为**最详细**。
@@ -58,5 +57,5 @@ nebula> UPDATE CONFIGS graph:minloglevel=0
 或者**关闭**所有的日志打印(仅保留 FATAL)。
 
 ```bash
-> curl "http://127.0.0.1:12000/set_flags?flag=minloglevel&value=3"
+> curl -X PUT -H "Content-Type: application/json" -d '{"minloglevel":3}' "http://127.0.0.1:12000/storage/flags"
 ```

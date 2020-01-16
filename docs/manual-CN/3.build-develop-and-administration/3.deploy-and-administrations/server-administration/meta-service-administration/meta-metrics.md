@@ -44,20 +44,18 @@ meta_heartbeat_latency.avg.60     // 最近一分钟心中的平均延时
 
 ```bash
 # 获取一个指标
-curl -G "http://127.0.0.1:11000/get_stats?stats=meta_heartbeat_qps.avg.60"
+curl -G "http://127.0.0.1:11000/meta/stats?names=meta_heartbeat_qps.avg.60"
 # meta_heartbeat_qps.avg.60=580
 
 # 同时获取多个指标
-curl -G "http://127.0.0.1:11000/get_stats?stats=meta_heartbeat_qps.avg.60,meta_heartbeat_error_qps.avg.60"
+curl -G "http://127.0.0.1:11000/meta/stats?names=meta_heartbeat_qps.avg.60,meta_heartbeat_error_qps.avg.60"
 # meta_heartbeat_qps.avg.60=537
 # meta_heartbeat_error_qps.avg.60=579
 
 # 同时获取多个指标并以 json 格式返回
-curl -G "http://127.0.0.1:11000/get_stats?stats=meta_heartbeat_qps.avg.60,meta_heartbeat_error_qps.avg.60&returnjson"
+curl -G "http://127.0.0.1:11000/meta/stats?names=meta_heartbeat_qps.avg.60,meta_heartbeat_error_qps.avg.60&return=json"
 # [{"value":533,"name":"meta_heartbeat_qps.avg.60"},{"value":574,"name":"meta_heartbeat_error_qps.avg.60"}]
 
 # 获取所有指标
-curl -G "http://127.0.0.1:11000/get_stats?stats"
-# 或
-curl -G "http://127.0.0.1:11000/get_stats"
+curl -G "http://127.0.0.1:11000/meta/stats"
 ```

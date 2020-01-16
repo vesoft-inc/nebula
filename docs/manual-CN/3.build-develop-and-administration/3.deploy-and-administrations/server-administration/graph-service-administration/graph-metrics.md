@@ -63,20 +63,18 @@ graph_updateEdge_error_qps.count.3600   // 最近一小时更新边命令失败�
 
 ```bash
 # 获取一个指标
-curl -G "http://127.0.0.1:13000/get_stats?stats=graph_insertVertex_qps.rate.60"
+curl -G "http://127.0.0.1:13000/graph/stats?names=graph_insertVertex_qps.rate.60"
 # graph_insertVertex_qps.rate.60=3069
 
 # 同时获取多个指标
-curl -G "http://127.0.0.1:13000/get_stats?stats=graph_insertVertex_qps.rate.60, graph_deleteVertex_latency.avg.60"
+curl -G "http://127.0.0.1:13000/graph/stats?names=graph_insertVertex_qps.rate.60,graph_deleteVertex_latency.avg.60"
 # graph_insertVertex_qps.rate.60=3069
 # graph_deleteVertex_latency.avg.60=837
 
 # 同时获取多个指标并以 json 格式返回
-curl -G "http://127.0.0.1:13000/get_stats?stats=graph_insertVertex_qps.rate.60, graph_deleteVertex_latency.avg.60&returnjson"
+curl -G "http://127.0.0.1:13000/graph/stats?names=graph_insertVertex_qps.rate.60,graph_deleteVertex_latency.avg.60&return=json"
 # [{"value":2373,"name":"graph_insertVertex_qps.rate.60"},{"value":760,"name":"graph_deleteVertex_latency.avg.60"}]
 
 # 获取所有指标
-curl -G "http://127.0.0.1:13000/get_stats?stats"
-# 或
-curl -G "http://127.0.0.1:13000/get_stats"
+curl -G "http://127.0.0.1:13000/graph/stats"
 ```

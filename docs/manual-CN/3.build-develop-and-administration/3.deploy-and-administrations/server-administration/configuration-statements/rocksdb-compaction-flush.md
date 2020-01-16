@@ -55,8 +55,8 @@ curl "${ws_ip}:${ws_http_port}/admin?space=${spaceName}&${op}"
 例如：
 
 ```bash
-curl "http://127.0.0.1:12000/admin?space=test&op=compact"
-curl "http://127.0.0.1:12000/admin?space=test&op=flush"
+curl "http://127.0.0.1:12000/storage/admin?space=test&op=compact"
+curl "http://127.0.0.1:12000/storage/admin?space=test&op=flush"
 ```
 
 > 注意：请先建立图空间 test，再运行上面的 curl 命令。

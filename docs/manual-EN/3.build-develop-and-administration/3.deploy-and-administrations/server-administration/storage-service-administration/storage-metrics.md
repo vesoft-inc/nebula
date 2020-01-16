@@ -58,20 +58,18 @@ Assume that a **Nebula Graph** storage service is started locally, and the `ws_h
 
 ```bash
 # obtain a metrics
-curl -G "http://127.0.0.1:12000/get_stats?stats=storage_vertex_props_qps.rate.60"
+curl -G "http://127.0.0.1:12000/storage/stats?names=storage_vertex_props_qps.rate.60"
 # storage_vertex_props_qps.rate.60=2674
 
 # obtain multiple metrics at the same time
-curl -G "http://127.0.0.1:12000/get_stats?stats=storage_vertex_props_qps.rate.60,storage_vertex_props_latency.avg.60"
+curl -G "http://127.0.0.1:12000/storage/stats?names=storage_vertex_props_qps.rate.60,storage_vertex_props_latency.avg.60"
 # storage_vertex_props_qps.rate.60=2638
 # storage_vertex_props_latency.avg.60=812
 
 # obtain multiple metrics at the same time and return in json format
-curl -G "http://127.0.0.1:12000/get_stats?stats=storage_vertex_props_qps.rate.60,storage_vertex_props_latency.avg.60&returnjson"
+curl -G "http://127.0.0.1:12000/storage/stats?names=storage_vertex_props_qps.rate.60,storage_vertex_props_latency.avg.60&return=json"
 # [{"value":2723,"name":"storage_vertex_props_qps.rate.60"},{"value":804,"name":"storage_vertex_props_latency.avg.60"}]
 
 # obtain all the metrics
-curl -G "http://127.0.0.1:12000/get_stats?stats"
-# or
-curl -G "http://127.0.0.1:12000/get_stats"
+curl -G "http://127.0.0.1:12000/storage/stats"
 ```

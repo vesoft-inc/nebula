@@ -41,20 +41,18 @@ Assume that a **Nebula Graph** meta service is started locally, and the `ws_http
 
 ```bash
 # obtain a metrics
-curl -G "http://127.0.0.1:11000/get_stats?stats=meta_heartbeat_qps.avg.60"
+curl -G "http://127.0.0.1:11000/meta/stats?names=meta_heartbeat_qps.avg.60"
 # meta_heartbeat_qps.avg.60=580
 
 # obtain multiple metrics at the same time
-curl -G "http://127.0.0.1:11000/get_stats?stats=meta_heartbeat_qps.avg.60,meta_heartbeat_error_qps.avg.60"
+curl -G "http://127.0.0.1:11000/meta/stats?names=meta_heartbeat_qps.avg.60,meta_heartbeat_error_qps.avg.60"
 # meta_heartbeat_qps.avg.60=537
 # meta_heartbeat_error_qps.avg.60=579
 
 # obtain multiple metrics at the same time and return in json format
-curl -G "http://127.0.0.1:11000/get_stats?stats=meta_heartbeat_qps.avg.60,meta_heartbeat_error_qps.avg.60&returnjson"
+curl -G "http://127.0.0.1:11000/meta/stats?names=meta_heartbeat_qps.avg.60,meta_heartbeat_error_qps.avg.60&return=json"
 # [{"value":533,"name":"meta_heartbeat_qps.avg.60"},{"value":574,"name":"meta_heartbeat_error_qps.avg.60"}]
 
 # obtain all the metrics
-curl -G "http://127.0.0.1:11000/get_stats?stats"
-# or
-curl -G "http://127.0.0.1:11000/get_stats"
+curl -G "http://127.0.0.1:11000/meta/stats"
 ```
