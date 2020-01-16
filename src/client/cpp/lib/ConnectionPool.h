@@ -5,7 +5,7 @@
  */
 
 #ifndef CLIENT_CPP_LIB_CONNECTIONPOOL_H
-#define CLIENT_CPP_LIB__CONNECTIONPOOL_H
+#define CLIENT_CPP_LIB_CONNECTIONPOOL_H
 
 #include "ConnectionThread.h"
 #include "client/cpp/include/nebula/ExecutionResponse.h"

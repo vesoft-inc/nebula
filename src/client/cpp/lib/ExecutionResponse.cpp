@@ -14,10 +14,10 @@ PathEntry::PathEntry() : type_(kEmpty) {
 
 PathEntry::PathEntry(const PathEntry &rhs) {
     switch (rhs.getType()) {
-        case kVertexType:
+        case kVertex:
             setVertexValue(rhs.getVertexValue());
             break;
-        case kEdgeType:
+        case kEdge:
             setEdgeValue(rhs.getEdgeValue());
             break;
         default:
@@ -31,23 +31,23 @@ PathEntry::~PathEntry() {
 
 void PathEntry::setVertexValue(Vertex vertex) {
     clear();
-    type_ = kVertexType;
+    type_ = kVertex;
     ::new (std::addressof(entry_.vertex)) Vertex(vertex);
 }
 
 void PathEntry::setEdgeValue(Edge edge) {
     clear();
-    type_ = kEdgeType;
+    type_ = kEdge;
     ::new (std::addressof(entry_.edge)) Edge(edge);
 }
 
 Vertex const & PathEntry::getVertexValue() const {
-    assert(type_ == kVertexType);
+    assert(type_ == kVertex);
     return entry_.vertex;
 }
 
 Edge const & PathEntry::getEdgeValue() const {
-    assert(type_ == kEdgeType);
+    assert(type_ == kEdge);
     return entry_.edge;
 }
 
@@ -57,15 +57,16 @@ void PathEntry::clear() {
         return;
     }
     switch (type_) {
-        case kVertexType:
+        case kVertex:
             destruct(entry_.vertex);
             break;
-        case kEdgeType:
+        case kEdge:
             destruct(entry_.edge);
             break;
         default:
             break;
     }
+    type_ = kEmpty;
 }
 
 Path::Path(const Path &rhs) {
@@ -81,6 +82,7 @@ std::vector<PathEntry> Path::getEntryList() {
 }
 
 void Path::setEntryList(std::vector<PathEntry> entryList) {
+    clear();
     entryList_ = std::move(entryList);
 }
 
@@ -289,6 +291,10 @@ void ColValue::clear() {
             break;
         case kTimestampType:
             destruct(value_.timestamp);
+            break;
+        case kPathType:
+            destruct(value_.path);
+            break;
         default:
             break;
     }

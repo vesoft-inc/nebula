@@ -46,7 +46,9 @@ struct DateTime {
 
 struct Vertex {
     Vertex() {}
-    ~Vertex() {}
+    ~Vertex() {
+        id = 0;
+    }
     IdType   id{0};
 };
 
@@ -66,8 +68,8 @@ struct Edge {
 
 enum EntryType {
     kEmpty  = 0,
-    kVertexType = 1,
-    kEdgeType   = 2,
+    kVertex = 1,
+    kEdge = 2,
 };
 
 union Entry {
@@ -110,9 +112,9 @@ private:
 class Path final {
     friend class nebula::graph::NebulaClientImpl;
 public:
-    Path() {}
+    Path() = default;
     Path(const Path &rhs);
-    ~Path() {}
+    ~Path() = default;
 
     std::vector<PathEntry> const & getEntryList() const;
     std::vector<PathEntry> getEntryList();
@@ -120,6 +122,10 @@ public:
 protected:
     void setEntryList(std::vector<PathEntry> entryList);
 
+private:
+    void clear() {
+        entryList_.clear();
+    }
 private:
     std::vector<PathEntry> entryList_;
 };
@@ -152,10 +158,10 @@ enum ErrorCode {
     // Execution errors
     kSessionInvalid      = -5,
     kSessionTimeout      = -6,
-    kSyntaxError         = -7,
-    kExecutionError      = -8,
+    kErrorSyntax         = -7,
+    kErrorExecution      = -8,
     // Nothing is executed When command is comment
-    kStatementEmpty      = -9,
+    kEmptyStatement      = -9,
 };
 
 enum ValueType {
