@@ -22,6 +22,7 @@
 #include <folly/executors/ThreadPoolExecutor.h>
 #include <folly/executors/CPUThreadPoolExecutor.h>
 #include "dataman/RowReader.h"
+#include "dataman/RowWriter.h"
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
 
@@ -30,13 +31,13 @@ namespace storage {
 
 class TestUtils {
 public:
-    static std::unique_ptr<kvstore::KVStore> initKV(
-            const char* rootPath,
-            int32_t partitionNumber = 6,
-            HostAddr localhost = {0, 0},
-            meta::MetaClient* mClient = nullptr,
-            bool useMetaServer = false,
-            std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder = nullptr) {
+    static std::unique_ptr<kvstore::KVStore>
+    initKV(const char* rootPath,
+           int32_t partitionNumber = 6,
+           HostAddr localhost = {0, 0},
+           meta::MetaClient* mClient = nullptr,
+           bool useMetaServer = false,
+           std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder = nullptr) {
         auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
         auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
                                  1, true /*stats*/);
@@ -90,19 +91,16 @@ public:
         return schemaMan;
     }
 
-    static std::vector<cpp2::Vertex> setupVertices(
-            PartitionID partitionID,
-            int64_t verticesNum,
-            int32_t tagsNum,
-            int32_t tagsFrom = 0,
-            int32_t vIdFrom = 0) {
+    static std::vector<cpp2::Vertex>
+    setupVertices(PartitionID partitionID, VertexID vIdFrom, VertexID vIdTo,
+                  TagID tagFrom = 0, TagID tagTo = 10) {
         // partId => List<Vertex>
         // Vertex => {Id, List<VertexProp>}
         // VertexProp => {tagId, tags}
         std::vector<cpp2::Vertex> vertices;
-        for (VertexID vId = vIdFrom, vNum = 0;  vNum< verticesNum; vId++, vNum++) {
+        for (VertexID vId = vIdFrom;  vId < vIdTo; vId++) {
               std::vector<cpp2::Tag> tags;
-              for (TagID tId = tagsFrom, tNum = 0; tNum < tagsNum; tId++, tNum++) {
+              for (TagID tId = tagFrom; tId < tagTo; tId++) {
                   cpp2::Tag t;
                   t.set_tag_id(tId);
                   t.set_props(folly::stringPrintf("%d_%ld_%d", partitionID, vId, tId));
@@ -116,13 +114,40 @@ public:
         return vertices;
     }
 
+    static std::vector<cpp2::Edge>
+    setupEdges(PartitionID part, VertexID srcFrom,
+               VertexID srcTo, std::string fmt = "%d_%ld") {
+        std::vector<cpp2::Edge> edges;
+        for (VertexID srcId = srcFrom; srcId < srcTo; srcId++) {
+            cpp2::EdgeKey key;
+            key.set_src(srcId);
+            key.set_edge_type(srcId * 100 + 1);
+            key.set_ranking(srcId * 100 + 2);
+            key.set_dst(srcId * 100 + 3);
+            edges.emplace_back();
+            edges.back().set_key(std::move(key));
+            edges.back().set_props(folly::stringPrintf(fmt.c_str(), part, srcId));
+        }
+        return edges;
+    }
+
+    static std::string setupEncode(int32_t intSize = 3, int32_t stringSize = 6) {
+        RowWriter writer;
+        for (int64_t numInt = 0; numInt < intSize; numInt++) {
+            writer << numInt;
+        }
+        for (int32_t numString = intSize; numString < stringSize; numString++) {
+            writer << folly::stringPrintf("string_col_%d", numString);
+        }
+        return writer.encode();
+    }
+
 
     /**
      * It will generate SchemaProvider with some int fields and string fields
      * */
-    static std::shared_ptr<meta::SchemaProviderIf> genEdgeSchemaProvider(
-            int32_t intFieldsNum,
-            int32_t stringFieldsNum) {
+    static std::shared_ptr<meta::SchemaProviderIf>
+    genEdgeSchemaProvider(int32_t intFieldsNum, int32_t stringFieldsNum) {
         nebula::cpp2::Schema schema;
         for (auto i = 0; i < intFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
@@ -143,10 +168,8 @@ public:
     /**
      * It will generate tag SchemaProvider with some int fields and string fields
      * */
-    static std::shared_ptr<meta::SchemaProviderIf> genTagSchemaProvider(
-            TagID tagId,
-            int32_t intFieldsNum,
-            int32_t stringFieldsNum) {
+    static std::shared_ptr<meta::SchemaProviderIf>
+    genTagSchemaProvider(TagID tagId, int32_t intFieldsNum, int32_t stringFieldsNum) {
         nebula::cpp2::Schema schema;
         for (auto i = 0; i < intFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
@@ -192,11 +215,9 @@ public:
     }
 
     // If kvstore should init files in dataPath, input port can't be 0
-    static std::unique_ptr<test::ServerContext> mockStorageServer(meta::MetaClient* mClient,
-                                                                  const char* dataPath,
-                                                                  uint32_t ip,
-                                                                  uint32_t port = 0,
-                                                                  bool useMetaServer = false) {
+    static std::unique_ptr<test::ServerContext>
+    mockStorageServer(meta::MetaClient* mClient, const char* dataPath,
+                      uint32_t ip, uint32_t port = 0, bool useMetaServer = false) {
         auto sc = std::make_unique<test::ServerContext>();
         // Always use the Meta Service in this case
         sc->kvStore_ = TestUtils::initKV(dataPath, 6, {ip, port}, mClient, true);
