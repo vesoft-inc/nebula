@@ -35,12 +35,11 @@ void GetFlagsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
         returnJson_ = (headers->getQueryParam("return") == "json");
     }
 
-    auto* flagsStr = headers->getQueryParamPtr("names");
-    if (flagsStr != nullptr) {
-        folly::split(",", *flagsStr, flagnames_, true);
+    if (headers->hasQueryParam("names")) {
+        const std::string& names = headers->getQueryParam("names");
+        folly::split(",", names, flagnames_, true);
     }
 }
-
 
 void GetFlagsHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
     // Do nothing, we only support GET

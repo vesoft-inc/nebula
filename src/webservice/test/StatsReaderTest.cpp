@@ -54,21 +54,21 @@ TEST(StatsReaderTest, GetStatsTest) {
         int64_t statSum = StatsManager::readValue("stat01.sum.60").value();
         EXPECT_EQ(5050, statSum);
         std::string resp1;
-        ASSERT_TRUE(getUrl("/get_stats?stats=stat01.sum.60", resp1));
+        ASSERT_TRUE(getUrl("/stats?names=stat01.sum.60", resp1));
         EXPECT_EQ(folly::stringPrintf("stat01.sum.60=%ld\n", statSum), resp1);
 
         statSum = 0;
         statSum = StatsManager::readValue("stat01.sum.600").value();
         EXPECT_EQ(5050, statSum);
         std::string resp2;
-        ASSERT_TRUE(getUrl("/get_stats?stats=stat01.sum.600", resp2));
+        ASSERT_TRUE(getUrl("/stats?names=stat01.sum.600", resp2));
         EXPECT_EQ(folly::stringPrintf("stat01.sum.600=%ld\n", statSum), resp2);
 
         statSum = 0;
         statSum = StatsManager::readValue("stat01.sum.3600").value();
         EXPECT_EQ(5050, statSum);
         std::string resp3;
-        ASSERT_TRUE(getUrl("/get_stats?stats=stat01.sum.3600", resp3));
+        ASSERT_TRUE(getUrl("/stats?names=stat01.sum.3600", resp3));
         EXPECT_EQ(folly::stringPrintf("stat01.sum.3600=%ld\n", statSum), resp3);
     }
 
@@ -76,33 +76,33 @@ TEST(StatsReaderTest, GetStatsTest) {
         int64_t statCount = StatsManager::readValue("stat01.count.60").value();
         EXPECT_EQ(100, statCount);
         std::string resp1;
-        ASSERT_TRUE(getUrl("/get_stats?stats=stat01.count.60", resp1));
+        ASSERT_TRUE(getUrl("/stats?names=stat01.count.60", resp1));
         EXPECT_EQ(folly::stringPrintf("stat01.count.60=%ld\n", statCount), resp1);
 
         statCount = 0;
         statCount = StatsManager::readValue("stat01.count.600").value();
         EXPECT_EQ(100, statCount);
         std::string resp2;
-        ASSERT_TRUE(getUrl("/get_stats?stats=stat01.count.600", resp2));
+        ASSERT_TRUE(getUrl("/stats?names=stat01.count.600", resp2));
         EXPECT_EQ(folly::stringPrintf("stat01.count.600=%ld\n", statCount), resp2);
 
         statCount = 0;
         statCount = StatsManager::readValue("stat01.count.3600").value();
         EXPECT_EQ(100, statCount);
         std::string resp3;
-        ASSERT_TRUE(getUrl("/get_stats?stats=stat01.count.3600", resp3));
+        ASSERT_TRUE(getUrl("/stats?names=stat01.count.3600", resp3));
         EXPECT_EQ(folly::stringPrintf("stat01.count.3600=%ld\n", statCount), resp3);
     }
 
     {
         // get multi stats
         std::string resp;
-        ASSERT_TRUE(getUrl("/get_stats?stats=stat01.sum.60,stat01.avg.60,stat01.count.60", resp));
+        ASSERT_TRUE(getUrl("/stats?names=stat01.sum.60,stat01.avg.60,stat01.count.60", resp));
         EXPECT_EQ(std::string("stat01.sum.60=5050\nstat01.avg.60=50\nstat01.count.60=100\n"), resp);
 
         // get multi stats, among invalid stat
         std::string resp1;
-        ASSERT_TRUE(getUrl("/get_stats?stats=stat01.sum.60,stat01.avg.60,stat01.count.60,"
+        ASSERT_TRUE(getUrl("/stats?names=stat01.sum.60,stat01.avg.60,stat01.count.60,"
                                             "stat01.p99.60", resp1));
         EXPECT_EQ(std::string("stat01.sum.60=5050\nstat01.avg.60=50\nstat01.count.60=100\n"
                               "stat01.p99.60=Invalid stats\n"), resp1);
@@ -111,7 +111,7 @@ TEST(StatsReaderTest, GetStatsTest) {
     {
         // return json
         std::string resp;
-        ASSERT_TRUE(getUrl("/get_stats?stats=stat01.sum.60&returnjson", resp));
+        ASSERT_TRUE(getUrl("/stats?names=stat01.sum.60&return=json", resp));
         auto json = folly::parseJson(resp);
         ASSERT_TRUE(json.isArray());
         ASSERT_EQ(1UL, json.size());
@@ -132,7 +132,7 @@ TEST(StatsReaderTest, GetStatsTest) {
     {
         // get all stats(sum,count,avg,rate)
         std::string resp;
-        ASSERT_TRUE(getUrl("/get_stats?stats= ", resp));
+        ASSERT_TRUE(getUrl("/stats?names= ", resp));
         EXPECT_FALSE(resp.empty());
     }
 
@@ -163,21 +163,21 @@ TEST(StatsReaderTest, GetHistoTest) {
         int64_t statAvg = StatsManager::readValue("stat02.avg.60").value();
         EXPECT_EQ(50, statAvg);
         std::string resp1;
-        ASSERT_TRUE(getUrl("/get_stats?stats=stat02.avg.60", resp1));
+        ASSERT_TRUE(getUrl("/stats?names=stat02.avg.60", resp1));
         EXPECT_EQ(folly::stringPrintf("stat02.avg.60=%ld\n", statAvg), resp1);
 
         statAvg = 0;
         statAvg = StatsManager::readValue("stat02.Avg.600").value();
         EXPECT_EQ(50, statAvg);
         std::string resp2;
-        ASSERT_TRUE(getUrl("/get_stats?stats=stat02.Avg.600", resp2));
+        ASSERT_TRUE(getUrl("/stats?names=stat02.Avg.600", resp2));
         EXPECT_EQ(folly::stringPrintf("stat02.Avg.600=%ld\n", statAvg), resp2);
 
         statAvg = 0;
         statAvg = StatsManager::readValue("stat02.AVG.3600").value();
         EXPECT_EQ(50, statAvg);
         std::string resp3;
-        ASSERT_TRUE(getUrl("/get_stats?stats=stat02.AVG.3600", resp3));
+        ASSERT_TRUE(getUrl("/stats?names=stat02.AVG.3600", resp3));
         EXPECT_EQ(folly::stringPrintf("stat02.AVG.3600=%ld\n", statAvg), resp3);
     }
 
@@ -185,20 +185,20 @@ TEST(StatsReaderTest, GetHistoTest) {
         int64_t statP = StatsManager::readValue("stat02.p99.60").value();
         EXPECT_EQ(100, statP);
         std::string resp1;
-        ASSERT_TRUE(getUrl("/get_stats?stats=stat02.p99.60", resp1));
+        ASSERT_TRUE(getUrl("/stats?names=stat02.p99.60", resp1));
         EXPECT_EQ(folly::stringPrintf("stat02.p99.60=%ld\n", statP), resp1);
 
         statP = 0;
         statP = StatsManager::readValue("stat02.P99.600").value();
         EXPECT_EQ(100, statP);
         std::string resp2;
-        ASSERT_TRUE(getUrl("/get_stats?stats=stat02.P99.600", resp2));
+        ASSERT_TRUE(getUrl("/stats?names=stat02.P99.600", resp2));
         EXPECT_EQ(folly::stringPrintf("stat02.P99.600=%ld\n", statP), resp2);
 
         statP = 0;
         EXPECT_FALSE(StatsManager::readValue("stat02.t99.3600").ok());
         std::string resp3;
-        ASSERT_TRUE(getUrl("/get_stats?stats=stat02.t99.3600", resp3));
+        ASSERT_TRUE(getUrl("/stats?names=stat02.t99.3600", resp3));
         EXPECT_EQ("stat02.t99.3600=Unsupported statistic method \"t99\"\n", resp3);
     }
 }
@@ -215,4 +215,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-

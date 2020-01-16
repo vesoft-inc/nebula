@@ -29,13 +29,13 @@ void GetStatsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
         return;
     }
 
-    if (headers->getQueryParamPtr("returnjson") != nullptr) {
-        returnJson_ = true;
+    if (headers->hasQueryParam("return")) {
+        returnJson_ = (headers->getQueryParam("return") == "json");
     }
 
-    auto* statsStr = headers->getQueryParamPtr("stats");
-    if (statsStr != nullptr) {
-        folly::split(",", *statsStr, statNames_, true);
+    if (headers->hasQueryParam("names")) {
+        const std::string& names = headers->getQueryParam("names");
+        folly::split(",", names, statNames_, true);
     }
 }
 
@@ -59,19 +59,12 @@ void GetStatsHandler::onEOM() noexcept {
 
     // read stats
     folly::dynamic vals = getStats();
-    if (returnJson_) {
-        ResponseBuilder(downstream_)
-            .status(WebServiceUtils::to(HttpStatusCode::OK),
-                    WebServiceUtils::toString(HttpStatusCode::OK))
-            .body(folly::toJson(vals))
-            .sendWithEOM();
-    } else {
-        ResponseBuilder(downstream_)
-            .status(WebServiceUtils::to(HttpStatusCode::OK),
-                    WebServiceUtils::toString(HttpStatusCode::OK))
-            .body(toStr(vals))
-            .sendWithEOM();
-    }
+    std::string body = returnJson_ ? folly::toPrettyJson(vals) : toStr(vals);
+    ResponseBuilder(downstream_)
+        .status(WebServiceUtils::to(HttpStatusCode::OK),
+                WebServiceUtils::toString(HttpStatusCode::OK))
+        .body(std::move(body))
+        .sendWithEOM();
 }
 
 
