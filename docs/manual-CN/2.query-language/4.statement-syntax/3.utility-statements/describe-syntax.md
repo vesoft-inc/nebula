@@ -4,6 +4,7 @@
 DESCRIBE SPACE <space_name>
 DESCRIBE TAG <tag_name>
 DESCRIBE EDGE <edge_name>
+DESCRIBE {TAG | EDGE} INDEX <index_name>
 ```
 
 DESCRIBE 关键词的作用是获取关于 space, tag, edge 结构的信息。
@@ -47,4 +48,15 @@ nebula> DESCRIBE EDGE serve
 ---------------------
 |   end_year |  int |
 ---------------------
+```
+
+返回指定索引信息，对应 `DESCRIBE INDEX`。
+
+```ngql
+nebula> DESCRIBE TAG INDEX player_index_0;
+==================
+| Field | Type   |
+==================
+| name  | string |
+------------------
 ```

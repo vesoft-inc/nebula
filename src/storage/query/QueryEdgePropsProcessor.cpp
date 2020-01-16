@@ -26,6 +26,7 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         return ret;
     }
+
     // Only use the latest version.
     if (iter && iter->valid()) {
         RowWriter writer(rsWriter.schema());
@@ -43,6 +44,16 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
 }
 
 void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
+    if (executor_ != nullptr) {
+        executor_->add([req, this] () {
+            this->doProcess(req);
+        });
+    } else {
+        doProcess(req);
+    }
+}
+
+void QueryEdgePropsProcessor::doProcess(const cpp2::EdgePropRequest& req) {
     spaceId_ = req.get_space_id();
 
     std::vector<EdgeType> e = {req.edge_type};
@@ -57,17 +68,20 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
         return;
     }
 
-    int32_t edgeSize = std::accumulate(edgeContexts_.cbegin(), edgeContexts_.cend(), 0,
-                                       [](int ac, auto& ec) { return ac + ec.second.size(); });
-
-    int32_t returnColumnsNum = req.get_return_columns().size() + edgeSize;
-    RowSetWriter rsWriter;
+    auto schema = edgeSchema_.find(req.edge_type);
+    if (schema == edgeSchema_.end()) {
+        LOG(ERROR) << "Not found the edge type: " << req.edge_type;
+        this->onFinished();
+        return;
+    }
+    RowSetWriter rsWriter(std::move(schema)->second);
     std::for_each(req.get_parts().begin(), req.get_parts().end(), [&](auto& partE) {
         auto partId = partE.first;
         kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
         for (auto& edgeKey : partE.second) {
             for (auto& ec : edgeContexts_) {
-                ret = this->collectEdgesProps(partId, edgeKey, ec.second, rsWriter);
+                ret = this->collectEdgesProps(
+                        partId, edgeKey, ec.second, rsWriter);
                 if (ret != kvstore::ResultCode::SUCCEEDED) {
                     break;
                 }
@@ -85,28 +99,10 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
     });
     resp_.set_data(std::move(rsWriter.data()));
 
-    std::vector<PropContext> props;
-    props.reserve(returnColumnsNum);
-    for (auto& ec : this->edgeContexts_) {
-        auto p = ec.second;
-        for (auto& prop : p) {
-            props.emplace_back(std::move(prop));
-        }
+    auto schemaResp = edgeSchemaResp_.find(req.edge_type);
+    if (!(schemaResp == edgeSchemaResp_.end())) {
+        resp_.set_schema(std::move(schemaResp)->second);
     }
-
-    std::sort(props.begin(), props.end(), [](auto& l, auto& r){
-        return l.retIndex_ < r.retIndex_;
-    });
-    decltype(resp_.schema) s;
-    decltype(resp_.schema.columns) cols;
-    for (auto& prop : props) {
-        VLOG(3) << prop.prop_.name << "," << static_cast<int32_t>(prop.type_.type);
-        cols.emplace_back(
-                columnDef(std::move(prop.prop_.name),
-                          prop.type_.type));
-    }
-    s.set_columns(std::move(cols));
-    resp_.set_schema(std::move(s));
     this->onFinished();
 }
 

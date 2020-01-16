@@ -757,7 +757,7 @@ MetaClient::multiPut(std::string segment,
     for (auto& element : pairs) {
         nebula::cpp2::Pair pair;
         pair.set_key(std::move(element.first));
-        pair.set_value(std::move(element.second))
+        pair.set_value(std::move(element.second));
         data.emplace_back(std::move(pair));
     }
     req.set_segment(std::move(segment));
