@@ -8,6 +8,4 @@ package com.vesoft.nebula.tools.generator.v2
 
 import org.scalatest.{BeforeAndAfter, FlatSpec}
 
-class ConfigTest extends FlatSpec with BeforeAndAfter {
-
-}
+class ConfigTest extends FlatSpec with BeforeAndAfter {}
