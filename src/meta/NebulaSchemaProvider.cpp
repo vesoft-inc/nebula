@@ -96,28 +96,28 @@ void NebulaSchemaProvider::addDefaultValue(folly::StringPiece name,
         LOG(ERROR) << "Unknown field \"" << name.toString() << "\"";
         return;
     }
-    VariantType tempValue;
+    VariantType defaultValue;
     switch (value.getType()) {
         case nebula::cpp2::Value::Type::__EMPTY__:
             VLOG(1) << "Empty field \"" << name.toString() << "\"";
             return;
         case nebula::cpp2::Value::Type::int_value:
-            tempValue = value.get_int_value();
+            defaultValue = value.get_int_value();
             break;
         case nebula::cpp2::Value::Type::bool_value:
-            tempValue = value.get_bool_value();
+            defaultValue = value.get_bool_value();
             break;
         case nebula::cpp2::Value::Type::double_value:
-            tempValue = value.get_double_value();
+            defaultValue = value.get_double_value();
             break;
         case nebula::cpp2::Value::Type::string_value:
-            tempValue = value.get_string_value();
+            defaultValue = value.get_string_value();
             break;
         case nebula::cpp2::Value::Type::timestamp:
-            tempValue = value.get_timestamp();
+            defaultValue = value.get_timestamp();
             break;
     }
-    fields_[it->second]->setDefaultValue(std::move(tempValue));
+    fields_[it->second]->setDefaultValue(std::move(defaultValue));
 }
 
 void NebulaSchemaProvider::setProp(nebula::cpp2::SchemaProp schemaProp) {
@@ -137,21 +137,17 @@ NebulaSchemaProvider::getDefaultValue(const folly::StringPiece name) const {
     }
     auto index = it->second;
     if (!fields_[index]->hasDefaultValue()) {
-        VLOG(2) << "Index " << index << " without default value";
-        return Status::Error("Index %ld without default value", index);
+        VLOG(2) << "Field " << name << " has no default value";
+        return Status::Error("`%s' has no default value", name.toString().c_str());
     }
     return fields_[index]->getDefaultValue();
 }
 
 const StatusOr<VariantType>
 NebulaSchemaProvider::getDefaultValue(int64_t index) const {
-    if (index < 0) {
-        VLOG(2) << "Invalid index " << index;
-        return Status::Error("Invalid index %ld", index);
-    }
-    if (index >= static_cast<int64_t>(fields_.size())) {
-        VLOG(2) << "Index " << index << " is out of range";
-        return Status::Error("Index %ld is out of range", index);
+    if (UNLIKELY(index < 0) || UNLIKELY(index >= static_cast<int64_t>(fields_.size()))) {
+        LOG(ERROR) << "Index[" << index << "] is out of range[0-" << fields_.size() << "]";
+        return Status::Error("Index[%ld] is out of range[0-%zu]", index, fields_.size());
     }
     if (!fields_[index]->hasDefaultValue()) {
         VLOG(2) << "Index " << index << " without default value";

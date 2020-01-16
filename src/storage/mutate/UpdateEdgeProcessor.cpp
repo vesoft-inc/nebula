@@ -174,7 +174,6 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
             auto&& v = value(std::move(res));
             edgeFilters_.emplace(propName, v);
         }
-        auto schema = std::const_pointer_cast<meta::SchemaProviderIf>(constSchema);
         updater_ = std::unique_ptr<RowUpdater>(new RowUpdater(std::move(reader), schema));
     } else if (insertable_) {
         resp_.set_upsert(true);
@@ -187,19 +186,17 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
         if (constSchema == nullptr) {
             return kvstore::ResultCode::ERR_UNKNOWN;
         }
-        auto schema = std::const_pointer_cast<meta::SchemaProviderIf>(constSchema);
-        auto updater = std::make_unique<RowUpdater>(schema);
+        auto updater = std::make_unique<RowUpdater>(constSchema);
 
-        for (auto index = 0UL; index < constSchema->getNumFields(); index++) {
-            auto propName = std::string(constSchema->getFieldName(index));
+        for (auto index = 0UL; index < schema->getNumFields(); index++) {
+            auto propName = std::string(schema->getFieldName(index));
             auto findIter = std::find_if(updateItems_.cbegin(), updateItems_.cend(),
                     [&propName](auto &item) { return item.prop == propName; });
             OptVariantType value;
             if (findIter == updateItems_.end()) {
-                value = std::dynamic_pointer_cast<const meta::NebulaSchemaProvider>(
-                        constSchema)->getDefaultValue(index);
+                value = schema->getDefaultValue(index);
             } else {
-                value = RowReader::getDefaultProp(constSchema.get(), propName);
+                value = RowReader::getDefaultProp(schema.get(), propName);
             }
             if (!value.ok()) {
                 LOG(ERROR) << "EdgeType: " << edgeKey.edge_type

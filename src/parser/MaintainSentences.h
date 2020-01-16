@@ -36,7 +36,7 @@ public:
     }
 
     Status MUST_USE_RESULT prepare() {
-        if (hasDefault()) {
+        if (hasDefaultValue()) {
             return defaultExpr_->prepare();
         }
         return Status::Error();
@@ -48,22 +48,33 @@ public:
         }
     }
 
-    bool hasDefault() {
-        return defaultExpr_ != nullptr;
-    }
-
     OptVariantType getDefault(Getters& getter) {
         auto r = defaultExpr_->eval(getter);
         if (!r.ok()) {
             return std::move(r).status();
         }
-        return std::move(r).value();
+        auto v = std::move(r).value();
+        if (!Value::isString(v)) {
+            return Status::Error("Wrong type");
+        }
+        return Value::toString(v);
+    }
+
+    void setContext(ExpressionContext* ctx) {
+        if (defaultExpr_ != nullptr) {
+            defaultExpr_->setContext(ctx);
+        }
+    }
+
+    bool hasDefaultValue() {
+        return defaultExpr_ != nullptr;
     }
 
 private:
     ColumnType                                  type_;
     std::unique_ptr<std::string>                name_;
     std::unique_ptr<Value>                      defaultExpr_{nullptr};
+    VariantType                                 defaultValue_;
 };
 
 

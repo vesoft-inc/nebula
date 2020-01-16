@@ -107,7 +107,7 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
             // load it. To protect the data, we just return failed to graphd.
             return kvstore::ResultCode::ERR_CORRUPT_DATA;
         }
-        const auto constSchema = reader->getSchema();
+        const auto schema = reader->getSchema();
         for (auto& prop : props) {
             auto res = RowReader::getPropByName(reader.get(), prop.prop_.name);
             if (!ok(res)) {
@@ -119,7 +119,6 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
             tagFilters_.emplace(std::make_pair(tagId, prop.prop_.name), v);
         }
         if (updateTagIds_.find(tagId) != updateTagIds_.end()) {
-            auto schema = std::const_pointer_cast<meta::SchemaProviderIf>(constSchema);
             auto updater =
                     std::make_unique<RowUpdater>(std::move(reader), schema);
             tagUpdaters_[tagId] = std::make_unique<KeyUpdaterPair>();
@@ -129,24 +128,23 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
         }
     } else if (insertable_ && updateTagIds_.find(tagId) != updateTagIds_.end()) {
         resp_.set_upsert(true);
-        const auto constSchema = this->schemaMan_->getTagSchema(this->spaceId_, tagId);
-        if (constSchema == nullptr) {
+        const auto schema = std::dynamic_pointer_cast<const meta::NebulaSchemaProvider>(
+                this->schemaMan_->getTagSchema(this->spaceId_, tagId));
+        if (schema == nullptr) {
             return kvstore::ResultCode::ERR_UNKNOWN;
         }
 
-        auto schema = std::const_pointer_cast<meta::SchemaProviderIf>(constSchema);
         auto updater = std::make_unique<RowUpdater>(schema);
 
-        for (auto index = 0UL; index < constSchema->getNumFields(); index++) {
-            auto propName = std::string(constSchema->getFieldName(index));
+        for (auto index = 0UL; index < schema->getNumFields(); index++) {
+            auto propName = std::string(schema->getFieldName(index));
             auto findIter = std::find_if(updateItems_.cbegin(), updateItems_.cend(),
                     [&propName](auto &item) { return item.prop == propName; });
             OptVariantType value;
             if (findIter == updateItems_.end()) {
-                value = std::dynamic_pointer_cast<const meta::NebulaSchemaProvider>(
-                        constSchema)->getDefaultValue(index);
+                value = schema->getDefaultValue(index);
             } else {
-                value = RowReader::getDefaultProp(constSchema.get(), propName);
+                value = RowReader::getDefaultProp(schema.get(), propName);
             }
             if (!value.ok()) {
                 LOG(ERROR) << "TagId: " << tagId << ", prop: " << propName

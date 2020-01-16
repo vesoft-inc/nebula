@@ -7,10 +7,10 @@
 #ifndef META_NEBULASCHEMAPROVIDER_H_
 #define META_NEBULASCHEMAPROVIDER_H_
 
-#include <folly/RWSpinLock.h>
 #include "base/Base.h"
-#include "base/StatusOr.h"
+#include <folly/RWSpinLock.h>
 #include "meta/SchemaProviderIf.h"
+#include "base/StatusOr.h"
 
 namespace nebula {
 namespace meta {

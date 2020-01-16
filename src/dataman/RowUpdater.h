@@ -27,8 +27,8 @@ public:
     // schema is the writer schema, which means the updated data will be encoded
     //   using this schema
     RowUpdater(std::unique_ptr<RowReader> reader,
-               std::shared_ptr<meta::SchemaProviderIf> schema);
-    explicit RowUpdater(std::shared_ptr<meta::SchemaProviderIf> schema);
+               std::shared_ptr<const meta::SchemaProviderIf> schema);
+    explicit RowUpdater(std::shared_ptr<const meta::SchemaProviderIf> schema);
 
     // Encode into a binary array
     std::string encode() const noexcept;
@@ -72,7 +72,7 @@ public:
     // TODO getMap(const std::string& name) const noexcept;
 
 private:
-    std::shared_ptr<meta::SchemaProviderIf> schema_;
+    std::shared_ptr<const meta::SchemaProviderIf> schema_;
     std::unique_ptr<RowReader> reader_;
     // Hash64(field_name) => value
     std::unordered_map<uint64_t, FieldValue> updatedFields_;

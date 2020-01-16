@@ -14,14 +14,14 @@ using folly::hash::SpookyHashV2;
 using nebula::meta::SchemaProviderIf;
 
 RowUpdater::RowUpdater(std::unique_ptr<RowReader> reader,
-                       std::shared_ptr<SchemaProviderIf> schema)
+                       std::shared_ptr<const meta::SchemaProviderIf> schema)
         : schema_(std::move(schema))
         , reader_(std::move(reader)) {
     CHECK(!!schema_);
 }
 
 
-RowUpdater::RowUpdater(std::shared_ptr<SchemaProviderIf> schema)
+RowUpdater::RowUpdater(std::shared_ptr<const meta::SchemaProviderIf> schema)
         : schema_(std::move(schema))
         , reader_(nullptr) {
     CHECK(!!schema_);
