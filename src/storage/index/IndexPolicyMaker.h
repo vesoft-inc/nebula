@@ -8,19 +8,13 @@
 #define STORAGE_INDEXPOLICYMAKER_H
 #include "base/Base.h"
 #include "meta/SchemaManager.h"
-<<<<<<< HEAD
 #include "meta/IndexManager.h"
 #include "storage/CommonUtils.h"
 #include "storage/BaseProcessor.h"
-=======
-#include "storage/CommonUtils.h"
-#include "storage/index/IndexOptimizer.h"
->>>>>>> 1, Addressed comments. 2, Optimized index scan logic.
 
 namespace nebula {
 namespace storage {
 
-<<<<<<< HEAD
 /**
  * OperatorList used record all scan filters, before create scan policy,
  * need collect all columns and values for prefix string.
@@ -29,27 +23,10 @@ namespace storage {
 using OperatorItem = std::tuple<std::string, VariantType, RelationalExpression::Operator>;
 
 class IndexPolicyMaker {
-=======
-enum class PolicyType : uint8_t {
-    SIMPLE_POLICY      = 0x01,
-    OPTIMIZED_POLICY   = 0x02,
-};
-
-enum class PolicyScanType : uint8_t {
-    SEEK_SCAN          = 0x01,
-    PREFIX_SCAN        = 0x02,
-    ACCURATE_SCAN      = 0x03,
-};
-
-using OperatorList = std::vector<std::pair<std::pair<std::string, VariantType>, bool>>;
-
-class IndexPolicyMaker : IndexOptimizer{
->>>>>>> 1, Addressed comments. 2, Optimized index scan logic.
 public:
     virtual ~IndexPolicyMaker() = default;
 
 protected:
-<<<<<<< HEAD
     explicit IndexPolicyMaker(meta::SchemaManager *schemaMan,
                               meta::IndexManager* indexMan)
         : schemaMan_(schemaMan)
@@ -97,37 +74,6 @@ protected:
     bool                                     optimizedPolicy_{true};
     bool                                     requiredFilter_{true};
     std::vector<OperatorItem>                operatorList_;
-=======
-    explicit IndexPolicyMaker(meta::SchemaManager *schemaMan)
-        : IndexOptimizer()
-        , schemaMan_(schemaMan) {}
-
-    cpp2::ErrorCode policyPrepare(const std::string& filter);
-
-    cpp2::ErrorCode policyGenerate();
-
-private:
-    cpp2::ErrorCode initPolicy();
-
-    std::string prepareAPE(const Expression* expr);
-
-    StatusOr<VariantType> preparePE(const Expression* expr);
-
-    cpp2::ErrorCode prepareRFE(const Expression* expr);
-
-    cpp2::ErrorCode prepareLE(const LogicalExpression* expr);
-
-    cpp2::ErrorCode prepareExpression(const Expression* expr);
-
-protected:
-    std::unique_ptr<Expression> expr_{nullptr};
-    meta::SchemaManager*        schemaMan_{nullptr};
-    nebula::cpp2::IndexItem     index_;
-    std::vector<VariantType>    policies_;
-    PolicyType                  policyType_{PolicyType::OPTIMIZED_POLICY};
-    PolicyScanType              policyScanType_{PolicyScanType::SEEK_SCAN};
-    OperatorList                operatorList_;
->>>>>>> 1, Addressed comments. 2, Optimized index scan logic.
 };
 }  // namespace storage
 }  // namespace nebula

@@ -7,11 +7,6 @@
 #ifndef STORAGE_INDEXEXECUTOR_H
 #define STORAGE_INDEXEXECUTOR_H
 
-<<<<<<< HEAD
-=======
-#include "base/Base.h"
-#include "storage/BaseProcessor.h"
->>>>>>> 1, Addressed comments. 2, Optimized index scan logic.
 #include "stats/Stats.h"
 #include "storage/index/IndexPolicyMaker.h"
 
@@ -19,32 +14,20 @@ namespace nebula {
 namespace storage {
 
 template<typename RESP>
-<<<<<<< HEAD
 class IndexExecutor : public BaseProcessor<RESP>
                     , public IndexPolicyMaker {
-=======
-class IndexExecutor : public BaseProcessor<RESP>,
-                      public IndexPolicyMaker {
->>>>>>> 1, Addressed comments. 2, Optimized index scan logic.
 public:
     virtual ~IndexExecutor() = default;
 
 protected:
     explicit IndexExecutor(kvstore::KVStore* kvstore,
                            meta::SchemaManager* schemaMan,
-<<<<<<< HEAD
                            meta::IndexManager* indexMan,
-=======
->>>>>>> 1, Addressed comments. 2, Optimized index scan logic.
                            stats::Stats* stats,
                            VertexCache* cache,
                            bool isEdgeIndex = false)
         : BaseProcessor<RESP>(kvstore, schemaMan, stats)
-<<<<<<< HEAD
         , IndexPolicyMaker(schemaMan, indexMan)
-=======
-        , IndexPolicyMaker(schemaMan)
->>>>>>> 1, Addressed comments. 2, Optimized index scan logic.
         , vertexCache_(cache)
         , isEdgeIndex_(isEdgeIndex) {}
 
@@ -55,7 +38,6 @@ protected:
         this->onFinished();
     }
 
-<<<<<<< HEAD
     cpp2::ErrorCode prepareRequest(const cpp2::LookUpIndexRequest &req);
 
     /**
@@ -70,28 +52,11 @@ protected:
      * Details Scan index part as one by one.
      **/
     kvstore::ResultCode executeExecutionPlan(PartitionID part);
-=======
-    cpp2::ErrorCode prepareScan(const cpp2::LookUpIndexRequest& req);
-
-    kvstore::ResultCode performScan(PartitionID part);
->>>>>>> 1, Addressed comments. 2, Optimized index scan logic.
 
 private:
     cpp2::ErrorCode checkIndex(IndexID indexId);
 
-<<<<<<< HEAD
     cpp2::ErrorCode checkReturnColumns(const std::vector<std::string> &cols);
-=======
-    cpp2::ErrorCode createResultSchema(const std::vector<std::string> &cols);
-
-    cpp2::ErrorCode preparePrefix();
-
-    kvstore::ResultCode accurateScan(PartitionID part);
-
-    kvstore::ResultCode prefixScan(PartitionID part);
-
-    kvstore::ResultCode seekScan(PartitionID part);
->>>>>>> 1, Addressed comments. 2, Optimized index scan logic.
 
     kvstore::ResultCode getDataRow(PartitionID partId,
                                    const folly::StringPiece& key);
@@ -120,7 +85,6 @@ protected:
     std::shared_ptr<SchemaWriter>          schema_{nullptr};
     std::vector<cpp2::VertexIndexData>     vertexRows_;
     std::vector<cpp2::Edge>                edgeRows_;
-<<<<<<< HEAD
 
 private:
     int                                    rowNum_{0};
@@ -128,16 +92,6 @@ private:
     bool                                   isEdgeIndex_{false};
     int32_t                                vColNum_{0};
     std::vector<PropContext>               props_;
-=======
-    bool                                   needReturnCols_{true};
-
-private:
-    int                                    rowCount_{0};
-    int32_t                                tagOrEdge_;
-    bool                                   isEdgeIndex_{false};
-    std::string                            prefix_;
-    int32_t                                vColSize_{0};
->>>>>>> 1, Addressed comments. 2, Optimized index scan logic.
     std::map<std::string, nebula::cpp2::SupportedType> indexCols_;
 };
 
