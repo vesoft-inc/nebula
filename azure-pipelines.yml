@@ -16,7 +16,7 @@ jobs:
   pool:
     vmImage: $(vmImage)
 
-  container: vesoft/nebula-dev:centos7
+  container: vesoft/nebula-dev:ubuntu1804
   timeoutInMinutes: 0
 
   steps:
