@@ -877,7 +877,8 @@ TEST(NebulaStoreTest, AtomicOpBatchTest) {
         store->asyncAtomicOp(1, 0, atomic, callback);
         baton.wait();
         std::unique_ptr<kvstore::KVIterator> iter;
-        auto ret = store->prefix(1, 0, "key", &iter);
+        std::string prefix("key");
+        auto ret = store->prefix(1, 0, prefix, &iter);
         EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
         while (iter->valid()) {
             result.emplace_back(iter->key(), iter->val());
@@ -914,7 +915,8 @@ TEST(NebulaStoreTest, AtomicOpBatchTest) {
         store->asyncAtomicOp(1, 0, atomic, callback);
         baton.wait();
         std::unique_ptr<kvstore::KVIterator> iter;
-        auto ret = store->prefix(1, 0, "key", &iter);
+        std::string prefix("key");
+        auto ret = store->prefix(1, 0, prefix, &iter);
         EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
         while (iter->valid()) {
             result.emplace_back(iter->key(), iter->val());

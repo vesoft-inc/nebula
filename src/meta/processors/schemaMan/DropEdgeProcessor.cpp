@@ -14,11 +14,15 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
     auto ret = getEdgeKeys(req.get_space_id(), req.get_edge_name());
     if (!ret.ok()) {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        resp_.set_code(
+            req.get_if_exists() == true
+            ? cpp2::ErrorCode::SUCCEEDED
+            : cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     LOG(INFO) << "Drop Edge " << req.get_edge_name();
     doMultiRemove(std::move(ret.value()));
 }

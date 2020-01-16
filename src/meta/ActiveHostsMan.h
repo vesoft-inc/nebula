@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include <gtest/gtest_prod.h>
 #include "kvstore/KVStore.h"
+#include "meta/MetaServiceUtils.h"
 
 namespace nebula {
 namespace meta {
@@ -49,7 +50,8 @@ public:
 
     static kvstore::ResultCode updateHostInfo(kvstore::KVStore* kv,
                                               const HostAddr& hostAddr,
-                                              const HostInfo& info);
+                                              const HostInfo& info,
+                                              const LeaderParts* leaderParts = nullptr);
 
     static std::vector<HostAddr> getActiveHosts(kvstore::KVStore* kv, int32_t expiredTTL = 0);
 
@@ -57,6 +59,18 @@ public:
 
 protected:
     ActiveHostsMan() = default;
+};
+
+class LastUpdateTimeMan final {
+public:
+    ~LastUpdateTimeMan() = default;
+
+    static kvstore::ResultCode update(kvstore::KVStore* kv, const int64_t timeInMilliSec);
+
+    static int64_t get(kvstore::KVStore* kv);
+
+protected:
+    LastUpdateTimeMan() = default;
 };
 
 }  // namespace meta

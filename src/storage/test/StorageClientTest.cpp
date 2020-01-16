@@ -16,14 +16,12 @@
 #include "network/NetworkUtils.h"
 
 DECLARE_string(meta_server_addrs);
-DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace storage {
 
 TEST(StorageClientTest, VerticesInterfacesTest) {
-    FLAGS_load_data_interval_secs = 1;
     FLAGS_heartbeat_interval_secs = 1;
     const nebula::ClusterID kClusterId = 10;
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
@@ -49,11 +47,13 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
     auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
     auto& localHost = hostRet.value();
+    meta::MetaClientOptions options;
+    options.localHost_ = localHost;
+    options.clusterId_ = kClusterId;
+    options.inStoraged_ = true;
     auto mClient = std::make_unique<meta::MetaClient>(threadPool,
                                                       std::move(addrs),
-                                                      localHost,
-                                                      kClusterId,
-                                                      true);
+                                                      options);
     LOG(INFO) << "Add hosts automatically and create space....";
     mClient->waitForMetadReady();
     VLOG(1) << "The storage server has been added to the meta service";
@@ -75,7 +75,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     ASSERT_TRUE(ret.ok()) << ret.status();
     spaceId = ret.value();
     LOG(INFO) << "Created space \"default\", its id is " << spaceId;
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     TestUtils::waitUntilAllElected(sc->kvStore_.get(), spaceId, 10);
     auto client = std::make_unique<StorageClient>(threadPool, mClient.get());
 

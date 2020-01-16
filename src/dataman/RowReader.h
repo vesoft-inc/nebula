@@ -91,7 +91,11 @@ public:
     static StatusOr<VariantType> getDefaultProp(const meta::SchemaProviderIf* schema,
                                                 const std::string& prop) {
         auto& vType = schema->getFieldType(prop);
-        switch (vType.type) {
+        return getDefaultProp(vType.type);
+    }
+
+    static StatusOr<VariantType> getDefaultProp(const nebula::cpp2::SupportedType& type) {
+        switch (type) {
             case nebula::cpp2::SupportedType::BOOL: {
                 return false;
             }
@@ -109,7 +113,7 @@ public:
                 return static_cast<std::string>("");
             }
             default:
-                auto msg = folly::sformat("Unknown type: {}", static_cast<int32_t>(vType.type));
+                auto msg = folly::sformat("Unknown type: {}", static_cast<int32_t>(type));
                 LOG(ERROR) << "Unknown type: " << msg;
                 return Status::Error(msg);
         }
@@ -169,7 +173,7 @@ public:
                 return v.toString();
             }
             default:
-                LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(vType.type);
+                LOG(ERROR) << "Unknown type: " << static_cast<int32_t>(vType.type);
                 return ResultType::E_DATA_INVALID;
         }
     }
@@ -229,7 +233,7 @@ public:
                 return v.toString();
             }
             default:
-                LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(vType.get_type());
+                LOG(ERROR) << "Unknown type: " << static_cast<int32_t>(vType.get_type());
                 return ResultType::E_DATA_INVALID;
         }
     }
@@ -272,6 +276,8 @@ public:
         return schema_;
     }
 
+    static int32_t getSchemaVer(folly::StringPiece row);
+
     // TODO getPath(const std::string& name) const noexcept;
     // TODO getPath(int64_t index) const noexcept;
     // TODO getList(const std::string& name) const noexcept;
@@ -294,8 +300,6 @@ private:
     mutable std::vector<int64_t> offsets_;
 
 private:
-    static int32_t getSchemaVer(folly::StringPiece row);
-
     RowReader(folly::StringPiece row,
               std::shared_ptr<const meta::SchemaProviderIf> schema);
 

@@ -18,6 +18,7 @@
 #include "meta/common/MetaCommon.h"
 #include "network/NetworkUtils.h"
 #include "meta/processors/Common.h"
+#include "meta/ActiveHostsMan.h"
 #include "stats/Stats.h"
 
 namespace nebula {
@@ -163,8 +164,7 @@ protected:
     /**
      * Remove keys from start to end, doesn't contain end.
      * */
-    void doRemoveRange(const std::string& start,
-                       const std::string& end);
+    void doRemoveRange(const std::string& start, const std::string& end);
 
     /**
      * Scan keys from start to end, doesn't contain end.
@@ -217,6 +217,10 @@ protected:
     StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
     getLatestTagFields(GraphSpaceID spaceId, const std::string& name);
 
+    // Get Tag schema by TagId
+    StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
+    getLatestTagFields(GraphSpaceID spaceId, TagID tagId);
+
     /**
      * Return the edgeType for name.
      */
@@ -227,6 +231,10 @@ protected:
      */
     StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
     getLatestEdgeFields(GraphSpaceID spaceId, const std::string& name);
+
+    // Get Edge schema by EdgeType
+    StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
+    getLatestEdgeFields(GraphSpaceID spaceId, EdgeType edgeType);
 
     StatusOr<TagIndexID> getTagIndexID(GraphSpaceID spaceId, const std::string& indexName);
 

@@ -79,7 +79,7 @@ TEST_F(FindPathTest, SingleEdgeShortest) {
         std::vector<std::string> expected = {
             "5662213458193308137<like,0>3394245602834314645",
             "5662213458193308137<like,0>-7579316172763586624",
-            "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239"
+            "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239",
         };
         ASSERT_TRUE(verifyPath(resp, expected));
     }
@@ -99,7 +99,6 @@ TEST_F(FindPathTest, SingleEdgeShortest) {
     }
     {
         // we only find the shortest path to the dest,
-        // so -8160811731890648949 to -1782445125509592239 is not in result
         cpp2::ExecutionResponse resp;
         auto *fmt = "FIND SHORTEST PATH FROM %ld,%ld TO %ld,%ld,%ld OVER like UPTO 5 STEPS";
         auto &tim = players_["Tim Duncan"];
@@ -114,7 +113,8 @@ TEST_F(FindPathTest, SingleEdgeShortest) {
         std::vector<std::string> expected = {
             "5662213458193308137<like,0>3394245602834314645",
             "5662213458193308137<like,0>-7579316172763586624",
-            "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239"
+            "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239",
+            "-8160811731890648949<like,0>3394245602834314645"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
     }
@@ -316,6 +316,7 @@ TEST_F(FindPathTest, MultiEdgesShortest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
         std::vector<std::string> expected = {
             "5662213458193308137<like,0>-7579316172763586624",
+            "5662213458193308137<teammate,0>-7579316172763586624"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
     }
@@ -330,6 +331,7 @@ TEST_F(FindPathTest, MultiEdgesShortest) {
         std::vector<std::string> expected = {
             "5662213458193308137<like,0>-7579316172763586624",
             "5662213458193308137<serve,0>7193291116733635180",
+            "5662213458193308137<teammate,0>-7579316172763586624",
         };
         ASSERT_TRUE(verifyPath(resp, expected));
     }
@@ -347,10 +349,12 @@ TEST_F(FindPathTest, MultiEdgesShortest) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
         std::vector<std::string> expected = {
-            "5662213458193308137<like,0>3394245602834314645",
             "5662213458193308137<like,0>-7579316172763586624",
-            "5662213458193308137<like,0>-7579316172763586624<like,0>-1782445125509592239",
+            "5662213458193308137<like,0>3394245602834314645",
             "5662213458193308137<serve,0>7193291116733635180",
+            "5662213458193308137<teammate,0>-1782445125509592239",
+            "5662213458193308137<teammate,0>-7579316172763586624",
+            "5662213458193308137<teammate,0>3394245602834314645"
         };
         ASSERT_TRUE(verifyPath(resp, expected));
     }
@@ -363,8 +367,7 @@ TEST_F(FindPathTest, MultiEdgesShortest) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << *(resp.get_error_msg());
         std::vector<std::string> expected = {
-            "-8160811731890648949<like,0>5662213458193308137<like,0>-7579316172763586624"
-                "<like,0>-1782445125509592239",
+            "-8160811731890648949<like,0>5662213458193308137<teammate,0>-1782445125509592239",
             "-8160811731890648949<serve,0>7193291116733635180",
         };
         ASSERT_TRUE(verifyPath(resp, expected));
@@ -408,7 +411,7 @@ TEST_F(FindPathTest, MultiEdgesAll) {
     }
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "FIND ALL PATH FROM %ld TO %ld,%ld OVER * UPTO 3 STEPS";
+        auto *fmt = "FIND ALL PATH FROM %ld TO %ld,%ld OVER like,serve UPTO 3 STEPS";
         auto &tim = players_["Tim Duncan"];
         auto &tony = players_["Tony Parker"];
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid(), teams_["Spurs"].vid());

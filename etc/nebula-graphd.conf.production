@@ -51,4 +51,4 @@
 # HTTP2 service port
 --ws_h2_port=13002
 
---load_data_interval_secs=120
+--heartbeat_interval_secs=10

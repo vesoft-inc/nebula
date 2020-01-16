@@ -107,6 +107,37 @@ Status Collector::collect(VariantType &var, RowWriter *writer) {
     return Status::OK();
 }
 
+Status Collector::collectWithoutSchema(VariantType &var, RowWriter *writer) {
+    switch (var.which()) {
+        case VAR_INT64:
+            VLOG(3) << boost::get<int64_t>(var);
+            (*writer) << RowWriter::ColType(nebula::cpp2::SupportedType::INT)
+                << boost::get<int64_t>(var);
+            break;
+        case VAR_DOUBLE:
+            VLOG(3) << boost::get<double>(var);
+            (*writer) << RowWriter::ColType(nebula::cpp2::SupportedType::DOUBLE)
+                << boost::get<double>(var);
+            break;
+        case VAR_BOOL:
+            VLOG(3) << boost::get<bool>(var);
+            (*writer) << RowWriter::ColType(nebula::cpp2::SupportedType::BOOL)
+                << boost::get<bool>(var);
+            break;
+        case VAR_STR:
+            VLOG(3) << boost::get<std::string>(var);
+            (*writer) << RowWriter::ColType(nebula::cpp2::SupportedType::STRING)
+                << boost::get<std::string>(var);
+            break;
+        default:
+            std::string errMsg =
+                folly::stringPrintf("Unknown VariantType: %d", var.which());
+            LOG(ERROR) << errMsg;
+            return Status::Error(errMsg);
+    }
+    return Status::OK();
+}
+
 OptVariantType Collector::getProp(const meta::SchemaProviderIf *schema,
                                const std::string &prop,
                                const RowReader *reader) {
@@ -282,6 +313,120 @@ StatusOr<bool> YieldClauseWrapper::needAllPropsFromVar(
         return true;
     }
     return false;
+}
+
+Status WhereWrapper::prepare(ExpressionContext *ectx) {
+    Status status = Status::OK();
+    if (where_ == nullptr) {
+        return status;
+    }
+
+    filter_ = where_->filter();
+    if (filter_ != nullptr) {
+        filter_->setContext(ectx);
+        status = filter_->prepare();
+        if (!status.ok()) {
+            return status;
+        }
+    }
+
+    if (!FLAGS_filter_pushdown) {
+        return status;
+    }
+
+    auto encode = Expression::encode(where_->filter());
+    auto decode = Expression::decode(std::move(encode));
+    if (!decode.ok()) {
+        return std::move(decode).status();
+    }
+    filterRewrite_ = std::move(decode).value();
+    if (!rewrite(filterRewrite_.get())) {
+        filterRewrite_ = nullptr;
+    }
+    if (filterRewrite_ != nullptr) {
+        VLOG(1) << "Filter pushdown: " << filterRewrite_->toString();
+        filterPushdown_ = Expression::encode(filterRewrite_.get());
+    }
+    return status;
+}
+
+bool WhereWrapper::rewrite(Expression *expr) const {
+    switch (expr->kind()) {
+        case Expression::kLogical: {
+            auto *logExpr = static_cast<LogicalExpression*>(expr);
+            // Rewrite rule will not be applied to XOR
+            if (logExpr->op() == LogicalExpression::Operator::XOR) {
+                return canPushdown(logExpr);
+            }
+            auto leftCanPushdown = rewrite(const_cast<Expression*>(logExpr->left()));
+            auto rightCanPushdown = rewrite(const_cast<Expression*>(logExpr->right()));
+            switch (logExpr->op()) {
+                case LogicalExpression::Operator::OR: {
+                    if (!leftCanPushdown || !rightCanPushdown) {
+                        return false;
+                    } else {
+                        return true;
+                    }
+                }
+                case LogicalExpression::Operator::AND: {
+                    if (!leftCanPushdown && !rightCanPushdown) {
+                        return false;
+                    } else if (!leftCanPushdown) {
+                        auto *truePri = new PrimaryExpression(true);
+                        logExpr->resetLeft(truePri);
+                    } else if (!rightCanPushdown) {
+                        auto *truePri = new PrimaryExpression(true);
+                        logExpr->resetRight(truePri);
+                    }
+                    return true;
+                }
+                default:
+                    return false;
+            }
+        }
+        case Expression::kUnary:
+        case Expression::kTypeCasting:
+        case Expression::kArithmetic:
+        case Expression::kRelational:
+        case Expression::kFunctionCall: {
+            return canPushdown(expr);
+        }
+        case Expression::kPrimary:
+        case Expression::kSourceProp:
+        case Expression::kEdgeRank:
+        case Expression::kEdgeDstId:
+        case Expression::kEdgeSrcId:
+        case Expression::kEdgeType:
+        case Expression::kAliasProp: {
+            return true;
+        }
+        case Expression::kMax:
+        case Expression::kVariableProp:
+        case Expression::kDestProp:
+        case Expression::kInputProp:
+        case Expression::kUUID: {
+            return false;
+        }
+        default: {
+            LOG(ERROR) << "Unkown expression: " << expr->kind();
+            return false;
+        }
+    }
+}
+
+bool WhereWrapper::canPushdown(Expression *expr) const {
+    auto ectx = std::make_unique<ExpressionContext>();
+    expr->setContext(ectx.get());
+    auto status = expr->prepare();
+    if (!status.ok()) {
+        // We had do the preparation before rewrite, it would not fail here.
+        LOG(ERROR) << "Prepare failed when rewrite filter: " << status.toString();
+        return false;
+    }
+    if (ectx->hasInputProp() || ectx->hasVariableProp() || ectx->hasDstTagProp()) {
+        return false;
+    }
+    return true;
 }
 }   // namespace graph
 }   // namespace nebula

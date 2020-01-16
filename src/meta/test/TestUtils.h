@@ -406,7 +406,7 @@ public:
         }
 
         for (auto resultIter = result.begin(), expectedIter = expected.begin();
-             resultIter != result.end(), expectedIter != expected.end();
+             resultIter != result.end() && expectedIter != expected.end();
              resultIter++, expectedIter++) {
             if (resultIter->first != expectedIter->first &&
                 !verifyResult(resultIter->second, expectedIter->second)) {
@@ -424,7 +424,7 @@ public:
         }
 
         for (auto resultIter = result.begin(), expectedIter = expected.begin();
-             resultIter != result.end(), expectedIter != expected.end();
+             resultIter != result.end() && expectedIter != expected.end();
              resultIter++, expectedIter++) {
             if (resultIter->first != expectedIter->first &&
                 !verifyResult(resultIter->second, expectedIter->second)) {

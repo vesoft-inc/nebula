@@ -35,11 +35,8 @@ GflagsManager::parseConfigJson(const std::string& path) {
         LOG(ERROR) << "Load gflags json failed";
         return configModeMap;
     }
-    static std::vector<std::string> keys = {"IMMUTABLE", "REBOOT", "MUTABLE", "IGNORED"};
-    static std::vector<cpp2::ConfigMode> modes = {cpp2::ConfigMode::IMMUTABLE,
-                                                  cpp2::ConfigMode::REBOOT,
-                                                  cpp2::ConfigMode::MUTABLE,
-                                                  cpp2::ConfigMode::IGNORED};
+    static std::vector<std::string> keys = {"MUTABLE"};
+    static std::vector<cpp2::ConfigMode> modes = {cpp2::ConfigMode::MUTABLE};
     for (size_t i = 0; i < keys.size(); i++) {
         std::vector<std::string> values;
         if (!conf.fetchAsStringArray(keys[i].c_str(), values).ok()) {
@@ -67,7 +64,8 @@ std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigMod
     if (module == cpp2::ConfigModule::UNKNOWN) {
         return configItems;
     }
-    auto configModeMap = parseConfigJson(FLAGS_gflags_mode_json);
+    auto mutableConfig = parseConfigJson(FLAGS_gflags_mode_json);
+    // Get all flags by listing all defined gflags
     std::vector<gflags::CommandLineFlagInfo> flags;
     gflags::GetAllFlags(&flags);
     for (auto& flag : flags) {
@@ -77,21 +75,14 @@ std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigMod
         VariantType value;
         std::string valueStr;
 
-        // default config type would be immutable
-        cpp2::ConfigMode mode = cpp2::ConfigMode::IMMUTABLE;
+        // We only register mutable configs to meta
+        cpp2::ConfigMode mode = cpp2::ConfigMode::MUTABLE;
         bool isNested = false;
-        auto iter = configModeMap.find(name);
-        if (iter != configModeMap.end()) {
-            mode = iter->second.first;
+        auto iter = mutableConfig.find(name);
+        if (iter != mutableConfig.end()) {
             isNested = iter->second.second;
-        }
-        // ignore some useless gflags
-        if (mode == cpp2::ConfigMode::IGNORED) {
+        } else {
             continue;
-        }
-        if (module == cpp2::ConfigModule::META) {
-            // all config of meta is immutable for now
-            mode = cpp2::ConfigMode::IMMUTABLE;
         }
 
         // TODO: all int32/uint32/uint64 gflags are converted to int64 for now

@@ -78,8 +78,8 @@ public:
         return store;
     }
 
-    static std::unique_ptr<meta::SchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0) {
-        auto* schemaMan = new AdHocSchemaManager();
+    static std::unique_ptr<AdHocSchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0) {
+        auto schemaMan = std::make_unique<AdHocSchemaManager>();
         for (auto edgeType = 101; edgeType < 110; edgeType++) {
             schemaMan->addEdgeSchema(spaceId /*space id*/, edgeType /*edge type*/,
                                      TestUtils::genEdgeSchemaProvider(10, 10));
@@ -88,8 +88,7 @@ public:
             schemaMan->addTagSchema(
                 spaceId /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
         }
-        std::unique_ptr<meta::SchemaManager> sm(schemaMan);
-        return sm;
+        return schemaMan;
     }
 
     static std::vector<cpp2::Vertex>
@@ -117,7 +116,7 @@ public:
 
     static std::vector<cpp2::Edge>
     setupEdges(PartitionID part, VertexID srcFrom,
-               VertexID srcTo, std::string tmp = "%d_%ld") {
+               VertexID srcTo, std::string fmt = "%d_%ld") {
         std::vector<cpp2::Edge> edges;
         for (VertexID srcId = srcFrom; srcId < srcTo; srcId++) {
             cpp2::EdgeKey key;
@@ -127,7 +126,7 @@ public:
             key.set_dst(srcId * 100 + 3);
             edges.emplace_back();
             edges.back().set_key(std::move(key));
-            edges.back().set_props(folly::stringPrintf(tmp.c_str(), part, srcId));
+            edges.back().set_props(folly::stringPrintf(fmt.c_str(), part, srcId));
         }
         return edges;
     }
@@ -296,6 +295,25 @@ void checkTagData(const std::vector<cpp2::TagData>& data,
     EXPECT_EQ(col, expected);
 }
 
+template <typename T>
+void checkTagData(const std::vector<cpp2::TagData>& data,
+                  TagID tid,
+                  const std::string col_name,
+                  const std::shared_ptr<const meta::SchemaProviderIf> schema,
+                  T expected) {
+    auto it = std::find_if(data.cbegin(), data.cend(), [tid](auto& td) {
+        if (td.tag_id == tid) {
+            return true;
+        }
+        return false;
+    });
+    DCHECK(it != data.cend()) << "Tag ID: " << tid;
+    auto tagReader   = RowReader::getRowReader(it->data, schema);
+    auto r = RowReader::getPropByName(tagReader.get(), col_name);
+    CHECK(ok(r));
+    auto col = boost::get<T>(value(r));
+    EXPECT_EQ(col, expected);
+}
 }  // namespace storage
 }  // namespace nebula
 

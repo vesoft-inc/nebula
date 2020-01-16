@@ -161,6 +161,10 @@ constexpr char _SRC[]   = "_src";
 constexpr char _TYPE[]  = "_type";
 constexpr char _RANK[]  = "_rank";
 constexpr char _DST[]   = "_dst";
+
+#define ID_HASH(id, numShards) \
+    ((static_cast<uint64_t>(id)) % numShards + 1)
+
 // Useful type traits
 
 // Tell if `T' is copy-constructible

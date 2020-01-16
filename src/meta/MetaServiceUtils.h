@@ -25,10 +25,15 @@ enum class EntryType : int8_t {
 };
 
 using ConfigName = std::pair<cpp2::ConfigModule, std::string>;
+using LeaderParts = std::unordered_map<GraphSpaceID, std::vector<PartitionID>>;
 
 class MetaServiceUtils final {
 public:
     MetaServiceUtils() = delete;
+
+    static std::string lastUpdateTimeKey();
+
+    static std::string lastUpdateTimeVal(const int64_t timeInMilliSec);
 
     static std::string spaceKey(GraphSpaceID spaceId);
 
@@ -43,6 +48,10 @@ public:
     static std::string spaceName(folly::StringPiece rawVal);
 
     static std::string partKey(GraphSpaceID spaceId, PartitionID partId);
+
+    static GraphSpaceID parsePartKeySpaceId(folly::StringPiece key);
+
+    static PartitionID parsePartKeyPartId(folly::StringPiece key);
 
     static std::string partVal(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
@@ -61,6 +70,16 @@ public:
     static const std::string& hostPrefix();
 
     static nebula::cpp2::HostAddr parseHostKey(folly::StringPiece key);
+
+    static std::string leaderKey(IPv4 ip, Port port);
+
+    static std::string leaderVal(const LeaderParts& leaderParts);
+
+    static const std::string& leaderPrefix();
+
+    static nebula::cpp2::HostAddr parseLeaderKey(folly::StringPiece key);
+
+    static LeaderParts parseLeaderVal(folly::StringPiece val);
 
     static std::string schemaEdgePrefix(GraphSpaceID spaceId, EdgeType edgeType);
 

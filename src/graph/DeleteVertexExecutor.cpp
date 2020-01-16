@@ -11,7 +11,8 @@ namespace nebula {
 namespace graph {
 
 DeleteVertexExecutor::DeleteVertexExecutor(Sentence *sentence,
-                                           ExecutionContext *ectx) : Executor(ectx) {
+                                           ExecutionContext *ectx)
+    : Executor(ectx, "delete_vertex") {
     sentence_ = static_cast<DeleteVertexSentence*>(sentence);
 }
 
@@ -23,7 +24,8 @@ Status DeleteVertexExecutor::prepare() {
 
     auto vid = sentence_->vid();
     vid->setContext(expCtx_.get());
-    auto ovalue = vid->eval();
+    Getters getters;
+    auto ovalue = vid->eval(getters);
     auto v = ovalue.value();
     if (!Expression::isInt(v)) {
         return Status::Error("Vertex ID should be of type integer");
@@ -33,13 +35,18 @@ Status DeleteVertexExecutor::prepare() {
 }
 
 void DeleteVertexExecutor::execute() {
-    // TODO(zlcook) Get edgeKeys of a vertex by Go
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+
     auto future = ectx()->getStorageClient()->getEdgeKeys(spaceId_, vid_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(Status::Error("Internal Error"),
-                    ectx()->getGraphStats()->getDeleteVertexStats());
+            doError(Status::Error("Get edge key failed when delete vertex `%ld'.", vid_));
             return;
         }
         auto rpcResp = std::move(resp).value();
@@ -62,9 +69,10 @@ void DeleteVertexExecutor::execute() {
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal Error"),
-                ectx()->getGraphStats()->getDeleteVertexStats());
+        auto msg = folly::stringPrintf("Get edge key exception when delete vertex `%ld': %s.",
+                vid_, e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -76,8 +84,9 @@ void DeleteVertexExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>* edge
     auto cb = [this] (auto &&resp) {
         auto completeness = resp.completeness();
         if (completeness != 100) {
-            doError(Status::Error("Internal Error"),
-                    ectx()->getGraphStats()->getDeleteVertexStats());
+            doError(Status::Error(
+                        "Delete edge not complete when delete vertex `%ld', completeness: %d",
+                        vid_, completeness));
             return;
         }
         deleteVertex();
@@ -85,9 +94,10 @@ void DeleteVertexExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>* edge
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal Error"),
-                ectx()->getGraphStats()->getDeleteVertexStats());
+        auto msg = folly::stringPrintf("Delete edge exception when delete vertex `%ld': %s",
+                vid_, e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(msg));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -98,18 +108,18 @@ void DeleteVertexExecutor::deleteVertex() {
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(Status::Error("Internal Error"),
-                    ectx()->getGraphStats()->getDeleteVertexStats());
+            doError(Status::Error("Delete vertex `%ld' failed.", vid_));
             return;
         }
-        doFinish(Executor::ProcessControl::kNext, ectx()->getGraphStats()->getDeleteVertexStats());
+        doFinish(Executor::ProcessControl::kNext);
         return;
     };
 
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal Error"),
-                ectx()->getGraphStats()->getDeleteVertexStats());
+        auto msg = folly::stringPrintf("Delete vertex `%ld' exception: %s",
+                vid_, e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(msg));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);

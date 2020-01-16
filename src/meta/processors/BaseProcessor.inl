@@ -262,7 +262,14 @@ BaseProcessor<RESP>::getLatestTagFields(GraphSpaceID spaceId,
         return Status::Error(folly::stringPrintf("Tag %s not found", name.c_str()));
     }
 
-    auto key = MetaServiceUtils::schemaTagPrefix(spaceId, result.value());
+    return getLatestTagFields(spaceId, result.value());
+}
+
+
+template <typename RESP>
+StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
+BaseProcessor<RESP>::getLatestTagFields(GraphSpaceID spaceId, const TagID tagId) {
+    auto key = MetaServiceUtils::schemaTagPrefix(spaceId, tagId);
     auto ret = doPrefix(key);
     if (!ret.ok()) {
         LOG(ERROR) << "Tag Prefix " << key << " not found";
@@ -288,9 +295,14 @@ BaseProcessor<RESP>::getLatestEdgeFields(GraphSpaceID spaceId,
         LOG(ERROR) << "Edge " << name << " not found";
         return Status::Error(folly::stringPrintf("Edge %s not found", name.c_str()));
     }
+    return getLatestEdgeFields(spaceId, result.value());
+}
 
-    auto edgeType = to(result.value(), EntryType::EDGE);
-    auto key = MetaServiceUtils::schemaEdgePrefix(spaceId, result.value());
+
+template <typename RESP>
+StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
+BaseProcessor<RESP>::getLatestEdgeFields(GraphSpaceID spaceId, const EdgeType edgeType) {
+    auto key = MetaServiceUtils::schemaEdgePrefix(spaceId, edgeType);
     auto ret = doPrefix(key);
     if (!ret.ok()) {
         LOG(ERROR) << "Edge Prefix " << key << " not found";
@@ -371,7 +383,7 @@ bool BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
     kvstore_->asyncMultiPut(kDefaultSpaceId,
                             kDefaultPartId,
                             std::move(data),
-                            [this, &ret, &baton] (kvstore::ResultCode code) {
+                            [&ret, &baton] (kvstore::ResultCode code) {
                                 if (kvstore::ResultCode::SUCCEEDED == code) {
                                     ret = true;
                                 } else {

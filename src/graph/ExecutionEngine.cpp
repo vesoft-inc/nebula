@@ -11,6 +11,7 @@
 #include "storage/client/StorageClient.h"
 
 DECLARE_string(meta_server_addrs);
+DECLARE_bool(local_config);
 
 namespace nebula {
 namespace graph {
@@ -29,14 +30,12 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
         return addrs.status();
     }
 
-    stats_ = std::make_unique<GraphStats>();
-
+    meta::MetaClientOptions options;
+    options.serviceName_ = "graph";
+    options.skipConfig_ = FLAGS_local_config;
     metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor,
                                                      std::move(addrs.value()),
-                                                     HostAddr(0, 0),
-                                                     0,
-                                                     false,
-                                                     stats_->getMetaClientStats());
+                                                     options);
     // load data try 3 time
     bool loadDataOk = metaClient_->waitForMetadReady(3);
     if (!loadDataOk) {
@@ -51,7 +50,7 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
 
     storage_ = std::make_unique<storage::StorageClient>(ioExecutor,
                                                         metaClient_.get(),
-                                                        stats_->getStorageClientStats());
+                                                        "graph");
     return Status::OK();
 }
 
@@ -60,8 +59,7 @@ void ExecutionEngine::execute(RequestContextPtr rctx) {
                                                    schemaManager_.get(),
                                                    gflagsManager_.get(),
                                                    storage_.get(),
-                                                   metaClient_.get(),
-                                                   stats_.get());
+                                                   metaClient_.get());
     // TODO(dutor) add support to plan cache
     auto plan = new ExecutionPlan(std::move(ectx));
 

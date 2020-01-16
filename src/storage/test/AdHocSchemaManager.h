@@ -23,11 +23,13 @@ public:
 
     void addTagSchema(GraphSpaceID space,
                       TagID tag,
-                      std::shared_ptr<nebula::meta::SchemaProviderIf> schema);
+                      std::shared_ptr<nebula::meta::SchemaProviderIf> schema,
+                      SchemaVer version = 0);
 
     void addEdgeSchema(GraphSpaceID space,
                        EdgeType edge,
-                       std::shared_ptr<nebula::meta::SchemaProviderIf> schema);
+                       std::shared_ptr<nebula::meta::SchemaProviderIf> schema,
+                       SchemaVer version = 0);
 
     void removeTagSchema(GraphSpaceID space, TagID tag);
 
@@ -52,12 +54,28 @@ public:
 
     StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
+    StatusOr<std::string> toTagName(GraphSpaceID, TagID) override {
+        LOG(FATAL) << "Unimplemented";
+        return Status::Error("Unimplemented");
+    }
+
     StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
     StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) override;
 
+    StatusOr<std::vector<nebula::cpp2::IndexItem>>
+    getTagIndexes(GraphSpaceID space) override;
+
+    StatusOr<std::vector<nebula::cpp2::IndexItem>>
+    getEdgeIndexes(GraphSpaceID space) override;
+
+    void addTagIndex(GraphSpaceID space, const nebula::cpp2::IndexItem& index);
+
+    void addEdgeIndex(GraphSpaceID space, const nebula::cpp2::IndexItem& index);
+
     StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID) override {
         LOG(FATAL) << "Unimplemented";
+        return Status::Error("Unimplemented");
     }
 
     void init(nebula::meta::MetaClient *) override {
@@ -80,6 +98,9 @@ protected:
     std::set<GraphSpaceID> spaces_;
     // Key: spaceId + tagName,  Val: tagId
     std::unordered_map<std::string, TagID> tagNameToId_;
+
+    std::unordered_map<GraphSpaceID, std::vector<nebula::cpp2::IndexItem>> edgeIndexes_;
+    std::unordered_map<GraphSpaceID, std::vector<nebula::cpp2::IndexItem>> tagIndexes_;
 };
 
 }  // namespace storage

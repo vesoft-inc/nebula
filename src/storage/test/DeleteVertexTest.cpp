@@ -9,8 +9,8 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/DeleteVertexProcessor.h"
-#include "storage/AddVerticesProcessor.h"
+#include "storage/mutate/DeleteVertexProcessor.h"
+#include "storage/mutate/AddVerticesProcessor.h"
 #include "base/NebulaKeyUtils.h"
 
 
@@ -20,9 +20,10 @@ namespace storage {
 TEST(DeleteVertexTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/DeleteVertexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto schemaMan = TestUtils::mockSchemaMan();
     // Add vertices
     {
-        auto* processor = AddVerticesProcessor::instance(kv.get(), nullptr, nullptr);
+        auto* processor = AddVerticesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
         req.overwritable = false;
@@ -58,7 +59,9 @@ TEST(DeleteVertexTest, SimpleTest) {
     {
         for (PartitionID partId = 0; partId < 3; partId++) {
             for (VertexID vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
-                auto* processor = DeleteVertexProcessor::instance(kv.get(), nullptr, nullptr);
+                auto* processor = DeleteVertexProcessor::instance(kv.get(),
+                                                                  schemaMan.get(),
+                                                                  nullptr);
                 cpp2::DeleteVertexRequest req;
                 req.set_space_id(0);
                 req.set_part_id(partId);

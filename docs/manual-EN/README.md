@@ -17,13 +17,12 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
   * [Query Language Overview](1.overview/1.concepts/2.nGQL-overview.md)
 * Quick Start and Useful Links
   * [Get Started](1.overview/2.quick-start/1.get-started.md)
-  * [Trouble Shooting](1.overview/2.quick-start/2.trouble-shooting.md)
+  * [FAQ](1.overview/2.quick-start/2.FAQ.md)
   * [Build Source Code](3.build-develop-and-administration/1.build/1.build-source-code.md)
   * [Deploy Cluster](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
   * [Import .csv File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
   * [Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
   * [Nebula Graph Clients](1.overview/2.quick-start/3.supported-clients.md)
-  * [FAQ](1.overview/2.quick-start/2.FAQ.md)
 
 
 * Design and Architecture
@@ -57,6 +56,7 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
   * [Property Reference](2.query-language/3.language-structure/property-reference.md)
   * [Schema Object Names](2.query-language/3.language-structure/schema-object-names.md)
   * [Statement Composition](2.query-language/3.language-structure/statement-composition.md)
+  * [User-Defined Variables](2.query-language/3.language-structure/user-defined-variables.md)
 * Statement Syntax
   * Data Definition Statements
     * [Alter Tag/Edge Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/alter-tag-edge-syntax.md)
@@ -65,6 +65,7 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
     * [Drop Edge Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-edge-syntax.md)
     * [Drop Space Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-space-syntax.md)
     * [Drop Tag Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-tag-syntax.md)
+    * [Index](2.query-language/4.statement-syntax/1.data-definition-statements/index.md)
   * Data Query and Manipulation Statements
     * [Delete Edge Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-edge-syntax.md)
     * [Delete Vertex Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-vertex-syntax.md)
@@ -98,6 +99,8 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
     * [Deploy Cluster On Docker](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster-on-docker.md)
     * [Deploy Cluster](3.build-develop-and-administration/3.deploy-and-administrations/deployment/deploy-cluster.md)
     * [Connect Prometheus](3.build-develop-and-administration/3.deploy-and-administrations/deployment/connect-prometheus.md)
+    * [Installation With rpm](3.build-develop-and-administration/3.deploy-and-administrations/deployment/install-with-rpm-deb.md)
+
 
   * Server Administration
     * Account Management Statements
@@ -115,6 +118,8 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
         * [Download And Ingest .sst File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/download-and-ingest-sst-file.md)
         * [Import .csv File](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/import-csv-file.md)
         * [Spark Writer](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-import/spark-writer.md)
+      * Data Export
+        * [Dump Tool](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/data-export/dump-tool.md)
       * [Storage Balance](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-balance.md)
       * [Storage Metrics](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/storage-metrics.md)
       * [Cluster Snapshot](3.build-develop-and-administration/3.deploy-and-administrations/server-administration/storage-service-administration/cluster-snapshot.md)
@@ -125,6 +130,10 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
 * [Cpp Coding Style](4.contributions/cpp-coding-style.md)
 * [Developer Documentation Style Guide](4.contributions/developer-documentation-style-guide.md)
 * [How to Contribute](4.contributions/how-to-contribute.md)
+
+## Appendix
+
+* [Gremlin VS nGQL](5.appendix/gremlin-ngql.md)
 
 ## Misc
 

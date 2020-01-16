@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/AddVerticesProcessor.h"
+#include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/StorageServiceHandler.h"
 
 namespace nebula {
@@ -26,9 +26,9 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     req.parts.emplace(1, TestUtils::setupVertices(1, 0, 20, 0, 30));
     LOG(INFO) << "Test FutureAddVerticesTest...";
     std::unique_ptr<kvstore::KVStore> kvstore = TestUtils::initKV(rootPath.path());
-
+    auto schemaMan = TestUtils::mockSchemaMan();
     auto storageServiceHandler = std::make_unique<StorageServiceHandler>(kvstore.get(),
-                                                                         nullptr,
+                                                                         schemaMan.get(),
                                                                          nullptr);
     auto resp = storageServiceHandler->future_addVertices(req).get();
     EXPECT_EQ(typeid(cpp2::ExecResponse).name() , typeid(resp).name());

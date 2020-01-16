@@ -17,8 +17,12 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
 
     auto edgeIndexID = getEdgeIndexID(spaceID, indexName);
     if (!edgeIndexID.ok()) {
-        LOG(ERROR) << "Edge Index not exist Space: " << spaceID << " Index name: " << indexName;
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        LOG(ERROR) << "Edge Index not exists in Space: " << spaceID << " Index name: " << indexName;
+        if (req.get_if_exists()) {
+            resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+        } else {
+            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        }
         onFinished();
         return;
     }
@@ -27,6 +31,7 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
     keys.emplace_back(MetaServiceUtils::indexEdgeIndexKey(spaceID, indexName));
     keys.emplace_back(MetaServiceUtils::edgeIndexKey(spaceID, edgeIndexID.value()));
 
+    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     LOG(INFO) << "Drop Edge Index " << indexName;
     resp_.set_id(to(edgeIndexID.value(), EntryType::EDGE_INDEX));
     doMultiRemove(keys);

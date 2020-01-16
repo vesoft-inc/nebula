@@ -10,8 +10,8 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/QueryEdgeKeysProcessor.h"
-#include "storage/AddEdgesProcessor.h"
+#include "storage/query/QueryEdgeKeysProcessor.h"
+#include "storage/mutate/AddEdgesProcessor.h"
 
 namespace nebula {
 namespace storage {
@@ -19,9 +19,10 @@ namespace storage {
 TEST(QueryEdgeKeysTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/QueryEdgeKeysTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto schemaMan = TestUtils::mockSchemaMan();
     // Add edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
+        auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
 
         cpp2::AddEdgesRequest req;
         req.space_id = 0;

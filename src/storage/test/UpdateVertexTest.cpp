@@ -11,7 +11,7 @@
 #include <limits>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
-#include "storage/UpdateVertexProcessor.h"
+#include "storage/mutate/UpdateVertexProcessor.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 
