@@ -33,7 +33,7 @@ public:
     explicit WebService(const std::string& name = "");
     ~WebService();
 
-    web::Router& router() {
+    MUST_USE_RESULT web::Router& router() {
         CHECK(!started_) << "Don't add routes after starting web server!";
         return *router_;
     }
@@ -44,17 +44,13 @@ public:
     // would be assigned and set back to the gflag, respectively.
     MUST_USE_RESULT Status start();
 
-    // To stop the web service and join the internal threads
-    void stop();
-
-    // Check whether this web service is stopped
-    bool stopped() const {
-        return stopped_;
+    // Check whether web service is started
+    bool started() const {
+        return started_;
     }
 
 private:
     bool started_{false};
-    bool stopped_{false};
     std::unique_ptr<proxygen::HTTPServer> server_;
     std::unique_ptr<thread::NamedThread> wsThread_;
     std::unique_ptr<web::Router> router_;

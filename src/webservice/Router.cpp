@@ -11,9 +11,9 @@
 #include <proxygen/httpserver/RequestHandler.h>
 
 #include "webservice/NotFoundHandler.h"
+#include "webservice/WebService.h"
 
 namespace nebula {
-
 namespace web {
 
 void Route::checkPath(const std::string &path) {
@@ -110,6 +110,20 @@ proxygen::RequestHandler *Router::dispatch(const proxygen::HTTPMessage *msg) con
         }
     }
     return new NotFoundHandler();
+}
+
+Route &Router::route(proxygen::HTTPMethod method, const std::string &path) {
+    if (webSvc_) {
+        CHECK(!webSvc_->started()) << "Don't add routes after starting web server!";
+    }
+    Route *next = nullptr;
+    if (!prefix_.empty()) {
+        next = new Route(method, "/" + prefix_ + (path.empty() ? "/" : path));
+    } else {
+        next = new Route(method, path.empty() ? "/" : path);
+    }
+    append(next);
+    return *next;
 }
 
 void Router::append(Route *route) {

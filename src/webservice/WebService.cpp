@@ -51,19 +51,13 @@ using proxygen::HTTPServer;
 using proxygen::HTTPServerOptions;
 using folly::SocketAddress;
 
-WebService::WebService(const std::string& name) : router_(std::make_unique<web::Router>(name)) {
-    router().get("/get_flag").handler([](web::PathParams&&) { return new GetFlagsHandler(); });
-    router().get("/get_flags").handler([](web::PathParams&&) { return new GetFlagsHandler(); });
-    router().get("/set_flag").handler([](web::PathParams&&) { return new SetFlagsHandler(); });
-    router().get("/set_flags").handler([](web::PathParams&&) { return new SetFlagsHandler(); });
-    router().get("/get_stat").handler([](web::PathParams&&) { return new GetStatsHandler(); });
-    router().get("/get_stats").handler([](web::PathParams&&) { return new GetStatsHandler(); });
-    router().get("/status").handler([](web::PathParams&&) { return new StatusHandler(); });
-    router().get("/").handler([](web::PathParams&&) { return new StatusHandler(); });
+WebService::WebService(const std::string& name) {
+    router_ = std::make_unique<web::Router>(name, this);
 }
 
 WebService::~WebService() {
-    stop();
+    server_->stop();
+    wsThread_->join();
 }
 
 Status WebService::start() {
@@ -71,6 +65,39 @@ Status WebService::start() {
         LOG(INFO) << "Web service has been started.";
         return Status::OK();
     }
+
+    router().get("/get_flag").handler([](web::PathParams&& params) {
+        DCHECK(params.empty());
+        return new GetFlagsHandler();
+    });
+    router().get("/get_flags").handler([](web::PathParams&& params) {
+        DCHECK(params.empty());
+        return new GetFlagsHandler();
+    });
+    router().get("/set_flag").handler([](web::PathParams&& params) {
+        DCHECK(params.empty());
+        return new SetFlagsHandler();
+    });
+    router().get("/set_flags").handler([](web::PathParams&& params) {
+        DCHECK(params.empty());
+        return new SetFlagsHandler();
+    });
+    router().get("/get_stat").handler([](web::PathParams&& params) {
+        DCHECK(params.empty());
+        return new GetStatsHandler();
+    });
+    router().get("/get_stats").handler([](web::PathParams&& params) {
+        DCHECK(params.empty());
+        return new GetStatsHandler();
+    });
+    router().get("/status").handler([](web::PathParams&& params) {
+        DCHECK(params.empty());
+        return new StatusHandler();
+    });
+    router().get("/").handler([](web::PathParams&& params) {
+        DCHECK(params.empty());
+        return new StatusHandler();
+    });
 
     started_ = true;
 
@@ -148,14 +175,6 @@ Status WebService::start() {
         }
     }
     return status;
-}
-
-void WebService::stop() {
-    if (!stopped_) {
-        stopped_ = true;
-        server_->stop();
-        wsThread_->join();
-    }
 }
 
 }  // namespace nebula

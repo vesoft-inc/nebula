@@ -4,7 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#pragma once
+#ifndef WEBSERVICE_ROUTER_H_
+#define WEBSERVICE_ROUTER_H_
 
 #include <memory>
 #include <regex>
@@ -21,6 +22,9 @@ class HTTPMessage;
 }   // namespace proxygen
 
 namespace nebula {
+
+class WebService;
+
 namespace web {
 
 using PathParams = std::unordered_map<std::string, std::string>;
@@ -65,7 +69,10 @@ private:
 
 class Router final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
-    explicit Router(const std::string &prefix) : prefix_(prefix) {}
+    explicit Router(const std::string &prefix) : prefix_(prefix), webSvc_(nullptr) {}
+    Router(const std::string &prefix, const WebService *webSvc) : prefix_(prefix), webSvc_(webSvc) {
+        DCHECK_NOTNULL(webSvc);
+    }
     ~Router();
 
     proxygen::RequestHandler *dispatch(const proxygen::HTTPMessage *msg) const;
@@ -86,16 +93,7 @@ public:
         return route(proxygen::HTTPMethod::DELETE, path);
     }
 
-    Route &route(proxygen::HTTPMethod method, const std::string &path) {
-        Route *next = nullptr;
-        if (!prefix_.empty()) {
-            next = new Route(method, "/" + prefix_ + (path.empty() ? "/" : path));
-        } else {
-            next = new Route(method, path.empty() ? "/" : path);
-        }
-        append(next);
-        return *next;
-    }
+    Route &route(proxygen::HTTPMethod method, const std::string &path);
 
 private:
     void append(Route *route);
@@ -103,7 +101,10 @@ private:
     std::string prefix_;
     Route *head_{nullptr};
     Route *tail_{nullptr};
+    const WebService *webSvc_;
 };
 
 }   // namespace web
 }   // namespace nebula
+
+#endif   // WEBSERVICE_ROUTER_H_
