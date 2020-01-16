@@ -385,9 +385,7 @@ public:
         return it->second;
     }
 
-    bool loadLeader() override {
-        return true;
-    }
+    void loadLeader() const override {}
 
     std::unordered_map<PartitionID, PartMeta> parts_;
 };

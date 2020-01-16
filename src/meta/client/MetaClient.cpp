@@ -1804,8 +1804,9 @@ StatusOr<LeaderMap> MetaClient::loadLeader() {
             for (const auto& partId : spaceEntry.second) {
                 leaderMap[{spaceId, partId}] = hostAddr;
             }
-            LOG(INFO) << "Load leader of " << hostAddr << " in space " << spaceName;
         }
+        LOG(INFO) << "Load leader of " << hostAddr
+                  << " in " << item.get_leader_parts().size() << " space";
     }
     LOG(INFO) << "Load leader ok";
     return leaderMap;

@@ -36,11 +36,6 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addVert
         std::vector<cpp2::Vertex> vertices,
         bool overwritable,
         folly::EventBase* evb) {
-    if (!loadLeader()) {
-        return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
-            std::runtime_error("Load leader failed"));
-    }
-
     auto status =
         clusterIdsToHosts(space, vertices, [](const cpp2::Vertex& v) { return v.get_id(); });
 
@@ -74,11 +69,6 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addEdge
         std::vector<storage::cpp2::Edge> edges,
         bool overwritable,
         folly::EventBase* evb) {
-    if (!loadLeader()) {
-        return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
-            std::runtime_error("Load leader failed"));
-    }
-
     auto status =
         clusterIdsToHosts(space, edges, [](const cpp2::Edge& e) { return e.get_key().get_src(); });
     if (!status.ok()) {
@@ -113,11 +103,6 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getNei
         std::string filter,
         std::vector<cpp2::PropDef> returnCols,
         folly::EventBase* evb) {
-    if (!loadLeader()) {
-        return folly::makeFuture<StorageRpcResponse<cpp2::QueryResponse>>(
-            std::runtime_error("Load leader failed"));
-    }
-
     auto status = clusterIdsToHosts(space, vertices, [](const VertexID& v) { return v; });
 
     if (!status.ok()) {
@@ -153,11 +138,6 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryStatsResponse>> StorageClient::n
         std::string filter,
         std::vector<cpp2::PropDef> returnCols,
         folly::EventBase* evb) {
-    if (!loadLeader()) {
-        return folly::makeFuture<StorageRpcResponse<cpp2::QueryStatsResponse>>(
-            std::runtime_error("Load leader failed"));
-    }
-
     auto status = clusterIdsToHosts(space, vertices, [](const VertexID& v) { return v; });
 
     if (!status.ok()) {
@@ -191,11 +171,6 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getVer
         std::vector<VertexID> vertices,
         std::vector<cpp2::PropDef> returnCols,
         folly::EventBase* evb) {
-    if (!loadLeader()) {
-        return folly::makeFuture<StorageRpcResponse<cpp2::QueryResponse>>(
-            std::runtime_error("Load leader failed"));
-    }
-
     auto status = clusterIdsToHosts(space, vertices, [](const VertexID& v) { return v; });
 
     if (!status.ok()) {
@@ -227,11 +202,6 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
         std::vector<cpp2::EdgeKey> edges,
         std::vector<cpp2::PropDef> returnCols,
         folly::EventBase* evb) {
-    if (!loadLeader()) {
-        return folly::makeFuture<StorageRpcResponse<cpp2::EdgePropResponse>>(
-            std::runtime_error("Load leader failed"));
-    }
-
     auto status =
         clusterIdsToHosts(space, edges, [](const cpp2::EdgeKey& v) { return v.get_src(); });
 
@@ -267,11 +237,6 @@ folly::Future<StatusOr<cpp2::EdgeKeyResponse>> StorageClient::getEdgeKeys(
     GraphSpaceID space,
     VertexID vid,
     folly::EventBase* evb) {
-    if (!loadLeader()) {
-        return folly::makeFuture<StatusOr<cpp2::EdgeKeyResponse>>(
-            Status::Error("Load leader failed"));
-    }
-
     std::pair<HostAddr, cpp2::EdgeKeyRequest> request;
     auto status = partId(space, vid);
     if (!status.ok()) {
@@ -308,11 +273,6 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::deleteE
     GraphSpaceID space,
     std::vector<storage::cpp2::EdgeKey> edges,
     folly::EventBase* evb) {
-    if (!loadLeader()) {
-        return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
-            std::runtime_error("Load leader failed"));
-    }
-
     auto status =
         clusterIdsToHosts(space, edges, [](const cpp2::EdgeKey& v) { return v.get_src(); });
 
@@ -343,11 +303,6 @@ folly::Future<StatusOr<cpp2::ExecResponse>> StorageClient::deleteVertex(
     GraphSpaceID space,
     VertexID vid,
     folly::EventBase* evb) {
-    if (!loadLeader()) {
-        return folly::makeFuture<StatusOr<cpp2::ExecResponse>>(
-            Status::Error("Load leader failed"));
-    }
-
     std::pair<HostAddr, cpp2::DeleteVertexRequest> request;
     auto status = partId(space, vid);
     if (!status.ok()) {
@@ -388,11 +343,6 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateVert
         std::vector<std::string> returnCols,
         bool insertable,
         folly::EventBase* evb) {
-    if (!loadLeader()) {
-        return folly::makeFuture<StatusOr<cpp2::UpdateResponse>>(
-            Status::Error("Load leader failed"));
-    }
-
     std::pair<HostAddr, cpp2::UpdateVertexRequest> request;
 
     auto status = partId(space, vertexId);
@@ -436,11 +386,6 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateEdge
         std::vector<std::string> returnCols,
         bool insertable,
         folly::EventBase* evb) {
-    if (!loadLeader()) {
-        return folly::makeFuture<StatusOr<cpp2::UpdateResponse>>(
-            Status::Error("Load leader failed"));
-    }
-
     std::pair<HostAddr, cpp2::UpdateEdgeRequest> request;
     auto status = partId(space, edgeKey.get_src());
     if (!status.ok()) {
@@ -479,11 +424,6 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(
         GraphSpaceID space,
         const std::string& name,
         folly::EventBase* evb) {
-    if (!loadLeader()) {
-        return folly::makeFuture<StatusOr<cpp2::GetUUIDResp>>(
-            Status::Error("Load leader failed"));
-    }
-
     std::pair<HostAddr, cpp2::GetUUIDReq> request;
     std::hash<std::string> hashFunc;
     auto hashValue = hashFunc(name);
@@ -533,11 +473,6 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>>
 StorageClient::put(GraphSpaceID space,
                    std::vector<nebula::cpp2::Pair> values,
                    folly::EventBase* evb) {
-    if (!loadLeader()) {
-        return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
-            std::runtime_error("Load leader failed"));
-    }
-
     auto status = clusterIdsToHosts(space, values, [](const nebula::cpp2::Pair& v) {
         return std::hash<std::string>{}(v.get_key());
     });
@@ -567,11 +502,6 @@ folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>>
 StorageClient::get(GraphSpaceID space,
                    const std::vector<std::string>& keys,
                    folly::EventBase* evb) {
-    if (!loadLeader()) {
-        return folly::makeFuture<StorageRpcResponse<cpp2::GeneralResponse>>(
-            std::runtime_error("Load leader failed"));
-    }
-
     auto status = clusterIdsToHosts(
         space, keys, [](const std::string& v) { return std::hash<std::string>{}(v); });
 
