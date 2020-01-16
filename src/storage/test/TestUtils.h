@@ -57,7 +57,7 @@ public:
             // GraphSpaceID =>  {PartitionIDs}
             // 0 => {0, 1, 2, 3, 4, 5}
             auto& partsMap = memPartMan->partsMap();
-            for (auto partId = 0; partId < partitionNumber; partId++) {
+            for (PartitionID partId = 0; partId < partitionNumber; partId++) {
                 partsMap[0][partId] = PartMeta();
             }
 
@@ -141,8 +141,8 @@ public:
                                                                  EdgeType startEdge = 101,
                                                                  EdgeType endEdge = 110) {
         auto* indexMan = new AdHocIndexManager();
-        for (auto tagId = startTag; tagId < endTag; tagId++) {
-            for (auto i = 0; i < 3; i++) {
+        for (TagID tagId = startTag; tagId < endTag; tagId++) {
+            for (int32_t i = 0; i < 3; i++) {
                 std::vector<nebula::cpp2::ColumnDef> columns;
                 nebula::cpp2::ColumnDef column;
                 column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
@@ -156,8 +156,8 @@ public:
             }
         }
 
-        for (auto edgeType = startEdge; edgeType < endEdge; edgeType++) {
-            for (auto i = 0; i < 10; i++) {
+        for (EdgeType edgeType = startEdge; edgeType < endEdge; edgeType++) {
+            for (int32_t i = 0; i < 10; i++) {
                 std::vector<nebula::cpp2::ColumnDef> columns;
                 nebula::cpp2::ColumnDef column;
                 column.name = folly::stringPrintf("col_%d", i);
@@ -216,7 +216,7 @@ public:
 
     static std::string setupEncode(int32_t intSize = 3, int32_t stringSize = 6) {
         RowWriter writer;
-        for (int64_t numInt = 0; numInt < intSize; numInt++) {
+        for (int32_t numInt = 0; numInt < intSize; numInt++) {
             writer << numInt;
         }
         for (int32_t numString = intSize; numString < stringSize; numString++) {
@@ -232,13 +232,13 @@ public:
     static std::shared_ptr<meta::SchemaProviderIf>
     genEdgeSchemaProvider(int32_t intFieldsNum, int32_t stringFieldsNum) {
         nebula::cpp2::Schema schema;
-        for (auto i = 0; i < intFieldsNum; i++) {
+        for (int32_t i = 0; i < intFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("col_%d", i);
             column.type.type = nebula::cpp2::SupportedType::INT;
             schema.columns.emplace_back(std::move(column));
         }
-        for (auto i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
+        for (int32_t i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("col_%d", i);
             column.type.type = nebula::cpp2::SupportedType::STRING;
@@ -254,13 +254,13 @@ public:
     static std::shared_ptr<meta::SchemaProviderIf>
     genTagSchemaProvider(TagID tagId, int32_t intFieldsNum, int32_t stringFieldsNum) {
         nebula::cpp2::Schema schema;
-        for (auto i = 0; i < intFieldsNum; i++) {
+        for (int32_t i = 0; i < intFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
             column.type.type = nebula::cpp2::SupportedType::INT;
             schema.columns.emplace_back(std::move(column));
         }
-        for (auto i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
+        for (int32_t i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
             column.type.type = nebula::cpp2::SupportedType::STRING;
