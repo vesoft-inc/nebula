@@ -69,10 +69,15 @@ protected:
      *         execution policy according to PolicyType.
      *         In this method, it is best to use as many index columns as possible.
      **/
-    cpp2::ErrorCode policyGenerate();
+    void policyGenerate();
+
+    /**
+     * Details Evaluate filter conditions.
+     */
+    bool exprEval(Getters &getters);
 
 private:
-    cpp2::ErrorCode initPolicy();
+    void initPolicy();
 
     /**
      * Details Prepare AliasPropertyExpression
@@ -100,7 +105,6 @@ private:
     cpp2::ErrorCode prepareExpression(const Expression* expr);
 
 protected:
-    std::unique_ptr<Expression> expr_{nullptr};
     meta::SchemaManager*        schemaMan_{nullptr};
     nebula::cpp2::IndexItem     index_;
     std::vector<VariantType>    policies_;

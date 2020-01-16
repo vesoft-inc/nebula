@@ -58,7 +58,7 @@ private:
 
     cpp2::ErrorCode createResultSchema(const std::vector<std::string> &cols);
 
-    cpp2::ErrorCode preparePrefix();
+    void preparePrefix();
 
     kvstore::ResultCode accurateScan(PartitionID part);
 

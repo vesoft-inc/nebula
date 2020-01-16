@@ -22,15 +22,12 @@ cpp2::ErrorCode IndexExecutor<RESP>::prepareScan(const cpp2::LookUpIndexRequest&
     if (ret != cpp2::ErrorCode::SUCCEEDED) {
         return ret;
     }
-    ret = policyGenerate();
-    if (ret != cpp2::ErrorCode::SUCCEEDED) {
-        return ret;
-    }
+    policyGenerate();
     ret = createResultSchema(req.get_return_columns());
     if (ret != cpp2::ErrorCode::SUCCEEDED) {
         return ret;
     }
-    ret = preparePrefix();
+    preparePrefix();
     return ret;
 }
 
@@ -103,33 +100,23 @@ cpp2::ErrorCode IndexExecutor<RESP>::createResultSchema(const std::vector<std::s
 }
 
 template <typename RESP>
-cpp2::ErrorCode IndexExecutor<RESP>::preparePrefix() {
+void IndexExecutor<RESP>::preparePrefix() {
     prefix_.reserve(256);
-    auto indexId = index_.get_index_id();
-    switch (this->policyScanType_) {
-        case PolicyScanType::SEEK_SCAN : {
-            prefix_.append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID));
-        }
-        case PolicyScanType::ACCURATE_SCAN :
-        case PolicyScanType::PREFIX_SCAN: {
-            prefix_.append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID));
-            for (const auto& v : policies_) {
-                prefix_.append(NebulaKeyUtils::encodeVariant(v));
-            }
-        }
+    for (const auto& v : policies_) {
+        prefix_.append(NebulaKeyUtils::encodeVariant(v));
     }
-    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 template <typename RESP>
 kvstore::ResultCode IndexExecutor<RESP>::accurateScan(PartitionID part) {
-    std::string prefix = NebulaKeyUtils::prefix(part) + prefix_;
+    std::string prefix = NebulaKeyUtils::indexPrefix(part, index_.get_index_id())
+                         .append(prefix_);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId_,
                                       part,
                                       prefix,
                                       &iter);
-    if (ret != kvstore::SUCCEEDED) {
+    if (ret != nebula::kvstore::SUCCEEDED) {
         return ret;
     }
     while (iter->valid() &&
@@ -146,13 +133,14 @@ kvstore::ResultCode IndexExecutor<RESP>::accurateScan(PartitionID part) {
 
 template <typename RESP>
 kvstore::ResultCode IndexExecutor<RESP>::prefixScan(PartitionID part) {
-    std::string prefix = NebulaKeyUtils::prefix(part) + prefix_;
+    std::string prefix = NebulaKeyUtils::indexPrefix(part, index_.get_index_id())
+                        .append(prefix_);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId_,
                                       part,
                                       prefix,
                                       &iter);
-    if (ret != kvstore::SUCCEEDED) {
+    if (ret != nebula::kvstore::SUCCEEDED) {
         return ret;
     }
     while (iter->valid() &&
@@ -175,7 +163,7 @@ template <typename RESP>
 kvstore::ResultCode IndexExecutor<RESP>::seekScan(PartitionID part) {
     /**
      * TODO sky : seekScan used conditional comparison with greater than , etc.
-     *            new reuse the prefixScan.
+     *            now reuse the prefixScan.
      */
     return prefixScan(part);
 }
@@ -334,16 +322,13 @@ std::string IndexExecutor<RESP>::getRowFromReader(RowReader* reader) {
 
 template<typename RESP>
 bool IndexExecutor<RESP>::conditionsCheck(const folly::StringPiece& key) {
+    UNUSED(key);
     Getters getters;
-    if (this->expr_ != nullptr) {
-        getters.getAliasProp = [this, &key](const std::string&,
-                                            const std::string &prop) -> OptVariantType {
-                return decodeValue(key, prop);
-        };
-        auto value = this->expr_->eval(getters);
-        return (value.ok() && !Expression::asBool(value.value()));
-    }
-    return true;
+    getters.getAliasProp = [this, &key](const std::string&,
+                                        const std::string &prop) -> OptVariantType {
+            return decodeValue(key, prop);
+    };
+    return exprEval(getters);
 }
 
 template<typename RESP>
