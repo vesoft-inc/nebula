@@ -30,8 +30,6 @@ nebula_add_library(
     http/StorageHttpAdminHandler.cpp
 )
 
-add_dependencies(storage_http_handler ws_common_obj)
-
 nebula_add_library(
     storage_client OBJECT
     client/StorageClient.cpp
