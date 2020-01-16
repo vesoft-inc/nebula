@@ -30,7 +30,7 @@ before_install:
 
 script :
     - mkdir -p _build && cd _build
-    - cmake -DENABLE_COVERAGE=ON ..
+    - cmake -DENABLE_WERROR=OFF -DENABLE_COVERAGE=ON ..
     - make -j4
     - ctest -j4
 
