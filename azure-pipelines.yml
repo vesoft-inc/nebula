@@ -17,7 +17,7 @@ jobs:
     vmImage: $(vmImage)
 
   container: vesoft/nebula-dev:centos7
-  timeoutInMinutes: 120
+  timeoutInMinutes: 0
 
   steps:
   - script: mkdir _build && cd _build && cmake ..
