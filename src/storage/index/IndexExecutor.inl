@@ -6,7 +6,7 @@
 
 #include "storage/index/IndexExecutor.h"
 
-DECLARE_int32(max_row_returned_per_index_scan);
+DECLARE_int32(max_rows_returned_per_lookup);
 DECLARE_bool(enable_vertex_cache);
 
 namespace nebula {
@@ -120,7 +120,7 @@ kvstore::ResultCode IndexExecutor<RESP>::accurateScan(PartitionID part) {
         return ret;
     }
     while (iter->valid() &&
-           rowCount_ < FLAGS_max_row_returned_per_index_scan) {
+           rowCount_ < FLAGS_max_rows_returned_per_lookup) {
         auto key = iter->key();
         ret = getDataRow(part, key);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -144,7 +144,7 @@ kvstore::ResultCode IndexExecutor<RESP>::prefixScan(PartitionID part) {
         return ret;
     }
     while (iter->valid() &&
-           rowCount_ < FLAGS_max_row_returned_per_index_scan) {
+           rowCount_ < FLAGS_max_rows_returned_per_lookup) {
         auto key = iter->key();
         if (!conditionsCheck(key)) {
             iter->next();

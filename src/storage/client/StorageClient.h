@@ -235,7 +235,7 @@ protected:
 
     template<class Request,
              class RemoteFunc,
-             class GetIdFunc,
+             class GetPartIDFunc,
              class Response =
                 typename std::result_of<
                     RemoteFunc(storage::cpp2::StorageServiceAsyncClient*, const Request&)
@@ -245,7 +245,7 @@ protected:
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc,
-        GetIdFunc f);
+        GetPartIDFunc f);
 
     template<class Request,
              class RemoteFunc,

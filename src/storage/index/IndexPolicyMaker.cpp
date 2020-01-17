@@ -9,11 +9,21 @@
 namespace nebula {
 namespace storage {
 cpp2::ErrorCode IndexPolicyMaker::policyPrepare(const std::string& filter) {
-    auto ret = optimizeFilter(filter);
-    if (ret != cpp2::ErrorCode::SUCCEEDED) {
-        return ret;
+    auto expRet = Expression::decode(filter);
+    if (!expRet.ok()) {
+        VLOG(1) << "Can't decode the filter " << filter;
+        return cpp2::ErrorCode::E_INVALID_FILTER;
     }
-    ret = prepareExpression(exp_.get());
+    exp_ = std::move(expRet).value();
+    if (expCtx_ == nullptr) {
+        expCtx_ = std::make_unique<ExpressionContext>();
+    }
+    exp_->setContext(this->expCtx_.get());
+    auto status = exp_->prepare();
+    if (!status.ok()) {
+        return cpp2::ErrorCode::E_INVALID_FILTER;
+    }
+    auto ret = prepareExpr(exp_.get());
     return ret;
 }
 
@@ -59,24 +69,28 @@ void IndexPolicyMaker::initPolicy() {
     }
 }
 
-std::string IndexPolicyMaker::prepareAPE(const Expression* expr) {
-    auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(expr);
-    return aExpr->prop()->c_str();
-}
-
-StatusOr<VariantType> IndexPolicyMaker::preparePE(const Expression* expr) {
-    auto* pExpr = dynamic_cast<const PrimaryExpression*>(expr);
+cpp2::ErrorCode IndexPolicyMaker::prepareExpr(const Expression* expr) {
+    cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
     Getters getters;
-    auto value = pExpr->eval(getters);
-    if (!value.ok()) {
-        return Status::SyntaxError("eval expression error : %s", pExpr->toString().data());
-    }
-    return value.value();
-}
-
-cpp2::ErrorCode IndexPolicyMaker::prepareRFE(const Expression* expr) {
-    cpp2::ErrorCode code = cpp2::ErrorCode::E_INVALID_FILTER;
     switch (expr->kind()) {
+        case nebula::Expression::kLogical : {
+            auto* lExpr = dynamic_cast<const LogicalExpression*>(expr);
+            if (policyType_ == PolicyType::SIMPLE_POLICY) {
+                return code;
+            }
+
+            if (lExpr->op() == LogicalExpression::Operator::XOR) {
+                return cpp2::ErrorCode::E_INVALID_FILTER;
+            } else if (lExpr->op() == LogicalExpression::Operator::OR) {
+                policyType_ = PolicyType::SIMPLE_POLICY;
+                return code;
+            }
+            auto* left = lExpr->left();
+            prepareExpr(left);
+            auto* right = lExpr->right();
+            prepareExpr(right);
+            break;
+        }
         case nebula::Expression::kRelational : {
             std::string prop;
             VariantType v;
@@ -85,22 +99,28 @@ cpp2::ErrorCode IndexPolicyMaker::prepareRFE(const Expression* expr) {
             auto* right = rExpr->right();
             if (left->kind() == nebula::Expression::kAliasProp
                 && right->kind() == nebula::Expression::kPrimary) {
-                prop = prepareAPE(left);
-                auto ret = preparePE(right);
-                if (!ret.ok()) {
-                    return code;
+                auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(left);
+                prop = aExpr->prop()->c_str();
+                auto* pExpr = dynamic_cast<const PrimaryExpression*>(right);
+                auto value = pExpr->eval(getters);
+                if (!value.ok()) {
+                    return cpp2::ErrorCode::E_INVALID_FILTER;
                 }
-                v = ret.value();
+                v = value.value();
             } else if (left->kind() == nebula::Expression::kPrimary
                        && right->kind() == nebula::Expression::kAliasProp) {
-                auto ret = preparePE(right);
-                if (!ret.ok()) {
-                    return code;
+                auto* pExpr = dynamic_cast<const PrimaryExpression*>(left);
+                auto value = pExpr->eval(getters);
+                if (!value.ok()) {
+                    return cpp2::ErrorCode::E_INVALID_FILTER;
                 }
-                v = ret.value();
-                prop = prepareAPE(left);
+                v = value.value();
+                auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(right);
+                prop = aExpr->prop()->c_str();
             } else {
-                return code;
+                prepareExpr(left);
+                prepareExpr(right);
+                break;
             }
             operatorList_.emplace_back(std::make_pair(std::move(prop), std::move(v)),
                                        rExpr->op() == RelationalExpression::Operator::EQ);
@@ -119,59 +139,9 @@ cpp2::ErrorCode IndexPolicyMaker::prepareRFE(const Expression* expr) {
             operatorList_.emplace_back(std::make_pair(std::move(prop), std::move(v)), false);
             break;
         }
-        case nebula::Expression::kLogical : {
-            auto* lExpr = dynamic_cast<const LogicalExpression*>(expr);
-            auto* left = lExpr->left();
-            code = prepareRFE(left);
-            if (code != cpp2::ErrorCode::SUCCEEDED) {
-                return code;
-            }
-            auto* right = lExpr->right();
-            code = prepareRFE(right);
-            if (code != cpp2::ErrorCode::SUCCEEDED) {
-                return code;
-            }
-            break;
+        default : {
+            return cpp2::ErrorCode::E_INVALID_FILTER;
         }
-        default: {
-            return code;
-        }
-    }
-    return cpp2::ErrorCode::SUCCEEDED;
-}
-
-cpp2::ErrorCode IndexPolicyMaker::prepareLE(const LogicalExpression* expr) {
-    cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
-    if (policyType_ == PolicyType::SIMPLE_POLICY) {
-        return code;
-    }
-
-    if (expr->op() == LogicalExpression::Operator::XOR) {
-        return cpp2::ErrorCode::E_INVALID_FILTER;
-    } else if (expr->op() == LogicalExpression::Operator::OR) {
-        policyType_ = PolicyType::SIMPLE_POLICY;
-        return code;
-    }
-    auto* left = expr->left();
-    code = prepareExpression(left);
-    if (code != cpp2::ErrorCode::SUCCEEDED) {
-        return code;
-    }
-    auto* right = expr->right();
-    code = prepareExpression(right);
-    return code;
-}
-
-cpp2::ErrorCode IndexPolicyMaker::prepareExpression(const Expression* expr) {
-    cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
-    if (policyType_ == PolicyType::SIMPLE_POLICY) {
-        return code;
-    }
-    if (expr->kind() == nebula::Expression::kLogical) {
-        auto* lExpr = dynamic_cast<const LogicalExpression*>(expr);
-        code = prepareLE(lExpr);
-    } else {
-        code = prepareRFE(expr);
     }
     return code;
 }
@@ -179,7 +149,7 @@ cpp2::ErrorCode IndexPolicyMaker::prepareExpression(const Expression* expr) {
 bool IndexPolicyMaker::exprEval(Getters &getters) {
     if (exp_ != nullptr) {
         auto value = exp_->eval(getters);
-        return (value.ok() && !Expression::asBool(value.value()));
+        return (value.ok() && Expression::asBool(value.value()));
     }
     return true;
 }

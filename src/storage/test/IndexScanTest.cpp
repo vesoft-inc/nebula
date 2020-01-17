@@ -269,8 +269,8 @@ static nebula::cpp2::IndexItem mockVertexIndex(int32_t intFieldsNum,
     return indexItem;
 }
 
-TEST(IndexScanTest, SimpleScanTest) {
-    fs::TempDir rootPath("/tmp/SimpleScanTest.XXXXXX");
+static cpp2::LookUpVertexIndexResp execLookupVertices(const std::string& filter) {
+    fs::TempDir rootPath("/tmp/execLookupVertices.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     GraphSpaceID spaceId = 0;
     TagID tagId = 3001;
@@ -280,81 +280,93 @@ TEST(IndexScanTest, SimpleScanTest) {
     auto eindex = mockEdgeIndex(10, 10, type);
     auto schemaMan = mockSchemaMan(spaceId, type, tagId, vindex, eindex);
     mockData(kv.get(), schemaMan.get(), type, tagId, spaceId, vindex, eindex);
-    {
-        auto *processor = LookUpVertexIndexProcessor::instance(kv.get(), schemaMan.get(),
-                                                               nullptr, nullptr);
-        cpp2::LookUpIndexRequest req;
-        decltype(req.parts) parts;
-        parts.emplace_back(0);
-        parts.emplace_back(1);
-        parts.emplace_back(2);
-        decltype(req.return_columns) cols;
-        cols.emplace_back("tag_3001_col_0");
-        cols.emplace_back("tag_3001_col_1");
-        cols.emplace_back("tag_3001_col_3");
-        cols.emplace_back("tag_3001_col_4");
-        req.set_space_id(spaceId);
-        req.set_parts(std::move(parts));
-        req.set_index_id(tagId);
-        req.set_return_columns(cols);
-        {
-            LOG(INFO) << "Build filter...";
-            auto* prop = new std::string("tag_3001_col_0");
-            auto* alias = new std::string("3001");
-            auto* aliaExp = new AliasPropertyExpression(new std::string(""), alias, prop);
-            auto* priExp = new PrimaryExpression(1L);
-            auto relExp = std::make_unique<RelationalExpression>(aliaExp,
-                                                                 RelationalExpression::Operator::EQ,
-                                                                 priExp);
-            req.set_filter(Expression::encode(relExp.get()));
-        }
+    auto *processor = LookUpVertexIndexProcessor::instance(kv.get(),
+                                                           schemaMan.get(),
+                                                           nullptr);
+    cpp2::LookUpIndexRequest req;
+    decltype(req.parts) parts;
+    parts.emplace_back(0);
+    parts.emplace_back(1);
+    parts.emplace_back(2);
+    decltype(req.return_columns) cols;
+    cols.emplace_back("tag_3001_col_0");
+    cols.emplace_back("tag_3001_col_1");
+    cols.emplace_back("tag_3001_col_3");
+    cols.emplace_back("tag_3001_col_4");
+    req.set_space_id(spaceId);
+    req.set_parts(std::move(parts));
+    req.set_index_id(tagId);
+    req.set_return_columns(cols);
+    req.set_filter(filter);
+    auto f = processor->getFuture();
+    processor->process(req);
+    return std::move(f).get();
+}
 
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
+static cpp2::LookUpEdgeIndexResp execLookupEdges(const std::string& filter) {
+    fs::TempDir rootPath("/tmp/execLookupEdges.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    GraphSpaceID spaceId = 0;
+    TagID tagId = 3001;
+    EdgeType type = 101;
+    LOG(INFO) << "Prepare meta...";
+    auto vindex = mockVertexIndex(3, 3, tagId);
+    auto eindex = mockEdgeIndex(10, 10, type);
+    auto schemaMan = mockSchemaMan(spaceId, type, tagId, vindex, eindex);
+    mockData(kv.get(), schemaMan.get(), type, tagId, spaceId, vindex, eindex);
+    auto *processor = LookUpEdgeIndexProcessor::instance(kv.get(),
+                                                         schemaMan.get(),
+                                                         nullptr);
+    cpp2::LookUpIndexRequest req;
+    decltype(req.parts) parts;
+    parts.emplace_back(0);
+    parts.emplace_back(1);
+    parts.emplace_back(2);
+    decltype(req.return_columns) cols;
+    cols.emplace_back("col_0");
+    cols.emplace_back("col_1");
+    cols.emplace_back("col_3");
+    cols.emplace_back("col_4");
+    cols.emplace_back("col_10");
+    cols.emplace_back("col_11");
+    cols.emplace_back("col_13");
+    cols.emplace_back("col_14");
+    req.set_space_id(spaceId);
+    req.set_parts(std::move(parts));
+    req.set_index_id(type);
+    req.set_return_columns(cols);
+    req.set_filter(filter);
+    auto f = processor->getFuture();
+    processor->process(req);
+    return std::move(f).get();
+}
+
+TEST(IndexScanTest, SimpleScanTest) {
+    {
+        LOG(INFO) << "Build filter...";
+        auto* prop = new std::string("tag_3001_col_0");
+        auto* alias = new std::string("3001");
+        auto* aliaExp = new AliasPropertyExpression(new std::string(""), alias, prop);
+        auto* priExp = new PrimaryExpression(1L);
+        auto relExp = std::make_unique<RelationalExpression>(aliaExp,
+                                                             RelationalExpression::Operator::EQ,
+                                                             priExp);
+        auto resp = execLookupVertices(Expression::encode(relExp.get()));
 
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(4, resp.get_schema()->get_columns().size());
         EXPECT_EQ(30, resp.rows.size());
     }
     {
-        auto *processor = LookUpEdgeIndexProcessor::instance(kv.get(),
-                                                             schemaMan.get(),
-                                                             nullptr);
-        cpp2::LookUpIndexRequest req;
-        decltype(req.parts) parts;
-        parts.emplace_back(0);
-        parts.emplace_back(1);
-        parts.emplace_back(2);
-        decltype(req.return_columns) cols;
-        cols.emplace_back("col_0");
-        cols.emplace_back("col_1");
-        cols.emplace_back("col_3");
-        cols.emplace_back("col_4");
-        cols.emplace_back("col_10");
-        cols.emplace_back("col_11");
-        cols.emplace_back("col_13");
-        cols.emplace_back("col_14");
-        req.set_space_id(spaceId);
-        req.set_parts(std::move(parts));
-        req.set_index_id(type);
-        req.set_return_columns(cols);
-        {
-            LOG(INFO) << "Build filter...";
-            auto* prop = new std::string("col_0");
-            auto* alias = new std::string("101");
-            auto* aliaExp = new AliasPropertyExpression(new std::string(""), alias, prop);
-            auto* priExp = new PrimaryExpression(1L);
-            auto relExp = std::make_unique<RelationalExpression>(aliaExp,
-                                                                 RelationalExpression::Operator::EQ,
-                                                                 priExp);
-            req.set_filter(Expression::encode(relExp.get()));
-        }
-
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-
+        LOG(INFO) << "Build filter...";
+        auto* prop = new std::string("col_0");
+        auto* alias = new std::string("101");
+        auto* aliaExp = new AliasPropertyExpression(new std::string(""), alias, prop);
+        auto* priExp = new PrimaryExpression(1L);
+        auto relExp = std::make_unique<RelationalExpression>(aliaExp,
+                                                             RelationalExpression::Operator::EQ,
+                                                             priExp);
+        auto resp = execLookupEdges(Expression::encode(relExp.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(8, resp.get_schema()->get_columns().size());
         EXPECT_EQ(210, resp.rows.size());
@@ -362,147 +374,157 @@ TEST(IndexScanTest, SimpleScanTest) {
 }
 
 TEST(IndexScanTest, AccurateScanTest) {
-    fs::TempDir rootPath("/tmp/AccurateScanTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
-    GraphSpaceID spaceId = 0;
-    TagID tagId = 3001;
-    EdgeType type = 101;
-    LOG(INFO) << "Prepare meta...";
-    auto vindex = mockVertexIndex(3, 3, tagId);
-    auto eindex = mockEdgeIndex(10, 10, type);
-    auto schemaMan = mockSchemaMan(spaceId, type, tagId, vindex, eindex);
-    mockData(kv.get(), schemaMan.get(), type, tagId, spaceId, vindex, eindex);
     {
-        auto *processor = LookUpVertexIndexProcessor::instance(kv.get(), schemaMan.get(),
-                                                               nullptr, nullptr);
-        cpp2::LookUpIndexRequest req;
-        decltype(req.parts) parts;
-        parts.emplace_back(0);
-        parts.emplace_back(1);
-        parts.emplace_back(2);
-        decltype(req.return_columns) cols;
-        cols.emplace_back("tag_3001_col_0");
-        cols.emplace_back("tag_3001_col_1");
-        cols.emplace_back("tag_3001_col_3");
-        cols.emplace_back("tag_3001_col_4");
-        req.set_space_id(spaceId);
-        req.set_parts(std::move(parts));
-        req.set_index_id(tagId);
-        req.set_return_columns(cols);
-        {
-            LOG(INFO) << "Build filter...";
-            /**
-             * where tag_3001_col_0 == 1 and
-             *       tag_3001_col_1 == 2 and
-             *       tag_3001_col_2 == 3
-             */
-            auto* col0 = new std::string("tag_3001_col_0");
-            auto* alias0 = new std::string("3001");
-            auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
-            auto* pe0 = new PrimaryExpression(1L);
-            auto* r1 =  new RelationalExpression(ape0,
-                                                  RelationalExpression::Operator::EQ,
-                                                  pe0);
+        LOG(INFO) << "Build filter...";
+        /**
+         * where tag_3001_col_0 == 1 and
+         *       tag_3001_col_1 == 2 and
+         *       tag_3001_col_2 == 3
+         */
+        auto* col0 = new std::string("tag_3001_col_0");
+        auto* alias0 = new std::string("3001");
+        auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
+        auto* pe0 = new PrimaryExpression(1L);
+        auto* r1 =  new RelationalExpression(ape0,
+                                              RelationalExpression::Operator::EQ,
+                                              pe0);
 
-            auto* col1 = new std::string("tag_3001_col_1");
-            auto* alias1 = new std::string("3001");
-            auto* ape1 = new AliasPropertyExpression(new std::string(""), alias1, col1);
-            auto* pe1 = new PrimaryExpression(2L);
-            auto* r2 =  new RelationalExpression(ape1,
-                                                 RelationalExpression::Operator::EQ,
-                                                 pe1);
+        auto* col1 = new std::string("tag_3001_col_1");
+        auto* alias1 = new std::string("3001");
+        auto* ape1 = new AliasPropertyExpression(new std::string(""), alias1, col1);
+        auto* pe1 = new PrimaryExpression(2L);
+        auto* r2 =  new RelationalExpression(ape1,
+                                             RelationalExpression::Operator::EQ,
+                                             pe1);
 
-            auto* col2 = new std::string("tag_3001_col_2");
-            auto* alias2 = new std::string("3001");
-            auto* ape2 = new AliasPropertyExpression(new std::string(""), alias2, col2);
-            auto* pe2 = new PrimaryExpression(3L);
-            auto* r3 =  new RelationalExpression(ape2,
-                                                 RelationalExpression::Operator::EQ,
-                                                 pe2);
-            auto* le1 = new LogicalExpression(r1,
-                                              LogicalExpression::AND,
-                                              r2);
+        auto* col2 = new std::string("tag_3001_col_2");
+        auto* alias2 = new std::string("3001");
+        auto* ape2 = new AliasPropertyExpression(new std::string(""), alias2, col2);
+        auto* pe2 = new PrimaryExpression(3L);
+        auto* r3 =  new RelationalExpression(ape2,
+                                             RelationalExpression::Operator::EQ,
+                                             pe2);
+        auto* le1 = new LogicalExpression(r1,
+                                          LogicalExpression::AND,
+                                          r2);
 
-            auto logExp = std::make_unique<LogicalExpression>(le1,
-                                                              LogicalExpression::AND,
-                                                              r3);
-            req.set_filter(Expression::encode(logExp.get()));
-        }
-
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-
+        auto logExp = std::make_unique<LogicalExpression>(le1,
+                                                          LogicalExpression::AND,
+                                                          r3);
+        auto resp = execLookupVertices(Expression::encode(logExp.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(4, resp.get_schema()->get_columns().size());
         EXPECT_EQ(30, resp.rows.size());
     }
     {
-        auto *processor = LookUpEdgeIndexProcessor::instance(kv.get(),
-                                                             schemaMan.get(),
-                                                             nullptr);
-        cpp2::LookUpIndexRequest req;
-        decltype(req.parts) parts;
-        parts.emplace_back(0);
-        parts.emplace_back(1);
-        parts.emplace_back(2);
-        decltype(req.return_columns) cols;
-        cols.emplace_back("col_0");
-        cols.emplace_back("col_1");
-        cols.emplace_back("col_3");
-        cols.emplace_back("col_4");
-        cols.emplace_back("col_10");
-        cols.emplace_back("col_11");
-        cols.emplace_back("col_13");
-        cols.emplace_back("col_14");
-        req.set_space_id(spaceId);
-        req.set_parts(std::move(parts));
-        req.set_index_id(type);
-        req.set_return_columns(cols);
-        {
-            LOG(INFO) << "Build filter...";
-            /**
-             * where col_0 == 1 and
-             *       col_1 == 2 and
-             *       col_2 == 3
-             */
-            auto* col0 = new std::string("col_0");
-            auto* alias0 = new std::string("101");
-            auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
-            auto* pe0 = new PrimaryExpression(1L);
-            auto* r1 =  new RelationalExpression(ape0,
-                                                 RelationalExpression::Operator::EQ,
-                                                 pe0);
+        LOG(INFO) << "Build filter...";
+        /**
+         * where col_0 == 1 and
+         *       col_1 == 2 and
+         *       col_2 == 3
+         */
+        auto* col0 = new std::string("col_0");
+        auto* alias0 = new std::string("101");
+        auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
+        auto* pe0 = new PrimaryExpression(1L);
+        auto* r1 =  new RelationalExpression(ape0,
+                                             RelationalExpression::Operator::EQ,
+                                             pe0);
 
-            auto* col1 = new std::string("col_1");
-            auto* alias1 = new std::string("101");
-            auto* ape1 = new AliasPropertyExpression(new std::string(""), alias1, col1);
-            auto* pe1 = new PrimaryExpression(2L);
-            auto* r2 =  new RelationalExpression(ape1,
-                                                 RelationalExpression::Operator::EQ,
-                                                 pe1);
+        auto* col1 = new std::string("col_1");
+        auto* alias1 = new std::string("101");
+        auto* ape1 = new AliasPropertyExpression(new std::string(""), alias1, col1);
+        auto* pe1 = new PrimaryExpression(2L);
+        auto* r2 =  new RelationalExpression(ape1,
+                                             RelationalExpression::Operator::EQ,
+                                             pe1);
 
-            auto* col2 = new std::string("col_2");
-            auto* alias2 = new std::string("101");
-            auto* ape2 = new AliasPropertyExpression(new std::string(""), alias2, col2);
-            auto* pe2 = new PrimaryExpression(3L);
-            auto* r3 =  new RelationalExpression(ape2,
-                                                 RelationalExpression::Operator::EQ,
-                                                 pe2);
-            auto* le1 = new LogicalExpression(r1,
-                                              LogicalExpression::AND,
-                                              r2);
+        auto* col2 = new std::string("col_2");
+        auto* alias2 = new std::string("101");
+        auto* ape2 = new AliasPropertyExpression(new std::string(""), alias2, col2);
+        auto* pe2 = new PrimaryExpression(3L);
+        auto* r3 =  new RelationalExpression(ape2,
+                                             RelationalExpression::Operator::EQ,
+                                             pe2);
+        auto* le1 = new LogicalExpression(r1,
+                                          LogicalExpression::AND,
+                                          r2);
 
-            auto logExp = std::make_unique<LogicalExpression>(le1,
-                                                              LogicalExpression::AND,
-                                                              r3);
-            req.set_filter(Expression::encode(logExp.get()));
-        }
+        auto logExp = std::make_unique<LogicalExpression>(le1,
+                                                          LogicalExpression::AND,
+                                                          r3);
+        auto resp = execLookupEdges(Expression::encode(logExp.get()));
 
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(8, resp.get_schema()->get_columns().size());
+        EXPECT_EQ(210, resp.rows.size());
+    }
+}
+TEST(IndexScanTest, SeekScanTest) {
+    {
+        LOG(INFO) << "Build filter...";
+        /**
+         * where tag_3001_col_0 > 0
+         */
+        auto* col0 = new std::string("tag_3001_col_0");
+        auto* alias0 = new std::string("3001");
+        auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
+        auto* pe0 = new PrimaryExpression(0L);
+        auto r1 =  std::make_unique<RelationalExpression>(ape0,
+                                                          RelationalExpression::Operator::GT,
+                                                          pe0);
+        auto resp = execLookupVertices(Expression::encode(r1.get()));
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(4, resp.get_schema()->get_columns().size());
+        EXPECT_EQ(30, resp.rows.size());
+    }
+    {
+        LOG(INFO) << "Build filter...";
+        /**
+         * where col_0 > 0
+         */
+        auto* col0 = new std::string("col_0");
+        auto* alias0 = new std::string("101");
+        auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
+        auto* pe0 = new PrimaryExpression(0L);
+        auto r1 =  std::make_unique<RelationalExpression>(ape0,
+                                                          RelationalExpression::Operator::GT,
+                                                          pe0);
+        auto resp = execLookupEdges(Expression::encode(r1.get()));
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(8, resp.get_schema()->get_columns().size());
+        EXPECT_EQ(210, resp.rows.size());
+    }
+    {
+        LOG(INFO) << "Build filter...";
+        /**
+         * where tag_3001_col_1 > 0
+         */
+        auto* col0 = new std::string("tag_3001_col_1");
+        auto* alias0 = new std::string("3001");
+        auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
+        auto* pe0 = new PrimaryExpression(0L);
+        auto r1 =  std::make_unique<RelationalExpression>(ape0,
+                                                          RelationalExpression::Operator::GT,
+                                                          pe0);
+        auto resp = execLookupVertices(Expression::encode(r1.get()));
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(4, resp.get_schema()->get_columns().size());
+        EXPECT_EQ(30, resp.rows.size());
+    }
+    {
+        LOG(INFO) << "Build filter...";
+        /**
+         * where col_1 > 0
+         */
+        auto* col0 = new std::string("col_1");
+        auto* alias0 = new std::string("101");
+        auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
+        auto* pe0 = new PrimaryExpression(0L);
+        auto r1 =  std::make_unique<RelationalExpression>(ape0,
+                                                          RelationalExpression::Operator::GT,
+                                                          pe0);
+        auto resp = execLookupEdges(Expression::encode(r1.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(8, resp.get_schema()->get_columns().size());
         EXPECT_EQ(210, resp.rows.size());
@@ -510,123 +532,62 @@ TEST(IndexScanTest, AccurateScanTest) {
 }
 
 TEST(IndexScanTest, PrefixScanTest) {
-    fs::TempDir rootPath("/tmp/PrefixScanTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
-    GraphSpaceID spaceId = 0;
-    TagID tagId = 3001;
-    EdgeType type = 101;
-    LOG(INFO) << "Prepare meta...";
-    auto vindex = mockVertexIndex(3, 3, tagId);
-    auto eindex = mockEdgeIndex(10, 10, type);
-    auto schemaMan = mockSchemaMan(spaceId, type, tagId, vindex, eindex);
-    mockData(kv.get(), schemaMan.get(), type, tagId, spaceId, vindex, eindex);
     {
-        auto *processor = LookUpVertexIndexProcessor::instance(kv.get(), schemaMan.get(),
-                                                               nullptr, nullptr);
-        cpp2::LookUpIndexRequest req;
-        decltype(req.parts) parts;
-        parts.emplace_back(0);
-        parts.emplace_back(1);
-        parts.emplace_back(2);
-        decltype(req.return_columns) cols;
-        cols.emplace_back("tag_3001_col_0");
-        cols.emplace_back("tag_3001_col_1");
-        cols.emplace_back("tag_3001_col_3");
-        cols.emplace_back("tag_3001_col_4");
-        req.set_space_id(spaceId);
-        req.set_parts(std::move(parts));
-        req.set_index_id(tagId);
-        req.set_return_columns(cols);
-        {
-            LOG(INFO) << "Build filter...";
-            /**
-             * where tag_3001_col_0 == 1 and
-             *       tag_3001_col_1 > 1
-             */
-            auto* col0 = new std::string("tag_3001_col_0");
-            auto* alias0 = new std::string("3001");
-            auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
-            auto* pe0 = new PrimaryExpression(1L);
-            auto* r1 =  new RelationalExpression(ape0,
-                                                 RelationalExpression::Operator::EQ,
-                                                 pe0);
+        LOG(INFO) << "Build filter...";
+        /**
+         * where tag_3001_col_0 == 1 and
+         *       tag_3001_col_1 > 1
+         */
+        auto* col0 = new std::string("tag_3001_col_0");
+        auto* alias0 = new std::string("3001");
+        auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
+        auto* pe0 = new PrimaryExpression(1L);
+        auto* r1 =  new RelationalExpression(ape0,
+                                             RelationalExpression::Operator::EQ,
+                                             pe0);
 
-            auto* col1 = new std::string("tag_3001_col_1");
-            auto* alias1 = new std::string("3001");
-            auto* ape1 = new AliasPropertyExpression(new std::string(""), alias1, col1);
-            auto* pe1 = new PrimaryExpression(1L);
-            auto* r2 =  new RelationalExpression(ape1,
-                                                 RelationalExpression::Operator::GT,
-                                                 pe1);
+        auto* col1 = new std::string("tag_3001_col_1");
+        auto* alias1 = new std::string("3001");
+        auto* ape1 = new AliasPropertyExpression(new std::string(""), alias1, col1);
+        auto* pe1 = new PrimaryExpression(1L);
+        auto* r2 =  new RelationalExpression(ape1,
+                                             RelationalExpression::Operator::GT,
+                                             pe1);
 
-            auto logExp = std::make_unique<LogicalExpression>(r1,
-                                                              LogicalExpression::AND,
-                                                              r2);
-            req.set_filter(Expression::encode(logExp.get()));
-        }
-
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-
+        auto logExp = std::make_unique<LogicalExpression>(r1,
+                                                          LogicalExpression::AND,
+                                                          r2);
+        auto resp = execLookupVertices(Expression::encode(logExp.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(4, resp.get_schema()->get_columns().size());
         EXPECT_EQ(30, resp.rows.size());
     }
     {
-        auto *processor = LookUpEdgeIndexProcessor::instance(kv.get(),
-                                                             schemaMan.get(),
-                                                             nullptr);
-        cpp2::LookUpIndexRequest req;
-        decltype(req.parts) parts;
-        parts.emplace_back(0);
-        parts.emplace_back(1);
-        parts.emplace_back(2);
-        decltype(req.return_columns) cols;
-        cols.emplace_back("col_0");
-        cols.emplace_back("col_1");
-        cols.emplace_back("col_3");
-        cols.emplace_back("col_4");
-        cols.emplace_back("col_10");
-        cols.emplace_back("col_11");
-        cols.emplace_back("col_13");
-        cols.emplace_back("col_14");
-        req.set_space_id(spaceId);
-        req.set_parts(std::move(parts));
-        req.set_index_id(type);
-        req.set_return_columns(cols);
-        {
-            LOG(INFO) << "Build filter...";
-            /**
-             * where col_0 == 1 and
-             *       col_1 > 1
-             */
-            auto* col0 = new std::string("col_0");
-            auto* alias0 = new std::string("101");
-            auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
-            auto* pe0 = new PrimaryExpression(1L);
-            auto* r1 =  new RelationalExpression(ape0,
-                                                 RelationalExpression::Operator::EQ,
-                                                 pe0);
+        LOG(INFO) << "Build filter...";
+        /**
+         * where col_0 == 1 and
+         *       col_1 > 1
+         */
+        auto* col0 = new std::string("col_0");
+        auto* alias0 = new std::string("101");
+        auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
+        auto* pe0 = new PrimaryExpression(1L);
+        auto* r1 =  new RelationalExpression(ape0,
+                                             RelationalExpression::Operator::EQ,
+                                             pe0);
 
-            auto* col1 = new std::string("col_1");
-            auto* alias1 = new std::string("101");
-            auto* ape1 = new AliasPropertyExpression(new std::string(""), alias1, col1);
-            auto* pe1 = new PrimaryExpression(1L);
-            auto* r2 =  new RelationalExpression(ape1,
-                                                 RelationalExpression::Operator::GT,
-                                                 pe1);
+        auto* col1 = new std::string("col_1");
+        auto* alias1 = new std::string("101");
+        auto* ape1 = new AliasPropertyExpression(new std::string(""), alias1, col1);
+        auto* pe1 = new PrimaryExpression(1L);
+        auto* r2 =  new RelationalExpression(ape1,
+                                             RelationalExpression::Operator::GT,
+                                             pe1);
 
-            auto logExp = std::make_unique<LogicalExpression>(r1,
-                                                              LogicalExpression::AND,
-                                                              r2);
-            req.set_filter(Expression::encode(logExp.get()));
-        }
-
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-
+        auto logExp = std::make_unique<LogicalExpression>(r1,
+                                                          LogicalExpression::AND,
+                                                          r2);
+        auto resp = execLookupEdges(Expression::encode(logExp.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(8, resp.get_schema()->get_columns().size());
         EXPECT_EQ(210, resp.rows.size());

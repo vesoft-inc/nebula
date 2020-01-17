@@ -9,7 +9,6 @@
 #include "base/Base.h"
 #include "meta/SchemaManager.h"
 #include "storage/CommonUtils.h"
-#include "storage/index/IndexOptimizer.h"
 
 namespace nebula {
 namespace storage {
@@ -42,16 +41,20 @@ enum class PolicyScanType : uint8_t {
     ACCURATE_SCAN      = 0x03,
 };
 
+/**
+ * OperatorList used record all scan filters, before create scan policy,
+ * need collect all columns and values for prefix string.
+ * std::vector<std::pair<col_name, value>, equivalent_scan_or_not>
+ */
 using OperatorList = std::vector<std::pair<std::pair<std::string, VariantType>, bool>>;
 
-class IndexPolicyMaker : IndexOptimizer{
+class IndexPolicyMaker {
 public:
     virtual ~IndexPolicyMaker() = default;
 
 protected:
     explicit IndexPolicyMaker(meta::SchemaManager *schemaMan)
-        : IndexOptimizer()
-        , schemaMan_(schemaMan) {}
+        : schemaMan_(schemaMan) {}
 
     /**
      * Details Entry method of index scan policy preparation, process logic as below :
@@ -80,37 +83,20 @@ private:
     void initPolicy();
 
     /**
-     * Details Prepare AliasPropertyExpression
-     */
-    std::string prepareAPE(const Expression* expr);
-
-    /**
-     * Details Prepare PrimaryExpression
-     */
-    StatusOr<VariantType> preparePE(const Expression* expr);
-
-    /**
-     * Details Prepare RelationalExpression and FunctionCallExpression
-     */
-    cpp2::ErrorCode prepareRFE(const Expression* expr);
-
-    /**
-     * Details Prepare LogicalExpression, This is a recursive method.
-     */
-    cpp2::ErrorCode prepareLE(const LogicalExpression* expr);
-
-    /**
      * Details Entry method of expresion traverse.
      */
-    cpp2::ErrorCode prepareExpression(const Expression* expr);
+
+    cpp2::ErrorCode prepareExpr(const Expression* expr);
 
 protected:
-    meta::SchemaManager*        schemaMan_{nullptr};
-    nebula::cpp2::IndexItem     index_;
-    std::vector<VariantType>    policies_;
-    PolicyType                  policyType_{PolicyType::OPTIMIZED_POLICY};
-    PolicyScanType              policyScanType_{PolicyScanType::SEEK_SCAN};
-    OperatorList                operatorList_;
+    meta::SchemaManager*               schemaMan_{nullptr};
+    std::unique_ptr<ExpressionContext> expCtx_{nullptr};
+    std::unique_ptr<Expression>        exp_{nullptr};
+    nebula::cpp2::IndexItem            index_;
+    std::vector<VariantType>           policies_;
+    PolicyType                         policyType_{PolicyType::OPTIMIZED_POLICY};
+    PolicyScanType                     policyScanType_{PolicyScanType::SEEK_SCAN};
+    OperatorList                       operatorList_;
 };
 }  // namespace storage
 }  // namespace nebula

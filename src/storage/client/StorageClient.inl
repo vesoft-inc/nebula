@@ -75,12 +75,12 @@ private:
 }  // Anonymous namespace
 
 
-template<class Request, class RemoteFunc, class GetIdFunc, class Response>
+template<class Request, class RemoteFunc, class GetPartIDFunc, class Response>
 folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc,
-        GetIdFunc f) {
+    GetPartIDFunc f) {
     auto context = std::make_shared<ResponseContext<Request, RemoteFunc, Response>>(
         requests.size(), std::move(remoteFunc));
 
