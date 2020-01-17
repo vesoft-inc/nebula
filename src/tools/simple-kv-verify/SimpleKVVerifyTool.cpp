@@ -63,8 +63,10 @@ public:
             auto key = std::to_string(folly::Random::rand32(1000000000));
             auto value = std::to_string(folly::Random::rand32(1000000000));
             data[key] = value;
-            pairs.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                               std::move(key), std::move(value));
+            nebula::cpp2::Pair pair;
+            pair.set_key(std::move(key));
+            pair.set_value(std::move(value));
+            pairs.emplace_back(std::move(pair));
         }
 
         auto future = storageClient_->put(space_, std::move(pairs));
