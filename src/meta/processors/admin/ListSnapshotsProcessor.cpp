@@ -11,8 +11,7 @@
 namespace nebula {
 namespace meta {
 
-void ListSnapshotsProcessor::process(const cpp2::ListSnapshotsReq& req) {
-    UNUSED(req);
+void ListSnapshotsProcessor::process(const cpp2::ListSnapshotsReq&) {
     auto prefix = MetaServiceUtils::snapshotPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
