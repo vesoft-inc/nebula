@@ -209,29 +209,29 @@ Player 表结构如下：
     # tag 名称为 tag name 0
     #  HDFS Parquet 文件的中的 field 0、field 1、field 2 将写入 tag name 0
     # 节点列为 vertex key field
-    tag name 0: {
+    tag-name-0: {
       type: parquet
       path: hdfs path
       fields: {
-        field 0: nebula field 0,
-        field 1: nebula field 1,
-        field 2: nebula field 2
+        field-0: nebula-field-0,
+        field-1: nebula-field-1,
+        field-2: nebula-field-2
       }
-      vertex: vertex key field
+      vertex: vertex-key-field
       batch : 16
     }
 
     # 与上述类似
     # 从 Hive 加载将执行命令 $ {exec} 作为数据集
-    tag name 1: {
+    tag-name-1: {
       type: hive
-      exec: "select hive field 0, hive field 1, hive field 2 from database.table"
+      exec: "select hive-field-0, hive-field-1, hive-field-2 from database.table"
       fields: {
-        hive field 0: nebula field 0,
-        hive field 1: nebula field 1,
-        hive field 2: nebula field 2
+        hive-field-0: nebula-field-0,
+        hive-field-1: nebula-field-1,
+        hive-field-2: nebula-field-2
       }
-      vertex: vertex id field
+      vertex: vertex-id-field
     }
   }
 
@@ -241,32 +241,32 @@ Player 表结构如下：
     # 边名称为 edge name 0
     # HDFS JSON 文件中的 field 0、field 1、field 2 将被写入 edge name 0
     # 起始列为 source field
-    edge name 0: {
+    edge-name-0: {
       type: json
       path: hdfs path
       fields: {
-        field 0: nebula field 0,
-        field 1: nebula field 1,
-        field 2: nebula field 2
+        field-0: nebula-field-0,
+        field-1: nebula-field-1,
+        field-2: nebula-field-2
       }
-      source:  source field
-      target:  target field
-      ranking: ranking field
+      source:  source-field
+      target:  target-field
+      ranking: ranking-field
     }
 
 
    # 从 Hive 加载将执行命令 $ {exec} 作为数据集
    # 边权重为可选
-   edge name 1: {
+   edge-name-1: {
     type: hive
-    exec: "select hive field 0, hive field 1, hive field 2 from database.table"
+    exec: "select hive-field-0, hive-field-1, hive-field-2 from database.table"
     fields: {
-      hive field 0: nebula field 0,
-      hive field 1: nebula field 1,
-      hive field 2: nebula field 2
+      hive-field-0: nebula-field-0,
+      hive-field-1: nebula-field-1,
+      hive-field-2: nebula-field-2
      }
-    source:  source id field
-    target:  target id field
+    source:  source-id-field
+    target:  target-id-field
    }
   }
 }
