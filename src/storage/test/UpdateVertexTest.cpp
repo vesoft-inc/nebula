@@ -21,12 +21,12 @@ namespace storage {
 void mockData(kvstore::KVStore* kv) {
     LOG(INFO) << "Prepare data...";
     std::vector<kvstore::KV> data;
-    for (auto partId = 0; partId < 3; partId++) {
-        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+    for (int32_t partId = 0; partId < 3; partId++) {
+        for (int32_t vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             // NOTE: the range of tagId is [3001, 3008], excluding 3009(for insert test).
-            for (auto tagId = 3001; tagId < 3010 - 1; tagId++) {
+            for (int32_t tagId = 3001; tagId < 3010 - 1; tagId++) {
                 // Write multi versions, we should get/update the latest version
-                for (auto version = 0; version < 3; version++) {
+                for (int32_t version = 0; version < 3; version++) {
                     auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId,
                             std::numeric_limits<int32_t>::max() - version);
                     RowWriter writer;
@@ -58,6 +58,7 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateVertexRequest...";
@@ -120,7 +121,10 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -203,6 +207,7 @@ TEST(UpdateVertexTest, Insertable_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateVertexRequest...";
@@ -254,7 +259,10 @@ TEST(UpdateVertexTest, Insertable_Test) {
     req.set_insertable(true);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -304,6 +312,7 @@ TEST(UpdateVertexTest, Invalid_Set_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateVertexRequest...";
@@ -330,7 +339,10 @@ TEST(UpdateVertexTest, Invalid_Set_Test) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -350,6 +362,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateVertexRequest...";
@@ -378,7 +391,10 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

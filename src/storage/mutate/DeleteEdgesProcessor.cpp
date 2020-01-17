@@ -14,7 +14,7 @@ namespace storage {
 void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
     auto spaceId = req.get_space_id();
     CHECK_NOTNULL(kvstore_);
-    auto iRet = schemaMan_->getEdgeIndexes(spaceId);
+    auto iRet = indexMan_->getEdgeIndexes(spaceId);
     if (iRet.ok()) {
         for (auto& index : iRet.value()) {
             indexes_.emplace_back(index);
@@ -84,8 +84,8 @@ std::string DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
             if (isLatestVE) {
                 std::unique_ptr<RowReader> reader;
                 for (auto& index : indexes_) {
-                    auto indexId = index.get_index_id();
-                    if (index.get_tagOrEdge() == type) {
+                    auto indexId = index->get_index_id();
+                    if (type == index->get_schema_id().get_edge_type()) {
                         if (reader == nullptr) {
                             reader = RowReader::getEdgePropReader(this->schemaMan_,
                                                                   iter->val(),
@@ -93,7 +93,7 @@ std::string DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
                                                                   type);
                         }
                         auto values = collectIndexValues(reader.get(),
-                                                         index.get_cols());
+                                                         index->get_fields());
                         auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
                                                                      indexId,
                                                                      srcId,

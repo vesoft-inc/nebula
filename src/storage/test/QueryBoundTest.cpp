@@ -22,27 +22,27 @@ namespace nebula {
 namespace storage {
 
 void mockData(kvstore::KVStore* kv) {
-    for (auto partId = 0; partId < 3; partId++) {
+    for (PartitionID partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
-        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            for (auto tagId = 3001; tagId < 3010; tagId++) {
+        for (VertexID vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+            for (TagID tagId = 3001; tagId < 3010; tagId++) {
                 auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
                 RowWriter writer;
                 for (uint64_t numInt = 0; numInt < 3; numInt++) {
                     writer << (vertexId + tagId + numInt);
                 }
-                for (auto numString = 3; numString < 6; numString++) {
+                for (int32_t numString = 3; numString < 6; numString++) {
                     writer << folly::stringPrintf("tag_string_col_%d", numString);
                 }
                 auto val = writer.encode();
                 data.emplace_back(std::move(key), std::move(val));
             }
             // Generate 7 out-edges for each edgeType.
-            for (auto dstId = 10001; dstId <= 10007; dstId++) {
+            for (VertexID dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 // Write multi versions,  we should get the latest version.
-                for (auto version = 0; version < 3; version++) {
-                    for (auto edgeType = 101; edgeType < 110; edgeType++) {
+                for (EdgeVersion version = 0; version < 3; version++) {
+                    for (EdgeType edgeType = 101; edgeType < 110; edgeType++) {
                         auto key =
                             NebulaKeyUtils::edgeKey(partId, vertexId, edgeType, 0, dstId,
                                                     std::numeric_limits<int>::max() - version);
@@ -50,8 +50,8 @@ void mockData(kvstore::KVStore* kv) {
                         for (uint64_t numInt = 0; numInt < 10; numInt++) {
                             writer << (dstId + numInt);
                         }
-                        for (auto numString = 10; numString < 20; numString++) {
-                            writer << folly::stringPrintf("string_col_%d_%d", numString, version);
+                        for (int32_t numString = 10; numString < 20; numString++) {
+                            writer << folly::stringPrintf("string_col_%d_%ld", numString, version);
                         }
                         auto val = writer.encode();
                         data.emplace_back(std::move(key), std::move(val));
@@ -59,13 +59,13 @@ void mockData(kvstore::KVStore* kv) {
                 }
             }
             // Generate 5 in-edges for each edgeType, the edgeType is negative
-            for (auto srcId = 20001; srcId <= 20005; srcId++) {
+            for (VertexID srcId = 20001; srcId <= 20005; srcId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", src " << srcId;
-                for (auto version = 0; version < 3; version++) {
-                    for (auto edgeType = 101; edgeType < 110; edgeType++) {
-                        auto key =
-                            NebulaKeyUtils::edgeKey(partId, vertexId, -edgeType, 0, srcId,
-                                                    std::numeric_limits<int>::max() - version);
+                for (EdgeVersion version = 0; version < 3; version++) {
+                    for (EdgeType edgeType = 101; edgeType < 110; edgeType++) {
+                        auto max = std::numeric_limits<int>::max();
+                        auto key = NebulaKeyUtils::edgeKey(partId, vertexId, -edgeType, 0, srcId,
+                                                           max - version);
                         data.emplace_back(std::move(key), "");
                     }
                 }
@@ -85,8 +85,8 @@ void mockData(kvstore::KVStore* kv) {
 void buildRequest(cpp2::GetNeighborsRequest& req, const std::vector<EdgeType>& et) {
     req.set_space_id(0);
     decltype(req.parts) tmpIds;
-    for (auto partId = 0; partId < 3; partId++) {
-        for (auto vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+    for (PartitionID partId = 0; partId < 3; partId++) {
+        for (VertexID vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             tmpIds[partId].emplace_back(vertexId);
         }
     }
@@ -215,8 +215,8 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
 
     LOG(INFO) << "Test QueryOutBoundRequest...";
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(), nullptr,
-                                                    executor.get());
+    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(),
+                                                    nullptr, executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -239,8 +239,8 @@ TEST(QueryBoundTest, inBoundSimpleTest) {
 
     LOG(INFO) << "Test QueryInBoundRequest...";
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(), nullptr,
-                                                    executor.get());
+    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(),
+                                                    nullptr, executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -490,8 +490,8 @@ TEST(QueryBoundTest, MaxEdgesReturenedTest) {
 
     LOG(INFO) << "Test QueryOutBoundRequest...";
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(), nullptr,
-                                                    executor.get());
+    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(),
+                                                    nullptr, executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

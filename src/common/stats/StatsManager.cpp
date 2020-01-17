@@ -129,7 +129,7 @@ StatusOr<StatsManager::VT> StatsManager::readValue(folly::StringPiece metricName
     }
 
     TimeRange range;
-    if ( parts[2] == "5") {
+    if (parts[2] == "5") {
         range = TimeRange::FIVE_SECONDS;
     } else if (parts[2] == "60") {
         range = TimeRange::ONE_MINUTE;

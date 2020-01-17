@@ -30,7 +30,6 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
         auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
         auto tagName = val.subpiece(sizeof(int32_t), nameLen).str();
         auto schema = MetaServiceUtils::parseSchema(val);
-
         cpp2::TagItem item;
         item.set_tag_id(tagID);
         item.set_tag_name(std::move(tagName));

@@ -13,7 +13,7 @@ void ListEdgeIndexesProcessor::process(const cpp2::ListEdgeIndexesReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeIndexLock());
     auto spaceId = req.get_space_id();
-    auto prefix = MetaServiceUtils::edgeIndexPrefix(spaceId);
+    auto prefix = MetaServiceUtils::indexPrefix(spaceId);
 
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
@@ -26,16 +26,8 @@ void ListEdgeIndexesProcessor::process(const cpp2::ListEdgeIndexesReq& req) {
 
     decltype(resp_.items) items;
     while (iter->valid()) {
-        auto key = iter->key();
         auto val = iter->val();
-        auto nameSize = *reinterpret_cast<const int32_t *>(val.data());
-        auto name = val.subpiece(sizeof(int32_t), nameSize).str();
-        auto edgeIndex = *reinterpret_cast<const EdgeIndexID *>(key.data() + prefix.size());
-        auto properties = MetaServiceUtils::parseEdgeIndex(val);
-        cpp2::EdgeIndexItem item;
-        item.set_index_id(edgeIndex);
-        item.set_index_name(std::move(name));
-        item.set_fields(std::move(properties));
+        auto item = MetaServiceUtils::parseIndex(val);
         items.emplace_back(std::move(item));
         iter->next();
     }
