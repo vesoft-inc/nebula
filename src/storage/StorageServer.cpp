@@ -118,6 +118,10 @@ bool StorageServer::start() {
     schemaMan_ = meta::SchemaManager::create();
     schemaMan_->init(metaClient_.get());
 
+    LOG(INFO) << "Init index manager";
+    auto indexMan = meta::IndexManager::create();
+    indexMan->init(metaClient_.get());
+
     LOG(INFO) << "Init kvstore";
     kvstore_ = getStoreInstance();
 
@@ -133,6 +137,7 @@ bool StorageServer::start() {
 
     auto handler = std::make_shared<StorageServiceHandler>(kvstore_.get(),
                                                            schemaMan_.get(),
+                                                           indexMan.get(),
                                                            metaClient_.get());
     try {
         LOG(INFO) << "The storage deamon start on " << localHost_;

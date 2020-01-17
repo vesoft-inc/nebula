@@ -19,7 +19,11 @@ TEST(AddVerticesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/AddVerticesTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
-    auto* processor = AddVerticesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto indexMan = TestUtils::mockIndexMan();
+    auto* processor = AddVerticesProcessor::instance(kv.get(),
+                                                     schemaMan.get(),
+                                                     indexMan.get(),
+                                                     nullptr);
 
     LOG(INFO) << "Build AddVerticesRequest...";
     cpp2::AddVerticesRequest req;

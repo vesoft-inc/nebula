@@ -20,16 +20,20 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/QueryEdgeKeysTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     // Add edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+        auto* processor = AddEdgesProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
 
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
         // partId => List<Edge>
         // Edge => {EdgeKey, props}
-        for (PartitionID partId = 0; partId < 3; partId++) {
+        for (PartitionID partId = 1; partId <= 3; partId++) {
             auto edges = TestUtils::setupEdges(partId, partId * 10, 10);
             for (VertexID srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
                 cpp2::EdgeKey key;
@@ -50,7 +54,7 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
     }
 
     LOG(INFO) << "Check data in kv store...";
-    for (PartitionID partId = 0; partId < 3; partId++) {
+    for (PartitionID partId = 1; partId <= 3; partId++) {
         for (VertexID srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
             auto prefix = NebulaKeyUtils::edgePrefix(partId, srcId, srcId * 100 + 1);
             std::unique_ptr<kvstore::KVIterator> iter;
@@ -67,7 +71,7 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
 
     // Query edgekeys
     {
-        for (PartitionID partId = 0; partId < 3; partId++) {
+        for (PartitionID partId = 1; partId <= 3; partId++) {
             for (VertexID srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
                 auto* processor = QueryEdgeKeysProcessor::instance(kv.get(), nullptr);
                 cpp2::EdgeKeyRequest req;
