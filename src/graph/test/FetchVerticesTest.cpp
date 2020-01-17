@@ -35,12 +35,12 @@ TEST_F(FetchVerticesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"player.name"}, {"player.age"}
+            {"VertexID"}, {"player.name"}, {"player.age"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-            {player.name(), player.age()},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+            {player.vid(), player.name(), player.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -54,12 +54,12 @@ TEST_F(FetchVerticesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"player.name"}, {"player.age"}, {"(player.age>30)"}
+            {"VertexID"}, {"player.name"}, {"player.age"}, {"(player.age>30)"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<std::string, int64_t, bool>> expected = {
-            {player.name(), player.age(), player.age() > 30},
+        std::vector<std::tuple<int64_t, std::string, int64_t, bool>> expected = {
+            {player.vid(), player.name(), player.age(), player.age() > 30},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -73,13 +73,13 @@ TEST_F(FetchVerticesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"player.name"}, {"player.age"}
+            {"VertexID"}, {"player.name"}, {"player.age"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-            {"Tony Parker", players_["Tony Parker"].age()},
-            {"Tim Duncan", players_["Tim Duncan"].age()},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+            {players_["Tony Parker"].vid(), "Tony Parker", players_["Tony Parker"].age()},
+            {players_["Tim Duncan"].vid(), "Tim Duncan", players_["Tim Duncan"].age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -93,13 +93,13 @@ TEST_F(FetchVerticesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"player.name"}, {"player.age"}
+            {"VertexID"}, {"player.name"}, {"player.age"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-            {"Tony Parker", players_["Tony Parker"].age()},
-            {"Tim Duncan", players_["Tim Duncan"].age()},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+            {players_["Tony Parker"].vid(), "Tony Parker", players_["Tony Parker"].age()},
+            {players_["Tim Duncan"].vid(), "Tim Duncan", players_["Tim Duncan"].age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -114,13 +114,13 @@ TEST_F(FetchVerticesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"name"}, {"player.age"}
+            {"VertexID"}, {"name"}, {"player.age"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-            {"Tim Duncan", players_["Tim Duncan"].age()},
-            {"Tony Parker", players_["Tony Parker"].age()},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+            {players_["Tim Duncan"].vid(), "Tim Duncan", players_["Tim Duncan"].age()},
+            {players_["Tony Parker"].vid(), "Tony Parker", players_["Tony Parker"].age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected, false));
     }
@@ -134,12 +134,12 @@ TEST_F(FetchVerticesTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"player.name"}, {"player.age"}
+            {"VertexID"}, {"player.name"}, {"player.age"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-            {player.name(), player.age()},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+            {player.vid(), player.name(), player.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -154,7 +154,7 @@ TEST_F(FetchVerticesTest, Base) {
         std::vector<std::tuple<std::string, int64_t>> expected = {
             {player.name(), player.age()},
         };
-        ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyResult(resp, expected, true, {0}));
     }
 }
 
@@ -168,12 +168,12 @@ TEST_F(FetchVerticesTest, NoYield) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"player.name"}, {"player.age"}
+            {"VertexID"}, {"player.name"}, {"player.age"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-            {player.name(), player.age()},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+            {player.vid(), player.name(), player.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -186,12 +186,12 @@ TEST_F(FetchVerticesTest, NoYield) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"player.name"}, {"player.age"}
+            {"VertexID"}, {"player.name"}, {"player.age"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-            {player.name(), player.age()},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+            {player.vid(), player.name(), player.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -205,7 +205,7 @@ TEST_F(FetchVerticesTest, NoYield) {
         std::vector<std::tuple<std::string, int64_t>> expected = {
             {player.name(), player.age()},
         };
-        ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyResult(resp, expected, true, {0}));
     }
 }
 
@@ -220,12 +220,12 @@ TEST_F(FetchVerticesTest, Distinct) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"player.name"}, {"player.age"}
+            {"VertexID"}, {"player.name"}, {"player.age"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-            {player.name(), player.age()},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+            {player.vid(), player.name(), player.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -240,12 +240,13 @@ TEST_F(FetchVerticesTest, Distinct) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<std::string> expectedColNames{
-            {"player.age"}
+            {"VertexID"}, {"player.age"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
 
-        std::vector<std::tuple<int64_t>> expected = {
-            {boris.age()},
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {boris.vid(), boris.age()},
+            {tony.vid(), tony.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -317,6 +318,68 @@ TEST_F(FetchVerticesTest, NonExistVertex) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FETCH PROP ON * %ld";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+}
+
+TEST_F(FetchVerticesTest, FetchAll) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "FETCH PROP ON * %ld ";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::string> expectedColNames{
+            {"VertexID"}, {"player.name"}, {"player.age"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+            {player.vid(), player.name(), player.age()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tim Duncan"];
+        auto *fmt = "FETCH PROP ON bachelor %ld ";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::string> expectedColNames{
+            {"VertexID"}, {"bachelor.name"}, {"bachelor.speciality"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+        std::vector<std::tuple<int64_t, std::string, std::string>> expected = {
+            {player.vid(), bachelors_["Tim Duncan"].name(), bachelors_["Tim Duncan"].speciality()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tim Duncan"];
+        auto *fmt = "FETCH PROP ON * %ld ";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::string> expectedColNames{
+            {"VertexID"}, {"player.name"}, {"player.age"},
+            {"bachelor.name"}, {"bachelor.speciality"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+        std::vector<std::tuple<int64_t, std::string, int64_t,
+                    std::string, std::string>> expected = {
+            {player.vid(), player.name(), player.age(),
+                bachelors_["Tim Duncan"].name(), bachelors_["Tim Duncan"].speciality()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 }  // namespace graph

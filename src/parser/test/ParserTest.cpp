@@ -408,6 +408,75 @@ TEST(Parser, ColumnSpacesTest) {
     }
 }
 
+TEST(Parser, IndexOperation) {
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG INDEX name_index ON person(name)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG INDEX IF NOT EXISTS name_index ON person(name)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG INDEX IF NOT EXISTS name_index ON person(name, age)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE EDGE INDEX IF NOT EXISTS like_index ON service(like)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE EDGE INDEX IF NOT EXISTS like_index ON service(like, score)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DROP TAG INDEX name_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DROP EDGE INDEX like_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DESCRIBE TAG INDEX name_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DESCRIBE EDGE INDEX like_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "BUILD TAG INDEX name_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "BUILD EDGE INDEX like_index";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
 TEST(Parser, Set) {
     {
         GQLParser parser;
@@ -861,6 +930,12 @@ TEST(Parser, FetchVertex) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "FETCH PROP ON * 1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, FetchEdge) {
@@ -963,6 +1038,18 @@ TEST(Parser, AdminOperation) {
     {
         GQLParser parser;
         std::string query = "SHOW EDGES";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW TAG INDEXES";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW EDGE INDEXES";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -1083,7 +1170,8 @@ TEST(Parser, UnreservedKeywords) {
     {
         GQLParser parser;
         std::string query = "CREATE TAG tag1(space string, spaces string, "
-                            "email string, password string, roles string)";
+                            "email string, password string, roles string, uuid int, "
+                            "path string, variables string, leader string, data string)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

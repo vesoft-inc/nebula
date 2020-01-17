@@ -896,39 +896,46 @@ void RaftPart::processAppendLogResponses(
         }
         // Step 5: Check whether need to continue
         // the log replication
-        CHECK(replicatingLogs_);
-        // Continue to process the original AppendLogsIterator if necessary
-        iter.resume();
-        if (iter.empty()) {
+        {
             std::lock_guard<std::mutex> lck(logsLock_);
-            VLOG(2) << idStr_ << "logs size " << logs_.size();
-            if (logs_.size() > 0) {
-                // continue to replicate the logs
-                sendingPromise_ = std::move(cachingPromise_);
-                cachingPromise_.reset();
-                iter = AppendLogsIterator(
-                    firstLogId,
-                    currTerm,
-                    std::move(logs_),
-                    [this] (AtomicOp op) -> std::string {
-                        auto opRet = op();
-                        if (opRet.empty()) {
-                            // Failed
-                            sendingPromise_.setOneSingleValue(
-                                AppendLogResult::E_ATOMIC_OP_FAILURE);
-                        }
-                        return opRet;
-                    });
-                logs_.clear();
-                bufferOverFlow_ = false;
-            } else {
-                replicatingLogs_ = false;
-                VLOG(2) << idStr_ << "No more log to be replicated";
+            CHECK(replicatingLogs_);
+            // Continue to process the original AppendLogsIterator if necessary
+            iter.resume();
+            // If no more valid logs to be replicated in iter, create a new one if we have new log
+            if (iter.empty()) {
+                VLOG(2) << idStr_ << "logs size " << logs_.size();
+                if (logs_.size() > 0) {
+                    // continue to replicate the logs
+                    sendingPromise_ = std::move(cachingPromise_);
+                    cachingPromise_.reset();
+                    iter = AppendLogsIterator(
+                        firstLogId,
+                        currTerm,
+                        std::move(logs_),
+                        [this] (AtomicOp op) -> std::string {
+                            auto opRet = op();
+                            if (opRet.empty()) {
+                                // Failed
+                                sendingPromise_.setOneSingleValue(
+                                    AppendLogResult::E_ATOMIC_OP_FAILURE);
+                            }
+                            return opRet;
+                        });
+                    logs_.clear();
+                    bufferOverFlow_ = false;
+                }
+                // Reset replicatingLogs_ one of the following is true:
+                // 1. old iter is empty && logs_.size() == 0
+                // 2. old iter is empty && logs_.size() > 0, but all logs in new iter is atomic op,
+                //    and all of them failed, which would make iter is empty again
+                if (iter.empty()) {
+                    replicatingLogs_ = false;
+                    VLOG(2) << idStr_ << "No more log to be replicated";
+                    return;
+                }
             }
         }
-        if (!iter.empty()) {
-           this->appendLogsInternal(std::move(iter), currTerm);
-        }
+        this->appendLogsInternal(std::move(iter), currTerm);
     } else {
         // Not enough hosts accepted the log, re-try
         LOG(WARNING) << idStr_ << "Only " << numSucceeded

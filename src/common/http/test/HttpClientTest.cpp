@@ -4,13 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
 #include "http/HttpClient.h"
+
 #include <gtest/gtest.h>
-#include "webservice/Common.h"
-#include "webservice/WebService.h"
-#include "proxygen/httpserver/RequestHandler.h"
+#include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
+
+#include "webservice/Common.h"
+#include "webservice/Router.h"
+#include "webservice/WebService.h"
 
 namespace nebula {
 namespace http {
@@ -51,18 +53,22 @@ public:
         FLAGS_ws_http_port = 0;
         FLAGS_ws_h2_port = 0;
         LOG(INFO) << "Starting web service...";
+        webSvc_ = std::make_unique<WebService>();
 
-        WebService::registerHandler("/path", [] {
-            return new HttpClientHandler();
-        });
-        auto status = WebService::start();
+        auto& router = webSvc_->router();
+        router.get("/path").handler([](auto&&) { return new HttpClientHandler(); });
+
+        auto status = webSvc_->start();
         ASSERT_TRUE(status.ok()) << status;
     }
 
     void TearDown() override {
-        WebService::stop();
+        webSvc_.reset();
         VLOG(1) << "Web service stopped";
     }
+
+private:
+    std::unique_ptr<WebService> webSvc_;
 };
 
 TEST(HttpClient, get) {
