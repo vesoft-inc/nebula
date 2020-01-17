@@ -42,7 +42,7 @@ jobs:
         run: cd build && cmake ..
       - name: CMake with clang
         if: matrix.compiler == 'clang'
-        run: cd build && cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DNEBULA_CLANG_USE_GCC_TOOLCHAIN=/opt/vesoft/toolset/gcc/7.5.0 ..
+        run: cd build && cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DENABLE_UBSAN=on -DNEBULA_CLANG_USE_GCC_TOOLCHAIN=/opt/vesoft/toolset/gcc/7.5.0 ..
       - name: Make
         run: cd build && make -j $(nproc)
       - name: CTest with single thread
