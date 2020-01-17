@@ -30,8 +30,8 @@ jobs:
     displayName: 'test'
 
   - script: |
-    apt update -y && apt install -y lcov
-    cd _build
-    lcov --capture --gcov-tool /opt/vesoft/toolset/gcc/7.5.0/bin/gcov --directory . --output-file coverage.info
-    bash <(curl -s https://codecov.io/bash) -t $(CODECOV_TOKEN) -f coverage.info
+      apt update -y && apt install -y lcov
+      cd _build
+      lcov --capture --gcov-tool /opt/vesoft/toolset/gcc/7.5.0/bin/gcov --directory . --output-file coverage.info
+      bash <(curl -s https://codecov.io/bash) -t $(CODECOV_TOKEN) -f coverage.info
     displayName: 'coverage'
