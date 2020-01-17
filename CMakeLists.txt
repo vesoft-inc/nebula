@@ -294,6 +294,8 @@ if(ENABLE_UBSAN)
         MESSAGE(FATAL_ERROR "The compiler does not support Undefined Behavior Sanitizer")
     endif()
     add_compile_options(-fsanitize=undefined -fno-sanitize=alignment)
+    # TODO(dutor) Remove the following line when RTTI-enabled RocksDB is ready
+    add_compile_options(-fno-sanitize=vptr)
     if(NOT ENABLE_ASAN)
         add_compile_options(-g)
         add_compile_options(-fno-omit-frame-pointer)
