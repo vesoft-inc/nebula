@@ -273,6 +273,7 @@ unreserved_keyword
      | KW_DATA               { $$ = new std::string("data"); }
      | KW_LEADER             { $$ = new std::string("leader"); }
      | KW_UUID               { $$ = new std::string("uuid"); }
+     | KW_VARIABLES          { $$ = new std::string("variables"); }
      ;
 
 agg_function
