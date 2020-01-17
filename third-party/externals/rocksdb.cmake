@@ -27,10 +27,7 @@ ExternalProject_Add(
         -DWITH_GFLAGS=OFF
         -DWITH_TESTS=OFF
         -DWITH_TOOLS=OFF
-<<<<<<< HEAD
         -DUSE_RTTI=ON
-=======
->>>>>>> Resolve conflict
         -DFAIL_ON_WARNINGS=OFF
         -DCMAKE_BUILD_TYPE=Release
 #-DCMAKE_CXX_FLAGS:STRING=${ROCKSDB_CXX_FLAGS}

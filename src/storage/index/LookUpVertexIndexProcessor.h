@@ -18,9 +18,10 @@ class LookUpVertexIndexProcessor:
 public:
     static LookUpVertexIndexProcessor* instance(kvstore::KVStore* kvstore,
                                                 meta::SchemaManager* schemaMan,
+                                                meta::IndexManager* indexMan,
                                                 stats::Stats* stats,
                                                 VertexCache* cache = nullptr) {
-        return new LookUpVertexIndexProcessor(kvstore, schemaMan, stats, cache);
+        return new LookUpVertexIndexProcessor(kvstore, schemaMan, indexMan, stats, cache);
     }
 
     void process(const cpp2::LookUpIndexRequest& req);
@@ -28,10 +29,11 @@ public:
 private:
     explicit LookUpVertexIndexProcessor(kvstore::KVStore* kvstore,
                                         meta::SchemaManager* schemaMan,
+                                        meta::IndexManager* indexMan,
                                         stats::Stats* stats,
                                         VertexCache* cache = nullptr)
         : IndexExecutor<cpp2::LookUpVertexIndexResp>
-                (kvstore, schemaMan, stats, cache) {}
+                (kvstore, schemaMan, indexMan, stats, cache) {}
 };
 }  // namespace storage
 }  // namespace nebula

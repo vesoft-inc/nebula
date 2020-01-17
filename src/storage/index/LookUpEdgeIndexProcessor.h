@@ -17,19 +17,21 @@ class LookUpEdgeIndexProcessor
     : public IndexExecutor<cpp2::LookUpEdgeIndexResp> {
 public:
     static LookUpEdgeIndexProcessor* instance(kvstore::KVStore* kvstore,
-                                            meta::SchemaManager* schemaMan,
-                                            stats::Stats* stats) {
-        return new LookUpEdgeIndexProcessor(kvstore, schemaMan, stats);
+                                              meta::SchemaManager* schemaMan,
+                                              meta::IndexManager* indexMan,
+                                              stats::Stats* stats) {
+        return new LookUpEdgeIndexProcessor(kvstore, schemaMan, indexMan, stats);
     }
 
     void process(const cpp2::LookUpIndexRequest& req);
 
 private:
     explicit LookUpEdgeIndexProcessor(kvstore::KVStore* kvstore,
-                                    meta::SchemaManager* schemaMan,
-                                    stats::Stats* stats)
+                                      meta::SchemaManager* schemaMan,
+                                      meta::IndexManager* indexMan,
+                                      stats::Stats* stats)
         : IndexExecutor<cpp2::LookUpEdgeIndexResp>
-            (kvstore, schemaMan, stats, nullptr, true) {}
+            (kvstore, schemaMan, indexMan, stats, nullptr, true) {}
 };
 }  // namespace storage
 }  // namespace nebula

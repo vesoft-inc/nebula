@@ -316,6 +316,7 @@ nebula_add_test(
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 
+
 nebula_add_test(
     NAME scan_vertex_test
     SOURCES ScanVertexTest.cpp
