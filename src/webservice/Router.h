@@ -14,7 +14,6 @@
 
 #include <proxygen/lib/http/HTTPMethod.h>
 
-#include "common/base/Base.h"
 #include "common/cpp/helpers.h"
 
 namespace proxygen {
@@ -71,9 +70,8 @@ private:
 class Router final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
     explicit Router(const std::string &prefix) : prefix_(prefix), webSvc_(nullptr) {}
-    Router(const std::string &prefix, const WebService *webSvc) : prefix_(prefix), webSvc_(webSvc) {
-        UNUSED(DCHECK_NOTNULL(webSvc));
-    }
+    Router(const std::string &prefix, const WebService *webSvc) : prefix_(prefix),
+        webSvc_(DCHECK_NOTNULL(webSvc)) {}
     ~Router();
 
     proxygen::RequestHandler *dispatch(const proxygen::HTTPMessage *msg) const;
