@@ -26,16 +26,16 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
         auto key = iter->key();
         auto val = iter->val();
         auto tagID = *reinterpret_cast<const TagID *>(key.data() + prefix.size());
-        auto vers = MetaServiceUtils::parseTagVersion(key);
+        auto version = MetaServiceUtils::parseTagVersion(key);
         auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
         auto tagName = val.subpiece(sizeof(int32_t), nameLen).str();
         auto schema = MetaServiceUtils::parseSchema(val);
-        cpp2::TagItem tag;
-        tag.set_tag_id(tagID);
-        tag.set_tag_name(std::move(tagName));
-        tag.set_version(vers);
-        tag.set_schema(std::move(schema));
-        tags.emplace_back(std::move(tag));
+        cpp2::TagItem item;
+        item.set_tag_id(tagID);
+        item.set_tag_name(std::move(tagName));
+        item.set_version(version);
+        item.set_schema(std::move(schema));
+        tags.emplace_back(std::move(item));
         iter->next();
     }
     resp_.set_tags(std::move(tags));
