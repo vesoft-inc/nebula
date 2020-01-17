@@ -72,7 +72,8 @@ TEST(LeaderTransferTest, ChangeLeaderServalTimesTest) {
     while (++times <= 10) {
         auto leaderIndex = nLeaderIndex;
         nLeaderIndex = (nLeaderIndex + 1) % 3;
-        LOG(INFO) << times << " ===== Let's transfer the leader to " << allHosts[nLeaderIndex];
+        LOG(INFO) << times << " ===== Let's transfer the leader from " << allHosts[leaderIndex]
+                           << " to " << allHosts[nLeaderIndex];
         leader.reset();
         auto f = copies[leaderIndex]->sendCommandAsync(
                                 test::encodeTransferLeader(allHosts[nLeaderIndex]));
