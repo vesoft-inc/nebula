@@ -140,11 +140,10 @@ void run(int32_t iters, int32_t handlerNum) {
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(FLAGS_handler_num);
     for (decltype(iters) i = 0; i < iters; i++) {
         auto* processor
-                = nebula::storage::QueryBoundProcessor::instance(
-                                                            gKV.get(),
-                                                            schema.get(),
-                                                            nullptr,
-                                                            executor.get());
+                = nebula::storage::QueryBoundProcessor::instance(gKV.get(),
+                                                                 schema.get(),
+                                                                 nullptr,
+                                                                 executor.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();

@@ -21,9 +21,13 @@ TEST(DeleteVertexTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/DeleteVertexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     // Add vertices
     {
-        auto* processor = AddVerticesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+        auto* processor = AddVerticesProcessor::instance(kv.get(),
+                                                         schemaMan.get(),
+                                                         indexMan.get(),
+                                                         nullptr);
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
         req.overwritable = false;
@@ -61,6 +65,7 @@ TEST(DeleteVertexTest, SimpleTest) {
             for (VertexID vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
                 auto* processor = DeleteVertexProcessor::instance(kv.get(),
                                                                   schemaMan.get(),
+                                                                  indexMan.get(),
                                                                   nullptr);
                 cpp2::DeleteVertexRequest req;
                 req.set_space_id(0);

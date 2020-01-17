@@ -15,6 +15,7 @@
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "dataman/RowWriter.h"
 #include <folly/Benchmark.h>
+#include "storage/test/TestUtils.h"
 #include "storage/StorageFlags.h"
 
 
@@ -24,127 +25,6 @@ DEFINE_string(root_data_path, "/tmp/IndexWritePref", "Engine data path");
 
 namespace nebula {
 namespace storage {
-std::unique_ptr<kvstore::KVStore> initKV(
-        const char* rootPath,
-        int32_t partitionNumber = 1,
-        HostAddr localhost = {0, 0},
-        meta::MetaClient* mClient = nullptr,
-        bool useMetaServer = false,
-        std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder = nullptr) {
-    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
-    auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-            1, true /*stats*/);
-    workers->setNamePrefix("executor");
-    workers->start();
-
-
-    kvstore::KVOptions options;
-    if (useMetaServer) {
-        options.partMan_ = std::make_unique<kvstore::MetaServerBasedPartManager>(
-                localhost,
-                mClient);
-    } else {
-        auto memPartMan = std::make_unique<kvstore::MemPartManager>();
-        auto& partsMap = memPartMan->partsMap();
-        for (auto partId = 0; partId < partitionNumber; partId++) {
-            partsMap[0][partId] = PartMeta();
-        }
-
-        options.partMan_ = std::move(memPartMan);
-    }
-    if (fs::FileUtils::exist(rootPath)) {
-        fs::FileUtils::remove(rootPath, true);
-    }
-    fs::FileUtils::makeDir(rootPath);
-    std::vector<std::string> paths;
-    paths.emplace_back(rootPath);
-
-    // Prepare KVStore
-    options.dataPaths_ = std::move(paths);
-    options.cffBuilder_ = std::move(cffBuilder);
-    auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
-                                                        ioPool,
-                                                        localhost,
-                                                        workers);
-    store->init();
-    sleep(1);
-    return store;
-}
-
-std::shared_ptr<meta::SchemaProviderIf> genTagSchema(TagID tagId) {
-    nebula::cpp2::Schema schema;
-    for (auto i = 0; i < 3; i++) {
-        nebula::cpp2::ColumnDef column;
-        column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
-        column.type.type = nebula::cpp2::SupportedType::INT;
-        schema.columns.emplace_back(std::move(column));
-    }
-    for (auto i = 3; i < 6; i++) {
-        nebula::cpp2::ColumnDef column;
-        column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
-        column.type.type = nebula::cpp2::SupportedType::STRING;
-        schema.columns.emplace_back(std::move(column));
-    }
-    return std::make_shared<ResultSchemaProvider>(std::move(schema));
-}
-
-std::unique_ptr<meta::SchemaManager> mockSchemaMan(TagID tagId,
-    const std::vector<nebula::cpp2::IndexItem>& tagIndexes = {}) {
-    auto* schemaMan = new AdHocSchemaManager();
-    schemaMan->addTagSchema(0 /*space id*/, tagId, genTagSchema(tagId));
-    for (auto& index : tagIndexes) {
-        schemaMan->addTagIndex(0 /*space id*/, index);
-    }
-    std::unique_ptr<meta::SchemaManager> sm(schemaMan);
-    return sm;
-}
-
-std::vector<nebula::cpp2::IndexItem> mockIndexes(TagID tagId) {
-    std::vector<nebula::cpp2::IndexItem> indexes;
-    std::vector<nebula::cpp2::ColumnDef> cols;
-    for (auto i = 0; i < 3; i++) {
-        nebula::cpp2::ColumnDef column;
-        column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
-        column.type.type = nebula::cpp2::SupportedType::INT;
-        cols.emplace_back(std::move(column));
-    }
-    for (auto i = 3; i < 6; i++) {
-        nebula::cpp2::ColumnDef column;
-        column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
-        column.type.type = nebula::cpp2::SupportedType::STRING;
-        cols.emplace_back(std::move(column));
-    }
-    // indexId can be same with tagId
-    nebula::cpp2::IndexItem index;
-    index.set_index_id(tagId);
-    index.set_tagOrEdge(tagId);
-    index.set_cols(std::move(cols));
-    indexes.emplace_back(std::move(index));
-    return indexes;
-}
-
-std::vector<nebula::cpp2::IndexItem> mockMultipleIndexes(TagID tagId) {
-    std::vector<nebula::cpp2::IndexItem> indexes;
-    std::vector<nebula::cpp2::ColumnDef> cols;
-    IndexID indexId = 0;
-    for (auto i = 0; i < 3; i++) {
-        {
-            nebula::cpp2::ColumnDef column;
-            column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
-            column.type.type = nebula::cpp2::SupportedType::INT;
-            cols.emplace_back(std::move(column));
-            column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i + 3);
-            column.type.type = nebula::cpp2::SupportedType::STRING;
-            cols.emplace_back(std::move(column));
-            nebula::cpp2::IndexItem index;
-            index.set_index_id(++indexId);
-            index.set_tagOrEdge(tagId);
-            index.set_cols(std::move(cols));
-            indexes.emplace_back(std::move(index));
-        }
-    }
-    return indexes;
-}
 
 std::string genData() {
     RowWriter writer;
@@ -176,6 +56,7 @@ std::vector<storage::cpp2::Vertex> genVertices(VertexID &vId, TagID tagId) {
 
 bool processVertices(kvstore::KVStore* kv,
                      meta::SchemaManager* schemaMan,
+                     meta::IndexManager* indexMan,
                      VertexID &vId) {
     cpp2::AddVerticesRequest req;
     BENCHMARK_SUSPEND {
@@ -186,7 +67,8 @@ bool processVertices(kvstore::KVStore* kv,
         vertices.insert(vertices.end(), v.begin(), v.end());
         req.parts.emplace(0, std::move(vertices));
     };
-    auto* processor = AddVerticesProcessor::instance(kv, schemaMan, nullptr);
+
+    auto* processor = AddVerticesProcessor::instance(kv, schemaMan, indexMan, nullptr);
     auto fut = processor->getFuture();
     processor->process(std::move(req));
     auto resp = std::move(fut).get();
@@ -201,6 +83,7 @@ bool processVertices(kvstore::KVStore* kv,
 void insertVertices(bool withoutIndex, bool skipIndexCheck = false) {
     std::unique_ptr<kvstore::KVStore> kv;
     std::unique_ptr<meta::SchemaManager> schemaMan;
+    std::unique_ptr<meta::IndexManager> indexMan;
     VertexID vId = 0;
     auto skipCheck = FLAGS_ignore_index_check_pre_insert;
     BENCHMARK_SUSPEND {
@@ -221,16 +104,16 @@ void insertVertices(bool withoutIndex, bool skipIndexCheck = false) {
                                                "attachIndex");
             }
         }
-        kv = initKV(std::move(rootPath).c_str());
+        kv = TestUtils::initKV(std::move(rootPath).c_str());
         if (withoutIndex) {
-            schemaMan = mockSchemaMan(1);
+            schemaMan = TestUtils::mockSchemaMan(1);
         } else {
-            auto indexes = mockIndexes(1);
-            schemaMan = mockSchemaMan(1, std::move(indexes));
+            indexMan = TestUtils::mockIndexMan(1, 3001, 3002);
+            schemaMan = TestUtils::mockSchemaMan(1);
         }
     };
     while (vId < FLAGS_total_vertices_size) {
-        if (!processVertices(kv.get(), schemaMan.get(), vId)) {
+        if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
             LOG(ERROR) << "Vertices bulk insert error";
             return;
         }
@@ -254,8 +137,7 @@ void insertVertices(bool withoutIndex, bool skipIndexCheck = false) {
                            << FLAGS_total_vertices_size
                            << "actual : " << cnt;
             }
-        }
-        if (!withoutIndex) {
+        } else {
             {
                 auto prefix = NebulaKeyUtils::prefix(0);
                 std::unique_ptr<kvstore::KVIterator> iter;
@@ -309,15 +191,16 @@ void insertVertices(bool withoutIndex, bool skipIndexCheck = false) {
 void insertUnmatchIndex() {
     std::unique_ptr<kvstore::KVStore> kv;
     std::unique_ptr<meta::SchemaManager> schemaMan;
+    std::unique_ptr<meta::IndexManager> indexMan;
     VertexID vId = 0;
     BENCHMARK_SUSPEND {
         auto rootPath = folly::stringPrintf("%s/%s", FLAGS_root_data_path.c_str(), "unmatchIndex");
-        kv = initKV(std::move(rootPath).c_str());
-        auto indexes = mockIndexes(100);
-        schemaMan = mockSchemaMan(1, std::move(indexes));
+        kv = TestUtils::initKV(std::move(rootPath).c_str());
+        indexMan = TestUtils::mockIndexMan(1, 2001, 2002);
+        schemaMan = TestUtils::mockSchemaMan(1);
     };
     while (vId < FLAGS_total_vertices_size) {
-        if (!processVertices(kv.get(), schemaMan.get(), vId)) {
+        if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
             LOG(ERROR) << "Vertices bulk insert error";
             return;
         }
@@ -374,18 +257,18 @@ void insertUnmatchIndex() {
 void insertDupVertices() {
     std::unique_ptr<kvstore::KVStore> kv;
     std::unique_ptr<meta::SchemaManager> schemaMan;
+    std::unique_ptr<meta::IndexManager> indexMan;
     VertexID vId = 0;
     BENCHMARK_SUSPEND {
         auto rootPath = folly::stringPrintf("%s/%s",
                 FLAGS_root_data_path.c_str(),
                 "duplicateIndex");
-        kv = initKV(std::move(rootPath).c_str());
-        auto indexes = mockIndexes(1);
-        schemaMan = mockSchemaMan(1, std::move(indexes));
+        kv = TestUtils::initKV(std::move(rootPath).c_str());
+        schemaMan = TestUtils::mockSchemaMan(1);
     };
     BENCHMARK_SUSPEND {
         while (vId < FLAGS_total_vertices_size) {
-            if (!processVertices(kv.get(), schemaMan.get(), vId)) {
+            if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
                 LOG(ERROR) << "Vertices bulk insert error";
                 return;
             }
@@ -393,7 +276,7 @@ void insertDupVertices() {
     };
     vId = 0;
     while (vId < FLAGS_total_vertices_size) {
-        if (!processVertices(kv.get(), schemaMan.get(), vId)) {
+        if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
             LOG(ERROR) << "Vertices bulk insert error";
             return;
         }
@@ -451,6 +334,7 @@ void insertDupVertices() {
 void insertVerticesMultIndex(bool skipIndexCheck = false) {
     std::unique_ptr<kvstore::KVStore> kv;
     std::unique_ptr<meta::SchemaManager> schemaMan;
+    std::unique_ptr<meta::IndexManager> indexMan;
     auto skipCheck = FLAGS_ignore_index_check_pre_insert;
     VertexID vId = 0;
     BENCHMARK_SUSPEND {
@@ -466,12 +350,12 @@ void insertVerticesMultIndex(bool skipIndexCheck = false) {
                                            "multIndex");
         }
 
-        kv = initKV(std::move(rootPath).c_str());
-        auto indexes = mockMultipleIndexes(1);
-        schemaMan = mockSchemaMan(1, std::move(indexes));
+        kv = TestUtils::initKV(std::move(rootPath).c_str());
+        indexMan = TestUtils::mockMultiIndexMan(1, 3001, 3002);
+        schemaMan = TestUtils::mockSchemaMan(1);
     };
     while (vId < FLAGS_total_vertices_size) {
-        if (!processVertices(kv.get(), schemaMan.get(), vId)) {
+        if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
             LOG(ERROR) << "Vertices bulk insert error";
             return;
         }
