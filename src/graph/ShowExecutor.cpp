@@ -772,16 +772,12 @@ void ShowExecutor::showCreateTagIndex() {
         buf.reserve(256);
         buf += folly::stringPrintf("CREATE TAG INDEX %s ON ", tagName->c_str());
 
-        auto& fields = indexItems.get_fields().get_fields();
-        auto iter = fields.begin();
-        while (iter != fields.end()) {
-            buf += iter->first;
-            buf += "(";
-            for (auto column : iter->second) {
-                buf += column.name;
-                buf += ", ";
-            }
-            iter++;
+        auto& fields = indexItems.get_fields();
+        buf += indexItems.get_schema_name();
+        buf += "(";
+        for (auto column : fields) {
+            buf += column.name;
+            buf += ", ";
         }
         buf = buf.substr(0, buf.size() - 2);
         buf += ")";
@@ -835,16 +831,12 @@ auto *name = sentence_->getName();
         buf.reserve(256);
         buf += folly::stringPrintf("CREATE EDGE INDEX %s ON ", edgeName->c_str());
 
-        auto& fields = indexItems.get_fields().get_fields();
-        auto iter = fields.begin();
-        while (iter != fields.end()) {
-            buf += iter->first;
-            buf += "(";
-            for (auto column : iter->second) {
-                buf += column.name;
-                buf += ", ";
-            }
-            iter++;
+        auto& fields = indexItems.get_fields();
+        buf += indexItems.get_schema_name();
+        buf += "(";
+        for (auto column : fields) {
+            buf += column.name;
+            buf += ", ";
         }
         buf = buf.substr(0, buf.size() - 2);
         buf += ")";

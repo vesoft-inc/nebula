@@ -23,11 +23,11 @@ void mockData(kvstore::KVStore* kv,
     auto edgeType = 101;
     auto spaceId = 0;
     auto schema = schemaMng->getEdgeSchema(spaceId, edgeType);
-    for (auto partId = 0; partId < 3; partId++) {
+    for (PartitionID partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
-        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+        for (VertexID vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             // Generate 7 edges for each source vertex id
-            for (auto dstId = 10001; dstId <= 10007; dstId++) {
+            for (VertexID dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 auto key = NebulaKeyUtils::edgeKey(
                         partId, vertexId, edgeType, dstId - 10001, dstId, version);
@@ -57,9 +57,9 @@ void mockData(kvstore::KVStore* kv,
 void buildRequest(cpp2::EdgePropRequest& req) {
     req.set_space_id(0);
     decltype(req.parts) tmpEdges;
-    for (auto partId = 0; partId < 3; partId++) {
-        for (auto vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            for (auto dstId = 10001; dstId <= 10007; dstId++) {
+    for (PartitionID partId = 0; partId < 3; partId++) {
+        for (VertexID vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+            for (VertexID dstId = 10001; dstId <= 10007; dstId++) {
                 tmpEdges[partId].emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                               vertexId, 101, dstId - 10001, dstId);
             }
