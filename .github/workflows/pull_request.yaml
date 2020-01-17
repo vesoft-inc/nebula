@@ -43,6 +43,8 @@ jobs:
             compiler: clang
           - cmake_build_type: Release
             cmake_with_testing: ON
+          - cmake_build_type: Debug
+            cmake_with_testing: OFF
 
     container:
       image: vesoft/nebula-dev:${{ matrix.tag }}
