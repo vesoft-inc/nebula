@@ -79,11 +79,9 @@ union ID {
     1: common.GraphSpaceID  space_id,
     2: common.TagID         tag_id,
     3: common.EdgeType      edge_type,
-    4: common.TagIndexID    tag_index_id,
-    5: common.EdgeIndexID   edge_index_id,
-    6: common.UserID        user_id,
-    7: common.ClusterID     cluster_id,
-    8: common.IndexID       index_id,
+    4: common.IndexID       index_id,
+    5: common.UserID        user_id,
+    6: common.ClusterID     cluster_id,
 }
 
 struct IdName {
@@ -119,26 +117,6 @@ struct EdgeItem {
     2: string               edge_name,
     3: common.SchemaVer     version,
     4: common.Schema        schema,
-}
-
-struct IndexProperties {
-    1: map<string, list<string>>(cpp.template = "std::map")  fields,
-}
-
-struct IndexFields {
-    1: map<string, list<common.ColumnDef>>(cpp.template = "std::map")  fields,
-}
-
-struct TagIndexItem {
-    1: common.TagIndexID    index_id,
-    2: string               index_name,
-    3: IndexFields          fields,
-}
-
-struct EdgeIndexItem {
-    1: common.EdgeIndexID   index_id,
-    2: string               index_name,
-    3: IndexFields          fields ,
 }
 
 enum HostStatus {
@@ -412,10 +390,11 @@ struct HBReq {
 }
 
 struct CreateTagIndexReq {
-    1: common.GraphSpaceID space_id,
-    2: string              index_name,
-    3: IndexProperties     properties,
-    4: bool                if_not_exists,
+    1: common.GraphSpaceID  space_id,
+    2: string               index_name,
+    3: string               tag_name,
+    4: list<string>         fields,
+    5: bool                 if_not_exists,
 }
 
 struct DropTagIndexReq {
@@ -432,7 +411,7 @@ struct GetTagIndexReq {
 struct GetTagIndexResp {
     1: ErrorCode              code,
     2: common.HostAddr        leader,
-    3: TagIndexItem           item,
+    3: common.IndexItem       item,
 }
 
 struct ListTagIndexesReq {
@@ -440,23 +419,17 @@ struct ListTagIndexesReq {
 }
 
 struct ListTagIndexesResp {
-    1: ErrorCode              code,
-    2: common.HostAddr        leader,
-    3: list<TagIndexItem>     items,
-}
-
-struct RebuildTagIndexReq {
-    1: common.GraphSpaceID space_id,
-    2: string              index_name,
-    3: common.TagID        tag_id,
-    4: common.SchemaVer    tag_version,
+    1: ErrorCode                code,
+    2: common.HostAddr          leader,
+    3: list<common.IndexItem>   items,
 }
 
 struct CreateEdgeIndexReq {
-    1: common.GraphSpaceID space_id,
-    2: string              index_name,
-    3: IndexProperties     properties,
-    4: bool                if_not_exists,
+    1: common.GraphSpaceID  space_id,
+    2: string               index_name,
+    3: string               edge_name,
+    4: list<string>         fields,
+    5: bool                 if_not_exists,
 }
 
 struct DropEdgeIndexReq {
@@ -473,7 +446,7 @@ struct GetEdgeIndexReq {
 struct GetEdgeIndexResp {
     1: ErrorCode              code,
     2: common.HostAddr        leader,
-    3: EdgeIndexItem          item,
+    3: common.IndexItem       item,
 }
 
 struct ListEdgeIndexesReq {
@@ -481,16 +454,23 @@ struct ListEdgeIndexesReq {
 }
 
 struct ListEdgeIndexesResp {
-    1: ErrorCode              code,
-    2: common.HostAddr        leader,
-    3: list<EdgeIndexItem>    items,
+    1: ErrorCode                 code,
+    2: common.HostAddr           leader,
+    3: list<common.IndexItem>    items,
 }
 
-struct RebuildEdgeIndexReq {
+struct RebuildIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
-    3: common.EdgeType     edge_type,
-    4: common.SchemaVer    edge_version,
+    3: common.SchemaID     schema_id,
+    4: common.SchemaVer    version,
+}
+
+struct RebuildIndexResp {
+    1: ErrorCode            code,
+    2: common.HostAddr      leader,
+    3: string               index_name,
+    4: string               index_status,
 }
 
 struct CreateUserReq {
@@ -680,13 +660,14 @@ struct ListIndexStatusReq {
 }
 
 struct IndexStatus {
-
+    1: string         name,
+    2: string         status,
 }
 
 struct ListIndexStatusResp {
     1: ErrorCode            code,
     2: common.HostAddr      leader,
-    3: list<IndexStatus>    status,
+    3: list<IndexStatus>    statuses,
 }
 
 service MetaService {
@@ -723,13 +704,13 @@ service MetaService {
     ExecResp             dropTagIndex(1: DropTagIndexReq req );
     GetTagIndexResp      getTagIndex(1: GetTagIndexReq req);
     ListTagIndexesResp   listTagIndexes(1:ListTagIndexesReq req);
-    ExecResp             rebuildTagIndex(1: RebuildTagIndexReq req);
+    RebuildIndexResp     rebuildTagIndex(1: RebuildIndexReq req);
+    ListIndexStatusResp  listTagIndexStatus(1: ListIndexStatusReq req);
     ExecResp             createEdgeIndex(1: CreateEdgeIndexReq req);
     ExecResp             dropEdgeIndex(1: DropEdgeIndexReq req );
     GetEdgeIndexResp     getEdgeIndex(1: GetEdgeIndexReq req);
     ListEdgeIndexesResp  listEdgeIndexes(1: ListEdgeIndexesReq req);
-    ExecResp             rebuildEdgeIndex(1: RebuildEdgeIndexReq req);
-    ListIndexStatusResp  listTagIndexStatus(1: ListIndexStatusReq req);
+    RebuildIndexResp     rebuildEdgeIndex(1: RebuildIndexReq req);
     ListIndexStatusResp  listEdgeIndexStatus(1: ListIndexStatusReq req);
 
     ExecResp createUser(1: CreateUserReq req);

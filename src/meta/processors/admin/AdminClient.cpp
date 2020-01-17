@@ -646,7 +646,7 @@ folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
 folly::Future<Status> AdminClient::rebuildTagIndex(HostAddr address,
                                                    GraphSpaceID spaceId,
                                                    TagID tagID,
-                                                   TagIndexID indexID,
+                                                   IndexID indexID,
                                                    TagVersion version,
                                                    std::vector<PartitionID> parts) {
     if (injector_) {
@@ -664,14 +664,14 @@ folly::Future<Status> AdminClient::rebuildTagIndex(HostAddr address,
     auto f = pro.getFuture();
     getResponse(hosts, 0, std::move(req), [] (auto client, auto request) {
         return client->future_rebuildTagIndex(request);
-    }, 0, std::move(pro), 0);
+    }, 0, std::move(pro), 1);
     return f;
 }
 
 folly::Future<Status> AdminClient::rebuildEdgeIndex(HostAddr address,
                                                     GraphSpaceID spaceId,
                                                     EdgeType edgeType,
-                                                    EdgeIndexID indexID,
+                                                    IndexID indexID,
                                                     EdgeVersion version,
                                                     std::vector<PartitionID> parts) {
     if (injector_) {
@@ -689,7 +689,7 @@ folly::Future<Status> AdminClient::rebuildEdgeIndex(HostAddr address,
     auto f = pro.getFuture();
     getResponse(hosts, 0, std::move(req), [] (auto client, auto request) {
         return client->future_rebuildEdgeIndex(request);
-    }, 0, std::move(pro), 0);
+    }, 0, std::move(pro), 1);
     return f;
 }
 

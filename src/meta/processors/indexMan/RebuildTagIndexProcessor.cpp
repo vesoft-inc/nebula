@@ -11,11 +11,11 @@
 namespace nebula {
 namespace meta {
 
-void RebuildTagIndexProcessor::process(const cpp2::RebuildTagIndexReq& req) {
+void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     auto space = req.get_space_id();
     const auto &indexName = req.get_index_name();
-    auto tagID = req.get_tag_id();
-    auto version = req.get_tag_version();
+    auto tagID = req.get_schema_id().get_tag_id();
+    auto version = req.get_version();
 
     LOG(INFO) << "Rebuild Tag Index Space " << space << ", Index Name " << indexName;
     std::unique_ptr<AdminClient> client(new AdminClient(kvstore_));
@@ -37,7 +37,7 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildTagIndexReq& req) {
     }
 
     auto parts = partsRet.value();
-    auto tagIndexIDResult = getTagIndexID(space, indexName);
+    auto tagIndexIDResult = getIndexID(space, indexName);
     if (!tagIndexIDResult.ok()) {
         LOG(ERROR) << "Tag Index " << indexName << " Not Found";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
@@ -46,7 +46,7 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildTagIndexReq& req) {
     }
 
     auto tagIndexID = tagIndexIDResult.value();
-    auto tagKey = MetaServiceUtils::tagIndexKey(space, tagIndexIDResult.value());
+    auto tagKey = MetaServiceUtils::indexKey(space, tagIndexIDResult.value());
     auto tagResult = doGet(tagKey);
     if (!tagResult.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
@@ -64,7 +64,7 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildTagIndexReq& req) {
 
     auto statusKey = MetaServiceUtils::rebuildIndexStatus(space, 'T', indexName);
     std::vector<kvstore::KV> status{std::make_pair(statusKey, "RUNNING")};
-    doPut(status);
+    doSyncPut(status);
 
     std::vector<folly::Future<Status>> results;
     for (auto iter = parts.begin(); iter != parts.end(); iter++) {
@@ -83,7 +83,7 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildTagIndexReq& req) {
                 if (!t.value().ok()) {
                     LOG(ERROR) << "Build Tag Index Failed";
                     std::vector<kvstore::KV> failedStatus{std::make_pair(statusKey, "FAILED")};
-                    doPut(failedStatus);
+                    doSyncPut(failedStatus);
                     resp_.set_code(cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE);
                     onFinished();
                     return;
@@ -91,16 +91,18 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildTagIndexReq& req) {
             }
         });
 
-    std::vector<kvstore::KV> successedStatus{std::make_pair(statusKey, "SUCCESSED")};
-    doPut(successedStatus);
-
     auto unblockStatus = client->blockingWrites(space, SignType::BLOCK_OFF).get();
     if (!unblockStatus.ok()) {
         LOG(ERROR) << "Block Write Close Failed";
+        std::vector<kvstore::KV> failedStatus{std::make_pair(statusKey, "FAILED")};
+        doSyncPut(failedStatus);
         resp_.set_code(cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE);
         onFinished();
         return;
     }
+
+    std::vector<kvstore::KV> successedStatus{std::make_pair(statusKey, "SUCCESSED")};
+    doSyncPut(successedStatus);
 
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     onFinished();

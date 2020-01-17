@@ -223,8 +223,8 @@ MetaServiceHandler::future_listTagIndexes(const cpp2::ListTagIndexesReq& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_rebuildTagIndex(const cpp2::RebuildTagIndexReq& req) {
+folly::Future<cpp2::RebuildIndexResp>
+MetaServiceHandler::future_rebuildTagIndex(const cpp2::RebuildIndexReq& req) {
     auto* processor = RebuildTagIndexProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
@@ -259,8 +259,8 @@ MetaServiceHandler::future_listEdgeIndexes(const cpp2::ListEdgeIndexesReq& req) 
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_rebuildEdgeIndex(const cpp2::RebuildEdgeIndexReq& req) {
+folly::Future<cpp2::RebuildIndexResp>
+MetaServiceHandler::future_rebuildEdgeIndex(const cpp2::RebuildIndexReq& req) {
     auto* processor = RebuildEdgeIndexProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }

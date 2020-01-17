@@ -11,11 +11,11 @@
 namespace nebula {
 namespace meta {
 
-void RebuildEdgeIndexProcessor::process(const cpp2::RebuildEdgeIndexReq& req) {
+void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     auto space = req.get_space_id();
     const auto &indexName = req.get_index_name();
-    auto edgeType = req.get_edge_type();
-    auto version = req.get_edge_version();
+    auto edgeType = req.get_schema_id().get_edge_type();
+    auto version = req.get_version();
 
     LOG(INFO) << "Rebuild Edge Index Space " << space << ", Index Name " << indexName;
 
@@ -39,7 +39,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildEdgeIndexReq& req) {
     }
 
     auto parts = partsRet.value();
-    auto edgeIndexIDResult = getEdgeIndexID(space, indexName);
+    auto edgeIndexIDResult = getIndexID(space, indexName);
     if (!edgeIndexIDResult.ok()) {
         LOG(ERROR) << "Edge Index " << indexName << " Not Found";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
@@ -48,7 +48,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildEdgeIndexReq& req) {
     }
 
     auto edgeIndexID = edgeIndexIDResult.value();
-    auto edgeKey = MetaServiceUtils::edgeIndexKey(space, edgeIndexIDResult.value());
+    auto edgeKey = MetaServiceUtils::indexKey(space, edgeIndexIDResult.value());
     auto edgeResult = doGet(edgeKey);
     if (!edgeResult.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
@@ -65,7 +65,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildEdgeIndexReq& req) {
 
     auto statusKey = MetaServiceUtils::rebuildIndexStatus(space, 'E', indexName);
     std::vector<kvstore::KV> status{std::make_pair(statusKey, "RUNNING")};
-    doPut(status);
+    doSyncPut(status);
 
     std::vector<folly::Future<Status>> results;
     for (auto iter = parts.begin(); iter != parts.end(); iter++) {
@@ -84,7 +84,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildEdgeIndexReq& req) {
                 if (!t.value().ok()) {
                     LOG(ERROR) << "Build Edge Index Failed";
                     std::vector<kvstore::KV> failedStatus{std::make_pair(statusKey, "FAILED")};
-                    doPut(failedStatus);
+                    doSyncPut(failedStatus);
                     resp_.set_code(cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE);
                     onFinished();
                     return;
@@ -92,15 +92,17 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildEdgeIndexReq& req) {
             }
         });
 
-    std::vector<kvstore::KV> successedStatus{std::make_pair(statusKey, "SUCCESSED")};
-    doPut(successedStatus);
     auto unblockStatus = client->blockingWrites(space, SignType::BLOCK_OFF).get();
     if (!unblockStatus.ok()) {
+        std::vector<kvstore::KV> failedStatus{std::make_pair(statusKey, "FAILED")};
+        doSyncPut(failedStatus);
         resp_.set_code(cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE);
         onFinished();
         return;
     }
 
+    std::vector<kvstore::KV> successedStatus{std::make_pair(statusKey, "SUCCESSED")};
+    doSyncPut(successedStatus);
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     onFinished();
 }

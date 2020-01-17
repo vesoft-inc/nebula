@@ -16,8 +16,6 @@
 namespace nebula {
 namespace meta {
 
-using apache::thrift::FragileConstructor::FRAGILE;
-
 TEST(AuthProcessorTest, CreateUserTest) {
     fs::TempDir rootPath("/tmp/CreateUserTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
@@ -311,7 +309,11 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         decltype(resp.roles) rolesList;
-        rolesList.emplace_back(FRAGILE, userId, spaceId, cpp2::RoleType::USER);
+        cpp2::RoleItem item;
+        item.set_user_id(userId);
+        item.set_space_id(spaceId);
+        item.set_role_type(cpp2::RoleType::USER);
+        rolesList.emplace_back(std::move(item));
         ASSERT_EQ(rolesList, resp.get_roles());
     }
     // revoke test

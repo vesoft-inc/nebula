@@ -29,7 +29,6 @@ namespace nebula {
 namespace meta {
 
 using nebula::cpp2::SupportedType;
-using apache::thrift::FragileConstructor::FRAGILE;
 
 class TestFaultInjector : public FaultInjector {
 public:
@@ -255,7 +254,10 @@ public:
 
         std::vector<nebula::cpp2::HostAddr> allHosts;
         for (int i = 0; i < totalHost; i++) {
-            allHosts.emplace_back(apache::thrift::FragileConstructor::FRAGILE, i, i);
+            nebula::cpp2::HostAddr address;
+            address.set_ip(i);
+            address.set_port(i);
+            allHosts.emplace_back(std::move(address));
         }
 
         for (auto partId = 1; partId <= partitionNum; partId++) {

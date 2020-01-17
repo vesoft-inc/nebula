@@ -16,17 +16,27 @@ void ListEdgeIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) 
     auto prefix = MetaServiceUtils::rebuildEdgeIndexStatusPrefix(space);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    resp_.set_code(to(ret));
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "List Edge Index Status Failed: SpaceID " << space;
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
 
-    // decltype(resp_.items) items;
+    decltype(resp_.statuses) statuses;
     while (iter->valid()) {
+        auto key = iter->key();
+        auto offset = prefix.size();
+        auto indexName = key.str().substr(offset, (key.size() - offset));
+        auto val = iter->val().str();
+        cpp2::IndexStatus status;
+        status.set_name(std::move(indexName));
+        status.set_status(std::move(val));
+        statuses.emplace_back(std::move(status));
         iter->next();
     }
+    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    resp_.set_statuses(std::move(statuses));
     onFinished();
 }
 

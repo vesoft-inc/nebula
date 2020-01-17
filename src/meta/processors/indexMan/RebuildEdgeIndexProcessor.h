@@ -12,17 +12,17 @@
 namespace nebula {
 namespace meta {
 
-class RebuildEdgeIndexProcessor : public BaseProcessor<cpp2::ExecResp> {
+class RebuildEdgeIndexProcessor : public BaseProcessor<cpp2::RebuildIndexResp> {
 public:
     static RebuildEdgeIndexProcessor* instance(kvstore::KVStore* kvstore) {
         return new RebuildEdgeIndexProcessor(kvstore);
     }
 
-    void process(const cpp2::RebuildEdgeIndexReq& req);
+    void process(const cpp2::RebuildIndexReq& req);
 
 private:
     explicit RebuildEdgeIndexProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+            : BaseProcessor<cpp2::RebuildIndexResp>(kvstore) {}
 };
 
 }  // namespace meta

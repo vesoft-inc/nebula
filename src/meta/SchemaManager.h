@@ -22,16 +22,14 @@ public:
 
     static std::unique_ptr<SchemaManager> create();
 
-    virtual std::shared_ptr<const SchemaProviderIf> getTagSchema(GraphSpaceID space,
-                                                                 TagID tag,
-                                                                 SchemaVer ver = -1) = 0;
+    virtual std::shared_ptr<const SchemaProviderIf>
+    getTagSchema(GraphSpaceID space, TagID tag, SchemaVer ver = -1) = 0;
 
     // Returns a negative number when the schema does not exist
     virtual StatusOr<SchemaVer> getLatestTagSchemaVersion(GraphSpaceID space, TagID tag) = 0;
 
-    virtual std::shared_ptr<const SchemaProviderIf> getEdgeSchema(GraphSpaceID space,
-                                                                  EdgeType edge,
-                                                                  SchemaVer ver = -1) = 0;
+    virtual std::shared_ptr<const SchemaProviderIf>
+    getEdgeSchema(GraphSpaceID space, EdgeType edge, SchemaVer ver = -1) = 0;
 
     // Returns a negative number when the schema does not exist
     virtual StatusOr<SchemaVer> getLatestEdgeSchemaVersion(GraphSpaceID space, EdgeType edge) = 0;
@@ -47,12 +45,6 @@ public:
     virtual StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) = 0;
 
     virtual StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) = 0;
-
-    virtual StatusOr<std::vector<nebula::cpp2::IndexItem>>
-    getTagIndexes(GraphSpaceID space) = 0;
-
-    virtual StatusOr<std::vector<nebula::cpp2::IndexItem>>
-    getEdgeIndexes(GraphSpaceID space) = 0;
 
     virtual void init(MetaClient *client = nullptr) = 0;
 

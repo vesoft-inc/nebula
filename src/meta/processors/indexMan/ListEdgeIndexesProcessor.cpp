@@ -12,30 +12,27 @@ namespace meta {
 void ListEdgeIndexesProcessor::process(const cpp2::ListEdgeIndexesReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeIndexLock());
-    auto spaceId = req.get_space_id();
-    auto prefix = MetaServiceUtils::edgeIndexPrefix(spaceId);
+    auto space = req.get_space_id();
+    auto prefix = MetaServiceUtils::indexPrefix(space);
 
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     resp_.set_code(to(ret));
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "List Edge Index Failed: SpaceID " << req.get_space_id();
+        LOG(ERROR) << "List Edge Index Failed: SpaceID " << space;
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
 
     decltype(resp_.items) items;
     while (iter->valid()) {
-        auto key = iter->key();
         auto val = iter->val();
-        auto nameSize = *reinterpret_cast<const int32_t *>(val.data());
-        auto name = val.subpiece(sizeof(int32_t), nameSize).str();
-        auto edgeIndex = *reinterpret_cast<const EdgeIndexID *>(key.data() + prefix.size());
-        auto properties = MetaServiceUtils::parseEdgeIndex(val);
-        items.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                           edgeIndex, name, properties);
+        auto item = MetaServiceUtils::parseIndex(val);
+        items.emplace_back(std::move(item));
         iter->next();
     }
+    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_items(std::move(items));
     onFinished();
 }

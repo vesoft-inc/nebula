@@ -268,7 +268,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
         if (!indexes_.empty()) {
             std::unique_ptr<RowReader> reader, oReader;
             for (auto &index : indexes_) {
-                if (index.get_tagOrEdge() == u.first) {
+                if (index->get_schema_id().get_tag_id() == u.first) {
                     if (!(u.second->kv.second.empty())) {
                         if (oReader == nullptr) {
                             oReader = RowReader::getTagPropReader(this->schemaMan_,
@@ -276,10 +276,10 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
                                                                   spaceId_,
                                                                   u.first);
                         }
-                        const auto &oCols = index.get_cols();
+                        const auto &oCols = index->get_fields();
                         auto oValues = collectIndexValues(oReader.get(), oCols);
                         auto oIndexKey = NebulaKeyUtils::vertexIndexKey(partId,
-                                                                        index.index_id,
+                                                                        index->index_id,
                                                                         vId,
                                                                         oValues);
                         batchHolder->remove(std::move(oIndexKey));
@@ -290,10 +290,13 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
                                                              spaceId_,
                                                              u.first);
                     }
-                    const auto &cols = index.get_cols();
+                    const auto &cols = index->get_fields();
                     auto values = collectIndexValues(reader.get(), cols);
-                    auto iKey = NebulaKeyUtils::vertexIndexKey(partId, index.index_id, vId, values);
-                    batchHolder->put(std::move(iKey), "");
+                    auto indexKey = NebulaKeyUtils::vertexIndexKey(partId,
+                                                                   index->get_index_id(),
+                                                                   vId,
+                                                                   values);
+                    batchHolder->put(std::move(indexKey), "");
                 }
             }
         }
@@ -398,7 +401,7 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
     }
     auto vId = req.get_vertex_id();
     updateItems_ = req.get_update_items();
-    auto iRet = schemaMan_->getTagIndexes(spaceId_);
+    auto iRet = indexMan_->getTagIndexes(spaceId_);
     if (iRet.ok()) {
         for (auto& index : iRet.value()) {
             indexes_.emplace_back(index);

@@ -46,8 +46,8 @@ TEST_F(DeleteVertexTest, Base) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-            {player.name(), player.age()},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+            {player.vid(), player.name(), player.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -61,8 +61,8 @@ TEST_F(DeleteVertexTest, Base) {
         auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {std::get<1>(serve), std::get<2>(serve)},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -93,7 +93,7 @@ TEST_F(DeleteVertexTest, Base) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -107,7 +107,7 @@ TEST_F(DeleteVertexTest, Base) {
         auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
+        std::vector<std::tuple<int64_t, int64_t, int64_t>> expected = {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -121,7 +121,7 @@ TEST_F(DeleteVertexTest, Base) {
         std::vector<std::tuple<std::string, int64_t>> expected = {
             {player.name(), player.age()},
         };
-        ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyResult(resp, expected, true, {0}));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -134,7 +134,7 @@ TEST_F(DeleteVertexTest, Base) {
         std::vector<std::tuple<int64_t, int64_t>> expected = {
             {std::get<1>(serve), std::get<2>(serve)},
         };
-        ASSERT_TRUE(verifyResult(resp, expected));
+        ASSERT_TRUE(verifyResult(resp, expected, true, {0, 1, 2}));
     }
     // Delete vertex
     {
@@ -149,7 +149,7 @@ TEST_F(DeleteVertexTest, Base) {
                      "YIELD player.name, player.age";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -159,7 +159,7 @@ TEST_F(DeleteVertexTest, Base) {
                      "YIELD serve.start_year, serve.end_year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
+        std::vector<std::tuple<int64_t, int64_t, int64_t>> expected = {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -193,7 +193,7 @@ TEST_F(DeleteVertexTest, Base) {
                      "YIELD player.name, player.age";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

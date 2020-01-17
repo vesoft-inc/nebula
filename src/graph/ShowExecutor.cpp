@@ -345,16 +345,11 @@ void ShowExecutor::showTags() {
         std::vector<std::string> header{"ID", "Name"};
         resp_->set_column_names(std::move(header));
 
-        std::map<nebula::cpp2::TagID, std::string> tagItems;
         for (auto &tag : value) {
-            tagItems.emplace(tag.get_tag_id(), tag.get_tag_name());
-        }
-
-        for (auto &item : tagItems) {
             std::vector<cpp2::ColumnValue> row;
             row.resize(2);
-            row[0].set_integer(item.first);
-            row[1].set_str(item.second);
+            row[0].set_integer(tag.get_tag_id());
+            row[1].set_str(std::move(tag.get_tag_name()));
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }
@@ -389,16 +384,11 @@ void ShowExecutor::showEdges() {
         std::vector<std::string> header{"ID", "Name"};
         resp_->set_column_names(std::move(header));
 
-        std::map<nebula::cpp2::EdgeType, std::string> edgeItems;
         for (auto &edge : value) {
-            edgeItems.emplace(edge.get_edge_type(), edge.get_edge_name());
-        }
-
-        for (auto &item : edgeItems) {
             std::vector<cpp2::ColumnValue> row;
             row.resize(2);
-            row[0].set_integer(item.first);
-            row[1].set_str(item.second);
+            row[0].set_integer(edge.get_edge_type());
+            row[1].set_str(std::move(edge.get_edge_name()));
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }
@@ -778,16 +768,12 @@ void ShowExecutor::showCreateTagIndex() {
         buf.reserve(256);
         buf += folly::stringPrintf("CREATE TAG INDEX %s ON ", tagName->c_str());
 
-        auto& fields = indexItems.get_fields().get_fields();
-        auto iter = fields.begin();
-        while (iter != fields.end()) {
-            buf += iter->first;
-            buf += "(";
-            for (auto column : iter->second) {
-                buf += column.name;
-                buf += ", ";
-            }
-            iter++;
+        auto& fields = indexItems.get_fields();
+        buf += indexItems.get_schema_name();
+        buf += "(";
+        for (auto &column : fields) {
+            buf += column.name;
+            buf += ", ";
         }
         buf = buf.substr(0, buf.size() - 2);
         buf += ")";
@@ -841,16 +827,12 @@ auto *name = sentence_->getName();
         buf.reserve(256);
         buf += folly::stringPrintf("CREATE EDGE INDEX %s ON ", edgeName->c_str());
 
-        auto& fields = indexItems.get_fields().get_fields();
-        auto iter = fields.begin();
-        while (iter != fields.end()) {
-            buf += iter->first;
-            buf += "(";
-            for (auto column : iter->second) {
-                buf += column.name;
-                buf += ", ";
-            }
-            iter++;
+        auto& fields = indexItems.get_fields();
+        buf += indexItems.get_schema_name();
+        buf += "(";
+        for (auto &column : fields) {
+            buf += column.name;
+            buf += ", ";
         }
         buf = buf.substr(0, buf.size() - 2);
         buf += ")";
@@ -884,6 +866,24 @@ void ShowExecutor::showTagIndexStatus() {
             doError(std::move(resp).status());
             return;
         }
+
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        std::vector<std::string> header{"Tag Index Name", "Tag Index Status"};
+        resp_->set_column_names(std::move(header));
+
+        std::vector<cpp2::RowValue> rows;
+        auto value = std::move(resp).value();
+        for (auto &status : value) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(2);
+            row[0].set_str(std::move(status.get_name()));
+            row[1].set_str(std::move(status.get_status()));
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+        resp_->set_rows(std::move(rows));
+        DCHECK(onFinish_);
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
@@ -905,6 +905,24 @@ void ShowExecutor::showEdgeIndexStatus() {
             doError(std::move(resp).status());
             return;
         }
+
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        std::vector<std::string> header{"Edge Index Name", "Edge Index Status"};
+        resp_->set_column_names(std::move(header));
+
+        std::vector<cpp2::RowValue> rows;
+        auto value = std::move(resp).value();
+        for (auto &status : value) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(2);
+            row[0].set_str(std::move(status.get_name()));
+            row[1].set_str(std::move(status.get_status()));
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+        resp_->set_rows(std::move(rows));
+        DCHECK(onFinish_);
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {

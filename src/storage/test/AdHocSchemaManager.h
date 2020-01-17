@@ -7,7 +7,6 @@
 #ifndef META_ADHOCSCHEMAMANAGER_H_
 #define META_ADHOCSCHEMAMANAGER_H_
 
-#include "base/Base.h"
 #include <folly/RWSpinLock.h>
 #include "meta/SchemaProviderIf.h"
 #include "meta/SchemaManager.h"
@@ -63,16 +62,6 @@ public:
 
     StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) override;
 
-    StatusOr<std::vector<nebula::cpp2::IndexItem>>
-    getTagIndexes(GraphSpaceID space) override;
-
-    StatusOr<std::vector<nebula::cpp2::IndexItem>>
-    getEdgeIndexes(GraphSpaceID space) override;
-
-    void addTagIndex(GraphSpaceID space, const nebula::cpp2::IndexItem& index);
-
-    void addEdgeIndex(GraphSpaceID space, const nebula::cpp2::IndexItem& index);
-
     StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID) override {
         LOG(FATAL) << "Unimplemented";
         return Status::Error("Unimplemented");
@@ -98,9 +87,6 @@ protected:
     std::set<GraphSpaceID> spaces_;
     // Key: spaceId + tagName,  Val: tagId
     std::unordered_map<std::string, TagID> tagNameToId_;
-
-    std::unordered_map<GraphSpaceID, std::vector<nebula::cpp2::IndexItem>> edgeIndexes_;
-    std::unordered_map<GraphSpaceID, std::vector<nebula::cpp2::IndexItem>> tagIndexes_;
 };
 
 }  // namespace storage

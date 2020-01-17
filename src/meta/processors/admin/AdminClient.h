@@ -116,14 +116,14 @@ public:
     folly::Future<Status> rebuildTagIndex(HostAddr address,
                                           GraphSpaceID spaceId,
                                           TagID tagID,
-                                          TagIndexID indexID,
+                                          IndexID indexID,
                                           TagVersion version,
                                           std::vector<PartitionID> parts);
 
     folly::Future<Status> rebuildEdgeIndex(HostAddr address,
                                            GraphSpaceID spaceId,
                                            EdgeType edgeType,
-                                           EdgeIndexID indexID,
+                                           IndexID indexID,
                                            EdgeVersion version,
                                            std::vector<PartitionID> parts);
 

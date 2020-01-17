@@ -20,6 +20,10 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildTagIndexRequest& req) 
               << " Tag Index " << indexID << " Tag Version " << tagVersion;
 
     for (PartitionID part : parts) {
+        // firstly remove the discard index
+        auto indexPrefix = NebulaKeyUtils::indexPrefix(space, indexID);
+        doRemovePrefix(space, part, std::move(indexPrefix));
+
         std::unique_ptr<kvstore::KVIterator> iter;
         auto prefix = NebulaKeyUtils::prefix(part);
         kvstore_->prefix(space, part, prefix, &iter);
@@ -54,6 +58,7 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildTagIndexRequest& req) 
         }
         doPut(space, part, std::move(data));
     }
+    onFinished();
 }
 
 }  // namespace storage

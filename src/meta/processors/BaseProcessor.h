@@ -124,11 +124,8 @@ protected:
             thriftID.set_user_id(static_cast<UserID>(id));
         case EntryType::CONFIG:
             break;
-        case EntryType::TAG_INDEX:
-            thriftID.set_tag_index_id(static_cast<TagIndexID>(id));
-            break;
-        case EntryType::EDGE_INDEX:
-            thriftID.set_edge_index_id(static_cast<EdgeIndexID>(id));
+        case EntryType::INDEX:
+            thriftID.set_index_id(static_cast<IndexID>(id));
             break;
         }
         return thriftID;
@@ -250,9 +247,7 @@ protected:
     StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
     getLatestEdgeFields(GraphSpaceID spaceId, EdgeType edgeType);
 
-    StatusOr<TagIndexID> getTagIndexID(GraphSpaceID spaceId, const std::string& indexName);
-
-    StatusOr<EdgeIndexID> getEdgeIndexID(GraphSpaceID spaceId, const std::string& indexName);
+    StatusOr<IndexID> getIndexID(GraphSpaceID spaceId, const std::string& indexName);
 
     StatusOr<UserID> getUserId(const std::string& account);
 

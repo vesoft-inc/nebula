@@ -20,6 +20,10 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildEdgeIndexRequest& req
               << " Edge Index " << indexID << " Edge Verison " << edgeVersion;
 
     for (PartitionID part : parts) {
+        // firstly remove the discard index
+        auto indexPrefix = NebulaKeyUtils::indexPrefix(space, indexID);
+        doRemovePrefix(space, part, std::move(indexPrefix));
+
         std::unique_ptr<kvstore::KVIterator> iter;
         auto prefix = NebulaKeyUtils::prefix(part);
         kvstore_->prefix(space, part, prefix, &iter);
@@ -57,6 +61,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildEdgeIndexRequest& req
         }
         doPut(space, part, std::move(data));
     }
+    onFinished();
 }
 
 }  // namespace storage

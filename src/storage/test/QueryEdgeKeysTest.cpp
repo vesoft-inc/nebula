@@ -20,18 +20,22 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/QueryEdgeKeysTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     // Add edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+        auto* processor = AddEdgesProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
 
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
         // partId => List<Edge>
         // Edge => {EdgeKey, props}
-        for (auto partId = 0; partId < 3; partId++) {
-            std::vector<cpp2::Edge> edges;
-            for (auto srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
+        for (PartitionID partId = 1; partId <= 3; partId++) {
+            auto edges = TestUtils::setupEdges(partId, partId * 10, 10);
+            for (VertexID srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
                 cpp2::EdgeKey key;
                 key.set_src(srcId);
                 key.set_edge_type(srcId * 100 + 1);
@@ -39,7 +43,7 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
                 key.set_dst(srcId * 100 + 3);
                 edges.emplace_back();
                 edges.back().set_key(std::move(key));
-                edges.back().set_props(folly::stringPrintf("%d_%d", partId, srcId));
+                edges.back().set_props(folly::stringPrintf("%d_%ld", partId, srcId));
             }
             req.parts.emplace(partId, std::move(edges));
         }
@@ -50,14 +54,14 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
     }
 
     LOG(INFO) << "Check data in kv store...";
-    for (auto partId = 0; partId < 3; partId++) {
-        for (auto srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
+    for (PartitionID partId = 1; partId <= 3; partId++) {
+        for (VertexID srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
             auto prefix = NebulaKeyUtils::edgePrefix(partId, srcId, srcId * 100 + 1);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             int num = 0;
             while (iter->valid()) {
-                EXPECT_EQ(folly::stringPrintf("%d_%d", partId, srcId), iter->val());
+                EXPECT_EQ(folly::stringPrintf("%d_%ld", partId, srcId), iter->val());
                 num++;
                 iter->next();
             }
@@ -67,8 +71,8 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
 
     // Query edgekeys
     {
-        for (auto partId = 0; partId < 3; partId++) {
-            for (auto srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
+        for (PartitionID partId = 1; partId <= 3; partId++) {
+            for (VertexID srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
                 auto* processor = QueryEdgeKeysProcessor::instance(kv.get(), nullptr);
                 cpp2::EdgeKeyRequest req;
                 req.space_id = 0;

@@ -20,11 +20,9 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     version = folly::Endian::big(version);
 
     callingNum_ = req.parts.size();
-    auto iRet = schemaMan_->getEdgeIndexes(spaceId_);
+    auto iRet = indexMan_->getEdgeIndexes(spaceId_);
     if (iRet.ok()) {
-        for (auto& index : iRet.value()) {
-            indexes_.emplace_back(index);
-        }
+        indexes_ = iRet.value();
     }
     CHECK_NOTNULL(kvstore_);
     if (indexes_.empty()) {
@@ -92,7 +90,7 @@ std::string AddEdgesProcessor::addEdges(int64_t version, PartitionID partId,
         std::unique_ptr<RowReader> nReader;
         auto edgeType = NebulaKeyUtils::getEdgeType(e.first);
         for (auto& index : indexes_) {
-            if (edgeType == index.get_tagOrEdge()) {
+            if (edgeType == index->get_schema_id().get_edge_type()) {
                 /*
                  * step 1 , Delete old version index if exists.
                  */
@@ -156,10 +154,10 @@ std::string AddEdgesProcessor::findObsoleteIndex(PartitionID partId,
 std::string AddEdgesProcessor::indexKey(PartitionID partId,
                                         RowReader* reader,
                                         const folly::StringPiece& rawKey,
-                                        const nebula::cpp2::IndexItem& index) {
-    auto values = collectIndexValues(reader, index.get_cols());
+                                        std::shared_ptr<nebula::cpp2::IndexItem> index) {
+    auto values = collectIndexValues(reader, index->get_fields());
     return NebulaKeyUtils::edgeIndexKey(partId,
-                                        index.get_index_id(),
+                                        index->get_index_id(),
                                         NebulaKeyUtils::getSrcId(rawKey),
                                         NebulaKeyUtils::getRank(rawKey),
                                         NebulaKeyUtils::getDstId(rawKey),

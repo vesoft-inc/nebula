@@ -83,6 +83,7 @@ TEST_F(IndexTest, TagIndex) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     // Rebuild Tag Index
     {
         cpp2::ExecutionResponse resp;
@@ -93,9 +94,13 @@ TEST_F(IndexTest, TagIndex) {
     // Show Tag Index Status
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "SHOW TAG INDEX STATUA";
+        std::string query = "SHOW TAG INDEX STATUS";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"single_person_index", "SUCCESSED"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
     // Describe Tag Index
     {
@@ -216,6 +221,7 @@ TEST_F(IndexTest, EdgeIndex) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     // Rebuild EDGE Index
     {
         cpp2::ExecutionResponse resp;
@@ -226,9 +232,13 @@ TEST_F(IndexTest, EdgeIndex) {
     // Show EDGE Index Status
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "SHOW EDGE INDEX STATUA";
+        std::string query = "SHOW EDGE INDEX STATUS";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"single_friend_index", "SUCCESSED"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
     // Describe Edge Index
     {

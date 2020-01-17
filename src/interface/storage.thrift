@@ -433,7 +433,7 @@ struct RebuildTagIndexRequest {
     2: list<common.PartitionID>     parts,
     3: common.TagID                 tag_id,
     4: common.SchemaVer             tag_version,
-    5: common.TagIndexID            index_id,
+    5: common.IndexID               index_id,
 }
 
 struct RebuildEdgeIndexRequest {
@@ -441,7 +441,7 @@ struct RebuildEdgeIndexRequest {
     2: list<common.PartitionID>     parts,
     3: common.EdgeType              edge_type,
     4: common.SchemaVer             edge_version,
-    5: common.EdgeIndexID           index_id,
+    5: common.IndexID               index_id,
 }
 
 service StorageService {
