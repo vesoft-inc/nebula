@@ -41,31 +41,31 @@ The example queries are based on the graph below:
 - Insert data
   
 ```
-  # insert vertex
-  nebula> INSERT VERTEX character(name, age, type) VALUES hash("saturn"):("saturn", 10000, "titan"), hash("jupiter"):("jupiter", 5000, "god");
+# insert vertex
+nebula> INSERT VERTEX character(name, age, type) VALUES hash("saturn"):("saturn", 10000, "titan"), hash("jupiter"):("jupiter", 5000, "god");
 
-  # insert edge
-  nebula> INSERT EDGE father() VALUES hash("jupiter")->hash("saturn"):();
+# insert edge
+nebula> INSERT EDGE father() VALUES hash("jupiter")->hash("saturn"):();
 
-  // cypher
-  cypher> CREATE (src:character {name:"saturn", age: 10000, type:"titan"})
-        > CREATE (dst:character {name:"jupiter", age: 5000, type:"god"})
-        > CREATE (src)-[rel:father]->(dst)
+// cypher
+cypher> CREATE (src:character {name:"saturn", age: 10000, type:"titan"})
+      > CREATE (dst:character {name:"jupiter", age: 5000, type:"god"})
+      > CREATE (src)-[rel:father]->(dst)
  ```
  
 
 - Delete vertex
   
-  ```bash
-  nebula> DELETE VERTEX hash("prometheus");
+```
+nebula> DELETE VERTEX hash("prometheus");
   
-  cypher> MATCH (n:character {name:"prometheus"})
+cypher> MATCH (n:character {name:"prometheus"})
         > DETACH DELETE n 
-  ```
+```
 
 - Update vertex
 
-```bash
+```
 nebula> UPDATE VERTEX hash("jesus") SET character.type = 'titan';
 
 cypher> MATCH (n:character {name:"prometheus"})
@@ -74,7 +74,7 @@ cypher> MATCH (n:character {name:"prometheus"})
 
 - Fetch data
   
-  ```bash
+  ```
   nebula> FETCH PROP ON character hash("saturn");
   ===================================================
   | character.name | character.age | character.type |
@@ -88,63 +88,62 @@ cypher> MATCH (n:character {name:"prometheus"})
 
 - Find the name of hercules's grandfather
 
-    ```bash
-    nebula> GO 2 STEPS FROM hash("hercules") OVER father YIELD  $$.character.name;
+```
+nebula> GO 2 STEPS FROM hash("hercules") OVER father YIELD  $$.character.name;
     =====================
     | $$.character.name |
     =====================
     | saturn            |
     ---------------------
 
-    cypher> MATCH (src:character{name:"prometheus"})-[r:father*2]->(dst:character)
-          > RETURN dst.name;
-    ```
+cypher> MATCH (src:character{name:"prometheus"})-[r:father*2]->(dst:character)
+      > RETURN dst.name;
+```
 
 - Find the name of hercules's father
 
-    ```bash
-    nebula> GO FROM hash("hercules") OVER father YIELD $$.character.name;
+```
+nebula> GO FROM hash("hercules") OVER father YIELD $$.character.name;
     =====================
     | $$.character.name |
     =====================
     | jupiter           |
     ---------------------
 
-    cypher> MATCH (src:character{name:"prometheus"})-[r:father]->(dst:character)
-          > RETURN dst.name
-    ```
+cypher> MATCH (src:character{name:"prometheus"})-[r:father]->(dst:character)
+      > RETURN dst.name
+```
 
 - Find the characters with age > 100
 
-    ```bash
-    nebula> XXX # not supported yet
+ ```
+nebula> XXX # not supported yet
     
-    cypher> MATCH (src:character)
-          > WHERE src.age > 100
-          > RETURN src.name
-
-    ```
+cypher> MATCH (src:character)
+      > WHERE src.age > 100
+      > RETURN src.name
+```
 
 - Find who are pluto's cohabitants
 
-    ```bash
-    nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | GO FROM $-.place OVER lives REVERSELY WHERE \
-    $$.character.name != "pluto" YIELD $$.character.name AS cohabitants;
+```
+nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | GO FROM $-.place OVER lives REVERSELY WHERE \
+      > $$.character.name != "pluto" YIELD $$.character.name AS cohabitants;
     ===============
     | cohabitants |
     ===============
     | cerberus    |
     ---------------
 
-    cypher> MATCH (src:character{name:"pluto"})-[r1:lives]->()<-[r2:lives]-(dst:character)
-          > RETURN dst.name
-    ```
+cypher> MATCH (src:character{name:"pluto"})-[r1:lives]->()<-[r2:lives]-(dst:character)
+      > RETURN dst.name
+```
 
 -  Find pluto's brother and their live places?
 
-    ```bash
-    nebula> GO FROM hash("pluto") OVER brother YIELD brother._dst AS god | \
-    GO FROM $-.god OVER lives YIELD $^.character.name AS Brother, $$.location.name AS Habitations;
+ ```
+nebula> GO FROM hash("pluto") OVER brother YIELD brother._dst AS god | \
+      > GO FROM $-.god OVER lives YIELD $^.character.name AS Brother, $$.location.name AS Habitations;
     =========================
     | Brother | Habitations |
     =========================
@@ -153,6 +152,6 @@ cypher> MATCH (n:character {name:"prometheus"})
     | neptune | sea         |
     -------------------------
 
-    cypher> MATCH (src:Character{name:"pluto"})-[r1:brother]->(bro:Character)-[r2:lives]->(dst)
-          > RETURN bro.name, dst.name
-    ```
+cypher> MATCH (src:Character{name:"pluto"})-[r1:brother]->(bro:Character)-[r2:lives]->(dst)
+      > RETURN bro.name, dst.name
+```
