@@ -5,6 +5,7 @@ on:
     types: [synchronize, reopened, labeled]
     branches:
       - master
+      - 'v[0-9]+*'
 
 jobs:
   lint:
