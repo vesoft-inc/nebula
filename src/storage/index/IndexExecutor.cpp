@@ -6,8 +6,8 @@
 
 #include "storage/index/IndexExecutor.h"
 
-DEFINE_int32(max_row_returned_per_index_scan, INT_MAX,
-             "Max row count returned when scanning index");
+DEFINE_int32(max_rows_returned_per_lookup, INT_MAX,
+             "Max rows count returned when lookup vertices or edges");
 
 namespace nebula {
 namespace storage {
