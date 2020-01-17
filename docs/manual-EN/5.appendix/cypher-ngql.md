@@ -5,7 +5,6 @@
 
 |Name               | Cypher | nGQL          |
 | --- | --- | --- |
-|  |  |
 | vertex, node       | node  | vertex        |
 | edge, relationship | relationship    | edge          |
 | vertex type        | label   | tag           |
@@ -18,7 +17,6 @@
 
 Name                   | Cypher         | nGQL          |
 | --- | ------------ | ------------ |
-|  |  |
 | List all labels/tags   | * MATCH (n) RETURN distinct labels(n);  <br/> * call db.labels(); | SHOW TAGS |
 | Insert a vertex with a specified type | CREATE (:Person {age: 16}) | INSERT VERTEX <tag_name> (prop_name_list) VALUES \<vid>:(prop_value_list) |
 | Insert an edge with specified edge type | CREATE (src)-[:LIKES]->(dst) <br/> SET rel.prop = V | INSERT EDGE <edge_name> ( <prop_name_list> ) VALUES <src_vid> -> <dst_vid>: ( <prop_value_list> ) |
