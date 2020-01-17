@@ -9,8 +9,7 @@
 namespace nebula {
 namespace meta {
 
-void ListSpacesProcessor::process(const cpp2::ListSpacesReq& req) {
-    UNUSED(req);
+void ListSpacesProcessor::process(const cpp2::ListSpacesReq&) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto prefix = MetaServiceUtils::spacePrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -27,7 +26,7 @@ void ListSpacesProcessor::process(const cpp2::ListSpacesReq& req) {
         VLOG(3) << "List spaces " << spaceId << ", name " << spaceName;
         cpp2::IdName space;
         space.set_id(to(spaceId, EntryType::SPACE));
-        space.set_name(spaceName);
+        space.set_name(std::move(spaceName));
         spaces.emplace_back(std::move(space));
         iter->next();
     }
