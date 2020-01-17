@@ -56,7 +56,9 @@ jobs:
           [ -d build/ ] && rm -rf build/* || mkdir -p build
       - name: CMake with gcc-7.5
         if: matrix.compiler == 'gcc-7.5' && steps.ignore_docs.outputs.num_source_files != 0
-        run: cd build && cmake ..
+        run: |
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
       - name: CMake with clang-8
         if: matrix.compiler == 'clang-8' && steps.ignore_docs.outputs.num_source_files != 0
         run: |
