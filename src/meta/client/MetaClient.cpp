@@ -642,12 +642,12 @@ folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
     return future;
 }
 
-folly::Future<StatusOr<std::vector<std::string>>>
+folly::Future<StatusOr<cpp2::AdminJobResult>>
 MetaClient::submitJob(cpp2::AdminJobOp op, std::vector<std::string> paras) {
     cpp2::AdminJobReq req;
     req.set_op(op);
-    req.set_paras(paras);
-    folly::Promise<StatusOr<std::vector<std::string>>> promise;
+    req.set_paras(std::move(paras));
+    folly::Promise<StatusOr<cpp2::AdminJobResult>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_runAdminJob(request);

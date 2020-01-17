@@ -4,7 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "folly/String.h"
+#include <stdexcept>
+#include <string>
+#include <vector>
+#include <folly/String.h>
+#include <boost/stacktrace.hpp>
 #include "meta/processors/jobMan/JobUtils.h"
 #include "meta/processors/jobMan/JobDescription.h"
 
@@ -13,24 +17,43 @@ namespace nebula {
 namespace meta {
 
 JobDescription::JobDescription(int32_t id,
-                               const std::string& cmd,
-                               std::vector<std::string>& paras)
+                               std::string type,
+                               std::vector<std::string> paras,
+                               JobStatus::Status status,
+                               std::time_t startTime,
+                               std::time_t stopTime)
                                : id_(id),
-                                 cmd_(cmd),
-                                 paras_(paras),
-                                 status_(JobStatus::Status::QUEUE),
-                                 startTime_(folly::none),
-                                 stopTime_(folly::none) {}
+                                 type_(std::move(type)),
+                                 paras_(std::move(paras)),
+                                 status_(status),
+                                 startTime_(startTime),
+                                 stopTime_(stopTime) {}
 
-JobDescription::JobDescription(const folly::StringPiece& key,
-                               const folly::StringPiece& val) {
-    id_ = parseKey(key);
-    auto tup = parseVal(val);
-    cmd_ = std::get<0>(tup);
-    paras_ = std::get<1>(tup);
-    status_ = std::get<2>(tup);
-    startTime_ = std::get<3>(tup);
-    stopTime_ = std::get<4>(tup);
+folly::Optional<JobDescription>
+JobDescription::makeJobDescription(folly::StringPiece rawkey,
+                                   folly::StringPiece rawval) {
+    try {
+        auto key = parseKey(rawkey);
+        LOG(INFO) << "after parseKey(rawkey);";
+
+        auto tup = parseVal(rawval);
+        LOG(INFO) << "after parseVal(rawval);";
+        auto type = std::get<0>(tup);
+        LOG(INFO) << "type = " << type;
+
+        auto paras = std::get<1>(tup);
+        for (auto p : paras) {
+            LOG(INFO) << "p = " << p;
+        }
+
+        auto status = std::get<2>(tup);
+        auto startTime = std::get<3>(tup);
+        auto stopTime = std::get<4>(tup);
+        return JobDescription(key, type, paras, status, startTime, stopTime);
+    } catch(std::exception& ex) {
+        LOG(ERROR) << ex.what();
+    }
+    return folly::none;
 }
 
 std::string JobDescription::jobKey() const {
@@ -48,71 +71,69 @@ std::string JobDescription::makeJobKey(int32_t iJob) {
 
 int32_t JobDescription::parseKey(const folly::StringPiece& rawKey) {
     auto offset = JobUtil::jobPrefix().size();
-    if (offset >= rawKey.size()) { return 0; }
+    if (offset + sizeof(size_t) < rawKey.size()) {
+        std::stringstream oss;
+        oss << __func__ << ", offset=" << offset << ", rawKey.size()=" << rawKey.size();
+        throw std::range_error(oss.str().c_str());
+    }
     return *reinterpret_cast<const int32_t*>(rawKey.begin() + offset);
 }
 
 std::string JobDescription::jobVal() const {
-    using typeT = folly::Optional<std::time_t>;
     std::string str;
-    auto cmdLen = cmd_.length();
+    auto typeLen = type_.length();
     auto paraSize = paras_.size();
     str.reserve(256);
-    str.append(reinterpret_cast<const char*>(&cmdLen), sizeof(cmdLen));
-    str.append(reinterpret_cast<const char*>(&cmd_[0]), cmd_.length());
-    str.append(reinterpret_cast<const char*>(&paraSize), sizeof(paraSize));
+    str.append(reinterpret_cast<const char*>(&typeLen), sizeof(size_t));
+    str.append(reinterpret_cast<const char*>(type_.data()), type_.length());
+    str.append(reinterpret_cast<const char*>(&paraSize), sizeof(size_t));
     for (auto& para : paras_) {
         auto len = para.length();
         str.append(reinterpret_cast<const char*>(&len), sizeof(len));
         str.append(reinterpret_cast<const char*>(&para[0]), len);
     }
     str.append(reinterpret_cast<const char*>(&status_), sizeof(JobStatus::Status));
-    str.append(reinterpret_cast<const char*>(&startTime_), sizeof(typeT));
-    str.append(reinterpret_cast<const char*>(&stopTime_), sizeof(typeT));
+    str.append(reinterpret_cast<const char*>(&startTime_), sizeof(std::time_t));
+    str.append(reinterpret_cast<const char*>(&stopTime_), sizeof(std::time_t));
     return str;
 }
 
 std::tuple<std::string,
            std::vector<std::string>,
            JobStatus::Status,
-           folly::Optional<std::time_t>,
-           folly::Optional<std::time_t>>
+           std::time_t,
+           std::time_t>
 JobDescription::parseVal(const folly::StringPiece& rawVal) {
-    using typeT = folly::Optional<std::time_t>;
-    int32_t offset = 0;
-    size_t cmdLen = *reinterpret_cast<const size_t*>(rawVal.begin() + offset);
-    offset += sizeof(size_t);
-    std::string cmd(rawVal.begin() + offset, cmdLen);
-    offset += cmdLen;
-    size_t sizeOfParas = *reinterpret_cast<const size_t*>(rawVal.begin() + offset);
-    offset += sizeof(size_t);
-    std::vector<std::string> paras(sizeOfParas);
-    for (size_t i = 0; i != sizeOfParas; ++i) {
-        size_t len = *reinterpret_cast<const size_t*>(rawVal.begin() + offset);
-        offset += sizeof(size_t);
-        paras[i] = std::string(rawVal.begin() + offset, len);
-        offset += len;
-    }
-    JobStatus::Status status = *reinterpret_cast<const JobStatus::Status*>(rawVal.begin() + offset);
+    size_t offset = 0;
+
+    std::string type = JobUtil::parseString(rawVal, offset);
+    offset += sizeof(size_t) + type.length();
+
+    std::vector<std::string> paras = JobUtil::parseStrVector(rawVal, &offset);
+
+    auto status = JobUtil::parseFixedVal<JobStatus::Status>(rawVal, offset);
     offset += sizeof(JobStatus::Status);
-    typeT tStart = *reinterpret_cast<const typeT*>(rawVal.begin() + offset);
-    offset += sizeof(typeT);
-    typeT tStop = *reinterpret_cast<const typeT*>(rawVal.begin() + offset);
-    return std::make_tuple(cmd, paras, status, tStart, tStop);
+
+    auto tStart = JobUtil::parseFixedVal<std::time_t>(rawVal, offset);
+    offset += sizeof(std::time_t);
+
+    auto tStop = JobUtil::parseFixedVal<std::time_t>(rawVal, offset);
+
+    return std::make_tuple(type, paras, status, tStart, tStop);
 }
 
-std::vector<std::string> JobDescription::dump() {
-    std::vector<std::string> ret;
-    ret.emplace_back(std::to_string(id_));
+cpp2::JobDetails JobDescription::toJobDetails() {
+    cpp2::JobDetails ret;
+    ret.set_id(std::to_string(id_));
     std::stringstream oss;
-    oss << cmd_ << " ";
+    oss << type_ << " ";
     for (auto& p : paras_) {
         oss << p << " ";
     }
-    ret.emplace_back(oss.str());
-    ret.emplace_back(JobStatus::toString(status_));
-    ret.emplace_back(JobUtil::strTimeT(startTime_));
-    ret.emplace_back(JobUtil::strTimeT(stopTime_));
+    ret.set_typeAndParas(oss.str());
+    ret.set_status(JobStatus::toString(status_));
+    ret.set_startTime(JobUtil::strTimeT(startTime_));
+    ret.set_stopTime(JobUtil::strTimeT(stopTime_));
     return ret;
 }
 
@@ -145,13 +166,13 @@ bool JobDescription::isJobKey(const folly::StringPiece& rawKey) {
 
 folly::Optional<JobDescription>
 JobDescription::loadJobDescription(int32_t iJob, nebula::kvstore::KVStore* kv) {
-    auto jobKey = makeJobKey(iJob);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    kv->prefix(0, 0, jobKey, &iter);
-    if (!iter->valid()) {
+    auto key = makeJobKey(iJob);
+    std::string val;
+    auto rc = kv->get(0, 0, key, &val);
+    if (rc != nebula::kvstore::SUCCEEDED) {
         return folly::none;
     }
-    return JobDescription(iter->key(), iter->val());
+    return makeJobDescription(key, val);
 }
 
 }  // namespace meta

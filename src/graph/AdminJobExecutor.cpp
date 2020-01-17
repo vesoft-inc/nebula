@@ -3,7 +3,6 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-
 #include "http/HttpClient.h"
 #include "graph/AdminJobExecutor.h"
 #include "process/ProcessUtils.h"
@@ -46,20 +45,9 @@ void AdminJobExecutor::execute() {
 
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         auto header = getHeader(opEnum);
-        auto nCols = header.size();
         resp_->set_column_names(std::move(header));
 
-        std::vector<cpp2::RowValue> result;
-        std::vector<cpp2::ColumnValue> newRow;
-        for (auto& item : resp.value()) {
-            newRow.emplace_back();
-            newRow.back().set_str(std::move(item));
-
-            if (newRow.size() == nCols) {
-                result.emplace_back();
-                result.back().set_columns(std::move(newRow));
-            }
-        }
+        auto result = toRowValues(opEnum, std::move(resp.value()));
         resp_->set_rows(std::move(result));
 
         DCHECK(onFinish_);
@@ -127,6 +115,96 @@ AdminJobExecutor::toAdminJobOp(const std::string& op) {
         return nebula::meta::cpp2::AdminJobOp::RECOVER;
     }
     return nebula::meta::cpp2::AdminJobOp::INVALID;
+}
+
+cpp2::RowValue
+AdminJobExecutor::toRowValue(const nebula::meta::cpp2::JobDetails& job) {
+    cpp2::RowValue ret;
+    std::vector<cpp2::ColumnValue> row(5);
+    row[0].set_str(job.get_id());
+    row[1].set_str(job.get_typeAndParas());
+    row[2].set_str(job.get_status());
+    row[3].set_str(job.get_startTime());
+    row[4].set_str(job.get_stopTime());
+
+    ret.set_columns(std::move(row));
+    return ret;
+}
+
+cpp2::RowValue
+AdminJobExecutor::toRowValue(const nebula::meta::cpp2::TaskDetails& task) {
+    cpp2::RowValue ret;
+    std::vector<cpp2::ColumnValue> row(5);
+    row[0].set_str(task.get_id());
+    row[1].set_str(task.get_host());
+    row[2].set_str(task.get_status());
+    row[3].set_str(task.get_startTime());
+    row[4].set_str(task.get_stopTime());
+
+    ret.set_columns(std::move(row));
+    return ret;
+}
+
+cpp2::RowValue AdminJobExecutor::toRowValue(std::string&& msg) {
+    cpp2::RowValue row;
+    std::vector<cpp2::ColumnValue> cols(1);
+    cols.back().set_str(std::move(msg));
+
+    row.set_columns(std::move(cols));
+    return row;
+}
+
+std::vector<cpp2::RowValue>
+AdminJobExecutor::toRowValues(nebula::meta::cpp2::AdminJobOp op,
+                              nebula::meta::cpp2::AdminJobResult &&resp) {
+    std::vector<cpp2::RowValue> ret;
+    switch (op) {
+    case nebula::meta::cpp2::AdminJobOp::ADD:
+        {
+            ret.emplace_back(toRowValue(std::to_string(*resp.get_jobId())));
+        }
+        break;
+    case nebula::meta::cpp2::AdminJobOp::SHOW_All:
+        {
+            for (auto& job : *resp.get_jobDetails()) {
+                ret.emplace_back(toRowValue(job));
+            }
+        }
+        break;
+    case nebula::meta::cpp2::AdminJobOp::SHOW:
+        {
+            for (auto& job : *resp.get_jobDetails()) {
+                ret.emplace_back(toRowValue(job));
+            }
+            for (auto& task : *resp.get_taskDetails()) {
+                ret.emplace_back(toRowValue(task));
+            }
+        }
+        break;
+    case nebula::meta::cpp2::AdminJobOp::STOP:
+        {
+            ret.emplace_back(toRowValue("Job stopped"));
+        }
+        break;
+    case nebula::meta::cpp2::AdminJobOp::BACKUP:
+        {
+            auto msg = folly::stringPrintf("backup job num: %d, task num %d",
+                                             resp.get_backupResult()->get_jobNum(),
+                                             resp.get_backupResult()->get_taskNum());
+            ret.emplace_back(toRowValue(std::move(msg)));
+        }
+        break;
+    case nebula::meta::cpp2::AdminJobOp::RECOVER:
+        {
+            auto msg = folly::stringPrintf("recoverd job num: %d",
+                                              *resp.get_recoveredJobNum());
+            ret.emplace_back(toRowValue(std::move(msg)));
+        }
+        break;
+    default:
+        return ret;
+    }
+    return ret;
 }
 
 }   // namespace graph

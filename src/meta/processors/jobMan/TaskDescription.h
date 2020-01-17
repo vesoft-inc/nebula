@@ -12,6 +12,8 @@
 #include <string>
 #include <folly/Range.h>
 #include <gtest/gtest_prod.h>
+
+#include "interface/gen-cpp2/meta_types.h"
 #include "meta/processors/jobMan/JobStatus.h"
 
 /*
@@ -61,8 +63,8 @@ public:
      * {host, status, start time, stop time}
      * */
     static std::tuple<std::string, JobStatus::Status,
-                      folly::Optional<std::time_t>,
-                      folly::Optional<std::time_t>>
+                      std::time_t,
+                      std::time_t>
     parseVal(const folly::StringPiece& rawVal);
 
     /*
@@ -81,7 +83,7 @@ public:
      *  then the vector should be
      * {27-0, 192.168.8.5, finished, 12/09/19 11:09:40, 12/09/19 11:09:40}
      * */
-    std::vector<std::string> dump();
+    cpp2::TaskDetails toTaskDetails();
 
     /*
      * set the internal status
@@ -98,8 +100,8 @@ private:
     int32_t                         iTask_;
     std::string                     dest_;
     JobStatus::Status               status_;
-    folly::Optional<std::time_t>    startTime_;
-    folly::Optional<std::time_t>    stopTime_;
+    std::time_t                     startTime_;
+    std::time_t                     stopTime_;
 };
 
 }  // namespace meta

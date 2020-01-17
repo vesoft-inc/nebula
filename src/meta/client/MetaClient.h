@@ -187,7 +187,7 @@ public:
     folly::Future<StatusOr<std::vector<SpaceIdName>>>
     listSpaces();
 
-    folly::Future<StatusOr<std::vector<std::string>>>
+    folly::Future<StatusOr<cpp2::AdminJobResult>>
     submitJob(cpp2::AdminJobOp op, std::vector<std::string> paras);
 
     folly::Future<StatusOr<cpp2::SpaceItem>>

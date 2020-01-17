@@ -9,6 +9,10 @@
 
 #include "meta/processors/jobMan/JobUtils.h"
 
+#include <stdexcept>
+#include <vector>
+#include <boost/stacktrace.hpp>
+
 namespace nebula {
 namespace meta {
 
@@ -18,7 +22,7 @@ namespace meta {
  * *important* *important* *important*
  * this key is carefully designed to be the length of jobKey + size(int32_t) + 1
  * */
-const std::string kCurrJobkey      = "__job_mgr____id"; // NOLINT
+const std::string kCurrJob      = "__job_mgr____id"; // NOLINT
 
 /*
  * this is the prefix for a regular job
@@ -31,39 +35,69 @@ const std::string kCurrJobkey      = "__job_mgr____id"; // NOLINT
  * __job_mgr_<65536><2>
  * __job_mgr_<65536><3>
  * */
-const std::string kJobKey          = "__job_mgr_"; // NOLINT
+const std::string kJob          = "__job_mgr_"; // NOLINT
 
 /*
  * DBA may call "backup jobs <from> <to>"
- * then all the jobs(and sub tasks) in the range will be moved from kJobKey to this
+ * then all the jobs(and sub tasks) in the range will be moved from kJob to this
  * */
-const std::string kJobArchiveKey   = "__job_mgr_archive_"; // NOLINT
+const std::string kJobArchive   = "__job_mgr_archive_"; // NOLINT
 
 const std::string& JobUtil::jobPrefix() {
-    return kJobKey;
+    return kJob;
 }
 
 const std::string& JobUtil::currJobKey() {
-    return kCurrJobkey;
+    return kCurrJob;
 }
 
 const std::string& JobUtil::archivePrefix() {
-    return kJobArchiveKey;
+    return kJobArchive;
 }
 
 std::string JobUtil::strTimeT(std::time_t t) {
+    std::string ret;
+    if (t == 0) {
+        return ret;
+    }
     std::time_t tm = t;
     char mbstr[50];
     int len = std::strftime(mbstr, sizeof(mbstr), "%x %X", std::localtime(&tm));
-    std::string ret;
-    if (len) {
+
+    if (len != 0) {
         ret = std::string(&mbstr[0], len);
     }
     return ret;
 }
 
-std::string JobUtil::strTimeT(const folly::Optional<std::time_t>& t) {
-    return t ? strTimeT(*t) : "";
+std::string JobUtil::parseString(folly::StringPiece rawVal, size_t offset) {
+    if (rawVal.size() < offset + sizeof(size_t)) {
+        throw std::runtime_error(folly::stringPrintf("%s: offset=%zu, rawVal.size()=%zu",
+                                                        __func__, offset, rawVal.size()));
+    }
+    auto len = *reinterpret_cast<const size_t*>(rawVal.data() + offset);
+    offset += sizeof(size_t);
+    if (rawVal.size() < offset + len) {
+        throw std::runtime_error(folly::stringPrintf("%s: offset=%zu, rawVal.size()=%zu",
+                                                        __func__, offset, rawVal.size()));
+    }
+    return std::string(rawVal.data() + offset, len);
+}
+
+std::vector<std::string> JobUtil::parseStrVector(folly::StringPiece rawVal, size_t* offset) {
+    std::vector<std::string> ret;
+    if (rawVal.size() < *offset + sizeof(size_t)) {
+        throw std::runtime_error(folly::stringPrintf("%s: offset=%zu, rawVal.size()=%zu",
+                                                        __func__, *offset, rawVal.size()));
+    }
+    auto vec_size = *reinterpret_cast<const size_t*>(rawVal.data() + *offset);
+    *offset += sizeof(size_t);
+    for (size_t i = 0; i < vec_size; ++i) {
+        ret.emplace_back(parseString(rawVal, *offset));
+        *offset += sizeof(size_t);
+        *offset += ret.back().length();
+    }
+    return ret;
 }
 
 }  // namespace meta

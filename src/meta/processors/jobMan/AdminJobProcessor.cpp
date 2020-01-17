@@ -16,7 +16,8 @@ namespace meta {
 
 void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
     Status status;
-    std::vector<std::string> result;
+    // std::vector<std::string> result;
+    cpp2::AdminJobResult result;
     std::stringstream oss;
     for (auto& p : req.get_paras()) { oss << p << " "; }
     LOG(INFO) << __PRETTY_FUNCTION__ << " paras=" << oss.str();
@@ -27,7 +28,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         {
             auto jobDesc = jobMgr->buildJobDescription(req.get_paras());
             if (jobDesc.ok()) {
-                result.emplace_back(std::to_string(jobMgr->addJob(jobDesc.value())));
+                result.set_jobId(jobMgr->addJob(jobDesc.value()));
             } else {
                 status = jobDesc.status();
             }
@@ -37,7 +38,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         {
             auto r = jobMgr->showJobs();
             if (r.ok()) {
-                result.swap(r.value());
+                result.set_jobDetails(r.value());
             } else {
                 status = r.status();
             }
@@ -47,6 +48,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         {
             if (req.get_paras().empty()) {
                 status = Status::SyntaxError("show job needs para");
+                break;
             }
             int iJob = atoi(req.get_paras()[0].c_str());
             if (iJob == 0) {
@@ -54,7 +56,9 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
             }
             auto r = jobMgr->showJob(iJob);
             if (r.ok()) {
-                result.swap(r.value());
+                // result.swap(r.value());
+                result.set_jobDetails(std::vector<cpp2::JobDetails>{r.value().first});
+                result.set_taskDetails(r.value().second);
             } else {
                 status = r.status();
             }
@@ -70,31 +74,27 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
                 break;
             }
             status = jobMgr->stopJob(iJob);
-            if (status.ok()) {
-                result.emplace_back("job " + std::to_string(iJob) + " stopped");
-            }
             break;
         }
         case nebula::meta::cpp2::AdminJobOp::BACKUP:
         {
             if (req.get_paras().size() < 2) {
                 status = Status::SyntaxError("invalid paras for backup job");
+                break;
             }
             int32_t iStart = atoi(req.get_paras()[0].c_str());
             int32_t iStop = atoi(req.get_paras()[1].c_str());
             auto nJobTask = jobMgr->backupJob(iStart, iStop);
-            std::string msg = folly::stringPrintf("backup %d job%s %d task%s",
-                                                  nJobTask.first,
-                                                  nJobTask.first > 0 ? "s" : "",
-                                                  nJobTask.second,
-                                                  nJobTask.second > 0 ? "s" : "");
-            result.emplace_back(msg);
+            cpp2::BackupJobResult backupRes;
+            backupRes.set_jobNum(nJobTask.first);
+            backupRes.set_taskNum(nJobTask.second);
+            result.set_backupResult(backupRes);
             break;
         }
         case nebula::meta::cpp2::AdminJobOp::RECOVER:
         {
             int32_t jobRecovered = jobMgr->recoverJob();
-            result.emplace_back(folly::stringPrintf("%d job recovered", jobRecovered));
+            result.set_recoveredJobNum(jobRecovered);
             break;
         }
         default:

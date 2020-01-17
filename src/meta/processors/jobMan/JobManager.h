@@ -7,6 +7,7 @@
 #ifndef META_JOBMANAGER_H_
 #define META_JOBMANAGER_H_
 
+#include <boost/core/noncopyable.hpp>
 #include <string>
 #include <gtest/gtest_prod.h>
 #include <folly/concurrency/UnboundedQueue.h>
@@ -21,7 +22,7 @@
 namespace nebula {
 namespace meta {
 
-class JobManager{
+class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovable {
     FRIEND_TEST(JobManagerTest, reserveJobId);
     FRIEND_TEST(JobManagerTest, buildJobDescription);
     FRIEND_TEST(JobManagerTest, addJob);
@@ -42,31 +43,30 @@ public:
     /*
      * Build job description and save it in kvstore.
      * */
-    StatusOr<JobDescription> buildJobDescription(const std::vector<std::string>& paras);
+    StatusOr<JobDescription> buildJobDescription(const std::vector<std::string>& args);
     /*
      * Load job description from kvstore
      * */
-    int32_t addJob(JobDescription& jobDesc);
-    StatusOr<std::vector<std::string>> showJobs();
-    StatusOr<std::vector<std::string>> showJob(int iJob);
+    int32_t addJob(const JobDescription& jobDesc);
+    StatusOr<std::vector<cpp2::JobDetails>> showJobs();
+    StatusOr<std::pair<cpp2::JobDetails, std::vector<cpp2::TaskDetails>>> showJob(int iJob);
     nebula::Status stopJob(int32_t iJob);
     std::pair<int, int> backupJob(int iBegin, int iEnd);
     int32_t recoverJob();
 
 private:
-    JobManager() {}
+    JobManager() = default;
     void runJobBackground();
-    bool runJobInternal(JobDescription& jobDesc);
+    bool runJobInternal(const JobDescription& jobDesc);
     StatusOr<int32_t> reserveJobId();
     int getSpaceId(const std::string& name);
     nebula::kvstore::ResultCode save(const std::string& k, const std::string& v);
 
-private:
     bool                shutDown_{false};
     std::unique_ptr<folly::UMPSCQueue<int32_t, true>> queue_;
     std::unique_ptr<thread::GenericWorker> bgThread_;
 
-    nebula::kvstore::KVStore* kvStore_;
+    nebula::kvstore::KVStore* kvStore_{nullptr};
     std::unique_ptr<nebula::thread::GenericThreadPool> pool_{nullptr};
 };
 

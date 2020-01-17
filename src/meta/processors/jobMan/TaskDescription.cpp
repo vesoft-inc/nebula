@@ -20,7 +20,7 @@ TaskDescription::TaskDescription(int32_t iJob,
                                    dest_(dest),
                                    status_(JobStatus::Status::RUNNING),
                                    startTime_(std::time(nullptr)),
-                                   stopTime_(folly::none) {}
+                                   stopTime_(0) {}
 
 
 /*
@@ -80,8 +80,8 @@ std::string TaskDescription::taskVal() {
     str.append(reinterpret_cast<const char*>(&destLen), sizeof(destLen));
     str.append(reinterpret_cast<const char*>(&dest_[0]), dest_.length());
     str.append(reinterpret_cast<const char*>(&status_), sizeof(JobStatus::Status));
-    str.append(reinterpret_cast<const char*>(&startTime_), sizeof(folly::Optional<std::time_t>));
-    str.append(reinterpret_cast<const char*>(&stopTime_), sizeof(folly::Optional<std::time_t>));
+    str.append(reinterpret_cast<const char*>(&startTime_), sizeof(std::time_t));
+    str.append(reinterpret_cast<const char*>(&stopTime_), sizeof(std::time_t));
     return str;
 }
 
@@ -92,20 +92,23 @@ std::string TaskDescription::taskVal() {
  *  std::time_t                     stopTime_;
  * */
 std::tuple<std::string, JobStatus::Status,
-           folly::Optional<std::time_t>,
-           folly::Optional<std::time_t>>
+           std::time_t,
+           std::time_t>
 TaskDescription::parseVal(const folly::StringPiece& rawVal) {
-    int offset = 0;
-    size_t len = *reinterpret_cast<const size_t*>(rawVal.begin() + offset);
-    offset += sizeof(size_t);
-    std::string dest(rawVal.begin() + offset, len);
-    offset += len;
-    JobStatus::Status status = *reinterpret_cast<const JobStatus::Status*>(rawVal.begin() + offset);
+    size_t offset = 0;
+
+    std::string host = JobUtil::parseString(rawVal, offset);
+    offset += sizeof(size_t) + host.length();
+
+    auto status = JobUtil::parseFixedVal<JobStatus::Status>(rawVal, offset);
     offset += sizeof(JobStatus::Status);
-    auto tStart = *reinterpret_cast<const folly::Optional<std::time_t>*>(rawVal.begin() + offset);
-    offset += sizeof(folly::Optional<std::time_t>);
-    auto tStop = *reinterpret_cast<const folly::Optional<std::time_t>*>(rawVal.begin() + offset);
-    return std::make_tuple(dest, status, tStart, tStop);
+
+    auto tStart = JobUtil::parseFixedVal<std::time_t>(rawVal, offset);
+    offset += sizeof(std::time_t);
+
+    auto tStop = JobUtil::parseFixedVal<std::time_t>(rawVal, offset);
+
+    return std::make_tuple(host, status, tStart, tStop);
 }
 
 /*
@@ -115,13 +118,13 @@ TaskDescription::parseVal(const folly::StringPiece& rawVal) {
  * | 27-0           | 192.168.8.5   | finished | 12/09/19 11:09:40 | 12/09/19 11:09:40 |
  * -------------------------------------------------------------------------------------
  * */
-std::vector<std::string> TaskDescription::dump() {
-    std::vector<std::string> ret;
-    ret.emplace_back(folly::stringPrintf("%d-%d", iJob_, iTask_));
-    ret.emplace_back(dest_);
-    ret.emplace_back(JobStatus::toString(status_));
-    ret.emplace_back(JobUtil::strTimeT(startTime_));
-    ret.emplace_back(JobUtil::strTimeT(stopTime_));
+cpp2::TaskDetails TaskDescription::toTaskDetails() {
+    cpp2::TaskDetails ret;
+    ret.set_id(folly::stringPrintf("%d-%d", iJob_, iTask_));
+    ret.set_host(dest_);
+    ret.set_status(JobStatus::toString(status_));
+    ret.set_startTime(JobUtil::strTimeT(startTime_));
+    ret.set_stopTime(JobUtil::strTimeT(stopTime_));
     return ret;
 }
 

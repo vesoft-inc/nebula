@@ -7,10 +7,12 @@
 #ifndef META_KVJOBDESCRIPTION_H_
 #define META_KVJOBDESCRIPTION_H_
 
-#include <vector>
 #include <string>
+#include <vector>
 
+#include <folly/Range.h>
 #include <gtest/gtest_prod.h>
+
 #include "meta/processors/jobMan/JobStatus.h"
 #include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/KVStore.h"
@@ -22,6 +24,7 @@ class JobDescription {
     FRIEND_TEST(JobDescriptionTest, parseKey);
     FRIEND_TEST(JobDescriptionTest, parseVal);
     FRIEND_TEST(JobManagerTest, buildJobDescription);
+    FRIEND_TEST(JobManagerTest, addJob);
     FRIEND_TEST(JobManagerTest, loadJobDescription);
     FRIEND_TEST(JobManagerTest, showJobs);
     FRIEND_TEST(JobManagerTest, showJob);
@@ -29,21 +32,31 @@ class JobDescription {
     FRIEND_TEST(JobManagerTest, recoverJob);
 
 public:
-    JobDescription() {}
-    JobDescription(int32_t id, const std::string& cmd, std::vector<std::string>& paras);
-    JobDescription(const folly::StringPiece& key, const folly::StringPiece& val);
+    JobDescription() = default;
+    JobDescription(int32_t id,
+                   std::string type,
+                   std::vector<std::string> paras,
+                   JobStatus::Status status = JobStatus::Status::QUEUE,
+                   std::time_t = 0,
+                   std::time_t = 0);
 
-    int32_t getJobId() { return id_; }
+    /*
+     * return the JobDescription if both key & val is valid
+     * */
+    static folly::Optional<JobDescription>
+    makeJobDescription(folly::StringPiece key, folly::StringPiece val);
+
+    int32_t getJobId() const { return id_; }
 
     /*
      * return the command for this job. (e.g. compact, flush ...)
      * */
-    std::string getCommand() { return cmd_; }
+    std::string getType() const { return type_; }
 
     /*
      * return the paras for this job. (e.g. space name for compact/flush)
      * */
-    std::vector<std::string> getParas() { return paras_; }
+    std::vector<std::string> getParas() const { return paras_; }
 
     /*
      * return the status (e.g. Queue, running, finished, failed, stopped);
@@ -97,7 +110,7 @@ public:
      * then, the vector should be
      * {27, flush nba, finished, 12/09/19 11:09:40, 12/09/19 11:09:40}
      * */
-    std::vector<std::string> dump();
+    cpp2::JobDetails toJobDetails();
 
     /*
      * decode key from kvstore, return job id
@@ -111,8 +124,8 @@ public:
     static std::tuple<std::string,
                       std::vector<std::string>,
                       JobStatus::Status,
-                      folly::Optional<std::time_t>,
-                      folly::Optional<std::time_t>>
+                      std::time_t,
+                      std::time_t>
     parseVal(const folly::StringPiece& rawVal);
 
     /*
@@ -122,11 +135,11 @@ public:
 
 private:
     int32_t                         id_;
-    std::string                     cmd_;
+    std::string                     type_;
     std::vector<std::string>        paras_;
     JobStatus::Status               status_;
-    folly::Optional<std::time_t>    startTime_;
-    folly::Optional<std::time_t>    stopTime_;
+    std::time_t                     startTime_;
+    std::time_t                     stopTime_;
 };
 
 }  // namespace meta

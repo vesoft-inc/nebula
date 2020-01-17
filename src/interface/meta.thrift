@@ -187,10 +187,39 @@ struct AdminJobReq {
     2: list<string> paras;
 }
 
+struct JobDetails {
+    1: string id
+    2: string typeAndParas
+    3: string status
+    4: string startTime
+    5: string stopTime
+}
+
+struct TaskDetails {
+    1: string id
+    2: string host
+    3: string status
+    4: string startTime
+    5: string stopTime
+}
+
+struct BackupJobResult {
+    1: i32 jobNum
+    2: i32 taskNum
+}
+
+struct AdminJobResult {
+    1: optional i32                 jobId
+    2: optional list<JobDetails>    jobDetails
+    3: optional list<TaskDetails>   taskDetails
+    4: optional BackupJobResult     backupResult
+    5: optional i32                 recoveredJobNum
+}
+
 struct AdminJobResp {
-    1: ErrorCode         code,
-    2: common.HostAddr  leader,
-    3: list<string> result;
+    1: ErrorCode                    code
+    2: common.HostAddr              leader
+    3: AdminJobResult               result
 }
 
 struct ListSpacesReq {
