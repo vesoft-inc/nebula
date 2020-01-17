@@ -27,8 +27,10 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     LOG(INFO) << "Test FutureAddVerticesTest...";
     std::unique_ptr<kvstore::KVStore> kvstore = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     auto storageServiceHandler = std::make_unique<StorageServiceHandler>(kvstore.get(),
                                                                          schemaMan.get(),
+                                                                         indexMan.get(),
                                                                          nullptr);
     auto resp = storageServiceHandler->future_addVertices(req).get();
     EXPECT_EQ(typeid(cpp2::ExecResponse).name() , typeid(resp).name());

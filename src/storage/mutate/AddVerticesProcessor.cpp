@@ -24,7 +24,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
     const auto& partVertices = req.get_parts();
     spaceId_ = req.get_space_id();
     callingNum_ = partVertices.size();
-    auto iRet = schemaMan_->getTagIndexes(spaceId_);
+    auto iRet = indexMan_->getTagIndexes(spaceId_);
     if (iRet.ok()) {
         for (auto& index : iRet.value()) {
             indexes_.emplace_back(index);
@@ -88,20 +88,20 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
     std::map<std::string, std::string> newVertices;
     std::for_each(vertices.begin(), vertices.end(), [&](auto& v) {
         auto vId = v.get_id();
-            const auto& tags = v.get_tags();
-            std::for_each(tags.begin(), tags.end(), [&](auto& tag) {
-                auto tagId = tag.get_tag_id();
-                auto prop = tag.get_props();
-                VLOG(3) << "PartitionID: " << partId << ", VertexID: " << vId
-                        << ", TagID: " << tagId << ", TagVersion: " << version;
-                auto key = NebulaKeyUtils::vertexKey(partId, vId, tagId, version);
-                newVertices[key] = std::move(prop);
-                if (FLAGS_enable_vertex_cache && this->vertexCache_ != nullptr) {
-                    this->vertexCache_->evict(std::make_pair(vId, tagId), partId);
-                    VLOG(3) << "Evict cache for vId " << vId << ", tagId " << tagId;
-                }
-            });
+        const auto& tags = v.get_tags();
+        std::for_each(tags.begin(), tags.end(), [&](auto& tag) {
+            auto tagId = tag.get_tag_id();
+            auto prop = tag.get_props();
+            VLOG(3) << "PartitionID: " << partId << ", VertexID: " << vId
+                    << ", TagID: " << tagId << ", TagVersion: " << version;
+            auto key = NebulaKeyUtils::vertexKey(partId, vId, tagId, version);
+            newVertices[key] = std::move(prop);
+            if (FLAGS_enable_vertex_cache && this->vertexCache_ != nullptr) {
+                this->vertexCache_->evict(std::make_pair(vId, tagId), partId);
+                VLOG(3) << "Evict cache for vId " << vId << ", tagId " << tagId;
+            }
         });
+    });
 
     for (auto& v : newVertices) {
         std::string val;
@@ -109,7 +109,7 @@ std::string AddVerticesProcessor::addVertices(int64_t version, PartitionID partI
         auto tagId = NebulaKeyUtils::getTagId(v.first);
         auto vId = NebulaKeyUtils::getVertexId(v.first);
         for (auto& index : indexes_) {
-            if (tagId == index.get_tagOrEdge()) {
+            if (tagId == index->get_schema_id().get_tag_id()) {
                 /*
                  * step 1 , Delete old version index if exists.
                  */
@@ -172,10 +172,10 @@ std::string AddVerticesProcessor::findObsoleteIndex(PartitionID partId,
 std::string AddVerticesProcessor::indexKey(PartitionID partId,
                                            VertexID vId,
                                            RowReader* reader,
-                                           const nebula::cpp2::IndexItem& index) {
-    auto values = collectIndexValues(reader, index.get_cols());
+                                           std::shared_ptr<nebula::cpp2::IndexItem> index) {
+    auto values = collectIndexValues(reader, index->get_fields());
     return NebulaKeyUtils::vertexIndexKey(partId,
-                                          index.get_index_id(),
+                                          index->get_index_id(),
                                           vId, values);
 }
 
