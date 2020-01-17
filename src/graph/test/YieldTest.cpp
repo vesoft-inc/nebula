@@ -578,6 +578,18 @@ TEST_F(YieldTest, calculateOverflow) {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -2*4611686018427387904";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD -9223372036854775808*1";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string query = "YIELD -9223372036854775809";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
