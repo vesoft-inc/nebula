@@ -58,6 +58,7 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateVertexRequest...";
@@ -120,7 +121,10 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -203,6 +207,7 @@ TEST(UpdateVertexTest, Insertable_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateVertexRequest...";
@@ -254,7 +259,10 @@ TEST(UpdateVertexTest, Insertable_Test) {
     req.set_insertable(true);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -304,6 +312,7 @@ TEST(UpdateVertexTest, Invalid_Set_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateVertexRequest...";
@@ -330,7 +339,10 @@ TEST(UpdateVertexTest, Invalid_Set_Test) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -350,6 +362,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateVertexRequest...";
@@ -378,7 +391,10 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
     req.set_insertable(false);
 
     LOG(INFO) << "Test UpdateVertexRequest...";
-    auto* processor = UpdateVertexProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+    auto* processor = UpdateVertexProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

@@ -19,8 +19,9 @@ class UpdateEdgeProcessor
 public:
     static UpdateEdgeProcessor* instance(kvstore::KVStore* kvstore,
                                          meta::SchemaManager* schemaMan,
+                                         meta::IndexManager* indexMan,
                                          stats::Stats* stats) {
-        return new UpdateEdgeProcessor(kvstore, schemaMan, stats);
+        return new UpdateEdgeProcessor(kvstore, schemaMan, indexMan, stats);
     }
 
     void process(const cpp2::UpdateEdgeRequest& req);
@@ -28,9 +29,11 @@ public:
 private:
     explicit UpdateEdgeProcessor(kvstore::KVStore* kvstore,
                                  meta::SchemaManager* schemaMan,
+                                 meta::IndexManager* indexMan,
                                  stats::Stats* stats)
         : QueryBaseProcessor<cpp2::UpdateEdgeRequest,
-                             cpp2::UpdateResponse>(kvstore, schemaMan, stats) {}
+                             cpp2::UpdateResponse>(kvstore, schemaMan, stats)
+        , indexMan_(indexMan) {}
 
     kvstore::ResultCode processVertex(PartitionID, VertexID) override {
         LOG(FATAL) << "Unimplement!";
@@ -63,7 +66,8 @@ private:
     std::string                                                     key_;
     std::string                                                     val_;
     std::unique_ptr<RowUpdater>                                     updater_;
-    std::vector<nebula::cpp2::IndexItem>                            indexes_;
+    meta::IndexManager*                                             indexMan_{nullptr};
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>                            indexes_;
 };
 
 }  // namespace storage

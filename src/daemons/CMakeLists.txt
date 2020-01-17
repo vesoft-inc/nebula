@@ -20,6 +20,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:thrift_obj>
         $<TARGET_OBJECTS:schema_obj>
+        $<TARGET_OBJECTS:index_obj>
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:dataman_obj>
@@ -54,6 +55,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:wal_obj>
         $<TARGET_OBJECTS:dataman_obj>
         $<TARGET_OBJECTS:schema_obj>
+        $<TARGET_OBJECTS:index_obj>
         $<TARGET_OBJECTS:hdfs_helper_obj>
         $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:http_client_obj>
@@ -93,6 +95,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:meta_http_handler>
         $<TARGET_OBJECTS:kvstore_obj>
         $<TARGET_OBJECTS:schema_obj>
+        $<TARGET_OBJECTS:index_obj>
         $<TARGET_OBJECTS:wal_obj>
         $<TARGET_OBJECTS:hdfs_helper_obj>
         $<TARGET_OBJECTS:http_client_obj>

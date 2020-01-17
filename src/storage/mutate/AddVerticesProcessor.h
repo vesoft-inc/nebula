@@ -21,9 +21,10 @@ class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static AddVerticesProcessor* instance(kvstore::KVStore* kvstore,
                                           meta::SchemaManager* schemaMan,
+                                          meta::IndexManager* indexMan,
                                           stats::Stats* stats,
                                           VertexCache* cache = nullptr) {
-        return new AddVerticesProcessor(kvstore, schemaMan, stats, cache);
+        return new AddVerticesProcessor(kvstore, schemaMan, indexMan, stats, cache);
     }
 
     void process(const cpp2::AddVerticesRequest& req);
@@ -31,9 +32,11 @@ public:
 private:
     explicit AddVerticesProcessor(kvstore::KVStore* kvstore,
                                   meta::SchemaManager* schemaMan,
+                                  meta::IndexManager* indexMan,
                                   stats::Stats* stats,
                                   VertexCache* cache)
             : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats)
+            , indexMan_(indexMan)
             , vertexCache_(cache) {}
 
     std::string addVertices(int64_t version, PartitionID partId,
@@ -46,14 +49,14 @@ private:
     std::string indexKey(PartitionID partId,
                          VertexID vId,
                          RowReader* reader,
-                         const nebula::cpp2::IndexItem& index);
+                         std::shared_ptr<nebula::cpp2::IndexItem> index);
 
 private:
-    GraphSpaceID  spaceId_;
-    VertexCache* vertexCache_ = nullptr;
-    std::vector<nebula::cpp2::IndexItem> indexes_;
+    GraphSpaceID                                          spaceId_;
+    meta::IndexManager*                                   indexMan_{nullptr};
+    VertexCache*                                          vertexCache_{nullptr};
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> indexes_;
 };
-
 
 }  // namespace storage
 }  // namespace nebula
