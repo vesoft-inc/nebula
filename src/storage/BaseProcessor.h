@@ -64,15 +64,28 @@ protected:
     void doRemoveRange(GraphSpaceID spaceId, PartitionID partId, std::string start,
                        std::string end);
 
-    kvstore::ResultCode doRange(GraphSpaceID spaceId, PartitionID partId, std::string start,
-                                std::string end, std::unique_ptr<kvstore::KVIterator>* iter);
+    kvstore::ResultCode doRange(GraphSpaceID spaceId, PartitionID partId, const std::string& start,
+                                const std::string& end, std::unique_ptr<kvstore::KVIterator>* iter);
+
+    kvstore::ResultCode doRange(GraphSpaceID spaceId, PartitionID partId,
+                                std::string&& start, std::string&& end,
+                                std::unique_ptr<kvstore::KVIterator>* iter) = delete;
 
     kvstore::ResultCode doPrefix(GraphSpaceID spaceId, PartitionID partId,
-                                 std::string prefix, std::unique_ptr<kvstore::KVIterator>* iter);
+                                 const std::string& prefix,
+                                 std::unique_ptr<kvstore::KVIterator>* iter);
+
+    kvstore::ResultCode doPrefix(GraphSpaceID spaceId, PartitionID partId,
+                                 std::string prefix,
+                                 std::unique_ptr<kvstore::KVIterator>* iter) = delete;
 
     kvstore::ResultCode doRangeWithPrefix(GraphSpaceID spaceId, PartitionID partId,
-                                          std::string start, std::string prefix,
+                                          const std::string& start, const std::string& prefix,
                                           std::unique_ptr<kvstore::KVIterator>* iter);
+
+    kvstore::ResultCode doRangeWithPrefix(GraphSpaceID spaceId, PartitionID partId,
+                                          std::string&& start, std::string&& prefix,
+                                          std::unique_ptr<kvstore::KVIterator>* iter) = delete;
 
     nebula::cpp2::ColumnDef columnDef(std::string name, nebula::cpp2::SupportedType type) {
         nebula::cpp2::ColumnDef column;
