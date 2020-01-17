@@ -8,21 +8,11 @@
 #define STORAGE_INDEXPOLICYMAKER_H
 #include "base/Base.h"
 #include "meta/SchemaManager.h"
+#include "meta/IndexManager.h"
 #include "storage/CommonUtils.h"
 
 namespace nebula {
 namespace storage {
-
-enum class PolicyType : uint8_t {
-    /**
-     * Not optimized, PolicyScanType will be invalid here. default using SEEK_SCAN.
-     */
-    SIMPLE_POLICY      = 0x01,
-    /**
-     * Scan policy optimized,  PolicyScanType will be valid here.
-     */
-    OPTIMIZED_POLICY   = 0x02,
-};
 
 enum class PolicyScanType : uint8_t {
     /**
@@ -53,8 +43,10 @@ public:
     virtual ~IndexPolicyMaker() = default;
 
 protected:
-    explicit IndexPolicyMaker(meta::SchemaManager *schemaMan)
-        : schemaMan_(schemaMan) {}
+    explicit IndexPolicyMaker(meta::SchemaManager *schemaMan,
+                              meta::IndexManager* indexMan)
+        : schemaMan_(schemaMan)
+        , indexMan_(indexMan) {}
 
     /**
      * Details Entry method of index scan policy preparation, process logic as below :
@@ -89,14 +81,15 @@ private:
     cpp2::ErrorCode prepareExpr(const Expression* expr);
 
 protected:
-    meta::SchemaManager*               schemaMan_{nullptr};
-    std::unique_ptr<ExpressionContext> expCtx_{nullptr};
-    std::unique_ptr<Expression>        exp_{nullptr};
-    nebula::cpp2::IndexItem            index_;
-    std::vector<VariantType>           policies_;
-    PolicyType                         policyType_{PolicyType::OPTIMIZED_POLICY};
-    PolicyScanType                     policyScanType_{PolicyScanType::SEEK_SCAN};
-    OperatorList                       operatorList_;
+    meta::SchemaManager*                     schemaMan_{nullptr};
+    meta::IndexManager*                      indexMan_{nullptr};
+    std::unique_ptr<ExpressionContext>       expCtx_{nullptr};
+    std::unique_ptr<Expression>              exp_{nullptr};
+    std::shared_ptr<nebula::cpp2::IndexItem> index_{nullptr};
+    std::vector<VariantType>                 policies_;
+    bool                                     optimizedPolicy_{true};
+    PolicyScanType                           policyScanType_{PolicyScanType::SEEK_SCAN};
+    OperatorList                             operatorList_;
 };
 }  // namespace storage
 }  // namespace nebula

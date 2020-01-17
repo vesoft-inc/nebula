@@ -24,11 +24,12 @@ public:
 protected:
     explicit IndexExecutor(kvstore::KVStore* kvstore,
                            meta::SchemaManager* schemaMan,
+                           meta::IndexManager* indexMan,
                            stats::Stats* stats,
                            VertexCache* cache,
                            bool isEdgeIndex = false)
         : BaseProcessor<RESP>(kvstore, schemaMan, stats)
-        , IndexPolicyMaker(schemaMan)
+        , IndexPolicyMaker(schemaMan, indexMan)
         , vertexCache_(cache)
         , isEdgeIndex_(isEdgeIndex) {}
 

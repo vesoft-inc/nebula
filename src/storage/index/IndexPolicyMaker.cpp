@@ -28,21 +28,15 @@ cpp2::ErrorCode IndexPolicyMaker::policyPrepare(const std::string& filter) {
 }
 
 void IndexPolicyMaker::policyGenerate() {
-    switch (policyType_) {
-        case PolicyType::SIMPLE_POLICY : {
-            break;
-        }
-        case PolicyType::OPTIMIZED_POLICY : {
-            initPolicy();
-            break;
-        }
+    if (optimizedPolicy_) {
+        initPolicy();
     }
 }
 
 void IndexPolicyMaker::initPolicy() {
     decltype(operatorList_.size()) hintNum = 0;
     bool hasStr = false;
-    for (auto& col : index_.get_cols()) {
+    for (auto& col : index_->get_fields()) {
         auto it = std::find_if(operatorList_.begin(), operatorList_.end(),
                                [&col] (const auto& op) {
                                    return col.get_name() == op.first.first;
@@ -75,14 +69,10 @@ cpp2::ErrorCode IndexPolicyMaker::prepareExpr(const Expression* expr) {
     switch (expr->kind()) {
         case nebula::Expression::kLogical : {
             auto* lExpr = dynamic_cast<const LogicalExpression*>(expr);
-            if (policyType_ == PolicyType::SIMPLE_POLICY) {
-                return code;
-            }
-
             if (lExpr->op() == LogicalExpression::Operator::XOR) {
                 return cpp2::ErrorCode::E_INVALID_FILTER;
             } else if (lExpr->op() == LogicalExpression::Operator::OR) {
-                policyType_ = PolicyType::SIMPLE_POLICY;
+                optimizedPolicy_ = false;
                 return code;
             }
             auto* left = lExpr->left();
@@ -100,7 +90,7 @@ cpp2::ErrorCode IndexPolicyMaker::prepareExpr(const Expression* expr) {
             if (left->kind() == nebula::Expression::kAliasProp
                 && right->kind() == nebula::Expression::kPrimary) {
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(left);
-                prop = aExpr->prop()->c_str();
+                prop = *aExpr->prop();
                 auto* pExpr = dynamic_cast<const PrimaryExpression*>(right);
                 auto value = pExpr->eval(getters);
                 if (!value.ok()) {
@@ -116,7 +106,7 @@ cpp2::ErrorCode IndexPolicyMaker::prepareExpr(const Expression* expr) {
                 }
                 v = value.value();
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(right);
-                prop = aExpr->prop()->c_str();
+                prop = *aExpr->prop();
             } else {
                 prepareExpr(left);
                 prepareExpr(right);

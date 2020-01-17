@@ -245,6 +245,7 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
     });  // via
     return f;
 }
+
 }   // namespace storage
 }   // namespace nebula
 

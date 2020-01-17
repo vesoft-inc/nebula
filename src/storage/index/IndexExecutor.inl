@@ -53,18 +53,19 @@ kvstore::ResultCode IndexExecutor<RESP>::performScan(PartitionID part) {
 
 template <typename RESP>
 cpp2::ErrorCode IndexExecutor<RESP>::checkIndex(IndexID indexId) {
-    StatusOr<nebula::cpp2::IndexItem> index;
+    StatusOr<std::shared_ptr<nebula::cpp2::IndexItem>> index;
     if (isEdgeIndex_) {
-        index = schemaMan_->getEdgeIndex(spaceId_, indexId);
+        index = indexMan_->getEdgeIndex(spaceId_, indexId);
     } else {
-        index = schemaMan_->getTagIndex(spaceId_, indexId);
+        index = indexMan_->getTagIndex(spaceId_, indexId);
     }
     if (!index.ok()) {
         return cpp2::ErrorCode::E_INDEX_NOT_FOUND;
     }
-    this->index_ = index.value();
-    this->tagOrEdge_ = index_.tagOrEdge;
-    for (const auto& col : this->index_.get_cols()) {
+    index_ = std::move(index).value();
+    tagOrEdge_ = (isEdgeIndex_) ? index_->get_schema_id().get_edge_type() :
+                                  index_->get_schema_id().get_tag_id();
+    for (const auto& col : index_->get_fields()) {
         indexCols_[col.get_name()] = col.get_type().get_type();
         if (col.get_type().get_type() == nebula::cpp2::SupportedType::STRING) {
             vColSize_++;
@@ -109,7 +110,7 @@ void IndexExecutor<RESP>::preparePrefix() {
 
 template <typename RESP>
 kvstore::ResultCode IndexExecutor<RESP>::accurateScan(PartitionID part) {
-    std::string prefix = NebulaKeyUtils::indexPrefix(part, index_.get_index_id())
+    std::string prefix = NebulaKeyUtils::indexPrefix(part, index_->get_index_id())
                          .append(prefix_);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId_,
@@ -133,7 +134,7 @@ kvstore::ResultCode IndexExecutor<RESP>::accurateScan(PartitionID part) {
 
 template <typename RESP>
 kvstore::ResultCode IndexExecutor<RESP>::prefixScan(PartitionID part) {
-    std::string prefix = NebulaKeyUtils::indexPrefix(part, index_.get_index_id())
+    std::string prefix = NebulaKeyUtils::indexPrefix(part, index_->get_index_id())
                         .append(prefix_);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId_,
@@ -348,7 +349,7 @@ folly::StringPiece IndexExecutor<RESP>::getIndexVal(const folly::StringPiece& ke
     size_t offset = sizeof(PartitionID) + sizeof(IndexID);
     int32_t len = 0;
     int32_t vCount = vColSize_;
-    for (const auto& col : index_.get_cols()) {
+    for (const auto& col : index_->get_fields()) {
         switch (col.get_type().get_type()) {
             case SupportedType::BOOL: {
                 len = sizeof(bool);
