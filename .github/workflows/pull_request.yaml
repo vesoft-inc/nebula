@@ -45,6 +45,8 @@ jobs:
             cmake_with_testing: ON
           - cmake_build_type: Debug
             cmake_with_testing: OFF
+          - tag: ubuntu18
+            cmake_build_type: Release
 
     container:
       image: vesoft/nebula-dev:${{ matrix.tag }}
