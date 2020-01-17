@@ -75,10 +75,9 @@ union ID {
     1: common.GraphSpaceID  space_id,
     2: common.TagID         tag_id,
     3: common.EdgeType      edge_type,
-    4: common.TagIndexID    tag_index_id,
-    5: common.EdgeIndexID   edge_index_id,
-    6: common.UserID        user_id,
-    7: common.ClusterID     cluster_id,
+    4: common.IndexID       index_id,
+    5: common.UserID        user_id,
+    6: common.ClusterID     cluster_id,
 }
 
 struct IdName {
@@ -114,26 +113,6 @@ struct EdgeItem {
     2: string               edge_name,
     3: common.SchemaVer     version,
     4: common.Schema        schema,
-}
-
-struct IndexProperties {
-    1: map<string, list<string>>(cpp.template = "std::map")  fields,
-}
-
-struct IndexFields {
-    1: map<string, list<common.ColumnDef>>(cpp.template = "std::map")  fields,
-}
-
-struct TagIndexItem {
-    1: common.TagIndexID    index_id,
-    2: string               index_name,
-    3: IndexFields          fields,
-}
-
-struct EdgeIndexItem {
-    1: common.EdgeIndexID   index_id,
-    2: string               index_name,
-    3: IndexFields          fields ,
 }
 
 enum HostStatus {
@@ -407,15 +386,17 @@ struct HBReq {
 }
 
 struct CreateTagIndexReq {
-    1: common.GraphSpaceID space_id,
-    2: string              index_name,
-    3: IndexProperties     properties,
-    4: bool                if_not_exists,
+    1: common.GraphSpaceID  space_id,
+    2: string               index_name,
+    3: string               tag_name,
+    4: list<string>         fields,
+    5: bool                 if_not_exists,
 }
 
 struct DropTagIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
+    3: bool                if_exists,
 }
 
 struct GetTagIndexReq {
@@ -426,7 +407,7 @@ struct GetTagIndexReq {
 struct GetTagIndexResp {
     1: ErrorCode              code,
     2: common.HostAddr        leader,
-    3: TagIndexItem           item,
+    3: common.IndexItem       item,
 }
 
 struct ListTagIndexesReq {
@@ -434,21 +415,23 @@ struct ListTagIndexesReq {
 }
 
 struct ListTagIndexesResp {
-    1: ErrorCode              code,
-    2: common.HostAddr        leader,
-    3: list<TagIndexItem>     items,
+    1: ErrorCode                code,
+    2: common.HostAddr          leader,
+    3: list<common.IndexItem>   items,
 }
 
 struct CreateEdgeIndexReq {
-    1: common.GraphSpaceID space_id,
-    2: string              index_name,
-    3: IndexProperties     properties,
-    4: bool                if_not_exists,
+    1: common.GraphSpaceID  space_id,
+    2: string               index_name,
+    3: string               edge_name,
+    4: list<string>         fields,
+    5: bool                 if_not_exists,
 }
 
 struct DropEdgeIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
+    3: bool                if_exists,
 }
 
 struct GetEdgeIndexReq {
@@ -459,7 +442,7 @@ struct GetEdgeIndexReq {
 struct GetEdgeIndexResp {
     1: ErrorCode              code,
     2: common.HostAddr        leader,
-    3: EdgeIndexItem          item,
+    3: common.IndexItem       item,
 }
 
 struct ListEdgeIndexesReq {
@@ -467,9 +450,9 @@ struct ListEdgeIndexesReq {
 }
 
 struct ListEdgeIndexesResp {
-    1: ErrorCode              code,
-    2: common.HostAddr        leader,
-    3: list<EdgeIndexItem>    items,
+    1: ErrorCode                 code,
+    2: common.HostAddr           leader,
+    3: list<common.IndexItem>    items,
 }
 
 struct CreateUserReq {

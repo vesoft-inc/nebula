@@ -94,13 +94,11 @@ int main(int argc, char *argv[]) {
     }
 
     LOG(INFO) << "Starting Graph HTTP Service";
-    status = nebula::WebService::start();
+    auto webSvc = std::make_unique<nebula::WebService>();
+    status = webSvc->start();
     if (!status.ok()) {
         return EXIT_FAILURE;
     }
-    SCOPE_EXIT {
-        nebula::WebService::stop();
-    };
 
     if (FLAGS_num_netio_threads == 0) {
         FLAGS_num_netio_threads = std::thread::hardware_concurrency();

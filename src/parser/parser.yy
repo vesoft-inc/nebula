@@ -803,12 +803,13 @@ order_by_sentence
 
 fetch_vertices_sentence
     : KW_FETCH KW_PROP KW_ON name_label vid_list yield_clause {
-        auto fetch = new FetchVerticesSentence($4, $5, $6);
-        $$ = fetch;
+        $$ = new FetchVerticesSentence($4, $5, $6);
     }
     | KW_FETCH KW_PROP KW_ON name_label vid_ref_expression yield_clause {
-        auto fetch = new FetchVerticesSentence($4, $5, $6);
-        $$ = fetch;
+        $$ = new FetchVerticesSentence($4, $5, $6);
+    }
+    | KW_FETCH KW_PROP KW_ON MUL vid {
+        $$ = new FetchVerticesSentence($5);
     }
     ;
 
@@ -1180,14 +1181,14 @@ create_edge_index_sentence
     ;
 
 drop_tag_index_sentence
-    : KW_DROP KW_TAG KW_INDEX name_label {
-        $$ = new DropTagIndexSentence($4);
+    : KW_DROP KW_TAG KW_INDEX opt_if_exists name_label {
+        $$ = new DropTagIndexSentence($5, $4);
     }
     ;
 
 drop_edge_index_sentence
-    : KW_DROP KW_EDGE KW_INDEX name_label {
-        $$ = new DropEdgeIndexSentence($4);
+    : KW_DROP KW_EDGE KW_INDEX opt_if_exists name_label {
+        $$ = new DropEdgeIndexSentence($5, $4);
     }
     ;
 
@@ -1222,8 +1223,7 @@ build_edge_index_sentence
     ;
 
 traverse_sentence
-    : L_PAREN piped_sentence R_PAREN { $$ = $2; }
-    | L_PAREN set_sentence R_PAREN { $$ = $2; }
+    : L_PAREN set_sentence R_PAREN { $$ = $2; }
     | go_sentence { $$ = $1; }
     | match_sentence { $$ = $1; }
     | find_sentence { $$ = $1; }
@@ -1235,20 +1235,13 @@ traverse_sentence
     | yield_sentence { $$ = $1; }
     ;
 
+piped_sentence
+    : traverse_sentence { $$ = $1; }
+    | piped_sentence PIPE traverse_sentence { $$ = new PipedSentence($1, $3); }
+    ;
+
 set_sentence
-    : piped_sentence KW_UNION KW_ALL piped_sentence { $$ = new SetSentence($1, SetSentence::UNION, $4); }
-    | piped_sentence KW_UNION piped_sentence {
-        auto *s = new SetSentence($1, SetSentence::UNION, $3);
-        s->setDistinct();
-        $$ = s;
-    }
-    | piped_sentence KW_UNION KW_DISTINCT piped_sentence {
-        auto *s = new SetSentence($1, SetSentence::UNION, $4);
-        s->setDistinct();
-        $$ = s;
-    }
-    | piped_sentence KW_INTERSECT piped_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
-    | piped_sentence KW_MINUS piped_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
+    : piped_sentence { $$ = $1; }
     | set_sentence KW_UNION KW_ALL piped_sentence { $$ = new SetSentence($1, SetSentence::UNION, $4); }
     | set_sentence KW_UNION piped_sentence {
         auto *s = new SetSentence($1, SetSentence::UNION, $3);
@@ -1264,13 +1257,8 @@ set_sentence
     | set_sentence KW_MINUS piped_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
     ;
 
-piped_sentence
-    : traverse_sentence { $$ = $1; }
-    | piped_sentence PIPE traverse_sentence { $$ = new PipedSentence($1, $3); }
-    ;
-
 assignment_sentence
-    : VARIABLE ASSIGN piped_sentence {
+    : VARIABLE ASSIGN set_sentence {
         $$ = new AssignmentSentence($1, $3);
     }
     ;
@@ -1944,7 +1932,6 @@ sentence
     : maintain_sentence { $$ = $1; }
     | use_sentence { $$ = $1; }
     | set_sentence { $$ = $1; }
-    | piped_sentence { $$ = $1; }
     | assignment_sentence { $$ = $1; }
     | mutate_sentence { $$ = $1; }
     | process_control_sentence { $$ = $1; }

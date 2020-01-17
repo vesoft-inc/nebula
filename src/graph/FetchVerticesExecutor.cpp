@@ -30,9 +30,12 @@ Status FetchVerticesExecutor::prepareClauses() {
         }
 
         expCtx_ = std::make_unique<ExpressionContext>();
-        expCtx_->setStorageClient(ectx()->getStorageClient());
-
         spaceId_ = ectx()->rctx()->session()->space();
+        expCtx_->setStorageClient(ectx()->getStorageClient());
+        if (sentence_->isAllTagProps()) {
+            break;
+        }
+
         yieldClause_ = DCHECK_NOTNULL(sentence_)->yieldClause();
         labelName_ = sentence_->tag();
         auto result = ectx()->schemaManager()->toTagID(spaceId_, *labelName_);
@@ -54,6 +57,9 @@ Status FetchVerticesExecutor::prepareClauses() {
             LOG(ERROR) << "Prepare vertex id failed: " << status;
             break;
         }
+
+        // Add VertexID before prepareYield()
+        returnColNames_.emplace_back("VertexID");
         status = prepareYield();
         if (!status.ok()) {
             LOG(ERROR) << "Prepare yield failed: " << status;
@@ -109,11 +115,14 @@ void FetchVerticesExecutor::execute() {
 }
 
 void FetchVerticesExecutor::fetchVertices() {
-    auto props = getPropNames();
-    if (props.empty()) {
-        LOG(WARNING) << "Empty props";
-        doEmptyResp();
-        return;
+    std::vector<storage::cpp2::PropDef> props;
+    if (!sentence_->isAllTagProps()) {
+        props = getPropNames();
+        if (props.empty()) {
+            LOG(WARNING) << "Empty props";
+            doEmptyResp();
+            return;
+        }
     }
 
     auto future = ectx()->getStorageClient()->getVertexProps(spaceId_, vids_, std::move(props));
@@ -130,7 +139,11 @@ void FetchVerticesExecutor::fetchVertices() {
                            << "error code: " << static_cast<int>(error.second);
             }
         }
-        processResult(std::move(result));
+        if (!sentence_->isAllTagProps()) {
+            processResult(std::move(result));
+        } else {
+            processAllPropsResult(std::move(result));
+        }
         return;
     };
     auto error = [this] (auto &&e) {
@@ -159,7 +172,6 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
     auto all = result.responses();
     std::shared_ptr<SchemaWriter> outputSchema;
     std::unique_ptr<RowSetWriter> rsWriter;
-    auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
     Getters getters;
     for (auto &resp : all) {
         if (!resp.__isset.vertices) {
@@ -188,6 +200,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             vreader = RowReader::getRowReader(vdata.tag_data[0].data, vschema);
             if (outputSchema == nullptr) {
                 outputSchema = std::make_shared<SchemaWriter>();
+                outputSchema->appendCol("VertexID", nebula::cpp2::SupportedType::VID);
                 auto status = getOutputSchema(vschema.get(), vreader.get(), outputSchema.get());
                 if (!status.ok()) {
                     LOG(ERROR) << "Get output schema failed: " << status;
@@ -199,6 +212,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             }
 
             auto writer = std::make_unique<RowWriter>(outputSchema);
+            (*writer) << vdata.vertex_id;
             getters.getAliasProp =
                 [&vreader, &vschema] (const std::string&,
                                       const std::string &prop) -> OptVariantType {
@@ -220,14 +234,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             }
             // TODO Consider float/double, and need to reduce mem copy.
             std::string encode = writer->encode();
-            if (distinct_) {
-                auto ret = uniqResult->emplace(encode);
-                if (ret.second) {
-                    rsWriter->addRow(std::move(encode));
-                }
-            } else {
-                rsWriter->addRow(std::move(encode));
-            }
+            rsWriter->addRow(std::move(encode));
         }  // for `vdata'
     }      // for `resp'
 
@@ -236,7 +243,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
 
 Status FetchVerticesExecutor::setupVids() {
     Status status = Status::OK();
-    if (sentence_->isRef()) {
+    if (sentence_->isRef() && !sentence_->isAllTagProps()) {
         status = setupVidsFromRef();
     } else {
         status = setupVidsFromExpr();
@@ -311,6 +318,75 @@ Status FetchVerticesExecutor::setupVidsFromRef() {
     }
     vids_ = std::move(result).value();
     return Status::OK();
+}
+
+void FetchVerticesExecutor::processAllPropsResult(RpcResponse &&result) {
+    auto &all = result.responses();
+    std::unique_ptr<RowSetWriter> rsWriter;
+    std::shared_ptr<SchemaWriter> outputSchema;
+    for (auto &resp : all) {
+        if (!resp.__isset.vertices) {
+            continue;
+        }
+
+        for (auto &vdata : resp.vertices) {
+            if (!vdata.__isset.tag_data || vdata.tag_data.empty()) {
+                continue;
+            }
+            RowWriter writer;
+            writer << RowWriter::ColType(nebula::cpp2::SupportedType::VID) << vdata.vertex_id;
+            for (auto &tdata : vdata.tag_data) {
+                auto ver = RowReader::getSchemaVer(tdata.data);
+                if (ver < 0) {
+                    LOG(ERROR) << "Found schema version negative " << ver;
+                    doError(Status::Error("Found schema version negative: %d", ver));
+                    return;
+                }
+                auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tdata.tag_id, ver);
+                if (rsWriter == nullptr) {
+                    outputSchema = std::make_shared<SchemaWriter>();
+                    outputSchema->appendCol("VertexID", nebula::cpp2::SupportedType::VID);
+                    returnColNames_.emplace_back("VertexID");
+                    rsWriter = std::make_unique<RowSetWriter>(outputSchema);
+                }
+                // row.append(tdata.data);
+                auto reader = RowReader::getRowReader(tdata.data, schema);
+
+                auto tagFound = ectx()->schemaManager()->toTagName(spaceId_, tdata.tag_id);
+                if (!tagFound.ok()) {
+                    LOG(ERROR) << "Tag not found for id: " << tdata.tag_id;
+                    doError(Status::Error("Tag not found for id: %d", tdata.tag_id));
+                    return;
+                }
+                auto tagName = std::move(tagFound).value();
+                auto iter = schema->begin();
+                auto index = 0;
+
+                while (iter) {
+                    auto *field = iter->getName();
+                    auto prop = RowReader::getPropByIndex(reader.get(), index);
+                    if (!ok(prop)) {
+                        LOG(ERROR) << "Read props of tag " << tagName << " failed.";
+                        doError(Status::Error("Read props of tag `%s' failed.", tagName.c_str()));
+                        return;
+                    }
+                    Collector::collectWithoutSchema(value(prop), &writer);
+                    auto colName = folly::stringPrintf("%s.%s", tagName.c_str(), field);
+                    resultColNames_.emplace_back(colName);
+                    returnColNames_.emplace_back(colName);
+                    auto fieldType = iter->getType();
+                    outputSchema->appendCol(std::move(colName), std::move(fieldType));
+                    ++index;
+                    ++iter;
+                }
+            }
+            if (writer.size() > 1 && rsWriter != nullptr) {
+                rsWriter->addRow(writer.encode());
+            }
+        }
+    }
+
+    finishExecution(std::move(rsWriter));
 }
 }  // namespace graph
 }  // namespace nebula

@@ -65,7 +65,7 @@ bool NebulaStore::init() {
                         return false;
                     }
 
-                    if (!options_.partMan_->spaceExist(storeSvcAddr_, spaceId)) {
+                    if (!options_.partMan_->spaceExist(storeSvcAddr_, spaceId).ok()) {
                         // TODO We might want to have a second thought here.
                         // Removing the data directly feels a little strong
                         LOG(INFO) << "Space " << spaceId
@@ -95,7 +95,7 @@ bool NebulaStore::init() {
                     // partIds is the partition in this host waiting to open
                     std::vector<PartitionID> partIds;
                     for (auto& partId : enginePtr->allParts()) {
-                        if (!options_.partMan_->partExist(storeSvcAddr_, spaceId, partId)) {
+                        if (!options_.partMan_->partExist(storeSvcAddr_, spaceId, partId).ok()) {
                             LOG(INFO) << "Part " << partId
                                       << " does not exist any more, remove it!";
                             enginePtr->removePart(partId);
@@ -406,6 +406,21 @@ ResultCode NebulaStore::prefix(GraphSpaceID spaceId,
     }
     return part->engine()->prefix(prefix, iter);
 }
+
+
+ResultCode NebulaStore::rangeWithPrefix(GraphSpaceID spaceId,
+                                        PartitionID  partId,
+                                        const std::string& start,
+                                        const std::string& prefix,
+                                        std::unique_ptr<KVIterator>* iter) {
+    auto ret = engine(spaceId, partId);
+    if (!ok(ret)) {
+        return error(ret);
+    }
+    auto* e = nebula::value(ret);
+    return e->rangeWithPrefix(start, prefix, iter);
+}
+
 
 void NebulaStore::asyncMultiPut(GraphSpaceID spaceId,
                                 PartitionID partId,

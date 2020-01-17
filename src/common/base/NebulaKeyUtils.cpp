@@ -87,6 +87,59 @@ std::string NebulaKeyUtils::kvKey(PartitionID partId, const folly::StringPiece& 
 }
 
 // static
+void NebulaKeyUtils::indexRaw(const IndexValues &values, std::string& raw) {
+    std::vector<int32_t> colsLen;
+    for (auto& col : values) {
+        if (col.first == cpp2::SupportedType::STRING) {
+            colsLen.emplace_back(col.second.size());
+        }
+        raw.append(col.second.data(), col.second.size());
+    }
+    for (auto len : colsLen) {
+        raw.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
+    }
+}
+
+// static
+std::string NebulaKeyUtils::vertexIndexKey(PartitionID partId, IndexID indexId, VertexID vId,
+                                           const IndexValues& values) {
+    int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
+    std::string key;
+    key.reserve(256);
+    key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
+       .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID));
+    indexRaw(values, key);
+    key.append(reinterpret_cast<const char*>(&vId), sizeof(VertexID));
+    return key;
+}
+
+// static
+std::string NebulaKeyUtils::edgeIndexKey(PartitionID partId, IndexID indexId,
+                                         VertexID srcId, EdgeRanking rank,
+                                         VertexID dstId, const IndexValues& values) {
+    int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
+    std::string key;
+    key.reserve(256);
+    key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
+       .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID));
+    indexRaw(values, key);
+    key.append(reinterpret_cast<const char*>(&srcId), sizeof(VertexID))
+       .append(reinterpret_cast<const char*>(&rank), sizeof(EdgeRanking))
+       .append(reinterpret_cast<const char*>(&dstId), sizeof(VertexID));
+    return key;
+}
+
+// static
+std::string NebulaKeyUtils::indexPrefix(PartitionID partId, IndexID indexId) {
+    PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
+    std::string key;
+    key.reserve(sizeof(PartitionID) + sizeof(IndexID));
+    key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID))
+       .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID));
+    return key;
+}
+
+// static
 std::string NebulaKeyUtils::vertexPrefix(PartitionID partId, VertexID vId, TagID tagId) {
     tagId &= kTagMaskSet;
     PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kData);
@@ -109,6 +162,26 @@ std::string NebulaKeyUtils::edgePrefix(PartitionID partId, VertexID srcId, EdgeT
     key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID))
        .append(reinterpret_cast<const char*>(&srcId), sizeof(VertexID))
        .append(reinterpret_cast<const char*>(&type), sizeof(EdgeType));
+    return key;
+}
+
+// static
+std::string NebulaKeyUtils::edgePrefix(PartitionID partId,
+                                       VertexID srcId,
+                                       EdgeType type,
+                                       EdgeRanking rank,
+                                       VertexID dstId) {
+    type |= kEdgeMaskSet;
+    int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kData);
+    std::string key;
+    key.reserve(sizeof(PartitionID) + sizeof(VertexID)
+                + sizeof(EdgeType) + sizeof(VertexID)
+                + sizeof(EdgeRanking));
+    key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID))
+            .append(reinterpret_cast<const char*>(&srcId), sizeof(VertexID))
+            .append(reinterpret_cast<const char*>(&type), sizeof(EdgeType))
+            .append(reinterpret_cast<const char*>(&rank), sizeof(EdgeRanking))
+            .append(reinterpret_cast<const char*>(&dstId), sizeof(VertexID));
     return key;
 }
 

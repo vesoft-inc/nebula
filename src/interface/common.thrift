@@ -17,8 +17,7 @@ typedef i32 (cpp.type = "nebula::TagID") TagID
 typedef i32 (cpp.type = "nebula::EdgeType") EdgeType
 typedef i64 (cpp.type = "nebula::EdgeRanking") EdgeRanking
 typedef i64 (cpp.type = "nebula::VertexID") VertexID
-typedef i32 (cpp.type = "nebula::TagIndexID") TagIndexID
-typedef i32 (cpp.type = "nebula::EdgeIndexID") EdgeIndexID
+typedef i32 (cpp.type = "nebula::IndexID") IndexID
 
 typedef i32 (cpp.type = "nebula::IPv4") IPv4
 typedef i32 (cpp.type = "nebula::Port") Port
@@ -27,6 +26,8 @@ typedef i64 (cpp.type = "nebula::SchemaVer") SchemaVer
 
 typedef i32 (cpp.type = "nebula::UserID") UserID
 typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
+
+typedef i32 (cpp.type = "nebula::IndexID") IndexID
 
 // These are all data types supported in the graph properties
 enum SupportedType {
@@ -90,6 +91,19 @@ struct Schema {
     2: SchemaProp schema_prop,
 }
 
+union SchemaID {
+    1: TagID         tag_id,
+    2: EdgeType      edge_type,
+}
+
+struct IndexItem {
+    1: IndexID             index_id,
+    2: string              index_name,
+    3: SchemaID            schema_id
+    4: string              schema_name,
+    5: list<ColumnDef>     fields,
+}
+
 struct HostAddr {
     1: IPv4  ip,
     2: Port  port,
@@ -99,5 +113,6 @@ struct Pair {
     1: string key,
     2: string value,
 }
+
 
 const ValueType kInvalidValueType = {"type" : UNKNOWN}

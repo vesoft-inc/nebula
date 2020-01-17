@@ -17,8 +17,8 @@ ServerBasedSchemaManager::~ServerBasedSchemaManager() {
 }
 
 void ServerBasedSchemaManager::init(MetaClient *client) {
+    CHECK_NOTNULL(client);
     metaClient_ = client;
-    CHECK_NOTNULL(metaClient_);
 }
 
 std::shared_ptr<const SchemaProviderIf>

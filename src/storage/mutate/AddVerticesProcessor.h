@@ -11,6 +11,8 @@
 #include "base/ConcurrentLRUCache.h"
 #include "storage/BaseProcessor.h"
 #include "storage/CommonUtils.h"
+#include "kvstore/LogEncoder.h"
+#include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace storage {
@@ -19,9 +21,10 @@ class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static AddVerticesProcessor* instance(kvstore::KVStore* kvstore,
                                           meta::SchemaManager* schemaMan,
+                                          meta::IndexManager* indexMan,
                                           stats::Stats* stats,
                                           VertexCache* cache = nullptr) {
-        return new AddVerticesProcessor(kvstore, schemaMan, stats, cache);
+        return new AddVerticesProcessor(kvstore, schemaMan, indexMan, stats, cache);
     }
 
     void process(const cpp2::AddVerticesRequest& req);
@@ -29,15 +32,31 @@ public:
 private:
     explicit AddVerticesProcessor(kvstore::KVStore* kvstore,
                                   meta::SchemaManager* schemaMan,
+                                  meta::IndexManager* indexMan,
                                   stats::Stats* stats,
                                   VertexCache* cache)
             : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats)
+            , indexMan_(indexMan)
             , vertexCache_(cache) {}
 
-private:
-    VertexCache* vertexCache_ = nullptr;
-};
+    std::string addVertices(int64_t version, PartitionID partId,
+                            const std::vector<cpp2::Vertex>& vertices);
 
+    std::string findObsoleteIndex(PartitionID partId,
+                                  VertexID vId,
+                                  TagID tagId);
+
+    std::string indexKey(PartitionID partId,
+                         VertexID vId,
+                         RowReader* reader,
+                         std::shared_ptr<nebula::cpp2::IndexItem> index);
+
+private:
+    GraphSpaceID                                          spaceId_;
+    meta::IndexManager*                                   indexMan_{nullptr};
+    VertexCache*                                          vertexCache_{nullptr};
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> indexes_;
+};
 
 }  // namespace storage
 }  // namespace nebula

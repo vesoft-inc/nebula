@@ -11,6 +11,7 @@
 #include <folly/RWSpinLock.h>
 #include "meta/SchemaProviderIf.h"
 #include "meta/client/MetaClient.h"
+#include "interface/gen-cpp2/storage_types.h"
 
 namespace nebula {
 namespace meta {
@@ -21,16 +22,14 @@ public:
 
     static std::unique_ptr<SchemaManager> create();
 
-    virtual std::shared_ptr<const SchemaProviderIf> getTagSchema(GraphSpaceID space,
-                                                                 TagID tag,
-                                                                 SchemaVer ver = -1) = 0;
+    virtual std::shared_ptr<const SchemaProviderIf>
+    getTagSchema(GraphSpaceID space, TagID tag, SchemaVer ver = -1) = 0;
 
     // Returns a negative number when the schema does not exist
     virtual StatusOr<SchemaVer> getNewestTagSchemaVer(GraphSpaceID space, TagID tag) = 0;
 
-    virtual std::shared_ptr<const SchemaProviderIf> getEdgeSchema(GraphSpaceID space,
-                                                                  EdgeType edge,
-                                                                  SchemaVer ver = -1) = 0;
+    virtual std::shared_ptr<const SchemaProviderIf>
+    getEdgeSchema(GraphSpaceID space, EdgeType edge, SchemaVer ver = -1) = 0;
 
     // Returns a negative number when the schema does not exist
     virtual StatusOr<SchemaVer> getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) = 0;

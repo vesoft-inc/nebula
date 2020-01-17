@@ -99,6 +99,13 @@ public:
                       const std::string& prefix,
                       std::unique_ptr<KVIterator>* iter) override;
 
+    // Get all results with prefix starting from start
+    ResultCode rangeWithPrefix(GraphSpaceID spaceId,
+                               PartitionID  partId,
+                               const std::string& start,
+                               const std::string& prefix,
+                               std::unique_ptr<KVIterator>* iter) override;
+
     // async batch put.
     void asyncMultiPut(GraphSpaceID spaceId,
                        PartitionID  partId,

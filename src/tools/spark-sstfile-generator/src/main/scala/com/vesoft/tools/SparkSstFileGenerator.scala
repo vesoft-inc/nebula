@@ -110,12 +110,10 @@ object SparkSstFileGenerator {
       )
       .build
 
-
     // when the newest data arrive, used in non-incremental environment
     val latestDate = CliOption
       .builder("di")
       .longOpt("latest_date_input")
-
       .required()
       .hasArg()
       .desc("Latest date to query,date format YYYY-MM-dd")
@@ -130,12 +128,10 @@ object SparkSstFileGenerator {
       )
       .build
 
-
     // may be used in some test run to prove the correctness
     val limit = CliOption
       .builder("li")
       .longOpt("limit_input")
-
       .hasArg()
       .desc(
         "Return at most this number of edges/vertex, usually used in POC stage, when omitted, fetch all data."
@@ -332,7 +328,6 @@ object SparkSstFileGenerator {
         case None => (key: String) => FNVHash.hash64(key)
       }
 
-
     // implicit ordering used by PairedRDD.repartitionAndSortWithinPartitions whose key is PartitionIdAndBytesEncoded typed
     implicit def ordering[A <: GraphPartitionIdAndKeyValueEncoded]: Ordering[A] = new Ordering[A] {
       override def compare(x: A, y: A): Int = {
@@ -367,9 +362,7 @@ object SparkSstFileGenerator {
         }
 
         val whereClause = tag.typePartitionKey
-          .map(
-            key => s"${key}='${tag.name}' AND ${datePartitionKey}='${latestDate}'"
-          )
+          .map(key => s"${key}='${tag.name}' AND ${datePartitionKey}='${latestDate}'")
           .getOrElse(s"${datePartitionKey}='${latestDate}'")
         //TODO:to handle multiple partition columns' Cartesian product
         val sql =
@@ -453,7 +446,6 @@ object SparkSstFileGenerator {
           mappingConfiguration.databaseName
         )
 
-
         val columnExpression = {
           assert(allColumns.size > 0)
           s"${edge.fromForeignKeyColumn},${edge.toForeignKeyColumn}," + allColumns
@@ -462,11 +454,8 @@ object SparkSstFileGenerator {
         }
 
         val whereClause = edge.typePartitionKey
-          .map(
-            key => s"${key}='${edge.name}' AND ${datePartitionKey}='${latestDate}'"
-          )
+          .map(key => s"${key}='${edge.name}' AND ${datePartitionKey}='${latestDate}'")
           .getOrElse(s"${datePartitionKey}='${latestDate}'")
-
 
         //TODO: join FROM_COLUMN and join TO_COLUMN from the table where this columns referencing, to make sure that the claimed id really exists in the reference table.BUT with HUGE Perf penalty
         val edgeDf = sqlContext.sql(
@@ -475,24 +464,20 @@ object SparkSstFileGenerator {
         assert(edgeDf.count() > 0)
         //RDD[Tuple3(from_vertex_businessKey,end_vertex_businessKey,values)]
         val edgeKeyAndValues: RDD[(String, String, Seq[AnyRef])] =
-          edgeDf.map(
-            row => {
-              (
-                row.getAs[String](edge.fromForeignKeyColumn), // consistent with vertexId generation logic, to make sure that vertex and its' outbound edges are in the same partition
-                row.getAs[String](edge.toForeignKeyColumn),
-                allColumns
-                  .filterNot(
-                    col =>
-                      (col.columnName.equalsIgnoreCase(
-                        edge.fromForeignKeyColumn
-                      ) || col.columnName
-                        .equalsIgnoreCase(edge.toForeignKeyColumn))
-                  )
-                  .map(valueExtractor(row, _, charset))
-              )
-            }
-
-          )
+          edgeDf.map(row => {
+            (
+              row.getAs[String](edge.fromForeignKeyColumn), // consistent with vertexId generation logic, to make sure that vertex and its' outbound edges are in the same partition
+              row.getAs[String](edge.toForeignKeyColumn),
+              allColumns
+                .filterNot(col =>
+                  (col.columnName.equalsIgnoreCase(
+                    edge.fromForeignKeyColumn
+                  ) || col.columnName
+                    .equalsIgnoreCase(edge.toForeignKeyColumn))
+                )
+                .map(valueExtractor(row, _, charset))
+            )
+          })
 
         edgeKeyAndValues
           .map {
@@ -615,7 +600,6 @@ object SparkSstFileGenerator {
         )
       }
 
-
     // check the claimed columns really exist in db
     colsMustCheck.map(_.toUpperCase).foreach { col =>
       if (allColumnMap.get(col).isEmpty) {
@@ -646,13 +630,11 @@ object SparkSstFileGenerator {
       // tag/edge's columnMappings should be checked and returned
       val columnMappings = edge.columnMappings.get
       val notValid = columnMappings
-        .filter(
-          col => {
-            val typeInDb = allColumnMap.get(col.columnName.toUpperCase)
-            typeInDb.isEmpty || !DataTypeCompatibility
-              .isCompatible(col.`type`, typeInDb.get)
-          }
-        )
+        .filter(col => {
+          val typeInDb = allColumnMap.get(col.columnName.toUpperCase)
+          typeInDb.isEmpty || !DataTypeCompatibility
+            .isCompatible(col.`type`, typeInDb.get)
+        })
         .map {
           case col => s"name=${col.columnName},type=${col.`type`}"
         }
