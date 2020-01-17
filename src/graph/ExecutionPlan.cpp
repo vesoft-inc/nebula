@@ -47,8 +47,12 @@ void ExecutionPlan::execute() {
     auto onError = [this] (Status s) {
         this->onError(std::move(s));
     };
+    auto onInfo = [this] (Status s) {
+        this->onInfo(std::move(s));
+    };
     executor_->setOnFinish(std::move(onFinish));
     executor_->setOnError(std::move(onError));
+    executor_->setOnInfo(std::move(onInfo));
 
     executor_->execute();
 }
@@ -84,6 +88,17 @@ void ExecutionPlan::onError(Status status) {
     rctx->resp().set_error_msg(status.toString());
     auto latency = rctx->duration().elapsedInUSec();
     stats::Stats::addStatsValue(allStats_.get(), false, latency);
+    rctx->resp().set_latency_in_us(latency);
+    rctx->finish();
+    delete this;
+}
+
+void ExecutionPlan::onInfo(Status status) {
+    auto *rctx = ectx()->rctx();
+    rctx->resp().set_error_code(cpp2::ErrorCode::SUCCEEDED);
+    rctx->resp().set_error_msg(status.toString());
+    auto latency = rctx->duration().elapsedInUSec();
+    stats::Stats::addStatsValue(allStats_.get(), true, latency);
     rctx->resp().set_latency_in_us(latency);
     rctx->finish();
     delete this;

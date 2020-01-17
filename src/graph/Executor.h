@@ -71,6 +71,11 @@ public:
     void setOnError(std::function<void(Status)> onError) {
         onError_ = onError;
     }
+
+    void setOnInfo(std::function<void(Status)> onInfo) {
+        onInfo_ = onInfo;
+    }
+
     /**
      * Upon finished successfully, `setupResponse' would be invoked on the last executor.
      * Any Executor implementation, which wants to send its meaningful result to the client,
@@ -114,12 +119,14 @@ protected:
     StatusOr<VariantType> transformDefaultValue(nebula::cpp2::SupportedType type,
                                                 std::string& originalValue);
     void doError(Status status, uint32_t count = 1) const;
+    void doInfo(Status status, uint32_t count = 1) const;
     void doFinish(ProcessControl pro, uint32_t count = 1) const;
 
 protected:
     ExecutionContext                           *ectx_;
     std::function<void(ProcessControl)>         onFinish_;
     std::function<void(Status)>                 onError_;
+    std::function<void(Status)>                 onInfo_;
     time::Duration                              duration_;
     std::unique_ptr<stats::Stats>               stats_;
 };

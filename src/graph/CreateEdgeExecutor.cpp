@@ -47,6 +47,18 @@ void CreateEdgeExecutor::execute() {
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();
 
+    // check if exist
+    if (sentence_->isIfNotExist()) {
+        auto result = ectx()->getMetaClient()->getEdgeSchema(spaceId, *name).get();
+        if (result.ok()) {
+            auto msg = folly::stringPrintf("The edge `%s' existes，nothing changed.",
+                        name->c_str());
+            doInfo(Status::OK(std::move(msg)));
+            return;
+        }
+    }
+
+    // create edge
     auto future = mc->createEdgeSchema(spaceId, *name, schema_, sentence_->isIfNotExist());
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {

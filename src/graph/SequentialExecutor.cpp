@@ -44,6 +44,10 @@ Status SequentialExecutor::prepare() {
         DCHECK(onError_);
         onError_(std::move(status));
     };
+    auto onInfo = [this] (Status status) {
+        DCHECK(onInfo_);
+        onInfo_(std::move(status));
+    };
     for (auto i = 0U; i < executors_.size() - 1; i++) {
         auto onFinish = [this, current = i, next = i + 1] (Executor::ProcessControl ctr) {
             switch (ctr) {
@@ -62,6 +66,7 @@ Status SequentialExecutor::prepare() {
         };
         executors_[i]->setOnFinish(onFinish);
         executors_[i]->setOnError(onError);
+        executors_[i]->setOnInfo(onInfo);
     }
     // The whole execution is done upon the last executor finishes.
     auto onFinish = [this] (Executor::ProcessControl ctr) {
@@ -71,6 +76,7 @@ Status SequentialExecutor::prepare() {
     };
     executors_.back()->setOnFinish(onFinish);
     executors_.back()->setOnError(onError);
+    executors_.back()->setOnInfo(onInfo);
 
     return Status::OK();
 }

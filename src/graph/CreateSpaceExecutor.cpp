@@ -39,6 +39,17 @@ Status CreateSpaceExecutor::prepare() {
 
 
 void CreateSpaceExecutor::execute() {
+    // check if exist
+    if (sentence_->isIfNotExist()) {
+        auto result = ectx()->getMetaClient()->getSpace(*spaceName_).get();
+        if (result.ok()) {
+            auto msg = folly::stringPrintf("The space `%s' existes，nothing changed.",
+                            spaceName_->c_str());
+            doInfo(Status::OK(std::move(msg)));
+            return;
+        }
+    }
+
     auto future = ectx()->getMetaClient()->createSpace(
         *spaceName_, partNum_, replicaFactor_, sentence_->isIfNotExist());
     auto *runner = ectx()->rctx()->runner();

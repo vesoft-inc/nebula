@@ -48,6 +48,8 @@ public:
      */
     void onError(Status);
 
+    void onInfo(Status);
+
     ExecutionContext* ectx() const {
         return ectx_.get();
     }

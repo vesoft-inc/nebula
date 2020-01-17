@@ -62,10 +62,10 @@ GraphService::future_execute(int64_t sessionId, const std::string& query) {
     auto future = ctx->future();
     {
         auto result = sessionManager_->findSession(sessionId);
+        ctx->resp().set_error_msg(result.status().toString());
         if (!result.ok()) {
             FLOG_ERROR("Session not found, id[%ld]", sessionId);
             ctx->resp().set_error_code(cpp2::ErrorCode::E_SESSION_INVALID);
-            ctx->resp().set_error_msg(result.status().toString());
             ctx->finish();
             return future;
         }

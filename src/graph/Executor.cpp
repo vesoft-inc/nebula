@@ -438,6 +438,12 @@ void Executor::doError(Status status, uint32_t count) const {
     onError_(std::move(status));
 }
 
+void Executor::doInfo(Status status, uint32_t count) const {
+    stats::Stats::addStatsValue(stats_.get(), true, duration().elapsedInUSec(), count);
+    DCHECK(onInfo_);
+    onInfo_(std::move(status));
+}
+
 void Executor::doFinish(ProcessControl pro, uint32_t count) const {
     stats::Stats::addStatsValue(stats_.get(), true, duration().elapsedInUSec(), count);
     DCHECK(onFinish_);

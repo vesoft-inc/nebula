@@ -48,6 +48,17 @@ void CreateTagExecutor::execute() {
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();
 
+    // check if exist
+    if (sentence_->isIfNotExist()) {
+        auto result = ectx()->getMetaClient()->getTagSchema(spaceId, *name).get();
+        if (result.ok()) {
+            auto msg = folly::stringPrintf("The tag `%s' existes，nothing changed.",
+                            name->c_str());
+            doInfo(Status::OK(std::move(msg)));
+            return;
+        }
+    }
+
     auto future = mc->createTagSchema(spaceId, *name, schema_, sentence_->isIfNotExist());
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {

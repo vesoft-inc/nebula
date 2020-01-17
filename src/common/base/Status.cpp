@@ -21,12 +21,15 @@ Status::Status(Code code, folly::StringPiece msg) {
 
 
 std::string Status::toString() const {
-    if (code() == kOk) {
+    if (code() == kOk && size() == 0) {
         return "OK";
     }
     char tmp[64];
     const char *str;
     switch (code()) {
+        case kOk:
+            str = "";
+            break;
         case kError:
             str = "";
             break;

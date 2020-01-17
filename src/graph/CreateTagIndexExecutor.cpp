@@ -32,6 +32,17 @@ void CreateTagIndexExecutor::execute() {
     auto columns = sentence_->names();
     auto spaceId = ectx()->rctx()->session()->space();
 
+    // check if exist
+    if (sentence_->isIfNotExist()) {
+        auto result = ectx()->getMetaClient()->getTagIndex(spaceId, *name).get();
+        if (result.ok()) {
+            auto msg = folly::stringPrintf("The tag index `%s' existes，nothing changed.",
+                            name->c_str());
+            doInfo(Status::OK(std::move(msg)));
+            return;
+        }
+    }
+
     auto future = mc->createTagIndex(spaceId,
                                      *name,
                                      *tagName,

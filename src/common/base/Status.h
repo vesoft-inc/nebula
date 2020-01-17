@@ -72,6 +72,10 @@ public:
         return Status();
     }
 
+    static Status OK(folly::StringPiece msg) {
+        return Status(Code::kOk, msg);
+    }
+
 #define STATUS_GENERATOR(ERROR)                         \
     static Status ERROR() {                             \
         return Status(k##ERROR, "");                    \

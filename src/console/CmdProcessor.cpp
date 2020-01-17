@@ -422,6 +422,9 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
                       << " rows (Time spent: ";
         } else if (resp.get_rows()) {
             std::cout << "Empty set (Time spent: ";
+        } else if (resp.get_error_msg() != nullptr) {
+            std::cout << *resp.get_error_msg() <<"\n"
+                      << "Execution succeeded (Time spent: ";
         } else {
             std::cout << "Execution succeeded (Time spent: ";
         }
