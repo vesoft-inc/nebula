@@ -20,15 +20,15 @@ jobs:
           - ubuntu1604
           - ubuntu1804
         compiler:
-          - gcc
-          - clang
+          - gcc-7.5
+          - clang-8
         exclude:
           - tag: centos6
-            compiler: clang
+            compiler: clang-8
           - tag: centos7
-            compiler: clang
+            compiler: clang-8
           - tag: ubuntu1604
-            compiler: clang
+            compiler: clang-8
     container:
       image: vesoft/nebula-dev:${{ matrix.tag }}
     steps:
@@ -37,14 +37,29 @@ jobs:
           fetch-depth: 1
       - name: Prepare environment
         run: mkdir -p build
-      - name: CMake with gcc
-        if: matrix.compiler == 'gcc'
-        run: cd build && cmake ..
-      - name: CMake with clang
-        if: matrix.compiler == 'clang'
-        run: cd build && cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DNEBULA_CLANG_USE_GCC_TOOLCHAIN=/opt/vesoft/toolset/gcc/7.5.0 ..
+      - name: CMake with gcc-7.5
+        if: matrix.compiler == 'gcc-7.5'
+        run: |
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+      - name: CMake with clang-8
+        if: matrix.compiler == 'clang-8'
+        run: |
+          cd build
+          cmake \
+            -DCMAKE_CXX_COMPILER=clang++-8 \
+            -DCMAKE_C_COMPILER=clang-8 \
+            -DENABLE_ASAN=on \
+            -DNEBULA_CLANG_USE_GCC_TOOLCHAIN=/opt/vesoft/toolset/gcc/7.5.0 \
+            ..
       - name: Make
         run: cd build && make -j $(nproc)
       - name: CTest with single thread
         timeout-minutes: 40
-        run: cd build && ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer ASAN_OPTIONS=fast_unwind_on_malloc=0 ctest --timeout 300 --output-on-failure
+        run: |
+          cd build
+          ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer \
+          ASAN_OPTIONS=fast_unwind_on_malloc=0 \
+          ctest \
+            --timeout 300 \
+            --output-on-failure
