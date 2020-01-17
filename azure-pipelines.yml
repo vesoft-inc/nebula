@@ -29,5 +29,5 @@ jobs:
   - script: cd _build && ctest -j$(nproc)
     displayName: 'test'
 
-  - script: cd _build && bash <(curl -s https://codecov.io/bash) -t $(CODECOV_TOKEN) -x $GCOV
+  - script: cd _build && bash <(curl -s https://codecov.io/bash) -t $(CODECOV_TOKEN) -x /opt/vesoft/toolset/gcc/7.5.0/bin/
     displayName: 'coverage'
