@@ -14,7 +14,7 @@
 
 #include <proxygen/lib/http/HTTPMethod.h>
 
-#include "common/cpp/helpers.h"
+#include "cpp/helpers.h"
 
 namespace proxygen {
 class RequestHandler;
