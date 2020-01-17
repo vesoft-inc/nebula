@@ -267,8 +267,8 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
     if (!indexes_.empty()) {
         std::unique_ptr<RowReader> reader, rReader;
         for (auto& index : indexes_) {
-            auto indexId = index.get_index_id();
-            if (index.get_tagOrEdge() == edgeKey.edge_type) {
+            auto indexId = index->get_index_id();
+            if (index->get_schema_id().get_edge_type() == edgeKey.edge_type) {
                 if (!val_.empty()) {
                     if (rReader == nullptr) {
                         rReader = RowReader::getEdgePropReader(this->schemaMan_,
@@ -277,7 +277,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
                                                                edgeKey.edge_type);
                     }
                     auto rValues = collectIndexValues(rReader.get(),
-                                                      index.get_cols());
+                                                      index->get_fields());
                     auto rIndexKey = NebulaKeyUtils::edgeIndexKey(partId,
                                                                   indexId,
                                                                   edgeKey.src,
@@ -294,7 +294,7 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
                 }
 
                 auto values = collectIndexValues(reader.get(),
-                                                 index.get_cols());
+                                                 index->get_fields());
                 auto indexKey = NebulaKeyUtils::edgeIndexKey(partId,
                                                              indexId,
                                                              edgeKey.src,
@@ -446,7 +446,7 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
     }
     updateItems_ = req.get_update_items();
 
-    auto iRet = schemaMan_->getEdgeIndexes(spaceId_);
+    auto iRet = indexMan_->getEdgeIndexes(spaceId_);
     if (iRet.ok()) {
         for (auto& index : iRet.value()) {
             indexes_.emplace_back(index);

@@ -8,6 +8,7 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:filter_obj>
     $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:index_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:ws_common_obj>
@@ -65,6 +66,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -82,6 +84,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -100,6 +103,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -118,6 +122,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -135,6 +140,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -152,6 +158,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -169,6 +176,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -186,6 +194,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -203,6 +212,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -220,6 +230,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -237,6 +248,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -254,6 +266,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -271,6 +284,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -288,6 +302,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -305,6 +320,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -322,6 +338,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}

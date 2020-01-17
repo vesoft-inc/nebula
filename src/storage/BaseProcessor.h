@@ -14,6 +14,7 @@
 #include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/KVStore.h"
 #include "meta/SchemaManager.h"
+#include "meta/IndexManager.h"
 #include "dataman/RowSetWriter.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
@@ -31,7 +32,8 @@ using PartCode = std::pair<PartitionID, kvstore::ResultCode>;
 template<typename RESP>
 class BaseProcessor {
 public:
-    explicit BaseProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan,
+    explicit BaseProcessor(kvstore::KVStore* kvstore,
+                           meta::SchemaManager* schemaMan,
                            stats::Stats* stats = nullptr)
             : kvstore_(kvstore)
             , schemaMan_(schemaMan)
@@ -140,9 +142,9 @@ protected:
     void handleAsync(GraphSpaceID spaceId, PartitionID partId, kvstore::ResultCode code);
 
 protected:
-    kvstore::KVStore*                               kvstore_ = nullptr;
-    meta::SchemaManager*                            schemaMan_ = nullptr;
-    stats::Stats*                                   stats_ = nullptr;
+    kvstore::KVStore*                               kvstore_{nullptr};
+    meta::SchemaManager*                            schemaMan_{nullptr};
+    stats::Stats*                                   stats_{nullptr};
     RESP                                            resp_;
     folly::Promise<RESP>                            promise_;
     cpp2::ResponseCommon                            result_;
@@ -150,7 +152,7 @@ protected:
     time::Duration                                  duration_;
     std::vector<cpp2::ResultCode>                   codes_;
     std::mutex                                      lock_;
-    int32_t                                         callingNum_ = 0;
+    int32_t                                         callingNum_{0};
 };
 
 }  // namespace storage

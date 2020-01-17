@@ -21,15 +21,19 @@ TEST(DeleteEdgesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/DeleteEdgesTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     // Add edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+        auto* processor = AddEdgesProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
         // partId => List<Edge>
         // Edge => {EdgeKey, props}
-        for (PartitionID partId = 0; partId < 3; partId++) {
+        for (PartitionID partId = 1; partId <= 3; partId++) {
             auto edges = TestUtils::setupEdges(partId, partId * 10, 10 * (partId + 1));
             req.parts.emplace(partId, std::move(edges));
         }
@@ -41,13 +45,16 @@ TEST(DeleteEdgesTest, SimpleTest) {
     }
     // Add multi version edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+        auto* processor = AddEdgesProcessor::instance(kv.get(),
+                                                      schemaMan.get(),
+                                                      indexMan.get(),
+                                                      nullptr);
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
         // partId => List<Edge>
         // Edge => {EdgeKey, props}
-        for (PartitionID partId = 0; partId < 3; partId++) {
+        for (PartitionID partId = 1; partId <= 3; partId++) {
             auto edges = TestUtils::setupEdges(partId, partId * 10,
                                                10 * (partId + 1), "%d_%ld_new");
             req.parts.emplace(partId, std::move(edges));
@@ -59,7 +66,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
         EXPECT_EQ(0, resp.result.failed_codes.size());
     }
 
-    for (PartitionID partId = 0; partId < 3; partId++) {
+    for (PartitionID partId = 1; partId <= 3; partId++) {
         for (VertexID srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
             auto prefix = NebulaKeyUtils::edgePrefix(partId, srcId, srcId * 100 + 1);
             std::unique_ptr<kvstore::KVIterator> iter;
@@ -80,11 +87,11 @@ TEST(DeleteEdgesTest, SimpleTest) {
 
     // Delete edges
     {
-        auto* processor = DeleteEdgesProcessor::instance(kv.get(), schemaMan.get());
+        auto* processor = DeleteEdgesProcessor::instance(kv.get(), schemaMan.get(), indexMan.get());
         cpp2::DeleteEdgesRequest req;
         req.set_space_id(0);
         // partId => List<EdgeKey>
-        for (PartitionID partId = 0; partId < 3; partId++) {
+        for (PartitionID partId = 1; partId <= 3; partId++) {
             std::vector<cpp2::EdgeKey> keys;
             for (VertexID srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
                 cpp2::EdgeKey key;
@@ -103,7 +110,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
         EXPECT_EQ(0, resp.result.failed_codes.size());
     }
 
-    for (PartitionID partId = 0; partId < 3; partId++) {
+    for (PartitionID partId = 1; partId <= 3; partId++) {
         for (VertexID srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
             auto prefix = NebulaKeyUtils::vertexPrefix(partId, srcId, srcId * 100 + 1);
             std::unique_ptr<kvstore::KVIterator> iter;
