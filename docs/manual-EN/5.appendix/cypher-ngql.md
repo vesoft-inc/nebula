@@ -74,17 +74,17 @@ cypher> MATCH (n:character {name:"prometheus"})
 
 - Fetch data
   
-  ```
-  nebula> FETCH PROP ON character hash("saturn");
+```
+nebula> FETCH PROP ON character hash("saturn");
   ===================================================
   | character.name | character.age | character.type |
   ===================================================
   | saturn         | 10000         | titan          |
   ---------------------------------------------------
 
-  cypher> MATCH (n:character {name:"prometheus"})
-        > RETURN properties(n);
-  ```
+cypher> MATCH (n:character {name:"prometheus"})
+      > RETURN properties(n);
+```
 
 - Find the name of hercules's grandfather
 
