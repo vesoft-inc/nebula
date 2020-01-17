@@ -110,8 +110,6 @@ protected:
         return Status::OK();
     }
 
-    StatusOr<VariantType> transformDefaultValue(nebula::cpp2::SupportedType type,
-                                                std::string& originalValue);
     void doError(Status status, uint32_t count = 1) const;
     void doFinish(ProcessControl pro, uint32_t count = 1) const;
 

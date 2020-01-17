@@ -188,6 +188,8 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
         }
         auto updater = std::make_unique<RowUpdater>(constSchema);
 
+        // When the schema field is not in update field, need to get default value from schema.
+        // If nonexistent return error.
         for (auto index = 0UL; index < schema->getNumFields(); index++) {
             auto propName = std::string(schema->getFieldName(index));
             auto findIter = std::find_if(updateItems_.cbegin(), updateItems_.cend(),
