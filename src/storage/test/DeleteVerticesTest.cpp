@@ -21,26 +21,19 @@ TEST(DeleteVerticesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/DeleteVertexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     // Add vertices
     {
-        auto* processor = AddVerticesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+        auto* processor = AddVerticesProcessor::instance(kv.get(),
+                                                         schemaMan.get(),
+                                                         indexMan.get(),
+                                                         nullptr);
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
         req.overwritable = false;
         // partId => List<Vertex>
-        for (auto partId = 0; partId < 3; partId++) {
-            std::vector<cpp2::Vertex> vertices;
-            for (auto vertexId = partId * 10; vertexId < 10 * (partId + 1); vertexId++) {
-                std::vector<cpp2::Tag> tags;
-                for (auto tagId = 0; tagId < 10; tagId++) {
-                    tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                      tagId,
-                                      folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId));
-                }
-                vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                      vertexId,
-                                      std::move(tags));
-            }
+        for (PartitionID partId = 0; partId < 3; partId++) {
+            auto vertices = TestUtils::setupVertices(partId, partId * 10, 10 * (partId + 1));
             req.parts.emplace(partId, std::move(vertices));
         }
 
@@ -49,15 +42,15 @@ TEST(DeleteVerticesTest, SimpleTest) {
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_codes.size());
 
-        for (auto partId = 0; partId < 3; partId++) {
-            for (auto vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
+        for (PartitionID partId = 0; partId < 3; partId++) {
+            for (VertexID vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
                 auto prefix = NebulaKeyUtils::vertexPrefix(partId, vertexId);
                 std::unique_ptr<kvstore::KVIterator> iter;
                 EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
                 TagID tagId = 0;
                 while (iter->valid()) {
-                    EXPECT_EQ(folly::stringPrintf("%d_%d_%d",
-                                                  partId, vertexId, tagId), iter->val());
+                    EXPECT_EQ(folly::stringPrintf("%d_%ld_%d",
+                                                   partId, vertexId, tagId), iter->val());
                     tagId++;
                     iter->next();
                 }
@@ -68,27 +61,28 @@ TEST(DeleteVerticesTest, SimpleTest) {
 
     // Delete vertices
     {
-        std::unordered_map<PartitionID, std::vector<VertexID>> parts;
-        for (auto partId = 0; partId < 3; partId++) {
-            std::vector<VertexID> vertexs;
-            for (auto vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
-                vertexs.emplace_back(vertexId);
-            }
-            parts.emplace(partId, std::move(vertexs));
-        }
-
         cpp2::DeleteVerticesRequest req;
         req.set_space_id(0);
-        req.set_parts(std::move(parts));
-        auto* processor = DeleteVerticesProcessor::instance(kv.get(), schemaMan.get(), nullptr);
+        for (PartitionID partId = 0; partId < 3; partId++) {
+            std::vector<VertexID> vertices;
+            for (VertexID vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
+                vertices.emplace_back(vertexId);
+            }
+            req.parts.emplace(partId, std::move(vertices));
+        }
+
+        auto* processor = DeleteVerticesProcessor::instance(kv.get(),
+                                                            schemaMan.get(),
+                                                            indexMan.get(),
+                                                            nullptr);
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
         EXPECT_EQ(0, resp.result.failed_codes.size());
     }
 
-    for (auto partId = 0; partId < 3; partId++) {
-        for (auto vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
+    for (PartitionID partId = 0; partId < 3; partId++) {
+        for (VertexID vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
             auto prefix = NebulaKeyUtils::vertexPrefix(partId, vertexId);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));

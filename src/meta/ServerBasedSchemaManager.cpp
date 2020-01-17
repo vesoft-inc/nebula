@@ -17,8 +17,8 @@ ServerBasedSchemaManager::~ServerBasedSchemaManager() {
 }
 
 void ServerBasedSchemaManager::init(MetaClient *client) {
+    CHECK_NOTNULL(client);
     metaClient_ = client;
-    CHECK_NOTNULL(metaClient_);
 }
 
 std::shared_ptr<const SchemaProviderIf>
@@ -106,20 +106,6 @@ StatusOr<std::string> ServerBasedSchemaManager::toEdgeName(GraphSpaceID space, E
 StatusOr<std::vector<std::string>> ServerBasedSchemaManager::getAllEdge(GraphSpaceID space) {
     CHECK(metaClient_);
     return metaClient_->getAllEdgeFromCache(space);
-}
-
-StatusOr<std::vector<nebula::cpp2::IndexItem>>
-ServerBasedSchemaManager::getTagIndexes(GraphSpaceID space) {
-    // TODO(sky) : metaClient_->getEdgeIndexesFromCache(space);
-    UNUSED(space);
-    return Status::TagIndexNotFound();
-}
-
-StatusOr<std::vector<nebula::cpp2::IndexItem>>
-ServerBasedSchemaManager::getEdgeIndexes(GraphSpaceID space) {
-    // TODO(sky) : metaClient_->getTagIndexesFromCache(space);
-    UNUSED(space);
-    return Status::EdgeIndexNotFound();
 }
 
 }  // namespace meta

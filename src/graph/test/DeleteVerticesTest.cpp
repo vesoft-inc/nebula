@@ -14,7 +14,7 @@
 namespace nebula {
 namespace graph {
 
-class DeleteVertexTest : public TraverseTestBase {
+class DeleteVerticesTest : public TraverseTestBase {
  protected:
   void SetUp() override {
     TraverseTestBase::SetUp();
@@ -25,7 +25,7 @@ class DeleteVertexTest : public TraverseTestBase {
   }
 };
 
-TEST_F(DeleteVertexTest, Base) {
+TEST_F(DeleteVerticesTest, Base) {
     // Check
     {
         cpp2::ExecutionResponse resp;
@@ -46,21 +46,8 @@ TEST_F(DeleteVertexTest, Base) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-            {player.name(), player.age()},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        auto &player = players_["Tony Parker"];
-        auto *fmt = "FETCH PROP ON player hash(\"%s\") "
-                    "YIELD player.name, player.age";
-        auto query = folly::stringPrintf(fmt, player.name().c_str());
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-            {player.name(), player.age()},
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+            {player.vid(), player.name(), player.age()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -74,31 +61,16 @@ TEST_F(DeleteVertexTest, Base) {
         auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {std::get<1>(serve), std::get<2>(serve)},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        auto &player = players_["Tony Parker"];
-        auto &serve = player.serves()[0];
-        auto &team = teams_[std::get<0>(serve)];
-        auto *fmt = "FETCH PROP ON serve hash(\"%s\")->hash(\"%s\") "
-                    "YIELD serve.start_year, serve.end_year";
-        auto query = folly::stringPrintf(fmt, player.name().c_str(), team.name().c_str());
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {std::get<1>(serve), std::get<2>(serve)},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     // Delete vertex
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "DELETE VERTEX hash(\"%s\")";
-        auto query = folly::stringPrintf(fmt, players_["Tony Parker"].name().c_str());
+        auto *fmt = "DELETE VERTEX %ld";
+        auto query = folly::stringPrintf(fmt, players_["Tony Parker"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -121,18 +93,7 @@ TEST_F(DeleteVertexTest, Base) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        auto &player = players_["Tony Parker"];
-        auto *fmt = "FETCH PROP ON player hash(\"%s\") YIELD player.name, player.age";
-        auto query = folly::stringPrintf(fmt, player.name().c_str());
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -146,13 +107,42 @@ TEST_F(DeleteVertexTest, Base) {
         auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
+        std::vector<std::tuple<int64_t, int64_t, int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(DeleteVerticesTest, DeleteWithHash) {
+    // Check
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like";
+        auto query = folly::stringPrintf(fmt, players_["Tracy McGrady"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Kobe Bryant"].vid()},
+            {players_["Grant Hill"].vid()},
+            {players_["Rudy Gay"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;
-        auto &player = players_["Tony Parker"];
+        auto &player = players_["Grant Hill"];
+        auto *fmt = "FETCH PROP ON player hash(\"%s\") YIELD player.name, player.age";
+        auto query = folly::stringPrintf(fmt, player.name().c_str());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+            {player.vid(), player.name(), player.age()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Grant Hill"];
         auto &serve = player.serves()[0];
         auto &team = teams_[std::get<0>(serve)];
         auto *fmt = "FETCH PROP ON serve hash(\"%s\")->hash(\"%s\") "
@@ -160,69 +150,58 @@ TEST_F(DeleteVertexTest, Base) {
         auto query = folly::stringPrintf(fmt, player.name().c_str(), team.name().c_str());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        auto &player = players_["Tony Parker"];
-        auto query = "FETCH PROP ON player uuid(\"Tony Parker\") "
-                     "YIELD player.name, player.age";
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-            {player.name(), player.age()},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        auto &player = players_["Tony Parker"];
-        auto &serve = player.serves()[0];
-        auto query = "FETCH PROP ON serve uuid(\"Tony Parker\")->uuid(\"Spurs\") "
-                     "YIELD serve.start_year, serve.end_year";
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {std::get<1>(serve), std::get<2>(serve)},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t>> expected = {
+            {player.vid(), team.vid(), 0, std::get<1>(serve), std::get<2>(serve)},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     // Delete vertex
     {
         cpp2::ExecutionResponse resp;
-        auto query = "DELETE VERTEX uuid(\"Tony Parker\")";
+        auto *fmt = "DELETE VERTEX hash(\"%s\")";
+        auto query = folly::stringPrintf(fmt, players_["Grant Hill"].name().c_str());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // Check again
     {
         cpp2::ExecutionResponse resp;
-        auto query = "FETCH PROP ON player uuid(\"Tony Parker\") "
-                     "YIELD player.name, player.age";
+        auto *fmt = "GO FROM %ld OVER like";
+        auto query = folly::stringPrintf(fmt, players_["Tracy McGrady"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Kobe Bryant"].vid()},
+            {players_["Rudy Gay"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;
-        auto query = "FETCH PROP ON serve uuid(\"Tony Parker\")->uuid(\"Spurs\") "
-                     "YIELD serve.start_year, serve.end_year";
+        auto &player = players_["Grant Hill"];
+        auto *fmt = "FETCH PROP ON player hash(\"%s\") YIELD player.name, player.age";
+        auto query = folly::stringPrintf(fmt, player.name().c_str());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Grant Hill"];
+        auto &serve = player.serves()[0];
+        auto &team = teams_[std::get<0>(serve)];
+        auto *fmt = "FETCH PROP ON serve hash(\"%s\")->hash(\"%s\") "
+                    "YIELD serve.start_year, serve.end_year";
+        auto query = folly::stringPrintf(fmt, player.name().c_str(), team.name().c_str());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t, int64_t>> expected = {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     // Delete non-existing vertex
-    {
-        cpp2::ExecutionResponse resp;
-        auto query = "DELETE VERTEX uuid(\"Non-existing Vertex\")";
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
     {
         cpp2::ExecutionResponse resp;
         auto query = "DELETE VERTEX hash(\"Non-existing Vertex\")";
@@ -230,30 +209,6 @@ TEST_F(DeleteVertexTest, Base) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // Delete a vertex without edges
-    {
-        // Insert a vertex without edges
-        cpp2::ExecutionResponse resp;
-        auto query = "INSERT VERTEX player(name, age) "
-                     "VALUES uuid(\"A Loner\"): (\"A Loner\", 0)";
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        auto query = "DELETE VERTEX uuid(\"A Loner\")";
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        auto query = "FETCH PROP ON player uuid(\"A Loner\") "
-                     "YIELD player.name, player.age";
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t>> expected = {
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
     {
         // Insert a vertex without edges
         cpp2::ExecutionResponse resp;
@@ -274,7 +229,104 @@ TEST_F(DeleteVertexTest, Base) {
                      "YIELD player.name, player.age";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+
+TEST_F(DeleteVerticesTest, DeleteWithUUID) {
+    // Check
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Grant Hill"];
+        auto *fmt = "FETCH PROP ON player UUID(\"%s\") YIELD player.name, player.age";
+        auto query = folly::stringPrintf(fmt, player.name().c_str());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, int64_t>> expected = {
+            {player.name(), player.age()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected, true, {0}));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Grant Hill"];
+        auto &serve = player.serves()[0];
+        auto &team = teams_[std::get<0>(serve)];
+        auto *fmt = "FETCH PROP ON serve UUID(\"%s\")->UUID(\"%s\") "
+                    "YIELD serve.start_year, serve.end_year";
+        auto query = folly::stringPrintf(fmt, player.name().c_str(), team.name().c_str());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {std::get<1>(serve), std::get<2>(serve)},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected, true, {0, 1, 2}));
+    }
+    // Delete vertex
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "DELETE VERTEX UUID(\"%s\")";
+        auto query = folly::stringPrintf(fmt, players_["Grant Hill"].name().c_str());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Grant Hill"];
+        auto *fmt = "FETCH PROP ON player UUID(\"%s\") YIELD player.name, player.age";
+        auto query = folly::stringPrintf(fmt, player.name().c_str());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected, true, {0}));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Grant Hill"];
+        auto &serve = player.serves()[0];
+        auto &team = teams_[std::get<0>(serve)];
+        auto *fmt = "FETCH PROP ON serve UUID(\"%s\")->UUID(\"%s\") "
+                    "YIELD serve.start_year, serve.end_year";
+        auto query = folly::stringPrintf(fmt, player.name().c_str(), team.name().c_str());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected, true, {0, 1, 2}));
+    }
+    // Delete non-existing vertex
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "DELETE VERTEX UUID(\"Non-existing Vertex\")";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Delete a vertex without edges
+    {
+        // Insert a vertex without edges
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX player(name, age) "
+                     "VALUES UUID(\"A Loner\"): (\"A Loner\", 0)";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "DELETE VERTEX UUID(\"A Loner\")";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "FETCH PROP ON player UUID(\"A Loner\") "
+                     "YIELD player.name, player.age";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string, int64_t>> expected = {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

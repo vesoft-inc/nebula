@@ -23,7 +23,8 @@ public:
      void process(const cpp2::EdgeKeysRequest& req);
 
 private:
-    explicit QueryEdgeKeysProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
+    explicit QueryEdgeKeysProcessor(kvstore::KVStore* kvstore,
+                                    meta::SchemaManager* schemaMan)
             : BaseProcessor<cpp2::EdgeKeysResponse>(kvstore, schemaMan) {}
 };
 

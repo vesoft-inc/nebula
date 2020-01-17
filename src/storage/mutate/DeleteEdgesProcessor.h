@@ -17,23 +17,28 @@ namespace storage {
 class DeleteEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static DeleteEdgesProcessor* instance(kvstore::KVStore* kvstore,
-                                          meta::SchemaManager* schemaMan) {
-        return new DeleteEdgesProcessor(kvstore, schemaMan);
+                                          meta::SchemaManager* schemaMan,
+                                          meta::IndexManager* indexMan) {
+        return new DeleteEdgesProcessor(kvstore, schemaMan, indexMan);
     }
 
      void process(const cpp2::DeleteEdgesRequest& req);
 
 private:
     explicit DeleteEdgesProcessor(kvstore::KVStore* kvstore,
-                                  meta::SchemaManager* schemaMan)
-            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan) {}
+                                  meta::SchemaManager* schemaMan,
+                                  meta::IndexManager* indexMan)
+            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan)
+            , indexMan_(indexMan) {}
+
 
     std::string deleteEdges(GraphSpaceID spaceId,
                             PartitionID partId,
                             const std::vector<cpp2::EdgeKey>& edges);
 
 private:
-    std::vector<nebula::cpp2::IndexItem> indexes_;
+    meta::IndexManager*                                   indexMan_{nullptr};
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> indexes_;
 };
 
 }  // namespace storage

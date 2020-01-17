@@ -18,9 +18,10 @@ class DeleteVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static DeleteVerticesProcessor* instance(kvstore::KVStore* kvstore,
                                              meta::SchemaManager* schemaMan,
+                                             meta::IndexManager* indexMan,
                                              stats::Stats* stats,
                                              VertexCache* cache = nullptr) {
-        return new DeleteVerticesProcessor(kvstore, schemaMan, stats, cache);
+        return new DeleteVerticesProcessor(kvstore, schemaMan, indexMan, stats, cache);
     }
 
     void process(const cpp2::DeleteVerticesRequest& req);
@@ -28,16 +29,21 @@ public:
 private:
     explicit DeleteVerticesProcessor(kvstore::KVStore* kvstore,
                                      meta::SchemaManager* schemaMan,
+                                     meta::IndexManager* indexMan,
                                      stats::Stats* stats,
                                      VertexCache* cache)
             : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats)
+            , indexMan_(indexMan)
             , vertexCache_(cache) {}
 
-    std::string deleteVertex(GraphSpaceID spaceId, PartitionID partId, VertexID vId);
+    std::string deleteVertices(GraphSpaceID spaceId,
+                               PartitionID partId,
+                               const std::vector<VertexID>& vertices);
 
 private:
-    VertexCache* vertexCache_ = nullptr;
-    std::vector<nebula::cpp2::IndexItem> indexes_;
+    meta::IndexManager*                                   indexMan_{nullptr};
+    VertexCache*                                          vertexCache_{nullptr};
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> indexes_;
 };
 
 

@@ -16,7 +16,7 @@ void DeleteVertexProcessor::process(const cpp2::DeleteVertexRequest& req) {
     auto spaceId = req.get_space_id();
     auto partId = req.get_part_id();
     auto vId = req.get_vid();
-    auto iRet = schemaMan_->getTagIndexes(spaceId);
+    auto iRet = indexMan_->getTagIndexes(spaceId);
     if (iRet.ok()) {
         for (auto& index : iRet.value()) {
             indexes_.emplace_back(index);
@@ -124,15 +124,15 @@ std::string DeleteVertexProcessor::deleteVertex(GraphSpaceID spaceId,
         if (latestVVId != tagId) {
             std::unique_ptr<RowReader> reader;
             for (auto& index : indexes_) {
-                auto indexId = index.get_index_id();
-                if (index.get_tagOrEdge() == tagId) {
+                auto indexId = index->get_index_id();
+                if (index->get_schema_id().get_tag_id() == tagId) {
                     if (reader == nullptr) {
                         reader = RowReader::getTagPropReader(this->schemaMan_,
                                                              iter->val(),
                                                              spaceId,
                                                              tagId);
                     }
-                    const auto& cols = index.get_cols();
+                    const auto& cols = index->get_fields();
                     auto values = collectIndexValues(reader.get(), cols);
                     auto indexKey = NebulaKeyUtils::vertexIndexKey(partId,
                                                                    indexId,
