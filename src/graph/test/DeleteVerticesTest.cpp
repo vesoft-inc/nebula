@@ -113,6 +113,45 @@ TEST_F(DeleteVerticesTest, Base) {
     }
 }
 
+TEST_F(DeleteVerticesTest, DeleteMultiVertices) {
+    // Check
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["LeBron James"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Delete verticse
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "DELETE VERTEX %ld, %ld, %ld";
+        auto query = folly::stringPrintf(fmt,
+                                         players_["LeBron James"].vid(),
+                                         players_["Carmelo Anthony"].vid(),
+                                         players_["Dwyane Wade"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Check again
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 TEST_F(DeleteVerticesTest, DeleteWithHash) {
     // Check
     {
