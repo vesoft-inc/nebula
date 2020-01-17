@@ -32,9 +32,18 @@ jobs:
         compiler:
           - gcc
           - clang
+        cmake_build_type:
+          - Debug
+          - Release
+        cmake_with_testing:
+          - ON
+          - OFF
         exclude:
           - tag: centos7
             compiler: clang
+          - cmake_build_type: Release
+            cmake_with_testing: ON
+
     container:
       image: vesoft/nebula-dev:${{ matrix.tag }}
       env:
@@ -55,19 +64,19 @@ jobs:
           [ -d build/ ] && rm -rf build/* || mkdir -p build
       - name: CMake with gcc
         if: matrix.compiler == 'gcc' && steps.ignore_docs.outputs.num_source_files != 0
-        run: cd build && cmake ..
+        run: cd build && cmake -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} -DENABLE_TESTING=${{ matrix.cmake_with_testing }} ..
       - name: CMake with clang
         if: matrix.compiler == 'clang' && steps.ignore_docs.outputs.num_source_files != 0
-        run: cd build && cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DNEBULA_CLANG_USE_GCC_TOOLCHAIN=/opt/vesoft/toolset/gcc/7.5.0 ..
+        run: cd build && cmake -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} -DENABLE_TESTING=${{ matrix.cmake_with_testing }} -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DNEBULA_CLANG_USE_GCC_TOOLCHAIN=/opt/vesoft/toolset/gcc/7.5.0 ..
       - name: Make
         if: steps.ignore_docs.outputs.num_source_files != 0
         run: cd build && make -j $(nproc)
       - name: CTest with multiple threads
-        if: steps.ignore_docs.outputs.num_source_files != 0
+        if: steps.ignore_docs.outputs.num_source_files != 0 && ${{ matrix.cmake_with_testing }} != OFF
         timeout-minutes: 15
         run: cd build && ctest -j 6 --timeout 300 --output-on-failure --rerun-failed
       - name: CTest with single thread
-        if: failure() && steps.ignore_docs.outputs.num_source_files != 0
+        if: failure() && steps.ignore_docs.outputs.num_source_files != 0 && ${{ matrix.cmake_with_testing }} != OFF
         timeout-minutes: 30
         run: cd build && ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer ASAN_OPTIONS=fast_unwind_on_malloc=0 ctest --timeout 300 --output-on-failure --rerun-failed
       - name: Cleanup
