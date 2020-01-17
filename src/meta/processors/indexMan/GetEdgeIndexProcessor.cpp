@@ -14,7 +14,7 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
     CHECK_SPACE_ID_AND_RETURN(spaceID);
     auto indexName = req.get_index_name();
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeIndexLock());
-    auto edgeIndexIDResult = getEdgeIndexID(spaceID, indexName);
+    auto edgeIndexIDResult = getIndexID(spaceID, indexName);
     if (!edgeIndexIDResult.ok()) {
         LOG(ERROR) << "Get Edge Index SpaceID: " << spaceID
                    << " Index Name: " << indexName << " not found";
@@ -24,7 +24,7 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
     }
 
     LOG(INFO) << "Get Edge Index SpaceID: " << spaceID << " Index Name: " << indexName;
-    auto edgeKey = MetaServiceUtils::edgeIndexKey(spaceID, edgeIndexIDResult.value());
+    auto edgeKey = MetaServiceUtils::indexKey(spaceID, edgeIndexIDResult.value());
     auto edgeResult = doGet(edgeKey);
     if (!edgeResult.ok()) {
         LOG(ERROR) << "Get Edge Index Failed: SpaceID " << spaceID
@@ -33,10 +33,7 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
         return;
     }
 
-    cpp2::EdgeIndexItem item;
-    item.set_index_name(indexName);
-    item.set_index_id(edgeIndexIDResult.value());
-    item.set_fields(MetaServiceUtils::parseEdgeIndex(edgeResult.value()));
+    auto item = MetaServiceUtils::parseIndex(edgeResult.value());
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_item(std::move(item));
     onFinished();

@@ -19,8 +19,7 @@ enum class EntryType : int8_t {
     TAG         = 0x02,
     EDGE        = 0x03,
     USER        = 0x04,
-    TAG_INDEX   = 0x05,
-    EDGE_INDEX  = 0x06,
+    INDEX       = 0x05,
     CONFIG      = 0x07,
 };
 
@@ -103,25 +102,13 @@ public:
 
     static nebula::cpp2::Schema parseSchema(folly::StringPiece rawData);
 
-    // assign tag index's key
-    static std::string tagIndexKey(GraphSpaceID spaceId, TagIndexID indexID);
+    static std::string indexKey(GraphSpaceID spaceId, IndexID indexID);
 
-    static std::string tagIndexVal(const std::string& name,
-                                   const nebula::meta::cpp2::IndexFields& fields);
+    static std::string indexVal(const nebula::cpp2::IndexItem& item);
 
-    static std::string tagIndexPrefix(GraphSpaceID spaceId);
+    static std::string indexPrefix(GraphSpaceID spaceId);
 
-    // assign edge index's key
-    static std::string edgeIndexKey(GraphSpaceID spaceId, EdgeIndexID indexID);
-
-    static std::string edgeIndexVal(const std::string& name,
-                                    const nebula::meta::cpp2::IndexFields& fields);
-
-    static std::string edgeIndexPrefix(GraphSpaceID spaceId);
-
-    static cpp2::IndexFields parseTagIndex(const folly::StringPiece& rawData);
-
-    static cpp2::IndexFields parseEdgeIndex(const folly::StringPiece& rawData);
+    static nebula::cpp2::IndexItem parseIndex(const folly::StringPiece& rawData);
 
     static std::string indexSpaceKey(const std::string& name);
 
@@ -129,9 +116,7 @@ public:
 
     static std::string indexEdgeKey(GraphSpaceID spaceId, const std::string& name);
 
-    static std::string indexTagIndexKey(GraphSpaceID spaceId, const std::string& name);
-
-    static std::string indexEdgeIndexKey(GraphSpaceID spaceId, const std::string& name);
+    static std::string indexIndexKey(GraphSpaceID spaceId, const std::string& name);
 
     static std::string assembleSegmentKey(const std::string& segment, const std::string& key);
 
