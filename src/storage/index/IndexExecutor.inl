@@ -33,7 +33,7 @@ cpp2::ErrorCode IndexExecutor<RESP>::prepareScan(const cpp2::LookUpIndexRequest&
 
 template <typename RESP>
 kvstore::ResultCode IndexExecutor<RESP>::performScan(PartitionID part) {
-    kvstore::ResultCode ret;
+    kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     switch (policyScanType_) {
         case PolicyScanType::ACCURATE_SCAN : {
             ret = accurateScan(part);
