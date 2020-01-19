@@ -490,6 +490,7 @@ endmacro(nebula_link_libraries)
 
 function(nebula_add_subdirectory dir_name)
     if ((NOT ENABLE_TESTING) AND (${dir_name} STREQUAL test))
+        add_subdirectory(${dir_name} EXCLUDE_FROM_ALL)
         return()
     endif()
     add_subdirectory(${dir_name})
