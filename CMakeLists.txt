@@ -245,6 +245,8 @@ if(ENABLE_WERROR)
     add_compile_options(-Werror)
 endif()
 
+include(CheckCXXCompilerFlag)
+
 # TODO(dutor) Move all compiler-config-related operations to a separate file
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # This requries GCC 5.1+
@@ -270,10 +272,12 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     add_compile_options(-Wno-overloaded-virtual)
     add_compile_options(-Wno-self-assign-overloaded)
     add_compile_options(-Wno-self-move)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -latomic")
+    set(libatomic_link_flags "-Wl,-Bstatic -latomic -Wl,-Bdynamic")
+    check_cxx_compiler_flag("${libatomic_link_flags}" has_static_libatomic)
+    if(NOT has_static_libatomic)
+        set(libatomic_link_flags "-latomic")
+    endif()
 endif()
-
-include(CheckCXXCompilerFlag)
 
 if(ENABLE_ASAN OR ENABLE_UBSAN)
     add_definitions(-DBUILT_WITH_SANITIZER)
@@ -484,6 +488,7 @@ macro(nebula_link_libraries target)
         resolv
         dl
         ${GETTIME_LIB}
+        ${libatomic_link_flags}
         -pthread
     )
 endmacro(nebula_link_libraries)
