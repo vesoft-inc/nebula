@@ -135,6 +135,20 @@ struct PartMeta {
     }
 };
 
+struct SpaceMeta {
+    SpaceMeta() = delete;
+    SpaceMeta(std::string spaceName, int32_t partNum, int32_t replicaFactor,
+              std::string charsetName = "", std::string collationName = "")
+        : spaceName_(spaceName), partNum_(partNum), replicaFactor_(replicaFactor),
+          charsetName_(charsetName), collationName_(collationName) {}
+
+    std::string spaceName_;
+    int32_t     partNum_;
+    int32_t     replicaFactor_;
+    std::string charsetName_;
+    std::string collationName_;
+};
+
 using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, PartMeta>>;
 
 using VariantType = boost::variant<int64_t, double, bool, std::string>;
