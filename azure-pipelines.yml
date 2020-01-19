@@ -20,17 +20,19 @@ jobs:
   timeoutInMinutes: 0
 
   steps:
-  - script: mkdir _build && cd _build && cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_COVERAGE=ON -DNEBULA_CLANG_USE_GCC_TOOLCHAIN=/opt/vesoft/toolset/gcc/7.5.0 ..
+  - script: apt-get update -y && apt-get install -y lcov ninja-build
+    displayName: 'Install'
+
+  - script: mkdir _build && cd _build && cmake -GNinja -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_COVERAGE=ON -DNEBULA_CLANG_USE_GCC_TOOLCHAIN=/opt/vesoft/toolset/gcc/7.5.0 ..
     displayName: 'cmake'
 
-  - script: cd _build && make -j$(expr $(nproc) \* 2)
+  - script: cd _build && ninja -j$(expr $(nproc) \* 2)
     displayName: 'make'
 
   - script: cd _build && ctest -j$(nproc)
     displayName: 'test'
 
   - script: |
-      apt-get update -y && apt-get install -y lcov
       cd _build
       lcov --capture --gcov-tool /opt/vesoft/toolset/gcc/7.5.0/bin/gcov --directory . --output-file coverage.info
       bash <(curl -s https://codecov.io/bash) -t $(CODECOV_TOKEN) -f coverage.info
