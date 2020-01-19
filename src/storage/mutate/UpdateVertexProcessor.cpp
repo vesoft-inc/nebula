@@ -90,7 +90,7 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(this->spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
+        VLOG(3) << "Error! ErrorCode is " << static_cast<int32_t>(ret)
                 << ", spaceId " << this->spaceId_;
         return ret;
     }

@@ -99,8 +99,8 @@ ListPartsProcessor::getAllParts() {
 void ListPartsProcessor::getLeaderDist(std::vector<cpp2::PartItem>& partItems) {
     const auto& hostPrefix = MetaServiceUtils::leaderPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &iter);
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
+    auto ret_code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &iter);
+    if (kvstore::ResultCode::SUCCEEDED != ret_code) {
         return;
     }
 
