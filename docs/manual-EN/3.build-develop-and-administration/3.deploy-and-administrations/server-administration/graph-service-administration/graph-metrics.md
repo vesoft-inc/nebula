@@ -70,7 +70,7 @@ curl -G "http://127.0.0.1:13000/graph/stats?names=graph_insertVertex_qps.rate.60
 
 # obtain multiple metrics at the same time and return in json format
 curl -G "http://127.0.0.1:13000/graph/stats?names=graph_insertVertex_qps.rate.60, graph_deleteVertex_latency.avg.60&return=json"
-# [{"value":2373,"name":"graph_insertVertex_qps.rate.60"},{"value":760,"name":"graph_deleteVertex_latency.avg.60"}]
+# [{"graph_insertVertex_qps.rate.60":2373},{"graph_deleteVertex_latency.avg.60":760}]
 
 # obtain all the metrics
 curl -G "http://127.0.0.1:13000/graph/stats"

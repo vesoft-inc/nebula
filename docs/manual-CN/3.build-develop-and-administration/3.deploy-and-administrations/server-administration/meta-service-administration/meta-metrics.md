@@ -54,7 +54,7 @@ curl -G "http://127.0.0.1:11000/meta/stats?names=meta_heartbeat_qps.avg.60,meta_
 
 # 同时获取多个指标并以 json 格式返回
 curl -G "http://127.0.0.1:11000/meta/stats?names=meta_heartbeat_qps.avg.60,meta_heartbeat_error_qps.avg.60&return=json"
-# [{"value":533,"name":"meta_heartbeat_qps.avg.60"},{"value":574,"name":"meta_heartbeat_error_qps.avg.60"}]
+# [{"meta_heartbeat_qps.avg.60":533},{"meta_heartbeat_error_qps.avg.60":574}]
 
 # 获取所有指标
 curl -G "http://127.0.0.1:11000/meta/stats"

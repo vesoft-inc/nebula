@@ -184,6 +184,7 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
     auto& sm = get();
 
     for (auto &statsName : sm.nameMap_) {
+        folly::dynamic stat = folly::dynamic::object();
         for (auto method = StatsMethod::SUM; method <= StatsMethod::RATE;
              method = static_cast<StatsMethod>(static_cast<int>(method) + 1)) {
             for (auto range = TimeRange::FIVE_SECONDS; range <= TimeRange::ONE_HOUR;
@@ -192,7 +193,6 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
                 auto status = readStats(statsName.second, range, method);
                 CHECK(status.ok());
                 int64_t metricValue = status.value();
-                folly::dynamic stat = folly::dynamic::object();
 
                 switch (method) {
                     case StatsMethod::SUM:
@@ -226,11 +226,10 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
                     // intentionally no `default'
                 }
 
-                stat["name"] = metricName;
-                stat["value"] = metricValue;
-                vals.push_back(std::move(stat));
+                stat.insert(metricName, metricValue);
             }
         }
+        vals.push_back(std::move(stat));
     }
 }
 
@@ -322,4 +321,3 @@ StatusOr<StatsManager::VT> StatsManager::readHisto(const std::string& counterNam
 
 }  // namespace stats
 }  // namespace nebula
-

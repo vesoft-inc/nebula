@@ -116,17 +116,8 @@ TEST(StatsReaderTest, GetStatsTest) {
         ASSERT_TRUE(json.isArray());
         ASSERT_EQ(1UL, json.size());
         ASSERT_TRUE(json[0].isObject());
-        ASSERT_EQ(2UL, json[0].size());
-
-        auto it = json[0].find("name");
-        ASSERT_NE(json[0].items().end(), it);
-        ASSERT_TRUE(it->second.isString());
-        EXPECT_EQ("stat01.sum.60", it->second.getString());
-
-        it = json[0].find("value");
-        ASSERT_NE(json[0].items().end(), it);
-        ASSERT_TRUE(it->second.isInt());
-        EXPECT_EQ(5050, it->second.getInt());
+        folly::dynamic expected = folly::dynamic::object("stat01.sum.60", 5050);
+        ASSERT_EQ(expected, json[0]);
     }
 
     {

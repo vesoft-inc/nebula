@@ -84,27 +84,6 @@ void GetStatsHandler::onError(ProxygenError err) noexcept {
     delete this;
 }
 
-
-void GetStatsHandler::addOneStat(folly::dynamic& vals,
-                                 const std::string& statName,
-                                 int64_t statValue) const {
-    folly::dynamic stat = folly::dynamic::object();
-    stat["name"] = statName;
-    stat["value"] = statValue;
-    vals.push_back(std::move(stat));
-}
-
-
-void GetStatsHandler::addOneStat(folly::dynamic& vals,
-                                 const std::string& statName,
-                                 const std::string& error) const {
-    folly::dynamic stat = folly::dynamic::object();
-    stat["name"] = statName;
-    stat["value"] = error;
-    vals.push_back(std::move(stat));
-}
-
-
 folly::dynamic GetStatsHandler::getStats() const {
     auto stats = folly::dynamic::array();
     if (statNames_.empty()) {
@@ -114,10 +93,9 @@ folly::dynamic GetStatsHandler::getStats() const {
         for (auto& sn : statNames_) {
             auto status = StatsManager::readValue(sn);
             if (status.ok()) {
-                int64_t statValue = status.value();
-                addOneStat(stats, sn, statValue);
+                stats.push_back(folly::dynamic::object(sn, status.value()));
             } else {
-                addOneStat(stats, sn, status.status().toString());
+                stats.push_back(folly::dynamic::object(sn, status.status().toString()));
             }
         }
     }
@@ -129,10 +107,9 @@ folly::dynamic GetStatsHandler::getStats() const {
 std::string GetStatsHandler::toStr(folly::dynamic& vals) const {
     std::stringstream ss;
     for (auto& counter : vals) {
-        auto& val = counter["value"];
-        ss << counter["name"].asString() << "="
-           << val.asString()
-           << "\n";
+        for (auto& m : counter.items()) {
+            ss << m.first.asString() << "=" << m.second.asString() << "\n";
+        }
     }
     return ss.str();
 }
