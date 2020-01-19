@@ -29,7 +29,9 @@ void ListTagIndexesProcessor::process(const cpp2::ListTagIndexesReq& req) {
     while (iter->valid()) {
         auto val = iter->val();
         auto item = MetaServiceUtils::parseIndex(val);
-        items.emplace_back(std::move(item));
+        if (item.get_schema_id().getType() == nebula::cpp2::SchemaID::Type::tag_id) {
+            items.emplace_back(std::move(item));
+        }
         iter->next();
     }
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);

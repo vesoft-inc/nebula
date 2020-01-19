@@ -29,7 +29,9 @@ void ListEdgeIndexesProcessor::process(const cpp2::ListEdgeIndexesReq& req) {
     while (iter->valid()) {
         auto val = iter->val();
         auto item = MetaServiceUtils::parseIndex(val);
-        items.emplace_back(std::move(item));
+        if (item.get_schema_id().getType() == nebula::cpp2::SchemaID::Type::edge_type) {
+            items.emplace_back(std::move(item));
+        }
         iter->next();
     }
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);

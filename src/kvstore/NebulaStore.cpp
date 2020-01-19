@@ -413,12 +413,15 @@ ResultCode NebulaStore::rangeWithPrefix(GraphSpaceID spaceId,
                                         const std::string& start,
                                         const std::string& prefix,
                                         std::unique_ptr<KVIterator>* iter) {
-    auto ret = engine(spaceId, partId);
+    auto ret = part(spaceId, partId);
     if (!ok(ret)) {
         return error(ret);
     }
-    auto* e = nebula::value(ret);
-    return e->rangeWithPrefix(start, prefix, iter);
+    auto part = nebula::value(ret);
+    if (!checkLeader(part)) {
+        return ResultCode::ERR_LEADER_CHANGED;
+    }
+    return part->engine()->rangeWithPrefix(start, prefix, iter);
 }
 
 

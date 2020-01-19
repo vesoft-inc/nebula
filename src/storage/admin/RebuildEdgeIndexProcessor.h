@@ -19,16 +19,22 @@ namespace storage {
 class RebuildEdgeIndexProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 public:
     static RebuildEdgeIndexProcessor* instance(kvstore::KVStore* kvstore,
-                                               meta::SchemaManager* schemaMan) {
-        return new RebuildEdgeIndexProcessor(kvstore, schemaMan);
+                                               meta::SchemaManager* schemaMan,
+                                               meta::IndexManager* indexMan) {
+        return new RebuildEdgeIndexProcessor(kvstore, schemaMan, indexMan);
     }
 
-    void process(const cpp2::RebuildEdgeIndexRequest& req);
+    void process(const cpp2::RebuildIndexRequest& req);
 
 private:
     explicit RebuildEdgeIndexProcessor(kvstore::KVStore* kvstore,
-                                       meta::SchemaManager* schemaMan)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, schemaMan, nullptr) {}
+                                       meta::SchemaManager* schemaMan,
+                                       meta::IndexManager* indexMan)
+            : BaseProcessor<cpp2::AdminExecResp>(kvstore, schemaMan, nullptr)
+            , indexMan_(indexMan) {}
+
+private:
+    meta::IndexManager* indexMan_{nullptr};
 };
 
 }  // namespace storage

@@ -339,6 +339,7 @@ void ShowExecutor::showTags() {
             return;
         }
 
+        std::unordered_set<TagID> tags;
         auto value = std::move(resp).value();
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         std::vector<cpp2::RowValue> rows;
@@ -346,9 +347,16 @@ void ShowExecutor::showTags() {
         resp_->set_column_names(std::move(header));
 
         for (auto &tag : value) {
+            auto tagID = tag.get_tag_id();
+            auto iter = tags.find(tagID);
+            if (iter != tags.end()) {
+                continue;
+            }
+
+            tags.emplace(tagID);
             std::vector<cpp2::ColumnValue> row;
             row.resize(2);
-            row[0].set_integer(tag.get_tag_id());
+            row[0].set_integer(tagID);
             row[1].set_str(std::move(tag.get_tag_name()));
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
@@ -378,6 +386,7 @@ void ShowExecutor::showEdges() {
             return;
         }
 
+        std::unordered_set<TagID> edges;
         auto value = std::move(resp).value();
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         std::vector<cpp2::RowValue> rows;
@@ -385,6 +394,13 @@ void ShowExecutor::showEdges() {
         resp_->set_column_names(std::move(header));
 
         for (auto &edge : value) {
+            auto edgeType = edge.get_edge_type();
+            auto iter = edges.find(edgeType);
+            if (iter != edges.end()) {
+                continue;
+            }
+
+            edges.emplace(edgeType);
             std::vector<cpp2::ColumnValue> row;
             row.resize(2);
             row[0].set_integer(edge.get_edge_type());
@@ -868,7 +884,7 @@ void ShowExecutor::showTagIndexStatus() {
         }
 
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        std::vector<std::string> header{"Tag Index Name", "Tag Index Status"};
+        std::vector<std::string> header{"Name", "Tag Index Status"};
         resp_->set_column_names(std::move(header));
 
         std::vector<cpp2::RowValue> rows;
@@ -907,7 +923,7 @@ void ShowExecutor::showEdgeIndexStatus() {
         }
 
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        std::vector<std::string> header{"Edge Index Name", "Edge Index Status"};
+        std::vector<std::string> header{"Name", "Edge Index Status"};
         resp_->set_column_names(std::move(header));
 
         std::vector<cpp2::RowValue> rows;

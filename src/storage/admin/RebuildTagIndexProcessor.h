@@ -19,16 +19,22 @@ namespace storage {
 class RebuildTagIndexProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 public:
     static RebuildTagIndexProcessor* instance(kvstore::KVStore* kvstore,
-                                              meta::SchemaManager* schemaMan) {
-        return new RebuildTagIndexProcessor(kvstore, schemaMan);
+                                              meta::SchemaManager* schemaMan,
+                                              meta::IndexManager* indexMan) {
+        return new RebuildTagIndexProcessor(kvstore, schemaMan, indexMan);
     }
 
-    void process(const cpp2::RebuildTagIndexRequest& req);
+    void process(const cpp2::RebuildIndexRequest& req);
 
 private:
     explicit RebuildTagIndexProcessor(kvstore::KVStore* kvstore,
-                                      meta::SchemaManager* schemaMan)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, schemaMan, nullptr) {}
+                                      meta::SchemaManager* schemaMan,
+                                      meta::IndexManager* indexMan)
+            : BaseProcessor<cpp2::AdminExecResp>(kvstore, schemaMan, nullptr)
+            , indexMan_(indexMan) {}
+
+private:
+    meta::IndexManager* indexMan_{nullptr};
 };
 
 }  // namespace storage

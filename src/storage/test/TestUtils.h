@@ -46,7 +46,6 @@ public:
         workers->setNamePrefix("executor");
         workers->start();
 
-
         kvstore::KVOptions options;
         if (useMetaServer) {
             options.partMan_ = std::make_unique<kvstore::MetaServerBasedPartManager>(
@@ -175,18 +174,19 @@ public:
     }
 
     static std::vector<cpp2::Vertex>
-    setupVertices(PartitionID partitionID, VertexID vIdFrom, VertexID vIdTo,
-                  TagID tagFrom = 0, TagID tagTo = 10) {
-        // partId => List<Vertex>
-        // Vertex => {Id, List<VertexProp>}
-        // VertexProp => {tagId, tags}
+    setupVertices(PartitionID partitionID,
+                  VertexID vIdFrom,
+                  VertexID vIdTo,
+                  TagID tagFrom = 0,
+                  TagID tagTo = 10) {
         std::vector<cpp2::Vertex> vertices;
         for (VertexID vId = vIdFrom;  vId < vIdTo; vId++) {
               std::vector<cpp2::Tag> tags;
               for (TagID tId = tagFrom; tId < tagTo; tId++) {
                   cpp2::Tag t;
                   t.set_tag_id(tId);
-                  t.set_props(folly::stringPrintf("%d_%ld_%d", partitionID, vId, tId));
+                  auto val = encodeValue(partitionID, vId, tId);
+                  t.set_props(std::move(val));
                   tags.emplace_back(std::move(t));
               }
               cpp2::Vertex v;
@@ -197,19 +197,67 @@ public:
         return vertices;
     }
 
+    static std::string encodeValue(PartitionID partitionID,
+                                   VertexID vertexID,
+                                   TagID tagID) {
+        RowWriter writer;
+        for (int32_t numInt = 0; numInt < 3; numInt++) {
+            writer << numInt;
+        }
+        for (int32_t numString = 3; numString < 6; numString++) {
+            writer << folly::stringPrintf("col_%d_%d_%ld_%d",
+                                          numString,
+                                          partitionID,
+                                          vertexID,
+                                          tagID);
+        }
+        return writer.encode();
+    }
+
+    static std::string encodeValue(PartitionID partitionID,
+                                   VertexID sourceID,
+                                   VertexID destinationID,
+                                   EdgeType edgeType,
+                                   SchemaVer version = 0,
+                                   std::string fmt = "%d_%d_%ld_%ld_%d_%ld") {
+        RowWriter writer;
+        for (int32_t numInt = 0; numInt < 10; numInt++) {
+            writer << numInt;
+        }
+        for (int32_t numString = 10; numString < 20; numString++) {
+            writer << folly::stringPrintf(fmt.c_str(),
+                                          numString,
+                                          partitionID,
+                                          sourceID,
+                                          destinationID,
+                                          edgeType,
+                                          version);
+        }
+        return writer.encode();
+    }
+
     static std::vector<cpp2::Edge>
-    setupEdges(PartitionID part, VertexID srcFrom,
-               VertexID srcTo, std::string fmt = "%d_%ld") {
+    setupEdges(PartitionID partitionID,
+               VertexID srcFrom,
+               VertexID srcTo,
+               EdgeType edgeType = 101,
+               int32_t versionNum = 1,
+               std::string fmt = "%d_%d_%ld_%ld_%d_%ld") {
         std::vector<cpp2::Edge> edges;
         for (VertexID srcId = srcFrom; srcId < srcTo; srcId++) {
-            cpp2::EdgeKey key;
-            key.set_src(srcId);
-            key.set_edge_type(srcId * 100 + 1);
-            key.set_ranking(srcId * 100 + 2);
-            key.set_dst(srcId * 100 + 3);
-            edges.emplace_back();
-            edges.back().set_key(std::move(key));
-            edges.back().set_props(folly::stringPrintf(fmt.c_str(), part, srcId));
+            for (SchemaVer version = 0; version < versionNum; version++) {
+                VertexID dstId = srcId * 100 + 2;
+                EdgeRanking ranking = srcId * 100 + 3;
+                cpp2::EdgeKey key;
+                key.set_src(srcId);
+                key.set_edge_type(edgeType);
+                key.set_ranking(ranking);
+                key.set_dst(dstId);
+                edges.emplace_back();
+                edges.back().set_key(std::move(key));
+                auto val = encodeValue(partitionID, srcId, dstId, edgeType, version, fmt);
+                edges.back().set_props(std::move(val));
+            }
         }
         return edges;
     }
@@ -224,7 +272,6 @@ public:
         }
         return writer.encode();
     }
-
 
     /**
      * It will generate SchemaProvider with some int fields and string fields
@@ -299,15 +346,15 @@ public:
 
     // If kvstore should init files in dataPath, input port can't be 0
     static std::unique_ptr<test::ServerContext>
-    mockStorageServer(meta::MetaClient* mClient, const char* dataPath,
-                      uint32_t ip, uint32_t port = 0, bool useMetaServer = false) {
+    mockStorageServer(meta::MetaClient* mClient, const char* dataPath, uint32_t ip,
+                      uint32_t port = 0, bool useMetaServer = false, GraphSpaceID space = 1) {
         auto sc = std::make_unique<test::ServerContext>();
         // Always use the Meta Service in this case
         sc->kvStore_ = TestUtils::initKV(dataPath, 6, {ip, port}, mClient, true);
 
         if (!useMetaServer) {
-            sc->schemaMan_ = TestUtils::mockSchemaMan(1);
-            sc->indexMan_ = TestUtils::mockIndexMan(1);
+            sc->schemaMan_ = TestUtils::mockSchemaMan(space);
+            sc->indexMan_ = TestUtils::mockIndexMan(space);
         } else {
             LOG(INFO) << "Create real SchemaManager and IndexManager";
             sc->schemaMan_ = meta::SchemaManager::create();

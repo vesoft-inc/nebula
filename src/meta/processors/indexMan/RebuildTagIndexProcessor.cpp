@@ -14,8 +14,6 @@ namespace meta {
 void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     auto space = req.get_space_id();
     const auto &indexName = req.get_index_name();
-    auto tagID = req.get_schema_id().get_tag_id();
-    auto version = req.get_version();
 
     LOG(INFO) << "Rebuild Tag Index Space " << space << ", Index Name " << indexName;
     std::unique_ptr<AdminClient> client(new AdminClient(kvstore_));
@@ -46,6 +44,16 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     }
 
     auto tagIndexID = tagIndexIDResult.value();
+    auto tagIDResult = getIndexItem(space, tagIndexID);
+    if (!tagIDResult.ok()) {
+        LOG(ERROR) << "Tag Index " << indexName << " Not Found Schema";
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        onFinished();
+        return;
+    }
+
+    auto tagID = tagIDResult.value().get_schema_id().get_tag_id();
+
     auto tagKey = MetaServiceUtils::indexKey(space, tagIndexIDResult.value());
     auto tagResult = doGet(tagKey);
     if (!tagResult.ok()) {
@@ -72,7 +80,6 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
                                               space,
                                               tagID,
                                               tagIndexID,
-                                              version,
                                               iter->second);
         results.emplace_back(std::move(future));
     }

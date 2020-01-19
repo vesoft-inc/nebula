@@ -287,27 +287,6 @@ BaseProcessor<RESP>::getLatestTagFields(GraphSpaceID spaceId, const TagID tagId)
 }
 
 template<typename RESP>
-StatusOr<TagVersion>
-BaseProcessor<RESP>::getLatestTagVersion(GraphSpaceID spaceId,
-                                         const std::string& name) {
-    auto result = getTagId(spaceId, name);
-    if (!result.ok()) {
-        LOG(ERROR) << "Tag " << name << " not found";
-        return Status::Error(folly::stringPrintf("Tag %s not found", name.c_str()));
-    }
-
-    auto key = MetaServiceUtils::schemaTagPrefix(spaceId, result.value());
-    auto ret = doPrefix(key);
-    if (!ret.ok()) {
-        LOG(ERROR) << "Tag Prefix " << key << " not found";
-        return Status::Error(folly::stringPrintf("Tag Prefix %s not found", key.c_str()));
-    }
-
-    auto iter = ret.value().get();
-    return MetaServiceUtils::parseTagVersion(iter->val());
-}
-
-template<typename RESP>
 StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
 BaseProcessor<RESP>::getLatestEdgeFields(GraphSpaceID spaceId,
                                          const std::string& name) {
@@ -341,28 +320,6 @@ BaseProcessor<RESP>::getLatestEdgeFields(GraphSpaceID spaceId, const EdgeType ed
 }
 
 template<typename RESP>
-StatusOr<EdgeVersion>
-BaseProcessor<RESP>::getLatestEdgeVersion(GraphSpaceID spaceId,
-                                          const std::string& name) {
-    auto result = getEdgeType(spaceId, name);
-    if (!result.ok()) {
-        LOG(ERROR) << "Edge " << name << " not found";
-        return Status::Error(folly::stringPrintf("Edge %s not found", name.c_str()));
-    }
-
-    auto edgeType = to(result.value(), EntryType::EDGE);
-    auto key = MetaServiceUtils::schemaEdgePrefix(spaceId, result.value());
-    auto ret = doPrefix(key);
-    if (!ret.ok()) {
-        LOG(ERROR) << "Edge Prefix " << key << " not found";
-        return Status::Error(folly::stringPrintf("Edge Prefix %s not found", key.c_str()));
-    }
-
-    auto iter = ret.value().get();
-    return MetaServiceUtils::parseEdgeVersion(iter->val());
-}
-
-template<typename RESP>
 StatusOr<IndexID>
 BaseProcessor<RESP>::getIndexID(GraphSpaceID spaceId, const std::string& indexName) {
     auto indexKey = MetaServiceUtils::indexIndexKey(spaceId, indexName);
@@ -371,6 +328,18 @@ BaseProcessor<RESP>::getIndexID(GraphSpaceID spaceId, const std::string& indexNa
         return *reinterpret_cast<const IndexID*>(ret.value().c_str());
     }
     return Status::IndexNotFound(folly::stringPrintf("Index %s not found", indexName.c_str()));
+}
+
+template<typename RESP>
+StatusOr<nebula::cpp2::IndexItem>
+BaseProcessor<RESP>::getIndexItem(GraphSpaceID spaceId, IndexID indexId) {
+    auto tagKey = MetaServiceUtils::indexKey(spaceId, indexId);
+    auto tagResult = doGet(tagKey);
+    if (!tagResult.ok()) {
+        return Status::IndexNotFound(folly::stringPrintf("Index %d not found", indexId));
+    }
+
+    return MetaServiceUtils::parseIndex(tagResult.value());
 }
 
 template<typename RESP>

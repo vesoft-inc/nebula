@@ -647,18 +647,18 @@ folly::Future<Status> AdminClient::rebuildTagIndex(HostAddr address,
                                                    GraphSpaceID spaceId,
                                                    TagID tagID,
                                                    IndexID indexID,
-                                                   TagVersion version,
                                                    std::vector<PartitionID> parts) {
     if (injector_) {
         return injector_->rebuildTagIndex();
     }
 
     std::vector<HostAddr> hosts{address};
-    storage::cpp2::RebuildTagIndexRequest req;
+    storage::cpp2::RebuildIndexRequest req;
     req.set_space_id(spaceId);
-    req.set_tag_id(tagID);
+    nebula::cpp2::SchemaID schemaID;
+    schemaID.set_tag_id(tagID);
+    req.set_schema_id(std::move(schemaID));
     req.set_index_id(indexID);
-    req.set_tag_version(version);
     req.set_parts(std::move(parts));
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
@@ -672,18 +672,18 @@ folly::Future<Status> AdminClient::rebuildEdgeIndex(HostAddr address,
                                                     GraphSpaceID spaceId,
                                                     EdgeType edgeType,
                                                     IndexID indexID,
-                                                    EdgeVersion version,
                                                     std::vector<PartitionID> parts) {
     if (injector_) {
         return injector_->rebuildEdgeIndex();
     }
 
     std::vector<HostAddr> hosts{address};
-    storage::cpp2::RebuildEdgeIndexRequest req;
+    storage::cpp2::RebuildIndexRequest req;
     req.set_space_id(spaceId);
-    req.set_edge_type(edgeType);
+    nebula::cpp2::SchemaID schemaID;
+    schemaID.set_edge_type(edgeType);
+    req.set_schema_id(std::move(schemaID));
     req.set_index_id(indexID);
-    req.set_edge_version(version);
     req.set_parts(std::move(parts));
     folly::Promise<Status> pro;
     auto f = pro.getFuture();

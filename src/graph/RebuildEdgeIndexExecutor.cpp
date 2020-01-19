@@ -29,14 +29,8 @@ void RebuildEdgeIndexExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->indexName();
     auto spaceId = ectx()->rctx()->session()->space();
-    auto edgeTypeRet = mc->getRelatedEdgeTypeByIndexNameFromCache(spaceId, *name);
-    if (!edgeTypeRet.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(edgeTypeRet.status()));
-        return;
-    }
 
-    auto future = mc->rebuildEdgeIndex(spaceId, *name, edgeTypeRet.value());
+    auto future = mc->rebuildEdgeIndex(spaceId, *name);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {

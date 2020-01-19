@@ -240,14 +240,18 @@ StorageServiceHandler::future_blockingWrites(const cpp2::BlockingSignRequest& re
 }
 
 folly::Future<cpp2::AdminExecResp>
-StorageServiceHandler::future_rebuildTagIndex(const cpp2::RebuildTagIndexRequest& req) {
-    auto* processor = RebuildTagIndexProcessor::instance(kvstore_, schemaMan_);
+StorageServiceHandler::future_rebuildTagIndex(const cpp2::RebuildIndexRequest& req) {
+    auto* processor = RebuildTagIndexProcessor::instance(kvstore_,
+                                                         schemaMan_,
+                                                         indexMan_);
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::AdminExecResp>
-StorageServiceHandler::future_rebuildEdgeIndex(const cpp2::RebuildEdgeIndexRequest& req) {
-    auto* processor = RebuildEdgeIndexProcessor::instance(kvstore_, schemaMan_);
+StorageServiceHandler::future_rebuildEdgeIndex(const cpp2::RebuildIndexRequest& req) {
+    auto* processor = RebuildEdgeIndexProcessor::instance(kvstore_,
+                                                          schemaMan_,
+                                                          indexMan_);
     RETURN_FUTURE(processor);
 }
 

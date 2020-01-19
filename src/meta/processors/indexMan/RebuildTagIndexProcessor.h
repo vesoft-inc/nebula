@@ -12,7 +12,7 @@
 namespace nebula {
 namespace meta {
 
-class RebuildTagIndexProcessor : public BaseProcessor<cpp2::RebuildIndexResp> {
+class RebuildTagIndexProcessor : public BaseProcessor<cpp2::ExecResp> {
 public:
     static RebuildTagIndexProcessor* instance(kvstore::KVStore* kvstore) {
         return new RebuildTagIndexProcessor(kvstore);
@@ -22,7 +22,7 @@ public:
 
 private:
     explicit RebuildTagIndexProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::RebuildIndexResp>(kvstore) {}
+            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta

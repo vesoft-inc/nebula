@@ -30,7 +30,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
             auto partId = partEdges.first;
             std::vector<kvstore::KV> data;
             std::for_each(partEdges.second.begin(), partEdges.second.end(), [&](auto& edge){
-                VLOG(3) << "PartitionID: " << partId << ", VertexID: " << edge.key.src
+                LOG(INFO) << "PartitionID: " << partId << ", VertexID: " << edge.key.src
                         << ", EdgeType: " << edge.key.edge_type << ", EdgeRanking: "
                         << edge.key.ranking << ", VertexID: "
                         << edge.key.dst << ", EdgeVersion: " << version;

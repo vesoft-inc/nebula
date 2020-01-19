@@ -130,12 +130,6 @@ public:
         return readInt<TagID>(rawKey.data() + offset, sizeof(TagID));
     }
 
-    static TagVersion getTagVersion(const folly::StringPiece& rawKey) {
-        CHECK_EQ(rawKey.size(), kVertexLen);
-        auto offset = sizeof(PartitionID) + sizeof(VertexID) + sizeof(TagID);
-        return readInt<TagVersion>(rawKey.data() + offset, sizeof(TagVersion));
-    }
-
     static bool isEdge(const folly::StringPiece& rawKey) {
         constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
         auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMask;

@@ -29,14 +29,8 @@ void RebuildTagIndexExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->indexName();
     auto spaceId = ectx()->rctx()->session()->space();
-    auto tagIDRet = mc->getRelatedTagIDByIndexNameFromCache(spaceId, *name);
-    if (!tagIDRet.ok()) {
-        DCHECK(onError_);
-        onError_(std::move(tagIDRet.status()));
-        return;
-    }
 
-    auto future = mc->rebuildTagIndex(spaceId, *name, tagIDRet.value());
+    auto future = mc->rebuildTagIndex(spaceId, *name);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {

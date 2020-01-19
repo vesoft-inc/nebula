@@ -1253,25 +1253,16 @@ MetaClient::listTagIndexes(GraphSpaceID spaceID) {
 
 folly::Future<StatusOr<bool>>
 MetaClient::rebuildTagIndex(GraphSpaceID spaceID,
-                            std::string name,
-                            TagID tagID) {
+                            std::string name) {
     cpp2::RebuildIndexReq req;
     req.set_space_id(std::move(spaceID));
     req.set_index_name(std::move(name));
-    nebula::cpp2::SchemaID schemaID;
-    schemaID.set_tag_id(tagID);
-    req.set_schema_id(std::move(schemaID));
-    auto versionRet = getLatestTagVersionFromCache(spaceID, tagID);
-    if (!versionRet.ok()) {
-        return versionRet.status();
-    }
-    req.set_version(versionRet.value());
 
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_rebuildTagIndex(request);
-    }, [] (cpp2::RebuildIndexResp&& resp) -> bool {
+    }, [] (cpp2::ExecResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, std::move(promise));
     return future;
@@ -1368,25 +1359,16 @@ MetaClient::listEdgeIndexes(GraphSpaceID spaceID) {
 
 folly::Future<StatusOr<bool>>
 MetaClient::rebuildEdgeIndex(GraphSpaceID spaceID,
-                             std::string name,
-                             EdgeType edgeType) {
+                             std::string name) {
     cpp2::RebuildIndexReq req;
     req.set_space_id(std::move(spaceID));
     req.set_index_name(std::move(name));
-    nebula::cpp2::SchemaID schemaID;
-    schemaID.set_edge_type(edgeType);
-    req.set_schema_id(std::move(schemaID));
-    auto versionRet = getLatestEdgeVersionFromCache(spaceID, edgeType);
-    if (!versionRet.ok()) {
-        return versionRet.status();
-    }
-    req.set_version(versionRet.value());
 
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_rebuildEdgeIndex(request);
-    }, [] (cpp2::RebuildIndexResp&& resp) -> bool {
+    }, [] (cpp2::ExecResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, std::move(promise));
     return future;

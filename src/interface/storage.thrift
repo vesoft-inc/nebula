@@ -32,6 +32,7 @@ enum ErrorCode {
     E_IMPROPER_DATA_TYPE = -23,
     E_EDGE_NOT_FOUND = -24,
     E_TAG_NOT_FOUND = -25,
+    E_INDEX_NOT_FOUND = -26,
 
     // Invalid request
     E_INVALID_FILTER = -31,
@@ -428,20 +429,11 @@ struct DropCPRequest {
     2: string                       name,
 }
 
-struct RebuildTagIndexRequest {
+struct RebuildIndexRequest {
     1: common.GraphSpaceID          space_id,
     2: list<common.PartitionID>     parts,
-    3: common.TagID                 tag_id,
-    4: common.SchemaVer             tag_version,
-    5: common.IndexID               index_id,
-}
-
-struct RebuildEdgeIndexRequest {
-    1: common.GraphSpaceID          space_id,
-    2: list<common.PartitionID>     parts,
-    3: common.EdgeType              edge_type,
-    4: common.SchemaVer             edge_version,
-    5: common.IndexID               index_id,
+    3: common.SchemaID              schema_id,
+    4: common.IndexID               index_id,
 }
 
 service StorageService {
@@ -482,8 +474,8 @@ service StorageService {
     AdminExecResp blockingWrites(1: BlockingSignRequest req);
 
     // Interfaces for rebuild index
-    AdminExecResp rebuildTagIndex(1: RebuildTagIndexRequest req);
-    AdminExecResp rebuildEdgeIndex(1: RebuildEdgeIndexRequest req);
+    AdminExecResp rebuildTagIndex(1: RebuildIndexRequest req);
+    AdminExecResp rebuildEdgeIndex(1: RebuildIndexRequest req);
 
     // Interfaces for key-value storage
     ExecResponse      put(1: PutRequest req);

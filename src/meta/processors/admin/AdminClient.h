@@ -117,14 +117,12 @@ public:
                                           GraphSpaceID spaceId,
                                           TagID tagID,
                                           IndexID indexID,
-                                          TagVersion version,
                                           std::vector<PartitionID> parts);
 
     folly::Future<Status> rebuildEdgeIndex(HostAddr address,
                                            GraphSpaceID spaceId,
                                            EdgeType edgeType,
                                            IndexID indexID,
-                                           EdgeVersion version,
                                            std::vector<PartitionID> parts);
 
     FaultInjector* faultInjector() {

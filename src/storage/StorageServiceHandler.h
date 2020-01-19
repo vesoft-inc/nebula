@@ -136,10 +136,10 @@ public:
     future_blockingWrites(const cpp2::BlockingSignRequest& req) override;
 
     folly::Future<cpp2::AdminExecResp>
-    future_rebuildTagIndex(const cpp2::RebuildTagIndexRequest& req) override;
+    future_rebuildTagIndex(const cpp2::RebuildIndexRequest& req) override;
 
     folly::Future<cpp2::AdminExecResp>
-    future_rebuildEdgeIndex(const cpp2::RebuildEdgeIndexRequest& req) override;
+    future_rebuildEdgeIndex(const cpp2::RebuildIndexRequest& req) override;
 
 private:
     kvstore::KVStore* kvstore_{nullptr};

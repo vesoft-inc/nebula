@@ -14,8 +14,6 @@ namespace meta {
 void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     auto space = req.get_space_id();
     const auto &indexName = req.get_index_name();
-    auto edgeType = req.get_schema_id().get_edge_type();
-    auto version = req.get_version();
 
     LOG(INFO) << "Rebuild Edge Index Space " << space << ", Index Name " << indexName;
 
@@ -48,6 +46,16 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     }
 
     auto edgeIndexID = edgeIndexIDResult.value();
+    auto edgeTypeResult = getIndexItem(space, edgeIndexID);
+    if (!edgeTypeResult.ok()) {
+        LOG(ERROR) << "Edge Index " << indexName << " Not Found Schema";
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        onFinished();
+        return;
+    }
+
+    auto edgeType = edgeTypeResult.value().get_schema_id().get_edge_type();
+
     auto edgeKey = MetaServiceUtils::indexKey(space, edgeIndexIDResult.value());
     auto edgeResult = doGet(edgeKey);
     if (!edgeResult.ok()) {
@@ -73,7 +81,6 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
                                                space,
                                                edgeType,
                                                edgeIndexID,
-                                               version,
                                                iter->second);
         results.emplace_back(std::move(future));
     }

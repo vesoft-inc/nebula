@@ -9,15 +9,23 @@
 namespace nebula {
 namespace storage {
 
-void RebuildTagIndexProcessor::process(const cpp2::RebuildTagIndexRequest& req) {
+void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
     CHECK_NOTNULL(kvstore_);
     auto space = req.get_space_id();
     auto parts = req.get_parts();
-    auto tagID = req.get_tag_id();
-    auto tagVersion = req.get_tag_version();
+    auto tagID = req.get_schema_id().get_tag_id();
     auto indexID = req.get_index_id();
+    auto itemRet = indexMan_->getTagIndex(space, indexID);
+    if (!itemRet.ok()) {
+        cpp2::ResultCode thriftRet;
+        thriftRet.set_code(cpp2::ErrorCode::E_INDEX_NOT_FOUND);
+        codes_.emplace_back(thriftRet);
+        onFinished();
+        return;
+    }
+    auto item = itemRet.value();
     LOG(INFO) << "Rebuild Tag Index Space " << space << " Tag ID " << tagID
-              << " Tag Index " << indexID << " Tag Version " << tagVersion;
+              << " Tag Index " << indexID;
 
     for (PartitionID part : parts) {
         // firstly remove the discard index
@@ -30,6 +38,7 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildTagIndexRequest& req) 
         std::vector<kvstore::KV> data;
         data.reserve(FLAGS_build_index_batch_size);
         int32_t batchSize = 0;
+        VertexID currentVertex = -1;
         while (iter && iter->valid()) {
             if (batchSize >= FLAGS_build_index_batch_size) {
                 doPut(space, part, std::move(data));
@@ -38,26 +47,33 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildTagIndexRequest& req) 
             }
 
             auto key = iter->key();
+            auto val = iter->val();
+
             if (!NebulaKeyUtils::isVertex(key) ||
-                NebulaKeyUtils::getTagId(key) != tagID ||
-                NebulaKeyUtils::getTagVersion(key) != tagVersion) {
+                NebulaKeyUtils::getTagId(key) != tagID) {
+                iter->next();
                 continue;
             }
 
             auto vertex = NebulaKeyUtils::getVertexId(key);
-            auto val = iter->val();
+            if (currentVertex == vertex) {
+                continue;
+            } else {
+                currentVertex = vertex;
+            }
             auto reader = RowReader::getTagPropReader(schemaMan_,
                                                       std::move(val),
                                                       space,
                                                       tagID);
-            std::vector<nebula::cpp2::ColumnDef> cols;
-            auto values = collectIndexValues(reader.get(), cols);
+            auto values = collectIndexValues(reader.get(), item->get_fields());
 
             auto indexKey = NebulaKeyUtils::vertexIndexKey(part, indexID, vertex, values);
             data.emplace_back(std::move(indexKey), "");
+            iter->next();
         }
         doPut(space, part, std::move(data));
     }
+
     onFinished();
 }
 

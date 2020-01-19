@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "graph/Executor.h"
+#include <unordered_set>
 
 namespace nebula {
 namespace graph {

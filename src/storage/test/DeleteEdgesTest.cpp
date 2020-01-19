@@ -31,8 +31,6 @@ TEST(DeleteEdgesTest, SimpleTest) {
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
-        // partId => List<Edge>
-        // Edge => {EdgeKey, props}
         for (PartitionID partId = 1; partId <= 3; partId++) {
             auto edges = TestUtils::setupEdges(partId, partId * 10, 10 * (partId + 1));
             req.parts.emplace(partId, std::move(edges));
@@ -55,8 +53,12 @@ TEST(DeleteEdgesTest, SimpleTest) {
         // partId => List<Edge>
         // Edge => {EdgeKey, props}
         for (PartitionID partId = 1; partId <= 3; partId++) {
-            auto edges = TestUtils::setupEdges(partId, partId * 10,
-                                               10 * (partId + 1), "%d_%ld_new");
+            auto edges = TestUtils::setupEdges(partId,
+                                               partId * 10,
+                                               10 * (partId + 1),
+                                               101,
+                                               1,
+                                               "%d_%d_%ld_%ld_%d_%ld_new");
             req.parts.emplace(partId, std::move(edges));
         }
 
@@ -68,15 +70,20 @@ TEST(DeleteEdgesTest, SimpleTest) {
 
     for (PartitionID partId = 1; partId <= 3; partId++) {
         for (VertexID srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
-            auto prefix = NebulaKeyUtils::edgePrefix(partId, srcId, srcId * 100 + 1);
+            auto prefix = NebulaKeyUtils::edgePrefix(partId, srcId, 101);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             int num = 0;
             while (iter->valid()) {
+                auto edgeType = 101;
+                auto dstId = srcId * 100 + 2;
                 if (num == 0) {
-                    EXPECT_EQ(folly::stringPrintf("%d_%ld_new", partId, srcId), iter->val());
+                    EXPECT_EQ(TestUtils::encodeValue(partId, srcId, dstId, edgeType, 0,
+                                                     "%d_%d_%ld_%ld_%d_%ld_new"),
+                              iter->val().str());
                 } else {
-                    EXPECT_EQ(folly::stringPrintf("%d_%ld", partId, srcId), iter->val());
+                    EXPECT_EQ(TestUtils::encodeValue(partId, srcId, dstId, edgeType),
+                              iter->val().str());
                 }
                 num++;
                 iter->next();
@@ -94,11 +101,14 @@ TEST(DeleteEdgesTest, SimpleTest) {
         for (PartitionID partId = 1; partId <= 3; partId++) {
             std::vector<cpp2::EdgeKey> keys;
             for (VertexID srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
+                EdgeType edgeType = srcId * 100 + 1;
+                VertexID dstId = srcId * 100 + 2;
+                EdgeRanking ranking = srcId * 100 + 3;
                 cpp2::EdgeKey key;
                 key.set_src(srcId);
-                key.set_edge_type(srcId * 100 + 1);
-                key.set_ranking(srcId * 100 + 2);
-                key.set_dst(srcId * 100 + 3);
+                key.set_edge_type(edgeType);
+                key.set_ranking(ranking);
+                key.set_dst(dstId);
                 keys.emplace_back(std::move(key));
             }
             req.parts.emplace(partId, std::move(keys));
