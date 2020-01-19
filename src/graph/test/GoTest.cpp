@@ -1954,7 +1954,6 @@ TEST_P(GoTest, Bidirect) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    /*
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER * bidirect";
@@ -1969,28 +1968,27 @@ TEST_P(GoTest, Bidirect) {
 
         std::vector<std::tuple<int64_t, int64_t, int64_t>> expected = {
             {teams_["Spurs"].vid(), 0, 0},
-            {0, players_["Tony Parker"].vid(), 0},
-            {0, players_["Manu Ginobili"].vid(), 0},
-            {0, players_["Tony Parker"].vid(), 0},
-            {0, players_["Manu Ginobili"].vid(), 0},
-            {0, players_["LaMarcus Aldridge"].vid(), 0},
-            {0, players_["Marco Belinelli"].vid(), 0},
-            {0, players_["Danny Green"].vid(), 0},
-            {0, players_["Aron Baynes"].vid(), 0},
-            {0, players_["Boris Diaw"].vid(), 0},
-            {0, players_["Tiago Splitter"].vid(), 0},
-            {0, players_["Dejounte Murray"].vid(), 0},
-            {0, players_["Shaquile O'Neal"].vid(), 0},
+            {0, 0, players_["Tony Parker"].vid()},
+            {0, 0, players_["Manu Ginobili"].vid()},
             {0, 0, players_["Tony Parker"].vid()},
             {0, 0, players_["Manu Ginobili"].vid()},
             {0, 0, players_["LaMarcus Aldridge"].vid()},
+            {0, 0, players_["Marco Belinelli"].vid()},
             {0, 0, players_["Danny Green"].vid()},
-            {0, 0, players_["Tony Parker"].vid()},
-            {0, 0, players_["Manu Ginobili"].vid()},
+            {0, 0, players_["Aron Baynes"].vid()},
+            {0, 0, players_["Boris Diaw"].vid()},
+            {0, 0, players_["Tiago Splitter"].vid()},
+            {0, 0, players_["Dejounte Murray"].vid()},
+            {0, 0, players_["Shaquile O'Neal"].vid()},
+            {0, players_["Tony Parker"].vid(), 0},
+            {0, players_["Manu Ginobili"].vid(), 0},
+            {0, players_["LaMarcus Aldridge"].vid(), 0},
+            {0, players_["Danny Green"].vid(), 0},
+            {0, players_["Tony Parker"].vid(), 0},
+            {0, players_["Manu Ginobili"].vid(), 0},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    */
 }
 
 INSTANTIATE_TEST_CASE_P(IfPushdownFilter, GoTest, ::testing::Bool());
