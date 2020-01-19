@@ -275,8 +275,11 @@ endif()
 
 include(CheckCXXCompilerFlag)
 
-if(ENABLE_ASAN)
+if(ENABLE_ASAN OR ENABLE_UBSAN)
     add_definitions(-DBUILT_WITH_SANITIZER)
+endif()
+
+if(ENABLE_ASAN)
     set(CMAKE_REQUIRED_FLAGS "-fsanitize=address")
     check_cxx_compiler_flag("-fsanitize=address" ENABLE_ASAN_OK)
     if (NOT ENABLE_ASAN_OK)
@@ -294,6 +297,7 @@ if(ENABLE_UBSAN)
         MESSAGE(FATAL_ERROR "The compiler does not support Undefined Behavior Sanitizer")
     endif()
     add_compile_options(-fsanitize=undefined -fno-sanitize=alignment)
+    add_compile_options(-fno-sanitize-recover=all)  # Exit on failure
     # TODO(dutor) Remove the following line when RTTI-enabled RocksDB is ready
     add_compile_options(-fno-sanitize=vptr)
     if(NOT ENABLE_ASAN)
