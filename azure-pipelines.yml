@@ -16,13 +16,10 @@ jobs:
   pool:
     vmImage: $(vmImage)
 
-  container: vesoft/nebula-dev:centos7
+  container: shylockhg/nebula-dev:centos7
   timeoutInMinutes: 0
 
   steps:
-  - script: sudo yum update -y && yum install -y ninja-build
-    displayName: 'Install'
-
   - script: mkdir _build && cd _build && cmake -GNinja -DENABLE_COVERAGE=ON ..
     displayName: 'cmake'
 
