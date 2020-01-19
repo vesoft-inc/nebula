@@ -504,14 +504,15 @@ void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
 
 void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
     auto requireDstProps = expCtx_->hasDstTagProp();
+    auto requireEdgeKeyProps = expCtx_->onlyEdgeKey();
     auto requireEdgeProps = !expCtx_->aliasProps().empty();
 
     // Non-reversely traversal, no properties required on destination nodes
     // Or, Reversely traversal but no properties on edge and destination nodes required.
-    // Note that the `dest` which used in reversely traversal means the `src` in foword edge.
+    // Note that the `dst` which used in reversely traversal means the `src` in foward edge.
     if ((!requireDstProps && !isReversely()) ||
-        (isReversely() && !requireDstProps && !requireEdgeProps &&
-         !(expCtx_->isOverAllEdge() && yields_.empty()))) {
+        (isReversely() && !requireDstProps && requireEdgeKeyProps)) {
+         // !(expCtx_->isOverAllEdge() && yields_.empty()))) {
         finishExecution(std::move(rpcResp));
         return;
     }
@@ -543,6 +544,7 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
     std::unordered_map<EdgeType, std::vector<storage::cpp2::EdgeKey>> edgeKeysMapping;
     std::unordered_map<EdgeType, std::vector<storage::cpp2::PropDef>> edgePropsMapping;
 
+    // We would fetch edge props from the forward edge.
     // TODO: There would be no need to fetch edges' props here,
     // if we implemnet the feature that keep all the props in the reverse edge.
     for (auto &resp : rpcResp.responses()) {
@@ -803,11 +805,14 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
         props.emplace_back(std::move(pd));
     }
 
-    if (isReversely()) {
+    if (isReversely() && !expCtx_->onlyEdgeKey()) {
         return props;
     }
 
     for (auto &prop : expCtx_->aliasProps()) {
+        if (prop.second == _DST) {
+            continue;
+        }
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::EDGE;
         pd.name  = prop.second;
@@ -1060,7 +1065,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                                     "Get edge type for `%s' failed in getters.", edgeName.c_str());
                         }
 
-                        if (isReversely()) {
+                        if (isReversely() && !expCtx_->onlyEdgeKey()) {
                             auto dst = RowReader::getPropByName(&*iter, _DST);
                             if (saveTypeFlag) {
                                 auto typeStatus = edgeHolder_->getType(

@@ -164,6 +164,14 @@ public:
 
     void setOverAllEdge() { overAll_ = true; }
 
+    bool onlyEdgeKey() const {
+        auto result = std::find_if(aliasProps_.begin(), aliasProps_.end(), [] (auto &iter) ->bool {
+            auto &prop = iter.second;
+            return !((prop == _SRC) || (prop == _DST) || (prop == _RANK) || (prop == _TYPE));
+        });
+        return (result == aliasProps_.end());
+    }
+
 private:
     std::unordered_set<PropPair>              srcTagProps_;
     std::unordered_set<PropPair>              dstTagProps_;

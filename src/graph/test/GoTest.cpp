@@ -227,8 +227,7 @@ TEST_P(GoTest, AssignmentEmptyResult) {
 }
 
 
-// REVERSELY not supported yet
-TEST_P(GoTest, DISABLED_OneStepInBound) {
+TEST_P(GoTest, OneStepInBound) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve REVERSELY";
@@ -240,17 +239,20 @@ TEST_P(GoTest, DISABLED_OneStepInBound) {
             {players_["Russell Westbrook"].vid()},
             {players_["Kevin Durant"].vid()},
             {players_["James Harden"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Paul George"].vid()},
+            {players_["Ray Allen"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 
-// REVERSELY not supported yet
-TEST_P(GoTest, DISABLED_OneStepInOutBound) {
+TEST_P(GoTest, OneStepInOutBound) {
     // Ever served in the same team
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER serve | GO FROM $-.serve_id OVER serve REVERSELY";
+        auto *fmt = "GO FROM %ld OVER serve YIELD serve._dst as id"
+                    " | GO FROM $-.id OVER serve REVERSELY";
         auto &player = players_["Kobe Bryant"];
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
@@ -259,6 +261,11 @@ TEST_P(GoTest, DISABLED_OneStepInOutBound) {
             {players_["LeBron James"].vid()},
             {players_["Rajon Rondo"].vid()},
             {players_["Kobe Bryant"].vid()},
+            {players_["Steve Nash"].vid()},
+            {players_["Paul Gasol"].vid()},
+            {players_["Shaquile O'Neal"].vid()},
+            {players_["JaVale McGee"].vid()},
+            {players_["Dwight Howard"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -393,9 +400,9 @@ TEST_P(GoTest, MULTI_EDGES) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {0, players_["James Harden"].vid()},
-            {0, players_["Dejounte Murray"].vid()},
-            {0, players_["Paul George"].vid()},
+            {0, player.vid()},
+            {0, player.vid()},
+            {0, player.vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -407,29 +414,15 @@ TEST_P(GoTest, MULTI_EDGES) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {0, player.vid()},
-            {0, player.vid()},
-            {0, player.vid()},
+            {0, players_["James Harden"].vid()},
+            {0, players_["Dejounte Murray"].vid()},
+            {0, players_["Paul George"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve, like REVERSELY";
-        auto &player = players_["Russell Westbrook"];
-        auto query = folly::stringPrintf(fmt, player.vid());
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {0, player.vid()},
-            {0, player.vid()},
-            {0, player.vid()},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER * REVERSELY YIELD serve._src, like._src";
         auto &player = players_["Russell Westbrook"];
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
@@ -443,7 +436,7 @@ TEST_P(GoTest, MULTI_EDGES) {
     }
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER * REVERSELY YIELD serve._dst, like._dst";
+        auto *fmt = "GO FROM %ld OVER * REVERSELY YIELD serve._src, like._src";
         auto &player = players_["Russell Westbrook"];
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
@@ -457,15 +450,29 @@ TEST_P(GoTest, MULTI_EDGES) {
     }
     {
         cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER * REVERSELY YIELD serve._dst, like._dst";
+        auto &player = players_["Russell Westbrook"];
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {0, players_["James Harden"].vid()},
+            {0, players_["Dejounte Murray"].vid()},
+            {0, players_["Paul George"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER * REVERSELY";
         auto &player = players_["Russell Westbrook"];
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t, int64_t>> expected = {
-            {0, 0, player.vid()},
-            {0, 0, player.vid()},
-            {0, 0, player.vid()},
+            {0, 0, players_["James Harden"].vid()},
+            {0, 0, players_["Dejounte Murray"].vid()},
+            {0, 0, players_["Paul George"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -1019,7 +1026,7 @@ TEST_P(GoTest, ReverselyOneStep) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "GO FROM hash('Tim Duncan') OVER like REVERSELY "
-                     "YIELD like._src";
+                     "YIELD like._dst";
         client_->execute(query, resp);
         std::vector<std::tuple<int64_t>> expected = {
             { players_["Tony Parker"].vid() },
@@ -1038,7 +1045,7 @@ TEST_P(GoTest, ReverselyOneStep) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "GO FROM hash('Tim Duncan') OVER * REVERSELY "
-                     "YIELD like._src";
+                     "YIELD like._dst";
         client_->execute(query, resp);
         std::vector<std::tuple<int64_t>> expected = {
             { players_["Tony Parker"].vid() },
@@ -1184,7 +1191,7 @@ TEST_P(GoTest, ReverselyWithPipe) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "GO FROM hash('Manu Ginobili') OVER like REVERSELY "
-                    "YIELD like._src AS id |"
+                    "YIELD like._dst AS id |"
                     "GO FROM $-.id OVER serve";
         client_->execute(query, resp);
         std::vector<std::tuple<int64_t>> expected = {
@@ -1202,7 +1209,7 @@ TEST_P(GoTest, ReverselyWithPipe) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "GO FROM hash('Manu Ginobili') OVER * REVERSELY "
-                    "YIELD like._src AS id |"
+                    "YIELD like._dst AS id |"
                     "GO FROM $-.id OVER serve";
         client_->execute(query, resp);
         std::vector<std::tuple<int64_t>> expected = {
@@ -1947,6 +1954,43 @@ TEST_P(GoTest, Bidirect) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    /*
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER * bidirect";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}, {"teammate._dst"}, {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t, int64_t, int64_t>> expected = {
+            {teams_["Spurs"].vid(), 0, 0},
+            {0, players_["Tony Parker"].vid(), 0},
+            {0, players_["Manu Ginobili"].vid(), 0},
+            {0, players_["Tony Parker"].vid(), 0},
+            {0, players_["Manu Ginobili"].vid(), 0},
+            {0, players_["LaMarcus Aldridge"].vid(), 0},
+            {0, players_["Marco Belinelli"].vid(), 0},
+            {0, players_["Danny Green"].vid(), 0},
+            {0, players_["Aron Baynes"].vid(), 0},
+            {0, players_["Boris Diaw"].vid(), 0},
+            {0, players_["Tiago Splitter"].vid(), 0},
+            {0, players_["Dejounte Murray"].vid(), 0},
+            {0, players_["Shaquile O'Neal"].vid(), 0},
+            {0, 0, players_["Tony Parker"].vid()},
+            {0, 0, players_["Manu Ginobili"].vid()},
+            {0, 0, players_["LaMarcus Aldridge"].vid()},
+            {0, 0, players_["Danny Green"].vid()},
+            {0, 0, players_["Tony Parker"].vid()},
+            {0, 0, players_["Manu Ginobili"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    */
 }
 
 INSTANTIATE_TEST_CASE_P(IfPushdownFilter, GoTest, ::testing::Bool());
