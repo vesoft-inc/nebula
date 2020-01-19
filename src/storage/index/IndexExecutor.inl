@@ -257,6 +257,7 @@ kvstore::ResultCode IndexExecutor<RESP>::getEdgeRow(PartitionID partId,
     edge.set_edge_type(tagOrEdge_);
     edge.set_ranking(rank);
     edge.set_dst(dst);
+    data->set_key(std::move(edge));
     if (!needReturnCols_) {
         return kvstore::ResultCode::SUCCEEDED;
     }
