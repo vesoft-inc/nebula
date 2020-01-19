@@ -105,10 +105,10 @@ public:
                           std::string(reinterpret_cast<char*>(&clusterId), sizeof(ClusterID)));
         bool ret = true;
         folly::Baton<true, std::atomic> baton;
-        kv->asyncMultiPut(0, 0, std::move(data), [&](kvstore::ResultCode code) {
-                               if (code != kvstore::ResultCode::SUCCEEDED) {
+        kv->asyncMultiPut(0, 0, std::move(data), [&](kvstore::ResultCode ret_code) {
+                               if (kvstore::ResultCode::SUCCEEDED != ret_code) {
                                    LOG(ERROR) << "Put failed, ErrorCode is "
-                                              << static_cast<int32_t>(code);
+                                              << static_cast<int32_t>(ret_code);
                                     ret = false;
                                } else {
                                    LOG(INFO) << "Put key " << key

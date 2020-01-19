@@ -21,8 +21,8 @@ void QueryEdgeKeysProcessor::process(const cpp2::EdgeKeyRequest& req) {
     auto prefix = NebulaKeyUtils::edgePrefix(partId, vId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId = " << spaceId
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
+        VLOG(3) << "Error! ErrorCode is " << static_cast<int32_t>(ret) << ", spaceId = " << spaceId
                 << ", partId =  " << partId << ", vertexId = " << vId;
         if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
             this->handleLeaderChanged(spaceId, partId);

@@ -264,7 +264,7 @@ public:
         folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(0, 0, std::move(data),
                           [&] (kvstore::ResultCode code) {
-                              ret = (code == kvstore::ResultCode::SUCCEEDED);
+                              ret = (kvstore::ResultCode::SUCCEEDED == code);
                               baton.post();
                           });
         baton.wait();

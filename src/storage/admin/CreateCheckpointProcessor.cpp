@@ -21,10 +21,11 @@ void CreateCheckpointProcessor::process(const cpp2::CreateCPRequest& req) {
     auto spaceId = req.get_space_id();
     auto& name = req.get_name();
     auto* store = dynamic_cast<kvstore::NebulaStore*>(kvstore_);
-    auto retCode = store->createCheckpoint(spaceId, std::move(name));
-    if (retCode != kvstore::ResultCode::SUCCEEDED) {
+    auto ret_code = store->createCheckpoint(spaceId, std::move(name));
+    if (kvstore::ResultCode::SUCCEEDED != ret_code) {
+        LOG(ERROR) << "Create Checkpoint Failed: ErrorCode is " << ret_code;
         cpp2::ResultCode thriftRet;
-        thriftRet.set_code(to(retCode));
+        thriftRet.set_code(to(ret_code));
         codes_.emplace_back(std::move(thriftRet));
     }
     onFinished();

@@ -398,8 +398,8 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
     auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId, tagId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId " << spaceId_;
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
+        VLOG(3) << "Error! ErrorCode is " << static_cast<int32_t>(ret) << ", spaceId " << spaceId_;
         return ret;
     }
     // Will decode the properties according to the schema version
@@ -430,7 +430,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
     auto prefix = NebulaKeyUtils::edgePrefix(partId, vId, edgeType);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
+    if (kvstore::ResultCode::SUCCEEDED != ret || !iter) {
         return ret;
     }
     EdgeRanking lastRank  = -1;
@@ -650,7 +650,7 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
             for (auto& r : bucketTry.value()) {
                 auto& partId = std::get<0>(r);
                 auto& ret = std::get<2>(r);
-                if (ret != kvstore::ResultCode::SUCCEEDED
+                if (kvstore::ResultCode::SUCCEEDED != ret
                       && failedParts.find(partId) == failedParts.end()) {
                     failedParts.emplace(partId);
                     if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {

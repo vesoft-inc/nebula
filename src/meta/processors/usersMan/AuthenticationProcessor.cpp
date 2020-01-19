@@ -57,8 +57,9 @@ void AlterUserProcessor::process(const cpp2::AlterUserReq& req) {
     UserID userId = ret.value();
     auto userKey = MetaServiceUtils::userKey(userId);
     std::string val;
-    auto result = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
-    if (result != kvstore::ResultCode::SUCCEEDED) {
+    auto ret_code = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
+    if (kvstore::ResultCode::SUCCEEDED != ret_code) {
+        LOG(ERROR) << "Alter Users Failed: ErrorCode is " << ret_code;
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
@@ -156,8 +157,9 @@ void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
 
     auto userKey = MetaServiceUtils::userKey(userRet.value());
     std::string val;
-    auto result = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
-    if (result != kvstore::ResultCode::SUCCEEDED) {
+    auto ret_code = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
+    if (kvstore::ResultCode::SUCCEEDED != ret_code) {
+        LOG(ERROR) << "Alter Password Failed: ErrorCode is " << ret_code;
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
@@ -182,7 +184,8 @@ void GetUserProcessor::process(const cpp2::GetUserReq& req) {
     auto userKey = MetaServiceUtils::userKey(userRet.value());
     std::string val;
     auto result = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
-    if (result != kvstore::ResultCode::SUCCEEDED) {
+    if (kvstore::ResultCode::SUCCEEDED != result) {
+        LOG(ERROR) << "Get Users Failed: ErrorCode is " << ret_code;
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
@@ -200,8 +203,8 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
     std::unique_ptr<kvstore::KVIterator> iter;
     std::string prefix = "__users__";
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Can't find any users.";
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
+        LOG(ERROR) << "Can't find any users. ErrorCode is " << ret;
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
@@ -246,8 +249,8 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
     auto prefix = MetaServiceUtils::roleSpacePrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Can't find any roles by space id  " << spaceId;
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
+        LOG(ERROR) << "Can't find any roles by space id  " << spaceId << ", ErrorCode is " << ret;
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;

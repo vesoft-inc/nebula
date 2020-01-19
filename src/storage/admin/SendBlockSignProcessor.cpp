@@ -15,10 +15,11 @@ void SendBlockSignProcessor::process(const cpp2::BlockingSignRequest& req) {
     LOG(INFO) << "Receive block sign for space " << req.get_space_id();
     auto spaceId = req.get_space_id();
     auto sign = req.get_sign() == cpp2::EngineSignType::BLOCK_ON;
-    auto code = kvstore_->setWriteBlocking(spaceId, sign);
-    if (code != kvstore::ResultCode::SUCCEEDED) {
+    auto ret_code = kvstore_->setWriteBlocking(spaceId, sign);
+    if (kvstore::ResultCode::SUCCEEDED != ret_code) {
+        LOG(ERROR) << "Send Block Sign Failed: ErrorCode is " << ret_code;
         cpp2::ResultCode thriftRet;
-        thriftRet.set_code(to(code));
+        thriftRet.set_code(to(ret_code));
         codes_.emplace_back(std::move(thriftRet));
     }
     onFinished();

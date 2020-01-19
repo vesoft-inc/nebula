@@ -49,7 +49,7 @@ GetProcessor::asyncProcess(PartitionID part,
                     kvKeys = std::move(kvKeys)] () mutable {
         std::vector<std::string> values;
         auto ret = this->kvstore_->multiGet(space_, part, kvKeys, &values);
-        if (ret == kvstore::ResultCode::SUCCEEDED) {
+        if (kvstore::ResultCode::SUCCEEDED == ret) {
             std::lock_guard<std::mutex> lg(this->lock_);
             for (int32_t i = 0; i < static_cast<int32_t>(keys.size()); i++) {
                 pairs_.emplace(keys[i], values[i]);

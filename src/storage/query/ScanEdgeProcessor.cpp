@@ -40,7 +40,7 @@ void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
 
     std::unique_ptr<kvstore::KVIterator> iter;
     auto kvRet = doRangeWithPrefix(spaceId_, partId_, start, prefix, &iter);
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
+    if (kvstore::ResultCode::SUCCEEDED != kvRet) {
         pushResultCode(to(kvRet), partId_);
         onFinished();
         return;

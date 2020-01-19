@@ -15,9 +15,10 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
     auto spaceId = req.get_space_id();
     auto prefix = MetaServiceUtils::schemaEdgesPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    auto ret_code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     resp_.set_code(to(ret));
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (kvstore::ResultCode::SUCCEEDED != ret_code) {
+        LOG(ERROR) << "List Edges Failed: ErrorCode is " << ret_code;
         onFinished();
         return;
     }

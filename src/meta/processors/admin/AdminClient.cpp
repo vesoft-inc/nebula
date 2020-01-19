@@ -493,7 +493,7 @@ StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, Part
             LOG(WARNING) << "Get peers failed, ErrorCode is " << static_cast<int32_t>(code);
             break;
     }
-    return Status::Error("Get Failed");
+    return Status::Error("Get Failed, ErrorCode is %d", code);
 }
 
 void AdminClient::getLeaderDist(const HostAddr& host,

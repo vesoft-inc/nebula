@@ -42,12 +42,12 @@ public:
                                                                req.get_new_leader().get_port()));
         part->asyncTransferLeader(host,
                                   [this, spaceId, partId, part] (kvstore::ResultCode code) {
-            if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+            if (kvstore::ResultCode::ERR_LEADER_CHANGED == code) {
                 LOG(INFO) << "I am not the leader yet!";
                 handleLeaderChanged(spaceId, partId);
                 onFinished();
                 return;
-            } else if (code == kvstore::ResultCode::SUCCEEDED) {
+            } else if (kvstore::ResultCode::SUCCEEDED == code) {
                 // To avoid dead lock, we use another ioThreadPool to check the leader information.
                 folly::via(folly::getIOExecutor().get(), [this, part, spaceId, partId] {
                     int retry = FLAGS_waiting_new_leader_retry_times;

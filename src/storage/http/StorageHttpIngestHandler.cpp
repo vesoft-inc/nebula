@@ -93,10 +93,10 @@ void StorageHttpIngestHandler::onError(ProxygenError error) noexcept {
 
 bool StorageHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
     auto code = kvstore_->ingest(space);
-    if (code == kvstore::ResultCode::SUCCEEDED) {
+    if (kvstore::ResultCode::SUCCEEDED == code) {
         return true;
     } else {
-        LOG(ERROR) << "SSTFile Ingest Failed: " << code;
+        LOG(ERROR) << "SSTFile Ingest Failed, ErrorCode is " << code;
         return false;
     }
 }

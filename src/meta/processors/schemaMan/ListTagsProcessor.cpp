@@ -17,7 +17,8 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     resp_.set_code(to(ret));
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
+        LOG(ERROR) << "List Tags Failed: ErrorCode is " << ret;
         onFinished();
         return;
     }

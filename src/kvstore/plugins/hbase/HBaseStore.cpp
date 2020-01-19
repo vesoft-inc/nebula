@@ -357,20 +357,20 @@ void HBaseStore::asyncRemoveRange(GraphSpaceID spaceId,
     UNUSED(partId);
     auto removeRange = [this, &spaceId, &start, &end] () -> ResultCode {
         std::unique_ptr<kvstore::KVIterator> iter;
-        ResultCode rangeCode = this->range(spaceId, start, end, &iter);
-        if (rangeCode == ResultCode::SUCCEEDED) {
+        ResultCode ret_code = this->range(spaceId, start, end, &iter);
+        if (ResultCode::SUCCEEDED != ret_code) {
             std::vector<std::string> keys;
             while (iter->valid()) {
                 keys.emplace_back(iter->key());
                 iter->next();
             }
             ResultCode code = this->multiRemove(spaceId, keys);
-            if (code == ResultCode::ERR_IO_ERROR) {
-                LOG(ERROR) << "RemoveRange Failed: the HBase I/O error.";
+            if (ResultCode::ERR_IO_ERROR == code) {
+                LOG(ERROR) << "RemoveRange Failed: the HBase I/O error. ErrorCode is " << code;
             }
             return code;
-        } else if (rangeCode == ResultCode::ERR_IO_ERROR) {
-            LOG(ERROR) << "RemoveRange Failed on Range: the HBase I/O error.";
+        } else if (ResultCode::ERR_IO_ERROR == ret_code) {
+            LOG(ERROR) << "RemoveRange Failed on Range: the HBase I/O error. ErrorCode is " << ret_code;
         }
         return rangeCode;
     };
@@ -385,8 +385,8 @@ void HBaseStore::asyncRemovePrefix(GraphSpaceID spaceId,
     UNUSED(partId);
     auto removePrefix = [this, &spaceId, &prefix] () -> ResultCode {
         std::unique_ptr<kvstore::KVIterator> iter;
-        ResultCode prefixCode = this->prefix(spaceId, prefix, &iter);
-        if (prefixCode == ResultCode::SUCCEEDED) {
+        ResultCode ret_code = this->prefix(spaceId, prefix, &iter);
+        if (ResultCode::SUCCEEDED == ret_code) {
             std::vector<std::string> keys;
             while (iter->valid()) {
                 keys.emplace_back(iter->key());
@@ -394,11 +394,11 @@ void HBaseStore::asyncRemovePrefix(GraphSpaceID spaceId,
             }
             ResultCode code = this->multiRemove(spaceId, keys);
             if (code == ResultCode::ERR_IO_ERROR) {
-                LOG(ERROR) << "RemoveRange Failed: the HBase I/O error.";
+                LOG(ERROR) << "RemoveRange Failed: the HBase I/O error. ErrorCode is " << code;
             }
             return code;
-        } else if (prefixCode == ResultCode::ERR_IO_ERROR) {
-            LOG(ERROR) << "RemoveRange Failed on Range: the HBase I/O error.";
+        } else if (ResultCode::ERR_IO_ERROR == ret_code) {
+            LOG(ERROR) << "RemoveRange Failed on Range: the HBase I/O error. ErrorCode is " << ret_code;
         }
         return prefixCode;
     };

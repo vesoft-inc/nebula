@@ -70,7 +70,7 @@ Status ListHostsProcessor::allHostsWithStatus() {
     if (kvstore::ResultCode::SUCCEEDED != kvRet) {
         LOG(ERROR) << "List Hosts Failed: No leaders, ErrorCode is " << kvRet;
         resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
-        return Status::Error("Can't access kvstore, ErrorCode is ", static_cast<int32_t>(kvRet));
+        return Status::Error("Can't access kvstore, ErrorCode is %d", static_cast<int32_t>(kvRet));
     }
 
     // get hosts which have send heartbeat recently
@@ -150,7 +150,7 @@ Status ListHostsProcessor::getSpaceIdNameMap() {
     if (kvRet != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "List Hosts Failed: No space found";
         resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
-        return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(kvRet));
+        return Status::Error("Can't access kvstore, ErrorCode is %d", static_cast<int32_t>(kvRet));
     }
     while (iter->valid()) {
         auto spaceId = MetaServiceUtils::spaceId(iter->key());

@@ -46,7 +46,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
         } else {
             ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info);
         }
-        if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+        if (kvstore::ResultCode::ERR_LEADER_CHANGED == ret) {
             auto leaderRet = kvstore_->partLeader(kDefaultSpaceId, kDefaultPartId);
             if (nebula::ok(leaderRet)) {
                 resp_.set_leader(toThriftHost(nebula::value(leaderRet)));

@@ -142,8 +142,8 @@ std::string AddEdgesProcessor::findObsoleteIndex(PartitionID partId,
                                              NebulaKeyUtils::getDstId(rawKey));
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(this->spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Error! ret = " << static_cast<int32_t>(ret)
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
+        LOG(ERROR) << "ErrorCode is " << static_cast<int32_t>(ret)
                    << ", spaceId " << this->spaceId_;
         return "";
     }

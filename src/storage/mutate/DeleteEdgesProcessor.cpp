@@ -71,8 +71,8 @@ std::string DeleteEdgesProcessor::deleteEdges(GraphSpaceID spaceId,
         auto prefix = NebulaKeyUtils::edgePrefix(partId, srcId, type, rank, dstId);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = this->kvstore_->prefix(spaceId, partId, prefix, &iter);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
+        if (kvstore::ResultCode::SUCCEEDED != ret) {
+            VLOG(3) << "ErrorCode is " << static_cast<int32_t>(ret)
                     << ", spaceId " << spaceId;
             return "";
         }

@@ -24,7 +24,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto edgePrefix = MetaServiceUtils::schemaEdgePrefix(req.get_space_id(), edgeType);
     auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, edgePrefix, &iter);
-    if (code != kvstore::ResultCode::SUCCEEDED || !iter->valid()) {
+    if ( kvstore::ResultCode::SUCCEEDED != code || !iter->valid()) {
         LOG(ERROR) << "Edge could not be found " << req.get_edge_name()
                    << ", spaceId " << req.get_space_id()
                    << ", edgeType " << edgeType;

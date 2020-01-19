@@ -54,14 +54,14 @@ void StorageHttpAdminHandler::onRequest(std::unique_ptr<HTTPMessage> headers) no
     if (*op == "compact") {
         auto status = kv_->compact(spaceId);
         if (status != kvstore::ResultCode::SUCCEEDED) {
-            resp_ = folly::stringPrintf("Compact failed! error=%d", static_cast<int32_t>(status));
+            resp_ = folly::stringPrintf("Compact failed! ErrorCode is %d", static_cast<int32_t>(status));
             err_ = HttpCode::SUCCEEDED;
             return;
         }
     } else if (*op == "flush") {
         auto status = kv_->flush(spaceId);
         if (status != kvstore::ResultCode::SUCCEEDED) {
-            resp_ = folly::stringPrintf("Flush failed! error=%d", static_cast<int32_t>(status));
+            resp_ = folly::stringPrintf("Flush failed! ErrorCode is %d", static_cast<int32_t>(status));
             err_ = HttpCode::SUCCEEDED;
             return;
         }

@@ -97,8 +97,8 @@ kvstore::ResultCode UpdateEdgeProcessor::collectVertexProps(
     auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId, tagId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(this->spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
+        VLOG(3) << "Error! ErrorCode is " << static_cast<int32_t>(ret)
                 << ", spaceId " << this->spaceId_;
         return ret;
     }
@@ -134,8 +134,8 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
                                          edgeKey.ranking, edgeKey.dst);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(this->spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
+        VLOG(3) << "Error! ErrorCode is " << static_cast<int32_t>(ret)
                 << ", spaceId " << this->spaceId_;
         return ret;
     }
@@ -313,14 +313,14 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
 bool UpdateEdgeProcessor::checkFilter(const PartitionID partId,
                                       const cpp2::EdgeKey& edgeKey) {
     auto ret = collectEdgesProps(partId, edgeKey);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
         return false;
     }
     for (auto& tc : this->tagContexts_) {
         VLOG(3) << "partId " << partId << ", vId " << edgeKey.src
                 << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
         ret = collectVertexProps(partId, edgeKey.src, tc.tagId_, tc.props_);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
+        if (kvstore::ResultCode::SUCCEEDED != ret) {
             return false;
         }
     }
@@ -466,7 +466,7 @@ void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
         },
         [this, partId, edgeKey, req] (kvstore::ResultCode code) {
             while (true) {
-                if (code == kvstore::ResultCode::SUCCEEDED) {
+                if (kvstore::ResultCode::SUCCEEDED != code) {
                     onProcessFinished(req.get_return_columns().size());
                     break;
                 }

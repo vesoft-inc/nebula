@@ -30,8 +30,8 @@ void DeleteVertexProcessor::process(const cpp2::DeleteVertexRequest& req) {
         keys.reserve(32);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = this->kvstore_->prefix(spaceId, partId, prefix, &iter);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId " << spaceId;
+        if (kvstore::ResultCode::SUCCEEDED != ret) {
+            VLOG(3) << "ErrorCode is " << static_cast<int32_t>(ret) << ", spaceId " << spaceId;
             this->onFinished();
             return;
         }
@@ -92,8 +92,8 @@ std::string DeleteVertexProcessor::deleteVertex(GraphSpaceID spaceId,
     auto prefix = NebulaKeyUtils::vertexPrefix(partId, vId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret)
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
+        VLOG(3) << "ErrorCode is " << static_cast<int32_t>(ret)
                 << ", spaceId " << spaceId;
         return "";
     }

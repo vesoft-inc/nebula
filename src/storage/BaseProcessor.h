@@ -118,8 +118,8 @@ protected:
     }
 
     void handleErrorCode(kvstore::ResultCode code, GraphSpaceID spaceId, PartitionID partId) {
-        if (code != kvstore::ResultCode::SUCCEEDED) {
-            if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+        if (kvstore::ResultCode::SUCCEEDED != code) {
+            if (kvstore::ResultCode::ERR_LEADER_CHANGED == code) {
                 handleLeaderChanged(spaceId, partId);
             } else {
                 pushResultCode(to(code), partId);
@@ -134,7 +134,7 @@ protected:
             this->pushResultCode(cpp2::ErrorCode::E_LEADER_CHANGED, partId, leader);
         } else {
             LOG(ERROR) << "Fail to get part leader, spaceId: " << spaceId
-                       << ", partId: " << partId << ", ResultCode: " << error(addrRet);
+                       << ", partId: " << partId << ", ErrorCode is " << error(addrRet);
             this->pushResultCode(to(error(addrRet)), partId);
         }
     }

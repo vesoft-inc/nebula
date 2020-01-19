@@ -33,7 +33,7 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeImpl(const PartitionID partI
             this->collectProps(reader, k, p, &fcontext, &collector);
             rsWriter.addRow(writer);
         });
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
         return ret;
     }
 
@@ -56,7 +56,7 @@ kvstore::ResultCode QueryBoundProcessor::processEdge(PartitionID partId, VertexI
         if (!props.empty()) {
             CHECK(!onlyVertexProps_);
             auto ret = processEdgeImpl(partId, vId, edgeType, props, fcontext, vdata);
-            if (ret != kvstore::ResultCode::SUCCEEDED) {
+            if (kvstore::ResultCode::SUCCEEDED != ret) {
                 return ret;
             }
         }
@@ -85,7 +85,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
             if (ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
                 continue;
             }
-            if (ret != kvstore::ResultCode::SUCCEEDED) {
+            if (kvstore::ResultCode::SUCCEEDED != ret) {
                 return ret;
             }
             if (writer.size() > 1) {
@@ -107,7 +107,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
     kvstore::ResultCode ret;
     ret = processEdge(partId, vId, fcontext, vResp);
 
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
         return ret;
     }
 

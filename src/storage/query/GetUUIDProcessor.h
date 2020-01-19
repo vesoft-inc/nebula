@@ -34,7 +34,7 @@ public:
         VertexID vId;
         auto ret = kvstore_->get(spaceId, partId, key, &val);
         // try to get the corresponding vertex id
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
+        if (kvstore::ResultCode::SUCCEEDED != ret) {
             // need to generate new vertex id of this uuid
             MurmurHash2 hashFunc;
             auto hashValue = hashFunc(name);
@@ -46,7 +46,7 @@ public:
 
             kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
                                     [vId, spaceId, partId, this] (kvstore::ResultCode code) {
-                if (code == kvstore::ResultCode::SUCCEEDED) {
+                if (kvstore::ResultCode::SUCCEEDED == code) {
                     resp_.set_id(vId);
                 } else {
                     this->handleErrorCode(code, spaceId, partId);

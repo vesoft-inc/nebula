@@ -26,8 +26,8 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
         for (const auto& partId : partIds_) {
             auto partKey = MetaServiceUtils::partKey(spaceId_, partId);
             std::string value;
-            auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, partKey, &value);
-            if (retCode == kvstore::ResultCode::SUCCEEDED) {
+            auto ret_code = kvstore_->get(kDefaultSpaceId, kDefaultPartId, partKey, &value);
+            if (kvstore::ResultCode::SUCCEEDED == ret_code) {
                 partHostsMap[partId] = MetaServiceUtils::parsePartVal(value);
             }
         }
@@ -76,11 +76,11 @@ ListPartsProcessor::getAllParts() {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto prefix = MetaServiceUtils::partPrefix(spaceId_);
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
+    auto ret_code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    if (kvstore::ResultCode::SUCCEEDED != ret_code) {
         LOG(ERROR) << "List Parts Failed: No parts";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-        return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(kvRet));
+        return Status::Error("Can't access kvstore, ErrorCode is %d", static_cast<int32_t>(ret_code));
     }
 
     while (iter->valid()) {

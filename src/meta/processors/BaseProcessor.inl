@@ -374,7 +374,7 @@ bool BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
                                 if (kvstore::ResultCode::SUCCEEDED == code) {
                                     ret = true;
                                 } else {
-                                    LOG(INFO) << "Put data error on meta server";
+                                    LOG(INFO) << "Put data error on meta server, ErrorCode is " << code;
                                 }
                                 baton.post();
                             });

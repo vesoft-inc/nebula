@@ -23,7 +23,7 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
                                          edgeKey.ranking, edgeKey.dst);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
         return ret;
     }
 
@@ -86,12 +86,12 @@ void QueryEdgePropsProcessor::doProcess(const cpp2::EdgePropRequest& req) {
                     break;
                 }
             }
-            if (ret != kvstore::ResultCode::SUCCEEDED) {
-                LOG(ERROR) << "It means the part has something wrong now";
+            if (kvstore::ResultCode::SUCCEEDED != ret) {
+                LOG(ERROR) << "It means the part has something wrong now. ErrorCode is " << ret;
                 break;
             }
         }
-        if (ret == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+        if (kvstore::ResultCode::ERR_LEADER_CHANGED == ret) {
             this->handleLeaderChanged(spaceId_, partId);
         } else {
             this->pushResultCode(this->to(ret), partId);
