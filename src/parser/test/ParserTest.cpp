@@ -146,6 +146,27 @@ TEST(Parser, SpaceOperation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
+                            "charset=utf8, collate=utf8_bin)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
+                            "charset=utf8)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
+                            "collate=utf8_bin)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, TagOperation) {
@@ -1087,6 +1108,18 @@ TEST(Parser, AdminOperation) {
     {
         GQLParser parser;
         std::string query = "SHOW CREATE EDGE e1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CHARSET";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW COLLATION";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

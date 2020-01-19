@@ -499,7 +499,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("conflict!");
         case cpp2::ErrorCode::E_WRONGCLUSTER:
             return Status::Error("wrong cluster!");
-        case cpp2::ErrorCode::E_LEADER_CHANGED: {
+        case cpp2::ErrorCode::E_LEADER_CHANGED:
             return Status::LeaderChanged("Leader changed!");
         case cpp2::ErrorCode::E_BALANCED:
             return Status::Error("The cluster is balanced!");
@@ -513,7 +513,16 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("No valid host hold the partition");
         case cpp2::ErrorCode::E_CORRUPTTED_BALANCE_PLAN:
             return Status::Error("No corrupted blance plan");
-        }
+        case cpp2::ErrorCode::E_INVALID_PARTITION_NUM:
+            return Status::Error("No valid partition_num");
+        case cpp2::ErrorCode::E_INVALID_REPLICA_FACTOR:
+            return Status::Error("No valid replica_factor");
+        case cpp2::ErrorCode::E_INVALID_CHARSET:
+            return Status::Error("No valid charset");
+        case cpp2::ErrorCode::E_INVALID_COLLATE:
+            return Status::Error("No valid collate");
+        case cpp2::ErrorCode::E_CHARSET_COLLATE_NOT_MATCH:
+            return Status::Error("Charset and collate not match");
         default:
             return Status::Error("Unknown code %d", static_cast<int32_t>(resp.get_code()));
     }
@@ -609,14 +618,15 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
 
 /// ================================== public methods =================================
 
-folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpace(std::string name,
-                                                              int32_t partsNum,
-                                                              int32_t replicaFactor,
+folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpace(SpaceMeta spaceMeta,
                                                               bool ifNotExists) {
     cpp2::SpaceProperties properties;
-    properties.set_space_name(std::move(name));
-    properties.set_partition_num(partsNum);
-    properties.set_replica_factor(replicaFactor);
+    properties.set_space_name(std::move(spaceMeta.spaceName_));
+    properties.set_partition_num(spaceMeta.partNum_);
+    properties.set_replica_factor(spaceMeta.replicaFactor_);
+    properties.set_charset_name(std::move(spaceMeta.charsetName_));
+    properties.set_collate_name(std::move(spaceMeta.collationName_));
+
     cpp2::CreateSpaceReq req;
     req.set_properties(std::move(properties));
     req.set_if_not_exists(ifNotExists);

@@ -37,3 +37,7 @@
 --default_parts_num=100
 # The default replica factor when a space is created
 --default_replica_factor=1
+# The default charset when a space is created
+--default_charset=utf8
+# The defaule collate when a space is created
+--default_collate=utf8_bin

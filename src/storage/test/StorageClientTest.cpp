@@ -70,8 +70,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                                            // SchemaMan We need to switch to Meta Server
                                            // based version
                                            false);
-
-    auto ret = mClient->createSpace("default", 10, 1).get();
+    SpaceMeta spaceMeta("default", 10, 1);
+    auto ret = mClient->createSpace(spaceMeta).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     spaceId = ret.value();
     LOG(INFO) << "Created space \"default\", its id is " << spaceId;

@@ -176,12 +176,7 @@ public:
     }
 
     // Operations for parts
-    /**
-     * TODO(dangleptr): Use one struct to represent space description.
-     * */
-    folly::Future<StatusOr<GraphSpaceID>> createSpace(std::string name,
-                                                      int32_t partsNum,
-                                                      int32_t replicaFactor,
+    folly::Future<StatusOr<GraphSpaceID>> createSpace(SpaceMeta spaceMeta,
                                                       bool ifNotExists = false);
 
     folly::Future<StatusOr<std::vector<SpaceIdName>>>

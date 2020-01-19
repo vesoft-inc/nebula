@@ -88,7 +88,8 @@ private:
         auto spaceResult = mClient_->getSpaceIdByNameFromCache(FLAGS_space_name);
         if (!spaceResult.ok()) {
             LOG(ERROR) << "Get spaceId failed, try to create one";
-            auto ret = mClient_->createSpace(FLAGS_space_name, FLAGS_partition_num, 1).get();
+            SpaceMeta spaceMeta(FLAGS_space_name, FLAGS_partition_num, 1);
+            auto ret = mClient_->createSpace(spaceMeta).get();
             if (!ret.ok()) {
                 LOG(ERROR) << "Create space failed: " << ret.status();
                 return false;
