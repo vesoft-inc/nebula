@@ -8,8 +8,8 @@
 #include "base/Status.h"
 #include <termios.h>
 #include <unistd.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+#include "readline/readline.h"
+#include "readline/history.h"
 #include "console/CliManager.h"
 #include "client/cpp/GraphClient.h"
 #include "fs/FileUtils.h"

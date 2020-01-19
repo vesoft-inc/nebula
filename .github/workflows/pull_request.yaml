@@ -5,6 +5,7 @@ on:
     types: [synchronize, reopened, labeled]
     branches:
       - master
+      - 'v[0-9]+.*'
 
 jobs:
   lint:
@@ -30,11 +31,11 @@ jobs:
           - centos7
           - ubuntu1804
         compiler:
-          - gcc
-          - clang
+          - gcc-7.5
+          - clang-8
         exclude:
           - tag: centos7
-            compiler: clang
+            compiler: clang-8
     container:
       image: vesoft/nebula-dev:${{ matrix.tag }}
       env:
@@ -53,23 +54,45 @@ jobs:
         run: |
           [ -f "$CCACHE_DIR/ccache.conf" ] || cp ci/ccache.conf "$CCACHE_DIR"
           [ -d build/ ] && rm -rf build/* || mkdir -p build
-      - name: CMake with gcc
-        if: matrix.compiler == 'gcc' && steps.ignore_docs.outputs.num_source_files != 0
-        run: cd build && cmake ..
-      - name: CMake with clang
-        if: matrix.compiler == 'clang' && steps.ignore_docs.outputs.num_source_files != 0
-        run: cd build && cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DNEBULA_CLANG_USE_GCC_TOOLCHAIN=/opt/vesoft/toolset/gcc/7.5.0 ..
+      - name: CMake with gcc-7.5
+        if: matrix.compiler == 'gcc-7.5' && steps.ignore_docs.outputs.num_source_files != 0
+        run: |
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+      - name: CMake with clang-8
+        if: matrix.compiler == 'clang-8' && steps.ignore_docs.outputs.num_source_files != 0
+        run: |
+          cd build
+          cmake \
+            -DCMAKE_CXX_COMPILER=clang++-8 \
+            -DCMAKE_C_COMPILER=clang-8 \
+            -DENABLE_ASAN=on \
+            -DNEBULA_CLANG_USE_GCC_TOOLCHAIN=/opt/vesoft/toolset/gcc/7.5.0 \
+            ..
       - name: Make
         if: steps.ignore_docs.outputs.num_source_files != 0
         run: cd build && make -j $(nproc)
       - name: CTest with multiple threads
         if: steps.ignore_docs.outputs.num_source_files != 0
         timeout-minutes: 15
-        run: cd build && ctest -j 6 --timeout 300 --output-on-failure --rerun-failed
+        run: |
+          cd build
+          ctest \
+            -j 6 \
+            --timeout 300 \
+            --output-on-failure \
+            --rerun-failed
       - name: CTest with single thread
         if: failure() && steps.ignore_docs.outputs.num_source_files != 0
         timeout-minutes: 30
-        run: cd build && ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer ASAN_OPTIONS=fast_unwind_on_malloc=0 ctest --timeout 300 --output-on-failure --rerun-failed
+        run: |
+          cd build
+          ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer \
+          ASAN_OPTIONS=fast_unwind_on_malloc=0 \
+          ctest \
+            --timeout 300 \
+            --output-on-failure \
+            --rerun-failed
       - name: Cleanup
         if: always()
         run: rm -rf build
