@@ -11,8 +11,20 @@ namespace meta {
 
 void DropTagProcessor::process(const cpp2::DropTagReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
+    GraphSpaceID spaceId = req.get_space_id();
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
-    auto ret = getTagKeys(req.get_space_id(), req.get_tag_name());
+    TagID tagId;
+    auto indexKey = MetaServiceUtils::indexTagKey(spaceId, req.get_tag_name());
+    auto iRet = doGet(indexKey);
+    if (iRet.ok()) {
+        tagId = *reinterpret_cast<const TagID *>(iRet.value().data());
+        resp_.set_id(to(tagId, EntryType::TAG));
+    } else {
+        resp_.set_code(to(iRet.status()));
+        onFinished();
+        return;
+    }
+    auto ret = getTagKeys(req.get_space_id(), tagId);
     if (!ret.ok()) {
         LOG(ERROR) << "Drop Tag Failed : " << req.get_tag_name() << " not found";
         resp_.set_code(
@@ -20,25 +32,15 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
         onFinished();
         return;
     }
+    auto keys = std::move(ret.value());
+    keys.emplace_back(indexKey);
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     LOG(INFO) << "Drop Tag " << req.get_tag_name();
-    doSyncMultiRemoveAndUpdate(std::move(ret.value()));
+    doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 
-StatusOr<std::vector<std::string>> DropTagProcessor::getTagKeys(GraphSpaceID id,
-                                                                const std::string& tagName) {
-    auto indexKey = MetaServiceUtils::indexTagKey(id, tagName);
+StatusOr<std::vector<std::string>> DropTagProcessor::getTagKeys(GraphSpaceID id, TagID tagId) {
     std::vector<std::string> keys;
-    TagID tagId;
-    auto ret = doGet(indexKey);
-    if (ret.ok()) {
-        tagId = *reinterpret_cast<const TagID *>(ret.value().data());
-        resp_.set_id(to(tagId, EntryType::TAG));
-        keys.emplace_back(indexKey);
-    } else {
-        return Status::Error("No Tag!");
-    }
-
     auto key = MetaServiceUtils::schemaTagPrefix(id, tagId);
     auto iterRet = doPrefix(key);
     if (!iterRet.ok()) {
