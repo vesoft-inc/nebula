@@ -71,9 +71,9 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
     }
 
     // step 5 : create checkpoint for meta server.
-    auto meteRet = kvstore_->createCheckpoint(kDefaultSpaceId, snapshot);
-    if (meteRet != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Create snapshot failed on meta server" << snapshot;
+    auto ret = kvstore_->createCheckpoint(kDefaultSpaceId, snapshot);
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
+        LOG(ERROR) << "Create snapshot failed on meta server" << snapshot << ", ErrorCode is " << ret;
         resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
         onFinished();
         return;

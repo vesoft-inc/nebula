@@ -132,7 +132,7 @@ bool BalancePlan::saveInStore(bool onlyPlan) {
             if (kvstore::ResultCode::SUCCEEDED == code) {
                 ret = true;
             } else {
-                LOG(ERROR) << "Can't write the kvstore, ret = " << static_cast<int32_t>(code);
+                LOG(ERROR) << "Can't write the kvstore, ErrorCode is " << static_cast<int32_t>(code);
             }
             baton.post();
         });
@@ -147,8 +147,8 @@ bool BalancePlan::recovery(bool resume) {
         const auto& prefix = BalanceTask::prefix(id_);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            LOG(ERROR) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
+        if (kvstore::ResultCode::SUCCEEDED != ret) {
+            LOG(ERROR) << "Can't access kvstore, ErrorCode is " << static_cast<int32_t>(ret);
             return false;
         }
         while (iter->valid()) {

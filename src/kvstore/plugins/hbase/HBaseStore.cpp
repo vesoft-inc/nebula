@@ -244,12 +244,12 @@ ResultCode HBaseStore::get(GraphSpaceID spaceId,
     auto tableName = this->spaceIdToTableName(spaceId);
     auto rowKey = this->getRowKey(key);
     KVMap data;
-    ResultCode code = client_->get(tableName, rowKey, data);
-    if (code == ResultCode::SUCCEEDED) {
+    ResultCode ret_code = client_->get(tableName, rowKey, data);
+    if (ResultCode::SUCCEEDED == ret_code) {
         *value = this->encode(spaceId, key, data);
-    } else if (code == ResultCode::ERR_KEY_NOT_FOUND) {
+    } else if (ResultCode::ERR_KEY_NOT_FOUND == ret_code) {
         LOG(ERROR) << "Get: " << key << " Not Found";
-    } else if (code == ResultCode::ERR_IO_ERROR) {
+    } else if (ResultCode::ERR_IO_ERROR == ret_code) {
         LOG(ERROR) << "Get Failed: " << key << ", the HBase I/O error.";
     }
     return code;

@@ -39,10 +39,10 @@ Status ListHostsProcessor::allHostsWithStatus() {
     const auto& hostPrefix = MetaServiceUtils::hostPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &iter);
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "List Hosts Failed: No hosts";
+    if (kvstore::ResultCode::SUCCEEDED != kvRet) {
+        LOG(ERROR) << "List Hosts Failed: No hosts, ErrorCode is " << kvRet;
         resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
-        return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(kvRet));
+        return Status::Error("Can't access kvstore, ErrorCode is %d", static_cast<int32_t>(kvRet));
     }
 
     auto now = time::WallClock::fastNowInMilliSec();
@@ -67,10 +67,10 @@ Status ListHostsProcessor::allHostsWithStatus() {
 
     const auto& leaderPrefix = MetaServiceUtils::leaderPrefix();
     kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, leaderPrefix, &iter);
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "List Hosts Failed: No leaders";
+    if (kvstore::ResultCode::SUCCEEDED != kvRet) {
+        LOG(ERROR) << "List Hosts Failed: No leaders, ErrorCode is " << kvRet;
         resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
-        return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(kvRet));
+        return Status::Error("Can't access kvstore, ErrorCode is ", static_cast<int32_t>(kvRet));
     }
 
     // get hosts which have send heartbeat recently
@@ -99,10 +99,10 @@ Status ListHostsProcessor::allHostsWithStatus() {
         std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
         const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);
         kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
-        if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-            LOG(ERROR) << "List Hosts Failed: No partitions";
+        if (kvstore::ResultCode::SUCCEEDED != kvRet) {
+            LOG(ERROR) << "List Hosts Failed: No partitions, ErrorCode is " << kvRet;
             resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-            return Status::Error("Can't find any partitions");
+            return Status::Error("Can't find any partitions, ErrorCode is %d" , kvRet);
         }
         while (iter->valid()) {
             PartitionID partId = MetaServiceUtils::parsePartKeyPartId(iter->key());
@@ -134,8 +134,8 @@ Status ListHostsProcessor::allHostsWithStatus() {
                                    kDefaultPartId,
                                    std::move(removeHostsKey),
                                    [] (kvstore::ResultCode code) {
-                if (code != kvstore::ResultCode::SUCCEEDED) {
-                    LOG(ERROR) << "Async remove long time offline hosts failed: " << code;
+                if (kvstore::ResultCode::SUCCEEDED != code) {
+                    LOG(ERROR) << "Async remove long time offline hosts failed, ErrorCode is " << code;
                 }
             });
     }

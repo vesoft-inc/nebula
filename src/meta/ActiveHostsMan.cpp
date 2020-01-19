@@ -42,7 +42,7 @@ std::vector<HostAddr> ActiveHostsMan::getActiveHosts(kvstore::KVStore* kv, int32
     const auto& prefix = MetaServiceUtils::hostPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
         return hosts;
     }
     int64_t threshold = (expiredTTL == 0 ? FLAGS_expired_threshold_sec : expiredTTL) * 1000;
@@ -86,7 +86,7 @@ int64_t LastUpdateTimeMan::get(kvstore::KVStore* kv) {
     auto key = MetaServiceUtils::lastUpdateTimeKey();
     std::string val;
     auto ret = kv->get(kDefaultSpaceId, kDefaultPartId, key, &val);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
         return *reinterpret_cast<const int64_t*>(val.data());
     }
     return 0;

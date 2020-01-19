@@ -15,7 +15,7 @@ void ListSnapshotsProcessor::process(const cpp2::ListSnapshotsReq&) {
     auto prefix = MetaServiceUtils::snapshotPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
         resp_.set_code(to(ret));
         onFinished();
         return;

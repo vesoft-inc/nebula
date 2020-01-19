@@ -322,8 +322,8 @@ std::string RocksEngine::partKey(PartitionID partId) {
 
 
 void RocksEngine::addPart(PartitionID partId) {
-    auto ret = put(partKey(partId), "");
-    if (ret == ResultCode::SUCCEEDED) {
+    auto ret_code = put(partKey(partId), "");
+    if (ResultCode::SUCCEEDED != ret_code) {
         partsNum_++;
         CHECK_GE(partsNum_, 0);
     }

@@ -142,7 +142,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
     auto prefix = MetaServiceUtils::partPrefix(spaceID_);
     auto ret = kvstore_->prefix(0, 0, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Fetch Parts Failed";
+        LOG(ERROR) << "Fetch Parts Failed, ErrorCode is " << ret;
         return false;
     }
 

@@ -18,8 +18,8 @@ void ListEdgeIndexesProcessor::process(const cpp2::ListEdgeIndexesReq& req) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     resp_.set_code(to(ret));
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "List Edge Index Failed: SpaceID " << req.get_space_id();
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
+        LOG(ERROR) << "List Edge Index Failed: SpaceID " << req.get_space_id() << ", ErrorCode is " << ret;
         onFinished();
         return;
     }

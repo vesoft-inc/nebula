@@ -224,7 +224,7 @@ bool BalanceTask::saveInStore() {
             if (kvstore::ResultCode::SUCCEEDED == code) {
                 ret = true;
             } else {
-                LOG(INFO) << taskIdStr_ << "Can't persist task!";
+                LOG(INFO) << taskIdStr_ << "Can't persist task!, ErrorCode is " << code;
             }
             baton.post();
         });

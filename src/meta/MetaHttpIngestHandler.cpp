@@ -112,8 +112,8 @@ bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
     static const GraphSpaceID metaSpaceId = 0;
     static const PartitionID  metaPartId = 0;
     auto ret = kvstore_->prefix(metaSpaceId, metaPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Fetch Parts Failed";
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
+        LOG(ERROR) << "Fetch Parts Failed, ErrorCode is " << ret;
         return false;
     }
 

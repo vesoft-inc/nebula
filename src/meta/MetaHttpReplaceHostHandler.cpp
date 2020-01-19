@@ -122,8 +122,8 @@ bool MetaHttpReplaceHostHandler::replaceHost(IPv4 ipv4From, IPv4 ipv4To) {
     const auto& spacePrefix = MetaServiceUtils::spacePrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, spacePrefix, &iter);
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        errMsg_ = folly::stringPrintf("can't get space prefix=%s", spacePrefix.c_str());
+    if (kvstore::ResultCode::SUCCEEDED != kvRet) {
+        errMsg_ = folly::stringPrintf("can't get space prefix=%s, ErrorCode is %d", spacePrefix.c_str(), kvRet);
         LOG(ERROR) << errMsg_;
         return false;
     }
@@ -140,8 +140,8 @@ bool MetaHttpReplaceHostHandler::replaceHost(IPv4 ipv4From, IPv4 ipv4To) {
     for (const auto& spaceId : allSpaceId) {
         const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);
         kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
-        if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-            errMsg_ = folly::stringPrintf("can't get partPrefix=%s", partPrefix.c_str());
+        if (kvstore::ResultCode::SUCCEEDED != kvRet) {
+            errMsg_ = folly::stringPrintf("can't get partPrefix=%s, ErrorCode is %d", partPrefix.c_str(), kvRet);
             LOG(ERROR) << errMsg_;
             return false;
         }

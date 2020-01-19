@@ -22,7 +22,7 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
                              MetaServiceUtils::snapshotKey(snapshot),
                              &val);
 
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
         LOG(ERROR) << "No snapshots found";
         resp_.set_code(to(ret));
         onFinished();
@@ -56,10 +56,10 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
         return;
     }
 
-    auto dmRet = kvstore_->dropCheckpoint(kDefaultSpaceId, snapshot);
+    auto ret = kvstore_->dropCheckpoint(kDefaultSpaceId, snapshot);
     // TODO sky : need remove meta checkpoint from slave hosts.
-    if (dmRet != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Drop snapshot error on meta engine";
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
+        LOG(ERROR) << "Drop snapshot error on meta engine, ErrorCode is " << ret;
         // Need update the snapshot status to invalid, maybe storage engines drop done.
         data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
                           MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));

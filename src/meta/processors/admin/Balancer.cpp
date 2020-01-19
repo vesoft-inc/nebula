@@ -76,8 +76,8 @@ bool Balancer::recovery() {
         const auto& prefix = BalancePlan::prefix();
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            LOG(ERROR) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
+        if (kvstore::ResultCode::SUCCEEDED != ret) {
+            LOG(ERROR) << "Can't access kvstore, ErrorCode is " << static_cast<int32_t>(ret);
             return false;
         }
         std::vector<int64_t> corruptedPlans;
@@ -117,7 +117,8 @@ bool Balancer::getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCo
     auto prefix = MetaServiceUtils::spacePrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
+        LOG(ERROR) << "Can't Get all spaces, ErrorCode is " << static_cast<int32_t>(ret);
         retCode = ret;
         return false;
     }
@@ -299,8 +300,8 @@ void Balancer::getHostParts(GraphSpaceID spaceId,
     auto prefix = MetaServiceUtils::partPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId;
+    if (kvstore::ResultCode::SUCCEEDED != ret ) {
+        LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId << " , ErrorCode is " << ret;
         return;
     }
     while (iter->valid()) {
@@ -318,8 +319,8 @@ void Balancer::getHostParts(GraphSpaceID spaceId,
     auto key = MetaServiceUtils::spaceKey(spaceId);
     std::string value;
     auto code = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &value);
-    if (code != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId;
+    if (kvstore::ResultCode::SUCCEEDED != code ) {
+        LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId << " , ErrorCode is " << code;
         return;
     }
     auto properties = MetaServiceUtils::parseSpace(value);
@@ -391,7 +392,7 @@ cpp2::ErrorCode Balancer::leaderBalance() {
     std::vector<GraphSpaceID> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
-        LOG(ERROR) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
+        LOG(ERROR) << "Can't access kvstore, ErrorCode is " << static_cast<int32_t>(ret);
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
 
@@ -445,8 +446,8 @@ Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spac
         auto prefix = MetaServiceUtils::partPrefix(spaceId);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId;
+        if (kvstore::ResultCode::SUCCEEDED != ret) {
+            LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId << " , ErrorCode is " << ret;
             return leaderHostParts;
         }
         while (iter->valid()) {

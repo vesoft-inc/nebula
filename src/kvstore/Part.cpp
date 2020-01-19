@@ -42,9 +42,9 @@ Part::Part(GraphSpaceID spaceId,
 
 std::pair<LogID, TermID> Part::lastCommittedLogId() {
     std::string val;
-    ResultCode res = engine_->get(NebulaKeyUtils::systemCommitKey(partId_), &val);
-    if (res != ResultCode::SUCCEEDED) {
-        LOG(INFO) << idStr_ << "Cannot fetch the last committed log id from the storage engine";
+    ResultCode ret_code = engine_->get(NebulaKeyUtils::systemCommitKey(partId_), &val);
+    if (ResultCode::SUCCEEDED != ret_code) {
+        LOG(INFO) << idStr_ << "Cannot fetch the last committed log id from the storage engine, ErrorCode is " << ret_code;
         return std::make_pair(0, 0);
     }
     CHECK_EQ(val.size(), sizeof(LogID) + sizeof(TermID));
@@ -213,8 +213,9 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
         case OP_PUT: {
             auto pieces = decodeMultiValues(log);
             DCHECK_EQ(2, pieces.size());
-            if (batch->put(pieces[0], pieces[1]) != ResultCode::SUCCEEDED) {
-                LOG(ERROR) << idStr_ << "Failed to call WriteBatch::put()";
+            auto ret_code = batch->put(pieces[0], pieces[1]);
+            if (ResultCode::SUCCEEDED != ret_code ) {
+                LOG(ERROR) << idStr_ << "Failed to call WriteBatch::put(), ErrorCode is " << ret_code;
                 return false;
             }
             break;
@@ -224,8 +225,9 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             // Make the number of values are an even number
             DCHECK_EQ((kvs.size() + 1) / 2, kvs.size() / 2);
             for (size_t i = 0; i < kvs.size(); i += 2) {
-                if (batch->put(kvs[i], kvs[i + 1]) != ResultCode::SUCCEEDED) {
-                    LOG(ERROR) << idStr_ << "Failed to call WriteBatch::put()";
+                auto ret_code = batch->put(kvs[i], kvs[i + 1]); 
+                if (ResultCode::SUCCEEDED != ret_code) {
+                    LOG(ERROR) << idStr_ << "Failed to call WriteBatch::put(), ErrorCode is "<< ret_code;
                     return false;
                 }
             }
@@ -233,17 +235,19 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
         }
         case OP_REMOVE: {
             auto key = decodeSingleValue(log);
-            if (batch->remove(key) != ResultCode::SUCCEEDED) {
-                LOG(ERROR) << idStr_ << "Failed to call WriteBatch::remove()";
+            auto ret_code = batch->remove(key);
+            if (ResultCode::SUCCEEDED != ret_code) {
+                LOG(ERROR) << idStr_ << "Failed to call WriteBatch::remove(), ErrorCode is "<< ret_code;
                 return false;
             }
             break;
         }
         case OP_MULTI_REMOVE: {
             auto keys = decodeMultiValues(log);
-            for (auto k : keys) {
-                if (batch->remove(k) != ResultCode::SUCCEEDED) {
-                    LOG(ERROR) << idStr_ << "Failed to call WriteBatch::remove()";
+            for (auto key : keys) {
+                auto ret_code = batch->remove(key);
+                if (ResultCode::SUCCEEDED != ret_code) {
+                    LOG(ERROR) << idStr_ << "Failed to call WriteBatch::remove(), ErrorCode is "<< ret_code;
                     return false;
                 }
             }
@@ -251,8 +255,9 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
         }
         case OP_REMOVE_PREFIX: {
             auto prefix = decodeSingleValue(log);
-            if (batch->removePrefix(prefix) != ResultCode::SUCCEEDED) {
-                LOG(ERROR) << idStr_ << "Failed to call WriteBatch::removePrefix()";
+            auto ret_code = batch->removePrefix(prefix);
+            if (ResultCode::SUCCEEDED != ret_code) {
+                LOG(ERROR) << idStr_ << "Failed to call WriteBatch::removePrefix(), ErrorCode is "<< ret_code;
                 return false;
             }
             break;
@@ -260,8 +265,9 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
         case OP_REMOVE_RANGE: {
             auto range = decodeMultiValues(log);
             DCHECK_EQ(2, range.size());
-            if (batch->removeRange(range[0], range[1]) != ResultCode::SUCCEEDED) {
-                LOG(ERROR) << idStr_ << "Failed to call WriteBatch::removeRange()";
+            auto ret_code = batch->removeRange(range[0], range[1]);
+            if (ResultCode::SUCCEEDED != ret_code) {
+                LOG(ERROR) << idStr_ << "Failed to call WriteBatch::removeRange(), ErrorCode is " << ret_code;
                 return false;
             }
             break;
@@ -269,16 +275,16 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
         case OP_BATCH_WRITE: {
             auto data = decodeBatchValue(log);
             for (auto& op : data) {
-                ResultCode code = ResultCode::SUCCEEDED;
+                ResultCode ret_code = ResultCode::SUCCEEDED;
                 if (op.first == BatchLogType::OP_BATCH_PUT) {
-                    code = batch->put(op.second.first, op.second.second);
+                    ret_code = batch->put(op.second.first, op.second.second);
                 } else if (op.first == BatchLogType::OP_BATCH_REMOVE) {
-                    code = batch->remove(op.second.first);
+                    ret_code = batch->remove(op.second.first);
                 } else if (op.first == BatchLogType::OP_BATCH_REMOVE_RANGE) {
-                    code = batch->removeRange(op.second.first, op.second.second);
+                    ret_code = batch->removeRange(op.second.first, op.second.second);
                 }
-                if (code != ResultCode::SUCCEEDED) {
-                    LOG(ERROR) << idStr_ << "Failed to call WriteBatch";
+                if (ret_code != ResultCode::SUCCEEDED) {
+                    LOG(ERROR) << idStr_ << "Failed to call WriteBatch, ErrorCode is "<< ret_code;
                     return false;
                 }
             }
@@ -317,8 +323,9 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
     }
 
     if (lastId >= 0) {
-        if (putCommitMsg(batch.get(), lastId, lastTerm) != ResultCode::SUCCEEDED) {
-            LOG(ERROR) << idStr_ << "Commit msg failed";
+        auto ret_code = putCommitMsg(batch.get(), lastId, lastTerm);
+        if ( ResultCode::SUCCEEDED != ret_code) {
+            LOG(ERROR) << idStr_ << "Commit msg failed, ErrorCode is "<< ret_code;
             return false;
         }
     }
@@ -336,19 +343,23 @@ std::pair<int64_t, int64_t> Part::commitSnapshot(const std::vector<std::string>&
         count++;
         size += row.size();
         auto kv = decodeKV(row);
-        if (ResultCode::SUCCEEDED != batch->put(kv.first, kv.second)) {
-            LOG(ERROR) << idStr_ << "Put failed in commit";
+        auto ret_code = batch->put(kv.first, kv.second);
+        if (ResultCode::SUCCEEDED != ret_code) {
+            LOG(ERROR) << idStr_ << "Put failed in commit, ErrorCode is "<< ret_code;
             return std::make_pair(0, 0);
         }
     }
     if (finished) {
-        if (ResultCode::SUCCEEDED != putCommitMsg(batch.get(), committedLogId, committedLogTerm)) {
-            LOG(ERROR) << idStr_ << "Put failed in commit";
+        auto ret_code = putCommitMsg(batch.get(), committedLogId, committedLogTerm);
+        if (ResultCode::SUCCEEDED != ret_code) {
+            LOG(ERROR) << idStr_ << "Put failed in commit, ErrorCode is " << ret_code;
             return std::make_pair(0, 0);
         }
     }
-    if (ResultCode::SUCCEEDED != engine_->commitBatchWrite(std::move(batch))) {
-        LOG(ERROR) << idStr_ << "Put failed in commit";
+
+    auto ret_code = engine_->commitBatchWrite(std::move(batch));
+    if (ResultCode::SUCCEEDED != ret_code) {
+        LOG(ERROR) << idStr_ << "Put failed in commit, ErrorCode is " << ret_code;
         return std::make_pair(0, 0);
     }
     return std::make_pair(count, size);

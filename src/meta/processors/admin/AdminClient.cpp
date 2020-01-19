@@ -214,10 +214,10 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
     part->sync([this, p = std::move(pro)] (kvstore::ResultCode code) mutable {
         // To avoid dead lock, we call future callback in ioThreadPool_
         folly::via(ioThreadPool_.get(), [code, p = std::move(p)] () mutable {
-            if (code == kvstore::ResultCode::SUCCEEDED) {
+            if (kvstore::ResultCode::SUCCEEDED != code) {
                 p.setValue(Status::OK());
             } else {
-                p.setValue(Status::Error("Access kv failed, code:%d", static_cast<int32_t>(code)));
+                p.setValue(Status::Error("Access kv failed, ErrorCode is %d", static_cast<int32_t>(code)));
             }
         });
     });
@@ -490,7 +490,7 @@ StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, Part
         case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
             return Status::Error("Key Not Found");
         default:
-            LOG(WARNING) << "Get peers failed, error " << static_cast<int32_t>(code);
+            LOG(WARNING) << "Get peers failed, ErrorCode is " << static_cast<int32_t>(code);
             break;
     }
     return Status::Error("Get Failed");

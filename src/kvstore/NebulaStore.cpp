@@ -546,9 +546,9 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
             auto files = nebula::fs::FileUtils::listAllFilesInDir(path.c_str(), true, "*.sst");
             for (auto file : files) {
                 LOG(INFO) << "Ingesting extra file: " << file;
-                auto code = engine->ingest(std::vector<std::string>({file}));
-                if (code != ResultCode::SUCCEEDED) {
-                    return code;
+                auto ret_code = engine->ingest(std::vector<std::string>({file}));
+                if (ResultCode::SUCCEEDED != ret_code) {
+                    return ret_code;
                 }
             }
         }
@@ -566,9 +566,9 @@ ResultCode NebulaStore::setOption(GraphSpaceID spaceId,
     }
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
-        auto code = engine->setOption(configKey, configValue);
-        if (code != ResultCode::SUCCEEDED) {
-            return code;
+        auto ret_code = engine->setOption(configKey, configValue);
+        if ( ResultCode::SUCCEEDED != ret_code ) {
+            return ret_code;
         }
     }
     return ResultCode::SUCCEEDED;
@@ -584,9 +584,9 @@ ResultCode NebulaStore::setDBOption(GraphSpaceID spaceId,
     }
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
-        auto code = engine->setDBOption(configKey, configValue);
-        if (code != ResultCode::SUCCEEDED) {
-            return code;
+        auto ret_code = engine->setDBOption(configKey, configValue);
+        if (ResultCode::SUCCEEDED != ret_code ) {
+            return ret_code;
         }
     }
     return ResultCode::SUCCEEDED;
@@ -604,8 +604,8 @@ ResultCode NebulaStore::compact(GraphSpaceID spaceId) {
     std::vector<std::thread> threads;
     for (auto& engine : space->engines_) {
         threads.emplace_back(std::thread([&engine, &code] {
-            auto ret = engine->compact();
-            if (ret != ResultCode::SUCCEEDED) {
+            auto ret_code = engine->compact();
+            if (ResultCode::SUCCEEDED != ret_code) {
                 code = ret;
             }
         }));
@@ -625,8 +625,8 @@ ResultCode NebulaStore::flush(GraphSpaceID spaceId) {
     }
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
-        auto code = engine->flush();
-        if (code != ResultCode::SUCCEEDED) {
+        auto ret_code = engine->flush();
+        if (ResultCode::SUCCEEDED != ret_code) {
             return code;
         }
     }
@@ -641,9 +641,9 @@ ResultCode NebulaStore::createCheckpoint(GraphSpaceID spaceId, const std::string
 
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
-        auto code = engine->createCheckpoint(name);
-        if (code != ResultCode::SUCCEEDED) {
-            return code;
+        auto ret_code = engine->createCheckpoint(name);
+        if (ResultCode::SUCCEEDED != ret_code) {
+            return ret_code;
         }
         // create wal hard link for all parts
         auto parts = engine->allParts();
@@ -705,21 +705,21 @@ ResultCode NebulaStore::setWriteBlocking(GraphSpaceID spaceId, bool sign) {
             }
             auto p = nebula::value(partRet);
             if (p->isLeader()) {
-                auto ret = ResultCode::SUCCEEDED;
+                auto ret_code = ResultCode::SUCCEEDED;
                 p->setBlocking(sign);
                 if (sign) {
                     folly::Baton<true, std::atomic> baton;
                     p->sync([&ret, &baton] (kvstore::ResultCode code) {
                         if (kvstore::ResultCode::SUCCEEDED != code) {
-                            ret = code;
+                            ret_code = code;
                         }
                         baton.post();
                     });
                     baton.wait();
                 }
-                if (ret != ResultCode::SUCCEEDED) {
+                if (ResultCode::SUCCEEDED != ret_code) {
                     LOG(ERROR) << "Part sync failed. space : " << spaceId << " Part : " << part;
-                    return ret;
+                    return ret_code;
                 }
             }
         }

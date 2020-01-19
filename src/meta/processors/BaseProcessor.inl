@@ -30,8 +30,8 @@ StatusOr<std::unique_ptr<kvstore::KVIterator>>
 BaseProcessor<RESP>::doPrefix(const std::string& key) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, key, &iter);
-    if (code != kvstore::ResultCode::SUCCEEDED) {
-        return Status::Error("Prefix Failed");
+    if (kvstore::ResultCode::SUCCEEDED != code) {
+        return Status::Error("Prefix Failed, ErrorCode is %d", code);
     }
     return std::move(iter);
 }
@@ -47,7 +47,7 @@ StatusOr<std::string> BaseProcessor<RESP>::doGet(const std::string& key) {
         case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
             return Status::Error("Key Not Found");
         default:
-            return Status::Error("Get Failed");
+            return Status::Error("Get Failed, ErrorCode is %d", code);
     }
 }
 
@@ -57,8 +57,8 @@ StatusOr<std::vector<std::string>>
 BaseProcessor<RESP>::doMultiGet(const std::vector<std::string>& keys) {
     std::vector<std::string> values;
     auto code = kvstore_->multiGet(kDefaultSpaceId, kDefaultPartId, keys, &values);
-    if (code != kvstore::ResultCode::SUCCEEDED) {
-        return Status::Error("MultiGet Failed");
+    if (kvstore::ResultCode::SUCCEEDED != code) {
+        return Status::Error("MultiGet Failed, ErrorCode is %d", code);
     }
     return values;
 }
@@ -116,8 +116,8 @@ StatusOr<std::vector<std::string>> BaseProcessor<RESP>::doScan(const std::string
                                                                const std::string& end) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto code = kvstore_->range(kDefaultSpaceId, kDefaultPartId, start, end, &iter);
-    if (code != kvstore::ResultCode::SUCCEEDED) {
-        return Status::Error("Scan Failed");
+    if (kvstore::ResultCode::SUCCEEDED != code) {
+        return Status::Error("Scan Failed, ErrorCode is %d", code);
     }
 
     std::vector<std::string> values;
@@ -135,8 +135,8 @@ StatusOr<std::vector<nebula::cpp2::HostAddr>> BaseProcessor<RESP>::allHosts() {
     const auto& prefix = MetaServiceUtils::hostPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        return Status::Error("Can't find any hosts");
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
+        return Status::Error("Can't find any hosts, ErrorCode is %d", ret);
     }
 
     while (iter->valid()) {
@@ -157,8 +157,8 @@ ErrorOr<cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId() {
     int32_t id;
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, kIdKey, &val);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        if (ret != kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
+        if (kvstore::ResultCode::ERR_KEY_NOT_FOUND != ret) {
             return to(ret);
         }
         id = 1;
@@ -178,7 +178,7 @@ ErrorOr<cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId() {
         baton.post();
     });
     baton.wait();
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
         return to(ret);
     } else {
         return id;

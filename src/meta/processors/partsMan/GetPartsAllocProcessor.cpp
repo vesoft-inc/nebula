@@ -16,7 +16,7 @@ void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     resp_.set_code(to(ret));
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
         onFinished();
         return;
     }

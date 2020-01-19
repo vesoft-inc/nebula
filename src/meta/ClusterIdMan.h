@@ -83,9 +83,9 @@ public:
         if (code == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
             LOG(INFO) << "There is no clusterId existed in kvstore!";
             return 0;
-        } else if (code == kvstore::ResultCode::SUCCEEDED) {
+        } else if (kvstore::ResultCode::SUCCEEDED != code) {
             if (value.size() != sizeof(ClusterID)) {
-                LOG(ERROR) << "Bad clusterId " << value;
+                LOG(ERROR) << "Bad clusterId " << value << ", ErrorCode is " << code;
                 return 0;
             }
             return *reinterpret_cast<const ClusterID*>(value.data());
@@ -107,7 +107,7 @@ public:
         folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(0, 0, std::move(data), [&](kvstore::ResultCode code) {
                                if (code != kvstore::ResultCode::SUCCEEDED) {
-                                   LOG(ERROR) << "Put failed, error "
+                                   LOG(ERROR) << "Put failed, ErrorCode is "
                                               << static_cast<int32_t>(code);
                                     ret = false;
                                } else {

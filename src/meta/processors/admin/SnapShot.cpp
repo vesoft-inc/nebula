@@ -17,7 +17,7 @@ cpp2::ErrorCode Snapshot::createSnapshot(const std::string& name) {
     std::vector<GraphSpaceID> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
-        LOG(ERROR) << "Can't access kvstore, ret = d"
+        LOG(ERROR) << "Can't access kvstore, ErrorCode is "
                    << static_cast<int32_t>(ret);
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
@@ -44,7 +44,7 @@ cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
     std::vector<GraphSpaceID> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
-        LOG(ERROR) << "Can't access kvstore, ret = d"
+        LOG(ERROR) << "Can't access kvstore, ErrorCode is "
                    << static_cast<int32_t>(ret);
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
@@ -64,7 +64,7 @@ bool Snapshot::getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCo
     auto prefix = MetaServiceUtils::spacePrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    if (kvstore::ResultCode::SUCCEEDED != ret) {
         retCode = ret;
         return false;
     }
@@ -80,7 +80,7 @@ cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType sign) {
     std::vector<GraphSpaceID> spaces;
     kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
     if (!getAllSpaces(spaces, ret)) {
-        LOG(ERROR) << "Can't access kvstore, ret = d"
+        LOG(ERROR) << "Can't access kvstore, ErrorCode is "
                    << static_cast<int32_t>(ret);
         return cpp2::ErrorCode::E_STORE_FAILURE;
     }
@@ -102,8 +102,8 @@ Snapshot::getLeaderParts(HostLeaderMap *hostLeaderMap, GraphSpaceID spaceId) {
     auto key = MetaServiceUtils::spaceKey(spaceId);
     std::string value;
     auto code = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &value);
-    if (code != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId;
+    if (vstore::ResultCode::SUCCEEDED != code ) {
+        LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId << ", ErrorCode is " << code;
         return leaderHostParts;
     }
     auto properties = MetaServiceUtils::parseSpace(value);
@@ -115,8 +115,8 @@ Snapshot::getLeaderParts(HostLeaderMap *hostLeaderMap, GraphSpaceID spaceId) {
         auto prefix = MetaServiceUtils::partPrefix(spaceId);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId;
+        if (kvstore::ResultCode::SUCCEEDED != ret) {
+            LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId << " , ErrorCode is " << ret;
             return leaderHostParts;
         }
         // Check the current cluster status, If the number of replica is

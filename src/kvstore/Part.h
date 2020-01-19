@@ -77,10 +77,10 @@ public:
     void reset() {
         LOG(INFO) << idStr_ << "Clean up all wals";
         wal()->reset();
-        ResultCode res = engine_->remove(NebulaKeyUtils::systemCommitKey(partId_));
-        if (res != ResultCode::SUCCEEDED) {
-            LOG(WARNING) << idStr_ << "Remove the committedLogId failed, error "
-                         << static_cast<int32_t>(res);
+        ResultCode ret_code = engine_->remove(NebulaKeyUtils::systemCommitKey(partId_));
+        if (ret_code != ResultCode::SUCCEEDED) {
+            LOG(WARNING) << idStr_ << "Remove the committedLogId failed, ErrorCode "
+                         << static_cast<int32_t>(ret_code);
         }
     }
 
@@ -113,12 +113,14 @@ private:
     void cleanup() override {
         LOG(INFO) << idStr_ << "Clean up all data, just reset the committedLogId!";
         auto batch = engine_->startBatchWrite();
-        if (ResultCode::SUCCEEDED != putCommitMsg(batch.get(), 0, 0)) {
-            LOG(ERROR) << idStr_ << "Put failed in commit";
+        auto ret_code = putCommitMsg(batch.get(), 0, 0);
+        if (ResultCode::SUCCEEDED != ret_code) {
+            LOG(ERROR) << idStr_ << "Put failed in commit, ErrorCode is "<< ret_code;
             return;
         }
-        if (ResultCode::SUCCEEDED != engine_->commitBatchWrite(std::move(batch))) {
-            LOG(ERROR) << idStr_ << "Put failed in commit";
+        auto ret_code = engine_->commitBatchWrite(std::move(batch));
+        if (ResultCode::SUCCEEDED != ret_code) {
+            LOG(ERROR) << idStr_ << "Put failed in commit, ErrorCode is " << ret_code;
             return;
         }
         return;
