@@ -66,7 +66,7 @@ static void checkInvalidRequest(const std::string& url, const std::string& errMs
     ASSERT_EQ(0, request(url).find(errMsg));
 }
 
-TEST(StoragehHttpAdminHandlerTest, TestInvalidRequest) {
+TEST(StoragehHttpAdminHandlerTest, TestInvalidRequests) {
     checkInvalidRequest("/admin", "Space should not be empty");
     checkInvalidRequest("/admin?space=xx", "Op should not be empty");
     checkInvalidRequest("/admin?space=xx&op=yy", "Can't find space xx");

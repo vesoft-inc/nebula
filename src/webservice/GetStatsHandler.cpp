@@ -92,11 +92,13 @@ folly::dynamic GetStatsHandler::getStats() const {
     } else {
         for (auto& sn : statNames_) {
             auto status = StatsManager::readValue(sn);
+            folly::dynamic stat = folly::dynamic::object();
             if (status.ok()) {
-                stats.push_back(folly::dynamic::object(sn, status.value()));
+                stat.insert(sn, status.value());
             } else {
-                stats.push_back(folly::dynamic::object(sn, status.status().toString()));
+                stat.insert(sn, status.status().toString());
             }
+            stats.push_back(std::move(stat));
         }
     }
 

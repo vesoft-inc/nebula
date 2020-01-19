@@ -63,7 +63,7 @@ TEST(FlagsAccessTest, GetSetTest) {
     ASSERT_TRUE(resp.find("crash_test=nullptr") != std::string::npos);
 }
 
-TEST(FlagsAccessTest, SetFlagFailureTest) {
+TEST(FlagsAccessTest, TestSetFlagsFailure) {
     folly::dynamic data = folly::dynamic::object("int64_test", 20)("float_test", 10.0f);
     auto status = putUrl("/flags", data);
     ASSERT_TRUE(status.ok());
