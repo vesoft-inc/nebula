@@ -613,13 +613,21 @@ go_sentence
         auto goBackward = new GoSentence();
         auto step = new StepClause(*$2);
         goBackward->setStepClause(step);
-        auto from = new FromClause(*$3);
+        auto from = new FromClause();
+        auto s = from->copy(*$3);
+        if (!s.ok()) {
+            throw nebula::GraphParser::syntax_error(@2, s.toString());
+        }
         goBackward->setFromClause(from);
         auto overReverse = new OverClause(*$4);
         overReverse->setDirection(OverClause::Direction::kBackward);
         goBackward->setOverClause(overReverse);
         if ($6 != nullptr) {
-            auto where = new WhereClause(*$6);
+            auto where = new WhereClause();
+            s = where->copy(*$6);
+            if (!s.ok()) {
+                throw nebula::GraphParser::syntax_error(@6, s.toString());
+            }
             goBackward->setWhereClause(where);
         }
         if ($7 == nullptr) {
@@ -636,7 +644,11 @@ go_sentence
             auto yield = new YieldClause(cols);
             goBackward->setYieldClause(yield);
         } else {
-            auto yield = new YieldClause(*$7);
+            auto yield = new YieldClause();
+            s = yield->copy(*$7);
+            if (!s.ok()) {
+                throw nebula::GraphParser::syntax_error(@7, s.toString());
+            }
             goBackward->setYieldClause(yield);
         }
 
