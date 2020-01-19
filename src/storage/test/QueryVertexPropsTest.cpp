@@ -190,7 +190,7 @@ TEST(QueryVertexPropsTest, QueryAfterTagAltered) {
     auto schemaMng = TestUtils::mockSchemaMan();
 
     auto spaceId = 0;
-    TagVersion version = std::numeric_limits<int64_t>::max() - 0;
+    TagVersion version = std::numeric_limits<int64_t>::max() / 2 /* in case of overflow */;
 
     {
         LOG(INFO) << "Prepare data...";

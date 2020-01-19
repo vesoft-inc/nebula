@@ -5,7 +5,7 @@ on:
     - cron: '0 18 * * *'
   push:
     branches:
-      - 'v[0-9]+*'
+      - 'v[0-9]+.*'
     paths-ignore:
       - 'docs/**'
       - '**.md'
@@ -32,7 +32,7 @@ jobs:
         id: version
         run: |
           [[ "${{ github.event_name }}" == "push" ]] && \
-            echo "::set-output name=version::${{ github.ref }}" || \
+            echo "::set-output name=version::$(cut -d/ -f3 <<< ${{ github.ref }})" || \
             echo "::set-output name=version::nightly"
       - uses: actions/upload-artifact@v1
         with:
