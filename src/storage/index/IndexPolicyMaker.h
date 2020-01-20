@@ -10,6 +10,7 @@
 #include "meta/SchemaManager.h"
 #include "meta/IndexManager.h"
 #include "storage/CommonUtils.h"
+#include "storage/BaseProcessor.h"
 
 namespace nebula {
 namespace storage {

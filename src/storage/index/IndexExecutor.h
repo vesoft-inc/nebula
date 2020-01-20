@@ -7,7 +7,6 @@
 #ifndef STORAGE_INDEXEXECUTOR_H
 #define STORAGE_INDEXEXECUTOR_H
 
-#include "storage/BaseProcessor.h"
 #include "stats/Stats.h"
 #include "storage/index/IndexPolicyMaker.h"
 
@@ -15,8 +14,8 @@ namespace nebula {
 namespace storage {
 
 template<typename RESP>
-class IndexExecutor : public BaseProcessor<RESP>,
-                      public IndexPolicyMaker {
+class IndexExecutor : public BaseProcessor<RESP>
+                    , public IndexPolicyMaker {
 public:
     virtual ~IndexExecutor() = default;
 
@@ -81,7 +80,7 @@ private:
                                    const folly::StringPiece& prop);
 
 protected:
-    GraphSpaceID                           spaceId_{};
+    GraphSpaceID                           spaceId_;
     VertexCache*                           vertexCache_{nullptr};
     std::shared_ptr<SchemaWriter>          schema_{nullptr};
     std::vector<cpp2::VertexIndexData>     vertexRows_;
@@ -89,9 +88,10 @@ protected:
 
 private:
     int                                    rowNum_{0};
-    int32_t                                tagOrEdge_{};
+    int32_t                                tagOrEdge_;
     bool                                   isEdgeIndex_{false};
     int32_t                                vColNum_{0};
+    std::vector<PropContext>               props_;
     std::map<std::string, nebula::cpp2::SupportedType> indexCols_;
 };
 

@@ -64,6 +64,7 @@ cpp2::ErrorCode IndexExecutor<RESP>::checkIndex(IndexID indexId) {
 
 template <typename RESP>
 cpp2::ErrorCode IndexExecutor<RESP>::checkReturnColumns(const std::vector<std::string> &cols) {
+    int32_t index = 0;
     if (!cols.empty()) {
         schema_ = std::make_shared<SchemaWriter>();
         auto schema = isEdgeIndex_ ?
@@ -75,10 +76,36 @@ cpp2::ErrorCode IndexExecutor<RESP>::checkReturnColumns(const std::vector<std::s
             return isEdgeIndex_ ? cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND :
                                   cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
         }
+
+        for (auto i = 0; i < static_cast<int64_t>(schema_->getNumFields()); i++) {
+            PropContext prop;
+            const auto& name = schema_->getFieldName(i);
+            auto ftype = schema_->getFieldType(name);
+            prop.type_ = ftype;
+            prop.retIndex_ = index++;
+            storage::cpp2::PropDef pd;
+            pd.set_name(name);
+            prop.prop_ = std::move(pd);
+            prop.returned_ = true;
+            props_.emplace_back(std::move(prop));
+        }
         for (auto& col : cols) {
             const auto& ftype = schema->getFieldType(col);
             if (UNLIKELY(ftype == CommonConstants::kInvalidValueType())) {
                 return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
+            }
+            /**
+             * Create PropContext for getRowFromReader
+             */
+            {
+                PropContext prop;
+                prop.type_ = ftype;
+                prop.retIndex_ = index++;
+                storage::cpp2::PropDef pd;
+                pd.set_name(col);
+                prop.prop_ = std::move(pd);
+                prop.returned_ = true;
+                props_.emplace_back(std::move(prop));
             }
             schema_->appendCol(col, std::move(ftype).get_type());
         }   // end for
@@ -154,9 +181,6 @@ kvstore::ResultCode IndexExecutor<RESP>::getVertexRow(PartitionID partId,
             auto v = std::move(result).value();
             auto reader = RowReader::getTagPropReader(schemaMan_, v, spaceId_, tagOrEdge_);
             auto row = getRowFromReader(reader.get());
-            if (row.empty()) {
-                return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
-            }
             data->set_props(std::move(row));
             VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagOrEdge_;
             return kvstore::ResultCode::SUCCEEDED;
@@ -177,9 +201,6 @@ kvstore::ResultCode IndexExecutor<RESP>::getVertexRow(PartitionID partId,
                                                   spaceId_,
                                                   tagOrEdge_);
         auto row = getRowFromReader(reader.get());
-        if (row.empty()) {
-            return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
-        }
         data->set_props(std::move(row));
         if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
             vertexCache_->insert(std::make_pair(vId, tagOrEdge_),
@@ -224,9 +245,6 @@ kvstore::ResultCode IndexExecutor<RESP>::getEdgeRow(PartitionID partId,
                                                    spaceId_,
                                                    tagOrEdge_);
         auto row = getRowFromReader(reader.get());
-        if (row.empty()) {
-            return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
-        }
         data->set_props(std::move(row));
     } else {
         VLOG(3) << "Missed partId " << partId
@@ -240,33 +258,9 @@ kvstore::ResultCode IndexExecutor<RESP>::getEdgeRow(PartitionID partId,
 
 template<typename RESP>
 std::string IndexExecutor<RESP>::getRowFromReader(RowReader* reader) {
-    std::string encode;
-    RowWriter writer(schema_);
-    for (auto i = 0; i < static_cast<int64_t>(schema_->getNumFields()); i++) {
-        const auto& name = schema_->getFieldName(i);
-        auto res = RowReader::getPropByName(reader, name);
-        if (!ok(res)) {
-            VLOG(1) << "Skip the bad value for prop " << name;
-            continue;
-        }
-        auto&& v = value(std::move(res));
-        switch (v.which()) {
-            case VAR_INT64:
-                writer << boost::get<int64_t>(v);
-                break;
-            case VAR_DOUBLE:
-                writer << boost::get<double>(v);
-                break;
-            case VAR_BOOL:
-                writer << boost::get<bool>(v);
-                break;
-            case VAR_STR:
-                writer << boost::get<std::string>(v);
-                break;
-            default:
-                LOG(FATAL) << "Unknown VariantType: " << v.which();
-        }  // switch
-    }
+    RowWriter writer;
+    PropsCollector collector(&writer);
+    this->collectProps(reader, props_, &collector);
     return writer.encode();
 }
 
