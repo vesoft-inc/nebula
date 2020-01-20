@@ -33,15 +33,7 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
 
     LOG(INFO) << "Drop Edge Index " << indexName;
     resp_.set_id(to(edgeIndexID.value(), EntryType::INDEX));
-    auto kvRet = doSyncMultiRemove(std::move(keys));
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        resp_.set_code(to(kvRet));
-        onFinished();
-        return;
-    }
-    kvRet = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-    resp_.set_code(to(kvRet));
-    onFinished();
+    doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 
 }  // namespace meta

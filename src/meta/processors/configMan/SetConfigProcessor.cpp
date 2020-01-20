@@ -92,15 +92,8 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
         }
 
         if (!data.empty()) {
-            auto kvRet = doSyncPut(std::move(data));
-            if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-                resp_.set_code(to(kvRet));
-                onFinished();
-                return;
-            }
-            kvRet = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-            resp_.set_code(to(kvRet));
-            onFinished();
+            doSyncPutAndUpdate(std::move(data));
+            return;
         }
         return;
     } while (false);

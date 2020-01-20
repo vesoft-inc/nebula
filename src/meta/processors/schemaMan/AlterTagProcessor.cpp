@@ -73,15 +73,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, version),
                       MetaServiceUtils::schemaTagVal(req.get_tag_name(), schema));
     resp_.set_id(to(tagId, EntryType::TAG));
-    auto kvRet = doSyncPut(std::move(data));
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        resp_.set_code(to(kvRet));
-        onFinished();
-        return;
-    }
-    kvRet = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-    resp_.set_code(to(kvRet));
-    onFinished();
+    doSyncPutAndUpdate(std::move(data));
 }
 
 }  // namespace meta

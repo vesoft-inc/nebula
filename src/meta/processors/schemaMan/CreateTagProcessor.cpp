@@ -130,15 +130,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     LOG(INFO) << "Create Tag " << tagName << ", TagID " << tagId;
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(tagId, EntryType::TAG));
-    auto kvRet = doSyncPut(std::move(data));
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        resp_.set_code(to(kvRet));
-        onFinished();
-        return;
-    }
-    kvRet = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-    resp_.set_code(to(kvRet));
-    onFinished();
+    doSyncPutAndUpdate(std::move(data));
 }
 
 }  // namespace meta

@@ -97,15 +97,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
                       MetaServiceUtils::indexVal(item));
     LOG(INFO) << "Create Edge Index " << indexName << ", edgeIndex " << edgeIndex;
     resp_.set_id(to(edgeIndex, EntryType::INDEX));
-    auto kvRet = doSyncPut(std::move(data));
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        resp_.set_code(to(kvRet));
-        onFinished();
-        return;
-    }
-    kvRet = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-    resp_.set_code(to(kvRet));
-    onFinished();
+    doSyncPutAndUpdate(std::move(data));
 }
 
 }  // namespace meta

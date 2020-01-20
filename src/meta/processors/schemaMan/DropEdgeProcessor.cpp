@@ -23,15 +23,7 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
     }
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     LOG(INFO) << "Drop Edge " << req.get_edge_name();
-    auto kvRet = doSyncMultiRemove(std::move(ret.value()));
-    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
-        resp_.set_code(to(kvRet));
-        onFinished();
-        return;
-    }
-    kvRet = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-    resp_.set_code(to(kvRet));
-    onFinished();
+    doSyncMultiRemoveAndUpdate(std::move(ret.value()));
 }
 
 StatusOr<std::vector<std::string>> DropEdgeProcessor::getEdgeKeys(GraphSpaceID id,
