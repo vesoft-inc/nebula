@@ -22,21 +22,26 @@ jobs:
         compiler:
           - gcc-9.2
           - clang-9
-        exclude:
-          - tag: centos6
-            compiler: clang-9
-          - tag: centos7
-            compiler: clang-9
-          - tag: ubuntu1604
-            compiler: clang-9
     container:
       image: vesoft/nebula-dev:${{ matrix.tag }}
+      env:
+        CCACHE_DIR: /tmp/ccache/
+      options: --mount type=tmpfs,destination=/tmp/ccache,tmpfs-size=1073741824
     steps:
       - uses: actions/checkout@v1
         with:
           fetch-depth: 1
+      - uses: actions/cache@v1
+        if: matrix.tag != "centos6"
+        with:
+          path: /tmp/ccache/
+          key: ${{ matrix.tag }}-${{ matrix.compiler }}-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ matrix.tag }}-${{ matrix.compiler }}-
       - name: Prepare environment
-        run: mkdir -p build
+        run: |
+          cp ci/ccache.conf /tmp/ccache/ccache.conf
+          mkdir -p build
       - name: CMake with gcc-9.2
         if: matrix.compiler == 'gcc-9.2'
         run: |
@@ -53,8 +58,22 @@ jobs:
             -DENABLE_UBSAN=on \
             ..
       - name: Make
-        run: cd build && make -j $(nproc)
-      - name: CTest with single thread
+        run: |
+          cd build
+          make -j $(nproc)
+      - name: CTest with multiple thread
+        timeout-minutes: 40
+        continue-on-error: true
+        run: |
+          cd build
+          ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer \
+          ASAN_OPTIONS=fast_unwind_on_malloc=1 \
+          ctest \
+            -j $(nproc) \
+            --timeout 400 \
+            --output-on-failure
+      - name: CTest with rerun failed option
+        if: failure()
         timeout-minutes: 40
         run: |
           cd build
@@ -62,4 +81,5 @@ jobs:
           ASAN_OPTIONS=fast_unwind_on_malloc=0 \
           ctest \
             --timeout 400 \
+            --rerun-failed \
             --output-on-failure

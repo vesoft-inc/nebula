@@ -73,17 +73,19 @@ jobs:
             ..
       - name: Make
         if: steps.ignore_docs.outputs.num_source_files != 0
-        run: cd build && make -j $(nproc)
+        run: |
+          cd build
+          make -j $(nproc)
       - name: CTest with multiple threads
         if: steps.ignore_docs.outputs.num_source_files != 0
         timeout-minutes: 15
+        continue-on-error: true
         run: |
           cd build
           ctest \
             -j 6 \
             --timeout 400 \
-            --output-on-failure \
-            --rerun-failed
+            --output-on-failure
       - name: CTest with single thread
         if: failure() && steps.ignore_docs.outputs.num_source_files != 0
         timeout-minutes: 30
