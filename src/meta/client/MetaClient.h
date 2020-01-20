@@ -105,6 +105,7 @@ using MetaConfigMap = std::unordered_map<std::pair<cpp2::ConfigModule, std::stri
 
 class MetaChangedListener {
 public:
+    virtual ~MetaChangedListener() = default;
     virtual void onSpaceAdded(GraphSpaceID spaceId) = 0;
     virtual void onSpaceRemoved(GraphSpaceID spaceId) = 0;
     virtual void onSpaceOptionUpdated(GraphSpaceID spaceId,
