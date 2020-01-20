@@ -45,8 +45,8 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     } else {
         std::for_each(req.parts.begin(), req.parts.end(), [&](auto& partEdges){
             auto partId = partEdges.first;
-            auto atomic = [version, partId, edges = std::move(partEdges.second), this]()
-                          -> std::string {
+            const auto &edges = partEdges.second;
+            auto atomic = [&]() -> std::string {
                 return addEdges(version, partId, edges);
             };
             auto callback = [partId, this](kvstore::ResultCode code) {

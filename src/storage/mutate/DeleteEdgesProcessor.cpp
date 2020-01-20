@@ -47,8 +47,8 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
         callingNum_ = req.parts.size();
         std::for_each(req.parts.begin(), req.parts.end(), [&](auto &partEdges) {
             auto partId = partEdges.first;
-            auto atomic = [spaceId, partId, edges = std::move(partEdges.second), this]()
-                          -> std::string {
+            const auto &edges = partEdges.second;
+            auto atomic = [&]() -> std::string {
                 return deleteEdges(spaceId, partId, edges);
             };
             auto callback = [spaceId, partId, this](kvstore::ResultCode code) {
