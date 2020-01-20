@@ -34,6 +34,7 @@ jobs:
           [[ "${{ github.event_name }}" == "push" ]] && \
             echo "::set-output name=version::$(cut -d/ -f3 <<< ${{ github.ref }})" || \
             echo "::set-output name=version::nightly"
+        shell: bash
       - uses: actions/upload-artifact@v1
         with:
           name: ${{ matrix.os }}-${{ steps.version.outputs.version }}
