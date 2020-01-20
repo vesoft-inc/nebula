@@ -11,43 +11,31 @@ DECLARE_bool(enable_vertex_cache);
 
 namespace nebula {
 namespace storage {
+
 template <typename RESP>
-cpp2::ErrorCode IndexExecutor<RESP>::prepareScan(const cpp2::LookUpIndexRequest& req) {
+cpp2::ErrorCode IndexExecutor<RESP>::prepareRequest(const cpp2::LookUpIndexRequest &req) {
     spaceId_ = req.get_space_id();
-    auto ret = policyPrepare(req.get_filter());
+    /**
+     * step 1 , check index meta , and collect index variable-length type of columns.
+     */
+    auto ret = checkIndex(req.get_index_id());
     if (ret != cpp2::ErrorCode::SUCCEEDED) {
         return ret;
     }
-    ret = checkIndex(req.get_index_id());
-    if (ret != cpp2::ErrorCode::SUCCEEDED) {
-        return ret;
-    }
-    policyGenerate();
-    ret = createResultSchema(req.get_return_columns());
-    if (ret != cpp2::ErrorCode::SUCCEEDED) {
-        return ret;
-    }
-    preparePrefix();
+    /**
+     * step 2 , check the return columns, and create schema for row binary.
+     */
+    ret = checkReturnColumns(req.get_return_columns());
     return ret;
 }
 
 template <typename RESP>
-kvstore::ResultCode IndexExecutor<RESP>::performScan(PartitionID part) {
-    kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
-    switch (policyScanType_) {
-        case PolicyScanType::ACCURATE_SCAN : {
-            ret = accurateScan(part);
-            break;
-        }
-        case PolicyScanType::PREFIX_SCAN : {
-            ret = prefixScan(part);
-            break;
-        }
-        case PolicyScanType::SEEK_SCAN : {
-            ret = seekScan(part);
-            break;
-        }
+cpp2::ErrorCode IndexExecutor<RESP>::buildExecutionPlan(const std::string& filter) {
+    auto ret = preparePolicy(filter);
+    if (ret != cpp2::ErrorCode::SUCCEEDED) {
+        return ret;
     }
+    buildPolicy();
     return ret;
 }
 
@@ -68,14 +56,14 @@ cpp2::ErrorCode IndexExecutor<RESP>::checkIndex(IndexID indexId) {
     for (const auto& col : index_->get_fields()) {
         indexCols_[col.get_name()] = col.get_type().get_type();
         if (col.get_type().get_type() == nebula::cpp2::SupportedType::STRING) {
-            vColSize_++;
+            vColNum_++;
         }
     }
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
 template <typename RESP>
-cpp2::ErrorCode IndexExecutor<RESP>::createResultSchema(const std::vector<std::string> &cols) {
+cpp2::ErrorCode IndexExecutor<RESP>::checkReturnColumns(const std::vector<std::string> &cols) {
     if (!cols.empty()) {
         schema_ = std::make_shared<SchemaWriter>();
         auto schema = isEdgeIndex_ ?
@@ -94,46 +82,12 @@ cpp2::ErrorCode IndexExecutor<RESP>::createResultSchema(const std::vector<std::s
             }
             schema_->appendCol(col, std::move(ftype).get_type());
         }   // end for
-    } else {
-        needReturnCols_ = false;
     }
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
 template <typename RESP>
-void IndexExecutor<RESP>::preparePrefix() {
-    prefix_.reserve(256);
-    for (const auto& v : policies_) {
-        prefix_.append(NebulaKeyUtils::encodeVariant(v));
-    }
-}
-
-template <typename RESP>
-kvstore::ResultCode IndexExecutor<RESP>::accurateScan(PartitionID part) {
-    std::string prefix = NebulaKeyUtils::indexPrefix(part, index_->get_index_id())
-                         .append(prefix_);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = this->kvstore_->prefix(spaceId_,
-                                      part,
-                                      prefix,
-                                      &iter);
-    if (ret != nebula::kvstore::SUCCEEDED) {
-        return ret;
-    }
-    while (iter->valid() &&
-           rowCount_ < FLAGS_max_rows_returned_per_lookup) {
-        auto key = iter->key();
-        ret = getDataRow(part, key);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            return ret;
-        }
-        iter->next();
-    }
-    return ret;
-}
-
-template <typename RESP>
-kvstore::ResultCode IndexExecutor<RESP>::prefixScan(PartitionID part) {
+kvstore::ResultCode IndexExecutor<RESP>::executeExecutionPlan(PartitionID part) {
     std::string prefix = NebulaKeyUtils::indexPrefix(part, index_->get_index_id())
                         .append(prefix_);
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -145,9 +99,12 @@ kvstore::ResultCode IndexExecutor<RESP>::prefixScan(PartitionID part) {
         return ret;
     }
     while (iter->valid() &&
-           rowCount_ < FLAGS_max_rows_returned_per_lookup) {
+           rowNum_ < FLAGS_max_rows_returned_per_lookup) {
         auto key = iter->key();
-        if (!conditionsCheck(key)) {
+        /**
+         * Need to filter result with expression if is not accurate scan.
+         */
+        if (isIndexScan_ && !conditionsCheck(key)) {
             iter->next();
             continue;
         }
@@ -160,15 +117,6 @@ kvstore::ResultCode IndexExecutor<RESP>::prefixScan(PartitionID part) {
     return ret;
 }
 
-template <typename RESP>
-kvstore::ResultCode IndexExecutor<RESP>::seekScan(PartitionID part) {
-    /**
-     * TODO sky : seekScan used conditional comparison with greater than , etc.
-     *            now reuse the prefixScan.
-     */
-    return prefixScan(part);
-}
-
 template<typename RESP>
 kvstore::ResultCode IndexExecutor<RESP>::getDataRow(PartitionID partId,
                                                     const folly::StringPiece& key) {
@@ -178,14 +126,14 @@ kvstore::ResultCode IndexExecutor<RESP>::getDataRow(PartitionID partId,
         ret = getEdgeRow(partId, key, &data);
         if (ret == kvstore::SUCCEEDED) {
             edgeRows_.emplace_back(std::move(data));
-            ++rowCount_;
+            ++rowNum_;
         }
     } else {
         cpp2::VertexIndexData data;
         ret = getVertexRow(partId, key, &data);
         if (ret == kvstore::SUCCEEDED) {
             vertexRows_.emplace_back(std::move(data));
-            ++rowCount_;
+            ++rowNum_;
         }
     }
     return ret;
@@ -197,7 +145,7 @@ kvstore::ResultCode IndexExecutor<RESP>::getVertexRow(PartitionID partId,
                                                       cpp2::VertexIndexData* data) {
     auto vId = NebulaKeyUtils::getIndexVertexID(key);
     data->set_vertex_id(vId);
-    if (!needReturnCols_) {
+    if (schema_ == nullptr) {
         return kvstore::ResultCode::SUCCEEDED;
     }
     if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
@@ -257,8 +205,8 @@ kvstore::ResultCode IndexExecutor<RESP>::getEdgeRow(PartitionID partId,
     edge.set_edge_type(tagOrEdge_);
     edge.set_ranking(rank);
     edge.set_dst(dst);
-    data->set_key(std::move(edge));
-    if (!needReturnCols_) {
+    data->set_key(edge);
+    if (schema_ == nullptr) {
         return kvstore::ResultCode::SUCCEEDED;
     }
     auto prefix = NebulaKeyUtils::edgePrefix(partId, src, tagOrEdge_, rank, dst);
@@ -348,8 +296,8 @@ folly::StringPiece IndexExecutor<RESP>::getIndexVal(const folly::StringPiece& ke
                                      sizeof(VertexID) * 2 + sizeof(EdgeRanking);
     using nebula::cpp2::SupportedType;
     size_t offset = sizeof(PartitionID) + sizeof(IndexID);
-    int32_t len = 0;
-    int32_t vCount = vColSize_;
+    size_t len = 0;
+    int32_t vCount = vColNum_;
     for (const auto& col : index_->get_fields()) {
         switch (col.get_type().get_type()) {
             case SupportedType::BOOL: {

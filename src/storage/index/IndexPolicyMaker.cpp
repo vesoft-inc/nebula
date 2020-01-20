@@ -5,10 +5,25 @@
  */
 
 #include "storage/index/IndexPolicyMaker.h"
+#include "common/base/NebulaKeyUtils.h"
 
 namespace nebula {
 namespace storage {
-cpp2::ErrorCode IndexPolicyMaker::policyPrepare(const std::string& filter) {
+cpp2::ErrorCode IndexPolicyMaker::preparePolicy(const std::string &filter) {
+    auto ret = decodeExpression(filter);
+    if (ret != cpp2::ErrorCode::SUCCEEDED) {
+        return ret;
+    }
+    /**
+     * Traverse the expression tree and
+     * collect the relationship for execution policies.
+     */
+    ret = traversalExpression(exp_.get());
+    return ret;
+}
+
+cpp2::ErrorCode IndexPolicyMaker::decodeExpression(const std::string &filter) {
+    cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
     auto expRet = Expression::decode(filter);
     if (!expRet.ok()) {
         VLOG(1) << "Can't decode the filter " << filter;
@@ -23,31 +38,27 @@ cpp2::ErrorCode IndexPolicyMaker::policyPrepare(const std::string& filter) {
     if (!status.ok()) {
         return cpp2::ErrorCode::E_INVALID_FILTER;
     }
-    auto ret = prepareExpr(exp_.get());
-    return ret;
+    return code;
 }
 
-void IndexPolicyMaker::policyGenerate() {
-    if (optimizedPolicy_) {
-        initPolicy();
-    }
-}
-
-void IndexPolicyMaker::initPolicy() {
+void IndexPolicyMaker::buildPolicy() {
+    prefix_.reserve(256);
     decltype(operatorList_.size()) hintNum = 0;
     bool hasStr = false;
     for (auto& col : index_->get_fields()) {
         auto it = std::find_if(operatorList_.begin(), operatorList_.end(),
-                               [&col] (const auto& op) {
-                                   return col.get_name() == op.first.first;
+                               [&col] (const auto& tup) {
+                                   return col.get_name() == std::get<0>(tup);;
                                });
         if (it != operatorList_.end()) {
-            if (it->second) {
+            if (std::get<2>(*it) == RelationalExpression::Operator::EQ) {
+                /**
+                 * TODO sky : drop the sub-exp from root expression tree.
+                 */
                 hintNum++;
-                auto v = it->first.second;
+                auto v = std::get<1>(*it);
                 hasStr = (v.which() == VAR_STR);
-                policyScanType_ = PolicyScanType::PREFIX_SCAN;
-                policies_.emplace_back(std::move(v));
+                prefix_.append(NebulaKeyUtils::encodeVariant(v));
             } else {
                 break;
             }
@@ -56,15 +67,15 @@ void IndexPolicyMaker::initPolicy() {
         }
     }
     if (hintNum == operatorList_.size() && !hasStr) {
-        /**
-         * TODO sky : drop the sub-exp from root expression tree.
-         */
-        policyScanType_ = PolicyScanType::ACCURATE_SCAN;
+        isIndexScan_ = false;
     }
 }
 
-cpp2::ErrorCode IndexPolicyMaker::prepareExpr(const Expression* expr) {
+cpp2::ErrorCode IndexPolicyMaker::traversalExpression(const Expression *expr) {
     cpp2::ErrorCode code = cpp2::ErrorCode::SUCCEEDED;
+    if (!optimizedPolicy_) {
+        return code;
+    }
     Getters getters;
     switch (expr->kind()) {
         case nebula::Expression::kLogical : {
@@ -76,9 +87,9 @@ cpp2::ErrorCode IndexPolicyMaker::prepareExpr(const Expression* expr) {
                 return code;
             }
             auto* left = lExpr->left();
-            prepareExpr(left);
+            traversalExpression(left);
             auto* right = lExpr->right();
-            prepareExpr(right);
+            traversalExpression(right);
             break;
         }
         case nebula::Expression::kRelational : {
@@ -108,26 +119,16 @@ cpp2::ErrorCode IndexPolicyMaker::prepareExpr(const Expression* expr) {
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(right);
                 prop = *aExpr->prop();
             } else {
-                prepareExpr(left);
-                prepareExpr(right);
+                traversalExpression(left);
+                traversalExpression(right);
                 break;
             }
-            operatorList_.emplace_back(std::make_pair(std::move(prop), std::move(v)),
-                                       rExpr->op() == RelationalExpression::Operator::EQ);
+            operatorList_.emplace_back(std::make_tuple(std::move(prop), std::move(v), rExpr->op()));
             break;
         }
         case nebula::Expression::kFunctionCall : {
-            /**
-             * TODO sky : Parse the prop name from function expresion,
-             *            because only check the 'Operator::EQ' ,
-             *            so the prop name can be ignore.
-             */
-            VariantType v;
-            std::string prop = ".";
-            auto* fExpr = dynamic_cast<const FunctionCallExpression*>(expr);
-            prop.append(*fExpr->name());
-            operatorList_.emplace_back(std::make_pair(std::move(prop), std::move(v)), false);
-            break;
+            optimizedPolicy_ = false;
+            return code;
         }
         default : {
             return cpp2::ErrorCode::E_INVALID_FILTER;

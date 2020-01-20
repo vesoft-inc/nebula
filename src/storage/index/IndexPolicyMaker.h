@@ -14,29 +14,12 @@
 namespace nebula {
 namespace storage {
 
-enum class PolicyScanType : uint8_t {
-    /**
-     * No index column match. seek scan and using expression condition filter.
-     */
-    SEEK_SCAN          = 0x01,
-    /**
-     * Few index column match, index scan in subset.
-     * And using expression condition filter for remaining index column.s
-     */
-    PREFIX_SCAN        = 0x02,
-    /**
-     * accurate scan, Fit all filter conditions. The results are accurate,
-     * so no more filter is needed.
-     */
-    ACCURATE_SCAN      = 0x03,
-};
-
 /**
  * OperatorList used record all scan filters, before create scan policy,
  * need collect all columns and values for prefix string.
- * std::vector<std::pair<col_name, value>, equivalent_scan_or_not>
+ * std::tuple<Column name, Value, Operator>;
  */
-using OperatorList = std::vector<std::pair<std::pair<std::string, VariantType>, bool>>;
+using OperatorItem = std::tuple<std::string, VariantType, RelationalExpression::Operator>;
 
 class IndexPolicyMaker {
 public:
@@ -56,7 +39,7 @@ protected:
      * Param  filter : From encoded string of where clause.
      * Return ErrorCode
      **/
-    cpp2::ErrorCode policyPrepare(const std::string& filter);
+    cpp2::ErrorCode preparePolicy(const std::string &filter);
 
     /**
      * Details Index scan policy generator. Confirm how to generate the scan policy
@@ -64,7 +47,7 @@ protected:
      *         execution policy according to PolicyType.
      *         In this method, it is best to use as many index columns as possible.
      **/
-    void policyGenerate();
+    void buildPolicy();
 
     /**
      * Details Evaluate filter conditions.
@@ -72,24 +55,24 @@ protected:
     bool exprEval(Getters &getters);
 
 private:
-    void initPolicy();
+    cpp2::ErrorCode decodeExpression(const std::string &filter);
 
     /**
      * Details Entry method of expresion traverse.
      */
 
-    cpp2::ErrorCode prepareExpr(const Expression* expr);
+    cpp2::ErrorCode traversalExpression(const Expression *expr);
 
 protected:
     meta::SchemaManager*                     schemaMan_{nullptr};
     meta::IndexManager*                      indexMan_{nullptr};
     std::unique_ptr<ExpressionContext>       expCtx_{nullptr};
     std::unique_ptr<Expression>              exp_{nullptr};
+    std::string                              prefix_;
     std::shared_ptr<nebula::cpp2::IndexItem> index_{nullptr};
-    std::vector<VariantType>                 policies_;
     bool                                     optimizedPolicy_{true};
-    PolicyScanType                           policyScanType_{PolicyScanType::SEEK_SCAN};
-    OperatorList                             operatorList_;
+    bool                                     isIndexScan_{true};
+    std::vector<OperatorItem>                operatorList_;
 };
 }  // namespace storage
 }  // namespace nebula

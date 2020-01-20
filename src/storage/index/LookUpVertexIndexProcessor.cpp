@@ -10,14 +10,29 @@ namespace nebula {
 namespace storage {
 
 void LookUpVertexIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
-    auto ret = prepareScan(req);
+    /**
+     * step 1 : prepare index meta and structure of return columns.
+     */
+    auto ret = prepareRequest(req);
     if (ret != cpp2::ErrorCode::SUCCEEDED) {
         putResultCodes(ret, req.get_parts());
         return;
     }
 
+    /**
+     * step 2 : build execution plan
+     */
+    ret = buildExecutionPlan(req.get_filter());
+    if (ret != cpp2::ErrorCode::SUCCEEDED) {
+        putResultCodes(ret, req.get_parts());
+        return;
+    }
+
+    /**
+     * step 3 : execute index scan.
+     */
     std::for_each(req.get_parts().begin(), req.get_parts().end(), [&](auto& partId) {
-        auto code = performScan(partId);
+        auto code = executeExecutionPlan(partId);
         if (code != kvstore::ResultCode::SUCCEEDED) {
             VLOG(1) << "Error! ret = " << static_cast<int32_t>(code)
                     << ", spaceId = " << spaceId_
@@ -31,7 +46,11 @@ void LookUpVertexIndexProcessor::process(const cpp2::LookUpIndexRequest& req) {
             return;
         }
     });
-    if (needReturnCols_) {
+
+    /**
+     * step 4 : collect result.
+     */
+    if (schema_ != nullptr) {
         decltype(resp_.schema) s;
         decltype(resp_.schema.columns) cols;
         for (auto i = 0; i < static_cast<int64_t>(schema_->getNumFields()); i++) {

@@ -260,7 +260,8 @@ static std::unique_ptr<meta::IndexManager> mockIndexMan(GraphSpaceID spaceId = 0
     return im;
 }
 
-static cpp2::LookUpVertexIndexResp execLookupVertices(const std::string& filter) {
+static cpp2::LookUpVertexIndexResp execLookupVertices(const std::string& filter,
+                                                      bool hasReturnCols = true) {
     fs::TempDir rootPath("/tmp/execLookupVertices.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     GraphSpaceID spaceId = 0;
@@ -279,22 +280,26 @@ static cpp2::LookUpVertexIndexResp execLookupVertices(const std::string& filter)
     parts.emplace_back(0);
     parts.emplace_back(1);
     parts.emplace_back(2);
-    decltype(req.return_columns) cols;
-    cols.emplace_back("tag_3001_col_0");
-    cols.emplace_back("tag_3001_col_1");
-    cols.emplace_back("tag_3001_col_3");
-    cols.emplace_back("tag_3001_col_4");
+    if (hasReturnCols) {
+        decltype(req.return_columns) cols;
+        cols.emplace_back("tag_3001_col_0");
+        cols.emplace_back("tag_3001_col_1");
+        cols.emplace_back("tag_3001_col_3");
+        cols.emplace_back("tag_3001_col_4");
+        req.set_return_columns(cols);
+    }
     req.set_space_id(spaceId);
     req.set_parts(std::move(parts));
     req.set_index_id(tagId);
-    req.set_return_columns(cols);
+
     req.set_filter(filter);
     auto f = processor->getFuture();
     processor->process(req);
     return std::move(f).get();
 }
 
-static cpp2::LookUpEdgeIndexResp execLookupEdges(const std::string& filter) {
+static cpp2::LookUpEdgeIndexResp execLookupEdges(const std::string& filter,
+                                                 bool hasReturnCols = true) {
     fs::TempDir rootPath("/tmp/execLookupEdges.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     GraphSpaceID spaceId = 0;
@@ -313,19 +318,22 @@ static cpp2::LookUpEdgeIndexResp execLookupEdges(const std::string& filter) {
     parts.emplace_back(0);
     parts.emplace_back(1);
     parts.emplace_back(2);
-    decltype(req.return_columns) cols;
-    cols.emplace_back("col_0");
-    cols.emplace_back("col_1");
-    cols.emplace_back("col_3");
-    cols.emplace_back("col_4");
-    cols.emplace_back("col_10");
-    cols.emplace_back("col_11");
-    cols.emplace_back("col_13");
-    cols.emplace_back("col_14");
+    if (hasReturnCols) {
+        decltype(req.return_columns) cols;
+        cols.emplace_back("col_0");
+        cols.emplace_back("col_1");
+        cols.emplace_back("col_3");
+        cols.emplace_back("col_4");
+        cols.emplace_back("col_10");
+        cols.emplace_back("col_11");
+        cols.emplace_back("col_13");
+        cols.emplace_back("col_14");
+        req.set_return_columns(cols);
+    }
     req.set_space_id(spaceId);
     req.set_parts(std::move(parts));
     req.set_index_id(type);
-    req.set_return_columns(cols);
+
     req.set_filter(filter);
     auto f = processor->getFuture();
     processor->process(req);
@@ -951,6 +959,69 @@ TEST(IndexScanTest, PrefixScanTest) {
         auto resp = execLookupEdges(Expression::encode(logExp.get()));
         EXPECT_EQ(0, resp.result.failed_codes.size());
         EXPECT_EQ(8, resp.get_schema()->get_columns().size());
+        EXPECT_EQ(210, resp.rows.size());
+    }
+}
+
+TEST(IndexScanTest, NoReturnColumnsTest) {
+    {
+        LOG(INFO) << "Build filter...";
+        /**
+         * where tag_3001_col_0 == 1 and
+         *       tag_3001_col_1 > 1
+         */
+        auto* col0 = new std::string("tag_3001_col_0");
+        auto* alias0 = new std::string("3001");
+        auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
+        auto* pe0 = new PrimaryExpression(1L);
+        auto* r1 =  new RelationalExpression(ape0,
+                                             RelationalExpression::Operator::EQ,
+                                             pe0);
+
+        auto* col1 = new std::string("tag_3001_col_1");
+        auto* alias1 = new std::string("3001");
+        auto* ape1 = new AliasPropertyExpression(new std::string(""), alias1, col1);
+        auto* pe1 = new PrimaryExpression(1L);
+        auto* r2 =  new RelationalExpression(ape1,
+                                             RelationalExpression::Operator::GT,
+                                             pe1);
+
+        auto logExp = std::make_unique<LogicalExpression>(r1,
+                                                          LogicalExpression::AND,
+                                                          r2);
+        auto resp = execLookupVertices(Expression::encode(logExp.get()), false);
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(NULL, resp.get_schema());
+        EXPECT_EQ(30, resp.rows.size());
+    }
+    {
+        LOG(INFO) << "Build filter...";
+        /**
+         * where col_0 == 1 and
+         *       col_1 > 1
+         */
+        auto* col0 = new std::string("col_0");
+        auto* alias0 = new std::string("101");
+        auto* ape0 = new AliasPropertyExpression(new std::string(""), alias0, col0);
+        auto* pe0 = new PrimaryExpression(1L);
+        auto* r1 =  new RelationalExpression(ape0,
+                                             RelationalExpression::Operator::EQ,
+                                             pe0);
+
+        auto* col1 = new std::string("col_1");
+        auto* alias1 = new std::string("101");
+        auto* ape1 = new AliasPropertyExpression(new std::string(""), alias1, col1);
+        auto* pe1 = new PrimaryExpression(1L);
+        auto* r2 =  new RelationalExpression(ape1,
+                                             RelationalExpression::Operator::GT,
+                                             pe1);
+
+        auto logExp = std::make_unique<LogicalExpression>(r1,
+                                                          LogicalExpression::AND,
+                                                          r2);
+        auto resp = execLookupEdges(Expression::encode(logExp.get()), false);
+        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(NULL, resp.get_schema());
         EXPECT_EQ(210, resp.rows.size());
     }
 }
