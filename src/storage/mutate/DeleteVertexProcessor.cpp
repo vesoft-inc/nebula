@@ -74,7 +74,7 @@ void DeleteVertexProcessor::process(const cpp2::DeleteVertexRequest& req) {
          });
     } else {
         callingNum_ = 1;
-        auto atomic = [&]() -> std::string {
+        auto atomic = [spaceId, partId, vId, this]() -> std::string {
             return deleteVertex(spaceId, partId, vId);
         };
         auto callback = [spaceId, partId, this](kvstore::ResultCode code) {
