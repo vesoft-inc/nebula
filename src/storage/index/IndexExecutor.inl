@@ -64,6 +64,7 @@ cpp2::ErrorCode IndexExecutor<RESP>::checkIndex(IndexID indexId) {
 
 template <typename RESP>
 cpp2::ErrorCode IndexExecutor<RESP>::checkReturnColumns(const std::vector<std::string> &cols) {
+    int32_t index = 0;
     if (!cols.empty()) {
         schema_ = std::make_shared<SchemaWriter>();
         auto schema = isEdgeIndex_ ?
