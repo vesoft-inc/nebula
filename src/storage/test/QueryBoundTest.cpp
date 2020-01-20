@@ -139,7 +139,7 @@ void checkResponse(cpp2::QueryResponse& resp,
         });
     int32_t totalEdges = 0;
     for (auto& vp : resp.vertices) {
-        VLOG(1) << "Check vertex props...";
+        VLOG(1) << "Check vertex " << vp.vertex_id << " props...";
         auto size = std::accumulate(vp.tag_data.cbegin(), vp.tag_data.cend(), 0,
                                     [vschema](int acc, auto& td) {
                                         auto it = vschema->find(td.tag_id);
@@ -162,6 +162,7 @@ void checkResponse(cpp2::QueryResponse& resp,
             int32_t rowNum = 0;
             for (auto& edge : ep.get_edges()) {
                 auto dst = edge.get_dst();
+                VLOG(1) << "Check edge " << vp.vertex_id << " -> " << dst << " props...";
                 CHECK_EQ(dstIdFrom + rowNum, dst);
                 auto reader = RowReader::getRowReader(edge.props, provider);
                 DCHECK(reader != nullptr);

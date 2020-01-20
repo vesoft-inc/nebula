@@ -1097,10 +1097,12 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                                    std::make_shared<ResultSchemaProvider>(schema.second));
                            });
         }
+        VLOG(1) << "Total resp.vertices size " << resp.vertices.size();
         for (auto &vdata : resp.vertices) {
             DCHECK(vdata.__isset.edge_data);
             auto tagData = vdata.get_tag_data();
             auto srcId = vdata.get_vertex_id();
+            VLOG(1) << "Total vdata.edge_data size " << vdata.edge_data.size();
             for (auto &edata : vdata.edge_data) {
                 auto edgeType = edata.type;
                 std::shared_ptr<ResultSchemaProvider> currEdgeSchema;
@@ -1109,6 +1111,9 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     DCHECK(it != edgeSchema.end());
                     currEdgeSchema = it->second;
                 }
+                 VLOG(1) << "Total edata.edges size " << edata.edges.size()
+                            << ", for edge " << edgeType
+                            << " currEdgeSchema is null? " << (currEdgeSchema == nullptr);
                 for (auto& edge : edata.edges) {
                     auto dstId = edge.get_dst();
                     Getters getters;

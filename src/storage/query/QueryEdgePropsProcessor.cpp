@@ -35,7 +35,7 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
                                                    iter->val(),
                                                    spaceId_,
                                                    edgeKey.edge_type);
-        this->collectProps(reader.get(), iter->key(), props, nullptr, &collector, true);
+        this->collectProps(reader.get(), iter->key(), props, nullptr, &collector);
         rsWriter.addRow(writer);
 
         iter->next();
@@ -59,6 +59,7 @@ void QueryEdgePropsProcessor::doProcess(const cpp2::EdgePropRequest& req) {
     std::vector<EdgeType> e = {req.edge_type};
     initEdgeContext(e, true);
 
+    this->compactDstIdProps_ = true;
     auto retCode = this->checkAndBuildContexts(req);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         for (auto& p : req.get_parts()) {

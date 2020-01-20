@@ -21,10 +21,15 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeImpl(const PartitionID partI
                                                          const std::vector<PropContext>& props,
                                                          FilterContext& fcontext,
                                                          cpp2::VertexData& vdata) {
-    auto schema = edgeSchema_.find(edgeType);
-    if (schema == edgeSchema_.end()) {
-        LOG(ERROR) << "Not found the edge type: " << edgeType;
-        return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
+    bool onlyStructure = onlyStructures_[edgeType];
+    std::shared_ptr<meta::SchemaProviderIf> currEdgeSchema;
+    if (!onlyStructure) {
+        auto schema = edgeSchema_.find(edgeType);
+        if (schema == edgeSchema_.end()) {
+            LOG(ERROR) << "Not found the edge type: " << edgeType;
+            return kvstore::ResultCode::ERR_EDGE_NOT_FOUND;
+        }
+        currEdgeSchema = schema->second;
     }
     std::vector<cpp2::IdAndProp> edges;
     edges.reserve(FLAGS_reserved_edges_one_vertex);
@@ -32,8 +37,8 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeImpl(const PartitionID partI
         partId, vId, edgeType, props, &fcontext,
         [&, this](RowReader* reader, folly::StringPiece k, const std::vector<PropContext>& p) {
             cpp2::IdAndProp edge;
-            if (!onlyStructure_) {
-                RowWriter writer(schema->second);
+            if (!onlyStructure) {
+                RowWriter writer(currEdgeSchema);
                 PropsCollector collector(&writer);
                 this->collectProps(reader, k, p, &fcontext, &collector);
                 edge.set_dst(collector.getDstId());
@@ -135,6 +140,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
 void QueryBoundProcessor::onProcessFinished(int32_t retNum) {
     (void)retNum;
     resp_.set_vertices(std::move(vertices_));
+    resp_.set_total_edges(totalEdges_);
     if (!vertexSchemaResp_.empty()) {
         resp_.set_vertex_schema(std::move(vertexSchemaResp_));
     }

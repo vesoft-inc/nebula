@@ -74,8 +74,7 @@ protected:
                       folly::StringPiece key,
                       const std::vector<PropContext>& props,
                       FilterContext* fcontext,
-                      Collector* collector,
-                      bool compactDstIdProps = false);
+                      Collector* collector);
 
     virtual kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) = 0;
 
@@ -125,14 +124,19 @@ protected:
     std::unique_ptr<Expression> exp_;
     std::vector<TagContext> tagContexts_;
     std::unordered_map<EdgeType, std::vector<PropContext>> edgeContexts_;
+
     std::unordered_map<TagID, nebula::cpp2::Schema> vertexSchemaResp_;
     std::unordered_map<EdgeType, nebula::cpp2::Schema> edgeSchemaResp_;
+
     std::unordered_map<TagID, std::shared_ptr<nebula::meta::SchemaProviderIf>> vertexSchema_;
     std::unordered_map<EdgeType, std::shared_ptr<nebula::meta::SchemaProviderIf>> edgeSchema_;
+
+    std::unordered_map<EdgeType, bool> onlyStructures_;
+
     folly::Executor* executor_{nullptr};
     VertexCache* vertexCache_{nullptr};
     std::unordered_map<std::string, EdgeType> edgeMap_;
-    bool onlyStructure_ = false;
+    bool compactDstIdProps_ = false;
 };
 
 }  // namespace storage

@@ -310,9 +310,10 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
                                                  folly::StringPiece key,
                                                  const std::vector<PropContext>& props,
                                                  FilterContext* fcontext,
-                                                 Collector* collector,
-                                                 bool compactDstIdProps) {
+                                                 Collector* collector) {
     for (auto& prop : props) {
+        VLOG(1) << "Collect prop " << prop.prop_.name
+                << ", type " << static_cast<int32_t>(prop.type_.type);
         if (!key.empty()) {
             switch (prop.pikType_) {
                 case PropContext::PropInKeyType::NONE:
@@ -322,7 +323,7 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
                     continue;
                 case PropContext::PropInKeyType::DST:
                     VLOG(3) << "collect _dst, value = " << NebulaKeyUtils::getDstId(key);
-                    if (compactDstIdProps) {
+                    if (compactDstIdProps_) {
                         collector->collectVid(NebulaKeyUtils::getDstId(key), prop);
                     } else {
                         collector->collectDstId(NebulaKeyUtils::getDstId(key));
@@ -443,6 +444,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
     VertexID    lastDstId = 0;
     bool        firstLoop = true;
     int         cnt = 0;
+    bool onlyStructure = onlyStructures_[edgeType];
     Getters getters;
     for (; iter->valid() && cnt < FLAGS_max_edge_returned_per_vertex; iter->next()) {
         auto key = iter->key();
@@ -456,7 +458,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
         lastRank = rank;
         lastDstId = dstId;
         std::unique_ptr<RowReader> reader;
-        if (!onlyStructure_
+        if (!onlyStructure
                 && edgeType > 0
                 && !val.empty()) {
             reader = RowReader::getEdgePropReader(this->schemaMan_, val, spaceId_, edgeType);
@@ -615,7 +617,7 @@ void QueryBaseProcessor<REQ, RESP>::buildRespSchema() {
             nebula::cpp2::Schema respEdge;
             auto& props = ec.second;
             for (auto& p : props) {
-                if (p.prop_.name == "_dst") {
+                if (!compactDstIdProps_ && p.prop_.name == "_dst") {
                     continue;
                 }
                 VLOG(3) << "Build schema with prop: " << p.prop_.name
@@ -624,6 +626,8 @@ void QueryBaseProcessor<REQ, RESP>::buildRespSchema() {
                         this->columnDef(p.prop_.name, p.type_.type));
             }
 
+            VLOG(1) << "EdgeType " << ec.first << ", onlyStructure " << respEdge.columns.empty();
+            onlyStructures_.emplace(ec.first, respEdge.columns.empty());
             if (!respEdge.columns.empty()) {
                 auto it = edgeSchemaResp_.find(ec.first);
                 if (it == edgeSchemaResp_.end()) {
@@ -645,12 +649,6 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
             << ", total returned columns " << returnColumnsNum
             << ", the first column "
             << (returnColumnsNum > 0 ? req.get_return_columns()[0].name : "");
-    if (req.edge_types.size() == 1
-            && returnColumnsNum == 1
-            && req.get_return_columns()[0].name == "_dst") {
-        onlyStructure_ = true;
-    }
-
     VLOG(3) << "Receive request, spaceId " << spaceId_ << ", return cols " << returnColumnsNum;
     tagContexts_.reserve(returnColumnsNum);
 
