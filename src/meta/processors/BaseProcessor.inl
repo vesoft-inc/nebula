@@ -364,20 +364,37 @@ BaseProcessor<RESP>::getUserAccount(UserID userId) {
 }
 
 template<typename RESP>
-bool BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
+kvstore::ResultCode BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
     folly::Baton<true, std::atomic> baton;
-    bool ret = false;
+    auto ret = kvstore::ResultCode::SUCCEEDED;
     kvstore_->asyncMultiPut(kDefaultSpaceId,
                             kDefaultPartId,
                             std::move(data),
                             [&ret, &baton] (kvstore::ResultCode code) {
-                                if (kvstore::ResultCode::SUCCEEDED == code) {
-                                    ret = true;
-                                } else {
-                                    LOG(INFO) << "Put data error on meta server";
-                                }
-                                baton.post();
-                            });
+        if (kvstore::ResultCode::SUCCEEDED != code) {
+            ret = code;
+            LOG(INFO) << "Put data error on meta server";
+        }
+        baton.post();
+    });
+    baton.wait();
+    return ret;
+}
+
+template<typename RESP>
+kvstore::ResultCode BaseProcessor<RESP>::doSyncMultiRemove(std::vector<std::string> keys) {
+    folly::Baton<true, std::atomic> baton;
+    auto ret = kvstore::ResultCode::SUCCEEDED;
+    kvstore_->asyncMultiRemove(kDefaultSpaceId,
+                               kDefaultPartId,
+                               std::move(keys),
+                               [&ret, &baton] (kvstore::ResultCode code) {
+        if (kvstore::ResultCode::SUCCEEDED != code) {
+            ret = code;
+            LOG(INFO) << "Remove data error on meta server";
+        }
+        baton.post();
+    });
     baton.wait();
     return ret;
 }

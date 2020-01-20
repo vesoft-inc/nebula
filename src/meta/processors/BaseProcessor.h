@@ -241,7 +241,9 @@ protected:
 
     StatusOr<std::string> getUserAccount(UserID userId);
 
-    bool doSyncPut(std::vector<kvstore::KV> data);
+    kvstore::ResultCode doSyncPut(std::vector<kvstore::KV> data);
+
+    kvstore::ResultCode doSyncMultiRemove(std::vector<std::string> keys);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

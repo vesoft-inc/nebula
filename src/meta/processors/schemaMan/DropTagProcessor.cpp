@@ -21,9 +21,16 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
         return;
     }
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
-    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     LOG(INFO) << "Drop Tag " << req.get_tag_name();
-    doMultiRemove(std::move(ret.value()));
+    auto kvRet = doSyncMultiRemove(std::move(ret.value()));
+    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
+        resp_.set_code(to(kvRet));
+        onFinished();
+        return;
+    }
+    kvRet = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
+    resp_.set_code(to(kvRet));
+    onFinished();
 }
 
 StatusOr<std::vector<std::string>> DropTagProcessor::getTagKeys(GraphSpaceID id,

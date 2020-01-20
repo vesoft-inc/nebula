@@ -31,10 +31,17 @@ void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
     keys.emplace_back(MetaServiceUtils::indexIndexKey(spaceID, indexName));
     keys.emplace_back(MetaServiceUtils::indexKey(spaceID, tagIndexID.value()));
 
-    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     LOG(INFO) << "Drop Tag Index " << indexName;
     resp_.set_id(to(tagIndexID.value(), EntryType::INDEX));
-    doMultiRemove(keys);
+    auto kvRet = doSyncMultiRemove(std::move(keys));
+    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
+        resp_.set_code(to(kvRet));
+        onFinished();
+        return;
+    }
+    kvRet = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
+    resp_.set_code(to(kvRet));
+    onFinished();
 }
 
 }  // namespace meta

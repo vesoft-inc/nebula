@@ -94,10 +94,17 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
                       std::string(reinterpret_cast<const char*>(&tagIndex), sizeof(IndexID)));
     data.emplace_back(MetaServiceUtils::indexKey(space, tagIndex),
                       MetaServiceUtils::indexVal(item));
-    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     LOG(INFO) << "Create Tag Index " << indexName << ", tagIndex " << tagIndex;
     resp_.set_id(to(tagIndex, EntryType::INDEX));
-    doPut(std::move(data));
+    auto kvRet = doSyncPut(std::move(data));
+    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
+        resp_.set_code(to(kvRet));
+        onFinished();
+        return;
+    }
+    kvRet = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
+    resp_.set_code(to(kvRet));
+    onFinished();
 }
 
 }  // namespace meta

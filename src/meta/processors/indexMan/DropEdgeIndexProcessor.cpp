@@ -31,10 +31,17 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
     keys.emplace_back(MetaServiceUtils::indexIndexKey(spaceID, indexName));
     keys.emplace_back(MetaServiceUtils::indexKey(spaceID, edgeIndexID.value()));
 
-    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     LOG(INFO) << "Drop Edge Index " << indexName;
     resp_.set_id(to(edgeIndexID.value(), EntryType::INDEX));
-    doMultiRemove(keys);
+    auto kvRet = doSyncMultiRemove(std::move(keys));
+    if (kvRet != kvstore::ResultCode::SUCCEEDED) {
+        resp_.set_code(to(kvRet));
+        onFinished();
+        return;
+    }
+    kvRet = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
+    resp_.set_code(to(kvRet));
+    onFinished();
 }
 
 }  // namespace meta

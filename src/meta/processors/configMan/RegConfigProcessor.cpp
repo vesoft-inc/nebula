@@ -30,8 +30,15 @@ void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
         }
 
         if (!data.empty()) {
-            LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-            doPut(std::move(data));
+            auto kvRet = doSyncPut(std::move(data));
+            if (kvRet != kvstore::ResultCode::SUCCEEDED) {
+                resp_.set_code(to(kvRet));
+                onFinished();
+                return;
+            }
+            kvRet = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
+            resp_.set_code(to(kvRet));
+            onFinished();
             return;
         }
     }
