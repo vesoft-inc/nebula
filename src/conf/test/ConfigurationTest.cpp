@@ -6,12 +6,13 @@
 
 #include "base/Base.h"
 #include <gtest/gtest.h>
-#include "base/Configuration.h"
+#include "conf/Configuration.h"
 #include "fs/TempFile.h"
 
 using nebula::fs::TempFile;
 
 namespace nebula {
+namespace conf {
 
 TEST(Configuration, Basic) {
     std::string json = "{"
@@ -235,5 +236,6 @@ TEST(Configuration, Iterator) {
     EXPECT_EQ(keys.size(), idx);
 }
 
+}   // namespace conf
 }   // namespace nebula
 

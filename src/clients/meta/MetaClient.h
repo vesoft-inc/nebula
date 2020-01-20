@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef META_METACLIENT_H_
-#define META_METACLIENT_H_
+#ifndef CLIENTS_META_METACLIENT_H_
+#define CLIENTS_META_METACLIENT_H_
 
 #include "base/Base.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
@@ -167,14 +167,14 @@ public:
     // Operations for schema
     folly::Future<StatusOr<TagID>> createTagSchema(GraphSpaceID spaceId,
                                                    std::string name,
-                                                   nebula::cpp2::Schema schema,
+                                                   cpp2::Schema schema,
                                                    bool ifNotExists = false);
 
     folly::Future<StatusOr<TagID>>
     alterTagSchema(GraphSpaceID spaceId,
                    std::string name,
                    std::vector<cpp2::AlterSchemaItem> items,
-                   nebula::cpp2::SchemaProp schemaProp);
+                   cpp2::SchemaProp schemaProp);
 
     folly::Future<StatusOr<std::vector<cpp2::TagItem>>>
     listTagSchemas(GraphSpaceID spaceId);
@@ -183,25 +183,25 @@ public:
     dropTagSchema(int32_t spaceId, std::string name);
 
     // Return the latest schema when ver = -1
-    folly::Future<StatusOr<nebula::cpp2::Schema>>
+    folly::Future<StatusOr<cpp2::Schema>>
     getTagSchema(int32_t spaceId, std::string name, SchemaVer version = -1);
 
     folly::Future<StatusOr<EdgeType>> createEdgeSchema(GraphSpaceID spaceId,
                                                        std::string name,
-                                                       nebula::cpp2::Schema schema,
+                                                       cpp2::Schema schema,
                                                        bool ifNotExists = false);
 
     folly::Future<StatusOr<bool>>
     alterEdgeSchema(GraphSpaceID spaceId,
                     std::string name,
                     std::vector<cpp2::AlterSchemaItem> items,
-                    nebula::cpp2::SchemaProp schemaProp);
+                    cpp2::SchemaProp schemaProp);
 
     folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
     listEdgeSchemas(GraphSpaceID spaceId);
 
     // Return the latest schema when ver = -1
-    folly::Future<StatusOr<nebula::cpp2::Schema>>
+    folly::Future<StatusOr<cpp2::Schema>>
     getEdgeSchema(GraphSpaceID spaceId, std::string name, SchemaVer version = -1);
 
     folly::Future<StatusOr<bool>>
@@ -458,4 +458,4 @@ private:
 
 }  // namespace meta
 }  // namespace nebula
-#endif  // META_METACLIENT_H_
+#endif  // CLIENTS_META_METACLIENT_H_

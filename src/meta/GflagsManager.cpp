@@ -5,7 +5,7 @@
  */
 
 #include "meta/GflagsManager.h"
-#include "base/Configuration.h"
+#include "conf/Configuration.h"
 #include "fs/FileUtils.h"
 
 DEFINE_string(gflags_mode_json, "share/resources/gflags.json", "gflags mode json for service");
@@ -30,7 +30,7 @@ std::string GflagsManager::gflagsValueToThriftValue<std::string>(
 std::unordered_map<std::string, std::pair<cpp2::ConfigMode, bool>>
 GflagsManager::parseConfigJson(const std::string& path) {
     std::unordered_map<std::string, std::pair<cpp2::ConfigMode, bool>> configModeMap;
-    Configuration conf;
+    conf::Configuration conf;
     if (!conf.parseFromFile(path).ok()) {
         LOG(ERROR) << "Load gflags json failed";
         return configModeMap;

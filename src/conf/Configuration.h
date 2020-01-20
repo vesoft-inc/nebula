@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#ifndef COMMON_BASE_CONFIGURATION_H_
-#define COMMON_BASE_CONFIGURATION_H_
+#ifndef CONF_CONFIGURATION_H_
+#define CONF_CONFIGURATION_H_
 
 #include "base/Base.h"
 #include "base/Status.h"
@@ -16,6 +16,7 @@
 
 
 namespace nebula {
+namespace conf {
 
 class Configuration final {
 public:
@@ -70,7 +71,7 @@ private:
     std::unique_ptr<folly::dynamic>             content_;
 };
 
+}   // namespace conf
 }   // namespace nebula
+#endif  // CONF_CONFIGURATION_H_
 
-
-#endif  // COMMON_BASE_CONFIGURATION_H_

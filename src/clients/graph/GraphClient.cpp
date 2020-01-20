@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "client/cpp/GraphClient.h"
+#include "clients/graph/GraphClient.h"
 #include <thrift/lib/cpp/async/TAsyncSocket.h>
 #include <thrift/lib/cpp2/async/HeaderClientChannel.h>
 
@@ -46,8 +46,10 @@ cpp2::ErrorCode GraphClient::connect(const std::string& username,
     try {
         client_->sync_authenticate(resp, username, password);
         if (resp.get_error_code() != cpp2::ErrorCode::SUCCEEDED) {
-            LOG(ERROR) << "Failed to authenticate \"" << username << "\": "
-                       << resp.get_error_msg();
+            LOG(ERROR) << "Failed to authenticate \"" << username << "\": ";
+// TODO(sye) In order to support multi-language, a separate module will e provided
+//           for looking up the error messages
+//                       << resp.get_error_msg();
             return resp.get_error_code();
         }
     } catch (const std::exception& ex) {

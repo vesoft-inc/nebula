@@ -8,6 +8,7 @@
 
 namespace nebula {
 
+/*
 VariantType variantLT(VariantType& lhs, VariantType& rhs) {
     if (lhs.which() != rhs.which()) {
         return NullValue(NullValue::NullType::NT_BadType);
@@ -204,7 +205,7 @@ bool variantBoolNE(VariantType& lhs, VariantType& rhs) {
 
     return boost::get<bool>(r);
 }
-
+*/
 
 std::ostream& operator <<(std::ostream &os, const HostAddr &addr) {
     uint32_t ip = addr.first;

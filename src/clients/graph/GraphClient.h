@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef CLIENT_CPP_GRAPHCLIENT_H_
-#define CLIENT_CPP_GRAPHCLIENT_H_
+#ifndef CLIENTS_GRAPH_GRAPHCLIENT_H_
+#define CLIENTS_GRAPH_GRAPHCLIENT_H_
 
 #include "base/Base.h"
 #include "gen-cpp2/GraphServiceAsyncClient.h"
@@ -35,4 +35,4 @@ private:
 
 }  // namespace graph
 }  // namespace nebula
-#endif  // CLIENT_CPP_GRAPHCLIENT_H_
+#endif  // CLIENTS_GRAPH_GRAPHCLIENT_H_

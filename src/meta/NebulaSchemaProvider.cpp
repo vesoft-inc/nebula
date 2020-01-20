@@ -14,9 +14,11 @@ SchemaVer NebulaSchemaProvider::getVersion() const noexcept {
     return ver_;
 }
 
+
 size_t NebulaSchemaProvider::getNumFields() const noexcept {
     return fields_.size();
 }
+
 
 int64_t NebulaSchemaProvider::getFieldIndex(const folly::StringPiece name) const {
     auto it = fieldNameIndex_.find(name.toString());
@@ -28,6 +30,7 @@ int64_t NebulaSchemaProvider::getFieldIndex(const folly::StringPiece name) const
     }
 }
 
+
 const char* NebulaSchemaProvider::getFieldName(int64_t index) const {
     if (UNLIKELY(index < 0) || UNLIKELY(index >= static_cast<int64_t>(fields_.size()))) {
         LOG(ERROR) << "Index[" << index << "] is out of range[0-" << fields_.size() << "]";
@@ -37,24 +40,28 @@ const char* NebulaSchemaProvider::getFieldName(int64_t index) const {
     return fields_[index]->getName();
 }
 
-const cpp2::ValueType& NebulaSchemaProvider::getFieldType(int64_t index) const {
+
+const cpp2::PropertyType NebulaSchemaProvider::getFieldType(int64_t index) const {
     if (UNLIKELY(index < 0) || UNLIKELY(index >= static_cast<int64_t>(fields_.size()))) {
         LOG(ERROR) << "Index[" << index << "] is out of range[0-" << fields_.size() << "]";
-        return CommonConstants::kInvalidValueType();
+        return cpp2::PropertyType::UNKNOWN;
     }
 
     return fields_[index]->getType();
 }
 
-const cpp2::ValueType& NebulaSchemaProvider::getFieldType(const folly::StringPiece name) const {
+
+const cpp2::PropertyType NebulaSchemaProvider::getFieldType(const folly::StringPiece name)
+        const {
     auto it = fieldNameIndex_.find(name.toString());
     if (UNLIKELY(fieldNameIndex_.end() == it)) {
         LOG(ERROR) << "Unknown field \"" << name.toString() << "\"";
-        return CommonConstants::kInvalidValueType();
+        return cpp2::PropertyType::UNKNOWN;
     }
 
     return fields_[it->second]->getType();
 }
+
 
 std::shared_ptr<const SchemaProviderIf::Field> NebulaSchemaProvider::field(
         int64_t index) const {
@@ -70,6 +77,7 @@ std::shared_ptr<const SchemaProviderIf::Field> NebulaSchemaProvider::field(
     return fields_[index];
 }
 
+
 std::shared_ptr<const SchemaProviderIf::Field> NebulaSchemaProvider::field(
         const folly::StringPiece name) const {
     auto it = fieldNameIndex_.find(name.toString());
@@ -81,19 +89,21 @@ std::shared_ptr<const SchemaProviderIf::Field> NebulaSchemaProvider::field(
     return fields_[it->second];
 }
 
+
 void NebulaSchemaProvider::addField(folly::StringPiece name,
-                                    nebula::cpp2::ValueType&& type) {
-    fields_.emplace_back(std::make_shared<SchemaField>(name.toString(),
-                                                       std::move(type)));
+                                    cpp2::PropertyType& type) {
+    fields_.emplace_back(std::make_shared<SchemaField>(name.toString(), type));
     fieldNameIndex_.emplace(name.toString(),
                             static_cast<int64_t>(fields_.size() - 1));
 }
 
-void NebulaSchemaProvider::setProp(nebula::cpp2::SchemaProp schemaProp) {
+
+void NebulaSchemaProvider::setProp(cpp2::SchemaProp schemaProp) {
     schemaProp_ = std::move(schemaProp);
 }
 
-const nebula::cpp2::SchemaProp NebulaSchemaProvider::getProp() const {
+
+const cpp2::SchemaProp NebulaSchemaProvider::getProp() const {
     return schemaProp_;
 }
 

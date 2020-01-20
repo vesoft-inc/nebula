@@ -4,9 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "base/Base.h"
-#include "base/Configuration.h"
+#include "conf/Configuration.h"
 
 namespace nebula {
+namespace conf {
 
 Configuration::Configuration() {
     content_ = std::make_unique<folly::dynamic>(folly::dynamic::object());
@@ -299,4 +300,5 @@ Status Configuration::forEachItem(
     return Status::OK();
 }
 
+}   // namespace conf
 }   // namespace nebula

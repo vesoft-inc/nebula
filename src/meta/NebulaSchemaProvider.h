@@ -19,7 +19,7 @@ class NebulaSchemaProvider : public SchemaProviderIf {
 public:
     class SchemaField final : public SchemaProviderIf::Field {
     public:
-        SchemaField(std::string name, nebula::cpp2::ValueType type)
+        SchemaField(std::string name, cpp2::PropertyType type)
             : name_(std::move(name))
             , type_(std::move(type)) {}
 
@@ -27,7 +27,7 @@ public:
             return name_.c_str();
         }
 
-        const nebula::cpp2::ValueType& getType() const override {
+        const cpp2::PropertyType getType() const override {
             return type_;
         }
 
@@ -45,7 +45,7 @@ public:
 
     private:
         std::string name_;
-        nebula::cpp2::ValueType type_;
+        cpp2::PropertyType type_;
         bool hasDefault_;
         std::string defaultValue_;
     };
@@ -59,18 +59,18 @@ public:
     int64_t getFieldIndex(const folly::StringPiece name) const override;
     const char* getFieldName(int64_t index) const override;
 
-    const nebula::cpp2::ValueType& getFieldType(int64_t index) const override;
-    const nebula::cpp2::ValueType& getFieldType(const folly::StringPiece name) const override;
+    const cpp2::PropertyType getFieldType(int64_t index) const override;
+    const cpp2::PropertyType getFieldType(const folly::StringPiece name) const override;
 
     std::shared_ptr<const SchemaProviderIf::Field> field(int64_t index) const override;
     std::shared_ptr<const SchemaProviderIf::Field> field(
         const folly::StringPiece name) const override;
 
-    void addField(folly::StringPiece name, nebula::cpp2::ValueType&& type);
+    void addField(folly::StringPiece name, cpp2::PropertyType& type);
 
-    void setProp(nebula::cpp2::SchemaProp schemaProp);
+    void setProp(cpp2::SchemaProp schemaProp);
 
-    const nebula::cpp2::SchemaProp getProp() const;
+    const cpp2::SchemaProp getProp() const;
 
 protected:
     NebulaSchemaProvider() = default;
@@ -81,7 +81,7 @@ protected:
     // fieldname -> index
     std::unordered_map<std::string, int64_t>   fieldNameIndex_;
     std::vector<std::shared_ptr<SchemaField>>  fields_;
-    nebula::cpp2::SchemaProp                   schemaProp_;
+    cpp2::SchemaProp                   schemaProp_;
 };
 
 }  // namespace meta

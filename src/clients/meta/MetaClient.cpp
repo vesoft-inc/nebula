@@ -4,15 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "base/Base.h"
+#include "clients/meta/MetaClient.h"
 #include "time/Duration.h"
-#include "meta/common/MetaCommon.h"
-#include "meta/client/MetaClient.h"
+#include "meta/MetaCommon.h"
 #include "network/NetworkUtils.h"
 #include "meta/NebulaSchemaProvider.h"
-#include "meta/ClusterIdMan.h"
-#include "meta/GflagsManager.h"
-#include "base/Configuration.h"
+#include "conf/Configuration.h"
 #include "stats/StatsManager.h"
+#include "clients/meta/FileBasedClusterIdMan.h"
 
 
 DEFINE_int32(load_data_interval_secs, 1, "Load data interval");
@@ -221,7 +221,8 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
 
     auto edgeRet = listEdgeSchemas(spaceId).get();
     if (!edgeRet.ok()) {
-        LOG(ERROR) << "Get edge schemas failed for spaceId " << spaceId << ", " << edgeRet.status();
+        LOG(ERROR) << "Get edge schemas failed for spaceId " << spaceId
+                   << ", " << edgeRet.status();
         return false;
     }
 
@@ -232,7 +233,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
     for (auto& tagIt : tagItemVec) {
         std::shared_ptr<NebulaSchemaProvider> schema(new NebulaSchemaProvider(tagIt.version));
         for (auto colIt : tagIt.schema.get_columns()) {
-            schema->addField(colIt.name, std::move(colIt.type));
+            schema->addField(colIt.name, colIt.type);
         }
         // handle schema property
         schema->setProp(tagIt.schema.get_schema_prop());
@@ -254,7 +255,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
     for (auto& edgeIt : edgeItemVec) {
         std::shared_ptr<NebulaSchemaProvider> schema(new NebulaSchemaProvider(edgeIt.version));
         for (auto colIt : edgeIt.schema.get_columns()) {
-            schema->addField(colIt.name, std::move(colIt.type));
+            schema->addField(colIt.name, colIt.type);
         }
         // handle shcem property
         schema->setProp(edgeIt.schema.get_schema_prop());
@@ -739,7 +740,7 @@ MetaClient::multiPut(std::string segment,
         return Status::Error("arguments invalid!");
     }
     cpp2::MultiPutReq req;
-    std::vector<nebula::cpp2::Pair> data;
+    std::vector<nebula::cpp2::KeyValue> data;
     for (auto& element : pairs) {
         data.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                           std::move(element.first), std::move(element.second));
@@ -927,7 +928,7 @@ StatusOr<int32_t> MetaClient::partsNum(GraphSpaceID spaceId) {
 
 folly::Future<StatusOr<TagID>> MetaClient::createTagSchema(GraphSpaceID spaceId,
                                                            std::string name,
-                                                           nebula::cpp2::Schema schema,
+                                                           cpp2::Schema schema,
                                                            bool ifNotExists) {
     cpp2::CreateTagReq req;
     req.set_space_id(std::move(spaceId));
@@ -948,7 +949,7 @@ folly::Future<StatusOr<TagID>>
 MetaClient::alterTagSchema(GraphSpaceID spaceId,
                            std::string name,
                            std::vector<cpp2::AlterSchemaItem> items,
-                           nebula::cpp2::SchemaProp schemaProp) {
+                           cpp2::SchemaProp schemaProp) {
     cpp2::AlterTagReq req;
     req.set_space_id(std::move(spaceId));
     req.set_tag_name(std::move(name));
@@ -996,17 +997,17 @@ MetaClient::dropTagSchema(int32_t spaceId, std::string tagName) {
 }
 
 
-folly::Future<StatusOr<nebula::cpp2::Schema>>
+folly::Future<StatusOr<cpp2::Schema>>
 MetaClient::getTagSchema(int32_t spaceId, std::string name, int64_t version) {
     cpp2::GetTagReq req;
     req.set_space_id(spaceId);
     req.set_tag_name(std::move(name));
     req.set_version(version);
-    folly::Promise<StatusOr<nebula::cpp2::Schema>> promise;
+    folly::Promise<StatusOr<cpp2::Schema>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_getTag(request);
-                }, [] (cpp2::GetTagResp&& resp) -> nebula::cpp2::Schema {
+                }, [] (cpp2::GetTagResp&& resp) -> cpp2::Schema {
                     return std::move(resp).get_schema();
                 }, std::move(promise));
     return future;
@@ -1014,7 +1015,7 @@ MetaClient::getTagSchema(int32_t spaceId, std::string name, int64_t version) {
 
 folly::Future<StatusOr<EdgeType>> MetaClient::createEdgeSchema(GraphSpaceID spaceId,
                                                                std::string name,
-                                                               nebula::cpp2::Schema schema,
+                                                               cpp2::Schema schema,
                                                                bool ifNotExists) {
     cpp2::CreateEdgeReq req;
     req.set_space_id(std::move(spaceId));
@@ -1037,7 +1038,7 @@ folly::Future<StatusOr<bool>>
 MetaClient::alterEdgeSchema(GraphSpaceID spaceId,
                             std::string name,
                             std::vector<cpp2::AlterSchemaItem> items,
-                            nebula::cpp2::SchemaProp schemaProp) {
+                            cpp2::SchemaProp schemaProp) {
     cpp2::AlterEdgeReq req;
     req.set_space_id(std::move(spaceId));
     req.set_edge_name(std::move(name));
@@ -1069,17 +1070,17 @@ MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
 }
 
 
-folly::Future<StatusOr<nebula::cpp2::Schema>>
+folly::Future<StatusOr<cpp2::Schema>>
 MetaClient::getEdgeSchema(GraphSpaceID spaceId, std::string name, SchemaVer version) {
     cpp2::GetEdgeReq req;
     req.set_space_id(std::move(spaceId));
     req.set_edge_name(std::move(name));
     req.set_version(version);
-    folly::Promise<StatusOr<nebula::cpp2::Schema>> promise;
+    folly::Promise<StatusOr<cpp2::Schema>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_getEdge(request);
-                }, [] (cpp2::GetEdgeResp&& resp) -> nebula::cpp2::Schema {
+                }, [] (cpp2::GetEdgeResp&& resp) -> cpp2::Schema {
                     return std::move(resp).get_schema();
                 }, std::move(promise));
     return future;
@@ -1326,7 +1327,7 @@ StatusOr<SchemaVer> MetaClient::getNewestEdgeVerFromCache(const GraphSpaceID& sp
 
 folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     if (clusterId_.load() == 0) {
-        clusterId_ = ClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
+        clusterId_ = FileBasedClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
     }
     cpp2::HBReq req;
     nebula::cpp2::HostAddr thriftHost;
@@ -1342,8 +1343,8 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
                 }, [this] (cpp2::HBResp&& resp) -> bool {
                     if (clusterId_.load() == 0) {
                         LOG(INFO) << "Persisit the cluster Id from metad " << resp.get_cluster_id();
-                        if (ClusterIdMan::persistInFile(resp.get_cluster_id(),
-                                                        FLAGS_cluster_id_path)) {
+                        if (FileBasedClusterIdMan::persistInFile(resp.get_cluster_id(),
+                                                                 FLAGS_cluster_id_path)) {
                             clusterId_.store(resp.get_cluster_id());
                         } else {
                             LOG(FATAL) << "Can't persist the clusterId in file "
@@ -1606,7 +1607,8 @@ void MetaClient::loadCfg() {
             for (const auto& entry : metaConfigMap) {
                 auto& key = entry.first;
                 auto it = metaConfigMap_.find(key);
-                if (it == metaConfigMap_.end() || metaConfigMap[key].value_ != it->second.value_) {
+                if (it == metaConfigMap_.end() ||
+                    metaConfigMap[key].value_ != it->second.value_) {
                     updateGflagsValue(entry.second);
                     metaConfigMap_[key] = entry.second;
                 }
@@ -1663,7 +1665,7 @@ void MetaClient::updateNestedGflags(const std::string& name) {
     std::string json;
     gflags::GetCommandLineOption(name.c_str(), &json);
     // generate option string map
-    Configuration conf;
+    conf::Configuration conf;
     auto status = conf.parseFromString(json);
     if (!status.ok()) {
         LOG(ERROR) << "Parse nested gflags " << name << " failed";

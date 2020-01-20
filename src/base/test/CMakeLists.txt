@@ -27,13 +27,6 @@ nebula_add_test(
 )
 
 nebula_add_test(
-    NAME configuration_test
-    SOURCES ConfigurationTest.cpp
-    OBJECTS $<TARGET_OBJECTS:fs_obj> $<TARGET_OBJECTS:base_obj>
-    LIBRARIES gtest gtest_main
-)
-
-nebula_add_test(
     NAME status_test
     SOURCES StatusTest.cpp
     OBJECTS $<TARGET_OBJECTS:fs_obj> $<TARGET_OBJECTS:base_obj>

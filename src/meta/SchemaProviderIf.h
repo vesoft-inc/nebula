@@ -8,13 +8,10 @@
 #define META_SCHEMAPROVIDERIF_H_
 
 #include "base/Base.h"
-#include "gen-cpp2/common_constants.h"
+#include "gen-cpp2/meta_types.h"
 
 
 namespace nebula {
-
-using CommonConstants = nebula::cpp2::common_constants;
-
 namespace meta {
 
 class SchemaProviderIf {
@@ -25,7 +22,7 @@ public:
         virtual ~Field() = default;
 
         virtual const char* getName() const = 0;
-        virtual const nebula::cpp2::ValueType& getType() const = 0;
+        virtual const cpp2::PropertyType getType() const = 0;
         virtual bool isValid() const = 0;
         virtual bool hasDefault() const = 0;
         virtual std::string getDefaultValue() const = 0;
@@ -94,8 +91,8 @@ public:
     virtual int64_t getFieldIndex(const folly::StringPiece name) const = 0;
     virtual const char* getFieldName(int64_t index) const = 0;
 
-    virtual const nebula::cpp2::ValueType& getFieldType(int64_t index) const = 0;
-    virtual const nebula::cpp2::ValueType& getFieldType(const folly::StringPiece name)
+    virtual const cpp2::PropertyType getFieldType(int64_t index) const = 0;
+    virtual const cpp2::PropertyType getFieldType(const folly::StringPiece name)
         const = 0;
 
     virtual std::shared_ptr<const Field> field(int64_t index) const = 0;
