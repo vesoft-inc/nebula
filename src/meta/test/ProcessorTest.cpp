@@ -2028,6 +2028,19 @@ TEST(ProcessorTest, TagIndexTest) {
         cpp2::CreateTagIndexReq req;
         req.set_space_id(1);
         req.set_tag_name("tag_0");
+        std::vector<std::string> fields{"tag_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("duplicate_field_index");
+        auto* processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.get_code());
+    }
+    {
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
         std::vector<std::string> fields{"tag_0_col_0", "tag_0_col_1"};
         req.set_fields(std::move(fields));
         req.set_index_name("multi_field_index");
@@ -2049,6 +2062,45 @@ TEST(ProcessorTest, TagIndexTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    }
+    {
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        std::vector<std::string> fields{"tag_0_col_0", "tag_0_col_1"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("duplicate_field_index");
+        auto* processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.get_code());
+    }
+    {
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        std::vector<std::string> fields{"tag_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("duplicate_field_index");
+        auto* processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.get_code());
+    }
+    {
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        std::vector<std::string> fields{"tag_0_col_1", "tag_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("disorder_field_index");
+        auto* processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     {
         cpp2::CreateTagIndexReq req;
@@ -2100,7 +2152,7 @@ TEST(ProcessorTest, TagIndexTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         auto items = resp.get_items();
 
-        ASSERT_EQ(2, items.size());
+        ASSERT_EQ(3, items.size());
         {
             nebula::cpp2::ColumnDef column;
             column.set_name("tag_0_col_0");
@@ -2135,6 +2187,26 @@ TEST(ProcessorTest, TagIndexTest) {
             ASSERT_EQ(2, multiItem.get_index_id());
             auto multiFieldResult = multiItem.get_fields();
             ASSERT_TRUE(TestUtils::verifyResult(columns, multiFieldResult));
+        }
+        {
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            nebula::cpp2::ColumnDef stringColumn;
+            stringColumn.set_name("tag_0_col_1");
+            nebula::cpp2::ValueType stringType;
+            stringType.set_type(SupportedType::STRING);
+            stringColumn.set_type(std::move(stringType));
+            columns.emplace_back(std::move(stringColumn));
+            nebula::cpp2::ColumnDef intColumn;
+            intColumn.set_name("tag_0_col_0");
+            nebula::cpp2::ValueType intType;
+            intType.set_type(SupportedType::INT);
+            intColumn.set_type(std::move(intType));
+            columns.emplace_back(std::move(intColumn));
+
+            auto disorderItem = items[2];
+            ASSERT_EQ(3, disorderItem.get_index_id());
+            auto disorderFieldResult = disorderItem.get_fields();
+            ASSERT_TRUE(TestUtils::verifyResult(columns, disorderFieldResult));
         }
     }
     {
@@ -2219,6 +2291,19 @@ TEST(ProcessorTest, EdgeIndexTest) {
         cpp2::CreateEdgeIndexReq req;
         req.set_space_id(1);
         req.set_edge_name("edge_0");
+        std::vector<std::string> fields{"edge_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("duplicate_field_index");
+        auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.get_code());
+    }
+    {
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
         std::vector<std::string> fields{"edge_0_col_0", "edge_0_col_1"};
         req.set_fields(std::move(fields));
         req.set_index_name("multi_field_index");
@@ -2240,6 +2325,45 @@ TEST(ProcessorTest, EdgeIndexTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    }
+    {
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        std::vector<std::string> fields{"edge_0_col_0", "edge_0_col_1"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("duplicate_field_index");
+        auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.get_code());
+    }
+    {
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        std::vector<std::string> fields{"edge_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("duplicate_field_index");
+        auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.get_code());
+    }
+    {
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        std::vector<std::string> fields{"edge_0_col_1", "edge_0_col_0"};
+        req.set_fields(std::move(fields));
+        req.set_index_name("disorder_field_index");
+        auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     {
         cpp2::CreateEdgeIndexReq req;
@@ -2289,7 +2413,7 @@ TEST(ProcessorTest, EdgeIndexTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         auto items = resp.get_items();
-        ASSERT_EQ(2, items.size());
+        ASSERT_EQ(3, items.size());
 
         {
             nebula::cpp2::ColumnDef column;
@@ -2325,6 +2449,26 @@ TEST(ProcessorTest, EdgeIndexTest) {
             ASSERT_EQ(2, multiItem.get_index_id());
             auto multiFieldResult = multiItem.get_fields();
             ASSERT_TRUE(TestUtils::verifyResult(columns, multiFieldResult));
+        }
+        {
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            nebula::cpp2::ColumnDef stringColumn;
+            stringColumn.set_name("edge_0_col_1");
+            nebula::cpp2::ValueType stringType;
+            stringType.set_type(SupportedType::STRING);
+            stringColumn.set_type(std::move(stringType));
+            columns.emplace_back(std::move(stringColumn));
+            nebula::cpp2::ColumnDef intColumn;
+            intColumn.set_name("edge_0_col_0");
+            nebula::cpp2::ValueType intType;
+            intType.set_type(SupportedType::INT);
+            intColumn.set_type(std::move(intType));
+            columns.emplace_back(std::move(intColumn));
+
+            auto disorderItem = items[2];
+            ASSERT_EQ(3, disorderItem.get_index_id());
+            auto disorderFieldResult = disorderItem.get_fields();
+            ASSERT_TRUE(TestUtils::verifyResult(columns, disorderFieldResult));
         }
     }
     {

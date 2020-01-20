@@ -53,14 +53,41 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     }
 
     auto edgeType = edgeTypeRet.value();
-    auto retSchema = getLatestEdgeSchema(space, edgeType);
-    if (!retSchema.ok()) {
+    auto prefix = MetaServiceUtils::indexPrefix(space);
+    std::unique_ptr<kvstore::KVIterator> checkIter;
+    auto checkRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &checkIter);
+    if (checkRet != kvstore::ResultCode::SUCCEEDED) {
+        resp_.set_code(MetaCommon::to(checkRet));
+        onFinished();
+        return;
+    }
+
+    while (checkIter->valid()) {
+        auto val = checkIter->val();
+        auto item = MetaServiceUtils::parseIndex(val);
+        if (item.get_schema_id().getType() != nebula::cpp2::SchemaID::Type::edge_type ||
+            fieldNames.size() > item.get_fields().size() ||
+            edgeType != item.get_schema_id().get_edge_type()) {
+            checkIter->next();
+            continue;
+        }
+
+        if (checkIndexExist(fieldNames, item)) {
+            resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+            onFinished();
+            return;
+        }
+        checkIter->next();
+    }
+
+    auto schemaRet = getLatestEdgeSchema(space, edgeType);
+    if (!schemaRet.ok()) {
         handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
 
-    auto latestEdgeSchema = retSchema.value();
+    auto latestEdgeSchema = schemaRet.value();
     if (tagOrEdgeHasTTL(latestEdgeSchema)) {
        LOG(ERROR) << "Edge: " << edgeName  << " has ttl, not create index";
        handleErrorCode(cpp2::ErrorCode::E_INDEX_WITH_TTL);
