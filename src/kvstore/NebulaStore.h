@@ -49,6 +49,7 @@ public:
             , workers_(workers)
             , raftAddr_(getRaftAddr(serviceAddr))
             , options_(std::move(options)) {
+        CHECK_NOTNULL(options_.partMan_);
     }
 
     ~NebulaStore();
