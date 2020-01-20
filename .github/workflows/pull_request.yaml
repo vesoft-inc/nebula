@@ -27,20 +27,20 @@ jobs:
     runs-on: self-hosted
     strategy:
       matrix:
-        tag:
+        os:
           - centos7
           - ubuntu1804
         compiler:
           - gcc-9.2
           - clang-9
         exclude:
-          - tag: centos7
+          - os: centos7
             compiler: clang-9
     container:
-      image: vesoft/nebula-dev:${{ matrix.tag }}
+      image: vesoft/nebula-dev:${{ matrix.os }}
       env:
-        CCACHE_DIR: /tmp/ccache/${{ matrix.tag }}-${{ matrix.compiler }}
-      options: --mount type=tmpfs,destination=/tmp/ccache,tmpfs-size=1073741824 -v /tmp/ccache/${{ matrix.tag }}-${{ matrix.compiler }}:/tmp/ccache/${{ matrix.tag }}-${{ matrix.compiler }}
+        CCACHE_DIR: /tmp/ccache/${{ matrix.os }}-${{ matrix.compiler }}
+      options: --mount type=tmpfs,destination=/tmp/ccache,tmpfs-size=1073741824 -v /tmp/ccache/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/${{ matrix.os }}-${{ matrix.compiler }}
     steps:
       - uses: actions/checkout@v1
         with:
