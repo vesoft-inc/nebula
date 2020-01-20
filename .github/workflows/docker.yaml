@@ -36,6 +36,7 @@ jobs:
           [[ "${{ github.event_name }}" == "push" ]] && \
             echo "::set-output name=tag::$(cut -d/ -f3 <<< ${{ github.ref }})" || \
             echo "::set-output name=tag::nightly"
+        shell: bash
       - name: Build image
         env:
           IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/nebula-${{ matrix.service }}:${{ steps.tag.outputs.tag }}
