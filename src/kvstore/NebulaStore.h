@@ -176,6 +176,32 @@ public:
                        raftex::AtomicOp op,
                        KVCallback cb) override;
 
+    // Synchronous Modify
+    ResultCode syncMultiPut(GraphSpaceID spaceId,
+                               PartitionID  partId,
+                               std::vector<KV> keyValues) override;
+
+    ResultCode syncRemove(GraphSpaceID spaceId,
+                             PartitionID partId,
+                             const std::string& key) override;
+
+    ResultCode syncMultiRemove(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  std::vector<std::string> keys) override;
+
+    ResultCode syncRemoveRange(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  const std::string& start,
+                                  const std::string& end) override;
+
+    ResultCode syncRemovePrefix(GraphSpaceID spaceId,
+                                   PartitionID partId,
+                                   const std::string& prefix) override;
+
+    ResultCode syncAtomicOp(GraphSpaceID spaceId,
+                               PartitionID partId,
+                               raftex::AtomicOp op) override;
+
     ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
                                                     PartitionID partId) override;
 

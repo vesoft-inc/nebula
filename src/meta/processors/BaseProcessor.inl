@@ -12,16 +12,8 @@ namespace meta {
 
 template<typename RESP>
 void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
-    folly::Baton<true, std::atomic> baton;
-    kvstore_->asyncMultiPut(kDefaultSpaceId,
-                            kDefaultPartId,
-                            std::move(data),
-                            [this, &baton] (kvstore::ResultCode code) {
-        this->resp_.set_code(to(code));
-        baton.post();
-    });
-    baton.wait();
-    this->onFinished();
+    resp_.set_code(to(kvstore_->syncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data))));
+    onFinished();
 }
 
 
@@ -66,48 +58,23 @@ BaseProcessor<RESP>::doMultiGet(const std::vector<std::string>& keys) {
 
 template<typename RESP>
 void BaseProcessor<RESP>::doRemove(const std::string& key) {
-    folly::Baton<true, std::atomic> baton;
-    kvstore_->asyncRemove(kDefaultSpaceId,
-                          kDefaultPartId,
-                          key,
-                          [this, &baton] (kvstore::ResultCode code) {
-        this->resp_.set_code(to(code));
-        baton.post();
-    });
-    baton.wait();
-    this->onFinished();
+    resp_.set_code(to(kvstore_->syncRemove(kDefaultSpaceId, kDefaultPartId, key)));
+    onFinished();
 }
 
 
 template<typename RESP>
 void BaseProcessor<RESP>::doMultiRemove(std::vector<std::string> keys) {
-    folly::Baton<true, std::atomic> baton;
-    kvstore_->asyncMultiRemove(kDefaultSpaceId,
-                               kDefaultPartId,
-                               std::move(keys),
-                               [this, &baton] (kvstore::ResultCode code) {
-        this->resp_.set_code(to(code));
-        baton.post();
-    });
-    baton.wait();
-    this->onFinished();
+    resp_.set_code(to(kvstore_->syncMultiRemove(kDefaultSpaceId, kDefaultPartId, std::move(keys))));
+    onFinished();
 }
 
 
 template<typename RESP>
 void BaseProcessor<RESP>::doRemoveRange(const std::string& start,
                                         const std::string& end) {
-    folly::Baton<true, std::atomic> baton;
-    kvstore_->asyncRemoveRange(kDefaultSpaceId,
-                               kDefaultPartId,
-                               start,
-                               end,
-                               [this, &baton] (kvstore::ResultCode code) {
-        this->resp_.set_code(to(code));
-        baton.post();
-    });
-    baton.wait();
-    this->onFinished();
+    resp_.set_code(to(kvstore_->syncRemoveRange(kDefaultSpaceId, kDefaultPartId, start, end)));
+    onFinished();
 }
 
 
@@ -169,15 +136,7 @@ ErrorOr<cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId() {
     std::vector<kvstore::KV> data;
     data.emplace_back(kIdKey,
                       std::string(reinterpret_cast<const char*>(&id), sizeof(id)));
-    folly::Baton<true, std::atomic> baton;
-    kvstore_->asyncMultiPut(kDefaultSpaceId,
-                            kDefaultPartId,
-                            std::move(data),
-                            [&] (kvstore::ResultCode code) {
-        ret = code;
-        baton.post();
-    });
-    baton.wait();
+    ret = kvstore_->syncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data));
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         return to(ret);
     } else {
@@ -365,21 +324,8 @@ BaseProcessor<RESP>::getUserAccount(UserID userId) {
 
 template<typename RESP>
 bool BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
-    folly::Baton<true, std::atomic> baton;
-    bool ret = false;
-    kvstore_->asyncMultiPut(kDefaultSpaceId,
-                            kDefaultPartId,
-                            std::move(data),
-                            [&ret, &baton] (kvstore::ResultCode code) {
-                                if (kvstore::ResultCode::SUCCEEDED == code) {
-                                    ret = true;
-                                } else {
-                                    LOG(INFO) << "Put data error on meta server";
-                                }
-                                baton.post();
-                            });
-    baton.wait();
-    return ret;
+    return kvstore_->syncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data))
+        == kvstore::ResultCode::SUCCEEDED;
 }
 
 }  // namespace meta

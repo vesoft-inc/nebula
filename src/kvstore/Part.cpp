@@ -133,6 +133,76 @@ void Part::asyncAtomicOp(raftex::AtomicOp op, KVCallback cb) {
     });
 }
 
+ResultCode Part::syncAtomicOp(raftex::AtomicOp op) {
+    return atomicOpAsync(std::move(op)).thenValue([this](auto &&code) {
+        return toResultCode(code);
+    }).thenError([](auto &&e) {
+        LOG(ERROR) << e.what();
+        return ResultCode::ERR_UNKNOWN;
+    }).get();
+}
+
+ResultCode Part::syncPut(folly::StringPiece key, folly::StringPiece value) {
+    return appendAsync(FLAGS_cluster_id, encodeMultiValues(OP_PUT, key, value))
+    .thenValue([this](auto &&code) {
+        return toResultCode(code);
+    }).thenError([](auto &&e) {
+        LOG(ERROR) << e.what();
+        return ResultCode::ERR_UNKNOWN;
+    }).get();
+}
+
+ResultCode Part::syncMultiPut(const std::vector<KV>& keyValues) {
+    return appendAsync(FLAGS_cluster_id, encodeMultiValues(OP_MULTI_PUT, keyValues))
+    .thenValue([this](auto &&code) {
+        return toResultCode(code);
+    }).thenError([](auto &&e) {
+        LOG(ERROR) << e.what();
+        return ResultCode::ERR_UNKNOWN;
+    }).get();
+}
+
+ResultCode Part::syncRemove(folly::StringPiece key) {
+    return appendAsync(FLAGS_cluster_id, encodeSingleValue(OP_REMOVE, key))
+    .thenValue([this](auto &&code) {
+        return toResultCode(code);
+    }).thenError([](auto &&e) {
+        LOG(ERROR) << e.what();
+        return ResultCode::ERR_UNKNOWN;
+    }).get();
+}
+
+ResultCode Part::syncMultiRemove(const std::vector<std::string>& keys) {
+    return appendAsync(FLAGS_cluster_id, encodeMultiValues(OP_MULTI_REMOVE, keys))
+    .thenValue([this](auto &&code) {
+        return toResultCode(code);
+    }).thenError([](auto &&e) {
+        LOG(ERROR) << e.what();
+        return ResultCode::ERR_UNKNOWN;
+    }).get();
+}
+
+ResultCode Part::syncRemovePrefix(folly::StringPiece prefix) {
+    return appendAsync(FLAGS_cluster_id, encodeSingleValue(OP_REMOVE_PREFIX, prefix))
+    .thenValue([this](auto &&code) {
+        return toResultCode(code);
+    }).thenError([](auto &&e) {
+        LOG(ERROR) << e.what();
+        return ResultCode::ERR_UNKNOWN;
+    }).get();
+}
+
+ResultCode Part::syncRemoveRange(folly::StringPiece start,
+                        folly::StringPiece end) {
+    return appendAsync(FLAGS_cluster_id, encodeMultiValues(OP_REMOVE_RANGE, start, end))
+    .thenValue([this](auto &&code) {
+        return toResultCode(code);
+    }).thenError([](auto &&e) {
+        LOG(ERROR) << e.what();
+        return ResultCode::ERR_UNKNOWN;
+    }).get();
+}
+
 void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
     std::string log = encodeHost(OP_ADD_LEARNER, learner);
     sendCommandAsync(std::move(log))

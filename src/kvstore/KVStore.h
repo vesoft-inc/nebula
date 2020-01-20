@@ -157,6 +157,31 @@ public:
                                raftex::AtomicOp op,
                                KVCallback cb) = 0;
 
+    virtual ResultCode syncMultiPut(GraphSpaceID spaceId,
+                               PartitionID  partId,
+                               std::vector<KV> keyValues) = 0;
+
+    virtual ResultCode syncRemove(GraphSpaceID spaceId,
+                             PartitionID partId,
+                             const std::string& key) = 0;
+
+    virtual ResultCode syncMultiRemove(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  std::vector<std::string> keys) = 0;
+
+    virtual ResultCode syncRemoveRange(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  const std::string& start,
+                                  const std::string& end) = 0;
+
+    virtual ResultCode syncRemovePrefix(GraphSpaceID spaceId,
+                                   PartitionID partId,
+                                   const std::string& prefix) = 0;
+
+    virtual ResultCode syncAtomicOp(GraphSpaceID spaceId,
+                               PartitionID partId,
+                               raftex::AtomicOp op) = 0;
+
     virtual ResultCode ingest(GraphSpaceID spaceId) = 0;
 
     virtual int32_t allLeader(std::unordered_map<GraphSpaceID,

@@ -50,6 +50,17 @@ public:
                           folly::StringPiece end,
                           KVCallback cb);
 
+    ResultCode syncAtomicOp(raftex::AtomicOp op);
+
+    ResultCode syncPut(folly::StringPiece key, folly::StringPiece value);
+    ResultCode syncMultiPut(const std::vector<KV>& keyValues);
+
+    ResultCode syncRemove(folly::StringPiece key);
+    ResultCode syncMultiRemove(const std::vector<std::string>& keys);
+    ResultCode syncRemovePrefix(folly::StringPiece prefix);
+    ResultCode syncRemoveRange(folly::StringPiece start,
+                          folly::StringPiece end);
+
     void asyncAtomicOp(raftex::AtomicOp op, KVCallback cb);
 
     void asyncAddLearner(const HostAddr& learner, KVCallback cb);

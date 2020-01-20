@@ -140,6 +140,62 @@ public:
         LOG(FATAL) << "Not supportted yet!";
     }
 
+    ResultCode syncMultiPut(GraphSpaceID spaceId,
+                               PartitionID  partId,
+                               std::vector<KV> keyValues) override {
+        UNUSED(spaceId);
+        UNUSED(partId);
+        UNUSED(keyValues);
+        LOG(FATAL) << "Not supportted yet!";
+    }
+
+    ResultCode syncRemove(GraphSpaceID spaceId,
+                             PartitionID partId,
+                             const std::string& key) override {
+        UNUSED(spaceId);
+        UNUSED(partId);
+        UNUSED(key);
+        LOG(FATAL) << "Not supportted yet!";
+    }
+
+    ResultCode syncMultiRemove(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  std::vector<std::string> keys) override {
+        UNUSED(spaceId);
+        UNUSED(partId);
+        UNUSED(keys);
+        LOG(FATAL) << "Not supportted yet!";
+    }
+
+    ResultCode syncRemoveRange(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  const std::string& start,
+                                  const std::string& end) override {
+        UNUSED(spaceId);
+        UNUSED(partId);
+        UNUSED(start);
+        UNUSED(end);
+        LOG(FATAL) << "Not supportted yet!";
+    }
+
+    ResultCode syncRemovePrefix(GraphSpaceID spaceId,
+                                   PartitionID partId,
+                                   const std::string& prefix) override {
+        UNUSED(spaceId);
+        UNUSED(partId);
+        UNUSED(prefix);
+        LOG(FATAL) << "Not supportted yet!";
+    }
+
+    ResultCode syncAtomicOp(GraphSpaceID spaceId,
+                               PartitionID partId,
+                               raftex::AtomicOp op) override {
+        UNUSED(spaceId);
+        UNUSED(partId);
+        UNUSED(op);
+        LOG(FATAL) << "Not supportted yet!";
+    }
+
     ResultCode ingest(GraphSpaceID spaceId) override;
 
     int32_t allLeader(std::unordered_map<GraphSpaceID,

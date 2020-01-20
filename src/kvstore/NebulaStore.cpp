@@ -508,6 +508,59 @@ void NebulaStore::asyncAtomicOp(GraphSpaceID spaceId,
     part->asyncAtomicOp(std::move(op), std::move(cb));
 }
 
+#define GET_PART()  \
+    auto ret = part(spaceId, partId); \
+    if (!ok(ret)) { \
+        return error(ret); \
+    } \
+    auto part = value(ret); \
+
+
+// Synchronous Modify
+ResultCode NebulaStore::syncMultiPut(GraphSpaceID spaceId,
+                            PartitionID  partId,
+                            std::vector<KV> keyValues) {
+    GET_PART();
+    return part->syncMultiPut(std::move(keyValues));
+}
+
+ResultCode NebulaStore::syncRemove(GraphSpaceID spaceId,
+                            PartitionID partId,
+                            const std::string& key) {
+    GET_PART();
+    return part->syncRemove(key);
+}
+
+ResultCode NebulaStore::syncMultiRemove(GraphSpaceID spaceId,
+                                PartitionID partId,
+                                std::vector<std::string> keys) {
+    GET_PART();
+    return part->syncMultiRemove(std::move(keys));
+}
+
+ResultCode NebulaStore::syncRemoveRange(GraphSpaceID spaceId,
+                                PartitionID partId,
+                                const std::string& start,
+                                const std::string& end) {
+    GET_PART();
+    return part->syncRemoveRange(start, end);
+}
+
+ResultCode NebulaStore::syncRemovePrefix(GraphSpaceID spaceId,
+                                PartitionID partId,
+                                const std::string& prefix) {
+    GET_PART();
+    return part->syncRemovePrefix(prefix);
+}
+
+ResultCode NebulaStore::syncAtomicOp(GraphSpaceID spaceId,
+                            PartitionID partId,
+                            raftex::AtomicOp op) {
+    GET_PART();
+    return part->syncAtomicOp(std::move(op));
+}
+#undef GET_PART
+
 ErrorOr<ResultCode, std::shared_ptr<Part>> NebulaStore::part(GraphSpaceID spaceId,
                                                              PartitionID partId) {
     folly::RWSpinLock::ReadHolder rh(&lock_);
