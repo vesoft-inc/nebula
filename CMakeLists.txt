@@ -46,11 +46,13 @@ option(ENABLE_TESTING "Whether to turn unit test ON or OFF" ON)
 option(ENABLE_UBSAN "Whether to turn Undefined Behavior Sanitizer ON or OFF" OFF)
 option(ENABLE_FUZZ_TEST "Whether to turn Fuzz Test ON or OFF" OFF)
 option(ENABLE_WERROR "Whether to error on warnings" ON)
+option(ENABLE_TSAN "Whether to turn Thread Sanitizer ON or OFF" OFF)
 
 message(STATUS "ENABLE_ASAN: ${ENABLE_ASAN}")
 message(STATUS "ENABLE_TESTING: ${ENABLE_TESTING}")
 message(STATUS "ENABLE_UBSAN: ${ENABLE_UBSAN}")
 message(STATUS "ENABLE_FUZZ_TEST: ${ENABLE_FUZZ_TEST}")
+message(STATUS "ENABLE_TSAN: ${ENABLE_TSAN}")
 
 
 if (ENABLE_NATIVE)
@@ -245,6 +247,8 @@ if(ENABLE_WERROR)
     add_compile_options(-Werror)
 endif()
 
+include(CheckCXXCompilerFlag)
+
 # TODO(dutor) Move all compiler-config-related operations to a separate file
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # This requries GCC 5.1+
@@ -270,13 +274,18 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     add_compile_options(-Wno-overloaded-virtual)
     add_compile_options(-Wno-self-assign-overloaded)
     add_compile_options(-Wno-self-move)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -latomic")
+    set(libatomic_link_flags "-Wl,-Bstatic -latomic -Wl,-Bdynamic")
+    check_cxx_compiler_flag("${libatomic_link_flags}" has_static_libatomic)
+    if(NOT has_static_libatomic)
+        set(libatomic_link_flags "-latomic")
+    endif()
 endif()
 
-include(CheckCXXCompilerFlag)
+if(ENABLE_ASAN OR ENABLE_UBSAN)
+    add_definitions(-DBUILT_WITH_SANITIZER)
+endif()
 
 if(ENABLE_ASAN)
-    add_definitions(-DBUILT_WITH_SANITIZER)
     set(CMAKE_REQUIRED_FLAGS "-fsanitize=address")
     check_cxx_compiler_flag("-fsanitize=address" ENABLE_ASAN_OK)
     if (NOT ENABLE_ASAN_OK)
@@ -288,12 +297,29 @@ if(ENABLE_ASAN)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
 endif()
 
+if(ENABLE_TSAN)
+    if (ENABLE_ASAN)
+        MESSAGE(FATAL_ERROR "ENABLE_TSAN cannot be combined with ENABLE_ASAN")
+    endif()
+    set(CMAKE_REQUIRED_FLAGS "-fsanitize=thread")
+    check_cxx_compiler_flag("-fsanitize=thread" ENABLE_TSAN_OK)
+    if (NOT ENABLE_TSAN_OK)
+        MESSAGE(FATAL_ERROR "The compiler does not support thread sanitizer")
+    endif()
+    set(ENV{TSAN_OPTIONS} "report_atomic_races=0")
+    add_compile_options(-fsanitize=thread)
+    add_compile_options(-g)
+    add_compile_options(-fno-omit-frame-pointer)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=thread")
+endif()
+
 if(ENABLE_UBSAN)
     check_cxx_compiler_flag("-fsanitize=undefined -fno-sanitize=alignment" ENABLE_UBSAN_OK)
     if (NOT ENABLE_UBSAN_OK)
         MESSAGE(FATAL_ERROR "The compiler does not support Undefined Behavior Sanitizer")
     endif()
     add_compile_options(-fsanitize=undefined -fno-sanitize=alignment)
+    add_compile_options(-fno-sanitize-recover=all)  # Exit on failure
     # TODO(dutor) Remove the following line when RTTI-enabled RocksDB is ready
     add_compile_options(-fno-sanitize=vptr)
     if(NOT ENABLE_ASAN)
@@ -480,6 +506,7 @@ macro(nebula_link_libraries target)
         resolv
         dl
         ${GETTIME_LIB}
+        ${libatomic_link_flags}
         -pthread
     )
 endmacro(nebula_link_libraries)
