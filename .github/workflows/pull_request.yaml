@@ -69,7 +69,7 @@ jobs:
             -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_C_COMPILER=clang \
             -DENABLE_ASAN=on \
-            -DENALBE_UBSAN=on \
+            -DENABLE_UBSAN=on \
             ..
       - name: Make
         if: steps.ignore_docs.outputs.num_source_files != 0
