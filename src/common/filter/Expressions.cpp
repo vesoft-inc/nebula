@@ -109,7 +109,7 @@ Expression::decode(folly::StringPiece buffer) noexcept {
         if (pos != end) {
             return Status::Error("Buffer not consumed up, end: %p, used upto: %p", end, pos);
         }
-        return std::move(expr);
+        return expr;
     } catch (const Status &status) {
         return status;
     }
