@@ -817,7 +817,7 @@ public:
         return operand_.get();
     }
 
-    const ColumnType getType() const {
+    ColumnType getType() const {
         return type_;
     }
 
@@ -977,7 +977,7 @@ public:
         right_.reset(expr);
     }
 
-    const Operator op() const {
+    Operator op() const {
         return op_;
     }
 
