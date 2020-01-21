@@ -300,8 +300,20 @@ TEST_P(GoTest, Distinct) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tony Parker"];
+        auto *fmt = "GO 2 STEPS FROM %ld OVER like YIELD DISTINCT like._dst";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        client_->execute(query, resp);
+        std::vector<std::tuple<VertexID>> expected = {
+            {3394245602834314645},
+            {-7579316172763586624},
+            {5662213458193308137},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
-
 
 TEST_P(GoTest, VertexNotExist) {
     std::string name = "NON EXIST VERTEX ID";
@@ -462,10 +474,11 @@ TEST_P(GoTest, MULTI_EDGES) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        // edges order: serve, like, teammate.
         std::vector<std::tuple<int64_t, int64_t, int64_t>> expected = {
-            {0, 0, player.vid()},
-            {0, 0, player.vid()},
-            {0, 0, player.vid()},
+            {0, player.vid(), 0},
+            {0, player.vid(), 0},
+            {0, player.vid(), 0},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -554,15 +567,17 @@ TEST_P(GoTest, MULTI_EDGES) {
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        // edges order: serve, like, teammate
         std::vector<std::tuple<int64_t, int64_t, int64_t>> expected = {
             {teams_["Grizzlies"].vid(), 0, 0},
             {teams_["Lakers"].vid(), 0, 0},
             {teams_["Bulls"].vid(), 0, 0},
             {teams_["Spurs"].vid(), 0, 0},
             {teams_["Bucks"].vid(), 0, 0},
-            {0, 0, players_["Kobe Bryant"].vid()},
-            {0, 0, players_["Marc Gasol"].vid()},
+            {0, players_["Kobe Bryant"].vid(), 0},
+            {0, players_["Marc Gasol"].vid(), 0},
         };
+
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 
@@ -1093,6 +1108,23 @@ TEST_P(GoTest, ReverselyOneStep) {
     }
 }
 
+TEST_P(GoTest, OnlyIdTwoSteps) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tony Parker"];
+        auto *fmt = "GO 2 STEPS FROM %ld OVER like YIELD like._dst";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        client_->execute(query, resp);
+        std::vector<std::tuple<VertexID>> expected = {
+            {3394245602834314645},
+            {-7579316172763586624},
+            {-7579316172763586624},
+            {5662213458193308137},
+            {5662213458193308137}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
 
 TEST_P(GoTest, ReverselyTwoStep) {
     {

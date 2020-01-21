@@ -263,9 +263,8 @@ Status EdgeSrcIdExpression::prepare() {
 
 
 OptVariantType EdgeDstIdExpression::eval(Getters &getters) const {
-    return getters.getAliasProp(*alias_, *prop_);
+    return getters.getEdgeDstId(*alias_);
 }
-
 
 Status EdgeDstIdExpression::prepare() {
     context_->addAliasProp(*alias_, *prop_);
