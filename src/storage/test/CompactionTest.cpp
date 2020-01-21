@@ -58,6 +58,100 @@ void mockData(kvstore::KVStore* kv) {
     }
 }
 
+void mockTTLDataExpired(kvstore::KVStore* kv) {
+    for (PartitionID partId = 0; partId < 3; partId++) {
+        std::vector<kvstore::KV> data;
+        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+            // one tag data, the record data will always expire
+            auto tagId = 3001;
+            auto tagkey = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
+            RowWriter tagwriter;
+            for (int64_t numInt = 0; numInt < 3; numInt++) {
+                // all data expired, 1546272000 timestamp representation "2019-1-1 0:0:0"
+                // With TTL, the record data will always expire
+                tagwriter << numInt + 1546272000;
+            }
+            for (auto numString = 3; numString < 6; numString++) {
+                tagwriter << folly::stringPrintf("string_col_%d", numString);
+            }
+            auto tagval = tagwriter.encode();
+            data.emplace_back(std::move(tagkey), std::move(tagval));
+
+            // one edge data, the record data will always expire
+            auto edgeType = 101;
+            auto edgekey = NebulaKeyUtils::edgeKey(partId, vertexId, edgeType, 0, 10001,
+                                                   std::numeric_limits<int>::max());
+            RowWriter edgewriter;
+            for (int64_t numInt = 0; numInt < 10; numInt++) {
+                // all data expired, 1546272000 timestamp representation "2019-1-1 0:0:0"
+                // With TTL, the record data will always expire
+                edgewriter << numInt + 1546272000;
+            }
+            for (auto numString = 10; numString < 20; numString++) {
+                edgewriter << folly::stringPrintf("string_col_%d", numString);
+            }
+            auto edgeval = edgewriter.encode();
+            data.emplace_back(std::move(edgekey), std::move(edgeval));
+        }
+
+        folly::Baton<true, std::atomic> baton;
+        kv->asyncMultiPut(
+            0, partId, std::move(data),
+            [&](kvstore::ResultCode code) {
+                EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                baton.post();
+            });
+        baton.wait();
+    }
+}
+
+void mockTTLDataNotExpired(kvstore::KVStore* kv) {
+    for (PartitionID partId = 0; partId < 3; partId++) {
+        std::vector<kvstore::KV> data;
+        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+            // one tag data, the record data will never expire
+            auto tagId = 3001;
+            auto tagkey = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
+            RowWriter tagwriter;
+            for (int64_t numInt = 0; numInt < 3; numInt++) {
+                // all data expired, 4102416000 timestamp representation "2100-1-1 0:0:0"
+                // With TTL, the record data will never expire
+                tagwriter << numInt + 4102416000;
+            }
+            for (auto numString = 3; numString < 6; numString++) {
+                tagwriter << folly::stringPrintf("string_col_%d", numString);
+            }
+            auto tagval = tagwriter.encode();
+            data.emplace_back(std::move(tagkey), std::move(tagval));
+
+            // one edge data, the record data will never expire
+            auto edgeType = 101;
+            auto edgekey = NebulaKeyUtils::edgeKey(partId, vertexId, edgeType, 0, 10001,
+                                                   std::numeric_limits<int>::max());
+            RowWriter edgewriter;
+            for (int64_t numInt = 0; numInt < 10; numInt++) {
+                // all data expired, 4102416000 timestamp representation "2100-1-1 0:0:0"
+                // With TTL, the record data will never expire
+                edgewriter << numInt + 4102416000;
+            }
+            for (auto numString = 10; numString < 20; numString++) {
+                edgewriter << folly::stringPrintf("string_col_%d", numString);
+            }
+            auto edgeval = edgewriter.encode();
+            data.emplace_back(std::move(edgekey), std::move(edgeval));
+        }
+
+        folly::Baton<true, std::atomic> baton;
+        kv->asyncMultiPut(
+            0, partId, std::move(data),
+            [&](kvstore::ResultCode code) {
+                EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                baton.post();
+            });
+        baton.wait();
+    }
+}
+
 TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
     fs::TempDir rootPath("/tmp/NebulaCompactionFilterTest.XXXXXX");
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -133,6 +227,144 @@ TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
             for (VertexID srcId = 20001; srcId <= 20005; srcId++) {
                 checkEdge(partId, vertexId, -101, 0, srcId, 1);
             }
+        }
+    }
+}
+
+TEST(NebulaCompactionFilterTest, TTLFilterDataExpiredTest) {
+    fs::TempDir rootPath("/tmp/NebulaCompactionFilterTest.XXXXXX");
+    auto schemaMan = TestUtils::mockSchemaWithTTLMan();
+    std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
+                                    new StorageCompactionFilterFactoryBuilder(schemaMan.get()));
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
+                                                           6,
+                                                           {0, 0},
+                                                           nullptr,
+                                                           false,
+                                                           std::move(cffBuilder)));
+
+    LOG(INFO) << "Write some data";
+    mockTTLDataExpired(kv.get());
+
+    auto* ns = static_cast<kvstore::NebulaStore*>(kv.get());
+    ns->compact(0);
+    LOG(INFO) << "Finish compaction, check data...";
+
+    auto checkTag = [&](PartitionID partId, VertexID vertexId, TagID tagId, int32_t expectedNum) {
+        auto prefix = NebulaKeyUtils::vertexKey(partId,
+                                                vertexId,
+                                                tagId,
+                                                0);
+        std::unique_ptr<kvstore::KVIterator> iter;
+        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
+        int32_t num = 0;
+        while (iter->valid()) {
+            iter->next();
+            num++;
+        }
+        VLOG(3) << "Check tag " << partId << ":" << vertexId << ":" << tagId;
+        ASSERT_EQ(expectedNum, num);
+    };
+
+    auto checkEdge = [&](PartitionID partId, VertexID vertexId, EdgeType edge,
+                         EdgeRanking rank, VertexID dstId, int32_t expectedNum) {
+        auto start = NebulaKeyUtils::edgeKey(partId,
+                                             vertexId,
+                                             edge,
+                                             rank,
+                                             dstId,
+                                             0);
+        auto end = NebulaKeyUtils::edgeKey(partId,
+                                           vertexId,
+                                           edge,
+                                           rank,
+                                           dstId,
+                                           std::numeric_limits<int>::max());
+        std::unique_ptr<kvstore::KVIterator> iter;
+        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kv->range(0, partId, start, end, &iter));
+        int32_t num = 0;
+        while (iter->valid()) {
+            iter->next();
+            num++;
+        }
+        VLOG(3) << "Check edge " << partId << ":" << vertexId << ":"
+                << edge << ":" << rank << ":" << dstId;
+        ASSERT_EQ(expectedNum, num);
+    };
+
+    for (PartitionID partId = 0; partId < 3; partId++) {
+        for (VertexID vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+            checkTag(partId, vertexId, 3001, 0);
+            checkEdge(partId, vertexId, 101, 0, 10001, 0);
+        }
+    }
+}
+
+TEST(NebulaCompactionFilterTest, TTLFilterDataNotExpiredTest) {
+    fs::TempDir rootPath("/tmp/NebulaCompactionFilterTest.XXXXXX");
+    auto schemaMan = TestUtils::mockSchemaWithTTLMan();
+    std::unique_ptr<kvstore::CompactionFilterFactoryBuilder> cffBuilder(
+                                    new StorageCompactionFilterFactoryBuilder(schemaMan.get()));
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
+                                                           6,
+                                                           {0, 0},
+                                                           nullptr,
+                                                           false,
+                                                           std::move(cffBuilder)));
+
+    LOG(INFO) << "Write some data";
+    mockTTLDataNotExpired(kv.get());
+
+    auto* ns = static_cast<kvstore::NebulaStore*>(kv.get());
+    ns->compact(0);
+    LOG(INFO) << "Finish compaction, check data...";
+
+    auto checkTag = [&](PartitionID partId, VertexID vertexId, TagID tagId, int32_t expectedNum) {
+        auto prefix = NebulaKeyUtils::vertexKey(partId,
+                                                vertexId,
+                                                tagId,
+                                                0);
+        std::unique_ptr<kvstore::KVIterator> iter;
+        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
+        int32_t num = 0;
+        while (iter->valid()) {
+            iter->next();
+            num++;
+        }
+        VLOG(3) << "Check tag " << partId << ":" << vertexId << ":" << tagId;
+        ASSERT_EQ(expectedNum, num);
+    };
+
+    auto checkEdge = [&](PartitionID partId, VertexID vertexId, EdgeType edge,
+                         EdgeRanking rank, VertexID dstId, int32_t expectedNum) {
+        auto start = NebulaKeyUtils::edgeKey(partId,
+                                             vertexId,
+                                             edge,
+                                             rank,
+                                             dstId,
+                                             0);
+        auto end = NebulaKeyUtils::edgeKey(partId,
+                                           vertexId,
+                                           edge,
+                                           rank,
+                                           dstId,
+                                           std::numeric_limits<int>::max());
+        std::unique_ptr<kvstore::KVIterator> iter;
+        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kv->range(0, partId, start, end, &iter));
+        int32_t num = 0;
+        while (iter->valid()) {
+            iter->next();
+            num++;
+        }
+        VLOG(3) << "Check edge " << partId << ":" << vertexId << ":"
+                << edge << ":" << rank << ":" << dstId;
+        ASSERT_EQ(expectedNum, num);
+    };
+
+    for (PartitionID partId = 0; partId < 3; partId++) {
+        for (VertexID vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+            checkTag(partId, vertexId, 3001, 1);
+            checkEdge(partId, vertexId, 101, 0, 10001, 1);
         }
     }
 }

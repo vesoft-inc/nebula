@@ -190,7 +190,7 @@ bool QueryBaseProcessor<REQ, RESP>::checkDataExpiredForTTL(RowReader* reader) {
     auto now = time::WallClock::slowNowInSec();
     const auto& ftype = schema->getFieldType(ttlCol);
 
-    int64_t v;
+    int64_t v = 0;
     switch (ftype.type) {
         case nebula::cpp2::SupportedType::TIMESTAMP:
         case nebula::cpp2::SupportedType::INT: {
