@@ -579,7 +579,7 @@ go_sentence
                     continue;
                 }
                 auto *edge  = new std::string(*e->edge());
-                auto *expr  = new EdgeSrcIdExpression(edge);
+                auto *expr  = new EdgeDstIdExpression(edge);
                 auto *col   = new YieldColumn(expr);
                 cols->addColumn(col);
             }
@@ -588,16 +588,15 @@ go_sentence
         go->setYieldClause($7);
         $$ = go;
     }
-    | KW_GO step_clause from_clause KW_OVER over_edges KW_BIDIRECT where_clause yield_clause {
+    | KW_GO step_clause from_clause over_clause KW_BIDIRECT where_clause yield_clause {
         auto goForward = new GoSentence();
         goForward->setStepClause($2);
         goForward->setFromClause($3);
-        auto over = new OverClause($5);
-        goForward->setOverClause(over);
-        goForward->setWhereClause($7);
-        if ($8 == nullptr) {
+        goForward->setOverClause($4);
+        goForward->setWhereClause($6);
+        if ($7 == nullptr) {
             auto *cols = new YieldColumns();
-            for (auto e : over->edges()) {
+            for (auto e : $4->edges()) {
                 if (e->isOverAll()) {
                     continue;
                 }
@@ -609,36 +608,48 @@ go_sentence
             auto yield = new YieldClause(cols);
             goForward->setYieldClause(yield);
         } else {
-            goForward->setYieldClause($8);
+            goForward->setYieldClause($7);
         }
 
         auto goBackward = new GoSentence();
         auto step = new StepClause(*$2);
         goBackward->setStepClause(step);
-        auto from = new FromClause(*$3);
+        auto from = new FromClause();
+        auto s = from->copy(*$3);
+        if (!s.ok()) {
+            throw nebula::GraphParser::syntax_error(@2, s.toString());
+        }
         goBackward->setFromClause(from);
-        auto overReverse = new OverClause(*over);
+        auto overReverse = new OverClause(*$4);
         overReverse->setDirection(OverClause::Direction::kBackward);
         goBackward->setOverClause(overReverse);
-        if ($7 != nullptr) {
-            auto where = new WhereClause(*$7);
+        if ($6 != nullptr) {
+            auto where = new WhereClause();
+            s = where->copy(*$6);
+            if (!s.ok()) {
+                throw nebula::GraphParser::syntax_error(@6, s.toString());
+            }
             goBackward->setWhereClause(where);
         }
-        if ($8 == nullptr) {
+        if ($7 == nullptr) {
             auto *cols = new YieldColumns();
-            for (auto e : over->edges()) {
+            for (auto e : $4->edges()) {
                 if (e->isOverAll()) {
                     continue;
                 }
                 auto *edge  = new std::string(*e->edge());
-                auto *expr  = new EdgeSrcIdExpression(edge);
+                auto *expr  = new EdgeDstIdExpression(edge);
                 auto *col   = new YieldColumn(expr);
                 cols->addColumn(col);
             }
             auto yield = new YieldClause(cols);
             goBackward->setYieldClause(yield);
         } else {
-            auto yield = new YieldClause(*$8);
+            auto yield = new YieldClause();
+            s = yield->copy(*$7);
+            if (!s.ok()) {
+                throw nebula::GraphParser::syntax_error(@7, s.toString());
+            }
             goBackward->setYieldClause(yield);
         }
 

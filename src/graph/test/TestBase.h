@@ -223,8 +223,9 @@ protected:
             std::sort(expected.begin(), expected.end());
         }
         for (decltype(rows.size()) i = 0; i < rows.size(); ++i) {
+            VLOG(1) << rows[i] << " vs. " << expected[i];
             if (rows[i] != expected[i]) {
-                return TestError() << rows[i] << " vs. " << expected[i];
+                return TestError() << rows[i] << " vs. " << expected[i] << " , index = " << i;
             }
         }
         return TestOK();

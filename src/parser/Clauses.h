@@ -131,29 +131,7 @@ private:
 
 class VerticesClause : public Clause {
 public:
-    VerticesClause(const VerticesClause &clause) {
-        if (clause.isRef()) {
-            auto ref = clause.ref();
-            CHECK(!!ref);
-            auto encode = Expression::encode(ref);
-            auto decode = Expression::decode(encode);
-           if (!decode.ok()) {
-                // TODO:
-           }
-           ref_ = std::move(decode).value();
-        } else {
-            vidList_ = std::make_unique<VertexIDList>();
-            for (auto vid : clause.vidList()) {
-                CHECK(!!vid);
-                auto encode = Expression::encode(vid);
-                auto decode = Expression::decode(encode);
-                if (!decode.ok()) {
-                    // TODO:
-                }
-                vidList_->add(decode.value().release());
-            }
-        }
-    }
+    VerticesClause() = default;
 
     explicit VerticesClause(VertexIDList *vidList) {
         vidList_.reset(vidList);
@@ -177,6 +155,33 @@ public:
 
     Status prepare(Vertices &vertices) const;
 
+    Status copy(const VerticesClause &clause) {
+        if (clause.isRef()) {
+            auto ref = clause.ref();
+            CHECK(!!ref);
+            auto encode = Expression::encode(ref);
+            auto decode = Expression::decode(encode);
+           if (!decode.ok()) {
+               return Status::Error("Decode the vid expression failed: %s",
+                       ref->toString().c_str());
+           }
+           ref_ = std::move(decode).value();
+        } else {
+            vidList_ = std::make_unique<VertexIDList>();
+            for (auto vid : clause.vidList()) {
+                CHECK(!!vid);
+                auto encode = Expression::encode(vid);
+                auto decode = Expression::decode(encode);
+                if (!decode.ok()) {
+                    return Status::Error("Decode the vid expression failed: %s",
+                            vid->toString().c_str());
+                }
+                vidList_->add(decode.value().release());
+            }
+        }
+        return Status::OK();
+    }
+
 protected:
     std::unique_ptr<VertexIDList>               vidList_;
     std::unique_ptr<Expression>                 ref_;
@@ -184,6 +189,8 @@ protected:
 
 class FromClause final : public VerticesClause {
 public:
+    FromClause() = default;
+
     explicit FromClause(VertexIDList *vidList) : VerticesClause(vidList) {
         kind_ = kFromClause;
     }
@@ -305,16 +312,7 @@ private:
 
 class WhereClause final : public Clause {
 public:
-    WhereClause(const WhereClause &clause) {
-        auto filter = clause.filter();
-        CHECK(!!filter);
-        auto encode = Expression::encode(filter);
-        auto decode = Expression::decode(encode);
-        if (!decode.ok()) {
-            // TODO:
-        }
-        filter_ = std::move(decode).value();
-    }
+    WhereClause() = default;
 
     explicit WhereClause(Expression *filter) {
         filter_.reset(filter);
@@ -327,6 +325,19 @@ public:
     Status prepare(Where &where) const;
 
     std::string toString() const;
+
+    Status copy(const WhereClause &clause) {
+        auto filter = clause.filter();
+        CHECK(!!filter);
+        auto encode = Expression::encode(filter);
+        auto decode = Expression::decode(encode);
+        if (!decode.ok()) {
+            return Status::Error("Decode the filter expression failed: %s",
+                       filter->toString().c_str());
+        }
+        filter_ = std::move(decode).value();
+        return Status::OK();
+    }
 
 private:
     std::unique_ptr<Expression>                 filter_;
@@ -395,28 +406,7 @@ private:
 
 class YieldClause final {
 public:
-    YieldClause(const YieldClause &clause) {
-        distinct_ = clause.isDistinct();
-        yieldColumns_ = std::make_unique<YieldColumns>();
-        for (auto *col : clause.columns()) {
-            CHECK(!!col);
-            auto expr = col->expr();
-            CHECK(!!expr);
-            auto encode = Expression::encode(expr);
-            auto decode = Expression::decode(encode);
-            if (!decode.ok()) {
-                // TODO:
-            }
-            auto alias = col->alias();
-            std::string *newAlias = nullptr;
-            if (alias != nullptr) {
-                newAlias = new std::string(*alias);
-            }
-            auto newCol = new YieldColumn(decode.value().release(), newAlias);
-            newCol->setFunction(new std::string(col->getFunName()));
-            yieldColumns_->addColumn(newCol);
-        }
-    }
+    YieldClause() = default;
 
     explicit YieldClause(YieldColumns *fields, bool distinct = false) {
         yieldColumns_.reset(fields);
@@ -432,6 +422,31 @@ public:
     }
 
     std::string toString() const;
+
+    Status copy(const YieldClause &clause) {
+        distinct_ = clause.isDistinct();
+        yieldColumns_ = std::make_unique<YieldColumns>();
+        for (auto *col : clause.columns()) {
+            CHECK(!!col);
+            auto expr = col->expr();
+            CHECK(!!expr);
+            auto encode = Expression::encode(expr);
+            auto decode = Expression::decode(encode);
+            if (!decode.ok()) {
+                return Status::Error("Decode the yield expression failed: %s",
+                       expr->toString().c_str());
+            }
+            auto alias = col->alias();
+            std::string *newAlias = nullptr;
+            if (alias != nullptr) {
+                newAlias = new std::string(*alias);
+            }
+            auto newCol = new YieldColumn(decode.value().release(), newAlias);
+            newCol->setFunction(new std::string(col->getFunName()));
+            yieldColumns_->addColumn(newCol);
+        }
+        return Status::OK();
+    }
 
 private:
     std::unique_ptr<YieldColumns>               yieldColumns_;
