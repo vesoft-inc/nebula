@@ -69,7 +69,6 @@ jobs:
             -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_C_COMPILER=clang \
             -DENABLE_ASAN=on \
-            -DENABLE_UBSAN=on \
             ..
       - name: Make
         if: steps.ignore_docs.outputs.num_source_files != 0
@@ -82,10 +81,13 @@ jobs:
         continue-on-error: true
         run: |
           cd build
+          ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer \
+          ASAN_OPTIONS=fast_unwind_on_malloc=1 \
           ctest \
-            -j 6 \
+            -j $(($(nproc)/2)) \
             --timeout 400 \
             --output-on-failure
+        shell: bash
       - name: CTest with single thread
         if: failure() && steps.ignore_docs.outputs.num_source_files != 0
         timeout-minutes: 30
