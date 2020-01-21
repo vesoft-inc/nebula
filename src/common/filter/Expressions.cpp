@@ -109,7 +109,7 @@ Expression::decode(folly::StringPiece buffer) noexcept {
         if (pos != end) {
             return Status::Error("Buffer not consumed up, end: %p, used upto: %p", end, pos);
         }
-        return std::move(expr);
+        return expr;
     } catch (const Status &status) {
         return status;
     }
@@ -263,9 +263,8 @@ Status EdgeSrcIdExpression::prepare() {
 
 
 OptVariantType EdgeDstIdExpression::eval(Getters &getters) const {
-    return getters.getAliasProp(*alias_, *prop_);
+    return getters.getEdgeDstId(*alias_);
 }
-
 
 Status EdgeDstIdExpression::prepare() {
     context_->addAliasProp(*alias_, *prop_);
