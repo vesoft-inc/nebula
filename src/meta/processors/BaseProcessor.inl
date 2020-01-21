@@ -382,5 +382,55 @@ bool BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
     return ret;
 }
 
+template<typename RESP>
+void BaseProcessor<RESP>::doSyncPutAndUpdate(std::vector<kvstore::KV> data) {
+    folly::Baton<true, std::atomic> baton;
+    auto ret = kvstore::ResultCode::SUCCEEDED;
+    kvstore_->asyncMultiPut(kDefaultSpaceId,
+                            kDefaultPartId,
+                            std::move(data),
+                            [&ret, &baton] (kvstore::ResultCode code) {
+        if (kvstore::ResultCode::SUCCEEDED != code) {
+            ret = code;
+            LOG(INFO) << "Put data error on meta server";
+        }
+        baton.post();
+    });
+    baton.wait();
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        this->resp_.set_code(to(ret));
+        this->onFinished();
+        return;
+    }
+    ret = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
+    this->resp_.set_code(to(ret));
+    this->onFinished();
+}
+
+template<typename RESP>
+void BaseProcessor<RESP>::doSyncMultiRemoveAndUpdate(std::vector<std::string> keys) {
+    folly::Baton<true, std::atomic> baton;
+    auto ret = kvstore::ResultCode::SUCCEEDED;
+    kvstore_->asyncMultiRemove(kDefaultSpaceId,
+                               kDefaultPartId,
+                               std::move(keys),
+                               [&ret, &baton] (kvstore::ResultCode code) {
+        if (kvstore::ResultCode::SUCCEEDED != code) {
+            ret = code;
+            LOG(INFO) << "Remove data error on meta server";
+        }
+        baton.post();
+    });
+    baton.wait();
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        this->resp_.set_code(to(ret));
+        this->onFinished();
+        return;
+    }
+    ret = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
+    this->resp_.set_code(to(ret));
+    this->onFinished();
+}
+
 }  // namespace meta
 }  // namespace nebula
