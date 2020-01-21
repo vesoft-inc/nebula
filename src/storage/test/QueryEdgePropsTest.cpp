@@ -218,6 +218,27 @@ TEST(QueryEdgePropsTest, SimpleTest) {
     checkResponse(resp, 14);
 }
 
+TEST(QueryEdgePropsTest, TTLTest) {
+    fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+
+    LOG(INFO) << "Prepare meta...";
+    auto schemaMng = TestUtils::mockSchemaWithTTLMan();
+    LOG(INFO) << "Prepare data...";
+    mockData(kv.get(), schemaMng.get(), 0);
+    LOG(INFO) << "Build EdgePropRequest...";
+    cpp2::EdgePropRequest req;
+    buildRequest(req);
+
+    LOG(INFO) << "Test QueryEdgePropsRequest...";
+    auto* processor = QueryEdgePropsProcessor::instance(kv.get(), schemaMng.get(), nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    checkTTLResponse(resp);
+}
 
 TEST(QueryEdgePropsTest, QueryAfterEdgeAltered) {
     fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
@@ -363,28 +384,6 @@ TEST(QueryEdgePropsTest, QueryAfterEdgeAltered) {
         int64_t val = 0;
         checkAlteredProp(resp, prop, val);
     }
-}
-
-
-TEST(QueryEdgePropsTest, TTLTest) {
-    fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    LOG(INFO) << "Prepare meta...";
-    auto schemaMan = TestUtils::mockSchemaWithTTLMan();
-    LOG(INFO) << "Prepare data...";
-    mockData(kv.get());
-    LOG(INFO) << "Build EdgePropRequest...";
-    cpp2::EdgePropRequest req;
-    buildRequest(req);
-
-    LOG(INFO) << "Test QueryEdgePropsRequest...";
-    auto* processor = QueryEdgePropsProcessor::instance(kv.get(), schemaMan.get(), nullptr);
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-
-    LOG(INFO) << "Check the results...";
-    checkTTLResponse(resp);
 }
 
 }  // namespace storage

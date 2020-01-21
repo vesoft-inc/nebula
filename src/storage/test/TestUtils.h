@@ -94,7 +94,10 @@ public:
     static std::unique_ptr<AdHocSchemaManager> mockSchemaWithTTLMan(GraphSpaceID spaceId = 0) {
         auto schemaMan = std::make_unique<AdHocSchemaManager>();
         auto tagId = 3001;
-        schemaMan->addTagSchema(spaceId, tagId, TestUtils::genTagSchemaWithTTLProvider(tagId, 3, 3));
+        schemaMan->addTagSchema(spaceId,
+                                tagId,
+                                TestUtils::genTagSchemaWithTTLProvider(tagId, 3, 3));
+
         schemaMan->addEdgeSchema(spaceId, 101, TestUtils::genEdgeSchemaWithTTLProvider(10, 10));
         return schemaMan;
     }
