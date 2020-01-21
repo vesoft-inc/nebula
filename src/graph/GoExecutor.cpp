@@ -517,14 +517,14 @@ void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
 
 void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
     auto requireDstProps = expCtx_->hasDstTagProp();
+    auto onlyEdgeKey = expCtx_->onlyEdgeKey();
     auto requireEdgeProps = !expCtx_->aliasProps().empty();
 
     // Non-reversely traversal, no properties required on destination nodes
     // Or, Reversely traversal but no properties on edge and destination nodes required.
-    // Note that the `dest` which used in reversely traversal means the `src` in foword edge.
+    // Note that the `dst` which used in reversely traversal means the `src` in foward edge.
     if ((!requireDstProps && !isReversely()) ||
-        (isReversely() && !requireDstProps && !requireEdgeProps &&
-         !(expCtx_->isOverAllEdge() && yields_.empty()))) {
+        (isReversely() && !requireDstProps && onlyEdgeKey)) {
         finishExecution(std::move(rpcResp));
         return;
     }
@@ -872,7 +872,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
             props.emplace_back(std::move(pd));
         }
 
-        if (isReversely()) {
+        if (isReversely() && !expCtx_->onlyEdgeKey()) {
             return props;
         }
         for (auto &prop : expCtx_->aliasProps()) {
@@ -1118,7 +1118,6 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     auto dstId = edge.get_dst();
                     Getters getters;
                     getters.getEdgeDstId = [this,
-                                            &srcId,
                                             &dstId,
                                             &edgeType] (const std::string& edgeName)
                                                             -> OptVariantType {
@@ -1134,7 +1133,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                                 return 0L;
                             }
                         }
-                        return isReversely() ? srcId : dstId;
+                        return dstId;
                     };
                     getters.getSrcTagProp = [&spaceId,
                                              &tagData,
@@ -1211,7 +1210,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                             return Status::Error(
                                     "Get edge type for `%s' failed in getters.", edgeName.c_str());
                         }
-                        if (isReversely()) {
+                        if (isReversely() && !expCtx_->onlyEdgeKey()) {
                             if (edgeType != type) {
                                 return edgeHolder_->getDefaultProp(std::abs(type), prop);
                             }
