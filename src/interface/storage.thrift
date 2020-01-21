@@ -88,9 +88,28 @@ struct ResultCode {
     3: optional common.HostAddr  leader,
 }
 
+struct EdgeKey {
+    1: common.VertexID src,
+    // When edge_type > 0, it's an out-edge, otherwise, it's an in-edge
+    // When query edge props, the field could be unset.
+    2: common.EdgeType edge_type,
+    3: common.EdgeRanking ranking,
+    4: common.VertexID dst,
+}
+
+struct Edge {
+    1: EdgeKey key,
+    2: binary props,
+}
+
+struct IdAndProp {
+    1: common.VertexID dst,
+    2: binary props,
+}
+
 struct EdgeData {
-    1: common.EdgeType type,
-    2: binary          data,   // decode according to edge_schema.
+    1: common.EdgeType   type,
+    3: list<IdAndProp>   edges,  // dstId and it's props
 }
 
 struct TagData {
@@ -116,6 +135,7 @@ struct QueryResponse {
     2: optional map<common.TagID, common.Schema>(cpp.template = "std::unordered_map")       vertex_schema,
     3: optional map<common.EdgeType, common.Schema>(cpp.template = "std::unordered_map")    edge_schema,
     4: optional list<VertexData> vertices,
+    5: optional i32 total_edges,
 }
 
 struct ExecResponse {
@@ -148,21 +168,6 @@ struct Vertex {
     1: common.VertexID id,
     2: list<Tag> tags,
 }
-
-struct EdgeKey {
-    1: common.VertexID src,
-    // When edge_type > 0, it's an out-edge, otherwise, it's an in-edge
-    // When query edge props, the field could be unset.
-    2: common.EdgeType edge_type,
-    3: common.EdgeRanking ranking,
-    4: common.VertexID dst,
-}
-
-struct Edge {
-    1: EdgeKey key,
-    2: binary props,
-}
-
 struct GetNeighborsRequest {
     1: common.GraphSpaceID space_id,
     // partId => ids
