@@ -96,6 +96,7 @@ add_library(
   OBJECT
   ${${file_name}-cpp2-SOURCES}
 )
+target_compile_options(${file_name}_thrift_obj PRIVATE "-Wno-pedantic")
 add_custom_target(${file_name}_thrift_headers DEPENDS ${${file_name}-cpp2-HEADERS})
 if(NOT "${file_name}" STREQUAL "common")
 add_dependencies(
