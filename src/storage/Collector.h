@@ -21,6 +21,8 @@ public:
 
     virtual ~Collector() = default;
 
+    virtual void collectDstId(VertexID) {}
+
     virtual void collectVid(int64_t v, const PropContext& prop) = 0;
 
     virtual void collectBool(bool v, const PropContext& prop) = 0;
@@ -36,7 +38,11 @@ public:
 class PropsCollector : public Collector {
 public:
     explicit PropsCollector(RowWriter* writer)
-                : writer_(writer) {}
+        : writer_(writer) {}
+
+    void collectDstId(VertexID dstId) override {
+        dstId_ = dstId;
+    }
 
     void collectVid(int64_t v, const PropContext& prop) override {
         (*writer_) << v;
@@ -68,8 +74,13 @@ public:
         (*writer_) << v;
     }
 
+    VertexID getDstId() const {
+        return dstId_;
+    }
+
 private:
-    RowWriter* writer_ = nullptr;
+    VertexID dstId_;
+    RowWriter* writer_;
 };
 
 

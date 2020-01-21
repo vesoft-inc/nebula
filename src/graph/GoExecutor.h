@@ -125,9 +125,9 @@ private:
     StatusOr<std::vector<VertexID>> getDstIdsFromResp(RpcResponse &rpcResp) const;
 
     /**
-     * get the edgeName from response when over all edges
+     * get the edgeName when over all edges
      */
-    std::vector<std::string> getEdgeNamesFromResp(RpcResponse &rpcResp) const;
+    std::vector<std::string> getEdgeNames() const;
     /**
      * All required data have arrived, finish the execution.
      */
@@ -154,8 +154,11 @@ private:
      * For each row that matches the filter, `cb' would be invoked.
      */
     using Callback = std::function<Status(std::vector<VariantType>,
-                                   std::vector<nebula::cpp2::SupportedType>)>;
+                                          const std::vector<nebula::cpp2::SupportedType>&)>;
+
     bool processFinalResult(RpcResponse &rpcResp, Callback cb) const;
+
+    StatusOr<std::vector<cpp2::RowValue>> toThriftResponse(RpcResponse&& resp);
 
     /**
      * A container to hold the mapping from vertex id to its properties, used for lookups
@@ -219,6 +222,8 @@ private:
     OptVariantType getPropFromInterim(VertexID id, const std::string &prop) const;
 
     nebula::cpp2::SupportedType getPropTypeFromInterim(const std::string &prop) const;
+
+    nebula::cpp2::SupportedType calculateExprType(Expression* exp) const;
 
     enum FromType {
         kInstantExpr,
