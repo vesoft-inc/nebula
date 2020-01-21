@@ -32,7 +32,7 @@ jobs:
         with:
           fetch-depth: 1
       - uses: actions/cache@v1
-        if: matrix.os != "centos6"
+        if: matrix.os != 'centos6'
         with:
           path: /tmp/ccache/
           key: ${{ matrix.os }}-${{ matrix.compiler }}-${{ hashFiles('**/CMakeLists.txt') }}
@@ -55,7 +55,6 @@ jobs:
             -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_C_COMPILER=clang \
             -DENABLE_ASAN=on \
-            -DENABLE_UBSAN=on \
             ..
       - name: Make
         run: |
