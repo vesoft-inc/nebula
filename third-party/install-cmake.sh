@@ -15,9 +15,9 @@ then
     exit $?
 fi
 
-archive=cmake-3.15.5-Linux-x86_64.sh
-url=https://cmake.org/files/v3.15/$archive
-prefix=`pwd`/cmake-3.15.5
+archive=cmake-3.16.3-Linux-x86_64.sh
+url=https://cmake.org/files/v3.16/$archive
+prefix=`pwd`/cmake-3.16.3
 
 if [[ -n $1 ]]
 then
@@ -26,10 +26,10 @@ fi
 
 if [[ -f $archive ]]
 then
-    checksum=$(md5sum $archive | cut -d ' ' -f 1)
+    checksum=$(sha256sum $archive | cut -d ' ' -f 1)
 fi
 
-if [[ ! $checksum = 35d56e9c27b4fd2819a11c29320c655a ]]
+if [[ ! $checksum = d38bbffd3b14b4f90a84fd7b5b8bbbf1cc7f5576cf881eb045e8dcd09d611de9 ]]
 then
     hash wget &> /dev/null && download_cmd="wget -c"
     hash axel &> /dev/null && download_cmd="axel -a -n 8"
