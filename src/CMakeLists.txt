@@ -1,4 +1,3 @@
-#nebula_add_subdirectory(client)
 #nebula_add_subdirectory(console)
 #nebula_add_subdirectory(parser)
 #nebula_add_subdirectory(graph)
