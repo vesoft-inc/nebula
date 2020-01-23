@@ -20,10 +20,10 @@ jobs:
   timeoutInMinutes: 0
 
   steps:
-  - script: mkdir _build && cd _build && cmake -GNinja -DENABLE_COVERAGE=ON ..
+  - script: mkdir _build && cd _build && cmake -DENABLE_COVERAGE=ON ..
     displayName: 'cmake'
 
-  - script: cd _build && ninja-build -j$(expr $(nproc) \* 2)
+  - script: cd _build && make -j$(expr $(nproc) \* 2)
     displayName: 'make'
 
   - script: cd _build && ctest -j$(expr $(nproc) \* 2)
