@@ -8,7 +8,7 @@ namespace cpp nebula.raftex
 namespace java com.vesoft.nebula.raftex
 namespace go nebula.raftex
 
-cpp_include "base/ThriftTypes.h"
+cpp_include "thrift/ThriftTypes.h"
 
 enum ErrorCode {
     SUCCEEDED = 0;

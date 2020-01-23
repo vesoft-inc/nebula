@@ -102,7 +102,7 @@
 #define FVLOG3(...) VLOG(3) << folly::stringPrintf(__VA_ARGS__)
 #define FVLOG4(...) VLOG(4) << folly::stringPrintf(__VA_ARGS__)
 
-#include "base/ThriftTypes.h"
+#include "thrift/ThriftTypes.h"
 
 
 namespace nebula {

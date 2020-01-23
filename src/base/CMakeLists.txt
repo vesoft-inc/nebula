@@ -5,7 +5,6 @@ add_library(
     Status.cpp
     SanitizerOptions.cpp
     SignalHandler.cpp
-    NebulaKeyUtils.cpp
     SlowOpTracker.cpp
     NullValue.cpp
     StringValue.cpp
