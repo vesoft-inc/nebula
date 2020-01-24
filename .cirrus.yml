@@ -1,0 +1,11 @@
+container:
+  image: vesoft/nebula-dev:centos7
+task:
+  timeout_in: 120m
+  tests_script: | 
+    mkdir -p _build && cd _build
+    cmake -DENABLE_COVERAGE=ON ../
+    make -j$(nproc)
+    ctest -j$(nproc)
+    lcov --capture --gcov-tool $GCOV --directory . --output-file coverage.info
+    bash <(curl -s https://codecov.io/bash) -t $(CODECOV_TOKEN) -f coverage.info
