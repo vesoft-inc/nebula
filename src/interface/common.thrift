@@ -67,19 +67,27 @@ struct Path {
 }
 
 
+enum NullType {
+    NT_Null     = 0,
+    NT_NaN      = 1,
+    NT_BadType  = 2,
+} (cpp.enum_strict)
+
+
 // The type to hold any supported values during the query
 union Value {
-    1: VertexID     idVal;
-    2: bool         bVal;
-    3: i64          iVal;
-    4: double       fVal;
-    5: binary       sVal;
-    6: Timestamp    tVal;
-    7: Date         dVal;
-    8: DateTime     dtVal;
-    9: Path         pVal (cpp2.ref_type = "unique");
-    10: List        lVal (cpp2.ref_type = "unique");
-    11: Map         mVal (cpp2.ref_type = "unique");
+    1: NullType     nVal;
+    2: VertexID     vVal;
+    3: bool         bVal;
+    4: i64          iVal;
+    5: double       fVal;
+    6: binary       sVal;
+    7: Timestamp    tVal;
+    8: Date         dVal;
+    9: DateTime     dtVal;
+    10: Path        pathVal (cpp2.ref_type = "unique");
+    11: List        listVal (cpp2.ref_type = "unique");
+    12: Map         mapVal (cpp2.ref_type = "unique");
 }
 
 

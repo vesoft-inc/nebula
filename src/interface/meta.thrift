@@ -90,6 +90,7 @@ enum RoleType {
     GUEST  = 0x04,
 } (cpp.enum_strict)
 
+
 union ID {
     1: common.GraphSpaceID  space_id,
     2: common.TagID         tag_id,
@@ -100,20 +101,20 @@ union ID {
     7: ClusterID            cluster_id,
 }
 
+
 // These are all data types supported in the graph properties
 enum PropertyType {
     UNKNOWN = 0,
 
     // Simple types
     BOOL = 1,
-    INTEGER = 2,  // Persisted as a variant int
-    FIXED_INT = 3,  // Persisted as an 8-byte integer
-    FLOAT = 4,
-    DOUBLE = 5,
-    STRING = 6,
+    INTEGER = 2,        // Persisted as a variant int
+    FLOAT = 3,
+    DOUBLE = 4,
+    STRING = 5,
     // String with fixed length. If the string content is shorteri
     // than the given length, '\0' will be padded to the end
-    FIXED_STRING = 7,
+    FIXED_STRING = 6,
 
     // Date time
     TIMESTAMP = 21,
@@ -121,16 +122,14 @@ enum PropertyType {
     DATETIME = 23,
 } (cpp.enum_strict)
 
+
 struct ColumnDef {
     1: required binary          name,
     2: required PropertyType    type,
-    3: required i16             type_length,
-//    3: optional union {
-//        1: bool bVal;
-//        2: i64 iVal;
-//        3: double dVal;
-//        4: string sVal;
-//    } default_value,
+    // type_length is valid for fixed_string type
+    3: required i16             type_length = 0,
+    4: required bool            nullable = false,
+    5: optional common.Value    default_value,
 }
 
 struct SchemaProp {
