@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "base/StatusOr.h"
+#include "datatypes/HostAddr.h"
 
 namespace nebula {
 namespace network {

@@ -8,11 +8,12 @@
 #define COMMON_STATS_STATSMANAGER_H_
 
 #include "base/Base.h"
-#include "time/WallClock.h"
-#include "base/StatusOr.h"
 #include <folly/RWSpinLock.h>
 #include <folly/stats/MultiLevelTimeSeries.h>
 #include <folly/stats/TimeseriesHistogram.h>
+#include "datatypes/HostAddr.h"
+#include "time/WallClock.h"
+#include "base/StatusOr.h"
 
 namespace nebula {
 namespace stats {

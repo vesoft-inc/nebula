@@ -7,7 +7,6 @@
 #include "base/Base.h"
 #include "clients/meta/MetaClient.h"
 #include "time/Duration.h"
-#include "meta/MetaCommon.h"
 #include "network/NetworkUtils.h"
 #include "meta/NebulaSchemaProvider.h"
 #include "conf/Configuration.h"
@@ -383,7 +382,7 @@ void MetaClient::getResponse(Request req,
 
                 return;
             } else if (resp.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
-                HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
+                HostAddr leader(resp.get_leader().first, resp.get_leader().second);
                 {
                     folly::RWSpinLock::WriteHolder holder(hostLock_);
                     leader_ = leader;
@@ -411,14 +410,6 @@ void MetaClient::getResponse(Request req,
     });  // via
 }
 
-std::vector<HostAddr> MetaClient::to(const std::vector<nebula::cpp2::HostAddr>& tHosts) {
-    std::vector<HostAddr> hosts;
-    hosts.resize(tHosts.size());
-    std::transform(tHosts.begin(), tHosts.end(), hosts.begin(), [](const auto& h) {
-        return HostAddr(h.get_ip(), h.get_port());
-    });
-    return hosts;
-}
 
 std::vector<SpaceIdName> MetaClient::toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames) {
     std::vector<SpaceIdName> idNames;
@@ -654,7 +645,7 @@ MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
                 }, [this] (cpp2::GetPartsAllocResp&& resp) -> decltype(auto) {
                     std::unordered_map<PartitionID, std::vector<HostAddr>> parts;
                     for (auto it = resp.parts.begin(); it != resp.parts.end(); it++) {
-                        parts.emplace(it->first, to(it->second));
+                        parts.emplace(it->first, it->second);
                     }
                     return parts;
                 }, std::move(promise));
@@ -735,15 +726,14 @@ StatusOr<std::vector<std::string>> MetaClient::getAllEdgeFromCache(const GraphSp
 folly::Future<StatusOr<bool>>
 MetaClient::multiPut(std::string segment,
                      std::vector<std::pair<std::string, std::string>> pairs) {
-    if (!nebula::meta::MetaCommon::checkSegment(segment)
+    if (!nebula::meta::checkSegment(segment)
             || pairs.empty()) {
         return Status::Error("arguments invalid!");
     }
     cpp2::MultiPutReq req;
-    std::vector<nebula::cpp2::KeyValue> data;
+    std::vector<nebula::KeyValue> data;
     for (auto& element : pairs) {
-        data.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                          std::move(element.first), std::move(element.second));
+        data.emplace_back(std::move(element));
     }
     req.set_segment(std::move(segment));
     req.set_pairs(std::move(data));
@@ -760,7 +750,7 @@ MetaClient::multiPut(std::string segment,
 
 folly::Future<StatusOr<std::string>>
 MetaClient::get(std::string segment, std::string key) {
-    if (!nebula::meta::MetaCommon::checkSegment(segment)
+    if (!nebula::meta::checkSegment(segment)
             || key.empty()) {
         return Status::Error("arguments invalid!");
     }
@@ -780,7 +770,7 @@ MetaClient::get(std::string segment, std::string key) {
 
 folly::Future<StatusOr<std::vector<std::string>>>
 MetaClient::multiGet(std::string segment, std::vector<std::string> keys) {
-    if (!nebula::meta::MetaCommon::checkSegment(segment)
+    if (!nebula::meta::checkSegment(segment)
             || keys.empty()) {
         return Status::Error("arguments invalid!");
     }
@@ -800,7 +790,7 @@ MetaClient::multiGet(std::string segment, std::vector<std::string> keys) {
 
 folly::Future<StatusOr<std::vector<std::string>>>
 MetaClient::scan(std::string segment, std::string start, std::string end) {
-    if (!nebula::meta::MetaCommon::checkSegment(segment)
+    if (!nebula::meta::checkSegment(segment)
             || start.empty() || end.empty()) {
         return Status::Error("arguments invalid!");
     }
@@ -821,7 +811,7 @@ MetaClient::scan(std::string segment, std::string start, std::string end) {
 
 folly::Future<StatusOr<bool>>
 MetaClient::remove(std::string segment, std::string key) {
-    if (!nebula::meta::MetaCommon::checkSegment(segment)
+    if (!nebula::meta::checkSegment(segment)
             || key.empty()) {
         return Status::Error("arguments invalid!");
     }
@@ -841,7 +831,7 @@ MetaClient::remove(std::string segment, std::string key) {
 
 folly::Future<StatusOr<bool>>
 MetaClient::removeRange(std::string segment, std::string start, std::string end) {
-    if (!nebula::meta::MetaCommon::checkSegment(segment)
+    if (!nebula::meta::checkSegment(segment)
             || start.empty() || end.empty()) {
         return Status::Error("arguments invalid!");
     }
@@ -1330,10 +1320,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
         clusterId_ = FileBasedClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
     }
     cpp2::HBReq req;
-    nebula::cpp2::HostAddr thriftHost;
-    thriftHost.set_ip(localHost_.first);
-    thriftHost.set_port(localHost_.second);
-    req.set_host(std::move(thriftHost));
+    req.set_host(localHost_);
     req.set_cluster_id(clusterId_.load());
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
@@ -1360,16 +1347,7 @@ folly::Future<StatusOr<int64_t>> MetaClient::balance(std::vector<HostAddr> hostD
                                                      bool isStop) {
     cpp2::BalanceReq req;
     if (!hostDel.empty()) {
-        std::vector<nebula::cpp2::HostAddr> tHostDel;
-        tHostDel.reserve(hostDel.size());
-        std::transform(hostDel.begin(), hostDel.end(),
-                       std::back_inserter(tHostDel), [](const auto& h) {
-            nebula::cpp2::HostAddr th;
-            th.set_ip(h.first);
-            th.set_port(h.second);
-            return th;
-        });
-        req.set_host_del(std::move(tHostDel));
+        req.set_host_del(std::move(hostDel));
     }
     if (isStop) {
         req.set_stop(isStop);

@@ -14,6 +14,7 @@
 #include "gen-cpp2/MetaServiceAsyncClient.h"
 #include "base/Status.h"
 #include "base/StatusOr.h"
+#include "meta/Common.h"
 #include "thread/GenericWorker.h"
 #include "thrift/ThriftClientManager.h"
 #include "meta/SchemaProviderIf.h"
@@ -411,8 +412,6 @@ protected:
                      bool toLeader = false,
                      int32_t retry = 0,
                      int32_t retryLimit = FLAGS_meta_client_retry_times);
-
-    std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
     std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
 

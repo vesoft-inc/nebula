@@ -9,7 +9,7 @@
 
 #include "base/Base.h"
 #include "fs/FileUtils.h"
-
+#include "thrift/ThriftTypes.h"
 
 namespace nebula {
 namespace meta {

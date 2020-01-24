@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include <folly/io/async/EventBaseManager.h>
+#include "datatypes/HostAddr.h"
 
 namespace nebula {
 namespace thrift {

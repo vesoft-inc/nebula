@@ -4,20 +4,10 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
-#include "base/NullValue.h"
-
-
-namespace std {
-
-std::ostream& operator<<(std::ostream& os, const nebula::NullValue&) {
-    os << "Null";
-    return os;
-}
-
-}
+#include "datatypes/Path.h"
 
 namespace nebula {
 
 }  // namespace nebula
+
 

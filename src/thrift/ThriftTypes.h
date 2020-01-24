@@ -32,24 +32,6 @@ using UserID = int32_t;
 using Timestamp = int64_t;
 
 
-struct Date {
-    int16_t year;
-    int8_t month;
-    int8_t day;
-};
-
-
-struct DateTime {
-    int16_t year;
-    int8_t month;
-    int8_t day;
-    int8_t hour;
-    int8_t minute;
-    int8_t sec;
-    int32_t microsec;
-    int32_t timezone;
-};
-
 }  // namespace nebula
 #endif  // COMMON_BASE_THRIFTTYPES_H_
 

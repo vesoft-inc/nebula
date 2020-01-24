@@ -6,7 +6,6 @@ add_library(
     SanitizerOptions.cpp
     SignalHandler.cpp
     SlowOpTracker.cpp
-    NullValue.cpp
     StringValue.cpp
 )
 
