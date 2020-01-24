@@ -3,6 +3,7 @@ container:
 task:
   timeout_in: 120m
   tests_script: | 
+    mkdir -p .git/hooks
     mkdir -p _build && cd _build
     cmake -DENABLE_COVERAGE=ON ../
     make -j$(nproc)
