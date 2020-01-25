@@ -13,7 +13,7 @@ jobs:
   pool:
     vmImage: $(vmImage)
 
-  container: vesoft/nebula-dev:centos7
+  container: shylockhg/nebula-dev:centos7
   timeoutInMinutes: 150
 
   steps:
