@@ -27,7 +27,8 @@ jobs:
     displayName: 'test'
 
   - script: |
+      set -e
       cd _build
       lcov --capture --gcov-tool $GCOV --directory . --output-file coverage.info
-      bash <(curl -s https://codecov.io/bash) -t $(CODECOV_TOKEN) -f coverage.info
+      bash <(curl -s https://codecov.io/bash) -Z -t $(CODECOV_TOKEN) -f coverage.info
     displayName: 'coverage'
