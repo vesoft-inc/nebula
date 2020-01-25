@@ -1,0 +1,33 @@
+# https://aka.ms/yaml
+
+variables:
+  - group: CODECOV
+
+jobs:
+- job: test
+  displayName: 'Building and Testing'
+  strategy:
+    matrix:
+      Linux:
+        vmImage: ubuntu-18.04
+  pool:
+    vmImage: $(vmImage)
+
+  container: vesoft/nebula-dev:centos7
+  timeoutInMinutes: 0
+
+  steps:
+  - script: mkdir _build && cd _build && cmake -DENABLE_COVERAGE=ON ..
+    displayName: 'cmake'
+
+  - script: cd _build && make -j$(expr $(nproc) \* 2)
+    displayName: 'make'
+
+  - script: cd _build && ctest -j$(expr $(nproc) \* 2)
+    displayName: 'test'
+
+  - script: |
+      cd _build
+      lcov --capture --gcov-tool $GCOV --directory . --output-file coverage.info
+      bash <(curl -s https://codecov.io/bash) -t $(CODECOV_TOKEN) -f coverage.info
+    displayName: 'coverage'
