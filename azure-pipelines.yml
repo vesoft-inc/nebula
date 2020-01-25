@@ -14,7 +14,7 @@ jobs:
     vmImage: $(vmImage)
 
   container: vesoft/nebula-dev:centos7
-  timeoutInMinutes: 0
+  timeoutInMinutes: 150
 
   steps:
   - script: mkdir _build && cd _build && cmake -DENABLE_COVERAGE=ON ..
