@@ -41,10 +41,6 @@ public:
     static StatusOr<std::vector<HostAddr>> resolveHost(const std::string &host, int32_t port);
     // Convert the given IP/HOST and Port to a HostAddr
     static StatusOr<HostAddr> toHostAddr(const std::string &ip, int32_t port);
-    // Retrieve the string-form IP from the given HostAddr
-    static std::string ipFromHostAddr(const HostAddr& host);
-    // Retrieve the port number from the given HostAddr
-    static int32_t portFromHostAddr(const HostAddr& host);
 
     // Convert an IPv4 address (in the form of xx.xx.xx.xx) to an 32-bit
     // integer

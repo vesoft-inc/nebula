@@ -93,16 +93,16 @@ TEST(NetworkUtils, toHostAddr) {
     auto addr = s.value();
     IPv4 ip;
     ASSERT_TRUE(NetworkUtils::ipv4ToInt("127.0.0.1", ip));
-    ASSERT_EQ(addr[0].first, ip);
-    ASSERT_EQ(addr[0].second, 1200);
+    ASSERT_EQ(addr[0].ip, ip);
+    ASSERT_EQ(addr[0].port, 1200);
 
     auto s2 = NetworkUtils::toHostAddr("8.8.8.8", 1300);
     ASSERT_TRUE(s2.ok());
     auto addr2 = s2.value();
 
     ASSERT_TRUE(NetworkUtils::ipv4ToInt("8.8.8.8", ip));
-    ASSERT_EQ(addr2.first, ip);
-    ASSERT_EQ(addr2.second, 1300);
+    ASSERT_EQ(addr2.ip, ip);
+    ASSERT_EQ(addr2.port, 1300);
 
     s2 = NetworkUtils::toHostAddr("a.b.c.d:a23", 1200);
     ASSERT_FALSE(s2.ok());
@@ -115,11 +115,11 @@ TEST(NetworkUtils, toHosts) {
 
     IPv4 ip;
     ASSERT_TRUE(NetworkUtils::ipv4ToInt("127.0.0.1", ip));
-    ASSERT_EQ(addr[0].first, ip);
-    ASSERT_EQ(addr[0].second, 1200);
+    ASSERT_EQ(addr[0].ip, ip);
+    ASSERT_EQ(addr[0].port, 1200);
 
-    ASSERT_EQ(addr[1].first, ip);
-    ASSERT_EQ(addr[1].second, 1200);
+    ASSERT_EQ(addr[1].ip, ip);
+    ASSERT_EQ(addr[1].port, 1200);
 
     s = NetworkUtils::toHosts("1.1.2.3:123, a.b.c.d:a23");
     ASSERT_FALSE(s.ok());

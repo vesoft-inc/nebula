@@ -382,7 +382,7 @@ void MetaClient::getResponse(Request req,
 
                 return;
             } else if (resp.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
-                HostAddr leader(resp.get_leader().first, resp.get_leader().second);
+                HostAddr leader = resp.get_leader();
                 {
                     folly::RWSpinLock::WriteHolder holder(hostLock_);
                     leader_ = leader;
@@ -473,7 +473,7 @@ PartsMap MetaClient::doGetPartsMap(const HostAddr& host,
                 auto& partM = partMap[spaceId][partId];
                 partM.spaceId_ = spaceId;
                 partM.partId_  = partId;
-                partM.peers_   = partAllocIter->second;
+                partM.hosts_   = partAllocIter->second;
             }
         }
     }
@@ -509,12 +509,12 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
                             << partIt->first << " was added!";
                     listener_->onPartAdded(partIt->second);
                 } else {
-                    const auto& oldPartMeta = oldPartIt->second;
-                    const auto& newPartMeta = partIt->second;
-                    if (oldPartMeta != newPartMeta) {
+                    const auto& oldPartHosts = oldPartIt->second;
+                    const auto& newPartHosts = partIt->second;
+                    if (oldPartHosts != newPartHosts) {
                         VLOG(1) << "SpaceId " << spaceId
                                 << ", partId " << partIt->first << " was updated!";
-                        listener_->onPartUpdated(newPartMeta);
+                        listener_->onPartUpdated(newPartHosts);
                     }
                 }
             }
@@ -856,7 +856,8 @@ PartsMap MetaClient::getPartsMapFromCache(const HostAddr& host) {
 }
 
 
-StatusOr<PartMeta> MetaClient::getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId) {
+StatusOr<PartHosts> MetaClient::getPartHostsFromCache(GraphSpaceID spaceId,
+                                                      PartitionID partId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(spaceId);
     if (it == localCache_.end()) {
@@ -865,13 +866,15 @@ StatusOr<PartMeta> MetaClient::getPartMetaFromCache(GraphSpaceID spaceId, Partit
     auto& cache = it->second;
     auto partAllocIter = cache->partsAlloc_.find(partId);
     if (partAllocIter == cache->partsAlloc_.end()) {
-        return Status::Error("Part not found in cache, spaceid: %d, partid: %d", spaceId, partId);
+        return Status::Error("Part not found in cache, spaceid: %d, partid: %d",
+                             spaceId,
+                             partId);
     }
-    PartMeta pm;
-    pm.spaceId_ = spaceId;
-    pm.partId_  = partId;
-    pm.peers_   = partAllocIter->second;
-    return pm;
+    PartHosts ph;
+    ph.spaceId_ = spaceId;
+    ph.partId_  = partId;
+    ph.hosts_   = partAllocIter->second;
+    return ph;
 }
 
 

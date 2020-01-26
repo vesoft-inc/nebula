@@ -1,0 +1,11 @@
+nebula_add_test(
+    NAME
+        host_addr_test
+    SOURCES
+        HostAddrTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+    LIBRARIES
+        gtest
+)

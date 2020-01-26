@@ -19,8 +19,8 @@ template<class ClientType>
 std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
         const HostAddr& host, folly::EventBase* evb, bool compatibility, uint32_t timeout) {
     VLOG(2) << "Getting a client to "
-            << network::NetworkUtils::intToIPv4(host.first)
-            << ":" << host.second;
+            << network::NetworkUtils::intToIPv4(host.ip)
+            << ":" << host.port;
 
     if (evb == nullptr) {
         evb = folly::EventBaseManager::get()->getEventBase();
@@ -32,10 +32,10 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
     }
 
     // Need to create a new client
-    auto ipAddr = network::NetworkUtils::intToIPv4(host.first);
-    auto port = host.second;
+    auto ipAddr = network::NetworkUtils::intToIPv4(host.ip);
+    auto port = host.port;
     VLOG(2) << "There is no existing client to "
-            << ipAddr << ":" << port
+            << ipAddr << ":" << host.port
             << ", trying to create one";
     auto channel = apache::thrift::ReconnectingRequestChannel::newChannel(
         *evb, [compatibility, ipAddr, port, timeout] (folly::EventBase& eb) mutable {
@@ -48,7 +48,7 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
                     socket = apache::thrift::async::TAsyncSocket::newSocket(
                         &eb, ipAddr, port, FLAGS_conn_timeout_ms);
                 });
-            auto headerClientChannel =  apache::thrift::HeaderClientChannel::newChannel(socket);
+            auto headerClientChannel = apache::thrift::HeaderClientChannel::newChannel(socket);
             if (timeout > 0) {
                 headerClientChannel->setTimeout(timeout);
             }

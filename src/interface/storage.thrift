@@ -314,10 +314,11 @@ struct AddEdgesRequest {
 /*
  * Start of DeleteVertex section
  */
-struct DeleteVertexRequest {
+struct DeleteVerticesRequest {
     1: common.GraphSpaceID space_id,
-    2: common.PartitionID  part_id,
-    3: common.VertexID     vid;
+    // partId => vertexId
+    2: map<common.PartitionID, list<common.VertexID>>(
+        cpp.template = "std::unordered_map") parts,
 }
 
 
@@ -355,7 +356,7 @@ struct UpdateVertexRequest {
     1: common.GraphSpaceID          space_id,
     2: common.PartitionID           part_id,
     3: common.VertexID              vertex_id,
-    4: list<UpdatedVertexProp>       updated_props,
+    4: list<UpdatedVertexProp>      updated_props,
     5: optional bool                insertable = false,
     6: optional list<VertexProp>    return_props,
     // If provided, the update happens only when the condition evaluates true
@@ -421,7 +422,7 @@ service GraphStorageService {
     ExecResponse addEdges(1: AddEdgesRequest req);
 
     ExecResponse deleteEdges(1: DeleteEdgesRequest req);
-    ExecResponse deleteVertex(1: DeleteVertexRequest req);
+    ExecResponse deleteVertices(1: DeleteVerticesRequest req);
 
     UpdateResponse updateVertex(1: UpdateVertexRequest req);
     UpdateResponse updateEdge(1: UpdateEdgeRequest req);

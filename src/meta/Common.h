@@ -22,23 +22,23 @@ constexpr char _RANK[]  = "_rank";
 constexpr char _DST[]   = "_dst";
 
 
-struct PartMeta {
+struct PartHosts {
     GraphSpaceID           spaceId_;
     PartitionID            partId_;
-    std::vector<HostAddr>  peers_;
+    std::vector<HostAddr>  hosts_;
 
-    bool operator==(const PartMeta& that) const {
-        return this->spaceId_ == that.spaceId_
-                    && this->partId_ == that.partId_
-                    && this->peers_ == that.peers_;
+    bool operator==(const PartHosts& rhs) const {
+        return this->spaceId_ == rhs.spaceId_ &&
+               this->partId_ == rhs.partId_ &&
+               this->hosts_ == rhs.hosts_;
     }
 
-    bool operator!=(const PartMeta& that) const {
-        return !(*this == that);
+    bool operator!=(const PartHosts& rhs) const {
+        return !(*this == rhs);
     }
 };
 
-using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, PartMeta>>;
+using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, PartHosts>>;
 
 
 inline bool checkSegment(const std::string& segment) {

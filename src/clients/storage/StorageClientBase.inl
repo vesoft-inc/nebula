@@ -4,9 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <folly/Try.h>
 #include "stats/StatsManager.h"
 #include "time/Duration.h"
-#include <folly/Try.h>
 
 DECLARE_int32(storage_client_timeout_ms);
 
@@ -74,8 +74,80 @@ private:
 }  // Anonymous namespace
 
 
+template<typename ClientType>
+StorageClientBase<ClientType>::StorageClientBase(
+    std::shared_ptr<folly::IOThreadPoolExecutor> threadPool,
+    meta::MetaClient* metaClient)
+        : ioThreadPool_(threadPool)
+        , metaClient_(metaClient) {
+    clientsMan_ = std::make_unique<thrift::ThriftClientManager<ClientType>>();
+}
+
+
+template<typename ClientType>
+StorageClientBase<ClientType>::~StorageClientBase() {
+    VLOG(3) << "Destructing StorageClientBase";
+    if (nullptr != metaClient_) {
+        metaClient_ = nullptr;
+    }
+}
+
+
+template<typename ClientType>
+const HostAddr
+StorageClientBase<ClientType>::getLeader(const meta::PartHosts& partHosts) const {
+    auto part = std::make_pair(partHosts.spaceId_, partHosts.partId_);
+
+    // Acquire the read lock
+    folly::RWSpinLock::ReadHolder rh(leadersLock_);
+
+    auto it = leaders_.find(part);
+    if (it != leaders_.end()) {
+        return it->second;
+    } else {
+        VLOG(1) << "No leader exists. Choose one random.";
+
+        // Upgrade the read lock to the write lock
+        folly::RWSpinLock::UpgradedHolder uh(leadersLock_);
+        rh.reset();
+        folly::RWSpinLock::WriteHolder wh(std::move(uh));
+
+        auto& random = partHosts.hosts_[folly::Random::rand32(partHosts.hosts_.size())];
+        leaders_[part] = random;
+        return random;
+    }
+}
+
+
+template<typename ClientType>
+void StorageClientBase<ClientType>::updateLeader(GraphSpaceID spaceId,
+                                                 PartitionID partId,
+                                                 const HostAddr& leader) {
+    LOG(INFO) << "Update the leader for [" << spaceId
+              << ", " << partId
+              << "] to " << leader;
+
+    folly::RWSpinLock::WriteHolder wh(leadersLock_);
+    leaders_[std::make_pair(spaceId, partId)] = leader;
+}
+
+
+template<typename ClientType>
+void StorageClientBase<ClientType>::invalidLeader(GraphSpaceID spaceId,
+                                                   PartitionID partId) {
+    LOG(INFO) << "Invalidate the leader for [" << spaceId << ", " << partId << "]";
+    folly::RWSpinLock::WriteHolder wh(leadersLock_);
+    auto it = leaders_.find(std::make_pair(spaceId, partId));
+    if (it != leaders_.end()) {
+        leaders_.erase(it);
+    }
+}
+
+
+template<typename ClientType>
 template<class Request, class RemoteFunc, class Response>
-folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
+folly::SemiFuture<StorageRpcResponse<Response>>
+StorageClientBase<ClientType>::collectResponse(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc) {
@@ -95,16 +167,21 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
         DCHECK(res.second);
         // Invoke the remote method
         folly::via(evb, [this, evb, context, host, spaceId, res, duration] () mutable {
-            auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
+            auto client = clientsMan_->client(host,
+                                              evb,
+                                              false,
+                                              FLAGS_storage_client_timeout_ms);
             // Result is a pair of <Request&, bool>
             context->serverMethod(client.get(), *res.first)
             // Future process code will be executed on the IO thread
             // Since all requests are sent using the same eventbase, all then-callback
             // will be executed on the same IO thread
-            .via(evb).then([this, context, host, spaceId, duration] (folly::Try<Response>&& val) {
+            .via(evb)
+            .then([this, context, host, spaceId, duration] (folly::Try<Response>&& val) {
                 auto& r = context->findRequest(host);
                 if (val.hasException()) {
-                    LOG(ERROR) << "Request to " << host << " failed: " << val.exception().what();
+                    LOG(ERROR) << "Request to " << host
+                               << " failed: " << val.exception().what();
                     for (auto& part : r.parts) {
                         VLOG(3) << "Exception! Failed part " << part.first;
                         context->resp.failedParts().emplace(
@@ -117,21 +194,19 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                     auto resp = std::move(val.value());
                     auto& result = resp.get_result();
                     bool hasFailure{false};
-                    for (auto& code : result.get_failed_codes()) {
+                    for (auto& code : result.get_failed_parts()) {
                         VLOG(3) << "Failure! Failed part " << code.get_part_id()
                                 << ", failed code " << static_cast<int32_t>(code.get_code());
                         hasFailure = true;
                         if (code.get_code() == storage::cpp2::ErrorCode::E_LEADER_CHANGED) {
                             auto* leader = code.get_leader();
-                            if (leader != nullptr
-                                    && leader->get_ip() != 0
-                                    && leader->get_port() != 0) {
-                                updateLeader(spaceId,
-                                             code.get_part_id(),
-                                             HostAddr(leader->get_ip(), leader->get_port()));
+                            if (leader != nullptr &&
+                                leader->ip != 0 &&
+                                leader->port != 0) {
+                                updateLeader(spaceId, code.get_part_id(), *leader);
                             }
-                        } else if (code.get_code() == storage::cpp2::ErrorCode::E_PART_NOT_FOUND
-                                || code.get_code() == storage::cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
+                        } else if (code.get_code() == cpp2::ErrorCode::E_PART_NOT_FOUND
+                                || code.get_code() == cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
                             invalidLeader(spaceId, code.get_part_id());
                         } else {
                             // Simply keep the result
@@ -153,9 +228,9 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
 
                 if (context->removeRequest(host)) {
                     // Received all responses
-                    stats::Stats::addStatsValue(stats_,
-                                                context->resp.succeeded(),
-                                                duration.elapsedInUSec());
+//                    stats::Stats::addStatsValue(stats_,
+//                                                context->resp.succeeded(),
+//                                                duration.elapsedInUSec());
                     context->promise.setValue(std::move(context->resp));
                 }
             });
@@ -165,15 +240,16 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
     if (context->finishSending()) {
         // Received all responses, most likely, all rpc failed
         context->promise.setValue(std::move(context->resp));
-        stats::Stats::addStatsValue(stats_, context->resp.succeeded(), duration.elapsedInUSec());
+//        stats::Stats::addStatsValue(stats_, context->resp.succeeded(), duration.elapsedInUSec());
     }
 
     return context->promise.getSemiFuture();
 }
 
 
+template<typename ClientType>
 template<class Request, class RemoteFunc, class Response>
-folly::Future<StatusOr<Response>> StorageClient::getResponse(
+folly::Future<StatusOr<Response>> StorageClientBase<ClientType>::getResponse(
         folly::EventBase* evb,
         std::pair<HostAddr, Request> request,
         RemoteFunc remoteFunc) {
@@ -196,35 +272,96 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
                     duration, this] (folly::Try<Response>&& t) mutable {
             // exception occurred during RPC
             if (t.hasException()) {
-                stats::Stats::addStatsValue(stats_, false, duration.elapsedInUSec());
-                p.setValue(Status::Error(folly::stringPrintf("RPC failure in StorageClient: %s",
-                                                             t.exception().what().c_str())));
+//                stats::Stats::addStatsValue(stats_, false, duration.elapsedInUSec());
+                p.setValue(
+                    Status::Error(
+                        folly::stringPrintf("RPC failure in StorageClient: %s",
+                                            t.exception().what().c_str())));
                 invalidLeader(spaceId, partId);
                 return;
             }
             auto&& resp = std::move(t.value());
             // leader changed
             auto& result = resp.get_result();
-            for (auto& code : result.get_failed_codes()) {
+            for (auto& code : result.get_failed_parts()) {
                 VLOG(3) << "Failure! Failed part " << code.get_part_id()
                         << ", failed code " << static_cast<int32_t>(code.get_code());
                 if (code.get_code() == storage::cpp2::ErrorCode::E_LEADER_CHANGED) {
                     auto* leader = code.get_leader();
-                    if (leader != nullptr && leader->get_ip() != 0 && leader->get_port() != 0) {
-                        updateLeader(spaceId, code.get_part_id(),
-                                     HostAddr(leader->get_ip(), leader->get_port()));
+                    if (leader != nullptr &&
+                        leader->ip != 0 &&
+                        leader->port != 0) {
+                        updateLeader(spaceId, code.get_part_id(), *leader);
                     }
                 } else if (code.get_code() == storage::cpp2::ErrorCode::E_PART_NOT_FOUND) {
                     invalidLeader(spaceId, code.get_part_id());
                 }
             }
-            stats::Stats::addStatsValue(stats_,
-                                        result.get_failed_codes().empty(),
-                                        duration.elapsedInUSec());
+//            stats::Stats::addStatsValue(stats_,
+//                                        result.get_failed_codes().empty(),
+//                                        duration.elapsedInUSec());
             p.setValue(std::move(resp));
         });
     });  // via
     return f;
+}
+
+
+template<typename ClientType>
+StatusOr<PartitionID> StorageClientBase<ClientType>::partId(GraphSpaceID spaceId,
+                                                            int64_t id) const {
+    CHECK(metaClient_ != nullptr);
+    auto status = metaClient_->partsNum(spaceId);
+    if (!status.ok()) {
+        return Status::Error("Space not found, spaceid: %d", spaceId);
+    }
+
+    auto parts = status.value();
+    auto s = ((static_cast<uint64_t>(id)) % parts + 1);
+    CHECK_GT(s, 0U);
+    return s;
+}
+
+
+template<typename ClientType>
+template<class Container, class GetIdFunc>
+StatusOr<
+    std::unordered_map<
+        HostAddr,
+        std::unordered_map<
+            PartitionID,
+            std::vector<typename Container::value_type>
+        >
+    >
+>
+StorageClientBase<ClientType>::clusterIdsToHosts(GraphSpaceID spaceId,
+                                                 Container&& ids,
+                                                 GetIdFunc f) const {
+    std::unordered_map<
+        HostAddr,
+        std::unordered_map<
+            PartitionID,
+            std::vector<typename Container::value_type>
+        >
+    > clusters;
+    for (auto& id : ids) {
+        auto status = partId(spaceId, f(id));
+        if (!status.ok()) {
+            return status;
+        }
+
+        auto part = status.value();
+        auto metaStatus = getPartHosts(spaceId, part);
+        if (!metaStatus.ok()) {
+            return status;
+        }
+
+        auto partHosts = metaStatus.value();
+        CHECK_GT(partHosts.hosts_.size(), 0U);
+        const auto leader = this->getLeader(partHosts);
+        clusters[leader][part].emplace_back(std::move(id));
+    }
+    return clusters;
 }
 
 }   // namespace storage

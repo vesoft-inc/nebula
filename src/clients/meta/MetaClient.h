@@ -95,10 +95,11 @@ public:
     virtual void onSpaceOptionUpdated(GraphSpaceID spaceId,
                                       const std::unordered_map<std::string, std::string>& options)
                                       = 0;
-    virtual void onPartAdded(const PartMeta& partMeta) = 0;
+    virtual void onPartAdded(const PartHosts& partHosts) = 0;
     virtual void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) = 0;
-    virtual void onPartUpdated(const PartMeta& partMeta) = 0;
+    virtual void onPartUpdated(const PartHosts& partHosts) = 0;
 };
+
 
 class MetaClient {
     FRIEND_TEST(ConfigManTest, MetaConfigManTest);
@@ -307,7 +308,7 @@ public:
 
     PartsMap getPartsMapFromCache(const HostAddr& host);
 
-    StatusOr<PartMeta> getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId);
+    StatusOr<PartHosts> getPartHostsFromCache(GraphSpaceID spaceId, PartitionID partId);
 
     bool checkPartExistInCache(const HostAddr& host,
                                GraphSpaceID spaceId,
