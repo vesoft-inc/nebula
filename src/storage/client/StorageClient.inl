@@ -80,7 +80,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc,
-    GetPartIDFunc f) {
+        GetPartIDFunc getPartIDFunc) {
     auto context = std::make_shared<ResponseContext<Request, RemoteFunc, Response>>(
         requests.size(), std::move(remoteFunc));
 
@@ -96,7 +96,14 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
         auto res = context->insertRequest(host, std::move(req.second));
         DCHECK(res.second);
         // Invoke the remote method
-        folly::via(evb, [this, evb, context, host, spaceId, res, duration, f] () mutable {
+        folly::via(evb, [this,
+                         evb,
+                         context,
+                         host,
+                         spaceId,
+                         res,
+                         duration,
+                         getPartIDFunc] () mutable {
             auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
             // Result is a pair of <Request&, bool>
             auto start = time::WallClock::fastNowInMicroSec();
@@ -109,13 +116,13 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                             host,
                             spaceId,
                             duration,
-                            f,
+                            getPartIDFunc,
                             start] (folly::Try<Response>&& val) {
                 auto& r = context->findRequest(host);
                 if (val.hasException()) {
                     LOG(ERROR) << "Request to " << host << " failed: " << val.exception().what();
                     for (auto& part : r.parts) {
-                        auto partId = f(part);
+                        auto partId = getPartIDFunc(part);
                         VLOG(3) << "Exception! Failed part " << partId;
                         context->resp.failedParts().emplace(
                             partId,

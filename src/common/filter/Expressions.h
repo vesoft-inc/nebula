@@ -920,7 +920,7 @@ public:
         return left_.get();
     }
 
-    const Operator op() const {
+    Operator op() const {
         return op_;
     }
 

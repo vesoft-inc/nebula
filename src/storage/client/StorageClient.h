@@ -245,7 +245,7 @@ protected:
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc,
-        GetPartIDFunc f);
+        GetPartIDFunc getPartIDFunc);
 
     template<class Request,
              class RemoteFunc,
@@ -333,7 +333,7 @@ protected:
         for (auto partId = 1; partId <= parts; partId++) {
             auto metaStatus = getPartMeta(spaceId, partId);
             if (!metaStatus.ok()) {
-                return status;
+                return metaStatus.status();
             }
             auto partMeta = metaStatus.value();
             CHECK_GT(partMeta.peers_.size(), 0U);
