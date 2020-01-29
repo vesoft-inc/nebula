@@ -108,18 +108,22 @@ enum PropertyType {
 
     // Simple types
     BOOL = 1,
-    INTEGER = 2,        // Persisted as a variant int
-    FLOAT = 3,
-    DOUBLE = 4,
-    STRING = 5,
+    INT64 = 2,          // This is the same as INT in v1
+    VID = 3,            // Deprecated, only supported by v1
+    FLOAT = 4,
+    DOUBLE = 5,
+    STRING = 6,
     // String with fixed length. If the string content is shorteri
     // than the given length, '\0' will be padded to the end
-    FIXED_STRING = 6,
+    FIXED_STRING = 7,   // New in v2
+    INT8 = 8,           // New in v2
+    INT16 = 9,          // New in v2
+    INT32 = 10,         // New in v2
 
     // Date time
     TIMESTAMP = 21,
-    DATE = 22,
-    DATETIME = 23,
+    DATE = 24,
+    DATETIME = 25,
 } (cpp.enum_strict)
 
 
