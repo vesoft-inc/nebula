@@ -33,7 +33,7 @@ BaseProcessor<RESP>::doPrefix(const std::string& key) {
     if (code != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("Prefix Failed");
     }
-    return std::move(iter);
+    return iter;
 }
 
 
@@ -320,27 +320,14 @@ BaseProcessor<RESP>::getLatestEdgeFields(GraphSpaceID spaceId, const EdgeType ed
 }
 
 template<typename RESP>
-StatusOr<TagIndexID>
-BaseProcessor<RESP>::getTagIndexID(GraphSpaceID spaceId, const std::string& indexName) {
-    auto indexKey = MetaServiceUtils::indexTagIndexKey(spaceId, indexName);
+StatusOr<IndexID>
+BaseProcessor<RESP>::getIndexID(GraphSpaceID spaceId, const std::string& indexName) {
+    auto indexKey = MetaServiceUtils::indexIndexKey(spaceId, indexName);
     auto ret = doGet(indexKey);
     if (ret.ok()) {
-        return *reinterpret_cast<const TagIndexID*>(ret.value().c_str());
+        return *reinterpret_cast<const IndexID*>(ret.value().c_str());
     }
-    return Status::TagIndexNotFound(folly::stringPrintf("Tag Index %s not found",
-                                                        indexName.c_str()));
-}
-
-template<typename RESP>
-StatusOr<EdgeIndexID>
-BaseProcessor<RESP>::getEdgeIndexID(GraphSpaceID spaceId, const std::string& indexName) {
-    auto indexKey = MetaServiceUtils::indexEdgeIndexKey(spaceId, indexName);
-    auto ret = doGet(indexKey);
-    if (ret.ok()) {
-        return *reinterpret_cast<const EdgeIndexID*>(ret.value().c_str());
-    }
-    return Status::EdgeIndexNotFound(folly::stringPrintf("Edge Index %s not found",
-                                                         indexName.c_str()));
+    return Status::IndexNotFound(folly::stringPrintf("Index %s not found", indexName.c_str()));
 }
 
 template<typename RESP>
@@ -393,6 +380,56 @@ bool BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
                             });
     baton.wait();
     return ret;
+}
+
+template<typename RESP>
+void BaseProcessor<RESP>::doSyncPutAndUpdate(std::vector<kvstore::KV> data) {
+    folly::Baton<true, std::atomic> baton;
+    auto ret = kvstore::ResultCode::SUCCEEDED;
+    kvstore_->asyncMultiPut(kDefaultSpaceId,
+                            kDefaultPartId,
+                            std::move(data),
+                            [&ret, &baton] (kvstore::ResultCode code) {
+        if (kvstore::ResultCode::SUCCEEDED != code) {
+            ret = code;
+            LOG(INFO) << "Put data error on meta server";
+        }
+        baton.post();
+    });
+    baton.wait();
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        this->resp_.set_code(to(ret));
+        this->onFinished();
+        return;
+    }
+    ret = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
+    this->resp_.set_code(to(ret));
+    this->onFinished();
+}
+
+template<typename RESP>
+void BaseProcessor<RESP>::doSyncMultiRemoveAndUpdate(std::vector<std::string> keys) {
+    folly::Baton<true, std::atomic> baton;
+    auto ret = kvstore::ResultCode::SUCCEEDED;
+    kvstore_->asyncMultiRemove(kDefaultSpaceId,
+                               kDefaultPartId,
+                               std::move(keys),
+                               [&ret, &baton] (kvstore::ResultCode code) {
+        if (kvstore::ResultCode::SUCCEEDED != code) {
+            ret = code;
+            LOG(INFO) << "Remove data error on meta server";
+        }
+        baton.post();
+    });
+    baton.wait();
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        this->resp_.set_code(to(ret));
+        this->onFinished();
+        return;
+    }
+    ret = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
+    this->resp_.set_code(to(ret));
+    this->onFinished();
 }
 
 }  // namespace meta

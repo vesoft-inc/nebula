@@ -359,7 +359,7 @@ void SetExecutor::doMinus() {
     if (!castingMap_.empty()) {
         Status stat = doCasting(rightRows);
         if (!stat.ok()) {
-            doError(status);
+            doError(stat);
             return;
         }
     }

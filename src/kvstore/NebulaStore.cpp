@@ -65,7 +65,7 @@ bool NebulaStore::init() {
                         return false;
                     }
 
-                    if (!options_.partMan_->spaceExist(storeSvcAddr_, spaceId)) {
+                    if (!options_.partMan_->spaceExist(storeSvcAddr_, spaceId).ok()) {
                         // TODO We might want to have a second thought here.
                         // Removing the data directly feels a little strong
                         LOG(INFO) << "Space " << spaceId
@@ -95,7 +95,7 @@ bool NebulaStore::init() {
                     // partIds is the partition in this host waiting to open
                     std::vector<PartitionID> partIds;
                     for (auto& partId : enginePtr->allParts()) {
-                        if (!options_.partMan_->partExist(storeSvcAddr_, spaceId, partId)) {
+                        if (!options_.partMan_->partExist(storeSvcAddr_, spaceId, partId).ok()) {
                             LOG(INFO) << "Part " << partId
                                       << " does not exist any more, remove it!";
                             enginePtr->removePart(partId);
@@ -413,12 +413,36 @@ ResultCode NebulaStore::rangeWithPrefix(GraphSpaceID spaceId,
                                         const std::string& start,
                                         const std::string& prefix,
                                         std::unique_ptr<KVIterator>* iter) {
-    auto ret = engine(spaceId, partId);
+    auto ret = part(spaceId, partId);
     if (!ok(ret)) {
         return error(ret);
     }
-    auto* e = nebula::value(ret);
-    return e->rangeWithPrefix(start, prefix, iter);
+    auto part = nebula::value(ret);
+    if (!checkLeader(part)) {
+        return ResultCode::ERR_LEADER_CHANGED;
+    }
+    return part->engine()->rangeWithPrefix(start, prefix, iter);
+}
+
+
+ResultCode NebulaStore::sync(GraphSpaceID spaceId,
+                             PartitionID partId) {
+    auto partRet = part(spaceId, partId);
+    if (!ok(partRet)) {
+        return error(partRet);
+    }
+    auto part = nebula::value(partRet);
+    if (!checkLeader(part)) {
+        return ResultCode::ERR_LEADER_CHANGED;
+    }
+    auto ret = ResultCode::SUCCEEDED;
+    folly::Baton<true, std::atomic> baton;
+    part->sync([&] (kvstore::ResultCode code) {
+        ret = code;
+        baton.post();
+    });
+    baton.wait();
+    return ret;
 }
 
 

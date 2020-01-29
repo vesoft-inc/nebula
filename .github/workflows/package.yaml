@@ -3,6 +3,12 @@ name: package
 on:
   schedule:
     - cron: '0 18 * * *'
+  push:
+    branches:
+      - 'v[0-9]+.*'
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
 
 jobs:
   package:
@@ -19,11 +25,17 @@ jobs:
       image: vesoft/nebula-dev:${{ matrix.os }}
     steps:
       - uses: actions/checkout@v1
-      - name: package
+      - name: Package
         run: ./package/package.sh
         shell: bash
-      - name: Upload nightly artifacts
-        uses: actions/upload-artifact@v1
+      - name: Compute version
+        id: version
+        run: |
+          [[ "${{ github.event_name }}" == "push" ]] && \
+            echo "::set-output name=version::$(cut -d/ -f3 <<< ${{ github.ref }})" || \
+            echo "::set-output name=version::nightly"
+        shell: bash
+      - uses: actions/upload-artifact@v1
         with:
-          name: ${{ matrix.os }}-nightly
+          name: ${{ matrix.os }}-${{ steps.version.outputs.version }}
           path: build/cpack_output

@@ -32,6 +32,7 @@ struct Getters {
     std::function<OptVariantType(const std::string&, const std::string&)> getSrcTagProp;
     std::function<OptVariantType(const std::string&, const std::string&)> getDstTagProp;
     std::function<OptVariantType(const std::string&, const std::string&)> getAliasProp;
+    std::function<OptVariantType(const std::string&)>                     getEdgeDstId;
 };
 
 class ExpressionContext final {
@@ -216,6 +217,10 @@ public:
 
     virtual bool isLogicalExpression() const {
         return kind_ == kLogical;
+    }
+
+    bool isEdgeDstIdExpression() const {
+        return kind_ == kEdgeDstId;
     }
 
     /**
@@ -823,7 +828,7 @@ public:
         return operand_.get();
     }
 
-    const ColumnType getType() const {
+    ColumnType getType() const {
         return type_;
     }
 
@@ -983,7 +988,7 @@ public:
         right_.reset(expr);
     }
 
-    const Operator op() const {
+    Operator op() const {
         return op_;
     }
 

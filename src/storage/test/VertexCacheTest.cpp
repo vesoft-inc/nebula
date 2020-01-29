@@ -21,13 +21,13 @@ namespace nebula {
 namespace storage {
 
 void addVertices(kvstore::KVStore* kv,  meta::SchemaManager* schemaMan,
-                 VertexCache* cache, int nums) {
+                 meta::IndexManager* indexMan, VertexCache* cache, int nums) {
     LOG(INFO) << "Build AddVerticesRequest...";
-    auto* processor = AddVerticesProcessor::instance(kv, schemaMan, nullptr, cache);
+    auto* processor = AddVerticesProcessor::instance(kv, schemaMan, indexMan, nullptr, cache);
     cpp2::AddVerticesRequest req;
     req.space_id = 0;
     req.overwritable = true;
-    auto vertices = TestUtils::setupVertices(0, nums, 1, 3001);
+    auto vertices = TestUtils::setupVertices(0, 0, nums, 3001, 3002);
     req.parts.emplace(0, std::move(vertices));
 
     LOG(INFO) << "Test AddVerticesProcessor...";
@@ -47,13 +47,13 @@ void prepareData(kvstore::KVStore* kv) {
     LOG(INFO) << "Prepare data...";
     std::vector<kvstore::KV> data;
     TagID tagId = 3001;
-    for (auto vertexId = 0; vertexId < 10000; vertexId++) {
+    for (int32_t vertexId = 0; vertexId < 10000; vertexId++) {
         auto key = NebulaKeyUtils::vertexKey(0, vertexId, tagId, 0);
         RowWriter writer;
         for (int64_t numInt = 0; numInt < 3; numInt++) {
             writer << numInt;
         }
-        for (auto numString = 3; numString < 6; numString++) {
+        for (int32_t numString = 3; numString < 6; numString++) {
             writer << folly::stringPrintf("tag_string_col_%d", numString);
         }
         auto val = writer.encode();
@@ -128,6 +128,7 @@ TEST(VertexCacheTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/VertexCacheTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = std::make_unique<AdHocIndexManager>();
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(1);
     prepareData(kv.get());
     VertexCache cache(1000, 0);
@@ -140,7 +141,7 @@ TEST(VertexCacheTest, SimpleTest) {
     checkCache(&cache, 500, 500, 2000);
 
     LOG(INFO) << "Insert vertices from 0 to 1000";
-    addVertices(kv.get(), schemaMan.get(), &cache, 1000);
+    addVertices(kv.get(), schemaMan.get(), indexMan.get(), &cache, 1000);
     checkCache(&cache, 1000, 500, 2000);
 }
 
