@@ -57,7 +57,7 @@ Value::Value(Value&& rhs) : type_(Value::Type::__EMPTY__) {
             value_.dtVal = std::move(rhs.value_.dtVal);
             break;
         }
-        case Type::pathVal:
+        case Type::pVal:
         {
             value_.pVal = std::move(rhs.value_.pVal);
             break;
@@ -132,7 +132,7 @@ Value::Value(const Value& rhs) : type_(Value::Type::__EMPTY__) {
             value_.dtVal = rhs.value_.dtVal;
             break;
         }
-        case Type::pathVal:
+        case Type::pVal:
         {
             value_.pVal = rhs.value_.pVal;
             break;
@@ -198,7 +198,7 @@ bool Value::operator==(const Value& rhs) const {
         {
           return value_.dtVal == rhs.value_.dtVal;
         }
-        case Type::pathVal:
+        case Type::pVal:
         {
           return value_.pVal == rhs.value_.pVal;
         }
@@ -265,7 +265,7 @@ void Value::clear() {
             destruct(value_.dtVal);
             break;
         }
-        case Type::pathVal:
+        case Type::pVal:
         {
             destruct(value_.pVal);
             break;
@@ -340,7 +340,7 @@ Value& Value::operator=(Value&& rhs) {
             value_.dtVal = std::move(rhs.value_.dtVal);
             break;
         }
-        case Type::pathVal:
+        case Type::pVal:
         {
             value_.pVal = std::move(rhs.value_.pVal);
             break;
@@ -417,7 +417,7 @@ Value& Value::operator=(const Value& rhs) {
             value_.dtVal = rhs.value_.dtVal;
             break;
         }
-        case Type::pathVal:
+        case Type::pVal:
         {
             value_.pVal = rhs.value_.pVal;
             break;
