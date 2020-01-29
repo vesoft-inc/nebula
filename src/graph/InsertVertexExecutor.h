@@ -30,7 +30,7 @@ private:
     StatusOr<std::vector<storage::cpp2::Vertex>> prepareVertices();
 
 private:
-    using TagSchema = std::shared_ptr<const meta::NebulaSchemaProvider>;
+    using TagSchema = std::shared_ptr<const meta::SchemaProviderIf>;
 
     InsertVertexSentence                                  *sentence_{nullptr};
     std::unique_ptr<ExpressionContext>                     expCtx_;

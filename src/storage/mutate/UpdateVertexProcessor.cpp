@@ -96,6 +96,11 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
         return ret;
     }
 
+    auto status = this->schemaMan_->toTagName(this->spaceId_, tagId);
+    if (!status.ok()) {
+        LOG(ERROR) << "toTagName failed, tagId: " << tagId;
+        return kvstore::ResultCode::ERR_UNKNOWN;
+    }
     if (iter && iter->valid()) {
         auto reader = RowReader::getTagPropReader(this->schemaMan_,
                                                   iter->val(),
@@ -128,25 +133,57 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
         }
     } else if (insertable_ && updateTagIds_.find(tagId) != updateTagIds_.end()) {
         resp_.set_upsert(true);
-        const auto schema = std::dynamic_pointer_cast<const meta::NebulaSchemaProvider>(
-                this->schemaMan_->getTagSchema(this->spaceId_, tagId));
+        const auto schema = this->schemaMan_->getTagSchema(this->spaceId_, tagId);
         if (schema == nullptr) {
+            LOG(ERROR) << "Get nullptr schema";
             return kvstore::ResultCode::ERR_UNKNOWN;
         }
+        auto tagStatus = this->schemaMan_->toTagName(this->spaceId_, tagId);
+        if (!tagStatus.ok()) {
+            LOG(ERROR) << "toTagName failed, tagId: " << tagId;
+            return kvstore::ResultCode::ERR_UNKNOWN;
+        }
+        auto tagName = std::move(tagStatus.value());
 
         auto updater = std::make_unique<RowUpdater>(schema);
-
-        // When the schema field is not in update field, need to get default value from schema.
-        // If nonexistent return error.
+        // When the schema field is not in update field or the update item has src item,
+        // need to get default value from schema. If nonexistent return error.
         for (auto index = 0UL; index < schema->getNumFields(); index++) {
             auto propName = std::string(schema->getFieldName(index));
             auto findIter = std::find_if(updateItems_.cbegin(), updateItems_.cend(),
-                    [&propName](auto &item) { return item.prop == propName; });
+                    [&propName, &tagName](auto &item) {
+                return item.prop == propName && item.name == tagName; });
             OptVariantType value;
+
             if (findIter == updateItems_.end()) {
+                // When the schema field is not in update field
+                // need to get default value from schema. If nonexistent return error.
                 value = schema->getDefaultValue(index);
             } else {
-                value = RowReader::getDefaultProp(schema.get(), propName);
+                // When the update item has src item,
+                // need to get default value from schema. If nonexistent return error.
+                auto expStatus = Expression::decode(findIter->get_value());
+                if (!expStatus.ok()) {
+                    LOG(ERROR) << "Expression decode failed, tagName: " << tagName
+                               << ", propName: " << propName;
+                    return kvstore::ResultCode::ERR_UNKNOWN;
+                }
+
+                auto expression = std::move(expStatus).value();
+                ExpressionContext expCtx;
+                expression->setContext(&expCtx);
+                if (!expression->prepare().ok()) {
+                    LOG(ERROR) << "Expression::prepare failed";
+                    return kvstore::ResultCode::ERR_UNKNOWN;
+                }
+                if (expCtx.hasSrcTagProp()) {
+                    value = schema->getDefaultValue(index);
+                    VLOG(2) << "UpdateItem on tagName: " << tagName
+                            << ", propName: " << propName << " has src prop";
+                } else {
+                    VLOG(2) << "Nothing set on tagName: " << tagName << ", propName: " << propName;
+                    continue;
+                }
             }
             if (!value.ok()) {
                 LOG(ERROR) << "TagId: " << tagId << ", prop: " << propName
@@ -154,23 +191,6 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
                 return kvstore::ResultCode::ERR_UNKNOWN;
             }
             auto v = std::move(value.value());
-            switch (v.which()) {
-                case VAR_INT64:
-                    updater->setInt(propName, boost::get<int64_t>(v));
-                    break;
-                case VAR_DOUBLE:
-                    updater->setDouble(propName, boost::get<double>(v));
-                    break;
-                case VAR_BOOL:
-                    updater->setBool(propName, boost::get<bool>(v));
-                    break;
-                case VAR_STR:
-                    updater->setString(propName, boost::get<std::string>(v));
-                    break;
-                default:
-                    LOG(ERROR) << "Unknown VariantType: " << v.which();
-                    return kvstore::ResultCode::ERR_UNKNOWN;
-            }
             tagFilters_.emplace(std::make_pair(tagId, propName), v);
         }
         tagUpdaters_[tagId] = std::make_unique<KeyUpdaterPair>();
@@ -193,10 +213,10 @@ cpp2::ErrorCode UpdateVertexProcessor::checkFilter(const PartitionID partId, con
         VLOG(3) << "partId " << partId << ", vId " << vId
                 << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
         auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_);
-        if (ret == kvstore::ResultCode::ERR_CORRUPT_DATA) {
-            return cpp2::ErrorCode::E_TAG_NOT_FOUND;
-        } else if (ret != kvstore::ResultCode::SUCCEEDED) {
-            return to(ret);
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
+            LOG(ERROR) << "partId: " << partId << ", vId: "
+                       << vId << " checkFilter failed: " << ret;
+            return FilterResult::E_ERROR;
         }
     }
 
@@ -211,6 +231,7 @@ cpp2::ErrorCode UpdateVertexProcessor::checkFilter(const PartitionID partId, con
         auto tagId = tagRet.value();
         auto it = tagFilters_.find(std::make_pair(tagId, prop));
         if (it == tagFilters_.end()) {
+            LOG(ERROR) << "Invalid Tag Filter, tagID: " << tagId << ", propName: " << prop;
             return Status::Error("Invalid Tag Filter");
         }
         VLOG(1) << "Hit srcProp filter for tag: " << tagName
@@ -274,23 +295,52 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
         auto expValue = value.value();
         tagFilters_[std::make_pair(tagId, prop)] = expValue;
 
+        auto schema = tagUpdaters_[tagId]->updater->schema();
+        if (schema == nullptr) {
+            LOG(ERROR) << "Get schema from updater is nullptr";
+            return std::string("");
+        }
         switch (expValue.which()) {
             case VAR_INT64: {
+                if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::INT) {
+                    LOG(ERROR) << "Field: `" << prop << "' type is "
+                               << static_cast<int32_t>(schema->getFieldType(prop).type)
+                               << ", not INT type";
+                    return std::string("");
+                }
                 auto v = boost::get<int64_t>(expValue);
                 tagUpdaters_[tagId]->updater->setInt(prop, v);
                 break;
             }
             case VAR_DOUBLE: {
+                if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::DOUBLE) {
+                    LOG(ERROR) << "Field: `" << prop << "' type is "
+                               << static_cast<int32_t>(schema->getFieldType(prop).type)
+                               << ", not DOUBLE type";
+                    return std::string("");
+                }
                 auto v = boost::get<double>(expValue);
                 tagUpdaters_[tagId]->updater->setDouble(prop, v);
                 break;
             }
             case VAR_BOOL: {
+                if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::BOOL) {
+                    LOG(ERROR) << "Field: `" << prop << "' type is "
+                               << static_cast<int32_t>(schema->getFieldType(prop).type)
+                               << ", not BOOL type";
+                    return std::string("");
+                }
                 auto v = boost::get<bool>(expValue);
                 tagUpdaters_[tagId]->updater->setBool(prop, v);
                 break;
             }
             case VAR_STR: {
+                if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::STRING) {
+                    LOG(ERROR) << "Field: `" << prop << "' type is "
+                               << static_cast<int32_t>(schema->getFieldType(prop).type)
+                               << ", not STRING type";
+                    return std::string("");
+                }
                 auto v = boost::get<std::string>(expValue);
                 tagUpdaters_[tagId]->updater->setString(prop, v);
                 break;
@@ -305,7 +355,12 @@ std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (const auto& u : tagUpdaters_) {
         auto nKey = u.second->kv.first;
-        auto nVal = u.second->updater->encode();
+        auto status = u.second->updater->encode();
+        if (!status.ok()) {
+            LOG(ERROR) << status.status();
+            return std::string("");
+        }
+        auto nVal = std::move(status.value());
         if (!indexes_.empty()) {
             std::unique_ptr<RowReader> reader, oReader;
             for (auto &index : indexes_) {

@@ -318,15 +318,17 @@ public:
             nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("col_%d", i);
             column.type.type = nebula::cpp2::SupportedType::INT;
+            column.default_value.set_int_value(0);
             schema->addField(column.name, std::move(column.type));
         }
         for (int32_t i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("col_%d", i);
             column.type.type = nebula::cpp2::SupportedType::STRING;
+            column.default_value.set_string_value("");
             schema->addField(column.name, std::move(column.type));
         }
-        return schema;
+        return std::make_shared<ResultSchemaProvider>(std::move(schema));
     }
 
     /**
@@ -389,12 +391,14 @@ public:
             nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
             column.type.type = nebula::cpp2::SupportedType::INT;
+            column.default_value.set_int_value(0);
             schema->addField(column.name, std::move(column.type));
         }
         for (int32_t i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
             nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
             column.type.type = nebula::cpp2::SupportedType::STRING;
+            column.default_value.set_string_value("");
             schema->addField(column.name, std::move(column.type));
         }
         nebula::cpp2::SchemaProp prop;

@@ -10,7 +10,6 @@
 #include "base/Base.h"
 #include <folly/RWSpinLock.h>
 #include "meta/SchemaProviderIf.h"
-#include "base/StatusOr.h"
 
 namespace nebula {
 namespace meta {
@@ -81,8 +80,8 @@ public:
     void setProp(nebula::cpp2::SchemaProp schemaProp);
 
     const nebula::cpp2::SchemaProp getProp() const;
-    const StatusOr<VariantType> getDefaultValue(const folly::StringPiece name) const;
-    const StatusOr<VariantType> getDefaultValue(int64_t index) const;
+    const StatusOr<VariantType> getDefaultValue(const folly::StringPiece name) const override;
+    const StatusOr<VariantType> getDefaultValue(int64_t index) const override;
 
 protected:
     NebulaSchemaProvider() = default;

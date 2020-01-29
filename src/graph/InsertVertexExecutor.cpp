@@ -55,8 +55,7 @@ Status InsertVertexExecutor::check() {
         }
 
         auto tagId = tagStatus.value();
-        auto schema = std::dynamic_pointer_cast<const meta::NebulaSchemaProvider>(
-                ectx()->schemaManager()->getTagSchema(spaceId_, tagId));
+        auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
         if (schema == nullptr) {
             LOG(ERROR) << "No schema found for " << *tagName;
             return Status::Error("No schema found for `%s'", tagName->c_str());

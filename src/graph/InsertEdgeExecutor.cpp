@@ -46,8 +46,7 @@ Status InsertEdgeExecutor::check() {
     rows_ = sentence_->rows();
 
     expCtx_->setStorageClient(ectx()->getStorageClient());
-    schema_ = std::dynamic_pointer_cast<const meta::NebulaSchemaProvider>(
-            ectx()->schemaManager()->getEdgeSchema(spaceId_, edgeType_));
+    schema_ = ectx()->schemaManager()->getEdgeSchema(spaceId_, edgeType_);
     if (schema_ == nullptr) {
         LOG(ERROR) << "No schema found for " << sentence_->edge();
         return Status::Error("No schema found for `%s'", sentence_->edge()->c_str());

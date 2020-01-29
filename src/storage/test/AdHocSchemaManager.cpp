@@ -19,6 +19,7 @@ void AdHocSchemaManager::addTagSchema(GraphSpaceID space,
         tagSchemas_[std::make_pair(space, tag)][version] = schema;
         auto key = folly::stringPrintf("%d_%d", space, tag);
         tagNameToId_[key] = tag;
+        tagIdToName_[tag] = key;
     }
     {
         folly::RWSpinLock::WriteHolder wh(spaceLock_);
@@ -151,6 +152,16 @@ StatusOr<TagID> AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPie
         LOG(FATAL) << e.what();
     }
     return -1;
+}
+
+StatusOr<std::string> AdHocSchemaManager::toTagName(GraphSpaceID space, TagID tagId) {
+    UNUSED(space);
+    folly::RWSpinLock::ReadHolder rh(tagLock_);
+    auto findIter = tagIdToName_.find(tagId);
+    if (findIter == tagIdToName_.end()) {
+        return Status::Error("Unknown tagId");
+    }
+    return findIter->second;
 }
 
 StatusOr<EdgeType> AdHocSchemaManager::toEdgeType(GraphSpaceID space, folly::StringPiece typeName) {

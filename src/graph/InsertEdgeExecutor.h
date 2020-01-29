@@ -30,7 +30,7 @@ private:
     StatusOr<std::vector<storage::cpp2::Edge>> prepareEdges();
 
 private:
-    using EdgeSchema = std::shared_ptr<const meta::NebulaSchemaProvider>;
+    using EdgeSchema = std::shared_ptr<const meta::SchemaProviderIf>;
 
     InsertEdgeSentence                               *sentence_{nullptr};
     std::unique_ptr<ExpressionContext>                expCtx_;

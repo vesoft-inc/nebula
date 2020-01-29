@@ -135,12 +135,7 @@ NebulaSchemaProvider::getDefaultValue(const folly::StringPiece name) const {
         LOG(ERROR) << "Unknown field \"" << name.toString() << "\"";
         return Status::Error("Unknown field \"%s\"", name.toString().c_str());
     }
-    auto index = it->second;
-    if (!fields_[index]->hasDefaultValue()) {
-        VLOG(2) << "Field " << name << " has no default value";
-        return Status::Error("`%s' has no default value", name.toString().c_str());
-    }
-    return fields_[index]->getDefaultValue();
+    return getDefaultValue(it->second);
 }
 
 const StatusOr<VariantType>

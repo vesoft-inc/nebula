@@ -54,6 +54,9 @@ public:
 
     nebula::cpp2::Schema toSchema() const override;
 
+    const StatusOr<VariantType> getDefaultValue(const folly::StringPiece name) const override;
+    const StatusOr<VariantType> getDefaultValue(int64_t index) const override;
+
 protected:
     SchemaVer schemaVer_{0};
 

@@ -29,6 +29,7 @@ void UpdateEdgeProcessor::onProcessFinished(int32_t retNum) {
             auto tagId = tagRet.value();
             auto it = tagFilters_.find(std::make_pair(tagId, prop));
             if (it == tagFilters_.end()) {
+                LOG(ERROR) << "Invalid Tag Filter, tagID: " << tagId << ", propName: " << prop;
                 return Status::Error("Invalid Tag Filter");
             }
             VLOG(1) << "Hit srcProp filter for tag: " << tagName
@@ -184,21 +185,43 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
         const auto constSchema = this->schemaMan_->getEdgeSchema(this->spaceId_,
                                                                  std::abs(edgeKey.edge_type));
         if (constSchema == nullptr) {
+            LOG(ERROR) << "Get nullptr schema";
             return kvstore::ResultCode::ERR_UNKNOWN;
         }
         auto updater = std::make_unique<RowUpdater>(constSchema);
 
-        // When the schema field is not in update field, need to get default value from schema.
-        // If nonexistent return error.
         for (auto index = 0UL; index < schema->getNumFields(); index++) {
             auto propName = std::string(schema->getFieldName(index));
             auto findIter = std::find_if(updateItems_.cbegin(), updateItems_.cend(),
                     [&propName](auto &item) { return item.prop == propName; });
             OptVariantType value;
             if (findIter == updateItems_.end()) {
+                // When the schema field is not in update field
+                // need to get default value from schema. If nonexistent return error.
                 value = schema->getDefaultValue(index);
             } else {
-                value = RowReader::getDefaultProp(schema.get(), propName);
+                // When the update item has src item,
+                // need to get default value from schema. If nonexistent return error.
+                auto expStatus = Expression::decode(findIter->get_value());
+                if (!expStatus.ok()) {
+                    LOG(ERROR) << "Expression decode failed, propName: " << propName;
+                    return kvstore::ResultCode::ERR_UNKNOWN;
+                }
+
+                auto expression = std::move(expStatus).value();
+                ExpressionContext expCtx;
+                expression->setContext(&expCtx);
+                if (!expression->prepare().ok()) {
+                    LOG(ERROR) << "Expression::prepare failed";
+                    return kvstore::ResultCode::ERR_UNKNOWN;
+                }
+                if (expCtx.hasEdgeProp()) {
+                    value = schema->getDefaultValue(index);
+                    VLOG(2) << "UpdateItem on propName: " << propName << " has edge prop";
+                } else {
+                    VLOG(2) << "Nothing set on propName: " << propName;
+                    continue;
+                }
             }
             if (!value.ok()) {
                 LOG(ERROR) << "EdgeType: " << edgeKey.edge_type
@@ -206,23 +229,6 @@ kvstore::ResultCode UpdateEdgeProcessor::collectEdgesProps(
                 return kvstore::ResultCode::ERR_UNKNOWN;
             }
             auto v = std::move(value.value());
-            switch (v.which()) {
-                case VAR_INT64:
-                    updater->setInt(propName, boost::get<int64_t>(v));
-                    break;
-                case VAR_DOUBLE:
-                    updater->setDouble(propName, boost::get<double>(v));
-                    break;
-                case VAR_BOOL:
-                    updater->setBool(propName, boost::get<bool>(v));
-                    break;
-                case VAR_STR:
-                    updater->setString(propName, boost::get<std::string>(v));
-                    break;
-                default:
-                    LOG(ERROR) << "Unknown VariantType: " << v.which();
-                    return kvstore::ResultCode::ERR_UNKNOWN;
-            }
             edgeFilters_.emplace(propName, v);
         }
         updater_ = std::unique_ptr<RowUpdater>(std::move(updater));
@@ -281,23 +287,48 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
         auto expValue = value.value();
         edgeFilters_[prop] = expValue;
 
+        auto schema = updater_->schema();
         switch (expValue.which()) {
             case VAR_INT64: {
+                if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::INT) {
+                    LOG(ERROR) << "Field: `" << prop << "' type is "
+                               << static_cast<int32_t>(schema->getFieldType(prop).type)
+                               << ", not INT type";
+                    return std::string("");
+                }
                 auto v = boost::get<int64_t>(expValue);
                 updater_->setInt(prop, v);
                 break;
             }
             case VAR_DOUBLE: {
+                if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::DOUBLE) {
+                    LOG(ERROR) << "Field: `" << prop << "' type is "
+                               << static_cast<int32_t>(schema->getFieldType(prop).type)
+                               << ", not DOUBLE type";
+                    return std::string("");
+                }
                 auto v = boost::get<double>(expValue);
                 updater_->setDouble(prop, v);
                 break;
             }
             case VAR_BOOL: {
+                if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::BOOL) {
+                    LOG(ERROR) << "Field: `" << prop << "' type is "
+                               << static_cast<int32_t>(schema->getFieldType(prop).type)
+                               << ", not BOOL type";
+                    return std::string("");
+                }
                 auto v = boost::get<bool>(expValue);
                 updater_->setBool(prop, v);
                 break;
             }
             case VAR_STR: {
+                if (schema->getFieldType(prop).type != nebula::cpp2::SupportedType::STRING) {
+                    LOG(ERROR) << "Field: `" << prop << "' type is "
+                               << static_cast<int32_t>(schema->getFieldType(prop).type)
+                               << ", not STRING type";
+                    return std::string("");
+                }
                 auto v = boost::get<std::string>(expValue);
                 updater_->setString(prop, v);
                 break;
@@ -309,7 +340,12 @@ std::string UpdateEdgeProcessor::updateAndWriteBack(PartitionID partId,
         }
     }
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
-    auto nVal = updater_->encode();
+    auto status = updater_->encode();
+    if (!status.ok()) {
+        LOG(ERROR) << status.status();
+        return std::string("");
+    }
+    auto nVal = std::move(status.value());
     // TODO(heng) we don't update the index for reverse edge.
     if (!indexes_.empty() && edgeKey.edge_type > 0) {
         std::unique_ptr<RowReader> reader, rReader;
