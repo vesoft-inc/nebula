@@ -10,6 +10,7 @@ jobs:
   pool:
     vmImage: $(vmImage)
 
+  # https://github.com/dutor/nebula-gears/issues/1
   container: shylockhg/nebula-dev:centos7
   timeoutInMinutes: 150
 
