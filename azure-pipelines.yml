@@ -1,5 +1,14 @@
 # https://aka.ms/yaml
 
+trigger:
+  paths:
+    exclude:
+    - '.github/*'
+    - '.linters/*'
+    - 'docs/*'
+    - 'LICENSES/*'
+    - '*.md'
+
 jobs:
 - job: test
   displayName: 'Building and Testing'
