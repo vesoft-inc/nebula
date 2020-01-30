@@ -1,8 +1,5 @@
 # https://aka.ms/yaml
 
-variables:
-  - group: CODECOV
-
 jobs:
 - job: test
   displayName: 'Building and Testing'
