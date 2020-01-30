@@ -2,12 +2,10 @@
 
 trigger:
   paths:
-    exclude:
-    - '.github/*'
-    - '.linters/*'
-    - 'docs/*'
-    - 'LICENSES/*'
-    - '*.md'
+    include:
+    - 'src/*'
+    - 'CMakeLists.txt'
+    - 'azure-pipelines.yml'
 
 jobs:
 - job: test
