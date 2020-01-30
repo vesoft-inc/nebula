@@ -1,5 +1,12 @@
 # https://aka.ms/yaml
 
+trigger:
+  paths:
+    include:
+    - 'src/*'
+    - 'CMakeLists.txt'
+    - 'azure-pipelines.yml'
+
 jobs:
 - job: test
   displayName: 'Building and Testing'
