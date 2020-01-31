@@ -1,0 +1,40 @@
+# https://aka.ms/yaml
+
+# Only for coverage!
+trigger:
+  paths:
+    include:
+    - 'src/*'
+    - 'CMakeLists.txt'
+    - 'azure-pipelines.yml'
+
+jobs:
+- job: test
+  displayName: 'Building and Testing'
+  strategy:
+    matrix:
+      Linux:
+        vmImage: ubuntu-18.04
+  pool:
+    vmImage: $(vmImage)
+
+  # https://github.com/dutor/nebula-gears/issues/1
+  container: shylockhg/nebula-dev:centos7
+  timeoutInMinutes: 150
+
+  steps:
+  - script: mkdir _build && cd _build && cmake -DENABLE_COVERAGE=ON ..
+    displayName: 'cmake'
+
+  - script: cd _build && make -j$(nproc)
+    displayName: 'make'
+
+  - script: cd _build && ctest -j$(nproc)
+    displayName: 'test'
+
+  - script: |
+      set -e
+      cd _build
+      lcov --capture --gcov-tool $GCOV --directory . --output-file coverage.info
+      bash <(curl -s https://codecov.io/bash) -Z -f coverage.info
+    displayName: 'coverage'
