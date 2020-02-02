@@ -261,13 +261,13 @@ protected:
         for (auto& id : ids) {
             auto status = partId(spaceId, f(id));
             if (!status.ok()) {
-                return status;
+                return status.status();
             }
 
             auto part = status.value();
             auto metaStatus = getPartMeta(spaceId, part);
             if (!metaStatus.ok()) {
-                return status;
+                return status.status();
             }
 
             auto partMeta = metaStatus.value();
