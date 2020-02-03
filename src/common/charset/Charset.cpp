@@ -8,6 +8,7 @@
 
 namespace nebula {
 
+
 Status CharsetInfo::isSupportCharset(const std::string& charsetName) {
     if (supportCharsets_.find(charsetName) == supportCharsets_.end()) {
         return Status::Error("Charset `%s' not support", charsetName.c_str());
