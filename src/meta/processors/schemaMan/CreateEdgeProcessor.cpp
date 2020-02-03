@@ -15,7 +15,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     {
         // if there is an edge of the same name
         // TODO: there exists race condition, we should address it in the future
-        folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
+        folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
         auto conflictRet = getTagId(req.get_space_id(), edgeName);
         if (conflictRet.ok()) {
             LOG(ERROR) << "Failed to create edge `" << edgeName

@@ -156,6 +156,7 @@ BIDIRECT                    ([Bb][Ii][Dd][Ii][Rr][Ee][Cc][Tt])
 ACCOUNT                     ([Aa][Cc][Cc][Oo][Uu][Nn][Tt])
 DBA                         ([Dd][Bb][Aa])
 CONTAINS                    ([Cc][Oo][Nn][Tt][Aa][Ii][Nn][Ss])
+SCHEMA                      ([Ss][Cc][Hh][Ee][Mm][Aa])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -308,6 +309,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {STORAGE}                   { return TokenType::KW_STORAGE; }
 {SHORTEST}                  { return TokenType::KW_SHORTEST; }
 {CONTAINS}                  { return TokenType::KW_CONTAINS; }
+{SCHEMA}                    { return TokenType::KW_SCHEMA; }
 
 
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }

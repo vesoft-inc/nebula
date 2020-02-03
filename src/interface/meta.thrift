@@ -687,6 +687,11 @@ struct ListIndexStatusResp {
     3: list<IndexStatus>    statuses,
 }
 
+struct AddSchemaFromSpaceReq {
+    1: string         current_space,
+    2: string         from_space,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -753,5 +758,6 @@ service MetaService {
     ExecResp dropSnapshot(1: DropSnapshotReq req);
     ListSnapshotsResp listSnapshots(1: ListSnapshotsReq req);
     AdminJobResp runAdminJob(1: AdminJobReq req);
+    ExecResp addSchemaFromSpace(1: AddSchemaFromSpaceReq req);
 }
 

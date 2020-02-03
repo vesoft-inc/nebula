@@ -264,4 +264,8 @@ std::string RebuildEdgeIndexSentence::toString() const {
     return folly::stringPrintf("BUILD EDGE INDEX %s", indexName_.get()->c_str());
 }
 
+std::string AddSchemaFromSpaceSentence::toString() const {
+    return folly::stringPrintf("ADD SCHEMA FROM %s", spaceName_.get()->c_str());
+}
+
 }   // namespace nebula

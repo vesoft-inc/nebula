@@ -682,6 +682,22 @@ private:
     bool                                        isOffline_;
 };
 
+class AddSchemaFromSpaceSentence final : public Sentence {
+public:
+    explicit AddSchemaFromSpaceSentence(std::string *spaceName) {
+        spaceName_.reset(spaceName);
+        kind_ = Kind::kAddSchemaFromSpace;
+    }
+
+    const std::string* spaceName() const {
+        return spaceName_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>                spaceName_;
+};
 }   // namespace nebula
 
 #endif  // PARSER_MAINTAINSENTENCES_H_

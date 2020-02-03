@@ -72,6 +72,7 @@ public:
         kCreateSnapshot,
         kDropSnapshot,
         kAdmin,
+        kAddSchemaFromSpace,
     };
 
     Kind kind() const {

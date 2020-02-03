@@ -23,6 +23,7 @@
 #include "meta/processors/schemaMan/DropEdgeProcessor.h"
 #include "meta/processors/schemaMan/GetEdgeProcessor.h"
 #include "meta/processors/schemaMan/ListEdgesProcessor.h"
+#include "meta/processors/schemaMan/AddSchemaFromSpaceProcessor.h"
 #include "meta/processors/indexMan/CreateTagIndexProcessor.h"
 #include "meta/processors/indexMan/DropTagIndexProcessor.h"
 #include "meta/processors/indexMan/GetTagIndexProcessor.h"
@@ -389,6 +390,12 @@ MetaServiceHandler::future_dropSnapshot(const cpp2::DropSnapshotReq& req) {
 folly::Future<cpp2::ListSnapshotsResp>
 MetaServiceHandler::future_listSnapshots(const cpp2::ListSnapshotsReq& req) {
     auto* processor = ListSnapshotsProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_addSchemaFromSpace(const cpp2::AddSchemaFromSpaceReq& req) {
+    auto* processor = AddSchemaFromSpaceProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

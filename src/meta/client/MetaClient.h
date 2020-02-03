@@ -395,6 +395,9 @@ public:
 
     folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> listSnapshots();
 
+    folly::Future<StatusOr<bool>> addSchemaFromSpace(const std::string& currentSpace,
+                                                     const std::string& fromSpace);
+
     // Opeartions for cache.
     StatusOr<GraphSpaceID>
     getSpaceIdByNameFromCache(const std::string& name);

@@ -217,6 +217,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %type <sentence> describe_tag_index_sentence describe_edge_index_sentence
 %type <sentence> rebuild_tag_index_sentence rebuild_edge_index_sentence
 %type <sentence> create_snapshot_sentence drop_snapshot_sentence
+%type <sentence> add_schema_sentence
 
 %type <sentence> admin_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
@@ -1929,6 +1930,12 @@ drop_snapshot_sentence
     }
     ;
 
+add_schema_sentence
+    : KW_ADD KW_SCHEMA KW_FROM LABEL {
+        $$ = new AddSchemaFromSpaceSentence($4);
+    }
+    ;
+
 mutate_sentence
     : insert_vertex_sentence { $$ = $1; }
     | insert_edge_sentence { $$ = $1; }
@@ -1962,18 +1969,7 @@ maintain_sentence
     | rebuild_tag_index_sentence { $$ = $1; }
     | rebuild_edge_index_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
-    ;
-    | create_user_sentence { $$ = $1; }
-    | alter_user_sentence { $$ = $1; }
-    | drop_user_sentence { $$ = $1; }
-    | change_password_sentence { $$ = $1; }
-    | grant_sentence { $$ = $1; }
-    | revoke_sentence { $$ = $1; }
-    | get_config_sentence { $$ = $1; }
-    | set_config_sentence { $$ = $1; }
-    | balance_sentence { $$ = $1; }
-    | create_snapshot_sentence { $$ = $1; };
-    | drop_snapshot_sentence { $$ = $1; };
+    | add_schema_sentence { $$ = $1; };
     ;
 
 return_sentence

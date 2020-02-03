@@ -2092,6 +2092,22 @@ folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> MetaClient::listSnapshots()
     return future;
 }
 
+folly::Future<StatusOr<bool>>
+MetaClient::addSchemaFromSpace(const std::string& currentSpace,
+                               const std::string& fromSpace) {
+    cpp2::AddSchemaFromSpaceReq req;
+    req.set_current_space(currentSpace);
+    req.set_from_space(fromSpace);
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_addSchemaFromSpace(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
 bool MetaClient::registerCfg() {
     auto ret = regConfig(gflagsDeclared_).get();
     if (ret.ok()) {
