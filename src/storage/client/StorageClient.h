@@ -320,7 +320,8 @@ protected:
             }
             isLoadingLeader_ = false;
         }
-    
+    }
+
     virtual StatusOr<std::unordered_map<HostAddr, std::vector<PartitionID>>>
     getHostParts(GraphSpaceID spaceId) const {
         std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
@@ -354,7 +355,6 @@ private:
     mutable std::atomic_bool isLoadingLeader_{false};
     std::unique_ptr<stats::Stats> stats_;
 };
-
 }   // namespace storage
 }   // namespace nebula
 
