@@ -109,7 +109,7 @@ Expression::decode(folly::StringPiece buffer) noexcept {
         if (pos != end) {
             return Status::Error("Buffer not consumed up, end: %p, used upto: %p", end, pos);
         }
-        return std::move(expr);
+        return expr;
     } catch (const Status &status) {
         return status;
     }
@@ -263,9 +263,8 @@ Status EdgeSrcIdExpression::prepare() {
 
 
 OptVariantType EdgeDstIdExpression::eval(Getters &getters) const {
-    return getters.getAliasProp(*alias_, *prop_);
+    return getters.getEdgeDstId(*alias_);
 }
-
 
 Status EdgeDstIdExpression::prepare() {
     context_->addAliasProp(*alias_, *prop_);
@@ -308,8 +307,12 @@ std::string PrimaryExpression::toString() const {
         case VAR_INT64:
             snprintf(buf, sizeof(buf), "%ld", boost::get<int64_t>(operand_));
             break;
-        case VAR_DOUBLE:
-            return std::to_string(boost::get<double>(operand_));
+        case VAR_DOUBLE: {
+            int digits10 = std::numeric_limits<double>::digits10;
+            std::string fmt = folly::sformat("%.{}lf", digits10);
+            snprintf(buf, sizeof(buf), fmt.c_str(), boost::get<double>(operand_));
+            break;
+        }
         case VAR_BOOL:
             snprintf(buf, sizeof(buf), "%s", boost::get<bool>(operand_) ? "true" : "false");
             break;

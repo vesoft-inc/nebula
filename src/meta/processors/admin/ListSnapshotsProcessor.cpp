@@ -11,8 +11,7 @@
 namespace nebula {
 namespace meta {
 
-void ListSnapshotsProcessor::process(const cpp2::ListSnapshotsReq& req) {
-    UNUSED(req);
+void ListSnapshotsProcessor::process(const cpp2::ListSnapshotsReq&) {
     auto prefix = MetaServiceUtils::snapshotPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
@@ -26,10 +25,11 @@ void ListSnapshotsProcessor::process(const cpp2::ListSnapshotsReq& req) {
         auto name = MetaServiceUtils::parseSnapshotName(iter->key());
         auto status = MetaServiceUtils::parseSnapshotStatus(iter->val());
         auto hosts = MetaServiceUtils::parseSnapshotHosts(iter->val());
-        snapshots.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                               std::move(name),
-                               std::move(status),
-                               std::move(hosts));
+        cpp2::Snapshot snapshot;
+        snapshot.set_name(std::move(name));
+        snapshot.set_status(std::move(status));
+        snapshot.set_hosts(std::move(hosts));
+        snapshots.emplace_back(std::move(snapshot));
         iter->next();
     }
     resp_.set_snapshots(std::move(snapshots));

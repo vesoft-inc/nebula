@@ -51,7 +51,7 @@ TEST_F(YieldTest, Base) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> expectedColNames{
-            {"(1+1)"}, {"1+1"}, {"(int)3.140000"}, {"(string)(1+1)"}, {"(string)true"}
+            {"(1+1)"}, {"1+1"}, {"(int)3.140000000000000"}, {"(string)(1+1)"}, {"(string)true"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
         std::vector<std::tuple<int64_t, std::string, int64_t, std::string, std::string>> expected{
@@ -126,7 +126,7 @@ TEST_F(YieldTest, HashCall) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::string> expectedColNames{
-            {"hash(123.000000)"}
+            {"hash(123.000000000000000)"}
         };
         ASSERT_TRUE(verifyColNames(resp, expectedColNames));
         std::vector<std::tuple<int64_t>> expected{
@@ -570,12 +570,15 @@ TEST_F(YieldTest, calculateOverflow) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // Negation of -9223372036854775808 incurs a runtime error under UBSan
+#ifndef BUILT_WITH_SANITIZER
     {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD -9223372036854775808";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+#endif
     {
         cpp2::ExecutionResponse resp;
         std::string query = "YIELD -9223372036854775809";

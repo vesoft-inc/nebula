@@ -10,6 +10,7 @@
 #include "meta/MetaHttpReplaceHostHandler.h"
 #include "meta/test/TestUtils.h"
 #include "network/NetworkUtils.h"
+#include "webservice/Router.h"
 #include "webservice/WebService.h"
 #include "fs/TempDir.h"
 #include <rocksdb/sst_file_writer.h>
@@ -39,24 +40,28 @@ public:
 
         gKVStore = kv_.get();
 
-        WebService::registerHandler("/replace", [&] {
+        webSvc_ = std::make_unique<WebService>();
+        auto &router = webSvc_->router();
+
+        router.get("/replace").handler([&](nebula::web::PathParams&&) {
             gHandler = new meta::MetaHttpReplaceHostHandler();
             gHandler->init(gKVStore);
             return gHandler;
         });
 
-        auto status = WebService::start();
+        auto status = webSvc_->start();
         ASSERT_TRUE(status.ok()) << status;
     }
 
     void TearDown() override {
         kv_.reset();
         rootPath_.reset();
-        WebService::stop();
+        webSvc_.reset();
         LOG(INFO) << "Web service stopped";
     }
 
 private:
+    std::unique_ptr<WebService> webSvc_;
     std::unique_ptr<fs::TempDir> rootPath_;
     std::unique_ptr<kvstore::KVStore> kv_;
 };
@@ -191,4 +196,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-

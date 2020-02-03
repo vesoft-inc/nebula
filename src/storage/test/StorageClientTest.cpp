@@ -91,14 +91,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 cpp2::Tag t;
                 t.set_tag_id(tagId);
                 // Generate some tag props.
-                RowWriter writer;
-                for (uint64_t numInt = 0; numInt < 3; numInt++) {
-                    writer << numInt;
-                }
-                for (auto numString = 3; numString < 6; numString++) {
-                    writer << folly::stringPrintf("tag_string_col_%d", numString);
-                }
-                t.set_props(writer.encode());
+                auto val = TestUtils::setupEncode();
+                t.set_props(std::move(val));
                 tags.emplace_back(std::move(t));
             }
             v.set_tags(std::move(tags));
@@ -160,7 +154,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             checkTagData<int64_t>(vp.tag_data, 3001, "tag_3001_col_0", vschema, 0);
             checkTagData<int64_t>(vp.tag_data, 3003, "tag_3003_col_2", vschema, 2);
             checkTagData<std::string>(vp.tag_data, 3005, "tag_3005_col_4", vschema,
-                                      folly::stringPrintf("tag_string_col_4"));
+                                      folly::stringPrintf("string_col_4"));
         }
     }
 
@@ -178,14 +172,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             edgeKey.set_ranking(srcId*100 + 3);
             edge.set_key(std::move(edgeKey));
             // Generate some edge props.
-            RowWriter writer;
-            for (int32_t iInt = 0; iInt < 10; iInt++) {
-                writer << iInt;
-            }
-            for (int32_t iString = 10; iString < 20; iString++) {
-                writer << folly::stringPrintf("string_col_%d", iString);
-            }
-            edge.set_props(writer.encode());
+            auto val = TestUtils::setupEncode(10, 20);
+            edge.set_props(std::move(val));
             edges.emplace_back(std::move(edge));
         }
         auto f = client->addEdges(spaceId, std::move(edges), true);

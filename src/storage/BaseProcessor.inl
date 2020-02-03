@@ -86,8 +86,8 @@ void BaseProcessor<RESP>::doRemoveRange(GraphSpaceID spaceId,
 template<typename RESP>
 kvstore::ResultCode BaseProcessor<RESP>::doRange(GraphSpaceID spaceId,
                                                  PartitionID partId,
-                                                 std::string start,
-                                                 std::string end,
+                                                 const std::string& start,
+                                                 const std::string& end,
                                                  std::unique_ptr<kvstore::KVIterator>* iter) {
     return kvstore_->range(spaceId, partId, start, end, iter);
 }
@@ -95,15 +95,15 @@ kvstore::ResultCode BaseProcessor<RESP>::doRange(GraphSpaceID spaceId,
 template<typename RESP>
 kvstore::ResultCode BaseProcessor<RESP>::doPrefix(GraphSpaceID spaceId,
                                                   PartitionID partId,
-                                                  std::string prefix,
+                                                  const std::string& prefix,
                                                   std::unique_ptr<kvstore::KVIterator>* iter) {
     return kvstore_->prefix(spaceId, partId, prefix, iter);
 }
 
 template<typename RESP>
 kvstore::ResultCode BaseProcessor<RESP>::doRangeWithPrefix(
-        GraphSpaceID spaceId, PartitionID partId, std::string start, std::string prefix,
-        std::unique_ptr<kvstore::KVIterator>* iter) {
+        GraphSpaceID spaceId, PartitionID partId, const std::string& start,
+        const std::string& prefix, std::unique_ptr<kvstore::KVIterator>* iter) {
     return kvstore_->rangeWithPrefix(spaceId, partId, start, prefix, iter);
 }
 
@@ -125,7 +125,6 @@ BaseProcessor<RESP>::collectIndexValues(RowReader* reader,
     }
     return values;
 }
-    
 
 template <typename RESP>
 void BaseProcessor<RESP>::collectProps(RowReader* reader,
@@ -161,7 +160,6 @@ void BaseProcessor<RESP>::collectProps(RowReader* reader,
         }
     }
 }
-    
 
 }  // namespace storage
 }  // namespace nebula
