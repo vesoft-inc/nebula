@@ -187,6 +187,7 @@ protected:
     StatusOr<PartitionID> partId(GraphSpaceID spaceId, int64_t id) const;
 
     const HostAddr leader(const PartMeta& partMeta) const {
+        loadLeader();
         auto part = std::make_pair(partMeta.spaceId_, partMeta.partId_);
         {
             folly::RWSpinLock::ReadHolder rh(leadersLock_);
@@ -288,6 +289,23 @@ protected:
         return client_->getPartMetaFromCache(spaceId, partId);
     }
 
+    virtual void loadLeader() const {
+        if (loadLeaderBefore_) {
+            return;
+        }
+        bool expected = false;
+        if (isLoadingLeader_.compare_exchange_strong(expected, true)) {
+            CHECK(client_ != nullptr);
+            auto status = client_->loadLeader();
+            if (status.ok()) {
+                folly::RWSpinLock::WriteHolder wh(leadersLock_);
+                leaders_ = std::move(status).value();
+                loadLeaderBefore_ = true;
+            }
+            isLoadingLeader_ = false;
+        }
+    }
+
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     meta::MetaClient *client_{nullptr};
@@ -295,6 +313,8 @@ private:
                         storage::cpp2::StorageServiceAsyncClient>> clientsMan_;
     mutable folly::RWSpinLock leadersLock_;
     mutable std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> leaders_;
+    mutable std::atomic_bool loadLeaderBefore_{false};
+    mutable std::atomic_bool isLoadingLeader_{false};
     std::unique_ptr<stats::Stats> stats_;
 };
 
