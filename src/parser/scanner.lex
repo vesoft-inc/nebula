@@ -57,6 +57,9 @@ UPTO                        ([Uu][Pp][Tt][Oo])
 REVERSELY                   ([Rr][Ee][Vv][Ee][Rr][Ss][Ee][Ll][Yy])
 SPACE                       ([Ss][Pp][Aa][Cc][Ee])
 SPACES                      ([Ss][Pp][Aa][Cc][Ee][Ss])
+INDEX                       ([Ii][Nn][Dd][Ee][Xx])
+INDEXES                     ([Ii][Nn][Dd][Ee][Xx][Ee][Ss])
+BUILD                       ([Bb][Uu][Ii][Ll][Dd])
 INT                         ([Ii][Nn][Tt])
 BIGINT                      ([Bb][Ii][Gg][Ii][Nn][Tt])
 DOUBLE                      ([Dd][Oo][Uu][Bb][Ll][Ee])
@@ -74,6 +77,7 @@ FALSE                       ([Ff][Aa][Ll][Ss][Ee])
 SHOW                        ([Ss][Hh][Oo][Ww])
 ADD                         ([Aa][Dd][Dd])
 HOSTS                       ([Hh][Oo][Ss][Tt][Ss])
+PART                        ([Pp][Aa][Rr][Tt])
 PARTS                       ([Pp][Aa][Rr][Tt][Ss])
 TIMESTAMP                   ([Tt][Ii][Mm][Ee][Ss][Tt][Aa][Mm][Pp])
 PARTITION_NUM               ([Pp][Aa][Rr][Tt][Ii][Tt][Ii][[Oo][Nn][_][Nn][Uu][Mm])
@@ -187,6 +191,9 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {REVERSELY}                 { return TokenType::KW_REVERSELY; }
 {SPACE}                     { return TokenType::KW_SPACE; }
 {SPACES}                    { return TokenType::KW_SPACES; }
+{INDEX}                     { return TokenType::KW_INDEX; }
+{INDEXES}                   { return TokenType::KW_INDEXES; }
+{BUILD}                     { return TokenType::KW_BUILD; }
 {INT}                       { return TokenType::KW_INT; }
 {BIGINT}                    { return TokenType::KW_BIGINT; }
 {DOUBLE}                    { return TokenType::KW_DOUBLE; }
@@ -202,6 +209,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {SHOW}                      { return TokenType::KW_SHOW; }
 {ADD}                       { return TokenType::KW_ADD; }
 {HOSTS}                     { return TokenType::KW_HOSTS; }
+{PART}                      { return TokenType::KW_PART; }
 {PARTS}                     { return TokenType::KW_PARTS; }
 {TIMESTAMP}                 { return TokenType::KW_TIMESTAMP; }
 {CREATE}                    { return TokenType::KW_CREATE;}
@@ -331,7 +339,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                             }
 {IP_OCTET}(\.{IP_OCTET}){3} {
                                 uint32_t octets[4] = {0};
-                                sscanf(yytext, "%i.%i.%i.%i", &octets[3], &octets[2], &octets[1], &octets[0]);
+                                sscanf(yytext, "%u.%u.%u.%u", &octets[3], &octets[2], &octets[1], &octets[0]);
                                 // The bytes order conforms to the one used in NetworkUtils
                                 uint32_t ipv4 = (octets[3] << 24) | (octets[2] << 16) | (octets[1] << 8) | octets[0];
                                 yylval->intval = ipv4;
@@ -347,9 +355,9 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                         yyterminate();
                                     }
                                 }
-                                int64_t val = 0;
+                                uint64_t val = 0;
                                 sscanf(yytext, "%lx", &val);
-                                yylval->intval = val;
+                                yylval->intval = static_cast<int64_t>(val);
                                 return TokenType::INTEGER;
                             }
 0{OCT}+                     {
@@ -364,15 +372,19 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                         yyterminate();
                                     }
                                 }
-                                int64_t val = 0;
+                                uint64_t val = 0;
                                 sscanf(yytext, "%lo", &val);
-                                yylval->intval = val;
+                                yylval->intval = static_cast<int64_t>(val);
                                 return TokenType::INTEGER;
                             }
 {DEC}+                      {
                                 try {
                                     folly::StringPiece text(yytext, yyleng);
-                                    yylval->intval = folly::to<int64_t>(text);
+                                    uint64_t val = folly::to<uint64_t>(text);
+                                    if (val > 9223372036854775808ULL) {
+                                        yyterminate();
+                                    }
+                                    yylval->intval = val;
                                 } catch (...) {
                                     yyterminate();
                                 }
@@ -429,7 +441,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                             }
 <DQ_STR,SQ_STR>\\{OCT}{1,3} {
                                 makeSpaceForString(1);
-                                int val = 0;
+                                uint32_t val = 0;
                                 sscanf(yytext + 1, "%o", &val);
                                 if (val > 0xFF) {
                                     yyterminate();

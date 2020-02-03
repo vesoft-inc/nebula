@@ -61,6 +61,11 @@ public:
     virtual ResultCode prefix(const std::string& prefix,
                               std::unique_ptr<KVIterator>* iter) = 0;
 
+    // Get all results with 'prefix' str as prefix starting form 'start'
+    virtual ResultCode rangeWithPrefix(const std::string& start,
+                                       const std::string& prefix,
+                                       std::unique_ptr<KVIterator>* iter) = 0;
+
     // Get all results in range [start, end)
     virtual ResultCode put(std::string key, std::string value) = 0;
 

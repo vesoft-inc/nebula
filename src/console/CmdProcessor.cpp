@@ -89,18 +89,22 @@ void CmdProcessor::calColumnWidths(
                     break;
                 }
                 case cpp2::ColumnValue::Type::single_precision: {
-                    GET_VALUE_WIDTH(float, single_precision, "%f")
+                    int digits10 = std::numeric_limits<float>::digits10;
+                    std::string fmtValue = folly::sformat("%.{}f", digits10);
+                    GET_VALUE_WIDTH(float, single_precision, fmtValue.c_str());
                     if (genFmt) {
-                        formats[idx] =
-                            folly::stringPrintf(" %%-%ldf |", widths[idx]);
+                        std::string fmt = folly::sformat(" %%-%ld.{}f |", digits10);
+                        formats[idx] = folly::stringPrintf(fmt.c_str(), widths[idx]);
                     }
                     break;
                 }
                 case cpp2::ColumnValue::Type::double_precision: {
-                    GET_VALUE_WIDTH(double, double_precision, "%lf")
+                    int digits10 = std::numeric_limits<double>::digits10;
+                    const char *fmtValue = folly::sformat("%.{}lf", digits10).c_str();
+                    GET_VALUE_WIDTH(double, double_precision, fmtValue);
                     if (genFmt) {
-                        formats[idx] =
-                            folly::stringPrintf(" %%-%ldlf |", widths[idx]);
+                        std::string fmt = folly::sformat(" %%-%ld.{}lf |", digits10);
+                        formats[idx] = folly::stringPrintf(fmt.c_str(), widths[idx]);
                     }
                     break;
                 }
@@ -381,6 +385,12 @@ void CmdProcessor::printData(const cpp2::ExecutionResponse& resp,
 }
 #undef PRINT_FIELD_VALUE
 
+void CmdProcessor::printTime() const {
+    auto now = std::chrono::system_clock::now();
+    std::time_t nowTime = std::chrono::system_clock::to_time_t(now);
+    std::cout << std::ctime(&nowTime) << std::endl;
+}
+
 
 bool CmdProcessor::processClientCmd(folly::StringPiece cmd,
                                     bool& readyToExit) {
@@ -431,29 +441,8 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
         }
         std::cout << std::endl;
    } else if (res == cpp2::ErrorCode::E_SYNTAX_ERROR) {
-        static const std::regex range("at 1.([0-9]+)-([0-9]+)");
-        static const std::regex single("at 1.([0-9]+)");
-        std::smatch result;
-        auto *msg = resp.get_error_msg();
-        auto verbose = *msg;
-        std::string headMsg = "syntax error near `";
-        auto pos = msg->find("at 1.");
-        if (pos != msg->npos) {
-            headMsg = msg->substr(0, pos) + "near `";
-            headMsg.replace(headMsg.find("SyntaxError:"), sizeof("SyntaxError:"), "");
-        }
-        if (std::regex_search(*msg, result, range)) {
-            auto start = folly::to<size_t>(result[1].str());
-            auto end = folly::to<size_t>(result[2].str());
-            verbose = headMsg + std::string(&cmd[start-1], end - start + 1) + "'";
-        } else if (std::regex_search(*msg, result, single)) {
-            auto start = folly::to<size_t>(result[1].str());
-            auto end = start + 8;
-            end = end > cmd.size() ? cmd.size() : end;
-            verbose = headMsg + std::string(&cmd[start-1], end - start + 1) + "'";
-        }
-        std::cout << "[ERROR (" << static_cast<int32_t>(res)
-                  << ")]: " << verbose << "\n";
+        std::cout << "[ERROR (" << static_cast<int32_t>(res) << ")]: "
+                  << (resp.get_error_msg() == nullptr ? "" : *resp.get_error_msg()) << "\n";
     } else if (res == cpp2::ErrorCode::E_STATEMENT_EMTPY) {
         return;
     } else {
@@ -467,6 +456,9 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
 
 
 bool CmdProcessor::process(folly::StringPiece cmd) {
+    SCOPE_EXIT {
+        printTime();
+    };
     bool exit;
     if (processClientCmd(cmd, exit)) {
         return !exit;

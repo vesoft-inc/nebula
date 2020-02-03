@@ -17,26 +17,20 @@ namespace storage {
 TEST(CheckpointTest, simpleTest) {
     fs::TempDir dataPath("/tmp/Checkpoint_Test_src.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath.path()));
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     // Add vertices
     {
-        auto* processor = AddVerticesProcessor::instance(kv.get(), nullptr, nullptr);
+        auto* processor = AddVerticesProcessor::instance(kv.get(),
+                                                         schemaMan.get(),
+                                                         indexMan.get(),
+                                                         nullptr);
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
         req.overwritable = false;
         // partId => List<Vertex>
-        for (auto partId = 0; partId < 3; partId++) {
-            std::vector<cpp2::Vertex> vertices;
-            for (auto vertexId = partId * 10; vertexId < 10 * (partId + 1); vertexId++) {
-                std::vector<cpp2::Tag> tags;
-                for (auto tagId = 0; tagId < 10; tagId++) {
-                    tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                      tagId,
-                                      folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId));
-                }
-                vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                      vertexId,
-                                      std::move(tags));
-            }
+        for (PartitionID partId = 0; partId < 3; partId++) {
+            auto vertices = TestUtils::setupVertices(partId, 10, 10, 0, partId * 10);
             req.parts.emplace(partId, std::move(vertices));
         }
 

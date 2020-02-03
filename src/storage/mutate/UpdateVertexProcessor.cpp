@@ -114,10 +114,10 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
         if (updateTagIds_.find(tagId) != updateTagIds_.end()) {
             auto schema = std::const_pointer_cast<meta::SchemaProviderIf>(constSchema);
             auto updater =
-                std::unique_ptr<RowUpdater>(new RowUpdater(std::move(reader), schema));
+                    std::make_unique<RowUpdater>(std::move(reader), schema);
             tagUpdaters_[tagId] = std::make_unique<KeyUpdaterPair>();
             auto& tagUpdater = tagUpdaters_[tagId];
-            tagUpdater->key = iter->key().toString();
+            tagUpdater->kv = std::make_pair(iter->key().str(), iter->val().str());
             tagUpdater->updater = std::move(updater);
         }
     } else if (insertable_ && updateTagIds_.find(tagId) != updateTagIds_.end()) {
@@ -136,12 +136,13 @@ kvstore::ResultCode UpdateVertexProcessor::collectVertexProps(
             tagFilters_.emplace(std::make_pair(tagId, propName), v);
         }
         auto schema = std::const_pointer_cast<meta::SchemaProviderIf>(constSchema);
-        auto updater = std::unique_ptr<RowUpdater>(new RowUpdater(schema));
+        auto updater = std::make_unique<RowUpdater>(schema);
         tagUpdaters_[tagId] = std::make_unique<KeyUpdaterPair>();
         auto& tagUpdater = tagUpdaters_[tagId];
         int64_t ms = time::WallClock::fastNowInMicroSec();
         auto now = std::numeric_limits<int64_t>::max() - ms;
-        tagUpdater->key = NebulaKeyUtils::vertexKey(partId, vId, tagId, now);
+        auto key = NebulaKeyUtils::vertexKey(partId, vId, tagId, now);
+        tagUpdater->kv = std::make_pair(std::move(key), "");
         tagUpdater->updater = std::move(updater);
     } else {
         VLOG(3) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagId;
@@ -190,7 +191,8 @@ bool UpdateVertexProcessor::checkFilter(const PartitionID partId, const VertexID
 }
 
 
-std::string UpdateVertexProcessor::updateAndWriteBack() {
+std::string UpdateVertexProcessor::updateAndWriteBack(const PartitionID partId,
+                                                      const VertexID vId) {
     Getters getters;
     getters.getSrcTagProp = [this] (const std::string& tagName,
                                        const std::string& prop) -> OptVariantType {
@@ -210,7 +212,7 @@ std::string UpdateVertexProcessor::updateAndWriteBack() {
     };
 
     for (auto& item : updateItems_) {
-        auto tagName = item.get_name();
+        const auto &tagName = item.get_name();
         auto tagRet = this->schemaMan_->toTagID(this->spaceId_, tagName);
         if (!tagRet.ok()) {
             VLOG(1) << "Can't find tag " << tagName << ", in space " << this->spaceId_;
@@ -259,13 +261,48 @@ std::string UpdateVertexProcessor::updateAndWriteBack() {
         }
     }
 
-    std::vector<kvstore::KV> data;
+    std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     for (const auto& u : tagUpdaters_) {
-        data.emplace_back(std::move(u.second->key),
-                          u.second->updater->encode());
+        auto nKey = u.second->kv.first;
+        auto nVal = u.second->updater->encode();
+        if (!indexes_.empty()) {
+            std::unique_ptr<RowReader> reader, oReader;
+            for (auto &index : indexes_) {
+                if (index->get_schema_id().get_tag_id() == u.first) {
+                    if (!(u.second->kv.second.empty())) {
+                        if (oReader == nullptr) {
+                            oReader = RowReader::getTagPropReader(this->schemaMan_,
+                                                                  u.second->kv.second,
+                                                                  spaceId_,
+                                                                  u.first);
+                        }
+                        const auto &oCols = index->get_fields();
+                        auto oValues = collectIndexValues(oReader.get(), oCols);
+                        auto oIndexKey = NebulaKeyUtils::vertexIndexKey(partId,
+                                                                        index->index_id,
+                                                                        vId,
+                                                                        oValues);
+                        batchHolder->remove(std::move(oIndexKey));
+                    }
+                    if (reader == nullptr) {
+                        reader = RowReader::getTagPropReader(this->schemaMan_,
+                                                             nVal,
+                                                             spaceId_,
+                                                             u.first);
+                    }
+                    const auto &cols = index->get_fields();
+                    auto values = collectIndexValues(reader.get(), cols);
+                    auto indexKey = NebulaKeyUtils::vertexIndexKey(partId,
+                                                                   index->get_index_id(),
+                                                                   vId,
+                                                                   values);
+                    batchHolder->put(std::move(indexKey), "");
+                }
+            }
+        }
+        batchHolder->put(std::move(nKey), std::move(nVal));
     }
-    auto log = kvstore::encodeMultiValues(kvstore::OP_MULTI_PUT, data);
-    return log;
+    return encodeBatchValue(batchHolder->getBatch());
 }
 
 
@@ -309,7 +346,7 @@ cpp2::ErrorCode UpdateVertexProcessor::checkAndBuildContexts(
     auto partId = req.get_part_id();
     // build context of the update items
     for (auto& item : req.get_update_items()) {
-        auto name = item.get_name();
+        const auto &name = item.get_name();
         SourcePropertyExpression sourcePropExp(new std::string(name),
                                                new std::string(item.get_prop()));
         sourcePropExp.setContext(this->expCtx_.get());
@@ -363,15 +400,21 @@ void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
         return;
     }
     auto vId = req.get_vertex_id();
-    updateItems_ = std::move(req).get_update_items();
+    updateItems_ = req.get_update_items();
+    auto iRet = indexMan_->getTagIndexes(spaceId_);
+    if (iRet.ok()) {
+        for (auto& index : iRet.value()) {
+            indexes_.emplace_back(index);
+        }
+    }
 
     VLOG(3) << "Update vertex, spaceId: " << this->spaceId_
             << ", partId: " << partId << ", vId: " << vId;
     CHECK_NOTNULL(kvstore_);
     this->kvstore_->asyncAtomicOp(this->spaceId_, partId,
-        [&, this] () -> std::string {
+        [partId, vId, this] () -> std::string {
             if (checkFilter(partId, vId)) {
-                return updateAndWriteBack();
+                return updateAndWriteBack(partId, vId);
             }
             return std::string("");
         },

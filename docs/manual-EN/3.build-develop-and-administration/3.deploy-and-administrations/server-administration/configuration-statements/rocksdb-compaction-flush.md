@@ -60,3 +60,11 @@ curl "http://127.0.0.1:12000/admin?space=test&op=flush"
 ```
 
 > Notice that you should create space test before the above curl command.
+
+## Set Compaction Threads
+
+Set the Compaction threads to speed up Compaction with the following statement:
+
+```ngql
+nebula> UPDATE CONFIGS storage:rocksdb_db_options = { max_background_compactions = 4 }
+```

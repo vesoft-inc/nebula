@@ -11,11 +11,12 @@ namespace storage {
 
 void AdHocSchemaManager::addTagSchema(GraphSpaceID space,
                                       TagID tag,
-                                      std::shared_ptr<nebula::meta::SchemaProviderIf> schema) {
+                                      std::shared_ptr<nebula::meta::SchemaProviderIf> schema,
+                                      SchemaVer version) {
     {
         folly::RWSpinLock::WriteHolder wh(tagLock_);
         // Only version 0
-        tagSchemas_[std::make_pair(space, tag)][0] = schema;
+        tagSchemas_[std::make_pair(space, tag)][version] = schema;
         auto key = folly::stringPrintf("%d_%d", space, tag);
         tagNameToId_[key] = tag;
     }
@@ -27,11 +28,12 @@ void AdHocSchemaManager::addTagSchema(GraphSpaceID space,
 
 void AdHocSchemaManager::addEdgeSchema(GraphSpaceID space,
                                        EdgeType edge,
-                                       std::shared_ptr<nebula::meta::SchemaProviderIf> schema) {
+                                       std::shared_ptr<nebula::meta::SchemaProviderIf> schema,
+                                       SchemaVer version) {
     {
         folly::RWSpinLock::WriteHolder wh(edgeLock_);
         // Only version 0
-        edgeSchemas_[std::make_pair(space, edge)][0] = schema;
+        edgeSchemas_[std::make_pair(space, edge)][version] = schema;
     }
     {
         folly::RWSpinLock::WriteHolder wh(spaceLock_);
@@ -169,5 +171,6 @@ StatusOr<std::string> AdHocSchemaManager::toEdgeName(GraphSpaceID space, EdgeTyp
     }
     return "";
 }
+
 }  // namespace storage
 }  // namespace nebula

@@ -154,7 +154,6 @@ std::unique_ptr<RowReader> RowReader::getEdgePropReader(
     }
 }
 
-
 // static
 std::unique_ptr<RowReader> RowReader::getRowReader(
         folly::StringPiece row,

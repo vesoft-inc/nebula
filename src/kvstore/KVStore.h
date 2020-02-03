@@ -82,6 +82,7 @@ public:
                                 PartitionID partId,
                                 const std::vector<std::string>& keys,
                                 std::vector<std::string>* values) = 0;
+
     // Get all results in range [start, end)
     virtual ResultCode range(GraphSpaceID spaceId,
                              PartitionID  partId,
@@ -109,6 +110,23 @@ public:
                               PartitionID  partId,
                               std::string&& prefix,
                               std::unique_ptr<KVIterator>* iter) = delete;
+
+    // Get all results with prefix starting from start
+    virtual ResultCode rangeWithPrefix(GraphSpaceID spaceId,
+                                       PartitionID  partId,
+                                       const std::string& start,
+                                       const std::string& prefix,
+                                       std::unique_ptr<KVIterator>* iter) = 0;
+
+    // To forbid to pass rvalue via the `rangeWithPrefix' parameter.
+    virtual ResultCode rangeWithPrefix(GraphSpaceID spaceId,
+                                       PartitionID  partId,
+                                       std::string&& start,
+                                       std::string&& prefix,
+                                       std::unique_ptr<KVIterator>* iter) = delete;
+
+    virtual ResultCode sync(GraphSpaceID spaceId,
+                            PartitionID partId) = 0;
 
     virtual void asyncMultiPut(GraphSpaceID spaceId,
                                PartitionID  partId,

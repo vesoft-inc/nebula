@@ -81,7 +81,8 @@ public:
         return Status(k##ERROR, msg);                   \
     }                                                   \
                                                         \
-    static Status ERROR(const char *fmt, ...) {         \
+    static Status ERROR(const char *fmt, ...)           \
+        __attribute__((format(printf, 1, 2))) {         \
         va_list args;                                   \
         va_start(args, fmt);                            \
         auto msg = format(fmt, args);                   \
@@ -111,8 +112,7 @@ public:
     STATUS_GENERATOR(TagNotFound);
     STATUS_GENERATOR(EdgeNotFound);
     STATUS_GENERATOR(UserNotFound);
-    STATUS_GENERATOR(TagIndexNotFound);
-    STATUS_GENERATOR(EdgeIndexNotFound);
+    STATUS_GENERATOR(IndexNotFound);
     STATUS_GENERATOR(LeaderChanged);
     STATUS_GENERATOR(Balanced);
     STATUS_GENERATOR(PartNotFound);
@@ -147,9 +147,8 @@ public:
         kUserNotFound           = 408,
         kLeaderChanged          = 409,
         kBalanced               = 410,
-        kTagIndexNotFound       = 411,
-        kEdgeIndexNotFound      = 412,
-        kPartNotFound           = 413,
+        kIndexNotFound          = 411,
+        kPartNotFound           = 412,
     };
 
     Code code() const {

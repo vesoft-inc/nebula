@@ -17,8 +17,8 @@ ServerBasedSchemaManager::~ServerBasedSchemaManager() {
 }
 
 void ServerBasedSchemaManager::init(MetaClient *client) {
+    CHECK_NOTNULL(client);
     metaClient_ = client;
-    CHECK_NOTNULL(metaClient_);
 }
 
 std::shared_ptr<const SchemaProviderIf>
@@ -85,6 +85,11 @@ StatusOr<TagID> ServerBasedSchemaManager::toTagID(GraphSpaceID space,
                                                   folly::StringPiece tagName) {
     CHECK(metaClient_);
     return metaClient_->getTagIDByNameFromCache(space, tagName.str());
+}
+
+StatusOr<std::string> ServerBasedSchemaManager::toTagName(GraphSpaceID space, TagID tagId) {
+    CHECK(metaClient_);
+    return metaClient_->getTagNameByIdFromCache(space, tagId);
 }
 
 StatusOr<EdgeType> ServerBasedSchemaManager::toEdgeType(GraphSpaceID space,

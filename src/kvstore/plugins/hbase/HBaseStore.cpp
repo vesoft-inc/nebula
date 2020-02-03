@@ -199,6 +199,33 @@ ResultCode HBaseStore::prefix(GraphSpaceID spaceId,
 }
 
 
+ResultCode HBaseStore::rangeWithPrefix(GraphSpaceID spaceId,
+                                       PartitionID  partId,
+                                       const std::string& start,
+                                       const std::string& prefix,
+                                       std::unique_ptr<KVIterator>* storageIter) {
+    UNUSED(partId);
+    auto tableName = this->spaceIdToTableName(spaceId);
+    std::string startRowKey, endRowKey;
+    startRowKey = this->getRowKey(start);
+    endRowKey.reserve(kMaxRowKeyLength);
+    for (size_t n = 0; n < kMaxRowKeyLength - prefix.size(); n++) {
+        endRowKey.append(reinterpret_cast<const char*>(&kFillMax), sizeof(uint8_t));
+    }
+    ResultCode code = this->range(spaceId, startRowKey, endRowKey, storageIter);
+    if (code == ResultCode::ERR_IO_ERROR) {
+        LOG(ERROR) << "Prefix " << prefix << " Failed: the HBase I/O error.";
+    }
+    return code;
+}
+
+
+ResultCode HBaseStore::sync(GraphSpaceID spaceId, PartitionID partId) {
+    UNUSED(spaceId);
+    UNUSED(partId);
+    LOG(FATAL) << "Unimplement";
+}
+
 ResultCode HBaseStore::multiRemove(GraphSpaceID spaceId,
                                    std::vector<std::string>& keys) {
     auto tableName = this->spaceIdToTableName(spaceId);

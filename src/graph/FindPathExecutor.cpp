@@ -206,7 +206,7 @@ void FindPathExecutor::getNeighborsAndFindPath() {
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error."));
+        doError(Status::Error("Find path exception: %s", e.what().c_str()));
     };
     folly::collectAll(futures).via(runner).thenValue(cb).thenError(error);
 }
@@ -311,19 +311,20 @@ inline void FindPathExecutor::meetOddPath(VertexID src, VertexID dst, Neighbor &
             VLOG(2) << "PathT: " << buildPathString(j->second);
 
             auto target = std::get<0>(*(path.back()));
-            auto pathTarget = std::get<0>(*(path.back())) + std::get<1>(*(path.back()));
             if (shortest_) {
                 targetNotFound_.erase(target);
-                if (finalPath_.count(pathTarget) > 0) {
+                auto pathFound = finalPath_.find(target);
+                if (pathFound != finalPath_.end()
+                        && pathFound->second.size() < path.size()) {
                     // already found a shorter path
                     continue;
                 } else {
                     VLOG(2) << "Found path: " << buildPathString(path);
-                    finalPath_.emplace(std::move(pathTarget), std::move(path));
+                    finalPath_.emplace(std::move(target), std::move(path));
                 }
             } else {
                 VLOG(2) << "Found path: " << buildPathString(path);
-                finalPath_.emplace(std::move(pathTarget), std::move(path));
+                finalPath_.emplace(std::move(target), std::move(path));
             }
         }  // for `j'
     }  // for `i'
@@ -361,19 +362,20 @@ inline void FindPathExecutor::meetEvenPath(VertexID intersectId) {
             VLOG(2) << "PathT: " << buildPathString(j->second);
             path.insert(path.end(), j->second.begin(), j->second.end());
             auto target = std::get<0>(*(path.back()));
-            auto pathTarget = std::get<0>(*(path.back())) + std::get<1>(*(path.back()));
             if (shortest_) {
-                if (finalPath_.count(pathTarget) > 0) {
+                auto pathFound = finalPath_.find(target);
+                if (pathFound != finalPath_.end()
+                        && pathFound->second.size() < path.size()) {
                     // already found a shorter path
                     continue;
                 } else {
                     targetNotFound_.erase(target);
                     VLOG(2) << "Found path: " << buildPathString(path);
-                    finalPath_.emplace(std::move(pathTarget), std::move(path));
+                    finalPath_.emplace(std::move(target), std::move(path));
                 }
             } else {
                 VLOG(2) << "Found path: " << buildPathString(path);
-                finalPath_.emplace(std::move(pathTarget), std::move(path));
+                finalPath_.emplace(std::move(target), std::move(path));
             }
         }
     }
@@ -484,7 +486,7 @@ void FindPathExecutor::getFromFrontiers(
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        fStatus_ = Status::Error("Get neighbors failed.");
+        fStatus_ = Status::Error("Get neighbors exception: %s.", e.what().c_str());
     };
     std::move(future).via(runner, folly::Executor::HI_PRI).thenValue(cb).thenError(error);
 }
@@ -522,7 +524,7 @@ void FindPathExecutor::getToFrontiers(
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        tStatus_ = Status::Error("Get neighbors failed.");
+        tStatus_ = Status::Error("Get neighbors exception: %s.", e.what().c_str());
     };
     std::move(future).via(runner, folly::Executor::HI_PRI).thenValue(cb).thenError(error);
 }
@@ -556,19 +558,24 @@ Status FindPathExecutor::doFilter(
             continue;
         }
 
+        std::vector<VariantType> temps;
+        temps.reserve(kReserveProps_.size());
         for (auto &vdata : resp.vertices) {
             DCHECK(vdata.__isset.edge_data);
             for (auto &edata : vdata.edge_data) {
                 auto edgeType = edata.type;
                 auto it = edgeSchema.find(edgeType);
                 DCHECK(it != edgeSchema.end());
-                RowSetReader rsReader(it->second, edata.data);
-                auto iter = rsReader.begin();
                 Neighbors neighbors;
-                while (iter) {
-                    std::vector<VariantType> temps;
+                for (auto& edge : edata.get_edges()) {
+                    auto dst = edge.get_dst();
+                    auto reader = RowReader::getRowReader(edge.props, it->second);
+                    if (reader == nullptr) {
+                        return Status::Error("Can't get row reader!");
+                    }
+                    temps.clear();
                     for (auto &prop : kReserveProps_) {
-                        auto res = RowReader::getPropByName(&*iter, prop);
+                        auto res = RowReader::getPropByName(reader.get(), prop);
                         if (ok(res)) {
                             temps.emplace_back(std::move(value(res)));
                         } else {
@@ -576,12 +583,11 @@ Status FindPathExecutor::doFilter(
                         }
                     }
                     Neighbor neighbor(
+                        dst,
                         boost::get<int64_t>(temps[0]),
-                        boost::get<int64_t>(temps[1]),
-                        boost::get<int64_t>(temps[2]));
+                        boost::get<int64_t>(temps[1]));
                     neighbors.emplace_back(std::move(neighbor));
-                    ++iter;
-                }  // while `iter'
+                }
                 auto frontier = std::make_pair(vdata.get_vertex_id(), std::move(neighbors));
                 frontiers.emplace_back(std::move(frontier));
             }  // `edata'
@@ -598,6 +604,13 @@ FindPathExecutor::getStepOutProps(bool reversely) {
     }
     std::vector<storage::cpp2::PropDef> props;
     for (auto &e : *edges) {
+        {
+            storage::cpp2::PropDef pd;
+            pd.owner = storage::cpp2::PropOwner::EDGE;
+            pd.name = "_dst";
+            pd.id.set_edge_type(e);
+            props.emplace_back(std::move(pd));
+        }
         for (auto &prop : kReserveProps_) {
             storage::cpp2::PropDef pd;
             pd.owner = storage::cpp2::PropOwner::EDGE;

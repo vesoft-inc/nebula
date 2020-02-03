@@ -13,7 +13,7 @@
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 
-DECLARE_int32(load_data_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace graph {
@@ -105,6 +105,8 @@ public:
     static AssertionResult prepareSchema();
 
     static AssertionResult prepareData();
+
+    static AssertionResult insertData();
 
     static AssertionResult removeData();
 
@@ -262,11 +264,40 @@ public:
         int64_t                                 vid_{0};
     };
 
+
+    class Bachelor final {
+    public:
+        Bachelor(std::string name,
+                 std::string speciality) {
+            name_ = std::move(name);
+            speciality_ = std::move(speciality);
+            vid_ = std::hash<std::string>()(name_);
+        }
+
+        const std::string& name() const {
+            return name_;
+        }
+
+        const std::string& speciality() const {
+            return speciality_;
+        }
+
+        int64_t vid() const {
+            return vid_;
+        }
+
+    private:
+        std::string     name_;
+        std::string     speciality_;
+        int64_t         vid_{0};
+    };
+
 protected:
     static uint16_t                             storagePort_;
     static std::unique_ptr<GraphClient>         client_;
     static VertexHolder<Player>                 players_;
     static VertexHolder<Team>                   teams_;
+    static VertexHolder<Bachelor>               bachelors_;
 };
 
 uint16_t TraverseTestBase::storagePort_ = 0;
@@ -368,6 +399,11 @@ TraverseTestBase::VertexHolder<TraverseTestBase::Team> TraverseTestBase::teams_ 
     }
 };
 
+TraverseTestBase::VertexHolder<TraverseTestBase::Bachelor> TraverseTestBase::bachelors_ = {
+    [] (const auto &bachelor) {return bachelor.name();}, {
+        Bachelor{"Tim Duncan", "psychology"},
+    }
+};
 
 // static
 AssertionResult TraverseTestBase::prepareSchema() {
@@ -433,7 +469,15 @@ AssertionResult TraverseTestBase::prepareSchema() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
-    sleep(FLAGS_load_data_interval_secs + 3);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG bachelor(name string, speciality string)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    sleep(FLAGS_heartbeat_interval_secs + 3);
     return TestOK();
 }
 
@@ -735,6 +779,10 @@ AssertionResult TraverseTestBase::prepareData() {
                            .like("Kristaps Porzingis", 90)
                            .like("James Harden", 80);
 
+    return insertData();
+}
+
+AssertionResult TraverseTestBase::insertData() {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "USE nba";
@@ -759,6 +807,30 @@ AssertionResult TraverseTestBase::prepareData() {
             query += "\"";
             query += ",";
             query += std::to_string(player.age());
+            query += "),\n\t";
+        }
+        query.resize(query.size() - 3);
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert `players' failed: "
+                               << static_cast<int32_t>(code);
+        }
+    }
+    {
+        // Insert vertices `player'
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query += "INSERT VERTEX bachelor(name, speciality) VALUES ";
+        for (auto &bachelor : bachelors_) {
+            query += std::to_string(bachelor.vid());
+            query += ": ";
+            query += "(";
+            query += "\"";
+            query += bachelor.name();
+            query += "\"";
+            query += ",";
+            query += bachelor.speciality();
             query += "),\n\t";
         }
         query.resize(query.size() - 3);

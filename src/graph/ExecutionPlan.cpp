@@ -20,7 +20,7 @@ void ExecutionPlan::execute() {
         auto result = GQLParser().parse(rctx->query());
         if (!result.ok()) {
             status = std::move(result).status();
-            LOG(ERROR) << status;
+            LOG(ERROR) << "Do cmd `" << rctx->query() << "' failed: " << status;
             stats::Stats::addStatsValue(parseStats_.get(), false);
             break;
         }
@@ -73,6 +73,7 @@ void ExecutionPlan::onFinish() {
 
 
 void ExecutionPlan::onError(Status status) {
+    LOG(ERROR) << "Execute failed: " << status.toString();
     auto *rctx = ectx()->rctx();
     if (status.isSyntaxError()) {
         rctx->resp().set_error_code(cpp2::ErrorCode::E_SYNTAX_ERROR);

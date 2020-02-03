@@ -49,6 +49,14 @@ Status FetchEdgesExecutor::prepareClauses() {
         if (!status.ok()) {
             break;
         }
+
+        // Add SrcID, DstID, Rank before prepareYield()
+        edgeSrcName_ = *labelName_ + "._src";
+        edgeDstName_ = *labelName_ + "._dst";
+        edgeRankName_ = *labelName_ + "._rank";
+        returnColNames_.emplace_back(edgeSrcName_);
+        returnColNames_.emplace_back(edgeDstName_);
+        returnColNames_.emplace_back(edgeRankName_);
         status = prepareYield();
         if (!status.ok()) {
             break;
@@ -65,14 +73,14 @@ Status FetchEdgesExecutor::prepareEdgeKeys() {
 
             srcid_ = edgeKeyRef->srcid();
             if (srcid_ == nullptr) {
-                status = Status::Error("Internal error.");
+                status = Status::Error("Src id nullptr.");
                 LOG(ERROR) << "Get src nullptr.";
                 break;
             }
 
             dstid_ = edgeKeyRef->dstid();
             if (dstid_ == nullptr) {
-                status = Status::Error("Internal error.");
+                status = Status::Error("Dst id nullptr.");
                 LOG(ERROR) << "Get dst nullptr.";
                 break;
             }
@@ -276,7 +284,7 @@ void FetchEdgesExecutor::fetchEdges() {
     auto cb = [this] (RpcResponse &&result) mutable {
         auto completeness = result.completeness();
         if (completeness == 0) {
-            doError(Status::Error("Get props failed"));
+            doError(Status::Error("Get edge `%s' props failed", sentence_->edge()->c_str()));
             return;
         } else if (completeness != 100) {
             LOG(INFO) << "Get edges partially failed: "  << completeness << "%";
@@ -289,8 +297,10 @@ void FetchEdgesExecutor::fetchEdges() {
         return;
     };
     auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Internal error"));
+        auto msg = folly::stringPrintf("Get edge `%s' props faield: %s.",
+                sentence_->edge()->c_str(), e.what().c_str());
+        LOG(ERROR) << msg;
+        doError(Status::Error(std::move(msg)));
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -316,7 +326,6 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
     auto all = result.responses();
     std::shared_ptr<SchemaWriter> outputSchema;
     std::unique_ptr<RowSetWriter> rsWriter;
-    auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
     Getters getters;
     for (auto &resp : all) {
         if (!resp.__isset.schema || !resp.__isset.data
@@ -330,17 +339,35 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
         auto iter = rsReader.begin();
         if (outputSchema == nullptr) {
             outputSchema = std::make_shared<SchemaWriter>();
+            outputSchema->appendCol(edgeSrcName_, nebula::cpp2::SupportedType::VID);
+            outputSchema->appendCol(edgeDstName_, nebula::cpp2::SupportedType::VID);
+            outputSchema->appendCol(edgeRankName_, nebula::cpp2::SupportedType::INT);
             auto status = getOutputSchema(eschema.get(), &*iter, outputSchema.get());
             if (!status.ok()) {
-                LOG(ERROR) << "Get getOutputSchema failed: " << status;
-                doError(Status::Error("Internal error."));
+                LOG(ERROR) << "Get output schema failed: " << status;
+                doError(Status::Error("Get output schema failed: %s.", status.toString().c_str()));
                 return;
             }
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
         }
         while (iter) {
             auto writer = std::make_unique<RowWriter>(outputSchema);
+            auto src = Collector::getProp(eschema.get(), _SRC, &*iter);
+            auto dst = Collector::getProp(eschema.get(), _DST, &*iter);
+            auto rank = Collector::getProp(eschema.get(), _RANK, &*iter);
+            if (!src.ok() || !dst.ok() || !rank.ok()) {
+                LOG(ERROR) << "Get edge key failed";
+                doError(Status::Error("Get edge key failed"));
+                return;
+            }
+            (*writer) << boost::get<int64_t>(src.value())
+                      << boost::get<int64_t>(dst.value())
+                      << boost::get<int64_t>(rank.value());
 
+            getters.getEdgeDstId = [&iter,
+                                    &eschema] (const std::string&) -> OptVariantType {
+                return Collector::getProp(eschema.get(), "_dst", &*iter);
+            };
             getters.getAliasProp =
                 [&iter, &eschema] (const std::string&,
                                    const std::string &prop) -> OptVariantType {
@@ -361,16 +388,8 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
                 }
             }
 
-            // TODO Consider float/double, and need to reduce mem copy.
             std::string encode = writer->encode();
-            if (distinct_) {
-                auto ret = uniqResult->emplace(encode);
-                if (ret.second) {
-                    rsWriter->addRow(std::move(encode));
-                }
-            } else {
-                rsWriter->addRow(std::move(encode));
-            }
+            rsWriter->addRow(std::move(encode));
             ++iter;
         }  // while `iter'
     }  // for `resp'

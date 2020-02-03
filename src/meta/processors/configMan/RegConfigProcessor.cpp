@@ -30,7 +30,7 @@ void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
         }
 
         if (!data.empty()) {
-            doPut(std::move(data));
+            doSyncPutAndUpdate(std::move(data));
             return;
         }
     }

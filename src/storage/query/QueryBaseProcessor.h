@@ -91,6 +91,13 @@ protected:
                             FilterContext* fcontext,
                             Collector* collector);
     /**
+     * Collect props for one vertex with vid.
+     * */
+    kvstore::ResultCode collectVertexProps(
+                            PartitionID partId,
+                            VertexID vId,
+                            std::vector<cpp2::TagData> &tds);
+    /**
      * Collect props for one vertex edge.
      * */
     kvstore::ResultCode collectEdgeProps(
@@ -109,15 +116,27 @@ protected:
 
     bool checkExp(const Expression* exp);
 
+    void buildRespSchema();
+
 protected:
     GraphSpaceID  spaceId_;
     std::unique_ptr<ExpressionContext> expCtx_;
     std::unique_ptr<Expression> exp_;
     std::vector<TagContext> tagContexts_;
     std::unordered_map<EdgeType, std::vector<PropContext>> edgeContexts_;
-    folly::Executor* executor_ = nullptr;
-    VertexCache* vertexCache_ = nullptr;
+
+    std::unordered_map<TagID, nebula::cpp2::Schema> vertexSchemaResp_;
+    std::unordered_map<EdgeType, nebula::cpp2::Schema> edgeSchemaResp_;
+
+    std::unordered_map<TagID, std::shared_ptr<nebula::meta::SchemaProviderIf>> vertexSchema_;
+    std::unordered_map<EdgeType, std::shared_ptr<nebula::meta::SchemaProviderIf>> edgeSchema_;
+
+    std::unordered_map<EdgeType, bool> onlyStructures_;
+
+    folly::Executor* executor_{nullptr};
+    VertexCache* vertexCache_{nullptr};
     std::unordered_map<std::string, EdgeType> edgeMap_;
+    bool compactDstIdProps_ = false;
 };
 
 }  // namespace storage

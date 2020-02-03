@@ -65,7 +65,7 @@ bool NebulaStore::init() {
                         return false;
                     }
 
-                    if (!options_.partMan_->spaceExist(storeSvcAddr_, spaceId)) {
+                    if (!options_.partMan_->spaceExist(storeSvcAddr_, spaceId).ok()) {
                         // TODO We might want to have a second thought here.
                         // Removing the data directly feels a little strong
                         LOG(INFO) << "Space " << spaceId
@@ -95,7 +95,7 @@ bool NebulaStore::init() {
                     // partIds is the partition in this host waiting to open
                     std::vector<PartitionID> partIds;
                     for (auto& partId : enginePtr->allParts()) {
-                        if (!options_.partMan_->partExist(storeSvcAddr_, spaceId, partId)) {
+                        if (!options_.partMan_->partExist(storeSvcAddr_, spaceId, partId).ok()) {
                             LOG(INFO) << "Part " << partId
                                       << " does not exist any more, remove it!";
                             enginePtr->removePart(partId);
@@ -407,6 +407,45 @@ ResultCode NebulaStore::prefix(GraphSpaceID spaceId,
     return part->engine()->prefix(prefix, iter);
 }
 
+
+ResultCode NebulaStore::rangeWithPrefix(GraphSpaceID spaceId,
+                                        PartitionID  partId,
+                                        const std::string& start,
+                                        const std::string& prefix,
+                                        std::unique_ptr<KVIterator>* iter) {
+    auto ret = part(spaceId, partId);
+    if (!ok(ret)) {
+        return error(ret);
+    }
+    auto part = nebula::value(ret);
+    if (!checkLeader(part)) {
+        return ResultCode::ERR_LEADER_CHANGED;
+    }
+    return part->engine()->rangeWithPrefix(start, prefix, iter);
+}
+
+
+ResultCode NebulaStore::sync(GraphSpaceID spaceId,
+                             PartitionID partId) {
+    auto partRet = part(spaceId, partId);
+    if (!ok(partRet)) {
+        return error(partRet);
+    }
+    auto part = nebula::value(partRet);
+    if (!checkLeader(part)) {
+        return ResultCode::ERR_LEADER_CHANGED;
+    }
+    auto ret = ResultCode::SUCCEEDED;
+    folly::Baton<true, std::atomic> baton;
+    part->sync([&] (kvstore::ResultCode code) {
+        ret = code;
+        baton.post();
+    });
+    baton.wait();
+    return ret;
+}
+
+
 void NebulaStore::asyncMultiPut(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 std::vector<KV> keyValues,
@@ -581,13 +620,23 @@ ResultCode NebulaStore::compact(GraphSpaceID spaceId) {
         return error(spaceRet);
     }
     auto space = nebula::value(spaceRet);
+
+    auto code = ResultCode::SUCCEEDED;
+    std::vector<std::thread> threads;
     for (auto& engine : space->engines_) {
-        auto code = engine->compact();
-        if (code != ResultCode::SUCCEEDED) {
-            return code;
-        }
+        threads.emplace_back(std::thread([&engine, &code] {
+            auto ret = engine->compact();
+            if (ret != ResultCode::SUCCEEDED) {
+                code = ret;
+            }
+        }));
     }
-    return ResultCode::SUCCEEDED;
+
+    // Wait for all threads to finish
+    for (auto& t : threads) {
+        t.join();
+    }
+    return code;
 }
 
 ResultCode NebulaStore::flush(GraphSpaceID spaceId) {

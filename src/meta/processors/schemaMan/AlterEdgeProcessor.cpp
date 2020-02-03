@@ -73,7 +73,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     data.emplace_back(MetaServiceUtils::schemaEdgeKey(req.get_space_id(), edgeType, version),
                       MetaServiceUtils::schemaEdgeVal(req.get_edge_name(), schema));
     resp_.set_id(to(edgeType, EntryType::EDGE));
-    doPut(std::move(data));
+    doSyncPutAndUpdate(std::move(data));
 }
 
 }  // namespace meta

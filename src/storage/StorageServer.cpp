@@ -8,11 +8,11 @@
 #include "network/NetworkUtils.h"
 #include "storage/StorageFlags.h"
 #include "storage/StorageServiceHandler.h"
-#include "storage/http/StorageHttpStatusHandler.h"
 #include "storage/http/StorageHttpDownloadHandler.h"
 #include "storage/http/StorageHttpIngestHandler.h"
 #include "storage/http/StorageHttpAdminHandler.h"
 #include "kvstore/PartManager.h"
+#include "webservice/Router.h"
 #include "webservice/WebService.h"
 #include "storage/CompactionFilter.h"
 #include "hdfs/HdfsCommandHelper.h"
@@ -25,9 +25,19 @@ DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
 DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");
+DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
 
 namespace nebula {
 namespace storage {
+
+StorageServer::StorageServer(HostAddr localHost,
+                             std::vector<HostAddr> metaAddrs,
+                             std::vector<std::string> dataPaths)
+    : localHost_(localHost), metaAddrs_(std::move(metaAddrs)), dataPaths_(std::move(dataPaths)) {}
+
+StorageServer::~StorageServer() {
+    stop();
+}
 
 std::unique_ptr<kvstore::KVStore> StorageServer::getStoreInstance() {
     kvstore::KVOptions options;
@@ -60,29 +70,25 @@ bool StorageServer::initWebService() {
     webWorkers_ = std::make_unique<nebula::thread::GenericThreadPool>();
     webWorkers_->start(FLAGS_storage_http_thread_num, "http thread pool");
     LOG(INFO) << "Http Thread Pool started";
+    webSvc_ = std::make_unique<WebService>();
+    auto& router = webSvc_->router();
 
-    WebService::registerHandler("/status", [] {
-        return new StorageHttpStatusHandler();
-    });
-    WebService::registerHandler("/download", [this] {
+    router.get("/download").handler([this](web::PathParams&&) {
         auto* handler = new storage::StorageHttpDownloadHandler();
         handler->init(hdfsHelper_.get(), webWorkers_.get(), kvstore_.get(), dataPaths_);
         return handler;
     });
-    nebula::WebService::registerHandler("/ingest", [this] {
+    router.get("/ingest").handler([this](web::PathParams&&) {
         auto handler = new nebula::storage::StorageHttpIngestHandler();
         handler->init(kvstore_.get());
         return handler;
     });
-    WebService::registerHandler("/admin", [this] {
+    router.get("/admin").handler([this](web::PathParams&&) {
         return new storage::StorageHttpAdminHandler(schemaMan_.get(), kvstore_.get());
     });
-    auto status = WebService::start();
-    if (!status.ok()) {
-        return false;
-    }
-    webStatus_ = Status::RUNNING;
-    return true;
+
+    auto status = webSvc_->start();
+    return status.ok();
 }
 
 bool StorageServer::start() {
@@ -93,11 +99,14 @@ bool StorageServer::start() {
     workers_->start();
 
     // Meta client
+    meta::MetaClientOptions options;
+    options.localHost_ = localHost_;
+    options.inStoraged_ = true;
+    options.serviceName_ = "";
+    options.skipConfig_ = FLAGS_local_config;
     metaClient_ = std::make_unique<meta::MetaClient>(ioThreadPool_,
                                                      metaAddrs_,
-                                                     localHost_,
-                                                     0,
-                                                     true);
+                                                     options);
     if (!metaClient_->waitForMetadReady()) {
         LOG(ERROR) << "waitForMetadReady error!";
         return false;
@@ -108,6 +117,10 @@ bool StorageServer::start() {
     LOG(INFO) << "Init schema manager";
     schemaMan_ = meta::SchemaManager::create();
     schemaMan_->init(metaClient_.get());
+
+    LOG(INFO) << "Init index manager";
+    auto indexMan = meta::IndexManager::create();
+    indexMan->init(metaClient_.get());
 
     LOG(INFO) << "Init kvstore";
     kvstore_ = getStoreInstance();
@@ -124,6 +137,7 @@ bool StorageServer::start() {
 
     auto handler = std::make_shared<StorageServiceHandler>(kvstore_.get(),
                                                            schemaMan_.get(),
+                                                           indexMan.get(),
                                                            metaClient_.get());
     try {
         LOG(INFO) << "The storage deamon start on " << localHost_;
@@ -149,10 +163,9 @@ void StorageServer::stop() {
         return;
     }
     stopped_ = true;
-    if (webStatus_ == Status::RUNNING) {
-        nebula::WebService::stop();
-        webStatus_ = Status::STOPPED;
-    }
+
+    webSvc_.reset();
+
     if (metaClient_) {
         metaClient_->stop();
     }

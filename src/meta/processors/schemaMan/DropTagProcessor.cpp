@@ -15,13 +15,14 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
     auto ret = getTagKeys(req.get_space_id(), req.get_tag_name());
     if (!ret.ok()) {
         LOG(ERROR) << "Drop Tag Failed : " << req.get_tag_name() << " not found";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        resp_.set_code(
+            req.get_if_exists() ? cpp2::ErrorCode::SUCCEEDED : cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     LOG(INFO) << "Drop Tag " << req.get_tag_name();
-    doMultiRemove(std::move(ret.value()));
+    doSyncMultiRemoveAndUpdate(std::move(ret.value()));
 }
 
 StatusOr<std::vector<std::string>> DropTagProcessor::getTagKeys(GraphSpaceID id,

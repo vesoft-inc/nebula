@@ -16,14 +16,12 @@
 #include "network/NetworkUtils.h"
 
 DECLARE_string(meta_server_addrs);
-DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace storage {
 
 TEST(StorageClientTest, VerticesInterfacesTest) {
-    FLAGS_load_data_interval_secs = 1;
     FLAGS_heartbeat_interval_secs = 1;
     const nebula::ClusterID kClusterId = 10;
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
@@ -49,11 +47,13 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
     auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
     auto& localHost = hostRet.value();
+    meta::MetaClientOptions options;
+    options.localHost_ = localHost;
+    options.clusterId_ = kClusterId;
+    options.inStoraged_ = true;
     auto mClient = std::make_unique<meta::MetaClient>(threadPool,
                                                       std::move(addrs),
-                                                      localHost,
-                                                      kClusterId,
-                                                      true);
+                                                      options);
     LOG(INFO) << "Add hosts automatically and create space....";
     mClient->waitForMetadReady();
     VLOG(1) << "The storage server has been added to the meta service";
@@ -75,7 +75,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     ASSERT_TRUE(ret.ok()) << ret.status();
     spaceId = ret.value();
     LOG(INFO) << "Created space \"default\", its id is " << spaceId;
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     TestUtils::waitUntilAllElected(sc->kvStore_.get(), spaceId, 10);
     auto client = std::make_unique<StorageClient>(threadPool, mClient.get());
 
@@ -91,14 +91,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 cpp2::Tag t;
                 t.set_tag_id(tagId);
                 // Generate some tag props.
-                RowWriter writer;
-                for (uint64_t numInt = 0; numInt < 3; numInt++) {
-                    writer << numInt;
-                }
-                for (auto numString = 3; numString < 6; numString++) {
-                    writer << folly::stringPrintf("tag_string_col_%d", numString);
-                }
-                t.set_props(writer.encode());
+                auto val = TestUtils::setupEncode();
+                t.set_props(std::move(val));
                 tags.emplace_back(std::move(t));
             }
             v.set_tags(std::move(tags));
@@ -160,7 +154,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             checkTagData<int64_t>(vp.tag_data, 3001, "tag_3001_col_0", vschema, 0);
             checkTagData<int64_t>(vp.tag_data, 3003, "tag_3003_col_2", vschema, 2);
             checkTagData<std::string>(vp.tag_data, 3005, "tag_3005_col_4", vschema,
-                                      folly::stringPrintf("tag_string_col_4"));
+                                      folly::stringPrintf("string_col_4"));
         }
     }
 
@@ -178,14 +172,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             edgeKey.set_ranking(srcId*100 + 3);
             edge.set_key(std::move(edgeKey));
             // Generate some edge props.
-            RowWriter writer;
-            for (int32_t iInt = 0; iInt < 10; iInt++) {
-                writer << iInt;
-            }
-            for (int32_t iString = 10; iString < 20; iString++) {
-                writer << folly::stringPrintf("string_col_%d", iString);
-            }
-            edge.set_props(writer.encode());
+            auto val = TestUtils::setupEncode(10, 20);
+            edge.set_props(std::move(val));
             edges.emplace_back(std::move(edge));
         }
         auto f = client->addEdges(spaceId, std::move(edges), true);
@@ -384,6 +372,8 @@ public:
         CHECK(it != parts_.end());
         return it->second;
     }
+
+    void loadLeader() const override {}
 
     std::unordered_map<PartitionID, PartMeta> parts_;
 };

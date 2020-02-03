@@ -22,13 +22,15 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     req.overwritable = true;
 
     LOG(INFO) << "Build FutureAddVerticesTest...";
-    req.parts.emplace(0, TestUtils::setupVertices(0, 10, 10));
-    req.parts.emplace(1, TestUtils::setupVertices(1, 20, 30));
+    req.parts.emplace(0, TestUtils::setupVertices(0, 0, 10, 0, 10));
+    req.parts.emplace(1, TestUtils::setupVertices(1, 0, 20, 0, 30));
     LOG(INFO) << "Test FutureAddVerticesTest...";
     std::unique_ptr<kvstore::KVStore> kvstore = TestUtils::initKV(rootPath.path());
-
+    auto schemaMan = TestUtils::mockSchemaMan();
+    auto indexMan = TestUtils::mockIndexMan();
     auto storageServiceHandler = std::make_unique<StorageServiceHandler>(kvstore.get(),
-                                                                         nullptr,
+                                                                         schemaMan.get(),
+                                                                         indexMan.get(),
                                                                          nullptr);
     auto resp = storageServiceHandler->future_addVertices(req).get();
     EXPECT_EQ(typeid(cpp2::ExecResponse).name() , typeid(resp).name());

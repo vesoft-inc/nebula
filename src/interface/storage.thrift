@@ -88,9 +88,28 @@ struct ResultCode {
     3: optional common.HostAddr  leader,
 }
 
+struct EdgeKey {
+    1: common.VertexID src,
+    // When edge_type > 0, it's an out-edge, otherwise, it's an in-edge
+    // When query edge props, the field could be unset.
+    2: common.EdgeType edge_type,
+    3: common.EdgeRanking ranking,
+    4: common.VertexID dst,
+}
+
+struct Edge {
+    1: EdgeKey key,
+    2: binary props,
+}
+
+struct IdAndProp {
+    1: common.VertexID dst,
+    2: binary props,
+}
+
 struct EdgeData {
-    1: common.EdgeType type,
-    2: binary          data,   // decode according to edge_schema.
+    1: common.EdgeType   type,
+    3: list<IdAndProp>   edges,  // dstId and it's props
 }
 
 struct TagData {
@@ -116,6 +135,7 @@ struct QueryResponse {
     2: optional map<common.TagID, common.Schema>(cpp.template = "std::unordered_map")       vertex_schema,
     3: optional map<common.EdgeType, common.Schema>(cpp.template = "std::unordered_map")    edge_schema,
     4: optional list<VertexData> vertices,
+    5: optional i32 total_edges,
 }
 
 struct ExecResponse {
@@ -148,21 +168,6 @@ struct Vertex {
     1: common.VertexID id,
     2: list<Tag> tags,
 }
-
-struct EdgeKey {
-    1: common.VertexID src,
-    // When edge_type > 0, it's an out-edge, otherwise, it's an in-edge
-    // When query edge props, the field could be unset.
-    2: common.EdgeType edge_type,
-    3: common.EdgeRanking ranking,
-    4: common.VertexID dst,
-}
-
-struct Edge {
-    1: EdgeKey key,
-    2: binary props,
-}
-
 struct GetNeighborsRequest {
     1: common.GraphSpaceID space_id,
     // partId => ids
@@ -211,9 +216,9 @@ struct EdgeKeyRequest {
 }
 
 struct DeleteVertexRequest {
-    1: common.GraphSpaceID space_id,
-    2: common.PartitionID  part_id,
-    3: common.VertexID     vid;
+    1: common.GraphSpaceID      space_id,
+    2: common.PartitionID       part_id,
+    3: common.VertexID          vid;
 }
 
 struct DeleteEdgesRequest {
@@ -291,23 +296,80 @@ struct UpdateItem {
 }
 
 struct UpdateVertexRequest {
-    1: common.GraphSpaceID space_id,
-    2: common.VertexID vertex_id,
-    3: common.PartitionID part_id,
-    4: binary filter,
-    5: list<UpdateItem> update_items,
-    6: list<binary> return_columns,
-    7: bool insertable,
+    1: common.GraphSpaceID      space_id,
+    2: common.VertexID          vertex_id,
+    3: common.PartitionID       part_id,
+    4: binary                   filter,
+    5: list<UpdateItem>         update_items,
+    6: list<binary>             return_columns,
+    7: bool                     insertable,
 }
 
 struct UpdateEdgeRequest {
+    1: common.GraphSpaceID      space_id,
+    2: EdgeKey                  edge_key,
+    3: common.PartitionID       part_id,
+    4: binary                   filter,
+    5: list<UpdateItem>         update_items,
+    6: list<binary>             return_columns,
+    7: bool                     insertable,
+}
+
+struct ScanEdgeRequest {
     1: common.GraphSpaceID space_id,
-    2: EdgeKey edge_key,
-    3: common.PartitionID part_id,
-    4: binary filter,
-    5: list<UpdateItem> update_items,
-    6: list<binary> return_columns,
-    7: bool insertable,
+    2: common.PartitionID part_id,
+    // start key of this block
+    3: optional binary cursor,
+    // If specified, only return specified columns, if not, no columns are returned
+    4: map<common.EdgeType, list<PropDef>> (cpp.template = "std::unordered_map") return_columns,
+    5: bool all_columns,
+    // max row count of edge in this response
+    6: i32 limit,
+    7: i64 start_time,
+    8: i64 end_time,
+}
+
+struct ScanEdgeResponse {
+    1: required ResponseCommon result,
+    2: map<common.EdgeType, common.Schema> (cpp.template = "std::unordered_map") edge_schema,
+    3: list<ScanEdge> edge_data,
+    4: bool has_next,
+    5: binary next_cursor, // next start key of scan
+}
+
+struct ScanEdge {
+    1: common.VertexID src,
+    2: common.EdgeType type,
+    3: common.VertexID dst,
+    4: binary value, // decode according to edge_schema.
+}
+
+struct ScanVertexRequest {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID part_id,
+    // start key of this block
+    3: optional binary cursor,
+    // If specified, only return specified columns, if not, no columns are returned
+    4: map<common.TagID, list<PropDef>> (cpp.template = "std::unordered_map") return_columns,
+    5: bool all_columns,
+    // max row count of tag in this response
+    6: i32 limit,
+    7: i64 start_time,
+    8: i64 end_time,
+}
+
+struct ScanVertex {
+    1: common.VertexID  vertexId,
+    2: common.TagID     tagId,
+    3: binary           value,                  // decode according to vertex_schema.
+}
+
+struct ScanVertexResponse {
+    1: required ResponseCommon result,
+    2: map<common.TagID, common.Schema> (cpp.template = "std::unordered_map") vertex_schema,
+    3: list<ScanVertex> vertex_data,
+    4: bool has_next,
+    5: binary next_cursor,          // next start key of scan
 }
 
 struct PutRequest {
@@ -389,6 +451,9 @@ service StorageService {
 
     UpdateResponse updateVertex(1: UpdateVertexRequest req)
     UpdateResponse updateEdge(1: UpdateEdgeRequest req)
+
+    ScanEdgeResponse scanEdge(1: ScanEdgeRequest req)
+    ScanVertexResponse scanVertex(1: ScanVertexRequest req)
 
     // Interfaces for admin operations
     AdminExecResp transLeader(1: TransLeaderReq req);

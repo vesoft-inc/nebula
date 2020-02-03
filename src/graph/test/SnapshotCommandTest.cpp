@@ -9,7 +9,7 @@
 #include "graph/test/TestBase.h"
 #include "meta/test/TestUtils.h"
 
-DECLARE_int32(load_data_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace graph {
@@ -37,7 +37,7 @@ TEST_F(SnapshotCommandTest, TestSnapshot) {
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_heartbeat_interval_secs + 1);
 
     ASSERT_NE(nullptr, client);
     {
