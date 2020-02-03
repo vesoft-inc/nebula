@@ -46,10 +46,11 @@ public:
      */
     static StatusOr<std::string> getCharsetbyCollation(const std::string& collationName);
 
-    static std::vector<std::string> supportCharset;
-    static std::vector<std::string> supportCollation;
+    static std::unordered_set<std::string> supportCharset;
 
-    static std::map<std::string, CharsetToCollation> charsetToCollation;
+    static std::unordered_set<std::string> supportCollation;
+
+    static std::unordered_map<std::string, CharsetToCollation> charsetToCollation;
 };
 
 }   // namespace nebula

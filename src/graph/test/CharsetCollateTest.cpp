@@ -46,7 +46,7 @@ TEST_F(CharsetCollateTest, ShowCharset) {
         auto *fmt = "SHOW CHARSETS";
         auto query = fmt;
         auto code = client->execute(query, resp);
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
 }
 
@@ -69,14 +69,14 @@ TEST_F(CharsetCollateTest, ShowCollate) {
         auto *fmt = "SHOW COLLATE";
         auto query = fmt;
         auto code = client->execute(query, resp);
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "SHOW COLLATIONS";
         auto query = fmt;
         auto code = client->execute(query, resp);
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
 }
 
