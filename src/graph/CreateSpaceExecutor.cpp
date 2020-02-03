@@ -23,13 +23,17 @@ Status CreateSpaceExecutor::prepare() {
             case SpaceOptItem::PARTITION_NUM:
                 partNum_ = item->get_partition_num();
                 if (partNum_ <= 0) {
-                    return Status::Error("Partition_num value should be greater than zero");
+                    return Status::Error("partition_num value should be greater than zero");
+                } else if (partNum_ >=100000) {
+                    return Status::Error("partition_num value should be less than 100000");
                 }
                 break;
             case SpaceOptItem::REPLICA_FACTOR:
                 replicaFactor_ = item->get_replica_factor();
                 if (replicaFactor_ <= 0) {
-                    return Status::Error("Replica_factor value should be greater than zero");
+                    return Status::Error("replica_factor value should be greater than zero");
+                } else if (replicaFactor_ >= 100) {
+                    return Status::Error("replica_factor value should be less than 100");
                 }
                 break;
         }
