@@ -78,6 +78,8 @@ using SpaceTagIdNameMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, std
 
 // get all edgeType edgeName via spaceId
 using SpaceAllEdgeMap = std::unordered_map<GraphSpaceID, std::vector<std::string>>;
+// get leader host via spaceId and partId
+using LeaderMap = std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>;
 
 
 struct ConfigItem {
@@ -417,6 +419,8 @@ public:
                                                              const std::string& field);
 
     Status refreshCache();
+
+    StatusOr<LeaderMap> loadLeader();
 
 protected:
     // Return true if load succeeded.
