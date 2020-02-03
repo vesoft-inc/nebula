@@ -17,8 +17,7 @@ void SetTimezoneProcessor::process(const cpp2::SetTimezoneReq& req) {
     std::string timezoneValue = MetaServiceUtils::timezoneValue(req.get_timezone());
     data.emplace_back(std::move(timezoneKey), std::move(timezoneValue));
 
-    doPut(std::move(data));
-    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
+    doSyncPutAndUpdate(std::move(data));
     return;
 }
 

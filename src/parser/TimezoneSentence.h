@@ -35,7 +35,7 @@ public:
         return timezone_.get();
     }
 
-    const TimezoneType getType() const {
+    TimezoneType getType() const {
         return type_;
     }
 

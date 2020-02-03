@@ -206,6 +206,8 @@ bool MetaClient::loadData() {
         spaceNewestTagVerMap_  = std::move(spaceNewestTagVerMap);
         spaceNewestEdgeVerMap_ = std::move(spaceNewestEdgeVerMap);
         spaceEdgeIndexByType_  = std::move(spaceEdgeIndexByType);
+        spaceTagIndexById_     = std::move(spaceTagIndexById);
+        spaceAllEdgeMap_       = std::move(spaceAllEdgeMap);
         if (tzResult.ok()) {
             timezone_ = std::move(tzResult).value();
         }

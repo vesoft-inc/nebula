@@ -788,7 +788,7 @@ Status TimeToSecFunc::calcDateTime() {
 
 Status MakeDateFunc::calcDateTime() {
     if ((*args_)[1].which() != VAR_INT64) {
-        return Status::Error("Wrong dayofyear type: %ld", (*args_)[1].which());
+        return Status::Error("Wrong dayofyear type: %d", (*args_)[1].which());
     }
     nebulaTime_.month = 1;
     nebulaTime_.day = 1;
