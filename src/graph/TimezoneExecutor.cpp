@@ -37,7 +37,7 @@ void TimezoneExecutor::execute() {
         case TimezoneSentence::TimezoneType::kGetTimezone:
             return getTimezone();
         default:
-            onError_(Status::Error("Unknown type: %d", sentence_->kind()));
+            onError_(Status::Error("Unknown type: %d", static_cast<uint8_t>(sentence_->kind())));
             return;
     }
 }

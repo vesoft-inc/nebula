@@ -351,7 +351,7 @@ StatusOr<NebulaTime> TimeCommon::toNebulaTimeValue(const VariantType &value, Dat
     if (!checkDatetime(resultValue)) {
         return Status::Error("Wrong time format");
     }
-    return std::move(resultValue);
+    return resultValue;
 }
 
 Status TimeCommon::UpdateDate(NebulaTime &nebulaTime, int32_t dayCount, bool add) {
