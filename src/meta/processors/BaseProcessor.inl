@@ -432,5 +432,58 @@ void BaseProcessor<RESP>::doSyncMultiRemoveAndUpdate(std::vector<std::string> ke
     this->onFinished();
 }
 
+template<typename RESP>
+StatusOr<std::vector<nebula::cpp2::IndexItem>>
+BaseProcessor<RESP>::getIndexes(GraphSpaceID spaceId,
+                                int32_t edgeOrTag,
+                                bool isEdge) {
+    std::vector<nebula::cpp2::IndexItem> items;
+    auto type = isEdge ? nebula::cpp2::SchemaID::Type::edge_type
+                       : nebula::cpp2::SchemaID::Type::tag_id;
+    auto indexPrefix = MetaServiceUtils::indexPrefix(spaceId);
+    auto iterRet = doPrefix(indexPrefix);
+    if (!iterRet.ok()) {
+        return iterRet.status();
+    }
+    auto indexIter = iterRet.value().get();
+    while (indexIter->valid()) {
+        auto item = MetaServiceUtils::parseIndex(indexIter->val());
+        auto id = isEdge ? item.get_schema_id().get_edge_type()
+                         : item.get_schema_id().get_tag_id();
+        if (item.get_schema_id().getType() == type && id == edgeOrTag) {
+            items.emplace_back(std::move(item));
+        }
+        indexIter->next();
+    }
+    return items;
+}
+
+template<typename RESP>
+cpp2::ErrorCode
+BaseProcessor<RESP>::indexCheck(const std::vector<nebula::cpp2::IndexItem>& items,
+                                const std::vector<cpp2::AlterSchemaItem>& alterItems) {
+    for (const auto& index : items) {
+        for (const auto& tagItem : alterItems) {
+            if (tagItem.op == nebula::meta::cpp2::AlterSchemaOp::CHANGE ||
+                tagItem.op == nebula::meta::cpp2::AlterSchemaOp::DROP) {
+                const auto& tagCols = tagItem.get_schema().get_columns();
+                const auto& indexCols = index.get_fields();
+                for (const auto& tCol : tagCols) {
+                    auto it = std::find_if(indexCols.begin(), indexCols.end(),
+                                           [&] (const auto& iCol) {
+                                               return tCol.name == iCol.name;
+                                           });
+                    if (it != indexCols.end()) {
+                        LOG(ERROR) << "Index conflict, index :" << index.get_index_name()
+                                   << ", column : " << tCol.name;
+                        return cpp2::ErrorCode::E_INDEX_CONFLICT;
+                    }
+                }
+            }
+        }
+    }
+    return cpp2::ErrorCode::SUCCEEDED;
+}
+
 }  // namespace meta
 }  // namespace nebula

@@ -20,17 +20,28 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
         edgeType = *reinterpret_cast<const EdgeType *>(iRet.value().data());
         resp_.set_id(to(edgeType, EntryType::EDGE));
     } else {
-        resp_.set_code(to(iRet.status()));
+        resp_.set_code(req.get_if_exists() == true ? cpp2::ErrorCode::SUCCEEDED
+                                                   : cpp2::ErrorCode::E_NOT_FOUND);
+        onFinished();
+        return;
+    }
+
+    auto indexes = getIndexes(spaceId, edgeType, true);
+    if (!indexes.ok()) {
+        resp_.set_code(to(indexes.status()));
+        onFinished();
+        return;
+    }
+    if (!indexes.value().empty()) {
+        LOG(ERROR) << "Drop edge error, index conflict";
+        resp_.set_code(cpp2::ErrorCode::E_INDEX_CONFLICT);
         onFinished();
         return;
     }
 
     auto ret = getEdgeKeys(req.get_space_id(), edgeType);
     if (!ret.ok()) {
-        resp_.set_code(
-            req.get_if_exists() == true
-            ? cpp2::ErrorCode::SUCCEEDED
-            : cpp2::ErrorCode::E_NOT_FOUND);
+        resp_.set_code(to(ret.status()));
         onFinished();
         return;
     }

@@ -44,46 +44,20 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     // Update schema column
     auto& tagItems = req.get_tag_items();
 
-    // Check the tag belongs to the index
-    {
-        std::unique_ptr<kvstore::KVIterator> indexIter;
-        auto indexPrefix = MetaServiceUtils::indexPrefix(spaceId);
-        auto iRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, indexPrefix, &indexIter);
-        if (iRet != kvstore::ResultCode::SUCCEEDED) {
-            resp_.set_code(to(iRet));
+    auto iCode = getIndexes(spaceId, tagId, false);
+    if (!iCode.ok()) {
+        resp_.set_code(to(iCode.status()));
+        onFinished();
+        return;
+    }
+    auto indexes = std::move(iCode).value();
+    if (!indexes.empty()) {
+        auto iStatus = indexCheck(indexes, tagItems);
+        if (iStatus != cpp2::ErrorCode::SUCCEEDED) {
+            LOG(ERROR) << "Alter tag error, index conflict : " << static_cast<int32_t>(iStatus);
+            resp_.set_code(iStatus);
             onFinished();
             return;
-        }
-        std::vector<nebula::cpp2::IndexItem> items;
-        while (indexIter->valid()) {
-            auto item = MetaServiceUtils::parseIndex(indexIter->val());
-            if (item.get_schema_id().getType() == nebula::cpp2::SchemaID::Type::tag_id &&
-                item.get_schema_id().get_tag_id() == tagId) {
-                items.emplace_back(std::move(item));
-            }
-            indexIter->next();
-        }
-        for (const auto& index : items) {
-            for (const auto& tagItem : tagItems) {
-                if (tagItem.op == nebula::meta::cpp2::AlterSchemaOp::CHANGE ||
-                    tagItem.op == nebula::meta::cpp2::AlterSchemaOp::DROP) {
-                    const auto& tagCols = tagItem.get_schema().get_columns();
-                    const auto& indexCols = index.get_fields();
-                    for (const auto& tCol : tagCols) {
-                        auto it = std::find_if(indexCols.begin(), indexCols.end(),
-                                               [&] (const auto& iCol) {
-                                                   return tCol.name == iCol.name;
-                                               });
-                        if (it != indexCols.end()) {
-                            LOG(ERROR) << "Index conflict, index :" << index.get_index_name()
-                                       << ", column : " << tCol.name;
-                            resp_.set_code(cpp2::ErrorCode::E_INDEX_CONFLICT);
-                            onFinished();
-                            return;
-                        }
-                    }
-                }
-            }
         }
     }
 

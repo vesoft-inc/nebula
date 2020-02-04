@@ -20,15 +20,29 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
         tagId = *reinterpret_cast<const TagID *>(iRet.value().data());
         resp_.set_id(to(tagId, EntryType::TAG));
     } else {
-        resp_.set_code(to(iRet.status()));
+        resp_.set_code(req.get_if_exists() ? cpp2::ErrorCode::SUCCEEDED
+                                           : cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
+
+    auto indexes = getIndexes(spaceId, tagId, false);
+    if (!indexes.ok()) {
+        resp_.set_code(to(indexes.status()));
+        onFinished();
+        return;
+    }
+    if (!indexes.value().empty()) {
+        LOG(ERROR) << "Drop tag error, index conflict";
+        resp_.set_code(cpp2::ErrorCode::E_INDEX_CONFLICT);
+        onFinished();
+        return;
+    }
+
     auto ret = getTagKeys(req.get_space_id(), tagId);
     if (!ret.ok()) {
         LOG(ERROR) << "Drop Tag Failed : " << req.get_tag_name() << " not found";
-        resp_.set_code(
-            req.get_if_exists() ? cpp2::ErrorCode::SUCCEEDED : cpp2::ErrorCode::E_NOT_FOUND);
+        resp_.set_code(to(ret.status()));
         onFinished();
         return;
     }
