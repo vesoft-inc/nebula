@@ -67,7 +67,7 @@ void IndexPolicyMaker::buildPolicy() {
         }
     }
     if (hintNum == operatorList_.size() && !hasStr) {
-        isIndexScan_ = false;
+        skipFilter_ = false;
     }
 }
 

@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "interface/gen-cpp2/common_types.h"
+#include "common/filter/Expressions.h"
 
 namespace nebula {
 using IndexValues = std::vector<std::pair<nebula::cpp2::SupportedType, std::string>>;
@@ -284,7 +285,7 @@ public:
              *   have a problem of precision overflow. current return value is -nan.
              */
             auto i = *reinterpret_cast<const int64_t*>(&v);
-            i = -(std::numeric_limits<int64_t >::max() + i);
+            i = -(std::numeric_limits<int64_t>::max() + i);
             v = *reinterpret_cast<const double*>(&i);
         }
         auto val = folly::Endian::big(v);
@@ -309,8 +310,8 @@ public:
         return val;
     }
 
-    static VariantType decodeVariant(const folly::StringPiece& raw,
-                                     nebula::cpp2::SupportedType type) {
+    static OptVariantType decodeVariant(const folly::StringPiece& raw,
+                                        nebula::cpp2::SupportedType type) {
         switch (type) {
             case nebula::cpp2::SupportedType::BOOL : {
                 return *reinterpret_cast<const bool*>(raw.data());
@@ -327,14 +328,14 @@ public:
                 return raw.str();
             }
             default:
-                return "";
+                return OptVariantType(Status::Error("Unknown type"));
         }
     }
 
     static VertexID getIndexVertexID(const folly::StringPiece& rawKey) {
         CHECK_GE(rawKey.size(), kVertexIndexLen);
-         auto offset = rawKey.size() - sizeof(VertexID);
-         return *reinterpret_cast<const VertexID*>(rawKey.data() + offset);
+        auto offset = rawKey.size() - sizeof(VertexID);
+        return *reinterpret_cast<const VertexID*>(rawKey.data() + offset);
      }
 
     static VertexID getIndexSrcId(const folly::StringPiece& rawKey) {

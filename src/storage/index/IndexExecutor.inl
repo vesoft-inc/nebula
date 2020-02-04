@@ -71,8 +71,8 @@ cpp2::ErrorCode IndexExecutor<RESP>::checkReturnColumns(const std::vector<std::s
                       schemaMan_->getEdgeSchema(spaceId_, tagOrEdge_) :
                       schemaMan_->getTagSchema(spaceId_, tagOrEdge_);
         if (!schema) {
-            VLOG(3) << "Can't find schema, spaceId "
-                    << spaceId_ << ", id " << tagOrEdge_;
+            LOG(ERROR) << "Can't find schema, spaceId "
+                       << spaceId_ << ", id " << tagOrEdge_;
             return isEdgeIndex_ ? cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND :
                                   cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
         }
@@ -118,6 +118,7 @@ kvstore::ResultCode IndexExecutor<RESP>::executeExecutionPlan(PartitionID part) 
     std::string prefix = NebulaKeyUtils::indexPrefix(part, index_->get_index_id())
                         .append(prefix_);
     std::unique_ptr<kvstore::KVIterator> iter;
+    std::vector<std::string> keys;
     auto ret = this->kvstore_->prefix(spaceId_,
                                       part,
                                       prefix,
@@ -131,15 +132,18 @@ kvstore::ResultCode IndexExecutor<RESP>::executeExecutionPlan(PartitionID part) 
         /**
          * Need to filter result with expression if is not accurate scan.
          */
-        if (isIndexScan_ && !conditionsCheck(key)) {
+        if (skipFilter_ && !conditionsCheck(key)) {
             iter->next();
             continue;
         }
-        ret = getDataRow(part, key);
+        keys.emplace_back(key);
+        iter->next();
+    }
+    for (auto& item : keys) {
+        ret = getDataRow(part, item);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             return ret;
         }
-        iter->next();
     }
     return ret;
 }
@@ -192,7 +196,7 @@ kvstore::ResultCode IndexExecutor<RESP>::getVertexRow(PartitionID partId,
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId " << spaceId_;
+        LOG(ERROR) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId " << spaceId_;
         return ret;
     }
     if (iter && iter->valid()) {
@@ -208,7 +212,7 @@ kvstore::ResultCode IndexExecutor<RESP>::getVertexRow(PartitionID partId,
             VLOG(3) << "Insert cache for vId " << vId << ", tagId " << tagOrEdge_;
         }
     } else {
-        VLOG(3) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagOrEdge_;
+        LOG(ERROR) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagOrEdge_;
         return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
     }
     return ret;
@@ -234,7 +238,7 @@ kvstore::ResultCode IndexExecutor<RESP>::getEdgeRow(PartitionID partId,
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        VLOG(3) << "Error! ret = "
+        LOG(ERROR) << "Error! ret = "
                 << static_cast<int32_t>(ret)
                 << ", spaceId " << spaceId_;
         return ret;
@@ -247,10 +251,10 @@ kvstore::ResultCode IndexExecutor<RESP>::getEdgeRow(PartitionID partId,
         auto row = getRowFromReader(reader.get());
         data->set_props(std::move(row));
     } else {
-        VLOG(3) << "Missed partId " << partId
-                << ", src " << src << ", edgeType "
-                << tagOrEdge_ << ", Rank "
-                << rank << ", dst " << dst;
+        LOG(ERROR) << "Missed partId " << partId
+                   << ", src " << src << ", edgeType "
+                   << tagOrEdge_ << ", Rank "
+                   << rank << ", dst " << dst;
         return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
     }
     return ret;

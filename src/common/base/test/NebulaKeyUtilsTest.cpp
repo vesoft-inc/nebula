@@ -45,18 +45,25 @@ bool evalInt64(int64_t val) {
     auto v = getVal(val);
     auto str = NebulaKeyUtils::encodeVariant(v);
     auto res = NebulaKeyUtils::decodeVariant(str, nebula::cpp2::SupportedType::INT);
-    EXPECT_EQ(VAR_INT64, res.which());
-    EXPECT_EQ(v, res);
-    return val == boost::get<int64_t>(res);
+    if (!res.ok()) {
+        return false;
+    }
+
+    EXPECT_EQ(VAR_INT64, res.value().which());
+    EXPECT_EQ(v, res.value());
+    return val == boost::get<int64_t>(res.value());
 }
 
 bool evalDouble(double val) {
     auto v = getVal(val);
     auto str = NebulaKeyUtils::encodeVariant(v);
     auto res = NebulaKeyUtils::decodeVariant(str, nebula::cpp2::SupportedType::DOUBLE);
-    EXPECT_EQ(VAR_DOUBLE, res.which());
-    EXPECT_EQ(v, res);
-    return val == boost::get<double>(res);
+    if (!res.ok()) {
+        return false;
+    }
+    EXPECT_EQ(VAR_DOUBLE, res.value().which());
+    EXPECT_EQ(v, res.value());
+    return val == boost::get<double>(res.value());
 }
 
 TEST(NebulaKeyUtilsTest, encodeVariant) {

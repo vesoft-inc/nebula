@@ -336,7 +336,7 @@ protected:
             if (!metaStatus.ok()) {
                 return metaStatus.status();
             }
-            auto partMeta = metaStatus.value();
+            auto partMeta = std::move(metaStatus).value();
             CHECK_GT(partMeta.peers_.size(), 0U);
             const auto leader = this->leader(partMeta);
             hostParts[leader].emplace_back(partId);

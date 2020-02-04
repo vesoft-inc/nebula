@@ -72,7 +72,7 @@ protected:
     std::string                              prefix_;
     std::shared_ptr<nebula::cpp2::IndexItem> index_{nullptr};
     bool                                     optimizedPolicy_{true};
-    bool                                     isIndexScan_{true};
+    bool                                     skipFilter_{true};
     std::vector<OperatorItem>                operatorList_;
 };
 }  // namespace storage
