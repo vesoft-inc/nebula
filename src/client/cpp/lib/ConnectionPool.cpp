@@ -33,7 +33,7 @@ bool ConnectionPool::init(const std::vector<ConnectionInfo> &addrInfo) {
     for (auto &item : addrInfo) {
         LOG(INFO) << "Service " << item.addr << ":" << item.port
                   << ", connNum: " << item.connectionNum << ", timeout: " << item.timeout;
-        if (item.connectionNum < 0) {
+        if (item.connectionNum == 0) {
             LOG(ERROR) << "Service: " << item.addr << ":" << item.port << " without connection";
             return false;
         }
