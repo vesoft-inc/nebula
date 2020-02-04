@@ -46,7 +46,7 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
         return;
     }
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
-    auto keys = std::move(ret.value());
+    auto keys = std::move(ret).value();
     keys.emplace_back(std::move(indexKey));
     LOG(INFO) << "Drop Edge " << req.get_edge_name();
     doSyncMultiRemoveAndUpdate(std::move(keys));

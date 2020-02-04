@@ -46,7 +46,7 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
         onFinished();
         return;
     }
-    auto keys = std::move(ret.value());
+    auto keys = std::move(ret).value();
     keys.emplace_back(indexKey);
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     LOG(INFO) << "Drop Tag " << req.get_tag_name();
