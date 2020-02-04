@@ -18,7 +18,7 @@ namespace storage {
 /**
  * A wrapper class for GraphStorageServiceAsyncClient thrift API
  *
- * The class is NOT re-entriable
+ * The class is NOT reenterable
  */
 class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsyncClient> {
     FRIEND_TEST(StorageClientTest, LeaderChangeTest);

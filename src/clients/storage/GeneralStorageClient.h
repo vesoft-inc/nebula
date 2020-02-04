@@ -20,7 +20,7 @@ namespace storage {
 /**
  * A wrapper class for GeneralStorageServiceAsyncClient thrift API
  *
- * The class is NOT re-entriable
+ * The class is NOT reenterable
  */
 class GeneralStorageClient
         : public StorageClientBase<cpp2::GeneralStorageServiceAsyncClient> {

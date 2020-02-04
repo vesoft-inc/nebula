@@ -1,4 +1,4 @@
-/* Copyright (c) 2019 vesoft inc. All rights reserved.
+/* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -35,7 +35,10 @@ namespace std {
 template<>
 struct hash<nebula::HostAddr> {
     std::size_t operator()(const nebula::HostAddr& h) const noexcept {
-        return folly::hash::fnv64_buf(&h, sizeof(nebula::HostAddr));
+        int64_t code = folly::hash::fnv32_buf(&(h.ip), sizeof(nebula::IPv4));
+        code <<= 32;
+        code |= folly::hash::fnv32_buf(&(h.port), sizeof(nebula::Port));
+        return code;
     }
 };
 
