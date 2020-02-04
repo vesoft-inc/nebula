@@ -1,8 +1,8 @@
-# Fetch 语法
+# Fetch 语法
 
 `FETCH` 语句用于获取点和边的属性。
 
-## 获取点属性
+## 获取点属性
 
 `FETCH PROP ON` 可返回节点的一系列属性，目前已支持一条语句返回多个节点属性。
 
@@ -19,7 +19,7 @@ FETCH PROP ON * <vertex_id>
 
 `[YIELD [DISTINCT] <return_list>]` 为返回的属性列表，`YIELD` 语法参看 [YIELD Syntax](yield-syntax.md) 。
 
-### 示例
+### 示例
 
 ```ngql
 -- 返回节点 100 的所有属性
@@ -44,7 +44,7 @@ nebula> $var = GO FROM 100 OVER follow YIELD follow._dst AS id; FETC
 nebula> FETCH PROP ON player 100,101,102 YIELD DISTINCT player.name, player.age;
 ```
 
-## 获取边属性
+## 获取边属性
 
 使用 `FETCH` 获取边属性的用法与点属性大致相同，且可同时获取相同类型多条边的属性。
 
@@ -60,7 +60,7 @@ FETCH PROP ON <edge_type> <vid> -> <vid>[@<ranking>] [, <vid> -> <vid>
 
 `[YIELD [DISTINCT] <return_list>]` 为返回的属性列表。
 
-### 获取边属性示例
+### 获取边属性示例
 
 ```ngql
 -- 本语句未指定 YIELD，因此获取从节点 100 到节点 200 边 serve 的所有属性
