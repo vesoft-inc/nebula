@@ -28,7 +28,7 @@ typedef i32 (cpp.type = "nebula::PartitionID") PartitionID
 typedef i32 (cpp.type = "nebula::TagID") TagID
 typedef i32 (cpp.type = "nebula::EdgeType") EdgeType
 typedef i64 (cpp.type = "nebula::EdgeRanking") EdgeRanking
-typedef i64 (cpp.type = "nebula::VertexID") VertexID
+typedef binary (cpp.type = "nebula::VertexID") VertexID
 
 typedef i64 (cpp.type = "nebula::Timestamp") Timestamp
 
@@ -82,17 +82,15 @@ enum NullType {
 // The type to hold any supported values during the query
 union Value {
     1: NullType                             nVal;
-    2: VertexID                             vVal;
-    3: bool                                 bVal;
-    4: i64                                  iVal;
-    5: double                               fVal;
-    6: binary                               sVal;
-    7: Timestamp                            tVal;
-    8: Date                                 dVal;
-    9: DateTime                             dtVal;
-    10: Path                                pVal;
-    11: List (cpp.type = "nebula::List")    listVal (cpp.ref_type = "unique");
-    12: Map (cpp.type = "nebula::Map")      mapVal (cpp.ref_type = "unique");
+    2: bool                                 bVal;
+    3: i64                                  iVal;
+    4: double                               fVal;
+    5: binary                               sVal;
+    6: Date                                 dVal;
+    7: DateTime                             dtVal;
+    8: Path                                 pVal;
+    9: List (cpp.type = "nebula::List")     listVal (cpp.ref_type = "unique");
+    10: Map (cpp.type = "nebula::Map")      mapVal (cpp.ref_type = "unique");
 } (cpp.type = "nebula::Value")
 
 

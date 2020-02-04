@@ -16,8 +16,8 @@ GeneralStorageClient::get(GraphSpaceID space,
                           folly::EventBase* evb) {
     auto status = clusterIdsToHosts(space,
                                     std::move(keys),
-                                    [] (const std::string& v) {
-        return std::hash<std::string>{}(v);
+                                    [] (const std::string& v) -> const std::string& {
+        return v;
     });
 
     if (!status.ok()) {
@@ -50,8 +50,8 @@ GeneralStorageClient::put(GraphSpaceID space,
                           folly::EventBase* evb) {
     auto status = clusterIdsToHosts(space,
                                     std::move(kvs),
-                                    [] (const KeyValue& v) {
-        return std::hash<std::string>{}(v.key);
+                                    [] (const KeyValue& v) -> const std::string& {
+        return v.key;
     });
 
     if (!status.ok()) {

@@ -5,6 +5,7 @@
  */
 
 #include "base/Base.h"
+#include <folly/hash/Hash.h>
 #include "clients/meta/MetaClient.h"
 #include "time/Duration.h"
 #include "network/NetworkUtils.h"
@@ -569,6 +570,28 @@ folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpace(std::string name,
     return future;
 }
 
+
+StatusOr<PartitionID> MetaClient::partId(GraphSpaceID spaceId, const VertexID id) const {
+    auto status = partsNum(spaceId);
+    if (!status.ok()) {
+        return Status::Error("Space not found, spaceid: %d", spaceId);
+    }
+
+    auto numParts = status.value();
+    // If the length of the id is 8, we will treat it as int64_t to be compatible
+    // with the version 1.0
+    uint64_t vid = 0;
+    if (id.size() == 8) {
+        memcpy(static_cast<void*>(&vid), id.data(), 8);
+    } else {
+        vid = folly::hash::fnv64_buf(id.data(), id.size());
+    }
+    PartitionID pId = vid % numParts + 1;
+    CHECK_GT(pId, 0U);
+    return pId;
+}
+
+
 folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
     cpp2::ListSpacesReq req;
     folly::Promise<StatusOr<std::vector<SpaceIdName>>> promise;
@@ -910,7 +933,7 @@ bool MetaClient::checkSpaceExistInCache(const HostAddr& host,
     return false;
 }
 
-StatusOr<int32_t> MetaClient::partsNum(GraphSpaceID spaceId) {
+StatusOr<int32_t> MetaClient::partsNum(GraphSpaceID spaceId) const {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(spaceId);
     if (it == localCache_.end()) {

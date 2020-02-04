@@ -23,11 +23,11 @@ public:
             : name_(std::move(name))
             , type_(std::move(type)) {}
 
-        const char* getName() const override {
+        const char* name() const override {
             return name_.c_str();
         }
 
-        const cpp2::PropertyType getType() const override {
+        const cpp2::PropertyType type() const override {
             return type_;
         }
 
@@ -39,7 +39,7 @@ public:
             return hasDefault_;
         }
 
-        std::string getDefaultValue() const override {
+        const Value& defaultValue() const override {
             return defaultValue_;
         }
 
@@ -47,7 +47,7 @@ public:
         std::string name_;
         cpp2::PropertyType type_;
         bool hasDefault_;
-        std::string defaultValue_;
+        Value defaultValue_;
     };
 
 public:
@@ -79,9 +79,9 @@ protected:
     SchemaVer ver_{-1};
 
     // fieldname -> index
-    std::unordered_map<std::string, int64_t>   fieldNameIndex_;
-    std::vector<std::shared_ptr<SchemaField>>  fields_;
-    cpp2::SchemaProp                   schemaProp_;
+    std::unordered_map<std::string, int64_t>    fieldNameIndex_;
+    std::vector<std::shared_ptr<SchemaField>>   fields_;
+    cpp2::SchemaProp                            schemaProp_;
 };
 
 }  // namespace meta

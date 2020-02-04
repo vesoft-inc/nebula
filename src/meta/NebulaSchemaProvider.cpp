@@ -37,7 +37,7 @@ const char* NebulaSchemaProvider::getFieldName(int64_t index) const {
         return nullptr;
     }
 
-    return fields_[index]->getName();
+    return fields_[index]->name();
 }
 
 
@@ -47,7 +47,7 @@ const cpp2::PropertyType NebulaSchemaProvider::getFieldType(int64_t index) const
         return cpp2::PropertyType::UNKNOWN;
     }
 
-    return fields_[index]->getType();
+    return fields_[index]->type();
 }
 
 
@@ -59,7 +59,7 @@ const cpp2::PropertyType NebulaSchemaProvider::getFieldType(const folly::StringP
         return cpp2::PropertyType::UNKNOWN;
     }
 
-    return fields_[it->second]->getType();
+    return fields_[it->second]->type();
 }
 
 

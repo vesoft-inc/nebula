@@ -123,20 +123,18 @@ protected:
     >
     clusterIdsToHosts(GraphSpaceID spaceId, Container&& ids, GetIdFunc f) const;
 
-    // Calculate the partition id for the given vertex id
-    StatusOr<PartitionID> partId(GraphSpaceID spaceId, int64_t id) const;
-
     virtual StatusOr<meta::PartHosts> getPartHosts(GraphSpaceID spaceId,
                                                    PartitionID partId) const {
         CHECK(metaClient_ != nullptr);
         return metaClient_->getPartHostsFromCache(spaceId, partId);
     }
 
+protected:
+    meta::MetaClient* metaClient_{nullptr};
+
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     std::unique_ptr<thrift::ThriftClientManager<ClientType>> clientsMan_;
-
-    meta::MetaClient* metaClient_{nullptr};
 
     mutable folly::RWSpinLock leadersLock_;
     mutable std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> leaders_;

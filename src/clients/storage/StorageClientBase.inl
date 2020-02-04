@@ -78,8 +78,8 @@ template<typename ClientType>
 StorageClientBase<ClientType>::StorageClientBase(
     std::shared_ptr<folly::IOThreadPoolExecutor> threadPool,
     meta::MetaClient* metaClient)
-        : ioThreadPool_(threadPool)
-        , metaClient_(metaClient) {
+        : metaClient_(metaClient)
+        , ioThreadPool_(threadPool) {
     clientsMan_ = std::make_unique<thrift::ThriftClientManager<ClientType>>();
 }
 
@@ -308,22 +308,6 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType>::getResponse(
 
 
 template<typename ClientType>
-StatusOr<PartitionID> StorageClientBase<ClientType>::partId(GraphSpaceID spaceId,
-                                                            int64_t id) const {
-    CHECK(metaClient_ != nullptr);
-    auto status = metaClient_->partsNum(spaceId);
-    if (!status.ok()) {
-        return Status::Error("Space not found, spaceid: %d", spaceId);
-    }
-
-    auto parts = status.value();
-    auto s = ((static_cast<uint64_t>(id)) % parts + 1);
-    CHECK_GT(s, 0U);
-    return s;
-}
-
-
-template<typename ClientType>
 template<class Container, class GetIdFunc>
 StatusOr<
     std::unordered_map<
@@ -345,7 +329,8 @@ StorageClientBase<ClientType>::clusterIdsToHosts(GraphSpaceID spaceId,
         >
     > clusters;
     for (auto& id : ids) {
-        auto status = partId(spaceId, f(id));
+        CHECK(!!metaClient_);
+        auto status = metaClient_->partId(spaceId, f(id));
         if (!status.ok()) {
             return status;
         }

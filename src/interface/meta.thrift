@@ -130,10 +130,10 @@ enum PropertyType {
 struct ColumnDef {
     1: required binary          name,
     2: required PropertyType    type,
+    3: optional common.Value    default_value,
     // type_length is valid for fixed_string type
-    3: required i16             type_length = 0,
-    4: required bool            nullable = false,
-    5: optional common.Value    default_value,
+    4: optional i16             type_length = 0,
+    5: optional bool            nullable = false,
 }
 
 struct SchemaProp {
@@ -155,6 +155,7 @@ struct SpaceProperties {
     1: binary   space_name,
     2: i32      partition_num,
     3: i32      replica_factor,
+    4: i32      vid_size = 8,
 }
 
 struct SpaceItem {

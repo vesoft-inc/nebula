@@ -21,7 +21,7 @@ GraphStorageClient::getNeighbors(GraphSpaceID space,
                                  folly::EventBase* evb) {
     auto status = clusterIdsToHosts(space,
                                     std::move(vertices),
-                                    [](const VertexID& v) {
+                                    [](const VertexID& v) -> const VertexID& {
         return v;
     });
 
@@ -62,7 +62,7 @@ GraphStorageClient::addVertices(GraphSpaceID space,
                                 folly::EventBase* evb) {
     auto status = clusterIdsToHosts(space,
                                     std::move(vertices),
-                                    [](const cpp2::NewVertex& v) {
+                                    [](const cpp2::NewVertex& v) -> const VertexID& {
         return v.get_id();
     });
 
@@ -99,7 +99,7 @@ GraphStorageClient::addEdges(GraphSpaceID space,
                              folly::EventBase* evb) {
     auto status = clusterIdsToHosts(space,
                                     std::move(edges),
-                                    [](const cpp2::NewEdge& e) {
+                                    [](const cpp2::NewEdge& e) -> const VertexID& {
         return e.get_key().get_src();
     });
 
@@ -136,7 +136,7 @@ GraphStorageClient::getVertexProps(GraphSpaceID space,
                                    folly::EventBase* evb) {
     auto status = clusterIdsToHosts(space,
                                     std::move(vertices),
-                                    [](const VertexID& v) {
+                                    [](const VertexID& v) -> const VertexID& {
         return v;
     });
 
@@ -175,7 +175,7 @@ GraphStorageClient::getEdgeProps(GraphSpaceID space,
                                  folly::EventBase* evb) {
     auto status = clusterIdsToHosts(space,
                                     std::move(edges),
-                                    [](const cpp2::EdgeKey& v) {
+                                    [](const cpp2::EdgeKey& v) -> const VertexID& {
         return v.get_src();
     });
 
@@ -212,7 +212,7 @@ GraphStorageClient::deleteEdges(GraphSpaceID space,
                                 folly::EventBase* evb) {
     auto status = clusterIdsToHosts(space,
                                     std::move(edges),
-                                    [](const cpp2::EdgeKey& v) {
+                                    [](const cpp2::EdgeKey& v) -> const VertexID& {
         return v.get_src();
     });
 
@@ -244,7 +244,9 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>>
 GraphStorageClient::deleteVertices(GraphSpaceID space,
                                    std::vector<VertexID> ids,
                                    folly::EventBase* evb) {
-    auto status = clusterIdsToHosts(space, std::move(ids), [](const VertexID& v) {
+    auto status = clusterIdsToHosts(space,
+                                    std::move(ids),
+                                    [](const VertexID& v) -> const VertexID& {
         return v;
     });
 
@@ -282,7 +284,8 @@ GraphStorageClient::updateVertex(GraphSpaceID space,
                                  folly::EventBase* evb) {
     std::pair<HostAddr, cpp2::UpdateVertexRequest> request;
 
-    auto status = partId(space, vertexId);
+    DCHECK(!!metaClient_);
+    auto status = metaClient_->partId(space, vertexId);
     if (!status.ok()) {
         return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(status.status());
     }
@@ -328,7 +331,8 @@ GraphStorageClient::updateEdge(GraphSpaceID space,
                                folly::EventBase* evb) {
     std::pair<HostAddr, cpp2::UpdateEdgeRequest> request;
 
-    auto status = partId(space, edgeKey.get_src());
+    DCHECK(!!metaClient_);
+    auto status = metaClient_->partId(space, edgeKey.get_src());
     if (!status.ok()) {
         return folly::makeFuture<StatusOr<storage::cpp2::UpdateResponse>>(status.status());
     }
@@ -369,9 +373,8 @@ GraphStorageClient::getUUID(GraphSpaceID space,
                             const std::string& name,
                             folly::EventBase* evb) {
     std::pair<HostAddr, cpp2::GetUUIDReq> request;
-    std::hash<std::string> hashFunc;
-    auto hashValue = hashFunc(name);
-    auto status = partId(space, hashValue);
+    DCHECK(!!metaClient_);
+    auto status = metaClient_->partId(space, name);
     if (!status.ok()) {
         return folly::makeFuture<StatusOr<cpp2::GetUUIDResp>>(status.status());
     }
