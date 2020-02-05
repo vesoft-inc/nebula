@@ -24,9 +24,9 @@ nebula> $A = GO FROM 100 OVER follow YIELD follow._dst AS dst; \
         $rA = YIELD $A.* WHERE $A.dst == 300; \
         RETURN $rA IF $rA is NOT NULL; \ /* Does not return the result because $rA is empty */
         GO FROM $A.dst OVER follow; /* As the RETURN statement does not return the result, the GO FROM statement is executed */
-=============
+===============
 | follow._dst |
-=============
+===============
 | 100         |
 ---------------
 | 101         |
