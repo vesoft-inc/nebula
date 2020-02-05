@@ -195,17 +195,23 @@ bool QueryBaseProcessor<REQ, RESP>::checkDataExpiredForTTL(RowReader* reader) {
         case nebula::cpp2::SupportedType::TIMESTAMP:
         case nebula::cpp2::SupportedType::INT: {
             auto ret = reader->getInt<int64_t>(ttlCol, v);
-            CHECK(ret == ResultType::SUCCEEDED);
+            if (ret != ResultType::SUCCEEDED) {
+                // Reading wrong data should not be deleted
+                return false;
+            }
             break;
         }
         case nebula::cpp2::SupportedType::VID: {
             auto ret = reader->getVid(ttlCol, v);
-            CHECK(ret == ResultType::SUCCEEDED);
+            if (ret != ResultType::SUCCEEDED) {
+                // Reading wrong data should not be deleted
+                return false;
+            }
             break;
         }
         default: {
             VLOG(1) << "Unsupport TTL column type";
-            break;
+            return false;
         }
     }
 
