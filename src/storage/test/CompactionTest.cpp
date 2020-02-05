@@ -80,7 +80,7 @@ void mockTTLDataExpired(kvstore::KVStore* kv) {
             // one edge data, the record data will always expire
             auto edgeType = 101;
             auto edgekey = NebulaKeyUtils::edgeKey(partId, vertexId, edgeType, 0, 10001,
-                                                   std::numeric_limits<int>::max());
+                                                   std::numeric_limits<int>::max() - 1);
             RowWriter edgewriter;
             for (int64_t numInt = 0; numInt < 10; numInt++) {
                 // all data expired, 1546272000 timestamp representation "2019-1-1 0:0:0"
@@ -127,7 +127,7 @@ void mockTTLDataNotExpired(kvstore::KVStore* kv) {
             // one edge data, the record data will never expire
             auto edgeType = 101;
             auto edgekey = NebulaKeyUtils::edgeKey(partId, vertexId, edgeType, 0, 10001,
-                                                   std::numeric_limits<int>::max());
+                                                   std::numeric_limits<int>::max() - 1);
             RowWriter edgewriter;
             for (int64_t numInt = 0; numInt < 10; numInt++) {
                 // all data expired, 4102416000 timestamp representation "2100-1-1 0:0:0"
@@ -299,6 +299,7 @@ TEST(NebulaCompactionFilterTest, TTLFilterDataExpiredTest) {
         }
     }
 }
+
 
 TEST(NebulaCompactionFilterTest, TTLFilterDataNotExpiredTest) {
     fs::TempDir rootPath("/tmp/NebulaCompactionFilterTest.XXXXXX");
