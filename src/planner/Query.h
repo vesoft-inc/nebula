@@ -13,11 +13,18 @@
 #include "parser/TraverseSentences.h"
 
 /**
- *  All query-related nodes would be put in this file,
- *  and they are derived from PlanNode.
+ * All query-related nodes would be put in this file,
+ * and they are derived from PlanNode.
  */
 namespace nebula {
 namespace graph {
+/**
+ * Now we hava four kind of exploration nodes:
+ *  GetNeighbors,
+ *  GetVertices,
+ *  GetEdges,
+ *  ReadIndex
+ */
 class Explore : public PlanNode {
 public:
     Explore(GraphSpaceID space,
@@ -35,11 +42,10 @@ private:
 };
 
 /**
- *  Get neighbors' property
+ * Get neighbors' property
  */
 class GetNeighbors final : public Explore {
 public:
-    /*
     GetNeighbors(nebula::cpp2::GetNeighborsRequest&& req,
                  GraphSpaceID space,
                  std::vector<std::string>&& colNames,
@@ -48,20 +54,18 @@ public:
         kind_ = PlanNode::Kind::kGetNeighbors;
         req_ = std::move(req);
     }
-    */
 
     std::string explain() const override;
 
 private:
-    //nebula::cpp2::GetNeighborsRequest req_;
+    nebula::cpp2::GetNeighborsRequest req_;
 };
 
 /**
- *  Get property with given vertex keys.
+ * Get property with given vertex keys.
  */
 class GetVertices final : public Explore {
 public:
-    /*
     GetVertices(nebula::cpp2::VertexPropRequest&& req,
                 GraphSpaceID space,
                 std::vector<std::string>&& colNames,
@@ -70,20 +74,18 @@ public:
         kind_ = PlanNode::Kind::kGetVertices;
         req_ = std::move(req);
     }
-    */
 
     std::string explain() const override;
 
 private:
-    //nebula::cpp2::VertexPropRequest req_;
+    nebula::cpp2::VertexPropRequest req_;
 };
 
 /**
- *  Get property with given edge keys.
+ * Get property with given edge keys.
  */
 class GetEdges final : public Explore {
 public:
-    /*
     GetEdges(nebula::cpp2::EdgePropsRequest&& req,
                 GraphSpaceID space,
                 std::vector<std::string>&& colNames,
@@ -92,16 +94,15 @@ public:
         kind_ = PlanNode::Kind::kGetEdges;
         req_ = std::move(req);
     }
-    */
 
     std::string explain() const override;
 
 private:
-    //nebula::cpp2::EdgePropRequest req_;
+    nebula::cpp2::EdgePropRequest req_;
 };
 
 /**
- *  Read data through the index.
+ * Read data through the index.
  */
 class ReadIndex final : public Explore {
 public:
@@ -115,6 +116,9 @@ public:
     std::string explain() const override;
 };
 
+/**
+ * A Filter node helps filt some records with condition.
+ */
 class Filter final : public PlanNode {
 public:
     Filter(Expression* condition,
@@ -134,12 +138,21 @@ private:
     Expression*         condition_;
 };
 
+/**
+ * Now we have three kind of set operations:
+ *   UNION,
+ *   INTERSECT,
+ *   MINUS
+ */
 class SetOp : public PlanNode {
 public:
     SetOp(std::vector<std::string>&& colNames,
           StateTransition&& stateTrans) : PlanNode(std::move(colNames), std::move(stateTrans)) {};
 };
 
+/**
+ * Combine two set of records.
+ */
 class Union final : public SetOp {
 public:
     Union(bool distinct,
@@ -159,6 +172,9 @@ private:
     bool    distinct_;
 };
 
+/**
+ * Return the intersected records between two sets.
+ */
 class Intersect final : public SetOp {
 public:
     Intersect(std::vector<std::string>&& colNames,
@@ -170,6 +186,9 @@ public:
 
 };
 
+/**
+ * Do subtraction between two sets.
+ */
 class Minus final : public SetOp {
 public:
     Minus(std::vector<std::string>&& colNames,
@@ -182,7 +201,7 @@ public:
 };
 
 /**
- *  Project is used to specify the final output.
+ * Project is used to specify the final output.
  */
 class Project final : public PlanNode {
 public:
@@ -210,6 +229,9 @@ private:
     bool                distinct_;
 };
 
+/**
+ * Sort the given record set.
+ */
 class Sort final : public PlanNode {
 public:
     Sort(OrderFactors* factors,
@@ -229,6 +251,9 @@ private:
     OrderFactors*   factors_;
 };
 
+/**
+ * Output the records with the given limitation.
+ */
 class Limit final : public PlanNode {
 public:
     Limit(int64_t offset,
@@ -255,6 +280,10 @@ private:
     int64_t     count_{-1};
 };
 
+/**
+ * Do Aggregation with the given set of records,
+ * such as AVG(), COUNT()...
+ */
 class Aggregate : public PlanNode {
 public:
     Aggregate(YieldColumns* yieldCols,

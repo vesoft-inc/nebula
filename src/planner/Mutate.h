@@ -9,8 +9,28 @@
 
 #include "PlanNode.h"
 
+/**
+ * All mutate-related nodes would put in this file.
+ */
 namespace nebula {
 namespace graph {
+class InsertVertex final : public PlanNode {
+};
+
+class InsertEdge final : public PlanNode {
+};
+
+class UpdateVertex final : public PlanNode {
+};
+
+class UpdateEdge final : public PlanNode {
+};
+
+class DeleteVertex final : public PlanNode {
+};
+
+class DeleteEdge final : public PlanNode {
+};
 }  // namespace graph
 }  // namespace nebula
 #endif  // PLANNER_MUTATE_H_

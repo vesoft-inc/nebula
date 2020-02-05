@@ -75,7 +75,7 @@ public:
     }
 
     /**
-     *  To explain how a query would be executed
+     * To explain how a query would be executed
      */
     virtual std::string explain() const = 0;
 
@@ -84,14 +84,14 @@ public:
     }
 
     /**
-     *  Execution engine will calculate the state by this expression.
+     * Execution engine will calculate the state by this expression.
      */
     const Expression* stateTransExpr() {
         return stateTrans_.expr();
     }
 
     /**
-     *  This table is used for finding the next node(s) to be executed.
+     * This table is used for finding the next node(s) to be executed.
      */
     const StateTransitionTable table() {
         return stateTrans_.table();
@@ -104,7 +104,7 @@ protected:
 };
 
 /**
- * An execution plan with start from a RootNode.
+ * An execution plan will start from a RootNode.
  */
 class RootNode final : public PlanNode {
 public:
