@@ -23,6 +23,11 @@ std::string GetEdges::explain() const {
     return "GetEdges";
 }
 
+std::string ReadIndex::explain() const {
+    // TODO:
+    return "ReadIndex";
+}
+
 std::string Filter::explain() const {
     // TODO:
     return "Filter";
@@ -57,7 +62,7 @@ std::string Limit::explain() const {
     std::string buf;
     buf.reserve(32);
     buf += "Limit: ";
-    buf += folly::StringPrintf("offset %ld, count %ld", offset_, count_);
+    buf += folly::stringPrintf("offset %ld, count %ld", offset_, count_);
     return buf;
 }
 

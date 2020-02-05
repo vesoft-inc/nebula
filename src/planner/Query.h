@@ -12,6 +12,10 @@
 #include "parser/Clauses.h"
 #include "parser/TraverseSentences.h"
 
+/**
+ *  All query-related nodes would be put in this file,
+ *  and they are derived from PlanNode.
+ */
 namespace nebula {
 namespace graph {
 class Explore : public PlanNode {
@@ -35,18 +39,21 @@ private:
  */
 class GetNeighbors final : public Explore {
 public:
+    /*
     GetNeighbors(nebula::cpp2::GetNeighborsRequest&& req,
                  GraphSpaceID space,
                  std::vector<std::string>&& colNames,
                  StateTransition&& stateTrans)
         : Explore(space, std::move(colNames), std::move(stateTrans)) {
+        kind_ = PlanNode::Kind::kGetNeighbors;
         req_ = std::move(req);
     }
+    */
 
     std::string explain() const override;
 
 private:
-    nebula::cpp2::GetNeighborsRequest req_;
+    //nebula::cpp2::GetNeighborsRequest req_;
 };
 
 /**
@@ -54,18 +61,21 @@ private:
  */
 class GetVertices final : public Explore {
 public:
+    /*
     GetVertices(nebula::cpp2::VertexPropRequest&& req,
                 GraphSpaceID space,
                 std::vector<std::string>&& colNames,
                 StateTransition&& stateTrans)
         : Explore(space, std::move(colNames), std::move(stateTrans)) {
+        kind_ = PlanNode::Kind::kGetVertices;
         req_ = std::move(req);
     }
+    */
 
     std::string explain() const override;
 
 private:
-    nebula::cpp2::VertexPropRequest req_;
+    //nebula::cpp2::VertexPropRequest req_;
 };
 
 /**
@@ -73,24 +83,36 @@ private:
  */
 class GetEdges final : public Explore {
 public:
+    /*
     GetEdges(nebula::cpp2::EdgePropsRequest&& req,
                 GraphSpaceID space,
                 std::vector<std::string>&& colNames,
                 StateTransition&& stateTrans)
         : Explore(space, std::move(colNames), std::move(stateTrans)) {
+        kind_ = PlanNode::Kind::kGetEdges;
         req_ = std::move(req);
     }
+    */
 
     std::string explain() const override;
 
 private:
-    nebula::cpp2::EdgePropRequest req_;
+    //nebula::cpp2::EdgePropRequest req_;
 };
 
 /**
  *  Read data through the index.
  */
 class ReadIndex final : public Explore {
+public:
+    ReadIndex(GraphSpaceID space,
+              std::vector<std::string>&& colNames,
+              StateTransition&& stateTrans)
+        : Explore(space, std::move(colNames), std::move(stateTrans)) {
+        kind_ = PlanNode::Kind::kReadIndex;
+    }
+
+    std::string explain() const override;
 };
 
 class Filter final : public PlanNode {
@@ -127,7 +149,7 @@ public:
         distinct_ = distinct;
     }
 
-    const bool distinct() {
+    bool distinct() {
         return distinct_;
     }
 
@@ -177,7 +199,7 @@ public:
         return cols_;
     }
 
-    const bool distinct() const {
+    bool distinct() const {
         return distinct_;
     }
 
@@ -218,11 +240,11 @@ public:
         count_ = count;
     }
 
-    const int64_t offset() const {
+    int64_t offset() const {
         return offset_;
     }
 
-    const int64_t count() const {
+    int64_t count() const {
         return count_;
     }
 

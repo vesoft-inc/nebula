@@ -48,9 +48,10 @@ class PlanNode {
 public:
     enum Kind : uint8_t {
         kUnknown = 0,
-        kGetNeighbor,
-        kGetVertex,
-        kGetEdge,
+        kRoot,
+        kGetNeighbors,
+        kGetVertices,
+        kGetEdges,
         kReadIndex,
         kFilter,
         kUnion,
@@ -78,7 +79,7 @@ public:
      */
     virtual std::string explain() const = 0;
 
-    std::vector<std::string> outputCols() const {
+    std::vector<std::string> outputColNames() const {
         return outputColNames_;
     }
 
@@ -100,6 +101,21 @@ protected:
     Kind                        kind_{Kind::kUnknown};
     std::vector<std::string>    outputColNames_;
     StateTransition             stateTrans_;
+};
+
+/**
+ * An execution plan with start from a RootNode.
+ */
+class RootNode final : public PlanNode {
+public:
+    RootNode(std::vector<std::string>&& colNames,
+             StateTransition&& stateTrans) : PlanNode(std::move(colNames), std::move(stateTrans)) {
+        kind_ = PlanNode::Kind::kRoot;
+    }
+
+    std::string explain() const override {
+        return "Root";
+    }
 };
 }  // namespace graph
 }  // namespace nebula
