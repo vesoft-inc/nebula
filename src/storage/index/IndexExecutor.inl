@@ -284,7 +284,11 @@ OptVariantType IndexExecutor<RESP>::decodeValue(const folly::StringPiece& key,
                                                 const folly::StringPiece& prop) {
     using nebula::cpp2::SupportedType;
     auto type = indexCols_[prop.str()];
-    return NebulaKeyUtils::decodeVariant(getIndexVal(key, prop), type);
+    /**
+     * Here need a string copy to avoid memory change
+     */
+    auto propVal = getIndexVal(key, prop).str();
+    return NebulaKeyUtils::decodeVariant(std::move(propVal), type);
 }
 
 template<typename RESP>
