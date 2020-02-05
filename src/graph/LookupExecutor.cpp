@@ -81,7 +81,7 @@ Status LookupExecutor::prepareYield() {
         auto schema = (isEdge_) ? ectx_->schemaManager()->getEdgeSchema(spaceId_, tagOrEdge_)
                                 : ectx_->schemaManager()->getTagSchema(spaceId_, tagOrEdge_);
         if (schema == nullptr) {
-            return Status::Error("No tag schema for %s", from_->c_str());
+            return Status::Error("No tag schema found : %s", from_->c_str());
         }
         yieldClauseWrapper_ = std::make_unique<YieldClauseWrapper>(clause);
         auto *varHolder = ectx()->variableHolder();
@@ -91,7 +91,7 @@ Status LookupExecutor::prepareYield() {
         }
         for (auto *col : yields_) {
             if (!col->getFunName().empty()) {
-                return Status::SyntaxError("Do not support in aggregated query");
+                return Status::SyntaxError("Not supported yet");
             }
             auto* prop = col->expr();
             if (prop->kind() != Expression::kAliasProp) {
@@ -152,20 +152,20 @@ Status LookupExecutor::traversalExpr(const Expression *expr) {
                 && right->kind() == nebula::Expression::kPrimary) {
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(left);
                 prop = *aExpr->prop();
-                rels_.emplace_back(std::make_pair(prop, rExpr->op()));
+                filters_.emplace_back(std::make_pair(prop, rExpr->op()));
             } else if (left->kind() == nebula::Expression::kPrimary
                        && right->kind() == nebula::Expression::kAliasProp) {
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(right);
                 prop = *aExpr->prop();
-                rels_.emplace_back(std::make_pair(prop, rExpr->op()));
+                filters_.emplace_back(std::make_pair(prop, rExpr->op()));
             } else {
                 return Status::SyntaxError("Unsupported syntax ：%s", rExpr->toString().c_str());
             }
             break;
         }
         case nebula::Expression::kFunctionCall : {
-            skipOptimize_ = true;
-            break;
+            return Status::SyntaxError("Unsupported function call ： %s",
+                                       expr->toString().c_str());
         }
         default : {
             return Status::SyntaxError("Unsupported syntax ： %s", expr->toString().c_str());
@@ -195,7 +195,7 @@ Status LookupExecutor::chooseIndex() {
     if (validIndexes.empty()) {
         return Status::IndexNotFound("No matching index was found");
     }
-    return findBestIndex(validIndexes);
+    return findOptimalIndex(validIndexes);
 }
 
 /**
@@ -206,7 +206,7 @@ Status LookupExecutor::chooseIndex() {
  *                 index3 (col1, colA, col2, col3)
  * as above, these indexes all are valid, but the index2 should be choose.
  */
-Status LookupExecutor::findBestIndex(std::vector<IndexID> ids) {
+Status LookupExecutor::findOptimalIndex(std::vector<IndexID> ids) {
     Status status = Status::OK();
     if (ids.size() == 1) {
         index_ = ids[0];
@@ -234,16 +234,19 @@ Status LookupExecutor::findBestIndex(std::vector<IndexID> ids) {
         const auto& index = itemStatus.value();
         int32_t hintCount = 0;
         for (const auto& field : index->get_fields()) {
-            auto it = std::find_if(rels_.begin(), rels_.end(),
+            auto it = std::find_if(filters_.begin(), filters_.end(),
                                    [field](const auto &rel) {
                                        return field.get_name() == rel.first &&
                                               rel.second == RelationalExpression::EQ;
                                    });
-            if (it == rels_.end()) {
+            if (it == filters_.end()) {
                 break;
             }
             ++hintCount;
         }
+        /**
+         * return the index of max hint count.
+         */
         indexHint[hintCount] = indexId;
     }
     index_ = indexHint.rbegin()->second;
@@ -259,7 +262,7 @@ LookupExecutor::findValidIndex(const std::vector<std::shared_ptr<nebula::cpp2::I
             continue;
         }
         const auto& fields = index->get_fields();
-        for (auto& col : rels_) {
+        for (auto& col : filters_) {
             auto it = std::find_if(fields.begin(), fields.end(),
                                    [col](const auto &field) {
                                        return field.get_name() == col.first;
@@ -279,6 +282,7 @@ LookupExecutor::findValidIndex(const std::vector<std::shared_ptr<nebula::cpp2::I
     }
     return indexes;
 }
+
 void LookupExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
     auto outputs = std::make_unique<InterimResult>(std::move(returnCols_));
     if (rsWriter != nullptr) {

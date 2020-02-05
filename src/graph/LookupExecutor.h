@@ -46,7 +46,7 @@ private:
     std::vector<IndexID>
     findValidIndex(const std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>& ids);
 
-    Status findBestIndex(std::vector<IndexID> ids);
+    Status findOptimalIndex(std::vector<IndexID> ids);
 
     Status chooseIndex();
 
@@ -66,9 +66,10 @@ private:
     void processVertexResult(VertexRpcResponse &&result);
 
 private:
-    using Relations = std::pair<std::string, RelationalExpression::Operator>;
+    using FilterItem = std::pair<std::string, RelationalExpression::Operator>;
     LookupSentence                                 *sentence_{nullptr};
     GraphSpaceID                                   spaceId_;
+    IndexID                                        index_;
     const std::string                              *from_{nullptr};
     std::unique_ptr<WhereWrapper>                  whereWrapper_;
     std::vector<YieldColumn*>                      yields_;
@@ -80,8 +81,7 @@ private:
     std::unique_ptr<InterimResult>                 inputs_;
     std::unique_ptr<cpp2::ExecutionResponse>       resp_;
     std::vector<std::string>                       returnCols_;
-    std::vector<Relations>                         rels_;
-    IndexID                                        index_;
+    std::vector<FilterItem>                        filters_;
 };
 }  // namespace graph
 }  // namespace nebula
