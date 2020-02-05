@@ -8,6 +8,7 @@
 #include <algorithm>
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
+#include "meta/NebulaSchemaProvider.h"
 #include "filter/FunctionManager.h"
 #include "time/WallClock.h"
 
@@ -169,9 +170,15 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
 }
 
 template<typename REQ, typename RESP>
-bool QueryBaseProcessor<REQ, RESP>::checkDataExpiredForTTL(RowReader* reader) {
-    auto schema = reader->getSchema();
-    const nebula::cpp2::SchemaProp schemaProp = schema->getProp();
+bool QueryBaseProcessor<REQ, RESP>::checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
+                                                           RowReader* reader) {
+    const meta::NebulaSchemaProvider* nschema =
+        dynamic_cast<const meta::NebulaSchemaProvider*>(schema);
+    if (nschema == NULL) {
+        return false;
+    }
+    const nebula::cpp2::SchemaProp schemaProp = nschema->getProp();
+
     int ttlDuration = 0;
     if (schemaProp.get_ttl_duration()) {
         ttlDuration = *schemaProp.get_ttl_duration();
@@ -436,6 +443,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
                             const std::vector<PropContext>& props,
                             FilterContext* fcontext,
                             Collector* collector) {
+    auto schema = this->schemaMan_->getTagSchema(spaceId_, tagId);
     if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
         auto result = vertexCache_->get(std::make_pair(vId, tagId), partId);
         if (result.ok()) {
@@ -443,7 +451,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
             auto reader = RowReader::getTagPropReader(this->schemaMan_, v, spaceId_, tagId);
 
             // Check if the schema has TTL
-            if (!checkDataExpiredForTTL(reader.get())) {
+            if (!checkDataExpiredForTTL(schema.get(), reader.get())) {
                 this->collectProps(reader.get(), "", props, fcontext, collector);
                 VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagId;
                 return kvstore::ResultCode::SUCCEEDED;
@@ -468,7 +476,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
         auto reader = RowReader::getTagPropReader(this->schemaMan_, iter->val(), spaceId_, tagId);
 
         // Check if the schema has TTL
-        if (!checkDataExpiredForTTL(reader.get())) {
+        if (!checkDataExpiredForTTL(schema.get(), reader.get())) {
             this->collectProps(reader.get(), iter->key(), props, fcontext, collector);
             if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
                 vertexCache_->insert(std::make_pair(vId, tagId),
@@ -503,6 +511,8 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
     int         cnt = 0;
     bool onlyStructure = onlyStructures_[edgeType];
     Getters getters;
+
+    auto schema = this->schemaMan_->getEdgeSchema(spaceId_, edgeType);
     for (; iter->valid() && cnt < FLAGS_max_edge_returned_per_vertex; iter->next()) {
         auto key = iter->key();
         auto val = iter->val();
@@ -584,7 +594,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
             }
 
             // Check if the schema has TTL
-            if (!checkDataExpiredForTTL(reader.get())) {
+            if (!checkDataExpiredForTTL(schema.get(), reader.get())) {
                 proc(reader.get(), key, props);
                 ++cnt;
             }

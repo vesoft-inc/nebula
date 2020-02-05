@@ -72,7 +72,7 @@ public:
 
     void setProp(nebula::cpp2::SchemaProp schemaProp);
 
-    const nebula::cpp2::SchemaProp getProp() const override;
+    const nebula::cpp2::SchemaProp getProp() const;
 
 protected:
     NebulaSchemaProvider() = default;

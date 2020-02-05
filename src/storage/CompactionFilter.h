@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include "base/NebulaKeyUtils.h"
 #include "dataman/RowReader.h"
+#include "meta/NebulaSchemaProvider.h"
 #include "kvstore/CompactionFilter.h"
 
 DEFINE_bool(storage_kv_mode, false, "True for kv mode");
@@ -106,7 +107,12 @@ public:
     }
 
     bool checkDataTtlValid(const meta::SchemaProviderIf* schema, nebula::RowReader* reader) const {
-        nebula::cpp2::SchemaProp schemaProp = schema->getProp();
+        const meta::NebulaSchemaProvider* nschema =
+            dynamic_cast<const meta::NebulaSchemaProvider*>(schema);
+        if (nschema == NULL) {
+            return true;
+        }
+        const nebula::cpp2::SchemaProp schemaProp = nschema->getProp();
         int ttlDuration = 0;
         if (schemaProp.get_ttl_duration()) {
             ttlDuration = *schemaProp.get_ttl_duration();
@@ -123,7 +129,7 @@ public:
         }
 
         auto now = time::WallClock::slowNowInSec();
-        const auto& ftype = schema->getFieldType(ttlCol);
+        const auto& ftype = nschema->getFieldType(ttlCol);
 
         int64_t v = 0;
         switch (ftype.type) {

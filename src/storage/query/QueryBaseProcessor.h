@@ -118,7 +118,7 @@ protected:
 
     void buildRespSchema();
 
-    bool checkDataExpiredForTTL(RowReader* reader);
+    bool checkDataExpiredForTTL(const nebula::meta::SchemaProviderIf* schema, RowReader* reader);
 
 protected:
     GraphSpaceID  spaceId_;

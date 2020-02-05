@@ -16,6 +16,7 @@
 namespace nebula {
 namespace storage {
 
+
 void mockData(kvstore::KVStore* kv) {
     for (PartitionID partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
@@ -230,6 +231,7 @@ TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
         }
     }
 }
+
 
 TEST(NebulaCompactionFilterTest, TTLFilterDataExpiredTest) {
     fs::TempDir rootPath("/tmp/NebulaCompactionFilterTest.XXXXXX");
