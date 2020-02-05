@@ -132,7 +132,7 @@ kvstore::ResultCode IndexExecutor<RESP>::executeExecutionPlan(PartitionID part) 
         /**
          * Need to filter result with expression if is not accurate scan.
          */
-        if (skipFilter_ && !conditionsCheck(key)) {
+        if (requiredFilter_ && !conditionsCheck(key)) {
             iter->next();
             continue;
         }
