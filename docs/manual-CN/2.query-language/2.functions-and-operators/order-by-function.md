@@ -33,7 +33,7 @@ nebula> FETCH PROP ON player 100,101,102,103 YIELD player.age AS age, player.nam
 ```ngql
 nebula> GO FROM 100 OVER follow YIELD $$.player.age AS age, $$.player.name AS name | ORDER BY age DESC, name ASC;
 
--- 从顶点 100 出发查找其关注的球员，返回球员的 age 和 name，age 按降序排序，如 age 相同，则 name 按升序排序。
+-- 从顶点 100 出发查找其关注的球员，返回球员的 age 和 name，age 按降序排列，如 age 相同，则 name 按升序排列。
 -- 返回如下结果：
 ===========================
 | age | name              |
