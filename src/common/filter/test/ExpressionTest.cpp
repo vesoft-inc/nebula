@@ -579,10 +579,10 @@ TEST_F(ExpressionTest, EdgeReference) {
             if (prop == "_src") {
                 return 0L;
             }
-            if (prop == "_dst") {
-                return 2L;
-            }
             return 1545798790L;
+        };
+        getters.getEdgeDstId = [] (auto&) -> VariantType {
+            return 2L;
         };
         expr->setContext(ctx.get());
         auto value = expr->eval(getters);

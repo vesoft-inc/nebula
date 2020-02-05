@@ -38,10 +38,11 @@ public:
         return maxLatency_;
     }
 
-    void setLatency(int32_t latency) {
+    void setLatency(HostAddr host, int32_t latency, int32_t e2eLatency) {
         if (latency > maxLatency_) {
             maxLatency_ = latency;
         }
+        hostLatency_.emplace_back(std::make_tuple(host, latency, e2eLatency));
     }
 
     void markFailure() {
@@ -63,6 +64,10 @@ public:
         return responses_;
     }
 
+    const std::vector<std::tuple<HostAddr, int32_t, int32_t>>& hostLatency() const {
+        return hostLatency_;
+    }
+
 private:
     const size_t totalReqsSent_;
     size_t failedReqs_{0};
@@ -71,6 +76,7 @@ private:
     std::unordered_map<PartitionID, storage::cpp2::ErrorCode> failedParts_;
     int32_t maxLatency_{0};
     std::vector<Response> responses_;
+    std::vector<std::tuple<HostAddr, int32_t, int32_t>> hostLatency_;
 };
 
 
@@ -181,6 +187,7 @@ protected:
     StatusOr<PartitionID> partId(GraphSpaceID spaceId, int64_t id) const;
 
     const HostAddr leader(const PartMeta& partMeta) const {
+        loadLeader();
         auto part = std::make_pair(partMeta.spaceId_, partMeta.partId_);
         {
             folly::RWSpinLock::ReadHolder rh(leadersLock_);
@@ -255,13 +262,13 @@ protected:
         for (auto& id : ids) {
             auto status = partId(spaceId, f(id));
             if (!status.ok()) {
-                return status;
+                return status.status();
             }
 
             auto part = status.value();
             auto metaStatus = getPartMeta(spaceId, part);
             if (!metaStatus.ok()) {
-                return status;
+                return status.status();
             }
 
             auto partMeta = metaStatus.value();
@@ -282,6 +289,23 @@ protected:
         return client_->getPartMetaFromCache(spaceId, partId);
     }
 
+    virtual void loadLeader() const {
+        if (loadLeaderBefore_) {
+            return;
+        }
+        bool expected = false;
+        if (isLoadingLeader_.compare_exchange_strong(expected, true)) {
+            CHECK(client_ != nullptr);
+            auto status = client_->loadLeader();
+            if (status.ok()) {
+                folly::RWSpinLock::WriteHolder wh(leadersLock_);
+                leaders_ = std::move(status).value();
+                loadLeaderBefore_ = true;
+            }
+            isLoadingLeader_ = false;
+        }
+    }
+
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     meta::MetaClient *client_{nullptr};
@@ -289,6 +313,8 @@ private:
                         storage::cpp2::StorageServiceAsyncClient>> clientsMan_;
     mutable folly::RWSpinLock leadersLock_;
     mutable std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> leaders_;
+    mutable std::atomic_bool loadLeaderBefore_{false};
+    mutable std::atomic_bool isLoadingLeader_{false};
     std::unique_ptr<stats::Stats> stats_;
 };
 
