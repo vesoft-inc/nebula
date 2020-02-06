@@ -46,16 +46,6 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     }
 
     auto edgeIndexID = edgeIndexIDResult.value();
-    auto edgeTypeResult = getIndexItem(space, edgeIndexID);
-    if (!edgeTypeResult.ok()) {
-        LOG(ERROR) << "Edge Index " << indexName << " Not Found Schema";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-        onFinished();
-        return;
-    }
-
-    auto edgeType = edgeTypeResult.value().get_schema_id().get_edge_type();
-
     auto edgeKey = MetaServiceUtils::indexKey(space, edgeIndexIDResult.value());
     auto edgeResult = doGet(edgeKey);
     if (!edgeResult.ok()) {
@@ -79,7 +69,6 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     for (auto iter = parts.begin(); iter != parts.end(); iter++) {
         auto future = client->rebuildEdgeIndex(iter->first,
                                                space,
-                                               edgeType,
                                                edgeIndexID,
                                                iter->second);
         results.emplace_back(std::move(future));

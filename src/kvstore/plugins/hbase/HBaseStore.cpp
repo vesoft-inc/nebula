@@ -220,6 +220,12 @@ ResultCode HBaseStore::rangeWithPrefix(GraphSpaceID spaceId,
 }
 
 
+ResultCode HBaseStore::sync(GraphSpaceID spaceId, PartitionID partId) {
+    UNUSED(spaceId);
+    UNUSED(partId);
+    LOG(FATAL) << "Unimplement";
+}
+
 ResultCode HBaseStore::multiRemove(GraphSpaceID spaceId,
                                    std::vector<std::string>& keys) {
     auto tableName = this->spaceIdToTableName(spaceId);

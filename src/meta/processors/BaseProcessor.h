@@ -237,8 +237,6 @@ protected:
 
     StatusOr<IndexID> getIndexID(GraphSpaceID spaceId, const std::string& indexName);
 
-    StatusOr<nebula::cpp2::IndexItem> getIndexItem(GraphSpaceID spaceId, IndexID indexID);
-
     StatusOr<UserID> getUserId(const std::string& account);
 
     bool checkPassword(UserID userId, const std::string& password);
@@ -246,6 +244,10 @@ protected:
     StatusOr<std::string> getUserAccount(UserID userId);
 
     bool doSyncPut(std::vector<kvstore::KV> data);
+
+    void doSyncPutAndUpdate(std::vector<kvstore::KV> data);
+
+    void doSyncMultiRemoveAndUpdate(std::vector<std::string> keys);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

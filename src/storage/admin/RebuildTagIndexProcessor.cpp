@@ -13,7 +13,6 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
     CHECK_NOTNULL(kvstore_);
     auto space = req.get_space_id();
     auto parts = req.get_parts();
-    auto tagID = req.get_schema_id().get_tag_id();
     auto indexID = req.get_index_id();
     auto itemRet = indexMan_->getTagIndex(space, indexID);
     if (!itemRet.ok()) {
@@ -24,6 +23,7 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
         return;
     }
     auto item = itemRet.value();
+    auto tagID = item->get_schema_id().get_tag_id();
     LOG(INFO) << "Rebuild Tag Index Space " << space << " Tag ID " << tagID
               << " Tag Index " << indexID;
 

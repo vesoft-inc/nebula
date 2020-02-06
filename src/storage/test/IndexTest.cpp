@@ -547,9 +547,6 @@ TEST(IndexTest, RebulidTagIndexTest) {
         cpp2::RebuildIndexRequest req;
         req.set_space_id(0);
         req.set_parts(std::move(parts));
-        nebula::cpp2::SchemaID schemaID;
-        schemaID.set_tag_id(3001);
-        req.set_schema_id(std::move(schemaID));
         req.set_index_id(3001 + 1000);
 
         auto* processor = RebuildTagIndexProcessor::instance(kv.get(),
@@ -605,9 +602,6 @@ TEST(IndexTest, RebulidEdgeIndexTest) {
         cpp2::RebuildIndexRequest req;
         req.set_space_id(0);
         req.set_parts(std::move(parts));
-        nebula::cpp2::SchemaID schemaID;
-        schemaID.set_edge_type(101);
-        req.set_schema_id(std::move(schemaID));
         req.set_index_id(101 + 100);
 
         auto* processor = RebuildEdgeIndexProcessor::instance(kv.get(),

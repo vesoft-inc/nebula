@@ -13,7 +13,6 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
     CHECK_NOTNULL(kvstore_);
     auto space = req.get_space_id();
     auto parts = req.get_parts();
-    auto edgeType = req.get_schema_id().get_edge_type();
     auto indexID = req.get_index_id();
     auto itemRet = indexMan_->getEdgeIndex(space, indexID);
     if (!itemRet.ok()) {
@@ -24,6 +23,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
         return;
     }
     auto item = itemRet.value();
+    auto edgeType = item->get_schema_id().get_edge_type();
     LOG(INFO) << "Rebuild Edge Index Space " << space << " Edge Type " << edgeType
               << " Edge Index " << indexID;
 

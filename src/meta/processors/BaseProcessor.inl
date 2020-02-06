@@ -33,7 +33,7 @@ BaseProcessor<RESP>::doPrefix(const std::string& key) {
     if (code != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("Prefix Failed");
     }
-    return std::move(iter);
+    return iter;
 }
 
 
@@ -331,18 +331,6 @@ BaseProcessor<RESP>::getIndexID(GraphSpaceID spaceId, const std::string& indexNa
 }
 
 template<typename RESP>
-StatusOr<nebula::cpp2::IndexItem>
-BaseProcessor<RESP>::getIndexItem(GraphSpaceID spaceId, IndexID indexId) {
-    auto tagKey = MetaServiceUtils::indexKey(spaceId, indexId);
-    auto tagResult = doGet(tagKey);
-    if (!tagResult.ok()) {
-        return Status::IndexNotFound(folly::stringPrintf("Index %d not found", indexId));
-    }
-
-    return MetaServiceUtils::parseIndex(tagResult.value());
-}
-
-template<typename RESP>
 StatusOr<UserID>
 BaseProcessor<RESP>::getUserId(const std::string& account) {
     auto indexKey = MetaServiceUtils::indexUserKey(account);
@@ -392,6 +380,56 @@ bool BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
                             });
     baton.wait();
     return ret;
+}
+
+template<typename RESP>
+void BaseProcessor<RESP>::doSyncPutAndUpdate(std::vector<kvstore::KV> data) {
+    folly::Baton<true, std::atomic> baton;
+    auto ret = kvstore::ResultCode::SUCCEEDED;
+    kvstore_->asyncMultiPut(kDefaultSpaceId,
+                            kDefaultPartId,
+                            std::move(data),
+                            [&ret, &baton] (kvstore::ResultCode code) {
+        if (kvstore::ResultCode::SUCCEEDED != code) {
+            ret = code;
+            LOG(INFO) << "Put data error on meta server";
+        }
+        baton.post();
+    });
+    baton.wait();
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        this->resp_.set_code(to(ret));
+        this->onFinished();
+        return;
+    }
+    ret = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
+    this->resp_.set_code(to(ret));
+    this->onFinished();
+}
+
+template<typename RESP>
+void BaseProcessor<RESP>::doSyncMultiRemoveAndUpdate(std::vector<std::string> keys) {
+    folly::Baton<true, std::atomic> baton;
+    auto ret = kvstore::ResultCode::SUCCEEDED;
+    kvstore_->asyncMultiRemove(kDefaultSpaceId,
+                               kDefaultPartId,
+                               std::move(keys),
+                               [&ret, &baton] (kvstore::ResultCode code) {
+        if (kvstore::ResultCode::SUCCEEDED != code) {
+            ret = code;
+            LOG(INFO) << "Remove data error on meta server";
+        }
+        baton.post();
+    });
+    baton.wait();
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        this->resp_.set_code(to(ret));
+        this->onFinished();
+        return;
+    }
+    ret = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
+    this->resp_.set_code(to(ret));
+    this->onFinished();
 }
 
 }  // namespace meta

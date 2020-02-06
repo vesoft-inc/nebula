@@ -645,7 +645,6 @@ folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
 
 folly::Future<Status> AdminClient::rebuildTagIndex(HostAddr address,
                                                    GraphSpaceID spaceId,
-                                                   TagID tagID,
                                                    IndexID indexID,
                                                    std::vector<PartitionID> parts) {
     if (injector_) {
@@ -655,9 +654,6 @@ folly::Future<Status> AdminClient::rebuildTagIndex(HostAddr address,
     std::vector<HostAddr> hosts{address};
     storage::cpp2::RebuildIndexRequest req;
     req.set_space_id(spaceId);
-    nebula::cpp2::SchemaID schemaID;
-    schemaID.set_tag_id(tagID);
-    req.set_schema_id(std::move(schemaID));
     req.set_index_id(indexID);
     req.set_parts(std::move(parts));
     folly::Promise<Status> pro;
@@ -670,7 +666,6 @@ folly::Future<Status> AdminClient::rebuildTagIndex(HostAddr address,
 
 folly::Future<Status> AdminClient::rebuildEdgeIndex(HostAddr address,
                                                     GraphSpaceID spaceId,
-                                                    EdgeType edgeType,
                                                     IndexID indexID,
                                                     std::vector<PartitionID> parts) {
     if (injector_) {
@@ -680,9 +675,6 @@ folly::Future<Status> AdminClient::rebuildEdgeIndex(HostAddr address,
     std::vector<HostAddr> hosts{address};
     storage::cpp2::RebuildIndexRequest req;
     req.set_space_id(spaceId);
-    nebula::cpp2::SchemaID schemaID;
-    schemaID.set_edge_type(edgeType);
-    req.set_schema_id(std::move(schemaID));
     req.set_index_id(indexID);
     req.set_parts(std::move(parts));
     folly::Promise<Status> pro;

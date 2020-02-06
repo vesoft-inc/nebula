@@ -51,6 +51,8 @@ public:
         scanVertexQpsStat_ = stats::Stats("storage", "scan_vertex");
         getKvQpsStat_ = stats::Stats("storage", "get_kv");
         putKvQpsStat_ = stats::Stats("storage", "put_kv");
+        lookupVerticesQpsStat_ = stats::Stats("storage", "lookup_vertices");
+        lookupEdgesQpsStat_ = stats::Stats("storage", "lookup_edges");
     }
 
     folly::Future<cpp2::QueryResponse>
@@ -141,6 +143,12 @@ public:
     folly::Future<cpp2::AdminExecResp>
     future_rebuildEdgeIndex(const cpp2::RebuildIndexRequest& req) override;
 
+    folly::Future<cpp2::LookUpVertexIndexResp>
+    future_lookUpVertexIndex(const cpp2::LookUpIndexRequest& req) override;
+
+    folly::Future<cpp2::LookUpEdgeIndexResp>
+    future_lookUpEdgeIndex(const cpp2::LookUpIndexRequest& req) override;
+
 private:
     kvstore::KVStore* kvstore_{nullptr};
     meta::SchemaManager* schemaMan_{nullptr};
@@ -162,6 +170,8 @@ private:
     stats::Stats scanVertexQpsStat_;
     stats::Stats getKvQpsStat_;
     stats::Stats putKvQpsStat_;
+    stats::Stats lookupVerticesQpsStat_;
+    stats::Stats lookupEdgesQpsStat_;
 };
 
 }  // namespace storage

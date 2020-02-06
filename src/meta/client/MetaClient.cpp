@@ -2011,5 +2011,38 @@ Status MetaClient::refreshCache() {
     return ret ? Status::OK() : Status::Error("Load data failed");
 }
 
+StatusOr<LeaderMap> MetaClient::loadLeader() {
+    // Return error if has not loadData before
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    auto ret = listHosts().get();
+    if (!ret.ok()) {
+        return Status::Error("List hosts failed");
+    }
+
+    LeaderMap leaderMap;
+    auto hostItems = std::move(ret).value();
+    for (auto& item : hostItems) {
+        auto hostAddr = HostAddr(item.hostAddr.ip, item.hostAddr.port);
+        for (auto& spaceEntry : item.get_leader_parts()) {
+            auto spaceName = spaceEntry.first;
+            auto status = getSpaceIdByNameFromCache(spaceName);
+            if (!status.ok()) {
+                continue;
+            }
+            auto spaceId = status.value();
+            for (const auto& partId : spaceEntry.second) {
+                leaderMap[{spaceId, partId}] = hostAddr;
+            }
+        }
+        LOG(INFO) << "Load leader of " << hostAddr
+                  << " in " << item.get_leader_parts().size() << " space";
+    }
+    LOG(INFO) << "Load leader ok";
+    return leaderMap;
+}
+
 }  // namespace meta
 }  // namespace nebula

@@ -55,6 +55,8 @@ message(STATUS "ENABLE_FUZZ_TEST: ${ENABLE_FUZZ_TEST}")
 message(STATUS "ENABLE_TSAN: ${ENABLE_TSAN}")
 
 
+add_compile_options(-fno-strict-aliasing)
+
 if (ENABLE_NATIVE)
     message(STATUS "ENABLE_NATIVE is ${ENABLE_NATIVE}")
     add_compile_options(-fPIC)
@@ -241,11 +243,18 @@ if(NOT ENABLE_ASAN AND NOT ENABLE_NATIVE)
 endif()
 
 add_compile_options(-Wall)
+add_compile_options(-Wextra)
+add_compile_options(-Wpedantic)
 add_compile_options(-Wunused-parameter)
 add_compile_options(-Wshadow)
+add_compile_options(-Wnon-virtual-dtor)
+add_compile_options(-Woverloaded-virtual)
+add_compile_options(-Wignored-qualifiers)
 if(ENABLE_WERROR)
     add_compile_options(-Werror)
 endif()
+
+include(CheckCXXCompilerFlag)
 
 # TODO(dutor) Move all compiler-config-related operations to a separate file
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -269,13 +278,17 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
             set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --target=${gcc_target_triplet}")
         endif()
     endif()
-    add_compile_options(-Wno-overloaded-virtual)
     add_compile_options(-Wno-self-assign-overloaded)
     add_compile_options(-Wno-self-move)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -latomic")
+    add_compile_options(-Wno-format-pedantic)
+    add_compile_options(-Wno-gnu-zero-variadic-macro-arguments)
+    set(libatomic_link_flags "-Wl,-Bstatic -latomic -Wl,-Bdynamic")
+    set(CMAKE_REQUIRED_FLAGS "${libatomic_link_flags}")
+    check_cxx_compiler_flag("${libatomic_link_flags}" has_static_libatomic)
+    if(NOT has_static_libatomic)
+        set(libatomic_link_flags "-latomic")
+    endif()
 endif()
-
-include(CheckCXXCompilerFlag)
 
 if(ENABLE_ASAN OR ENABLE_UBSAN)
     add_definitions(-DBUILT_WITH_SANITIZER)
@@ -502,12 +515,14 @@ macro(nebula_link_libraries target)
         resolv
         dl
         ${GETTIME_LIB}
+        ${libatomic_link_flags}
         -pthread
     )
 endmacro(nebula_link_libraries)
 
 function(nebula_add_subdirectory dir_name)
     if ((NOT ENABLE_TESTING) AND (${dir_name} STREQUAL test))
+        add_subdirectory(${dir_name} EXCLUDE_FROM_ALL)
         return()
     endif()
     add_subdirectory(${dir_name})

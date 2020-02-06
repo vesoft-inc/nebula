@@ -78,6 +78,8 @@ using SpaceTagIdNameMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, std
 
 // get all edgeType edgeName via spaceId
 using SpaceAllEdgeMap = std::unordered_map<GraphSpaceID, std::vector<std::string>>;
+// get leader host via spaceId and partId
+using LeaderMap = std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr>;
 
 using IndexStatus = std::tuple<std::string, std::string, std::string>;
 
@@ -106,6 +108,7 @@ using MetaConfigMap = std::unordered_map<std::pair<cpp2::ConfigModule, std::stri
 
 class MetaChangedListener {
 public:
+    virtual ~MetaChangedListener() = default;
     virtual void onSpaceAdded(GraphSpaceID spaceId) = 0;
     virtual void onSpaceRemoved(GraphSpaceID spaceId) = 0;
     virtual void onSpaceOptionUpdated(GraphSpaceID spaceId,
@@ -422,6 +425,8 @@ public:
                                                              const std::string& field);
 
     Status refreshCache();
+
+    StatusOr<LeaderMap> loadLeader();
 
 protected:
     // Return true if load succeeded.

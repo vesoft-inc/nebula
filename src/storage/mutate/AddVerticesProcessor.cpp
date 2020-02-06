@@ -55,8 +55,8 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
     } else {
         std::for_each(partVertices.begin(), partVertices.end(), [&](auto &pv) {
             auto partId = pv.first;
-            const auto &vertices = pv.second;
-            auto atomic = [&]() -> std::string {
+            auto atomic = [version, partId, vertices = std::move(pv.second), this]()
+                          -> std::string {
                 return addVertices(version, partId, vertices);
             };
             auto callback = [partId, this](kvstore::ResultCode code) {

@@ -44,16 +44,6 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     }
 
     auto tagIndexID = tagIndexIDResult.value();
-    auto tagIDResult = getIndexItem(space, tagIndexID);
-    if (!tagIDResult.ok()) {
-        LOG(ERROR) << "Tag Index " << indexName << " Not Found Schema";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-        onFinished();
-        return;
-    }
-
-    auto tagID = tagIDResult.value().get_schema_id().get_tag_id();
-
     auto tagKey = MetaServiceUtils::indexKey(space, tagIndexIDResult.value());
     auto tagResult = doGet(tagKey);
     if (!tagResult.ok()) {
@@ -78,7 +68,6 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     for (auto iter = parts.begin(); iter != parts.end(); iter++) {
         auto future = client->rebuildTagIndex(iter->first,
                                               space,
-                                              tagID,
                                               tagIndexID,
                                               iter->second);
         results.emplace_back(std::move(future));
