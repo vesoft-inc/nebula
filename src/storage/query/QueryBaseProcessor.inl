@@ -107,7 +107,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                     VLOG(3) << "Can't find spaceId " << spaceId_ << ", edgeType " << edgeType;
                     return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
                 }
-                this->edgeMap_.emplace(edgeName.value(), edgeType);
+                this->edgeMap_.emplace(edgeName.value(), std::abs(edgeType));
 
                 auto it = kPropsInKey_.find(col.name);
                 if (it != kPropsInKey_.end()) {
@@ -118,10 +118,10 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                     } else {
                         prop.type_.type = nebula::cpp2::SupportedType::INT;
                     }
-                } else if (edgeType > 0) {
+                } else {
                     // Only outBound have properties on edge.
                     auto schema = this->schemaMan_->getEdgeSchema(spaceId_,
-                                                                  edgeType);
+                                                                  std::abs(edgeType));
                     if (!schema) {
                         return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
                     }
@@ -130,9 +130,6 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                         return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
                     }
                     prop.type_ = ftype;
-                } else {
-                    VLOG(3) << "InBound has none props, skip it!";
-                    break;
                 }
                 if (col.__isset.stat && !validOperation(prop.type_.type, col.stat)) {
                     return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
@@ -272,12 +269,7 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
             }
 
             auto edgeType = edgeStatus.value();
-            if (edgeType < 0) {
-                VLOG(1) << "Only support filter on out bound props";
-                return false;
-            }
-
-            auto schema = this->schemaMan_->getEdgeSchema(spaceId_, edgeType);
+            auto schema = this->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType));
             if (!schema) {
                 VLOG(1) << "Cant find edgeType " << edgeType;
                 return false;
@@ -459,9 +451,11 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
         lastDstId = dstId;
         std::unique_ptr<RowReader> reader;
         if (!onlyStructure
-                && edgeType > 0
                 && !val.empty()) {
-            reader = RowReader::getEdgePropReader(this->schemaMan_, val, spaceId_, edgeType);
+            reader = RowReader::getEdgePropReader(this->schemaMan_,
+                                                  val,
+                                                  spaceId_,
+                                                  std::abs(edgeType));
             if (exp_ != nullptr) {
                 getters.getAliasProp = [this, edgeType, &reader, &key](const std::string& edgeName,
                                            const std::string& prop) -> OptVariantType {
@@ -470,7 +464,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                         return Status::Error(
                                 "Edge `%s' not found when call getters.", edgeName.c_str());
                     }
-                    if (edgeType != edgeFound->second) {
+                    if (std::abs(edgeType) != edgeFound->second) {
                         return Status::Error("Ignore this edge");
                     }
 
@@ -496,12 +490,13 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                 getters.getEdgeDstId = [this,
                                         &edgeType,
                                         &dstId] (const std::string& edgeName) -> OptVariantType {
-                    auto edgeStatus = this->schemaMan_->toEdgeType(spaceId_, edgeName);
-                    if (!edgeStatus.ok()) {
-                        return Status::Error("Can't find edge %s", edgeName.c_str());
+                    auto edgeFound = this->edgeMap_.find(edgeName);
+                    if (edgeFound == edgeMap_.end()) {
+                        return Status::Error(
+                                "Edge `%s' not found when call getters.", edgeName.c_str());
                     }
-                    if (edgeType != edgeStatus.value()) {
-                        return Status::Error("ignore this edge");
+                    if (std::abs(edgeType) != edgeFound->second) {
+                        return Status::Error("Ignore this edge");
                     }
                     return dstId;
                 };
@@ -633,6 +628,7 @@ void QueryBaseProcessor<REQ, RESP>::buildRespSchema() {
                 if (it == edgeSchemaResp_.end()) {
                     auto schemaProvider = std::make_shared<ResultSchemaProvider>(respEdge);
                     edgeSchema_.emplace(ec.first, std::move(schemaProvider));
+                    VLOG(1) << "Fulfill edge response for edge " << ec.first;
                     edgeSchemaResp_.emplace(ec.first, std::move(respEdge));
                 }
             }
