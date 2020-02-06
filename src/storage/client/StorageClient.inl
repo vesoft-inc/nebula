@@ -75,11 +75,12 @@ private:
 }  // Anonymous namespace
 
 
-template<class Request, class RemoteFunc, class Response>
+template<class Request, class RemoteFunc, class GetPartIDFunc, class Response>
 folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
-        RemoteFunc&& remoteFunc) {
+        RemoteFunc&& remoteFunc,
+        GetPartIDFunc getPartIDFunc) {
     auto context = std::make_shared<ResponseContext<Request, RemoteFunc, Response>>(
         requests.size(), std::move(remoteFunc));
 
@@ -95,7 +96,14 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
         auto res = context->insertRequest(host, std::move(req.second));
         DCHECK(res.second);
         // Invoke the remote method
-        folly::via(evb, [this, evb, context, host, spaceId, res, duration] () mutable {
+        folly::via(evb, [this,
+                         evb,
+                         context,
+                         host,
+                         spaceId,
+                         res,
+                         duration,
+                         getPartIDFunc] () mutable {
             auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
             // Result is a pair of <Request&, bool>
             auto start = time::WallClock::fastNowInMicroSec();
@@ -108,16 +116,18 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                             host,
                             spaceId,
                             duration,
+                            getPartIDFunc,
                             start] (folly::Try<Response>&& val) {
                 auto& r = context->findRequest(host);
                 if (val.hasException()) {
                     LOG(ERROR) << "Request to " << host << " failed: " << val.exception().what();
                     for (auto& part : r.parts) {
-                        VLOG(3) << "Exception! Failed part " << part.first;
+                        auto partId = getPartIDFunc(part);
+                        VLOG(3) << "Exception! Failed part " << partId;
                         context->resp.failedParts().emplace(
-                            part.first,
+                            partId,
                             storage::cpp2::ErrorCode::E_RPC_FAILURE);
-                        invalidLeader(spaceId, part.first);
+                        invalidLeader(spaceId, partId);
                     }
                     context->resp.markFailure();
                 } else {
