@@ -9,7 +9,7 @@
 
 #include "base/Base.h"
 #include <gtest/gtest_prod.h>
-#include "gen-cpp2/GeneralStorageServiceAsyncClient.h"
+#include "interface/gen-cpp2/GeneralStorageServiceAsyncClient.h"
 #include "datatypes/KeyValue.h"
 #include "clients/storage/StorageClientBase.h"
 #include "clients/meta/MetaClient.h"

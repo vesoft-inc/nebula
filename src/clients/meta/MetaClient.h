@@ -11,7 +11,7 @@
 #include <folly/executors/IOThreadPoolExecutor.h>
 #include <folly/RWSpinLock.h>
 #include <gtest/gtest_prod.h>
-#include "gen-cpp2/MetaServiceAsyncClient.h"
+#include "interface/gen-cpp2/MetaServiceAsyncClient.h"
 #include "base/Status.h"
 #include "base/StatusOr.h"
 #include "meta/Common.h"

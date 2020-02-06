@@ -8,7 +8,7 @@
 #define CLIENTS_GRAPH_GRAPHCLIENT_H_
 
 #include "base/Base.h"
-#include "gen-cpp2/GraphServiceAsyncClient.h"
+#include "interface/gen-cpp2/GraphServiceAsyncClient.h"
 
 namespace nebula {
 namespace graph {

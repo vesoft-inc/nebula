@@ -73,9 +73,10 @@ struct Path {
 
 
 enum NullType {
-    NT_Null     = 0,
-    NT_NaN      = 1,
-    NT_BadType  = 2,
+    __NULL__ = 0,
+    NaN      = 1,
+    BAD_DATA = 2,
+    BAD_TYPE = 3,
 } (cpp.enum_strict cpp.type = "nebula::NullType")
 
 

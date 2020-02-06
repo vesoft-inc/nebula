@@ -8,7 +8,7 @@
 #define META_SCHEMAPROVIDERIF_H_
 
 #include "base/Base.h"
-#include "gen-cpp2/meta_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 
 namespace nebula {

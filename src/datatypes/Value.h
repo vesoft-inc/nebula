@@ -18,9 +18,10 @@ struct Map;
 struct List;
 
 enum class NullType {
-    NT_Null = 0,
-    NT_NaN = 1,
-    NT_BadType = 2
+    __NULL__ = 0,
+    NaN      = 1,
+    BAD_DATA = 2,
+    BAD_TYPE = 3
 };
 
 
@@ -123,7 +124,7 @@ struct Value {
     bool operator==(const Value& rhs) const;
 
     static const Value& null() noexcept {
-        static const Value kNullValue(NullType::NT_Null);
+        static const Value kNullValue(NullType::__NULL__);
         return kNullValue;
     }
 

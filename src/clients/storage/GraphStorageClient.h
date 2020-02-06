@@ -9,7 +9,7 @@
 
 #include "base/Base.h"
 #include <gtest/gtest_prod.h>
-#include "gen-cpp2/GraphStorageServiceAsyncClient.h"
+#include "interface/gen-cpp2/GraphStorageServiceAsyncClient.h"
 #include "clients/storage/StorageClientBase.h"
 
 namespace nebula {
