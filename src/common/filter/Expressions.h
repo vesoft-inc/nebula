@@ -920,6 +920,10 @@ public:
         return left_.get();
     }
 
+    Operator op() const {
+        return op_;
+    }
+
     const Expression* right() const {
         return right_.get();
     }
