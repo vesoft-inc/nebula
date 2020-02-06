@@ -14,7 +14,7 @@ By default, `ORDER BY` sorts the records in ascending order if no `ASC` or `DESC
 ```ngql
 nebula> FETCH PROP ON player 100,101,102,103 YIELD player.age AS age, player.name AS name | ORDER BY age, name DESC;  
 
--- Fetch four vertices and sort them by their age in ascending order, and for those in the same age, sort them by name in descending order.
+-- Fetch four vertices and sort them by their ages in ascending order, and for those in the same age, sort them by name in descending order.
 -- The following result is returned:
 ======================================
 | VertexID | age | name              |
@@ -34,7 +34,7 @@ nebula> FETCH PROP ON player 100,101,102,103 YIELD player.age AS age, player.nam
 ```ngql
 nebula> GO FROM 100 OVER follow YIELD $$.player.age AS age, $$.player.name AS name | ORDER BY age DESC, name ASC;
 
--- Search all the players followed by vertex 100 and return their age and name. The age is in descending order; the name is in ascending order if they have the same name.
+-- Search all the players followed by vertex 100 and return their ages and names. The age is in descending order; the name is in ascending order if they have the same name.
 -- The following result is returned:  
 ===========================
 | age | name              |
