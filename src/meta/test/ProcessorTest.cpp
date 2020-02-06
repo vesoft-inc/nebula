@@ -814,6 +814,9 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
             ASSERT_EQ(folly::stringPrintf("tag_%d_col_%d", 0, i), cols[i].get_name());
             ASSERT_EQ((i < 1 ? SupportedType::INT : SupportedType::STRING),
                       cols[i].get_type().get_type());
+            ASSERT_EQ(nullptr, cols[i].get_could_null());
+            ASSERT(nullptr == cols[i].get_key_type()
+                || ::nebula::cpp2::KeyType::EMPTY == *cols[i].get_key_type());
         }
     }
 
@@ -836,6 +839,9 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
             ASSERT_EQ(folly::stringPrintf("tag_%d_col_%d", 0, i), cols[i].get_name());
             ASSERT_EQ((i < 1 ? SupportedType::INT : SupportedType::STRING),
                       cols[i].get_type().get_type());
+            ASSERT_EQ(nullptr, cols[i].get_could_null());
+            ASSERT(nullptr == cols[i].get_key_type()
+                || ::nebula::cpp2::KeyType::EMPTY == *cols[i].get_key_type());
         }
     }
 }
@@ -888,7 +894,10 @@ TEST(ProcessorTest, ListOrGetEdgesTest) {
             for (auto i = 0; i < 2; i++) {
                 ASSERT_EQ(folly::stringPrintf("edge_%d_col_%d", t, i), cols[i].get_name());
                 ASSERT_EQ((i < 1 ? SupportedType::INT : SupportedType::STRING),
-                cols[i].get_type().get_type());
+                    cols[i].get_type().get_type());
+                ASSERT_EQ(nullptr, cols[i].get_could_null());
+                ASSERT(nullptr == cols[i].get_key_type()
+                    || ::nebula::cpp2::KeyType::EMPTY == *cols[i].get_key_type());
             }
         }
     }
@@ -912,6 +921,9 @@ TEST(ProcessorTest, ListOrGetEdgesTest) {
             ASSERT_EQ(folly::stringPrintf("edge_%d_col_%d", 0, i), cols[i].get_name());
             ASSERT_EQ((i < 1 ? SupportedType::INT : SupportedType::STRING),
                       cols[i].get_type().get_type());
+            ASSERT_EQ(nullptr, cols[i].get_could_null());
+            ASSERT(nullptr == cols[i].get_key_type()
+                || ::nebula::cpp2::KeyType::EMPTY == *cols[i].get_key_type());
         }
     }
 }

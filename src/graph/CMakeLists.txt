@@ -16,6 +16,7 @@ nebula_add_library(
     CreateEdgeExecutor.cpp
     AlterEdgeExecutor.cpp
     DescribeEdgeExecutor.cpp
+    DescribeSchemaExecutor.cpp
     CreateTagExecutor.cpp
     AlterTagExecutor.cpp
     DropTagExecutor.cpp

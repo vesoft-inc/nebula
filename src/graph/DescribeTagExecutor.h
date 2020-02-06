@@ -8,12 +8,12 @@
 #define GRAPH_DESCRIBETAGEXECUTOR_H_
 
 #include "base/Base.h"
-#include "graph/Executor.h"
+#include "graph/DescribeSchemaExecutor.h"
 
 namespace nebula {
 namespace graph {
 
-class DescribeTagExecutor final : public Executor {
+class DescribeTagExecutor final : public DescribeSchemaExecutor {
 public:
     DescribeTagExecutor(Sentence *sentence, ExecutionContext *ectx);
 

@@ -90,6 +90,8 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     item.set_schema_id(schemaID);
     item.set_schema_name(edgeName);
     item.set_fields(std::move(columns));
+    // TODO(shylock) Hard Code for now pass from query if supported
+    item.set_key_type(::nebula::cpp2::KeyType::MUL);
 
     data.emplace_back(MetaServiceUtils::indexIndexKey(space, indexName),
                       std::string(reinterpret_cast<const char*>(&edgeIndex), sizeof(IndexID)));

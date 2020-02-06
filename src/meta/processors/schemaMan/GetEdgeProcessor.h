@@ -21,6 +21,8 @@ public:
     void process(const cpp2::GetEdgeReq& req);
 
 private:
+    std::vector<::nebula::cpp2::IndexItem> getEdgeIndexKey(GraphSpaceID spaceId, EdgeType edgeType);
+
     explicit GetEdgeProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::GetEdgeResp>(kvstore) {}
 };
