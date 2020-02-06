@@ -2,9 +2,9 @@
 
 `GO` statement is the MOST commonly used clause in **Nebula Graph**.
 
-It indicates to travel in a graph with specific filters (the `WHERE` clause), to fetch properties of vertices and edges, and return results (the `YIELD` clause) with given order (the `ORDER BY ASC | DESC` clause) and numbers (the `LIMIT` clause).
+It indicates to traverse in a graph with specific filters (the `WHERE` clause), to fetch properties of vertices and edges, and return results (the `YIELD` clause) with given order (the `ORDER BY ASC | DESC` clause) and numbers (the `LIMIT` clause).
 
-> The syntax of `GO` statement is very similar to `SELECT` in SQL. Notice that the major difference is that `GO` must start traversing from a (set of) vertex(vertices).
+> The syntax of `GO` statement is very similar to `SELECT` in SQL. Notice that the major difference is that `GO` must start traversing from a (set of) vertex (vertices).
 <!-- >You can refer to `FIND` statement (in progress), which is the counterpart of `SELECT` in SQL. -->
 
 ```ngql
@@ -127,9 +127,9 @@ The following result is returned:
 ------------------------------------
 ```
 
-If there is no properties, the default value will be placed. The default value for numeric type is 0, and for string type is an empty string, for bool is false, for timestamp is 0 (namely “1970-01-01 00:00:00”) and for double is 0.0.
+If there is no property, the default value will be placed. The default value for numeric type is 0, and for string type is an empty string, for bool is false, for timestamp is 0 (namely “1970-01-01 00:00:00”) and for double is 0.0.
 
-Of course, you can query without specifying `YIELD`, which returns the vids of the dest vertices of each edge. Again, default values (here is 0) will be placed if there is no properties. For example, query `GO FROM 100 OVER edge1, edge2` returns the follow lines:
+Of course, you can query without specifying `YIELD`, which returns the vids of the dest vertices of each edge. Again, default values (here is 0) will be placed if there is no property. For example, query `GO FROM 100 OVER edge1, edge2` returns the follow lines:
 ```
 ============================
 | follow._dst | serve._dst |
