@@ -182,6 +182,20 @@ public:
         const std::string& name,
         folly::EventBase* evb = nullptr);
 
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpVertexIndexResp>> lookUpVertexIndex(
+            GraphSpaceID space,
+            IndexID indexId,
+            std::string filter,
+            std::vector<std::string> returnCols,
+            folly::EventBase *evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpEdgeIndexResp>> lookUpEdgeIndex(
+            GraphSpaceID space,
+            IndexID indexId,
+            std::string filter,
+            std::vector<std::string> returnCols,
+            folly::EventBase *evb = nullptr);
+
 protected:
     // Calculate the partition id for the given vertex id
     StatusOr<PartitionID> partId(GraphSpaceID spaceId, int64_t id) const;
@@ -221,6 +235,7 @@ protected:
 
     template<class Request,
              class RemoteFunc,
+             class GetPartIDFunc,
              class Response =
                 typename std::result_of<
                     RemoteFunc(storage::cpp2::StorageServiceAsyncClient*, const Request&)
@@ -229,7 +244,8 @@ protected:
     folly::SemiFuture<StorageRpcResponse<Response>> collectResponse(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
-        RemoteFunc&& remoteFunc);
+        RemoteFunc&& remoteFunc,
+        GetPartIDFunc getPartIDFunc);
 
     template<class Request,
              class RemoteFunc,
@@ -239,9 +255,9 @@ protected:
                 >::type::value_type
             >
     folly::Future<StatusOr<Response>> getResponse(
-            folly::EventBase* evb,
-            std::pair<HostAddr, Request> request,
-            RemoteFunc remoteFunc);
+        folly::EventBase* evb,
+        std::pair<HostAddr, Request> request,
+        RemoteFunc remoteFunc);
 
     // Cluster given ids into the host they belong to
     // The method returns a map
@@ -306,6 +322,28 @@ protected:
         }
     }
 
+    virtual StatusOr<std::unordered_map<HostAddr, std::vector<PartitionID>>>
+    getHostParts(GraphSpaceID spaceId) const {
+        std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
+        auto status = partsNum(spaceId);
+        if (!status.ok()) {
+            return Status::Error("Space not found, spaceid: %d", spaceId);
+        }
+
+        auto parts = status.value();
+        for (auto partId = 1; partId <= parts; partId++) {
+            auto metaStatus = getPartMeta(spaceId, partId);
+            if (!metaStatus.ok()) {
+                return metaStatus.status();
+            }
+            auto partMeta = std::move(metaStatus).value();
+            CHECK_GT(partMeta.peers_.size(), 0U);
+            const auto leader = this->leader(partMeta);
+            hostParts[leader].emplace_back(partId);
+        }
+        return hostParts;
+    }
+
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     meta::MetaClient *client_{nullptr};
@@ -317,7 +355,6 @@ private:
     mutable std::atomic_bool isLoadingLeader_{false};
     std::unique_ptr<stats::Stats> stats_;
 };
-
 }   // namespace storage
 }   // namespace nebula
 
