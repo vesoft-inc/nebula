@@ -25,6 +25,11 @@ TEST(NebulaKeyUtilsTest, SimpleTest) {
     ASSERT_EQ(tagId, NebulaKeyUtils::getTagId(vertexKey));
     ASSERT_EQ(srcId, NebulaKeyUtils::getVertexId(vertexKey));
 
+    std::string invalidLenKey(12, 'A');
+    ASSERT_EQ(12, invalidLenKey.size());
+    ASSERT_FALSE(NebulaKeyUtils::isVertex(invalidLenKey));
+    ASSERT_FALSE(NebulaKeyUtils::isEdge(invalidLenKey));
+
     auto edgeKey = NebulaKeyUtils::edgeKey(partId, srcId, type, rank, dstId, edgeVersion);
     ASSERT_TRUE(NebulaKeyUtils::isEdge(edgeKey));
     ASSERT_EQ(partId, NebulaKeyUtils::getPart(edgeKey));
