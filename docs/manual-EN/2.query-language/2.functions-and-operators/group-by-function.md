@@ -19,8 +19,9 @@ All the functions above only work with int64 and double.
 
 ## Example
 
+```ngql
 nebula> GO FROM 100 OVER follow YIELD $$.player.name as Name | GROUP BY $-.Name YIELD $-.Name, COUNT(*);
--- Find all the players followed by vertex 100 and return their names as `Name`. These players are grouped by `Name` and the number in each group is counted.
+-- Find all the players followed by vertex 100 and return their names as Name. These players are grouped by Name and the number in each group is counted.
 -- The following result is returned:
 ================================
 | $-.Name           | COUNT(*) |
@@ -33,7 +34,7 @@ nebula> GO FROM 100 OVER follow YIELD $$.player.name as Name | GROUP BY $-.Name 
 --------------------------------
 
 nebula> GO FROM 101 OVER follow YIELD follow._src AS player, follow.degree AS degree | GROUP BY $-.player YIELD SUM($-.degree);
--- Find all the players who follow vertex 101, return these players as `player` and the property of the `follow` edge as `degree`. These players are grouped and the sum of their degree values is returned.
+-- Find all the players who follow vertex 101, return these players as player and the property of the follow edge as degree. These players are grouped and the sum of their degree values is returned.
 -- The following result is returned:
 ==================
 | SUM($-.degree) |
