@@ -118,7 +118,23 @@ protected:
 
     void buildRespSchema();
 
-    bool checkDataExpiredForTTL(const nebula::meta::SchemaProviderIf* schema, RowReader* reader);
+    bool checkDataExpiredForTTL(const nebula::meta::SchemaProviderIf* schema,
+                                RowReader* reader,
+                                std::string ttlCol,
+                                int64_t ttlDuration);
+
+    void buildTagOrEdgeTTLInfo(const meta::SchemaProviderIf* schema,
+                               bool isTag,
+                               TagID tagId,
+                               EdgeType edgeType);
+
+    bool tagHasTTL(TagID tagId);
+
+    bool edgeHasTTL(EdgeType edgeType);
+
+    std::pair<std::string, int64_t> getTagTTLInfo(TagID tagId);
+
+    std::pair<std::string, int64_t> getEdgeTTLInfo(EdgeType edgeType);
 
 protected:
     GraphSpaceID  spaceId_;
@@ -139,6 +155,10 @@ protected:
     VertexCache* vertexCache_{nullptr};
     std::unordered_map<std::string, EdgeType> edgeMap_;
     bool compactDstIdProps_ = false;
+
+    std::unordered_map<EdgeType, std::pair<std::string, int64_t>> edgeTTLInfo_;
+
+    std::unordered_map<TagID, std::pair<std::string, int64_t>> tagTTLInfo_;
 };
 
 }  // namespace storage

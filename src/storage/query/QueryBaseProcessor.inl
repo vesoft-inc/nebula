@@ -100,6 +100,8 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                 } else {
                     tagContexts_[it->second].props_.emplace_back(std::move(prop));
                 }
+
+                buildTagOrEdgeTTLInfo(schema.get(), true, tagId, 0);
                 break;
             }
             case cpp2::PropOwner::EDGE: {
@@ -132,6 +134,8 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                         return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
                     }
                     prop.type_ = ftype;
+
+                    buildTagOrEdgeTTLInfo(schema.get(), false, 0, edgeType);
                 }
                 if (col.__isset.stat && !validOperation(prop.type_.type, col.stat)) {
                     return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
@@ -170,16 +174,18 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
 }
 
 template<typename REQ, typename RESP>
-bool QueryBaseProcessor<REQ, RESP>::checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
-                                                           RowReader* reader) {
+void QueryBaseProcessor<REQ, RESP>::buildTagOrEdgeTTLInfo(const meta::SchemaProviderIf* schema,
+                                                          bool isTag,
+                                                          TagID tagId,
+                                                          EdgeType edgeType) {
     const meta::NebulaSchemaProvider* nschema =
         dynamic_cast<const meta::NebulaSchemaProvider*>(schema);
     if (nschema == NULL) {
-        return false;
+        return;
     }
     const nebula::cpp2::SchemaProp schemaProp = nschema->getProp();
 
-    int ttlDuration = 0;
+    int64_t ttlDuration = 0;
     if (schemaProp.get_ttl_duration()) {
         ttlDuration = *schemaProp.get_ttl_duration();
     }
@@ -190,10 +196,65 @@ bool QueryBaseProcessor<REQ, RESP>::checkDataExpiredForTTL(const meta::SchemaPro
 
     // Only support the specified ttl_col mode
     // Not specifying or non-positive ttl_duration behaves like ttl_duration = infinity
-    if (ttlCol.empty() ||  ttlDuration <= 0) {
-        return false;
+    if (ttlCol.empty() || ttlDuration <= 0) {
+        return;
     }
 
+    if (isTag) {
+        auto tagFound = tagTTLInfo_.find(tagId);
+        if (tagFound == tagTTLInfo_.end()) {
+            tagTTLInfo_.emplace(tagId, std::make_pair(ttlCol, ttlDuration));
+        }
+    } else {
+        auto edgeFound = edgeTTLInfo_.find(edgeType);
+        if (edgeFound == edgeTTLInfo_.end()) {
+            edgeTTLInfo_.emplace(edgeType, std::make_pair(ttlCol, ttlDuration));
+        }
+    }
+    return;
+}
+
+template<typename REQ, typename RESP>
+bool QueryBaseProcessor<REQ, RESP>::tagHasTTL(TagID tagId) {
+    auto tagFound = tagTTLInfo_.find(tagId);
+    if (tagFound != tagTTLInfo_.end()) {
+        return true;
+    }
+    return false;
+}
+
+template<typename REQ, typename RESP>
+bool QueryBaseProcessor<REQ, RESP>::edgeHasTTL(EdgeType edgeType) {
+    auto edgeFound = edgeTTLInfo_.find(edgeType);
+    if (edgeFound != edgeTTLInfo_.end()) {
+        return true;
+    }
+    return false;
+}
+
+template<typename REQ, typename RESP>
+std::pair<std::string, int64_t>  QueryBaseProcessor<REQ, RESP>::getTagTTLInfo(TagID tagId) {
+    auto tagFound = tagTTLInfo_.find(tagId);
+    if (tagFound != tagTTLInfo_.end()) {
+        return tagFound->second;
+    }
+    return std::make_pair(std::string(""), 0);
+}
+
+template<typename REQ, typename RESP>
+std::pair<std::string, int64_t>  QueryBaseProcessor<REQ, RESP>::getEdgeTTLInfo(EdgeType edgeType) {
+    auto edgeFound = edgeTTLInfo_.find(edgeType);
+    if (edgeFound != edgeTTLInfo_.end()) {
+        return edgeFound->second;
+    }
+    return std::make_pair(std::string(""), 0);
+}
+
+template<typename REQ, typename RESP>
+bool QueryBaseProcessor<REQ, RESP>::checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
+                                                           RowReader* reader,
+                                                           std::string ttlCol,
+                                                           int64_t ttlDuration) {
     auto now = time::WallClock::slowNowInSec();
     const auto& ftype = schema->getFieldType(ttlCol);
 
@@ -451,13 +512,23 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
             auto reader = RowReader::getTagPropReader(this->schemaMan_, v, spaceId_, tagId);
 
             // Check if the schema has TTL
-            if (!checkDataExpiredForTTL(schema.get(), reader.get())) {
+            if (tagHasTTL(tagId)) {
+                std::pair<std::string, int64_t> tagTTL = getTagTTLInfo(tagId);
+                if (!checkDataExpiredForTTL(schema.get(),
+                                            reader.get(),
+                                            tagTTL.first,
+                                            tagTTL.second)) {
+                    this->collectProps(reader.get(), "", props, fcontext, collector);
+                    VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagId;
+                } else {
+                    VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagId
+                            << " but data expired";
+                }
+                return kvstore::ResultCode::SUCCEEDED;
+            } else {
                 this->collectProps(reader.get(), "", props, fcontext, collector);
                 VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagId;
                 return kvstore::ResultCode::SUCCEEDED;
-            } else {
-                VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagId
-                        << " but data expired";
             }
         } else {
             VLOG(3) << "Miss cache for vId " << vId << ", tagId " << tagId;
@@ -476,7 +547,20 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
         auto reader = RowReader::getTagPropReader(this->schemaMan_, iter->val(), spaceId_, tagId);
 
         // Check if the schema has TTL
-        if (!checkDataExpiredForTTL(schema.get(), reader.get())) {
+        if (tagHasTTL(tagId)) {
+            std::pair<std::string, int64_t> tagTTL = getTagTTLInfo(tagId);
+            if (!checkDataExpiredForTTL(schema.get(),
+                                        reader.get(),
+                                        tagTTL.first,
+                                        tagTTL.second)) {
+                this->collectProps(reader.get(), iter->key(), props, fcontext, collector);
+                if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
+                    vertexCache_->insert(std::make_pair(vId, tagId),
+                                         iter->val().str(), partId);
+                    VLOG(3) << "Insert cache for vId " << vId << ", tagId " << tagId;
+                }
+            }
+        } else {
             this->collectProps(reader.get(), iter->key(), props, fcontext, collector);
             if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
                 vertexCache_->insert(std::make_pair(vId, tagId),
@@ -512,7 +596,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
     bool onlyStructure = onlyStructures_[edgeType];
     Getters getters;
 
-    auto schema = this->schemaMan_->getEdgeSchema(spaceId_, edgeType);
+    auto schema = this->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType));
     for (; iter->valid() && cnt < FLAGS_max_edge_returned_per_vertex; iter->next()) {
         auto key = iter->key();
         auto val = iter->val();
@@ -531,6 +615,19 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                                                   val,
                                                   spaceId_,
                                                   std::abs(edgeType));
+
+            // Check if the schema has TTL
+            if (edgeHasTTL(edgeType)) {
+                std::pair<std::string, int64_t> edgeTTL = getEdgeTTLInfo(edgeType);
+                if (checkDataExpiredForTTL(schema.get(),
+                                           reader.get(),
+                                           edgeTTL.first,
+                                           edgeTTL.second)) {
+                    VLOG(3) << "Data expired.";
+                    continue;
+                }
+            }
+
             if (exp_ != nullptr) {
                 getters.getAliasProp = [this, edgeType, &reader, &key](const std::string& edgeName,
                                            const std::string& prop) -> OptVariantType {
@@ -593,11 +690,8 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                 }
             }
 
-            // Check if the schema has TTL
-            if (!checkDataExpiredForTTL(schema.get(), reader.get())) {
-                proc(reader.get(), key, props);
-                ++cnt;
-            }
+            proc(reader.get(), key, props);
+            ++cnt;
         } else {
             proc(reader.get(), key, props);
             ++cnt;

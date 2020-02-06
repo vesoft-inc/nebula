@@ -91,16 +91,13 @@ public:
             return checkDataTtlValid(schema.get(), reader.get());
         } else if (NebulaKeyUtils::isEdge(key)) {
             auto edgeType = NebulaKeyUtils::getEdgeType(key);
-            if (edgeType < 0) {
-                // TODO(panda) reverse edge supports ttl compaction
-                return true;
-            }
-            auto schema = this->schemaMan_->getEdgeSchema(spaceId, edgeType);
+            auto schema = this->schemaMan_->getEdgeSchema(spaceId, std::abs(edgeType));
             if (!schema) {
                 VLOG(3) << "Space " << spaceId << ", EdgeType " << edgeType << " invalid";
                 return false;
             }
-            auto reader = nebula::RowReader::getEdgePropReader(schemaMan_, val, spaceId, edgeType);
+            auto reader = nebula::RowReader::getEdgePropReader(schemaMan_, val,
+                                                               spaceId, std::abs(edgeType));
             return checkDataTtlValid(schema.get(), reader.get());
         }
         return true;

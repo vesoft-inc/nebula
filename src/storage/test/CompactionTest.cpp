@@ -16,7 +16,6 @@
 namespace nebula {
 namespace storage {
 
-
 void mockData(kvstore::KVStore* kv) {
     for (PartitionID partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
@@ -37,13 +36,15 @@ void mockData(kvstore::KVStore* kv) {
                     data.emplace_back(std::move(key), std::move(val));
                 }
             }
+
             // Generate 5 in-edges for each edgeType, the edgeType is negative
             for (VertexID srcId = 20001; srcId <= 20005; srcId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", src " << srcId;
                 for (EdgeVersion version = 0; version < 3; version++) {
                     auto key = NebulaKeyUtils::edgeKey(partId, vertexId, -101, 0, srcId,
                                                        std::numeric_limits<int>::max() - version);
-                    data.emplace_back(std::move(key), "");
+                    auto val = TestUtils::setupEncode(10, 20);
+                    data.emplace_back(std::move(key), std::move(val));
                 }
             }
         }

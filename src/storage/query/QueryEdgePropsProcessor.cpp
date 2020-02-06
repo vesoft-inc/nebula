@@ -27,7 +27,7 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
         return ret;
     }
 
-    auto schema = this->schemaMan_->getEdgeSchema(spaceId_, edgeKey.edge_type);
+    auto schema = this->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeKey.edge_type));
     // Only use the latest version.
     if (iter && iter->valid()) {
         RowWriter writer(rsWriter.schema());
@@ -35,10 +35,18 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
         auto reader = RowReader::getEdgePropReader(schemaMan_,
                                                    iter->val(),
                                                    spaceId_,
-                                                   edgeKey.edge_type);
+                                                   std::abs(edgeKey.edge_type));
 
         // Check if the schema has TTL
-        if (!checkDataExpiredForTTL(schema.get(), reader.get())) {
+        if (edgeHasTTL(edgeKey.edge_type)) {
+            std::pair<std::string, int64_t> edgeTTL = getEdgeTTLInfo(edgeKey.edge_type);
+            if (!checkDataExpiredForTTL(schema.get(), reader.get(),
+                                        edgeTTL.first, edgeTTL.second)) {
+                this->collectProps(reader.get(), iter->key(), props, nullptr, &collector);
+                rsWriter.addRow(writer);
+            }
+            // Do nothing when data ttl expired
+        } else {
             this->collectProps(reader.get(), iter->key(), props, nullptr, &collector);
             rsWriter.addRow(writer);
         }
