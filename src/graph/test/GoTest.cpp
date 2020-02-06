@@ -507,7 +507,16 @@ TEST_P(GoTest, MULTI_EDGES) {
         auto &player = players_["Manu Ginobili"];
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t, int64_t, std::string>> expected = {
+            {95, 0, 0, "Tim Duncan"},
+            {95, 0, 0, "Tony Parker"},
+            {90, 0, 0, "Tiago Splitter"},
+            {99, 0, 0, "Dejounte Murray"},
+            {0, 2002, 0, "Tim Duncan"},
+            {0, 2002, 0, "Tony Parker"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;

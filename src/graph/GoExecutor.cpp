@@ -253,10 +253,6 @@ Status GoExecutor::prepareOver() {
 
     isReversely_ = clause->isReversely();
 
-    if (isReversely()) {
-        edgeHolder_ = std::make_unique<EdgeHolder>();
-    }
-
     auto edges = clause->edges();
     for (auto e : edges) {
         if (e->isOverAll()) {
@@ -517,14 +513,11 @@ void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
 
 void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
     auto requireDstProps = expCtx_->hasDstTagProp();
-    auto requireEdgeProps = !expCtx_->aliasProps().empty();
 
     // Non-reversely traversal, no properties required on destination nodes
     // Or, Reversely traversal but no properties on edge and destination nodes required.
     // Note that the `dest` which used in reversely traversal means the `src` in foword edge.
-    if ((!requireDstProps && !isReversely()) ||
-        (isReversely() && !requireDstProps && !requireEdgeProps &&
-         !(expCtx_->isOverAllEdge() && yields_.empty()))) {
+    if (!requireDstProps) {
         finishExecution(std::move(rpcResp));
         return;
     }
@@ -544,130 +537,10 @@ void GoExecutor::maybeFinishExecution(RpcResponse &&rpcResp) {
         return;
     }
 
+    DCHECK(requireDstProps);
     // Only properties on destination nodes required
-    if (!isReversely() || (requireDstProps && !requireEdgeProps)) {
-        fetchVertexProps(std::move(dstids), std::move(rpcResp));
-        return;
-    }
-
-    // Reversely traversal
-    DCHECK(isReversely());
-
-    std::unordered_map<EdgeType, std::vector<storage::cpp2::EdgeKey>> edgeKeysMapping;
-    std::unordered_map<EdgeType, std::vector<storage::cpp2::PropDef>> edgePropsMapping;
-
-    // TODO: There would be no need to fetch edges' props here,
-    // if we implemnet the feature that keep all the props in the reverse edge.
-    for (auto &resp : rpcResp.responses()) {
-        auto *vertices = resp.get_vertices();
-        if (vertices == nullptr) {
-            continue;
-        }
-        auto *eschema = resp.get_edge_schema();
-        std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> schemas;
-        if (eschema != nullptr) {
-            std::transform(eschema->cbegin(),
-                           eschema->cend(),
-                           std::inserter(schemas, schemas.begin()), [] (auto &s) {
-                return std::make_pair(s.first, std::make_shared<ResultSchemaProvider>(s.second));
-            });
-        }
-        for (auto& vdata : *vertices) {
-            for (auto& edata : vdata.edge_data) {
-                std::shared_ptr<ResultSchemaProvider> currEdgeSchema;
-                if (!schemas.empty()) {
-                    auto it = schemas.find(edata.type);
-                    DCHECK(it != schemas.end());
-                    currEdgeSchema = it->second;
-                }
-                for (auto& edge : edata.get_edges()) {
-                    auto dst = edge.get_dst();
-                    std::unique_ptr<RowReader> reader;
-                    if (currEdgeSchema) {
-                        reader = RowReader::getRowReader(edge.props, currEdgeSchema);
-                        DCHECK(reader != nullptr);
-                        EdgeRanking rank;
-                        auto rc = reader->getInt(_RANK, rank);
-                        if (rc != ResultType::SUCCEEDED) {
-                            doError(Status::Error("Get rank error when go reversely."));
-                            return;
-                        }
-                        auto type = std::abs(edata.type);
-                        auto &edgeKeys = edgeKeysMapping[type];
-                        edgeKeys.emplace_back();
-                        edgeKeys.back().set_src(dst);
-                        edgeKeys.back().set_dst(vdata.get_vertex_id());
-                        edgeKeys.back().set_ranking(rank);
-                        edgeKeys.back().set_edge_type(type);
-                    }  // if (!edgeSchema.empty())
-                }  // for (auto& edge : edata.get_edges())
-            }  // for (auto &edge : vdata.edge_data)
-        }  // for (auto &vdata : *vertices)
-    }  // for (auto &resp : rpcResp.responses()
-
-    for (auto &prop : expCtx_->aliasProps()) {
-        EdgeType edgeType;
-        if (!expCtx_->getEdgeType(prop.first, edgeType)) {
-            doError(Status::Error("No schema found for `%s'", prop.first.c_str()));
-            return;
-        }
-
-        edgeType = std::abs(edgeType);
-        auto &edgeProps = edgePropsMapping[edgeType];
-        edgeProps.emplace_back();
-        edgeProps.back().owner = storage::cpp2::PropOwner::EDGE;
-        edgeProps.back().name = prop.second;
-        edgeProps.back().id.set_edge_type(edgeType);
-    }
-
-    using EdgePropResponse = storage::StorageRpcResponse<storage::cpp2::EdgePropResponse>;
-    std::vector<folly::SemiFuture<EdgePropResponse>> futures;
-
-    auto spaceId = ectx()->rctx()->session()->space();
-    auto *runner = ectx()->rctx()->runner();
-
-    for (auto &pair : edgeKeysMapping) {
-        auto *storage = ectx()->getStorageClient();
-        auto future = storage->getEdgeProps(spaceId,
-                                            pair.second,
-                                            edgePropsMapping[pair.first]);
-        futures.emplace_back(std::move(future));
-    }
-
-    auto cb = [this, stepResp = std::move(rpcResp),
-               dstids = std::move(dstids)] (auto &&result) mutable {
-        for (auto &t : result) {
-            if (t.hasException()) {
-                LOG(ERROR) << "Exception caught: " << t.exception().what();
-                doError(Status::Error("Exeception when get edge props in reversely traversal: %s.",
-                            t.exception().what().c_str()));
-                return;
-            }
-            auto resp = std::move(t).value();
-            for (auto &edgePropResp : resp.responses()) {
-                auto status = edgeHolder_->add(edgePropResp);
-                if (!status.ok()) {
-                    LOG(ERROR) << "Error when handle edges: " << status;
-                    doError(std::move(status));
-                    return;
-                }
-            }
-        }
-
-        if (expCtx_->hasDstTagProp()) {
-            fetchVertexProps(std::move(dstids), std::move(stepResp));
-            return;
-        }
-
-        finishExecution(std::move(stepResp));
-    };
-
-    auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        doError(Status::Error("Exception when get edges: %s.", e.what().c_str()));
-    };
-
-    folly::collectAll(std::move(futures)).via(runner).thenValue(cb).thenError(error);
+    fetchVertexProps(std::move(dstids), std::move(rpcResp));
+    return;
 }
 
 void GoExecutor::onVertexProps(RpcResponse &&rpcResp) {
@@ -848,15 +721,6 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
             pd.name = _DST;
             pd.id.set_edge_type(e);
             props.emplace_back(std::move(pd));
-            // We need ranking when go reverly in final step,
-            // because we have to fetch the coresponding edges.
-            if (isReversely()) {
-                storage::cpp2::PropDef rankPd;
-                rankPd.owner = storage::cpp2::PropOwner::EDGE;
-                rankPd.name = _RANK;
-                rankPd.id.set_edge_type(e);
-                props.emplace_back(std::move(rankPd));
-            }
         }
         auto spaceId = ectx()->rctx()->session()->space();
         for (auto &tagProp : expCtx_->srcTagProps()) {
@@ -870,10 +734,6 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
             auto tagId = status.value();
             pd.id.set_tag_id(tagId);
             props.emplace_back(std::move(pd));
-        }
-
-        if (isReversely()) {
-            return props;
         }
         for (auto &prop : expCtx_->aliasProps()) {
             if (prop.second == _DST) {
@@ -1105,18 +965,18 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
             VLOG(1) << "Total vdata.edge_data size " << vdata.edge_data.size();
             for (auto &edata : vdata.edge_data) {
                 auto edgeType = edata.type;
+                VLOG(1) << "Total edata.edges size " << edata.edges.size()
+                        << ", for edge " << edgeType;
                 std::shared_ptr<ResultSchemaProvider> currEdgeSchema;
-                if (!edgeSchema.empty()) {
-                    auto it = edgeSchema.find(edgeType);
-                    DCHECK(it != edgeSchema.end());
+                auto it = edgeSchema.find(edgeType);
+                if (it != edgeSchema.end()) {
                     currEdgeSchema = it->second;
                 }
-                 VLOG(1) << "Total edata.edges size " << edata.edges.size()
-                            << ", for edge " << edgeType
-                            << " currEdgeSchema is null? " << (currEdgeSchema == nullptr);
+                VLOG(1) << "CurrEdgeSchema is null? " << (currEdgeSchema == nullptr);
                 for (auto& edge : edata.edges) {
                     auto dstId = edge.get_dst();
                     Getters getters;
+                    // In reverse mode, _dst will return the srcId.
                     getters.getEdgeDstId = [this,
                                             &srcId,
                                             &dstId,
@@ -1136,6 +996,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         }
                         return isReversely() ? srcId : dstId;
                     };
+                    // In reverse mode, it is used to get the dst props.
                     getters.getSrcTagProp = [&spaceId,
                                              &tagData,
                                              &tagSchema,
@@ -1172,6 +1033,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         }
                         return value(res);
                     };
+                    // In reverse mode, it is used to get the src props.
                     getters.getDstTagProp = [&dstId,
                                              this] (const std::string &tag,
                                                     const std::string &prop) -> OptVariantType {
@@ -1196,49 +1058,44 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     if (currEdgeSchema) {
                         reader = RowReader::getRowReader(edge.props, currEdgeSchema);
                     }
+
+                    // In reverse mode, we should handle _src
                     getters.getAliasProp = [&reader,
-                                            &srcId,
                                             &dstId,
+                                            &srcId,
                                             &edgeType,
                                             &edgeSchema,
                                             this] (const std::string &edgeName,
                                                    const std::string &prop) mutable
                                                                 -> OptVariantType {
-                        CHECK(reader != nullptr);
                         EdgeType type;
                         auto found = expCtx_->getEdgeType(edgeName, type);
                         if (!found) {
                             return Status::Error(
                                     "Get edge type for `%s' failed in getters.", edgeName.c_str());
                         }
-                        if (isReversely()) {
-                            if (edgeType != type) {
-                                return edgeHolder_->getDefaultProp(std::abs(type), prop);
+                        if (edgeType != type) {
+                            auto sit = edgeSchema.find(type);
+                            if (sit == edgeSchema.end()) {
+                                LOG(ERROR) << "Can't find schema for " << edgeName;
+                                return Status::Error("get schema failed");
                             }
-                            return edgeHolder_->get(dstId,
-                                                    srcId,
-                                                    std::abs(edgeType),
-                                                    prop);
-                        } else {
-                            if (edgeType != type) {
-                                auto sit = edgeSchema.find(type);
-                                if (sit == edgeSchema.end()) {
-                                    LOG(ERROR) << "Can't find schema for " << edgeName;
-                                    return Status::Error("get schema failed");
-                                }
-                                return RowReader::getDefaultProp(sit->second.get(), prop);
-                            }
-                            auto res = RowReader::getPropByName(reader.get(), prop);
-                            if (!ok(res)) {
-                                LOG(ERROR) << "Can't get prop for " << prop
-                                           << ", edge " << edgeName;
-                                return Status::Error(
-                                        folly::sformat("get prop({}.{}) failed",
-                                                       edgeName,
-                                                       prop));
-                            }
-                            return value(std::move(res));
+                            return RowReader::getDefaultProp(sit->second.get(), prop);
                         }
+                        if (prop == _SRC) {
+                            return isReversely() ? dstId : srcId;
+                        }
+                        DCHECK(reader != nullptr);
+                        auto res = RowReader::getPropByName(reader.get(), prop);
+                        if (!ok(res)) {
+                            LOG(ERROR) << "Can't get prop for " << prop
+                                       << ", edge " << edgeName;
+                            return Status::Error(
+                                    folly::sformat("get prop({}.{}) failed",
+                                                   edgeName,
+                                                   prop));
+                        }
+                        return value(std::move(res));
                     };  // getAliasProp
                     // Evaluate filter
                     if (whereWrapper_->filter_ != nullptr) {
@@ -1361,101 +1218,6 @@ void GoExecutor::VertexHolder::add(const storage::cpp2::QueryResponse &resp) {
         data_[vdata.vertex_id] = std::move(m);
     }
 }
-
-
-Status GoExecutor::EdgeHolder::add(const storage::cpp2::EdgePropResponse &resp) {
-    if (resp.get_schema() == nullptr ||
-            resp.get_data() == nullptr ||
-            resp.get_data()->empty()) {
-        return Status::OK();
-    }
-
-    auto eschema = std::make_shared<ResultSchemaProvider>(*resp.get_schema());
-    RowSetReader rsReader(eschema, *resp.get_data());
-    auto collector = std::make_unique<Collector>();
-    auto iter = rsReader.begin();
-    while (iter) {
-        auto src = collector->getProp(eschema.get(), _SRC, &*iter);
-        auto dst = collector->getProp(eschema.get(), _DST, &*iter);
-        auto type = collector->getProp(eschema.get(), _TYPE, &*iter);
-        if (!src.ok() || !dst.ok() || !type.ok()) {
-            ++iter;
-            continue;
-        }
-        auto key = std::make_tuple(boost::get<int64_t>(src.value()),
-                                   boost::get<int64_t>(dst.value()),
-                                   boost::get<int64_t>(type.value()));
-        RowWriter rWriter(eschema);
-        auto fields = iter->numFields();
-        for (auto i = 0; i < fields; i++) {
-            auto result = RowReader::getPropByIndex(&*iter, i);
-            if (!ok(result)) {
-                return Status::Error("Get prop failed when add edge.");
-            }
-            collector->collect(value(result), &rWriter);
-        }
-
-        edges_.emplace(std::move(key), std::make_pair(eschema, rWriter.encode()));
-
-        schemas_.emplace(boost::get<int64_t>(type.value()), eschema);
-        ++iter;
-    }
-
-    return Status::OK();
-}
-
-
-OptVariantType GoExecutor::EdgeHolder::get(VertexID src,
-                                           VertexID dst,
-                                           EdgeType type,
-                                           const std::string &prop) const {
-    auto iter = edges_.find(std::make_tuple(src, dst, type));
-    if (iter == edges_.end()) {
-        LOG(ERROR) << "EdgeHolder couldn't find src: "
-                   << src << ", dst: " << dst << ", edge type: " << type;
-        return Status::Error("EdgeHolder couldn't find src: %ld, dst: %ld, type: %d",
-                             src, dst, type);
-    }
-    auto reader = RowReader::getRowReader(iter->second.second, iter->second.first);
-    auto result = RowReader::getPropByName(reader.get(), prop);
-    if (!ok(result)) {
-        return Status::Error("Prop not found: `%s'", prop.c_str());
-    }
-    return value(result);
-}
-
-
-StatusOr<SupportedType> GoExecutor::EdgeHolder::getType(VertexID src,
-                                                        VertexID dst,
-                                                        EdgeType type,
-                                                        const std::string &prop) const {
-    auto iter = edges_.find(std::make_tuple(src, dst, type));
-    if (iter == edges_.end()) {
-        LOG(ERROR) << "EdgeHolder couldn't find src: "
-                   << src << ", dst: " << dst << ", edge type: " << type;
-        return Status::Error("EdgeHolder couldn't find src: %ld, dst: %ld, type: %d",
-                             src, dst, type);
-    }
-    return iter->second.first->getFieldType(prop).type;
-}
-
-
-OptVariantType GoExecutor::EdgeHolder::getDefaultProp(EdgeType type,
-                                                      const std::string &prop) {
-    auto sit = schemas_.find(type);
-    if (sit == schemas_.end()) {
-        // This means that the reversely edge does not exist
-        if (prop == _DST || prop == _SRC || prop == _RANK) {
-            return static_cast<int64_t>(0);
-        } else {
-            LOG(ERROR) << "Get prop " << prop << " failed for " << type;
-            return Status::Error("Get default prop failed in reversely traversal.");
-        }
-    }
-
-    return RowReader::getDefaultProp(sit->second.get(), prop);
-}
-
 
 OptVariantType GoExecutor::getPropFromInterim(VertexID id, const std::string &prop) const {
     auto rootId = id;
