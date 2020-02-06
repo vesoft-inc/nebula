@@ -22,25 +22,32 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
         onFinished();
         return;
     }
+
     auto item = itemRet.value();
     auto tagID = item->get_schema_id().get_tag_id();
     LOG(INFO) << "Rebuild Tag Index Space " << space << " Tag ID " << tagID
               << " Tag Index " << indexID;
 
+    auto indexPrefix = NebulaKeyUtils::indexPrefix(space, indexID);
     for (PartitionID part : parts) {
         // firstly remove the discard index
-        auto indexPrefix = NebulaKeyUtils::indexPrefix(space, indexID);
-        doRemovePrefix(space, part, std::move(indexPrefix));
-
+        doRemovePrefix(space, part, indexPrefix, true);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto prefix = NebulaKeyUtils::prefix(part);
-        kvstore_->prefix(space, part, prefix, &iter);
+        auto ret = kvstore_->prefix(space, part, prefix, &iter);
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
+            LOG(ERROR) << "Processing Part " << part << " Failed";
+            this->pushResultCode(to(ret), part);
+            onFinished();
+            return;
+        }
+
         std::vector<kvstore::KV> data;
-        data.reserve(FLAGS_build_index_batch_size);
+        data.reserve(FLAGS_rebuild_index_batch_size);
         int32_t batchSize = 0;
         VertexID currentVertex = -1;
         while (iter && iter->valid()) {
-            if (batchSize >= FLAGS_build_index_batch_size) {
+            if (batchSize >= FLAGS_rebuild_index_batch_size) {
                 doPut(space, part, std::move(data));
                 data.clear();
                 batchSize = 0;

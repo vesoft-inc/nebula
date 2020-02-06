@@ -13,18 +13,13 @@ namespace meta {
 
 void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     auto space = req.get_space_id();
+    CHECK_SPACE_ID_AND_RETURN(space);
     const auto &indexName = req.get_index_name();
+    folly::SharedMutex::ReadHolder schemaHolder(LockUtils::tagLock());
+    folly::SharedMutex::ReadHolder indexHolder(LockUtils::tagIndexLock());
 
     LOG(INFO) << "Rebuild Tag Index Space " << space << ", Index Name " << indexName;
     std::unique_ptr<AdminClient> client(new AdminClient(kvstore_));
-    auto spaceKey = MetaServiceUtils::spaceKey(space);
-    auto spaceRet = doGet(spaceKey);
-    if (!spaceRet.ok()) {
-        LOG(ERROR) << "Space " << space << " Not Found";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-        onFinished();
-        return;
-    }
 
     auto partsRet = client->getPartsDist(space).get();
     if (!partsRet.ok()) {

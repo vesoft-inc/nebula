@@ -13,20 +13,14 @@ namespace meta {
 
 void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     auto space = req.get_space_id();
+    CHECK_SPACE_ID_AND_RETURN(space);
     const auto &indexName = req.get_index_name();
-
+    folly::SharedMutex::ReadHolder schemaHolder(LockUtils::edgeLock());
+    folly::SharedMutex::ReadHolder indexHolder(LockUtils::edgeIndexLock());
     LOG(INFO) << "Rebuild Edge Index Space " << space << ", Index Name " << indexName;
 
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeIndexLock());
     std::unique_ptr<AdminClient> client(new AdminClient(kvstore_));
-    auto spaceKey = MetaServiceUtils::spaceKey(space);
-    auto spaceRet = doGet(spaceKey);
-    if (!spaceRet.ok()) {
-        LOG(ERROR) << "Space " << space << " Not Found";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-        onFinished();
-        return;
-    }
 
     auto partsRet = client->getPartsDist(space).get();
     if (!partsRet.ok()) {

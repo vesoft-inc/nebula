@@ -898,15 +898,13 @@ void ShowExecutor::showTagIndexStatus() {
             rows.back().set_columns(std::move(row));
         }
         resp_->set_rows(std::move(rows));
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
         doError(Status::Error(folly::stringPrintf("Show tag index status exception : %s",
                                                   e.what().c_str())));
-        return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
@@ -937,15 +935,13 @@ void ShowExecutor::showEdgeIndexStatus() {
             rows.back().set_columns(std::move(row));
         }
         resp_->set_rows(std::move(rows));
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
         doError(Status::Error(folly::stringPrintf("Show edge index status exception : %s",
                                                   e.what().c_str())));
-        return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
