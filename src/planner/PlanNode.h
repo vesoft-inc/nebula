@@ -44,6 +44,7 @@ private:
  * PlanNode is an abstraction of nodes in an execution plan which
  * is a kind of directed cyclic graph.
  */
+class StartNode;
 class PlanNode {
 public:
     enum Kind : uint8_t {
@@ -97,6 +98,24 @@ public:
         return stateTrans_.table();
     }
 
+    /**
+     * Append a sub-plan to another one.
+     */
+    Status append(std::shared_ptr<StartNode> start) {
+        // TODO:
+        UNUSED(start);
+        return Status::OK();
+    }
+
+    /**
+     * Merge two sub-plan.
+     */
+    Status merge(std::shared_ptr<StartNode> start) {
+        UNUSED(start);
+        // TODO:
+        return Status::OK();
+    }
+
 protected:
     Kind                        kind_{Kind::kUnknown};
     std::vector<std::string>    outputColNames_;
@@ -106,9 +125,9 @@ protected:
 /**
  * An execution plan will start from a RootNode.
  */
-class RootNode final : public PlanNode {
+class StartNode final : public PlanNode {
 public:
-    RootNode(std::vector<std::string>&& colNames,
+    StartNode(std::vector<std::string>&& colNames,
              StateTransition&& stateTrans) : PlanNode(std::move(colNames), std::move(stateTrans)) {
         kind_ = PlanNode::Kind::kRoot;
     }
