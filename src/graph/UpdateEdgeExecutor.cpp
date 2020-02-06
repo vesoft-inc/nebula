@@ -209,6 +209,7 @@ void UpdateEdgeExecutor::insertReverselyEdge(storage::cpp2::UpdateResponse &&rpc
     reverselyEdge.key.set_dst(edge_.src);
     reverselyEdge.key.set_ranking(edge_.ranking);
     reverselyEdge.key.set_edge_type(-edge_.edge_type);
+    // TODO(heng) For upsert, we should take the properties
     reverselyEdge.props = "";
     edges.emplace_back(reverselyEdge);
     auto future = ectx()->getStorageClient()->addEdges(spaceId_, std::move(edges), false);
