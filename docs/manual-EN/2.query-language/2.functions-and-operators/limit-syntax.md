@@ -24,12 +24,12 @@ LIMIT [<offset_value>,] <number_rows>
 For example:
 
 ```ngql
-nebula> GO FROM 105 OVER follow YIELD $$.player.name AS Friend, $$.player.age AS Age, follow._dst AS Follow | LIMIT 2
-================================
+nebula> GO FROM 105 OVER follow YIELD $$.player.name AS Friend, $$.player.age AS Age, follow._dst AS Follow | LIMIT 2;
+==================================
 | Friend          | Age | Follow |
-================================
-| Tim Duncan      | 42  | 100  |
---------------------------------
-| Marco Belinelli | 32  | 104  |
---------------------------------
+==================================
+| Marco Belinelli | 32  | 104    |
+----------------------------------
+| Cory Joseph     | 27  | 110    |
+----------------------------------
 ```
