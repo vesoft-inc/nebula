@@ -22,7 +22,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeIndexLock());
     std::unique_ptr<AdminClient> client(new AdminClient(kvstore_));
 
-    auto partsRet = client->getPartsDist(space).get();
+    auto partsRet = client->getLeaderDist(space).get();
     if (!partsRet.ok()) {
         LOG(ERROR) << "Get space " << space << "'s part failed";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
@@ -48,13 +48,6 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
         return;
     }
 
-    auto blockingStatus = client->blockingWrites(space, SignType::BLOCK_ON).get();
-    if (!blockingStatus.ok()) {
-        resp_.set_code(cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE);
-        onFinished();
-        return;
-    }
-
     auto statusKey = MetaServiceUtils::rebuildIndexStatus(space, 'E', indexName);
     std::vector<kvstore::KV> status{std::make_pair(statusKey, "RUNNING")};
     doSyncPut(status);
@@ -75,21 +68,12 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
                     LOG(ERROR) << "Build Edge Index Failed";
                     std::vector<kvstore::KV> failedStatus{std::make_pair(statusKey, "FAILED")};
                     doSyncPut(failedStatus);
-                    resp_.set_code(cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE);
+                    resp_.set_code(cpp2::ErrorCode::E_REBUILD_INDEX_FAILURE);
                     onFinished();
                     return;
                 }
             }
         });
-
-    auto unblockStatus = client->blockingWrites(space, SignType::BLOCK_OFF).get();
-    if (!unblockStatus.ok()) {
-        std::vector<kvstore::KV> failedStatus{std::make_pair(statusKey, "FAILED")};
-        doSyncPut(failedStatus);
-        resp_.set_code(cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE);
-        onFinished();
-        return;
-    }
 
     std::vector<kvstore::KV> successedStatus{std::make_pair(statusKey, "SUCCESSED")};
     doSyncPut(successedStatus);

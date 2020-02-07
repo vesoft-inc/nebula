@@ -102,7 +102,7 @@ public:
     folly::Future<Status> getLeaderDist(HostLeaderMap* result);
 
     folly::Future<StatusOr<std::unordered_map<HostAddr, std::vector<PartitionID>>>>
-    getPartsDist(GraphSpaceID spaceId);
+    getLeaderDist(GraphSpaceID spaceId);
 
     folly::Future<Status> createSnapshot(GraphSpaceID spaceId, const std::string& name);
 

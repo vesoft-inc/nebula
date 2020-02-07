@@ -568,7 +568,7 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
 }
 
 folly::Future<StatusOr<std::unordered_map<HostAddr, std::vector<PartitionID>>>>
-AdminClient::getPartsDist(GraphSpaceID space) {
+AdminClient::getLeaderDist(GraphSpaceID space) {
     HostLeaderMap hostLeaderMap;
     auto ret = getLeaderDist(&hostLeaderMap).get();
     std::unordered_map<HostAddr, std::vector<PartitionID>> addresses;

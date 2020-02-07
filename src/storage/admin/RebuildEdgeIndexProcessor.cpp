@@ -66,6 +66,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
             auto source = NebulaKeyUtils::getSrcId(key);
             auto destination = NebulaKeyUtils::getDstId(key);
             if (currentSrcVertex == source || currentDstVertex == destination) {
+                iter->next();
                 continue;
             } else {
                 currentSrcVertex = source;

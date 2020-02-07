@@ -83,11 +83,27 @@ TEST_F(IndexTest, TagIndex) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT VERTEX person(name, age, gender, email) VALUES "
+                     "uuid(\"Tim\"):  (\"Tim\",  18, \"M\", \"tim@ve.com\"), "
+                     "uuid(\"Tony\"): (\"Tony\", 18, \"M\", \"tony@ve.com\"), "
+                     "uuid(\"May\"):  (\"May\",  18, \"F\", \"may@ve.com\"), "
+                     "uuid(\"Tom\"):  (\"Tom\",  18, \"M\", \"tom@ve.com\")";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
     sleep(FLAGS_heartbeat_interval_secs + 1);
     // Rebuild Tag Index
     {
         cpp2::ExecutionResponse resp;
         std::string query = "REBUILD TAG INDEX single_person_index";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "REBUILD TAG INDEX multi_person_index";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -99,6 +115,7 @@ TEST_F(IndexTest, TagIndex) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"single_person_index", "SUCCESSED"},
+            {"multi_person_index",  "SUCCESSED"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -186,6 +203,7 @@ TEST_F(IndexTest, EdgeIndex) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    sleep(FLAGS_heartbeat_interval_secs + 1);
     // Single Edge Single Field
     {
         cpp2::ExecutionResponse resp;
@@ -221,11 +239,27 @@ TEST_F(IndexTest, EdgeIndex) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "INSERT EDGE friend(degree, start_time) VALUES "
+                     "uuid(\"Tim\")  -> uuid(\"May\"):  (\"Good\", 18), "
+                     "uuid(\"Tim\")  -> uuid(\"Tony\"): (\"Good\", 18), "
+                     "uuid(\"Tony\") -> uuid(\"May\"):  (\"Like\", 18), "
+                     "uuid(\"May\")  -> uuid(\"Tim\"):  (\"Like\", 18)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
     sleep(FLAGS_heartbeat_interval_secs + 1);
     // Rebuild EDGE Index
     {
         cpp2::ExecutionResponse resp;
         std::string query = "REBUILD EDGE INDEX single_friend_index";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "REBUILD EDGE INDEX multi_friend_index";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -237,6 +271,7 @@ TEST_F(IndexTest, EdgeIndex) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"single_friend_index", "SUCCESSED"},
+            {"multi_friend_index",  "SUCCESSED"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

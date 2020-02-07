@@ -64,6 +64,7 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
 
             auto vertex = NebulaKeyUtils::getVertexId(key);
             if (currentVertex == vertex) {
+                iter->next();
                 continue;
             } else {
                 currentVertex = vertex;
