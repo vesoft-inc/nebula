@@ -46,10 +46,10 @@ namespace graph {
         row[1].set_str(valueTypeToString(item.type));
         // Null
         if (item.get_could_null() != nullptr) {
-            row[2].set_str(*item.get_could_null() ? "True" : "False");
+            row[2].set_bool_val(*item.get_could_null());
         } else {
             // For testing checking with one value
-            row[2].set_str(std::string());
+            row[2].set_bool_val(false);
         }
         // Key
         if (item.get_key_type() != nullptr) {

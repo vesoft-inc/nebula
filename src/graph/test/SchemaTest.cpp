@@ -17,6 +17,10 @@ namespace graph {
 
 class SchemaTest : public TestBase {
 protected:
+    // Field Type Null Key Default Extra
+    using SchemaTuple = std::tuple<std::string, std::string, bool,
+        std::string, std::string, std::string>;
+
     void SetUp() override {
         TestBase::SetUp();
         // ...
@@ -258,9 +262,9 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE TAG tag1";
         client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 6>> expected{
-                {"id", "int", "", "", "", ""},
-                {"name", "string", "", "", "", ""},
+        std::vector<SchemaTuple> expected{
+                {"id", "int", false, "", "", ""},
+                {"name", "string", false, "", "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -291,12 +295,12 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "DESCRIBE TAG person";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<uniform_tuple_t<std::string, 6>> expected{
-            {"name", "string", "", "", "", ""},
-            {"email", "string", "", "", "", ""},
-            {"age", "int", "", "", "", ""},
-            {"gender", "string", "", "", "", ""},
-            {"row_timestamp", "timestamp", "", "", "", ""},
+        std::vector<SchemaTuple> expected{
+            {"name", "string", false, "", "", ""},
+            {"email", "string", false, "", "", ""},
+            {"age", "int", false, "", "", ""},
+            {"gender", "string", false, "", "", ""},
+            {"row_timestamp", "timestamp", false, "", "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -306,12 +310,12 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "DESC TAG person";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<uniform_tuple_t<std::string, 6>> expected{
-            {"name", "string", "", "", "", ""},
-            {"email", "string", "", "", "", ""},
-            {"age", "int", "", "", "", ""},
-            {"gender", "string", "", "", "", ""},
-            {"row_timestamp", "timestamp", "", "", "", ""},
+        std::vector<SchemaTuple> expected{
+            {"name", "string", false, "", "", ""},
+            {"email", "string", false, "", "", ""},
+            {"age", "int", false, "", "", ""},
+            {"gender", "string", false, "", "", ""},
+            {"row_timestamp", "timestamp", false, "", "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -353,12 +357,12 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
-        std::vector<uniform_tuple_t<std::string, 6>> expected{
-            {"name", "string", "", "", "", ""},
-            {"email", "string", "", "", "", ""},
-            {"age", "int", "", "", "", ""},
-            {"gender", "string", "", "", "", ""},
-            {"row_timestamp", "timestamp", "", "", "", ""},
+        std::vector<SchemaTuple> expected{
+            {"name", "string", false, "", "", ""},
+            {"email", "string", false, "", "", ""},
+            {"age", "int", false, "", "", ""},
+            {"gender", "string", false, "", "", ""},
+            {"row_timestamp", "timestamp", false, "", "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -396,13 +400,13 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE TAG person";
         client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 6>> expected{
-                {"name", "string", "", "", "", ""},
-                {"email", "string", "", "", "", ""},
-                {"age", "string", "", "", "", ""},
-                {"row_timestamp", "timestamp", "", "", "", ""},
-                {"col1", "int", "", "", "", ""},
-                {"col2", "string", "", "", "", ""},
+        std::vector<SchemaTuple> expected{
+                {"name", "string", false, "", "", ""},
+                {"email", "string", false, "", "", ""},
+                {"age", "string", false, "", "", ""},
+                {"row_timestamp", "timestamp", false, "", "", ""},
+                {"col1", "int", false, "", "", ""},
+                {"col2", "string", false, "", "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -466,9 +470,9 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE edge1";
         client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 6>> expected{
-                {"id", "int", "", "", "", ""},
-                {"name", "string", "", "", "", ""},
+        std::vector<SchemaTuple> expected{
+                {"id", "int", false, "", "", ""},
+                {"name", "string", false, "", "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -503,9 +507,9 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "DESCRIBE EDGE buy";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<uniform_tuple_t<std::string, 6>> expected{
-            {"id", "int", "", "", "", ""},
-            {"time", "string", "", "", "", ""},
+        std::vector<SchemaTuple> expected{
+            {"id", "int", false, "", "", ""},
+            {"time", "string", false, "", "", ""},
         };
         EXPECT_TRUE(verifyResult(resp, expected));
     }
@@ -522,9 +526,9 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "DESC EDGE buy";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<uniform_tuple_t<std::string, 6>> expected{
-            {"id", "int", "", "", "", ""},
-            {"time", "string", "", "", "", ""},
+        std::vector<SchemaTuple> expected{
+            {"id", "int", false, "", "", ""},
+            {"time", "string", false, "", "", ""},
         };
         EXPECT_TRUE(verifyResult(resp, expected));
     }
@@ -560,10 +564,10 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE education";
         client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 6>> expected{
-            {"id", "int", "", "", "", ""},
-            {"time", "timestamp", "", "", "", ""},
-            {"school", "string", "", "", "", ""},
+        std::vector<SchemaTuple> expected{
+            {"id", "int", false, "", "", ""},
+            {"time", "timestamp", false, "", "", ""},
+            {"school", "string", false, "", "", ""},
         };
         EXPECT_TRUE(verifyResult(resp, expected));
     }
@@ -601,10 +605,10 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE education";
         client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 6>> expected{
-                {"school", "int", "", "", "", ""},
-                {"col1", "int", "", "", "", ""},
-                {"col2", "string", "", "", "", ""},
+        std::vector<SchemaTuple> expected{
+                {"school", "int", false, "", "", ""},
+                {"col1", "int", false, "", "", ""},
+                {"col2", "string", false, "", "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -624,8 +628,8 @@ TEST_F(SchemaTest, metaCommunication) {
         for (auto i = 0u; i < 1000; i++) {
             query = "DESCRIBE TAG tag10" + std::to_string(i);
             client->execute(query, resp);
-            std::vector<uniform_tuple_t<std::string, 6>> expected{
-                {"name", "string", "", "", "", ""},
+            std::vector<SchemaTuple> expected{
+                {"name", "string", false, "", "", ""},
             };
             ASSERT_TRUE(verifyResult(resp, expected));
         }
@@ -749,9 +753,9 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "DESCRIBE TAG animal";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<uniform_tuple_t<std::string, 6>> expected{
-            {"name", "string", "", "", "", ""},
-            {"kind", "string", "", "", "", ""},
+        std::vector<SchemaTuple> expected{
+            {"name", "string", false, "", "", ""},
+            {"kind", "string", false, "", "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -889,12 +893,12 @@ TEST_F(SchemaTest, TTLtest) {
         std::string query = "DESCRIBE TAG person";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<uniform_tuple_t<std::string, 6>> expected{
-            {"name", "string", "", "", "", ""},
-            {"email", "string", "", "", "", ""},
-            {"age", "int", "", "", "", ""},
-            {"gender", "string", "", "", "", ""},
-            {"row_timestamp", "timestamp", "", "", "", ""},
+        std::vector<SchemaTuple> expected{
+            {"name", "string", false, "", "", ""},
+            {"email", "string", false, "", "", ""},
+            {"age", "int", false, "", "", ""},
+            {"gender", "string", false, "", "", ""},
+            {"row_timestamp", "timestamp", false, "", "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -1133,9 +1137,9 @@ TEST_F(SchemaTest, TTLtest) {
         std::string query = "DESCRIBE EDGE work";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<uniform_tuple_t<std::string, 6>> expected{
-            {"number", "string", "", "", "", ""},
-            {"start_time", "timestamp", "", "", "", ""},
+        std::vector<SchemaTuple> expected{
+            {"number", "string", false, "", "", ""},
+            {"start_time", "timestamp", false, "", "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -1345,10 +1349,10 @@ TEST_F(SchemaTest, TTLtest) {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE work2";
         client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 6>> expected{
-            {"email", "string", "", "", "", ""},
-            {"age", "int", "", "", "", ""},
-            {"gender", "string", "", "", "", ""},
+        std::vector<SchemaTuple> expected{
+            {"email", "string", false, "", "", ""},
+            {"age", "int", false, "", "", ""},
+            {"gender", "string", false, "", "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -1410,9 +1414,9 @@ TEST_F(SchemaTest, DescribeSchema) {
         std::string cmd = "DESC TAG tag_test";
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<uniform_tuple_t<std::string, 6>> expected{
-            {"id", "int", "", "MUL", "233", ""},
-            {"name", "string", "", "", "shylock", ""},
+        std::vector<SchemaTuple> expected{
+            {"id", "int", false, "MUL", "233", ""},
+            {"name", "string", false, "", "shylock", ""},
         };
         EXPECT_TRUE(verifyResult(resp, expected));
     }
@@ -1436,9 +1440,9 @@ TEST_F(SchemaTest, DescribeSchema) {
         std::string cmd = "DESC EDGE edge_test";
         auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<uniform_tuple_t<std::string, 6>> expected{
-            {"id", "int", "", "MUL", "233", ""},
-            {"name", "string", "", "", "shylock", ""},
+        std::vector<SchemaTuple> expected{
+            {"id", "int", false, "MUL", "233", ""},
+            {"name", "string", false, "", "shylock", ""},
         };
         EXPECT_TRUE(verifyResult(resp, expected));
     }
