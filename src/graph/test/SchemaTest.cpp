@@ -725,6 +725,22 @@ TEST_F(SchemaTest, metaCommunication) {
         }
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Tag with negative value
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd =
+            "CREATE TAG default_tag_neg(id int DEFAULT -10, height double DEFAULT -176.0)";
+        auto code = client->execute(cmd, resp);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Edge with negative default value
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd =
+            "CREATE EDGE default_edge_neg(id int DEFAULT -10, height double DEFAULT -176.0)";
+        auto code = client->execute(cmd, resp);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
     // Test different tag and edge in different space
     {
         cpp2::ExecutionResponse resp;
@@ -768,8 +784,8 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected{
-            {1015, "animal"},
-            {1016, "person"},
+            {1017, "animal"},
+            {1018, "person"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -784,7 +800,7 @@ TEST_F(SchemaTest, metaCommunication) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected1{
-            {1018, "test_tag"},
+            {1020, "test_tag"},
         };
         ASSERT_TRUE(verifyResult(resp, expected1));
 
@@ -792,8 +808,8 @@ TEST_F(SchemaTest, metaCommunication) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected2{
-            {1015, "animal"},
-            {1016, "person"},
+            {1017, "animal"},
+            {1018, "person"},
         };
         ASSERT_TRUE(verifyResult(resp, expected2));
 
