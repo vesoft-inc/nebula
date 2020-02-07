@@ -229,8 +229,13 @@ Status GoExecutor::prepareOverAll() {
         }
 
         auto v = edgeStatus.value();
-        if (isReversely()) {
-            v = -v;
+        if (direction_ == OverClause::Direction::kBackward) {
+            edgeTypes_.push_back(v);
+        } else if (direction_ == OverClause::Direction::kBackward) {
+            edgeTypes_.push_back(-v);
+        } else if (direction_ == OverClause::Direction::kBiDirect) {
+            edgeTypes_.push_back(v);
+            edgeTypes_.push_back(-v);
         }
 
         edgeTypes_.push_back(v);
@@ -251,7 +256,7 @@ Status GoExecutor::prepareOver() {
         return Status::Error("Over clause shall never be null");
     }
 
-    isReversely_ = clause->isReversely();
+    direction_ = clause->direction();
 
     auto edges = clause->edges();
     for (auto e : edges) {
@@ -267,10 +272,14 @@ Status GoExecutor::prepareOver() {
         }
 
         auto v = edgeStatus.value();
-        if (isReversely()) {
-            v = -v;
+        if (direction_ == OverClause::Direction::kBackward) {
+            edgeTypes_.push_back(v);
+        } else if (direction_ == OverClause::Direction::kBackward) {
+            edgeTypes_.push_back(-v);
+        } else if (direction_ == OverClause::Direction::kBiDirect) {
+            edgeTypes_.push_back(v);
+            edgeTypes_.push_back(-v);
         }
-        edgeTypes_.push_back(v);
 
         if (e->alias() != nullptr) {
             if (!expCtx_->addEdge(*e->alias(), v)) {
@@ -442,7 +451,8 @@ void GoExecutor::stepOut() {
     }
     auto returns = status.value();
     std::string filterPushdown = "";
-    if (FLAGS_filter_pushdown && isFinalStep() && !isReversely()) {
+    if (FLAGS_filter_pushdown && isFinalStep()
+            && direction_ == OverClause::Direction::kForward) {
         // TODO: not support filter pushdown in reversely traversal now.
         filterPushdown = whereWrapper_->filterPushdown_;
     }
@@ -978,7 +988,6 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     Getters getters;
                     // In reverse mode, _dst will return the srcId.
                     getters.getEdgeDstId = [this,
-                                            &srcId,
                                             &dstId,
                                             &edgeType] (const std::string& edgeName)
                                                             -> OptVariantType {
@@ -994,7 +1003,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                                 return 0L;
                             }
                         }
-                        return isReversely() ? srcId : dstId;
+                        return dstId;
                     };
                     // In reverse mode, it is used to get the dst props.
                     getters.getSrcTagProp = [&spaceId,
@@ -1083,7 +1092,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                             return RowReader::getDefaultProp(sit->second.get(), prop);
                         }
                         if (prop == _SRC) {
-                            return isReversely() ? dstId : srcId;
+                            return srcId;
                         }
                         DCHECK(reader != nullptr);
                         auto res = RowReader::getPropByName(reader.get(), prop);

@@ -21,7 +21,6 @@ public:
     };
 
     struct Over {
-        bool                    isReversely_{false};
         std::vector<OverEdge*>  edges_{nullptr};
         std::vector<EdgeType>   edgeTypes_;
         std::vector<EdgeType>   oppositeTypes_;
@@ -219,10 +218,16 @@ private:
 
 class OverClause final : public Clause {
 public:
-    explicit OverClause(OverEdges *edges, bool isReversely = false) {
+    enum Direction : uint8_t {
+        kForward,
+        kBackward,
+        kBiDirect
+    };
+
+    explicit OverClause(OverEdges *edges, Direction direction = kForward) {
         kind_ = kOverClause;
         overEdges_.reset(edges);
-        isReversely_ = isReversely;
+        direction_ = direction;
     }
 
     std::vector<OverEdge *> edges() const { return overEdges_->edges(); }
@@ -231,12 +236,12 @@ public:
 
     std::string toString() const;
 
-    bool isReversely() const {
-        return isReversely_;
+    Direction direction() const {
+        return direction_;
     }
 
 private:
-    bool isReversely_{false};
+    Direction                  direction_;
     std::unique_ptr<OverEdges> overEdges_;
 };
 

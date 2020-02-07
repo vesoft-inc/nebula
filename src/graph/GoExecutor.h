@@ -76,10 +76,6 @@ private:
         return upto_;
     }
 
-    bool isReversely() const {
-        return isReversely_;
-    }
-
     /**
      * To obtain the source ids from various places,
      * such as the literal id list, inputs from the pipeline or results of variable.
@@ -216,7 +212,7 @@ private:
     uint32_t                                    steps_{1};
     uint32_t                                    curStep_{1};
     bool                                        upto_{false};
-    bool                                        isReversely_{false};
+    OverClause::Direction                       direction_{OverClause::Direction::kForward};
     std::vector<EdgeType>                       edgeTypes_;
     std::string                                *varname_{nullptr};
     std::string                                *colname_{nullptr};

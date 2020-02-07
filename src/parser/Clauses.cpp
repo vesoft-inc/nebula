@@ -120,7 +120,6 @@ std::string ToClause::toString() const {
 
 Status OverClause::prepare(Over &over) const {
     over.edges_ = edges();
-    over.isReversely_ = isReversely_;
     return Status::OK();
 }
 
@@ -157,8 +156,10 @@ std::string OverClause::toString() const {
     buf += "OVER ";
     buf += overEdges_->toString();
 
-    if (isReversely()) {
+    if (direction_ == OverClause::Direction::kBackward) {
         buf += " REVERSELY";
+    } else if (direction_ == OverClause::Direction::kBiDirect) {
+        buf += " BIDIRECT";
     }
 
     return buf;
