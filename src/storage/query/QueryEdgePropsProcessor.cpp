@@ -38,10 +38,13 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
                                                    std::abs(edgeKey.edge_type));
 
         // Check if the schema has TTL
-        if (edgeHasTTL(edgeKey.edge_type)) {
-            std::pair<std::string, int64_t> edgeTTL = getEdgeTTLInfo(edgeKey.edge_type);
-            if (!checkDataExpiredForTTL(schema.get(), reader.get(),
-                                        edgeTTL.first, edgeTTL.second)) {
+        auto retTTLOpt = getEdgeTTLInfo(edgeKey.edge_type);
+        if (retTTLOpt.has_value()) {
+            auto ttlValue = retTTLOpt.value();
+            if (!checkDataExpiredForTTL(schema.get(),
+                                        reader.get(),
+                                        ttlValue.first,
+                                        ttlValue.second)) {
                 this->collectProps(reader.get(), iter->key(), props, nullptr, &collector);
                 rsWriter.addRow(writer);
             }

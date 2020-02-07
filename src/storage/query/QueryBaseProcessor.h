@@ -13,6 +13,7 @@
 #include "filter/Expressions.h"
 #include "storage/CommonUtils.h"
 #include "stats/Stats.h"
+#include "folly/Optional.h"
 
 namespace nebula {
 namespace storage {
@@ -116,25 +117,16 @@ protected:
 
     bool checkExp(const Expression* exp);
 
-    void buildRespSchema();
+    void buildTTLInfoAndRespSchema();
 
     bool checkDataExpiredForTTL(const nebula::meta::SchemaProviderIf* schema,
                                 RowReader* reader,
                                 std::string ttlCol,
                                 int64_t ttlDuration);
 
-    void buildTagOrEdgeTTLInfo(const meta::SchemaProviderIf* schema,
-                               bool isTag,
-                               TagID tagId,
-                               EdgeType edgeType);
+    folly::Optional<std::pair<std::string, int64_t>> getTagTTLInfo(TagID tagId);
 
-    bool tagHasTTL(TagID tagId);
-
-    bool edgeHasTTL(EdgeType edgeType);
-
-    std::pair<std::string, int64_t> getTagTTLInfo(TagID tagId);
-
-    std::pair<std::string, int64_t> getEdgeTTLInfo(EdgeType edgeType);
+    folly::Optional<std::pair<std::string, int64_t>> getEdgeTTLInfo(EdgeType edgeType);
 
 protected:
     GraphSpaceID  spaceId_;

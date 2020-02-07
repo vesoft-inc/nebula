@@ -103,6 +103,7 @@ public:
         return true;
     }
 
+    // TODO(panda) Optimize the method in the future
     bool checkDataTtlValid(const meta::SchemaProviderIf* schema, nebula::RowReader* reader) const {
         const meta::NebulaSchemaProvider* nschema =
             dynamic_cast<const meta::NebulaSchemaProvider*>(schema);
@@ -125,7 +126,7 @@ public:
             return true;
         }
 
-        auto now = time::WallClock::slowNowInSec();
+        auto now = time::WallClock::fastNowInSec();
         const auto& ftype = nschema->getFieldType(ttlCol);
 
         int64_t v = 0;
