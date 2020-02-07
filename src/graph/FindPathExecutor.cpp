@@ -564,7 +564,7 @@ Status FindPathExecutor::doFilter(
             DCHECK(vdata.__isset.edge_data);
             for (auto &edata : vdata.edge_data) {
                 auto edgeType = edata.type;
-                auto it = edgeSchema.find(edgeType);
+                auto it = edgeSchema.find(std::abs(edgeType));
                 DCHECK(it != edgeSchema.end());
                 Neighbors neighbors;
                 for (auto& edge : edata.get_edges()) {

@@ -163,8 +163,8 @@ void checkResponse(cpp2::QueryResponse& resp,
                                   folly::stringPrintf("tag_string_col_4"));
 
         for (auto& ep : vp.edge_data) {
-            auto it2 = schema.find(ep.type);
-            DCHECK(it2 != schema.end());
+            auto it2 = schema.find(std::abs(ep.type));
+            DCHECK(it2 != schema.end()) << ep.type;
             auto provider = it2->second;
             int32_t rowNum = 0;
             for (auto& edge : ep.get_edges()) {

@@ -168,7 +168,9 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
             LOG(ERROR) << "Edge type " << edgeType << "was given, but no props request.";
             return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
         }
-        eCtx.second = it->second;
+        // There might exist default props in context,
+        // so insert the props.
+        eCtx.second.insert(eCtx.second.end(), it->second.begin(), it->second.end());
     }
 
     const auto& filterStr = req.get_filter();
