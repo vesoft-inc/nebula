@@ -71,6 +71,9 @@ Status LookupExecutor::prepareFrom() {
 
 Status LookupExecutor::prepareWhere() {
     auto *clause = sentence_->whereClause();
+    if (!clause) {
+        return Status::SyntaxError("Where clause is required");
+    }
     whereWrapper_ = std::make_unique<WhereWrapper>(clause);
     auto status = whereWrapper_->prepare(expCtx_.get());
     return status;
@@ -186,6 +189,7 @@ Status LookupExecutor::chooseIndex() {
     auto ret = (isEdge_) ? ectx()->getMetaClient()->getEdgeIndexesFromCache(spaceId_)
                          : ectx()->getMetaClient()->getTagIndexesFromCache(spaceId_);
     if (!ret.ok()) {
+        LOG(ERROR) << "No index was found";
         return Status::IndexNotFound();
     }
 
@@ -288,7 +292,8 @@ LookupExecutor::findValidIndex(const std::vector<std::shared_ptr<nebula::cpp2::I
 }
 
 void LookupExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
-    auto outputs = std::make_unique<InterimResult>(std::move(returnCols_));
+    auto resultColNames = getResultColumnNames();
+    auto outputs = std::make_unique<InterimResult>(std::move(resultColNames));
     if (rsWriter != nullptr) {
         outputs->setInterim(std::move(rsWriter));
     }
@@ -336,9 +341,9 @@ void LookupExecutor::processEdgeResult(EdgeRpcResponse &&result) {
                 schema = std::make_shared<ResultSchemaProvider>(*(resp.get_schema()));
             }
             outputSchema = std::make_shared<SchemaWriter>();
-            outputSchema->appendCol("edgeSrc", nebula::cpp2::SupportedType::VID);
-            outputSchema->appendCol("edgeDst", nebula::cpp2::SupportedType::VID);
-            outputSchema->appendCol("edgeRank", nebula::cpp2::SupportedType::INT);
+            outputSchema->appendCol("SrcVID", nebula::cpp2::SupportedType::VID);
+            outputSchema->appendCol("DstVID", nebula::cpp2::SupportedType::VID);
+            outputSchema->appendCol("Ranking", nebula::cpp2::SupportedType::INT);
             setOutputYields(outputSchema.get(), schema);
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
         }
@@ -495,5 +500,25 @@ void LookupExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     resp = std::move(*resp_);
 }
 
+std::vector<std::string> LookupExecutor::getResultColumnNames() const {
+    std::vector<std::string> result;
+    result.reserve(yields_.size() + ((isEdge_) ? 3 : 1));
+    if (isEdge_) {
+        result.emplace_back("SrcVID");
+        result.emplace_back("DstVID");
+        result.emplace_back("Ranking");
+    } else {
+        result.emplace_back("VertexID");
+    }
+    result.reserve(yields_.size());
+    for (auto *col : yields_) {
+        if (col->alias() == nullptr) {
+            result.emplace_back(col->expr()->toString());
+        } else {
+            result.emplace_back(*col->alias());
+        }
+    }
+    return result;
+}
 }  // namespace graph
 }  // namespace nebula

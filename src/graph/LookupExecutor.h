@@ -59,6 +59,8 @@ private:
     void setOutputYields(SchemaWriter *outputSchema,
                          const std::shared_ptr<ResultSchemaProvider>& schema);
 
+    std::vector<std::string> getResultColumnNames() const;
+
     using EdgeRpcResponse = storage::StorageRpcResponse<storage::cpp2::LookUpEdgeIndexResp>;
     void processEdgeResult(EdgeRpcResponse &&result);
 
