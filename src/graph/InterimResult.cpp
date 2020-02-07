@@ -251,7 +251,7 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
         ++rowIter;
     }
     index->schema_ = schema;
-    return std::move(index);
+    return index;
 }
 
 
@@ -587,7 +587,7 @@ InterimResult::getInterim(
     }
     auto result = std::make_unique<InterimResult>(std::move(colNames));
     result->setInterim(std::move(rsWriter));
-    return std::move(result);
+    return result;
 }
 
 Status InterimResult::applyTo(std::function<Status(const RowReader *reader)> visitor,

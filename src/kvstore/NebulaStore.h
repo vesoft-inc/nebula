@@ -49,6 +49,7 @@ public:
             , workers_(workers)
             , raftAddr_(getRaftAddr(serviceAddr))
             , options_(std::move(options)) {
+        CHECK_NOTNULL(options_.partMan_);
     }
 
     ~NebulaStore();
@@ -143,6 +144,9 @@ public:
                                std::string&& start,
                                std::string&& prefix,
                                std::unique_ptr<KVIterator>* iter) override = delete;
+
+    ResultCode sync(GraphSpaceID spaceId,
+                    PartitionID partId) override;
 
     // async batch put.
     void asyncMultiPut(GraphSpaceID spaceId,

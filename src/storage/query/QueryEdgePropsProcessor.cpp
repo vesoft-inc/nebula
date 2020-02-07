@@ -59,6 +59,7 @@ void QueryEdgePropsProcessor::doProcess(const cpp2::EdgePropRequest& req) {
     std::vector<EdgeType> e = {req.edge_type};
     initEdgeContext(e, true);
 
+    this->compactDstIdProps_ = true;
     auto retCode = this->checkAndBuildContexts(req);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         for (auto& p : req.get_parts()) {
@@ -74,7 +75,7 @@ void QueryEdgePropsProcessor::doProcess(const cpp2::EdgePropRequest& req) {
         this->onFinished();
         return;
     }
-    RowSetWriter rsWriter(std::move(schema)->second);
+    RowSetWriter rsWriter(schema->second);
     std::for_each(req.get_parts().begin(), req.get_parts().end(), [&](auto& partE) {
         auto partId = partE.first;
         kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
