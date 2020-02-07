@@ -65,6 +65,7 @@ Status LookupExecutor::prepareFrom() {
         isEdge_ = true;
         return Status::OK();
     }
+    LOG(ERROR) << "Tag or Edge was not found : " << from_->c_str();
     return Status::Error("Tag or Edge was not found : %s", from_->c_str());
 }
 
@@ -81,7 +82,8 @@ Status LookupExecutor::prepareYield() {
         auto schema = (isEdge_) ? ectx_->schemaManager()->getEdgeSchema(spaceId_, tagOrEdge_)
                                 : ectx_->schemaManager()->getTagSchema(spaceId_, tagOrEdge_);
         if (schema == nullptr) {
-            return Status::Error("No tag schema found : %s", from_->c_str());
+            LOG(ERROR) << "No schema found for " << from_->c_str();
+            return Status::Error("No schema found for `%s'", from_->c_str());
         }
         yieldClauseWrapper_ = std::make_unique<YieldClauseWrapper>(clause);
         auto *varHolder = ectx()->variableHolder();
@@ -99,6 +101,7 @@ Status LookupExecutor::prepareYield() {
             }
             auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(prop);
             if (schema->getFieldIndex(aExpr->prop()->c_str()) < 0) {
+                LOG(ERROR) << "Unknown column " << aExpr->prop()->c_str();
                 return Status::Error("Unknown column `%s' in schema", aExpr->prop()->c_str());
             }
             returnCols_.emplace_back(aExpr->prop()->c_str());
@@ -193,7 +196,8 @@ Status LookupExecutor::chooseIndex() {
 
     auto validIndexes = findValidIndex(indexes);
     if (validIndexes.empty()) {
-        return Status::IndexNotFound("No matching index was found");
+        LOG(ERROR) << "No matching index was found";
+        return Status::Error("No matching index was found");
     }
     return findOptimalIndex(validIndexes);
 }
@@ -314,8 +318,7 @@ void LookupExecutor::setOutputYields(SchemaWriter *outputSchema,
         return;
     }
     for (auto& col : returnCols_) {
-        auto index = schema->getFieldIndex(col);
-        outputSchema->appendCol(col, schema->getFieldType(index).type);
+        outputSchema->appendCol(col, schema->getFieldType(col).type);
     }
 }
 
