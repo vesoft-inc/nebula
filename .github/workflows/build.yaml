@@ -62,7 +62,7 @@ jobs:
           make -j $(nproc)
       - name: CTest with multiple thread
         timeout-minutes: 40
-        continue-on-error: true
+        continue-on-error: false
         run: |
           cd build
           ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer \
