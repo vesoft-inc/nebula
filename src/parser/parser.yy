@@ -190,6 +190,7 @@ class GraphScanner;
 %type <integer_list> integer_list
 
 %type <intval> unary_integer rank port
+%type <doubleval> unary_double
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
@@ -620,6 +621,18 @@ unary_integer
     }
     | INTEGER {
         ifOutOfRange($1, @1);
+        $$ = $1;
+    }
+    ;
+
+unary_double
+    : PLUS DOUBLE {
+        $$ = $2;
+    }
+    | MINUS DOUBLE {
+        $$ = -$2;
+    }
+    | DOUBLE {
         $$ = $1;
     }
     ;
@@ -1121,7 +1134,7 @@ column_spec_list
 
 column_spec
     : name_label type_spec { $$ = new ColumnSpecification($2, $1); }
-    | name_label type_spec KW_DEFAULT INTEGER {
+    | name_label type_spec KW_DEFAULT unary_integer {
         $$ = new ColumnSpecification($2, $1);
         $$->setIntValue($4);
     }
@@ -1129,7 +1142,7 @@ column_spec
         $$ = new ColumnSpecification($2, $1);
         $$->setBoolValue($4);
     }
-    | name_label type_spec KW_DEFAULT DOUBLE {
+    | name_label type_spec KW_DEFAULT unary_double {
         $$ = new ColumnSpecification($2, $1);
         $$->setDoubleValue($4);
     }
