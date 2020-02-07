@@ -44,27 +44,27 @@ jobs:
           mkdir -p build
       - name: CMake with gcc-9.2
         if: matrix.compiler == 'gcc-9.2'
+        working-directory: build
         run: |
-          cd build
           cmake -DCMAKE_BUILD_TYPE=Release ..
       - name: CMake with clang-9
         if: matrix.compiler == 'clang-9'
+        working-directory: build
         run: |
-          cd build
           cmake \
             -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_C_COMPILER=clang \
             -DENABLE_ASAN=on \
             ..
       - name: Make
+        working-directory: build
         run: |
-          cd build
           make -j $(nproc)
       - name: CTest with multiple thread
         timeout-minutes: 40
         continue-on-error: false
+        working-directory: build
         run: |
-          cd build
           ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer \
           ASAN_OPTIONS=fast_unwind_on_malloc=1 \
           ctest \
@@ -74,8 +74,8 @@ jobs:
       - name: CTest with rerun failed option
         if: failure()
         timeout-minutes: 40
+        working-directory: build
         run: |
-          cd build
           ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer \
           ASAN_OPTIONS=fast_unwind_on_malloc=0 \
           ctest \

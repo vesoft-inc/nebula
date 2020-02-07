@@ -57,13 +57,13 @@ jobs:
         shell: bash
       - name: CMake with gcc-9.2
         if: matrix.compiler == 'gcc-9.2' && steps.ignore_docs.outputs.num_source_files != 0
+        working-directory: build
         run: |
-          cd build
           cmake -DCMAKE_BUILD_TYPE=Release ..
       - name: CMake with clang-9
         if: matrix.compiler == 'clang-9' && steps.ignore_docs.outputs.num_source_files != 0
+        working-directory: build
         run: |
-          cd build
           cmake \
             -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_C_COMPILER=clang \
@@ -71,15 +71,15 @@ jobs:
             ..
       - name: Make
         if: steps.ignore_docs.outputs.num_source_files != 0
+        working-directory: build
         run: |
-          cd build
           make -j $(nproc)
       - name: CTest with multiple threads
         if: steps.ignore_docs.outputs.num_source_files != 0
         timeout-minutes: 15
         continue-on-error: false
+        working-directory: build
         run: |
-          cd build
           ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer \
           ASAN_OPTIONS=fast_unwind_on_malloc=1 \
           ctest \
@@ -90,8 +90,8 @@ jobs:
       - name: CTest with single thread
         if: failure() && steps.ignore_docs.outputs.num_source_files != 0
         timeout-minutes: 30
+        working-directory: build
         run: |
-          cd build
           ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer \
           ASAN_OPTIONS=fast_unwind_on_malloc=0 \
           ctest \
