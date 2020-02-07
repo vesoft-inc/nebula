@@ -57,23 +57,20 @@ jobs:
         shell: bash
       - name: CMake with gcc-9.2
         if: matrix.compiler == 'gcc-9.2' && steps.ignore_docs.outputs.num_source_files != 0
-        working-directory: build
         run: |
-          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake -DCMAKE_BUILD_TYPE=Release -B build/
       - name: CMake with clang-9
         if: matrix.compiler == 'clang-9' && steps.ignore_docs.outputs.num_source_files != 0
-        working-directory: build
         run: |
           cmake \
             -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_C_COMPILER=clang \
             -DENABLE_ASAN=on \
-            ..
+            -B build/
       - name: Make
         if: steps.ignore_docs.outputs.num_source_files != 0
-        working-directory: build
         run: |
-          make -j $(nproc)
+          cmake --build build/ -j $(nproc)
       - name: CTest with multiple threads
         if: steps.ignore_docs.outputs.num_source_files != 0
         timeout-minutes: 15

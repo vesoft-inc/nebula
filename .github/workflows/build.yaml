@@ -44,22 +44,19 @@ jobs:
           mkdir -p build
       - name: CMake with gcc-9.2
         if: matrix.compiler == 'gcc-9.2'
-        working-directory: build
         run: |
-          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake -DCMAKE_BUILD_TYPE=Release -B build/
       - name: CMake with clang-9
         if: matrix.compiler == 'clang-9'
-        working-directory: build
         run: |
           cmake \
             -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_C_COMPILER=clang \
             -DENABLE_ASAN=on \
-            ..
+            -B build/
       - name: Make
-        working-directory: build
         run: |
-          make -j $(nproc)
+          cmake --build build/ -j $(nproc)
       - name: CTest with multiple thread
         timeout-minutes: 40
         continue-on-error: false
