@@ -37,7 +37,7 @@
 # Seconds before the idle connections are closed, 0 for never closed
 --client_idle_timeout_secs=0
 # Seconds before the idle sessions are expired, 0 for no expiration
---session_idle_timeout_secs=60000
+--session_idle_timeout_secs=0
 # The number of threads to accept incoming connections
 --num_accept_threads=1
 # The number of networking IO threads, 0 for # of CPU cores
