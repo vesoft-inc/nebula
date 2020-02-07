@@ -27,6 +27,7 @@ namespace graph {
             return std::to_string(value.get_timestamp());
         }
         case ::nebula::cpp2::Value::Type::__EMPTY__: {
+            // TODO Default NULL if NULL introduced
             return std::string();
         }
     }
@@ -62,6 +63,7 @@ namespace graph {
         // Default
         if (item.get_default_value() != nullptr) {
             // covert to characters for the column require same type for testing checking
+            // TODO make the column value typed if column with different type supported
             row[4].set_str(value2String(*item.get_default_value()));
         } else {
             // For testing checking with one value
