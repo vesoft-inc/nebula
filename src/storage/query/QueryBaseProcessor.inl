@@ -67,6 +67,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
     int32_t index = std::accumulate(edgeContexts_.cbegin(), edgeContexts_.cend(), 0,
                                     [](int ac, auto& ec) { return ac + ec.second.size(); });
     std::unordered_map<TagID, int32_t> tagIndex;
+    std::unordered_map<EdgeType, std::vector<PropContext>> edgeProps;
     for (auto& col : req.get_return_columns()) {
         PropContext prop;
         switch (col.owner) {
@@ -103,13 +104,13 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                 break;
             }
             case cpp2::PropOwner::EDGE: {
-                EdgeType edgeType = col.id.get_edge_type();
-                auto edgeName = this->schemaMan_->toEdgeName(spaceId_, std::abs(edgeType));
+                EdgeType edgeType = std::abs(col.id.get_edge_type());
+                auto edgeName = this->schemaMan_->toEdgeName(spaceId_, edgeType);
                 if (!edgeName.ok()) {
                     VLOG(3) << "Can't find spaceId " << spaceId_ << ", edgeType " << edgeType;
                     return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
                 }
-                this->edgeMap_.emplace(edgeName.value(), std::abs(edgeType));
+                this->edgeMap_.emplace(edgeName.value(), edgeType);
 
                 auto it = kPropsInKey_.find(col.name);
                 if (it != kPropsInKey_.end()) {
@@ -121,9 +122,8 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                         prop.type_.type = nebula::cpp2::SupportedType::INT;
                     }
                 } else {
-                    // Only outBound have properties on edge.
                     auto schema = this->schemaMan_->getEdgeSchema(spaceId_,
-                                                                  std::abs(edgeType));
+                                                                  edgeType);
                     if (!schema) {
                         return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
                     }
@@ -139,6 +139,15 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                 prop.retIndex_ = index++;
                 prop.prop_ = std::move(col);
                 prop.returned_ = true;
+                auto it2 = edgeProps.find(edgeType);
+                if (it2 == edgeProps.end()) {
+                    std::vector<PropContext> v{std::move(prop)};
+                    edgeProps.emplace(edgeType, std::move(v));
+                    break;
+                }
+                it2->second.emplace_back(std::move(prop));
+                break;
+                /*
                 auto it2 = edgeContexts_.find(edgeType);
                 if (it2 == edgeContexts_.end()) {
                     std::vector<PropContext> v{std::move(prop)};
@@ -148,9 +157,20 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
 
                 it2->second.emplace_back(std::move(prop));
                 break;
+                */
             }
         }
     }
+    for (auto &eCtx : edgeContexts_) {
+        auto edgeType = std::abs(eCtx.first);
+        auto it = edgeProps.find(edgeType);
+        if (it == edgeProps.end()) {
+            LOG(ERROR) << "Edge type " << edgeType << "was given, but no props request.";
+            return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+        }
+        eCtx.second = it->second;
+    }
+
     const auto& filterStr = req.get_filter();
     if (!filterStr.empty()) {
         StatusOr<std::unique_ptr<Expression>> expRet = Expression::decode(filterStr);
@@ -727,12 +747,12 @@ void QueryBaseProcessor<REQ, RESP>::buildTTLInfoAndRespSchema() {
             VLOG(1) << "EdgeType " << ec.first << ", onlyStructure " << respEdge.columns.empty();
             onlyStructures_.emplace(ec.first, respEdge.columns.empty());
             if (!respEdge.columns.empty()) {
-                auto it = edgeSchemaResp_.find(ec.first);
+                auto it = edgeSchemaResp_.find(std::abs(ec.first));
                 if (it == edgeSchemaResp_.end()) {
                     auto schemaProvider = std::make_shared<ResultSchemaProvider>(respEdge);
                     edgeSchema_.emplace(ec.first, std::move(schemaProvider));
                     VLOG(1) << "Fulfill edge response for edge " << ec.first;
-                    edgeSchemaResp_.emplace(ec.first, std::move(respEdge));
+                    edgeSchemaResp_.emplace(std::abs(ec.first), std::move(respEdge));
                 }
             }
 

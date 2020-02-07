@@ -229,18 +229,18 @@ Status GoExecutor::prepareOverAll() {
         }
 
         auto v = edgeStatus.value();
-        if (direction_ == OverClause::Direction::kBackward) {
+        if (direction_ == OverClause::Direction::kForward) {
             edgeTypes_.push_back(v);
         } else if (direction_ == OverClause::Direction::kBackward) {
-            edgeTypes_.push_back(-v);
+            v = -v;
+            edgeTypes_.push_back(v);
         } else if (direction_ == OverClause::Direction::kBiDirect) {
             edgeTypes_.push_back(v);
-            edgeTypes_.push_back(-v);
+            v = -v;
+            edgeTypes_.push_back(v);
         }
 
-        edgeTypes_.push_back(v);
-
-        if (!expCtx_->addEdge(e, v)) {
+        if (!expCtx_->addEdge(e, std::abs(v))) {
             return Status::Error(folly::sformat("edge alias({}) was dup", e));
         }
     }
@@ -272,21 +272,23 @@ Status GoExecutor::prepareOver() {
         }
 
         auto v = edgeStatus.value();
-        if (direction_ == OverClause::Direction::kBackward) {
+        if (direction_ == OverClause::Direction::kForward) {
             edgeTypes_.push_back(v);
         } else if (direction_ == OverClause::Direction::kBackward) {
-            edgeTypes_.push_back(-v);
+            v = -v;
+            edgeTypes_.push_back(v);
         } else if (direction_ == OverClause::Direction::kBiDirect) {
             edgeTypes_.push_back(v);
-            edgeTypes_.push_back(-v);
+            v = -v;
+            edgeTypes_.push_back(v);
         }
 
         if (e->alias() != nullptr) {
-            if (!expCtx_->addEdge(*e->alias(), v)) {
+            if (!expCtx_->addEdge(*e->alias(), std::abs(v))) {
                 return Status::Error(folly::sformat("edge alias({}) was dup", *e->alias()));
             }
         } else {
-            if (!expCtx_->addEdge(*e->edge(), v)) {
+            if (!expCtx_->addEdge(*e->edge(), std::abs(v))) {
                 return Status::Error(folly::sformat("edge alias({}) was dup", *e->edge()));
             }
         }
@@ -456,6 +458,8 @@ void GoExecutor::stepOut() {
         // TODO: not support filter pushdown in reversely traversal now.
         filterPushdown = whereWrapper_->filterPushdown_;
     }
+    VLOG(1) << "edge type size: " << edgeTypes_.size()
+        << " return cols: " << returns.size();
     auto future  = ectx()->getStorageClient()->getNeighbors(spaceId,
                                                    starts_,
                                                    edgeTypes_,
@@ -557,19 +561,6 @@ void GoExecutor::onVertexProps(RpcResponse &&rpcResp) {
     UNUSED(rpcResp);
 }
 
-std::vector<std::string> GoExecutor::getEdgeNames() const {
-    std::vector<std::string> names;
-    auto spaceId = ectx()->rctx()->session()->space();
-    for (auto edgeType : edgeTypes_) {
-        auto status = ectx()->schemaManager()->toEdgeName(spaceId, std::abs(edgeType));
-        DCHECK(status.ok());
-        auto edgeName = status.value();
-        names.emplace_back(std::move(edgeName));
-    }
-
-    return names;
-}
-
 StatusOr<std::vector<VertexID>> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const {
     std::unordered_set<VertexID> set;
     for (auto &resp : rpcResp.responses()) {
@@ -597,13 +588,8 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
     // MayBe we can do better.
     std::vector<std::unique_ptr<YieldColumn>> yc;
     if (expCtx_->isOverAllEdge() && yields_.empty()) {
-        auto edgeNames = getEdgeNames();
-        if (edgeNames.empty()) {
-            doError(Status::Error("get edge name failed"));
-            return;
-        }
-        for (const auto &name : edgeNames) {
-            auto dummy = new std::string(name);
+        for (const auto &alias : expCtx_->getEdgeAlias()) {
+            auto dummy = new std::string(alias);
             auto dummy_exp = new EdgeDstIdExpression(dummy);
             auto ptr = std::make_unique<YieldColumn>(dummy_exp);
             dummy_exp->setContext(expCtx_.get());
@@ -720,7 +706,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
             storage::cpp2::PropDef pd;
             pd.owner = storage::cpp2::PropOwner::EDGE;
             pd.name = _DST;
-            pd.id.set_edge_type(e);
+            pd.id.set_edge_type(std::abs(e));
             props.emplace_back(std::move(pd));
         }
         return props;
@@ -729,7 +715,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
             storage::cpp2::PropDef pd;
             pd.owner = storage::cpp2::PropOwner::EDGE;
             pd.name = _DST;
-            pd.id.set_edge_type(e);
+            pd.id.set_edge_type(std::abs(e));
             props.emplace_back(std::move(pd));
         }
         auto spaceId = ectx()->rctx()->session()->space();
@@ -978,7 +964,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                 VLOG(1) << "Total edata.edges size " << edata.edges.size()
                         << ", for edge " << edgeType;
                 std::shared_ptr<ResultSchemaProvider> currEdgeSchema;
-                auto it = edgeSchema.find(edgeType);
+                auto it = edgeSchema.find(std::abs(edgeType));
                 if (it != edgeSchema.end()) {
                     currEdgeSchema = it->second;
                 }
@@ -986,7 +972,6 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                 for (auto& edge : edata.edges) {
                     auto dstId = edge.get_dst();
                     Getters getters;
-                    // In reverse mode, _dst will return the srcId.
                     getters.getEdgeDstId = [this,
                                             &dstId,
                                             &edgeType] (const std::string& edgeName)
@@ -999,13 +984,12 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                                         "Get edge type for `%s' failed in getters.",
                                         edgeName.c_str());
                             }
-                            if (type != edgeType) {
+                            if (type != std::abs(edgeType)) {
                                 return 0L;
                             }
                         }
                         return dstId;
                     };
-                    // In reverse mode, it is used to get the dst props.
                     getters.getSrcTagProp = [&spaceId,
                                              &tagData,
                                              &tagSchema,
@@ -1083,7 +1067,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                             return Status::Error(
                                     "Get edge type for `%s' failed in getters.", edgeName.c_str());
                         }
-                        if (edgeType != type) {
+                        if (std::abs(edgeType) != type) {
                             auto sit = edgeSchema.find(type);
                             if (sit == edgeSchema.end()) {
                                 LOG(ERROR) << "Can't find schema for " << edgeName;
