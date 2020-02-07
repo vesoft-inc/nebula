@@ -24,7 +24,7 @@ jobs:
   build:
     name: build
     needs: lint
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         os:
@@ -48,7 +48,7 @@ jobs:
       - name: Ignore only documents changes
         id: ignore_docs
         run: |
-          num_source_files=$(git --no-pager diff --name-only $(git log --oneline -n 1 | cut -d' ' -f1,5) | grep '^src\|^CMakeLists.txt\|^cmake\|^.github/workflows' | wc -l)
+          num_source_files=$(git --no-pager diff --name-only $(git log --oneline -n 1 | cut -d' ' -f1,5) | grep '^src\|^CMakeLists.txt\|^cmake' | wc -l)
           echo "::set-output name=num_source_files::${num_source_files}"
         shell: bash
       - name: Prepare environment
