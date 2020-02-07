@@ -64,9 +64,10 @@ jobs:
         timeout-minutes: 40
         continue-on-error: false
         working-directory: build
+        env:
+          ASAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer
+          ASAN_OPTIONS: fast_unwind_on_malloc=1
         run: |
-          ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer \
-          ASAN_OPTIONS=fast_unwind_on_malloc=1 \
           ctest \
             -j $(nproc) \
             --timeout 400 \
@@ -75,9 +76,10 @@ jobs:
         if: failure()
         timeout-minutes: 40
         working-directory: build
+        env:
+          ASAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer
+          ASAN_OPTIONS: fast_unwind_on_malloc=0
         run: |
-          ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer \
-          ASAN_OPTIONS=fast_unwind_on_malloc=0 \
           ctest \
             --timeout 400 \
             --rerun-failed \
