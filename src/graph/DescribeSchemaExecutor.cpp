@@ -65,6 +65,7 @@ namespace graph {
             row[4].set_str(value2String(*item.get_default_value()));
         } else {
             // For testing checking with one value
+            // TODO Default NULL if NULL introduced
             row[4].set_str(std::string());
         }
         // Extra TODO(shylock) reserved now
