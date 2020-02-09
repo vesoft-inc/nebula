@@ -9,6 +9,7 @@
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/raftex/test/TestShard.h"
 #include "thrift/ThriftClientManager.h"
+#include "kvstore/wal/FileBasedWal.h"
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 
@@ -154,6 +155,8 @@ void setupRaft(
         std::vector<std::shared_ptr<RaftexService>>& services,
         std::vector<std::shared_ptr<test::TestShard>>& copies,
         std::shared_ptr<test::TestShard>& leader,
+        bool setup,
+        bool sameLog,
         std::vector<bool> isLearner) {
     IPv4 ipInt;
     CHECK(NetworkUtils::ipv4ToInt("127.0.0.1", ipInt));
@@ -163,11 +166,37 @@ void setupRaft(
 
     // Set up WAL folders (Create one extra for leader crash test)
     for (int i = 0; i < numCopies + 1; ++i) {
-        wals.emplace_back(
-            folly::stringPrintf("%s/copy%d",
-                                walRoot.path(),
-                                i + 1));
+        auto path = folly::stringPrintf("%s/copy%d",
+                                       walRoot.path(),
+                                       i + 1);
+        wals.emplace_back(path);
         CHECK(FileUtils::makeDir(wals.back()));
+
+        if (!setup) {
+            nebula::wal::FileBasedWalPolicy policy;
+            auto processor = [](LogID, TermID, ClusterID, const std::string&) {
+                return true;
+            };
+            auto wal = nebula::wal::FileBasedWal::getWal(path,
+                                                         "",
+                                                         policy,
+                                                         processor);
+            EXPECT_EQ(0, wal->lastLogId());
+
+            if (sameLog) {
+                for (int32_t index = 1; index <= 10; index++) {
+                    EXPECT_TRUE(wal->appendLog(index /*id*/, 1 /*term*/, 0 /*cluster*/,
+                                folly::stringPrintf("Test string %02d", index)));
+                }
+                EXPECT_EQ(10, wal->lastLogId());
+            } else {
+                for (int32_t index = 1; index <= 10 + i; index++) {
+                    EXPECT_TRUE(wal->appendLog(index /*id*/, 1 /*term*/, 0 /*cluster*/,
+                                folly::stringPrintf("Test string %02d", index)));
+                }
+                EXPECT_EQ(10 + i, wal->lastLogId());
+            }
+        }
     }
 
     // Set up services

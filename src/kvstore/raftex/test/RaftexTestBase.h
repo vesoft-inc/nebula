@@ -64,6 +64,8 @@ void setupRaft(
         std::vector<std::shared_ptr<RaftexService>>& services,
         std::vector<std::shared_ptr<test::TestShard>>& copies,
         std::shared_ptr<test::TestShard>& leader,
+        bool setup = true,
+        bool sameLog = true,
         std::vector<bool> isLearner = {});
 
 void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,

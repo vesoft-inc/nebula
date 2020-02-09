@@ -39,7 +39,7 @@ TEST(SnapshotTest, LearnerCatchUpDataTest) {
 
     std::shared_ptr<test::TestShard> leader;
     std::vector<bool> isLearner = {false, false, false, true};
-    setupRaft(4, walRoot, workers, wals, allHosts, services, copies, leader, isLearner);
+    setupRaft(4, walRoot, workers, wals, allHosts, services, copies, leader, true, true, isLearner);
 
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);

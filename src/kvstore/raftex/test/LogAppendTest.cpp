@@ -64,6 +64,44 @@ TEST(LogAppend, SimpleAppendWithThreeCopies) {
     finishRaft(services, copies, workers, leader);
 }
 
+TEST(LogAppend, SimpleAppendWithLeaderCrash) {
+    fs::TempDir walRoot("/tmp/simple_append_with_leader_crash.XXXXXX");
+    std::shared_ptr<thread::GenericThreadPool> workers;
+    std::vector<std::string> wals;
+    std::vector<HostAddr> allHosts;
+    std::vector<std::shared_ptr<RaftexService>> services;
+    std::vector<std::shared_ptr<test::TestShard>> copies;
+
+    std::shared_ptr<test::TestShard> leader;
+    setupRaft(5, walRoot, workers, wals, allHosts, services, copies, leader);
+
+    // Check all hosts agree on the same leader
+    checkLeadership(copies, leader);
+
+    std::vector<std::string> msgs;
+    appendLogs(0, 99, leader, msgs);
+    checkConsensus(copies, 0, 99, msgs);
+
+    // Let's kill the old leader
+    LOG(INFO) << "=====> Now let's kill the old leader";
+    size_t idx = leader->index();
+    copies[idx].reset();
+    services[idx]->removePartition(leader);
+    {
+        std::lock_guard<std::mutex> lock(leaderMutex);
+        leader.reset();
+    }
+
+    // Wait untill all copies agree on the same leader
+    waitUntilLeaderElected(copies, leader);
+    services[idx]->addPartition(leader);
+
+    // After the new leader elected, append more logs.
+    appendLogs(100, 199, leader, msgs);
+    checkConsensus(copies, 1000, 199, msgs);
+
+    finishRaft(services, copies, workers, leader);
+}
 
 TEST(LogAppend, MultiThreadAppend) {
     fs::TempDir walRoot("/tmp/multi_thread_append.XXXXXX");
