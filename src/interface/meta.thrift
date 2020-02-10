@@ -197,20 +197,20 @@ enum JobStatus {
 } (cpp.enum_strict)
 
 struct JobDesc {
-    1: i32 id
-    2: string typeAndParas
-    3: JobStatus status
-    4: i64 startTime
-    5: i64 stopTime
+    1: i32          id
+    2: string       cmdAndParas
+    3: JobStatus    status
+    4: i64          startTime
+    5: i64          stopTime
 }
 
 struct TaskDesc {
-    1: i32 taskId
-    2: common.HostAddr host
-    3: JobStatus status
-    4: i64 startTime
-    5: i64 stopTime
-    6: i32 jobId
+    1: i32              taskId
+    2: common.HostAddr  host
+    3: JobStatus        status
+    4: i64              startTime
+    5: i64              stopTime
+    6: i32              jobId
 }
 
 struct BackupJobResult {
@@ -219,7 +219,9 @@ struct BackupJobResult {
 }
 
 struct AdminJobResult {
-    // used in "admin flush" and "admin compact"
+    // used in a new added job, e.g. "flush" "compact"
+    // other job type which also need jobId in their result
+    // will use other filed. e.g. JobDesc::id
     1: optional i32                 jobId
     // used in "show jobs" and "show job <id>"
     2: optional list<JobDesc>       jobDesc

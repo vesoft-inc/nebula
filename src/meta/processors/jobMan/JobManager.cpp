@@ -24,6 +24,7 @@
 
 DEFINE_int32(dispatch_thread_num, 3, "Number of job dispatch http thread");
 DEFINE_int32(job_check_intervals, 5000, "job intervals in us");
+DEFINE_double(job_expired_secs, 7*24*60*60, "job expired intervals in sec");
 
 using nebula::kvstore::ResultCode;
 using nebula::kvstore::KVIterator;
@@ -111,7 +112,7 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc) {
         return false;
     }
 
-    std::string op = jobDesc.getType();
+    std::string op = jobDesc.getCmd();
 
     struct HostAddrCmp {
         bool operator()(const nebula::cpp2::HostAddr& a,
@@ -209,9 +210,17 @@ JobManager::showJobs() {
     for (; iter->valid(); iter->next()) {
         if (JobDescription::isJobKey(iter->key())) {
             auto optJob = JobDescription::makeJobDescription(iter->key(), iter->val());
-            if (optJob != folly::none) {
-                ret.value().emplace_back(optJob->toJobDesc());
+            if (optJob == folly::none) {
+                continue;
             }
+            // skip expired job, default 1 week
+            auto jobDesc = optJob->toJobDesc();
+            auto jobStart = jobDesc.get_startTime();
+            auto duration = std::difftime(std::time(nullptr), jobStart);
+            if (duration > FLAGS_job_expired_secs) {
+                continue;
+            }
+            ret.value().emplace_back(jobDesc);
         }
     }
     return ret;

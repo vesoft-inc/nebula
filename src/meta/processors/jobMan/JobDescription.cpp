@@ -19,13 +19,13 @@ namespace meta {
 using Status = cpp2::JobStatus;
 
 JobDescription::JobDescription(int32_t id,
-                               std::string type,
+                               std::string cmd,
                                std::vector<std::string> paras,
                                Status status,
                                int64_t startTime,
                                int64_t stopTime)
                                : id_(id),
-                                 type_(std::move(type)),
+                                 cmd_(std::move(cmd)),
                                  paras_(std::move(paras)),
                                  status_(status),
                                  startTime_(startTime),
@@ -36,22 +36,17 @@ JobDescription::makeJobDescription(folly::StringPiece rawkey,
                                    folly::StringPiece rawval) {
     try {
         auto key = parseKey(rawkey);
-        LOG(INFO) << "after parseKey(rawkey);";
-
         auto tup = parseVal(rawval);
-        LOG(INFO) << "after parseVal(rawval);";
-        auto type = std::get<0>(tup);
-        LOG(INFO) << "type = " << type;
 
+        auto cmd = std::get<0>(tup);
         auto paras = std::get<1>(tup);
         for (auto p : paras) {
             LOG(INFO) << "p = " << p;
         }
-
         auto status = std::get<2>(tup);
         auto startTime = std::get<3>(tup);
         auto stopTime = std::get<4>(tup);
-        return JobDescription(key, type, paras, status, startTime, stopTime);
+        return JobDescription(key, cmd, paras, status, startTime, stopTime);
     } catch(std::exception& ex) {
         LOG(ERROR) << ex.what();
     }
@@ -83,11 +78,11 @@ int32_t JobDescription::parseKey(const folly::StringPiece& rawKey) {
 
 std::string JobDescription::jobVal() const {
     std::string str;
-    auto typeLen = type_.length();
+    auto cmdLen = cmd_.length();
     auto paraSize = paras_.size();
     str.reserve(256);
-    str.append(reinterpret_cast<const char*>(&typeLen), sizeof(size_t));
-    str.append(reinterpret_cast<const char*>(type_.data()), type_.length());
+    str.append(reinterpret_cast<const char*>(&cmdLen), sizeof(size_t));
+    str.append(reinterpret_cast<const char*>(cmd_.data()), cmd_.length());
     str.append(reinterpret_cast<const char*>(&paraSize), sizeof(size_t));
     for (auto& para : paras_) {
         auto len = para.length();
@@ -108,8 +103,8 @@ std::tuple<std::string,
 JobDescription::parseVal(const folly::StringPiece& rawVal) {
     size_t offset = 0;
 
-    std::string type = JobUtil::parseString(rawVal, offset);
-    offset += sizeof(size_t) + type.length();
+    std::string cmd = JobUtil::parseString(rawVal, offset);
+    offset += sizeof(size_t) + cmd.length();
 
     std::vector<std::string> paras = JobUtil::parseStrVector(rawVal, &offset);
 
@@ -121,18 +116,18 @@ JobDescription::parseVal(const folly::StringPiece& rawVal) {
 
     auto tStop = JobUtil::parseFixedVal<int64_t>(rawVal, offset);
 
-    return std::make_tuple(type, paras, status, tStart, tStop);
+    return std::make_tuple(cmd, paras, status, tStart, tStop);
 }
 
 cpp2::JobDesc JobDescription::toJobDesc() {
     cpp2::JobDesc ret;
     ret.set_id(id_);
     std::stringstream oss;
-    oss << type_ << " ";
+    oss << cmd_ << " ";
     for (auto& p : paras_) {
         oss << p << " ";
     }
-    ret.set_typeAndParas(oss.str());
+    ret.set_cmdAndParas(oss.str());
     ret.set_status(status_);
     ret.set_startTime(startTime_);
     ret.set_stopTime(stopTime_);

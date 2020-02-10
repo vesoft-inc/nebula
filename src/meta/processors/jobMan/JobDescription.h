@@ -53,7 +53,7 @@ public:
     /*
      * return the command for this job. (e.g. compact, flush ...)
      * */
-    std::string getType() const { return type_; }
+    std::string getCmd() const { return cmd_; }
 
     /*
      * return the paras for this job. (e.g. space name for compact/flush)
@@ -133,7 +133,7 @@ public:
 
 private:
     int32_t                         id_;
-    std::string                     type_;
+    std::string                     cmd_;  // compact, flush ...
     std::vector<std::string>        paras_;
     Status                          status_;
     int64_t                         startTime_;

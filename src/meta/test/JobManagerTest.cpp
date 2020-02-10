@@ -52,13 +52,13 @@ protected:
 };
 
 TEST_F(JobManagerTest, buildJobDescription) {
-    std::string type("compact");
+    std::string cmd("compact");
     std::string para("test");
-    std::vector<std::string> paras{type, para};
+    std::vector<std::string> paras{cmd, para};
     auto jd = jobMgr->buildJobDescription(1, paras);
     ASSERT_TRUE(jd.ok());
     ASSERT_EQ(jd.value().id_, 1);
-    ASSERT_EQ(jd.value().type_, type);
+    ASSERT_EQ(jd.value().cmd_, cmd);
     ASSERT_EQ(jd.value().paras_[0], para);
 }
 
@@ -80,14 +80,14 @@ TEST_F(JobManagerTest, loadJobDescription) {
     optJob1.value().setStatus(Status::FINISHED);
     int32_t jobId = jobMgr->addJob(optJob1.value());
     ASSERT_EQ(optJob1.value().id_, 1);
-    ASSERT_EQ(optJob1.value().type_, type);
+    ASSERT_EQ(optJob1.value().cmd_, type);
     ASSERT_EQ(optJob1.value().paras_[0], para);
 
     auto optJd2 = JobDescription::loadJobDescription(jobId, kv_.get());
     ASSERT_TRUE(optJd2);
     ASSERT_EQ(optJob1.value().id_, optJd2->id_);
     LOG(INFO) << "optJob1.value().id_=" << optJob1.value().id_;
-    ASSERT_EQ(optJob1.value().type_, optJd2->type_);
+    ASSERT_EQ(optJob1.value().cmd_, optJd2->cmd_);
     ASSERT_EQ(optJob1.value().paras_, optJd2->paras_);
     ASSERT_EQ(optJob1.value().status_, optJd2->status_);
     ASSERT_EQ(optJob1.value().startTime_, optJd2->startTime_);
@@ -122,13 +122,13 @@ TEST_F(JobManagerTest, showJobs) {
 
     auto& jobs = statusOrShowResult.value();
     ASSERT_EQ(jobs[0].get_id(), jd1.value().id_);
-    ASSERT_EQ(jobs[0].get_typeAndParas(), type1 + " " + para1 + " ");
+    ASSERT_EQ(jobs[0].get_cmdAndParas(), type1 + " " + para1 + " ");
     ASSERT_EQ(jobs[0].get_status(), Status::FINISHED);
     ASSERT_EQ(jobs[0].get_startTime(), jd1.value().startTime_);
     ASSERT_EQ(jobs[0].get_stopTime(), jd1.value().stopTime_);
 
     ASSERT_EQ(jobs[1].get_id(), jd2.value().id_);
-    ASSERT_EQ(jobs[1].get_typeAndParas(), type2 + " " + para2 + " ");
+    ASSERT_EQ(jobs[1].get_cmdAndParas(), type2 + " " + para2 + " ");
     ASSERT_EQ(jobs[1].get_status(), Status::FAILED);
     ASSERT_EQ(jobs[1].get_startTime(), jd2.value().startTime_);
     ASSERT_EQ(jobs[1].get_stopTime(), jd2.value().stopTime_);
@@ -175,7 +175,7 @@ TEST_F(JobManagerTest, showJob) {
     auto& tasks = showResult.value().second;
 
     ASSERT_EQ(jobs.get_id(), iJob);
-    ASSERT_EQ(jobs.get_typeAndParas(), type + " " + para + " ");
+    ASSERT_EQ(jobs.get_cmdAndParas(), type + " " + para + " ");
     ASSERT_EQ(jobs.get_status(), Status::FINISHED);
     ASSERT_EQ(jobs.get_startTime(), jd.value().startTime_);
     ASSERT_EQ(jobs.get_stopTime(), jd.value().stopTime_);
@@ -281,7 +281,7 @@ TEST(JobDescriptionTest, parseKey) {
     JobDescription jd(iJob, type, paras);
     auto sKey = jd.jobKey();
     ASSERT_EQ(iJob, jd.getJobId());
-    ASSERT_EQ(type, jd.getType());
+    ASSERT_EQ(type, jd.getCmd());
 
     folly::StringPiece spKey(&sKey[0], sKey.length());
     auto parsedKeyId = JobDescription::parseKey(spKey);

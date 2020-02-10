@@ -138,7 +138,7 @@ AdminJobExecutor::toRowValue(const nebula::meta::cpp2::JobDesc& job) {
     cpp2::RowValue ret;
     std::vector<cpp2::ColumnValue> row(5);
     row[0].set_str(std::to_string(job.get_id()));
-    row[1].set_str(job.get_typeAndParas());
+    row[1].set_str(job.get_cmdAndParas());
     row[2].set_str(toString(job.get_status()));
     row[3].set_str(time2string(job.get_startTime()));
     row[4].set_str(time2string(job.get_stopTime()));
