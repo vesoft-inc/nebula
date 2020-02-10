@@ -34,6 +34,9 @@ DEFINE_int32(wal_buffer_size, 8 * 1024 * 1024, "Default wal buffer size");
 DEFINE_int32(wal_buffer_num, 2, "Default wal buffer number");
 DEFINE_bool(trace_raft, false, "Enable trace one raft request");
 
+DEFINE_double(lease_valid_deviation, 0.8, "");
+DEFINE_bool(has_leader_lease, true, "");
+
 
 namespace nebula {
 namespace raftex {
@@ -326,6 +329,7 @@ void RaftPart::stop() {
         status_ = Status::STOPPED;
         leader_ = {0, 0};
         role_ = Role::FOLLOWER;
+        ready_ = false;
 
         hosts = std::move(hosts_);
     }
@@ -962,7 +966,7 @@ bool RaftPart::needToSendHeartbeat() {
     std::lock_guard<std::mutex> g(raftLock_);
     return status_ == Status::RUNNING &&
            role_ == Role::LEADER &&
-           lastMsgSentDur_.elapsedInSec() >= FLAGS_raft_heartbeat_interval_secs * 2 / 5;
+           lastMsgSentDur_.elapsedInMSec() >= FLAGS_raft_heartbeat_interval_secs * 1000 * 2 / 5;
 }
 
 
@@ -1031,7 +1035,8 @@ bool RaftPart::prepareElectionRequest(
 
 
 typename RaftPart::Role RaftPart::processElectionResponses(
-        const RaftPart::ElectionResponses& results) {
+        const RaftPart::ElectionResponses& results,
+        std::vector<std::shared_ptr<Host>> hosts) {
     std::lock_guard<std::mutex> g(raftLock_);
 
     if (UNLIKELY(status_ == Status::STOPPED)) {
@@ -1061,6 +1066,11 @@ typename RaftPart::Role RaftPart::processElectionResponses(
     for (auto& r : results) {
         if (r.second.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
             ++numSucceeded;
+        } else if (r.second.get_error_code() == cpp2::ErrorCode::E_LOG_STALE) {
+            LOG(INFO) << idStr_ << "My last log id is less than " << hosts[r.first]->address()
+                      << ", double my election interval.";
+            uint64_t curWeight = weight_.load();
+            weight_.store(curWeight * 2);
         }
     }
 
@@ -1072,6 +1082,7 @@ typename RaftPart::Role RaftPart::processElectionResponses(
                   << proposedTerm_;
         term_ = proposedTerm_;
         role_ = Role::LEADER;
+        ready_ = false;
     }
 
     return role_;
@@ -1113,9 +1124,9 @@ bool RaftPart::leaderElection() {
                         << host->idStr();
                 return via(
                     eb,
-                    [&voteReq, &host] ()
+                    [&voteReq, &host, eb] ()
                             -> Future<cpp2::AskForVoteResponse> {
-                        return host->askForVote(voteReq);
+                        return host->askForVote(voteReq, eb);
                     });
             })
             | gen::as<std::vector>(),
@@ -1123,12 +1134,6 @@ bool RaftPart::leaderElection() {
             quorum_,
             // Result evaluator
             [hosts, this](size_t idx, cpp2::AskForVoteResponse& resp) {
-                if (resp.get_error_code() == cpp2::ErrorCode::E_LOG_STALE) {
-                    LOG(INFO) << idStr_ << "My last log id is less than " << hosts[idx]->address()
-                              << ", double my election interval.";
-                    uint64_t curWeight = weight_.load();
-                    weight_.store(curWeight * 2);
-                }
                 return resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED
                         && !hosts[idx]->isLearner();
             });
@@ -1146,7 +1151,7 @@ bool RaftPart::leaderElection() {
     }
 
     // Process the responses
-    switch (processElectionResponses(resps)) {
+    switch (processElectionResponses(resps, std::move(hosts))) {
         case Role::LEADER: {
             // Elected
             LOG(INFO) << idStr_
@@ -1162,7 +1167,14 @@ bool RaftPart::leaderElection() {
                 }
             }
             weight_ = 1;
-            sendHeartbeat();
+            sendHeartbeat().then([this] (folly::Try<AppendLogResult>&& t) {
+                CHECK(!t.hasException());
+                auto result = std::move(t).value();
+                if (result == AppendLogResult::SUCCEEDED) {
+                    std::lock_guard<std::mutex> g(raftLock_);
+                    ready_ = true;
+                }
+            });
             return true;
         }
         case Role::FOLLOWER: {
@@ -1200,7 +1212,14 @@ void RaftPart::statusPolling() {
         }
     } else if (needToSendHeartbeat()) {
         VLOG(2) << idStr_ << "Need to send heartbeat";
-        sendHeartbeat();
+        sendHeartbeat().then([this] (folly::Try<AppendLogResult>&& t) {
+            CHECK(!t.hasException());
+            auto result = std::move(t).value();
+            if (result == AppendLogResult::SUCCEEDED) {
+                std::lock_guard<std::mutex> g(raftLock_);
+                ready_ = true;
+            }
+        });
     }
     if (needToCleanupSnapshot()) {
         LOG(INFO) << idStr_ << "Clean up the snapshot";
@@ -1841,6 +1860,14 @@ void RaftPart::checkAndResetPeers(const std::vector<HostAddr>& peers) {
         LOG(INFO) << idStr_ << "Add peer " << p << " if not exist!";
         addPeer(p);
     }
+}
+
+bool RaftPart::leaseValid() {
+    if (!FLAGS_has_leader_lease) {
+        return true;
+    }
+    return lastMsgSentDur_.elapsedInMSec() <
+           FLAGS_raft_heartbeat_interval_secs * 1000 * FLAGS_lease_valid_deviation;
 }
 
 }  // namespace raftex

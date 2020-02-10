@@ -209,6 +209,12 @@ public:
         const cpp2::SendSnapshotRequest& req,
         cpp2::SendSnapshotResponse& resp);
 
+    bool isReady() {
+        return ready_;
+    }
+
+    bool leaseValid();
+
 protected:
     // Protected constructor to prevent from instantiating directly
     RaftPart(ClusterID clusterId,
@@ -344,7 +350,8 @@ private:
         std::vector<std::shared_ptr<Host>>& hosts);
 
     // The method returns the partition's role after the election
-    Role processElectionResponses(const ElectionResponses& results);
+    Role processElectionResponses(const ElectionResponses& results,
+                                  std::vector<std::shared_ptr<Host>> hosts);
 
     // Check whether new logs can be appended
     // Pre-condition: The caller needs to hold the raftLock_
@@ -534,6 +541,7 @@ protected:
     std::atomic<uint64_t> weight_;
 
     bool blocking_{false};
+    bool ready_{false};
 };
 
 }  // namespace raftex
