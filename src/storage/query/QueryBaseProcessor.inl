@@ -749,10 +749,14 @@ void QueryBaseProcessor<REQ, RESP>::buildTTLInfoAndRespSchema() {
             VLOG(1) << "EdgeType " << ec.first << ", onlyStructure " << respEdge.columns.empty();
             onlyStructures_.emplace(ec.first, respEdge.columns.empty());
             if (!respEdge.columns.empty()) {
-                auto it = edgeSchemaResp_.find(std::abs(ec.first));
-                if (it == edgeSchemaResp_.end()) {
+                auto it = edgeSchema_.find(ec.first);
+                if (it == edgeSchema_.end()) {
                     auto schemaProvider = std::make_shared<ResultSchemaProvider>(respEdge);
                     edgeSchema_.emplace(ec.first, std::move(schemaProvider));
+                    VLOG(1) << "Fulfill edge for edge " << ec.first;
+                }
+                auto itResp = edgeSchemaResp_.find(std::abs(ec.first));
+                if (itResp == edgeSchemaResp_.end()) {
                     VLOG(1) << "Fulfill edge response for edge " << ec.first;
                     edgeSchemaResp_.emplace(std::abs(ec.first), std::move(respEdge));
                 }

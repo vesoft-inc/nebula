@@ -717,6 +717,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
             pd.name = _DST;
             pd.id.set_edge_type(std::abs(e));
             props.emplace_back(std::move(pd));
+            VLOG(3) << "Need edge props: " << e << ", _dst";
         }
         auto spaceId = ectx()->rctx()->session()->space();
         for (auto &tagProp : expCtx_->srcTagProps()) {
@@ -730,6 +731,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
             auto tagId = status.value();
             pd.id.set_tag_id(tagId);
             props.emplace_back(std::move(pd));
+            VLOG(3) << "Need tag src props: " << tagProp.first << ", " << tagProp.second;
         }
         for (auto &prop : expCtx_->aliasProps()) {
             if (prop.second == _DST) {
@@ -746,6 +748,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
             }
             pd.id.set_edge_type(edgeType);
             props.emplace_back(std::move(pd));
+            VLOG(3) << "Need edge props: " << prop.first << ", " << prop.second;
         }
         return props;
     }
@@ -766,6 +769,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getDstProps() {
         auto tagId = status.value();
         pd.id.set_tag_id(tagId);
         props.emplace_back(std::move(pd));
+        VLOG(3) << "Need dst tag props: " << tagProp.first << ", " << tagProp.second;
     }
     return props;
 }

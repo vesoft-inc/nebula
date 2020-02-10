@@ -1997,6 +1997,35 @@ TEST_P(GoTest, Bidirect) {
     }
     {
         cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve, like bidirect";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}, {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {teams_["Spurs"].vid(), 0},
+            {0, players_["Tony Parker"].vid()},
+            {0, players_["Manu Ginobili"].vid()},
+            {0, players_["Tony Parker"].vid()},
+            {0, players_["Manu Ginobili"].vid()},
+            {0, players_["LaMarcus Aldridge"].vid()},
+            {0, players_["Marco Belinelli"].vid()},
+            {0, players_["Danny Green"].vid()},
+            {0, players_["Aron Baynes"].vid()},
+            {0, players_["Boris Diaw"].vid()},
+            {0, players_["Tiago Splitter"].vid()},
+            {0, players_["Dejounte Murray"].vid()},
+            {0, players_["Shaquile O'Neal"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER * bidirect";
         auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
         auto code = client_->execute(query, resp);
@@ -2027,6 +2056,113 @@ TEST_P(GoTest, Bidirect) {
             {0, 0, players_["Danny Green"].vid()},
             {0, 0, players_["Tony Parker"].vid()},
             {0, 0, players_["Manu Ginobili"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve bidirect YIELD $$.team.name";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$$.team.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string>> expected = {
+            {"Spurs"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like bidirect YIELD $$.player.name";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$$.player.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string>> expected = {
+            {"Tony Parker"},
+            {"Manu Ginobili"},
+            {"Tony Parker"},
+            {"Manu Ginobili"},
+            {"LaMarcus Aldridge"},
+            {"Marco Belinelli"},
+            {"Danny Green"},
+            {"Aron Baynes"},
+            {"Boris Diaw"},
+            {"Tiago Splitter"},
+            {"Dejounte Murray"},
+            {"Shaquile O'Neal"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like bidirect "
+                    "WHERE like.likeness > 90 "
+                    "YIELD $^.player.name, like._dst, $$.player.name, like.likeness";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name", "like._dst", "$$.player.name", "like.likeness"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<std::string, int64_t, std::string, int64_t>> expected = {
+            {"Tim Duncan", players_["Tony Parker"].vid(), "Tony Parker", 95},
+            {"Tim Duncan", players_["Manu Ginobili"].vid(), "Manu Ginobili", 95},
+            {"Tim Duncan", players_["Tony Parker"].vid(), "Tony Parker", 95},
+            {"Tim Duncan", players_["Dejounte Murray"].vid(), "Dejounte Murray", 99},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER * bidirect "
+                    "YIELD $^.player.name, serve._dst, $$.team.name, like._dst, $$.player.name";
+        auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"$^.player.name"}, {"serve._dst"}, {"$$.team.name"}, {"like._dst"}, {"$$.player.name"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<
+                    std::tuple<std::string, int64_t, std::string, int64_t, std::string>
+                   > expected = {
+            {"Tim Duncan", teams_["Spurs"].vid(), "Spurs", 0, ""},
+            {"Tim Duncan", 0, "", players_["Tony Parker"].vid(), "Tony Parker"},
+            {"Tim Duncan", 0, "", players_["Manu Ginobili"].vid(), "Manu Ginobili"},
+            {"Tim Duncan", 0, "", players_["Tony Parker"].vid(), "Tony Parker"},
+            {"Tim Duncan", 0, "", players_["Manu Ginobili"].vid(), "Manu Ginobili"},
+            {"Tim Duncan", 0, "", players_["LaMarcus Aldridge"].vid(), "LaMarcus Aldridge"},
+            {"Tim Duncan", 0, "", players_["Marco Belinelli"].vid(), "Marco Belinelli"},
+            {"Tim Duncan", 0, "", players_["Danny Green"].vid(), "Danny Green"},
+            {"Tim Duncan", 0, "", players_["Aron Baynes"].vid(), "Aron Baynes"},
+            {"Tim Duncan", 0, "", players_["Boris Diaw"].vid(), "Boris Diaw"},
+            {"Tim Duncan", 0, "", players_["Tiago Splitter"].vid(), "Tiago Splitter"},
+            {"Tim Duncan", 0, "", players_["Dejounte Murray"].vid(), "Dejounte Murray"},
+            {"Tim Duncan", 0, "", players_["Shaquile O'Neal"].vid(), "Shaquile O'Neal"},
+            // These response derives from the teamates, the fifth column has property
+            // because that we collect props with column name.
+            {"Tim Duncan", 0, "", 0, "Tony Parker"},
+            {"Tim Duncan", 0, "", 0, "Manu Ginobili"},
+            {"Tim Duncan", 0, "", 0, "Danny Green"},
+            {"Tim Duncan", 0, "", 0, "LaMarcus Aldridge"},
+            {"Tim Duncan", 0, "", 0, "Tony Parker"},
+            {"Tim Duncan", 0, "", 0, "Manu Ginobili"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
