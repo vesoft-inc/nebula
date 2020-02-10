@@ -43,13 +43,14 @@ public:
     /*
      * Build job description and save it in kvstore.
      * */
-    StatusOr<JobDescription> buildJobDescription(const std::vector<std::string>& args);
+    StatusOr<JobDescription>
+    buildJobDescription(int32_t jobId, const std::vector<std::string>& args);
     /*
      * Load job description from kvstore
      * */
     int32_t addJob(const JobDescription& jobDesc);
-    StatusOr<std::vector<cpp2::JobDetails>> showJobs();
-    StatusOr<std::pair<cpp2::JobDetails, std::vector<cpp2::TaskDetails>>> showJob(int iJob);
+    StatusOr<std::vector<cpp2::JobDesc>> showJobs();
+    StatusOr<std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>> showJob(int iJob);
     nebula::Status stopJob(int32_t iJob);
     std::pair<int, int> backupJob(int iBegin, int iEnd);
     int32_t recoverJob();
@@ -58,7 +59,6 @@ private:
     JobManager() = default;
     void runJobBackground();
     bool runJobInternal(const JobDescription& jobDesc);
-    StatusOr<int32_t> reserveJobId();
     int getSpaceId(const std::string& name);
     nebula::kvstore::ResultCode save(const std::string& k, const std::string& v);
 

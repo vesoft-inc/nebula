@@ -55,21 +55,6 @@ const std::string& JobUtil::archivePrefix() {
     return kJobArchive;
 }
 
-std::string JobUtil::strTimeT(std::time_t t) {
-    std::string ret;
-    if (t == 0) {
-        return ret;
-    }
-    std::time_t tm = t;
-    char mbstr[50];
-    int len = std::strftime(mbstr, sizeof(mbstr), "%x %X", std::localtime(&tm));
-
-    if (len != 0) {
-        ret = std::string(&mbstr[0], len);
-    }
-    return ret;
-}
-
 std::string JobUtil::parseString(folly::StringPiece rawVal, size_t offset) {
     if (rawVal.size() < offset + sizeof(size_t)) {
         throw std::runtime_error(folly::stringPrintf("%s: offset=%zu, rawVal.size()=%zu",

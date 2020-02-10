@@ -13,17 +13,18 @@ namespace meta {
 const int kNotStarted = 0;
 const int kInProgress = 1;
 const int kDeadEnd = 2;
+using Status = cpp2::JobStatus;
 
-int JobStatus::phaseNumber(JobStatus::Status st) {
-    if (st == JobStatus::Status::QUEUE) return kNotStarted;
-    if (st == JobStatus::Status::RUNNING) return kInProgress;
-    if (st == JobStatus::Status::FINISHED) return kDeadEnd;
-    if (st == JobStatus::Status::FAILED) return kDeadEnd;
-    if (st == JobStatus::Status::STOPPED) return kDeadEnd;
+int JobStatus::phaseNumber(Status st) {
+    if (st == Status::QUEUE) return kNotStarted;
+    if (st == Status::RUNNING) return kInProgress;
+    if (st == Status::FINISHED) return kDeadEnd;
+    if (st == Status::FAILED) return kDeadEnd;
+    if (st == Status::STOPPED) return kDeadEnd;
     return INT_MIN;
 }
 
-bool JobStatus::laterThan(JobStatus::Status lhs, JobStatus::Status rhs) {
+bool JobStatus::laterThan(Status lhs, Status rhs) {
     return phaseNumber(lhs) > phaseNumber(rhs);
 }
 
@@ -43,24 +44,6 @@ std::string JobStatus::toString(Status st) {
         return "invalid";
     }
     return "invalid st";
-}
-
-JobStatus::Status JobStatus::toStatus(const std::string& strStatus) {
-    if (strStatus == "queue") {
-        return Status::QUEUE;
-    } else if (strStatus == "running") {
-        return Status::RUNNING;
-    } else if (strStatus == "queue") {
-        return Status::QUEUE;
-    } else if (strStatus == "finished") {
-        return Status::FINISHED;
-    } else if (strStatus == "failed") {
-        return Status::FAILED;
-    } else if (strStatus == "stopped") {
-        return Status::STOPPED;
-    } else {
-        return Status::INVALID;
-    }
 }
 
 }  // namespace meta

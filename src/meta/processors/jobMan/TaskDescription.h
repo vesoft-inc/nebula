@@ -38,7 +38,7 @@ class TaskDescription {
     FRIEND_TEST(JobManagerTest, showJob);
 
 public:
-    TaskDescription(int32_t iJob, int32_t iTask, const std::string& dest);
+    TaskDescription(int32_t iJob, int32_t iTask, const nebula::cpp2::HostAddr& dest);
     TaskDescription(const folly::StringPiece& key, const folly::StringPiece& val);
 
     /*
@@ -62,9 +62,7 @@ public:
      * should be
      * {host, status, start time, stop time}
      * */
-    static std::tuple<std::string, JobStatus::Status,
-                      std::time_t,
-                      std::time_t>
+    static std::tuple<nebula::cpp2::HostAddr, cpp2::JobStatus, int64_t, int64_t>
     parseVal(const folly::StringPiece& rawVal);
 
     /*
@@ -83,7 +81,7 @@ public:
      *  then the vector should be
      * {27-0, 192.168.8.5, finished, 12/09/19 11:09:40, 12/09/19 11:09:40}
      * */
-    cpp2::TaskDetails toTaskDetails();
+    cpp2::TaskDesc toTaskDesc();
 
     /*
      * set the internal status
@@ -93,15 +91,15 @@ public:
      * will set start time if newStatus is running
      * will set stop time if newStatus is finished / failed / stopped
      * */
-    bool setStatus(JobStatus::Status newStatus);
+    bool setStatus(cpp2::JobStatus newStatus);
 
 private:
     int32_t                         iJob_;
     int32_t                         iTask_;
-    std::string                     dest_;
-    JobStatus::Status               status_;
-    std::time_t                     startTime_;
-    std::time_t                     stopTime_;
+    nebula::cpp2::HostAddr          dest_;
+    cpp2::JobStatus                 status_;
+    int64_t                         startTime_;
+    int64_t                         stopTime_;
 };
 
 }  // namespace meta

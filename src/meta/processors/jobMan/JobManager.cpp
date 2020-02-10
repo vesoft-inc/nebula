@@ -81,16 +81,16 @@ void JobManager::runJobBackground() {
             LOG(ERROR) << "[JobManager] load a invalid job from queue " << iJob;
             continue;   // leader change or archive happend
         }
-        if (!jobDesc->setStatus(JobStatus::Status::RUNNING)) {
+        if (!jobDesc->setStatus(cpp2::JobStatus::RUNNING)) {
             LOG(INFO) << "[JobManager] skip job " << iJob;
             continue;
         }
         save(jobDesc->jobKey(), jobDesc->jobVal());
 
         if (runJobInternal(*jobDesc)) {
-            jobDesc->setStatus(JobStatus::Status::FINISHED);
+            jobDesc->setStatus(cpp2::JobStatus::FINISHED);
         } else {
-            jobDesc->setStatus(JobStatus::Status::FAILED);
+            jobDesc->setStatus(cpp2::JobStatus::FAILED);
         }
         save(jobDesc->jobKey(), jobDesc->jobVal());
     }
@@ -112,11 +112,20 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc) {
     }
 
     std::string op = jobDesc.getType();
-    std::unordered_set<std::string> storageIPs;
+
+    struct HostAddrCmp {
+        bool operator()(const nebula::cpp2::HostAddr& a,
+                        const nebula::cpp2::HostAddr& b) const {
+            if (a.get_ip() == b.get_ip()) {
+                return a.get_port() < b.get_port();
+            }
+            return a.get_ip() < b.get_ip();
+        }
+    };
+    std::set<nebula::cpp2::HostAddr, HostAddrCmp> hosts;
     while (iter->valid()) {
         for (auto &host : MetaServiceUtils::parsePartVal(iter->val())) {
-            auto storageIP = network::NetworkUtils::intToIPv4(host.get_ip());
-            storageIPs.insert(storageIP);
+            hosts.insert(host);
         }
         iter->next();
     }
@@ -124,24 +133,25 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc) {
     int32_t iJob = jobDesc.getJobId();
     std::vector<folly::SemiFuture<bool>> futures;
     size_t iTask = 0;
-    for (auto& storageIP : storageIPs) {
+    for (auto& host : hosts) {
         auto dispatcher = [=]() {
             static const char *tmp = "http://%s:%d/admin?op=%s&space=%s";
-            auto url = folly::stringPrintf(tmp, storageIP.c_str(),
+            auto strIP = network::NetworkUtils::intToIPv4(host.get_ip());
+            auto url = folly::stringPrintf(tmp, strIP.c_str(),
                                            FLAGS_ws_storage_http_port,
                                            op.c_str(),
                                            spaceName.c_str());
             LOG(INFO) << "make admin url: " << url << ", iTask=" << iTask;
-            TaskDescription taskDesc(iJob, iTask, storageIP);
+            TaskDescription taskDesc(iJob, iTask, host);
             save(taskDesc.taskKey(), taskDesc.taskVal());
 
             auto httpResult = nebula::http::HttpClient::get(url, "-GSs");
             bool succeed = httpResult.ok() && httpResult.value() == "ok";
 
             if (succeed) {
-                taskDesc.setStatus(JobStatus::Status::FINISHED);
+                taskDesc.setStatus(cpp2::JobStatus::FINISHED);
             } else {
-                taskDesc.setStatus(JobStatus::Status::FAILED);
+                taskDesc.setStatus(cpp2::JobStatus::FAILED);
             }
 
             save(taskDesc.taskKey(), taskDesc.taskVal());
@@ -171,15 +181,11 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc) {
 }
 
 StatusOr<JobDescription>
-JobManager::buildJobDescription(const std::vector<std::string>& args) {
+JobManager::buildJobDescription(int32_t jobId, const std::vector<std::string>& args) {
     using retType = StatusOr<JobDescription>;
     auto command = args[0];
     std::vector<std::string> paras(args.begin() + 1, args.end());
-    auto errOrJobId = reserveJobId();
-    if (!errOrJobId.ok()) {
-        return retType(errOrJobId.status());
-    }
-    return retType(JobDescription(errOrJobId.value(), command, paras));
+    return retType(JobDescription(jobId, command, paras));
 }
 
 int32_t JobManager::addJob(const JobDescription& jobDesc) {
@@ -188,9 +194,9 @@ int32_t JobManager::addJob(const JobDescription& jobDesc) {
     return jobDesc.getJobId();
 }
 
-StatusOr<std::vector<cpp2::JobDetails>>
+StatusOr<std::vector<cpp2::JobDesc>>
 JobManager::showJobs() {
-    using TReturn = StatusOr<std::vector<cpp2::JobDetails>>;
+    using TReturn = StatusOr<std::vector<cpp2::JobDesc>>;
     TReturn ret;
     std::unique_ptr<kvstore::KVIterator> iter;
     ResultCode rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId,
@@ -199,23 +205,22 @@ JobManager::showJobs() {
         ret = Status::Error("kvstore err code = %d", rc);
         return ret;
     }
-    ret = std::vector<cpp2::JobDetails>{};
-
+    ret = std::vector<cpp2::JobDesc>{};
     for (; iter->valid(); iter->next()) {
         if (JobDescription::isJobKey(iter->key())) {
             auto optJob = JobDescription::makeJobDescription(iter->key(), iter->val());
             if (optJob != folly::none) {
-                ret.value().emplace_back(optJob->toJobDetails());
+                ret.value().emplace_back(optJob->toJobDesc());
             }
         }
     }
     return ret;
 }
 
-StatusOr<std::pair<cpp2::JobDetails, std::vector<cpp2::TaskDetails>>>
+StatusOr<std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>>
 JobManager::showJob(int iJob) {
-    using TReturn = StatusOr<std::pair<cpp2::JobDetails, std::vector<cpp2::TaskDetails>>>;
-    std::pair<cpp2::JobDetails, std::vector<cpp2::TaskDetails>> ret;
+    using TReturn = StatusOr<std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>>;
+    std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>> ret;
     auto jobKey = JobDescription::makeJobKey(iJob);
     std::unique_ptr<kvstore::KVIterator> iter;
     ResultCode rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, jobKey, &iter);
@@ -227,11 +232,11 @@ JobManager::showJob(int iJob) {
         if (JobDescription::isJobKey(iter->key())) {
             auto optJob = JobDescription::makeJobDescription(iter->key(), iter->val());
             if (optJob != folly::none) {
-                ret.first = optJob->toJobDetails();
+                ret.first = optJob->toJobDesc();
             }
         } else {
             TaskDescription td(iter->key(), iter->val());
-            ret.second.emplace_back(td.toTaskDetails());
+            ret.second.emplace_back(td.toTaskDesc());
         }
     }
     return ret;
@@ -243,7 +248,7 @@ nebula::Status JobManager::stopJob(int32_t iJob) {
         return Status::Error("kvstore err %d", nebula::kvstore::ResultCode::ERR_KEY_NOT_FOUND);
     }
 
-    jobDesc->setStatus(JobStatus::Status::STOPPED);
+    jobDesc->setStatus(cpp2::JobStatus::STOPPED);
     save(jobDesc->jobKey(), jobDesc->jobVal());
 
     return Status::OK();
@@ -297,42 +302,17 @@ int32_t JobManager::recoverJob() {
     std::unique_ptr<kvstore::KVIterator> iter;
     kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
     for (; iter->valid(); iter->next()) {
-        if (!JobDescription::isJobKey(iter->key())) { continue; }
+        if (!JobDescription::isJobKey(iter->key())) {
+            continue;
+        }
         auto optJob = JobDescription::makeJobDescription(iter->key(), iter->val());
         if (optJob == folly::none) { continue; }
-        if (optJob->getStatus() == JobStatus::Status::QUEUE) {
+        if (optJob->getStatus() == cpp2::JobStatus::QUEUE) {
             queue_->enqueue(optJob->getJobId());
             ++recoveredJobNum;
         }
     }
     return recoveredJobNum;
-}
-
-StatusOr<int32_t> JobManager::reserveJobId() {
-    folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
-
-    auto currId = JobUtil::currJobKey();
-    std::string val;
-    ResultCode rc = kvStore_->get(kDefaultPartId, kDefaultSpaceId, currId, &val);
-    if (rc == nebula::kvstore::ERR_KEY_NOT_FOUND) {
-        val = std::to_string(0);    // assume there is a val 0
-    } else if (rc != nebula::kvstore::SUCCEEDED) {
-        std::string msg = folly::stringPrintf("kvStore error %d", rc);
-        LOG(ERROR) << msg;
-        return StatusOr<int32_t>(Status::Error(msg));
-    }
-
-    int32_t oldId = atoi(val.c_str());
-    int32_t newId = oldId + 1;
-
-    rc = save(currId, std::to_string(newId));
-    if (rc != nebula::kvstore::SUCCEEDED) {
-        std::string msg = folly::stringPrintf("kvStore error %d", rc);
-        LOG(ERROR) << msg;
-        return Status::Error(msg);
-    }
-
-    return newId;
 }
 
 nebula::kvstore::ResultCode JobManager::save(const std::string& k, const std::string& v) {

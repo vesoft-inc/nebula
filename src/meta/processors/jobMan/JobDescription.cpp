@@ -16,12 +16,14 @@
 namespace nebula {
 namespace meta {
 
+using Status = cpp2::JobStatus;
+
 JobDescription::JobDescription(int32_t id,
                                std::string type,
                                std::vector<std::string> paras,
-                               JobStatus::Status status,
-                               std::time_t startTime,
-                               std::time_t stopTime)
+                               Status status,
+                               int64_t startTime,
+                               int64_t stopTime)
                                : id_(id),
                                  type_(std::move(type)),
                                  paras_(std::move(paras)),
@@ -92,17 +94,17 @@ std::string JobDescription::jobVal() const {
         str.append(reinterpret_cast<const char*>(&len), sizeof(len));
         str.append(reinterpret_cast<const char*>(&para[0]), len);
     }
-    str.append(reinterpret_cast<const char*>(&status_), sizeof(JobStatus::Status));
-    str.append(reinterpret_cast<const char*>(&startTime_), sizeof(std::time_t));
-    str.append(reinterpret_cast<const char*>(&stopTime_), sizeof(std::time_t));
+    str.append(reinterpret_cast<const char*>(&status_), sizeof(Status));
+    str.append(reinterpret_cast<const char*>(&startTime_), sizeof(int64_t));
+    str.append(reinterpret_cast<const char*>(&stopTime_), sizeof(int64_t));
     return str;
 }
 
 std::tuple<std::string,
            std::vector<std::string>,
-           JobStatus::Status,
-           std::time_t,
-           std::time_t>
+           Status,
+           int64_t,
+           int64_t>
 JobDescription::parseVal(const folly::StringPiece& rawVal) {
     size_t offset = 0;
 
@@ -111,29 +113,29 @@ JobDescription::parseVal(const folly::StringPiece& rawVal) {
 
     std::vector<std::string> paras = JobUtil::parseStrVector(rawVal, &offset);
 
-    auto status = JobUtil::parseFixedVal<JobStatus::Status>(rawVal, offset);
-    offset += sizeof(JobStatus::Status);
+    auto status = JobUtil::parseFixedVal<Status>(rawVal, offset);
+    offset += sizeof(Status);
 
-    auto tStart = JobUtil::parseFixedVal<std::time_t>(rawVal, offset);
-    offset += sizeof(std::time_t);
+    auto tStart = JobUtil::parseFixedVal<int64_t>(rawVal, offset);
+    offset += sizeof(int64_t);
 
-    auto tStop = JobUtil::parseFixedVal<std::time_t>(rawVal, offset);
+    auto tStop = JobUtil::parseFixedVal<int64_t>(rawVal, offset);
 
     return std::make_tuple(type, paras, status, tStart, tStop);
 }
 
-cpp2::JobDetails JobDescription::toJobDetails() {
-    cpp2::JobDetails ret;
-    ret.set_id(std::to_string(id_));
+cpp2::JobDesc JobDescription::toJobDesc() {
+    cpp2::JobDesc ret;
+    ret.set_id(id_);
     std::stringstream oss;
     oss << type_ << " ";
     for (auto& p : paras_) {
         oss << p << " ";
     }
     ret.set_typeAndParas(oss.str());
-    ret.set_status(JobStatus::toString(status_));
-    ret.set_startTime(JobUtil::strTimeT(startTime_));
-    ret.set_stopTime(JobUtil::strTimeT(stopTime_));
+    ret.set_status(status_);
+    ret.set_startTime(startTime_);
+    ret.set_stopTime(stopTime_);
     return ret;
 }
 
@@ -146,15 +148,15 @@ std::string JobDescription::archiveKey() {
     return str;
 }
 
-bool JobDescription::setStatus(JobStatus::Status newStatus) {
+bool JobDescription::setStatus(Status newStatus) {
     if (JobStatus::laterThan(status_, newStatus)) {
         return false;
     }
     status_ = newStatus;
-    if (newStatus == JobStatus::Status::RUNNING) {
+    if (newStatus == Status::RUNNING) {
         startTime_ = std::time(nullptr);
     }
-    if (JobStatus::laterThan(newStatus, JobStatus::Status::RUNNING)) {
+    if (JobStatus::laterThan(newStatus, Status::RUNNING)) {
         stopTime_ = std::time(nullptr);
     }
     return true;

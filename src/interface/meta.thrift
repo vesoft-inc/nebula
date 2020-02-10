@@ -187,20 +187,30 @@ struct AdminJobReq {
     2: list<string> paras;
 }
 
-struct JobDetails {
-    1: string id
+enum JobStatus {
+    QUEUE           = 0x01,
+    RUNNING         = 0x02,
+    FINISHED        = 0x03,
+    FAILED          = 0x04,
+    STOPPED         = 0x05,
+    INVALID         = 0xFF,
+} (cpp.enum_strict)
+
+struct JobDesc {
+    1: i32 id
     2: string typeAndParas
-    3: string status
-    4: string startTime
-    5: string stopTime
+    3: JobStatus status
+    4: i64 startTime
+    5: i64 stopTime
 }
 
-struct TaskDetails {
-    1: string id
-    2: string host
-    3: string status
-    4: string startTime
-    5: string stopTime
+struct TaskDesc {
+    1: i32 taskId
+    2: common.HostAddr host
+    3: JobStatus status
+    4: i64 startTime
+    5: i64 stopTime
+    6: i32 jobId
 }
 
 struct BackupJobResult {
@@ -209,10 +219,15 @@ struct BackupJobResult {
 }
 
 struct AdminJobResult {
+    // used in "admin flush" and "admin compact"
     1: optional i32                 jobId
-    2: optional list<JobDetails>    jobDetails
-    3: optional list<TaskDetails>   taskDetails
+    // used in "show jobs" and "show job <id>"
+    2: optional list<JobDesc>       jobDesc
+    // used in "show job <id>"
+    3: optional list<TaskDesc>      taskDesc
+    // used in "backup job"
     4: optional BackupJobResult     backupResult
+    // used in "recover job"
     5: optional i32                 recoveredJobNum
 }
 

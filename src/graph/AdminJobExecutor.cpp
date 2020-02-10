@@ -3,6 +3,7 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
+#include "gen-cpp2/meta_types.h"
 #include "http/HttpClient.h"
 #include "graph/AdminJobExecutor.h"
 #include "process/ProcessUtils.h"
@@ -117,29 +118,44 @@ AdminJobExecutor::toAdminJobOp(const std::string& op) {
     return nebula::meta::cpp2::AdminJobOp::INVALID;
 }
 
+std::string AdminJobExecutor::time2string(int64_t t) {
+    std::string ret;
+    if (t == 0) {
+        return ret;
+    }
+    std::time_t tm = t;
+    char mbstr[50];
+    int len = std::strftime(mbstr, sizeof(mbstr), "%x %X", std::localtime(&tm));
+
+    if (len != 0) {
+        ret = std::string(&mbstr[0], len);
+    }
+    return ret;
+}
+
 cpp2::RowValue
-AdminJobExecutor::toRowValue(const nebula::meta::cpp2::JobDetails& job) {
+AdminJobExecutor::toRowValue(const nebula::meta::cpp2::JobDesc& job) {
     cpp2::RowValue ret;
     std::vector<cpp2::ColumnValue> row(5);
-    row[0].set_str(job.get_id());
+    row[0].set_str(std::to_string(job.get_id()));
     row[1].set_str(job.get_typeAndParas());
-    row[2].set_str(job.get_status());
-    row[3].set_str(job.get_startTime());
-    row[4].set_str(job.get_stopTime());
+    row[2].set_str(toString(job.get_status()));
+    row[3].set_str(time2string(job.get_startTime()));
+    row[4].set_str(time2string(job.get_stopTime()));
 
     ret.set_columns(std::move(row));
     return ret;
 }
 
 cpp2::RowValue
-AdminJobExecutor::toRowValue(const nebula::meta::cpp2::TaskDetails& task) {
+AdminJobExecutor::toRowValue(const nebula::meta::cpp2::TaskDesc& task) {
     cpp2::RowValue ret;
     std::vector<cpp2::ColumnValue> row(5);
-    row[0].set_str(task.get_id());
-    row[1].set_str(task.get_host());
-    row[2].set_str(task.get_status());
-    row[3].set_str(task.get_startTime());
-    row[4].set_str(task.get_stopTime());
+    row[0].set_str(folly::stringPrintf("%d-%d", task.get_jobId(), task.get_taskId()));
+    row[1].set_str(toString(task.get_host()));
+    row[2].set_str(toString(task.get_status()));
+    row[3].set_str(time2string(task.get_startTime()));
+    row[4].set_str(time2string(task.get_stopTime()));
 
     ret.set_columns(std::move(row));
     return ret;
@@ -166,17 +182,17 @@ AdminJobExecutor::toRowValues(nebula::meta::cpp2::AdminJobOp op,
         break;
     case nebula::meta::cpp2::AdminJobOp::SHOW_All:
         {
-            for (auto& job : *resp.get_jobDetails()) {
+            for (auto& job : *resp.get_jobDesc()) {
                 ret.emplace_back(toRowValue(job));
             }
         }
         break;
     case nebula::meta::cpp2::AdminJobOp::SHOW:
         {
-            for (auto& job : *resp.get_jobDetails()) {
+            for (auto& job : *resp.get_jobDesc()) {
                 ret.emplace_back(toRowValue(job));
             }
-            for (auto& task : *resp.get_taskDetails()) {
+            for (auto& task : *resp.get_taskDesc()) {
                 ret.emplace_back(toRowValue(task));
             }
         }
@@ -204,6 +220,31 @@ AdminJobExecutor::toRowValues(nebula::meta::cpp2::AdminJobOp op,
     default:
         return ret;
     }
+    return ret;
+}
+
+std::string
+AdminJobExecutor::toString(nebula::meta::cpp2::JobStatus st) {
+    switch (st) {
+    case nebula::meta::cpp2::JobStatus::QUEUE:
+        return "queue";
+    case nebula::meta::cpp2::JobStatus::RUNNING:
+        return "running";
+    case nebula::meta::cpp2::JobStatus::FINISHED:
+        return "finished";
+    case nebula::meta::cpp2::JobStatus::FAILED:
+        return "failed";
+    case nebula::meta::cpp2::JobStatus::STOPPED:
+        return "stopped";
+    case nebula::meta::cpp2::JobStatus::INVALID:
+        return "invalid";
+    }
+    return "invalid st";
+}
+
+std::string AdminJobExecutor::toString(nebula::cpp2::HostAddr host) {
+    auto ip = network::NetworkUtils::intToIPv4(host.get_ip());
+    auto ret = folly::stringPrintf("%s:%d", ip.c_str(), host.get_port());
     return ret;
 }
 

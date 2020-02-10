@@ -18,12 +18,11 @@
 namespace nebula {
 namespace meta {
 
-class JobUtil{
+class JobUtil {
 public:
     static const std::string& jobPrefix();
     static const std::string& currJobKey();
     static const std::string& archivePrefix();
-    static std::string strTimeT(std::time_t t);
 
     template<typename T>
     static T parseFixedVal(folly::StringPiece rawVal, size_t offset) {

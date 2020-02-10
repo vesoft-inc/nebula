@@ -16,17 +16,24 @@ namespace meta {
 
 void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
     Status status;
-    // std::vector<std::string> result;
     cpp2::AdminJobResult result;
     std::stringstream oss;
-    for (auto& p : req.get_paras()) { oss << p << " "; }
+    for (auto& p : req.get_paras()) {
+        oss << p << " ";
+    }
     LOG(INFO) << __PRETTY_FUNCTION__ << " paras=" << oss.str();
 
     JobManager* jobMgr = JobManager::getInstance();
     switch (req.get_op()) {
         case nebula::meta::cpp2::AdminJobOp::ADD:
         {
-            auto jobDesc = jobMgr->buildJobDescription(req.get_paras());
+            auto newJobId = autoIncrementId();
+            if (!nebula::ok(newJobId)) {
+                resp_.set_code(nebula::error(newJobId));
+                onFinished();
+                return;
+            }
+            auto jobDesc = jobMgr->buildJobDescription(nebula::value(newJobId), req.get_paras());
             if (jobDesc.ok()) {
                 result.set_jobId(jobMgr->addJob(jobDesc.value()));
             } else {
@@ -38,7 +45,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         {
             auto r = jobMgr->showJobs();
             if (r.ok()) {
-                result.set_jobDetails(r.value());
+                result.set_jobDesc(r.value());
             } else {
                 status = r.status();
             }
@@ -56,9 +63,8 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
             }
             auto r = jobMgr->showJob(iJob);
             if (r.ok()) {
-                // result.swap(r.value());
-                result.set_jobDetails(std::vector<cpp2::JobDetails>{r.value().first});
-                result.set_taskDetails(r.value().second);
+                result.set_jobDesc(std::vector<cpp2::JobDesc>{r.value().first});
+                result.set_taskDesc(r.value().second);
             } else {
                 status = r.status();
             }
@@ -98,6 +104,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
             break;
         }
         default:
+            LOG(INFO) << "invalid job type";
             break;
     }
 

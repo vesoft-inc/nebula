@@ -36,9 +36,12 @@ private:
     bool opNeedsSpace(JobOpEnum op);
     JobOpEnum toAdminJobOp(const std::string& op);
     std::vector<cpp2::RowValue> toRowValues(JobOpEnum op, TJobResult &&resp);
-    cpp2::RowValue toRowValue(const nebula::meta::cpp2::JobDetails&);
-    cpp2::RowValue toRowValue(const nebula::meta::cpp2::TaskDetails&);
+    cpp2::RowValue toRowValue(const nebula::meta::cpp2::JobDesc&);
+    cpp2::RowValue toRowValue(const nebula::meta::cpp2::TaskDesc&);
     cpp2::RowValue toRowValue(std::string&& msg);
+    static std::string time2string(int64_t);
+    static std::string toString(nebula::meta::cpp2::JobStatus st);
+    static std::string toString(nebula::cpp2::HostAddr st);
 
 private:
     AdminSentence                             *sentence_{nullptr};

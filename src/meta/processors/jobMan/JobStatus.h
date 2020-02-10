@@ -9,23 +9,15 @@
 
 #include <vector>
 #include <string>
+#include "gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace meta {
 
 class JobStatus {
+    using Status = cpp2::JobStatus;
 public:
-    enum class Status : uint8_t {
-        QUEUE           = 0x01,
-        RUNNING         = 0x02,
-        FINISHED        = 0x03,
-        FAILED          = 0x04,
-        STOPPED         = 0x05,
-        INVALID         = 0x99,
-    };
-
     static std::string toString(Status st);
-    static Status toStatus(const std::string& strStatus);
     static bool laterThan(Status lhs, Status rhs);
 private:
     static int phaseNumber(Status st);
