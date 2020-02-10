@@ -725,19 +725,41 @@ TEST_F(SchemaTest, metaCommunication) {
         }
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    // Tag with negative value
+    // Tag with negative default value
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd =
+        const std::string cmd =
             "CREATE TAG default_tag_neg(id int DEFAULT -10, height double DEFAULT -176.0)";
+        auto code = client->execute(cmd, resp);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Tag with expression default value
+    {
+        cpp2::ExecutionResponse resp;
+        const std::string cmd = "CREATE TAG default_tag_expr"
+            "(id int DEFAULT 3/2*4-5, "  // arithmetic
+            "male bool DEFAULT 3 > 2, "  // relation
+            "height double DEFAULT abs(-176.0), "  // built-in function
+            "adult bool DEFAULT true && false)";  // logic
         auto code = client->execute(cmd, resp);
         EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // Edge with negative default value
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd =
+        const std::string cmd =
             "CREATE EDGE default_edge_neg(id int DEFAULT -10, height double DEFAULT -176.0)";
+        auto code = client->execute(cmd, resp);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Edge with expression default value
+    {
+        cpp2::ExecutionResponse resp;
+        const std::string cmd = "CREATE EDGE default_edge_expr"
+            "(id int DEFAULT 3/2*4-5, "  // arithmetic
+            "male bool DEFAULT 3 > 2, "  // relation
+            "height double DEFAULT abs(-176.0), "  // built-in function
+            "adult bool DEFAULT true && false)";  // logic
         auto code = client->execute(cmd, resp);
         EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -784,8 +806,8 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected{
-            {1017, "animal"},
-            {1018, "person"},
+            {1019, "animal"},
+            {1020, "person"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -800,7 +822,7 @@ TEST_F(SchemaTest, metaCommunication) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected1{
-            {1020, "test_tag"},
+            {1022, "test_tag"},
         };
         ASSERT_TRUE(verifyResult(resp, expected1));
 
@@ -808,8 +830,8 @@ TEST_F(SchemaTest, metaCommunication) {
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int32_t, std::string>> expected2{
-            {1017, "animal"},
-            {1018, "person"},
+            {1019, "animal"},
+            {1020, "person"},
         };
         ASSERT_TRUE(verifyResult(resp, expected2));
 

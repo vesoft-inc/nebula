@@ -31,65 +31,79 @@ public:
         return name_.get();
     }
 
-    void setIntValue(int64_t v) {
-        defaultValue_ = v;
-        hasDefault_ = true;
+    void setValue(Expression* expr) {
+        defaultExpr_.reset(DCHECK_NOTNULL(expr));
     }
 
-    StatusOr<int64_t> getIntValue() {
-        if (defaultValue_.which() != VAR_INT64) {
+    Status MUST_USE_RESULT prepare() {
+        if (hasDefault()) {
+            return defaultExpr_->prepare();
+        }
+        return Status::Error();
+    }
+
+    StatusOr<int64_t> getIntValue(Getters& getter) {
+        auto r = defaultExpr_->eval(getter);
+        if (!r.ok()) {
+            return std::move(r).status();
+        }
+        auto v = std::move(r).value();
+        if (!Expression::isInt(v)) {
             return Status::Error("Wrong type");
         }
-        int64_t v = boost::get<int64_t>(defaultValue_);
-        return v;
+        return Expression::toInt(v);
     }
 
-    void setBoolValue(bool v) {
-        defaultValue_ = v;
-        hasDefault_ = true;
-    }
-
-    StatusOr<bool> getBoolValue() {
-        if (defaultValue_.which() != VAR_BOOL) {
+    StatusOr<bool> getBoolValue(Getters& getter) {
+        auto r = defaultExpr_->eval(getter);
+        if (!r.ok()) {
+            return std::move(r).status();
+        }
+        auto v = std::move(r).value();
+        if (!Expression::isBool(v)) {
             return Status::Error("Wrong type");
         }
-        return boost::get<bool>(defaultValue_);
+        return Expression::toBool(v);
     }
 
-    void setDoubleValue(double v) {
-        defaultValue_ = v;
-        hasDefault_ = true;
-    }
-
-    StatusOr<double> getDoubleValue() {
-        if (defaultValue_.which() != VAR_DOUBLE) {
+    StatusOr<bool> getDoubleValue(Getters& getter) {
+        auto r = defaultExpr_->eval(getter);
+        if (!r.ok()) {
+            return std::move(r).status();
+        }
+        auto v = std::move(r).value();
+        if (!Expression::isDouble(v)) {
             return Status::Error("Wrong type");
         }
-        return boost::get<double>(defaultValue_);
+        return Expression::toDouble(v);
     }
 
-    void setStringValue(std::string *v) {
-        defaultValue_ = *v;
-        hasDefault_ = true;
-        delete v;
-    }
-
-    StatusOr<std::string> getStringValue() {
-        if (defaultValue_.which() != VAR_STR) {
+    StatusOr<std::string> getStringValue(Getters& getter) {
+        auto r = defaultExpr_->eval(getter);
+        if (!r.ok()) {
+            return std::move(r).status();
+        }
+        auto v = std::move(r).value();
+        if (!Expression::isString(v)) {
             return Status::Error("Wrong type");
         }
-        return boost::get<std::string>(defaultValue_);
+        return Expression::toString(v);
+    }
+
+    void setContext(ExpressionContext* ctx) {
+        if (defaultExpr_ != nullptr) {
+            defaultExpr_->setContext(ctx);
+        }
     }
 
     bool hasDefault() {
-        return hasDefault_;
+        return defaultExpr_ != nullptr;
     }
 
 private:
     ColumnType                                  type_;
     std::unique_ptr<std::string>                name_;
-    bool                                        hasDefault_{false};
-    VariantType                                 defaultValue_;
+    std::unique_ptr<Expression>                 defaultExpr_{nullptr};
 };
 
 
