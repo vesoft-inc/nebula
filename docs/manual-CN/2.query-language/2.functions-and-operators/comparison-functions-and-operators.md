@@ -90,7 +90,7 @@ nebula> YIELD 0.11 <= 0.11;
 不等于：
 
 ```ngql
-nebula> YIELD 1 != '1'
+nebula> YIELD 1 != '1';
 [ERROR (-8)]: A string type can not be compared with a non-string type.
 ```
 
@@ -99,24 +99,26 @@ nebula> YIELD 1 != '1'
 第一个参数为要比较的值。
 
 ```ngql
-nebula> YIELD udf_is_in(1,0,1,2)
+nebula> YIELD udf_is_in(1,0,1,2);
 ======================
 | udf_is_in(1,0,1,2) |
 ======================
 | true               |
 ----------------------
 
-nebula> GO FROM 201 OVER like WHERE udf_is_in($$.student.name, "Jane")
-=============
-| like._dst |
-=============
-| 202       |
--------------
+nebula> GO FROM 100 OVER follow WHERE udf_is_in($$.player.name, "Tony Parker");
+===============
+| follow._dst |
+===============
+| 101         |
+---------------
 
-nebula> GO FROM 201 OVER like YIELD like._dst AS id | GO FROM $-.id OVER like WHERE udf_is_in($-.id, 200, 200+1)
-=============
-| like._dst |
-=============
-| 201       |
--------------
+nebula> GO FROM 100 OVER follow YIELD follow._dst AS id | GO FROM $-.id OVER follow WHERE udf_is_in($-.id, 102, 102+1);
+===============
+| follow._dst |
+===============
+| 100         |
+---------------
+| 101         |
+---------------
 ```
