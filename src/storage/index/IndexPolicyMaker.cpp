@@ -98,20 +98,16 @@ cpp2::ErrorCode IndexPolicyMaker::traversalExpression(const Expression *expr) {
             auto* rExpr = dynamic_cast<const RelationalExpression*>(expr);
             auto* left = rExpr->left();
             auto* right = rExpr->right();
-            if (left->kind() == nebula::Expression::kAliasProp
-                && right->kind() == nebula::Expression::kPrimary) {
+            if (left->kind() == nebula::Expression::kAliasProp) {
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(left);
                 prop = *aExpr->prop();
-                auto* pExpr = dynamic_cast<const PrimaryExpression*>(right);
-                auto value = pExpr->eval(getters);
+                auto value = right->eval(getters);
                 if (!value.ok()) {
                     return cpp2::ErrorCode::E_INVALID_FILTER;
                 }
                 v = value.value();
-            } else if (left->kind() == nebula::Expression::kPrimary
-                       && right->kind() == nebula::Expression::kAliasProp) {
-                auto* pExpr = dynamic_cast<const PrimaryExpression*>(left);
-                auto value = pExpr->eval(getters);
+            } else if (right->kind() == nebula::Expression::kAliasProp) {
+                auto value = left->eval(getters);
                 if (!value.ok()) {
                     return cpp2::ErrorCode::E_INVALID_FILTER;
                 }
@@ -119,9 +115,8 @@ cpp2::ErrorCode IndexPolicyMaker::traversalExpression(const Expression *expr) {
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(right);
                 prop = *aExpr->prop();
             } else {
-                traversalExpression(left);
-                traversalExpression(right);
-                break;
+                optimizedPolicy_ = false;
+                return code;
             }
             operatorList_.emplace_back(std::make_tuple(std::move(prop), std::move(v), rExpr->op()));
             break;

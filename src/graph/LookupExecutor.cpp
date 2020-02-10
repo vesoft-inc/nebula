@@ -74,9 +74,8 @@ Status LookupExecutor::prepareWhere() {
     if (!clause) {
         return Status::SyntaxError("Where clause is required");
     }
-    whereWrapper_ = std::make_unique<WhereWrapper>(clause);
-    auto status = whereWrapper_->prepare(expCtx_.get());
-    return status;
+    filter_ = Expression::encode(clause->filter());
+    return Status::OK();
 }
 
 Status LookupExecutor::prepareYield() {
@@ -154,24 +153,35 @@ Status LookupExecutor::traversalExpr(const Expression *expr) {
             auto* rExpr = dynamic_cast<const RelationalExpression*>(expr);
             auto* left = rExpr->left();
             auto* right = rExpr->right();
-            if (left->kind() == nebula::Expression::kAliasProp
-                && right->kind() == nebula::Expression::kPrimary) {
+            /**
+             * TODO（sky） : Support WHERE ：tag1.col2 != tag1.col3
+             *  Handler error for FuncExpr or  ArithmeticExpr contains
+             *  AliasPropExpr , for example :
+             *  WHERE lookup_tag_2.col2 > (lookup_tag_2.col3 - 100)
+             */
+            if (left->kind() == nebula::Expression::kAliasProp &&
+                right->kind() == nebula::Expression::kAliasProp) {
+                return Status::SyntaxError("Unsupported syntax ：%s", rExpr->toString().c_str());
+            }  else if (left->kind() == nebula::Expression::kAliasProp) {
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(left);
                 prop = *aExpr->prop();
                 filters_.emplace_back(std::make_pair(prop, rExpr->op()));
-            } else if (left->kind() == nebula::Expression::kPrimary
-                       && right->kind() == nebula::Expression::kAliasProp) {
+            } else if (right->kind() == nebula::Expression::kAliasProp) {
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(right);
                 prop = *aExpr->prop();
                 filters_.emplace_back(std::make_pair(prop, rExpr->op()));
             } else {
-                return Status::SyntaxError("Unsupported syntax ：%s", rExpr->toString().c_str());
+                skipOptimize_ = true;
             }
             break;
         }
         case nebula::Expression::kFunctionCall : {
-            return Status::SyntaxError("Unsupported function call ： %s",
-                                       expr->toString().c_str());
+            auto* fExpr = dynamic_cast<const FunctionCallExpression*>(expr);
+            auto* name = fExpr->name();
+            if (*name == "udf_is_in") {
+                return Status::SyntaxError("Unsupported function call ： %s", name->c_str());
+            }
+            break;
         }
         default : {
             return Status::SyntaxError("Unsupported syntax ： %s", expr->toString().c_str());
@@ -181,7 +191,7 @@ Status LookupExecutor::traversalExpr(const Expression *expr) {
 }
 
 Status LookupExecutor::checkFilter() {
-    auto status = traversalExpr(whereWrapper_->getFilter());
+    auto status = traversalExpr(sentence_->whereClause()->filter());
     return status;
 }
 
@@ -291,6 +301,18 @@ LookupExecutor::findValidIndex(const std::vector<std::shared_ptr<nebula::cpp2::I
     return indexes;
 }
 
+
+void LookupExecutor::onEmptyInputs() {
+    auto resultColNames = getResultColumnNames();
+    auto outputs = std::make_unique<InterimResult>(std::move(resultColNames));
+    if (onResult_) {
+        onResult_(std::move(outputs));
+    } else if (resp_ == nullptr) {
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+    }
+    doFinish(Executor::ProcessControl::kNext);
+}
+
 void LookupExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
     auto resultColNames = getResultColumnNames();
     auto outputs = std::make_unique<InterimResult>(std::move(resultColNames));
@@ -367,6 +389,10 @@ void LookupExecutor::processEdgeResult(EdgeRpcResponse &&result) {
             rsWriter->addRow(writer.encode());
         }
     }  // for `resp'
+    if (outputSchema == nullptr) {
+        onEmptyInputs();
+        return;
+    }
     finishExecution(std::move(rsWriter));
 }
 
@@ -407,6 +433,10 @@ void LookupExecutor::processVertexResult(VertexRpcResponse &&result) {
             rsWriter->addRow(writer.encode());
         }
     }  // for `resp'
+    if (outputSchema == nullptr) {
+        onEmptyInputs();
+        return;
+    }
     finishExecution(std::move(rsWriter));
 }
 
@@ -414,7 +444,7 @@ void LookupExecutor::stepEdgeOut() {
     auto *sc = ectx()->getStorageClient();
     auto future  = sc->lookUpEdgeIndex(spaceId_,
                                        index_,
-                                       whereWrapper_->getFilterPushdown(),
+                                       filter_,
                                        returnCols_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
@@ -443,7 +473,7 @@ void LookupExecutor::stepVertexOut() {
     auto *sc = ectx()->getStorageClient();
     auto future  = sc->lookUpVertexIndex(spaceId_,
                                          index_,
-                                         whereWrapper_->getFilterPushdown(),
+                                         filter_,
                                          returnCols_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {

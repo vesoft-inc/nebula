@@ -54,6 +54,8 @@ private:
 
     void stepVertexOut();
 
+    void onEmptyInputs();
+
     void finishExecution(std::unique_ptr<RowSetWriter> rsWriter);
 
     void setOutputYields(SchemaWriter *outputSchema,
@@ -73,7 +75,7 @@ private:
     GraphSpaceID                                   spaceId_;
     IndexID                                        index_;
     const std::string                              *from_{nullptr};
-    std::unique_ptr<WhereWrapper>                  whereWrapper_;
+    std::string                                    filter_;
     std::vector<YieldColumn*>                      yields_;
     std::unique_ptr<YieldClauseWrapper>            yieldClauseWrapper_;
     std::unique_ptr<ExpressionContext>             expCtx_;
