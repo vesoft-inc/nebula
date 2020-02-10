@@ -106,12 +106,11 @@ public:
 
     // TODO(panda) Optimize the method in the future
     bool checkDataTtlValid(const meta::SchemaProviderIf* schema, nebula::RowReader* reader) const {
-        const meta::NebulaSchemaProvider* nschema =
-            dynamic_cast<const meta::NebulaSchemaProvider*>(schema);
+        const auto* nschema = dynamic_cast<const meta::NebulaSchemaProvider*>(schema);
         if (nschema == NULL) {
             return true;
         }
-        const nebula::cpp2::SchemaProp schemaProp = nschema->getProp();
+        const auto schemaProp = nschema->getProp();
         int ttlDuration = 0;
         if (schemaProp.get_ttl_duration()) {
             ttlDuration = *schemaProp.get_ttl_duration();
