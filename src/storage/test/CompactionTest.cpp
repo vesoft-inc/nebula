@@ -10,6 +10,7 @@
 #include <folly/synchronization/Baton.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
+#include "storage/CommonUtils.h"
 #include "storage/CompactionFilter.h"
 #include "dataman/RowWriter.h"
 

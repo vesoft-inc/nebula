@@ -12,6 +12,7 @@
 #include "dataman/RowReader.h"
 #include "meta/NebulaSchemaProvider.h"
 #include "kvstore/CompactionFilter.h"
+#include "storage/CommonUtils.h"
 
 DEFINE_bool(storage_kv_mode, false, "True for kv mode");
 
@@ -126,41 +127,7 @@ public:
             return true;
         }
 
-        auto now = time::WallClock::fastNowInSec();
-        const auto& ftype = nschema->getFieldType(ttlCol);
-
-        int64_t v = 0;
-        switch (ftype.type) {
-            case nebula::cpp2::SupportedType::TIMESTAMP:
-            case nebula::cpp2::SupportedType::INT: {
-                auto ret = reader->getInt<int64_t>(ttlCol, v);
-                if (ret != ResultType::SUCCEEDED) {
-                    VLOG(3) << "Data read error";
-                    // Reading wrong data should not be deleted
-                    return true;
-                }
-                break;
-            }
-            case nebula::cpp2::SupportedType::VID: {
-                auto ret = reader->getVid(ttlCol, v);
-                if (ret == ResultType::SUCCEEDED) {
-                    VLOG(3) << "Data read error";
-                    // Reading wrong data should not be deleted
-                    return true;
-                }
-                break;
-            }
-            default: {
-                // Reading wrong data should not be deleted
-                VLOG(1) << "Unsupport TTL column type";
-                return true;
-            }
-        }
-
-        if (now > (v + ttlDuration)) {
-            return false;
-        }
-        return true;
+        return !nebula::storage::checkDataExpiredForTTL(schema, reader, ttlCol, ttlDuration);
     }
 
     bool filterVersions(const folly::StringPiece& key) const {

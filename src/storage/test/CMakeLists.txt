@@ -216,6 +216,7 @@ nebula_add_test(
     SOURCES
         CompactionTest.cpp
     OBJECTS
+        $<TARGET_OBJECTS:storage_service_handler>
         $<TARGET_OBJECTS:adHocSchema_obj>
         $<TARGET_OBJECTS:kvstore_obj>
         $<TARGET_OBJECTS:raftex_obj>
