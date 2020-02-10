@@ -16,6 +16,7 @@ DECLARE_int32(max_handlers_per_req);
 DECLARE_int32(min_vertices_per_bucket);
 DECLARE_int32(max_edge_returned_per_vertex);
 DECLARE_bool(enable_vertex_cache);
+DECLARE_string(cutoff_strategy);
 
 namespace nebula {
 namespace storage {
@@ -484,6 +485,26 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
     if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
         return ret;
     }
+
+    if (FLAGS_cutoff_strategy == "simple_cut") {
+        cutoffCollectEdgeProps(iter.get(), vId, edgeType, props, fcontext, proc);
+    } else if (FLAGS_cutoff_strategy == "reservoir_sampling") {
+        samplingCollectEdgeProps(iter.get(), vId, edgeType, props, fcontext, proc);
+    } else {
+        LOG(FATAL) << "Unkown cutoff strategy: " << FLAGS_cutoff_strategy;
+    }
+
+    return ret;
+}
+
+template<typename REQ, typename RESP>
+void QueryBaseProcessor<REQ, RESP>::cutoffCollectEdgeProps(
+                                               kvstore::KVIterator* iter,
+                                               VertexID vId,
+                                               EdgeType edgeType,
+                                               const std::vector<PropContext>& props,
+                                               FilterContext* fcontext,
+                                               EdgeProcessor proc) {
     EdgeRanking lastRank  = -1;
     VertexID    lastDstId = 0;
     bool        firstLoop = true;
@@ -589,9 +610,126 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
             firstLoop = false;
         }
     }
-    return ret;
 }
 
+template<typename REQ, typename RESP>
+void QueryBaseProcessor<REQ, RESP>::samplingCollectEdgeProps(
+                                               kvstore::KVIterator* iter,
+                                               VertexID vId,
+                                               EdgeType edgeType,
+                                               const std::vector<PropContext>& props,
+                                               FilterContext* fcontext,
+                                               EdgeProcessor proc) {
+    auto sampler = std::make_unique<ReservoirSampling>();
+    std::vector<std::pair<std::string, std::string>> kvs;
+    kvs.resize(FLAGS_max_edge_returned_per_vertex);
+    EdgeRanking lastRank  = -1;
+    VertexID    lastDstId = 0;
+    bool        firstLoop = true;
+    int         cnt = 0;
+    bool onlyStructure = onlyStructures_[edgeType];
+    Getters getters;
+    for (; iter->valid(); iter->next()) {
+        auto key = iter->key();
+        auto val = iter->val();
+        auto rank = NebulaKeyUtils::getRank(key);
+        auto dstId = NebulaKeyUtils::getDstId(key);
+        if (!firstLoop && rank == lastRank && lastDstId == dstId) {
+            VLOG(3) << "Only get the latest version for each edge.";
+            continue;
+        }
+        lastRank = rank;
+        lastDstId = dstId;
+
+        auto index = sampler->sampling();
+        if (index >= 0 && index < FLAGS_max_edge_returned_per_vertex) {
+            kvs[index] = std::move(std::make_pair(key.str(), val.str()));
+            ++cnt;
+        }
+    }
+
+    if (cnt > FLAGS_max_edge_returned_per_vertex) {
+        cnt = FLAGS_max_edge_returned_per_vertex;
+    }
+
+    for (auto i = 0; i < cnt; ++i) {
+        auto& pair = kvs[i];
+        auto& key = pair.first;
+        auto& val = pair.second;
+        auto rank = NebulaKeyUtils::getRank(key);
+        auto dstId = NebulaKeyUtils::getDstId(key);
+        std::unique_ptr<RowReader> reader;
+        if (!onlyStructure
+                && !val.empty()) {
+            reader = RowReader::getEdgePropReader(this->schemaMan_,
+                                                  val,
+                                                  spaceId_,
+                                                  std::abs(edgeType));
+            if (exp_ != nullptr) {
+                getters.getAliasProp = [this, edgeType, &reader, &key](const std::string& edgeName,
+                                           const std::string& prop) -> OptVariantType {
+                    auto edgeFound = this->edgeMap_.find(edgeName);
+                    if (edgeFound == edgeMap_.end()) {
+                        return Status::Error(
+                                "Edge `%s' not found when call getters.", edgeName.c_str());
+                    }
+                    if (std::abs(edgeType) != edgeFound->second) {
+                        return Status::Error("Ignore this edge");
+                    }
+
+                    if (prop == _SRC) {
+                        return NebulaKeyUtils::getSrcId(key);
+                    } else if (prop == _DST) {
+                        return NebulaKeyUtils::getDstId(key);
+                    } else if (prop == _RANK) {
+                        return NebulaKeyUtils::getRank(key);
+                    } else if (prop == _TYPE) {
+                        return static_cast<int64_t>(NebulaKeyUtils::getEdgeType(key));
+                    }
+
+                    auto res = RowReader::getPropByName(reader.get(), prop);
+                    if (!ok(res)) {
+                        return Status::Error("Invalid Prop");
+                    }
+                    return value(std::move(res));
+                };
+                getters.getEdgeRank = [&rank] () -> VariantType {
+                    return rank;
+                };
+                getters.getEdgeDstId = [this,
+                                        &edgeType,
+                                        &dstId] (const std::string& edgeName) -> OptVariantType {
+                    auto edgeFound = this->edgeMap_.find(edgeName);
+                    if (edgeFound == edgeMap_.end()) {
+                        return Status::Error(
+                                "Edge `%s' not found when call getters.", edgeName.c_str());
+                    }
+                    if (std::abs(edgeType) != edgeFound->second) {
+                        return Status::Error("Ignore this edge");
+                    }
+                    return dstId;
+                };
+                getters.getSrcTagProp = [&fcontext] (const std::string& tag,
+                                                     const std::string& prop) -> OptVariantType {
+                    auto it = fcontext->tagFilters_.find(std::make_pair(tag, prop));
+                    if (it == fcontext->tagFilters_.end()) {
+                        return Status::Error("Invalid Tag Filter");
+                    }
+                    VLOG(1) << "Hit srcProp filter for tag " << tag << ", prop "
+                            << prop << ", value " << it->second;
+                    return it->second;
+                };
+                auto value = exp_->eval(getters);
+                if (value.ok() && !Expression::asBool(value.value())) {
+                    VLOG(1) << "Filter the edge "
+                            << vId << "-> " << dstId << "@" << rank << ":" << edgeType;
+                    continue;
+                }
+            }
+        }
+        proc(reader.get(), key, props);
+    }
+}
 template<typename REQ, typename RESP>
 folly::Future<std::vector<OneVertexResp>>
 QueryBaseProcessor<REQ, RESP>::asyncProcessBucket(Bucket bucket) {

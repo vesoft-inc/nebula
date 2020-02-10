@@ -14,6 +14,9 @@
 #include "filter/Expressions.h"
 #include "storage/CommonUtils.h"
 #include "stats/Stats.h"
+#include <boost/random.hpp>
+
+DECLARE_int32(max_edge_returned_per_vertex);
 
 namespace nebula {
 namespace storage {
@@ -34,6 +37,28 @@ struct Bucket {
 };
 
 using OneVertexResp = std::tuple<PartitionID, VertexID, kvstore::ResultCode>;
+
+class ReservoirSampling final {
+public:
+    int64_t sampling() {
+        ++cnt_;
+        if (cnt_ < FLAGS_max_edge_returned_per_vertex) {
+            return cnt_;
+        } else {
+            boost::random::uniform_int_distribution<> dist(0, cnt_);
+            int64_t index = dist(rng_);
+            if (index < FLAGS_max_edge_returned_per_vertex) {
+                return index;
+            } else {
+                return -1;
+            }
+        }
+    }
+
+private:
+    boost::random::mt19937  rng_;
+    int64_t                 cnt_{-1};
+};
 
 template<typename REQ, typename RESP>
 class QueryBaseProcessor : public BaseProcessor<RESP> {
@@ -76,6 +101,20 @@ protected:
                       const std::vector<PropContext>& props,
                       FilterContext* fcontext,
                       Collector* collector);
+
+    void cutoffCollectEdgeProps(kvstore::KVIterator* iter,
+                                VertexID vId,
+                                EdgeType edgeType,
+                                const std::vector<PropContext>& props,
+                                FilterContext* fcontext,
+                                EdgeProcessor proc);
+
+    void samplingCollectEdgeProps(kvstore::KVIterator* iter,
+                                  VertexID vId,
+                                  EdgeType edgeType,
+                                  const std::vector<PropContext>& props,
+                                  FilterContext* fcontext,
+                                  EdgeProcessor proc);
 
     virtual kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) = 0;
 
