@@ -14,14 +14,14 @@ WHERE <expression> [ AND | OR <expression> ...])
 
 ```ngql
 -- 边 follow 的 degree 属性大于 90。
-nebula> GO FROM 100 OVER follow WHERE follow.degree>90;
+nebula> GO FROM 100 OVER follow WHERE follow.degree > 90;
 -- 返回以下值：
 ===============
 | follow._dst |
 ===============
 | 101         |
 ---------------
--- 起点 player 104 的 age 属性与终点 player 103 的 age 属性值相等。
+-- 找到与起点 player 104 的 age 值相等的点。
 nebula> GO FROM 104 OVER follow WHERE $^.player.age == $$.player.age;
 -- 返回以下值：
 ===============
@@ -39,7 +39,7 @@ nebula> GO FROM 100 OVER follow WHERE follow.degree > 90 OR $$.player.age != 33 
 ---------------
 | 106         |
 ---------------
---下面这个条件总是为 TRUE。
+--下面 WHERE 语句中的条件总是为 TRUE。
 nebula> GO FROM 101 OVER follow WHERE 1 == 1 OR TRUE;
 -- 返回以下值：
 ===============
