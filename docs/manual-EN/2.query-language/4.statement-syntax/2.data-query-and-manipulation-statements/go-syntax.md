@@ -60,7 +60,7 @@ nebula> GO 2 STEPS FROM 103 OVER follow; \
 ```ngql
 nebula> GO FROM 109 OVER serve  \
    WHERE serve.start_year > 1990       /* check edge (serve) property ( start_year) */ \
-   YYIELD $$.team.name AS team_name, serve.start_year as start_year;   /* target vertex (team) property serve.start_year */
+   YIELD $$.team.name AS team_name, serve.start_year as start_year;   /* target vertex (team) property serve.start_year */
 ==========================
 | team_name | start_year |
 ==========================
