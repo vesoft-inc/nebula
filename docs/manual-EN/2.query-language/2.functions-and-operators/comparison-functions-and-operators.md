@@ -102,7 +102,7 @@ nebula> YIELD udf_is_in(1,0,1,2);
 | true               |
 ----------------------
 
-nebula> GO FROM 100 OVER follow WHERE udf_is_in($$.player.name, "Tony Parker");
+nebula> GO FROM 100 OVER follow WHERE udf_is_in($$.player.name, "Tony Parker"); /* This example might not work because udf_is_in might be changed in the future.*/
 ===============
 | follow._dst |
 ===============
