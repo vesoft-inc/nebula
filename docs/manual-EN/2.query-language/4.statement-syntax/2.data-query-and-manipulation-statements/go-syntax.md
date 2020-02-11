@@ -5,11 +5,10 @@
 It indicates to traverse in a graph with specific filters (the `WHERE` clause), to fetch properties of vertices and edges, and return results (the `YIELD` clause) with given order (the `ORDER BY ASC | DESC` clause) and numbers (the `LIMIT` clause).
 
 > The syntax of `GO` statement is very similar to `SELECT` in SQL. Notice that the major difference is that `GO` must start traversing from a (set of) vertex (vertices).
-<!-- >You can refer to `FIND` statement (in progress), which is the counterpart of `SELECT` in SQL. -->
 
 ```ngql
   GO [ <N> STEPS ] FROM <node_list>
-  OVER <edge_type_list> [REVERSELY]
+  OVER <edge_type_list> [REVERSELY] [BIDIRECT]
   [ WHERE <expression> [ AND | OR expression ...]) ]
   YIELD | YIELDS [DISTINCT] <return_list>
 
@@ -25,11 +24,11 @@ It indicates to traverse in a graph with specific filters (the `WHERE` clause), 
     <col_name> [AS <col_alias>] [, <col_name> [AS <col_alias>] ...]
 ```
 
-* [ <N> STEPS ] specifies the N query hops
-* <node_list> is either a list of vertices' vids separated by comma(,), or a special place holder `$-.id` (refer `PIPE` syntax).
+* [ \<N> STEPS ] specifies the N query hops
+* <node_list> is either a list of node's vid separated by comma(,), or a special place holder `$-.id` (refer `PIPE` syntax).
 * <edge_type_list> is a list of edge types which graph traversal can go through.
-* [ WHERE <expression> ] extracts only those results that fulfill the specified conditions. WHERE syntax can be conditions for src-vertex, the edges, and dst-vertex. The logical AND, OR, NOT are also supported. See [WHERE Syntax](where-syntax.md) for more information.
-* YIELD [DISTINCT] <return_list> statement returns the result in column format and rename as an alias name. See `YIELD`-syntax for more information. The `DISTINCT` syntax works the same as SQL.
+* [ WHERE \<expression> ] extracts only those results that fulfill the specified conditions. WHERE syntax can be conditions for src-vertex, the edges, and dst-vertex. The logical AND, OR, NOT are also supported. See [WHERE Syntax](where-syntax.md) for more information.
+* YIELD [DISTINCT] <return_list> statement returns the result in column format and rename as an alias name. See `YIELD` syntax for more information. The `DISTINCT` syntax works the same as SQL.
 
 ## Examples
 
@@ -165,4 +164,21 @@ nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._src AS id | \
 ----------------------------
 ```
 
+<<<<<<< HEAD
 The above query first traverses players that follow player 100 and finds the teams they serve, then filter players who are older than 20, and finally it returns their names and teams. Of course, you can query without specifying `YIELD`, which will return the `vids` of the dest vertices of each edge by default.
+=======
+The above query first traverses players that follow player 125 and finds the teams they serve, then filter players who are older than 35, and finally it returns their names and teams. Of course, you can query without specifying `YIELD`, which will return the `vids` of the dest vertices of each edge by default.
+
+## Traverse Bidirect
+
+Currently, **Nebula Graph** supports traversing reversely using keyword `BIDIRECT`, the syntax is:
+
+```ngql
+  GO FROM <node_list>
+  OVER <edge_type_list> REVERSELY
+  WHERE (expression [ AND | OR expression ...])  
+  YIELD | YIELDS  [DISTINCT] <return_list>
+```
+
+For example: TODO
+>>>>>>> add bidirect
