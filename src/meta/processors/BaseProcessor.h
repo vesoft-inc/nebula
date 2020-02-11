@@ -247,6 +247,15 @@ protected:
 
     void doSyncMultiRemoveAndUpdate(std::vector<std::string> keys);
 
+    /**
+     * check if the edge or tag contains indexes when alter edge or tag.
+     **/
+    cpp2::ErrorCode indexCheck(const std::vector<nebula::cpp2::IndexItem>& items,
+                               const std::vector<cpp2::AlterSchemaItem>& alterItems);
+
+    StatusOr<std::vector<nebula::cpp2::IndexItem>>
+    getIndexes(GraphSpaceID spaceId, int32_t edgeOrTag, bool isEdge);
+
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;
