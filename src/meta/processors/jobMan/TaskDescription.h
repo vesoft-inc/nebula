@@ -93,6 +93,8 @@ public:
      * */
     bool setStatus(cpp2::JobStatus newStatus);
 
+    int32_t getJobId() { return iJob_; }
+
 private:
     int32_t                         iJob_;
     int32_t                         iTask_;

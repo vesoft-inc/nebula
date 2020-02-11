@@ -29,8 +29,9 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
     FRIEND_TEST(JobManagerTest, loadJobDescription);
     FRIEND_TEST(JobManagerTest, showJobs);
     FRIEND_TEST(JobManagerTest, showJob);
-    FRIEND_TEST(JobManagerTest, backupJob);
     FRIEND_TEST(JobManagerTest, recoverJob);
+
+    using ResultCode = nebula::kvstore::ResultCode;
 
 public:
     ~JobManager();
@@ -41,19 +42,13 @@ public:
     void shutDown();
 
     /*
-     * Build job description and save it in kvstore.
-     * */
-    StatusOr<JobDescription>
-    buildJobDescription(int32_t jobId, const std::vector<std::string>& args);
-    /*
      * Load job description from kvstore
      * */
-    int32_t addJob(const JobDescription& jobDesc);
-    StatusOr<std::vector<cpp2::JobDesc>> showJobs();
-    StatusOr<std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>> showJob(int iJob);
-    nebula::Status stopJob(int32_t iJob);
-    std::pair<int, int> backupJob(int iBegin, int iEnd);
-    int32_t recoverJob();
+    ResultCode addJob(const JobDescription& jobDesc);
+    ErrorOr<ResultCode, std::vector<cpp2::JobDesc>> showJobs();
+    ErrorOr<ResultCode, std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>> showJob(int iJob);
+    ResultCode stopJob(int32_t iJob);
+    ErrorOr<ResultCode, int32_t> recoverJob();
 
 private:
     JobManager() = default;
@@ -63,6 +58,8 @@ private:
     nebula::kvstore::ResultCode save(const std::string& k, const std::string& v);
 
     bool                shutDown_{false};
+    static bool isExpiredJob(const cpp2::JobDesc& jobDesc);
+    void removeExpiredJobs(const std::vector<std::string>& jobKeys);
     std::unique_ptr<folly::UMPSCQueue<int32_t, true>> queue_;
     std::unique_ptr<thread::GenericWorker> bgThread_;
 

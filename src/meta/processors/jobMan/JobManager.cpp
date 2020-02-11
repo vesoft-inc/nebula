@@ -181,32 +181,26 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc) {
     return successfully;
 }
 
-StatusOr<JobDescription>
-JobManager::buildJobDescription(int32_t jobId, const std::vector<std::string>& args) {
-    using retType = StatusOr<JobDescription>;
-    auto command = args[0];
-    std::vector<std::string> paras(args.begin() + 1, args.end());
-    return retType(JobDescription(jobId, command, paras));
+ResultCode JobManager::addJob(const JobDescription& jobDesc) {
+    auto rc = save(jobDesc.jobKey(), jobDesc.jobVal());
+    if (rc == nebula::kvstore::SUCCEEDED) {
+        queue_->enqueue(jobDesc.getJobId());
+    }
+    return rc;
 }
 
-int32_t JobManager::addJob(const JobDescription& jobDesc) {
-    save(jobDesc.jobKey(), jobDesc.jobVal());
-    queue_->enqueue(jobDesc.getJobId());
-    return jobDesc.getJobId();
-}
-
-StatusOr<std::vector<cpp2::JobDesc>>
+ErrorOr<ResultCode, std::vector<cpp2::JobDesc>>
 JobManager::showJobs() {
-    using TReturn = StatusOr<std::vector<cpp2::JobDesc>>;
-    TReturn ret;
     std::unique_ptr<kvstore::KVIterator> iter;
     ResultCode rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId,
                                      JobUtil::jobPrefix(), &iter);
     if (rc != nebula::kvstore::SUCCEEDED) {
-        ret = Status::Error("kvstore err code = %d", rc);
-        return ret;
+        return rc;
     }
-    ret = std::vector<cpp2::JobDesc>{};
+
+    int32_t lastExpiredJobId = INT_MIN;
+    std::vector<std::string> expiredJobKeys;
+    std::vector<cpp2::JobDesc> ret;
     for (; iter->valid(); iter->next()) {
         if (JobDescription::isJobKey(iter->key())) {
             auto optJob = JobDescription::makeJobDescription(iter->key(), iter->val());
@@ -215,28 +209,56 @@ JobManager::showJobs() {
             }
             // skip expired job, default 1 week
             auto jobDesc = optJob->toJobDesc();
-            auto jobStart = jobDesc.get_startTime();
-            auto duration = std::difftime(std::time(nullptr), jobStart);
-            if (duration > FLAGS_job_expired_secs) {
+            if (isExpiredJob(jobDesc)) {
+                lastExpiredJobId = jobDesc.get_id();
+                LOG(INFO) << "remove expired job " << lastExpiredJobId;
+                expiredJobKeys.emplace_back(iter->key());
                 continue;
             }
-            ret.value().emplace_back(jobDesc);
+            ret.emplace_back(jobDesc);
+        } else {  // iter-key() is a TaskKey
+            TaskDescription task(iter->key(), iter->val());
+            if (task.getJobId() == lastExpiredJobId) {
+                expiredJobKeys.emplace_back(iter->key());
+            }
         }
     }
+    removeExpiredJobs(expiredJobKeys);
     return ret;
 }
 
-StatusOr<std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>>
+bool JobManager::isExpiredJob(const cpp2::JobDesc& jobDesc) {
+    auto jobStart = jobDesc.get_startTime();
+    auto duration = std::difftime(std::time(nullptr), jobStart);
+    return duration > FLAGS_job_expired_secs;
+}
+
+void JobManager::removeExpiredJobs(const std::vector<std::string>& expiredJobsAndTasks) {
+    folly::Baton<true, std::atomic> baton;
+    kvStore_->asyncMultiRemove(kDefaultSpaceId, kDefaultPartId, expiredJobsAndTasks,
+        [&](nebula::kvstore::ResultCode code){
+            if (code != kvstore::ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "kvstore asyncRemoveRange failed: " << code;
+            }
+            baton.post();
+        });
+    baton.wait();
+}
+
+ErrorOr<ResultCode, std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>>
 JobManager::showJob(int iJob) {
-    using TReturn = StatusOr<std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>>;
-    std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>> ret;
     auto jobKey = JobDescription::makeJobKey(iJob);
     std::unique_ptr<kvstore::KVIterator> iter;
     ResultCode rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, jobKey, &iter);
     if (rc != nebula::kvstore::SUCCEEDED) {
-        return TReturn(Status::Error("kvstore err code = %d", rc));
+        return rc;
     }
 
+    if (!iter->valid()) {
+        return nebula::kvstore::ERR_KEY_NOT_FOUND;
+    }
+
+    std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>> ret;
     for (; iter->valid(); iter->next()) {
         if (JobDescription::isJobKey(iter->key())) {
             auto optJob = JobDescription::makeJobDescription(iter->key(), iter->val());
@@ -251,80 +273,42 @@ JobManager::showJob(int iJob) {
     return ret;
 }
 
-nebula::Status JobManager::stopJob(int32_t iJob) {
+ResultCode JobManager::stopJob(int32_t iJob) {
     auto jobDesc = JobDescription::loadJobDescription(iJob, kvStore_);
     if (jobDesc == folly::none) {
-        return Status::Error("kvstore err %d", nebula::kvstore::ResultCode::ERR_KEY_NOT_FOUND);
+        return nebula::kvstore::ResultCode::ERR_KEY_NOT_FOUND;
     }
 
     jobDesc->setStatus(cpp2::JobStatus::STOPPED);
-    save(jobDesc->jobKey(), jobDesc->jobVal());
-
-    return Status::OK();
-}
-
-// return pair(backupJobNum, backupTaskNum)
-std::pair<int, int> JobManager::backupJob(int iBegin, int iEnd) {
-    int backupJobNum = 0;
-    int backupTaskNum = 0;
-
-    std::string keyBegin = JobDescription::makeJobKey(iBegin);
-    std::string keyEnd = JobDescription::makeJobKey(iEnd+1);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto rc = kvStore_->range(kDefaultSpaceId, kDefaultPartId, keyBegin, keyEnd, &iter);
-    if (rc != nebula::kvstore::SUCCEEDED) {
-        return std::make_pair(0, 0);
-    }
-
-    while (iter->valid()) {
-        if (JobDescription::isJobKey(iter->key())) {
-            auto optJob = JobDescription::makeJobDescription(iter->key(), iter->val());
-            if (optJob != folly::none) {
-                save(optJob->archiveKey(), iter->val().str());
-                ++backupJobNum;
-            }
-        } else {
-            TaskDescription td(iter->key(), iter->val());
-            save(td.archiveKey(), iter->val().str());
-            ++backupTaskNum;
-        }
-        iter->next();
-    }
-
-    folly::Baton<true, std::atomic> baton;
-    kvStore_->asyncRemoveRange(kDefaultSpaceId, kDefaultPartId, keyBegin, keyEnd,
-        [&](nebula::kvstore::ResultCode code){
-            if (code != kvstore::ResultCode::SUCCEEDED) {
-                LOG(ERROR) << "kvstore asyncRemoveRange failed: " << code;
-            }
-            baton.post();
-        });
-    baton.wait();
-    return std::make_pair(backupJobNum, backupTaskNum);
+    return save(jobDesc->jobKey(), jobDesc->jobVal());
 }
 
 /*
  * Return: recovered job num.
  * */
-int32_t JobManager::recoverJob() {
+ErrorOr<ResultCode, int32_t> JobManager::recoverJob() {
     int32_t recoveredJobNum = 0;
     std::unique_ptr<kvstore::KVIterator> iter;
-    kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
+    ResultCode rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
+    if (rc != nebula::kvstore::SUCCEEDED) {
+        return rc;
+    }
     for (; iter->valid(); iter->next()) {
         if (!JobDescription::isJobKey(iter->key())) {
             continue;
         }
         auto optJob = JobDescription::makeJobDescription(iter->key(), iter->val());
-        if (optJob == folly::none) { continue; }
-        if (optJob->getStatus() == cpp2::JobStatus::QUEUE) {
-            queue_->enqueue(optJob->getJobId());
-            ++recoveredJobNum;
+        if (optJob != folly::none) {
+            if (optJob->getStatus() == cpp2::JobStatus::QUEUE) {
+                queue_->enqueue(optJob->getJobId());
+                ++recoveredJobNum;
+            }
         }
     }
     return recoveredJobNum;
 }
 
-nebula::kvstore::ResultCode JobManager::save(const std::string& k, const std::string& v) {
+ResultCode JobManager::save(const std::string& k, const std::string& v) {
     std::vector<kvstore::KV> data{std::make_pair(k, v)};
     folly::Baton<true, std::atomic> baton;
     nebula::kvstore::ResultCode rc = nebula::kvstore::SUCCEEDED;

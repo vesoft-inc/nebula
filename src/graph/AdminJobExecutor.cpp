@@ -91,8 +91,6 @@ AdminJobExecutor::getHeader(nebula::meta::cpp2::AdminJobOp op, bool succeed) {
         return {"Job Id(TaskId)", "Command(Dest)", "Status", "Start Time", "Stop Time"};
     case nebula::meta::cpp2::AdminJobOp::STOP:
         return {"Result"};
-    case nebula::meta::cpp2::AdminJobOp::BACKUP:
-        return {"BACKUP Result"};
     case nebula::meta::cpp2::AdminJobOp::RECOVER:
         return {"Recovered job num"};
     default:
@@ -110,8 +108,6 @@ AdminJobExecutor::toAdminJobOp(const std::string& op) {
         return nebula::meta::cpp2::AdminJobOp::SHOW;
     } else if (op == "stop_job") {
         return nebula::meta::cpp2::AdminJobOp::STOP;
-    } else if (op == "backup_job") {
-        return nebula::meta::cpp2::AdminJobOp::BACKUP;
     } else if (op == "recover_job") {
         return nebula::meta::cpp2::AdminJobOp::RECOVER;
     }
@@ -138,7 +134,12 @@ AdminJobExecutor::toRowValue(const nebula::meta::cpp2::JobDesc& job) {
     cpp2::RowValue ret;
     std::vector<cpp2::ColumnValue> row(5);
     row[0].set_str(std::to_string(job.get_id()));
-    row[1].set_str(job.get_cmdAndParas());
+    std::stringstream oss;
+    oss << job.get_cmd() << " ";
+    for (auto& p : job.get_paras()) {
+        oss << p << " ";
+    }
+    row[1].set_str(oss.str());
     row[2].set_str(toString(job.get_status()));
     row[3].set_str(time2string(job.get_startTime()));
     row[4].set_str(time2string(job.get_stopTime()));
@@ -200,14 +201,6 @@ AdminJobExecutor::toRowValues(nebula::meta::cpp2::AdminJobOp op,
     case nebula::meta::cpp2::AdminJobOp::STOP:
         {
             ret.emplace_back(toRowValue("Job stopped"));
-        }
-        break;
-    case nebula::meta::cpp2::AdminJobOp::BACKUP:
-        {
-            auto msg = folly::stringPrintf("backup job num: %d, task num %d",
-                                             resp.get_backupResult()->get_jobNum(),
-                                             resp.get_backupResult()->get_taskNum());
-            ret.emplace_back(toRowValue(std::move(msg)));
         }
         break;
     case nebula::meta::cpp2::AdminJobOp::RECOVER:

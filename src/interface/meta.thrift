@@ -177,8 +177,7 @@ enum AdminJobOp {
     SHOW_All    = 0x02,
     SHOW        = 0x03,
     STOP        = 0x04,
-    BACKUP      = 0x05,
-    RECOVER     = 0x06,
+    RECOVER     = 0x05,
     INVALID     = 0xFF,
 } (cpp.enum_strict)
 
@@ -198,10 +197,11 @@ enum JobStatus {
 
 struct JobDesc {
     1: i32          id
-    2: string       cmdAndParas
-    3: JobStatus    status
-    4: i64          startTime
-    5: i64          stopTime
+    2: string       cmd
+    3: list<string> paras
+    4: JobStatus    status
+    5: i64          startTime
+    6: i64          stopTime
 }
 
 struct TaskDesc {
@@ -213,24 +213,20 @@ struct TaskDesc {
     6: i32              jobId
 }
 
-struct BackupJobResult {
-    1: i32 jobNum
-    2: i32 taskNum
-}
-
 struct AdminJobResult {
     // used in a new added job, e.g. "flush" "compact"
     // other job type which also need jobId in their result
     // will use other filed. e.g. JobDesc::id
     1: optional i32                 jobId
+
     // used in "show jobs" and "show job <id>"
     2: optional list<JobDesc>       jobDesc
+
     // used in "show job <id>"
     3: optional list<TaskDesc>      taskDesc
-    // used in "backup job"
-    4: optional BackupJobResult     backupResult
+
     // used in "recover job"
-    5: optional i32                 recoveredJobNum
+    4: optional i32                 recoveredJobNum
 }
 
 struct AdminJobResp {

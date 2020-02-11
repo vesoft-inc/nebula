@@ -51,47 +51,36 @@ protected:
     JobManager* jobMgr{nullptr};
 };
 
-TEST_F(JobManagerTest, buildJobDescription) {
-    std::string cmd("compact");
-    std::string para("test");
-    std::vector<std::string> paras{cmd, para};
-    auto jd = jobMgr->buildJobDescription(1, paras);
-    ASSERT_TRUE(jd.ok());
-    ASSERT_EQ(jd.value().id_, 1);
-    ASSERT_EQ(jd.value().cmd_, cmd);
-    ASSERT_EQ(jd.value().paras_[0], para);
-}
-
 TEST_F(JobManagerTest, addJob) {
-    std::string type("compact");
-    std::string para("test");
-    std::vector<std::string> paras{type, para};
-    auto optJob = jobMgr->buildJobDescription(1, paras);
-    int32_t jobId = jobMgr->addJob(optJob.value());
-    ASSERT_EQ(1, jobId);
+    std::string cmd("compact");
+    std::vector<std::string> paras{"test"};
+    JobDescription job(1, cmd, paras);
+    auto rc = jobMgr->addJob(job);
+    ASSERT_EQ(rc, nebula::kvstore::ResultCode::SUCCEEDED);
 }
 
 TEST_F(JobManagerTest, loadJobDescription) {
-    std::string type("compact");
+    std::string cmd("compact");
     std::string para("test");
-    std::vector<std::string> paras{type, para};
-    auto optJob1 = jobMgr->buildJobDescription(1, paras);
-    optJob1.value().setStatus(Status::RUNNING);
-    optJob1.value().setStatus(Status::FINISHED);
-    int32_t jobId = jobMgr->addJob(optJob1.value());
-    ASSERT_EQ(optJob1.value().id_, 1);
-    ASSERT_EQ(optJob1.value().cmd_, type);
-    ASSERT_EQ(optJob1.value().paras_[0], para);
+    std::vector<std::string> paras{para};
+    JobDescription job1(1, cmd, paras);
+    job1.setStatus(Status::RUNNING);
+    job1.setStatus(Status::FINISHED);
+    auto rc = jobMgr->addJob(job1);
+    ASSERT_EQ(rc, ResultCode::SUCCEEDED);
+    ASSERT_EQ(job1.id_, 1);
+    ASSERT_EQ(job1.cmd_, cmd);
+    ASSERT_EQ(job1.paras_[0], para);
 
-    auto optJd2 = JobDescription::loadJobDescription(jobId, kv_.get());
+    auto optJd2 = JobDescription::loadJobDescription(job1.id_, kv_.get());
     ASSERT_TRUE(optJd2);
-    ASSERT_EQ(optJob1.value().id_, optJd2->id_);
-    LOG(INFO) << "optJob1.value().id_=" << optJob1.value().id_;
-    ASSERT_EQ(optJob1.value().cmd_, optJd2->cmd_);
-    ASSERT_EQ(optJob1.value().paras_, optJd2->paras_);
-    ASSERT_EQ(optJob1.value().status_, optJd2->status_);
-    ASSERT_EQ(optJob1.value().startTime_, optJd2->startTime_);
-    ASSERT_EQ(optJob1.value().stopTime_, optJd2->stopTime_);
+    ASSERT_EQ(job1.id_, optJd2.value().id_);
+    LOG(INFO) << "job1.id_=" << job1.id_;
+    ASSERT_EQ(job1.cmd_, optJd2.value().cmd_);
+    ASSERT_EQ(job1.paras_, optJd2.value().paras_);
+    ASSERT_EQ(job1.status_, optJd2.value().status_);
+    ASSERT_EQ(job1.startTime_, optJd2.value().startTime_);
+    ASSERT_EQ(job1.stopTime_, optJd2.value().stopTime_);
 }
 
 TEST(JobUtilTest, dummy) {
@@ -102,36 +91,38 @@ TEST(JobUtilTest, dummy) {
 TEST_F(JobManagerTest, showJobs) {
     std::string type1("compact");
     std::string para1("test");
-    std::vector<std::string> paras1{type1, para1};
-    auto jd1 = jobMgr->buildJobDescription(1, paras1);
-    jd1.value().setStatus(Status::RUNNING);
-    jd1.value().setStatus(Status::FINISHED);
-    jobMgr->addJob(jd1.value());
+    std::vector<std::string> paras1{para1};
+    JobDescription jd1(1, type1, paras1);
+    jd1.setStatus(Status::RUNNING);
+    jd1.setStatus(Status::FINISHED);
+    jobMgr->addJob(jd1);
 
     std::string type2("flush");
     std::string para2("nba");
-    std::vector<std::string> paras2{type2, para2};
-    auto jd2 = jobMgr->buildJobDescription(2, paras2);
-    jd2.value().setStatus(Status::RUNNING);
-    jd2.value().setStatus(Status::FAILED);
-    jobMgr->addJob(jd2.value());
+    std::vector<std::string> paras2{para2};
+    JobDescription jd2(2, type2, paras2);
+    jd2.setStatus(Status::RUNNING);
+    jd2.setStatus(Status::FAILED);
+    jobMgr->addJob(jd2);
 
     auto statusOrShowResult = jobMgr->showJobs();
     LOG(INFO) << "after show jobs";
-    ASSERT_TRUE(statusOrShowResult.ok());
+    ASSERT_TRUE(nebula::ok(statusOrShowResult));
 
-    auto& jobs = statusOrShowResult.value();
-    ASSERT_EQ(jobs[0].get_id(), jd1.value().id_);
-    ASSERT_EQ(jobs[0].get_cmdAndParas(), type1 + " " + para1 + " ");
+    auto& jobs = nebula::value(statusOrShowResult);
+    ASSERT_EQ(jobs[0].get_id(), jd1.id_);
+    ASSERT_EQ(jobs[0].get_cmd(), type1);
+    ASSERT_EQ(jobs[0].get_paras()[0], para1);
     ASSERT_EQ(jobs[0].get_status(), Status::FINISHED);
-    ASSERT_EQ(jobs[0].get_startTime(), jd1.value().startTime_);
-    ASSERT_EQ(jobs[0].get_stopTime(), jd1.value().stopTime_);
+    ASSERT_EQ(jobs[0].get_startTime(), jd1.startTime_);
+    ASSERT_EQ(jobs[0].get_stopTime(), jd1.stopTime_);
 
-    ASSERT_EQ(jobs[1].get_id(), jd2.value().id_);
-    ASSERT_EQ(jobs[1].get_cmdAndParas(), type2 + " " + para2 + " ");
+    ASSERT_EQ(jobs[1].get_id(), jd2.id_);
+    ASSERT_EQ(jobs[1].get_cmd(), type2);
+    ASSERT_EQ(jobs[1].get_paras()[0], para2);
     ASSERT_EQ(jobs[1].get_status(), Status::FAILED);
-    ASSERT_EQ(jobs[1].get_startTime(), jd2.value().startTime_);
-    ASSERT_EQ(jobs[1].get_stopTime(), jd2.value().stopTime_);
+    ASSERT_EQ(jobs[1].get_startTime(), jd2.startTime_);
+    ASSERT_EQ(jobs[1].get_stopTime(), jd2.stopTime_);
 }
 
 nebula::cpp2::HostAddr toHost(std::string strIp) {
@@ -145,13 +136,14 @@ nebula::cpp2::HostAddr toHost(std::string strIp) {
 TEST_F(JobManagerTest, showJob) {
     std::string type("compact");
     std::string para("test");
-    std::vector<std::string> paras{type, para};
-    auto jd = jobMgr->buildJobDescription(1, paras);
-    jd.value().setStatus(Status::RUNNING);
-    jd.value().setStatus(Status::FINISHED);
-    jobMgr->addJob(jd.value());
+    std::vector<std::string> paras{para};
 
-    int32_t iJob = jd.value().id_;
+    JobDescription jd(1, type, paras);
+    jd.setStatus(Status::RUNNING);
+    jd.setStatus(Status::FINISHED);
+    jobMgr->addJob(jd);
+
+    int32_t iJob = jd.id_;
     int32_t task1 = 0;
     auto host1 = toHost("192.168.8.5");
 
@@ -170,15 +162,17 @@ TEST_F(JobManagerTest, showJob) {
     LOG(INFO) << "before jobMgr->showJob";
     auto showResult = jobMgr->showJob(iJob);
     LOG(INFO) << "after jobMgr->showJob";
-    ASSERT_TRUE(showResult.ok());
-    auto& jobs = showResult.value().first;
-    auto& tasks = showResult.value().second;
+    ASSERT_TRUE(nebula::ok(showResult));
+    auto& jobs = nebula::value(showResult).first;
+    auto& tasks = nebula::value(showResult).second;
 
     ASSERT_EQ(jobs.get_id(), iJob);
-    ASSERT_EQ(jobs.get_cmdAndParas(), type + " " + para + " ");
+    // ASSERT_EQ(jobs.get_cmdAndParas(), type + " " + para + " ");
+    ASSERT_EQ(jobs.get_cmd(), type);
+    ASSERT_EQ(jobs.get_paras()[0], para);
     ASSERT_EQ(jobs.get_status(), Status::FINISHED);
-    ASSERT_EQ(jobs.get_startTime(), jd.value().startTime_);
-    ASSERT_EQ(jobs.get_stopTime(), jd.value().stopTime_);
+    ASSERT_EQ(jobs.get_startTime(), jd.startTime_);
+    ASSERT_EQ(jobs.get_stopTime(), jd.stopTime_);
 
     ASSERT_EQ(tasks[0].get_taskId(), task1);
     ASSERT_EQ(tasks[0].get_jobId(), iJob);
@@ -195,41 +189,15 @@ TEST_F(JobManagerTest, showJob) {
     ASSERT_EQ(tasks[1].get_stopTime(), td2.stopTime_);
 }
 
-TEST_F(JobManagerTest, backupJob) {
-    int32_t nJob = 2;
-    int32_t nTask = 5;
-    for (auto j = 0; j != nJob; ++j) {
-        auto statusOrDesc = jobMgr->buildJobDescription(j, {"compact", "test"});
-        auto& jd = statusOrDesc.value();
-        jd.setStatus(Status::RUNNING);
-        jd.setStatus(Status::FINISHED);
-        jobMgr->save(jd.jobKey(), jd.jobVal());
-        for (auto i = 0; i != nTask; ++i) {
-            auto str_dst = folly::stringPrintf("192.168.8.%d", i);
-            auto dst = toHost(str_dst);
-            TaskDescription td(jd.id_, i, dst);
-            td.setStatus(Status::FINISHED);
-            jobMgr->save(td.taskKey(), td.taskVal());
-        }
-    }
-
-    auto result = jobMgr->backupJob(0, nJob);
-    ASSERT_EQ(result.first, 2);
-    ASSERT_EQ(result.second, 10);
-    auto showJobsRes = jobMgr->showJobs();
-    ASSERT_TRUE(showJobsRes.value().empty());
-}
-
 TEST_F(JobManagerTest, recoverJob) {
     int32_t nJob = 3;
     for (auto i = 0; i != nJob; ++i) {
-        auto statusOrDesc = jobMgr->buildJobDescription(i, {"flush", "test"});
-        auto& jd = statusOrDesc.value();
+        JobDescription jd(i, "flush", {"test"});
         jobMgr->save(jd.jobKey(), jd.jobVal());
     }
 
     auto nJobRecovered = jobMgr->recoverJob();
-    ASSERT_EQ(nJobRecovered, nJob);
+    ASSERT_EQ(nebula::value(nJobRecovered), nJob);
 }
 
 TEST(JobDescriptionTest, ctor) {

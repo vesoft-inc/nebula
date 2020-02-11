@@ -15,8 +15,8 @@ namespace nebula {
 namespace meta {
 
 void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
-    Status status;
     cpp2::AdminJobResult result;
+    cpp2::ErrorCode errorCode = cpp2::ErrorCode::SUCCEEDED;
     std::stringstream oss;
     for (auto& p : req.get_paras()) {
         oss << p << " ";
@@ -27,89 +27,97 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
     switch (req.get_op()) {
         case nebula::meta::cpp2::AdminJobOp::ADD:
         {
-            auto newJobId = autoIncrementId();
-            if (!nebula::ok(newJobId)) {
-                resp_.set_code(nebula::error(newJobId));
-                onFinished();
-                return;
+            auto jobId = autoIncrementId();
+            if (!nebula::ok(jobId)) {
+                errorCode = nebula::error(jobId);
+                break;
             }
-            auto jobDesc = jobMgr->buildJobDescription(nebula::value(newJobId), req.get_paras());
-            if (jobDesc.ok()) {
-                result.set_jobId(jobMgr->addJob(jobDesc.value()));
+
+            std::vector<std::string> cmd_and_paras = req.get_paras();
+            if (cmd_and_paras.empty()) {
+                errorCode = cpp2::ErrorCode::E_INVALID_PARM;
+                break;
+            }
+
+            std::string cmd = cmd_and_paras[0];
+            std::vector<std::string> paras(cmd_and_paras.begin() + 1,
+                                           cmd_and_paras.end());
+
+            JobDescription jobDesc(nebula::value(jobId), cmd, paras);
+            auto rc = jobMgr->addJob(jobDesc);
+            if (rc == nebula::kvstore::SUCCEEDED) {
+                result.set_jobId(nebula::value(jobId));
             } else {
-                status = jobDesc.status();
+                errorCode = to(rc);
             }
             break;
         }
         case nebula::meta::cpp2::AdminJobOp::SHOW_All:
         {
-            auto r = jobMgr->showJobs();
-            if (r.ok()) {
-                result.set_jobDesc(r.value());
+            auto ret = jobMgr->showJobs();
+            if (nebula::ok(ret)) {
+                result.set_jobDesc(nebula::value(ret));
             } else {
-                status = r.status();
+                errorCode = to(nebula::error(ret));
             }
             break;
         }
         case nebula::meta::cpp2::AdminJobOp::SHOW:
         {
             if (req.get_paras().empty()) {
-                status = Status::SyntaxError("show job needs para");
+                errorCode = cpp2::ErrorCode::E_INVALID_PARM;
                 break;
             }
+
             int iJob = atoi(req.get_paras()[0].c_str());
             if (iJob == 0) {
+                errorCode = cpp2::ErrorCode::E_INVALID_PARM;
                 break;
             }
-            auto r = jobMgr->showJob(iJob);
-            if (r.ok()) {
-                result.set_jobDesc(std::vector<cpp2::JobDesc>{r.value().first});
-                result.set_taskDesc(r.value().second);
+
+            auto ret = jobMgr->showJob(iJob);
+            if (nebula::ok(ret)) {
+                result.set_jobDesc(std::vector<cpp2::JobDesc>{nebula::value(ret).first});
+                result.set_taskDesc(nebula::value(ret).second);
             } else {
-                status = r.status();
+                errorCode = to(nebula::error(ret));
             }
             break;
         }
         case nebula::meta::cpp2::AdminJobOp::STOP:
         {
             if (req.get_paras().empty()) {
-                status = Status::SyntaxError("stop job needs para");
+                errorCode = cpp2::ErrorCode::E_INVALID_PARM;
+                break;
             }
             int iJob = atoi(req.get_paras()[0].c_str());
             if (iJob == 0) {
+                errorCode = cpp2::ErrorCode::E_INVALID_PARM;
                 break;
             }
-            status = jobMgr->stopJob(iJob);
-            break;
-        }
-        case nebula::meta::cpp2::AdminJobOp::BACKUP:
-        {
-            if (req.get_paras().size() < 2) {
-                status = Status::SyntaxError("invalid paras for backup job");
-                break;
+            auto ret = jobMgr->stopJob(iJob);
+            if (nebula::kvstore::ResultCode::SUCCEEDED != ret) {
+                errorCode = to(ret);
             }
-            int32_t iStart = atoi(req.get_paras()[0].c_str());
-            int32_t iStop = atoi(req.get_paras()[1].c_str());
-            auto nJobTask = jobMgr->backupJob(iStart, iStop);
-            cpp2::BackupJobResult backupRes;
-            backupRes.set_jobNum(nJobTask.first);
-            backupRes.set_taskNum(nJobTask.second);
-            result.set_backupResult(backupRes);
             break;
         }
         case nebula::meta::cpp2::AdminJobOp::RECOVER:
         {
-            int32_t jobRecovered = jobMgr->recoverJob();
-            result.set_recoveredJobNum(jobRecovered);
+            auto ret = jobMgr->recoverJob();
+            if (nebula::ok(ret)) {
+                result.set_recoveredJobNum(nebula::value(ret));
+            } else {
+                errorCode = to(nebula::error(ret));
+            }
             break;
         }
         default:
-            LOG(INFO) << "invalid job type";
+            errorCode = cpp2::ErrorCode::E_INVALID_PARM;
             break;
     }
 
-    if (!status.ok()) {
-        resp_.set_code(to(status));
+    if (errorCode != cpp2::ErrorCode::SUCCEEDED) {
+        resp_.set_code(errorCode);
         onFinished();
         return;
     }

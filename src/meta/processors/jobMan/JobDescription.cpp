@@ -122,12 +122,8 @@ JobDescription::parseVal(const folly::StringPiece& rawVal) {
 cpp2::JobDesc JobDescription::toJobDesc() {
     cpp2::JobDesc ret;
     ret.set_id(id_);
-    std::stringstream oss;
-    oss << cmd_ << " ";
-    for (auto& p : paras_) {
-        oss << p << " ";
-    }
-    ret.set_cmdAndParas(oss.str());
+    ret.set_cmd(cmd_);
+    ret.set_paras(paras_);
     ret.set_status(status_);
     ret.set_startTime(startTime_);
     ret.set_stopTime(stopTime_);
