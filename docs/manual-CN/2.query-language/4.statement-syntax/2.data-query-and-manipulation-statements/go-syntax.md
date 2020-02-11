@@ -31,8 +31,8 @@
 ## 示例
 
 ```ngql
-nebula> GO FROM 101 OVER serve;  \
-   /* 从点 101 出发，沿边 serve，找到点 200，201 */
+nebula> GO FROM 107 OVER serve;  \
+   /* 从点 107 出发，沿边 serve，找到点 200，201 */
 ==============
 | serve._dst |
 ==============
@@ -48,8 +48,6 @@ nebula> GO 2 STEPS FROM 103 OVER follow; \
 ===============
 | follow._dst |
 ===============
-| 100         |
----------------
 | 101         |
 ---------------
 ```
@@ -77,10 +75,6 @@ nebula> GO FROM 100,102 OVER serve           \
 | team_name | start_year | player_name       |
 ==============================================
 | Warriors  | 2001       | LaMarcus Aldridge |
-----------------------------------------------
-| Trail     | 2006       | LaMarcus Aldridge |
-----------------------------------------------
-| Spurs     | 2015       | LaMarcus Aldridge |
 ----------------------------------------------
 | Warriors  | 1997       | Tim Duncan        |
 ----------------------------------------------
@@ -116,17 +110,16 @@ nebula> GO FROM 100 OVER follow, serve YIELD follow.degree, serve.start_year;
 ------------------------------------
 | 95            | 0                |
 ------------------------------------
-| 90            | 0                |
+| 91            | 0                |
 ------------------------------------
 | 90            | 0                |
 ------------------------------------
-```
+
 
 没有的属性当前会填充默认值， 数值型的默认值为 0， 字符型的默认值为空字符串。bool 类型默认值为 false，timestamp 类型默认值为 0 (即 "1970-01-01 00:00:00")，double 类型默认值为 0.0。
 
 当然也可以不指定 `YIELD`， 这时会返回每条边目标点的 vid。如果目标点不存在，同样用默认值(此处为 0)填充。比如 `GO FROM 100 OVER follow, serve;`，返回结果如下：
 
-```
 ============================
 | follow._dst | serve._dst |
 ============================
@@ -158,21 +151,15 @@ nebula> GO FROM 100 OVER follow, serve YIELD follow.degree, serve.start_year;
 
 ```ngql
 nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._src AS id | \
-        GO FROM $-.id OVER serve WHERE $^.player.age > 25 YIELD $^.player.name AS FriendOf, $$.team.name AS Team;
+        GO FROM $-.id OVER serve WHERE $^.player.age > 20 YIELD $^.player.name AS FriendOf, $$.team.name AS Team;
 
-================================
-| FriendOf          | Team     |
-================================
-| LaMarcus Aldridge | Warriors |
---------------------------------
-| LaMarcus Aldridge | Trail    |
---------------------------------
-| LaMarcus Aldridge | Spurs    |
---------------------------------
-| Tony Parker       | Warriors |
---------------------------------
-| Tony Parker       | Nuggets  |
---------------------------------
+============================
+| FriendOf      | Team     |
+============================
+| Tony Parker   | Warriors |
+----------------------------
+| Kyle Anderson | Warriors |
+----------------------------
 ```
 
-遍历所有关注 100 号球员的球员，找出这些球员服役的球队，筛选年龄大于 25 岁的球员并返回这些球员姓名和其服役的球队名称。如果此处不指定 `YIELD`，则默认返回每条边目标点的 `vid`。
+遍历所有关注 100 号球员的球员，找出这些球员服役的球队，筛选年龄大于 20 岁的球员并返回这些球员姓名和其服役的球队名称。如果此处不指定 `YIELD`，则默认返回每条边目标点的 `vid`。

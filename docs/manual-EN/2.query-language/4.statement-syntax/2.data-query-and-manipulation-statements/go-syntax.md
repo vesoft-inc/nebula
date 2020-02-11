@@ -34,8 +34,8 @@ It indicates to traverse in a graph with specific filters (the `WHERE` clause), 
 ## Examples
 
 ```ngql
-nebula> GO FROM 101 OVER serve;  \
-   /* start from vertex 101 along with edge type serve, and get vertex 200, 201 */
+nebula> GO FROM 107 OVER serve;  \
+   /* start from vertex 107 along with edge type serve, and get vertex 200, 201 */
 ==============
 | serve._dst |
 ==============
@@ -51,8 +51,6 @@ nebula> GO 2 STEPS FROM 103 OVER follow; \
 ===============
 | follow._dst |
 ===============
-| 100         |
----------------
 | 101         |
 ---------------
 ```
@@ -81,10 +79,6 @@ nebula> GO FROM 100,102 OVER serve           \
 ==============================================
 | Warriors  | 2001       | LaMarcus Aldridge |
 ----------------------------------------------
-| Trail     | 2006       | LaMarcus Aldridge |
-----------------------------------------------
-| Spurs     | 2015       | LaMarcus Aldridge |
-----------------------------------------------
 | Warriors  | 1997       | Tim Duncan        |
 ----------------------------------------------
 ```
@@ -110,10 +104,9 @@ As for return results, if multiple edge properties are to be returned, **Nebula 
 
 ```ngql
 nebula> GO FROM 100 OVER follow, serve YIELD follow.degree, serve.start_year;
-```
 
 The following result is returned:
-```
+
 ====================================
 | follow.degree | serve.start_year |
 ====================================
@@ -121,16 +114,16 @@ The following result is returned:
 ------------------------------------
 | 95            | 0                |
 ------------------------------------
-| 90            | 0                |
+| 91            | 0                |
 ------------------------------------
 | 90            | 0                |
 ------------------------------------
-```
+
 
 If there is no property, the default value will be placed. The default value for numeric type is 0, and for string type is an empty string, for bool is false, for timestamp is 0 (namely “1970-01-01 00:00:00”) and for double is 0.0.
 
 Of course, you can query without specifying `YIELD`, which returns the vids of the dest vertices of each edge. Again, default values (here is 0) will be placed if there is no property. For example, query `GO FROM 100 OVER edge1, edge2` returns the follow lines:
-```
+
 ============================
 | follow._dst | serve._dst |
 ============================
@@ -162,21 +155,15 @@ For example:
 
 ```ngql
 nebula> GO FROM 100 OVER follow REVERSELY YIELD follow._src AS id | \
-        GO FROM $-.id OVER serve WHERE $^.player.age > 25 YIELD $^.player.name AS FriendOf, $$.team.name AS Team;
+        GO FROM $-.id OVER serve WHERE $^.player.age > 20 YIELD $^.player.name AS FriendOf, $$.team.name AS Team;
 
-================================
-| FriendOf          | Team     |
-================================
-| LaMarcus Aldridge | Warriors |
---------------------------------
-| LaMarcus Aldridge | Trail    |
---------------------------------
-| LaMarcus Aldridge | Spurs    |
---------------------------------
-| Tony Parker       | Warriors |
---------------------------------
-| Tony Parker       | Nuggets  |
---------------------------------
+============================
+| FriendOf      | Team     |
+============================
+| Tony Parker   | Warriors |
+----------------------------
+| Kyle Anderson | Warriors |
+----------------------------
 ```
 
-The above query first traverses players that follow player 100 and finds the teams they serve, then filter players who are older than 25, and finally it returns their names and teams. Of course, you can query without specifying `YIELD`, which will return the `vids` of the dest vertices of each edge by default.
+The above query first traverses players that follow player 100 and finds the teams they serve, then filter players who are older than 20, and finally it returns their names and teams. Of course, you can query without specifying `YIELD`, which will return the `vids` of the dest vertices of each edge by default.
