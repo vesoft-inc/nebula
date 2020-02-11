@@ -136,11 +136,9 @@ bool genData(kvstore::KVStore* kv,
              std::shared_ptr<nebula::cpp2::IndexItem> &index) {
     std::vector<kvstore::KV> data;
     for (auto i = 0; i < FLAGS_total_vertices_size; i++) {
-        auto key = NebulaKeyUtils::vertexKey(partId, i, tagId, 0);
         auto val = genVertexProp(i);
         auto indexKey = genVertexIndexKey(schemaMan, val, index, i);
         data.emplace_back(std::move(indexKey), "");
-        data.emplace_back(std::move(key), std::move(val));
     }
     folly::Baton<true, std::atomic> baton;
     bool ret = false;
@@ -289,10 +287,10 @@ int main(int argc, char** argv) {
  * ============================================================================
  * src/storage/test/StorageLookupBenchmark.cpprelative  time/iter  iters/s
  * ============================================================================
- * PreciseScan_10000                                          577.73ms     1.73
- * PreciseScan_100                                            594.96ms     1.68
- * PreciseScan_10                                             469.44ms     2.13
- * FilterScan_10                                                 1.57s  636.61m
+ * PreciseScan_10000                                          242.67ms     4.12
+ * PreciseScan_100                                            215.78ms     4.63
+ * PreciseScan_10                                             221.32ms     4.52
+ * FilterScan_10                                              354.26ms     2.82
  * ============================================================================
  **/
 
