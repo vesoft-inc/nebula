@@ -14,13 +14,13 @@ namespace nebula {
 namespace graph {
 
 /**
- * The StateTransition tells executor which DCGNode it would transfer to.
+ * The StateTransition tells executor which node it would transfer to.
  */
 class PlanNode;
 using StateTransitionTable = std::vector<std::shared_ptr<PlanNode>>;
 class StateTransition {
 public:
-    enum State : int8_t {
+    enum class State : int8_t {
         kUnknown = 0,
         kTrue = 1,
         kFalse = 2,
@@ -35,6 +35,16 @@ public:
         return table_;
     }
 
+    void setTable(StateTransitionTable&& table) {
+        table_ = std::move(table);
+    }
+
+    void addNodes(StateTransitionTable&& table) {
+        table_.insert(table_.end(),
+                std::make_move_iterator(table.begin()),
+                std::make_move_iterator(table.end()));
+    }
+
 private:
     std::unique_ptr<Expression>             expr_;
     StateTransitionTable                    table_;
@@ -47,9 +57,9 @@ private:
 class StartNode;
 class PlanNode {
 public:
-    enum Kind : uint8_t {
+    enum class Kind : uint8_t {
         kUnknown = 0,
-        kRoot,
+        kStart,
         kGetNeighbors,
         kGetVertices,
         kGetEdges,
@@ -101,20 +111,12 @@ public:
     /**
      * Append a sub-plan to another one.
      */
-    Status append(std::shared_ptr<StartNode> start) {
-        // TODO:
-        UNUSED(start);
-        return Status::OK();
-    }
+    Status append(std::shared_ptr<StartNode> start);
 
     /**
      * Merge two sub-plan.
      */
-    Status merge(std::shared_ptr<StartNode> start) {
-        UNUSED(start);
-        // TODO:
-        return Status::OK();
-    }
+    Status merge(std::shared_ptr<StartNode> start);
 
 protected:
     Kind                        kind_{Kind::kUnknown};
@@ -123,17 +125,17 @@ protected:
 };
 
 /**
- * An execution plan will start from a RootNode.
+ * An execution plan will start from a StartNode.
  */
 class StartNode final : public PlanNode {
 public:
     StartNode(std::vector<std::string>&& colNames,
              StateTransition&& stateTrans) : PlanNode(std::move(colNames), std::move(stateTrans)) {
-        kind_ = PlanNode::Kind::kRoot;
+        kind_ = PlanNode::Kind::kStart;
     }
 
     std::string explain() const override {
-        return "Root";
+        return "Start";
     }
 };
 }  // namespace graph

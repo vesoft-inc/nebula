@@ -147,7 +147,7 @@ private:
 class SetOp : public PlanNode {
 public:
     SetOp(std::vector<std::string>&& colNames,
-          StateTransition&& stateTrans) : PlanNode(std::move(colNames), std::move(stateTrans)) {};
+          StateTransition&& stateTrans) : PlanNode(std::move(colNames), std::move(stateTrans)) {}
 };
 
 /**
@@ -183,7 +183,6 @@ public:
     }
 
     std::string explain() const override;
-
 };
 
 /**
@@ -197,7 +196,6 @@ public:
     }
 
     std::string explain() const override;
-
 };
 
 /**

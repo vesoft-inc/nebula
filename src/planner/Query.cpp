@@ -60,7 +60,7 @@ std::string Sort::explain() const {
 
 std::string Limit::explain() const {
     std::string buf;
-    buf.reserve(32);
+    buf.reserve(256);
     buf += "Limit: ";
     buf += folly::stringPrintf("offset %ld, count %ld", offset_, count_);
     return buf;
