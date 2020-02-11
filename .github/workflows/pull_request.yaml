@@ -5,6 +5,7 @@ on:
     types: [synchronize, reopened, labeled]
     branches:
       - master
+      - 'v[0-9]+.*'
 
 jobs:
   lint:
@@ -26,20 +27,20 @@ jobs:
     runs-on: self-hosted
     strategy:
       matrix:
-        tag:
+        os:
           - centos7
           - ubuntu1804
         compiler:
-          - gcc
-          - clang
+          - gcc-9.2
+          - clang-9
         exclude:
-          - tag: centos7
-            compiler: clang
+          - os: centos7
+            compiler: clang-9
     container:
-      image: vesoft/nebula-dev:${{ matrix.tag }}
+      image: vesoft/nebula-dev:${{ matrix.os }}
       env:
-        CCACHE_DIR: /tmp/ccache/${{ matrix.tag }}-${{ matrix.compiler }}
-      options: --mount type=tmpfs,destination=/tmp/ccache,tmpfs-size=1073741824 -v /tmp/ccache/${{ matrix.tag }}-${{ matrix.compiler }}:/tmp/ccache/${{ matrix.tag }}-${{ matrix.compiler }}
+        CCACHE_DIR: /tmp/ccache/${{ matrix.os }}-${{ matrix.compiler }}
+      options: --mount type=tmpfs,destination=/tmp/ccache,tmpfs-size=1073741824 -v /tmp/ccache/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/${{ matrix.os }}-${{ matrix.compiler }}
     steps:
       - uses: actions/checkout@v1
         with:
@@ -53,23 +54,49 @@ jobs:
         run: |
           [ -f "$CCACHE_DIR/ccache.conf" ] || cp ci/ccache.conf "$CCACHE_DIR"
           [ -d build/ ] && rm -rf build/* || mkdir -p build
-      - name: CMake with gcc
-        if: matrix.compiler == 'gcc' && steps.ignore_docs.outputs.num_source_files != 0
-        run: cd build && cmake ..
-      - name: CMake with clang
-        if: matrix.compiler == 'clang' && steps.ignore_docs.outputs.num_source_files != 0
-        run: cd build && cmake -DCMAKE_CXX_COMPILER=clang++-8 -DCMAKE_C_COMPILER=clang-8 -DENABLE_ASAN=on -DNEBULA_CLANG_USE_GCC_TOOLCHAIN=/opt/vesoft/toolset/gcc/7.5.0 ..
+        shell: bash
+      - name: CMake with gcc-9.2
+        if: matrix.compiler == 'gcc-9.2' && steps.ignore_docs.outputs.num_source_files != 0
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=Release -B build/
+      - name: CMake with clang-9
+        if: matrix.compiler == 'clang-9' && steps.ignore_docs.outputs.num_source_files != 0
+        run: |
+          cmake \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_C_COMPILER=clang \
+            -DENABLE_ASAN=on \
+            -B build/
       - name: Make
         if: steps.ignore_docs.outputs.num_source_files != 0
-        run: cd build && make -j $(nproc)
+        run: |
+          cmake --build build/ -j $(nproc)
       - name: CTest with multiple threads
         if: steps.ignore_docs.outputs.num_source_files != 0
         timeout-minutes: 15
-        run: cd build && ctest -j 6 --timeout 300 --output-on-failure --rerun-failed
+        continue-on-error: false
+        working-directory: build
+        env:
+          ASAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer
+          ASAN_OPTIONS: fast_unwind_on_malloc=1
+        run: |
+          ctest \
+            -j $(($(nproc)/2)) \
+            --timeout 400 \
+            --output-on-failure
+        shell: bash
       - name: CTest with single thread
         if: failure() && steps.ignore_docs.outputs.num_source_files != 0
         timeout-minutes: 30
-        run: cd build && ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer ASAN_OPTIONS=fast_unwind_on_malloc=0 ctest --timeout 300 --output-on-failure --rerun-failed
+        working-directory: build
+        env:
+          ASAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer
+          ASAN_OPTIONS: fast_unwind_on_malloc=0
+        run: |
+          ctest \
+            --timeout 400 \
+            --output-on-failure \
+            --rerun-failed
       - name: Cleanup
         if: always()
         run: rm -rf build

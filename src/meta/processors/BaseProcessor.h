@@ -243,6 +243,10 @@ protected:
 
     bool doSyncPut(std::vector<kvstore::KV> data);
 
+    void doSyncPutAndUpdate(std::vector<kvstore::KV> data);
+
+    void doSyncMultiRemoveAndUpdate(std::vector<std::string> keys);
+
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;

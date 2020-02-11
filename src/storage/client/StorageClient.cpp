@@ -59,7 +59,9 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addVert
         evb, std::move(requests),
         [](cpp2::StorageServiceAsyncClient* client,
            const cpp2::AddVerticesRequest& r) {
-            return client->future_addVertices(r);
+            return client->future_addVertices(r); },
+        [](const std::pair<const PartitionID, std::vector<cpp2::Vertex>>& p) {
+            return p.first;
         });
 }
 
@@ -91,7 +93,10 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addEdge
         evb, std::move(requests),
         [](cpp2::StorageServiceAsyncClient* client,
            const cpp2::AddEdgesRequest& r) {
-            return client->future_addEdges(r);
+            return client->future_addEdges(r); },
+        [](const std::pair<const PartitionID,
+                           std::vector<cpp2::Edge>>& p) {
+            return p.first;
         });
 }
 
@@ -126,7 +131,10 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getNei
     return collectResponse(
         evb, std::move(requests),
         [](cpp2::StorageServiceAsyncClient* client, const cpp2::GetNeighborsRequest& r) {
-            return client->future_getBound(r);
+            return client->future_getBound(r); },
+        [](const std::pair<const PartitionID,
+                           std::vector<VertexID>>& p) {
+            return p.first;
         });
 }
 
@@ -161,7 +169,10 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryStatsResponse>> StorageClient::n
     return collectResponse(
         evb, std::move(requests),
         [](cpp2::StorageServiceAsyncClient* client, const cpp2::GetNeighborsRequest& r) {
-            return client->future_boundStats(r);
+            return client->future_boundStats(r); },
+        [](const std::pair<const PartitionID,
+                           std::vector<VertexID>>& p) {
+            return p.first;
         });
 }
 
@@ -192,7 +203,10 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getVer
         evb, std::move(requests),
         [](cpp2::StorageServiceAsyncClient* client,
            const cpp2::VertexPropRequest& r) {
-            return client->future_getProps(r);
+            return client->future_getProps(r); },
+        [](const std::pair<const PartitionID,
+                           std::vector<VertexID>>& p) {
+            return p.first;
         });
 }
 
@@ -228,7 +242,9 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
         evb, std::move(requests),
         [](cpp2::StorageServiceAsyncClient* client,
            const cpp2::EdgePropRequest& r) {
-            return client->future_getEdgeProps(r);
+            return client->future_getEdgeProps(r); },
+        [](const std::pair<const PartitionID, std::vector<cpp2::EdgeKey>>& p) {
+            return p.first;
         });
 }
 
@@ -256,7 +272,9 @@ folly::SemiFuture<StorageRpcResponse<storage::cpp2::EdgeKeysResponse>> StorageCl
         evb, std::move(requests),
         [](cpp2::StorageServiceAsyncClient* client,
            const cpp2::EdgeKeysRequest& r) {
-            return client->future_getEdgeKeys(r);
+            return client->future_getEdgeKeys(r);},
+        [](const std::pair<const PartitionID, std::vector<VertexID>>& p) {
+            return p.first;
         });
 }
 
@@ -285,7 +303,10 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::deleteE
         evb, std::move(requests),
         [](cpp2::StorageServiceAsyncClient* client,
            const cpp2::DeleteEdgesRequest& r) {
-            return client->future_deleteEdges(r);
+            return client->future_deleteEdges(r); },
+        [](const std::pair<const PartitionID,
+                           std::vector<cpp2::EdgeKey>>& p) {
+            return p.first;
         });
 }
 
@@ -316,7 +337,10 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::deleteV
         [] (cpp2::StorageServiceAsyncClient* client,
             const cpp2::DeleteVerticesRequest& r) {
             return client->future_deleteVertices(r);
-    });
+        },
+        [](const std::pair<const PartitionID, std::vector<VertexID>>& p) {
+            return p.first;
+        });
 }
 
 
@@ -479,8 +503,11 @@ StorageClient::put(GraphSpaceID space,
     return collectResponse(evb, std::move(requests),
                            [](cpp2::StorageServiceAsyncClient* client,
                               const cpp2::PutRequest& r) {
-                                  return client->future_put(r);
-                              });
+                               return client->future_put(r); },
+                           [](const std::pair<const PartitionID,
+                                              std::vector<::nebula::cpp2::Pair>>& p) {
+                               return p.first;
+                           });
 }
 
 folly::SemiFuture<StorageRpcResponse<storage::cpp2::GeneralResponse>>
@@ -507,8 +534,73 @@ StorageClient::get(GraphSpaceID space,
     return collectResponse(evb, std::move(requests),
                            [](cpp2::StorageServiceAsyncClient* client,
                               const cpp2::GetRequest& r) {
-                                  return client->future_get(r);
-                              });
+                               return client->future_get(r); },
+                           [](const std::pair<const PartitionID,
+                                               std::vector<std::string>>& p) {
+                               return p.first;
+                           });
+}
+
+folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpVertexIndexResp>>
+StorageClient::lookUpVertexIndex(GraphSpaceID space,
+                                 IndexID indexId,
+                                 std::string filter,
+                                 std::vector<std::string> returnCols,
+                                 folly::EventBase *evb) {
+    auto status = getHostParts(space);
+    if (!status.ok()) {
+        return folly::makeFuture<StorageRpcResponse<storage::cpp2::LookUpVertexIndexResp>>(
+            std::runtime_error(status.status().toString()));
+    }
+    auto& clusters = status.value();
+    std::unordered_map<HostAddr, cpp2::LookUpIndexRequest> requests;
+    for (auto& c : clusters) {
+        auto& host = c.first;
+        auto& req = requests[host];
+        req.set_space_id(space);
+        req.set_parts(std::move(c.second));
+        req.set_index_id(indexId);
+        req.set_filter(filter);
+        req.set_return_columns(returnCols);
+    }
+    return collectResponse(evb, std::move(requests),
+                           [](cpp2::StorageServiceAsyncClient* client,
+                              const cpp2::LookUpIndexRequest& r) {
+                               return client->future_lookUpVertexIndex(r); },
+                           [](const PartitionID& part) {
+                               return part;
+                           });
+}
+
+folly::SemiFuture<StorageRpcResponse<storage::cpp2::LookUpEdgeIndexResp>>
+StorageClient::lookUpEdgeIndex(GraphSpaceID space,
+                               IndexID indexId,
+                               std::string filter,
+                               std::vector<std::string> returnCols,
+                               folly::EventBase *evb) {
+    auto status = getHostParts(space);
+    if (!status.ok()) {
+        return folly::makeFuture<StorageRpcResponse<storage::cpp2::LookUpEdgeIndexResp>>(
+            std::runtime_error(status.status().toString()));
+    }
+    auto& clusters = status.value();
+    std::unordered_map<HostAddr, cpp2::LookUpIndexRequest> requests;
+    for (auto& c : clusters) {
+        auto& host = c.first;
+        auto& req = requests[host];
+        req.set_space_id(space);
+        req.set_parts(std::move(c.second));
+        req.set_index_id(indexId);
+        req.set_filter(filter);
+        req.set_return_columns(returnCols);
+    }
+    return collectResponse(evb, std::move(requests),
+                           [](cpp2::StorageServiceAsyncClient* client,
+                              const cpp2::LookUpIndexRequest& r) {
+                               return client->future_lookUpEdgeIndex(r); },
+                           [](const PartitionID& part) {
+                               return part;
+                           });
 }
 
 }   // namespace storage
