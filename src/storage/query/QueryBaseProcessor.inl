@@ -581,13 +581,10 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                     continue;
                 }
             }
-
-            proc(reader.get(), key, props);
-            ++cnt;
-        } else {
-            proc(reader.get(), key, props);
-            ++cnt;
         }
+
+        proc(reader.get(), key, props);
+        ++cnt;
         if (firstLoop) {
             firstLoop = false;
         }
