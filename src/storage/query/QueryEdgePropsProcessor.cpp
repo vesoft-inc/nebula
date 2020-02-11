@@ -37,7 +37,7 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
                                                    spaceId_,
                                                    std::abs(edgeKey.edge_type));
 
-        // Check if the schema has TTL
+        // Check if ttl data expired
         auto retTTLOpt = getEdgeTTLInfo(edgeKey.edge_type);
         if (retTTLOpt.has_value()) {
             auto ttlValue = retTTLOpt.value();

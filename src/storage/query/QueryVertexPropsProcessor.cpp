@@ -92,7 +92,7 @@ kvstore::ResultCode QueryVertexPropsProcessor::collectVertexProps(
 
         auto schema = this->schemaMan_->getTagSchema(spaceId_, tagId);
         auto reader = RowReader::getTagPropReader(this->schemaMan_, val, spaceId_, tagId);
-        // Check if the schema has TTL
+        // Check if ttl data expired
         auto retTTL = getTagTTLInfo(tagId);
         if (retTTL.has_value() && checkDataExpiredForTTL(schema.get(),
                                                          reader.get(),

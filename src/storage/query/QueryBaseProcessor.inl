@@ -413,26 +413,23 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
             auto v = std::move(result).value();
             auto reader = RowReader::getTagPropReader(this->schemaMan_, v, spaceId_, tagId);
 
-            // Check if the schema has TTL
-             auto retTtlOpt = getTagTTLInfo(tagId);
-             if (retTtlOpt.hasValue()) {
+            // Check if ttl data expired
+            auto retTtlOpt = getTagTTLInfo(tagId);
+            if (retTtlOpt.hasValue()) {
                 auto ttlValue = retTtlOpt.value();
-                if (!checkDataExpiredForTTL(schema.get(),
-                                            reader.get(),
-                                            ttlValue.first,
-                                            ttlValue.second)) {
-                    this->collectProps(reader.get(), "", props, fcontext, collector);
-                    VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagId;
-                } else {
-                    VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagId
-                            << " but data expired";
+                if (checkDataExpiredForTTL(schema.get(),
+                                           reader.get(),
+                                           ttlValue.first,
+                                           ttlValue.second)) {
+                    VLOG(3) << "Hit cache for vId " << vId << ", tagId "
+                            << tagId <<", but data expired";
+                    return kvstore::ResultCode::SUCCEEDED;
                 }
-                return kvstore::ResultCode::SUCCEEDED;
-            } else {
-                this->collectProps(reader.get(), "", props, fcontext, collector);
-                VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagId;
-                return kvstore::ResultCode::SUCCEEDED;
             }
+
+            this->collectProps(reader.get(), "", props, fcontext, collector);
+            VLOG(3) << "Hit cache for vId " << vId << ", tagId " << tagId;
+            return kvstore::ResultCode::SUCCEEDED;
         } else {
             VLOG(3) << "Miss cache for vId " << vId << ", tagId " << tagId;
         }
@@ -449,7 +446,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
     if (iter && iter->valid()) {
         auto reader = RowReader::getTagPropReader(this->schemaMan_, iter->val(), spaceId_, tagId);
 
-        // Check if the schema has TTL
+        // Check if ttl data expired
         auto retTtlOpt = getTagTTLInfo(tagId);
         if (retTtlOpt.hasValue()) {
             auto ttlValue = retTtlOpt.value();
@@ -495,6 +492,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
     Getters getters;
 
     auto schema = this->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType));
+    auto retTTL = getEdgeTTLInfo(edgeType);
     for (; iter->valid() && cnt < FLAGS_max_edge_returned_per_vertex; iter->next()) {
         auto key = iter->key();
         auto val = iter->val();
@@ -513,8 +511,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                                                   val,
                                                   spaceId_,
                                                   std::abs(edgeType));
-            // Check if the schema has TTL
-            auto retTTL = getEdgeTTLInfo(edgeType);
+            // Check if ttl data expired
             if (retTTL.has_value() && checkDataExpiredForTTL(schema.get(),
                                                              reader.get(),
                                                              retTTL.value().first,
