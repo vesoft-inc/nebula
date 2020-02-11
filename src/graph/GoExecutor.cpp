@@ -1058,7 +1058,6 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
 
                     // In reverse mode, we should handle _src
                     getters.getAliasProp = [&reader,
-                                            &dstId,
                                             &srcId,
                                             &edgeType,
                                             &edgeSchema,
