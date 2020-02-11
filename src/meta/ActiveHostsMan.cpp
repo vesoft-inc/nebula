@@ -74,11 +74,11 @@ kvstore::ResultCode LastUpdateTimeMan::update(kvstore::KVStore* kv, const int64_
     kvstore::ResultCode ret;
     kv->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
                       [&] (kvstore::ResultCode code) {
-            ret = code;
-            baton.post();
-        });
+        ret = code;
+        baton.post();
+    });
     baton.wait();
-    return ret;
+    return kv->sync(kDefaultSpaceId, kDefaultPartId);
 }
 
 int64_t LastUpdateTimeMan::get(kvstore::KVStore* kv) {
