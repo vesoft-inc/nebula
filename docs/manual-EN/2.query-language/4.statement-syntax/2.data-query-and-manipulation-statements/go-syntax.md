@@ -114,15 +114,14 @@ The following result is returned:
 ------------------------------------
 | 95            | 0                |
 ------------------------------------
-| 91            | 0                |
+| 89            | 0                |
 ------------------------------------
 | 90            | 0                |
 ------------------------------------
 
-
 If there is no property, the default value will be placed. The default value for numeric type is 0, and for string type is an empty string, for bool is false, for timestamp is 0 (namely “1970-01-01 00:00:00”) and for double is 0.0.
 
-Of course, you can query without specifying `YIELD`, which returns the vids of the dest vertices of each edge. Again, default values (here is 0) will be placed if there is no property. For example, query `GO FROM 100 OVER edge1, edge2` returns the follow lines:
+Of course, you can query without specifying `YIELD`, which returns the vids of the dest vertices of each edge. Again, default values (here is 0) will be placed if there is no property. For example, query `GO FROM 100 OVER follow, serve;` returns the follow lines:
 
 ============================
 | follow._dst | serve._dst |
