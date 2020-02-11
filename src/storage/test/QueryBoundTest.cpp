@@ -17,7 +17,6 @@
 
 DECLARE_int32(max_handlers_per_req);
 DECLARE_int32(min_vertices_per_bucket);
-DECLARE_string(cutoff_strategy);
 
 namespace nebula {
 namespace storage {
@@ -197,6 +196,48 @@ void checkResponse(cpp2::QueryResponse& resp,
             }
             EXPECT_EQ(edgeNum, rowNum);
             totalEdges += rowNum;
+        }
+    }
+    EXPECT_EQ(totalEdges, *resp.get_total_edges());
+}
+
+void checkSamplingResponse(cpp2::QueryResponse& resp,
+                           int32_t vertexNum,
+                           int32_t edgeNum) {
+    EXPECT_EQ(0, resp.result.failed_codes.size());
+
+    EXPECT_EQ(vertexNum, resp.vertices.size());
+
+    auto* vschema = resp.get_vertex_schema();
+    DCHECK(vschema != nullptr);
+
+    auto* eschema = resp.get_edge_schema();
+    DCHECK(eschema != nullptr);
+
+    std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> schema;
+
+    std::transform(
+        eschema->cbegin(), eschema->cend(), std::inserter(schema, schema.begin()), [](auto& s) {
+            return std::make_pair(s.first, std::make_shared<ResultSchemaProvider>(s.second));
+        });
+    int32_t totalEdges = 0;
+    for (auto& vp : resp.vertices) {
+        VLOG(1) << "Check vertex " << vp.vertex_id << " props...";
+        auto size = std::accumulate(vp.tag_data.cbegin(), vp.tag_data.cend(), 0,
+                                    [vschema](int acc, auto& td) {
+                                        auto it = vschema->find(td.tag_id);
+                                        DCHECK(it != vschema->end());
+                                        return acc + it->second.columns.size();
+                                    });
+
+        EXPECT_EQ(3, size);
+
+        for (auto& ep : vp.edge_data) {
+            auto it2 = schema.find(ep.type);
+            DCHECK(it2 != schema.end());
+            auto provider = it2->second;
+            EXPECT_LE(edgeNum, ep.get_edges().size());
+            totalEdges += ep.get_edges().size();
         }
     }
     EXPECT_EQ(totalEdges, *resp.get_total_edges());
@@ -505,7 +546,7 @@ TEST(QueryBoundTest, MaxEdgesReturenedTest) {
 TEST(QueryBoundTest, SamplingTest) {
     int old_max_edge_returned = FLAGS_max_edge_returned_per_vertex;
     FLAGS_max_edge_returned_per_vertex = 5;
-    FLAGS_cutoff_strategy = "reservoir_sampling";
+    FLAGS_enable_reservoir_sampling = true;
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
@@ -526,7 +567,7 @@ TEST(QueryBoundTest, SamplingTest) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    // checkResponse(resp, 30, 12, 10001, FLAGS_max_edge_returned_per_vertex);
+    checkSamplingResponse(resp, 30, FLAGS_max_edge_returned_per_vertex);
     FLAGS_max_edge_returned_per_vertex = old_max_edge_returned;
 }
 }  // namespace storage

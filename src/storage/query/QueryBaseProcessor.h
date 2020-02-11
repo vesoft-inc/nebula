@@ -40,6 +40,10 @@ using OneVertexResp = std::tuple<PartitionID, VertexID, kvstore::ResultCode>;
 
 class ReservoirSampling final {
 public:
+    ReservoirSampling() {
+        rng_.seed(nebula::time::WallClock::fastNowInMicroSec());
+    }
+
     int64_t sampling() {
         ++cnt_;
         if (cnt_ < FLAGS_max_edge_returned_per_vertex) {

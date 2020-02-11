@@ -16,7 +16,7 @@ DECLARE_int32(max_handlers_per_req);
 DECLARE_int32(min_vertices_per_bucket);
 DECLARE_int32(max_edge_returned_per_vertex);
 DECLARE_bool(enable_vertex_cache);
-DECLARE_string(cutoff_strategy);
+DECLARE_bool(enable_reservoir_sampling);
 
 namespace nebula {
 namespace storage {
@@ -486,12 +486,10 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
         return ret;
     }
 
-    if (FLAGS_cutoff_strategy == "simple_cut") {
-        cutoffCollectEdgeProps(iter.get(), vId, edgeType, props, fcontext, proc);
-    } else if (FLAGS_cutoff_strategy == "reservoir_sampling") {
+    if (FLAGS_enable_reservoir_sampling) {
         samplingCollectEdgeProps(iter.get(), vId, edgeType, props, fcontext, proc);
     } else {
-        LOG(FATAL) << "Unkown cutoff strategy: " << FLAGS_cutoff_strategy;
+        cutoffCollectEdgeProps(iter.get(), vId, edgeType, props, fcontext, proc);
     }
 
     return ret;
@@ -643,7 +641,7 @@ void QueryBaseProcessor<REQ, RESP>::samplingCollectEdgeProps(
 
         auto index = sampler->sampling();
         if (index >= 0 && index < FLAGS_max_edge_returned_per_vertex) {
-            kvs[index] = std::move(std::make_pair(key.str(), val.str()));
+            kvs[index] = std::make_pair(key.str(), val.str());
             ++cnt;
         }
     }
@@ -730,6 +728,7 @@ void QueryBaseProcessor<REQ, RESP>::samplingCollectEdgeProps(
         proc(reader.get(), key, props);
     }
 }
+
 template<typename REQ, typename RESP>
 folly::Future<std::vector<OneVertexResp>>
 QueryBaseProcessor<REQ, RESP>::asyncProcessBucket(Bucket bucket) {
