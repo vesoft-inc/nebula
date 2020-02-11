@@ -120,6 +120,10 @@ Status FetchExecutor::getOutputSchema(
     getters.getAliasProp = [schema, reader] (const std::string&, const std::string &prop) {
         return Collector::getProp(schema, prop, reader);
     };
+    getters.getEdgeDstId = [schema,
+                            reader] (const std::string&) -> OptVariantType {
+        return Collector::getProp(schema, "_dst", reader);
+    };
     std::vector<VariantType> record;
     for (auto *column : yields_) {
         auto *expr = column->expr();
