@@ -157,7 +157,7 @@ public:
             }
             usleep(100000);
         }
-        return std::move(store);
+        return store;
     }
 
     static nebula::cpp2::ColumnDef columnDef(int32_t index, nebula::cpp2::SupportedType st) {
