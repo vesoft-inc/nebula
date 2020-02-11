@@ -45,13 +45,11 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
                                        reader.get(),
                                        ttlValue.first,
                                        ttlValue.second)) {
-                iter->next();
                 return ret;
             }
         }
         this->collectProps(reader.get(), iter->key(), props, nullptr, &collector);
         rsWriter.addRow(writer);
-        iter->next();
     }
     return ret;
 }
