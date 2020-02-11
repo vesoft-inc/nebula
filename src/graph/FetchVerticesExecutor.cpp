@@ -344,10 +344,6 @@ void FetchVerticesExecutor::processAllPropsResult(RpcResponse &&result) {
                 }
                 auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tdata.tag_id, ver);
                 if (schema == nullptr) {
-                    // It actually should never be null here.
-                    // But issue1699 indicates that it would be nullptr when schema
-                    // was altered. This is a hot fix through reporting error, and we will
-                    // find out why it is null.
                     LOG(ERROR) << "Schema not found for id: " << tdata.tag_id;
                     doError(Status::Error("Get schema failed when handle data."));
                     return;
