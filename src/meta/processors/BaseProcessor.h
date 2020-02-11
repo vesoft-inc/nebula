@@ -249,6 +249,8 @@ protected:
 
     void doSyncMultiRemoveAndUpdate(std::vector<std::string> keys);
 
+    bool saveRebuildStatus(std::string statusKey, std::string&& statusValue);
+
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;

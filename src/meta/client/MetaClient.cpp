@@ -1264,7 +1264,7 @@ MetaClient::rebuildTagIndex(GraphSpaceID spaceID,
         return client->future_rebuildTagIndex(request);
     }, [] (cpp2::ExecResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
-    }, std::move(promise));
+    }, std::move(promise), true);
     return future;
 }
 
@@ -1370,7 +1370,7 @@ MetaClient::rebuildEdgeIndex(GraphSpaceID spaceID,
         return client->future_rebuildEdgeIndex(request);
     }, [] (cpp2::ExecResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
-    }, std::move(promise));
+    }, std::move(promise), true);
     return future;
 }
 

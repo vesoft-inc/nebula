@@ -432,5 +432,17 @@ void BaseProcessor<RESP>::doSyncMultiRemoveAndUpdate(std::vector<std::string> ke
     this->onFinished();
 }
 
+template<typename RESP>
+bool BaseProcessor<RESP>::saveRebuildStatus(std::string statusKey, std::string&& statusValue) {
+    std::vector<kvstore::KV> status{std::make_pair(statusKey, statusValue)};
+    if (!doSyncPut(status)) {
+        LOG(ERROR) << "Save Status Failed";
+        resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
+        onFinished();
+        return false;
+    }
+    return true;
+}
+
 }  // namespace meta
 }  // namespace nebula

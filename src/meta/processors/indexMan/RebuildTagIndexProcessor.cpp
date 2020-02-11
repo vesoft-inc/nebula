@@ -15,8 +15,6 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     auto space = req.get_space_id();
     CHECK_SPACE_ID_AND_RETURN(space);
     const auto &indexName = req.get_index_name();
-    folly::SharedMutex::ReadHolder schemaHolder(LockUtils::tagLock());
-    folly::SharedMutex::ReadHolder indexHolder(LockUtils::tagIndexLock());
 
     LOG(INFO) << "Rebuild Tag Index Space " << space << ", Index Name " << indexName;
     std::unique_ptr<AdminClient> client(new AdminClient(kvstore_));
@@ -28,8 +26,10 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
         onFinished();
         return;
     }
-
     auto parts = partsRet.value();
+
+    folly::SharedMutex::ReadHolder schemaHolder(LockUtils::tagLock());
+    folly::SharedMutex::ReadHolder indexHolder(LockUtils::tagIndexLock());
     auto tagIndexIDResult = getIndexID(space, indexName);
     if (!tagIndexIDResult.ok()) {
         LOG(ERROR) << "Tag Index " << indexName << " Not Found";
@@ -48,8 +48,9 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     }
 
     auto statusKey = MetaServiceUtils::rebuildIndexStatus(space, 'T', indexName);
-    std::vector<kvstore::KV> status{std::make_pair(statusKey, "RUNNING")};
-    doSyncPut(status);
+    if (!saveRebuildStatus(statusKey, "RUNNING")) {
+        return;
+    }
 
     std::vector<folly::Future<Status>> results;
     for (auto iter = parts.begin(); iter != parts.end(); iter++) {
@@ -65,17 +66,28 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
             for (const auto& t : tries) {
                 if (!t.value().ok()) {
                     LOG(ERROR) << "Build Tag Index Failed";
-                    std::vector<kvstore::KV> failedStatus{std::make_pair(statusKey, "FAILED")};
-                    doSyncPut(failedStatus);
+                    if (!saveRebuildStatus(statusKey, "FAILED")) {
+                        return;
+                    }
                     resp_.set_code(cpp2::ErrorCode::E_REBUILD_INDEX_FAILURE);
                     onFinished();
                     return;
                 }
             }
+        })
+        .thenError([&] (auto &&e) {
+            LOG(ERROR) << "Exception caught: " << e.what();
+            if (!saveRebuildStatus(std::move(statusKey), "FAILED")) {
+                return;
+            }
+            resp_.set_code(cpp2::ErrorCode::E_REBUILD_INDEX_FAILURE);
+            onFinished();
+            return;
         });
 
-    std::vector<kvstore::KV> successedStatus{std::make_pair(statusKey, "SUCCESSED")};
-    doSyncPut(successedStatus);
+    if (!saveRebuildStatus(statusKey, "SUCCEEDED")) {
+        return;
+    }
 
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     onFinished();

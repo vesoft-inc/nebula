@@ -114,8 +114,8 @@ TEST_F(IndexTest, TagIndex) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"single_person_index", "SUCCESSED"},
-            {"multi_person_index",  "SUCCESSED"},
+            {"single_person_index", "SUCCEEDED"},
+            {"multi_person_index",  "SUCCEEDED"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -270,8 +270,8 @@ TEST_F(IndexTest, EdgeIndex) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"single_friend_index", "SUCCESSED"},
-            {"multi_friend_index",  "SUCCESSED"},
+            {"single_friend_index", "SUCCEEDED"},
+            {"multi_friend_index",  "SUCCEEDED"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
