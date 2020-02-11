@@ -43,7 +43,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     // Update schema column
     auto& edgeItems = req.get_edge_items();
 
-    auto iRet = getIndexes(spaceId, edgeType, true);
+    auto iRet = getIndexes(spaceId, edgeType);
     if (!iRet.ok()) {
         resp_.set_code(to(iRet.status()));
         onFinished();

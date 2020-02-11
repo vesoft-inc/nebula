@@ -26,7 +26,7 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
         return;
     }
 
-    auto indexes = getIndexes(spaceId, tagId, false);
+    auto indexes = getIndexes(spaceId, tagId);
     if (!indexes.ok()) {
         resp_.set_code(to(indexes.status()));
         onFinished();

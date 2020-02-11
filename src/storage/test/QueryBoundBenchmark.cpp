@@ -36,14 +36,7 @@ void mockData(kvstore::KVStore* kv) {
         for (VertexID vertexId = 1; vertexId < 1000; vertexId++) {
             for (TagID tagId = 3001; tagId < 3010; tagId++) {
                 auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
-                RowWriter writer;
-                for (uint64_t numInt = 0; numInt < 3; numInt++) {
-                    writer << numInt;
-                }
-                for (auto numString = 3; numString < 6; numString++) {
-                    writer << folly::stringPrintf("tag_string_col_%d", numString);
-                }
-                auto val = writer.encode();
+                auto val = TestUtils::setupEncode(3, 6);
                 data.emplace_back(std::move(key), std::move(val));
             }
             // Generate 7 out-edges for each edgeType.
@@ -54,14 +47,7 @@ void mockData(kvstore::KVStore* kv) {
                     auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101,
                                                  dstId - 10001, dstId,
                                                  std::numeric_limits<int>::max() - version);
-                    RowWriter writer(nullptr);
-                    for (uint64_t numInt = 0; numInt < 10; numInt++) {
-                        writer << numInt;
-                    }
-                    for (int32_t numString = 10; numString < 20; numString++) {
-                        writer << folly::stringPrintf("string_col_%d_%ld", numString, version);
-                    }
-                    auto val = writer.encode();
+                    auto val = TestUtils::setupEncode(10, 20);
                     data.emplace_back(std::move(key), std::move(val));
                 }
             }

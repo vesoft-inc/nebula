@@ -11,7 +11,6 @@
 #include "kvstore/KVIterator.h"
 #include "meta/SchemaManager.h"
 #include "storage/BaseProcessor.h"
-#include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace storage {
@@ -32,6 +31,12 @@ private:
                                       meta::IndexManager* indexMan)
             : BaseProcessor<cpp2::AdminExecResp>(kvstore, schemaMan, nullptr)
             , indexMan_(indexMan) {}
+
+    std::string partitionRebuildIndex(GraphSpaceID space,
+                                      PartitionID part,
+                                      TagID tag,
+                                      std::shared_ptr<nebula::cpp2::IndexItem> item,
+                                      kvstore::KVIterator* iter);
 
 private:
     meta::IndexManager* indexMan_{nullptr};

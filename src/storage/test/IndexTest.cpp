@@ -563,7 +563,6 @@ TEST(IndexTest, RebulidTagIndexTest) {
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             int32_t count = 0;
             while (iter->valid()) {
-                LOG(INFO) << "Key " << iter->key();
                 count++;
                 iter->next();
             }
@@ -619,7 +618,6 @@ TEST(IndexTest, RebulidEdgeIndexTest) {
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             int32_t rowCount = 0;
             while (iter->valid()) {
-                LOG(INFO) << "Key " << iter->key();
                 rowCount++;
                 iter->next();
             }

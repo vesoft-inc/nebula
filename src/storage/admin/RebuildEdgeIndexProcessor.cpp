@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "kvstore/LogEncoder.h"
 #include "storage/admin/RebuildEdgeIndexProcessor.h"
 
 namespace nebula {
@@ -13,6 +14,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
     CHECK_NOTNULL(kvstore_);
     auto space = req.get_space_id();
     auto parts = req.get_parts();
+    callingNum_ = parts.size();
     auto indexID = req.get_index_id();
     auto itemRet = indexMan_->getEdgeIndex(space, indexID);
     if (!itemRet.ok()) {
@@ -28,10 +30,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
     LOG(INFO) << "Rebuild Edge Index Space " << space << " Edge Type " << edgeType
               << " Edge Index " << indexID;
 
-    auto indexPrefix = NebulaKeyUtils::indexPrefix(space, indexID);
     for (PartitionID part : parts) {
-        // firstly remove the discard index
-        doRemovePrefix(space, part, indexPrefix, true);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto prefix = NebulaKeyUtils::prefix(part);
         auto ret = kvstore_->prefix(space, part, prefix, &iter);
@@ -42,51 +41,66 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
             return;
         }
 
-        std::vector<kvstore::KV> data;
-        data.reserve(FLAGS_rebuild_index_batch_size);
-        int32_t batchSize = 0;
-        VertexID currentSrcVertex = -1;
-        VertexID currentDstVertex = -1;
-        while (iter && iter->valid()) {
-            if (batchSize >= FLAGS_rebuild_index_batch_size) {
-                doPut(space, part, std::move(data));
-                data.clear();
-                batchSize = 0;
-            }
+        auto iterPtr = iter.get();
+        auto atomic = [space, part, edgeType, item, iterPtr, this]() -> std::string {
+            return partitionRebuildIndex(space, part, edgeType, item, iterPtr);
+        };
 
-            auto key = iter->key();
-            auto val = iter->val();
+        auto callback = [space, part, this](kvstore::ResultCode code) {
+            handleAsync(space, part, code);
+        };
 
-            if (!NebulaKeyUtils::isEdge(key) ||
-                NebulaKeyUtils::getEdgeType(key) != edgeType) {
-                iter->next();
-                continue;
-            }
-
-            auto source = NebulaKeyUtils::getSrcId(key);
-            auto destination = NebulaKeyUtils::getDstId(key);
-            if (currentSrcVertex == source || currentDstVertex == destination) {
-                iter->next();
-                continue;
-            } else {
-                currentSrcVertex = source;
-                currentDstVertex = destination;
-            }
-            auto ranking = NebulaKeyUtils::getRank(key);
-            auto reader = RowReader::getEdgePropReader(schemaMan_,
-                                                       std::move(val),
-                                                       space,
-                                                       edgeType);
-            auto values = collectIndexValues(reader.get(), item->get_fields());
-            auto indexKey = NebulaKeyUtils::edgeIndexKey(part, indexID, source,
-                                                         ranking, destination, values);
-            data.emplace_back(std::move(indexKey), "");
-            iter->next();
-        }
-        doPut(space, part, std::move(data));
+        this->kvstore_->asyncAtomicOp(space, part, atomic, callback);
     }
     onFinished();
 }
 
+std::string
+RebuildEdgeIndexProcessor::partitionRebuildIndex(GraphSpaceID space,
+                                                 PartitionID part,
+                                                 EdgeType edge,
+                                                 std::shared_ptr<nebula::cpp2::IndexItem> item,
+                                                 kvstore::KVIterator* iter) {
+    std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
+    // firstly remove the discard index
+    batchHolder->remove(NebulaKeyUtils::indexPrefix(space, item->get_index_id()));
+
+    VertexID currentSrcVertex = -1;
+    VertexID currentDstVertex = -1;
+    while (iter && iter->valid()) {
+        auto key = iter->key();
+        auto val = iter->val();
+        if (!NebulaKeyUtils::isEdge(key) ||
+            NebulaKeyUtils::getEdgeType(key) != edge) {
+            iter->next();
+            continue;
+        }
+
+        auto source = NebulaKeyUtils::getSrcId(key);
+        auto destination = NebulaKeyUtils::getDstId(key);
+        if (currentSrcVertex == source || currentDstVertex == destination) {
+            iter->next();
+            continue;
+        } else {
+            currentSrcVertex = source;
+            currentDstVertex = destination;
+        }
+
+        auto ranking = NebulaKeyUtils::getRank(key);
+        auto reader = RowReader::getEdgePropReader(schemaMan_,
+                                                   std::move(val),
+                                                   space,
+                                                   edge);
+        auto values = collectIndexValues(reader.get(), item->get_fields());
+        auto indexKey = NebulaKeyUtils::edgeIndexKey(part, item->get_index_id(), source,
+                                                     ranking, destination, values);
+        batchHolder->put(std::move(indexKey), "");
+        iter->next();
+    }
+
+    return encodeBatchValue(batchHolder->getBatch());
+}
+
 }  // namespace storage
 }  // namespace nebula
+

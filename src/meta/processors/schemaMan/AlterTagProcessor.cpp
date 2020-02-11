@@ -44,7 +44,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     // Update schema column
     auto& tagItems = req.get_tag_items();
 
-    auto iCode = getIndexes(spaceId, tagId, false);
+    auto iCode = getIndexes(spaceId, tagId);
     if (!iCode.ok()) {
         resp_.set_code(to(iCode.status()));
         onFinished();

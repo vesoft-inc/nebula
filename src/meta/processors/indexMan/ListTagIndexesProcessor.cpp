@@ -20,7 +20,6 @@ void ListTagIndexesProcessor::process(const cpp2::ListTagIndexesReq& req) {
     resp_.set_code(to(ret));
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "List Tag Index Failed: SpaceID " << space;
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }

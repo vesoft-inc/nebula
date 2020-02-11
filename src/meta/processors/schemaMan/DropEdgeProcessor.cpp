@@ -26,7 +26,7 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
         return;
     }
 
-    auto indexes = getIndexes(spaceId, edgeType, true);
+    auto indexes = getIndexes(spaceId, edgeType);
     if (!indexes.ok()) {
         resp_.set_code(to(indexes.status()));
         onFinished();
