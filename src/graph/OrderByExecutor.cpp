@@ -163,7 +163,7 @@ Status OrderByExecutor::beforeExecute() {
 StatusOr<std::unique_ptr<InterimResult>> OrderByExecutor::setupInterimResult() {
     auto result = std::make_unique<InterimResult>(std::move(colNames_));
     if (rows_.empty()) {
-        return std::move(result);
+        return result;
     }
 
     auto schema = inputs_->schema();
@@ -201,7 +201,7 @@ StatusOr<std::unique_ptr<InterimResult>> OrderByExecutor::setupInterimResult() {
     }
 
     result->setInterim(std::move(rsWriter));
-    return std::move(result);
+    return result;
 }
 
 void OrderByExecutor::setupResponse(cpp2::ExecutionResponse &resp) {

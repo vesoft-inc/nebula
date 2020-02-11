@@ -107,7 +107,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                     VLOG(3) << "Can't find spaceId " << spaceId_ << ", edgeType " << edgeType;
                     return cpp2::ErrorCode::E_EDGE_NOT_FOUND;
                 }
-                this->edgeMap_.emplace(edgeName.value(), edgeType);
+                this->edgeMap_.emplace(edgeName.value(), std::abs(edgeType));
 
                 auto it = kPropsInKey_.find(col.name);
                 if (it != kPropsInKey_.end()) {
@@ -118,10 +118,10 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                     } else {
                         prop.type_.type = nebula::cpp2::SupportedType::INT;
                     }
-                } else if (edgeType > 0) {
+                } else {
                     // Only outBound have properties on edge.
                     auto schema = this->schemaMan_->getEdgeSchema(spaceId_,
-                                                                  edgeType);
+                                                                  std::abs(edgeType));
                     if (!schema) {
                         return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
                     }
@@ -130,9 +130,6 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                         return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
                     }
                     prop.type_ = ftype;
-                } else {
-                    VLOG(3) << "InBound has none props, skip it!";
-                    break;
                 }
                 if (col.__isset.stat && !validOperation(prop.type_.type, col.stat)) {
                     return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
@@ -272,12 +269,7 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
             }
 
             auto edgeType = edgeStatus.value();
-            if (edgeType < 0) {
-                VLOG(1) << "Only support filter on out bound props";
-                return false;
-            }
-
-            auto schema = this->schemaMan_->getEdgeSchema(spaceId_, edgeType);
+            auto schema = this->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType));
             if (!schema) {
                 VLOG(1) << "Cant find edgeType " << edgeType;
                 return false;
@@ -312,6 +304,8 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
                                                  FilterContext* fcontext,
                                                  Collector* collector) {
     for (auto& prop : props) {
+        VLOG(1) << "Collect prop " << prop.prop_.name
+                << ", type " << static_cast<int32_t>(prop.type_.type);
         if (!key.empty()) {
             switch (prop.pikType_) {
                 case PropContext::PropInKeyType::NONE:
@@ -320,7 +314,12 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
                     collector->collectVid(NebulaKeyUtils::getSrcId(key), prop);
                     continue;
                 case PropContext::PropInKeyType::DST:
-                    collector->collectVid(NebulaKeyUtils::getDstId(key), prop);
+                    VLOG(3) << "collect _dst, value = " << NebulaKeyUtils::getDstId(key);
+                    if (compactDstIdProps_) {
+                        collector->collectVid(NebulaKeyUtils::getDstId(key), prop);
+                    } else {
+                        collector->collectDstId(NebulaKeyUtils::getDstId(key));
+                    }
                     continue;
                 case PropContext::PropInKeyType::TYPE:
                     collector->collectInt64(static_cast<int64_t>(NebulaKeyUtils::getEdgeType(key)),
@@ -437,6 +436,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
     VertexID    lastDstId = 0;
     bool        firstLoop = true;
     int         cnt = 0;
+    bool onlyStructure = onlyStructures_[edgeType];
     Getters getters;
     for (; iter->valid() && cnt < FLAGS_max_edge_returned_per_vertex; iter->next()) {
         auto key = iter->key();
@@ -450,8 +450,12 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
         lastRank = rank;
         lastDstId = dstId;
         std::unique_ptr<RowReader> reader;
-        if (edgeType > 0 && !val.empty()) {
-            reader = RowReader::getEdgePropReader(this->schemaMan_, val, spaceId_, edgeType);
+        if (!onlyStructure
+                && !val.empty()) {
+            reader = RowReader::getEdgePropReader(this->schemaMan_,
+                                                  val,
+                                                  spaceId_,
+                                                  std::abs(edgeType));
             if (exp_ != nullptr) {
                 getters.getAliasProp = [this, edgeType, &reader, &key](const std::string& edgeName,
                                            const std::string& prop) -> OptVariantType {
@@ -460,7 +464,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                         return Status::Error(
                                 "Edge `%s' not found when call getters.", edgeName.c_str());
                     }
-                    if (edgeType != edgeFound->second) {
+                    if (std::abs(edgeType) != edgeFound->second) {
                         return Status::Error("Ignore this edge");
                     }
 
@@ -480,8 +484,21 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                     }
                     return value(std::move(res));
                 };
-                getters.getEdgeRank = [&] () -> VariantType {
+                getters.getEdgeRank = [&rank] () -> VariantType {
                     return rank;
+                };
+                getters.getEdgeDstId = [this,
+                                        &edgeType,
+                                        &dstId] (const std::string& edgeName) -> OptVariantType {
+                    auto edgeFound = this->edgeMap_.find(edgeName);
+                    if (edgeFound == edgeMap_.end()) {
+                        return Status::Error(
+                                "Edge `%s' not found when call getters.", edgeName.c_str());
+                    }
+                    if (std::abs(edgeType) != edgeFound->second) {
+                        return Status::Error("Ignore this edge");
+                    }
+                    return dstId;
                 };
                 getters.getSrcTagProp = [&fcontext] (const std::string& tag,
                                                      const std::string& prop) -> OptVariantType {
@@ -595,17 +612,23 @@ void QueryBaseProcessor<REQ, RESP>::buildRespSchema() {
             nebula::cpp2::Schema respEdge;
             auto& props = ec.second;
             for (auto& p : props) {
+                if (!compactDstIdProps_ && p.prop_.name == "_dst") {
+                    continue;
+                }
                 VLOG(3) << "Build schema with prop: " << p.prop_.name
                         << " , type: " << static_cast<int32_t>(p.type_.type);
                 respEdge.columns.emplace_back(
                         this->columnDef(p.prop_.name, p.type_.type));
             }
 
+            VLOG(1) << "EdgeType " << ec.first << ", onlyStructure " << respEdge.columns.empty();
+            onlyStructures_.emplace(ec.first, respEdge.columns.empty());
             if (!respEdge.columns.empty()) {
                 auto it = edgeSchemaResp_.find(ec.first);
                 if (it == edgeSchemaResp_.end()) {
                     auto schemaProvider = std::make_shared<ResultSchemaProvider>(respEdge);
                     edgeSchema_.emplace(ec.first, std::move(schemaProvider));
+                    VLOG(1) << "Fulfill edge response for edge " << ec.first;
                     edgeSchemaResp_.emplace(ec.first, std::move(respEdge));
                 }
             }
@@ -618,6 +641,10 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
     CHECK_NOTNULL(executor_);
     spaceId_ = req.get_space_id();
     int32_t returnColumnsNum = req.get_return_columns().size();
+    VLOG(1) << "Total edge types " << req.edge_types.size()
+            << ", total returned columns " << returnColumnsNum
+            << ", the first column "
+            << (returnColumnsNum > 0 ? req.get_return_columns()[0].name : "");
     VLOG(3) << "Receive request, spaceId " << spaceId_ << ", return cols " << returnColumnsNum;
     tagContexts_.reserve(returnColumnsNum);
 
