@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "interface/gen-cpp2/common_types.h"
+#include "common/filter/Expressions.h"
 
 namespace nebula {
 using IndexValues = std::vector<std::pair<nebula::cpp2::SupportedType, std::string>>;
@@ -124,7 +125,19 @@ public:
     }
 
     static TagID getTagId(const folly::StringPiece& rawKey) {
-        CHECK_EQ(rawKey.size(), kVertexLen);
+        // CHECK_EQ(rawKey.size(), kVertexLen);
+        if (rawKey.size() != kVertexLen) {
+            std::stringstream msg;
+            msg << " rawKey.size() != kVertexLen."
+                << "\nrawKey.size()=" << rawKey.size()
+                << "\nkVertexLen=" << kVertexLen
+                << "\nrawkey string format=" << rawKey
+                << "\nrawkey dec format:";
+            for (auto i = 0U; i != rawKey.size(); ++i) {
+                msg << "\nrawKey[" << i << "]=" << static_cast<int>(rawKey[i]);
+            }
+            LOG(FATAL) << msg.str();
+        }
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
         return readInt<TagID>(rawKey.data() + offset, sizeof(TagID));
     }
@@ -262,6 +275,13 @@ public:
         return raw;
     }
 
+    static int64_t decodeInt64(const folly::StringPiece& raw) {
+        auto val = *reinterpret_cast<const int64_t*>(raw.data());
+        val = folly::Endian::big(val);
+        val ^= folly::to<int64_t>(1) << 63;
+        return val;
+    }
+
     /*
      * Default, the double memory structure is :
      *   sign bit（1bit）+  exponent bit(11bit) + float bit(52bit)
@@ -269,9 +289,16 @@ public:
      *   To keep the string in order, the first bit must to be inverse,
      *   then need to subtract from maximum.
      */
+
     static std::string encodeDouble(double v) {
         if (v < 0) {
-            v = -(std::numeric_limits<double>::max() + v);
+            /**
+             *   TODO : now, the -(std::numeric_limits<double>::min())
+             *   have a problem of precision overflow. current return value is -nan.
+             */
+            auto i = *reinterpret_cast<const int64_t*>(&v);
+            i = -(std::numeric_limits<int64_t>::max() + i);
+            v = *reinterpret_cast<const double*>(&i);
         }
         auto val = folly::Endian::big(v);
         auto* c = reinterpret_cast<char*>(&val);
@@ -280,6 +307,66 @@ public:
         raw.reserve(sizeof(double));
         raw.append(c, sizeof(double));
         return raw;
+    }
+
+    static double decodeDouble(const folly::StringPiece& raw) {
+        char* v = const_cast<char*>(raw.data());
+        v[0] ^= 0x80;
+        auto val = *reinterpret_cast<const double*>(v);
+        val = folly::Endian::big(val);
+        if (val < 0) {
+            auto i = *reinterpret_cast<const int64_t*>(&val);
+            i = -(std::numeric_limits<int64_t >::max() + i);
+            val = *reinterpret_cast<const double*>(&i);
+        }
+        return val;
+    }
+
+    static OptVariantType decodeVariant(const folly::StringPiece& raw,
+                                        nebula::cpp2::SupportedType type) {
+        switch (type) {
+            case nebula::cpp2::SupportedType::BOOL : {
+                return *reinterpret_cast<const bool*>(raw.data());
+            }
+            case nebula::cpp2::SupportedType::INT :
+            case nebula::cpp2::SupportedType::TIMESTAMP : {
+                return decodeInt64(raw);
+            }
+            case nebula::cpp2::SupportedType::DOUBLE :
+            case nebula::cpp2::SupportedType::FLOAT : {
+                return decodeDouble(raw);
+            }
+            case nebula::cpp2::SupportedType::STRING : {
+                return raw.str();
+            }
+            default:
+                return OptVariantType(Status::Error("Unknown type"));
+        }
+    }
+
+    static VertexID getIndexVertexID(const folly::StringPiece& rawKey) {
+        CHECK_GE(rawKey.size(), kVertexIndexLen);
+        auto offset = rawKey.size() - sizeof(VertexID);
+        return *reinterpret_cast<const VertexID*>(rawKey.data() + offset);
+     }
+
+    static VertexID getIndexSrcId(const folly::StringPiece& rawKey) {
+        CHECK_GE(rawKey.size(), kEdgeIndexLen);
+        auto offset = rawKey.size() -
+                      sizeof(VertexID) * 2 - sizeof(EdgeRanking);
+        return readInt<VertexID>(rawKey.data() + offset, sizeof(VertexID));
+    }
+
+    static VertexID getIndexDstId(const folly::StringPiece& rawKey) {
+        CHECK_GE(rawKey.size(), kEdgeIndexLen);
+        auto offset = rawKey.size() - sizeof(VertexID);
+        return readInt<VertexID>(rawKey.data() + offset, sizeof(VertexID));
+    }
+
+    static EdgeRanking getIndexRank(const folly::StringPiece& rawKey) {
+        CHECK_GE(rawKey.size(), kEdgeIndexLen);
+        auto offset = rawKey.size() - sizeof(VertexID) - sizeof(EdgeRanking);
+        return readInt<EdgeRanking>(rawKey.data() + offset, sizeof(EdgeRanking));
     }
 
 private:
@@ -292,6 +379,12 @@ private:
     static constexpr int32_t kEdgeLen = sizeof(PartitionID) + sizeof(VertexID)
                                       + sizeof(EdgeType) + sizeof(VertexID)
                                       + sizeof(EdgeRanking) + sizeof(EdgeVersion);
+
+    static constexpr int32_t kVertexIndexLen = sizeof(PartitionID) + sizeof(IndexID)
+                                               + sizeof(VertexID);
+
+    static constexpr int32_t kEdgeIndexLen = sizeof(PartitionID) + sizeof(IndexID)
+                                             + sizeof(VertexID) * 2 + sizeof(EdgeRanking);
 
     static constexpr int32_t kSystemLen = sizeof(PartitionID) + sizeof(NebulaSystemKeyType);
 

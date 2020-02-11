@@ -32,7 +32,7 @@ jobs:
         with:
           fetch-depth: 1
       - uses: actions/cache@v1
-        if: matrix.os != "centos6"
+        if: matrix.os != 'centos6'
         with:
           path: /tmp/ccache/
           key: ${{ matrix.os }}-${{ matrix.compiler }}-${{ hashFiles('**/CMakeLists.txt') }}
@@ -45,29 +45,26 @@ jobs:
       - name: CMake with gcc-9.2
         if: matrix.compiler == 'gcc-9.2'
         run: |
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake -DCMAKE_BUILD_TYPE=Release -B build/
       - name: CMake with clang-9
         if: matrix.compiler == 'clang-9'
         run: |
-          cd build
           cmake \
             -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_C_COMPILER=clang \
             -DENABLE_ASAN=on \
-            -DENABLE_UBSAN=on \
-            ..
+            -B build/
       - name: Make
         run: |
-          cd build
-          make -j $(nproc)
+          cmake --build build/ -j $(nproc)
       - name: CTest with multiple thread
         timeout-minutes: 40
-        continue-on-error: true
+        continue-on-error: false
+        working-directory: build
+        env:
+          ASAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer
+          ASAN_OPTIONS: fast_unwind_on_malloc=1
         run: |
-          cd build
-          ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer \
-          ASAN_OPTIONS=fast_unwind_on_malloc=1 \
           ctest \
             -j $(nproc) \
             --timeout 400 \
@@ -75,10 +72,11 @@ jobs:
       - name: CTest with rerun failed option
         if: failure()
         timeout-minutes: 40
+        working-directory: build
+        env:
+          ASAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer
+          ASAN_OPTIONS: fast_unwind_on_malloc=0
         run: |
-          cd build
-          ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer \
-          ASAN_OPTIONS=fast_unwind_on_malloc=0 \
           ctest \
             --timeout 400 \
             --rerun-failed \
