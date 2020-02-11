@@ -151,10 +151,6 @@ protected:
         return tHost;
     }
 
-    std::string indexStr(RowReader*, const nebula::cpp2::ColumnDef&) {
-        return "";
-    }
-
     IndexValues collectIndexValues(RowReader* reader,
                                    const std::vector<nebula::cpp2::ColumnDef>& cols);
 

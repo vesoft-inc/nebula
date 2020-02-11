@@ -46,8 +46,8 @@ enum ErrorCode {
     E_INPROPER_ROLE          = -42,
 
     // Admin Failure
-    E_SNAPSHOT_FAILURE     = -51,
-    E_BLOCK_WRITE_FAILURE  = -52,
+    E_SNAPSHOT_FAILURE       = -51,
+    E_BLOCK_WRITE_FAILURE    = -52,
     E_REBUILD_INDEX_FAILURE  = -53,
 
     E_UNKNOWN        = -99,
