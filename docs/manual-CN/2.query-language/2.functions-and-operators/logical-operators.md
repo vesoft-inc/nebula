@@ -1,11 +1,11 @@
 # 逻辑运算符
 
-|  ***名称***    |  ***描述***    |
+|  **名称**    |  **描述**    |
 |:----|:----:|
 |   &&     |   逻辑与 AND     |
 |   !      |   逻辑非 NOT     |
-|   \|\|   |   逻辑或 OR   |
-|  XOR |    逻辑异或 XOR|
+|   \|\|   |   逻辑或 OR      |
+|  XOR     |   逻辑异或 XORvvv|
 
 在 nGQL 中，非 0 数字将被视为 _true_ 。逻辑运算符的优先级参见 [Operator Precedence](./operator-precedence.md)。
 
@@ -33,7 +33,6 @@ nebula> YIELD !(-1);
 ===========
 | false   |
 -----------
-
 ```
 
 * ||
@@ -46,4 +45,17 @@ nebula> YIELD 1 || !1;
 | (1||!(1)) |
 =============
 | true      |
+```
+
+* ^
+
+逻辑异或 XOR:
+
+```ngql
+nebula> YIELD (NOT 0 || 0) AND 0 XOR 1 AS ret;
+=========
+| ret   |
+=========
+| true  |
+---------
 ```
