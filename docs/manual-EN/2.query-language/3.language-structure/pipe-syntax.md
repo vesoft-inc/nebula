@@ -8,9 +8,9 @@ Meanwhile, nGQL uses shell style `PIPE (|)`.
 ## Examples
 
 ```ngql
-GO FROM 100 OVER follow | GO FROM $-.id OVER follow | GO FROM $-.id ...
+nebula> GO FROM 100 OVER follow | GO FROM $-.id OVER follow | GO FROM $-.id ...
 
-GO FROM 100 OVER follow YIELD follow._dst AS dstid, $$.player.name AS Name | GO FROM $-.dstid OVER follow YIELD follow._dst, follow.degree, $-.Name
+nebula> GO FROM 100 OVER follow YIELD follow._dst AS dstid, $$.player.name AS Name | GO FROM $-.dstid OVER follow YIELD follow._dst, follow.degree, $-.Name
 ```
 
 The dest (vertex) `id` will be given as the default value if no `YIELD` is used.

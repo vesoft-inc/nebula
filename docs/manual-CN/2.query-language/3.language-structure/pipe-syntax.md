@@ -7,9 +7,9 @@ SQL 中的查询语句通常由子查询嵌套组成，而 nGQL 则使用类似�
 ## 示例
 
 ```ngql
-GO FROM 100 OVER follow | GO FROM $-.id OVER follow | GO FROM $-.id ...
+nebula> GO FROM 100 OVER follow | GO FROM $-.id OVER follow | GO FROM $-.id ...
 
-GO FROM 100 OVER follow YIELD follow._dst AS dstid, $$.player.name AS Name  | GO FROM $-.dstid OVER follow YIELD follow._dst, follow.degree, $-.Name
+nebula> GO FROM 100 OVER follow YIELD follow._dst AS dstid, $$.player.name AS Name  | GO FROM $-.dstid OVER follow YIELD follow._dst, follow.degree, $-.Name
 ```
 
 如未使用 `YIELD`，则默认返回终点 `id`。
