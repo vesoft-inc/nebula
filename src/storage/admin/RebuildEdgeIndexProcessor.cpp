@@ -31,19 +31,8 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
               << " Edge Index " << indexID;
 
     for (PartitionID part : parts) {
-        std::unique_ptr<kvstore::KVIterator> iter;
-        auto prefix = NebulaKeyUtils::prefix(part);
-        auto ret = kvstore_->prefix(space, part, prefix, &iter);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            LOG(ERROR) << "Processing Part " << part << " Failed";
-            this->pushResultCode(to(ret), part);
-            onFinished();
-            return;
-        }
-
-        auto iterPtr = iter.get();
-        auto atomic = [space, part, edgeType, item, iterPtr, this]() -> std::string {
-            return partitionRebuildIndex(space, part, edgeType, item, iterPtr);
+        auto atomic = [space, part, edgeType, item, this]() -> std::string {
+            return partitionRebuildIndex(space, part, edgeType, item);
         };
 
         auto callback = [space, part, this](kvstore::ResultCode code) {
@@ -59,14 +48,21 @@ std::string
 RebuildEdgeIndexProcessor::partitionRebuildIndex(GraphSpaceID space,
                                                  PartitionID part,
                                                  EdgeType edge,
-                                                 std::shared_ptr<nebula::cpp2::IndexItem> item,
-                                                 kvstore::KVIterator* iter) {
+                                                 std::shared_ptr<nebula::cpp2::IndexItem> item) {
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     // firstly remove the discard index
-    batchHolder->remove(NebulaKeyUtils::indexPrefix(space, item->get_index_id()));
+    batchHolder->removePrefix(NebulaKeyUtils::indexPrefix(space, item->get_index_id()));
 
     VertexID currentSrcVertex = -1;
     VertexID currentDstVertex = -1;
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto prefix = NebulaKeyUtils::prefix(part);
+    auto ret = kvstore_->prefix(space, part, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Processing Part " << part << " Failed";
+        return "";
+    }
+
     while (iter && iter->valid()) {
         auto key = iter->key();
         auto val = iter->val();

@@ -27,7 +27,6 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     }
     auto parts = partsRet.value();
 
-    folly::SharedMutex::ReadHolder schemaHolder(LockUtils::edgeLock());
     folly::SharedMutex::ReadHolder indexHolder(LockUtils::edgeIndexLock());
     auto edgeIndexIDResult = getIndexID(space, indexName);
     if (!edgeIndexIDResult.ok()) {

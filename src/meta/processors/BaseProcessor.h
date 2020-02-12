@@ -20,7 +20,6 @@
 #include "meta/processors/Common.h"
 #include "meta/ActiveHostsMan.h"
 #include "stats/Stats.h"
-#include "gen-cpp2/StorageServiceAsyncClient.h"
 
 namespace nebula {
 namespace meta {

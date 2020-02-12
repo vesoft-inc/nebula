@@ -35,8 +35,7 @@ private:
     std::string partitionRebuildIndex(GraphSpaceID space,
                                       PartitionID part,
                                       EdgeType edge,
-                                      std::shared_ptr<nebula::cpp2::IndexItem> item,
-                                      kvstore::KVIterator* iter);
+                                      std::shared_ptr<nebula::cpp2::IndexItem> item);
 
 private:
     meta::IndexManager* indexMan_{nullptr};

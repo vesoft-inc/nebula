@@ -28,7 +28,6 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexReq& req) {
     }
     auto parts = partsRet.value();
 
-    folly::SharedMutex::ReadHolder schemaHolder(LockUtils::tagLock());
     folly::SharedMutex::ReadHolder indexHolder(LockUtils::tagIndexLock());
     auto tagIndexIDResult = getIndexID(space, indexName);
     if (!tagIndexIDResult.ok()) {

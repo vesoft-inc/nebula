@@ -460,7 +460,8 @@ BaseProcessor<RESP>::getIndexes(GraphSpaceID spaceId,
         if (item.get_schema_id().getType() == nebula::cpp2::SchemaID::Type::tag_id &&
             item.get_schema_id().get_tag_id() == schemaId) {
             items.emplace_back(std::move(item));
-        } else if (item.get_schema_id().get_edge_type() == schemaId) {
+        } else if (item.get_schema_id().getType() == nebula::cpp2::SchemaID::Type::edge_type &&
+                   item.get_schema_id().get_edge_type() == schemaId) {
             items.emplace_back(std::move(item));
         }
         indexIter->next();

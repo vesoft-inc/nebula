@@ -31,19 +31,8 @@ void RebuildTagIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
               << " Tag Index " << indexID;
 
     for (PartitionID part : parts) {
-        std::unique_ptr<kvstore::KVIterator> iter;
-        auto prefix = NebulaKeyUtils::prefix(part);
-        auto ret = kvstore_->prefix(space, part, prefix, &iter);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            LOG(ERROR) << "Processing Part " << part << " Failed";
-            this->pushResultCode(to(ret), part);
-            onFinished();
-            return;
-        }
-
-        auto iterPtr = iter.get();
-        auto atomic = [space, part, tagID, item, iterPtr, this]() -> std::string {
-            return partitionRebuildIndex(space, part, tagID, item, iterPtr);
+        auto atomic = [space, part, tagID, item, this]() -> std::string {
+            return partitionRebuildIndex(space, part, tagID, item);
         };
 
         auto callback = [space, part, this](kvstore::ResultCode code) {
@@ -59,11 +48,18 @@ std::string
 RebuildTagIndexProcessor::partitionRebuildIndex(GraphSpaceID space,
                                                 PartitionID part,
                                                 TagID tag,
-                                                std::shared_ptr<nebula::cpp2::IndexItem> item,
-                                                kvstore::KVIterator* iter) {
+                                                std::shared_ptr<nebula::cpp2::IndexItem> item) {
     std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
     // firstly remove the discard index
     batchHolder->removePrefix(NebulaKeyUtils::indexPrefix(space, item->get_index_id()));
+
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto prefix = NebulaKeyUtils::prefix(part);
+    auto ret = kvstore_->prefix(space, part, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Processing Part " << part << " Failed";
+        return "";
+    }
 
     VertexID currentVertex = -1;
     while (iter && iter->valid()) {
