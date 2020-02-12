@@ -16,16 +16,16 @@ void QueryEdgeKeysProcessor::process(const cpp2::EdgeKeysRequest& req) {
     const auto& partVertices = req.get_parts();
 
     std::unordered_map<VertexID, std::vector<cpp2::EdgeKey>> edge_keys;
-    std::for_each(partVertices.begin(), partVertices.end(), [&](auto& pv) {
-        auto part = pv.first;
-        const auto& vertices = pv.second;
-        std::for_each(vertices.begin(), vertices.end(), [&](auto& v) {
-            auto prefix = NebulaKeyUtils::edgePrefix(part, v);
+    for (auto pv = partVertices.begin(); pv != partVertices.end(); pv++) {
+        auto part = pv->first;
+        const auto& vertices = pv->second;
+        for (auto v = vertices.begin(); v != vertices.end(); v++) {
+            auto prefix = NebulaKeyUtils::edgePrefix(part, *v);
             std::unique_ptr<kvstore::KVIterator> iter;
             auto ret = this->kvstore_->prefix(spaceId, part, prefix, &iter);
             if (ret != kvstore::ResultCode::SUCCEEDED) {
                 VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId = " << spaceId
-                        << ", partId =  " << part << ", vertexId = " << v;
+                        << ", partId =  " << part << ", vertexId = " << *v;
                 this->pushResultCode(this->to(ret), part);
                 this->onFinished();
                 return;
@@ -48,9 +48,9 @@ void QueryEdgeKeysProcessor::process(const cpp2::EdgeKeysRequest& req) {
                 }
                 iter->next();
             }
-            edge_keys.emplace(v, std::move(edges));
-        });
-    });
+            edge_keys.emplace(*v, std::move(edges));
+        }
+    }
 
     resp_.set_edge_keys(std::move(edge_keys));
     this->onFinished();

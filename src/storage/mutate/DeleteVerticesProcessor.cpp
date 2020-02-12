@@ -27,11 +27,11 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
             callingNum_ += pv.second.size();
         });
 
-        std::for_each(partVertices.begin(), partVertices.end(), [&](auto& pv) {
-            auto part = pv.first;
-            const auto& vertices = pv.second;
-            std::for_each(vertices.begin(), vertices.end(), [&](auto& v){
-                auto prefix = NebulaKeyUtils::vertexPrefix(part, v);
+        for (auto pv = partVertices.begin(); pv != partVertices.end(); pv++) {
+            auto part = pv->first;
+            const auto& vertices = pv->second;
+            for (auto v = vertices.begin(); v != vertices.end(); v++) {
+                auto prefix = NebulaKeyUtils::vertexPrefix(part, *v);
 
                 // Evict vertices from cache
                 if (FLAGS_enable_vertex_cache && vertexCache_ != nullptr) {
@@ -48,15 +48,15 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
                         auto key = iter->key();
                         if (NebulaKeyUtils::isVertex(key)) {
                             auto tag = NebulaKeyUtils::getTagId(key);
-                            VLOG(3) << "Evict vertex cache for VID " << v << ", TagID " << tag;
-                            vertexCache_->evict(std::make_pair(v, tag), part);
+                            VLOG(3) << "Evict vertex cache for VID " << *v << ", TagID " << tag;
+                            vertexCache_->evict(std::make_pair(*v, tag), part);
                         }
                         iter->next();
                     }
                 }
                 doRemovePrefix(spaceId, part, std::move(prefix));
-            });
-        });
+            }
+        }
     } else {
         callingNum_ = req.parts.size();
         std::for_each(req.parts.begin(), req.parts.end(), [&](auto &partVerticse) {

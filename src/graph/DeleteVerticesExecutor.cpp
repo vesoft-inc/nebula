@@ -17,39 +17,41 @@ DeleteVerticesExecutor::DeleteVerticesExecutor(Sentence *sentence,
 }
 
 Status DeleteVerticesExecutor::prepare() {
-    Status status;
-    do {
-        status = checkIfGraphSpaceChosen();
-        if (!status.ok()) {
-            break;
-        }
-
-        space_ = ectx()->rctx()->session()->space();
-        expCtx_ = std::make_unique<ExpressionContext>();
-        expCtx_->setSpace(space_);
-        expCtx_->setStorageClient(ectx()->getStorageClient());
-
-        auto vidList = sentence_->vidList();
-        vidList->setContext(expCtx_.get());
-        status = vidList->prepare();
-        if (!status.ok()) {
-            break;
-        }
-
-        auto values = vidList->eval();
-        for (auto value : values) {
-            auto v = value.value();
-            if (!Expression::isInt(v)) {
-                status = Status::Error("Vertex ID should be of type integer");
-            }
-            auto vid = Expression::asInt(v);
-            vids_.emplace_back(vid);
-        }
-    } while (false);
-    return status;
+    return Status::OK();
 }
 
 void DeleteVerticesExecutor::execute() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        doError(std::move(status));
+        return;
+    }
+
+    space_ = ectx()->rctx()->session()->space();
+    expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setSpace(space_);
+    expCtx_->setStorageClient(ectx()->getStorageClient());
+
+    auto vidList = sentence_->vidList();
+    vidList->setContext(expCtx_.get());
+    status = vidList->prepare();
+    if (!status.ok()) {
+        doError(std::move(status));
+        return;
+    }
+
+    auto values = vidList->eval();
+    for (auto value : values) {
+        auto v = value.value();
+        if (!Expression::isInt(v)) {
+            status = Status::Error("Vertex ID should be of type integer");
+            doError(std::move(status));
+            return;
+        }
+        auto vid = Expression::asInt(v);
+        vids_.emplace_back(vid);
+    }
+
     // TODO(zlcook) Get edgeKeys of a vertex by Go
     auto future = ectx()->getStorageClient()->getEdgeKeys(space_, vids_);
     auto *runner = ectx()->rctx()->runner();
@@ -57,10 +59,13 @@ void DeleteVerticesExecutor::execute() {
     auto cb = [this] (auto &&result) {
         auto completeness = result.completeness();
         if (completeness != 100) {
-            LOG(INFO) << "Get vertices partially failed: "  << completeness << "%";
+            LOG(ERROR) << "Get vertices partially failed: "  << completeness << "%";
             for (auto &error : result.failedParts()) {
                 LOG(ERROR) << "part: " << error.first
                            << " error code: " << static_cast<int>(error.second);
+                doError(Status::Error("Delete edge not complete, completeness: %d",
+                                      completeness));
+                return;
             }
         }
 
@@ -92,8 +97,7 @@ void DeleteVerticesExecutor::execute() {
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal error"));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -105,8 +109,8 @@ void DeleteVerticesExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>& ed
     auto cb = [this] (auto &&resp) {
         auto completeness = resp.completeness();
         if (completeness != 100) {
-            DCHECK(onError_);
-            onError_(Status::Error("Internal Error"));
+            LOG(ERROR) << "Delete edges partially failed: "  << completeness << "%";
+            doError(Status::Error("Internal error"));
             return;
         }
         deleteVertices();
@@ -115,8 +119,7 @@ void DeleteVerticesExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>& ed
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal error"));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -128,19 +131,17 @@ void DeleteVerticesExecutor::deleteVertices() {
     auto cb = [this] (auto &&resp) {
         auto completeness = resp.completeness();
         if (completeness != 100) {
-            DCHECK(onError_);
-            onError_(Status::Error("Internal Error"));
+            LOG(ERROR) << "Delete vertices partially failed: "  << completeness << "%";
+            doError(Status::Error("Internal error"));
             return;
         }
-        DCHECK(onFinish_);
-        onFinish_(Executor::ProcessControl::kNext);
+        doFinish(Executor::ProcessControl::kNext, vids_.size());
         return;
     };
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        doError(Status::Error("Internal error"));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
