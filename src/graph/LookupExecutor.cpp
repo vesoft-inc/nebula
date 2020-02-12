@@ -74,7 +74,6 @@ Status LookupExecutor::prepareWhere() {
     if (!clause) {
         return Status::SyntaxError("Where clause is required");
     }
-    filter_ = Expression::encode(clause->filter());
     return Status::OK();
 }
 
@@ -137,7 +136,7 @@ Status LookupExecutor::traversalExpr(const Expression *expr) {
         case nebula::Expression::kLogical : {
             auto* lExpr = dynamic_cast<const LogicalExpression*>(expr);
             if (lExpr->op() == LogicalExpression::Operator::XOR) {
-                return Status::SyntaxError("Unsupported syntax ：%s", lExpr->toString().c_str());
+                return Status::SyntaxError("Syntax error : %s", lExpr->toString().c_str());
             } else if (lExpr->op() == LogicalExpression::Operator::OR) {
                 skipOptimize_ = true;
             }
@@ -154,14 +153,14 @@ Status LookupExecutor::traversalExpr(const Expression *expr) {
             auto* left = rExpr->left();
             auto* right = rExpr->right();
             /**
-             * TODO（sky） : Support WHERE ：tag1.col2 != tag1.col3
+             *  TODO (sky) : Support WHERE ：tag1.col2 != tag1.col3
              *  Handler error for FuncExpr or  ArithmeticExpr contains
              *  AliasPropExpr , for example :
              *  WHERE lookup_tag_2.col2 > (lookup_tag_2.col3 - 100)
              */
             if (left->kind() == nebula::Expression::kAliasProp &&
                 right->kind() == nebula::Expression::kAliasProp) {
-                return Status::SyntaxError("Unsupported syntax ：%s", rExpr->toString().c_str());
+                return Status::SyntaxError("Syntax error ：%s", rExpr->toString().c_str());
             }  else if (left->kind() == nebula::Expression::kAliasProp) {
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(left);
                 prop = *aExpr->prop();
@@ -179,12 +178,12 @@ Status LookupExecutor::traversalExpr(const Expression *expr) {
             auto* fExpr = dynamic_cast<const FunctionCallExpression*>(expr);
             auto* name = fExpr->name();
             if (*name == "udf_is_in") {
-                return Status::SyntaxError("Unsupported function call ： %s", name->c_str());
+                return Status::SyntaxError("Unsupported function ： %s", name->c_str());
             }
             break;
         }
         default : {
-            return Status::SyntaxError("Unsupported syntax ： %s", expr->toString().c_str());
+            return Status::SyntaxError("Syntax error ： %s", expr->toString().c_str());
         }
     }
     return Status::OK();
@@ -442,9 +441,10 @@ void LookupExecutor::processVertexResult(VertexRpcResponse &&result) {
 
 void LookupExecutor::stepEdgeOut() {
     auto *sc = ectx()->getStorageClient();
+    auto filter = Expression::encode(sentence_->whereClause()->filter());
     auto future  = sc->lookUpEdgeIndex(spaceId_,
                                        index_,
-                                       filter_,
+                                       filter,
                                        returnCols_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
@@ -471,9 +471,10 @@ void LookupExecutor::stepEdgeOut() {
 
 void LookupExecutor::stepVertexOut() {
     auto *sc = ectx()->getStorageClient();
+    auto filter = Expression::encode(sentence_->whereClause()->filter());
     auto future  = sc->lookUpVertexIndex(spaceId_,
                                          index_,
-                                         filter_,
+                                         filter,
                                          returnCols_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {

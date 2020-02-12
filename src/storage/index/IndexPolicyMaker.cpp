@@ -77,6 +77,17 @@ cpp2::ErrorCode IndexPolicyMaker::traversalExpression(const Expression *expr) {
         return code;
     }
     Getters getters;
+
+    /**
+     *  TODO (sky) :
+     *  Handler error for FuncExpr or  ArithmeticExpr contains
+     *  AliasPropExpr , for example :
+     *  "tag1.col1 > tag1.col2" or "tag1.col2 > (tag1.col3 - 100)" , etc.
+     */
+    getters.getAliasProp = [](const std::string&,
+                              const std::string&) -> OptVariantType {
+        return OptVariantType(Status::Error("Alias expression cannot be evaluated"));
+    };
     switch (expr->kind()) {
         case nebula::Expression::kLogical : {
             auto* lExpr = dynamic_cast<const LogicalExpression*>(expr);
@@ -103,12 +114,14 @@ cpp2::ErrorCode IndexPolicyMaker::traversalExpression(const Expression *expr) {
                 prop = *aExpr->prop();
                 auto value = right->eval(getters);
                 if (!value.ok()) {
+                    VLOG(1) << "Can't evaluate the expression " << right->toString();
                     return cpp2::ErrorCode::E_INVALID_FILTER;
                 }
                 v = value.value();
             } else if (right->kind() == nebula::Expression::kAliasProp) {
                 auto value = left->eval(getters);
                 if (!value.ok()) {
+                    VLOG(1) << "Can't evaluate the expression " << left->toString();
                     return cpp2::ErrorCode::E_INVALID_FILTER;
                 }
                 v = value.value();

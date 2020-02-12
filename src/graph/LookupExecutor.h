@@ -75,7 +75,6 @@ private:
     GraphSpaceID                                   spaceId_;
     IndexID                                        index_;
     const std::string                              *from_{nullptr};
-    std::string                                    filter_;
     std::vector<YieldColumn*>                      yields_;
     std::unique_ptr<YieldClauseWrapper>            yieldClauseWrapper_;
     std::unique_ptr<ExpressionContext>             expCtx_;
