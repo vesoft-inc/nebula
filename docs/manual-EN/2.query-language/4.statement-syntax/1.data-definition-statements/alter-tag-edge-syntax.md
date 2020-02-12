@@ -16,10 +16,7 @@ ttl_definition:
 
 `ALTER` statement changes the structure of a tag or edge. For example, you can add or delete properties, change the data type of an existing property. You can also set a property as TTL (Time-To-Live), or change the TTL duration.
 
-**Note:** **Nebula Graph** automatically examines indexes when altering a tag or edge.
-
-- When altering a tag or edge, **Nebula Graph** first checks whether the tag or edge is associated with any indexes then traverses all of them to check whether the column item to be dropped or changed exists in the index column. If exists, the alter is rejected. Otherwise, it is allowed.
-- When deleting a tag or edge, **Nebula Graph** only checks whether the tag or edge is associated with any indexes. If so the deletion is rejected.
+**Note:** **Nebula Graph** automatically examines indexes when altering a tag or edge. When altering a tag or edge, **Nebula Graph** first checks whether the tag or edge is associated with any indexes then traverses all of them to check whether the column item to be dropped or changed exists in the index column. If exists, the alter is rejected. Otherwise, it is allowed.
 
 Please refer to [Index Documentation](index.md) on details about index.
 
