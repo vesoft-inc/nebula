@@ -10,7 +10,7 @@ You must have the DROP privilege for the edge type.
 
 Please refer to [Index Documentation](index.md) on details about index.
 
-You can use the `If EXISTS` keywords when dropping edges. This keyword automatically detects if the corresponding edge exists. If it exists, it will be deleted. Otherwise, no edge is deleted.
+You can use the `If EXISTS` keywords when dropping edges. These keywords automatically detect if the corresponding edge exists. If it exists, it will be deleted. Otherwise, no edge is deleted.
 
 This statement removes all the edges (connections) within the specific edge type.
 
