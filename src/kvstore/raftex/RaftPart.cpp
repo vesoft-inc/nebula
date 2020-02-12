@@ -1133,7 +1133,7 @@ bool RaftPart::leaderElection() {
             // Number of succeeded required
             quorum_,
             // Result evaluator
-            [hosts, this](size_t idx, cpp2::AskForVoteResponse& resp) {
+            [hosts] (size_t idx, cpp2::AskForVoteResponse& resp) {
                 return resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED
                         && !hosts[idx]->isLearner();
             });
