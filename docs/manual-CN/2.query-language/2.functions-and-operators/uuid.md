@@ -9,9 +9,9 @@
 插入 `UUID`：
 
 ```ngql
--- INSERT VERTEX player (name, age) VALUES hash("n0"):("n0", 21)
+-- 使用 UUID 函数插入一个点。
 nebula> INSERT VERTEX player (name, age) VALUES uuid("n0"):("n0", 21);
--- INSERT EDGE follow(degree) VALUES hash("n0") -> hash("n1"): (90)
+-- 使用 UUID 函数插入一条边。
 nebula> INSERT EDGE follow(degree) VALUES uuid("n0") -> uuid("n1"): (90);
 ```
 
