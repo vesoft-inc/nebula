@@ -35,6 +35,9 @@ folly::Optional<JobDescription>
 JobDescription::makeJobDescription(folly::StringPiece rawkey,
                                    folly::StringPiece rawval) {
     try {
+        if (!isJobKey(rawkey)) {
+            return folly::none;
+        }
         auto key = parseKey(rawkey);
         auto tup = parseVal(rawval);
 
@@ -68,11 +71,6 @@ std::string JobDescription::makeJobKey(int32_t iJob) {
 
 int32_t JobDescription::parseKey(const folly::StringPiece& rawKey) {
     auto offset = JobUtil::jobPrefix().size();
-    if (offset + sizeof(size_t) < rawKey.size()) {
-        std::stringstream oss;
-        oss << __func__ << ", offset=" << offset << ", rawKey.size()=" << rawKey.size();
-        throw std::range_error(oss.str().c_str());
-    }
     return *reinterpret_cast<const int32_t*>(rawKey.begin() + offset);
 }
 

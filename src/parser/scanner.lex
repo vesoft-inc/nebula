@@ -112,6 +112,7 @@ DOWNLOAD                    ([Dd][Oo][Ww][Nn][Ll][Oo][Aa][Dd])
 HDFS                        ([Hh][Dd][Ff][Ss])
 ORDER                       ([Oo][Rr][Dd][Ee][Rr])
 INGEST                      ([Ii][Nn][Gg][Ee][Ss][Tt])
+SUBMIT                      ([Ss][Uu][Bb][Mm][Ii][Tt])
 COMPACT                     ([Cc][Oo][Mm][Pp][Aa][Cc][Tt])
 FLUSH                       ([Ff][Ll][Uu][Ss][Hh])
 ASC                         ([Aa][Ss][Cc])
@@ -160,7 +161,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
 JOBS                        ([Jj][Oo][Bb][Ss])
 JOB                         ([Jj][Oo][Bb])
-BACKUP                      ([Bb][Aa][Cc][Kk][Uu][Pp])
 RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 
 %%
@@ -261,6 +261,7 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {INGEST}                    { return TokenType::KW_INGEST; }
 {COMPACT}                   { return TokenType::KW_COMPACT; }
 {FLUSH}                     { return TokenType::KW_FLUSH; }
+{SUBMIT}                    { return TokenType::KW_SUBMIT; }
 {ASC}                       { return TokenType::KW_ASC; }
 {DISTINCT}                  { return TokenType::KW_DISTINCT; }
 {DEFAULT}                   { return TokenType::KW_DEFAULT; }
@@ -295,7 +296,6 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 
 {JOBS}                      { return TokenType::KW_JOBS; }
 {JOB}                       { return TokenType::KW_JOB; }
-{BACKUP}                    { return TokenType::KW_BACKUP; }
 {RECOVER}                   { return TokenType::KW_RECOVER; }
 
 "."                         { return TokenType::DOT; }

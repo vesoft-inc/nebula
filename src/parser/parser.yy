@@ -118,7 +118,7 @@ class GraphScanner;
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS
-%token KW_JOBS KW_JOB KW_BACKUP KW_RECOVER KW_FLUSH KW_COMPACT
+%token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_SUBMIT
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -279,7 +279,7 @@ unreserved_keyword
      | KW_VARIABLES          { $$ = new std::string("variables"); }
      | KW_JOB                { $$ = new std::string("job"); }
      | KW_JOBS               { $$ = new std::string("jobs"); }
-     | KW_BACKUP             { $$ = new std::string("backup"); }
+     | KW_SUBMIT             { $$ = new std::string("submit"); }
      | KW_RECOVER            { $$ = new std::string("recover"); }
      | KW_FLUSH              { $$ = new std::string("flush"); }
      | KW_COMPACT            { $$ = new std::string("compact"); }
@@ -1533,9 +1533,9 @@ ingest_sentence
     ;
 
 admin_sentence
-    : KW_ADMIN admin_operation {
+    : KW_SUBMIT KW_JOB admin_operation {
         auto sentence = new AdminSentence("add_job");
-        sentence->addPara(*$2);
+        sentence->addPara(*$3);
         $$ = sentence;
     }
     | KW_SHOW KW_JOBS {
@@ -1550,12 +1550,6 @@ admin_sentence
     | KW_STOP KW_JOB INTEGER {
         auto sentence = new AdminSentence("stop_job");
         sentence->addPara(std::to_string($3));
-        $$ = sentence;
-    }
-    | KW_BACKUP KW_JOB INTEGER INTEGER {
-        auto sentence = new AdminSentence("backup_job");
-        sentence->addPara(std::to_string($3));
-        sentence->addPara(std::to_string($4));
         $$ = sentence;
     }
     | KW_RECOVER KW_JOB {

@@ -8,6 +8,7 @@
 #include "meta/processors/jobMan/TaskDescription.h"
 #include "meta/processors/jobMan/JobStatus.h"
 #include "meta/processors/jobMan/JobUtils.h"
+#include "common/time/WallClock.h"
 
 namespace nebula {
 namespace meta {
@@ -133,11 +134,11 @@ bool TaskDescription::setStatus(Status newStatus) {
     }
     status_ = newStatus;
     if (newStatus == Status::RUNNING) {
-        startTime_ = std::time(nullptr);
+        startTime_ = nebula::time::WallClock::fastNowInSec();
     }
 
     if (JobStatus::laterThan(newStatus, Status::RUNNING)) {
-        stopTime_ = std::time(nullptr);
+        stopTime_ = nebula::time::WallClock::fastNowInSec();
     }
     return true;
 }

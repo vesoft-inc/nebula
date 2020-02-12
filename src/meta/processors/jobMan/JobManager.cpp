@@ -21,6 +21,7 @@
 #include "meta/processors/jobMan/JobStatus.h"
 #include "meta/MetaServiceUtils.h"
 #include "webservice/Common.h"
+#include "common/time/WallClock.h"
 
 DEFINE_int32(dispatch_thread_num, 3, "Number of job dispatch http thread");
 DEFINE_int32(job_check_intervals, 5000, "job intervals in us");
@@ -173,11 +174,15 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc) {
                     break;
                 }
             }
-        }).thenError([&](auto&& e){
+        }).thenError([&](auto&& e) {
             LOG(ERROR) << "admin Failed: " << e.what();
             successfully = false;
         }).wait();
-    LOG(INFO) << "admin tasks have finished";
+    LOG(INFO) << folly::stringPrintf("admin job %d %s, descrtion: %s %s",
+                                     iJob,
+                                     successfully ? "succeeded" : "failed",
+                                     op.c_str(),
+                                     folly::join(" ", jobDesc.getParas()).c_str());
     return successfully;
 }
 
@@ -229,7 +234,7 @@ JobManager::showJobs() {
 
 bool JobManager::isExpiredJob(const cpp2::JobDesc& jobDesc) {
     auto jobStart = jobDesc.get_startTime();
-    auto duration = std::difftime(std::time(nullptr), jobStart);
+    auto duration = std::difftime(nebula::time::WallClock::fastNowInSec(), jobStart);
     return duration > FLAGS_job_expired_secs;
 }
 
