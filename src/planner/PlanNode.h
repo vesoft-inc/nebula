@@ -31,7 +31,7 @@ public:
         return expr_.get();
     }
 
-    const StateTransitionTable table() const {
+    StateTransitionTable table() const {
         return table_;
     }
 
@@ -74,12 +74,22 @@ public:
         kAggregate
     };
 
+    PlanNode() = default;
+
     PlanNode(std::vector<std::string>&& colNames, StateTransition&& stateTrans) {
         outputColNames_ = std::move(colNames);
         stateTrans_ = std::move(stateTrans);
     }
 
     virtual ~PlanNode() = default;
+
+    void setOutputColNames(std::vector<std::string>&& cols) {
+        outputColNames_ = std::move(cols);
+    }
+
+    void setStateTrans(StateTransition&& stateTrans) {
+        stateTrans_ = std::move(stateTrans);
+    }
 
     Kind kind() const {
         return kind_;
@@ -104,14 +114,14 @@ public:
     /**
      * This table is used for finding the next node(s) to be executed.
      */
-    const StateTransitionTable table() {
+    StateTransitionTable table() {
         return stateTrans_.table();
     }
 
     /**
      * Append a sub-plan to another one.
      */
-    Status append(std::shared_ptr<StartNode> start);
+    Status append(std::shared_ptr<PlanNode> start);
 
     /**
      * Merge two sub-plan.
@@ -129,6 +139,10 @@ protected:
  */
 class StartNode final : public PlanNode {
 public:
+    StartNode() {
+        kind_ = PlanNode::Kind::kStart;
+    }
+
     StartNode(std::vector<std::string>&& colNames,
              StateTransition&& stateTrans) : PlanNode(std::move(colNames), std::move(stateTrans)) {
         kind_ = PlanNode::Kind::kStart;

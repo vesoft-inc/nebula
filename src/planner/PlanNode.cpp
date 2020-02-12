@@ -8,8 +8,12 @@
 
 namespace nebula {
 namespace graph {
-Status PlanNode::append(std::shared_ptr<StartNode> start) {
-    stateTrans_.setTable(start->table());
+Status PlanNode::append(std::shared_ptr<PlanNode> node) {
+    if (node->kind() == PlanNode::Kind::kStart) {
+        stateTrans_.setTable(node->table());
+    } else {
+        // TODO: append a node to current node.
+    }
     return Status::OK();
 }
 

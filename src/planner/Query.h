@@ -27,6 +27,10 @@ namespace graph {
  */
 class Explore : public PlanNode {
 public:
+    explicit Explore(GraphSpaceID space) {
+        space_ = space;
+    }
+
     Explore(GraphSpaceID space,
             std::vector<std::string>&& colNames,
             StateTransition&& stateTrans) : PlanNode(std::move(colNames), std::move(stateTrans)) {
@@ -46,6 +50,12 @@ private:
  */
 class GetNeighbors final : public Explore {
 public:
+    GetNeighbors(nebula::cpp2::GetNeighborsRequest&& req,
+                 GraphSpaceID space) : Explore(space) {
+        kind_ = PlanNode::Kind::kGetNeighbors;
+        req_ = std::move(req);
+    }
+
     GetNeighbors(nebula::cpp2::GetNeighborsRequest&& req,
                  GraphSpaceID space,
                  std::vector<std::string>&& colNames,
@@ -67,6 +77,12 @@ private:
 class GetVertices final : public Explore {
 public:
     GetVertices(nebula::cpp2::VertexPropRequest&& req,
+                GraphSpaceID space) : Explore(space) {
+        kind_ = PlanNode::Kind::kGetVertices;
+        req_ = std::move(req);
+    }
+
+    GetVertices(nebula::cpp2::VertexPropRequest&& req,
                 GraphSpaceID space,
                 std::vector<std::string>&& colNames,
                 StateTransition&& stateTrans)
@@ -87,6 +103,12 @@ private:
 class GetEdges final : public Explore {
 public:
     GetEdges(nebula::cpp2::EdgePropsRequest&& req,
+                GraphSpaceID space) : Explore(space) {
+        kind_ = PlanNode::Kind::kGetEdges;
+        req_ = std::move(req);
+    }
+
+    GetEdges(nebula::cpp2::EdgePropsRequest&& req,
                 GraphSpaceID space,
                 std::vector<std::string>&& colNames,
                 StateTransition&& stateTrans)
@@ -106,6 +128,10 @@ private:
  */
 class ReadIndex final : public Explore {
 public:
+    explicit ReadIndex(GraphSpaceID space) : Explore(space) {
+        kind_ = PlanNode::Kind::kReadIndex;
+    }
+
     ReadIndex(GraphSpaceID space,
               std::vector<std::string>&& colNames,
               StateTransition&& stateTrans)
@@ -121,6 +147,11 @@ public:
  */
 class Filter final : public PlanNode {
 public:
+    explicit Filter(Expression* condition) {
+        kind_ = PlanNode::Kind::kFilter;
+        condition_ = condition;
+    }
+
     Filter(Expression* condition,
            std::vector<std::string>&& colNames,
            StateTransition&& stateTrans) : PlanNode(std::move(colNames), std::move(stateTrans)) {
@@ -146,6 +177,8 @@ private:
  */
 class SetOp : public PlanNode {
 public:
+    SetOp() = default;
+
     SetOp(std::vector<std::string>&& colNames,
           StateTransition&& stateTrans) : PlanNode(std::move(colNames), std::move(stateTrans)) {}
 };
@@ -155,6 +188,11 @@ public:
  */
 class Union final : public SetOp {
 public:
+    explicit Union(bool distinct) {
+        kind_ = PlanNode::Kind::kUnion;
+        distinct_ = distinct;
+    }
+
     Union(bool distinct,
           std::vector<std::string>&& colNames,
           StateTransition&& stateTrans) : SetOp(std::move(colNames), std::move(stateTrans)) {
@@ -177,6 +215,10 @@ private:
  */
 class Intersect final : public SetOp {
 public:
+    Intersect() {
+        kind_ = PlanNode::Kind::kIntersect;
+    }
+
     Intersect(std::vector<std::string>&& colNames,
               StateTransition&& stateTrans) : SetOp(std::move(colNames), std::move(stateTrans)) {
         kind_ = PlanNode::Kind::kIntersect;
@@ -190,6 +232,10 @@ public:
  */
 class Minus final : public SetOp {
 public:
+    Minus() {
+        kind_ = PlanNode::Kind::kMinus;
+    }
+
     Minus(std::vector<std::string>&& colNames,
           StateTransition&& stateTrans) : SetOp(std::move(colNames), std::move(stateTrans)) {
         kind_ = PlanNode::Kind::kMinus;
@@ -203,6 +249,12 @@ public:
  */
 class Project final : public PlanNode {
 public:
+    Project(YieldColumns* cols, bool distinct) {
+        kind_ = PlanNode::Kind::kProject;
+        cols_ = cols;
+        distinct_ = distinct;
+    }
+
     Project(YieldColumns* cols,
             bool distinct,
             std::vector<std::string>&& colNames,
@@ -232,6 +284,11 @@ private:
  */
 class Sort final : public PlanNode {
 public:
+    explicit Sort(OrderFactors* factors) {
+        kind_ = PlanNode::Kind::kSort;
+        factors_ = factors;
+    }
+
     Sort(OrderFactors* factors,
          std::vector<std::string>&& colNames,
          StateTransition&& stateTrans) : PlanNode(std::move(colNames), std::move(stateTrans)) {
@@ -254,6 +311,12 @@ private:
  */
 class Limit final : public PlanNode {
 public:
+    Limit(int64_t offset, int64_t count) {
+        kind_ = PlanNode::Kind::kLimit;
+        offset_ = offset;
+        count_ = count;
+    }
+
     Limit(int64_t offset,
           int64_t count,
           std::vector<std::string>&& colNames,
@@ -284,6 +347,13 @@ private:
  */
 class Aggregate : public PlanNode {
 public:
+    Aggregate(YieldColumns* yieldCols,
+              YieldColumns* groupCols) {
+        kind_ = PlanNode::Kind::kAggregate;
+        yieldCols_ = yieldCols;
+        groupCols_ = groupCols;
+    }
+
     Aggregate(YieldColumns* yieldCols,
               YieldColumns* groupCols,
               std::vector<std::string>&& colNames,
