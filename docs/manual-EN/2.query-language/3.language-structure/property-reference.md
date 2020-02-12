@@ -55,7 +55,7 @@ There are four built-in properties in the edge:
 * _src: source vertex ID of the edge
 * _dst: destination ID of the edge
 * _type: edge type
-* _rank: the edge's ranking
+* _ranking: the edge's ranking
 
 You can use `_src` and `_dst` to get the starting and ending vertices' ID, and they are very commonly used to show a graph path.
 

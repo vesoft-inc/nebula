@@ -51,7 +51,7 @@ nebula> GO FROM 100 OVER follow YIELD follow.degree;
 - _src: 边起点 ID
 - _dst: 边终点 ID
 - _type: 边类型
-- _rank: 边的权重
+- _ranking: 边的权重
 
 获取起点和终点 ID 可通过 `_src` 和 `_dst` 获取，这在显示图路径时经常会用到。
 
