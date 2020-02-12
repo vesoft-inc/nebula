@@ -1171,8 +1171,8 @@ bool RaftPart::leaderElection() {
                 CHECK(!t.hasException());
                 auto result = std::move(t).value();
                 if (result == AppendLogResult::SUCCEEDED) {
-                    std::lock_guard<std::mutex> g(raftLock_);
-                    ready_ = true;
+                    bool expected = false;
+                    ready_.compare_exchange_strong(expected, true);
                 }
             });
             return true;
@@ -1216,8 +1216,8 @@ void RaftPart::statusPolling() {
             CHECK(!t.hasException());
             auto result = std::move(t).value();
             if (result == AppendLogResult::SUCCEEDED) {
-                std::lock_guard<std::mutex> g(raftLock_);
-                ready_ = true;
+                bool expected = false;
+                ready_.compare_exchange_strong(expected, true);
             }
         });
     }
