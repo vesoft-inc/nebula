@@ -200,33 +200,33 @@ struct JobDesc {
     2: string       cmd
     3: list<string> paras
     4: JobStatus    status
-    5: i64          startTime
-    6: i64          stopTime
+    5: i64          start_time
+    6: i64          stop_time
 }
 
 struct TaskDesc {
-    1: i32              taskId
+    1: i32              task_id
     2: common.HostAddr  host
     3: JobStatus        status
-    4: i64              startTime
-    5: i64              stopTime
-    6: i32              jobId
+    4: i64              start_time
+    5: i64              stop_time
+    6: i32              job_id
 }
 
 struct AdminJobResult {
     // used in a new added job, e.g. "flush" "compact"
     // other job type which also need jobId in their result
     // will use other filed. e.g. JobDesc::id
-    1: optional i32                 jobId
+    1: optional i32                 job_id
 
     // used in "show jobs" and "show job <id>"
-    2: optional list<JobDesc>       jobDesc
+    2: optional list<JobDesc>       job_desc
 
     // used in "show job <id>"
-    3: optional list<TaskDesc>      taskDesc
+    3: optional list<TaskDesc>      task_desc
 
     // used in "recover job"
-    4: optional i32                 recoveredJobNum
+    4: optional i32                 recovered_job_num
 }
 
 struct AdminJobResp {

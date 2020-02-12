@@ -141,8 +141,8 @@ AdminJobExecutor::toRowValue(const nebula::meta::cpp2::JobDesc& job) {
     }
     row[1].set_str(oss.str());
     row[2].set_str(toString(job.get_status()));
-    row[3].set_str(time2string(job.get_startTime()));
-    row[4].set_str(time2string(job.get_stopTime()));
+    row[3].set_str(time2string(job.get_start_time()));
+    row[4].set_str(time2string(job.get_stop_time()));
 
     ret.set_columns(std::move(row));
     return ret;
@@ -152,11 +152,11 @@ cpp2::RowValue
 AdminJobExecutor::toRowValue(const nebula::meta::cpp2::TaskDesc& task) {
     cpp2::RowValue ret;
     std::vector<cpp2::ColumnValue> row(5);
-    row[0].set_str(folly::stringPrintf("%d-%d", task.get_jobId(), task.get_taskId()));
+    row[0].set_str(folly::stringPrintf("%d-%d", task.get_job_id(), task.get_task_id()));
     row[1].set_str(toString(task.get_host()));
     row[2].set_str(toString(task.get_status()));
-    row[3].set_str(time2string(task.get_startTime()));
-    row[4].set_str(time2string(task.get_stopTime()));
+    row[3].set_str(time2string(task.get_start_time()));
+    row[4].set_str(time2string(task.get_stop_time()));
 
     ret.set_columns(std::move(row));
     return ret;
@@ -178,22 +178,22 @@ AdminJobExecutor::toRowValues(nebula::meta::cpp2::AdminJobOp op,
     switch (op) {
     case nebula::meta::cpp2::AdminJobOp::ADD:
         {
-            ret.emplace_back(toRowValue(std::to_string(*resp.get_jobId())));
+            ret.emplace_back(toRowValue(std::to_string(*resp.get_job_id())));
         }
         break;
     case nebula::meta::cpp2::AdminJobOp::SHOW_All:
         {
-            for (auto& job : *resp.get_jobDesc()) {
+            for (auto& job : *resp.get_job_desc()) {
                 ret.emplace_back(toRowValue(job));
             }
         }
         break;
     case nebula::meta::cpp2::AdminJobOp::SHOW:
         {
-            for (auto& job : *resp.get_jobDesc()) {
+            for (auto& job : *resp.get_job_desc()) {
                 ret.emplace_back(toRowValue(job));
             }
-            for (auto& task : *resp.get_taskDesc()) {
+            for (auto& task : *resp.get_task_desc()) {
                 ret.emplace_back(toRowValue(task));
             }
         }
@@ -206,7 +206,7 @@ AdminJobExecutor::toRowValues(nebula::meta::cpp2::AdminJobOp op,
     case nebula::meta::cpp2::AdminJobOp::RECOVER:
         {
             auto msg = folly::stringPrintf("recoverd job num: %d",
-                                              *resp.get_recoveredJobNum());
+                                              *resp.get_recovered_job_num());
             ret.emplace_back(toRowValue(std::move(msg)));
         }
         break;

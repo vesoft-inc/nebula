@@ -123,8 +123,8 @@ cpp2::JobDesc JobDescription::toJobDesc() {
     ret.set_cmd(cmd_);
     ret.set_paras(paras_);
     ret.set_status(status_);
-    ret.set_startTime(startTime_);
-    ret.set_stopTime(stopTime_);
+    ret.set_start_time(startTime_);
+    ret.set_stop_time(stopTime_);
     return ret;
 }
 

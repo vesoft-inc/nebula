@@ -119,12 +119,12 @@ TaskDescription::parseVal(const folly::StringPiece& rawVal) {
  * */
 cpp2::TaskDesc TaskDescription::toTaskDesc() {
     cpp2::TaskDesc ret;
-    ret.set_jobId(iJob_);
-    ret.set_taskId(iTask_);
+    ret.set_job_id(iJob_);
+    ret.set_task_id(iTask_);
     ret.set_host(dest_);
     ret.set_status(status_);
-    ret.set_startTime(startTime_);
-    ret.set_stopTime(stopTime_);
+    ret.set_start_time(startTime_);
+    ret.set_stop_time(stopTime_);
     return ret;
 }
 

@@ -114,15 +114,15 @@ TEST_F(JobManagerTest, showJobs) {
     ASSERT_EQ(jobs[0].get_cmd(), type1);
     ASSERT_EQ(jobs[0].get_paras()[0], para1);
     ASSERT_EQ(jobs[0].get_status(), Status::FINISHED);
-    ASSERT_EQ(jobs[0].get_startTime(), jd1.startTime_);
-    ASSERT_EQ(jobs[0].get_stopTime(), jd1.stopTime_);
+    ASSERT_EQ(jobs[0].get_start_time(), jd1.startTime_);
+    ASSERT_EQ(jobs[0].get_stop_time(), jd1.stopTime_);
 
     ASSERT_EQ(jobs[1].get_id(), jd2.id_);
     ASSERT_EQ(jobs[1].get_cmd(), type2);
     ASSERT_EQ(jobs[1].get_paras()[0], para2);
     ASSERT_EQ(jobs[1].get_status(), Status::FAILED);
-    ASSERT_EQ(jobs[1].get_startTime(), jd2.startTime_);
-    ASSERT_EQ(jobs[1].get_stopTime(), jd2.stopTime_);
+    ASSERT_EQ(jobs[1].get_start_time(), jd2.startTime_);
+    ASSERT_EQ(jobs[1].get_stop_time(), jd2.stopTime_);
 }
 
 nebula::cpp2::HostAddr toHost(std::string strIp) {
@@ -171,22 +171,22 @@ TEST_F(JobManagerTest, showJob) {
     ASSERT_EQ(jobs.get_cmd(), type);
     ASSERT_EQ(jobs.get_paras()[0], para);
     ASSERT_EQ(jobs.get_status(), Status::FINISHED);
-    ASSERT_EQ(jobs.get_startTime(), jd.startTime_);
-    ASSERT_EQ(jobs.get_stopTime(), jd.stopTime_);
+    ASSERT_EQ(jobs.get_start_time(), jd.startTime_);
+    ASSERT_EQ(jobs.get_stop_time(), jd.stopTime_);
 
-    ASSERT_EQ(tasks[0].get_taskId(), task1);
-    ASSERT_EQ(tasks[0].get_jobId(), iJob);
+    ASSERT_EQ(tasks[0].get_task_id(), task1);
+    ASSERT_EQ(tasks[0].get_job_id(), iJob);
     ASSERT_EQ(tasks[0].get_host(), host1);
     ASSERT_EQ(tasks[0].get_status(), Status::FINISHED);
-    ASSERT_EQ(tasks[0].get_startTime(), td1.startTime_);
-    ASSERT_EQ(tasks[0].get_stopTime(), td1.stopTime_);
+    ASSERT_EQ(tasks[0].get_start_time(), td1.startTime_);
+    ASSERT_EQ(tasks[0].get_stop_time(), td1.stopTime_);
 
-    ASSERT_EQ(tasks[1].get_taskId(), task2);
-    ASSERT_EQ(tasks[1].get_jobId(), iJob);
+    ASSERT_EQ(tasks[1].get_task_id(), task2);
+    ASSERT_EQ(tasks[1].get_job_id(), iJob);
     ASSERT_EQ(tasks[1].get_host(), host2);
     ASSERT_EQ(tasks[1].get_status(), Status::FAILED);
-    ASSERT_EQ(tasks[1].get_startTime(), td2.startTime_);
-    ASSERT_EQ(tasks[1].get_stopTime(), td2.stopTime_);
+    ASSERT_EQ(tasks[1].get_start_time(), td2.startTime_);
+    ASSERT_EQ(tasks[1].get_stop_time(), td2.stopTime_);
 }
 
 TEST_F(JobManagerTest, recoverJob) {

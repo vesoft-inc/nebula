@@ -46,7 +46,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
             JobDescription jobDesc(nebula::value(jobId), cmd, paras);
             auto rc = jobMgr->addJob(jobDesc);
             if (rc == nebula::kvstore::SUCCEEDED) {
-                result.set_jobId(nebula::value(jobId));
+                result.set_job_id(nebula::value(jobId));
             } else {
                 errorCode = to(rc);
             }
@@ -56,7 +56,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         {
             auto ret = jobMgr->showJobs();
             if (nebula::ok(ret)) {
-                result.set_jobDesc(nebula::value(ret));
+                result.set_job_desc(nebula::value(ret));
             } else {
                 errorCode = to(nebula::error(ret));
             }
@@ -77,8 +77,8 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
 
             auto ret = jobMgr->showJob(iJob);
             if (nebula::ok(ret)) {
-                result.set_jobDesc(std::vector<cpp2::JobDesc>{nebula::value(ret).first});
-                result.set_taskDesc(nebula::value(ret).second);
+                result.set_job_desc(std::vector<cpp2::JobDesc>{nebula::value(ret).first});
+                result.set_task_desc(nebula::value(ret).second);
             } else {
                 errorCode = to(nebula::error(ret));
             }
@@ -105,7 +105,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         {
             auto ret = jobMgr->recoverJob();
             if (nebula::ok(ret)) {
-                result.set_recoveredJobNum(nebula::value(ret));
+                result.set_recovered_job_num(nebula::value(ret));
             } else {
                 errorCode = to(nebula::error(ret));
             }
