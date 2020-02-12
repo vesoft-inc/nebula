@@ -25,7 +25,7 @@ Symbol `$$` indicates the ending vertex, `tag_name` and `prop_name` are the vert
 ### Example
 
 ```ngql
-nebula> GO FROM 100 OVER follow YIELD $^.player.name AS StartName, $$.player.age AS EndAge;
+nebula> GO FROM 100 OVER follow YIELD $^.player.name AS startName, $$.player.age AS endAge;
 ```
 
 Use the above query to get the source vertex's property name and ending vertex's property age.

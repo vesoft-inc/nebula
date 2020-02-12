@@ -23,7 +23,7 @@ $$.tag_name.prop_name
 ### 示例
 
 ```ngql
-nebula> GO FROM 100 OVER follow YIELD $^.player.name AS StartName, $$.player.age AS EndAge;
+nebula> GO FROM 100 OVER follow YIELD $^.player.name AS startName, $$.player.age AS endAge;
 ```
 
 该语句用于获取起点的属性名称和终点的属性年龄。
