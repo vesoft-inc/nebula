@@ -18,21 +18,21 @@
 Name                   | Cypher         | nGQL          |
 | --- | ------------ | ------------ |
 | 列出所有 labels/tags   | * MATCH (n) RETURN distinct labels(n);  <br/> * call db.labels(); | SHOW TAGS |
-| 插入一个指定类型的点 | CREATE (:Person {age: 16}) | INSERT VERTEX <tag_name> (prop_name_list) VALUES \<vid>:(prop_value_list) |
-| 插入一条指定类型的边| CREATE (src)-[:LIKES]->(dst) <br/> SET rel.prop = V | INSERT EDGE <edge_type> ( <prop_name_list> ) VALUES <src_vid> -> <dst_vid>[@<ranking>]: ( <prop_value_list> ) |
-| 删除点 | MATCH (n:A)  <br/> DETACH DELETE n | DELETE VERTEX \<vid> |
-| 删除边  | MATCH ()-[r:LIKES]->() <br/> DELETE r | DELETE EDGE <edge_type> \<src_vid> -> \<dst_vid>[@<ranking>] |
+| 插入指定类型的点 | CREATE (:Person {age: 16}) | INSERT VERTEX <tag_name> (prop_name_list) VALUES \<vid>:(prop_value_list) |
+| 插入指定类型的边| CREATE (src)-[:LIKES]->(dst) <br/> SET rel.prop = V | INSERT EDGE <edge_type> ( <prop_name_list> ) VALUES <src_vid> -> <dst_vid>[@<ranking>]: ( <prop_value_list> ) |
+| 删除点 | MATCH (n) WHERE ID(n) = vid <br/> DETACH DELETE n | DELETE VERTEX \<vid> |
+| 删除边  | MATCH ()-[r]->() WHERE ID(r)=edgeID <br/> DELETE r | DELETE EDGE <edge_type> \<src_vid> -> \<dst_vid>[@<ranking>] |
 | 更新点属性 |SET n.name = V | UPDATE VERTEX \<vid> SET <update_columns> |
 | 查询指定点的属性| MATCH (n) <br/> WHERE ID(n) = vid  <br/> RETURN properties(n) | FETCH PROP ON <tag_name> \<vid>|
-| 查询指定边的属性  | MATCH (n)-[r]->() <br/> WHERE ID(n)=edgeID <br/> return properties(r)| FETCH PROP ON <edge_type> <src_vid> -> <dst_vid>[@<ranking>] |
-| 查询指定点的某一类关系 |MATCH (n)-[r:FOLLOW]->() WHERE ID(n) = vid| GO FROM \<vid> OVER  \<edge_type> |
-| 指定点的某一类反向关系 | MATCH (n)<-[r:FOLLOW]-() WHERE ID(n) = vid| GO FROM \<vid>  OVER \<edge_type> REVERSELY |
-| 指定点某一类关系 N 步查询  |MATCH (n)-[r:FOLLOW*1..N]->() <br/> WHERE ID(a) = vid <br/> return r | GO N STEPS FROM \<vid> OVER \<edge_type> |
+| 查询指定边的属性  | MATCH (n)-[r]->() <br/> WHERE ID(r)=edgeID <br/> return properties(r)| FETCH PROP ON <edge_type> <src_vid> -> <dst_vid>[@<ranking>] |
+| 查询指定点的某一类关系 |MATCH (n)-[r:edge_type]->() WHERE ID(n) = vid| GO FROM \<vid> OVER  \<edge_type> |
+| 指定点的某一类反向关系 | MATCH (n)<-[r:edge_type]-() WHERE ID(n) = vid| GO FROM \<vid>  OVER \<edge_type> REVERSELY |
+| 指定点某一类关系 N 步查询  |MATCH (n)-[r:edge_type*1..N]->() <br/> WHERE ID(a) = vid <br/> return r | GO N STEPS FROM \<vid> OVER \<edge_type> |
 | 两点路径 | MATCH p =(a)-[]->(b) <br/> WHERE ID(a) = a_vid AND ID(b) = b_vid <br/> RETURN p | FIND ALL PATH FROM \<a_vid> TO \<b_vid> OVER * |
 
 ## 示例查询
 
-本节示例使用的数据图结构如下:
+示例使用以下数据:
 
 ![image](https://user-images.githubusercontent.com/42762957/71503167-0e264b80-28af-11ea-87c5-76f4fd1275cd.png)
 
@@ -61,7 +61,7 @@ cypher> MATCH (n:character {name:"prometheus"})
         > DETACH DELETE n 
 ```
 
-- 更新点属性
+- 更新点的属性
 
 ```
 nebula> UPDATE VERTEX hash("jesus") SET character.type = 'titan';
@@ -112,7 +112,7 @@ cypher> MATCH (src:character{name:"prometheus"})-[r:father]->(dst:character)
       > RETURN dst.name
 ```
 
-- 查询年龄百岁老人的姓名
+- 查询百岁老人的姓名
 
  ```
 nebula> XXX # not supported yet
@@ -122,7 +122,7 @@ cypher> MATCH (src:character)
       > RETURN src.name
 ```
 
-- 找出 pluto 和谁一起住
+- 找出 pluto 和谁住
 
 ```
 nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | GO FROM $-.place OVER lives REVERSELY WHERE \

@@ -20,14 +20,14 @@ Name                   | Cypher         | nGQL          |
 | List all labels/tags   | * MATCH (n) RETURN distinct labels(n);  <br/> * call db.labels(); | SHOW TAGS |
 | Insert a vertex with a specified type | CREATE (:Person {age: 16}) | INSERT VERTEX <tag_name> (prop_name_list) VALUES \<vid>:(prop_value_list) |
 | Insert an edge with specified edge type | CREATE (src)-[rel:LIKES]->(dst) <br/> SET rel.prop = V | INSERT EDGE <edge_type> ( <prop_name_list> ) VALUES <src_vid> -> <dst_vid>[@<ranking>]: ( <prop_value_list> ) |
-| Delete a vertex | MATCH (n) WHERE ID(n) = vid  <br/> DETACH DELETE n | DELETE VERTEX \<vid> |
-| Delete an edge  | MATCH ()-[r]->()  WHERE ID(r)=edgeID <br/> DELETE r | DELETE EDGE <edge_type> \<src_vid> -> \<dst_vid>[@<ranking>] |
+| Delete a vertex | MATCH (n) WHERE ID(n) = vid <br/> DETACH DELETE n | DELETE VERTEX \<vid> |
+| Delete an edge  | MATCH ()-[r]->() WHERE ID(r)=edgeID <br/> DELETE r | DELETE EDGE <edge_type> \<src_vid> -> \<dst_vid>[@<ranking>] |
 | Update a vertex property |SET n.name = V | UPDATE VERTEX \<vid> SET <update_columns> |
 | Fetch vertice prop| MATCH (n) <br/> WHERE ID(n) = vid  <br/> RETURN properties(n) | FETCH PROP ON <tag_name> \<vid>|
 | Fetch edges prop  | MATCH (n)-[r]->() <br/> WHERE ID(r)=edgeID <br/> return properties(r)| FETCH PROP ON <edge_type> <src_vid> -> <dst_vid>[@<ranking>]|
-| Query a vertex along specified edge type |MATCH (n)-[r:FOLLOW]->() WHERE ID(n) = vid| GO FROM \<vid> OVER  \<edge_type> |
-| Query a vertex along specified edge type reversely | MATCH (n)<-[r:FOLLOW]-() WHERE ID(n) = vid | GO FROM \<vid>  OVER \<edge_type> REVERSELY |
-| Query N hops along a specified edge type |MATCH (n)-[r:FOLLOW*1..N]->() <br/> WHERE ID(a) = vid <br/> return r | GO N STEPS FROM \<vid> OVER \<edge_type> |
+| Query a vertex along specified edge type |MATCH (n)-[r:edge_type]->() WHERE ID(n) = vid| GO FROM \<vid> OVER  \<edge_type> |
+| Query a vertex along specified edge type reversely | MATCH (n)<-[r:edge_type]-() WHERE ID(n) = vid | GO FROM \<vid>  OVER \<edge_type> REVERSELY |
+| Query N hops along a specified edge type |MATCH (n)-[r:edge_type*1..N]->() <br/> WHERE ID(a) = vid <br/> return r | GO N STEPS FROM \<vid> OVER \<edge_type> |
 | Find path between two vertices | MATCH p =(a)-[]->(b) <br/> WHERE ID(a) = a_vid AND ID(b) = b_vid <br/> RETURN p | FIND ALL PATH FROM \<a_vid> TO \<b_vid> OVER * |
 
 ## Example Queries
