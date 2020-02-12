@@ -74,19 +74,19 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
         }
     }
 
-    // Update schema property
+    // Update schema property if tag not index
     auto& alterSchemaProp = req.get_schema_prop();
-    auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, alterSchemaProp);
-
-    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-        LOG(ERROR) << "Alter tag property error " << static_cast<int32_t>(retCode);
-        resp_.set_code(retCode);
-        onFinished();
-        return;
+    if (indexes.empty()) {
+        auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, alterSchemaProp);
+        if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+            LOG(ERROR) << "Alter tag property error " << static_cast<int32_t>(retCode);
+            resp_.set_code(retCode);
+            onFinished();
+            return;
+        }
+        schema.set_schema_prop(std::move(prop));
     }
-
     schema.set_columns(std::move(columns));
-    schema.set_schema_prop(std::move(prop));
 
     std::vector<kvstore::KV> data;
     LOG(INFO) << "Alter Tag " << req.get_tag_name() << ", tagId " << tagId;

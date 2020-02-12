@@ -73,19 +73,20 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
         }
     }
 
-    // Update schema property
-    auto& alterSchemaProp = req.get_schema_prop();
-    auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, alterSchemaProp);
+    // Update schema property if edge not index
+    if (indexes.empty()) {
+        auto& alterSchemaProp = req.get_schema_prop();
+        auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, alterSchemaProp);
 
-    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-        LOG(ERROR) << "Alter edge property error " << static_cast<int32_t>(retCode);
-        resp_.set_code(retCode);
-        onFinished();
-        return;
+        if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+            LOG(ERROR) << "Alter edge property error " << static_cast<int32_t>(retCode);
+            resp_.set_code(retCode);
+            onFinished();
+            return;
+        }
+        schema.set_schema_prop(std::move(prop));
     }
-
     schema.set_columns(std::move(columns));
-    schema.set_schema_prop(std::move(prop));
 
     std::vector<kvstore::KV> data;
     LOG(INFO) << "Alter edge " << req.get_edge_name() << ", edgeType " << edgeType;

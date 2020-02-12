@@ -423,15 +423,15 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
             for (auto it = cols.begin(); it != cols.end(); ++it) {
                 if (col.get_name() == it->get_name()) {
                     // Check if there is a TTL on the column to be deleted
-                    if (!prop.get_ttl_col() ||
-                        (prop.get_ttl_col() && (*prop.get_ttl_col() != col.get_name()))) {
-                        cols.erase(it);
-                        return cpp2::ErrorCode::SUCCEEDED;
-                    } else {
-                        LOG(ERROR) << "Column can't be dropped, a TTL attribute on it: "
-                                   << col.get_name();
-                        return cpp2::ErrorCode::E_NOT_DROP;
+                    // drop the column with ttl
+                    //if (!prop.get_ttl_col() ||
+                    //    (prop.get_ttl_col() && (*prop.get_ttl_col() != col.get_name()))) {
+                    if (prop.get_ttl_col() && (*prop.get_ttl_col() == col.get_name())) {
+                        prop.set_ttl_duration(0);
+                        prop.set_ttl_col("");
                     }
+                    cols.erase(it);
+                    return cpp2::ErrorCode::SUCCEEDED;
                 }
             }
             LOG(ERROR) << "Column not found: " << col.get_name();
