@@ -150,7 +150,15 @@ bool genData(kvstore::KVStore* kv,
                           baton.post();
                       });
     baton.wait();
-    return ret;
+    if (!ret) {
+        return false;
+    }
+
+    auto code = kv->compact(spaceId);
+    if (code != kvstore::ResultCode::SUCCEEDED) {
+        return false;
+    }
+    return true;
 }
 
 bool processLookup(kvstore::KVStore* kv,
@@ -287,10 +295,10 @@ int main(int argc, char** argv) {
  * ============================================================================
  * src/storage/test/StorageLookupBenchmark.cpprelative  time/iter  iters/s
  * ============================================================================
- * PreciseScan_10000                                          242.67ms     4.12
- * PreciseScan_100                                            215.78ms     4.63
- * PreciseScan_10                                             221.32ms     4.52
- * FilterScan_10                                              354.26ms     2.82
+ * PreciseScan_10000                                          31.81ms     4.12
+ * PreciseScan_100                                            33.98ms     4.63
+ * PreciseScan_10                                             28.96ms     4.52
+ * FilterScan_10                                              260.16ms    2.82
  * ============================================================================
  **/
 
