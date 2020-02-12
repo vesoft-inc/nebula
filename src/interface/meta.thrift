@@ -44,7 +44,9 @@ enum ErrorCode {
     E_INVALID_PASSWORD       = -41,
     E_INPROPER_ROLE          = -42,
 
-    E_SNAPSHOT_FAILURE   = -51;
+    E_SNAPSHOT_FAILURE   = -51,
+
+    E_INDEX_CONFLICT = -61,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
