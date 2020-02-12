@@ -16,6 +16,8 @@ ttl_definition:
 
 `ALTER` statement changes the structure of a tag or edge. For example, you can add or delete properties, change the data type of an existing property. You can also set a property as TTL (Time-To-Live), or change the TTL duration.
 
+**Note:** **Nebula Graph** automatically examines indexes when altering a tag or edge. If there are any indexes, a conflict is thrown when dropping or changing a tag or edge. Adding new properties to a tag or edge is ok with index. Please refer to [Index Documentation](index.md) on details about index.
+
 Multiple `ADD`, `DROP`, `CHANGE` clauses are permitted in a single `ALTER` statements, separated by commas. But do NOT add, drop, change the same property in one statement. If you have to do so, make each operation as a clause of the `ALTER` statement.
 
 ```ngql
