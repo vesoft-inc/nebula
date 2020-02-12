@@ -113,7 +113,7 @@ nebula> GO FROM 100 OVER follow WHERE udf_is_in($$.player.name, "Tony Parker");/
 | 101         |
 ---------------
 
-nebula> GO FROM 100 OVER follow YIELD follow._dst AS id | GO FROM $-.id OVER follow WHERE udf_is_in($-.id, 102, 102+1);
+nebula> GO FROM 100 OVER follow YIELD follow._dst AS id | GO FROM $-.id OVER follow WHERE udf_is_in($-.id, 102, 102 + 1);
 ===============
 | follow._dst |
 ===============
