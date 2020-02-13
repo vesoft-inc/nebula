@@ -34,8 +34,6 @@ DEFINE_int32(wal_buffer_size, 8 * 1024 * 1024, "Default wal buffer size");
 DEFINE_int32(wal_buffer_num, 2, "Default wal buffer number");
 DEFINE_bool(trace_raft, false, "Enable trace one raft request");
 
-DEFINE_double(lease_valid_deviation, 0.8, "The lease valid time is "
-              "raft_heartbeat_interval_secs * lease_valid_deviation");
 DEFINE_bool(has_leader_lease, true, "If set to true, the leader only can read when "
             "its lease is valid. If set to false, always valid");
 
@@ -769,6 +767,7 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
 
     VLOG(2) << idStr_ << "About to replicate logs to all peer hosts";
 
+    lastMsgSentDur_.reset();
     SlowOpTracker tracker;
     collectNSucceeded(
         gen::from(hosts)
@@ -877,8 +876,6 @@ void RaftPart::processAppendLogResponses(
             lastLogId_ = lastLogId;
             lastLogTerm_ = currTerm;
 
-            lastMsgSentDur_.reset();
-
             auto walIt = wal_->iterator(committedId + 1, lastLogId);
             SlowOpTracker tracker;
             // Step 3: Commit the batch
@@ -894,6 +891,9 @@ void RaftPart::processAppendLogResponses(
             }
             VLOG(2) << idStr_ << "Leader succeeded in committing the logs "
                               << committedId + 1 << " to " << lastLogId;
+
+            lastMsgAcceptedCostMs_ = lastMsgSentDur_.elapsedInMSec();
+            lastMsgAcceptedDur_.reset();
         } while (false);
 
         if (!checkAppendLogResult(res)) {
@@ -968,7 +968,7 @@ bool RaftPart::needToSendHeartbeat() {
     std::lock_guard<std::mutex> g(raftLock_);
     return status_ == Status::RUNNING &&
            role_ == Role::LEADER &&
-           lastMsgSentDur_.elapsedInMSec() >= FLAGS_raft_heartbeat_interval_secs * 1000 * 2 / 5;
+           lastMsgAcceptedDur_.elapsedInMSec() >= FLAGS_raft_heartbeat_interval_secs * 1000 * 2 / 5;
 }
 
 
@@ -1316,6 +1316,14 @@ void RaftPart::processAskForVoteRequest(
         return;
     }
 
+    auto candidate = HostAddr(req.get_candidate_ip(), req.get_candidate_port());
+    if (lastMsgRecvDur_.elapsedInMSec() < FLAGS_raft_heartbeat_interval_secs * 1000) {
+        LOG(INFO) << idStr_ << "I believe the leader exists. "
+                  << "Refuse to vote for " << candidate;
+        resp.set_error_code(cpp2::ErrorCode::E_WRONG_LEADER);
+        return;
+    }
+
     // Check term id
     auto term = role_ == Role::CANDIDATE ? proposedTerm_ : term_;
     if (req.get_term() <= term) {
@@ -1354,7 +1362,6 @@ void RaftPart::processAskForVoteRequest(
         }
     }
 
-    auto candidate = HostAddr(req.get_candidate_ip(), req.get_candidate_port());
     auto hosts = followers();
     auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate] (const auto& h){
                 return h->address() == candidate;
@@ -1868,8 +1875,11 @@ bool RaftPart::leaseValid() {
     if (!FLAGS_has_leader_lease) {
         return true;
     }
-    return lastMsgSentDur_.elapsedInMSec() <
-           FLAGS_raft_heartbeat_interval_secs * 1000 * FLAGS_lease_valid_deviation;
+    // When majority has accepted a log, leader obtains a lease which last for heartbeat.
+    // However, we need to take off the net io time. On the left side of the inequality is
+    // the time duration of since last time send and accept logs
+    return lastMsgAcceptedCostMs_ + lastMsgAcceptedDur_.elapsedInMSec()
+        < FLAGS_raft_heartbeat_interval_secs * 1000;
 }
 
 }  // namespace raftex

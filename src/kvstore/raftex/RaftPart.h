@@ -514,9 +514,12 @@ protected:
 
     // To record how long ago when the last leader message received
     time::Duration lastMsgRecvDur_;
-    // To record how long ago when the last log message or heartbeat
-    // was sent
+    // To record how long ago when the last log message or heartbeat was sent
     time::Duration lastMsgSentDur_;
+    // To record how long ago when the last message was accepted by majority peers
+    time::Duration lastMsgAcceptedDur_;
+    // How long between last message was sent and was accepted by majority peers
+    uint64_t lastMsgAcceptedCostMs_{0};
 
     // Write-ahead Log
     std::shared_ptr<wal::FileBasedWal> wal_;
