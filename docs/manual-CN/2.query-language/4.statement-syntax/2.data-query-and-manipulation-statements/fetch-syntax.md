@@ -11,37 +11,37 @@ FETCH PROP ON <tag_name> <vertex_id_list> [YIELD [DISTINCT] <return_list>]
 FETCH PROP ON * <vertex_id>
 ```
 
-`*` 返回指定 ID 点的所有属性
+`*` 返回指定 ID 点的所有属性。
 
 `<tag_name>` 为标签名称，与 return_list 中的标签相同。
 
-`<vertex_id_list>::=[vertex_id [, vertex_id]]` 是一组用 "," 分隔开的顶点 ID 列表
+`<vertex_id_list>::=[vertex_id [, vertex_id]]` 是一组用 "," 分隔开的顶点 ID 列表。
 
 `[YIELD [DISTINCT] <return_list>]` 为返回的属性列表，`YIELD` 语法参看 [YIELD Syntax](yield-syntax.md) 。
 
 ### 示例
 
 ```ngql
--- 返回节点 1 的所有属性
-nebula> FETCH PROP ON * 1;
+-- 返回节点 100 的所有属性。
+nebula> FETCH PROP ON * 100;
 
--- 如未指定 YIELD 字段，则返回节点 1 tag 为 player 的所有属性
-nebula> FETCH PROP ON player 1;
+-- 如未指定 YIELD 字段，则返回节点 100, tag 为 player 的所有属性。
+nebula> FETCH PROP ON player 100;
 
--- 返回节点 1 的姓名与年龄属性
-nebula> FETCH PROP ON player 1 YIELD player.name, player.age;
+-- 返回节点 100 的姓名与年龄属性。
+nebula> FETCH PROP ON player 100 YIELD player.name, player.age;
 
--- 通过 hash 生成 int64 节点 ID，返回其姓名和年龄属性
-nebula> FETCH PROP ON player hash(\"nebula\")  YIELD player.name, player.age;
+-- 通过 hash 生成 int64 节点 ID，返回其姓名和年龄属性。
+nebula> FETCH PROP ON player hash("nebula")  YIELD player.name, player.age;
 
--- 沿边 e1 寻找节点 1 的所有近邻，返回其姓名和年龄属性
-nebula> GO FROM 1 over e1 YIELD e1._dst AS id | FETCH PROP ON player $-.id YIELD player.name, player.age;
+-- 沿边 follow 寻找节点 100 的所有近邻，返回其姓名和年龄属性。
+nebula> GO FROM 100 OVER follow YIELD follow._dst AS id | FETCH PROP ON player $-.id YIELD player.name, player.age;
 
--- 与上述语法相同
-nebula> $var = GO FROM 1 over e1 YIELD e1._dst AS id; FETCH PROP ON player $var.id YIELD player.name, player.age;
+-- 与上述语法相同。
+nebula> $var = GO FROM 100 OVER follow YIELD follow._dst AS id; FETCH PROP ON player $var.id YIELD player.name, player.age;
 
--- 获取 1，2，3 三个节点，返回姓名和年龄都不相同的记录
-nebula> FETCH PROP ON player 1,2,3 YIELD DISTINCT player.name, player.age;
+-- 获取 100、101、102 三个节点，返回姓名和年龄都不相同的记录。
+nebula> FETCH PROP ON player 100,101,102 YIELD DISTINCT player.name, player.age;
 ```
 
 ## 获取边属性
@@ -54,7 +54,7 @@ FETCH PROP ON <edge_type> <vid> -> <vid>[@<ranking>] [, <vid> -> <vid> ...] [YIE
 
 `<edge_type>` 指定边的类型，需与 `<return_list>` 相同。
 
-`<vid> -> <vid>` 从起始节点到终止节点。多条边需使用逗号隔开。
+`<vid> -> <vid>` 从起始节点到终止节点，多条边需使用逗号隔开。
 
 `<ranking>` 指定相同类型边 ranking，可选。
 
@@ -63,20 +63,22 @@ FETCH PROP ON <edge_type> <vid> -> <vid>[@<ranking>] [, <vid> -> <vid> ...] [YIE
 ### 获取边属性示例
 
 ```ngql
--- 本语句未指定 YIELD，因此获取从节点 100 到节点 200 边 e1 的所有属性
-nebula> FETCH PROP ON e1 100 -> 200;
+-- 本语句未指定 YIELD，因此获取从节点 100 到节点 200 边 serve 的所有属性。
+nebula> FETCH PROP ON serve 100 -> 200;
 
--- 仅返回属性 p1
-nebula> FETCH PROP ON e1 100 -> 200 YIELD e1.p1;
+-- 仅返回属性 start_year。
+nebula> FETCH PROP ON serve 100 -> 200 YIELD serve.start_year;
 
--- 获取节点 1 出边 e1 的 prop1 属性
-nebula> GO FROM 1 OVER e1 YIELD e1.prop1;
+-- 获取节点 100 出边 follow 的 degree 属性。
+nebula> GO FROM 100 OVER follow YIELD follow.degree;
 
--- 同上述语句
-nebula> GO FROM 1 OVER e1 YIELD e1._src AS s, serve._dst AS d \
- | FETCH PROP ON e1 $-.s -> $-.d YIELD e1.prop1;
+-- 同上述语句。
+nebula> GO FROM 100 OVER follow YIELD follow._src AS s, serve._dst AS d \
+ | FETCH PROP ON follow $-.s -> $-.d YIELD follow.degree;
 
--- 同上述语句
-nebula> $var = GO FROM 1 OVER e1 YIELD e1._src AS s, e2._dst AS d;\
- FETCH PROP ON e3 $var.s -> $var.d YIELD e3.prop1;
+-- 同上述语句。
+nebula> $var = GO FROM 100 OVER follow YIELD follow._src AS s, follow._dst AS d;\
+ FETCH PROP ON follow $var.s -> $var.d YIELD follow.degree;
 ```
+
+

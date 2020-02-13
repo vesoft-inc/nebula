@@ -364,6 +364,10 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
                       << boost::get<int64_t>(dst.value())
                       << boost::get<int64_t>(rank.value());
 
+            getters.getEdgeDstId = [&iter,
+                                    &eschema] (const std::string&) -> OptVariantType {
+                return Collector::getProp(eschema.get(), "_dst", &*iter);
+            };
             getters.getAliasProp =
                 [&iter, &eschema] (const std::string&,
                                    const std::string &prop) -> OptVariantType {
