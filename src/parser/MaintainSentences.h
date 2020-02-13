@@ -31,7 +31,7 @@ public:
         return name_.get();
     }
 
-    void setValue(Expression* expr) {
+    void setValue(Value* expr) {
         defaultExpr_.reset(DCHECK_NOTNULL(expr));
     }
 
@@ -48,10 +48,10 @@ public:
             return std::move(r).status();
         }
         auto v = std::move(r).value();
-        if (!Expression::isInt(v)) {
+        if (!Value::isInt(v)) {
             return Status::Error("Wrong type");
         }
-        return Expression::toInt(v);
+        return Value::toInt(v);
     }
 
     StatusOr<bool> getBoolValue(Getters& getter) {
@@ -60,10 +60,10 @@ public:
             return std::move(r).status();
         }
         auto v = std::move(r).value();
-        if (!Expression::isBool(v)) {
+        if (!Value::isBool(v)) {
             return Status::Error("Wrong type");
         }
-        return Expression::toBool(v);
+        return Value::toBool(v);
     }
 
     StatusOr<double> getDoubleValue(Getters& getter) {
@@ -72,10 +72,10 @@ public:
             return std::move(r).status();
         }
         auto v = std::move(r).value();
-        if (!Expression::isDouble(v)) {
+        if (!Value::isDouble(v)) {
             return Status::Error("Wrong type");
         }
-        return Expression::toDouble(v);
+        return Value::toDouble(v);
     }
 
     StatusOr<std::string> getStringValue(Getters& getter) {
@@ -84,10 +84,10 @@ public:
             return std::move(r).status();
         }
         auto v = std::move(r).value();
-        if (!Expression::isString(v)) {
+        if (!Value::isString(v)) {
             return Status::Error("Wrong type");
         }
-        return Expression::toString(v);
+        return Value::toString(v);
     }
 
     void setContext(ExpressionContext* ctx) {
