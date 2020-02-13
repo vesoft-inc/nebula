@@ -1316,14 +1316,6 @@ void RaftPart::processAskForVoteRequest(
         return;
     }
 
-    auto candidate = HostAddr(req.get_candidate_ip(), req.get_candidate_port());
-    if (lastMsgRecvDur_.elapsedInMSec() < FLAGS_raft_heartbeat_interval_secs * 1000) {
-        LOG(INFO) << idStr_ << "I believe the leader exists. "
-                  << "Refuse to vote for " << candidate;
-        resp.set_error_code(cpp2::ErrorCode::E_WRONG_LEADER);
-        return;
-    }
-
     // Check term id
     auto term = role_ == Role::CANDIDATE ? proposedTerm_ : term_;
     if (req.get_term() <= term) {
@@ -1362,6 +1354,7 @@ void RaftPart::processAskForVoteRequest(
         }
     }
 
+    auto candidate = HostAddr(req.get_candidate_ip(), req.get_candidate_port());
     auto hosts = followers();
     auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate] (const auto& h){
                 return h->address() == candidate;
@@ -1877,7 +1870,7 @@ bool RaftPart::leaseValid() {
     }
     // When majority has accepted a log, leader obtains a lease which last for heartbeat.
     // However, we need to take off the net io time. On the left side of the inequality is
-    // the time duration of since last time send and accept logs
+    // the time duration since last time leader send a log (the log has been accepted as well)
     return lastMsgAcceptedCostMs_ + lastMsgAcceptedDur_.elapsedInMSec()
         < FLAGS_raft_heartbeat_interval_secs * 1000;
 }
