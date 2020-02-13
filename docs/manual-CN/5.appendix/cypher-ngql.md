@@ -27,7 +27,7 @@
 | 查询指定边的属性  | MATCH (n)-[r]->() <br/> WHERE ID(r)=edgeID <br/> return properties(r)| FETCH PROP ON <edge_type> <src_vid> -> <dst_vid>[@<ranking>] |
 | 查询指定点的某一类关系 |MATCH (n)-[r:edge_type]->() WHERE ID(n) = vid| GO FROM \<vid> OVER  \<edge_type> |
 | 指定点的某一类反向关系 | MATCH (n)<-[r:edge_type]-() WHERE ID(n) = vid| GO FROM \<vid>  OVER \<edge_type> REVERSELY |
-| 指定点某一类关系第 N hops 查询  |MATCH (n)-[r:edge_type*N]->() <br/> WHERE ID(a) = vid <br/> return r | GO N STEPS FROM \<vid> OVER \<edge_type> |
+| 指定点某一类关系第 N-Hop 查询  |MATCH (n)-[r:edge_type*N]->() <br/> WHERE ID(a) = vid <br/> return r | GO N STEPS FROM \<vid> OVER \<edge_type> |
 | 两点路径 | MATCH p =(a)-[]->(b) <br/> WHERE ID(a) = a_vid AND ID(b) = b_vid <br/> RETURN p | FIND ALL PATH FROM \<a_vid> TO \<b_vid> OVER * |
 
 ## 示例查询
@@ -67,7 +67,7 @@ cypher> MATCH (n:character {name:"prometheus"})
 nebula> UPDATE VERTEX hash("jesus") SET character.type = 'titan';
 
 cypher> MATCH (n:character {name:"prometheus"})
-      > SET n.type = 'titan';
+      > SET n.type = 'titan'
 ```
 
 - 查看点的属性
@@ -81,7 +81,7 @@ nebula> FETCH PROP ON character hash("saturn");
   ---------------------------------------------------
 
 cypher> MATCH (n:character {name:"prometheus"})
-      > RETURN properties(n);
+      > RETURN properties(n)
 ```
 
 - 查询 hercules 祖父的姓名

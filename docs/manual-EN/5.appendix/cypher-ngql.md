@@ -27,7 +27,7 @@
 | Fetch edges prop  | MATCH (n)-[r]->() <br/> WHERE ID(r)=edgeID <br/> return properties(r)| FETCH PROP ON <edge_type> <src_vid> -> <dst_vid>[@<ranking>]|
 | Query a vertex along specified edge type |MATCH (n)-[r:edge_type]->() WHERE ID(n) = vid| GO FROM \<vid> OVER  \<edge_type> |
 | Query a vertex along specified edge type reversely | MATCH (n)<-[r:edge_type]-() WHERE ID(n) = vid | GO FROM \<vid>  OVER \<edge_type> REVERSELY |
-| Get the N hops along a specified edge type |MATCH (n)-[r:edge_type*N]->() <br/> WHERE ID(a) = vid <br/> return r | GO N STEPS FROM \<vid> OVER \<edge_type> |
+| Get the N-Hop along a specified edge type |MATCH (n)-[r:edge_type*N]->() <br/> WHERE ID(a) = vid <br/> return r | GO N STEPS FROM \<vid> OVER \<edge_type> |
 | Find path between two vertices | MATCH p =(a)-[]->(b) <br/> WHERE ID(a) = a_vid AND ID(b) = b_vid <br/> RETURN p | FIND ALL PATH FROM \<a_vid> TO \<b_vid> OVER * |
 
 ## Example Queries
@@ -67,7 +67,7 @@ cypher> MATCH (n:character {name:"prometheus"})
 nebula> UPDATE VERTEX hash("jesus") SET character.type = 'titan';
 
 cypher> MATCH (n:character {name:"prometheus"})
-      > SET n.type = 'titan';
+      > SET n.type = 'titan'
 ```
 
 - Fetch vertice properties
@@ -81,7 +81,7 @@ nebula> FETCH PROP ON character hash("saturn");
   ---------------------------------------------------
 
 cypher> MATCH (n:character {name:"prometheus"})
-      > RETURN properties(n);
+      > RETURN properties(n)
 ```
 
 - Find the name of hercules's grandfather
@@ -95,7 +95,7 @@ nebula> GO 2 STEPS FROM hash("hercules") OVER father YIELD  $$.character.name;
     ---------------------
 
 cypher> MATCH (src:character{name:"prometheus"})-[r:father*2]->(dst:character)
-      > RETURN dst.name;
+      > RETURN dst.name
 ```
 
 - Find the name of hercules's father
