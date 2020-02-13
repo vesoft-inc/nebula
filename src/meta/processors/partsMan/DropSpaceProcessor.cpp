@@ -44,9 +44,8 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     // delete related role data.
     // TODO(boshengchen) delete related role data under the space
     // TODO(YT) delete Tag/Edge under the space
-    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-    doMultiRemove(std::move(deleteKeys));
     // TODO(YT) delete part files of the space
+    doSyncMultiRemoveAndUpdate(std::move(deleteKeys));
 }
 
 }  // namespace meta

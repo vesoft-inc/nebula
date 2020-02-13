@@ -22,7 +22,8 @@ RowWriter::operator<<(T v) noexcept {
             break;
         }
         default: {
-            LOG(ERROR) << "Incompatible value type \"int\"";
+            LOG(ERROR) << "Incompatible value type \"int\""
+                       << ", current type " << static_cast<int32_t>(type->get_type());
             writeInt(0);
             break;
         }

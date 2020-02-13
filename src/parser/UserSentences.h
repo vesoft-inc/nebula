@@ -31,7 +31,7 @@ public:
         return optValue_.get();
     }
 
-    const OptionType getOptType() {
+    OptionType getOptType() {
         return optType_;
     }
 
@@ -73,7 +73,7 @@ public:
         roleType_ = roleType;
     }
 
-    const RoleType getOptType() {
+    RoleType getOptType() {
         return roleType_;
     }
 
@@ -100,7 +100,7 @@ public:
         type_.reset(type);
     }
 
-    const RoleTypeClause::RoleType getRoleType() {
+    RoleTypeClause::RoleType getRoleType() {
         return type_->getOptType();
     }
 

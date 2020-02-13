@@ -33,7 +33,7 @@ BaseProcessor<RESP>::doPrefix(const std::string& key) {
     if (code != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("Prefix Failed");
     }
-    return std::move(iter);
+    return iter;
 }
 
 
@@ -380,6 +380,109 @@ bool BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
                             });
     baton.wait();
     return ret;
+}
+
+template<typename RESP>
+void BaseProcessor<RESP>::doSyncPutAndUpdate(std::vector<kvstore::KV> data) {
+    folly::Baton<true, std::atomic> baton;
+    auto ret = kvstore::ResultCode::SUCCEEDED;
+    kvstore_->asyncMultiPut(kDefaultSpaceId,
+                            kDefaultPartId,
+                            std::move(data),
+                            [&ret, &baton] (kvstore::ResultCode code) {
+        if (kvstore::ResultCode::SUCCEEDED != code) {
+            ret = code;
+            LOG(INFO) << "Put data error on meta server";
+        }
+        baton.post();
+    });
+    baton.wait();
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        this->resp_.set_code(to(ret));
+        this->onFinished();
+        return;
+    }
+    ret = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
+    this->resp_.set_code(to(ret));
+    this->onFinished();
+}
+
+template<typename RESP>
+void BaseProcessor<RESP>::doSyncMultiRemoveAndUpdate(std::vector<std::string> keys) {
+    folly::Baton<true, std::atomic> baton;
+    auto ret = kvstore::ResultCode::SUCCEEDED;
+    kvstore_->asyncMultiRemove(kDefaultSpaceId,
+                               kDefaultPartId,
+                               std::move(keys),
+                               [&ret, &baton] (kvstore::ResultCode code) {
+        if (kvstore::ResultCode::SUCCEEDED != code) {
+            ret = code;
+            LOG(INFO) << "Remove data error on meta server";
+        }
+        baton.post();
+    });
+    baton.wait();
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        this->resp_.set_code(to(ret));
+        this->onFinished();
+        return;
+    }
+    ret = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
+    this->resp_.set_code(to(ret));
+    this->onFinished();
+}
+
+template<typename RESP>
+StatusOr<std::vector<nebula::cpp2::IndexItem>>
+BaseProcessor<RESP>::getIndexes(GraphSpaceID spaceId,
+                                int32_t edgeOrTag,
+                                bool isEdge) {
+    std::vector<nebula::cpp2::IndexItem> items;
+    auto type = isEdge ? nebula::cpp2::SchemaID::Type::edge_type
+                       : nebula::cpp2::SchemaID::Type::tag_id;
+    auto indexPrefix = MetaServiceUtils::indexPrefix(spaceId);
+    auto iterRet = doPrefix(indexPrefix);
+    if (!iterRet.ok()) {
+        return iterRet.status();
+    }
+    auto indexIter = iterRet.value().get();
+    while (indexIter->valid()) {
+        auto item = MetaServiceUtils::parseIndex(indexIter->val());
+        auto id = isEdge ? item.get_schema_id().get_edge_type()
+                         : item.get_schema_id().get_tag_id();
+        if (item.get_schema_id().getType() == type && id == edgeOrTag) {
+            items.emplace_back(std::move(item));
+        }
+        indexIter->next();
+    }
+    return items;
+}
+
+template<typename RESP>
+cpp2::ErrorCode
+BaseProcessor<RESP>::indexCheck(const std::vector<nebula::cpp2::IndexItem>& items,
+                                const std::vector<cpp2::AlterSchemaItem>& alterItems) {
+    for (const auto& index : items) {
+        for (const auto& tagItem : alterItems) {
+            if (tagItem.op == nebula::meta::cpp2::AlterSchemaOp::CHANGE ||
+                tagItem.op == nebula::meta::cpp2::AlterSchemaOp::DROP) {
+                const auto& tagCols = tagItem.get_schema().get_columns();
+                const auto& indexCols = index.get_fields();
+                for (const auto& tCol : tagCols) {
+                    auto it = std::find_if(indexCols.begin(), indexCols.end(),
+                                           [&] (const auto& iCol) {
+                                               return tCol.name == iCol.name;
+                                           });
+                    if (it != indexCols.end()) {
+                        LOG(ERROR) << "Index conflict, index :" << index.get_index_name()
+                                   << ", column : " << tCol.name;
+                        return cpp2::ErrorCode::E_INDEX_CONFLICT;
+                    }
+                }
+            }
+        }
+    }
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace meta
