@@ -1086,6 +1086,16 @@ bool RaftPart::leaderElection() {
     cpp2::AskForVoteRequest voteReq;
     decltype(hosts_) hosts;
     if (!prepareElectionRequest(voteReq, hosts)) {
+        // Suppose we have three replias A(leader), B, C, after A crashed,
+        // B, C will begin the election. B win, and send hb, C has gap with B
+        // and need the snapshot from B. Meanwhile C begin the lection,
+        // C will be Candidate, but becasue C is in WAITING_SNAPSHOT,
+        // so prepareElectionRequest will return false and go on the election.
+        // Becasue C is in Candidate, so it will reject the snapshot request from B.
+        // Infinite loop begins.
+        // So we neeed to back the follower to avoid the case.
+        std::lock_guard<std::mutex> g(raftLock_);
+        role_ = Role::FOLLOWER;
         return false;
     }
 
