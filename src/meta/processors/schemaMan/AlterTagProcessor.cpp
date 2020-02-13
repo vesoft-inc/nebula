@@ -22,7 +22,6 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     auto tagId = ret.value();
 
     // Check the tag belongs to the space
-
     std::unique_ptr<kvstore::KVIterator> iter;
     auto tagPrefix = MetaServiceUtils::schemaTagPrefix(spaceId, tagId);
     auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, tagPrefix, &iter);
@@ -51,7 +50,8 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
         return;
     }
     auto indexes = std::move(iCode).value();
-    if (!indexes.empty()) {
+    auto existIndex = !indexes.empty();
+    if (existIndex) {
         auto iStatus = indexCheck(indexes, tagItems);
         if (iStatus != cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Alter tag error, index conflict : " << static_cast<int32_t>(iStatus);
@@ -76,14 +76,15 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
 
     // Update schema property if tag not index
     auto& alterSchemaProp = req.get_schema_prop();
-    if (indexes.empty()) {
-        auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, alterSchemaProp);
-        if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-            LOG(ERROR) << "Alter tag property error " << static_cast<int32_t>(retCode);
-            resp_.set_code(retCode);
-            onFinished();
-            return;
-        }
+    auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, alterSchemaProp, existIndex);
+    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+        LOG(ERROR) << "Alter tag property error " << static_cast<int32_t>(retCode);
+        resp_.set_code(retCode);
+        onFinished();
+        return;
+    }
+
+    if (!existIndex) {
         schema.set_schema_prop(std::move(prop));
     }
     schema.set_columns(std::move(columns));

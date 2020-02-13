@@ -424,7 +424,7 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
                 if (col.get_name() == it->get_name()) {
                     // Check if there is a TTL on the column to be deleted
                     // drop the column with ttl
-                    //if (!prop.get_ttl_col() ||
+                    // if (!prop.get_ttl_col() ||
                     //    (prop.get_ttl_col() && (*prop.get_ttl_col() != col.get_name()))) {
                     if (prop.get_ttl_col() && (*prop.get_ttl_col() == col.get_name())) {
                         prop.set_ttl_duration(0);
@@ -444,20 +444,33 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
 
 cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
                                                   nebula::cpp2::SchemaProp& schemaProp,
-                                                  nebula::cpp2::SchemaProp alterSchemaProp) {
+                                                  nebula::cpp2::SchemaProp alterSchemaProp,
+                                                  bool existIndex) {
+    // Has index, not allowed to modify ttl property
+    if (existIndex && (alterSchemaProp.__isset.ttl_duration || alterSchemaProp.__isset.ttl_col)) {
+        LOG(ERROR) << "Has index, can't set ttl";
+        return cpp2::ErrorCode::E_UNSUPPORTED;
+    }
     if (alterSchemaProp.__isset.ttl_duration) {
         // Graph check  <=0 to = 0
         schemaProp.set_ttl_duration(*alterSchemaProp.get_ttl_duration());
     }
     if (alterSchemaProp.__isset.ttl_col) {
         auto ttlCol = *alterSchemaProp.get_ttl_col();
+        // Disable ttl, ttl_col is empty, ttl_duration is 0
+        if (ttlCol.empty()) {
+            schemaProp.set_ttl_duration(0);
+            schemaProp.set_ttl_col(ttlCol);
+            return cpp2::ErrorCode::SUCCEEDED;
+        }
+
         auto existed = false;
         for (auto& col : cols) {
             if (col.get_name() == ttlCol) {
                 // Only integer and timestamp columns can be used as ttl_col
                 if (col.type.type != nebula::cpp2::SupportedType::INT &&
                     col.type.type != nebula::cpp2::SupportedType::TIMESTAMP) {
-                    LOG(WARNING) << "TTL column type illegal";
+                    LOG(ERROR) << "TTL column type illegal";
                     return cpp2::ErrorCode::E_UNSUPPORTED;
                 }
                 existed = true;
@@ -467,7 +480,7 @@ cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::Colu
         }
 
         if (!existed) {
-            LOG(WARNING) << "TTL column not found: " << ttlCol;
+            LOG(ERROR) << "TTL column not found: " << ttlCol;
             return cpp2::ErrorCode::E_NOT_FOUND;
         }
     }

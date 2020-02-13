@@ -50,7 +50,8 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
         return;
     }
     auto indexes = std::move(iRet).value();
-    if (!indexes.empty()) {
+    auto existIndex = !indexes.empty();
+    if (existIndex) {
         auto iStatus = indexCheck(indexes, edgeItems);
         if (iStatus != cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Alter edge error, index conflict : " << static_cast<int32_t>(iStatus);
@@ -74,16 +75,15 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     }
 
     // Update schema property if edge not index
-    if (indexes.empty()) {
-        auto& alterSchemaProp = req.get_schema_prop();
-        auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, alterSchemaProp);
-
-        if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-            LOG(ERROR) << "Alter edge property error " << static_cast<int32_t>(retCode);
-            resp_.set_code(retCode);
-            onFinished();
-            return;
-        }
+    auto& alterSchemaProp = req.get_schema_prop();
+    auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, alterSchemaProp, existIndex);
+    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+        LOG(ERROR) << "Alter edge property error " << static_cast<int32_t>(retCode);
+        resp_.set_code(retCode);
+        onFinished();
+        return;
+    }
+    if (!existIndex) {
         schema.set_schema_prop(std::move(prop));
     }
     schema.set_columns(std::move(columns));

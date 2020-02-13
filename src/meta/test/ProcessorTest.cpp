@@ -1295,7 +1295,7 @@ TEST(ProcessorTest, AlterTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     // Verify alter drop ttl col result.
     {
@@ -1703,7 +1703,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         auto edges = resp.get_edges();
-        ASSERT_EQ(5, edges.size());
+        ASSERT_EQ(6, edges.size());
         // EdgeItems in vector are unordered.So get the latest one by comparing the versions.
         int version = 0;
         int max_index = 0;
@@ -1715,7 +1715,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         }
         auto edge = edges[max_index];
 
-        EXPECT_EQ(6, edge.get_edge_type());
+        EXPECT_EQ(0, edge.get_edge_type());
         EXPECT_EQ("edge_0", edge.get_edge_name());
         EXPECT_EQ(5, edge.version);
 
@@ -1725,10 +1725,6 @@ TEST(ProcessorTest, AlterEdgeTest) {
         nebula::cpp2::ColumnDef column;
         column.name = "edge_0_col_1";
         column.type.type = SupportedType::DOUBLE;
-        cols.emplace_back(std::move(column));
-
-        column.name = "edge_0_col_10";
-        column.type.type = SupportedType::INT;
         cols.emplace_back(std::move(column));
 
         column.name = "edge_0_col_11";
@@ -2679,7 +2675,7 @@ TEST(ProcessorTest, IndexTTLTagTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
-    // Drop index, then add ttl property, succeed
+    // Add ttl property, succeed
     {
         cpp2::AlterTagReq req;
         nebula::cpp2::SchemaProp schemaProp;
@@ -2887,7 +2883,7 @@ TEST(ProcessorTest, IndexTTLEdgeTest) {
         schemaProp.set_ttl_col("edge_0_col_0");
         schemaProp.set_ttl_duration(100);
         req.set_space_id(1);
-        req.set_edge_name("tag_0");
+        req.set_edge_name("edge_0");
         req.set_schema_prop(std::move(schemaProp));
 
         auto* processor = AlterEdgeProcessor::instance(kv.get());
@@ -2985,7 +2981,7 @@ TEST(ProcessorTest, IndexTTLEdgeTest) {
     {
         cpp2::DropEdgeIndexReq req;
         req.set_space_id(1);
-        req.set_index_name("single_field_index_col_0");
+        req.set_index_name("single_field_index_col_10");
 
         auto* processor = DropEdgeIndexProcessor::instance(kv.get());
         auto f = processor->getFuture();
