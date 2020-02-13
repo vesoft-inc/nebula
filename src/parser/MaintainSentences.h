@@ -16,7 +16,7 @@ namespace nebula {
 
 class ColumnSpecification final {
 public:
-    using Value = boost::variant<int64_t, bool, double, std::string>;
+    using Value = Expression;
 
     ColumnSpecification(ColumnType type, std::string *name) {
         type_ = type;
@@ -103,7 +103,7 @@ public:
 private:
     ColumnType                                  type_;
     std::unique_ptr<std::string>                name_;
-    std::unique_ptr<Expression>                 defaultExpr_{nullptr};
+    std::unique_ptr<Value>                      defaultExpr_{nullptr};
 };
 
 
