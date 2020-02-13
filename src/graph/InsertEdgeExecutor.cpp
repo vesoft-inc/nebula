@@ -208,13 +208,14 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             return Status::Error("Column count doesn't match value count");
         }
 
+        auto props = writer.encode();
         {
             auto &out = edges[index++];
             out.key.set_src(src);
             out.key.set_dst(dst);
             out.key.set_ranking(rank);
             out.key.set_edge_type(edgeType_);
-            out.props = writer.encode();
+            out.props = props;
             out.__isset.key = true;
             out.__isset.props = true;
         }
@@ -224,7 +225,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             in.key.set_dst(src);
             in.key.set_ranking(rank);
             in.key.set_edge_type(-edgeType_);
-            in.props = "";
+            in.props = std::move(props);
             in.__isset.key = true;
             in.__isset.props = true;
         }

@@ -103,7 +103,6 @@ struct RowValue {
     1: list<ColumnValue> columns;
 }
 
-
 struct ExecutionResponse {
     1: required ErrorCode error_code;
     2: required i32 latency_in_us;          // Execution time on server

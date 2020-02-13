@@ -216,6 +216,7 @@ nebula_add_test(
     SOURCES
         CompactionTest.cpp
     OBJECTS
+        $<TARGET_OBJECTS:storage_service_handler>
         $<TARGET_OBJECTS:adHocSchema_obj>
         $<TARGET_OBJECTS:kvstore_obj>
         $<TARGET_OBJECTS:raftex_obj>
@@ -355,3 +356,11 @@ nebula_add_executable(
         wangle
         gtest
 )
+
+nebula_add_test(
+    NAME index_scan_test
+    SOURCES IndexScanTest.cpp
+    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
+    LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
+)
+

@@ -16,7 +16,7 @@ namespace nebula {
 namespace graph {
 
 using SchemaProps = std::unordered_map<std::string, std::vector<std::string>>;
-const std::vector<std::string> kReserveProps_ = {"_dst", "_type", "_rank"};
+const std::vector<std::string> kReserveProps_ = {"_type", "_rank"};
 using Neighbor = std::tuple<VertexID, EdgeType, EdgeRanking>; /* dst, type, rank*/
 using Neighbors = std::vector<Neighbor>;
 using Frontiers =
