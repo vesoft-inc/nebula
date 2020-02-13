@@ -11,8 +11,9 @@ namespace meta {
 
 void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
+    GraphSpaceID spaceId = req.get_space_id();
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
-    auto ret = getEdgeType(req.get_space_id(), req.get_edge_name());
+    auto ret = getEdgeType(spaceId, req.get_edge_name());
     if (!ret.ok()) {
         resp_.set_code(to(ret.status()));
         onFinished();
@@ -22,11 +23,11 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
 
     // Check the edge belongs to the space
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto edgePrefix = MetaServiceUtils::schemaEdgePrefix(req.get_space_id(), edgeType);
+    auto edgePrefix = MetaServiceUtils::schemaEdgePrefix(spaceId, edgeType);
     auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, edgePrefix, &iter);
     if (code != kvstore::ResultCode::SUCCEEDED || !iter->valid()) {
         LOG(ERROR) << "Edge could not be found " << req.get_edge_name()
-                   << ", spaceId " << req.get_space_id()
+                   << ", spaceId " << spaceId
                    << ", edgeType " << edgeType;
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
@@ -41,6 +42,24 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
 
     // Update schema column
     auto& edgeItems = req.get_edge_items();
+
+    auto iRet = getIndexes(spaceId, edgeType, true);
+    if (!iRet.ok()) {
+        resp_.set_code(to(iRet.status()));
+        onFinished();
+        return;
+    }
+    auto indexes = std::move(iRet).value();
+    if (!indexes.empty()) {
+        auto iStatus = indexCheck(indexes, edgeItems);
+        if (iStatus != cpp2::ErrorCode::SUCCEEDED) {
+            LOG(ERROR) << "Alter edge error, index conflict : " << static_cast<int32_t>(iStatus);
+            resp_.set_code(iStatus);
+            onFinished();
+            return;
+        }
+    }
+
     for (auto& edgeItem : edgeItems) {
         auto& cols = edgeItem.get_schema().get_columns();
         for (auto& col : cols) {
@@ -56,7 +75,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
 
     // Update schema property
     auto& alterSchemaProp = req.get_schema_prop();
-    auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, std::move(alterSchemaProp));
+    auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, alterSchemaProp);
 
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Alter edge property error " << static_cast<int32_t>(retCode);
@@ -70,7 +89,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
 
     std::vector<kvstore::KV> data;
     LOG(INFO) << "Alter edge " << req.get_edge_name() << ", edgeType " << edgeType;
-    data.emplace_back(MetaServiceUtils::schemaEdgeKey(req.get_space_id(), edgeType, version),
+    data.emplace_back(MetaServiceUtils::schemaEdgeKey(spaceId, edgeType, version),
                       MetaServiceUtils::schemaEdgeVal(req.get_edge_name(), schema));
     resp_.set_id(to(edgeType, EntryType::EDGE));
     doSyncPutAndUpdate(std::move(data));

@@ -9,7 +9,10 @@
 
 #include "base/Base.h"
 #include "base/NebulaKeyUtils.h"
+#include "dataman/RowReader.h"
+#include "meta/NebulaSchemaProvider.h"
 #include "kvstore/CompactionFilter.h"
+#include "storage/CommonUtils.h"
 
 DEFINE_bool(storage_kv_mode, false, "True for kv mode");
 
@@ -35,7 +38,7 @@ public:
             if (!schemaValid(spaceId, key)) {
                 return true;
             }
-            if (!ttlValid(spaceId, val)) {
+            if (!ttlValid(spaceId, key, val)) {
                 VLOG(3) << "TTL invalid for key " << key;
                 return true;
             }
@@ -76,9 +79,54 @@ public:
         return true;
     }
 
-    bool ttlValid(GraphSpaceID, const folly::StringPiece&) const {
-        // TODO(heng): Implement ttl filter after ttl schema pr merged in
+    bool ttlValid(GraphSpaceID spaceId, const folly::StringPiece& key,
+                  const folly::StringPiece& val) const {
+        if (NebulaKeyUtils::isVertex(key)) {
+            auto tagId = NebulaKeyUtils::getTagId(key);
+            auto schema = this->schemaMan_->getTagSchema(spaceId, tagId);
+            if (!schema) {
+                VLOG(3) << "Space " << spaceId << ", Tag " << tagId << " invalid";
+                return false;
+            }
+            auto reader = nebula::RowReader::getTagPropReader(schemaMan_, val, spaceId, tagId);
+            return checkDataTtlValid(schema.get(), reader.get());
+        } else if (NebulaKeyUtils::isEdge(key)) {
+            auto edgeType = NebulaKeyUtils::getEdgeType(key);
+            auto schema = this->schemaMan_->getEdgeSchema(spaceId, std::abs(edgeType));
+            if (!schema) {
+                VLOG(3) << "Space " << spaceId << ", EdgeType " << edgeType << " invalid";
+                return false;
+            }
+            auto reader = nebula::RowReader::getEdgePropReader(schemaMan_, val,
+                                                               spaceId, std::abs(edgeType));
+            return checkDataTtlValid(schema.get(), reader.get());
+        }
         return true;
+    }
+
+    // TODO(panda) Optimize the method in the future
+    bool checkDataTtlValid(const meta::SchemaProviderIf* schema, nebula::RowReader* reader) const {
+        const auto* nschema = dynamic_cast<const meta::NebulaSchemaProvider*>(schema);
+        if (nschema == NULL) {
+            return true;
+        }
+        const auto schemaProp = nschema->getProp();
+        int ttlDuration = 0;
+        if (schemaProp.get_ttl_duration()) {
+            ttlDuration = *schemaProp.get_ttl_duration();
+        }
+        std::string ttlCol;
+        if (schemaProp.get_ttl_col()) {
+            ttlCol = *schemaProp.get_ttl_col();
+        }
+
+        // Only support the specified ttl_col mode
+        // Not specifying or non-positive ttl_duration behaves like ttl_duration = infinity
+        if (ttlCol.empty() ||  ttlDuration <= 0) {
+            return true;
+        }
+
+        return !nebula::storage::checkDataExpiredForTTL(schema, reader, ttlCol, ttlDuration);
     }
 
     bool filterVersions(const folly::StringPiece& key) const {
