@@ -8,6 +8,7 @@
 #define STORAGE_QUERY_QUERYBASEPROCESSOR_H_
 
 #include "base/Base.h"
+#include <folly/Optional.h>
 #include "storage/BaseProcessor.h"
 #include "storage/Collector.h"
 #include "filter/Expressions.h"
@@ -116,7 +117,11 @@ protected:
 
     bool checkExp(const Expression* exp);
 
-    void buildRespSchema();
+    void buildTTLInfoAndRespSchema();
+
+    folly::Optional<std::pair<std::string, int64_t>> getTagTTLInfo(TagID tagId);
+
+    folly::Optional<std::pair<std::string, int64_t>> getEdgeTTLInfo(EdgeType edgeType);
 
 protected:
     GraphSpaceID  spaceId_;
@@ -137,6 +142,10 @@ protected:
     VertexCache* vertexCache_{nullptr};
     std::unordered_map<std::string, EdgeType> edgeMap_;
     bool compactDstIdProps_ = false;
+
+    std::unordered_map<EdgeType, std::pair<std::string, int64_t>> edgeTTLInfo_;
+
+    std::unordered_map<TagID, std::pair<std::string, int64_t>> tagTTLInfo_;
 };
 
 }  // namespace storage
