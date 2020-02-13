@@ -271,12 +271,15 @@ public:
     ResultType getVid(const folly::StringPiece name, int64_t& v) const noexcept;
     ResultType getVid(int64_t index, int64_t& v) const noexcept;
 
-
     std::shared_ptr<const meta::SchemaProviderIf> getSchema() const {
         return schema_;
     }
 
     static int32_t getSchemaVer(folly::StringPiece row);
+
+    folly::StringPiece getData() const noexcept {
+        return data_;
+    }
 
     // TODO getPath(const std::string& name) const noexcept;
     // TODO getPath(int64_t index) const noexcept;
