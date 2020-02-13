@@ -25,7 +25,7 @@ Symbol `$$` indicates the ending vertex, `tag_name` and `prop_name` are the vert
 ### Example
 
 ```ngql
-nebula> GO FROM 1 OVER e1 YIELD $^.start.name AS startName, $$.end.Age AS endAge
+nebula> GO FROM 100 OVER follow YIELD $^.player.name AS startName, $$.player.age AS endAge;
 ```
 
 Use the above query to get the source vertex's property name and ending vertex's property age.
@@ -45,24 +45,24 @@ edge_type.edge_prop
 For example,
 
 ```ngql
-nebula> GO FROM 1 OVER e1 YIELD e1.prop1
+nebula> GO FROM 100 OVER follow YIELD follow.degree;
 ```
 
-### For Build-in Properties
+### For Built-in Properties
 
-There are four build-in properties in the edge:
+There are four built-in properties in the edge:
 
 * _src: source vertex ID of the edge
 * _dst: destination ID of the edge
 * _type: edge type
-* _rank: the edge's ranking
+* _ranking: the edge's ranking
 
 You can use `_src` and `_dst` to get the starting and ending vertices' ID, and they are very commonly used to show a graph path.
 
 For example,
 
 ```ngql
-nebula> GO FROM 1 OVER e1 YIELD e1._src as startVID /* which is, 1 */, e1._dst as endVID
+nebula> GO FROM 100 OVER follow YIELD follow._src AS startVID /* starting vertex is 100 */, follow._dst AS endVID;
 ```
 
-This statement returns all the neighbors of vertex `1` over edge type `e1`, by referencing `e1._src` as the starting vertex ID (which, of course, is `1`) and `e1._dst` as the ending vertex ID.
+This statement returns all the neighbors of vertex `100` over edge type `follow`, by referencing `follow._src` as the starting vertex ID (which, of course, is `100`) and `follow._dst` as the ending vertex ID.
