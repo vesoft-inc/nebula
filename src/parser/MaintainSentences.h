@@ -66,7 +66,7 @@ public:
         return Expression::toBool(v);
     }
 
-    StatusOr<bool> getDoubleValue(Getters& getter) {
+    StatusOr<double> getDoubleValue(Getters& getter) {
         auto r = defaultExpr_->eval(getter);
         if (!r.ok()) {
             return std::move(r).status();
