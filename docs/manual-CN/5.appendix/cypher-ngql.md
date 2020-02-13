@@ -1,9 +1,9 @@
-# Comparison Between Cypher and nGQL
+# Cypher 和 nGQL 
 
 
 ## 基本概念对比
 
-|Name               | Cypher | nGQL          |
+|概念名称               | Cypher | nGQL          |
 | --- | --- | --- |
 | vertex, node       | node  | vertex        |
 | edge, relationship | relationship    | edge          |
@@ -15,7 +15,7 @@
 
 ## 图基本操作
 
-Name                   | Cypher         | nGQL          |
+|操作                   | Cypher         | nGQL          |
 | --- | ------------ | ------------ |
 | 列出所有 labels/tags   | * MATCH (n) RETURN distinct labels(n);  <br/> * call db.labels(); | SHOW TAGS |
 | 插入指定类型的点 | CREATE (:Person {age: 16}) | INSERT VERTEX <tag_name> (prop_name_list) VALUES \<vid>:(prop_value_list) |
@@ -115,7 +115,7 @@ cypher> MATCH (src:character{name:"prometheus"})-[r:father]->(dst:character)
 - 查询百岁老人的姓名
 
  ```
-nebula> XXX # not supported yet
+nebula> # coming soon
     
 cypher> MATCH (src:character)
       > WHERE src.age > 100

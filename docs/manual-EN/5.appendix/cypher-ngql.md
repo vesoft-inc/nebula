@@ -15,7 +15,7 @@
 
 ## Basic Graph Operations
 
-Name                   | Cypher         | nGQL          |
+|Operations                   | Cypher         | nGQL          |
 | --- | ------------ | ------------ |
 | List all labels/tags   | * MATCH (n) RETURN distinct labels(n);  <br/> * call db.labels(); | SHOW TAGS |
 | Insert a vertex with a specified type | CREATE (:Person {age: 16}) | INSERT VERTEX <tag_name> (prop_name_list) VALUES \<vid>:(prop_value_list) |
@@ -115,7 +115,7 @@ cypher> MATCH (src:character{name:"prometheus"})-[r:father]->(dst:character)
 - Find the the centenarians' name.
 
  ```
-nebula> XXX # not supported yet
+nebula> # coming soon
     
 cypher> MATCH (src:character)
       > WHERE src.age > 100
