@@ -241,8 +241,7 @@ Status VariablePropertyExpression::prepare() {
 
 
 OptVariantType EdgeTypeExpression::eval(Getters &getters) const {
-    UNUSED(getters);
-    return *alias_;
+    return getters.getAliasProp(*alias_, *prop_);
 }
 
 Status EdgeTypeExpression::prepare() {

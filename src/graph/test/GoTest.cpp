@@ -406,15 +406,16 @@ TEST_P(GoTest, MULTI_EDGES) {
     }
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER serve, like REVERSELY YIELD serve._dst, like._dst";
+        auto *fmt = "GO FROM %ld OVER serve, like REVERSELY "
+                    "YIELD serve._dst, like._dst, serve._type, like._type";
         auto &player = players_["Russell Westbrook"];
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {0, players_["James Harden"].vid()},
-            {0, players_["Dejounte Murray"].vid()},
-            {0, players_["Paul George"].vid()},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t>> expected = {
+            {0, players_["James Harden"].vid(), 0, -5},
+            {0, players_["Dejounte Murray"].vid(), 0, -5},
+            {0, players_["Paul George"].vid(), 0, -5},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -491,7 +492,7 @@ TEST_P(GoTest, MULTI_EDGES) {
     }
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER like, teammate REVERSELY yield like.likeness, "
+        auto *fmt = "GO FROM %ld OVER like, teammate REVERSELY YIELD like.likeness, "
                     "teammate.start_year, $$.player.name";
         auto &player = players_["Manu Ginobili"];
         auto query = folly::stringPrintf(fmt, player.vid());
@@ -509,7 +510,7 @@ TEST_P(GoTest, MULTI_EDGES) {
     }
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER * REVERSELY yield like.likeness, teammate.start_year, "
+        auto *fmt = "GO FROM %ld OVER * REVERSELY YIELD like.likeness, teammate.start_year, "
                     "serve.start_year, $$.player.name";
         auto &player = players_["Manu Ginobili"];
         auto query = folly::stringPrintf(fmt, player.vid());
@@ -527,15 +528,16 @@ TEST_P(GoTest, MULTI_EDGES) {
     }
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER serve, like yield serve.start_year, like.likeness";
+        auto *fmt = "GO FROM %ld OVER serve, like "
+                    "YIELD serve.start_year, like.likeness, serve._type, like._type";
         auto &player = players_["Russell Westbrook"];
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {2008, 0},
-            {0, 90},
-            {0, 90},
+        std::vector<std::tuple<int64_t, int64_t, int64_t, int64_t>> expected = {
+            {2008, 0, 4, 0},
+            {0, 90, 0, 5},
+            {0, 90, 0, 5},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -832,7 +834,7 @@ TEST_P(GoTest, ReferenceVariableInYieldAndWhere) {
 TEST_P(GoTest, NotExistTagProp) {
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER serve yield $^.test";
+        auto *fmt = "GO FROM %ld OVER serve YIELD $^.test";
         auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
@@ -840,7 +842,7 @@ TEST_P(GoTest, NotExistTagProp) {
 
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER serve yield serve.test";
+        auto *fmt = "GO FROM %ld OVER serve YIELD serve.test";
         auto query = folly::stringPrintf(fmt, players_["Tim Duncan"].vid());
         auto code = client_->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
