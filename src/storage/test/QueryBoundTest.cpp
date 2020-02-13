@@ -66,7 +66,15 @@ void mockData(kvstore::KVStore* kv) {
                         auto max = std::numeric_limits<int>::max();
                         auto key = NebulaKeyUtils::edgeKey(partId, vertexId, -edgeType, 0, srcId,
                                                            max - version);
-                        data.emplace_back(std::move(key), "");
+                        RowWriter writer(nullptr);
+                        for (uint64_t numInt = 0; numInt < 10; numInt++) {
+                            writer << (srcId + numInt);
+                        }
+                        for (int32_t numString = 10; numString < 20; numString++) {
+                            writer << folly::stringPrintf("string_col_%d_%ld", numString, version);
+                        }
+                        auto val = writer.encode();
+                        data.emplace_back(std::move(key), std::move(val));
                     }
                 }
             }
@@ -118,8 +126,7 @@ void checkResponse(cpp2::QueryResponse& resp,
                    int32_t vertexNum,
                    int32_t edgeFields,
                    int32_t dstIdFrom,
-                   int32_t edgeNum,
-                   bool outBound) {
+                   int32_t edgeNum) {
     EXPECT_EQ(0, resp.result.failed_codes.size());
 
     EXPECT_EQ(vertexNum, resp.vertices.size());
@@ -130,15 +137,16 @@ void checkResponse(cpp2::QueryResponse& resp,
     auto* eschema = resp.get_edge_schema();
     DCHECK(eschema != nullptr);
 
+
     std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> schema;
 
     std::transform(
         eschema->cbegin(), eschema->cend(), std::inserter(schema, schema.begin()), [](auto& s) {
             return std::make_pair(s.first, std::make_shared<ResultSchemaProvider>(s.second));
         });
-
+    int32_t totalEdges = 0;
     for (auto& vp : resp.vertices) {
-        VLOG(1) << "Check vertex props...";
+        VLOG(1) << "Check vertex " << vp.vertex_id << " props...";
         auto size = std::accumulate(vp.tag_data.cbegin(), vp.tag_data.cend(), 0,
                                     [vschema](int acc, auto& td) {
                                         auto it = vschema->find(td.tag_id);
@@ -157,48 +165,40 @@ void checkResponse(cpp2::QueryResponse& resp,
         for (auto& ep : vp.edge_data) {
             auto it2 = schema.find(ep.type);
             DCHECK(it2 != schema.end());
-            auto it3 = eschema->find(ep.type);
-            EXPECT_EQ(edgeFields, it3->second.columns.size());
             auto provider = it2->second;
-            VLOG(1) << "Check edge props...";
-            RowSetReader rsReader(provider, ep.data);
-            auto it = rsReader.begin();
             int32_t rowNum = 0;
-            while (static_cast<bool>(it)) {
-                EXPECT_EQ(edgeFields, it->numFields());
-                int64_t dstId;
-                {
-                    // _dst
-                    EXPECT_EQ(ResultType::SUCCEEDED, it->getVid(0, dstId));
-                    CHECK_EQ(dstIdFrom + rowNum, dstId);
-                }
+            for (auto& edge : ep.get_edges()) {
+                auto dst = edge.get_dst();
+                VLOG(1) << "Check edge " << vp.vertex_id << " -> " << dst << " props...";
+                CHECK_EQ(dstIdFrom + rowNum, dst);
+                auto reader = RowReader::getRowReader(edge.props, provider);
+                DCHECK(reader != nullptr);
+                EXPECT_EQ(edgeFields, reader->numFields() + 1);
                 {
                     // _rank
                     int64_t v;
-                    EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(1, v));
+                    EXPECT_EQ(ResultType::SUCCEEDED, reader->getInt<int64_t>(0, v));
                     CHECK_EQ(0, v);
                 }
-                if (outBound) {
-                    // col_0, col_2 ... col_8
-                    for (auto i = 2; i < 7; i++) {
-                        int64_t v;
-                        EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(i, v));
-                        CHECK_EQ((i - 2) * 2 + dstId, v);
-                    }
-                    // col_10, col_12 ... col_18
-                    for (auto i = 7; i < 12; i++) {
-                        folly::StringPiece v;
-                        EXPECT_EQ(ResultType::SUCCEEDED, it->getString(i, v));
-                        CHECK_EQ(folly::stringPrintf("string_col_%d_%d", (i - 7 + 5) * 2, 2), v);
-                    }
+                // col_0, col_2 ... col_8
+                for (auto i = 1; i < 6; i++) {
+                    int64_t v;
+                    EXPECT_EQ(ResultType::SUCCEEDED, reader->getInt<int64_t>(i, v));
+                    CHECK_EQ((i - 1) * 2 + dst, v);
                 }
-                ++it;
+                // col_10, col_12 ... col_18
+                for (auto i = 6; i < 11; i++) {
+                    folly::StringPiece v;
+                    EXPECT_EQ(ResultType::SUCCEEDED, reader->getString(i, v));
+                    CHECK_EQ(folly::stringPrintf("string_col_%d_%d", (i - 6 + 5) * 2, 2), v);
+                }
                 rowNum++;
             }
-            EXPECT_EQ(it, rsReader.end());
             EXPECT_EQ(edgeNum, rowNum);
+            totalEdges += rowNum;
         }
     }
+    EXPECT_EQ(totalEdges, *resp.get_total_edges());
 }
 
 TEST(QueryBoundTest, OutBoundSimpleTest) {
@@ -222,7 +222,7 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    checkResponse(resp, 30, 12, 10001, 7, true);
+    checkResponse(resp, 30, 12, 10001, 7);
 }
 
 TEST(QueryBoundTest, inBoundSimpleTest) {
@@ -246,7 +246,7 @@ TEST(QueryBoundTest, inBoundSimpleTest) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    checkResponse(resp, 30, 2, 20001, 5, false);
+    checkResponse(resp, 30, 12, 20001, 5);
 }
 
 TEST(QueryBoundTest, FilterTest_OnlyEdgeFilter) {
@@ -280,7 +280,7 @@ TEST(QueryBoundTest, FilterTest_OnlyEdgeFilter) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    checkResponse(resp, 30, 12, 10007, 1, true);
+    checkResponse(resp, 30, 12, 10007, 1);
 }
 
 TEST(QueryBoundTest, FilterTest_OnlyTagFilter) {
@@ -314,7 +314,7 @@ TEST(QueryBoundTest, FilterTest_OnlyTagFilter) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    checkResponse(resp, 10, 12, 10001, 7, true);
+    checkResponse(resp, 10, 12, 10001, 7);
 }
 
 TEST(QueryBoundTest, GenBucketsTest) {
@@ -413,7 +413,7 @@ TEST(QueryBoundTest, FilterTest_TagAndEdgeFilter) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    checkResponse(resp, 10, 12, 10007, 1, true);
+    checkResponse(resp, 10, 12, 10007, 1);
 }
 
 TEST(QueryBoundTest, FilterTest_InvalidFilter) {
@@ -471,7 +471,7 @@ TEST(QueryBoundTest, MultiEdgeQueryTest) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    checkResponse(resp, 30, 12, 10001, 7, true);
+    checkResponse(resp, 30, 12, 10001, 7);
 }
 
 TEST(QueryBoundTest, MaxEdgesReturenedTest) {
@@ -497,7 +497,7 @@ TEST(QueryBoundTest, MaxEdgesReturenedTest) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    checkResponse(resp, 30, 12, 10001, FLAGS_max_edge_returned_per_vertex, true);
+    checkResponse(resp, 30, 12, 10001, FLAGS_max_edge_returned_per_vertex);
     FLAGS_max_edge_returned_per_vertex = old_max_edge_returned;
 }
 

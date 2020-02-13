@@ -425,6 +425,27 @@ ResultCode NebulaStore::rangeWithPrefix(GraphSpaceID spaceId,
 }
 
 
+ResultCode NebulaStore::sync(GraphSpaceID spaceId,
+                             PartitionID partId) {
+    auto partRet = part(spaceId, partId);
+    if (!ok(partRet)) {
+        return error(partRet);
+    }
+    auto part = nebula::value(partRet);
+    if (!checkLeader(part)) {
+        return ResultCode::ERR_LEADER_CHANGED;
+    }
+    auto ret = ResultCode::SUCCEEDED;
+    folly::Baton<true, std::atomic> baton;
+    part->sync([&] (kvstore::ResultCode code) {
+        ret = code;
+        baton.post();
+    });
+    baton.wait();
+    return ret;
+}
+
+
 void NebulaStore::asyncMultiPut(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 std::vector<KV> keyValues,

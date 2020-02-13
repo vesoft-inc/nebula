@@ -8,6 +8,7 @@
 #define STORAGE_QUERY_QUERYBASEPROCESSOR_H_
 
 #include "base/Base.h"
+#include <folly/Optional.h>
 #include "storage/BaseProcessor.h"
 #include "storage/Collector.h"
 #include "filter/Expressions.h"
@@ -116,7 +117,11 @@ protected:
 
     bool checkExp(const Expression* exp);
 
-    void buildRespSchema();
+    void buildTTLInfoAndRespSchema();
+
+    folly::Optional<std::pair<std::string, int64_t>> getTagTTLInfo(TagID tagId);
+
+    folly::Optional<std::pair<std::string, int64_t>> getEdgeTTLInfo(EdgeType edgeType);
 
 protected:
     GraphSpaceID  spaceId_;
@@ -124,13 +129,23 @@ protected:
     std::unique_ptr<Expression> exp_;
     std::vector<TagContext> tagContexts_;
     std::unordered_map<EdgeType, std::vector<PropContext>> edgeContexts_;
+
     std::unordered_map<TagID, nebula::cpp2::Schema> vertexSchemaResp_;
     std::unordered_map<EdgeType, nebula::cpp2::Schema> edgeSchemaResp_;
+
     std::unordered_map<TagID, std::shared_ptr<nebula::meta::SchemaProviderIf>> vertexSchema_;
     std::unordered_map<EdgeType, std::shared_ptr<nebula::meta::SchemaProviderIf>> edgeSchema_;
+
+    std::unordered_map<EdgeType, bool> onlyStructures_;
+
     folly::Executor* executor_{nullptr};
     VertexCache* vertexCache_{nullptr};
     std::unordered_map<std::string, EdgeType> edgeMap_;
+    bool compactDstIdProps_ = false;
+
+    std::unordered_map<EdgeType, std::pair<std::string, int64_t>> edgeTTLInfo_;
+
+    std::unordered_map<TagID, std::pair<std::string, int64_t>> tagTTLInfo_;
 };
 
 }  // namespace storage

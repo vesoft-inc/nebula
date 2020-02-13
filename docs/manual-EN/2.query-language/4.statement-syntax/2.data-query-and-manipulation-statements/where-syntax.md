@@ -8,18 +8,45 @@ WHERE <expression> [ AND | OR <expression> ...])
 
 Usually, `WHERE` is a set of logical combination that filters vertex or edge properties.
 
-> As syntactic sugar, you can freely choose to use both `AND` and  `&&` as boolean logical and, `OR` and `||` as boolean logical or.
+> As syntactic sugar, logic AND is represented by `AND` or `&&` and logic OR is represented by `OR` or `||`.
 
 ## Examples
 
 ```ngql
--- the edge e1's property prop1 is greater than 17
-nebula> GO FROM 201 OVER e1 WHERE e1.prop1 >= 17
--- the source vertex v1's property prop1 is equivalent with dest vertex v2's property prop2
-nebula> GO FROM 201 OVER e1 WHERE $^.v1.prop1 == $$.v2.prop2
--- logical combination is allowed
-nebula> GO FROM 201 OVER e1 WHERE ((e3.prop3 < 0.5) \
-   OR ($^.v4.prop4 != "hello")) AND $$.v5.prop5 == "world"
--- always TRUE
-nebula> GO FROM 201 OVER e1 WHERE 1 == 1 OR TRUE
+-- the degree property of edge follow is greater than 90.
+nebula> GO FROM 100 OVER follow WHERE follow.degree > 90;
+-- the following result is returned:
+===============
+| follow._dst |
+===============
+| 101         |
+---------------
+-- find the dest vertex whose age is equal to the source vertex, player 104.
+nebula> GO FROM 104 OVER follow WHERE $^.player.age == $$.player.age;
+-- the following result is returned:
+===============
+| follow._dst |
+===============
+| 103         |
+---------------
+-- logical combination is allowed.
+nebula> GO FROM 100 OVER follow WHERE follow.degree > 90 OR $$.player.age != 33 AND $$.player.name != "Tony Parker";
+-- the following result is returned:
+===============
+| follow._dst |
+===============
+| 101         |
+---------------
+| 106         |
+---------------
+-- the condition in the WHERE clause is always TRUE.
+nebula> GO FROM 101 OVER follow WHERE 1 == 1 OR TRUE;
+-- the following result is returned:
+===============
+| follow._dst |
+===============
+| 100         |
+---------------
+| 102         |
+---------------
 ```
