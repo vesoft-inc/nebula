@@ -20,7 +20,7 @@
 
 #### 返回单个作业信息
 
-命令 `SHOW JOB <job_id>` 用于返回对应 ID 作业信息。
+命令 `SHOW JOB <job_id>` 用于返回对应 ID 作业及其所有任务。作业到达 Meta 层后，Meta 会将作业分成多个任务并发送至 storage 层。
 
 ```ngql
 nebula> SHOW JOB 40
@@ -48,19 +48,19 @@ nebula> SHOW JOB 40
 - `12/17/19 17:21:30` 表示开始时间，因为任务初始即为 running 状态，所以这里永不为空
 - `12/17/19 17:21:30` 表示结束时间，如果为 running 状态，这里会为空，当状态变为 finished、failed、stopped 时会设置此值
 
-**注意：** 作业状态有五种，分为是 QUEUE、RUNNING、FINISHED、FAILED、STOPPED。状态机转换（backuped 状态不会显示）见以下说明：
+**注意：** 作业状态有五种，分为是 QUEUE、RUNNING、FINISHED、FAILED、STOPPED。状态机转换见以下说明：
 
 ```ngql
-Queue -- running -- finished -- backuped
+Queue -- running -- finished -- removed
      \          \                /
       \          \ -- failed -- /
        \          \            /
-        \ --------- - stopped -/
+        \ ---------- stopped -/
 ```
 
 #### 返回所有作业信息
 
-命令 `SHOW JOBS` 用于列出所有作业信息(实际上是没有被归档的作业，如何归档见下节)。
+命令 `SHOW JOBS` 用于列出所有未过期的作业信息。默认作业过期时长为一周。用户可通过 `job_expired_secs` 参数更改过期时长。
 
 ```ngql
 nebula> SHOW JOBS
@@ -79,22 +79,22 @@ nebula> SHOW JOBS
 
 返回结果说明见上节[返回单个作业信息](#返回单个作业信息)。
 
-### BACKUP JOB
+### STOP JOB
 
-命令 `BACKUP JOB <from_id> <to_id>` 用于在作业过多时将作业归档。归档后的作业在客户端中不再可见。且 SHOW 一个已归档的作业将会报错。
+命令 `STOP JOB` 用于在停止未完成的作业。
 
 ```ngql
-nebula> BACKUP JOB 0 22
+nebula> STOP JOB 0 22
 =========================
-| BACKUP Result         |
+| STOP Result         |
 =========================
-| backup 1 jobs 2 tasks |
+| stop 1 jobs 2 tasks |
 -------------------------
 ```
 
 ### RECOVER JOB
 
-命令 `RECOVER JOB` 用于重新执行作业，并返回 recover 的作业数目。
+命令 `RECOVER JOB` 用于重新失败执行作业，并返回 recover 的作业数目。
 
 ```ngql
 nebula> RECOVER JOB

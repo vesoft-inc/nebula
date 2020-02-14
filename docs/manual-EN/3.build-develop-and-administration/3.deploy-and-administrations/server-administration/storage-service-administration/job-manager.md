@@ -20,7 +20,7 @@ The `admin compact/flush` statement creates a new job and returns the job ID in 
 
 #### List Single Job Information
 
-The `SHOW JOB <job_id>` statement lists the information of the given job.
+The `SHOW JOB <job_id>` statement shows a job with certain ID and all its tasks. After a job arrives to Meta, Meta will split the job to tasks, and send them to storage.
 
 ```ngql
 nebula> SHOW JOB 40
@@ -51,16 +51,16 @@ What's in the returned results:
 **Note:** There are five job status, i.e. QUEUE, RUNNING, FINISHED, FAILED, STOPPED. Status switching is described below:
 
 ```ngql
-Queue -- running -- finished -- backuped
+Queue -- running -- finished -- removed
      \          \                /
       \          \ -- failed -- /
        \          \            /
-        \ --------- - stopped -/
+        \ ---------- stopped -/
 ```
 
 #### List All Jobs
 
-The `SHOW JOBS` statement lists all the jobs (all the jobs that are not backuped. Please refer to the next section on how to backup job).
+The `SHOW JOBS` statement lists all the jobs that are not expired. The default  job expiration time is one week. You can change it with meta flag `job_expired_secs`.
 
 ```ngql
 nebula> SHOW JOBS
@@ -79,22 +79,22 @@ nebula> SHOW JOBS
 
 For details on the returned results, please refer to the previous section [List Single Job Information](#list-single-job-information).
 
-### BACKUP JOB
+### STOP JOB
 
-The `BACKUP JOB <from_id> <to_id>`  statement archives jobs when there are too many jobs. The archived jobs are no longer visible in the console. If you use the `SHOW` command to display an archived job, an error is thrown.
+The `STOP JOB` statement jobs that are not finished.
 
 ```ngql
-nebula> BACKUP JOB 0 22
+nebula> STOP JOB 0 22
 =========================
-| BACKUP Result         |
+| STOP Result         |
 =========================
-| backup 1 jobs 2 tasks |
+| stop 1 jobs 2 tasks |
 -------------------------
 ```
 
 ### RECOVER JOB
 
-The `RECOVER JOB` statement re-executes the jobs and returns the number of the recovered jobs.
+The `RECOVER JOB` statement re-executes the failed jobs and returns the number of the recovered jobs.
 
 ```ngql
 nebula> RECOVER JOB
