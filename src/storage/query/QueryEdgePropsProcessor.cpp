@@ -27,6 +27,8 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
         return ret;
     }
 
+    auto schema = this->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeKey.edge_type));
+    auto retTTLOpt = getEdgeTTLInfo(edgeKey.edge_type);
     // Only use the latest version.
     if (iter && iter->valid()) {
         RowWriter writer(rsWriter.schema());
@@ -34,11 +36,20 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
         auto reader = RowReader::getEdgePropReader(schemaMan_,
                                                    iter->val(),
                                                    spaceId_,
-                                                   edgeKey.edge_type);
+                                                   std::abs(edgeKey.edge_type));
+
+        // Check if ttl data expired
+        if (retTTLOpt.has_value()) {
+            auto ttlValue = retTTLOpt.value();
+            if (checkDataExpiredForTTL(schema.get(),
+                                       reader.get(),
+                                       ttlValue.first,
+                                       ttlValue.second)) {
+                return ret;
+            }
+        }
         this->collectProps(reader.get(), iter->key(), props, nullptr, &collector);
         rsWriter.addRow(writer);
-
-        iter->next();
     }
     return ret;
 }
