@@ -218,6 +218,7 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:storage_service_handler>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:adHocIndex_obj>
         $<TARGET_OBJECTS:kvstore_obj>
         $<TARGET_OBJECTS:raftex_obj>
         $<TARGET_OBJECTS:raftex_thrift_obj>
