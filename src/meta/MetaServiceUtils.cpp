@@ -412,7 +412,13 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
             return cpp2::ErrorCode::SUCCEEDED;
         case cpp2::AlterSchemaOp::CHANGE:
             for (auto it = cols.begin(); it != cols.end(); ++it) {
-                if (col.get_name() == it->get_name()) {
+                auto colName = col.get_name();
+                if (colName == it->get_name()) {
+                    // If this col is ttl_col, change not allowed
+                    if (prop.get_ttl_col() && (*prop.get_ttl_col() == colName)) {
+                        LOG(ERROR) << "Column: " << colName << " as ttl_col, change not allowed";
+                        return cpp2::ErrorCode::E_UNSUPPORTED;
+                    }
                     *it = col;
                     return cpp2::ErrorCode::SUCCEEDED;
                 }
@@ -421,12 +427,9 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
             return cpp2::ErrorCode::E_NOT_FOUND;
         case cpp2::AlterSchemaOp::DROP:
             for (auto it = cols.begin(); it != cols.end(); ++it) {
-                if (col.get_name() == it->get_name()) {
-                    // Check if there is a TTL on the column to be deleted
-                    // drop the column with ttl
-                    // if (!prop.get_ttl_col() ||
-                    //    (prop.get_ttl_col() && (*prop.get_ttl_col() != col.get_name()))) {
-                    if (prop.get_ttl_col() && (*prop.get_ttl_col() == col.get_name())) {
+                auto colName = col.get_name();
+                if (colName == it->get_name()) {
+                    if (prop.get_ttl_col() && (*prop.get_ttl_col() == colName)) {
                         prop.set_ttl_duration(0);
                         prop.set_ttl_col("");
                     }
@@ -446,7 +449,6 @@ cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::Colu
                                                   nebula::cpp2::SchemaProp& schemaProp,
                                                   nebula::cpp2::SchemaProp alterSchemaProp,
                                                   bool existIndex) {
-    // Has index, not allowed to modify ttl property
     if (existIndex && (alterSchemaProp.__isset.ttl_duration || alterSchemaProp.__isset.ttl_col)) {
         LOG(ERROR) << "Has index, can't set ttl";
         return cpp2::ErrorCode::E_UNSUPPORTED;

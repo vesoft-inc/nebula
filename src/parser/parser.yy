@@ -1068,12 +1068,8 @@ alter_schema_prop_item
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
     | KW_TTL_COL ASSIGN STRING {
-        if ($3) {
-            $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
-            delete $3;
-        } else  {
-            $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, std::string(""));
-        }
+        $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
+        delete $3;
     }
     ;
 

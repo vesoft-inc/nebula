@@ -1197,8 +1197,8 @@ TEST(ProcessorTest, AlterTagTest) {
         auto resp = std::move(f).get();
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
+    // Succeeded
     {
-        // Succeeded
         cpp2::AlterTagReq req;
         nebula::cpp2::SchemaProp schemaProp;
         schemaProp.set_ttl_duration(100);
@@ -1259,6 +1259,29 @@ TEST(ProcessorTest, AlterTagTest) {
                   *tag.get_schema().get_schema_prop().get_ttl_duration());
         EXPECT_EQ(*schema.get_schema_prop().get_ttl_col(),
                   *tag.get_schema().get_schema_prop().get_ttl_col());
+    }
+    // Change col with ttl, failed
+    {
+        cpp2::AlterTagReq req;
+        std::vector<cpp2::AlterSchemaItem> items;
+        nebula::cpp2::Schema changeSch;
+        nebula::cpp2::ColumnDef column;
+        column.name = "tag_0_col_10";
+        column.type.type = SupportedType::DOUBLE;
+        changeSch.columns.emplace_back(std::move(column));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
+        items.back().set_schema(std::move(changeSch));
+
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        req.set_tag_items(items);
+        auto* processor = AlterTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     // Set ttl col on illegal column type, failed
     {
@@ -1570,9 +1593,8 @@ TEST(ProcessorTest, AlterEdgeTest) {
         EXPECT_EQ(schema, edge.get_schema());
     }
 
-    // Alter edge with ttl
+    // Only set ttl_duration, failed
     {
-        // Only set ttl_duration, failed
         cpp2::AlterEdgeReq req;
         nebula::cpp2::SchemaProp schemaProp;
         schemaProp.set_ttl_duration(100);
@@ -1586,8 +1608,8 @@ TEST(ProcessorTest, AlterEdgeTest) {
         auto resp = std::move(f).get();
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
+    // Succeed
     {
-        // Succeed
         cpp2::AlterEdgeReq req;
         nebula::cpp2::SchemaProp schemaProp;
         schemaProp.set_ttl_duration(100);
@@ -1656,8 +1678,31 @@ TEST(ProcessorTest, AlterEdgeTest) {
         EXPECT_EQ(*schema.get_schema_prop().get_ttl_col(),
                   *edge.get_schema().get_schema_prop().get_ttl_col());
     }
+    // Change col on ttl, failed
     {
-        // Set ttl col on illegal column type, failed
+        cpp2::AlterEdgeReq req;
+        std::vector<cpp2::AlterSchemaItem> items;
+        nebula::cpp2::Schema changeSch;
+        nebula::cpp2::ColumnDef column;
+        column.name = "edge_0_col_10";
+        column.type.type = SupportedType::DOUBLE;
+        changeSch.columns.emplace_back(std::move(column));
+
+        items.emplace_back();
+        items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
+        items.back().set_schema(std::move(changeSch));
+
+        req.set_space_id(1);
+        req.set_edge_name("edge_0");
+        req.set_edge_items(items);
+        auto* processor = AlterEdgeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // Set ttl col on illegal column type, failed
+    {
         cpp2::AlterEdgeReq req;
         nebula::cpp2::SchemaProp schemaProp;
         schemaProp.set_ttl_duration(100);
@@ -2938,7 +2983,7 @@ TEST(ProcessorTest, IndexTTLEdgeTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
-    // Edge without ttl to： create index, succeed
+    // Edge without ttl to create index, succeed
     {
         cpp2::CreateEdgeIndexReq req;
         req.set_space_id(1);

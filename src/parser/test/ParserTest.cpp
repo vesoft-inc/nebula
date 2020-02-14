@@ -307,6 +307,12 @@ TEST(Parser, EdgeOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "ALTER EDGE man ttl_col = \"\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "ALTER EDGE woman ttl_duration = 50, ttl_col = \"age\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
