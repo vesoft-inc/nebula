@@ -235,8 +235,6 @@ RaftPart::RaftPart(ClusterID clusterId,
                                                                logClusterId,
                                                                log);
                                 });
-    lastLogId_ = wal_->lastLogId();
-    lastLogTerm_ = wal_->lastLogTerm();
     logs_.reserve(FLAGS_max_batch_size);
     CHECK(!!executor_) << idStr_ << "Should not be nullptr";
 }
@@ -270,6 +268,9 @@ const char* RaftPart::roleStr(Role role) const {
 
 void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
     std::lock_guard<std::mutex> g(raftLock_);
+
+    lastLogId_ = wal_->lastLogId();
+    lastLogTerm_ = wal_->lastLogTerm();
 
     // Set the quorum number
     quorum_ = (peers.size() + 1) / 2;
