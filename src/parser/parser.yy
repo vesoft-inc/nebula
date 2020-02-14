@@ -118,6 +118,7 @@ class GraphScanner;
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS
+%token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_SUBMIT
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -132,6 +133,7 @@ class GraphScanner;
 %token <strval> STRING VARIABLE LABEL
 
 %type <strval> name_label unreserved_keyword agg_function
+%type <strval> admin_operation admin_para
 %type <expr> expression logic_xor_expression logic_or_expression logic_and_expression
 %type <expr> relational_expression multiplicative_expression additive_expression arithmetic_xor_expression
 %type <expr> unary_expression primary_expression equality_expression base_expression
@@ -211,6 +213,8 @@ class GraphScanner;
 %type <sentence> describe_tag_index_sentence describe_edge_index_sentence
 %type <sentence> rebuild_tag_index_sentence rebuild_edge_index_sentence
 %type <sentence> create_snapshot_sentence drop_snapshot_sentence
+
+%type <sentence> admin_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
 %type <sentence> show_sentence 
 
@@ -278,6 +282,12 @@ unreserved_keyword
      | KW_LEADER             { $$ = new std::string("leader"); }
      | KW_UUID               { $$ = new std::string("uuid"); }
      | KW_VARIABLES          { $$ = new std::string("variables"); }
+     | KW_JOB                { $$ = new std::string("job"); }
+     | KW_JOBS               { $$ = new std::string("jobs"); }
+     | KW_SUBMIT             { $$ = new std::string("submit"); }
+     | KW_RECOVER            { $$ = new std::string("recover"); }
+     | KW_FLUSH              { $$ = new std::string("flush"); }
+     | KW_COMPACT            { $$ = new std::string("compact"); }
      ;
 
 agg_function
@@ -1527,6 +1537,48 @@ ingest_sentence
     }
     ;
 
+admin_sentence
+    : KW_SUBMIT KW_JOB admin_operation {
+        auto sentence = new AdminSentence("add_job");
+        sentence->addPara(*$3);
+        $$ = sentence;
+    }
+    | KW_SHOW KW_JOBS {
+        auto sentence = new AdminSentence("show_jobs");
+        $$ = sentence;
+    }
+    | KW_SHOW KW_JOB INTEGER {
+        auto sentence = new AdminSentence("show_job");
+        sentence->addPara(std::to_string($3));
+        $$ = sentence;
+    }
+    | KW_STOP KW_JOB INTEGER {
+        auto sentence = new AdminSentence("stop_job");
+        sentence->addPara(std::to_string($3));
+        $$ = sentence;
+    }
+    | KW_RECOVER KW_JOB {
+        auto sentence = new AdminSentence("recover_job");
+        $$ = sentence;
+    }
+    ;
+
+admin_operation
+    : KW_COMPACT { $$ = new std::string("compact"); }
+    | KW_FLUSH   { $$ = new std::string("flush"); }
+    | admin_operation admin_para {
+        $$ = new std::string(*$1 + " " + *$2);
+    }
+    ;
+
+admin_para
+    : name_label ASSIGN name_label {
+        auto left = *$1;
+        auto right = *$3;
+        $$ = new std::string(*$1 + "=" + *$3);
+    }
+    ;
+
 show_sentence
     : KW_SHOW KW_HOSTS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowHosts);
@@ -1893,6 +1945,7 @@ mutate_sentence
     | delete_edge_sentence { $$ = $1; }
     | download_sentence { $$ = $1; }
     | ingest_sentence { $$ = $1; }
+    | admin_sentence { $$ = $1; }
     ;
 
 maintain_sentence

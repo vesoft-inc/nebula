@@ -176,6 +176,69 @@ struct DropSpaceReq {
     2: bool if_exists,
 }
 
+enum AdminJobOp {
+    ADD         = 0x01,
+    SHOW_All    = 0x02,
+    SHOW        = 0x03,
+    STOP        = 0x04,
+    RECOVER     = 0x05,
+    INVALID     = 0xFF,
+} (cpp.enum_strict)
+
+struct AdminJobReq {
+    1: AdminJobOp   op
+    2: list<string> paras;
+}
+
+enum JobStatus {
+    QUEUE           = 0x01,
+    RUNNING         = 0x02,
+    FINISHED        = 0x03,
+    FAILED          = 0x04,
+    STOPPED         = 0x05,
+    INVALID         = 0xFF,
+} (cpp.enum_strict)
+
+struct JobDesc {
+    1: i32          id
+    2: string       cmd
+    3: list<string> paras
+    4: JobStatus    status
+    5: i64          start_time
+    6: i64          stop_time
+}
+
+struct TaskDesc {
+    1: i32              task_id
+    2: common.HostAddr  host
+    3: JobStatus        status
+    4: i64              start_time
+    5: i64              stop_time
+    6: i32              job_id
+}
+
+struct AdminJobResult {
+    // used in a new added job, e.g. "flush" "compact"
+    // other job type which also need jobId in their result
+    // will use other filed. e.g. JobDesc::id
+    1: optional i32                 job_id
+
+    // used in "show jobs" and "show job <id>"
+    2: optional list<JobDesc>       job_desc
+
+    // used in "show job <id>"
+    3: optional list<TaskDesc>      task_desc
+
+    // used in "recover job"
+    4: optional i32                 recovered_job_num
+}
+
+struct AdminJobResp {
+    1: ErrorCode                    code
+    2: common.HostAddr              leader
+    3: AdminJobResult               result
+}
+
 struct ListSpacesReq {
 }
 
@@ -727,5 +790,6 @@ service MetaService {
     ExecResp createSnapshot(1: CreateSnapshotReq req);
     ExecResp dropSnapshot(1: DropSnapshotReq req);
     ListSnapshotsResp listSnapshots(1: ListSnapshotsReq req);
+    AdminJobResp runAdminJob(1: AdminJobReq req);
 }
 

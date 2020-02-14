@@ -129,6 +129,9 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:meta_service_handler>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
+        $<TARGET_OBJECTS:http_client_obj>
+        $<TARGET_OBJECTS:process_obj>
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -152,6 +155,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:ws_common_obj>
         ${storage_test_deps}
     LIBRARIES
         proxygenhttpserver
@@ -176,6 +180,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:ws_common_obj>
         ${storage_test_deps}
     LIBRARIES
         proxygenhttpserver
@@ -200,6 +205,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:ws_common_obj>
         ${storage_test_deps}
     LIBRARIES
         proxygenhttpserver
@@ -216,6 +222,7 @@ nebula_add_test(
     SOURCES
         CompactionTest.cpp
     OBJECTS
+        $<TARGET_OBJECTS:storage_service_handler>
         $<TARGET_OBJECTS:adHocSchema_obj>
         $<TARGET_OBJECTS:kvstore_obj>
         $<TARGET_OBJECTS:raftex_obj>

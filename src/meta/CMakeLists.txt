@@ -67,6 +67,12 @@ nebula_add_library(
     processors/configMan/GetConfigProcessor.cpp
     processors/configMan/ListConfigsProcessor.cpp
     processors/configMan/SetConfigProcessor.cpp
+    processors/jobMan/JobManager.cpp
+    processors/jobMan/JobDescription.cpp
+    processors/jobMan/TaskDescription.cpp
+    processors/jobMan/JobStatus.cpp
+    processors/jobMan/AdminJobProcessor.cpp
+    processors/jobMan/JobUtils.cpp
 )
 
 nebula_add_library(

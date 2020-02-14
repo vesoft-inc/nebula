@@ -208,6 +208,9 @@ public:
     folly::Future<cpp2::ListSnapshotsResp>
     future_listSnapshots(const cpp2::ListSnapshotsReq& req) override;
 
+    folly::Future<cpp2::AdminJobResp>
+    future_runAdminJob(const cpp2::AdminJobReq& req) override;
+
 private:
     kvstore::KVStore* kvstore_ = nullptr;
     ClusterID clusterId_{0};

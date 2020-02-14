@@ -40,6 +40,7 @@
 #include "graph/DownloadExecutor.h"
 #include "graph/OrderByExecutor.h"
 #include "graph/IngestExecutor.h"
+#include "graph/AdminJobExecutor.h"
 #include "graph/ConfigExecutor.h"
 #include "graph/FetchVerticesExecutor.h"
 #include "graph/FetchEdgesExecutor.h"
@@ -206,6 +207,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kDropSnapshot:
             executor = std::make_unique<DropSnapshotExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kAdmin:
+            executor = std::make_unique<AdminJobExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(ERROR) << "Sentence kind unknown";

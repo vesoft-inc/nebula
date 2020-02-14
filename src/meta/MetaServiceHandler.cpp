@@ -52,6 +52,7 @@
 #include "meta/processors/configMan/GetConfigProcessor.h"
 #include "meta/processors/configMan/SetConfigProcessor.h"
 #include "meta/processors/configMan/ListConfigsProcessor.h"
+#include "meta/processors/jobMan/AdminJobProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -76,6 +77,12 @@ MetaServiceHandler::future_dropSpace(const cpp2::DropSpaceReq& req) {
 folly::Future<cpp2::ListSpacesResp>
 MetaServiceHandler::future_listSpaces(const cpp2::ListSpacesReq& req) {
     auto* processor = ListSpacesProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::AdminJobResp>
+MetaServiceHandler::future_runAdminJob(const cpp2::AdminJobReq& req) {
+    auto* processor = AdminJobProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
