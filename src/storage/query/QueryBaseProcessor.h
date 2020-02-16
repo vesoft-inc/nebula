@@ -14,7 +14,7 @@
 #include "filter/Expressions.h"
 #include "storage/CommonUtils.h"
 #include "stats/Stats.h"
-#include <boost/random.hpp>
+#include <random>
 
 DECLARE_int32(max_edge_returned_per_vertex);
 
@@ -49,7 +49,7 @@ public:
         if (cnt_ < FLAGS_max_edge_returned_per_vertex) {
             return cnt_;
         } else {
-            boost::random::uniform_int_distribution<> dist(0, cnt_);
+            std::uniform_int_distribution<> dist(0, cnt_);
             int64_t index = dist(rng_);
             if (index < FLAGS_max_edge_returned_per_vertex) {
                 return index;
@@ -60,7 +60,7 @@ public:
     }
 
 private:
-    boost::random::mt19937  rng_;
+    std::mt19937            rng_;
     int64_t                 cnt_{-1};
 };
 
