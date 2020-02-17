@@ -229,15 +229,9 @@ Status GoExecutor::prepareOverAll() {
         }
 
         auto v = edgeStatus.value();
-        if (direction_ == OverClause::Direction::kForward) {
-            edgeTypes_.push_back(v);
-        } else if (direction_ == OverClause::Direction::kBackward) {
-            v = -v;
-            edgeTypes_.push_back(v);
-        } else if (direction_ == OverClause::Direction::kBiDirect) {
-            edgeTypes_.push_back(v);
-            v = -v;
-            edgeTypes_.push_back(v);
+        auto status = addToEdgeTypes(v);
+        if (!status.ok()) {
+            return status;
         }
 
         if (!expCtx_->addEdge(e, std::abs(v))) {
@@ -272,15 +266,9 @@ Status GoExecutor::prepareOver() {
         }
 
         auto v = edgeStatus.value();
-        if (direction_ == OverClause::Direction::kForward) {
-            edgeTypes_.push_back(v);
-        } else if (direction_ == OverClause::Direction::kBackward) {
-            v = -v;
-            edgeTypes_.push_back(v);
-        } else if (direction_ == OverClause::Direction::kBiDirect) {
-            edgeTypes_.push_back(v);
-            v = -v;
-            edgeTypes_.push_back(v);
+        status = addToEdgeTypes(v);
+        if (!status.ok()) {
+            return status;
         }
 
         if (e->alias() != nullptr) {
@@ -297,6 +285,29 @@ Status GoExecutor::prepareOver() {
     return status;
 }
 
+Status GoExecutor::addToEdgeTypes(EdgeType type) {
+    switch (direction_) {
+        case OverClause::Direction::kForward: {
+            edgeTypes_.push_back(type);
+            break;
+        }
+        case OverClause::Direction::kBackward: {
+            type = -type;
+            edgeTypes_.push_back(type);
+            break;
+        }
+        case OverClause::Direction::kBiDirect: {
+            edgeTypes_.push_back(type);
+            type = -type;
+            edgeTypes_.push_back(type);
+            break;
+        }
+        default: {
+            return Status::Error("Unkown direction type: %ld", static_cast<int64_t>(direction_));
+        }
+    }
+    return Status::OK();
+}
 
 Status GoExecutor::prepareWhere() {
     auto *clause = sentence_->whereClause();
@@ -459,7 +470,7 @@ void GoExecutor::stepOut() {
         filterPushdown = whereWrapper_->filterPushdown_;
     }
     VLOG(1) << "edge type size: " << edgeTypes_.size()
-        << " return cols: " << returns.size();
+            << " return cols: " << returns.size();
     auto future  = ectx()->getStorageClient()->getNeighbors(spaceId,
                                                    starts_,
                                                    edgeTypes_,

@@ -218,13 +218,14 @@ private:
 
 class OverClause final : public Clause {
 public:
-    enum Direction : uint8_t {
+    enum class Direction : uint8_t {
         kForward,
         kBackward,
         kBiDirect
     };
 
-    explicit OverClause(OverEdges *edges, Direction direction = kForward) {
+    OverClause(OverEdges *edges,
+               Direction direction = Direction::kForward) {
         kind_ = kOverClause;
         overEdges_.reset(edges);
         direction_ = direction;

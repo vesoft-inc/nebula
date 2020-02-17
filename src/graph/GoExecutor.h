@@ -61,6 +61,8 @@ private:
 
     Status prepareOverAll();
 
+    Status addToEdgeTypes(EdgeType type);
+
     /**
      * To check if this is the final step.
      */

@@ -147,17 +147,6 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                 }
                 it2->second.emplace_back(std::move(prop));
                 break;
-                /*
-                auto it2 = edgeContexts_.find(edgeType);
-                if (it2 == edgeContexts_.end()) {
-                    std::vector<PropContext> v{std::move(prop)};
-                    edgeContexts_.emplace(edgeType, std::move(v));
-                    break;
-                }
-
-                it2->second.emplace_back(std::move(prop));
-                break;
-                */
             }
         }
     }
