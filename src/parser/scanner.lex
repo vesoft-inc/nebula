@@ -156,7 +156,10 @@ BIDIRECT                    ([Bb][Ii][Dd][Ii][Rr][Ee][Cc][Tt])
 ACCOUNT                     ([Aa][Cc][Cc][Oo][Uu][Nn][Tt])
 DBA                         ([Dd][Bb][Aa])
 CONTAINS                    ([Cc][Oo][Nn][Tt][Aa][Ii][Nn][Ss])
+COPY                        ([Cc][Oo][Pp][Yy])
 SCHEMA                      ([Ss][Cc][Hh][Ee][Mm][Aa])
+RENAME                      ([Rr][Ee][Nn][Aa][Mm][Ee])
+TRUNCATE                    ([Tt][Rr][Uu][Nn][Cc][Aa][Tt][Ee])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -310,6 +313,11 @@ RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 {SHORTEST}                  { return TokenType::KW_SHORTEST; }
 {CONTAINS}                  { return TokenType::KW_CONTAINS; }
 {SCHEMA}                    { return TokenType::KW_SCHEMA; }
+{BIDIRECT}                  { return TokenType::KW_BIDIRECT; }
+{COPY}                      { return TokenType::KW_COPY; }
+{SCHEMA}                    { return TokenType::KW_SCHEMA; }
+{RENAME}                    { return TokenType::KW_RENAME; }
+{TRUNCATE}                  { return TokenType::KW_TRUNCATE; }
 
 
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }

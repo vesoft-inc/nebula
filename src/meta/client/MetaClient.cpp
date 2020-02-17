@@ -2093,15 +2093,32 @@ folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> MetaClient::listSnapshots()
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::addSchemaFromSpace(const std::string& currentSpace,
-                               const std::string& fromSpace) {
-    cpp2::AddSchemaFromSpaceReq req;
+MetaClient::copySchemaFromSpace(const std::string& currentSpace,
+                                const std::string& fromSpace,
+                                const bool needIndex) {
+    cpp2::CopySchemaFromSpaceReq req;
     req.set_current_space(currentSpace);
     req.set_from_space(fromSpace);
+    req.set_need_index(needIndex);
     folly::Promise<StatusOr<bool>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_addSchemaFromSpace(request);
+        return client->future_copySchemaFromSpace(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::renameSpace(const std::string& fromSpace, const std::string& toSpace) {
+    cpp2::RenameSpaceReq req;
+    req.set_from_space(fromSpace);
+    req.set_to_space(toSpace);
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_renameSpace(request);
     }, [] (cpp2::ExecResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, std::move(promise), true);

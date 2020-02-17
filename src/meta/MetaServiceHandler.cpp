@@ -13,6 +13,7 @@
 #include "meta/processors/partsMan/ListHostsProcessor.h"
 #include "meta/processors/partsMan/ListPartsProcessor.h"
 #include "meta/processors/partsMan/GetPartsAllocProcessor.h"
+#include "meta/processors/partsMan/RenameSpaceProcessor.h"
 #include "meta/processors/schemaMan/CreateTagProcessor.h"
 #include "meta/processors/schemaMan/AlterTagProcessor.h"
 #include "meta/processors/schemaMan/DropTagProcessor.h"
@@ -23,7 +24,7 @@
 #include "meta/processors/schemaMan/DropEdgeProcessor.h"
 #include "meta/processors/schemaMan/GetEdgeProcessor.h"
 #include "meta/processors/schemaMan/ListEdgesProcessor.h"
-#include "meta/processors/schemaMan/AddSchemaFromSpaceProcessor.h"
+#include "meta/processors/schemaMan/CopySchemaFromSpaceProcessor.h"
 #include "meta/processors/indexMan/CreateTagIndexProcessor.h"
 #include "meta/processors/indexMan/DropTagIndexProcessor.h"
 #include "meta/processors/indexMan/GetTagIndexProcessor.h"
@@ -394,8 +395,14 @@ MetaServiceHandler::future_listSnapshots(const cpp2::ListSnapshotsReq& req) {
 }
 
 folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_addSchemaFromSpace(const cpp2::AddSchemaFromSpaceReq& req) {
-    auto* processor = AddSchemaFromSpaceProcessor::instance(kvstore_);
+MetaServiceHandler::future_copySchemaFromSpace(const cpp2::CopySchemaFromSpaceReq& req) {
+    auto* processor = CopySchemaFromSpaceProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_renameSpace(const cpp2::RenameSpaceReq& req) {
+    auto* processor = RenameSpaceProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#ifndef GRAPH_ADDSCHEMAFROMSPACEEXECUTOR_H_
-#define GRAPH_ADDSCHEMAFROMSPACEEXECUTOR_H_
+#ifndef GRAPH_CopySchemaFromSpaceExecutor_H_
+#define GRAPH_CopySchemaFromSpaceExecutor_H_
 
 #include "base/Base.h"
 #include "graph/Executor.h"
@@ -12,12 +12,12 @@
 namespace nebula {
 namespace graph {
 
-class AddSchemaFromSpaceExecutor final : public Executor {
+class CopySchemaFromSpaceExecutor final : public Executor {
 public:
-    AddSchemaFromSpaceExecutor(Sentence *sentence, ExecutionContext *ectx);
+    CopySchemaFromSpaceExecutor(Sentence *sentence, ExecutionContext *ectx);
 
     const char* name() const override {
-        return "AddSchemaFromSpaceExecutor";
+        return "CopySchemaFromSpaceExecutor";
     }
 
     Status MUST_USE_RESULT prepare() override;
@@ -25,12 +25,12 @@ public:
     void execute() override;
 
 private:
-    AddSchemaFromSpaceSentence                  *sentence_{nullptr};
-    const std::string                           *spaceName_{nullptr};
+    CopySchemaFromSpaceSentence                  *sentence_{nullptr};
+    const std::string                            *spaceName_{nullptr};
 };
 
 }   // namespace graph
 }   // namespace nebula
 
-#endif  // GRAPH_ADDSCHEMAFROMSPACEEXECUTOR_H_
+#endif  // GRAPH_CopySchemaFromSpaceExecutor_H_
 

@@ -208,7 +208,10 @@ public:
     folly::Future<cpp2::AdminJobResp>
     future_runAdminJob(const cpp2::AdminJobReq& req) override;
     folly::Future<cpp2::ExecResp>
-    future_addSchemaFromSpace(const cpp2::AddSchemaFromSpaceReq& req) override;
+    future_copySchemaFromSpace(const cpp2::CopySchemaFromSpaceReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_renameSpace(const cpp2::RenameSpaceReq& req) override;
 
 private:
     kvstore::KVStore* kvstore_ = nullptr;

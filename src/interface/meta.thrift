@@ -687,9 +687,15 @@ struct ListIndexStatusResp {
     3: list<IndexStatus>    statuses,
 }
 
-struct AddSchemaFromSpaceReq {
+struct CopySchemaFromSpaceReq {
     1: string         current_space,
     2: string         from_space,
+    3: bool           need_index,
+}
+
+struct RenameSpaceReq {
+    1: string         from_space,
+    2: string         to_space,
 }
 
 service MetaService {
@@ -758,6 +764,7 @@ service MetaService {
     ExecResp dropSnapshot(1: DropSnapshotReq req);
     ListSnapshotsResp listSnapshots(1: ListSnapshotsReq req);
     AdminJobResp runAdminJob(1: AdminJobReq req);
-    ExecResp addSchemaFromSpace(1: AddSchemaFromSpaceReq req);
+    ExecResp copySchemaFromSpace(1: CopySchemaFromSpaceReq req);
+    ExecResp renameSpace(1: RenameSpaceReq req);
 }
 

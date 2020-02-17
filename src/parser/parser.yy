@@ -125,6 +125,7 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
 %token KW_GOD KW_ADMIN KW_DBA KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_CONTAINS
+%token KW_COPY KW_SCHEMA KW_WITH_INDEX KW_RENAME KW_TRUNCATE
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -212,6 +213,8 @@ static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 %type <sentence> alter_tag_sentence alter_edge_sentence
 %type <sentence> drop_tag_sentence drop_edge_sentence
 %type <sentence> describe_tag_sentence describe_edge_sentence
+%type <sentence> copy_schema_sentence rename_space_sentence truncate_space_sentence
+
 %type <sentence> create_tag_index_sentence create_edge_index_sentence
 %type <sentence> drop_tag_index_sentence drop_edge_index_sentence
 %type <sentence> describe_tag_index_sentence describe_edge_index_sentence
@@ -1930,9 +1933,24 @@ drop_snapshot_sentence
     }
     ;
 
-add_schema_sentence
-    : KW_ADD KW_SCHEMA KW_FROM LABEL {
-        $$ = new AddSchemaFromSpaceSentence($4);
+copy_schema_sentence
+    : KW_COPY KW_SCHEMA KW_FROM LABEL {
+        $$ = new CopySchemaFromSpaceSentence($4, true);
+    }
+    | KW_COPY KW_SCHEMA KW_FROM LABEL KW_NO KW_INDEX{
+        $$ = new CopySchemaFromSpaceSentence($4, false);
+    }
+    ;
+
+rename_space_sentence
+    : KW_RENAME KW_SPACE LABEL KW_TO LABEL {
+        $$ = new RenameSpaceSentence($3, $5);
+    }
+    ;
+
+truncate_space_sentence
+    : KW_TRUNCATE KW_SPACE LABEL {
+        $$ = new TruncateSpaceSentence($3);
     }
     ;
 
@@ -1969,7 +1987,9 @@ maintain_sentence
     | rebuild_tag_index_sentence { $$ = $1; }
     | rebuild_edge_index_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
-    | add_schema_sentence { $$ = $1; };
+    | copy_schema_sentence { $$ = $1; };
+    | rename_space_sentence { $$ = $1; };
+    | truncate_space_sentence { $$ = $1; };
     ;
 
 return_sentence

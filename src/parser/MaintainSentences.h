@@ -682,11 +682,57 @@ private:
     bool                                        isOffline_;
 };
 
-class AddSchemaFromSpaceSentence final : public Sentence {
+class CopySchemaFromSpaceSentence final : public Sentence {
 public:
-    explicit AddSchemaFromSpaceSentence(std::string *spaceName) {
+    explicit CopySchemaFromSpaceSentence(std::string *spaceName, bool needIndex) {
         spaceName_.reset(spaceName);
-        kind_ = Kind::kAddSchemaFromSpace;
+        kind_ = Kind::kCopySchemaFromSpace;
+        needIndex_ = needIndex;
+    }
+
+    const std::string* spaceName() const {
+        return spaceName_.get();
+    }
+
+    bool needIndex() const {
+        return needIndex_;
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>                spaceName_;
+    bool                                        needIndex_;
+};
+
+class RenameSpaceSentence final : public Sentence {
+public:
+    explicit RenameSpaceSentence(std::string *fromName, std::string *toName) {
+        fromSpace_.reset(fromName);
+        toSpace_.reset(toName);
+        kind_ = Kind::kRenameSpace;
+    }
+
+    const std::string* fromSpaceName() const {
+        return fromSpace_.get();
+    }
+
+    const std::string* toSpaceName() const {
+        return toSpace_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>                fromSpace_;
+    std::unique_ptr<std::string>                toSpace_;
+};
+
+class TruncateSpaceSentence final : public Sentence {
+public:
+    explicit TruncateSpaceSentence(std::string *spaceName) {
+        spaceName_.reset(spaceName);
+        kind_ = Kind::kTruncateSpace;
     }
 
     const std::string* spaceName() const {
@@ -698,6 +744,7 @@ public:
 private:
     std::unique_ptr<std::string>                spaceName_;
 };
+
 }   // namespace nebula
 
 #endif  // PARSER_MAINTAINSENTENCES_H_

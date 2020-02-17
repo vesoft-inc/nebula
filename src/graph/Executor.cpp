@@ -61,7 +61,9 @@
 #include "graph/DropSnapshotExecutor.h"
 #include "graph/UserExecutor.h"
 #include "graph/PrivilegeExecutor.h"
-#include "graph/AddSchemaFromSpaceExecutor.h"
+#include "graph/CopySchemaFromSpaceExecutor.h"
+#include "graph/RenameSpaceExecutor.h"
+#include "graph/TruncateSpaceExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -214,7 +216,6 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kAdmin:
             executor = std::make_unique<AdminJobExecutor>(sentence, ectx());
             break;
-<<<<<<< HEAD
         case Sentence::Kind::kCreateUser:
             executor = std::make_unique<CreateUserExecutor>(sentence, ectx());
             break;
@@ -232,10 +233,15 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kRevoke:
             executor = std::make_unique<RevokeExecutor>(sentence, ectx());
-=======
-        case Sentence::Kind::kAddSchemaFromSpace:
-            executor = std::make_unique<AddSchemaFromSpaceExecutor>(sentence, ectx());
->>>>>>> support add schema from space
+            break;
+        case Sentence::Kind::kCopySchemaFromSpace:
+            executor = std::make_unique<CopySchemaFromSpaceExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kRenameSpace:
+            executor = std::make_unique<RenameSpaceExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kTruncateSpace:
+            executor = std::make_unique<TruncateSpaceExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(ERROR) << "Sentence kind unknown";
