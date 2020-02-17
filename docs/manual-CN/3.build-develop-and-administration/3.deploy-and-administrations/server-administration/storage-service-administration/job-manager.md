@@ -4,9 +4,9 @@
 
 ## 命令列表
 
-### admin compact / flush
+### submit compact / flush
 
-`admin compact/flush` 命令在作业管理中新建作业并返回作业 ID，在存储层中执行 `compact/flush` 命令。示例返回结果如下：
+`submit compact/flush` 命令在作业管理中新建作业并返回作业 ID，在存储层中执行 `compact/flush` 命令。示例返回结果如下：
 
 ```ngql
 ==============

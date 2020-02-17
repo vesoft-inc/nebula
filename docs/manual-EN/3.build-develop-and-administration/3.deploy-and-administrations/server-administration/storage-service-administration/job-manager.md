@@ -4,9 +4,9 @@ The job here refers to the two commands `compact` and `flush` running at the sto
 
 ## Statements List
 
-### admin compact / flush
+### submit compact / flush
 
-The `admin compact/flush` statement creates a new job and returns the job ID in the job manager, and executes the `compact/flush` command in the storage. The example is as follows:
+The `submit compact/flush` statement creates a new job and returns the job ID in the job manager, and executes the `compact/flush` command in the storage. The example is as follows:
 
 ```ngql
 ==============
