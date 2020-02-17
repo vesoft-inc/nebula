@@ -148,7 +148,7 @@ void TruncateSpaceExecutor::dropSpace(const std::string &spaceName, bool isIfExi
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [spaceName, isIfExists, this] (auto &&resp) {
-        // if drop from_space failed, need to drop the temp_space
+        // If drop from_space failed, need to drop the temp_space
         if (!resp.ok()) {
             if (!isIfExists) {
                 dropSpace(tempSpaceName_, true);
@@ -186,9 +186,10 @@ void TruncateSpaceExecutor::dropSpace(const std::string &spaceName, bool isIfExi
 }
 
 void TruncateSpaceExecutor::execute() {
-    // step1: copy schema from space
-    // step2: drop from_space
-    // step3: rename to_space as from_space
+    // step1: create temp space
+    // step2: copy schema from from_space
+    // step3: drop from_space
+    // step4: rename to_space to from_space
     getSpace();
 }
 

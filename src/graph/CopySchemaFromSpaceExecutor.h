@@ -28,7 +28,6 @@ private:
     CopySchemaFromSpaceSentence                  *sentence_{nullptr};
     const std::string                            *spaceName_{nullptr};
 };
-
 }   // namespace graph
 }   // namespace nebula
 

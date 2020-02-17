@@ -20,7 +20,7 @@ Status RenameSpaceExecutor::prepare() {
     fromSpaceName_ = sentence_->fromSpaceName();
     toSpaceName_ = sentence_->toSpaceName();
     if (fromSpaceName_ == nullptr || toSpaceName_ == nullptr) {
-        return Status::Error("input space name is empty");
+        return Status::Error("Input space name is empty");
     }
     return Status::OK();
 }
@@ -32,8 +32,8 @@ void RenameSpaceExecutor::execute() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            doError(Status::Error("Rename space `%s' failed: %s.",
-                                   fromSpaceName_->c_str(), resp.status().toString().c_str()));
+            onError_(Status::Error("Rename space `%s' failed: %s.",
+                                    fromSpaceName_->c_str(), resp.status().toString().c_str()));
             return;
         }
 
@@ -41,14 +41,14 @@ void RenameSpaceExecutor::execute() {
         if (*fromSpaceName_ == ectx()->rctx()->session()->spaceName()) {
             ectx()->rctx()->session()->setSpace(*toSpaceName_, ectx()->rctx()->session()->space());
         }
-        doFinish(Executor::ProcessControl::kNext);
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         auto msg = folly::stringPrintf("Rename space `%s' exception: %s.",
                                         fromSpaceName_->c_str(), e.what().c_str());
         LOG(ERROR) << msg;
-        doError(Status::Error(std::move(msg)));
+        onError_(Status::Error(std::move(msg)));
         return;
     };
 

@@ -11,7 +11,7 @@ namespace graph {
 
 CopySchemaFromSpaceExecutor::CopySchemaFromSpaceExecutor(Sentence *sentence,
                                          ExecutionContext *ectx)
-        : Executor(ectx, "copy_schema_from_space") {
+        : Executor(ectx) {
     sentence_ = static_cast<CopySchemaFromSpaceSentence*>(sentence);
 }
 
@@ -26,14 +26,14 @@ Status CopySchemaFromSpaceExecutor::prepare() {
 void CopySchemaFromSpaceExecutor::execute() {
     auto status = checkIfGraphSpaceChosen();
     if (!status.ok()) {
-        doError(std::move(status));
+        onError_(std::move(status));
         return;
     }
     auto currentSpace = ectx()->rctx()->session()->spaceName();
     if (currentSpace == *spaceName_) {
         LOG(ERROR) << "Current space `" << currentSpace << "' as same as from space `"
                    << spaceName_->c_str() << "'";
-        doError(Status::Error("From space `%s' as same as current space `%s'",
+        onError_(Status::Error("From space `%s' as same as current space `%s'",
                 spaceName_->c_str(), currentSpace.c_str()));
         return;
     }
@@ -46,20 +46,20 @@ void CopySchemaFromSpaceExecutor::execute() {
         if (!resp.ok()) {
             LOG(ERROR) << "Copy schema from space `" << spaceName_->c_str()
                        << "' failed: " << resp.status().toString().c_str();
-            doError(Status::Error("Copy schema from space `%s' failed: %s",
+            onError_(Status::Error("Copy schema from space `%s' failed: %s",
                                    spaceName_->c_str(), resp.status().toString().c_str()));
             return;
         }
 
         LOG(INFO) << "Copy schema from space `" << spaceName_->c_str() << "' succeed";
-        doFinish(Executor::ProcessControl::kNext);
+        onFinish_(Executor::ProcessControl::kNext);
     };
 
     auto error = [this] (auto &&e) {
         auto msg = folly::stringPrintf("Copy schema from space `%s' exception: %s.",
                                         spaceName_->c_str(), e.what().c_str());
         LOG(ERROR) << msg;
-        doError(Status::Error(std::move(msg)));
+        onError_(Status::Error(std::move(msg)));
         return;
     };
 

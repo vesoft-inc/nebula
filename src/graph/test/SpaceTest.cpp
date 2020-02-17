@@ -345,17 +345,18 @@ TEST_F(SpaceTest, TestTruncate) {
         };
         ASSERT_TRUE(verifyResult(resp, edgeExpected, true, {0}));
 
-        sleep(FLAGS_heartbeat_interval_secs + 3);
+        sleep(FLAGS_heartbeat_interval_secs + 1);
 
+        cpp2::ExecutionResponse fetchResp;
         cmd = "FETCH PROP ON person hash(\"Lily\")";
-        code = client_->execute(cmd, resp);
+        code = client_->execute(cmd, fetchResp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        ASSERT_EQ(0, resp.get_rows()->size());
+        ASSERT_EQ(nullptr, fetchResp.get_rows());
 
         cmd = "FETCH PROP ON like hash(\"Lily\") -> hash(\"Tom\")";
-        code = client_->execute(cmd, resp);
+        code = client_->execute(cmd, fetchResp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        ASSERT_EQ(0, resp.get_rows()->size());
+        ASSERT_EQ(nullptr, fetchResp.get_rows());
     }
     cmd = "DROP SPACE current_space";
     code = client_->execute(cmd, resp);

@@ -265,7 +265,10 @@ std::string RebuildEdgeIndexSentence::toString() const {
 }
 
 std::string CopySchemaFromSpaceSentence::toString() const {
-    return folly::stringPrintf("COPY SCHEMA FROM %s", spaceName_.get()->c_str());
+    if (needIndex_) {
+        return folly::stringPrintf("COPY SCHEMA FROM %s", spaceName_.get()->c_str());
+    }
+    return folly::stringPrintf("COPY SCHEMA FROM %s NO INDEX", spaceName_.get()->c_str());
 }
 
 std::string RenameSpaceSentence::toString() const {

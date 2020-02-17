@@ -34,5 +34,5 @@ private:
 }   // namespace graph
 }   // namespace nebula
 
-#endif  // GRAPH_CREATESPACEEXECUTOR_H_
+#endif  // GRAPH_RENAMESPACEEXECUTOR_H_
 
