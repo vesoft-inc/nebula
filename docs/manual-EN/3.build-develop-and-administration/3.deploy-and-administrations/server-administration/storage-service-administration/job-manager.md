@@ -1,12 +1,12 @@
 # Job Manager
 
-The job here refers to the two commands `compact` and `flush` running at the storage layer. The manager means to manage the jobs. For example, you can run, show, stop and recover jobs.
+The job here refers to the long tasks running at the storage layer. For example, `compact` and `flush`. The manager means to manage the jobs. For example, you can run, show, stop and recover jobs.
 
 ## Statements List
 
-### submit compact / flush
+### submit job compact / flush
 
-The `submit compact/flush` statement creates a new job and returns the job ID in the job manager, and executes the `compact/flush` command in the storage. The example is as follows:
+The `submit job compact/flush` statement creates a new job and returns the job ID in the job manager, and executes the `compact/flush` command in the storage. The example is as follows:
 
 ```ngql
 ==============

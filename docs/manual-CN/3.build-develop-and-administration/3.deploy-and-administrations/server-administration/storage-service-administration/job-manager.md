@@ -1,12 +1,12 @@
 # 作业管理（Job Manager）
 
-作业特指在存储层运行的两个命令 `compact` 和 `flush`。管理指对作业进行管理。比如让作业排队执行、查看作业状态、停止作业、恢复作业等。
+作业特指在存储层运行的一些长任务。比如 `compact` 和 `flush`。管理指对作业进行管理。比如让作业排队执行、查看作业状态、停止作业、恢复作业等。
 
 ## 命令列表
 
-### submit compact / flush
+### submit job compact / flush
 
-`submit compact/flush` 命令在作业管理中新建作业并返回作业 ID，在存储层中执行 `compact/flush` 命令。示例返回结果如下：
+`submit job compact/flush` 命令在作业管理中新建作业并返回作业 ID，在存储层中执行 `compact/flush` 命令。示例返回结果如下：
 
 ```ngql
 ==============
