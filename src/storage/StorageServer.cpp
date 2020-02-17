@@ -126,6 +126,9 @@ bool StorageServer::start() {
     LOG(INFO) << "Init kvstore";
     kvstore_ = getStoreInstance();
 
+    LOG(INFO) << "Init CharsetInfo";
+    charsetInfo_ = CharsetInfo::instance();
+
     if (nullptr == kvstore_) {
         LOG(ERROR) << "Init kvstore failed";
         return false;
@@ -139,7 +142,8 @@ bool StorageServer::start() {
     auto handler = std::make_shared<StorageServiceHandler>(kvstore_.get(),
                                                            schemaMan_.get(),
                                                            indexMan_.get(),
-                                                           metaClient_.get());
+                                                           metaClient_.get(),
+                                                           charsetInfo_);
     try {
         LOG(INFO) << "The storage deamon start on " << localHost_;
         tfServer_ = std::make_unique<apache::thrift::ThriftServer>();

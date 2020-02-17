@@ -28,7 +28,7 @@ private:
     explicit ScanVertexProcessor(kvstore::KVStore* kvstore,
                                  meta::SchemaManager* schemaMan,
                                  stats::Stats* stats)
-            : BaseProcessor<cpp2::ScanVertexResponse>(kvstore, schemaMan, stats) {}
+            : BaseProcessor<cpp2::ScanVertexResponse>(kvstore, schemaMan, nullptr, stats) {}
 
     cpp2::ErrorCode checkAndBuildContexts(const cpp2::ScanVertexRequest& req);
 

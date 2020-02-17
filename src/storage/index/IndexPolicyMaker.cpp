@@ -31,7 +31,11 @@ cpp2::ErrorCode IndexPolicyMaker::decodeExpression(const std::string &filter) {
     }
     exp_ = std::move(expRet).value();
     if (expCtx_ == nullptr) {
-        expCtx_ = std::make_unique<ExpressionContext>();
+        auto spaceCollate = this->schemaMan_->toSpaceCollate(spaceId_);
+        if (!spaceCollate.ok()) {
+            return cpp2::ErrorCode::E_INVALID_FILTER;
+        }
+        expCtx_ = std::make_unique<ExpressionContext>(spaceCollate.value(), charsetInfo_);
     }
     exp_->setContext(this->expCtx_.get());
     auto status = exp_->prepare();

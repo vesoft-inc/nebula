@@ -17,9 +17,24 @@ public:
     void SetUp() override;
     void TearDown() override;
 
+    static void SetUpTestCase() {
+        charsetInfo_ = CharsetInfo::instance();
+        ASSERT_NE(nullptr, charsetInfo_);
+    }
+
+    static void TearDownTestCase() {
+    }
+
+
 protected:
     Expression* getFilterExpr(SequentialSentences *sentences);
+
+    static CharsetInfo*         charsetInfo_;
+    std::string          collate_{"utf8_bin"};
 };
+
+
+CharsetInfo*        ExpressionTest:: charsetInfo_;
 
 
 void ExpressionTest::SetUp() {
@@ -38,34 +53,37 @@ Expression* ExpressionTest::getFilterExpr(SequentialSentences *sentences) {
 
 TEST_F(ExpressionTest, LiteralConstants) {
     GQLParser parser;
-#define TEST_EXPR(expr_arg, type)                                       \
-    do {                                                                \
-        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;   \
-        auto parsed = parser.parse(query);                              \
-        ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
-        Getters getters;                                                \
-        auto *expr = getFilterExpr(parsed.value().get());               \
-        ASSERT_NE(nullptr, expr);                                       \
-        auto value = expr->eval(getters);                               \
-        ASSERT_TRUE(value.ok());                                        \
-        auto v = value.value();                                         \
-        ASSERT_TRUE(Expression::is##type(v));                           \
-        if (#type == std::string("Double")) {                           \
-            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(v));      \
-        } else {                                                        \
-            ASSERT_EQ((expr_arg), Expression::as##type(v));             \
-        }                                                               \
-        auto decoded = Expression::decode(Expression::encode(expr));    \
-        ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
-        value = decoded.value()->eval(getters);                         \
-        ASSERT_TRUE(value.ok());                                        \
-        v = value.value();                                              \
-        ASSERT_TRUE(Expression::is##type(v));                           \
-        if (#type == std::string("Double")) {                           \
-            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(v));      \
-        } else {                                                        \
-            ASSERT_EQ((expr_arg), Expression::as##type(v));             \
-        }                                                               \
+#define TEST_EXPR(expr_arg, type)                                                 \
+    do {                                                                          \
+        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;             \
+        auto parsed = parser.parse(query);                                        \
+        ASSERT_TRUE(parsed.ok()) << parsed.status();                              \
+        Getters getters;                                                          \
+        auto *expr = getFilterExpr(parsed.value().get());                         \
+        ASSERT_NE(nullptr, expr);                                                 \
+        auto ctx = std::make_unique<ExpressionContext>(collate_, charsetInfo_);   \
+        expr->setContext(ctx.get());                                              \
+        auto value = expr->eval(getters);                                         \
+        ASSERT_TRUE(value.ok());                                                  \
+        auto v = value.value();                                                   \
+        ASSERT_TRUE(Expression::is##type(v));                                     \
+        if (#type == std::string("Double")) {                                     \
+            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(v));                \
+        } else {                                                                  \
+            ASSERT_EQ((expr_arg), Expression::as##type(v));                       \
+        }                                                                         \
+        auto decoded = Expression::decode(Expression::encode(expr));              \
+        ASSERT_TRUE(decoded.ok()) << decoded.status();                            \
+        decoded.value()->setContext(ctx.get());                                   \
+        value = decoded.value()->eval(getters);                                   \
+        ASSERT_TRUE(value.ok());                                                  \
+        v = value.value();                                                        \
+        ASSERT_TRUE(Expression::is##type(v));                                     \
+        if (#type == std::string("Double")) {                                     \
+            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(v));                \
+        } else {                                                                  \
+            ASSERT_EQ((expr_arg), Expression::as##type(v));                       \
+        }                                                                         \
     } while (false)
 
     TEST_EXPR(true, Bool);
@@ -90,6 +108,8 @@ TEST_F(ExpressionTest, LiteralConstants) {
         Getters getters;
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
+        auto ctx = std::make_unique<ExpressionContext>(collate_, charsetInfo_);
+        expr->setContext(ctx.get());
         auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
@@ -101,6 +121,7 @@ TEST_F(ExpressionTest, LiteralConstants) {
         auto decoded = Expression::decode(buffer);
         ASSERT_TRUE(decoded.ok()) << decoded.status();
         ASSERT_NE(nullptr, decoded.value());
+        decoded.value()->setContext(ctx.get());
         value = decoded.value()->eval(getters);
         ASSERT_TRUE(value.ok());
         v = value.value();
@@ -112,38 +133,41 @@ TEST_F(ExpressionTest, LiteralConstants) {
 
 TEST_F(ExpressionTest, LiteralContantsArithmetic) {
     GQLParser parser;
-#define TEST_EXPR(expr_arg, expected, type)                             \
-    do {                                                                \
-        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;   \
-        auto parsed = parser.parse(query);                              \
-        ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
-        Getters getters;                                                \
-        auto *expr = getFilterExpr(parsed.value().get());               \
-        ASSERT_NE(nullptr, expr);                                       \
-        auto value = expr->eval(getters);                               \
-        ASSERT_TRUE(value.ok());                                        \
-        auto v = value.value();                                         \
-        ASSERT_TRUE(Expression::is##type(v));                           \
-        if (#type == std::string("Double")) {                           \
-            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(v));      \
-            ASSERT_DOUBLE_EQ((expected), Expression::as##type(v));      \
-        } else {                                                        \
-            ASSERT_EQ((expr_arg), Expression::as##type(v));             \
-            ASSERT_EQ((expected), Expression::as##type(v));             \
-        }                                                               \
-        auto decoded = Expression::decode(Expression::encode(expr));    \
-        ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
-        value = decoded.value()->eval(getters);                         \
-        ASSERT_TRUE(value.ok());                                        \
-        v = value.value();                                              \
-        ASSERT_TRUE(Expression::is##type(v));                           \
-        if (#type == std::string("Double")) {                           \
-            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(v));      \
-            ASSERT_DOUBLE_EQ((expected), Expression::as##type(v));      \
-        } else {                                                        \
-            ASSERT_EQ((expr_arg), Expression::as##type(v));             \
-            ASSERT_EQ((expected), Expression::as##type(v));             \
-        }                                                               \
+#define TEST_EXPR(expr_arg, expected, type)                                       \
+    do {                                                                          \
+        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;             \
+        auto parsed = parser.parse(query);                                        \
+        ASSERT_TRUE(parsed.ok()) << parsed.status();                              \
+        Getters getters;                                                          \
+        auto *expr = getFilterExpr(parsed.value().get());                         \
+        ASSERT_NE(nullptr, expr);                                                 \
+        auto ctx = std::make_unique<ExpressionContext>(collate_, charsetInfo_);   \
+        expr->setContext(ctx.get());                                              \
+        auto value = expr->eval(getters);                                         \
+        ASSERT_TRUE(value.ok());                                                  \
+        auto v = value.value();                                                   \
+        ASSERT_TRUE(Expression::is##type(v));                                     \
+        if (#type == std::string("Double")) {                                     \
+            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(v));                \
+            ASSERT_DOUBLE_EQ((expected), Expression::as##type(v));                \
+        } else {                                                                  \
+            ASSERT_EQ((expr_arg), Expression::as##type(v));                       \
+            ASSERT_EQ((expected), Expression::as##type(v));                       \
+        }                                                                         \
+        auto decoded = Expression::decode(Expression::encode(expr));              \
+        ASSERT_TRUE(decoded.ok()) << decoded.status();                            \
+        decoded.value()->setContext(ctx.get());                                   \
+        value = decoded.value()->eval(getters);                                   \
+        ASSERT_TRUE(value.ok());                                                  \
+        v = value.value();                                                        \
+        ASSERT_TRUE(Expression::is##type(v));                                     \
+        if (#type == std::string("Double")) {                                     \
+            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(v));                \
+            ASSERT_DOUBLE_EQ((expected), Expression::as##type(v));                \
+        } else {                                                                  \
+            ASSERT_EQ((expr_arg), Expression::as##type(v));                       \
+            ASSERT_EQ((expected), Expression::as##type(v));                       \
+        }                                                                         \
     } while (false)
 
     TEST_EXPR(8 + 16, 24, Int);
@@ -210,6 +234,8 @@ TEST_F(ExpressionTest, LiteralContantsArithmetic) {
         Getters getters;
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
+        auto ctx = std::make_unique<ExpressionContext>(collate_, charsetInfo_);
+        expr->setContext(ctx.get());
         auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
@@ -221,6 +247,7 @@ TEST_F(ExpressionTest, LiteralContantsArithmetic) {
         auto decoded = Expression::decode(buffer);
         ASSERT_TRUE(decoded.ok()) << decoded.status();
         ASSERT_NE(nullptr, decoded.value());
+        decoded.value()->setContext(ctx.get());
         value = decoded.value()->eval(getters);
         ASSERT_TRUE(value.ok());
         v = value.value();
@@ -232,28 +259,31 @@ TEST_F(ExpressionTest, LiteralContantsArithmetic) {
 
 TEST_F(ExpressionTest, LiteralConstantsRelational) {
     GQLParser parser;
-#define TEST_EXPR(expr_arg, expected)                                   \
-    do {                                                                \
-        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;   \
-        auto parsed = parser.parse(query);                              \
-        ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
-        Getters getters;                                                \
-        auto *expr = getFilterExpr(parsed.value().get());               \
-        ASSERT_NE(nullptr, expr);                                       \
-        auto value = expr->eval(getters);                               \
-        ASSERT_TRUE(value.ok());                                        \
-        auto v = value.value();                                         \
-        ASSERT_TRUE(Expression::isBool(v));                             \
-        ASSERT_EQ((expr_arg), Expression::asBool(v));                   \
-        ASSERT_EQ((expected), Expression::asBool(v));                   \
-        auto decoded = Expression::decode(Expression::encode(expr));    \
-        ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
-        value = decoded.value()->eval(getters);                         \
-        ASSERT_TRUE(value.ok());                                        \
-        v = value.value();                                              \
-        ASSERT_TRUE(Expression::isBool(v));                             \
-        ASSERT_EQ((expr_arg), Expression::asBool(v));                   \
-        ASSERT_EQ((expected), Expression::asBool(v));                   \
+#define TEST_EXPR(expr_arg, expected)                                             \
+    do {                                                                          \
+        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;             \
+        auto parsed = parser.parse(query);                                        \
+        ASSERT_TRUE(parsed.ok()) << parsed.status();                              \
+        Getters getters;                                                          \
+        auto *expr = getFilterExpr(parsed.value().get());                         \
+        ASSERT_NE(nullptr, expr);                                                 \
+        auto ctx = std::make_unique<ExpressionContext>(collate_, charsetInfo_);   \
+        expr->setContext(ctx.get());                                              \
+        auto value = expr->eval(getters);                                         \
+        ASSERT_TRUE(value.ok());                                                  \
+        auto v = value.value();                                                   \
+        ASSERT_TRUE(Expression::isBool(v));                                       \
+        ASSERT_EQ((expr_arg), Expression::asBool(v));                             \
+        ASSERT_EQ((expected), Expression::asBool(v));                             \
+        auto decoded = Expression::decode(Expression::encode(expr));              \
+        ASSERT_TRUE(decoded.ok()) << decoded.status();                            \
+        decoded.value()->setContext(ctx.get());                                   \
+        value = decoded.value()->eval(getters);                                   \
+        ASSERT_TRUE(value.ok());                                                  \
+        v = value.value();                                                        \
+        ASSERT_TRUE(Expression::isBool(v));                                       \
+        ASSERT_EQ((expr_arg), Expression::asBool(v));                             \
+        ASSERT_EQ((expected), Expression::asBool(v));                             \
     } while (false)
 
     TEST_EXPR(!-1, false);
@@ -360,6 +390,8 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         Getters getters;
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
+        auto ctx = std::make_unique<ExpressionContext>(collate_, charsetInfo_);
+        expr->setContext(ctx.get());
         auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
@@ -367,6 +399,7 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         ASSERT_TRUE(Expression::asBool(v));
         auto decoded = Expression::decode(Expression::encode(expr));
         ASSERT_TRUE(decoded.ok()) << decoded.status();
+        decoded.value()->setContext(ctx.get());
         value = decoded.value()->eval(getters);
         ASSERT_TRUE(value.ok());
         v = value.value();
@@ -380,6 +413,8 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         Getters getters;
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
+        auto ctx = std::make_unique<ExpressionContext>(collate_, charsetInfo_);
+        expr->setContext(ctx.get());
         auto value = expr->eval(getters);
         ASSERT_TRUE(value.ok());
         auto v = value.value();
@@ -387,6 +422,7 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         ASSERT_TRUE(Expression::asBool(v));
         auto decoded = Expression::decode(Expression::encode(expr));
         ASSERT_TRUE(decoded.ok()) << decoded.status();
+        decoded.value()->setContext(ctx.get());
         value = decoded.value()->eval(getters);
         ASSERT_TRUE(value.ok());
         v = value.value();
@@ -400,28 +436,31 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
 
 TEST_F(ExpressionTest, LiteralConstantsLogical) {
     GQLParser parser;
-#define TEST_EXPR(expr_arg, expected)                                   \
-    do {                                                                \
-        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;   \
-        auto parsed = parser.parse(query);                              \
-        ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
-        Getters getters;                                                \
-        auto *expr = getFilterExpr(parsed.value().get());               \
-        ASSERT_NE(nullptr, expr);                                       \
-        auto value = expr->eval(getters);                               \
-        ASSERT_TRUE(value.ok());                                        \
-        auto v = value.value();                                         \
-        ASSERT_TRUE(Expression::isBool(v));                             \
-        ASSERT_EQ((expr_arg), Expression::asBool(v));                   \
-        ASSERT_EQ((expected), Expression::asBool(v));                   \
-        auto decoded = Expression::decode(Expression::encode(expr));    \
-        ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
-        value = decoded.value()->eval(getters);                         \
-        ASSERT_TRUE(value.ok());                                        \
-        v = value.value();                                              \
-        ASSERT_TRUE(Expression::isBool(v));                             \
-        ASSERT_EQ((expr_arg), Expression::asBool(v));                   \
-        ASSERT_EQ((expected), Expression::asBool(v));                   \
+#define TEST_EXPR(expr_arg, expected)                                              \
+    do {                                                                           \
+        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;              \
+        auto parsed = parser.parse(query);                                         \
+        ASSERT_TRUE(parsed.ok()) << parsed.status();                               \
+        Getters getters;                                                           \
+        auto *expr = getFilterExpr(parsed.value().get());                          \
+        ASSERT_NE(nullptr, expr);                                                  \
+        auto ctx = std::make_unique<ExpressionContext>(collate_, charsetInfo_);    \
+        expr->setContext(ctx.get());                                               \
+        auto value = expr->eval(getters);                                          \
+        ASSERT_TRUE(value.ok());                                                   \
+        auto v = value.value();                                                    \
+        ASSERT_TRUE(Expression::isBool(v));                                        \
+        ASSERT_EQ((expr_arg), Expression::asBool(v));                              \
+        ASSERT_EQ((expected), Expression::asBool(v));                              \
+        auto decoded = Expression::decode(Expression::encode(expr));               \
+        ASSERT_TRUE(decoded.ok()) << decoded.status();                             \
+        decoded.value()->setContext(ctx.get());                                    \
+        value = decoded.value()->eval(getters);                                    \
+        ASSERT_TRUE(value.ok());                                                   \
+        v = value.value();                                                         \
+        ASSERT_TRUE(Expression::isBool(v));                                        \
+        ASSERT_EQ((expr_arg), Expression::asBool(v));                              \
+        ASSERT_EQ((expected), Expression::asBool(v));                              \
     } while (false)
 
     // AND
@@ -493,7 +532,7 @@ TEST_F(ExpressionTest, InputReference) {
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
-        auto ctx = std::make_unique<ExpressionContext>();
+        auto ctx = std::make_unique<ExpressionContext>(collate_, charsetInfo_);
         Getters getters;
         getters.getInputProp = [] (auto &prop) -> VariantType {
             if (prop == "name") {
@@ -515,7 +554,7 @@ TEST_F(ExpressionTest, InputReference) {
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
-        auto ctx = std::make_unique<ExpressionContext>();
+        auto ctx = std::make_unique<ExpressionContext>(collate_, charsetInfo_);
         Getters getters;
         getters.getInputProp = [] (auto &prop) -> VariantType {
             if (prop == "age") {
@@ -542,7 +581,7 @@ TEST_F(ExpressionTest, SourceTagReference) {
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
-        auto ctx = std::make_unique<ExpressionContext>();
+        auto ctx = std::make_unique<ExpressionContext>(collate_, charsetInfo_);
         Getters getters;
         getters.getSrcTagProp = [] (auto &tag, auto &prop) -> VariantType {
             if (tag == "person" && prop == "name") {
@@ -570,7 +609,7 @@ TEST_F(ExpressionTest, EdgeReference) {
         ASSERT_TRUE(parsed.ok());
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
-        auto ctx = std::make_unique<ExpressionContext>();
+        auto ctx = std::make_unique<ExpressionContext>(collate_, charsetInfo_);
         Getters getters;
         getters.getAliasProp = [] (auto &, auto &prop) -> VariantType {
             if (prop == "cur_time") {
@@ -596,33 +635,33 @@ TEST_F(ExpressionTest, EdgeReference) {
 
 TEST_F(ExpressionTest, FunctionCall) {
     GQLParser parser;
-#define TEST_EXPR(expected, op, expr_arg, type)                         \
-    do {                                                                \
-        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;   \
-        auto parsed = parser.parse(query);                              \
-        ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
-        Getters getters;                                                \
-        auto *expr = getFilterExpr(parsed.value().get());               \
-        ASSERT_NE(nullptr, expr);                                       \
-        auto decoded = Expression::decode(Expression::encode(expr));    \
-        ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
-        auto ctx = std::make_unique<ExpressionContext>();               \
-        decoded.value()->setContext(ctx.get());                         \
-        auto status = decoded.value()->prepare();                       \
-        ASSERT_TRUE(status.ok()) << status;                             \
-        auto value = decoded.value()->eval(getters);                    \
-        ASSERT_TRUE(value.ok());                                        \
-        auto v = value.value();                                         \
-        ASSERT_TRUE(Expression::is##type(v));                           \
-        if (#type == std::string("Double")) {                           \
-            if (#op != std::string("EQ")) {                             \
-                ASSERT_##op(expected, Expression::as##type(v));         \
-            } else {                                                    \
-                ASSERT_DOUBLE_EQ(expected, Expression::as##type(v));    \
-            }                                                           \
-        } else {                                                        \
-            ASSERT_##op(expected, Expression::as##type(v));             \
-        }                                                               \
+#define TEST_EXPR(expected, op, expr_arg, type)                                   \
+    do {                                                                          \
+        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;             \
+        auto parsed = parser.parse(query);                                        \
+        ASSERT_TRUE(parsed.ok()) << parsed.status();                              \
+        Getters getters;                                                          \
+        auto *expr = getFilterExpr(parsed.value().get());                         \
+        ASSERT_NE(nullptr, expr);                                                 \
+        auto decoded = Expression::decode(Expression::encode(expr));              \
+        ASSERT_TRUE(decoded.ok()) << decoded.status();                            \
+        auto ctx = std::make_unique<ExpressionContext>(collate_, charsetInfo_);   \
+        decoded.value()->setContext(ctx.get());                                   \
+        auto status = decoded.value()->prepare();                                 \
+        ASSERT_TRUE(status.ok()) << status;                                       \
+        auto value = decoded.value()->eval(getters);                              \
+        ASSERT_TRUE(value.ok());                                                  \
+        auto v = value.value();                                                   \
+        ASSERT_TRUE(Expression::is##type(v));                                     \
+        if (#type == std::string("Double")) {                                     \
+            if (#op != std::string("EQ")) {                                       \
+                ASSERT_##op(expected, Expression::as##type(v));                   \
+            } else {                                                              \
+                ASSERT_DOUBLE_EQ(expected, Expression::as##type(v));              \
+            }                                                                     \
+        } else {                                                                  \
+            ASSERT_##op(expected, Expression::as##type(v));                       \
+        }                                                                         \
     } while (false)
 
     TEST_EXPR(5.0, EQ, abs(5), Double);
@@ -679,33 +718,33 @@ TEST_F(ExpressionTest, FunctionCall) {
 
 TEST_F(ExpressionTest, StringFunctionCall) {
     GQLParser parser;
-#define TEST_EXPR(expected, op, expr_arg, type)                         \
-    do {                                                                \
-        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;   \
-        auto parsed = parser.parse(query);                              \
-        ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
-        Getters getters;                                                \
-        auto *expr = getFilterExpr(parsed.value().get());               \
-        ASSERT_NE(nullptr, expr);                                       \
-        auto decoded = Expression::decode(Expression::encode(expr));    \
-        ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
-        auto ctx = std::make_unique<ExpressionContext>();               \
-        decoded.value()->setContext(ctx.get());                         \
-        auto status = decoded.value()->prepare();                       \
-        ASSERT_TRUE(status.ok()) << status;                             \
-        auto value = decoded.value()->eval(getters);                    \
-        ASSERT_TRUE(value.ok());                                        \
-        auto v = value.value();                                         \
-        ASSERT_TRUE(Expression::is##type(v));                           \
-        if (#type == std::string("String")) {                           \
-            if (#op != std::string("EQ")) {                             \
-                ASSERT_##op(expected, Expression::as##type(v));         \
-            } else {                                                    \
-                ASSERT_EQ(expected, Expression::as##type(v));    \
-            }                                                           \
-        } else {                                                        \
-            ASSERT_##op(expected, Expression::as##type(v));             \
-        }                                                               \
+#define TEST_EXPR(expected, op, expr_arg, type)                                   \
+    do {                                                                          \
+        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;             \
+        auto parsed = parser.parse(query);                                        \
+        ASSERT_TRUE(parsed.ok()) << parsed.status();                              \
+        Getters getters;                                                          \
+        auto *expr = getFilterExpr(parsed.value().get());                         \
+        ASSERT_NE(nullptr, expr);                                                 \
+        auto decoded = Expression::decode(Expression::encode(expr));              \
+        ASSERT_TRUE(decoded.ok()) << decoded.status();                            \
+        auto ctx = std::make_unique<ExpressionContext>(collate_, charsetInfo_);   \
+        decoded.value()->setContext(ctx.get());                                   \
+        auto status = decoded.value()->prepare();                                 \
+        ASSERT_TRUE(status.ok()) << status;                                       \
+        auto value = decoded.value()->eval(getters);                              \
+        ASSERT_TRUE(value.ok());                                                  \
+        auto v = value.value();                                                   \
+        ASSERT_TRUE(Expression::is##type(v));                                     \
+        if (#type == std::string("String")) {                                     \
+            if (#op != std::string("EQ")) {                                       \
+                ASSERT_##op(expected, Expression::as##type(v));                   \
+            } else {                                                              \
+                ASSERT_EQ(expected, Expression::as##type(v));                     \
+            }                                                                     \
+        } else {                                                                  \
+            ASSERT_##op(expected, Expression::as##type(v));                       \
+        }                                                                         \
     } while (false)
 
     TEST_EXPR("hello", EQ, lower("HelLo"), String);
@@ -760,23 +799,22 @@ TEST_F(ExpressionTest, StringFunctionCall) {
 
 TEST_F(ExpressionTest, InvalidExpressionTest) {
     GQLParser parser;
-
-#define TEST_EXPR(expr_arg)                                           \
-    do {                                                              \
-        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg; \
-        auto parsed = parser.parse(query);                            \
-        ASSERT_TRUE(parsed.ok()) << parsed.status();                  \
-        Getters getters;                                              \
-        auto *expr = getFilterExpr(parsed.value().get());             \
-        ASSERT_NE(nullptr, expr);                                     \
-        auto decoded = Expression::decode(Expression::encode(expr));  \
-        ASSERT_TRUE(decoded.ok()) << decoded.status();                \
-        auto ctx = std::make_unique<ExpressionContext>();             \
-        decoded.value()->setContext(ctx.get());                       \
-        auto status = decoded.value()->prepare();                     \
-        ASSERT_TRUE(status.ok()) << status;                           \
-        auto value = decoded.value()->eval(getters);                  \
-        ASSERT_TRUE(!value.ok());                                     \
+#define TEST_EXPR(expr_arg)                                                       \
+    do {                                                                          \
+        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;             \
+        auto parsed = parser.parse(query);                                        \
+        ASSERT_TRUE(parsed.ok()) << parsed.status();                              \
+        Getters getters;                                                          \
+        auto *expr = getFilterExpr(parsed.value().get());                         \
+        ASSERT_NE(nullptr, expr);                                                 \
+        auto decoded = Expression::decode(Expression::encode(expr));              \
+        ASSERT_TRUE(decoded.ok()) << decoded.status();                            \
+        auto ctx = std::make_unique<ExpressionContext>(collate_, charsetInfo_);   \
+        decoded.value()->setContext(ctx.get());                                   \
+        auto status = decoded.value()->prepare();                                 \
+        ASSERT_TRUE(status.ok()) << status;                                       \
+        auto value = decoded.value()->eval(getters);                              \
+        ASSERT_TRUE(!value.ok());                                                 \
     } while (false)
 
     TEST_EXPR("a" + 1);

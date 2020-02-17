@@ -29,7 +29,9 @@ Status FetchVerticesExecutor::prepareClauses() {
             break;
         }
 
-        expCtx_ = std::make_unique<ExpressionContext>();
+        auto spaceCollate = ectx()->rctx()->session()->spaceCollate();
+        auto* charsetInfo = ectx()->getCharsetInfo();
+        expCtx_ = std::make_unique<ExpressionContext>(spaceCollate, charsetInfo);
         spaceId_ = ectx()->rctx()->session()->space();
         expCtx_->setStorageClient(ectx()->getStorageClient());
         if (sentence_->isAllTagProps()) {

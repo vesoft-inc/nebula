@@ -19,9 +19,10 @@ class UpdateEdgeProcessor
 public:
     static UpdateEdgeProcessor* instance(kvstore::KVStore* kvstore,
                                          meta::SchemaManager* schemaMan,
+                                         CharsetInfo* charsetInfo,
                                          meta::IndexManager* indexMan,
                                          stats::Stats* stats) {
-        return new UpdateEdgeProcessor(kvstore, schemaMan, indexMan, stats);
+        return new UpdateEdgeProcessor(kvstore, schemaMan, charsetInfo, indexMan, stats);
     }
 
     void process(const cpp2::UpdateEdgeRequest& req);
@@ -29,10 +30,11 @@ public:
 private:
     explicit UpdateEdgeProcessor(kvstore::KVStore* kvstore,
                                  meta::SchemaManager* schemaMan,
+                                 CharsetInfo* charsetInfo,
                                  meta::IndexManager* indexMan,
                                  stats::Stats* stats)
         : QueryBaseProcessor<cpp2::UpdateEdgeRequest,
-                             cpp2::UpdateResponse>(kvstore, schemaMan, stats)
+                             cpp2::UpdateResponse>(kvstore, schemaMan, charsetInfo, stats)
         , indexMan_(indexMan) {}
 
     kvstore::ResultCode processVertex(PartitionID, VertexID) override {

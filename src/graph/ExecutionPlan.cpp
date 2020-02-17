@@ -62,6 +62,8 @@ void ExecutionPlan::onFinish() {
     rctx->resp().set_latency_in_us(latency);
     auto &spaceName = rctx->session()->spaceName();
     rctx->resp().set_space_name(spaceName);
+    auto &spaceCharset = rctx->session()->spaceCharset();
+    rctx->resp().set_space_charset(spaceCharset);
     rctx->finish();
 
     // The `ExecutionPlan' is the root node holding all resources during the execution.

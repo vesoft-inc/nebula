@@ -19,9 +19,10 @@ class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static AddEdgesProcessor* instance(kvstore::KVStore* kvstore,
                                        meta::SchemaManager* schemaMan,
+                                       CharsetInfo* charsetInfo,
                                        meta::IndexManager* indexMan,
                                        stats::Stats* stats) {
-        return new AddEdgesProcessor(kvstore, schemaMan, indexMan, stats);
+        return new AddEdgesProcessor(kvstore, schemaMan, charsetInfo, indexMan, stats);
     }
 
     void process(const cpp2::AddEdgesRequest& req);
@@ -29,9 +30,10 @@ public:
 private:
     explicit AddEdgesProcessor(kvstore::KVStore* kvstore,
                                meta::SchemaManager* schemaMan,
+                               CharsetInfo* charsetInfo,
                                meta::IndexManager* indexMan,
                                stats::Stats* stats)
-            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats)
+            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, charsetInfo, stats)
             , indexMan_(indexMan) {}
 
     std::string addEdges(int64_t version, PartitionID partId,

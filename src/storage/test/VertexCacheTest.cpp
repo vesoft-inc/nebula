@@ -20,10 +20,19 @@ DECLARE_int32(max_handlers_per_req);
 namespace nebula {
 namespace storage {
 
-void addVertices(kvstore::KVStore* kv,  meta::SchemaManager* schemaMan,
-                 meta::IndexManager* indexMan, VertexCache* cache, int nums) {
+void addVertices(kvstore::KVStore* kv,
+                 meta::SchemaManager* schemaMan,
+                 CharsetInfo* charsetInfo,
+                 meta::IndexManager* indexMan,
+                 VertexCache* cache,
+                 int nums) {
     LOG(INFO) << "Build AddVerticesRequest...";
-    auto* processor = AddVerticesProcessor::instance(kv, schemaMan, indexMan, nullptr, cache);
+    auto* processor = AddVerticesProcessor::instance(kv,
+                                                     schemaMan,
+                                                     charsetInfo,
+                                                     indexMan,
+                                                     nullptr,
+                                                     cache);
     cpp2::AddVerticesRequest req;
     req.space_id = 0;
     req.overwritable = true;
@@ -73,6 +82,7 @@ void prepareData(kvstore::KVStore* kv) {
 
 void fetchVertices(kvstore::KVStore* kv,
                    meta::SchemaManager* schemaMan,
+                   CharsetInfo* charsetInfo,
                    folly::Executor* executor,
                    VertexCache* cache,
                    VertexID start,
@@ -96,6 +106,7 @@ void fetchVertices(kvstore::KVStore* kv,
     LOG(INFO) << "Test QueryVertexPropsRequest...";
     auto* processor = QueryVertexPropsProcessor::instance(kv,
                                                           schemaMan,
+                                                          charsetInfo,
                                                           nullptr,
                                                           executor,
                                                           cache);
@@ -130,18 +141,20 @@ TEST(VertexCacheTest, SimpleTest) {
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = std::make_unique<AdHocIndexManager>();
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(1);
+    auto charsetInfo = CharsetInfo::instance();
+
     prepareData(kv.get());
     VertexCache cache(1000, 0);
 
     LOG(INFO) << "Fetch some vertices...";
-    fetchVertices(kv.get(), schemaMan.get(), executor.get(), &cache, 0, 1000);
+    fetchVertices(kv.get(), schemaMan.get(), charsetInfo, executor.get(), &cache, 0, 1000);
     checkCache(&cache, 0, 0, 1000);
 
-    fetchVertices(kv.get(), schemaMan.get(), executor.get(), &cache, 500, 1500);
+    fetchVertices(kv.get(), schemaMan.get(), charsetInfo,  executor.get(), &cache, 500, 1500);
     checkCache(&cache, 500, 500, 2000);
 
     LOG(INFO) << "Insert vertices from 0 to 1000";
-    addVertices(kv.get(), schemaMan.get(), indexMan.get(), &cache, 1000);
+    addVertices(kv.get(), schemaMan.get(), charsetInfo, indexMan.get(), &cache, 1000);
     checkCache(&cache, 1000, 500, 2000);
 }
 

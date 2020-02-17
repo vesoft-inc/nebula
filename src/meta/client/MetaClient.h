@@ -26,7 +26,6 @@ namespace nebula {
 namespace meta {
 
 using PartsAlloc = std::unordered_map<PartitionID, std::vector<HostAddr>>;
-using SpaceIdName = std::pair<GraphSpaceID, std::string>;
 using HostStatus = std::pair<HostAddr, std::string>;
 
 // struct for in cache
@@ -52,6 +51,8 @@ struct SpaceInfoCache {
     EdgeSchemas edgeSchemas_;
     Indexes tagIndexes_;
     Indexes edgeIndexes_;
+    std::string charset_;
+    std::string collate_;
 };
 
 using LocalCache = std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>>;
@@ -207,8 +208,8 @@ public:
     folly::Future<StatusOr<GraphSpaceID>> createSpace(SpaceDesc spaceDesc,
                                                       bool ifNotExists = false);
 
-    folly::Future<StatusOr<std::vector<SpaceIdName>>>
-    listSpaces();
+    folly::Future<StatusOr<std::vector<cpp2::SpaceItem>>>
+    listSpaceSchemas();
 
     folly::Future<StatusOr<cpp2::AdminJobResult>>
     submitJob(cpp2::AdminJobOp op, std::vector<std::string> paras);
@@ -399,6 +400,12 @@ public:
     StatusOr<GraphSpaceID>
     getSpaceIdByNameFromCache(const std::string& name);
 
+    StatusOr<std::string>
+    getSpaceCharsetByIdFromCache(GraphSpaceID spaceId);
+
+    StatusOr<std::string>
+    getSpaceCollateByIdFromCache(GraphSpaceID spaceId);
+
     StatusOr<TagID>
     getTagIDByNameFromCache(const GraphSpaceID& space, const std::string& name);
 
@@ -554,8 +561,6 @@ protected:
                      int32_t retryLimit = FLAGS_meta_client_retry_times);
 
     std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
-
-    std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
 
     ConfigItem toConfigItem(const cpp2::ConfigItem& item);
 

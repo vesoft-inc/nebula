@@ -26,6 +26,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:kvstore_storage_utils_obj>
+        $<TARGET_OBJECTS:charset_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}

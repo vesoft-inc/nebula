@@ -12,6 +12,7 @@
 #include "meta/client/MetaClient.h"
 #include "meta/SchemaManager.h"
 #include "meta/IndexManager.h"
+#include "charset/Charset.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
 namespace nebula {
@@ -26,6 +27,7 @@ struct ServerContext {
             thread_->join();
         }
         kvStore_ = nullptr;
+        charsetInfo_ = nullptr;
         schemaMan_.reset();
         indexMan_.reset();
         server_ = nullptr;
@@ -59,6 +61,7 @@ struct ServerContext {
     std::unique_ptr<kvstore::KVStore>                  kvStore_{nullptr};
     std::unique_ptr<meta::SchemaManager>               schemaMan_{nullptr};
     std::unique_ptr<meta::IndexManager>                indexMan_{nullptr};
+    CharsetInfo*                                       charsetInfo_{nullptr};
     uint16_t                                           port_{0};
 };
 

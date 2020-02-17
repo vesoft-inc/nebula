@@ -17,9 +17,10 @@ class QueryEdgePropsProcessor
 public:
     static QueryEdgePropsProcessor* instance(kvstore::KVStore* kvstore,
                                              meta::SchemaManager* schemaMan,
+                                             CharsetInfo* charsetInfo,
                                              stats::Stats* stats,
                                              folly::Executor* executor = nullptr) {
-        return new QueryEdgePropsProcessor(kvstore, schemaMan, stats, executor);
+        return new QueryEdgePropsProcessor(kvstore, schemaMan, charsetInfo, stats, executor);
     }
 
     // It is one new method for QueryBaseProcessor.process.
@@ -30,10 +31,15 @@ public:
 private:
     explicit QueryEdgePropsProcessor(kvstore::KVStore* kvstore,
                                      meta::SchemaManager* schemaMan,
+                                     CharsetInfo* charsetInfo,
                                      stats::Stats* stats,
                                      folly::Executor* executor)
         : QueryBaseProcessor<cpp2::EdgePropRequest,
-                             cpp2::EdgePropResponse>(kvstore, schemaMan, stats, executor) {}
+                             cpp2::EdgePropResponse>(kvstore,
+                                                     schemaMan,
+                                                     charsetInfo,
+                                                     stats,
+                                                     executor) {}
 
     kvstore::ResultCode collectEdgesProps(PartitionID partId,
                                           const cpp2::EdgeKey& edgeKey,

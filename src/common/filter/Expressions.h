@@ -10,6 +10,7 @@
 #include "base/StatusOr.h"
 #include "base/Status.h"
 #include "storage/client/StorageClient.h"
+#include "charset/Charset.h"
 #include <boost/variant.hpp>
 #include <folly/futures/Future.h>
 
@@ -37,6 +38,11 @@ struct Getters {
 
 class ExpressionContext final {
 public:
+    ExpressionContext(const std::string& spaceCollate, CharsetInfo* charsetinfo)
+        : spaceCollate_(spaceCollate)
+        , charsetInfo_(charsetinfo) {
+    }
+
     using EdgeInfo = boost::variant<std::string, EdgeType>;
     void addSrcTagProp(const std::string &tag, const std::string &prop) {
         tagMap_.emplace(tag, -1);
@@ -168,6 +174,18 @@ public:
         return space_;
     }
 
+    void setSpaceCollate(std::string spaceCollate) {
+        spaceCollate_ = spaceCollate;
+    }
+
+    std::string spaceCollate() {
+        return spaceCollate_;
+    }
+
+    CharsetInfo* getCharsetInfo() {
+        return charsetInfo_;
+    }
+
     void print() const;
 
     bool isOverAllEdge() const { return overAll_; }
@@ -187,7 +205,9 @@ private:
     std::vector<std::string>                  edgeAlias_;
     bool                                      overAll_{false};
     GraphSpaceID                              space_;
+    std::string                               spaceCollate_;
     nebula::storage::StorageClient            *storageClient_{nullptr};
+    CharsetInfo                               *charsetInfo_{nullptr};
 };
 
 

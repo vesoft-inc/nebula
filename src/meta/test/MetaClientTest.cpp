@@ -84,11 +84,11 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ("utf8_bin", properties.collate_name);
         }
         {
-            auto ret = client->listSpaces().get();
+            auto ret = client->listSpaceSchemas().get();
             ASSERT_TRUE(ret.ok()) << ret.status();
             ASSERT_EQ(1, ret.value().size());
-            ASSERT_EQ(1, ret.value()[0].first);
-            ASSERT_EQ("default_space", ret.value()[0].second);
+            ASSERT_EQ(1, ret.value()[0].get_space_id());
+            ASSERT_EQ("default_space", ret.value()[0].get_properties().space_name);
         }
         {
             auto ret = client->getPartsAlloc(spaceId).get();
@@ -332,7 +332,7 @@ TEST(MetaClientTest, InterfacesTest) {
     {
         auto ret = client->dropSpace("default_space").get();
         ASSERT_TRUE(ret.ok());
-        auto ret1 = client->listSpaces().get();
+        auto ret1 = client->listSpaceSchemas().get();
         ASSERT_TRUE(ret1.ok()) << ret1.status();
         ASSERT_EQ(0, ret1.value().size());
     }

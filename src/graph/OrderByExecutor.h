@@ -8,6 +8,7 @@
 #define GRAPH_ORDERBYEXECUTOR_H_
 
 #include "base/Base.h"
+#include "charset/Charset.h"
 #include "graph/TraverseExecutor.h"
 
 namespace nebula {

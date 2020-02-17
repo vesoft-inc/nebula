@@ -161,7 +161,11 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
         if (!checkExp(exp_.get())) {
             return cpp2::ErrorCode::E_INVALID_FILTER;
         }
-        expCtx_ = std::make_unique<ExpressionContext>();
+        auto spaceCollate = this->schemaMan_->toSpaceCollate(spaceId_);
+        if (!spaceCollate.ok()) {
+            return cpp2::ErrorCode::E_INVALID_FILTER;
+        }
+        expCtx_ = std::make_unique<ExpressionContext>(spaceCollate.value(), this->charsetInfo_);
         exp_->setContext(expCtx_.get());
     }
 

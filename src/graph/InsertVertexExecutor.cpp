@@ -21,7 +21,9 @@ InsertVertexExecutor::InsertVertexExecutor(Sentence *sentence,
 
 
 Status InsertVertexExecutor::prepare() {
-    expCtx_ = std::make_unique<ExpressionContext>();
+    auto spaceCollate = ectx()->rctx()->session()->spaceCollate();
+    auto* charsetInfo = ectx()->getCharsetInfo();
+    expCtx_ = std::make_unique<ExpressionContext>(spaceCollate, charsetInfo);
     expCtx_->setStorageClient(ectx()->getStorageClient());
     return Status::OK();
 }

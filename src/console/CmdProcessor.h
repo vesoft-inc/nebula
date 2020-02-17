@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "client/cpp/GraphClient.h"
+#include "charset/Charset.h"
 
 namespace nebula {
 namespace graph {
@@ -16,7 +17,9 @@ namespace graph {
 class CmdProcessor final {
 public:
     explicit CmdProcessor(std::unique_ptr<GraphClient> client)
-        : client_(std::move(client)) {}
+        : client_(std::move(client)) {
+        charsetInfo_ = CharsetInfo::instance();
+    }
     ~CmdProcessor() = default;
 
     // Process the given command
@@ -29,6 +32,8 @@ public:
 
 private:
     std::unique_ptr<GraphClient> client_;
+
+    CharsetInfo* charsetInfo_{nullptr};
 
     std::string curSpaceName_{"(none)"};
 
@@ -53,6 +58,8 @@ private:
     void printTime() const;
 
     void normalize(folly::StringPiece &command);
+
+    std::string curSpaceCharset_{"utf8"};
 };
 
 }  // namespace graph

@@ -16,6 +16,7 @@
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 #include "meta/SchemaManager.h"
+#include "charset/Charset.h"
 #include "storage/test/AdHocSchemaManager.h"
 #include <folly/executors/CPUThreadPoolExecutor.h>
 
@@ -26,6 +27,7 @@ DECLARE_int32(max_handlers_per_req);
 
 std::unique_ptr<nebula::kvstore::KVStore> gKV;
 std::unique_ptr<nebula::storage::AdHocSchemaManager> schema;
+std::unique_ptr<nebula::CharsetInfo> chInfo;
 
 namespace nebula {
 namespace storage {
@@ -72,6 +74,9 @@ void mockData(kvstore::KVStore* kv) {
 
 void setUp(const char* path) {
     gKV = TestUtils::initKV(path);
+    auto* charsetptr = CharsetInfo::instance();
+    chInfo.reset(charsetptr);
+
     schema.reset(new storage::AdHocSchemaManager());
     schema->addEdgeSchema(
         0 /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
@@ -128,6 +133,7 @@ void run(int32_t iters, int32_t handlerNum) {
         auto* processor
                 = nebula::storage::QueryBoundProcessor::instance(gKV.get(),
                                                                  schema.get(),
+                                                                 chInfo.get(),
                                                                  nullptr,
                                                                  executor.get());
         auto f = processor->getFuture();

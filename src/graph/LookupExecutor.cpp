@@ -99,7 +99,9 @@ Status LookupExecutor::prepareWhere() {
     if (!clause) {
         return Status::SyntaxError("Where clause is required");
     }
-    expCtx_ = std::make_unique<ExpressionContext>();
+    auto spaceCollate = ectx()->rctx()->session()->spaceCollate();
+    auto* charsetInfo = ectx()->getCharsetInfo();
+    expCtx_ = std::make_unique<ExpressionContext>(spaceCollate, charsetInfo);
     expCtx_->setStorageClient(ectx()->getStorageClient());
     expCtx_->setSpace(spaceId_);
     return Status::OK();

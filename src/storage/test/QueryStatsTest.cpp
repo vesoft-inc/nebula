@@ -122,6 +122,7 @@ void checkResponse(const cpp2::QueryStatsResponse& resp) {
 TEST(QueryStatsTest, StatsSimpleTest) {
     fs::TempDir rootPath("/tmp/QueryStatsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto* charsetInfo = CharsetInfo::instance();
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -131,7 +132,10 @@ TEST(QueryStatsTest, StatsSimpleTest) {
     buildRequest(req);
 
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-    auto* processor = QueryStatsProcessor::instance(kv.get(), schemaMan.get(), nullptr,
+    auto* processor = QueryStatsProcessor::instance(kv.get(),
+                                                    schemaMan.get(),
+                                                    charsetInfo,
+                                                    nullptr,
                                                     executor.get());
     auto f = processor->getFuture();
     processor->process(req);

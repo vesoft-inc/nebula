@@ -20,8 +20,10 @@ TEST(AddVerticesTest, SimpleTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    auto* charsetInfo = CharsetInfo::instance();
     auto* processor = AddVerticesProcessor::instance(kv.get(),
                                                      schemaMan.get(),
+                                                     charsetInfo,
                                                      indexMan.get(),
                                                      nullptr);
 

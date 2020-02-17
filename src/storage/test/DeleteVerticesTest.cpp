@@ -22,10 +22,13 @@ TEST(DeleteVerticesTest, SimpleTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    auto* charsetInfo = CharsetInfo::instance();
+
     // Add vertices
     {
         auto* processor = AddVerticesProcessor::instance(kv.get(),
                                                          schemaMan.get(),
+                                                         charsetInfo,
                                                          indexMan.get(),
                                                          nullptr);
         cpp2::AddVerticesRequest req;
@@ -66,6 +69,20 @@ TEST(DeleteVerticesTest, SimpleTest) {
             std::vector<VertexID> vertices;
             for (VertexID vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
                 vertices.emplace_back(vertexId);
+                auto* processor = DeleteVertexProcessor::instance(kv.get(),
+                                                                  schemaMan.get(),
+                                                                  charsetInfo,
+                                                                  indexMan.get(),
+                                                                  nullptr);
+                cpp2::DeleteVertexRequest req;
+                req.set_space_id(0);
+                req.set_part_id(partId);
+                req.set_vid(vertexId);
+
+                auto fut = processor->getFuture();
+                processor->process(req);
+                auto resp = std::move(fut).get();
+                EXPECT_EQ(0, resp.result.failed_codes.size());
             }
             req.parts.emplace(partId, std::move(vertices));
         }

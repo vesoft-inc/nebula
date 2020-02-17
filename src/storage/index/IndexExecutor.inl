@@ -16,7 +16,7 @@ template <typename RESP>
 cpp2::ErrorCode IndexExecutor<RESP>::prepareRequest(const cpp2::LookUpIndexRequest &req) {
     spaceId_ = req.get_space_id();
     isEdgeIndex_ = req.get_is_edge();
-
+    setSpaceId(spaceId_);
     /**
      * step 1 , check index meta , and collect index variable-length type of columns.
      */

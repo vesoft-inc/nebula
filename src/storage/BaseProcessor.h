@@ -32,11 +32,13 @@ using PartCode = std::pair<PartitionID, kvstore::ResultCode>;
 template<typename RESP>
 class BaseProcessor {
 public:
-    explicit BaseProcessor(kvstore::KVStore* kvstore,
-                           meta::SchemaManager* schemaMan,
-                           stats::Stats* stats = nullptr)
+    BaseProcessor(kvstore::KVStore* kvstore,
+                  meta::SchemaManager* schemaMan,
+                  CharsetInfo* charsetInfo,
+                  stats::Stats* stats = nullptr)
             : kvstore_(kvstore)
             , schemaMan_(schemaMan)
+            , charsetInfo_(charsetInfo)
             , stats_(stats) {}
 
     virtual ~BaseProcessor() = default;
@@ -161,6 +163,7 @@ protected:
 protected:
     kvstore::KVStore*                               kvstore_{nullptr};
     meta::SchemaManager*                            schemaMan_{nullptr};
+    CharsetInfo*                                    charsetInfo_{nullptr};
     stats::Stats*                                   stats_{nullptr};
     RESP                                            resp_;
     folly::Promise<RESP>                            promise_;

@@ -156,6 +156,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:hdfs_helper_obj>
         $<TARGET_OBJECTS:http_client_obj>
+        $<TARGET_OBJECTS:charset_obj>
         ${meta_test_deps}
     LIBRARIES
         proxygenhttpserver

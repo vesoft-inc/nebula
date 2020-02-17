@@ -5,6 +5,7 @@
  */
 
 #include "graph/DropSpaceExecutor.h"
+#include "graph/GraphFlags.h"
 
 namespace nebula {
 namespace graph {
@@ -38,7 +39,10 @@ void DropSpaceExecutor::execute() {
         }
 
         if (*spaceName_ == ectx()->rctx()->session()->spaceName()) {
-            ectx()->rctx()->session()->setSpace("", -1);
+            ectx()->rctx()->session()->setSpace("",
+                                                -1,
+                                                FLAGS_default_charset,
+                                                FLAGS_default_collate);
         }
         doFinish(Executor::ProcessControl::kNext);
     };

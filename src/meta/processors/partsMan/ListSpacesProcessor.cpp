@@ -19,17 +19,23 @@ void ListSpacesProcessor::process(const cpp2::ListSpacesReq&) {
         onFinished();
         return;
     }
-    std::vector<cpp2::IdName> spaces;
+    decltype(resp_.spaces) spaces;
     while (iter->valid()) {
         auto spaceId = MetaServiceUtils::spaceId(iter->key());
-        auto spaceName = MetaServiceUtils::spaceName(iter->val());
-        VLOG(3) << "List spaces " << spaceId << ", name " << spaceName;
-        cpp2::IdName space;
-        space.set_id(to(spaceId, EntryType::SPACE));
-        space.set_name(std::move(spaceName));
-        spaces.emplace_back(std::move(space));
+        auto properties = MetaServiceUtils::parseSpace(iter->val());
+        VLOG(3) << "List spaces " << spaceId << ", name "
+                << properties.get_space_name() << ", Partition Num "
+                << properties.get_partition_num() << ", Replica Factor "
+                << properties.get_replica_factor() << ", charset "
+                << properties.get_charset_name() << ", collate "
+                << properties.get_collate_name();
+        cpp2::SpaceItem item;
+        item.set_space_id(spaceId);
+        item.set_properties(properties);
+        spaces.emplace_back(std::move(item));
         iter->next();
     }
+    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_spaces(std::move(spaces));
     onFinished();
 }

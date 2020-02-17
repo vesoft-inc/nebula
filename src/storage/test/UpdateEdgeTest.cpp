@@ -82,6 +82,7 @@ void mockData(kvstore::KVStore* kv) {
 TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
     fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto* charsetInfo = CharsetInfo::instance();
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -156,6 +157,7 @@ TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
     LOG(INFO) << "Test UpdateEdgeRequest...";
     auto* processor = UpdateEdgeProcessor::instance(kv.get(),
                                                     schemaMan.get(),
+                                                    charsetInfo,
                                                     indexMan.get(),
                                                     nullptr);
     auto f = processor->getFuture();
@@ -218,6 +220,7 @@ TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
 TEST(UpdateEdgeTest, Insertable_Test) {
     fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto* charsetInfo = CharsetInfo::instance();
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -280,6 +283,7 @@ TEST(UpdateEdgeTest, Insertable_Test) {
     LOG(INFO) << "Test UpdateEdgeRequest...";
     auto* processor = UpdateEdgeProcessor::instance(kv.get(),
                                                     schemaMan.get(),
+                                                    charsetInfo,
                                                     indexMan.get(),
                                                     nullptr);
     auto f = processor->getFuture();

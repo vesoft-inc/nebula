@@ -390,7 +390,11 @@ cpp2::ErrorCode UpdateEdgeProcessor::checkFilter(const PartitionID partId,
 cpp2::ErrorCode UpdateEdgeProcessor::checkAndBuildContexts(
         const cpp2::UpdateEdgeRequest& req) {
     if (this->expCtx_ == nullptr) {
-        this->expCtx_ = std::make_unique<ExpressionContext>();
+        auto spaceCollate = this->schemaMan_->toSpaceCollate(spaceId_);
+        if (!spaceCollate.ok()) {
+            return cpp2::ErrorCode::E_INVALID_UPDATER;
+        }
+        this->expCtx_ = std::make_unique<ExpressionContext>(spaceCollate.value(), charsetInfo_);
     }
     // return columns
     for (auto& col : req.get_return_columns()) {

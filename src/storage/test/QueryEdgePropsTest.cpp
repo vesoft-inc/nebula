@@ -192,6 +192,7 @@ void checkTTLResponse(cpp2::EdgePropResponse& resp) {
 TEST(QueryEdgePropsTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    CharsetInfo* charsetInfo = CharsetInfo::instance();
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMng = TestUtils::mockSchemaMan();
@@ -202,7 +203,10 @@ TEST(QueryEdgePropsTest, SimpleTest) {
     buildRequest(req);
 
     LOG(INFO) << "Test QueryEdgePropsRequest...";
-    auto* processor = QueryEdgePropsProcessor::instance(kv.get(), schemaMng.get(), nullptr);
+    auto* processor = QueryEdgePropsProcessor::instance(kv.get(),
+                                                        schemaMng.get(),
+                                                        charsetInfo,
+                                                        nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -214,6 +218,7 @@ TEST(QueryEdgePropsTest, SimpleTest) {
 TEST(QueryEdgePropsTest, TTLTest) {
     fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    CharsetInfo* charsetInfo = CharsetInfo::instance();
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMng = TestUtils::mockSchemaWithTTLMan();
@@ -224,7 +229,10 @@ TEST(QueryEdgePropsTest, TTLTest) {
     buildRequest(req);
 
     LOG(INFO) << "Test QueryEdgePropsRequest...";
-    auto* processor = QueryEdgePropsProcessor::instance(kv.get(), schemaMng.get(), nullptr);
+    auto* processor = QueryEdgePropsProcessor::instance(kv.get(),
+                                                        schemaMng.get(),
+                                                        charsetInfo,
+                                                        nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -236,6 +244,7 @@ TEST(QueryEdgePropsTest, TTLTest) {
 TEST(QueryEdgePropsTest, QueryAfterEdgeAltered) {
     fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    CharsetInfo* charsetInfo = CharsetInfo::instance();
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMng = TestUtils::mockSchemaMan();
@@ -269,7 +278,10 @@ TEST(QueryEdgePropsTest, QueryAfterEdgeAltered) {
         req.return_columns.emplace_back(TestUtils::edgePropDef("AddedProp", 101));
 
         LOG(INFO) << "Test QueryEdgePropsRequest...";
-        auto* processor = QueryEdgePropsProcessor::instance(kv.get(), schemaMng.get(), nullptr);
+        auto* processor = QueryEdgePropsProcessor::instance(kv.get(),
+                                                            schemaMng.get(),
+                                                            charsetInfo,
+                                                            nullptr);
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -324,7 +336,10 @@ TEST(QueryEdgePropsTest, QueryAfterEdgeAltered) {
         req.return_columns.emplace_back(TestUtils::edgePropDef("AddedProp", 101));
 
         LOG(INFO) << "Test QueryEdgePropsRequest...";
-        auto* processor = QueryEdgePropsProcessor::instance(kv.get(), schemaMng.get(), nullptr);
+        auto* processor = QueryEdgePropsProcessor::instance(kv.get(),
+                                                            schemaMng.get(),
+                                                            charsetInfo,
+                                                            nullptr);
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -361,7 +376,10 @@ TEST(QueryEdgePropsTest, QueryAfterEdgeAltered) {
         req.return_columns.emplace_back(TestUtils::edgePropDef("AddedProp", 101));
 
         LOG(INFO) << "Test QueryEdgePropsRequest...";
-        auto* processor = QueryEdgePropsProcessor::instance(kv.get(), schemaMng.get(), nullptr);
+        auto* processor = QueryEdgePropsProcessor::instance(kv.get(),
+                                                            schemaMng.get(),
+                                                            charsetInfo,
+                                                            nullptr);
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();

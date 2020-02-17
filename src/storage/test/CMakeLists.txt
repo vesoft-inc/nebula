@@ -404,9 +404,9 @@ nebula_add_executable(
         gtest
 )
 
-nebula_add_test(    
+nebula_add_test(
     NAME
-        index_scan_test    
+        index_scan_test
     SOURCES
         IndexScanTest.cpp
     OBJECTS
@@ -415,7 +415,7 @@ nebula_add_test(
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
-        gtest 
+        gtest
 )
 
 nebula_add_executable(

@@ -63,7 +63,7 @@ public:
 
 private:
     explicit GetUUIDProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::GetUUIDResp>(kvstore, nullptr) {}
+            : BaseProcessor<cpp2::GetUUIDResp>(kvstore, nullptr, nullptr) {}
 };
 
 }  // namespace storage

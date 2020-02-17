@@ -21,10 +21,11 @@ class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static AddVerticesProcessor* instance(kvstore::KVStore* kvstore,
                                           meta::SchemaManager* schemaMan,
+                                          CharsetInfo* charsetInfo,
                                           meta::IndexManager* indexMan,
                                           stats::Stats* stats,
                                           VertexCache* cache = nullptr) {
-        return new AddVerticesProcessor(kvstore, schemaMan, indexMan, stats, cache);
+        return new AddVerticesProcessor(kvstore, schemaMan, charsetInfo, indexMan, stats, cache);
     }
 
     void process(const cpp2::AddVerticesRequest& req);
@@ -32,10 +33,11 @@ public:
 private:
     explicit AddVerticesProcessor(kvstore::KVStore* kvstore,
                                   meta::SchemaManager* schemaMan,
+                                  CharsetInfo* charsetInfo,
                                   meta::IndexManager* indexMan,
                                   stats::Stats* stats,
                                   VertexCache* cache)
-            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats)
+            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, charsetInfo, stats)
             , indexMan_(indexMan)
             , vertexCache_(cache) {}
 

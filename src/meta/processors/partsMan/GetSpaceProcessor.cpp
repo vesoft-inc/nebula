@@ -31,7 +31,9 @@ void GetSpaceProcessor::process(const cpp2::GetSpaceReq& req) {
     VLOG(3) << "Get Space SpaceName: " << req.get_space_name() << ", Name "
             << properties.get_space_name() << ", Partition Num "
             << properties.get_partition_num() << ", Replica Factor "
-            << properties.get_replica_factor();
+            << properties.get_replica_factor() << ", charset "
+            << properties.get_charset_name() << ", collate "
+            << properties.get_collate_name();
 
     cpp2::SpaceItem item;
     item.set_space_id(spaceId);

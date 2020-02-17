@@ -414,6 +414,7 @@ public:
         auto sc = std::make_unique<test::ServerContext>();
         // Always use the Meta Service in this case
         sc->kvStore_ = TestUtils::initKV(dataPath, 6, {ip, port}, mClient, true);
+        sc->charsetInfo_ = CharsetInfo::instance();
 
         if (!useMetaServer) {
             sc->schemaMan_ = TestUtils::mockSchemaMan(space);
@@ -429,7 +430,9 @@ public:
 
 
         auto handler = std::make_shared<nebula::storage::StorageServiceHandler>(
-            sc->kvStore_.get(), sc->schemaMan_.get(), sc->indexMan_.get(), mClient);
+            sc->kvStore_.get(), sc->schemaMan_.get(), sc->indexMan_.get(),
+            mClient, sc->charsetInfo_);
+
         sc->mockCommon("storage", port, handler);
         auto ptr = dynamic_cast<kvstore::MetaServerBasedPartManager*>(
             sc->kvStore_->partManager());

@@ -53,6 +53,7 @@ void mockData(kvstore::KVStore* kv,
 
 void testWithVersion(kvstore::KVStore* kv,
                      meta::SchemaManager* schemaMng,
+                     CharsetInfo* charsetInfo,
                      folly::CPUThreadPoolExecutor* executor,
                      TagVersion version) {
     {
@@ -80,9 +81,16 @@ void testWithVersion(kvstore::KVStore* kv,
 
         LOG(INFO) << "Test QueryVertexPropsRequest...";
         auto* processor = QueryVertexPropsProcessor::instance(kv,
+<<<<<<< HEAD
                                                               schemaMng,
                                                               nullptr,
                                                               executor);
+=======
+                                                            schemaMng,
+                                                            charsetInfo,
+                                                            nullptr,
+                                                            executor);
+>>>>>>> rebase master
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -132,9 +140,16 @@ void testWithVersion(kvstore::KVStore* kv,
 
         LOG(INFO) << "Test QueryVertexPropsRequest...";
         auto* processor = QueryVertexPropsProcessor::instance(kv,
+<<<<<<< HEAD
                                                               schemaMng,
                                                               nullptr,
                                                               executor);
+=======
+                                                            schemaMng,
+                                                            charsetInfo,
+                                                            nullptr,
+                                                            executor);
+>>>>>>> rebase master
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -167,6 +182,7 @@ void testWithVersion(kvstore::KVStore* kv,
 TEST(QueryVertexPropsTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/QueryVertexPropsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    CharsetInfo* charsetInfo = CharsetInfo::instance();
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMng = TestUtils::mockSchemaMan();
@@ -174,17 +190,18 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     TagVersion version = 1;
     mockData(kv.get(), schemaMng.get(), version);
-    testWithVersion(kv.get(), schemaMng.get(), executor.get(), version);
+    testWithVersion(kv.get(), schemaMng.get(), charsetInfo, executor.get(), version);
 
     version = 0;
     mockData(kv.get(), schemaMng.get(), version);
-    testWithVersion(kv.get(), schemaMng.get(), executor.get(), version);
+    testWithVersion(kv.get(), schemaMng.get(), charsetInfo, executor.get(), version);
 }
 
 TEST(QueryVertexPropsTest, QueryAfterTagAltered) {
     fs::TempDir rootPath("/tmp/QueryVertexPropsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    CharsetInfo* charsetInfo = CharsetInfo::instance();
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMng = TestUtils::mockSchemaMan();
@@ -238,6 +255,7 @@ TEST(QueryVertexPropsTest, QueryAfterTagAltered) {
         LOG(INFO) << "Test QueryVertexPropsRequest...";
         auto* processor = QueryVertexPropsProcessor::instance(kv.get(),
                                                               schemaMng.get(),
+                                                              charsetInfo,
                                                               nullptr,
                                                               executor.get());
         auto f = processor->getFuture();
@@ -328,9 +346,16 @@ TEST(QueryVertexPropsTest, QueryAfterTagAltered) {
 
         LOG(INFO) << "Test QueryVertexPropsRequest...";
         auto* processor = QueryVertexPropsProcessor::instance(kv.get(),
+<<<<<<< HEAD
                                                               schemaMng.get(),
                                                               nullptr,
                                                               executor.get());
+=======
+                                                            schemaMng.get(),
+                                                            charsetInfo,
+                                                            nullptr,
+                                                            executor.get());
+>>>>>>> rebase master
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -405,6 +430,7 @@ TEST(QueryVertexPropsTest, QueryAfterTagAltered) {
         LOG(INFO) << "Test QueryVertexPropsRequest...";
         auto* processor = QueryVertexPropsProcessor::instance(kv.get(),
                                                             schemaMng.get(),
+                                                            charsetInfo,
                                                             nullptr,
                                                             executor.get());
         auto f = processor->getFuture();
@@ -443,6 +469,7 @@ TEST(QueryVertexPropsTest, QueryAfterTagAltered) {
 TEST(QueryVertexPropsTest, TTLTest) {
     fs::TempDir rootPath("/tmp/QueryVertexPropsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    CharsetInfo* charsetInfo = CharsetInfo::instance();
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaWithTTLMan();
@@ -499,6 +526,7 @@ TEST(QueryVertexPropsTest, TTLTest) {
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryVertexPropsProcessor::instance(kv.get(),
                                                           schemaMan.get(),
+                                                          charsetInfo,
                                                           nullptr,
                                                           executor.get());
     auto f = processor->getFuture();

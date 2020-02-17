@@ -27,6 +27,7 @@ TEST(IndexTest, AddVerticesTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    auto* charsetInfo = CharsetInfo::instance();
 
     cpp2::AddVerticesRequest req;
     req.space_id = 0;
@@ -41,6 +42,7 @@ TEST(IndexTest, AddVerticesTest) {
     }
     auto* processor = AddVerticesProcessor::instance(kv.get(),
                                                      schemaMan.get(),
+                                                     charsetInfo,
                                                      indexMan.get(),
                                                      nullptr);
     auto fut = processor->getFuture();
@@ -82,8 +84,11 @@ TEST(IndexTest, AddEdgeTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    auto* charsetInfo = CharsetInfo::instance();
+    LOG(INFO) << "Build AddEdgesRequest...";
     auto* processor = AddEdgesProcessor::instance(kv.get(),
                                                   schemaMan.get(),
+                                                  charsetInfo,
                                                   indexMan.get(),
                                                   nullptr);
     cpp2::AddEdgesRequest req;
@@ -135,6 +140,8 @@ TEST(IndexTest, DeleteVertexTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    auto* charsetInfo = CharsetInfo::instance();
+
     {
         cpp2::AddVerticesRequest req;
         req.space_id = 0;
@@ -148,6 +155,7 @@ TEST(IndexTest, DeleteVertexTest) {
         req.parts.emplace(partId, std::move(vertices));
         auto* processor = AddVerticesProcessor::instance(kv.get(),
                                                          schemaMan.get(),
+                                                         charsetInfo,
                                                          indexMan.get(),
                                                          nullptr);
         auto fut = processor->getFuture();
@@ -158,6 +166,7 @@ TEST(IndexTest, DeleteVertexTest) {
     {
         auto* processor = DeleteVerticesProcessor::instance(kv.get(),
                                                             schemaMan.get(),
+                                                            charsetInfo,
                                                             indexMan.get(),
                                                             nullptr);
         cpp2::DeleteVerticesRequest req;
@@ -189,9 +198,12 @@ TEST(IndexTest, DeleteEdgeTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    auto* charsetInfo = CharsetInfo::instance();
+    LOG(INFO) << "Build AddEdgesRequest...";
     {
         auto* processor = AddEdgesProcessor::instance(kv.get(),
                                                       schemaMan.get(),
+                                                      charsetInfo,
                                                       indexMan.get(),
                                                       nullptr);
         cpp2::AddEdgesRequest req;
@@ -226,7 +238,10 @@ TEST(IndexTest, DeleteEdgeTest) {
         EXPECT_EQ(0, resp.result.failed_codes.size());
     }
     {
-        auto* processor = DeleteEdgesProcessor::instance(kv.get(), schemaMan.get(), indexMan.get());
+        auto* processor = DeleteEdgesProcessor::instance(kv.get(),
+                                                         schemaMan.get(),
+                                                         charsetInfo,
+                                                         indexMan.get());
         cpp2::DeleteEdgesRequest req;
         req.set_space_id(0);
         // partId => List<EdgeKey>
@@ -269,6 +284,8 @@ TEST(IndexTest, DeleteEdgeTest) {
 TEST(IndexTest, UpdateVertexTest) {
     fs::TempDir rootPath("/tmp/DeleteVertexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto* charsetInfo = CharsetInfo::instance();
+    LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
     {
@@ -301,6 +318,7 @@ TEST(IndexTest, UpdateVertexTest) {
 
         auto* processor = AddVerticesProcessor::instance(kv.get(),
                                                          schemaMan.get(),
+                                                         charsetInfo,
                                                          indexMan.get(),
                                                          nullptr);
         auto fut = processor->getFuture();
@@ -367,6 +385,7 @@ TEST(IndexTest, UpdateVertexTest) {
         LOG(INFO) << "Test UpdateVertexRequest...";
         auto* processor = UpdateVertexProcessor::instance(kv.get(),
                                                           schemaMan.get(),
+                                                          charsetInfo,
                                                           indexMan.get(),
                                                           nullptr);
         auto f = processor->getFuture();
@@ -405,12 +424,15 @@ TEST(IndexTest, UpdateVertexTest) {
 TEST(IndexTest, UpdateEdgeTest) {
     fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto* charsetInfo = CharsetInfo::instance();
+    LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
     LOG(INFO) << "Build AddEdgesRequest...";
     {
         auto* processor = AddEdgesProcessor::instance(kv.get(),
                                                       schemaMan.get(),
+                                                      charsetInfo,
                                                       indexMan.get(),
                                                       nullptr);
         cpp2::AddEdgesRequest req;
@@ -482,6 +504,7 @@ TEST(IndexTest, UpdateEdgeTest) {
         req.set_insertable(false);
         auto* processor = UpdateEdgeProcessor::instance(kv.get(),
                                                         schemaMan.get(),
+                                                        charsetInfo,
                                                         indexMan.get(),
                                                         nullptr);
         auto f = processor->getFuture();

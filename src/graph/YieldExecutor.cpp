@@ -19,7 +19,9 @@ YieldExecutor::YieldExecutor(Sentence *sentence, ExecutionContext *ectx)
 
 Status YieldExecutor::prepare() {
     Status status = Status::OK();
-    expCtx_ = std::make_unique<ExpressionContext>();
+    auto spaceCollate = ectx()->rctx()->session()->spaceCollate();
+    auto* charsetInfo = ectx()->getCharsetInfo();
+    expCtx_ = std::make_unique<ExpressionContext>(spaceCollate, charsetInfo);
     do {
         status = prepareWhere();
         if (!status.ok()) {

@@ -292,6 +292,7 @@ void checkSamplingResponse(cpp2::QueryResponse& resp,
 TEST(QueryBoundTest, OutBoundSimpleTest) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto* charsetInfo = CharsetInfo::instance();
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -303,8 +304,11 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
 
     LOG(INFO) << "Test QueryOutBoundRequest...";
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(),
-                                                    nullptr, executor.get());
+    auto* processor = QueryBoundProcessor::instance(kv.get(),
+                                                    schemaMan.get(),
+                                                    charsetInfo,
+                                                    nullptr,
+                                                    executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -317,6 +321,7 @@ TEST(QueryBoundTest, InBoundSimpleTest) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto* charsetInfo = CharsetInfo::instance();
 
     auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
@@ -327,8 +332,11 @@ TEST(QueryBoundTest, InBoundSimpleTest) {
 
     LOG(INFO) << "Test QueryInBoundRequest...";
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(),
-                                                    nullptr, executor.get());
+    auto* processor = QueryBoundProcessor::instance(kv.get(),
+                                                    schemaMan.get(),
+                                                    charsetInfo,
+                                                    nullptr,
+                                                    executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -341,6 +349,7 @@ TEST(QueryBoundTest, FilterTest_OnlyEdgeFilter) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto* charsetInfo = CharsetInfo::instance();
     auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
 
@@ -361,6 +370,7 @@ TEST(QueryBoundTest, FilterTest_OnlyEdgeFilter) {
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryBoundProcessor::instance(kv.get(),
                                                     schemaMan.get(),
+                                                    charsetInfo,
                                                     nullptr,
                                                     executor.get());
     auto f = processor->getFuture();
@@ -375,6 +385,7 @@ TEST(QueryBoundTest, FilterTest_OnlyTagFilter) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto* charsetInfo = CharsetInfo::instance();
     auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
 
@@ -395,6 +406,7 @@ TEST(QueryBoundTest, FilterTest_OnlyTagFilter) {
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryBoundProcessor::instance(kv.get(),
                                                     schemaMan.get(),
+                                                    charsetInfo,
                                                     nullptr,
                                                     executor.get());
     auto f = processor->getFuture();
@@ -410,7 +422,7 @@ TEST(QueryBoundTest, GenBucketsTest) {
         cpp2::GetNeighborsRequest req;
         std::vector<EdgeType> et = {-101};
         buildRequest(req, et);
-        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(10, buckets.size());
         for (auto& bucket : buckets) {
@@ -423,7 +435,7 @@ TEST(QueryBoundTest, GenBucketsTest) {
         cpp2::GetNeighborsRequest req;
         std::vector<EdgeType> et = {-101};
         buildRequest(req, et);
-        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(9, buckets.size());
         for (auto i = 0; i < 3; i++) {
@@ -439,7 +451,7 @@ TEST(QueryBoundTest, GenBucketsTest) {
         cpp2::GetNeighborsRequest req;
         std::vector<EdgeType> et = {-101};
         buildRequest(req, et);
-        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(7, buckets.size());
         for (auto i = 0; i < 2; i++) {
@@ -454,7 +466,7 @@ TEST(QueryBoundTest, GenBucketsTest) {
         cpp2::GetNeighborsRequest req;
         std::vector<EdgeType> et = {-101};
         buildRequest(req, et);
-        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(1, buckets.size());
         ASSERT_EQ(30, buckets[0].vertices_.size());
@@ -465,6 +477,7 @@ TEST(QueryBoundTest, FilterTest_TagAndEdgeFilter) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto* charsetInfo = CharsetInfo::instance();
     auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
 
@@ -494,6 +507,7 @@ TEST(QueryBoundTest, FilterTest_TagAndEdgeFilter) {
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryBoundProcessor::instance(kv.get(),
                                                     schemaMan.get(),
+                                                    charsetInfo,
                                                     nullptr,
                                                     executor.get());
     auto f = processor->getFuture();
@@ -508,6 +522,7 @@ TEST(QueryBoundTest, FilterTest_InvalidFilter) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto* charsetInfo = CharsetInfo::instance();
     auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
 
@@ -524,6 +539,7 @@ TEST(QueryBoundTest, FilterTest_InvalidFilter) {
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryBoundProcessor::instance(kv.get(),
                                                     schemaMan.get(),
+                                                    charsetInfo,
                                                     nullptr,
                                                     executor.get());
     auto f = processor->getFuture();
@@ -539,6 +555,7 @@ TEST(QueryBoundTest, FilterTest_InvalidFilter) {
 TEST(QueryBoundTest, MultiEdgeQueryTest) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto* charsetInfo = CharsetInfo::instance();
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -552,6 +569,7 @@ TEST(QueryBoundTest, MultiEdgeQueryTest) {
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryBoundProcessor::instance(kv.get(),
                                                     schemaMan.get(),
+                                                    charsetInfo,
                                                     nullptr,
                                                     executor.get());
     auto f = processor->getFuture();
@@ -568,6 +586,7 @@ TEST(QueryBoundTest, MaxEdgesReturenedTest) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto* charsetInfo = CharsetInfo::instance();
 
     auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
@@ -578,8 +597,11 @@ TEST(QueryBoundTest, MaxEdgesReturenedTest) {
 
     LOG(INFO) << "Test QueryOutBoundRequest...";
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
-    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(),
-                                                    nullptr, executor.get());
+    auto* processor = QueryBoundProcessor::instance(kv.get(),
+                                                    schemaMan.get(),
+                                                    charsetInfo,
+                                                    nullptr,
+                                                    executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

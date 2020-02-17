@@ -18,7 +18,9 @@ GroupByExecutor::GroupByExecutor(Sentence *sentence, ExecutionContext *ectx)
 
 
 Status GroupByExecutor::prepare() {
-    expCtx_ = std::make_unique<ExpressionContext>();
+    auto spaceCollate = ectx()->rctx()->session()->spaceCollate();
+    auto* charsetInfo = ectx()->getCharsetInfo();
+    expCtx_ = std::make_unique<ExpressionContext>(spaceCollate, charsetInfo);
     Status status;
     do {
         status = prepareYield();

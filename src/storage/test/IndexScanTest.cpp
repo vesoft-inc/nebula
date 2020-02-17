@@ -271,9 +271,11 @@ static cpp2::LookUpIndexResp execLookupVertices(const std::string& filter,
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = mockSchemaMan(spaceId, type, tagId);
     auto indexMan = mockIndexMan(spaceId, tagId, type);
+    auto* charsetInfo = CharsetInfo::instance();
     mockData(kv.get(), schemaMan.get(), indexMan.get(), type, tagId, spaceId);
     auto *processor = LookUpIndexProcessor::instance(kv.get(),
                                                      schemaMan.get(),
+                                                     charsetInfo,
                                                      indexMan.get(),
                                                      nullptr);
     cpp2::LookUpIndexRequest req;
@@ -306,9 +308,11 @@ static cpp2::LookUpIndexResp execLookupEdges(const std::string& filter,
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = mockSchemaMan(spaceId, type, tagId);
     auto indexMan = mockIndexMan(spaceId, tagId, type);
+    auto* charsetInfo = CharsetInfo::instance();
     mockData(kv.get(), schemaMan.get(), indexMan.get(), type, tagId, spaceId);
     auto *processor = LookUpIndexProcessor::instance(kv.get(),
                                                      schemaMan.get(),
+                                                     charsetInfo,
                                                      indexMan.get(),
                                                      nullptr);
     cpp2::LookUpIndexRequest req;
@@ -338,6 +342,7 @@ static cpp2::LookUpIndexResp execLookupEdges(const std::string& filter,
 static cpp2::LookUpIndexResp checkLookupEdgesString(const std::string& filter) {
     fs::TempDir rootPath("/tmp/checkLookupEdgesString.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto* charsetInfo = CharsetInfo::instance();
     GraphSpaceID spaceId = 0;
     EdgeType type = 101;
 
@@ -407,6 +412,7 @@ static cpp2::LookUpIndexResp checkLookupEdgesString(const std::string& filter) {
     }
     auto *processor = LookUpIndexProcessor::instance(kv.get(),
                                                      schemaMan.get(),
+                                                     charsetInfo,
                                                      indexMan.get(),
                                                      nullptr);
     cpp2::LookUpIndexRequest req;
@@ -426,6 +432,7 @@ static cpp2::LookUpIndexResp checkLookupEdgesString(const std::string& filter) {
 static cpp2::LookUpIndexResp checkLookupVerticesString(const std::string& filter) {
     fs::TempDir rootPath("/tmp/checkLookupVerticesString.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto* charsetInfo = CharsetInfo::instance();
     GraphSpaceID spaceId = 0;
     TagID tagId = 3001;
     nebula::cpp2::Schema schema;
@@ -492,6 +499,7 @@ static cpp2::LookUpIndexResp checkLookupVerticesString(const std::string& filter
     }
     auto *processor = LookUpIndexProcessor::instance(kv.get(),
                                                      schemaMan.get(),
+                                                     charsetInfo,
                                                      indexMan.get(),
                                                      nullptr);
     cpp2::LookUpIndexRequest req;
@@ -511,6 +519,7 @@ static cpp2::LookUpIndexResp checkLookupVerticesString(const std::string& filter
 static cpp2::LookUpIndexResp checkLookupEdgesDouble(const std::string& filter) {
     fs::TempDir rootPath("/tmp/checkLookupEdgesDouble.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto* charsetInfo = CharsetInfo::instance();
     GraphSpaceID spaceId = 0;
     EdgeType type = 101;
 
@@ -584,6 +593,7 @@ static cpp2::LookUpIndexResp checkLookupEdgesDouble(const std::string& filter) {
     }
     auto *processor = LookUpIndexProcessor::instance(kv.get(),
                                                      schemaMan.get(),
+                                                     charsetInfo,
                                                      indexMan.get(),
                                                      nullptr);
     cpp2::LookUpIndexRequest req;
@@ -603,6 +613,7 @@ static cpp2::LookUpIndexResp checkLookupEdgesDouble(const std::string& filter) {
 static cpp2::LookUpIndexResp checkLookupVerticesDouble(const std::string& filter) {
     fs::TempDir rootPath("/tmp/checkLookupVerticesDouble.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    auto* charsetInfo = CharsetInfo::instance();
     GraphSpaceID spaceId = 0;
     TagID tagId = 3001;
     nebula::cpp2::Schema schema;
@@ -673,6 +684,7 @@ static cpp2::LookUpIndexResp checkLookupVerticesDouble(const std::string& filter
     }
     auto *processor = LookUpIndexProcessor::instance(kv.get(),
                                                      schemaMan.get(),
+                                                     charsetInfo,
                                                      indexMan.get(),
                                                      nullptr);
     cpp2::LookUpIndexRequest req;

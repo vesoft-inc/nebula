@@ -45,6 +45,7 @@ std::vector<storage::cpp2::Vertex> genVertices(VertexID &vId, TagID tagId) {
 
 bool processVertices(kvstore::KVStore* kv,
                      meta::SchemaManager* schemaMan,
+                     CharsetInfo* charsetInfo,
                      meta::IndexManager* indexMan,
                      VertexID &vId) {
     cpp2::AddVerticesRequest req;
@@ -57,7 +58,11 @@ bool processVertices(kvstore::KVStore* kv,
         req.parts.emplace(0, std::move(vertices));
     };
 
-    auto* processor = AddVerticesProcessor::instance(kv, schemaMan, indexMan, nullptr);
+    auto* processor = AddVerticesProcessor::instance(kv,
+                                                     schemaMan,
+                                                     charsetInfo,
+                                                     indexMan,
+                                                     nullptr);
     auto fut = processor->getFuture();
     processor->process(std::move(req));
     auto resp = std::move(fut).get();
@@ -73,6 +78,7 @@ void insertVertices(bool withoutIndex) {
     std::unique_ptr<kvstore::KVStore> kv;
     std::unique_ptr<meta::SchemaManager> schemaMan;
     std::unique_ptr<meta::IndexManager> indexMan;
+    auto* charsetInfo = CharsetInfo::instance();
     VertexID vId = 0;
     BENCHMARK_SUSPEND {
         std::string rootPath;
@@ -95,7 +101,7 @@ void insertVertices(bool withoutIndex) {
         }
     };
     while (vId < FLAGS_total_vertices_size) {
-        if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
+        if (!processVertices(kv.get(), schemaMan.get(), charsetInfo, indexMan.get(), vId)) {
             LOG(ERROR) << "Vertices bulk insert error";
             return;
         }
@@ -173,6 +179,7 @@ void insertUnmatchIndex() {
     std::unique_ptr<kvstore::KVStore> kv;
     std::unique_ptr<meta::SchemaManager> schemaMan;
     std::unique_ptr<meta::IndexManager> indexMan;
+    auto* charsetInfo = CharsetInfo::instance();
     VertexID vId = 0;
     BENCHMARK_SUSPEND {
         auto rootPath = folly::stringPrintf("%s/%s", FLAGS_root_data_path.c_str(), "unmatchIndex");
@@ -181,7 +188,7 @@ void insertUnmatchIndex() {
         schemaMan = TestUtils::mockSchemaMan(0);
     };
     while (vId < FLAGS_total_vertices_size) {
-        if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
+        if (!processVertices(kv.get(), schemaMan.get(), charsetInfo, indexMan.get(), vId)) {
             LOG(ERROR) << "Vertices bulk insert error";
             return;
         }
@@ -239,6 +246,7 @@ void insertDupVertices() {
     std::unique_ptr<kvstore::KVStore> kv;
     std::unique_ptr<meta::SchemaManager> schemaMan;
     std::unique_ptr<meta::IndexManager> indexMan;
+    auto* charsetInfo = CharsetInfo::instance();
     VertexID vId = 0;
     BENCHMARK_SUSPEND {
         auto rootPath = folly::stringPrintf("%s/%s",
@@ -250,8 +258,8 @@ void insertDupVertices() {
     };
 
     while (vId < FLAGS_total_vertices_size) {
-        if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId) ||
-                !processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
+        if (!processVertices(kv.get(), schemaMan.get(), charsetInfo, indexMan.get(), vId) ||
+                !processVertices(kv.get(), schemaMan.get(), charsetInfo,  indexMan.get(), vId)) {
             LOG(ERROR) << "Vertices bulk insert error";
             return;
         }
@@ -310,6 +318,7 @@ void insertVerticesMultIndex() {
     std::unique_ptr<kvstore::KVStore> kv;
     std::unique_ptr<meta::SchemaManager> schemaMan;
     std::unique_ptr<meta::IndexManager> indexMan;
+    auto* charsetInfo = CharsetInfo::instance();
     VertexID vId = 0;
     BENCHMARK_SUSPEND {
         std::string rootPath;
@@ -322,7 +331,7 @@ void insertVerticesMultIndex() {
         schemaMan = TestUtils::mockSchemaMan(0);
     };
     while (vId < FLAGS_total_vertices_size) {
-        if (!processVertices(kv.get(), schemaMan.get(), indexMan.get(), vId)) {
+        if (!processVertices(kv.get(), schemaMan.get(), charsetInfo, indexMan.get(), vId)) {
             LOG(ERROR) << "Vertices bulk insert error";
             return;
         }

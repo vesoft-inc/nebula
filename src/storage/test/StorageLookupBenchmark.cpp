@@ -139,6 +139,7 @@ bool genData(kvstore::KVStore* kv,
 
 bool processLookup(kvstore::KVStore* kv,
                    meta::SchemaManager* schemaMan,
+                   CharsetInfo* charsetInfo,
                    meta::IndexManager* indexMan,
                    const std::string& filter,
                    size_t expectRowNum) {
@@ -149,7 +150,11 @@ bool processLookup(kvstore::KVStore* kv,
     req.set_parts(std::move(parts));
     req.set_index_id(indexId);
     req.set_filter(filter);
-    auto* processor = LookUpIndexProcessor::instance(kv, schemaMan, indexMan, nullptr);
+    auto* processor = LookUpIndexProcessor::instance(kv,
+                                                     schemaMan,
+                                                     charsetInfo,
+                                                     indexMan,
+                                                     nullptr);
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
@@ -177,6 +182,7 @@ void lookupExec(int32_t expectRowNum,
     std::unique_ptr<meta::SchemaManager> schemaMan;
     std::unique_ptr<meta::IndexManager> indexMan;
     std::shared_ptr<nebula::cpp2::IndexItem> index;
+    CharsetInfo* charsetInfo = nullptr;
     BENCHMARK_SUSPEND {
         std::string rootPath;
         rootPath = folly::stringPrintf("%s/%s_%d",
@@ -185,6 +191,7 @@ void lookupExec(int32_t expectRowNum,
         kv = TestUtils::initKV(std::move(rootPath).c_str());
         schemaMan = mockSchemaMan();
         indexMan = mockIndexMan();
+        charsetInfo = CharsetInfo::instance();
         auto iRet = indexMan->getTagIndex(spaceId, indexId);
         if (!iRet.ok()) {
             LOG(ERROR) << "Index get error";
@@ -196,7 +203,12 @@ void lookupExec(int32_t expectRowNum,
             return;
         }
     };
-    auto ret = processLookup(kv.get(), schemaMan.get(), indexMan.get(), filter, expectRowNum);
+    auto ret = processLookup(kv.get(),
+                             schemaMan.get(),
+                             charsetInfo,
+                             indexMan.get(),
+                             filter,
+                             expectRowNum);
     if (!ret) {
         LOG(ERROR) << "Processor error";
         return;

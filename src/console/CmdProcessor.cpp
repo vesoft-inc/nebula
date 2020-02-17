@@ -7,6 +7,8 @@
 #include "base/Base.h"
 #include "console/CmdProcessor.h"
 #include "time/Duration.h"
+#include "charset/Charset.h"
+
 
 namespace nebula {
 namespace graph {
@@ -29,13 +31,22 @@ void CmdProcessor::calColumnWidths(
     // Check column names first
     if (resp.get_column_names() != nullptr) {
         for (size_t i = 0; i < resp.get_column_names()->size(); i++) {
-            widths.emplace_back(resp.get_column_names()->at(i).size());
+            auto s1 = resp.get_column_names()->at(i);
+            auto byteLen = s1.size();
+            auto len = byteLen;
+            if (curSpaceCharset_.compare("utf8") == 0) {
+                auto charLen =  charsetInfo_->getUtf8Charlength(s1);
+                // One less byte when displaying Chinese characters
+                auto diff = (byteLen - charLen) / 2;
+                len -= diff;
+            }
+            widths.emplace_back(len);
         }
     }
+
     if (widths.size() == 0) {
         return;
     }
-
     if (resp.get_rows() == nullptr) {
         return;
     }
@@ -109,7 +120,15 @@ void CmdProcessor::calColumnWidths(
                     break;
                 }
                 case cpp2::ColumnValue::Type::str: {
-                    size_t len = col.get_str().size();
+                    auto st = col.get_str();
+                    auto byteLen = st.size();
+                    size_t len = byteLen;
+                    if (curSpaceCharset_.compare("utf8") == 0) {
+                        auto charLen = charsetInfo_->getUtf8Charlength(st);
+                        auto diff = (byteLen - charLen) / 2;
+                        len -= diff;
+                    }
+
                     if (widths[idx] < len) {
                         widths[idx] = len;
                         genFmt = true;
@@ -264,9 +283,17 @@ void CmdProcessor::printHeader(
 
     size_t idx = 0;
     for (auto& cname : (*resp.get_column_names())) {
-        std::string fmt = folly::stringPrintf(" %%-%lds |", widths[idx++]);
+        auto len = widths[idx++];
+        if (curSpaceCharset_.compare("utf8") == 0) {
+            auto byteLen = cname.size();
+            auto charLen = charsetInfo_->getUtf8Charlength(cname);
+            auto diff = (byteLen - charLen) / 2;
+            len += diff;
+        }
+        std::string fmt = folly::stringPrintf(" %%-%lds |", len);
         std::cout << folly::stringPrintf(fmt.c_str(), cname.c_str());
     }
+
     std::cout << "\n";
 }
 
@@ -313,7 +340,16 @@ void CmdProcessor::printData(const cpp2::ExecutionResponse& resp,
                     break;
                 }
                 case cpp2::ColumnValue::Type::str: {
-                    PRINT_FIELD_VALUE(col.get_str().c_str());
+                    auto st = col.get_str();
+                    auto byteLen = st.size();
+                    auto len = widths[cIdx];
+                    if (curSpaceCharset_.compare("utf8") == 0) {
+                        auto charLen =  charsetInfo_->getUtf8Charlength(st);
+                        auto diff = (byteLen - charLen) / 2;
+                        len += diff;
+                    }
+                    std::string fmt = folly::stringPrintf(" %%-%lds |", len);
+                    std::cout << folly::stringPrintf(fmt.c_str(), col.get_str().c_str());
                     break;
                 }
                 case cpp2::ColumnValue::Type::timestamp: {
@@ -420,6 +456,12 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
         } else {
             curSpaceName_ = "(none)";
         }
+        auto *spaceCharset = resp.get_space_charset();
+        if (spaceCharset && !spaceCharset->empty()) {
+            curSpaceCharset_ = std::move(*spaceCharset);
+            folly::toLowerAscii(curSpaceCharset_);
+        }
+
         if (resp.get_rows() && !resp.get_rows()->empty()) {
             printResult(resp);
             std::cout << "Got " << resp.get_rows()->size()

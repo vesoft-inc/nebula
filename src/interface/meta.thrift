@@ -74,11 +74,6 @@ union ID {
     5: common.ClusterID     cluster_id,
 }
 
-struct IdName {
-    1: ID     id,
-    2: string name,
-}
-
 struct SpaceProperties {
     1: string               space_name,
     2: i32                  partition_num,
@@ -218,7 +213,7 @@ struct ListSpacesResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: list<IdName> spaces,
+    3: list<SpaceItem> spaces,
 }
 
 struct GetSpaceReq {

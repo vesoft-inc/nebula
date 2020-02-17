@@ -31,11 +31,13 @@ public:
     StorageServiceHandler(kvstore::KVStore* kvstore,
                           meta::SchemaManager* schemaMan,
                           meta::IndexManager* indexMan,
-                          meta::MetaClient* client)
+                          meta::MetaClient* client,
+                          CharsetInfo* charstInfo)
         : kvstore_(kvstore)
         , schemaMan_(schemaMan)
         , indexMan_(indexMan)
         , metaClient_(client)
+        , charsetInfo_(charstInfo)
         , vertexCache_(FLAGS_vertex_cache_num, FLAGS_vertex_cache_bucket_exp)
         , readerPool_(std::make_unique<folly::IOThreadPoolExecutor>(FLAGS_reader_handlers)) {
         getBoundQpsStat_ = stats::Stats("storage", "get_bound");
@@ -144,10 +146,11 @@ public:
     future_lookUpIndex(const cpp2::LookUpIndexRequest& req) override;
 
 private:
-    kvstore::KVStore* kvstore_{nullptr};
-    meta::SchemaManager* schemaMan_{nullptr};
-    meta::IndexManager* indexMan_{nullptr};
-    meta::MetaClient* metaClient_{nullptr};
+    kvstore::KVStore*     kvstore_{nullptr};
+    meta::SchemaManager*  schemaMan_{nullptr};
+    meta::IndexManager*   indexMan_{nullptr};
+    meta::MetaClient*     metaClient_{nullptr};
+    CharsetInfo*          charsetInfo_{nullptr};
     VertexCache vertexCache_;
     std::unique_ptr<folly::IOThreadPoolExecutor> readerPool_;
 

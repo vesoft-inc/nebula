@@ -226,7 +226,7 @@ void ShowExecutor::showHosts() {
 }
 
 void ShowExecutor::showSpaces() {
-    auto future = ectx()->getMetaClient()->listSpaces();
+    auto future = ectx()->getMetaClient()->listSpaceSchemas();
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
@@ -235,11 +235,12 @@ void ShowExecutor::showSpaces() {
             return;
         }
 
-        auto retShowSpaces = std::move(resp).value();
-        std::vector<cpp2::RowValue> rows;
         std::vector<std::string> header{"Name"};
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(std::move(header));
+
+        auto retShowSpaces = std::move(resp).value();
+        std::vector<cpp2::RowValue> rows;
 
         for (auto &space : retShowSpaces) {
             auto canShow = permission::PermissionManager::canShow(ectx()->rctx()->session(),
@@ -251,7 +252,7 @@ void ShowExecutor::showSpaces() {
 
             std::vector<cpp2::ColumnValue> row;
             row.emplace_back();
-            row.back().set_str(std::move(space.second));
+            row.back().set_str(std::move(space.get_properties().get_space_name()));
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }

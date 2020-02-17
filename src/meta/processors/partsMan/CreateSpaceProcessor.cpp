@@ -9,8 +9,6 @@
 
 DEFINE_int32(default_parts_num, 100, "The default number of parts when a space is created");
 DEFINE_int32(default_replica_factor, 1, "The default replica factor when a space is created");
-DEFINE_string(default_charset, "utf8", "The default charset when a space is created");
-DEFINE_string(default_collate, "utf8_bin", "The default collate when a space is created");
 
 namespace nebula {
 namespace meta {

@@ -32,7 +32,9 @@ Status UpdateEdgeExecutor::prepareData() {
     Status status = Status::OK();
 
     spaceId_ = ectx()->rctx()->session()->space();
-    expCtx_ = std::make_unique<ExpressionContext>();
+    auto spaceCollate = ectx()->rctx()->session()->spaceCollate();
+    auto* charsetInfo = ectx()->getCharsetInfo();
+    expCtx_ = std::make_unique<ExpressionContext>(spaceCollate, charsetInfo);
     expCtx_->setSpace(spaceId_);
     expCtx_->setStorageClient(ectx()->getStorageClient());
     Getters getters;

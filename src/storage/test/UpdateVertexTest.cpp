@@ -55,6 +55,7 @@ void mockData(kvstore::KVStore* kv) {
 TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
     fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    CharsetInfo* charsetInfo = CharsetInfo::instance();
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -123,6 +124,7 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
     LOG(INFO) << "Test UpdateVertexRequest...";
     auto* processor = UpdateVertexProcessor::instance(kv.get(),
                                                       schemaMan.get(),
+                                                      charsetInfo,
                                                       indexMan.get(),
                                                       nullptr);
     auto f = processor->getFuture();
@@ -204,6 +206,7 @@ TEST(UpdateVertexTest, Set_Filter_Yield_Test) {
 TEST(UpdateVertexTest, Insertable_Test) {
     fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    CharsetInfo* charsetInfo = CharsetInfo::instance();
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -261,6 +264,7 @@ TEST(UpdateVertexTest, Insertable_Test) {
     LOG(INFO) << "Test UpdateVertexRequest...";
     auto* processor = UpdateVertexProcessor::instance(kv.get(),
                                                       schemaMan.get(),
+                                                      charsetInfo,
                                                       indexMan.get(),
                                                       nullptr);
     auto f = processor->getFuture();
@@ -309,6 +313,7 @@ TEST(UpdateVertexTest, Insertable_Test) {
 TEST(UpdateVertexTest, Invalid_Set_Test) {
     fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    CharsetInfo* charsetInfo = CharsetInfo::instance();
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -341,6 +346,7 @@ TEST(UpdateVertexTest, Invalid_Set_Test) {
     LOG(INFO) << "Test UpdateVertexRequest...";
     auto* processor = UpdateVertexProcessor::instance(kv.get(),
                                                       schemaMan.get(),
+                                                      charsetInfo,
                                                       indexMan.get(),
                                                       nullptr);
     auto f = processor->getFuture();
@@ -359,6 +365,7 @@ TEST(UpdateVertexTest, Invalid_Set_Test) {
 TEST(UpdateVertexTest, Invalid_Filter_Test) {
     fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+    CharsetInfo* charsetInfo = CharsetInfo::instance();
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -393,6 +400,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
     LOG(INFO) << "Test UpdateVertexRequest...";
     auto* processor = UpdateVertexProcessor::instance(kv.get(),
                                                       schemaMan.get(),
+                                                      charsetInfo,
                                                       indexMan.get(),
                                                       nullptr);
     auto f = processor->getFuture();

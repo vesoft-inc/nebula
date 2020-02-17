@@ -78,27 +78,55 @@ Status OrderByExecutor::prepare() {
 }
 
 void OrderByExecutor::execute() {
-    auto status = beforeExecute();
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        doError(std::move(status));
+        return;
+    }
+    status = beforeExecute();
     if (!status.ok()) {
         LOG(ERROR) << "Error happened before execute: " << status.toString();
         doError(std::move(status));
         return;
     }
 
-    auto comparator = [this] (cpp2::RowValue& lhs, cpp2::RowValue& rhs) {
+    auto spaceCollate = ectx()->rctx()->session()->spaceCollate();
+
+    auto comparator = [this, &spaceCollate] (cpp2::RowValue& lhs, cpp2::RowValue& rhs) {
         const auto &lhsColumns = lhs.get_columns();
         const auto &rhsColumns = rhs.get_columns();
         for (auto &factor : this->sortFactors_) {
             auto fieldIndex = factor.first;
             auto orderType = factor.second;
-            if (lhsColumns[fieldIndex] == rhsColumns[fieldIndex]) {
-                continue;
-            }
+            if (lhsColumns[fieldIndex].getType() == cpp2::ColumnValue::Type::str &&
+                rhsColumns[fieldIndex].getType() == cpp2::ColumnValue::Type::str) {
+                auto ret = this->ectx()->getCharsetInfo()->nebulaStrCmp(spaceCollate,
+                                                     lhsColumns[fieldIndex].get_str().c_str(),
+                                                     rhsColumns[fieldIndex].get_str().c_str());
+                if (!ret.ok()) {
+                    return false;
+                }
 
-            if (orderType == OrderFactor::OrderType::ASCEND) {
-                return lhsColumns[fieldIndex] < rhsColumns[fieldIndex];
-            } else if (orderType == OrderFactor::OrderType::DESCEND) {
-                return lhsColumns[fieldIndex] > rhsColumns[fieldIndex];
+                auto val = ret.value();
+                if (val == 0) {
+                    continue;
+                }
+                if (orderType == OrderFactor::OrderType::ASCEND) {
+                    return val < 0;
+                } else if (orderType == OrderFactor::OrderType::DESCEND) {
+                    return val > 0;
+                }
+
+            } else {
+                if (lhsColumns[fieldIndex] == rhsColumns[fieldIndex]) {
+                    continue;
+                }
+
+                if (orderType == OrderFactor::OrderType::ASCEND) {
+                    return lhsColumns[fieldIndex] < rhsColumns[fieldIndex];
+                } else if (orderType == OrderFactor::OrderType::DESCEND) {
+                    return lhsColumns[fieldIndex] > rhsColumns[fieldIndex];
+                }
             }
         }
         return false;

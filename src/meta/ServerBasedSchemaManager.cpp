@@ -81,6 +81,17 @@ StatusOr<GraphSpaceID> ServerBasedSchemaManager::toGraphSpaceID(folly::StringPie
     return  metaClient_->getSpaceIdByNameFromCache(spaceName.str());
 }
 
+
+StatusOr<std::string> ServerBasedSchemaManager::toSpaceCharset(GraphSpaceID space) {
+    CHECK(metaClient_);
+    return  metaClient_->getSpaceCharsetByIdFromCache(space);
+}
+
+StatusOr<std::string> ServerBasedSchemaManager::toSpaceCollate(GraphSpaceID space) {
+    CHECK(metaClient_);
+    return  metaClient_->getSpaceCollateByIdFromCache(space);
+}
+
 StatusOr<TagID> ServerBasedSchemaManager::toTagID(GraphSpaceID space,
                                                   folly::StringPiece tagName) {
     CHECK(metaClient_);

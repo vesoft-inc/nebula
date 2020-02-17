@@ -23,10 +23,12 @@ TEST(CheckpointTest, simpleTest) {
     TestUtils::waitUntilAllElected(kv.get(), 0, {0, 1, 2, 3, 4, 5}/*partitions*/);
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    auto* charsetInfo = CharsetInfo::instance();
     // Add vertices
     {
         auto* processor = AddVerticesProcessor::instance(kv.get(),
                                                          schemaMan.get(),
+                                                         charsetInfo,
                                                          indexMan.get(),
                                                          nullptr);
         cpp2::AddVerticesRequest req;

@@ -36,6 +36,10 @@ public:
 
     virtual StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece spaceName) = 0;
 
+    virtual StatusOr<std::string> toSpaceCharset(GraphSpaceID space) = 0;
+
+    virtual StatusOr<std::string> toSpaceCollate(GraphSpaceID space) = 0;
+
     virtual StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) = 0;
 
     virtual StatusOr<std::string> toTagName(GraphSpaceID space, TagID tagId) = 0;

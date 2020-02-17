@@ -22,10 +22,12 @@ TEST(DeleteEdgesTest, SimpleTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto schemaMan = TestUtils::mockSchemaMan();
     auto indexMan = TestUtils::mockIndexMan();
+    auto* charsetInfo = CharsetInfo::instance();
     // Add edges
     {
         auto* processor = AddEdgesProcessor::instance(kv.get(),
                                                       schemaMan.get(),
+                                                      charsetInfo,
                                                       indexMan.get(),
                                                       nullptr);
         cpp2::AddEdgesRequest req;
@@ -45,6 +47,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
     {
         auto* processor = AddEdgesProcessor::instance(kv.get(),
                                                       schemaMan.get(),
+                                                      charsetInfo,
                                                       indexMan.get(),
                                                       nullptr);
         cpp2::AddEdgesRequest req;
@@ -94,7 +97,10 @@ TEST(DeleteEdgesTest, SimpleTest) {
 
     // Delete edges
     {
-        auto* processor = DeleteEdgesProcessor::instance(kv.get(), schemaMan.get(), indexMan.get());
+        auto* processor = DeleteEdgesProcessor::instance(kv.get(),
+                                                         schemaMan.get(),
+                                                         charsetInfo,
+                                                         indexMan.get());
         cpp2::DeleteEdgesRequest req;
         req.set_space_id(0);
         // partId => List<EdgeKey>

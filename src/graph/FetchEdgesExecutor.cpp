@@ -27,7 +27,9 @@ Status FetchEdgesExecutor::prepareClauses() {
             break;
         }
 
-        expCtx_ = std::make_unique<ExpressionContext>();
+        auto spaceCollate = ectx()->rctx()->session()->spaceCollate();
+        auto* charsetInfo = ectx()->getCharsetInfo();
+        expCtx_ = std::make_unique<ExpressionContext>(spaceCollate, charsetInfo);
         expCtx_->setStorageClient(ectx()->getStorageClient());
         spaceId_ = ectx()->rctx()->session()->space();
         yieldClause_ = DCHECK_NOTNULL(sentence_)->yieldClause();

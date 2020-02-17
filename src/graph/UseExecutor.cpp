@@ -31,7 +31,11 @@ void UseExecutor::execute() {
             return;
         }
 
-        auto spaceId = resp.value().get_space_id();
+        auto spaceItem = resp.value();
+        auto spaceId = spaceItem.get_space_id();
+        auto spaceProp = spaceItem.get_properties();
+        auto spaceCharset = spaceProp.get_charset_name();
+        auto spaceCollate = spaceProp.get_collate_name();
 
         /**
         * Permission check.
@@ -43,7 +47,10 @@ void UseExecutor::execute() {
             return;
         }
 
-        ectx()->rctx()->session()->setSpace(*sentence_->space(), spaceId);
+        ectx()->rctx()->session()->setSpace(*sentence_->space(),
+                                            spaceId,
+                                            spaceCharset,
+                                            spaceCollate);
 
         FLOG_INFO("Graph space switched to `%s', space id: %d",
                    sentence_->space()->c_str(), spaceId);

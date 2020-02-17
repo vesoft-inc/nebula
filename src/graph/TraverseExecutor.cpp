@@ -405,6 +405,8 @@ StatusOr<bool> YieldClauseWrapper::needAllPropsFromVar(
 
 Status WhereWrapper::prepare(ExpressionContext *ectx) {
     Status status = Status::OK();
+    spaceCollate_ = ectx->spaceCollate();
+    charsetInfo_ = ectx->getCharsetInfo();
     if (where_ == nullptr) {
         return status;
     }
@@ -503,7 +505,7 @@ bool WhereWrapper::rewrite(Expression *expr) const {
 }
 
 bool WhereWrapper::canPushdown(Expression *expr) const {
-    auto ectx = std::make_unique<ExpressionContext>();
+    auto ectx = std::make_unique<ExpressionContext>(spaceCollate_, charsetInfo_);
     expr->setContext(ectx.get());
     auto status = expr->prepare();
     if (!status.ok()) {

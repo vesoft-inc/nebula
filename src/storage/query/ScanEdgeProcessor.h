@@ -28,7 +28,7 @@ private:
     explicit ScanEdgeProcessor(kvstore::KVStore* kvstore,
                                meta::SchemaManager* schemaMan,
                                stats::Stats* stats)
-            : BaseProcessor<cpp2::ScanEdgeResponse>(kvstore, schemaMan, stats) {}
+            : BaseProcessor<cpp2::ScanEdgeResponse>(kvstore, schemaMan, nullptr, stats) {}
 
     cpp2::ErrorCode checkAndBuildContexts(const cpp2::ScanEdgeRequest& req);
 

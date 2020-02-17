@@ -60,4 +60,116 @@ StatusOr<std::string> CharsetInfo::getCharsetbyCollation(const std::string& coll
     return Status::Error("Collation `%s' not support", collationName.c_str());
 }
 
+
+size_t CharsetInfo::getUtf8Charlength(const std::string& str) {
+    size_t length = 0;
+    for (size_t i = 0, len = 0; i < str.length(); i += len) {
+        unsigned char byte = str[i];
+        if (byte >= 0xFC) {
+            len = 6;
+        } else if (byte >= 0xF8) {
+            len = 5;
+        } else if (byte >= 0xF0) {
+            len = 4;
+        } else if (byte >= 0xE0) {
+            len = 3;
+        } else if (byte >= 0xC0) {
+            len = 2;
+        } else {
+            len = 1;
+        }
+        length++;
+    }
+    return length;
+}
+
+
+StatusOr<int> CharsetInfo::nebulaStrCmp(const std::string& collateName,
+                                        const std::string& p1,
+                                        const std::string& p2) {
+    auto iter = collationToLocale_.find(collateName);
+    if (iter == collationToLocale_.end()) {
+        return Status::Error("Collation `%s' not support", collateName.c_str());
+    }
+
+    // For charset is incomplete in locale
+    std::locale loc(iter->second);
+    if (!std::has_facet<std::ctype<char>>(loc)) {
+        return Status::Error("Locale: `%s' environment is not supported", iter->second.c_str());
+    }
+    auto& f = std::use_facet<std::collate<char>>(loc);
+
+    std::string str1(p1), str2(p2);
+    return f.compare(&str1[0], &str1[0] + str1.size(),
+                     &str2[0], &str2[0] + str2.size());
+}
+
+
+StatusOr<bool> CharsetInfo::nebulaStrCmpLT(const std::string& collateName,
+                                           const std::string& p1,
+                                           const std::string& p2) {
+    auto ret = nebulaStrCmp(collateName, p1, p2);
+    if (!ret.ok()) {
+        return ret.status();
+    }
+    auto val = ret.value();
+    return val < 0;
+}
+
+
+StatusOr<bool> CharsetInfo:: nebulaStrCmpLE(const std::string& collateName,
+                                            const std::string& p1,
+                                            const std::string& p2) {
+    auto ret = nebulaStrCmp(collateName, p1, p2);
+    if (!ret.ok()) {
+        return ret.status();
+    }
+    auto val = ret.value();
+    return val <= 0;
+}
+
+
+StatusOr<bool> CharsetInfo::nebulaStrCmpGT(const std::string& collateName,
+                                           const std::string& p1,
+                                           const std::string& p2) {
+    auto ret = nebulaStrCmpLE(collateName, p1, p2);
+    if (!ret.ok()) {
+        return ret.status();
+    }
+    return !ret.value();
+}
+
+
+StatusOr<bool> CharsetInfo::nebulaStrCmpGE(const std::string& collateName,
+                                           const std::string& p1,
+                                           const std::string& p2) {
+    auto ret = nebulaStrCmpLT(collateName, p1, p2);
+    if (!ret.ok()) {
+        return ret.status();
+    }
+    return !ret.value();
+}
+
+
+StatusOr<bool> CharsetInfo::nebulaStrCmpEQ(const std::string& collateName,
+                                           const std::string& p1,
+                                           const std::string& p2) {
+    auto ret = nebulaStrCmp(collateName, p1, p2);
+    if (!ret.ok()) {
+        return ret.status();
+    }
+    return ret.value() == 0;
+}
+
+
+StatusOr<bool> CharsetInfo::nebulaStrCmpNE(const std::string& collateName,
+                                           const std::string& p1,
+                                           const std::string& p2) {
+    auto ret = nebulaStrCmpEQ(collateName, p1, p2);
+    if (!ret.ok()) {
+        return ret.status();
+    }
+    return !ret.value();
+}
+
 }   // namespace nebula

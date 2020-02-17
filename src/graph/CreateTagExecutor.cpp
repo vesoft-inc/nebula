@@ -13,10 +13,12 @@ namespace nebula {
 namespace graph {
 
 CreateTagExecutor::CreateTagExecutor(Sentence *sentence,
-                                     ExecutionContext *ectx)
-    : Executor(ectx, "create_tag") {
+                                     ExecutionContext *ec)
+    : Executor(ec, "create_tag") {
     sentence_ = static_cast<CreateTagSentence*>(sentence);
-    exprCtx_ = std::make_unique<ExpressionContext>();
+    auto spaceCollate = ectx()->rctx()->session()->spaceCollate();
+    auto* charsetInfo = ectx()->getCharsetInfo();
+    exprCtx_ = std::make_unique<ExpressionContext>(spaceCollate, charsetInfo);
 }
 
 

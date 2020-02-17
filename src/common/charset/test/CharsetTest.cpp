@@ -4,7 +4,6 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
 #include <gtest/gtest.h>
 #include "charset/Charset.h"
 
@@ -98,4 +97,270 @@ TEST(CharsetInfo, getCharsetDesc) {
     auto result = charsetInfo->getCharsetDesc();
     EXPECT_EQ(1, result.size());
 }
+
+
+TEST(CharsetInfo, getUtf8Charlength) {
+    auto* charsetInfo = CharsetInfo::instance();
+    {
+        auto result = charsetInfo->getUtf8Charlength("China");
+        EXPECT_EQ(5, result);
+    }
+    {
+        auto result = charsetInfo->getUtf8Charlength("123_ac");
+        EXPECT_EQ(6, result);
+    }
+    {
+        auto result = charsetInfo->getUtf8Charlength("中国北京");
+        EXPECT_EQ(4, result);
+    }
+}
+
+
+TEST(CharsetInfo, nebulaStrCmp) {
+    auto* charsetInfo = CharsetInfo::instance();
+    {
+        auto result = charsetInfo->nebulaStrCmp("utf8mb4_bin", "123456", "21345");
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmp("utf8_bin", "123456", "21345");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(-1, result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmp("utf8_bin", "23456", "21345");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(1, result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmp("utf8_bin", "beijing", "tianjin");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(-1, result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmp("utf8_bin", "beijing", "beijinghaidian");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(-1, result.value());
+    }
+    {
+        // Determined by locale characteristics, not by ASCII
+        auto result = charsetInfo->nebulaStrCmp("utf8_bin", "China", "china");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(1, result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmp("utf8_bin", "北京", "天津");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_EQ(-1, result.value());
+    }
+}
+
+
+TEST(CharsetInfo, nebulaStrCmpLT) {
+    auto* charsetInfo = CharsetInfo::instance();
+    {
+        auto result = charsetInfo->nebulaStrCmpLT("utf8mb4_bin", "123456", "21345");
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpLT("utf8_bin", "123456", "21345");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpLT("utf8_bin", "23456", "21345");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpLT("utf8_bin", "beijing", "tianjin");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpLT("utf8_bin", "beijing", "beijinghaidian");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpLT("utf8_bin", "China", "china");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpLT("utf8_bin", "北京", "天津");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
+    }
+}
+
+TEST(CharsetInfo, nebulaStrCmpLE) {
+    auto* charsetInfo = CharsetInfo::instance();
+    {
+        auto result = charsetInfo->nebulaStrCmpLE("utf8mb4_bin", "123456", "21345");
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpLE("utf8_bin", "beijing", "tianjin");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpLE("utf8_bin", "beijing", "beijinghaidian");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpLE("utf8_bin", "China", "chine");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpLE("utf8_bin", "北京", "天津");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpLE("utf8_bin", "北京", "北京");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
+    }
+}
+
+
+TEST(CharsetInfo, nebulaStrCmpGT) {
+    auto* charsetInfo = CharsetInfo::instance();
+    {
+        auto result = charsetInfo->nebulaStrCmpGT("utf8mb4_bin", "123456", "21345");
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpGT("utf8_bin", "beijing", "tianjin");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpGT("utf8_bin", "beijing", "beijinghaidian");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpGT("utf8_bin", "China", "chine");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpGT("utf8_bin", "北京", "天津");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpGT("utf8_bin", "北京", "北京");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
+    }
+}
+
+
+TEST(CharsetInfo, nebulaStrCmpGE) {
+    auto* charsetInfo = CharsetInfo::instance();
+    {
+        auto result = charsetInfo->nebulaStrCmpGE("utf8mb4_bin", "123456", "21345");
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpGE("utf8_bin", "beijing", "tianjin");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpGE("utf8_bin", "beijing", "beijinghaidian");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpGE("utf8_bin", "China", "chine");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpGE("utf8_bin", "北京", "天津");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpGE("utf8_bin", "北京", "北京");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
+    }
+}
+
+
+TEST(CharsetInfo, nebulaStrCmpEQ) {
+    auto* charsetInfo = CharsetInfo::instance();
+    {
+        auto result = charsetInfo->nebulaStrCmpEQ("utf8mb4_bin", "123456", "21345");
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpEQ("utf8_bin", "beijing", "tianjin");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpEQ("utf8_bin", "beijing", "beijinghaidian");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpEQ("utf8_bin", "China", "chine");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpEQ("utf8_bin", "北京", "天津");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpLE("utf8_bin", "北京", "北京");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
+    }
+}
+
+
+TEST(CharsetInfo, nebulaStrCmpNE) {
+    auto* charsetInfo = CharsetInfo::instance();
+    {
+        auto result = charsetInfo->nebulaStrCmpNE("utf8mb4_bin", "123456", "21345");
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpNE("utf8_bin", "beijing", "tianjin");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpNE("utf8_bin", "beijing", "beijinghaidian");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpNE("utf8_bin", "China", "china");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpNE("utf8_bin", "北京", "天津");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_TRUE(result.value());
+    }
+    {
+        auto result = charsetInfo->nebulaStrCmpNE("utf8_bin", "北京", "北京");
+        ASSERT_TRUE(result.ok()) << result.status();
+        EXPECT_FALSE(result.value());
+    }
+}
+
 }   // namespace nebula

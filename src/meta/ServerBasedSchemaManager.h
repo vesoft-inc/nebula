@@ -36,6 +36,10 @@ public:
 
     StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece spaceName) override;
 
+    StatusOr<std::string> toSpaceCharset(GraphSpaceID space) override;
+
+    StatusOr<std::string> toSpaceCollate(GraphSpaceID space) override;
+
     StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
     StatusOr<std::string> toTagName(GraphSpaceID space, TagID tagId) override;

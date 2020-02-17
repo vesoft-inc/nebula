@@ -17,7 +17,9 @@ FindPathExecutor::FindPathExecutor(Sentence *sentence, ExecutionContext *exct)
 
 Status FindPathExecutor::prepare() {
     Status status;
-    expCtx_ = std::make_unique<ExpressionContext>();
+    auto spaceCollate = ectx()->rctx()->session()->spaceCollate();
+    auto* charsetInfo = ectx()->getCharsetInfo();
+    expCtx_ = std::make_unique<ExpressionContext>(spaceCollate, charsetInfo);
     do {
         if (sentence_->from() != nullptr) {
             status = sentence_->from()->prepare(from_);

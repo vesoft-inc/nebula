@@ -23,12 +23,16 @@ public:
     void addTagSchema(GraphSpaceID space,
                       TagID tag,
                       std::shared_ptr<nebula::meta::SchemaProviderIf> schema,
-                      SchemaVer version = 0);
+                      SchemaVer version = 0,
+                      const std::string& spaceCharset = "utf8",
+                      const std::string& spaceCollate = "utf8_bin");
 
     void addEdgeSchema(GraphSpaceID space,
                        EdgeType edge,
                        std::shared_ptr<nebula::meta::SchemaProviderIf> schema,
-                       SchemaVer version = 0);
+                       SchemaVer version = 0,
+                       const std::string& spaceCharset = "utf8",
+                       const std::string& spaceCollate = "utf8_bin");
 
     void removeTagSchema(GraphSpaceID space, TagID tag);
 
@@ -50,6 +54,10 @@ public:
     StatusOr<SchemaVer> getLatestEdgeSchemaVersion(GraphSpaceID space, EdgeType edge) override;
 
     StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece spaceName) override;
+
+    StatusOr<std::string> toSpaceCharset(GraphSpaceID space) override;
+
+    StatusOr<std::string> toSpaceCollate(GraphSpaceID space) override;
 
     StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
@@ -84,7 +92,8 @@ protected:
         edgeSchemas_;
 
     folly::RWSpinLock spaceLock_;
-    std::set<GraphSpaceID> spaces_;
+    // space -> std::pair<spacecharset, spacecollate>
+    std::unordered_map<GraphSpaceID, std::pair<std::string, std::string>> spaceToCharsetCollate_;
     // Key: spaceId + tagName,  Val: tagId
     std::unordered_map<std::string, TagID> tagNameToId_;
 };

@@ -225,8 +225,8 @@ TEST(ProcessorTest, SpaceTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(1, resp.spaces.size());
-        ASSERT_EQ(1, resp.spaces[0].id.get_space_id());
-        ASSERT_EQ("default_space", resp.spaces[0].name);
+        ASSERT_EQ(1, resp.spaces[0].get_space_id());
+        ASSERT_EQ("default_space", resp.spaces[0].get_properties().get_space_name());
     }
     // Check the result. The dispatch way from part to hosts is in a round robin fashion.
     {

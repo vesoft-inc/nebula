@@ -12,7 +12,9 @@ namespace storage {
 void AdHocSchemaManager::addTagSchema(GraphSpaceID space,
                                       TagID tag,
                                       std::shared_ptr<nebula::meta::SchemaProviderIf> schema,
-                                      SchemaVer version) {
+                                      SchemaVer version,
+                                      const std::string& spaceCharset,
+                                      const std::string& spaceCollate) {
     {
         folly::RWSpinLock::WriteHolder wh(tagLock_);
         // Only version 0
@@ -22,14 +24,16 @@ void AdHocSchemaManager::addTagSchema(GraphSpaceID space,
     }
     {
         folly::RWSpinLock::WriteHolder wh(spaceLock_);
-        spaces_.emplace(space);
+        spaceToCharsetCollate_.emplace(space, std::make_pair(spaceCharset, spaceCollate));
     }
 }
 
 void AdHocSchemaManager::addEdgeSchema(GraphSpaceID space,
                                        EdgeType edge,
                                        std::shared_ptr<nebula::meta::SchemaProviderIf> schema,
-                                       SchemaVer version) {
+                                       SchemaVer version,
+                                       const std::string& spaceCharset,
+                                       const std::string& spaceCollate) {
     {
         folly::RWSpinLock::WriteHolder wh(edgeLock_);
         // Only version 0
@@ -37,7 +41,7 @@ void AdHocSchemaManager::addEdgeSchema(GraphSpaceID space,
     }
     {
         folly::RWSpinLock::WriteHolder wh(spaceLock_);
-        spaces_.emplace(space);
+        spaceToCharsetCollate_.emplace(space, std::make_pair(spaceCharset, spaceCollate));
     }
 }
 
@@ -141,6 +145,24 @@ StatusOr<GraphSpaceID> AdHocSchemaManager::toGraphSpaceID(folly::StringPiece spa
     } catch (const std::exception& e) {
         return Status::SpaceNotFound();
     }
+}
+
+StatusOr<std::string> AdHocSchemaManager::toSpaceCharset(GraphSpaceID space) {
+    folly::RWSpinLock::ReadHolder rh(spaceLock_);
+    auto it = spaceToCharsetCollate_.find(space);
+    if (it ==spaceToCharsetCollate_.end()) {
+         return Status::SpaceNotFound();
+    }
+    return it->second.first;
+}
+
+StatusOr<std::string> AdHocSchemaManager::toSpaceCollate(GraphSpaceID space) {
+    folly::RWSpinLock::ReadHolder rh(spaceLock_);
+    auto it = spaceToCharsetCollate_.find(space);
+    if (it ==spaceToCharsetCollate_.end()) {
+        return Status::SpaceNotFound();
+    }
+    return it->second.second;
 }
 
 StatusOr<TagID> AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPiece tagName) {

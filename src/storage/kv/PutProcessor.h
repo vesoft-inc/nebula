@@ -27,7 +27,7 @@ private:
     explicit PutProcessor(kvstore::KVStore* kvstore,
                           meta::SchemaManager* schemaMan,
                           stats::Stats* stats)
-            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, stats) {}
+            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, nullptr, stats) {}
 };
 
 }  // namespace storage

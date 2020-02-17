@@ -53,6 +53,7 @@ private:
     std::unique_ptr<meta::ClientBasedGflagsManager> gFlagsMan_;
     std::unique_ptr<meta::SchemaManager> schemaMan_;
     std::unique_ptr<meta::IndexManager> indexMan_;
+    CharsetInfo* charsetInfo_;
 
     std::atomic_bool stopped_{false};
     HostAddr localHost_;

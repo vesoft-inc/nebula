@@ -18,8 +18,9 @@ class DeleteEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static DeleteEdgesProcessor* instance(kvstore::KVStore* kvstore,
                                           meta::SchemaManager* schemaMan,
+                                          CharsetInfo* charsetInfo,
                                           meta::IndexManager* indexMan) {
-        return new DeleteEdgesProcessor(kvstore, schemaMan, indexMan);
+        return new DeleteEdgesProcessor(kvstore, schemaMan, charsetInfo, indexMan);
     }
 
      void process(const cpp2::DeleteEdgesRequest& req);
@@ -27,8 +28,9 @@ public:
 private:
     explicit DeleteEdgesProcessor(kvstore::KVStore* kvstore,
                                   meta::SchemaManager* schemaMan,
+                                  CharsetInfo* charsetInfo,
                                   meta::IndexManager* indexMan)
-            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan)
+            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan, charsetInfo, nullptr)
             , indexMan_(indexMan) {}
 
 

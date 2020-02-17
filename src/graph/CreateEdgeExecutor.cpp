@@ -13,9 +13,11 @@ namespace nebula {
 namespace graph {
 
 CreateEdgeExecutor::CreateEdgeExecutor(Sentence *sentence,
-                                       ExecutionContext *ectx)
-    : Executor(ectx, "create_edge") {
-    exprCtx_ = std::make_unique<ExpressionContext>();
+                                       ExecutionContext *ec)
+    : Executor(ec, "create_edge") {
+    auto spaceCollate = ectx()->rctx()->session()->spaceCollate();
+    auto* charsetInfo = ectx()->getCharsetInfo();
+    exprCtx_ = std::make_unique<ExpressionContext>(spaceCollate, charsetInfo);
     sentence_ = static_cast<CreateEdgeSentence*>(sentence);
 }
 

@@ -45,10 +45,11 @@ public:
 protected:
     explicit QueryBaseProcessor(kvstore::KVStore* kvstore,
                                 meta::SchemaManager* schemaMan,
+                                CharsetInfo* charsetInfo,
                                 stats::Stats* stats,
                                 folly::Executor* executor = nullptr,
                                 VertexCache* cache = nullptr)
-        : BaseProcessor<RESP>(kvstore, schemaMan, stats)
+        : BaseProcessor<RESP>(kvstore, schemaMan, charsetInfo, stats)
         , executor_(executor)
         , vertexCache_(cache) {}
 
