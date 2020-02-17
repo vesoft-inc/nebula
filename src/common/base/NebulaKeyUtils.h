@@ -210,22 +210,6 @@ public:
         return readInt<IndexID>(rawKey.data() + offset, sizeof(IndexID));
     }
 
-    static VertexID getIndexSrcId(const folly::StringPiece& rawKey) {
-        auto offset = rawKey.size() -
-                      sizeof(VertexID) * 2 - sizeof(EdgeRanking);
-        return readInt<VertexID>(rawKey.data() + offset, sizeof(VertexID));
-    }
-
-    static VertexID getIndexDstId(const folly::StringPiece& rawKey) {
-        auto offset = rawKey.size() - sizeof(VertexID);
-        return readInt<VertexID>(rawKey.data() + offset, sizeof(VertexID));
-    }
-
-    static EdgeRanking getIndexRank(const folly::StringPiece& rawKey) {
-        auto offset = rawKey.size() - sizeof(VertexID) - sizeof(EdgeRanking);
-        return readInt<EdgeRanking>(rawKey.data() + offset, sizeof(EdgeRanking));
-    }
-
     template<typename T>
     static typename std::enable_if<std::is_integral<T>::value, T>::type
     readInt(const char* data, int32_t len) {
