@@ -84,7 +84,7 @@ For details on the returned results, please refer to the previous section [List 
 The `STOP JOB` statement jobs that are not finished.
 
 ```ngql
-nebula> STOP JOB 0 22
+nebula> STOP JOB 22
 =========================
 | STOP Result         |
 =========================

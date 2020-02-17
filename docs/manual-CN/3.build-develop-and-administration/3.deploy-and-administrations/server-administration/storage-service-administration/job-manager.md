@@ -84,7 +84,7 @@ nebula> SHOW JOBS
 命令 `STOP JOB` 用于在停止未完成的作业。
 
 ```ngql
-nebula> STOP JOB 0 22
+nebula> STOP JOB 22
 =========================
 | STOP Result         |
 =========================
