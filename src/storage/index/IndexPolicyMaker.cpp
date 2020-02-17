@@ -95,7 +95,6 @@ cpp2::ErrorCode IndexPolicyMaker::traversalExpression(const Expression *expr) {
                 return cpp2::ErrorCode::E_INVALID_FILTER;
             } else if (lExpr->op() == LogicalExpression::Operator::OR) {
                 optimizedPolicy_ = false;
-                return code;
             }
             auto* left = lExpr->left();
             traversalExpression(left);
@@ -129,14 +128,14 @@ cpp2::ErrorCode IndexPolicyMaker::traversalExpression(const Expression *expr) {
                 prop = *aExpr->prop();
             } else {
                 optimizedPolicy_ = false;
-                return code;
+                break;
             }
             operatorList_.emplace_back(std::make_tuple(std::move(prop), std::move(v), rExpr->op()));
             break;
         }
         case nebula::Expression::kFunctionCall : {
             optimizedPolicy_ = false;
-            return code;
+            break;
         }
         default : {
             return cpp2::ErrorCode::E_INVALID_FILTER;

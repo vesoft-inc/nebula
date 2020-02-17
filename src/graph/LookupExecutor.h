@@ -33,6 +33,8 @@ private:
 
     Status prepareFrom();
 
+    Status prepareIndexes();
+
     Status prepareWhere();
 
     Status prepareYield();
@@ -43,31 +45,35 @@ private:
 
     Status checkFilter();
 
-    std::vector<IndexID>
-    findValidIndex(const std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>& ids);
-
-    Status findOptimalIndex(std::vector<IndexID> ids);
-
-    Status chooseIndex();
+    Status findValidIndex();
 
     void stepEdgeOut();
 
     void stepVertexOut();
 
-    void onEmptyInputs();
-
-    void finishExecution(std::unique_ptr<RowSetWriter> rsWriter);
-
-    void setOutputYields(SchemaWriter *outputSchema,
-                         const std::shared_ptr<ResultSchemaProvider>& schema);
-
     std::vector<std::string> getResultColumnNames() const;
 
     using EdgeRpcResponse = storage::StorageRpcResponse<storage::cpp2::LookUpEdgeIndexResp>;
-    void processEdgeResult(EdgeRpcResponse &&result);
 
     using VertexRpcResponse = storage::StorageRpcResponse<storage::cpp2::LookUpVertexIndexResp>;
-    void processVertexResult(VertexRpcResponse &&result);
+
+    using Callback = std::function<Status(std::vector<VariantType>,
+                                          const std::vector<nebula::cpp2::SupportedType>&)>;
+
+    void finishExecution(EdgeRpcResponse &&eRpcResp,
+                         VertexRpcResponse &&vRpcResp);
+
+    bool setupInterimResult(EdgeRpcResponse &&eRpcResp,
+                            VertexRpcResponse &&vRpcResp,
+                            std::unique_ptr<InterimResult> &result);
+
+    StatusOr<std::vector<cpp2::RowValue>> toThriftResponse(EdgeRpcResponse&& eRpcResp,
+                                                           VertexRpcResponse &&vRpcResp);
+
+    bool processFinalEdgeResult(EdgeRpcResponse &rpcResp, const Callback& cb) const;
+
+    bool processFinalVertexResult(VertexRpcResponse &rpcResp, const Callback& cb) const;
+
 
 private:
     using FilterItem = std::pair<std::string, RelationalExpression::Operator>;
@@ -80,11 +86,11 @@ private:
     std::unique_ptr<ExpressionContext>             expCtx_;
     int32_t                                        tagOrEdge_;
     bool                                           isEdge_{false};
-    bool                                           skipOptimize_{false};
     std::unique_ptr<InterimResult>                 inputs_;
     std::unique_ptr<cpp2::ExecutionResponse>       resp_;
     std::vector<std::string>                       returnCols_;
     std::vector<FilterItem>                        filters_;
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> indexes_;
 };
 }  // namespace graph
 }  // namespace nebula

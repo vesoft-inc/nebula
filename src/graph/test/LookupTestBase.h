@@ -140,6 +140,14 @@ AssertionResult LookupTestBase::prepareSchema() {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG INDEX t_index_5 ON lookup_tag_2(col4)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE EDGE INDEX e_index_1 ON lookup_edge_1(col1, col2, col3)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {

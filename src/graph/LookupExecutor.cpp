@@ -34,6 +34,10 @@ Status LookupExecutor::prepareClauses() {
         if (!status.ok()) {
             break;
         }
+        status = prepareIndexes();
+        if (!status.ok()) {
+            break;
+        }
         status = prepareWhere();
         if (!status.ok()) {
             break;
@@ -67,6 +71,30 @@ Status LookupExecutor::prepareFrom() {
     }
     LOG(ERROR) << "Tag or Edge was not found : " << from_->c_str();
     return Status::Error("Tag or Edge was not found : %s", from_->c_str());
+}
+
+Status LookupExecutor::prepareIndexes() {
+    auto ret = (isEdge_) ? ectx()->getMetaClient()->getEdgeIndexesFromCache(spaceId_)
+                         : ectx()->getMetaClient()->getTagIndexesFromCache(spaceId_);
+    if (!ret.ok()) {
+        LOG(ERROR) << "No index was found";
+        return Status::IndexNotFound();
+    }
+
+    auto indexes = ret.value();
+    if (indexes.empty()) {
+        return Status::IndexNotFound();
+    }
+    for (auto& index : indexes) {
+        if (index->get_schema_name() == *from_) {
+            indexes_.emplace_back(index);
+        }
+    }
+    if (indexes_.empty()) {
+        LOG(ERROR) << "No index was found";
+        return Status::IndexNotFound();
+    }
+    return Status::OK();
 }
 
 Status LookupExecutor::prepareWhere() {
@@ -118,7 +146,7 @@ Status LookupExecutor::optimize() {
         if (!status.ok()) {
             break;
         }
-        status = chooseIndex();
+        status = findValidIndex();
         if (!status.ok()) {
             break;
         }
@@ -137,8 +165,6 @@ Status LookupExecutor::traversalExpr(const Expression *expr) {
             auto* lExpr = dynamic_cast<const LogicalExpression*>(expr);
             if (lExpr->op() == LogicalExpression::Operator::XOR) {
                 return Status::SyntaxError("Syntax error : %s", lExpr->toString().c_str());
-            } else if (lExpr->op() == LogicalExpression::Operator::OR) {
-                skipOptimize_ = true;
             }
             auto* left = lExpr->left();
             traversalExpr(left);
@@ -153,10 +179,9 @@ Status LookupExecutor::traversalExpr(const Expression *expr) {
             auto* left = rExpr->left();
             auto* right = rExpr->right();
             /**
-             *  TODO (sky) : Support WHERE ：tag1.col2 != tag1.col3
-             *  Handler error for FuncExpr or  ArithmeticExpr contains
-             *  AliasPropExpr , for example :
-             *  WHERE lookup_tag_2.col2 > (lookup_tag_2.col3 - 100)
+             *  TODO (sky) : Does not support left expr and right expr are both kAliasProp.
+             *               Handle error (kAliasProp OP kAliasProp)
+             *               No handle error for (kAliasProp OP kFunctionCall(kAliasProp)) yet.
              */
             if (left->kind() == nebula::Expression::kAliasProp &&
                 right->kind() == nebula::Expression::kAliasProp) {
@@ -170,7 +195,8 @@ Status LookupExecutor::traversalExpr(const Expression *expr) {
                 prop = *aExpr->prop();
                 filters_.emplace_back(std::make_pair(prop, rExpr->op()));
             } else {
-                skipOptimize_ = true;
+                return Status::SyntaxError("Unsupported expression ：%s",
+                                           rExpr->toString().c_str());
             }
             break;
         }
@@ -191,252 +217,84 @@ Status LookupExecutor::traversalExpr(const Expression *expr) {
 
 Status LookupExecutor::checkFilter() {
     auto status = traversalExpr(sentence_->whereClause()->filter());
-    return status;
+    if (!status.ok()) {
+        return status;
+    }
+    if (filters_.empty()) {
+        return Status::SyntaxError("Where clause error . have not index matching");
+    }
+    return Status::OK();
 }
 
-Status LookupExecutor::chooseIndex() {
-    auto ret = (isEdge_) ? ectx()->getMetaClient()->getEdgeIndexesFromCache(spaceId_)
-                         : ectx()->getMetaClient()->getTagIndexesFromCache(spaceId_);
-    if (!ret.ok()) {
-        LOG(ERROR) << "No index was found";
-        return Status::IndexNotFound();
+Status
+LookupExecutor::findValidIndex() {
+    std::vector<std::shared_ptr<nebula::cpp2::IndexItem>> indexes;
+    std::set<std::string> filterCols;
+    for (auto& filter : filters_) {
+        filterCols.insert(filter.first);
+    }
+    /**
+     * step 1 : found out all valid indexes. for example :
+     * tag (col1 , col2, col3)
+     * index1 on tag (col1, col2)
+     * index2 on tag (col2, col1)
+     * index3 on tag (col3)
+     *
+     * where where clause is below :
+     * col1 > 1 and col2 > 1 --> index1 and index2 are valid.
+     * col1 > 1 --> index1 is valid.
+     * col2 > 1 --> index2 is valid.
+     * col3 > 1 --> index3 is valid.
+     */
+    for (auto& index : indexes_) {
+        bool matching = true;
+        size_t filterNum = 1;
+        for (const auto& field : index->get_fields()) {
+            auto it = std::find_if(filterCols.begin(), filterCols.end(),
+                                   [field](const auto &name) {
+                                       return field.get_name() == name;
+                                   });
+            if (it == filterCols.end()) {
+                matching = false;
+                break;
+            }
+            if (filterNum++ == filterCols.size()) {
+                break;
+            }
+        }
+        if (!matching || index->get_fields().size() < filterCols.size()) {
+            continue;
+        }
+        indexes.emplace_back(index);
     }
 
-    auto indexes = ret.value();
     if (indexes.empty()) {
         return Status::IndexNotFound();
     }
 
-    auto validIndexes = findValidIndex(indexes);
-    if (validIndexes.empty()) {
-        LOG(ERROR) << "No matching index was found";
-        return Status::Error("No matching index was found");
-    }
-    return findOptimalIndex(validIndexes);
-}
-
-/**
- * Choose the index that filter best matches, for example :
- * the filter is col1 == 1 and col2 == 2 and col3 == 3,
- * the indexes are index1 (col4, col3, col2, col1)
- *                 index2 (col1, col2, col3, col4)
- *                 index3 (col1, colA, col2, col3)
- * as above, these indexes all are valid, but the index2 should be choose.
- */
-Status LookupExecutor::findOptimalIndex(std::vector<IndexID> ids) {
-    Status status = Status::OK();
-    if (ids.size() == 1) {
-        index_ = ids[0];
-        return status;
-    }
     /**
-     * Returns the first index if no optimization is required
-     */
-    if (skipOptimize_) {
-        index_ = ids[0];
-        return status;
-    }
-    auto *mc = ectx()->getMetaClient();
-
-    /**
-     * std::map<column_hint_count, IndexID>
+     * step 2 , if have multiple valid indexes, get the best one.
+     * for example : if where clause is :
+     * col1 > 1 and col2 > 1 --> index1 and index2 are valid. get one of these at random.
+     * col1 > 1 and col2 == 1 --> only index2 is valid. because col2 have a equivalent value.
      */
     std::map<int32_t, IndexID> indexHint;
-    for (auto& indexId : ids) {
-        auto itemStatus = (isEdge_) ? mc->getEdgeIndexFromCache(spaceId_, indexId)
-                                    : mc->getTagIndexFromCache(spaceId_, indexId);
-        if (!itemStatus.ok()) {
-            return itemStatus.status();
-        }
-        const auto& index = itemStatus.value();
+    for (auto& index : indexes) {
         int32_t hintCount = 0;
         for (const auto& field : index->get_fields()) {
             auto it = std::find_if(filters_.begin(), filters_.end(),
                                    [field](const auto &rel) {
-                                       return field.get_name() == rel.first &&
-                                              rel.second == RelationalExpression::EQ;
+                                       return rel.second == RelationalExpression::EQ;
                                    });
             if (it == filters_.end()) {
                 break;
             }
             ++hintCount;
         }
-        /**
-         * return the index of max hint count.
-         */
-        indexHint[hintCount] = indexId;
+        indexHint[hintCount] = index->get_index_id();
     }
     index_ = indexHint.rbegin()->second;
-    return status;
-}
-
-std::vector<IndexID>
-LookupExecutor::findValidIndex(const std::vector<std::shared_ptr<nebula::cpp2::IndexItem>>& ids) {
-    std::vector<IndexID> indexes;
-    for (auto& index : ids) {
-        bool indexHint = true;
-        if (index->get_schema_name() != *from_) {
-            continue;
-        }
-        const auto& fields = index->get_fields();
-        for (auto& col : filters_) {
-            auto it = std::find_if(fields.begin(), fields.end(),
-                                   [col](const auto &field) {
-                                       return field.get_name() == col.first;
-                                   });
-
-            // If the property name not find in index's field
-            // we need break this loop then check next index.
-            if (it == fields.end()) {
-                indexHint = false;
-                break;
-            }
-        }
-        if (!indexHint) {
-            continue;
-        }
-        indexes.emplace_back(index->get_index_id());
-    }
-    return indexes;
-}
-
-
-void LookupExecutor::onEmptyInputs() {
-    auto resultColNames = getResultColumnNames();
-    auto outputs = std::make_unique<InterimResult>(std::move(resultColNames));
-    if (onResult_) {
-        onResult_(std::move(outputs));
-    } else if (resp_ == nullptr) {
-        resp_ = std::make_unique<cpp2::ExecutionResponse>();
-    }
-    doFinish(Executor::ProcessControl::kNext);
-}
-
-void LookupExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
-    auto resultColNames = getResultColumnNames();
-    auto outputs = std::make_unique<InterimResult>(std::move(resultColNames));
-    if (rsWriter != nullptr) {
-        outputs->setInterim(std::move(rsWriter));
-    }
-
-    if (onResult_) {
-        onResult_(std::move(outputs));
-    } else {
-        resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        auto colNames = outputs->getColNames();
-        resp_->set_column_names(std::move(colNames));
-        if (outputs->hasData()) {
-            auto ret = outputs->getRows();
-            if (!ret.ok()) {
-                LOG(ERROR) << "Get rows failed: " << ret.status();
-                doError(std::move(ret).status());
-                return;
-            }
-            resp_->set_rows(std::move(ret).value());
-        }
-    }
-    doFinish(Executor::ProcessControl::kNext);
-}
-
-void LookupExecutor::setOutputYields(SchemaWriter *outputSchema,
-                                     const std::shared_ptr<ResultSchemaProvider>& schema) {
-    if (schema == nullptr) {
-        return;
-    }
-    for (auto& col : returnCols_) {
-        outputSchema->appendCol(col, schema->getFieldType(col).type);
-    }
-}
-
-void LookupExecutor::processEdgeResult(EdgeRpcResponse &&result) {
-    auto all = result.responses();
-    std::shared_ptr<SchemaWriter> outputSchema;
-    std::unique_ptr<RowSetWriter> rsWriter;
-    std::shared_ptr<ResultSchemaProvider> schema = nullptr;
-    for (auto &resp : all) {
-        if (!resp.__isset.rows || resp.get_rows() == nullptr || resp.rows.empty()) {
-            continue;
-        }
-        if (outputSchema == nullptr) {
-            if (!yields_.empty()) {
-                schema = std::make_shared<ResultSchemaProvider>(*(resp.get_schema()));
-            }
-            outputSchema = std::make_shared<SchemaWriter>();
-            outputSchema->appendCol("SrcVID", nebula::cpp2::SupportedType::VID);
-            outputSchema->appendCol("DstVID", nebula::cpp2::SupportedType::VID);
-            outputSchema->appendCol("Ranking", nebula::cpp2::SupportedType::INT);
-            setOutputYields(outputSchema.get(), schema);
-            rsWriter = std::make_unique<RowSetWriter>(outputSchema);
-        }
-        for (const auto& data : *resp.get_rows()) {
-            RowWriter writer(outputSchema);
-            const auto& edge = data.get_key();
-            writer << edge.get_src() << edge.get_dst() << edge.get_ranking();
-            for (auto& column : returnCols_) {
-                auto reader = RowReader::getRowReader(data.get_props(), schema);
-                auto res = RowReader::getPropByName(reader.get(), column);
-                if (!ok(res)) {
-                    LOG(ERROR) << "Skip the bad value for prop " << column;
-                    continue;
-                }
-                auto&& v = value(std::move(res));
-                auto status = Collector::collect(v, &writer);
-                if (!status.ok()) {
-                    LOG(ERROR) << "Collect prop error: " << status;
-                }
-            }
-            rsWriter->addRow(writer.encode());
-        }
-    }  // for `resp'
-    if (outputSchema == nullptr) {
-        onEmptyInputs();
-        return;
-    }
-    finishExecution(std::move(rsWriter));
-}
-
-void LookupExecutor::processVertexResult(VertexRpcResponse &&result) {
-    auto all = result.responses();
-    std::shared_ptr<SchemaWriter> outputSchema;
-    std::unique_ptr<RowSetWriter> rsWriter;
-    std::shared_ptr<ResultSchemaProvider> schema = nullptr;
-    for (auto &resp : all) {
-        if (!resp.__isset.rows || resp.get_rows() == nullptr || resp.rows.empty()) {
-            continue;
-        }
-        if (outputSchema == nullptr) {
-            if (!yields_.empty()) {
-                schema = std::make_shared<ResultSchemaProvider>(*(resp.get_schema()));
-            }
-            outputSchema = std::make_shared<SchemaWriter>();
-            outputSchema->appendCol("VertexID", nebula::cpp2::SupportedType::VID);
-            setOutputYields(outputSchema.get(), schema);
-            rsWriter = std::make_unique<RowSetWriter>(outputSchema);
-        }
-        for (const auto& data : *resp.get_rows()) {
-            RowWriter writer(outputSchema);
-            writer << data.get_vertex_id();
-            for (auto& column : returnCols_) {
-                auto reader = RowReader::getRowReader(data.get_props(), schema);
-                auto res = RowReader::getPropByName(reader.get(), column);
-                if (!ok(res)) {
-                    LOG(ERROR) << "Skip the bad value for prop " << column;
-                    continue;
-                }
-                auto&& v = value(std::move(res));
-                auto status = Collector::collect(v, &writer);
-                if (!status.ok()) {
-                    LOG(ERROR) << "Collect prop error: " << status;
-                }
-            }
-            rsWriter->addRow(writer.encode());
-        }
-    }  // for `resp'
-    if (outputSchema == nullptr) {
-        onEmptyInputs();
-        return;
-    }
-    finishExecution(std::move(rsWriter));
+    return Status::OK();
 }
 
 void LookupExecutor::stepEdgeOut() {
@@ -459,7 +317,8 @@ void LookupExecutor::stepEdgeOut() {
                            << "error code: " << static_cast<int>(error.second);
             }
         }
-        processEdgeResult(std::forward<decltype(result)>(result));
+        storage::StorageRpcResponse<storage::cpp2::LookUpVertexIndexResp> vResp(0);
+        finishExecution(std::forward<decltype(result)>(result), std::move(vResp));
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception when handle lookup: " << e.what();
@@ -489,7 +348,8 @@ void LookupExecutor::stepVertexOut() {
                            << "error code: " << static_cast<int>(error.second);
             }
         }
-        processVertexResult(std::forward<decltype(result)>(result));
+        storage::StorageRpcResponse<storage::cpp2::LookUpEdgeIndexResp> eResp(0);
+        finishExecution(std::move(eResp), std::forward<decltype(result)>(result));
     };
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception when handle lookup: " << e.what();
@@ -551,5 +411,297 @@ std::vector<std::string> LookupExecutor::getResultColumnNames() const {
     }
     return result;
 }
+
+void LookupExecutor::finishExecution(EdgeRpcResponse &&eRpcResp,
+                                     VertexRpcResponse &&vRpcResp) {
+    if (onResult_) {
+        std::unique_ptr<InterimResult> outputs;
+        if (!setupInterimResult(std::move(eRpcResp), std::move(vRpcResp), outputs)) {
+            return;
+        }
+        onResult_(std::move(outputs));
+    } else {
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(getResultColumnNames());
+        auto ret = toThriftResponse(std::forward<EdgeRpcResponse>(eRpcResp),
+                                    std::forward<VertexRpcResponse>(vRpcResp));
+        if (!ret.ok()) {
+            LOG(ERROR) << "Get rows failed: " << ret.status();
+            return;
+        }
+        if (!ret.value().empty()) {
+            resp_->set_rows(std::move(ret).value());
+        }
+    }
+    doFinish(Executor::ProcessControl::kNext);
+}
+
+bool LookupExecutor::setupInterimResult(EdgeRpcResponse &&eRpcResp,
+                                        VertexRpcResponse &&vRpcResp,
+                                        std::unique_ptr<InterimResult> &result) {
+    // Generic results
+    result = std::make_unique<InterimResult>(getResultColumnNames());
+    std::shared_ptr<SchemaWriter> schema;
+    std::unique_ptr<RowSetWriter> rsWriter;
+    auto cb = [&] (std::vector<VariantType> record,
+                   const std::vector<nebula::cpp2::SupportedType>& colTypes) -> Status {
+        if (schema == nullptr) {
+            schema = std::make_shared<SchemaWriter>();
+            auto colnames = getResultColumnNames();
+            if (record.size() != colTypes.size()) {
+                LOG(ERROR) << "Record size: " << record.size()
+                           << " != column type size: " << colTypes.size();
+                return Status::Error("Record size is not equal to column type size, [%lu != %lu]",
+                                     record.size(), colTypes.size());
+            }
+            for (auto i = 0u; i < record.size(); i++) {
+                nebula::cpp2::SupportedType type;
+                if (colTypes[i] == nebula::cpp2::SupportedType::UNKNOWN) {
+                    switch (record[i].which()) {
+                        case VAR_INT64:
+                            // all integers in InterimResult are regarded as type of INT
+                            type = nebula::cpp2::SupportedType::INT;
+                            break;
+                        case VAR_DOUBLE:
+                            type = nebula::cpp2::SupportedType::DOUBLE;
+                            break;
+                        case VAR_BOOL:
+                            type = nebula::cpp2::SupportedType::BOOL;
+                            break;
+                        case VAR_STR:
+                            type = nebula::cpp2::SupportedType::STRING;
+                            break;
+                        default:
+                            LOG(ERROR) << "Unknown VariantType: " << record[i].which();
+                            return Status::Error("Unknown VariantType: %d", record[i].which());
+                    }
+                } else {
+                    type = colTypes[i];
+                }
+                schema->appendCol(colnames[i], type);
+            }  // for
+            rsWriter = std::make_unique<RowSetWriter>(schema);
+        }  // if
+
+        RowWriter writer(schema);
+        for (auto &column : record) {
+            switch (column.which()) {
+                case VAR_INT64:
+                    writer << boost::get<int64_t>(column);
+                    break;
+                case VAR_DOUBLE:
+                    writer << boost::get<double>(column);
+                    break;
+                case VAR_BOOL:
+                    writer << boost::get<bool>(column);
+                    break;
+                case VAR_STR:
+                    writer << boost::get<std::string>(column);
+                    break;
+                default:
+                    LOG(ERROR) << "Unknown VariantType: " << column.which();
+                    return Status::Error("Unknown VariantType: %d", column.which());
+            }
+        }
+
+        rsWriter->addRow(writer.encode());
+        return Status::OK();
+    };  // cb
+    if (isEdge_) {
+        if (!processFinalEdgeResult(eRpcResp, cb)) {
+            return false;
+        }
+    } else {
+        if (!processFinalVertexResult(vRpcResp, cb)) {
+            return false;
+        }
+    }
+
+
+    if (rsWriter != nullptr) {
+        result->setInterim(std::move(rsWriter));
+    }
+    return true;
+}
+
+StatusOr<std::vector<cpp2::RowValue>>
+LookupExecutor::toThriftResponse(EdgeRpcResponse&& eRpcResp,
+                                 VertexRpcResponse &&vRpcResp) {
+    std::vector<cpp2::RowValue> rows;
+    int64_t totalRows = 0;
+    if (isEdge_) {
+        for (auto& resp : eRpcResp.responses()) {
+            if (!resp.get_rows()->empty()) {
+                totalRows += resp.get_rows()->size();
+            }
+        }
+    } else {
+        for (auto& resp : vRpcResp.responses()) {
+            if (!resp.get_rows()->empty()) {
+                totalRows += resp.get_rows()->size();
+            }
+        }
+    }
+
+    rows.reserve(totalRows);
+    auto cb = [&] (std::vector<VariantType> record,
+                   const std::vector<nebula::cpp2::SupportedType>& colTypes) -> Status {
+        std::vector<cpp2::ColumnValue> row;
+        row.reserve(record.size());
+        for (size_t i = 0; i < colTypes.size(); i++) {
+            auto& column = record[i];
+            auto& type = colTypes[i];
+            row.emplace_back();
+            switch (type) {
+                case nebula::cpp2::SupportedType::BOOL:
+                    row.back().set_bool_val(boost::get<bool>(column));
+                    break;
+                case nebula::cpp2::SupportedType::INT:
+                    row.back().set_integer(boost::get<int64_t>(column));
+                    break;
+                case nebula::cpp2::SupportedType::DOUBLE:
+                    row.back().set_double_precision(boost::get<double>(column));
+                    break;
+                case nebula::cpp2::SupportedType::FLOAT:
+                    row.back().set_single_precision(boost::get<double>(column));
+                    break;
+                case nebula::cpp2::SupportedType::STRING:
+                    row.back().set_str(boost::get<std::string>(column));
+                    break;
+                case nebula::cpp2::SupportedType::TIMESTAMP:
+                    row.back().set_timestamp(boost::get<int64_t>(column));
+                    break;
+                case nebula::cpp2::SupportedType::VID:
+                    row.back().set_id(boost::get<int64_t>(column));
+                    break;
+                default:
+                {
+                    switch (column.which()) {
+                        case VAR_INT64:
+                            row.back().set_integer(boost::get<int64_t>(column));
+                            break;
+                        case VAR_DOUBLE:
+                            row.back().set_double_precision(boost::get<double>(column));
+                            break;
+                        case VAR_BOOL:
+                            break;
+                        case VAR_STR:
+                            row.back().set_str(boost::get<std::string>(column));
+                            break;
+                        default:
+                            LOG(FATAL) << "Unknown VariantType: " << column.which();
+                    }
+                }
+                    break;
+            }
+        }
+        rows.emplace_back();
+        rows.back().set_columns(std::move(row));
+        return Status::OK();
+    };  // cb
+
+    if (isEdge_) {
+        if (!processFinalEdgeResult(eRpcResp, cb)) {
+            return Status::Error("process failed");
+        }
+    } else {
+        if (!processFinalVertexResult(vRpcResp, cb)) {
+            return Status::Error("process failed");
+        }
+    }
+    return rows;
+}
+
+bool LookupExecutor::processFinalEdgeResult(EdgeRpcResponse &rpcResp, const Callback& cb) const {
+    auto& all = rpcResp.responses();
+    std::vector<nebula::cpp2::SupportedType> colTypes;
+    std::vector<VariantType> record;
+    record.reserve(returnCols_.size() + 3);
+    std::shared_ptr<ResultSchemaProvider> schema = nullptr;
+    for (auto &resp : all) {
+        if (!resp.__isset.rows || resp.get_rows() == nullptr || resp.rows.empty()) {
+            continue;
+        }
+        if (colTypes.empty()) {
+            colTypes.emplace_back(nebula::cpp2::SupportedType::VID);
+            colTypes.emplace_back(nebula::cpp2::SupportedType::VID);
+            colTypes.emplace_back(nebula::cpp2::SupportedType::INT);
+            if (!returnCols_.empty()) {
+                schema = std::make_shared<ResultSchemaProvider>(*(resp.get_schema()));
+                std::for_each(returnCols_.begin(), returnCols_.end(), [&](auto& col) {
+                    colTypes.emplace_back(schema->getFieldType(col).get_type());
+                });
+            }
+        }
+        for (const auto& data : *resp.get_rows()) {
+            const auto& edge = data.get_key();
+            record.emplace_back(edge.get_src());
+            record.emplace_back(edge.get_dst());
+            record.emplace_back(edge.get_ranking());
+            for (auto& column : returnCols_) {
+                auto reader = RowReader::getRowReader(data.get_props(), schema);
+                auto res = RowReader::getPropByName(reader.get(), column);
+                if (!ok(res)) {
+                    LOG(ERROR) << "Skip the bad value for prop " << column;
+                    continue;
+                }
+                auto&& v = value(std::move(res));
+                record.emplace_back(std::move(v));
+            }
+            auto cbStatus = cb(std::move(record), colTypes);
+            if (!cbStatus.ok()) {
+                LOG(ERROR) << cbStatus;
+                doError(std::move(cbStatus));
+                return false;
+            }
+        }
+    }   // for `resp'
+    return true;
+}
+
+bool LookupExecutor::processFinalVertexResult(VertexRpcResponse &rpcResp,
+                                              const Callback& cb) const {
+    auto& all = rpcResp.responses();
+    std::vector<nebula::cpp2::SupportedType> colTypes;
+    std::vector<VariantType> record;
+    record.reserve(returnCols_.size() + 1);
+    std::shared_ptr<ResultSchemaProvider> schema = nullptr;
+    for (auto &resp : all) {
+        if (!resp.__isset.rows || resp.get_rows() == nullptr || resp.rows.empty()) {
+            continue;
+        }
+        if (colTypes.empty()) {
+            colTypes.emplace_back(nebula::cpp2::SupportedType::VID);
+            if (!returnCols_.empty()) {
+                schema = std::make_shared<ResultSchemaProvider>(*(resp.get_schema()));
+                std::for_each(returnCols_.begin(), returnCols_.end(), [&](auto& col) {
+                    colTypes.emplace_back(schema->getFieldType(col).get_type());
+                });
+            }
+        }
+        for (const auto& data : *resp.get_rows()) {
+            const auto& vertexId = data.get_vertex_id();
+            record.emplace_back(vertexId);
+            for (auto& column : returnCols_) {
+                auto reader = RowReader::getRowReader(data.get_props(), schema);
+                auto res = RowReader::getPropByName(reader.get(), column);
+                if (!ok(res)) {
+                    LOG(ERROR) << "Skip the bad value for prop " << column;
+                    continue;
+                }
+                auto&& v = value(std::move(res));
+                record.emplace_back(v);
+            }
+            auto cbStatus = cb(std::move(record), colTypes);
+            if (!cbStatus.ok()) {
+                LOG(ERROR) << cbStatus;
+                doError(std::move(cbStatus));
+                return false;
+            }
+        }
+    }   // for `resp'
+    return true;
+}
+
 }  // namespace graph
 }  // namespace nebula
