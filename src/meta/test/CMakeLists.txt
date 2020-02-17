@@ -546,6 +546,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:process_obj>
