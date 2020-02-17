@@ -463,18 +463,12 @@ void GoExecutor::stepOut() {
         return;
     }
     auto returns = status.value();
-    std::string filterPushdown = "";
-    if (FLAGS_filter_pushdown && isFinalStep()
-            && direction_ == OverClause::Direction::kForward) {
-        // TODO: not support filter pushdown in reversely traversal now.
-        filterPushdown = whereWrapper_->filterPushdown_;
-    }
     VLOG(1) << "edge type size: " << edgeTypes_.size()
             << " return cols: " << returns.size();
     auto future  = ectx()->getStorageClient()->getNeighbors(spaceId,
                                                    starts_,
                                                    edgeTypes_,
-                                                   filterPushdown,
+                                                   whereWrapper_->filterPushdown_,
                                                    std::move(returns));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
