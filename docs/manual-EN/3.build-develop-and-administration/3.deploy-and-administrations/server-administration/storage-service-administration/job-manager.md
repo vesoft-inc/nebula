@@ -46,7 +46,7 @@ What's in the returned results:
 - `192.168.8.5` shows which machine the job is running on
 - `finished` is the job status, which indicates that the job execution is finished and successful. Other job status are Queue, running, failed and stopped
 - `12/17/19 17:21:30` is the start time, which can never be empty because the initial status is running
-- `12/17/19 17:21:30` is the stop time, which is empty when the job status is running. The value is set when the job status is finished, failed and stopped
+- `12/17/19 17:21:30` is the end time, which is empty when the job status is running. The value is set when the job status is finished, failed and stopped
 
 **Note:** There are five job status, i.e. QUEUE, RUNNING, FINISHED, FAILED, STOPPED. Status switching is described below:
 
@@ -60,7 +60,7 @@ Queue -- running -- finished -- removed
 
 #### List All Jobs
 
-The `SHOW JOBS` statement lists all the jobs that are not expired. The default  job expiration time is one week. You can change it with meta flag `job_expired_secs`.
+The `SHOW JOBS` statement lists all the jobs that are not expired. The default job expiration time is one week. You can change it with meta flag `job_expired_secs`.
 
 ```ngql
 nebula> SHOW JOBS
