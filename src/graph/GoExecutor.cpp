@@ -463,12 +463,16 @@ void GoExecutor::stepOut() {
         return;
     }
     auto returns = status.value();
+    std::string filterPushdown = "";
+    if (FLAGS_filter_pushdown) {
+        filterPushdown = whereWrapper_->filterPushdown_;
+    }
     VLOG(1) << "edge type size: " << edgeTypes_.size()
             << " return cols: " << returns.size();
     auto future  = ectx()->getStorageClient()->getNeighbors(spaceId,
                                                    starts_,
                                                    edgeTypes_,
-                                                   whereWrapper_->filterPushdown_,
+                                                   filterPushdown,
                                                    std::move(returns));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
