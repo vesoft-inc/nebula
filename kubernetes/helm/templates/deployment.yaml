@@ -63,7 +63,12 @@ spec:
         volumeMounts:
         - name: config 
           mountPath: /usr/local/nebula/etc/
+        - name: timezone 
+          mountPath: /etc/localtime
       volumes:
+      - name: timezone
+        hostPath:
+          path: /etc/localtime
       - name: config 
         configMap: 
           name: nebula-graphd
