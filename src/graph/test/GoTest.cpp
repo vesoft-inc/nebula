@@ -2788,6 +2788,672 @@ TEST_P(GoTest, ReverseTraversalFilterPushdown) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
+
+TEST_P(GoTest, BidirectTraversalFilterPushdown) {
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE like.likeness > 0 && like.likeness < 99";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "((like.likeness>0)&&(like.likeness<99))");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["LeBron James"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE !(like.likeness > 0 && like.likeness < 99)";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "!(((like.likeness>0)&&(like.likeness<99)))");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Blake Griffin"].vid()},
+            {players_["Dejounte Murray"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE like.likeness > 0 && $$.player.name == \"Carmelo Anthony\"";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "((like.likeness>0)&&true)");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE $$.player.name == \"Dwayne Wade\""
+                    " && $$.player.name == \"Carmelo Anthony\"";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                false,
+                "");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE $$.player.name == \"Dwyane Wade\""
+                    " || $$.player.name == \"Carmelo Anthony\"";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                false,
+                "");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE like.likeness > 0"
+                    " && (like.likeness < 90 || $$.player.name == \"Carmelo Anthony\")";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "((like.likeness>0)&&true)");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE (like.likeness < 90 || $$.player.name == \"Carmelo Anthony\")"
+                    " && like.likeness > 0";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "(true&&(like.likeness>0))");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE like.likeness < 99 "
+                    " && like.likeness > 0"
+                    " && $$.player.name == \"Carmelo Anthony\"";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "(((like.likeness<99)&&(like.likeness>0))&&true)");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE like.likeness < 99 "
+                    " && $$.player.name == \"Carmelo Anthony\""
+                    " && like.likeness > 0";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "(((like.likeness<99)&&true)&&(like.likeness>0))");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE $$.player.name == \"Carmelo Anthony\""
+                    " && like.likeness < 99 "
+                    " && like.likeness > 0";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "((true&&(like.likeness<99))&&(like.likeness>0))");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE like.likeness == 0 || like.likeness > 0 && like.likeness < 99";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "((like.likeness==0)||((like.likeness>0)&&(like.likeness<99)))");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["LeBron James"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE like.likeness > 0 && like.likeness <=45 "
+                    "|| like.likeness >=45 && like.likeness < 99";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "(((like.likeness>0)&&(like.likeness<=45))"
+                "||((like.likeness>=45)&&(like.likeness<99)))");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["LeBron James"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE like.likeness > 0 && like.likeness <=45 "
+                    "&& $$.player.name ==\"Dwyane Wadw\""
+                    "|| like.likeness >=45 && like.likeness < 99";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "((((like.likeness>0)&&(like.likeness<=45))&&true)"
+                "||((like.likeness>=45)&&(like.likeness<99)))");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["LeBron James"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE $$.player.name == \"Carmelo Anthony\""
+                    " || like.likeness < 99 "
+                    " && like.likeness > 0";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                false,
+                "");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["LeBron James"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE like.likeness > 0 && like.likeness <=45 "
+                    "XOR like.likeness >=45 && like.likeness < 99";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "(((like.likeness>0)&&(like.likeness<=45))"
+                "XOR((like.likeness>=45)&&(like.likeness<99)))");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["LeBron James"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE like.likeness > 0 && like.likeness <=45 "
+                    "&& $$.player.name ==\"Dwyane Wadw\""
+                    "XOR like.likeness >=45 && like.likeness < 99";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                false,
+                "");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["LeBron James"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE $^.player.name == \"Chris Paul\" "
+                    "&& like.likeness > 0 && like.likeness < 99";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "((($^.player.name==Chris Paul)&&(like.likeness>0))&&(like.likeness<99))");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["LeBron James"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE like._src == %ld && like._rank == 0 && like._dst == %ld"
+                    "YIELD like._dst AS id";
+        auto query = folly::stringPrintf(fmt,
+                players_["Chris Paul"].vid(),
+                players_["Chris Paul"].vid(),
+                players_["Dwyane Wade"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "(((like._src==-6952676908621237908)&&(like._rank==0))"
+                "&&(like._dst==-4725743394557506923))");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"id"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Dwyane Wade"].vid()},
+            {players_["Dwyane Wade"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE udf_is_in(like._dst, 1, 2, 3)";
+        auto query = folly::stringPrintf(fmt, players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "udf_is_in(like._dst,1,2,3)");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE udf_is_in(like._dst, %ld, 2, 3)";
+        auto query = folly::stringPrintf(fmt,
+                players_["Chris Paul"].vid(),
+                players_["Dwyane Wade"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "udf_is_in(like._dst,-4725743394557506923,2,3)");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["Dwyane Wade"].vid()},
+            {players_["Dwyane Wade"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE udf_is_in(\"test\", $$.player.name)";
+        auto query = folly::stringPrintf(fmt,
+                players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                false,
+                "");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE udf_is_in($^.player.name, \"Chris Paul\")";
+        auto query = folly::stringPrintf(fmt,
+                players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "udf_is_in($^.player.name,Chris Paul)");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+            {players_["LeBron James"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+            {players_["Carmelo Anthony"].vid()},
+            {players_["Dwyane Wade"].vid()},
+            {players_["Blake Griffin"].vid()},
+            {players_["Dejounte Murray"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE !udf_is_in($^.player.name, \"Chris Paul\")";
+        auto query = folly::stringPrintf(fmt,
+                players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "!(udf_is_in($^.player.name,Chris Paul))");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER like BIDIRECT "
+                    "WHERE udf_is_in($^.team.name, \"Hornets\")";
+        auto query = folly::stringPrintf(fmt,
+                players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "udf_is_in($^.team.name,Hornets)");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"like._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        auto *fmt = "GO FROM %ld OVER * BIDIRECT "
+                    "WHERE udf_is_in($^.player.name, \"Chris Paul\")";
+        auto query = folly::stringPrintf(fmt,
+                players_["Chris Paul"].vid());
+
+        TEST_FILTER_PUSHDOWN_REWRITE(
+                true,
+                "udf_is_in($^.player.name,Chris Paul)");
+
+        cpp2::ExecutionResponse resp;
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<std::string> expectedColNames{
+            {"serve._dst"}, {"like._dst"}, {"teammate._dst"}
+        };
+        ASSERT_TRUE(verifyColNames(resp, expectedColNames));
+
+        std::vector<std::tuple<int64_t, int64_t, int64_t>> expected = {
+            {0, players_["LeBron James"].vid(), 0},
+            {0, players_["Carmelo Anthony"].vid(), 0},
+            {0, players_["Dwyane Wade"].vid(), 0},
+            {0, players_["Carmelo Anthony"].vid(), 0},
+            {0, players_["Dwyane Wade"].vid(), 0},
+            {0, players_["Blake Griffin"].vid(), 0},
+            {0, players_["Dejounte Murray"].vid(), 0},
+            {teams_["Hornets"].vid(), 0, 0},
+            {teams_["Clippers"].vid(), 0, 0},
+            {teams_["Rockets"].vid(), 0, 0},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
 #undef TEST_FILTER_PUSHDWON_REWRITE
 
 INSTANTIATE_TEST_CASE_P(IfPushdownFilter, GoTest, ::testing::Bool());
