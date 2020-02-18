@@ -21,6 +21,10 @@ spec:
         app: nebula-graphd
     spec:
       restartPolicy: Always
+{{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+{{- end }}
       containers:
       - name: nebula-graphd
         image: "{{ .Values.image.graphd.repository }}:{{ .Values.image.graphd.tag }}"
@@ -59,12 +63,7 @@ spec:
         volumeMounts:
         - name: config 
           mountPath: /usr/local/nebula/etc/
-        - name: timezone
-          mountPath: /etc/localtime
       volumes:
-      - name: timezone 
-        hostPath:
-          path: /etc/localtime
       - name: config 
         configMap: 
           name: nebula-graphd
