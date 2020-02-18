@@ -180,13 +180,8 @@ Status LookupExecutor::traversalExpr(const Expression *expr) {
             auto* right = rExpr->right();
             /**
              *  TODO (sky) : Does not support left expr and right expr are both kAliasProp.
-             *               Handle error (kAliasProp OP kAliasProp)
-             *               No handle error for (kAliasProp OP kFunctionCall(kAliasProp)) yet.
              */
-            if (left->kind() == nebula::Expression::kAliasProp &&
-                right->kind() == nebula::Expression::kAliasProp) {
-                return Status::SyntaxError("Syntax error ：%s", rExpr->toString().c_str());
-            }  else if (left->kind() == nebula::Expression::kAliasProp) {
+            if (left->kind() == nebula::Expression::kAliasProp) {
                 auto* aExpr = dynamic_cast<const AliasPropertyExpression*>(left);
                 prop = *aExpr->prop();
                 filters_.emplace_back(std::make_pair(prop, rExpr->op()));
@@ -276,7 +271,9 @@ LookupExecutor::findValidIndex() {
      * step 2 , if have multiple valid indexes, get the best one.
      * for example : if where clause is :
      * col1 > 1 and col2 > 1 --> index1 and index2 are valid. get one of these at random.
-     * col1 > 1 and col2 == 1 --> only index2 is valid. because col2 have a equivalent value.
+     * col1 > 1 and col2 == 1 --> index1 and index2 are valid.
+     *                            but need choose one for storage layer.
+     *                            here index2 is chosen because col2 have a equivalent value.
      */
     std::map<int32_t, IndexID> indexHint;
     for (auto& index : indexes) {
