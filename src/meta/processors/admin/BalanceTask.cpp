@@ -152,14 +152,6 @@ void BalanceTask::invoke() {
                 if (!resp.ok()) {
                     LOG(INFO) << taskIdStr_ << "Update meta failed, status " << resp;
                     ret_ = Result::FAILED;
-                } else if (kv_ != nullptr) {
-                    if (LastUpdateTimeMan::update(kv_, time::WallClock::fastNowInMilliSec()) !=
-                            kvstore::ResultCode::SUCCEEDED) {
-                        LOG(INFO) << taskIdStr_ << "Update meta failed";
-                        ret_ = Result::FAILED;
-                    } else {
-                        status_ = Status::REMOVE_PART_ON_SRC;
-                    }
                 } else {
                     status_ = Status::REMOVE_PART_ON_SRC;
                 }
