@@ -175,7 +175,7 @@ TEST(Parser, TagOperation) {
         GQLParser parser;
         std::string query = "CREATE TAG woman(name string, age int, "
                             "married bool, salary double, create_time timestamp)"
-                            "ttl_duration = 100, ttl_col = create_time";
+                            "ttl_duration = 100, ttl_col = \"create_time\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -211,7 +211,13 @@ TEST(Parser, TagOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "ALTER TAG woman ttl_duration = 50, ttl_col = age";
+        std::string query = "ALTER TAG man ttl_col = \"\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER TAG woman ttl_duration = 50, ttl_col = \"age\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -281,7 +287,7 @@ TEST(Parser, EdgeOperation) {
         GQLParser parser;
         std::string query = "CREATE EDGE woman(name string, age int, "
                             "married bool, salary double, create_time timestamp)"
-                            "ttl_duration = 100, ttl_col = create_time";
+                            "ttl_duration = 100, ttl_col = \"create_time\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -301,7 +307,13 @@ TEST(Parser, EdgeOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "ALTER EDGE woman ttl_duration = 50, ttl_col = age";
+        std::string query = "ALTER EDGE man ttl_col = \"\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER EDGE woman ttl_duration = 50, ttl_col = \"age\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
