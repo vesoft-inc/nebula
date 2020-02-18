@@ -133,8 +133,26 @@ nebula_add_executable(
 install(
     TARGETS
         nebula-graphd
+    DESTINATION
+        bin
+    COMPONENT
+        graph
+)
+
+install(
+    TARGETS
         nebula-storaged
+    DESTINATION
+        bin
+    COMPONENT
+        storage
+)
+
+install(
+    TARGETS
         nebula-metad
     DESTINATION
         bin
+    COMPONENT
+        meta
 )
