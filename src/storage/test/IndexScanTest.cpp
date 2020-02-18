@@ -16,6 +16,8 @@
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 
+DECLARE_uint32(raft_heartbeat_interval_secs);
+
 namespace nebula {
 namespace storage {
 using IndexValues = std::vector<std::pair<nebula::cpp2::SupportedType, std::string>>;
@@ -371,6 +373,7 @@ static cpp2::LookUpEdgeIndexResp checkLookupEdgesString(const std::string& filte
     }
     std::unique_ptr<meta::IndexManager> indexMan(im);
     auto eindex = indexMan->getEdgeIndex(spaceId, type).value();
+    sleep(FLAGS_raft_heartbeat_interval_secs);
     {
         for (auto partId = 0; partId < 3; partId++) {
             std::vector<kvstore::KV> data;
@@ -462,6 +465,7 @@ static cpp2::LookUpVertexIndexResp checkLookupVerticesString(const std::string& 
     }
     std::unique_ptr<meta::IndexManager> indexMan(im);
     auto vindex = indexMan->getTagIndex(spaceId, tagId).value();
+    sleep(FLAGS_raft_heartbeat_interval_secs);
     {
         for (auto partId = 0; partId < 3; partId++) {
             std::vector<kvstore::KV> data;
@@ -552,6 +556,7 @@ static cpp2::LookUpEdgeIndexResp checkLookupEdgesDouble(const std::string& filte
     }
     std::unique_ptr<meta::IndexManager> indexMan(im);
     auto eindex = indexMan->getEdgeIndex(spaceId, type).value();
+    sleep(FLAGS_raft_heartbeat_interval_secs);
     {
         for (auto partId = 0; partId < 3; partId++) {
             std::vector<kvstore::KV> data;
@@ -647,6 +652,7 @@ static cpp2::LookUpVertexIndexResp checkLookupVerticesDouble(const std::string& 
     }
     std::unique_ptr<meta::IndexManager> indexMan(im);
     auto vindex = indexMan->getTagIndex(spaceId, tagId).value();
+    sleep(FLAGS_raft_heartbeat_interval_secs);
     {
         for (auto partId = 0; partId < 3; partId++) {
             std::vector<kvstore::KV> data;
