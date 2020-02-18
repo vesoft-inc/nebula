@@ -243,12 +243,6 @@ protected:
     StatusOr<nebula::cpp2::Schema>
     getLatestEdgeSchema(GraphSpaceID spaceId, const EdgeType edgeType);
 
-    /**
-     * Check if edge has ttl
-     */
-    StatusOr<bool>
-    edgeHasTTL(GraphSpaceID spaceId, const EdgeType edgeType);
-
     StatusOr<IndexID> getIndexID(GraphSpaceID spaceId, const std::string& indexName);
 
     StatusOr<UserID> getUserId(const std::string& account);
