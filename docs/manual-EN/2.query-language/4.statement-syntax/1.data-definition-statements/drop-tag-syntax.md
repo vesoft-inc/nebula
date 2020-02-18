@@ -8,7 +8,11 @@ You must have the DROP privilege for the tag.
 
 > Be careful with this statement.
 
-You can use the `If EXISTS` keywords when dropping tags. This keyword automatically detects if the corresponding tag exists. If it exists, it will be deleted. Otherwise, no tag is deleted.
+**Note:** When dropping a tag, **Nebula Graph** only checks whether the tag is associated with any indexes. If so the deletion is rejected.
+
+Please refer to [Index Documentation](index.md) on details about index.
+
+You can use the `If EXISTS` keywords when dropping tags. These keywords automatically detect if the corresponding tag exists. If it exists, it will be deleted. Otherwise, no tag is deleted.
 
 A vertex can have either only one tag (types) or multiple tags (types).
 
