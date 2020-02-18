@@ -114,12 +114,6 @@ public:
             LOG(INFO) << "Space " << spaceId << " not exist, create it!";
             store->addSpace(spaceId);
         }
-        auto st = mClient_->refreshCache();
-        if (!st.ok()) {
-            this->pushResultCode(cpp2::ErrorCode::E_LOAD_META_FAILED, partId);
-            onFinished();
-            return;
-        }
         store->addPart(spaceId, partId, req.get_as_learner());
         onFinished();
     }

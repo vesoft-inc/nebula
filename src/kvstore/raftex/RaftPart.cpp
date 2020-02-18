@@ -488,7 +488,7 @@ void RaftPart::addPeer(const HostAddr& peer) {
 void RaftPart::removePeer(const HostAddr& peer) {
     CHECK(!raftLock_.try_lock());
     if (peer == addr_) {
-        //    status_ = Status::STOPPED;
+        // The part will be removed in REMOVE_PART_ON_SRC phase
         LOG(INFO) << idStr_ << "Remove myself from the raft group.";
         return;
     }

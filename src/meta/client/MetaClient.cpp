@@ -556,7 +556,7 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
         const auto& newParts = it->second;
         auto oldIt = oldPartsMap.find(spaceId);
         if (oldIt == oldPartsMap.end()) {
-            VLOG(1) << "SpaceId " << spaceId << " was added!";
+            LOG(INFO) << "SpaceId " << spaceId << " was added!";
             listener_->onSpaceAdded(spaceId);
             for (auto partIt = newParts.begin(); partIt != newParts.end(); partIt++) {
                 listener_->onPartAdded(partIt->second);
@@ -587,7 +587,7 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
         const auto& oldParts = it->second;
         auto newIt = newPartsMap.find(spaceId);
         if (newIt == newPartsMap.end()) {
-            VLOG(1) << "SpaceId " << spaceId << " was removed!";
+            LOG(INFO) << "SpaceId " << spaceId << " was removed!";
             for (auto partIt = oldParts.begin(); partIt != oldParts.end(); partIt++) {
                 listener_->onPartRemoved(spaceId, partIt->first);
             }
