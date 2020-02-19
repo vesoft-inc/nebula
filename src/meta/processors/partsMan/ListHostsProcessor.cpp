@@ -74,7 +74,7 @@ Status ListHostsProcessor::allHostsWithStatus() {
     }
 
     // get hosts which have send heartbeat recently
-    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_, FLAGS_heartbeat_interval_secs + 1);
+    auto activeHosts = ActiveHostsMan::getActiveHosts(kvstore_, FLAGS_heartbeat_interval_secs * 2);
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseLeaderKey(iter->key());
         if (std::find(activeHosts.begin(), activeHosts.end(),

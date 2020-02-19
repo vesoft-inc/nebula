@@ -319,7 +319,6 @@ void killOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
                  std::vector<std::shared_ptr<test::TestShard>>& copies,
                  std::shared_ptr<test::TestShard>& leader,
                  size_t index) {
-    copies[index]->stop();
     services[index]->removePartition(copies[index]);
     if (leader != nullptr && index == leader->index()) {
         std::lock_guard<std::mutex> lock(leaderMutex);
