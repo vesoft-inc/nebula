@@ -65,7 +65,7 @@ CREATE {TAG | EDGE} [IF NOT EXISTS] {<tag_name> | <edge_name>}
 
 * 单 TTL 定义
 
-    可以指定单个 TTL_COL 字段， **Nebula Graph** 会使用最早的失效时间。
+    仅支持指定单个 TTL_COL 字段。
 
 ### 示例
 
@@ -83,18 +83,12 @@ nebula> CREATE EDGE follow_with_default(start_time timestamp DEFAULT 0, grade do
 ```ngql
 nebula> CREATE TAG woman(name string, age int,
    married bool, salary double, create_time timestamp)
-   TTL_DURATION = 100, TTL_COL = create_time -- 时间间隔是 100s，从 create_time 字段的值开始
+   TTL_DURATION = 100, TTL_COL = "create_time" -- 时间间隔是 100s，从 create_time 字段的值开始
 
 nebula> CREATE EDGE marriage(location string, since timestamp)
     TTL_DURATION = 0, TTL_COL = since -- 负值或 0 数据不会失效
 
 nebula> CREATE TAG icecream(made timestamp, temperature int)
    TTL_DURATION = 100, TTL_COL = made,
-   TTL_DURATION = 10, TTL_COL = temperature
-   --  超过任一 TTL_DURATION 数据即失效
-
-nebula> CREATE EDGE garbage (thrown timestamp, temperature int)
-   TTL_DURATION = -2, TTL_COL = thrown,
-   TTL_DURATION = 10, TTL_COL = thrown
-   --  可指定多个 TTL_DURATION 或 TTL_COL 字段，但是只有最后一个有效。不推荐使用。
+   --  超过 TTL_DURATION 数据即失效
 ```

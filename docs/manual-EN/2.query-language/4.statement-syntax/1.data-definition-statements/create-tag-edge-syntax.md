@@ -67,7 +67,7 @@ You can use the `If NOT EXISTS` keywords when creating tags or edges. This keywo
 
 * single TTL definition
 
-    You can specify a single TTL_COL field and **Nebula Graph** uses the lowest(i.e. earliest) expiration threshold to expire data.
+    Only a single TTL_COL field can be specified.
 
 ### Examples
 
@@ -85,19 +85,13 @@ nebula> CREATE EDGE follow_with_default(start_time timestamp DEFAULT 0, grade do
 ```ngql
 nebula> CREATE TAG woman(name string, age int,
    married bool, salary double, create_time timestamp)
-   TTL_DURATION = 100, TTL_COL = create_time -- time interval is 100s, starting from the create_time filed
+   TTL_DURATION = 100, TTL_COL = "create_time" -- time interval is 100s, starting from the create_time filed
 
 nebula> CREATE EDGE marriage(location string, since timestamp)
     TTL_DURATION = 0, TTL_COL = since -- negative or zero, not expire
 
 nebula> CREATE TAG icecream(made timestamp, temperature int)
    TTL_DURATION = 100, TTL_COL = made,
-   TTL_DURATION = 10, TTL_COL = temperature
-   --  no matter which comes first: made + 100 or temperature + 10
-
-nebula> CREATE EDGE garbage (thrown timestamp, temperature int)
-   TTL_DURATION = -2, TTL_COL = thrown,
-   TTL_DURATION = 10, TTL_COL = thrown
-   --  You can specify multiple TTL_DURATION or TTL_COL, but only the last one is valid. So this usage like this is not recommended.
+   --  Data expires after TTL_DURATION
 
 ```
