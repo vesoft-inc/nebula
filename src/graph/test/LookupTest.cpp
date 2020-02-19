@@ -58,7 +58,6 @@ TEST_F(LookupTest, SimpleVertex) {
                 {200},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
-        ASSERT_TRUE(verifyResult(resp, expected));
         std::vector<std::string> cols = {
             {"VertexID"}
         };

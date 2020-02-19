@@ -21,10 +21,6 @@ Status LookupExecutor::prepare() {
 Status LookupExecutor::prepareClauses() {
     DCHECK(sentence_ != nullptr);
     Status status = Status::OK();
-    spaceId_ = ectx()->rctx()->session()->space();
-    expCtx_ = std::make_unique<ExpressionContext>();
-    expCtx_->setStorageClient(ectx()->getStorageClient());
-    expCtx_->setSpace(spaceId_);
     do {
         status = checkIfGraphSpaceChosen();
         if (!status.ok()) {
@@ -56,6 +52,7 @@ Status LookupExecutor::prepareClauses() {
 }
 
 Status LookupExecutor::prepareFrom() {
+    spaceId_ = ectx()->rctx()->session()->space();
     from_ = sentence_->from();
     auto *mc = ectx()->getMetaClient();
     auto tagResult = mc->getTagIDByNameFromCache(spaceId_, *from_);
@@ -102,6 +99,9 @@ Status LookupExecutor::prepareWhere() {
     if (!clause) {
         return Status::SyntaxError("Where clause is required");
     }
+    expCtx_ = std::make_unique<ExpressionContext>();
+    expCtx_->setStorageClient(ectx()->getStorageClient());
+    expCtx_->setSpace(spaceId_);
     return Status::OK();
 }
 
@@ -398,7 +398,6 @@ std::vector<std::string> LookupExecutor::getResultColumnNames() const {
     } else {
         result.emplace_back("VertexID");
     }
-    result.reserve(yields_.size());
     for (auto *col : yields_) {
         if (col->alias() == nullptr) {
             result.emplace_back(col->expr()->toString());
