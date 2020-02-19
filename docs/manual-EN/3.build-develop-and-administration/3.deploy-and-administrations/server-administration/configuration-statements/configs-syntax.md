@@ -2,7 +2,7 @@
 
 ## Introduction to Configuration
 
-**Nebula Graph** gets configuration from meta by default. If you want to get configuration locally, please add the `local_config=true` option in flag files `metad.conf`, `storaged.conf`, `graphd.conf` (directory is `/usr/local/nebula/etc/`) respectively.
+**Nebula Graph** gets configuration from meta by default. If you want to get configuration locally, please add the `local_config=true` option in flag files `metad.conf`, `storaged.conf`, `graphd.conf` (directory is `/home/user/nebula/build/install/etc`) respectively.
 
 **Note:**
 

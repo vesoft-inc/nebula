@@ -2,7 +2,7 @@
 
 ## 配置说明
 
-**Nebula Graph** 默认从 meta 获取配置。如需从本地获取配置，请在 flag 配置文件 `metad.conf`、 `storaged.conf`、`graphd.conf` （路径为 `/usr/local/nebula/etc/`）中分别添加 `local_config=true`，以从本地配置文件获取。
+**Nebula Graph** 默认从 meta 获取配置。如需从本地获取配置，请在 flag 配置文件 `metad.conf`、 `storaged.conf`、`graphd.conf` （路径为 `/home/user/nebula/build/install/etc`）中分别添加 `local_config=true`，以从本地配置文件获取。
 
 **注意：**
 
