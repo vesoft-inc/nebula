@@ -45,14 +45,22 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     }
 
     auto edgeType = edgeTypeRet.value();
-    auto fieldsResult = getLatestEdgeFields(space, edgeType);
-    if (!fieldsResult.ok()) {
-        LOG(ERROR) << "Get Latest Edge Property Name Failed";
+    auto retSchema = getLatestEdgeSchema(space, edgeType);
+    if (!retSchema.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
-    auto fields = fieldsResult.value();
+
+    auto latestEdgeSchema = retSchema.value();
+    if (tagOrEdgeHasTTL(latestEdgeSchema)) {
+       LOG(ERROR) << "Edge: " << edgeName  << " has ttl, not create index";
+       resp_.set_code(cpp2::ErrorCode::E_INDEX_WITH_TTL);
+       onFinished();
+       return;
+    }
+
+    auto fields = getLatestEdgeFields(latestEdgeSchema);
     std::vector<nebula::cpp2::ColumnDef> columns;
     for (auto &field : fieldNames) {
         auto iter = std::find_if(std::begin(fields), std::end(fields),
@@ -95,10 +103,9 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
                       std::string(reinterpret_cast<const char*>(&edgeIndex), sizeof(IndexID)));
     data.emplace_back(MetaServiceUtils::indexKey(space, edgeIndex),
                       MetaServiceUtils::indexVal(item));
-    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     LOG(INFO) << "Create Edge Index " << indexName << ", edgeIndex " << edgeIndex;
     resp_.set_id(to(edgeIndex, EntryType::INDEX));
-    doPut(std::move(data));
+    doSyncPutAndUpdate(std::move(data));
 }
 
 }  // namespace meta

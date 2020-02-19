@@ -43,6 +43,7 @@ void BalanceTask::invoke() {
             ret_ = Result::IN_PROGRESS;
             startTimeMs_ = time::WallClock::fastNowInMilliSec();
         }
+        // fallthrough
         case Status::CHANGE_LEADER: {
             LOG(INFO) << taskIdStr_ << "Ask the src to give up the leadership.";
             SAVE_STATE();
@@ -66,6 +67,7 @@ void BalanceTask::invoke() {
                 status_ = Status::ADD_PART_ON_DST;
             }
         }
+        // fallthrough
         case Status::ADD_PART_ON_DST: {
             LOG(INFO) << taskIdStr_ << "Open the part as learner on dst.";
             SAVE_STATE();
@@ -177,6 +179,7 @@ void BalanceTask::invoke() {
                 status_ = Status::CHECK;
             }
         }
+        // fallthrough
         case Status::CHECK: {
             LOG(INFO) << taskIdStr_ << "Check the peers...";
             SAVE_STATE();

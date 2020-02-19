@@ -11,6 +11,7 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "kvstore/NebulaStore.h"
 #include "meta/SchemaManager.h"
+#include "meta/IndexManager.h"
 #include "meta/client/MetaClient.h"
 #include "meta/ClientBasedGflagsManager.h"
 #include "hdfs/HdfsHelper.h"
@@ -51,6 +52,7 @@ private:
     std::unique_ptr<nebula::thread::GenericThreadPool> webWorkers_;
     std::unique_ptr<meta::ClientBasedGflagsManager> gFlagsMan_;
     std::unique_ptr<meta::SchemaManager> schemaMan_;
+    std::unique_ptr<meta::IndexManager> indexMan_;
 
     std::atomic_bool stopped_{false};
     HostAddr localHost_;
