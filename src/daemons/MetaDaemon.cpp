@@ -19,10 +19,12 @@
 #include "hdfs/HdfsCommandHelper.h"
 #include "thread/GenericThreadPool.h"
 #include "kvstore/PartManager.h"
-#include "meta/ClusterIdMan.h"
 #include "kvstore/NebulaStore.h"
+#include "meta/ClusterIdMan.h"
+#include "meta/CompactionFilter.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/jobMan/JobManager.h"
+#include "meta/MetaCFHelper.h"
 
 using nebula::operator<<;
 using nebula::ProcessUtils;
@@ -73,11 +75,14 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
                                  FLAGS_num_worker_threads, true /*stats*/));
     threadManager->setNamePrefix("executor");
     threadManager->start();
+
+    nebula::meta::MetaCFHelper cfHelper;
     // On metad, we are allowed to read on follower
     FLAGS_check_leader = false;
     nebula::kvstore::KVOptions options;
     options.dataPaths_ = {FLAGS_data_path};
     options.partMan_ = std::move(partMan);
+    options.cffBuilder_ = std::make_unique<nebula::meta::MetaCompactionFilterFactoryBuilder>(&cfHelper);
     auto kvstore = std::make_unique<nebula::kvstore::NebulaStore>(
                                                         std::move(options),
                                                         ioPool,
@@ -129,6 +134,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
         }
     }
     LOG(INFO) << "Nebula store init succeeded, clusterId " << gClusterId;
+    cfHelper.registerKv(kvstore.get());
     return kvstore;
 }
 
