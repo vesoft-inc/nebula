@@ -29,8 +29,8 @@ private:
     CreateSpaceSentence            *sentence_{nullptr};
     // TODO Due to the currently design of the createSpace interface,
     // it's impossible to express *not specified*, so we use 0 to
-    // indicate partNum_ and replicaFactor_ in spaceMeta_.
-    SpaceMeta                       spaceMeta_ = SpaceMeta("", 0, 0);
+    // indicate partNum_ and replicaFactor_ in spaceDesc_.
+    meta::SpaceDesc                spaceDesc_;
 };
 
 }   // namespace graph

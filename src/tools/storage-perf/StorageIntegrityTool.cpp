@@ -36,11 +36,11 @@ namespace storage {
  * There are some gflags we need to pay attention:
  * 1. The space's replica must be 1, because we don't have retry in StorageClient, we will
  *    update it after we suppport preheat. The tag must have only one int property,
- *    which is prop_name. 
+ *    which is prop_name.
  * 2. If the space and tag doesn't exists, it will try to create one, maybe you need to set
  *    heartbeat_interval_secs to make sure the storage service has load meta.
  * 3. The width and height is the size of the big linked list, you can refer to the graph below.
- *    As expected, we can traverse the big linked list after width * height steps starting 
+ *    As expected, we can traverse the big linked list after width * height steps starting
  *    from any node in the list.
  */
 class IntegrityTest {
@@ -88,8 +88,8 @@ private:
         auto spaceResult = mClient_->getSpaceIdByNameFromCache(FLAGS_space_name);
         if (!spaceResult.ok()) {
             LOG(ERROR) << "Get spaceId failed, try to create one";
-            SpaceMeta spaceMeta(FLAGS_space_name, FLAGS_partition_num, 1);
-            auto ret = mClient_->createSpace(spaceMeta).get();
+            meta::SpaceDesc spaceDesc(FLAGS_space_name, FLAGS_partition_num, 1);
+            auto ret = mClient_->createSpace(spaceDesc).get();
             if (!ret.ok()) {
                 LOG(ERROR) << "Create space failed: " << ret.status();
                 return false;

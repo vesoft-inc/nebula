@@ -12,45 +12,66 @@
 
 namespace nebula {
 
+struct CharsetToCollation {
+    std::string               charsetName_;
+    std::string               defaultColl_;
+    std::vector<std::string>  supportColl_;
+    std::string               desc_;
+    int32_t                   maxLen_;
+};
+
+
 class CharsetInfo final {
 public:
-    CharsetInfo() = delete;
+    static CharsetInfo* instance() {
+        static std::unique_ptr<CharsetInfo> charsetInfo(new CharsetInfo());
+        charsetInfo->prepare();
+        return charsetInfo.get();
+    }
 
-    struct CharsetToCollation {
-        std::string               charsetName_;
-        std::string               defaultColl_;
-        std::vector<std::string>  supportColl_;
-        std::string               desc_;
-        int32_t                   maxLen_;
-    };
+    void prepare() {
+        charsetToCollation["utf8"] = {"utf8", "utf8_bin", {"utf8_bin"}, "UTF-8 Unicode", 4};
+    }
 
     /**
      * Check if charset is supported
      */
-    static Status isSupportCharset(const std::string& charsetName);
+    Status isSupportCharset(const std::string& charsetName);
+
     /**
      * Check if collation is supported
      */
-    static Status isSupportCollate(const std::string& collateName);
+    Status isSupportCollate(const std::string& collateName);
+
     /**
      * check if charset and collation match
      */
-    static Status charsetAndCollateMatch(const std::string& charsetName,
+    Status charsetAndCollateMatch(const std::string& charsetName,
                                          const std::string& collateName);
+
     /**
      * Get the corresponding collation according to charset
      */
-    static StatusOr<std::string> getDefaultCollationbyCharset(const std::string& charsetName);
+    StatusOr<std::string> getDefaultCollationbyCharset(const std::string& charsetName);
+
     /**
      * Get the corresponding charset according to collation
      */
-    static StatusOr<std::string> getCharsetbyCollation(const std::string& collationName);
+    StatusOr<std::string> getCharsetbyCollation(const std::string& collationName);
 
-    static std::unordered_set<std::string> supportCharset;
 
-    static std::unordered_set<std::string> supportCollation;
+    std::unordered_map<std::string, CharsetToCollation> getCharsetToCollation() {
+        return charsetToCollation;
+    }
 
-    static std::unordered_map<std::string, CharsetToCollation> charsetToCollation;
+private:
+    CharsetInfo() {}
+
+    std::unordered_set<std::string> supportCharset = {"utf8"};
+
+    std::unordered_set<std::string> supportCollation = {"utf8_bin"};
+
+    std::unordered_map<std::string, CharsetToCollation> charsetToCollation;
 };
 
 }   // namespace nebula

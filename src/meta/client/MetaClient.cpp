@@ -618,14 +618,14 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
 
 /// ================================== public methods =================================
 
-folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpace(SpaceMeta spaceMeta,
+folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpace(SpaceDesc spaceDesc,
                                                               bool ifNotExists) {
     cpp2::SpaceProperties properties;
-    properties.set_space_name(std::move(spaceMeta.spaceName_));
-    properties.set_partition_num(spaceMeta.partNum_);
-    properties.set_replica_factor(spaceMeta.replicaFactor_);
-    properties.set_charset_name(std::move(spaceMeta.charsetName_));
-    properties.set_collate_name(std::move(spaceMeta.collationName_));
+    properties.set_space_name(std::move(spaceDesc.spaceName_));
+    properties.set_partition_num(spaceDesc.partNum_);
+    properties.set_replica_factor(spaceDesc.replicaFactor_);
+    properties.set_charset_name(std::move(spaceDesc.charsetName_));
+    properties.set_collate_name(std::move(spaceDesc.collationName_));
 
     cpp2::CreateSpaceReq req;
     req.set_properties(std::move(properties));

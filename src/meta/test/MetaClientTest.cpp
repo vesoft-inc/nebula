@@ -60,17 +60,17 @@ TEST(MetaClientTest, InterfacesTest) {
     {
         // Test createSpace, listSpaces, getPartsAlloc.
         {
-            SpaceMeta spaceMeta("default_space", 8, 3, "utf8", "utf8_bin");
-            auto ret = client->createSpace(spaceMeta).get();
+            SpaceDesc spaceDesc("default_space", 8, 3, "utf8", "utf8_bin");
+            auto ret = client->createSpace(spaceDesc).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
             spaceId = ret.value();
 
-            ret = client->createSpace(spaceMeta, true).get();
+            ret = client->createSpace(spaceDesc, true).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
         }
         {
-            SpaceMeta spaceMeta("default_space", 8, 3);
-            auto ret = client->createSpace(spaceMeta).get();
+            SpaceDesc spaceDesc("default_space", 8, 3);
+            auto ret = client->createSpace(spaceDesc).get();
             ASSERT_FALSE(ret.ok());
         }
         {
@@ -356,8 +356,8 @@ TEST(MetaClientTest, TagTest) {
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     client->waitForMetadReady();
     TestUtils::registerHB(sc->kvStore_.get(), hosts);
-    SpaceMeta spaceMeta("default", 9, 3);
-    auto ret = client->createSpace(spaceMeta).get();
+    SpaceDesc spaceDesc("default", 9, 3);
+    auto ret = client->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     GraphSpaceID spaceId = ret.value();
     TagID id;
@@ -474,8 +474,8 @@ TEST(MetaClientTest, EdgeTest) {
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     client->waitForMetadReady();
     TestUtils::registerHB(sc->kvStore_.get(), hosts);
-    SpaceMeta spaceMeta("default_space", 9, 3);
-    auto ret = client->createSpace(spaceMeta).get();
+    SpaceDesc spaceDesc("default_space", 9, 3);
+    auto ret = client->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     GraphSpaceID space = ret.value();
     SchemaVer version;
@@ -599,8 +599,8 @@ TEST(MetaClientTest, TagIndexTest) {
     client->waitForMetadReady();
     TestUtils::registerHB(sc->kvStore_.get(), hosts);
 
-    SpaceMeta spaceMeta("default_space", 8, 3);
-    auto ret = client->createSpace(spaceMeta).get();
+    SpaceDesc spaceDesc("default_space", 8, 3);
+    auto ret = client->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     GraphSpaceID space = ret.value();
     IndexID singleFieldIndexID;
@@ -766,8 +766,8 @@ TEST(MetaClientTest, EdgeIndexTest) {
     client->waitForMetadReady();
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     TestUtils::registerHB(sc->kvStore_.get(), hosts);
-    SpaceMeta spaceMeta("default_space", 8, 3);
-    auto ret = client->createSpace(spaceMeta).get();
+    SpaceDesc spaceDesc("default_space", 8, 3);
+    auto ret = client->createSpace(spaceDesc).get();
     GraphSpaceID space = ret.value();
     IndexID singleFieldIndexID;
     IndexID multiFieldIndexID;
@@ -1001,16 +1001,16 @@ TEST(MetaClientTest, DiffTest) {
     }
     {
         // Test Create Space and List Spaces
-        SpaceMeta spaceMeta("default_space", 9, 1);
-        auto ret = client->createSpace(spaceMeta).get();
+        SpaceDesc spaceDesc("default_space", 9, 1);
+        auto ret = client->createSpace(spaceDesc).get();
         ASSERT_TRUE(ret.ok()) << ret.status();
     }
     sleep(FLAGS_heartbeat_interval_secs + 1);
     ASSERT_EQ(1, listener->spaceNum);
     ASSERT_EQ(9, listener->partNum);
     {
-        SpaceMeta spaceMeta("default_space_1", 5, 1);
-        auto ret = client->createSpace(spaceMeta).get();
+        SpaceDesc spaceDesc("default_space_1", 5, 1);
+        auto ret = client->createSpace(spaceDesc).get();
         ASSERT_TRUE(ret.ok()) << ret.status();
     }
     sleep(FLAGS_heartbeat_interval_secs + 1);
@@ -1409,8 +1409,8 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
     {
         std::vector<HostAddr> hosts = {{0, 0}};
         TestUtils::registerHB(sc->kvStore_.get(), hosts);
-        SpaceMeta spaceMeta("default_space", 9, 1);
-        client->createSpace(spaceMeta).get();
+        SpaceDesc spaceDesc("default_space", 9, 1);
+        client->createSpace(spaceDesc).get();
         sleep(FLAGS_heartbeat_interval_secs + 1);
     }
     {

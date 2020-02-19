@@ -87,8 +87,8 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     }
 
     LOG(INFO) << "Create space and schema";
-    SpaceMeta spaceMeta("storage", partition, replica);
-    auto ret = mClient->createSpace(spaceMeta).get();
+    SpaceDesc spaceDesc("storage", partition, replica);
+    auto ret = mClient->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok());
     auto spaceId = ret.value();
 
@@ -315,8 +315,8 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
         serverContexts.emplace_back(std::move(sc));
     }
 
-    SpaceMeta spaceMeta("storage", partition, replica);
-    auto ret = mClient->createSpace(spaceMeta).get();
+    SpaceDesc spaceDesc("storage", partition, replica);
+    auto ret = mClient->createSpace(spaceDesc).get();
     ASSERT_TRUE(ret.ok());
     while (true) {
         int totalLeaders = 0;

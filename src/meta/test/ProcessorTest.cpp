@@ -321,8 +321,9 @@ TEST(ProcessorTest, SpaceTest) {
         ASSERT_EQ("space_with_no_option", gresp.item.properties.space_name);
         ASSERT_EQ(100, gresp.item.properties.partition_num);
         ASSERT_EQ(1, gresp.item.properties.replica_factor);
-        ASSERT_EQ("utf8", gresp.item.properties.charset_name);
-        ASSERT_EQ("utf8_bin", gresp.item.properties.collate_name);
+        // Because setting default value in graph
+        ASSERT_EQ("", gresp.item.properties.charset_name);
+        ASSERT_EQ("", gresp.item.properties.collate_name);
 
         cpp2::DropSpaceReq dreq;
         dreq.set_space_name("space_with_no_option");

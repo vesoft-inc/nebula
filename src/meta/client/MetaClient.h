@@ -102,6 +102,28 @@ struct ConfigItem {
     VariantType         value_;
 };
 
+
+struct SpaceDesc {
+    SpaceDesc() {}
+
+    SpaceDesc(const std::string& spaceName, int32_t partNum,
+              int32_t replicaFactor, const std::string& charsetName = "",
+              const std::string& collationName = "")
+        : spaceName_(spaceName)
+        , partNum_(partNum)
+        , replicaFactor_(replicaFactor)
+        , charsetName_(charsetName)
+        , collationName_(collationName) {
+    }
+
+    std::string  spaceName_;
+    int32_t      partNum_{0};
+    int32_t      replicaFactor_{0};
+    std::string  charsetName_;
+    std::string  collationName_;
+};
+
+
 // config cahce, get config via module and name
 using MetaConfigMap = std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, ConfigItem>;
 
@@ -176,7 +198,7 @@ public:
     }
 
     // Operations for parts
-    folly::Future<StatusOr<GraphSpaceID>> createSpace(SpaceMeta spaceMeta,
+    folly::Future<StatusOr<GraphSpaceID>> createSpace(SpaceDesc spaceDesc,
                                                       bool ifNotExists = false);
 
     folly::Future<StatusOr<std::vector<SpaceIdName>>>

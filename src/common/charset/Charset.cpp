@@ -8,14 +8,6 @@
 
 namespace nebula {
 
-std::unordered_set<std::string> CharsetInfo::supportCharset = {"utf8"};
-
-std::unordered_set<std::string> CharsetInfo::supportCollation = {"utf8_bin"};
-
-std::unordered_map<std::string, CharsetInfo::CharsetToCollation> CharsetInfo::charsetToCollation = {
-    {"utf8", {"utf8", "utf8_bin", {"utf8_bin"}, "UTF-8 Unicode", 4}}
-};
-
 Status CharsetInfo::isSupportCharset(const std::string& charsetName) {
     for (auto& sc : supportCharset) {
         if (!sc.compare(charsetName)) {

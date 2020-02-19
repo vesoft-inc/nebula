@@ -9,8 +9,6 @@
 
 DEFINE_int32(default_parts_num, 100, "The default number of parts when a space is created");
 DEFINE_int32(default_replica_factor, 1, "The default replica factor when a space is created");
-DEFINE_string(default_charset, "utf8", "The default charset when a space is created");
-DEFINE_string(default_collate, "utf8_bin", "The default collate when a space is created");
 
 namespace nebula {
 namespace meta {
@@ -79,42 +77,6 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         }
         // Set the default value back to the struct, which will be written to storage
         properties.set_replica_factor(replicaFactor);
-    }
-
-    // charset and collate are not specified
-    if (charsetName.empty() && collateName.empty()) {
-        charsetName = FLAGS_default_charset;
-        folly::toLowerAscii(charsetName);
-        auto retStatus = CharsetInfo::isSupportCharset(charsetName);
-        if (!retStatus.ok()) {
-            LOG(ERROR) << "Create Space Failed : charset not support";
-            resp_.set_code(cpp2::ErrorCode::E_INVALID_CHARSET);
-            onFinished();
-            return;
-        }
-
-        collateName = FLAGS_default_collate;
-        folly::toLowerAscii(collateName);
-        retStatus = CharsetInfo::isSupportCollate(collateName);
-        if (!retStatus.ok()) {
-            LOG(ERROR) << "Create Space Failed : collate not support";
-            resp_.set_code(cpp2::ErrorCode::E_INVALID_COLLATE);
-            onFinished();
-            return;
-        }
-
-        retStatus = CharsetInfo::charsetAndCollateMatch(charsetName, collateName);
-        if (!retStatus.ok()) {
-            LOG(ERROR) << "Create Space Failed : charset and collate not match";
-            resp_.set_code(cpp2::ErrorCode::E_CHARSET_COLLATE_NOT_MATCH);
-            onFinished();
-            return;
-        }
-
-        // Set the default value back to the struct, which will be written to storage
-        properties.set_charset_name(charsetName);
-        // Set the default value back to the struct, which will be written to storage
-        properties.set_collate_name(collateName);
     }
 
     VLOG(3) << "Create space " << spaceName << ", id " << spaceId;

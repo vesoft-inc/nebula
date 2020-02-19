@@ -11,46 +11,49 @@
 namespace nebula {
 
 TEST(CharsetInfo, isSupportCharset) {
+    auto* charsetInfo = CharsetInfo::instance();
     {
-        auto status = CharsetInfo::isSupportCharset(std::string("utf8"));
+        auto status = charsetInfo->isSupportCharset(std::string("utf8"));
         ASSERT_TRUE(status.ok()) << status;
     }
     {
-        auto status = CharsetInfo::isSupportCharset(std::string("gbk"));
+        auto status = charsetInfo->isSupportCharset(std::string("gbk"));
         ASSERT_FALSE(status.ok());
     }
 }
 
 
 TEST(CharsetInfo, isSupportCollate) {
+    auto* charsetInfo = CharsetInfo::instance();
     {
-        auto status = CharsetInfo::isSupportCollate(std::string("utf8_bin"));
+        auto status = charsetInfo->isSupportCollate(std::string("utf8_bin"));
         ASSERT_TRUE(status.ok()) << status;
     }
     {
-        auto status = CharsetInfo::isSupportCollate(std::string("utf8"));
+        auto status = charsetInfo->isSupportCollate(std::string("utf8"));
         ASSERT_FALSE(status.ok());
     }
     {
-        auto status = CharsetInfo::isSupportCollate(std::string("gbk_bin"));
+        auto status = charsetInfo->isSupportCollate(std::string("gbk_bin"));
         ASSERT_FALSE(status.ok());
     }
 }
 
 
 TEST(CharsetInfo, charsetAndCollateMatch) {
+    auto* charsetInfo = CharsetInfo::instance();
     {
-        auto status = CharsetInfo::charsetAndCollateMatch(std::string("utf8"),
+        auto status = charsetInfo->charsetAndCollateMatch(std::string("utf8"),
                                                           std::string("utf8_bin"));
         ASSERT_TRUE(status.ok()) << status;
     }
     {
-        auto status = CharsetInfo::charsetAndCollateMatch(std::string("utf8"),
+        auto status = charsetInfo->charsetAndCollateMatch(std::string("utf8"),
                                                           std::string("utf8_general_ci"));
         ASSERT_FALSE(status.ok());
     }
     {
-        auto status = CharsetInfo::charsetAndCollateMatch(std::string("gbk"),
+        auto status = charsetInfo->charsetAndCollateMatch(std::string("gbk"),
                                                           std::string("utf8_bin"));
         ASSERT_FALSE(status.ok());
     }
@@ -58,34 +61,36 @@ TEST(CharsetInfo, charsetAndCollateMatch) {
 
 
 TEST(CharsetInfo, getDefaultCollationbyCharset) {
+    auto* charsetInfo = CharsetInfo::instance();
     {
-        auto result = CharsetInfo::getDefaultCollationbyCharset(std::string("utf8"));
+        auto result = charsetInfo->getDefaultCollationbyCharset(std::string("utf8"));
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(std::string("utf8_bin"), result.value());
     }
     {
-        auto result = CharsetInfo::getDefaultCollationbyCharset(std::string("utf8mb4"));
+        auto result = charsetInfo->getDefaultCollationbyCharset(std::string("utf8mb4"));
         ASSERT_FALSE(result.ok());
     }
     {
-        auto result = CharsetInfo::getDefaultCollationbyCharset(std::string("gbk"));
+        auto result = charsetInfo->getDefaultCollationbyCharset(std::string("gbk"));
         ASSERT_FALSE(result.ok());
     }
 }
 
 
 TEST(CharsetInfo, getCharsetbyCollation) {
+    auto* charsetInfo = CharsetInfo::instance();
     {
-        auto result = CharsetInfo::getCharsetbyCollation(std::string("utf8_bin"));
+        auto result = charsetInfo->getCharsetbyCollation(std::string("utf8_bin"));
         ASSERT_TRUE(result.ok()) << result.status();
         EXPECT_EQ(std::string("utf8"), result.value());
     }
     {
-        auto result = CharsetInfo::getCharsetbyCollation(std::string("utf8mb4_bin"));
+        auto result = charsetInfo->getCharsetbyCollation(std::string("utf8mb4_bin"));
         ASSERT_FALSE(result.ok());
     }
     {
-        auto result = CharsetInfo::getCharsetbyCollation(std::string("gbk_bin"));
+        auto result = charsetInfo->getCharsetbyCollation(std::string("gbk_bin"));
         ASSERT_FALSE(result.ok());
     }
 }
