@@ -5,6 +5,7 @@
  */
 
 #include "kvstore/LogEncoder.h"
+#include "storage/StorageFlags.h"
 #include "storage/admin/RebuildEdgeIndexProcessor.h"
 
 namespace nebula {
@@ -31,15 +32,70 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
               << " Edge Index " << indexID;
 
     for (PartitionID part : parts) {
-        auto atomic = [space, part, edgeType, item, this]() -> std::string {
-            return partitionRebuildIndex(space, part, edgeType, item);
-        };
+        if (!FLAGS_ignore_index_check_pre_insert) {
+            std::unique_ptr<kvstore::KVIterator> iter;
+            auto prefix = NebulaKeyUtils::prefix(part);
+            auto ret = kvstore_->prefix(space, part, prefix, &iter);
+            if (ret != kvstore::ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "Processing Part " << part << " Failed";
+                this->pushResultCode(to(ret), part);
+                onFinished();
+                return;
+            }
 
-        auto callback = [space, part, this](kvstore::ResultCode code) {
-            handleAsync(space, part, code);
-        };
+            std::vector<kvstore::KV> data;
+            data.reserve(FLAGS_rebuild_index_batch_size);
+            int32_t batchSize = 0;
+            VertexID currentSrcVertex = -1;
+            VertexID currentDstVertex = -1;
+            while (iter && iter->valid()) {
+                if (batchSize >= FLAGS_rebuild_index_batch_size) {
+                    doPut(space, part, std::move(data));
+                    data.clear();
+                    batchSize = 0;
+                }
 
-        this->kvstore_->asyncAtomicOp(space, part, atomic, callback);
+                auto key = iter->key();
+                auto val = iter->val();
+
+                if (!NebulaKeyUtils::isEdge(key) ||
+                    NebulaKeyUtils::getEdgeType(key) != edgeType) {
+                    iter->next();
+                    continue;
+                }
+
+                auto source = NebulaKeyUtils::getSrcId(key);
+                auto destination = NebulaKeyUtils::getDstId(key);
+                if (currentSrcVertex == source || currentDstVertex == destination) {
+                    iter->next();
+                    continue;
+                } else {
+                    currentSrcVertex = source;
+                    currentDstVertex = destination;
+                }
+                auto ranking = NebulaKeyUtils::getRank(key);
+                auto reader = RowReader::getEdgePropReader(schemaMan_,
+                                                        std::move(val),
+                                                        space,
+                                                        edgeType);
+                auto values = collectIndexValues(reader.get(), item->get_fields());
+                auto indexKey = NebulaKeyUtils::edgeIndexKey(part, indexID, source,
+                                                            ranking, destination, values);
+                data.emplace_back(std::move(indexKey), "");
+                iter->next();
+            }
+            doPut(space, part, std::move(data));
+        } else {
+            auto atomic = [space, part, edgeType, item, this]() -> std::string {
+                return partitionRebuildIndex(space, part, edgeType, item);
+            };
+
+            auto callback = [space, part, this](kvstore::ResultCode code) {
+                handleAsync(space, part, code);
+            };
+
+            this->kvstore_->asyncAtomicOp(space, part, atomic, callback);
+        }
     }
     onFinished();
 }
