@@ -45,14 +45,22 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     }
 
     auto edgeType = edgeTypeRet.value();
-    auto fieldsResult = getLatestEdgeFields(space, edgeType);
-    if (!fieldsResult.ok()) {
-        LOG(ERROR) << "Get Latest Edge Property Name Failed";
+    auto retSchema = getLatestEdgeSchema(space, edgeType);
+    if (!retSchema.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
-    auto fields = fieldsResult.value();
+
+    auto latestEdgeSchema = retSchema.value();
+    if (tagOrEdgeHasTTL(latestEdgeSchema)) {
+       LOG(ERROR) << "Edge: " << edgeName  << " has ttl, not create index";
+       resp_.set_code(cpp2::ErrorCode::E_INDEX_WITH_TTL);
+       onFinished();
+       return;
+    }
+
+    auto fields = getLatestEdgeFields(latestEdgeSchema);
     std::vector<nebula::cpp2::ColumnDef> columns;
     for (auto &field : fieldNames) {
         auto iter = std::find_if(std::begin(fields), std::end(fields),
