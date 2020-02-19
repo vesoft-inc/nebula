@@ -989,28 +989,35 @@ TEST(Parser, FetchEdge) {
     }
 }
 
-TEST(Parser, Find) {
+TEST(Parser, Lookup) {
     {
         GQLParser parser;
-        std::string query = "FIND name FROM person";
+        std::string query = "LOOKUP ON person";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "FIND name, salary, age FROM person";
+        std::string query = "LOOKUP ON salary, age";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON person WHERE person.gender == \"man\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "FIND name, salary, age FROM person WHERE gender == \"man\"";
+        std::string query = "LOOKUP ON transfer WHERE transfer.amount > 1000 YIELD transfer.amount";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "FIND amount, time FROM transfer WHERE amount > 1000";
+        std::string query = "LOOKUP ON transfer WHERE transfer.amount > 1000 YIELD transfer.amount,"
+                            " transfer.test";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
