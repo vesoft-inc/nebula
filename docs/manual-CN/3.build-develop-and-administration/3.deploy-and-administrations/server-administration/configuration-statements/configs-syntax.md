@@ -1,8 +1,18 @@
 # CONFIG 语法
 
-**Nebula Graph** 使用 `gflags` 进行运行时配置。
+## 配置说明
+
+**Nebula Graph** 默认从 meta 获取配置。如需从本地获取配置，请在 flag 配置文件 `metad.conf`、 `storaged.conf`、`graphd.conf` 中分别添加 `local_config=true`，以从本地配置文件获取。
+
+**注意：**
+
+- 配置优先级是：meta > 命令行参数 > 环境变量 > flag 文件。
+- 更改 flag 文件后需重启服务方可生效。
+- 使用命令行更改可实时生效。
 
 ## gflags 参数
+
+**Nebula Graph** 使用 `gflags` 进行运行时配置。
 
 相关的 `gflags` 参数有四个，其中，`max_edge_returned_per_vertex` 用来控制一个点最多可以搜索返回的边数，`rocksdb_db_options`，`rocksdb_column_family_options`，`rocksdb_block_based_table_options`
 三个参数均为 json 格式，其中每个参数 key 和 value 均为 string 格式。例如可以在 storage 的 conf 文件中做如下设置：
