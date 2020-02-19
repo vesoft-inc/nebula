@@ -482,7 +482,6 @@ std::vector<SpaceIdName> MetaClient::toSpaceIdName(const std::vector<cpp2::IdNam
     return idNames;
 }
 
-
 template<typename RESP>
 Status MetaClient::handleResponse(const RESP& resp) {
     switch (resp.get_code()) {
@@ -557,7 +556,7 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
         const auto& newParts = it->second;
         auto oldIt = oldPartsMap.find(spaceId);
         if (oldIt == oldPartsMap.end()) {
-            VLOG(1) << "SpaceId " << spaceId << " was added!";
+            LOG(INFO) << "SpaceId " << spaceId << " was added!";
             listener_->onSpaceAdded(spaceId);
             for (auto partIt = newParts.begin(); partIt != newParts.end(); partIt++) {
                 listener_->onPartAdded(partIt->second);
@@ -588,7 +587,7 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
         const auto& oldParts = it->second;
         auto newIt = newPartsMap.find(spaceId);
         if (newIt == newPartsMap.end()) {
-            VLOG(1) << "SpaceId " << spaceId << " was removed!";
+            LOG(INFO) << "SpaceId " << spaceId << " was removed!";
             for (auto partIt = oldParts.begin(); partIt != oldParts.end(); partIt++) {
                 listener_->onPartRemoved(spaceId, partIt->first);
             }
@@ -639,6 +638,21 @@ folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
                     return client->future_listSpaces(request);
                 }, [this] (cpp2::ListSpacesResp&& resp) -> decltype(auto) {
                     return this->toSpaceIdName(resp.get_spaces());
+                }, std::move(promise));
+    return future;
+}
+
+folly::Future<StatusOr<cpp2::AdminJobResult>>
+MetaClient::submitJob(cpp2::AdminJobOp op, std::vector<std::string> paras) {
+    cpp2::AdminJobReq req;
+    req.set_op(op);
+    req.set_paras(std::move(paras));
+    folly::Promise<StatusOr<cpp2::AdminJobResult>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_runAdminJob(request);
+                }, [] (cpp2::AdminJobResp&& resp) -> decltype(auto) {
+                    return resp.get_result();
                 }, std::move(promise));
     return future;
 }
