@@ -37,7 +37,7 @@ public:
         space_ = space;
     }
 
-    const GraphSpaceID space() const {
+    GraphSpaceID space() const {
         return space_;
     }
 

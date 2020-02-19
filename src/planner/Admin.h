@@ -11,7 +11,7 @@
 
 /**
  * All admin-related nodes would be put in this file.
- * These nodes would not exist in a same plan with maitain-related/
+ * These nodes would not exist in a same plan with maintain-related/
  * mutate-related/query-related nodes. And they are also isolated
  * from each other. This would be guaranteed by parser and validator.
  */
