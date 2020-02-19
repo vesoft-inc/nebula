@@ -175,7 +175,7 @@ TEST(Parser, TagOperation) {
         GQLParser parser;
         std::string query = "CREATE TAG woman(name string, age int, "
                             "married bool, salary double, create_time timestamp)"
-                            "ttl_duration = 100, ttl_col = create_time";
+                            "ttl_duration = 100, ttl_col = \"create_time\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -211,7 +211,13 @@ TEST(Parser, TagOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "ALTER TAG woman ttl_duration = 50, ttl_col = age";
+        std::string query = "ALTER TAG man ttl_col = \"\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER TAG woman ttl_duration = 50, ttl_col = \"age\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -281,7 +287,7 @@ TEST(Parser, EdgeOperation) {
         GQLParser parser;
         std::string query = "CREATE EDGE woman(name string, age int, "
                             "married bool, salary double, create_time timestamp)"
-                            "ttl_duration = 100, ttl_col = create_time";
+                            "ttl_duration = 100, ttl_col = \"create_time\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -301,7 +307,13 @@ TEST(Parser, EdgeOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "ALTER EDGE woman ttl_duration = 50, ttl_col = age";
+        std::string query = "ALTER EDGE man ttl_col = \"\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER EDGE woman ttl_duration = 50, ttl_col = \"age\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -977,28 +989,35 @@ TEST(Parser, FetchEdge) {
     }
 }
 
-TEST(Parser, Find) {
+TEST(Parser, Lookup) {
     {
         GQLParser parser;
-        std::string query = "FIND name FROM person";
+        std::string query = "LOOKUP ON person";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "FIND name, salary, age FROM person";
+        std::string query = "LOOKUP ON salary, age";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "LOOKUP ON person WHERE person.gender == \"man\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "FIND name, salary, age FROM person WHERE gender == \"man\"";
+        std::string query = "LOOKUP ON transfer WHERE transfer.amount > 1000 YIELD transfer.amount";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "FIND amount, time FROM transfer WHERE amount > 1000";
+        std::string query = "LOOKUP ON transfer WHERE transfer.amount > 1000 YIELD transfer.amount,"
+                            " transfer.test";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

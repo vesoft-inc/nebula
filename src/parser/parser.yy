@@ -117,7 +117,7 @@ class GraphScanner;
 %token KW_BALANCE KW_LEADER
 %token KW_SHORTEST KW_PATH
 %token KW_IS KW_NULL KW_DEFAULT
-%token KW_SNAPSHOT KW_SNAPSHOTS
+%token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
 %token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_SUBMIT
 
 /* symbols */
@@ -225,7 +225,7 @@ class GraphScanner;
 %type <sentence> download_sentence ingest_sentence
 
 %type <sentence> traverse_sentence
-%type <sentence> go_sentence match_sentence find_sentence find_path_sentence
+%type <sentence> go_sentence match_sentence lookup_sentence find_path_sentence
 %type <sentence> group_by_sentence order_by_sentence limit_sentence
 %type <sentence> fetch_sentence fetch_vertices_sentence fetch_edges_sentence
 %type <sentence> set_sentence piped_sentence assignment_sentence
@@ -766,10 +766,11 @@ match_sentence
     : KW_MATCH { $$ = new MatchSentence; }
     ;
 
-find_sentence
-    : KW_FIND prop_list KW_FROM name_label where_clause {
-        auto sentence = new FindSentence($4, $2);
-        sentence->setWhereClause($5);
+lookup_sentence
+    : KW_LOOKUP KW_ON name_label where_clause yield_clause {
+        auto sentence = new LookupSentence($3);
+        sentence->setWhereClause($4);
+        sentence->setYieldClause($5);
         $$ = sentence;
     }
     ;
@@ -991,7 +992,7 @@ create_schema_prop_item
         }
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
-    | KW_TTL_COL ASSIGN name_label {
+    | KW_TTL_COL ASSIGN STRING {
         $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
         delete $3;
     }
@@ -1072,7 +1073,7 @@ alter_schema_prop_item
         }
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
-    | KW_TTL_COL ASSIGN name_label {
+    | KW_TTL_COL ASSIGN STRING {
         $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
         delete $3;
     }
@@ -1241,7 +1242,7 @@ traverse_sentence
     : L_PAREN set_sentence R_PAREN { $$ = $2; }
     | go_sentence { $$ = $1; }
     | match_sentence { $$ = $1; }
-    | find_sentence { $$ = $1; }
+    | lookup_sentence { $$ = $1; }
     | group_by_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }

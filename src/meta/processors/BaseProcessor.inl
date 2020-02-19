@@ -252,23 +252,22 @@ StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId,
     return Status::EdgeNotFound(folly::stringPrintf("Edge %s not found", name.c_str()));
 }
 
-template<typename RESP>
-StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
-BaseProcessor<RESP>::getLatestTagFields(GraphSpaceID spaceId,
-                                        const std::string& name) {
-    auto result = getTagId(spaceId, name);
-    if (!result.ok()) {
-        LOG(ERROR) << "Tag " << name << " not found";
-        return Status::Error(folly::stringPrintf("Tag %s not found", name.c_str()));
-    }
 
-    return getLatestTagFields(spaceId, result.value());
+template <typename RESP>
+std::unordered_map<std::string, nebula::cpp2::ValueType>
+BaseProcessor<RESP>::getLatestTagFields(const nebula::cpp2::Schema& latestTagSchema) {
+    std::unordered_map<std::string, nebula::cpp2::ValueType> propertyNames;
+    for (auto &column : latestTagSchema.get_columns()) {
+        propertyNames.emplace(std::move(column.get_name()),
+                              std::move(column.get_type()));
+    }
+    return propertyNames;
 }
 
 
 template <typename RESP>
-StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
-BaseProcessor<RESP>::getLatestTagFields(GraphSpaceID spaceId, const TagID tagId) {
+StatusOr<nebula::cpp2::Schema>
+BaseProcessor<RESP>::getLatestTagSchema(GraphSpaceID spaceId, const TagID tagId) {
     auto key = MetaServiceUtils::schemaTagPrefix(spaceId, tagId);
     auto ret = doPrefix(key);
     if (!ret.ok()) {
@@ -277,31 +276,25 @@ BaseProcessor<RESP>::getLatestTagFields(GraphSpaceID spaceId, const TagID tagId)
     }
 
     auto iter = ret.value().get();
-    auto latestSchema = MetaServiceUtils::parseSchema(iter->val());
+    return MetaServiceUtils::parseSchema(iter->val());
+}
+
+
+template <typename RESP>
+std::unordered_map<std::string, nebula::cpp2::ValueType>
+BaseProcessor<RESP>::getLatestEdgeFields(const nebula::cpp2::Schema& latestEdgeSchema) {
     std::unordered_map<std::string, nebula::cpp2::ValueType> propertyNames;
-    for (auto &column : latestSchema.get_columns()) {
+    for (auto &column : latestEdgeSchema.get_columns()) {
         propertyNames.emplace(std::move(column.get_name()),
                               std::move(column.get_type()));
     }
     return propertyNames;
 }
 
-template<typename RESP>
-StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
-BaseProcessor<RESP>::getLatestEdgeFields(GraphSpaceID spaceId,
-                                         const std::string& name) {
-    auto result = getEdgeType(spaceId, name);
-    if (!result.ok()) {
-        LOG(ERROR) << "Edge " << name << " not found";
-        return Status::Error(folly::stringPrintf("Edge %s not found", name.c_str()));
-    }
-    return getLatestEdgeFields(spaceId, result.value());
-}
-
 
 template <typename RESP>
-StatusOr<std::unordered_map<std::string, nebula::cpp2::ValueType>>
-BaseProcessor<RESP>::getLatestEdgeFields(GraphSpaceID spaceId, const EdgeType edgeType) {
+StatusOr<nebula::cpp2::Schema>
+BaseProcessor<RESP>::getLatestEdgeSchema(GraphSpaceID spaceId, const EdgeType edgeType) {
     auto key = MetaServiceUtils::schemaEdgePrefix(spaceId, edgeType);
     auto ret = doPrefix(key);
     if (!ret.ok()) {
@@ -310,14 +303,19 @@ BaseProcessor<RESP>::getLatestEdgeFields(GraphSpaceID spaceId, const EdgeType ed
     }
 
     auto iter = ret.value().get();
-    auto latestSchema = MetaServiceUtils::parseSchema(iter->val());
-    std::unordered_map<std::string, nebula::cpp2::ValueType> propertyNames;
-    for (auto &column : latestSchema.get_columns()) {
-        propertyNames.emplace(std::move(column.get_name()),
-                              std::move(column.get_type()));
-    }
-    return propertyNames;
+    return MetaServiceUtils::parseSchema(iter->val());
 }
+
+
+template <typename RESP>
+bool BaseProcessor<RESP>::tagOrEdgeHasTTL(const nebula::cpp2::Schema& latestSchema) {
+    auto schemaProp = latestSchema.get_schema_prop();
+    if (schemaProp.get_ttl_col() && !schemaProp.get_ttl_col()->empty()) {
+         return true;
+    }
+    return false;
+}
+
 
 template<typename RESP>
 StatusOr<IndexID>

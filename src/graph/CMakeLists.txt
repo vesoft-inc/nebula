@@ -51,7 +51,6 @@ nebula_add_library(
     FetchEdgesExecutor.cpp
     FetchExecutor.cpp
     SetExecutor.cpp
-    FindExecutor.cpp
     MatchExecutor.cpp
     DeleteVertexExecutor.cpp
     DeleteEdgesExecutor.cpp
@@ -62,6 +61,7 @@ nebula_add_library(
     CreateSnapshotExecutor.cpp
     DropSnapshotExecutor.cpp
     AdminJobExecutor.cpp
+    LookupExecutor.cpp
 )
 nebula_add_subdirectory(test)
 

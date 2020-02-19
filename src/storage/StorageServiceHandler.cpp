@@ -162,7 +162,7 @@ StorageServiceHandler::future_transLeader(const cpp2::TransLeaderReq& req) {
 
 folly::Future<cpp2::AdminExecResp>
 StorageServiceHandler::future_addPart(const cpp2::AddPartReq& req) {
-    auto* processor = AddPartProcessor::instance(kvstore_, metaClient_);
+    auto* processor = AddPartProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

@@ -48,6 +48,7 @@ public:
         kDeleteVertex,
         kDeleteEdges,
         kFind,
+        kLookup,
         kCreateSpace,
         kDropSpace,
         kDescribeSpace,

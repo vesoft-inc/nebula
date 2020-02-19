@@ -141,7 +141,8 @@ public:
 
     static cpp2::ErrorCode alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
                                            nebula::cpp2::SchemaProp&  schemaProp,
-                                           nebula::cpp2::SchemaProp alterSchemaProp);
+                                           nebula::cpp2::SchemaProp alterSchemaProp,
+                                           bool existIndex);
 
     static std::string indexUserKey(const std::string& account);
 
