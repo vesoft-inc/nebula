@@ -15,20 +15,20 @@
 
 ## Basic Graph Operations
 
-Name                   | Cypher         | nGQL          |
+|Operations                   | Cypher         | nGQL          |
 | --- | ------------ | ------------ |
 | List all labels/tags   | * MATCH (n) RETURN distinct labels(n);  <br/> * call db.labels(); | SHOW TAGS |
 | Insert a vertex with a specified type | CREATE (:Person {age: 16}) | INSERT VERTEX <tag_name> (prop_name_list) VALUES \<vid>:(prop_value_list) |
-| Insert an edge with specified edge type | CREATE (src)-[:LIKES]->(dst) <br/> SET rel.prop = V | INSERT EDGE <edge_name> ( <prop_name_list> ) VALUES <src_vid> -> <dst_vid>: ( <prop_value_list> ) |
-| Delete a vertex | MATCH (n:A)  <br/> DETACH DELETE n | DELETE VERTEX \<vid> |
-| Delete an edge  | MATCH ()-[r:LIKES]->() <br/> DELETE r | DELETE EDGE <edge_type> \<src_vid> -> \<dst_vid> |
+| Insert an edge with specified edge type | CREATE (src)-[rel:LIKES]->(dst) <br/> SET rel.prop = V | INSERT EDGE <edge_type> ( <prop_name_list> ) VALUES <src_vid> -> <dst_vid>[@<ranking>]: ( <prop_value_list> ) |
+| Delete a vertex | MATCH (n) WHERE ID(n) = vid <br/> DETACH DELETE n | DELETE VERTEX \<vid> |
+| Delete an edge  | MATCH ()-[r]->() WHERE ID(r)=edgeID <br/> DELETE r | DELETE EDGE <edge_type> \<src_vid> -> \<dst_vid>[@<ranking>] |
 | Update a vertex property |SET n.name = V | UPDATE VERTEX \<vid> SET <update_columns> |
-| Fetch vertice prop| MATCH (n) <br/> WHERE id(n) = vid  <br/> RETURN properties(n) | FETCH PROP ON <tag_name> \<vid>|
-| Fetch edges prop  | MATCH (n)-[r:FOLLOW]->() <br/> WHERE id(n)=vid <br/> return properties(r)| FETCH PROP ON <edge_name> <src_vid> -> <dst_vid> |
-| Query a vertex along specified edge type |MATCH (n)-[r:FOLLOW]->() | GO FROM \<vid> OVER  \<edge> |
-| Query a vertex along specified edge type reversely | MATCH (n)<-[r:FOLLOW]-()| GO FROM \<vid>  OVER \<edge> REVERSELY |
-| Query N hops along a specified edge |MATCH (n)-[r:FOLLOW*1..N]->() <br/> WHERE id(a) = vid <br/> return r | GO N STEPS FROM \<vid> OVER \<edge> |
-| Find path between two vertices |MATCH p =(a)-[]->(b) <br/> WHERE id(a) = vid <br/> RETURN p | FIND ALL PATH FROM \<vid> TO \<vid> OVER * |
+| Fetch vertice prop| MATCH (n) <br/> WHERE ID(n) = vid  <br/> RETURN properties(n) | FETCH PROP ON <tag_name> \<vid>|
+| Fetch edges prop  | MATCH (n)-[r]->() <br/> WHERE ID(r)=edgeID <br/> return properties(r)| FETCH PROP ON <edge_type> <src_vid> -> <dst_vid>[@<ranking>]|
+| Query a vertex along specified edge type |MATCH (n)-[r:edge_type]->() WHERE ID(n) = vid| GO FROM \<vid> OVER  \<edge_type> |
+| Query a vertex along specified edge type reversely | MATCH (n)<-[r:edge_type]-() WHERE ID(n) = vid | GO FROM \<vid>  OVER \<edge_type> REVERSELY |
+| Get the N-Hop along a specified edge type |MATCH (n)-[r:edge_type*N]->() <br/> WHERE ID(a) = vid <br/> return r | GO N STEPS FROM \<vid> OVER \<edge_type> |
+| Find path between two vertices | MATCH p =(a)-[]->(b) <br/> WHERE ID(a) = a_vid AND ID(b) = b_vid <br/> RETURN p | FIND ALL PATH FROM \<a_vid> TO \<b_vid> OVER * |
 
 ## Example Queries
 
@@ -67,10 +67,10 @@ cypher> MATCH (n:character {name:"prometheus"})
 nebula> UPDATE VERTEX hash("jesus") SET character.type = 'titan';
 
 cypher> MATCH (n:character {name:"prometheus"})
-      > SET n.type = 'titan';
+      > SET n.type = 'titan'
 ```
 
-- Fetch data
+- Fetch vertice properties
   
 ```
 nebula> FETCH PROP ON character hash("saturn");
@@ -81,7 +81,7 @@ nebula> FETCH PROP ON character hash("saturn");
   ---------------------------------------------------
 
 cypher> MATCH (n:character {name:"prometheus"})
-      > RETURN properties(n);
+      > RETURN properties(n)
 ```
 
 - Find the name of hercules's grandfather
@@ -95,7 +95,7 @@ nebula> GO 2 STEPS FROM hash("hercules") OVER father YIELD  $$.character.name;
     ---------------------
 
 cypher> MATCH (src:character{name:"prometheus"})-[r:father*2]->(dst:character)
-      > RETURN dst.name;
+      > RETURN dst.name
 ```
 
 - Find the name of hercules's father
@@ -112,17 +112,17 @@ cypher> MATCH (src:character{name:"prometheus"})-[r:father]->(dst:character)
       > RETURN dst.name
 ```
 
-- Find the characters with age > 100
+- Find the the centenarians' name.
 
  ```
-nebula> XXX # not supported yet
+nebula> # coming soon
     
 cypher> MATCH (src:character)
       > WHERE src.age > 100
       > RETURN src.name
 ```
 
-- Find who are pluto's cohabitants
+- Find who live with pluto
 
 ```
 nebula> GO FROM hash("pluto") OVER lives YIELD lives._dst AS place | GO FROM $-.place OVER lives REVERSELY WHERE \
@@ -137,7 +137,7 @@ cypher> MATCH (src:character{name:"pluto"})-[r1:lives]->()<-[r2:lives]-(dst:char
       > RETURN dst.name
 ```
 
--  Find pluto's brother and their live places?
+-  Find pluto's brother and their habitations?
 
  ```
 nebula> GO FROM hash("pluto") OVER brother YIELD brother._dst AS god | \

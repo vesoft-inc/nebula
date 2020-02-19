@@ -135,7 +135,7 @@ gremlin> g.V(jesus).property('age', 6000);
 - Find the characters with age > 100
 
     ```bash
-    nebula> XXX # not supported yet
+    nebula> # coming soon
     gremlin> g.V().hasLabel('character').has('age',gt(100)).values('name');
     ==>saturn
     ==>jupiter
