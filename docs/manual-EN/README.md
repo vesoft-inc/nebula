@@ -134,7 +134,8 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
 
 ## Appendix
 
-* [Gremlin VS nGQL](5.appendix/gremlin-ngql.md)
+* [Gremlin V.S. nGQL](5.appendix/gremlin-ngql.md)
+* [Cypher V.S. nGQL](5.appendix/cypher-ngql.md)
 
 ## Misc
 
