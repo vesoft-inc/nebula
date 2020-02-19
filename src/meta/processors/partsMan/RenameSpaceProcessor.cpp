@@ -26,7 +26,15 @@ void RenameSpaceProcessor::process(const cpp2::RenameSpaceReq& req) {
         return;
     }
 
-    auto spaceRet = getSpaceId(fromSpace);
+    auto spaceRet = getSpaceId(toSpace);
+    if (spaceRet.ok()) {
+        LOG(ERROR) << "The to_space " << toSpace << " has existed!";
+        resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+        onFinished();
+        return;
+    }
+
+    spaceRet = getSpaceId(fromSpace);
     if (!spaceRet.ok()) {
         resp_.set_code(to(spaceRet.status()));
         onFinished();

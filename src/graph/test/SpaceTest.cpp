@@ -95,6 +95,13 @@ TEST_F(SpaceTest, TestRename) {
         };
         ASSERT_TRUE(verifyResult(resp, tagsExpected, true, {0}));
     }
+    // Rename the existent space
+    {
+        cpp2::ExecutionResponse resp;
+        auto cmd = "RENAME SPACE space_2 TO space_4";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
     // check the number of spaces
     {
         cpp2::ExecutionResponse resp;
