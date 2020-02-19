@@ -1,12 +1,12 @@
 # CONFIG Syntax
 
-## Configuration Introduction
+## Introduction to Configuration
 
-**Nebula Graph** gets configuration from meta by default. If you want to get configuration locally, please add `local_config=true` option in flag files `metad.conf`, `storaged.conf`, `graphd.conf` respectively.
+**Nebula Graph** gets configuration from meta by default. If you want to get configuration locally, please add the `local_config=true` option in flag files `metad.conf`, `storaged.conf`, `graphd.conf` (directory is `/usr/local/nebula/etc/`) respectively.
 
 **Note:**
 
-- Configuration precedence: meta > console > environment variable > flag files
+- Configuration precedence: meta > console > environment variable > flag files. If set `local_config` to true, the flag files take precedence.
 - Restart the services after changing the flag files to take effect.
 - Configuration changes in console take effect in real time.
 
