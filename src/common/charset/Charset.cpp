@@ -9,22 +9,18 @@
 namespace nebula {
 
 Status CharsetInfo::isSupportCharset(const std::string& charsetName) {
-    for (auto& sc : supportCharset) {
-        if (!sc.compare(charsetName)) {
-            return Status::OK();
-        }
+    if (supportCharset.find(charsetName) == supportCharset.end()) {
+        return Status::Error("Charset `%s' not support", charsetName.c_str());
     }
-    return Status::Error("Charset `%s' not support", charsetName.c_str());
+    return Status::OK();
 }
 
 
 Status CharsetInfo::isSupportCollate(const std::string& collateName) {
-    for (auto& sc : supportCollation) {
-        if (!sc.compare(collateName)) {
-            return Status::OK();
-        }
+    if (supportCollation.find(collateName) == supportCollation.end()) {
+        return Status::Error("Collation `%s' not support", collateName.c_str());
     }
-    return Status::Error("Collation `%s' not support", collateName.c_str());
+    return Status::OK();
 }
 
 
