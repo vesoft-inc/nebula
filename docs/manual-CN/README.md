@@ -64,6 +64,7 @@
     * [删除 Edge](2.query-language/4.statement-syntax/1.data-definition-statements/drop-edge-syntax.md)
     * [删除 Space](2.query-language/4.statement-syntax/1.data-definition-statements/drop-space-syntax.md)
     * [索引](2.query-language/4.statement-syntax/1.data-definition-statements/index.md)
+    * [配置生存时间 (TTL)](2.query-language/4.statement-syntax/1.data-definition-statements/configure-TTL.md)
 
   * 数据查询与操作语句 (DQL 和 DML)
     * [删除边](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-edge-syntax.md)
