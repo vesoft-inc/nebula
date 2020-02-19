@@ -44,15 +44,22 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     }
 
     auto tagID = tagIDRet.value();
-    auto fieldsResult = getLatestTagFields(space, tagID);
-    if (!fieldsResult.ok()) {
-        LOG(ERROR) << "Get Latest Tag Fields Failed";
+    auto retSchema = getLatestTagSchema(space, tagID);
+    if (!retSchema.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
 
-    auto fields = fieldsResult.value();
+    auto latestTagSchema = retSchema.value();
+    if (tagOrEdgeHasTTL(latestTagSchema)) {
+       LOG(ERROR) << "Tag: " << tagName << " has ttl, not create index";
+       resp_.set_code(cpp2::ErrorCode::E_INDEX_WITH_TTL);
+       onFinished();
+       return;
+    }
+
+    auto fields = getLatestTagFields(latestTagSchema);
     std::vector<nebula::cpp2::ColumnDef> columns;
     for (auto &field : fieldNames) {
         auto iter = std::find_if(std::begin(fields), std::end(fields),
@@ -94,10 +101,9 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
                       std::string(reinterpret_cast<const char*>(&tagIndex), sizeof(IndexID)));
     data.emplace_back(MetaServiceUtils::indexKey(space, tagIndex),
                       MetaServiceUtils::indexVal(item));
-    LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
     LOG(INFO) << "Create Tag Index " << indexName << ", tagIndex " << tagIndex;
     resp_.set_id(to(tagIndex, EntryType::INDEX));
-    doPut(std::move(data));
+    doSyncPutAndUpdate(std::move(data));
 }
 
 }  // namespace meta

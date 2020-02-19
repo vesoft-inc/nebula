@@ -22,6 +22,7 @@
 #include "meta/ClusterIdMan.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/ActiveHostsMan.h"
+#include "meta/processors/jobMan/JobManager.h"
 
 using nebula::operator<<;
 using nebula::ProcessUtils;
@@ -226,6 +227,14 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    {
+        nebula::meta::JobManager* jobMgr = nebula::meta::JobManager::getInstance();
+        if (!jobMgr->init(kvstore.get())) {
+            LOG(ERROR) << "Init job manager failed";
+            return EXIT_FAILURE;
+        }
+    }
+
     // Setup the signal handlers
     status = setupSignalHandler();
     if (!status.ok()) {
@@ -268,6 +277,10 @@ void signalHandler(int sig) {
             FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
             if (gServer) {
                 gServer->stop();
+            }
+            {
+                auto gJobMgr = nebula::meta::JobManager::getInstance();
+                gJobMgr->shutDown();
             }
             break;
         default:

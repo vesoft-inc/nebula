@@ -48,6 +48,7 @@ public:
         kDeleteVertex,
         kDeleteEdges,
         kFind,
+        kLookup,
         kCreateSpace,
         kDropSpace,
         kDescribeSpace,
@@ -71,6 +72,7 @@ public:
         kReturn,
         kCreateSnapshot,
         kDropSnapshot,
+        kAdmin,
     };
 
     Kind kind() const {

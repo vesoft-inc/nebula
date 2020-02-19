@@ -64,7 +64,7 @@ public:
         auto *sentences = sentences_;
         sentences_ = nullptr;
         scanner_.setQuery(nullptr);
-        return sentences;
+        return std::unique_ptr<SequentialSentences>(sentences);
     }
 
 private:

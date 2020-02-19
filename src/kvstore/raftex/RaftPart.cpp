@@ -235,8 +235,6 @@ RaftPart::RaftPart(ClusterID clusterId,
                                                                logClusterId,
                                                                log);
                                 });
-    lastLogId_ = wal_->lastLogId();
-    lastLogTerm_ = wal_->lastLogTerm();
     logs_.reserve(FLAGS_max_batch_size);
     CHECK(!!executor_) << idStr_ << "Should not be nullptr";
 }
@@ -270,6 +268,9 @@ const char* RaftPart::roleStr(Role role) const {
 
 void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
     std::lock_guard<std::mutex> g(raftLock_);
+
+    lastLogId_ = wal_->lastLogId();
+    lastLogTerm_ = wal_->lastLogTerm();
 
     // Set the quorum number
     quorum_ = (peers.size() + 1) / 2;
@@ -487,7 +488,7 @@ void RaftPart::addPeer(const HostAddr& peer) {
 void RaftPart::removePeer(const HostAddr& peer) {
     CHECK(!raftLock_.try_lock());
     if (peer == addr_) {
-        //    status_ = Status::STOPPED;
+        // The part will be removed in REMOVE_PART_ON_SRC phase
         LOG(INFO) << idStr_ << "Remove myself from the raft group.";
         return;
     }

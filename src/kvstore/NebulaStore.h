@@ -145,6 +145,9 @@ public:
                                std::string&& prefix,
                                std::unique_ptr<KVIterator>* iter) override = delete;
 
+    ResultCode sync(GraphSpaceID spaceId,
+                    PartitionID partId) override;
+
     // async batch put.
     void asyncMultiPut(GraphSpaceID spaceId,
                        PartitionID  partId,

@@ -50,6 +50,7 @@ UPSERT                      ([Uu][Pp][Ss][Ee][Rr][Tt])
 WHEN                        ([Ww][Hh][Ee][Nn])
 DELETE                      ([Dd][Ee][Ll][Ee][Tt][Ee])
 FIND                        ([Ff][Ii][Nn][Dd])
+LOOKUP                      ([Ll][Oo][Oo][Kk][Uu][Pp])
 ALTER                       ([Aa][Ll][Tt][Ee][Rr])
 STEPS                       ([Ss][Tt][Ee][Pp][Ss]?)
 OVER                        ([Oo][Vv][Ee][Rr])
@@ -112,6 +113,9 @@ DOWNLOAD                    ([Dd][Oo][Ww][Nn][Ll][Oo][Aa][Dd])
 HDFS                        ([Hh][Dd][Ff][Ss])
 ORDER                       ([Oo][Rr][Dd][Ee][Rr])
 INGEST                      ([Ii][Nn][Gg][Ee][Ss][Tt])
+SUBMIT                      ([Ss][Uu][Bb][Mm][Ii][Tt])
+COMPACT                     ([Cc][Oo][Mm][Pp][Aa][Cc][Tt])
+FLUSH                       ([Ff][Ll][Uu][Ss][Hh])
 ASC                         ([Aa][Ss][Cc])
 DISTINCT                    ([Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
 DEFAULT                     ([Dd][Ee][Ff][Aa][Uu][Ll][Tt])
@@ -156,6 +160,9 @@ HEX                         ([0-9a-fA-F])
 OCT                         ([0-7])
 IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
+JOBS                        ([Jj][Oo][Bb][Ss])
+JOB                         ([Jj][Oo][Bb])
+RECOVER                     ([Rr][Ee][Cc][Oo][Vv][Ee][Rr])
 
 %%
 
@@ -184,6 +191,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {WHEN}                      { return TokenType::KW_WHEN; }
 {DELETE}                    { return TokenType::KW_DELETE; }
 {FIND}                      { return TokenType::KW_FIND; }
+{LOOKUP}                    { return TokenType::KW_LOOKUP; }
 {ALTER}                     { return TokenType::KW_ALTER; }
 {STEPS}                     { return TokenType::KW_STEPS; }
 {OVER}                      { return TokenType::KW_OVER; }
@@ -253,6 +261,9 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 {ORDER}                     { return TokenType::KW_ORDER; }
 {INGEST}                    { return TokenType::KW_INGEST; }
+{COMPACT}                   { return TokenType::KW_COMPACT; }
+{FLUSH}                     { return TokenType::KW_FLUSH; }
+{SUBMIT}                    { return TokenType::KW_SUBMIT; }
 {ASC}                       { return TokenType::KW_ASC; }
 {DISTINCT}                  { return TokenType::KW_DISTINCT; }
 {DEFAULT}                   { return TokenType::KW_DEFAULT; }
@@ -284,6 +295,10 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {SNAPSHOT}                  { return TokenType::KW_SNAPSHOT; }
 {SNAPSHOTS}                 { return TokenType::KW_SNAPSHOTS; }
 {FORCE}                     { return TokenType::KW_FORCE; }
+
+{JOBS}                      { return TokenType::KW_JOBS; }
+{JOB}                       { return TokenType::KW_JOB; }
+{RECOVER}                   { return TokenType::KW_RECOVER; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
@@ -339,7 +354,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                             }
 {IP_OCTET}(\.{IP_OCTET}){3} {
                                 uint32_t octets[4] = {0};
-                                sscanf(yytext, "%i.%i.%i.%i", &octets[3], &octets[2], &octets[1], &octets[0]);
+                                sscanf(yytext, "%u.%u.%u.%u", &octets[3], &octets[2], &octets[1], &octets[0]);
                                 // The bytes order conforms to the one used in NetworkUtils
                                 uint32_t ipv4 = (octets[3] << 24) | (octets[2] << 16) | (octets[1] << 8) | octets[0];
                                 yylval->intval = ipv4;
@@ -355,9 +370,9 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                         yyterminate();
                                     }
                                 }
-                                int64_t val = 0;
+                                uint64_t val = 0;
                                 sscanf(yytext, "%lx", &val);
-                                yylval->intval = val;
+                                yylval->intval = static_cast<int64_t>(val);
                                 return TokenType::INTEGER;
                             }
 0{OCT}+                     {
@@ -372,9 +387,9 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                         yyterminate();
                                     }
                                 }
-                                int64_t val = 0;
+                                uint64_t val = 0;
                                 sscanf(yytext, "%lo", &val);
-                                yylval->intval = val;
+                                yylval->intval = static_cast<int64_t>(val);
                                 return TokenType::INTEGER;
                             }
 {DEC}+                      {
@@ -441,7 +456,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                             }
 <DQ_STR,SQ_STR>\\{OCT}{1,3} {
                                 makeSpaceForString(1);
-                                int val = 0;
+                                uint32_t val = 0;
                                 sscanf(yytext + 1, "%o", &val);
                                 if (val > 0xFF) {
                                     yyterminate();

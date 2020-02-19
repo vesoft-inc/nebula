@@ -92,8 +92,8 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
         }
 
         if (!data.empty()) {
-            LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-            doPut(std::move(data));
+            doSyncPutAndUpdate(std::move(data));
+            return;
         }
         return;
     } while (false);

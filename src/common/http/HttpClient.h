@@ -19,7 +19,7 @@ public:
 
     ~HttpClient() = default;
 
-    static StatusOr<std::string> get(const std::string& path);
+    static StatusOr<std::string> get(const std::string& path, const std::string& options = "-G");
 };
 
 }   // namespace http
