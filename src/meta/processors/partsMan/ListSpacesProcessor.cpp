@@ -15,7 +15,7 @@ void ListSpacesProcessor::process(const cpp2::ListSpacesReq&) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        resp_.set_code(to(ret));
+        handleErrorCode(MetaCommon::to(ret));
         onFinished();
         return;
     }

@@ -29,14 +29,14 @@ using FieldType = std::pair<std::string, nebula::cpp2::ValueType>;
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID) \
     if (spaceExist(spaceID) == Status::SpaceNotFound()) { \
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND); \
         onFinished(); \
         return; \
     }
 
 #define CHECK_USER_ID_AND_RETURN(userID) \
     if (userExist(userID) == Status::UserNotFound()) { \
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
+        handleErrorCode(cpp2::ErrorCode::E_NOT_FOUND); \
         onFinished(); \
         return; \
     }
@@ -46,7 +46,7 @@ using FieldType = std::pair<std::string, nebula::cpp2::ValueType>;
  * */
 #define CHECK_SEGMENT(segment) \
     if (!MetaCommon::checkSegment(segment)) { \
-        resp_.set_code(cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL); \
+        handleErrorCode(cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL); \
         onFinished(); \
         return; \
     }
@@ -75,32 +75,20 @@ protected:
         delete this;
     }
 
-    cpp2::ErrorCode to(kvstore::ResultCode code) {
-        switch (code) {
-        case kvstore::ResultCode::SUCCEEDED:
-            return cpp2::ErrorCode::SUCCEEDED;
-        case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
-            return cpp2::ErrorCode::E_NOT_FOUND;
-        case kvstore::ResultCode::ERR_LEADER_CHANGED:
-            return cpp2::ErrorCode::E_LEADER_CHANGED;
-        case kvstore::ResultCode::ERR_CHECKPOINT_ERROR:
-            return cpp2::ErrorCode::E_SNAPSHOT_FAILURE;
-        default:
-            return cpp2::ErrorCode::E_UNKNOWN;
+    void handleErrorCode(cpp2::ErrorCode code, GraphSpaceID spaceId = kDefaultSpaceId,
+                         PartitionID partId = kDefaultPartId) {
+        resp_.set_code(code);
+        if (code == cpp2::ErrorCode::E_LEADER_CHANGED) {
+            handleLeaderChanged(spaceId, partId);
         }
     }
 
-    cpp2::ErrorCode to(const Status& status) {
-        switch (status.code()) {
-        case Status::kOk:
-            return cpp2::ErrorCode::SUCCEEDED;
-        case Status::kSpaceNotFound:
-        case Status::kHostNotFound:
-        case Status::kTagNotFound:
-        case Status::kUserNotFound:
-            return cpp2::ErrorCode::E_NOT_FOUND;
-        default:
-            return cpp2::ErrorCode::E_UNKNOWN;
+    void handleLeaderChanged(GraphSpaceID spaceId, PartitionID partId) {
+        auto leaderRet = kvstore_->partLeader(spaceId, partId);
+        if (ok(leaderRet)) {
+            resp_.set_leader(toThriftHost(nebula::value(leaderRet)));
+        } else {
+            resp_.set_code(MetaCommon::to(nebula::error(leaderRet)));
         }
     }
 

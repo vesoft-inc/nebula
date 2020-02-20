@@ -17,7 +17,7 @@ void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
                             kDefaultPartId,
                             std::move(data),
                             [this, &baton] (kvstore::ResultCode code) {
-        this->resp_.set_code(to(code));
+        this->handleErrorCode(MetaCommon::to(code));
         baton.post();
     });
     baton.wait();
@@ -71,7 +71,7 @@ void BaseProcessor<RESP>::doRemove(const std::string& key) {
                           kDefaultPartId,
                           key,
                           [this, &baton] (kvstore::ResultCode code) {
-        this->resp_.set_code(to(code));
+        this->handleErrorCode(MetaCommon::to(code));
         baton.post();
     });
     baton.wait();
@@ -86,7 +86,7 @@ void BaseProcessor<RESP>::doMultiRemove(std::vector<std::string> keys) {
                                kDefaultPartId,
                                std::move(keys),
                                [this, &baton] (kvstore::ResultCode code) {
-        this->resp_.set_code(to(code));
+        this->handleErrorCode(MetaCommon::to(code));
         baton.post();
     });
     baton.wait();
@@ -103,7 +103,7 @@ void BaseProcessor<RESP>::doRemoveRange(const std::string& start,
                                start,
                                end,
                                [this, &baton] (kvstore::ResultCode code) {
-        this->resp_.set_code(to(code));
+        this->handleErrorCode(MetaCommon::to(code));
         baton.post();
     });
     baton.wait();
@@ -159,7 +159,7 @@ ErrorOr<cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId() {
     auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, kIdKey, &val);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         if (ret != kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
-            return to(ret);
+            return MetaCommon::to(ret);
         }
         id = 1;
     } else {
@@ -179,7 +179,7 @@ ErrorOr<cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId() {
     });
     baton.wait();
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        return to(ret);
+        return MetaCommon::to(ret);
     } else {
         return id;
     }
@@ -396,12 +396,12 @@ void BaseProcessor<RESP>::doSyncPutAndUpdate(std::vector<kvstore::KV> data) {
     });
     baton.wait();
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        this->resp_.set_code(to(ret));
+        this->handleErrorCode(MetaCommon::to(ret));
         this->onFinished();
         return;
     }
     ret = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-    this->resp_.set_code(to(ret));
+    this->handleErrorCode(MetaCommon::to(ret));
     this->onFinished();
 }
 
@@ -421,12 +421,12 @@ void BaseProcessor<RESP>::doSyncMultiRemoveAndUpdate(std::vector<std::string> ke
     });
     baton.wait();
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        this->resp_.set_code(to(ret));
+        this->handleErrorCode(MetaCommon::to(ret));
         this->onFinished();
         return;
     }
     ret = LastUpdateTimeMan::update(kvstore_, time::WallClock::fastNowInMilliSec());
-    this->resp_.set_code(to(ret));
+    this->handleErrorCode(MetaCommon::to(ret));
     this->onFinished();
 }
 

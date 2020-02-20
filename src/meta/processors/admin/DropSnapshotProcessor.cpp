@@ -24,7 +24,7 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
 
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "No snapshots found";
-        resp_.set_code(to(ret));
+        handleErrorCode(MetaCommon::to(ret));
         onFinished();
         return;
     }
@@ -33,7 +33,7 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
     auto peers = NetworkUtils::toHosts(hosts);
     if (!peers.ok()) {
         LOG(ERROR) << "Get checkpoint hosts error";
-        resp_.set_code(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
+        handleErrorCode(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
         onFinished();
         return;
     }
@@ -48,9 +48,9 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
         if (!doSyncPut(std::move(data))) {
             LOG(ERROR) << "Update snapshot status error. "
                           "snapshot : " << snapshot;
-            resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
+            handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
         } else {
-            resp_.set_code(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
+            handleErrorCode(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
         }
         onFinished();
         return;
@@ -66,9 +66,9 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
         if (!doSyncPut(std::move(data))) {
             LOG(ERROR) << "Update snapshot status error. "
                           "snapshot : " << snapshot;
-            resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
+            handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
         } else {
-            resp_.set_code(to(dmRet));
+            handleErrorCode(MetaCommon::to(dmRet));
         }
         onFinished();
         return;
