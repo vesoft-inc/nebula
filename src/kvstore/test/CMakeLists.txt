@@ -40,14 +40,6 @@ nebula_add_test(
 )
 
 nebula_add_test(
-    NAME load_test
-    SOURCES LoadTest.cpp
-    OBJECTS ${KVSTORE_TEST_LIBS}
-    LIBRARIES ${THRIFT_LIBRARIES} ${ROCKSDB_LIBRARIES} wangle gtest
-)
-
-
-nebula_add_test(
     NAME
         rocks_engine_config_test
     SOURCES
