@@ -362,16 +362,15 @@ BaseProcessor<RESP>::getUserAccount(UserID userId) {
 }
 
 template<typename RESP>
-bool BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
+kvstore::ResultCode BaseProcessor<RESP>::doSyncPut(std::vector<kvstore::KV> data) {
     folly::Baton<true, std::atomic> baton;
-    bool ret = false;
+    auto ret = kvstore::ResultCode::SUCCEEDED;
     kvstore_->asyncMultiPut(kDefaultSpaceId,
                             kDefaultPartId,
                             std::move(data),
                             [&ret, &baton] (kvstore::ResultCode code) {
-                                if (kvstore::ResultCode::SUCCEEDED == code) {
-                                    ret = true;
-                                } else {
+                                if (kvstore::ResultCode::SUCCEEDED != code) {
+                                    ret = code;
                                     LOG(INFO) << "Put data error on meta server";
                                 }
                                 baton.post();

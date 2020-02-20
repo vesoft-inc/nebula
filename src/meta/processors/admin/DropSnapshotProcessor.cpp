@@ -45,12 +45,11 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
         // Need update the snapshot status to invalid, maybe some storage engine drop done.
         data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
                           MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
-        if (!doSyncPut(std::move(data))) {
+        auto putRet = doSyncPut(std::move(data));
+        if (putRet != kvstore::ResultCode::SUCCEEDED) {
             LOG(ERROR) << "Update snapshot status error. "
                           "snapshot : " << snapshot;
-            handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
-        } else {
-            handleErrorCode(cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
+            handleErrorCode(MetaCommon::to(putRet));
         }
         onFinished();
         return;
@@ -63,12 +62,11 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
         // Need update the snapshot status to invalid, maybe storage engines drop done.
         data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
                           MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
-        if (!doSyncPut(std::move(data))) {
+        auto putRet = doSyncPut(std::move(data));
+        if (putRet != kvstore::ResultCode::SUCCEEDED) {
             LOG(ERROR) << "Update snapshot status error. "
                           "snapshot : " << snapshot;
-            handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
-        } else {
-            handleErrorCode(MetaCommon::to(dmRet));
+            handleErrorCode(MetaCommon::to(putRet));
         }
         onFinished();
         return;

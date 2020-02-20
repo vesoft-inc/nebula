@@ -34,9 +34,10 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
                       MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID,
                                                     NetworkUtils::toHosts(hosts)));
 
-    if (!doSyncPut(std::move(data))) {
+    auto putRet = doSyncPut(std::move(data));
+    if (putRet != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Write snapshot meta error";
-        handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
+        handleErrorCode(MetaCommon::to(putRet));
         onFinished();
         return;
     }
@@ -84,11 +85,12 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq& req) {
                       MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::VALID,
                                                     NetworkUtils::toHosts(hosts)));
 
-    if (!doSyncPut(std::move(data))) {
+    putRet = doSyncPut(std::move(data));
+    if (putRet != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "All checkpoint creations are done, "
                       "but update checkpoint status error. "
                       "snapshot : " << snapshot;
-        handleErrorCode(cpp2::ErrorCode::E_STORE_FAILURE);
+        handleErrorCode(MetaCommon::to(putRet));
     }
 
     onFinished();
