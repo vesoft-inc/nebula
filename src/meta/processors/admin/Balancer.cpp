@@ -35,11 +35,13 @@ ErrorOr<cpp2::ErrorCode, BalanceID> Balancer::balance(std::vector<HostAddr> host
                 return retCode;
             }
         }
+        LOG(INFO) << "Start to invoke balance plan " << plan_->id();
         executor_->add(std::bind(&BalancePlan::invoke, plan_.get()));
         running_ = true;
         return plan_->id();
     }
     CHECK(!!plan_);
+    LOG(INFO) << "Balance plan " << plan_->id() << " is still running";
     return plan_->id();
 }
 
@@ -67,6 +69,7 @@ StatusOr<BalanceID> Balancer::stop() {
     }
     CHECK(!!plan_);
     plan_->stop();
+    LOG(INFO) << "Stop balance plan " << plan_->id();
     return plan_->id();
 }
 

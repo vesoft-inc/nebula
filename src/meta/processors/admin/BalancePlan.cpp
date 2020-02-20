@@ -52,6 +52,8 @@ void BalancePlan::invoke() {
                 {
                     std::lock_guard<std::mutex> lg(lock_);
                     finishedTaskNum_++;
+                    LOG(INFO) << "Balance " << id_ << " has completed "
+                              << finishedTaskNum_ << " task";
                     if (finishedTaskNum_ == tasks_.size()) {
                         finished = true;
                         if (status_ == Status::IN_PROGRESS) {
@@ -79,6 +81,8 @@ void BalancePlan::invoke() {
                 {
                     std::lock_guard<std::mutex> lg(lock_);
                     finishedTaskNum_++;
+                    LOG(INFO) << "Balance " << id_ << " has completed "
+                              << finishedTaskNum_ << " task";
                     status_ = Status::FAILED;
                     if (finishedTaskNum_ == tasks_.size()) {
                         finished = true;
