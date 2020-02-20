@@ -59,13 +59,13 @@ It is the optimal solution in the world capable of hosting graphs with dozens of
 * Statement Syntax
   * Data Definition Statements
     * [Alter Tag/Edge Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/alter-tag-edge-syntax.md)
-    * [Configure TTL](2.query-language/4.statement-syntax/1.data-definition-statements/configure-TTL.md)
     * [Create Space Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/create-space-syntax.md)
     * [Create Tag/Edge Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/create-tag-edge-syntax.md)
     * [Drop Edge Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-edge-syntax.md)
     * [Drop Space Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-space-syntax.md)
     * [Drop Tag Syntax](2.query-language/4.statement-syntax/1.data-definition-statements/drop-tag-syntax.md)
     * [Index](2.query-language/4.statement-syntax/1.data-definition-statements/index.md)
+    * [TTL (time-to-live)](2.query-language/4.statement-syntax/1.data-definition-statements/TTL.md)
   * Data Query and Manipulation Statements
     * [Delete Edge Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-edge-syntax.md)
     * [Delete Vertex Syntax](2.query-language/4.statement-syntax/2.data-query-and-manipulation-statements/delete-vertex-syntax.md)
