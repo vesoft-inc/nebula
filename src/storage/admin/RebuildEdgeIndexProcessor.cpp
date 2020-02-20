@@ -32,7 +32,7 @@ void RebuildEdgeIndexProcessor::process(const cpp2::RebuildIndexRequest& req) {
               << " Edge Index " << indexID;
 
     for (PartitionID part : parts) {
-        if (FLAGS_ignore_index_check_pre_insert) {
+        if (FLAGS_offline) {
             std::unique_ptr<kvstore::KVIterator> iter;
             auto prefix = NebulaKeyUtils::prefix(part);
             auto ret = kvstore_->prefix(space, part, prefix, &iter);
