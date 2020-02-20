@@ -296,7 +296,7 @@ Status GoExecutor::addToEdgeTypes(EdgeType type) {
             edgeTypes_.push_back(type);
             break;
         }
-        case OverClause::Direction::kBiDirect: {
+        case OverClause::Direction::kBidirect: {
             edgeTypes_.push_back(type);
             type = -type;
             edgeTypes_.push_back(type);
@@ -717,7 +717,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
             storage::cpp2::PropDef pd;
             pd.owner = storage::cpp2::PropOwner::EDGE;
             pd.name = _DST;
-            pd.id.set_edge_type(std::abs(e));
+            pd.id.set_edge_type(e);
             props.emplace_back(std::move(pd));
         }
         return props;
@@ -726,7 +726,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
             storage::cpp2::PropDef pd;
             pd.owner = storage::cpp2::PropOwner::EDGE;
             pd.name = _DST;
-            pd.id.set_edge_type(std::abs(e));
+            pd.id.set_edge_type(e);
             props.emplace_back(std::move(pd));
             VLOG(3) << "Need edge props: " << e << ", _dst";
         }
@@ -758,7 +758,28 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
                 return Status::Error("the edge was not found '%s'", prop.first.c_str());
             }
             pd.id.set_edge_type(edgeType);
-            props.emplace_back(std::move(pd));
+            switch (direction_) {
+                case OverClause::Direction::kForward: {
+                    props.emplace_back(std::move(pd));
+                    break;
+                }
+                case OverClause::Direction::kBackward: {
+                    edgeType = -edgeType;
+                    pd.id.set_edge_type(edgeType);
+                    props.emplace_back(std::move(pd));
+                    break;
+                }
+                case OverClause::Direction::kBidirect: {
+                    props.emplace_back(pd);
+                    edgeType = -edgeType;
+                    pd.id.set_edge_type(edgeType);
+                    props.emplace_back(std::move(pd));
+                    break;
+                }
+                default:
+                    return Status::Error(
+                            "Unknown direction: %ld", static_cast<int64_t>(direction_));
+            }
             VLOG(3) << "Need edge props: " << prop.first << ", " << prop.second;
         }
         return props;
@@ -979,7 +1000,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                 VLOG(1) << "Total edata.edges size " << edata.edges.size()
                         << ", for edge " << edgeType;
                 std::shared_ptr<ResultSchemaProvider> currEdgeSchema;
-                auto it = edgeSchema.find(std::abs(edgeType));
+                auto it = edgeSchema.find(edgeType);
                 if (it != edgeSchema.end()) {
                     currEdgeSchema = it->second;
                 }
@@ -1082,12 +1103,45 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                                     "Get edge type for `%s' failed in getters.", edgeName.c_str());
                         }
                         if (std::abs(edgeType) != type) {
-                            auto sit = edgeSchema.find(type);
-                            if (sit == edgeSchema.end()) {
-                                LOG(ERROR) << "Can't find schema for " << edgeName;
-                                return Status::Error("get schema failed");
+                            switch (direction_) {
+                                case OverClause::Direction::kForward: {
+                                    auto sit = edgeSchema.find(type);
+                                    if (sit != edgeSchema.end()) {
+                                        return RowReader::getDefaultProp(sit->second.get(), prop);
+                                    }
+                                    break;
+                                }
+                                case OverClause::Direction::kBackward: {
+                                    type = -type;
+                                    auto sit = edgeSchema.find(type);
+                                    if (sit != edgeSchema.end()) {
+                                        return RowReader::getDefaultProp(sit->second.get(), prop);
+                                    }
+                                    break;
+                                }
+                                case OverClause::Direction::kBidirect: {
+                                    auto sit = edgeSchema.find(type);
+                                    if (sit != edgeSchema.end()) {
+                                        return RowReader::getDefaultProp(sit->second.get(), prop);
+                                    }
+
+                                    type = -type;
+                                    sit = edgeSchema.find(type);
+                                    if (sit != edgeSchema.end()) {
+                                        return RowReader::getDefaultProp(sit->second.get(), prop);
+                                    }
+                                    break;
+                                }
+                                default:
+                                    return Status::Error(
+                                            "Unknown direction: %ld",
+                                            static_cast<int64_t>(direction_));
                             }
-                            return RowReader::getDefaultProp(sit->second.get(), prop);
+
+                            std::string errMsg = folly::stringPrintf(
+                                    "Can't find shcema for %s when get default.", edgeName.c_str());
+                            LOG(ERROR) << errMsg;
+                            return Status::Error(errMsg);
                         }
                         if (prop == _SRC) {
                             return srcId;

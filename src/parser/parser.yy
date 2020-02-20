@@ -684,7 +684,7 @@ over_clause
         auto s = new std::string("*");
         auto edge = new OverEdge(s, nullptr);
         edges->addEdge(edge);
-        $$ = new OverClause(edges, OverClause::Direction::kBiDirect);
+        $$ = new OverClause(edges, OverClause::Direction::kBidirect);
     }
     | KW_OVER over_edges {
         $$ = new OverClause($2);
@@ -693,7 +693,7 @@ over_clause
         $$ = new OverClause($2, OverClause::Direction::kBackward);
     }
     | KW_OVER over_edges KW_BIDIRECT {
-        $$ = new OverClause($2, OverClause::Direction::kBiDirect);
+        $$ = new OverClause($2, OverClause::Direction::kBidirect);
     }
     ;
 

@@ -158,7 +158,7 @@ std::string OverClause::toString() const {
 
     if (direction_ == OverClause::Direction::kBackward) {
         buf += " REVERSELY";
-    } else if (direction_ == OverClause::Direction::kBiDirect) {
+    } else if (direction_ == OverClause::Direction::kBidirect) {
         buf += " BIDIRECT";
     }
 

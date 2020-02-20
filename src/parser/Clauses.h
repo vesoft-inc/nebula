@@ -221,7 +221,7 @@ public:
     enum class Direction : uint8_t {
         kForward,
         kBackward,
-        kBiDirect
+        kBidirect
     };
 
     OverClause(OverEdges *edges,
